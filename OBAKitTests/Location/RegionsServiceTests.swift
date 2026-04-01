@@ -38,36 +38,6 @@ private class RegionsServiceTestDelegate: NSObject, RegionsServiceDelegate {
     }
 }
 
-// MARK: - Mock File Storage
-
-private class MockRegionsFileStorage: RegionsFileStorageProtocol {
-    var storedDefaultRegions: [Region]?
-    var storedCustomRegions: [Region] = []
-    var loadDefaultRegionsError: Error?
-
-    func loadDefaultRegions() throws -> [Region]? {
-        if let error = loadDefaultRegionsError { throw error }
-        return storedDefaultRegions
-    }
-
-    func saveDefaultRegions(_ regions: [Region]) throws {
-        storedDefaultRegions = regions
-    }
-
-    func loadCustomRegions() -> [Region] {
-        return storedCustomRegions
-    }
-
-    func saveCustomRegion(_ region: Region) throws {
-        storedCustomRegions.removeAll { $0.regionIdentifier == region.regionIdentifier }
-        storedCustomRegions.append(region)
-    }
-
-    func deleteCustomRegion(identifier: RegionIdentifier) throws {
-        storedCustomRegions.removeAll { $0.regionIdentifier == identifier }
-    }
-}
-
 // MARK: - Test Case
 
 class RegionsServiceTests: OBATestCase {
@@ -75,7 +45,7 @@ class RegionsServiceTests: OBATestCase {
     var locationManagerMock: LocationManagerMock!
     var locationService: LocationService!
     var dataLoader: MockDataLoader!
-    private var mockFileStorage: MockRegionsFileStorage!
+    var mockFileStorage: MockRegionsFileStorage!
 
     override func setUp() {
         super.setUp()
@@ -382,6 +352,124 @@ class RegionsServiceTests: OBATestCase {
         XCTAssertEqual(migratedIdentifier, customRegion.regionIdentifier, "Expected current region identifier to be migrated")
 
         XCTAssertNil(userDefaults.data(forKey: RegionsService.legacyCurrentRegionUserDefaultsKey), "Expected legacy current region key to be cleared after migration")
+    }
+
+    /// Corrupt plist in the legacy default-regions key must be discarded (key cleared) without saving anything to disk.
+    func test_migration_defaultRegions_corruptData_discardsKey() {
+        stubRegions(dataLoader: dataLoader)
+
+        let data = "corrupted data".data(using: .utf8)
+        userDefaults.set(data, forKey: RegionsService.legacyStoredRegionsUserDefaultsKey)
+
+        _ = makeRegionsService()
+
+        XCTAssertNil(
+            userDefaults.data(forKey: RegionsService.legacyStoredRegionsUserDefaultsKey),
+            "Corrupt legacy data should be discarded — the key must be cleared so migration does not retry on bad data"
+        )
+        XCTAssertNil(mockFileStorage.storedDefaultRegions, "Nothing should be written to file storage when the legacy data is undecodable")
+    }
+
+    /// An empty region list in the legacy key must clear the key without touching file storage.
+    func test_migration_defaultRegions_emptyArray_clearsKeyWithoutSaving() throws {
+        stubRegions(dataLoader: dataLoader)
+
+        let plistData = try PropertyListEncoder().encode([Region]())
+        userDefaults.set(plistData, forKey: RegionsService.legacyStoredRegionsUserDefaultsKey)
+
+        _ = makeRegionsService()
+
+        XCTAssertNil(
+            userDefaults.data(forKey: RegionsService.legacyStoredRegionsUserDefaultsKey),
+            "An empty legacy region array should clear the key"
+        )
+        XCTAssertNil(mockFileStorage.storedDefaultRegions, "Nothing should be written to file storage for an empty region list")
+    }
+
+    /// Corrupt plist in the legacy custom-regions key must be discarded (key cleared).
+    func test_migration_customRegions_corruptData_discardsKey() {
+        stubRegions(dataLoader: dataLoader)
+
+        let data = "corrupted data".data(using: .utf8)
+        userDefaults.set(data, forKey: RegionsService.legacyStoredCustomRegionsUserDefaultsKey)
+
+        _ = makeRegionsService()
+
+        XCTAssertNil(
+            userDefaults.data(forKey: RegionsService.legacyStoredCustomRegionsUserDefaultsKey),
+            "Corrupt legacy custom-region data should be discarded — key must be cleared"
+        )
+        XCTAssertTrue(mockFileStorage.storedCustomRegions.isEmpty, "Nothing should be written to file storage when the legacy data is undecodable")
+    }
+
+    /// When any `saveCustomRegion` throws during migration the legacy key must be preserved for retry.
+    func test_migration_customRegions_saveFailure_preservesLegacyKey() throws {
+        stubRegions(dataLoader: dataLoader)
+
+        let customRegion = Fixtures.customMinneapolisRegion
+        let plistData = try PropertyListEncoder().encode([customRegion])
+        userDefaults.set(plistData, forKey: RegionsService.legacyStoredCustomRegionsUserDefaultsKey)
+
+        mockFileStorage.saveCustomRegionError = CocoaError(.fileWriteNoPermission)
+
+        _ = makeRegionsService()
+
+        let preservedData = userDefaults.data(forKey: RegionsService.legacyStoredCustomRegionsUserDefaultsKey)
+        XCTAssertNotNil(
+            preservedData,
+            "Legacy custom-regions key must NOT be deleted when saveCustomRegion throws — data would be lost permanently"
+        )
+        XCTAssertEqual(preservedData, plistData, "Preserved legacy data must be byte-for-byte identical to the original")
+        XCTAssertTrue(mockFileStorage.storedCustomRegions.isEmpty, "No custom regions should be stored when the save threw an error")
+    }
+
+    /// Corrupt plist in the legacy current-region key must be discarded via defer and must not
+    /// write any identifier — unlike the default/custom cases this path does not retry on next launch.
+    func test_migration_currentRegion_corruptData_clearsKeyWithoutWritingIdentifier() {
+        stubRegions(dataLoader: dataLoader)
+        
+        let data = "corrupted data".data(using: .utf8)
+        userDefaults.set(data, forKey: RegionsService.legacyCurrentRegionUserDefaultsKey)
+
+        _ = makeRegionsService()
+
+        XCTAssertNil(
+            userDefaults.data(forKey: RegionsService.legacyCurrentRegionUserDefaultsKey),
+            "Corrupt legacy current-region data should be cleared — there is nothing to retry"
+        )
+        XCTAssertNil(
+            userDefaults.object(forKey: RegionsService.currentRegionIdentifierUserDefaultsKey),
+            "No region identifier should be written when the legacy current-region data is undecodable"
+        )
+    }
+
+    /// When `saveDefaultRegions` throws during migration the legacy UserDefaults key must not be deleted
+    /// — preserving the data so the migration can retry on the next launch.
+    func test_migration_defaultRegions_saveFailure_preservesLegacyKey() throws {
+        stubRegions(dataLoader: dataLoader)
+
+        let customRegion = Fixtures.customMinneapolisRegion
+        let plistData = try PropertyListEncoder().encode([customRegion])
+        userDefaults.set(plistData, forKey: RegionsService.legacyStoredRegionsUserDefaultsKey)
+
+        // Simulate a disk-write failure during migration.
+        mockFileStorage.saveDefaultRegionsError = CocoaError(.fileWriteNoPermission)
+
+        _ = makeRegionsService()
+
+        // The legacy key must still be present with its original data intact so the migration retries on next launch.
+        let preservedData = userDefaults.data(forKey: RegionsService.legacyStoredRegionsUserDefaultsKey)
+        XCTAssertNotNil(
+            preservedData,
+            "Legacy UserDefaults key must NOT be deleted when saveDefaultRegions throws — data would be lost permanently"
+        )
+        XCTAssertEqual(preservedData, plistData, "Preserved legacy data must be byte-for-byte identical to the original")
+
+        // Nothing should have been written to file storage.
+        XCTAssertNil(
+            mockFileStorage.storedDefaultRegions,
+            "No regions should be stored in file storage when the save threw an error"
+        )
     }
 
     // MARK: - Location Services

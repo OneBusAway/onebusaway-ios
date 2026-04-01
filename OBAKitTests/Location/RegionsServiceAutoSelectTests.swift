@@ -20,6 +20,7 @@ class RegionsServiceAutoSelectTests: OBATestCase {
     var locationManagerMock: LocationManagerMock!
     var locationService: LocationService!
     var dataLoader: MockDataLoader!
+    var mockFileStorage: MockRegionsFileStorage!
 
     override func setUp() {
         super.setUp()
@@ -27,13 +28,7 @@ class RegionsServiceAutoSelectTests: OBATestCase {
         locationManagerMock = LocationManagerMock()
         locationService = LocationService(userDefaults: userDefaults, locationManager: locationManagerMock)
         dataLoader = (regionsAPIService.dataLoader as! MockDataLoader)
-    }
-
-    override func tearDown() {
-        userDefaults.removeObject(forKey: RegionsService.currentRegionUserDefaultsKey)
-        userDefaults.removeObject(forKey: RegionsService.automaticallySelectRegionUserDefaultsKey)
-        userDefaults.removeObject(forKey: RegionsService.storedRegionsUserDefaultsKey)
-        super.tearDown()
+        mockFileStorage = MockRegionsFileStorage()
     }
 
     // MARK: - Fixed Region by Name
@@ -47,6 +42,7 @@ class RegionsServiceAutoSelectTests: OBATestCase {
             userDefaults: userDefaults,
             bundledRegionsFilePath: bundledRegionsPath,
             apiPath: regionsAPIPath,
+            fileStorage: mockFileStorage,
             fixedRegionName: "Puget Sound"
         )
 
@@ -63,6 +59,7 @@ class RegionsServiceAutoSelectTests: OBATestCase {
             userDefaults: userDefaults,
             bundledRegionsFilePath: bundledRegionsPath,
             apiPath: regionsAPIPath,
+            fileStorage: mockFileStorage,
             fixedRegionName: "Nonexistent Region",
             fixedRegionOBABaseURL: URL(string: "https://api.tampa.onebusaway.org/api/")
         )
@@ -80,6 +77,7 @@ class RegionsServiceAutoSelectTests: OBATestCase {
             userDefaults: userDefaults,
             bundledRegionsFilePath: bundledRegionsPath,
             apiPath: regionsAPIPath,
+            fileStorage: mockFileStorage,
             fixedRegionName: "Nonexistent Region"
         )
 
@@ -95,6 +93,7 @@ class RegionsServiceAutoSelectTests: OBATestCase {
             userDefaults: userDefaults,
             bundledRegionsFilePath: bundledRegionsPath,
             apiPath: regionsAPIPath,
+            fileStorage: mockFileStorage,
             fixedRegionName: "Puget Sound"
         )
 
@@ -105,10 +104,8 @@ class RegionsServiceAutoSelectTests: OBATestCase {
     func test_fixedRegion_onlyAppliesWhenCurrentRegionNil() throws {
         stubRegions(dataLoader: dataLoader)
 
-        // Pre-set a current region in UserDefaults.
         let tampaBay = try XCTUnwrap(Fixtures.loadSomeRegions().first(where: { $0.name == "Tampa Bay" }))
-        let plistData = try PropertyListEncoder().encode(tampaBay)
-        userDefaults.set(plistData, forKey: RegionsService.currentRegionUserDefaultsKey)
+        userDefaults.set(tampaBay.regionIdentifier, forKey: RegionsService.currentRegionIdentifierUserDefaultsKey)
         userDefaults.set(false, forKey: RegionsService.automaticallySelectRegionUserDefaultsKey)
 
         let service = RegionsService(
@@ -117,6 +114,7 @@ class RegionsServiceAutoSelectTests: OBATestCase {
             userDefaults: userDefaults,
             bundledRegionsFilePath: bundledRegionsPath,
             apiPath: regionsAPIPath,
+            fileStorage: mockFileStorage,
             fixedRegionName: "Puget Sound"
         )
 
@@ -129,17 +127,17 @@ class RegionsServiceAutoSelectTests: OBATestCase {
     func test_singleActiveRegion_autoSelected() throws {
         stubRegionsJustPugetSound(dataLoader: dataLoader)
 
-        // Store just one region so it's the only active region available.
+        // Seed file storage with just one region so it's the only active region available.
         let pugetSound = try XCTUnwrap(Fixtures.loadSomeRegions().first(where: { $0.name == "Puget Sound" }))
-        let plistData = try PropertyListEncoder().encode([pugetSound])
-        userDefaults.set(plistData, forKey: RegionsService.storedRegionsUserDefaultsKey)
+        mockFileStorage.storedDefaultRegions = [pugetSound]
 
         let service = RegionsService(
             apiService: regionsAPIService,
             locationService: locationService,
             userDefaults: userDefaults,
             bundledRegionsFilePath: bundledRegionsPath,
-            apiPath: regionsAPIPath
+            apiPath: regionsAPIPath,
+            fileStorage: mockFileStorage
         )
 
         let currentRegion = try XCTUnwrap(service.currentRegion)
@@ -155,7 +153,8 @@ class RegionsServiceAutoSelectTests: OBATestCase {
             locationService: locationService,
             userDefaults: userDefaults,
             bundledRegionsFilePath: bundledRegionsPath,
-            apiPath: regionsAPIPath
+            apiPath: regionsAPIPath,
+            fileStorage: mockFileStorage
         )
 
         XCTAssertNil(service.currentRegion, "Region should not be auto-selected when multiple active regions exist")
@@ -175,6 +174,7 @@ class RegionsServiceAutoSelectTests: OBATestCase {
             userDefaults: userDefaults,
             bundledRegionsFilePath: bundledRegionsPath,
             apiPath: regionsAPIPath,
+            fileStorage: mockFileStorage,
             fixedRegionName: "Tampa Bay"
         )
 
@@ -194,6 +194,7 @@ class RegionsServiceAutoSelectTests: OBATestCase {
             userDefaults: userDefaults,
             bundledRegionsFilePath: bundledRegionsPath,
             apiPath: regionsAPIPath,
+            fileStorage: mockFileStorage,
             fixedRegionName: "Tampa Bay (Renamed)",
             fixedRegionOBABaseURL: URL(string: "https://api.tampa.onebusaway.org/api/")
         )
@@ -212,7 +213,8 @@ class RegionsServiceAutoSelectTests: OBATestCase {
             locationService: locationService,
             userDefaults: userDefaults,
             bundledRegionsFilePath: bundledRegionsPath,
-            apiPath: regionsAPIPath
+            apiPath: regionsAPIPath,
+            fileStorage: mockFileStorage
         )
 
         XCTAssertNil(service.currentRegion, "Without config, location, or single region, currentRegion should remain nil")

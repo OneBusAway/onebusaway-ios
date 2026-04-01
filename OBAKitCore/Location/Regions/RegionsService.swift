@@ -56,7 +56,7 @@ public class RegionsService: NSObject, LocationServiceDelegate {
     ///   - delegate: A delegate object for callbacks.
     ///   - fixedRegionName: A region name from `OBAKitConfig` to auto-select, bypassing the region picker.
     ///   - fixedRegionOBABaseURL: A fallback OBA base URL used when `fixedRegionName` doesn't match any known region.
-    public init(apiService: RegionsAPIService?, locationService: LocationService, userDefaults: UserDefaults, fileStorage: RegionsFileStorageProtocol = RegionsFileStorage(), bundledRegionsFilePath: String, apiPath: String?, delegate: RegionsServiceDelegate? = nil, fixedRegionName: String? = nil, fixedRegionOBABaseURL: URL? = nil) {
+    public init(apiService: RegionsAPIService?, locationService: LocationService, userDefaults: UserDefaults, bundledRegionsFilePath: String, apiPath: String?, fileStorage: RegionsFileStorageProtocol = RegionsFileStorage(), delegate: RegionsServiceDelegate? = nil, fixedRegionName: String? = nil, fixedRegionOBABaseURL: URL? = nil) {
         self.apiService = apiService
         self.locationService = locationService
         self.userDefaults = userDefaults

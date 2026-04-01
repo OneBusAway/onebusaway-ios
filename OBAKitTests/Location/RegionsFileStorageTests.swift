@@ -9,7 +9,6 @@
 
 import Foundation
 import XCTest
-@testable import OBAKit
 @testable import OBAKitCore
 
 class RegionsFileStorageTests: XCTestCase {
@@ -73,8 +72,8 @@ class RegionsFileStorageTests: XCTestCase {
 
     // MARK: - Custom Regions
 
-    func test_loadCustomRegions_returnsEmptyWhenNoFilesExist() {
-        let result = storage.loadCustomRegions()
+    func test_loadCustomRegions_returnsEmptyWhenNoFilesExist() throws {
+        let result = try storage.loadCustomRegions()
         XCTAssertTrue(result.isEmpty, "Expected empty array when no custom region files exist")
     }
 
@@ -82,7 +81,7 @@ class RegionsFileStorageTests: XCTestCase {
         let region = Fixtures.customMinneapolisRegion
         try storage.saveCustomRegion(region)
 
-        let loaded = storage.loadCustomRegions()
+        let loaded = try storage.loadCustomRegions()
         XCTAssertEqual(loaded.count, 1)
         XCTAssertEqual(loaded.first?.name, region.name)
         XCTAssertEqual(loaded.first?.regionIdentifier, region.regionIdentifier)
@@ -91,21 +90,21 @@ class RegionsFileStorageTests: XCTestCase {
     func test_saveCustomRegion_replacesExistingRegionWithSameIdentifier() throws {
         let region = Fixtures.customMinneapolisRegion
         try storage.saveCustomRegion(region)
-        XCTAssertEqual(storage.loadCustomRegions().count, 1)
+        XCTAssertEqual(try storage.loadCustomRegions().count, 1)
 
         // Saving the same region again should overwrite the existing file, not create a second one.
         try storage.saveCustomRegion(region)
 
-        XCTAssertEqual(storage.loadCustomRegions().count, 1, "Expected saving the same region twice to result in a single file")
+        XCTAssertEqual(try storage.loadCustomRegions().count, 1, "Expected saving the same region twice to result in a single file")
     }
 
     func test_deleteCustomRegion_removesFile() throws {
         let region = Fixtures.customMinneapolisRegion
         try storage.saveCustomRegion(region)
-        XCTAssertEqual(storage.loadCustomRegions().count, 1)
+        XCTAssertEqual(try storage.loadCustomRegions().count, 1)
 
         try storage.deleteCustomRegion(identifier: region.regionIdentifier)
-        XCTAssertTrue(storage.loadCustomRegions().isEmpty, "Expected custom regions to be empty after deletion")
+        XCTAssertTrue(try storage.loadCustomRegions().isEmpty, "Expected custom regions to be empty after deletion")
     }
 
     func test_deleteCustomRegion_doesNotThrowWhenFileDoesNotExist() {
@@ -121,7 +120,8 @@ class RegionsFileStorageTests: XCTestCase {
         let corruptedFileURL = try customRegionsDirectoryURL().appendingPathComponent("corrupted.json")
         try "{ this is not valid JSON }".write(to: corruptedFileURL, atomically: true, encoding: .utf8)
 
-        let loaded = storage.loadCustomRegions()
+        // loadCustomRegions must not throw when individual files are corrupted — it skips them and returns the rest.
+        let loaded = try storage.loadCustomRegions()
         XCTAssertEqual(loaded.count, 1, "Expected corrupted file to be skipped; only valid region should be returned")
         XCTAssertEqual(loaded.first?.name, validRegion.name)
     }
