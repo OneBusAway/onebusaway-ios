@@ -24,7 +24,7 @@ private struct StubItem: OBAListViewItem {
     var configuration: OBAListViewItemConfiguration {
         // Returning a plain list configuration satisfies the protocol without
         // needing any cell registration.
-        .list(.init(), [])
+        .list(UIListContentConfiguration.cell(), [])
     }
 
     static func == (lhs: StubItem, rhs: StubItem) -> Bool {

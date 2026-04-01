@@ -423,7 +423,7 @@ extension OBAListView {
         }
     }
 
-    private func getUpdateStrategy(
+    func getUpdateStrategy(
         oldSections: [OBAListViewSection],
         newSections: [OBAListViewSection]
     ) -> UpdateStrategy {
