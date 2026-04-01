@@ -302,6 +302,13 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate {
 
         sections = handleEmptySections(sections: sections)
 
+        // After filtering out headerless empty sections, the result may also be empty.
+        if sections.isEmpty {
+            handleEmptyDataSource()
+            emptyDataConfiguration(isEmpty: true)
+            return
+        }
+
         guard validateSnapshot(sections) else {
             Logger.error("Invalid snapshot detected, skipping update")
             return
@@ -380,7 +387,7 @@ extension OBAListView {
 
     }
 
-    public func applyDataSmartly(to newSections: [OBAListViewSection], animated: Bool = false, scrollBehavior: ScrollBehavior = .preserve) {
+    private func applyDataSmartly(to newSections: [OBAListViewSection], animated: Bool = false, scrollBehavior: ScrollBehavior = .preserve) {
         let scrollState = ScrollState(from: self, behavior: scrollBehavior)
 
         var newSections = newSections
@@ -447,7 +454,7 @@ extension OBAListView {
             let oldIDs = Set(oldSection.contents.map { $0.id })
             let newIDs = Set(newSection.contents.map { $0.id })
 
-            if oldIDs.isDisjoint(with: newIDs) {
+            if oldIDs != newIDs {
                 return .sectionReload
             }
         }
@@ -481,12 +488,8 @@ extension OBAListView {
 
         diffableDataSource.apply(snapshot, animatingDifferences: animated)
 
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
-
-            for section in newSections {
-                self.applySectionSnapshot(for: section, animatingDifferences: false)
-            }
+        for section in newSections {
+            applySectionSnapshot(for: section, animatingDifferences: false)
         }
     }
 
@@ -645,15 +648,19 @@ extension OBAListView {
             switch behavior {
             case .preserve:
                 guard strategy != .fullRebuild, strategy != .noChange else { return }
-
-                DispatchQueue.main.async {
+                DispatchQueue.main.async { [weak listView] in
+                    guard let listView else { return }
                     let maxY = max(0, listView.contentSize.height - listView.bounds.height + listView.contentInset.bottom)
                     let safeOffset = CGPoint(x: offset.x, y: min(offset.y, maxY))
                     listView.setContentOffset(safeOffset, animated: false)
                 }
 
             case .scrollToBottom:
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                // Skip scrolling when nothing actually changed.
+                guard strategy != .noChange else { return }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak listView] in
+                    guard let listView else { return }
+                    listView.layoutIfNeeded()
                     let maxY = max(0, listView.contentSize.height - listView.bounds.height + listView.contentInset.bottom)
                     listView.setContentOffset(CGPoint(x: 0, y: maxY), animated: true)
                 }
