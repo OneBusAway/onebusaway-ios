@@ -47,6 +47,11 @@ class TripViewController: UIViewController,
         fatalError("init(coder:) has not been implemented")
     }
 
+    deinit {
+        refreshTimer?.invalidate()
+        loadDataTask?.cancel()
+    }
+
     private func registerTraitChangeCallback() {
         let sizeTraits: [UITrait] = [UITraitVerticalSizeClass.self, UITraitHorizontalSizeClass.self, UITraitPreferredContentSizeCategory.self]
         registerForTraitChanges(sizeTraits) { (self: Self, _) in
@@ -95,6 +100,7 @@ class TripViewController: UIViewController,
 
         disableIdleTimer()
         beginUserActivity()
+        startRefreshTimer()
 
         setContentScrollView(tripDetailsController.listView, for: .bottom)
     }
@@ -107,6 +113,8 @@ class TripViewController: UIViewController,
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         enableIdleTimer()
+        refreshTimer?.invalidate()
+        refreshTimer = nil
     }
 
     // MARK: - NSUserActivity
@@ -294,10 +302,12 @@ class TripViewController: UIViewController,
 
     private func loadTripConvertible(isProgrammatic: Bool) async throws {
         guard let apiService = application.apiService else {
+            Logger.error("API service unavailable in loadTripConvertible")
             return
         }
 
         guard let arrivalDeparture = tripConvertible.arrivalDeparture else {
+            Logger.warn("No arrivalDeparture available for trip convertible refresh")
             return
         }
 
@@ -317,6 +327,7 @@ class TripViewController: UIViewController,
 
     private func loadTripDetails(isProgrammatic: Bool) async throws {
         guard let apiService = application.apiService else {
+            Logger.error("API service unavailable in loadTripDetails")
             return
         }
 
@@ -380,43 +391,73 @@ class TripViewController: UIViewController,
         loadData(isProgrammatic: false)
     }
 
+    // MARK: - Refresh Timer
+
+    /// Interval between automatic vehicle position refreshes.
+    /// Matches CurrentTripViewController's refresh interval.
+    private static let refreshInterval: TimeInterval = 20.0
+
+    private var refreshTimer: Timer?
+
+    private func startRefreshTimer() {
+        refreshTimer?.invalidate()
+        refreshTimer = Timer.scheduledTimer(
+            withTimeInterval: Self.refreshInterval,
+            repeats: true
+        ) { [weak self] _ in
+            guard let self else { return }
+            // Skip refresh when VoiceOver is active to avoid
+            // disrupting screen reader users mid-navigation.
+            guard !UIAccessibility.isVoiceOverRunning else { return }
+            self.loadData(isProgrammatic: true)
+        }
+    }
+
     private var loadDataTask: Task<Void, Never>?
     private func loadData(isProgrammatic: Bool) {
         if let loadDataTask {
             loadDataTask.cancel()
         }
 
-        loadDataTask = Task {
+        loadDataTask = Task { [weak self] in
+            guard let self else { return }
             self.navigationItem.rightBarButtonItem = self.activityIndicatorButton
 
             do {
                 try await withThrowingTaskGroup(of: Void.self) { group in
-                    group.addTask {
+                    group.addTask { [weak self] in
+                        guard let self else { return }
                         try await self.loadTripDetails(isProgrammatic: isProgrammatic)
                     }
 
-                    group.addTask {
+                    group.addTask { [weak self] in
+                        guard let self else { return }
                         try await self.loadTripConvertible(isProgrammatic: isProgrammatic)
                     }
 
-                    group.addTask {
+                    group.addTask { [weak self] in
+                        guard let self else { return }
                         try await self.loadMapPolyline(isProgrammatic: isProgrammatic)
                     }
 
                     try await group.waitForAll()
                 }
 
-                await MainActor.run {
-                    self.dataLoadFeedbackGenerator.dataLoad(.success)
+                await MainActor.run { [weak self] in
+                    self?.dataLoadFeedbackGenerator.dataLoad(.success)
                 }
+            } catch is CancellationError {
+                return
             } catch {
                 await self.application.displayError(error)
-                await MainActor.run {
-                    self.dataLoadFeedbackGenerator.dataLoad(.failed)
+                await MainActor.run { [weak self] in
+                    self?.dataLoadFeedbackGenerator.dataLoad(.failed)
                 }
             }
 
-            self.navigationItem.rightBarButtonItem = self.reloadButton
+            await MainActor.run { [weak self] in
+                self?.navigationItem.rightBarButtonItem = self?.reloadButton
+            }
         }
     }
 

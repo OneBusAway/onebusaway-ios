@@ -11,8 +11,9 @@ import UIKit
 import OBAKitCore
 import CoreLocation
 import SwiftUI
+import SafariServices
 
-// swiftlint:disable file_length
+// swiftlint:disable file_length type_body_length
 
 /// This is the core view controller for displaying information about a transit stop.
 ///
@@ -37,6 +38,7 @@ public class StopViewController: UIViewController,
     enum ListSections {
         case stopHeader
         case donations
+        case survey
         case emptyData
         case serviceAlerts
         case pastArrivalDepartures(suffix: String)
@@ -113,6 +115,7 @@ public class StopViewController: UIViewController,
         didSet {
             if stop != oldValue, let stop = stop {
                 stopUpdated(stop)
+
             }
         }
     }
@@ -216,6 +219,7 @@ public class StopViewController: UIViewController,
         listView.register(listViewItem: StopArrivalWalkItem.self)
         listView.register(listViewItem: StopHeaderItem.self)
         listView.register(listViewItem: TransferArrivalItem.self)
+        listView.register(listViewItem: SurveyStopListItem.self)
 
         view.addSubview(statusLabel)
         view.addSubview(listView)
@@ -238,6 +242,7 @@ public class StopViewController: UIViewController,
         if !stopViewShowsServiceAlerts {
             collapsedSections.insert(ListSections.serviceAlerts.sectionID)
         }
+
     }
 
     public override func viewWillAppear(_ animated: Bool) {
@@ -252,6 +257,7 @@ public class StopViewController: UIViewController,
         Task {
             await updateData()
         }
+
     }
 
     public override func viewDidAppear(_ animated: Bool) {
@@ -272,7 +278,6 @@ public class StopViewController: UIViewController,
 
     public override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-
         enableIdleTimer()
     }
 
@@ -564,8 +569,15 @@ public class StopViewController: UIViewController,
             self.dataLoadFeedbackGenerator.dataLoad(.failed)
         }
 
-        self.listView.applyData(scrollBehavior: isLoadingMore ? .scrollToBottom : .preserve)
-        isLoadingMore = false
+        self.listView.applyData()
+
+        Task { [weak self] in
+            guard let self else { return }
+            await application.surveyService.fetchSurveys()
+            self.listView.applyData(scrollBehavior: isLoadingMore ? .scrollToBottom : .preserve)
+            self.isLoadingMore = false
+        }
+
     }
 
     /// Loads more departures for this `Stop` in cases where no `ArrivalDeparture` objects are being returned.
@@ -644,6 +656,10 @@ public class StopViewController: UIViewController,
         var sections: [OBAListViewSection?] = []
 
         sections.append(stopHeaderSection)
+
+        if let surveySection {
+            sections.append(surveySection)
+        }
 
         if let donationsSection {
             sections.append(donationsSection)
@@ -763,6 +779,83 @@ public class StopViewController: UIViewController,
         alertController.addAction(title: Strings.cancel, style: .cancel, handler: nil)
 
         present(alertController, animated: true)
+    }
+
+    // MARK: - Data/Surveys
+
+    private var surveySection: OBAListViewSection? {
+        guard application.surveyService.shouldShowSurvey() else { return nil }
+        guard let stop = stop else { return nil }
+        let routeIDs = stop.routes.map { $0.id }
+        guard let survey = application.surveyService.findSurveyForStop(
+            stopID: stopID, routeIDs: routeIDs
+        ) else { return nil }
+
+        let item = SurveyStopListItem(
+            survey: survey,
+            stopID: stopID,
+            selectedOption: nil,
+            onNext: { [weak self] answer in
+                self?.handleSurveyAnswer(survey: survey, answer: answer)
+            },
+            onDismiss: { [weak self] in
+                self?.handleSurveyDismiss(survey: survey)
+            },
+            onSelectionChanged: { _ in }
+        )
+        return listViewSection(for: .survey, title: survey.study.name, items: [item])
+    }
+
+    private func handleSurveyAnswer(survey: Survey, answer: String) {
+        guard let heroQuestion = survey.heroQuestion else {
+            Logger.error("handleSurveyAnswer: survey \(survey.id) has no hero question")
+            return
+        }
+        let response = SurveyService.createQuestionResponse(
+            question: heroQuestion, answer: answer
+        )
+
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                let submission = try await application.surveyService.submitHeroQuestion(
+                    survey: survey,
+                    heroQuestionResponse: response,
+                    stopID: stopID,
+                    stopLocation: stop?.coordinate
+                )
+
+                if survey.remainingQuestions.isEmpty {
+                    application.surveyService.markSurveyCompleted(survey)
+                } else {
+                    showFullSurvey(survey, heroResponseID: submission.id)
+                }
+
+                application.surveyService.setNextReminderDate()
+                listView.applyData()
+            } catch {
+                Logger.error("Survey submission failed: \(error)")
+                await AlertPresenter.show(error: error, presentingController: self)
+            }
+        }
+    }
+
+    private func handleSurveyDismiss(survey: Survey) {
+        application.surveyService.dismissSurvey(survey)
+        application.surveyService.setNextReminderDate()
+        listView.applyData()
+    }
+
+    private func showFullSurvey(_ survey: Survey, heroResponseID: String? = nil) {
+        let surveyVC = SurveyViewController(
+            survey: survey,
+            surveyService: application.surveyService,
+            stopID: stopID,
+            stopLocation: stop?.coordinate,
+            heroResponseID: heroResponseID
+        )
+        let nav = UINavigationController(rootViewController: surveyVC)
+        present(nav, animated: true)
     }
 
     // MARK: - Data/Stop Arrivals
@@ -1408,6 +1501,7 @@ public class StopViewController: UIViewController,
             return "User Distance: 03200-INFINITY"
         }
     }
+
 }
 
 // MARK: - Transfer Helpers
@@ -1455,3 +1549,5 @@ private extension StopViewController {
         }
     }
 }
+
+// swiftlint:enable file_length
