@@ -8,6 +8,7 @@
 //
 
 import UIKit
+import SwiftUI
 import OBAKitCore
 import FloatingPanel
 
@@ -23,15 +24,23 @@ class TripFloatingPanelController: UIViewController,
     var tripDetails: TripDetails? {
         didSet {
             if isLoadedAndOnScreen {
-                listView.applyData(animated: false)
+                if useModernUI {
+                    refreshModernUI()
+                } else {
+                    listView.applyData(animated: false)
+                }
             }
         }
     }
 
     var tripConvertible: TripConvertible? {
         didSet {
-            if isLoadedAndOnScreen, let arrivalDeparture = tripConvertible?.arrivalDeparture {
-                stopArrivalView.arrivalDeparture = arrivalDeparture
+            if isLoadedAndOnScreen {
+                if useModernUI {
+                    refreshModernUI()
+                } else if let arrivalDeparture = tripConvertible?.arrivalDeparture {
+                    stopArrivalView.arrivalDeparture = arrivalDeparture
+                }
             }
         }
     }
@@ -72,21 +81,122 @@ class TripFloatingPanelController: UIViewController,
     public override func viewDidLoad() {
         super.viewDidLoad()
 
-        listView.formatters = application.formatters
-        listView.obaDataSource = self
-        listView.collapsibleSectionsDelegate = self
-        listView.contextMenuDelegate = self
-        listView.register(listViewItem: TripStopViewModel.self)
-
         view.backgroundColor = ThemeColors.shared.systemBackground
-        view.addSubview(outerStack)
-        outerStack.pinToSuperview(.edges)
+
+        if useModernUI {
+            installModernUI()
+        } else {
+            listView.formatters = application.formatters
+            listView.obaDataSource = self
+            listView.collapsibleSectionsDelegate = self
+            listView.contextMenuDelegate = self
+            listView.register(listViewItem: TripStopViewModel.self)
+            view.addSubview(outerStack)
+            outerStack.pinToSuperview(.edges)
+        }
     }
 
     public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
-        listView.applyData(animated: false)
+        if useModernUI {
+            refreshModernUI()
+        } else {
+            listView.applyData(animated: false)
+        }
+    }
+
+    // MARK: - Modern SwiftUI UI
+
+    /// Set to `true` to use the new SwiftUI-based trip stop list.
+    /// Defaults to `true`; set to `false` to fall back to the legacy UIKit layout.
+    var useModernUI: Bool = true
+
+    private var modernHostingController: UIHostingController<TripStopListView>?
+
+    private func installModernUI() {
+        let view = buildModernView()
+        let hosting = UIHostingController(rootView: view)
+        hosting.view.backgroundColor = .clear
+        addChild(hosting)
+        self.view.addSubview(hosting.view)
+        hosting.view.pinToSuperview(.edges)
+        hosting.didMove(toParent: self)
+        modernHostingController = hosting
+    }
+
+    private func refreshModernUI() {
+        guard let hosting = modernHostingController else { return }
+        hosting.rootView = buildModernView()
+    }
+
+    private func buildModernView() -> TripStopListView {
+        let headerVM: TripPanelHeaderViewModel
+        if let arrDep = tripConvertible?.arrivalDeparture {
+            headerVM = TripPanelHeaderViewModel(arrivalDeparture: arrDep, formatters: application.formatters)
+        } else {
+            headerVM = TripPanelHeaderViewModel(
+                routeHeadsign: tripDetails?.trip.routeHeadsign ?? "",
+                scheduledTime: "",
+                statusText: "",
+                minutesUntilArrival: nil,
+                isRealTime: false
+            )
+        }
+
+        let stopVMs: [TripStopRowViewModel]
+        if let details = tripDetails {
+            stopVMs = TripStopRowViewModel.viewModels(
+                from: details,
+                arrivalDeparture: tripConvertible?.arrivalDeparture,
+                formatters: application.formatters,
+                onSelect: { [weak self] _ in }
+            )
+        } else {
+            stopVMs = []
+        }
+
+        // Service alert strings for the banner
+        let alertStrings: [String] = tripDetails?.serviceAlerts.compactMap { $0.summary?.value } ?? []
+
+        var listView = TripStopListView(header: headerVM, stops: stopVMs) { [weak self] stopVM in
+            guard let self, let details = self.tripDetails else { return }
+            if let stopTime = details.stopTimes.first(where: { $0.stopID == stopVM.id }) {
+                let transferContext: TransferContext?
+                if let arrDep = self.tripConvertible?.arrivalDeparture, stopTime.stopID != arrDep.stopID {
+                    transferContext = TransferContext.from(arrivalDeparture: arrDep, arrivalDate: stopTime.arrivalDate)
+                } else {
+                    transferContext = nil
+                }
+                self.application.viewRouter.navigateTo(stop: stopTime.stop, from: self, transferContext: transferContext)
+            }
+        }
+
+        listView.serviceAlerts = alertStrings
+
+        if parentTripViewController != nil {
+            listView.onShowOnMap = { [weak self] stopVM in
+                guard let self, let stopTime = self.tripDetails?.stopTimes.first(where: { $0.stopID == stopVM.id }) else { return }
+                self.parentTripViewController?.showStopOnMap(stopTime)
+            }
+        }
+
+        listView.refreshAction = { [weak self] in
+            guard let self, let apiService = self.application.apiService,
+                  let details = self.tripDetails else { return }
+            do {
+                let result = try await apiService.getTrip(
+                    tripID: details.trip.id,
+                    vehicleID: details.status?.vehicleID,
+                    serviceDate: details.serviceDate
+                )
+                await MainActor.run { self.tripDetails = result.entry }
+            } catch {
+                await self.application.displayError(error)
+            }
+        }
+
+        return listView
     }
 
     // MARK: - Public Methods
@@ -256,7 +366,8 @@ class TripFloatingPanelController: UIViewController,
     }
 
     private func showOnMap(_ tripStop: TripStopViewModel) {
-        parentTripViewController?.showStopOnMap(tripStop)
+        guard let stopTime = tripDetails?.stopTimes.first(where: { $0.stopID == tripStop.stop.id }) else { return }
+        parentTripViewController?.showStopOnMap(stopTime)
     }
 
     private func showOnList(_ tripStop: TripStopTime) {
