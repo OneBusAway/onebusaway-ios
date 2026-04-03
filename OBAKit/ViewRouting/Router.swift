@@ -94,6 +94,16 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
         navigate(to: stopController, from: fromController)
     }
 
+    /// Creates (but does not present) a stop sheet — use when you need to set a delegate before presenting.
+    func makeStopSheet(stop: Stop, bookmark: Bookmark? = nil, transferContext: TransferContext? = nil) -> StopSheetViewController {
+        StopSheetViewController(application: application, stop: stop, bookmark: bookmark, transferContext: transferContext)
+    }
+
+    /// Creates (but does not present) a stop sheet by ID — use when you need to set a delegate before presenting.
+    func makeStopSheet(stopID: StopID) -> StopSheetViewController {
+        StopSheetViewController(application: application, stopID: stopID)
+    }
+
     public func navigateTo(arrivalDeparture: ArrivalDeparture, from fromController: UIViewController) {
         guard shouldNavigate(from: fromController, to: .arrivalDeparture(arrivalDeparture)) else { return }
         let tripController = TripViewController(application: application, arrivalDeparture: arrivalDeparture)
