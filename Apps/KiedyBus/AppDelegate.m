@@ -45,11 +45,58 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     self.window = [[UIWindow alloc] initWithFrame:UIScreen.mainScreen.bounds];
+
+    UIColor *brandGreen = [UIColor colorWithRed:0x78/255.0 green:0xAA/255.0 blue:0x36/255.0 alpha:1.0];
+
+    UIViewController *splashVC = [[UIViewController alloc] init];
+    splashVC.view.backgroundColor = [UIColor systemBackgroundColor];
+
+    UIImageView *logoView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"LaunchLogo"]];
+    logoView.contentMode = UIViewContentModeScaleAspectFit;
+    logoView.layer.cornerRadius = 28;
+    logoView.layer.cornerCurve = kCACornerCurveContinuous;
+    logoView.clipsToBounds = YES;
+    logoView.translatesAutoresizingMaskIntoConstraints = NO;
+    [splashVC.view addSubview:logoView];
+
+    UILabel *nameLabel = [[UILabel alloc] init];
+    nameLabel.text = @"KiedyBus";
+    nameLabel.font = [UIFont systemFontOfSize:26 weight:UIFontWeightBold];
+    nameLabel.textColor = brandGreen;
+    nameLabel.textAlignment = NSTextAlignmentCenter;
+    nameLabel.translatesAutoresizingMaskIntoConstraints = NO;
+    [splashVC.view addSubview:nameLabel];
+
+    UILabel *tagLabel = [[UILabel alloc] init];
+    tagLabel.text = @"Public Transit";
+    tagLabel.font = [UIFont systemFontOfSize:14 weight:UIFontWeightRegular];
+    tagLabel.textColor = [UIColor systemGrayColor];
+    tagLabel.textAlignment = NSTextAlignmentCenter;
+    tagLabel.translatesAutoresizingMaskIntoConstraints = NO;
+    [splashVC.view addSubview:tagLabel];
+
+    [NSLayoutConstraint activateConstraints:@[
+        [logoView.centerXAnchor constraintEqualToAnchor:splashVC.view.centerXAnchor],
+        [logoView.centerYAnchor constraintEqualToAnchor:splashVC.view.centerYAnchor constant:-50],
+        [logoView.widthAnchor constraintEqualToConstant:120],
+        [logoView.heightAnchor constraintEqualToConstant:120],
+        [nameLabel.topAnchor constraintEqualToAnchor:logoView.bottomAnchor constant:20],
+        [nameLabel.centerXAnchor constraintEqualToAnchor:splashVC.view.centerXAnchor],
+        [tagLabel.topAnchor constraintEqualToAnchor:nameLabel.bottomAnchor constant:6],
+        [tagLabel.centerXAnchor constraintEqualToAnchor:splashVC.view.centerXAnchor],
+    ]];
+
+    splashVC.view.alpha = 0;
+    self.window.rootViewController = splashVC;
     [self.window makeKeyAndVisible];
 
-    // This method will call -applicationReloadRootInterface:, which creates the
-    // application's UI and attaches it to the window, so no need to do that here.
-    [self.app application:application didFinishLaunching:launchOptions];
+    [UIView animateWithDuration:0.3 animations:^{
+        splashVC.view.alpha = 1;
+    }];
+
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [self.app application:application didFinishLaunching:launchOptions];
+    });
 
     return YES;
 }
@@ -86,7 +133,9 @@
 
 - (void)applicationReloadRootInterface:(OBAApplication*)application {
     self.rootController = [[OBAClassicApplicationRootController alloc] initWithApplication:application];
-    self.window.rootViewController = self.rootController;
+    [UIView transitionWithView:self.window duration:0.3 options:UIViewAnimationOptionTransitionCrossDissolve animations:^{
+        self.window.rootViewController = self.rootController;
+    } completion:nil];
 }
 
 - (BOOL)canOpenURL:(NSURL*)url {
