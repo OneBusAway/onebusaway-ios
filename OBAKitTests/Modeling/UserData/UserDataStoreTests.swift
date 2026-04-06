@@ -245,4 +245,33 @@ class UserDefaultsStoreTests: OBATestCase {
         expect(self.userDefaultsStore.shouldShowSurveyLater(surveyId: 1, userIdentifier: "user1")).to(beFalse())
     }
 
+    // MARK: - Walking Speed
+
+    func test_walkingSpeed_defaultValue() {
+        expect(self.userDefaultsStore.walkingSpeedMetersPerSecond).to(beCloseTo(1.4))
+    }
+
+    func test_walkingSpeed_roundTrip() {
+        userDefaultsStore.walkingSpeedMetersPerSecond = 0.9
+        expect(self.userDefaultsStore.walkingSpeedMetersPerSecond).to(beCloseTo(0.9))
+
+        userDefaultsStore.walkingSpeedMetersPerSecond = 1.8
+        expect(self.userDefaultsStore.walkingSpeedMetersPerSecond).to(beCloseTo(1.8))
+
+        let newStore = UserDefaultsStore(userDefaults: userDefaults)
+        expect(newStore.walkingSpeedMetersPerSecond).to(beCloseTo(1.8))
+    }
+
+    func test_walkingSpeedSource_defaultValue() {
+        expect(self.userDefaultsStore.walkingSpeedSource) == .manual
+    }
+
+    func test_walkingSpeedSource_roundTrip() {
+        userDefaultsStore.walkingSpeedSource = .healthKit
+        expect(self.userDefaultsStore.walkingSpeedSource) == .healthKit
+
+        userDefaultsStore.walkingSpeedSource = .manual
+        expect(self.userDefaultsStore.walkingSpeedSource) == .manual
+    }
+
 }

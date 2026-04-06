@@ -16,13 +16,16 @@ class WalkingDirections: NSObject {
     /// Average human walking speed is 1.4 meters per second (about 3.1 miles per hour).
     private static let walkingVelocity = 1.4
 
-    /// Calculates the travel time in seconds from one location to another, assuming
-    /// average human walking speed of 1.4 meters per second (about 3.1 miles per hour).
+    /// Calculates travel time, optionally using a custom walking velocity.
     /// - Parameter location: Starting location
     /// - Parameter toLocation: Ending location
-    public class func travelTime(from location: CLLocation?, to toLocation: CLLocation?) -> TimeInterval? {
+    /// - Parameter velocity: Walking speed in meters per second. Defaults to 1.4 (average human walking speed).
+    public class func travelTime(
+        from location: CLLocation?,
+        to toLocation: CLLocation?,
+        velocity: Double = 1.4
+    ) -> TimeInterval? {
         guard let location = location, let toLocation = toLocation else { return nil }
-        let distance = location.distance(from: toLocation)
-        return distance / walkingVelocity
+        return location.distance(from: toLocation) / velocity
     }
 }
