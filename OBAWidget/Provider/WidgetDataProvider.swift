@@ -35,6 +35,9 @@ class WidgetDataProvider: NSObject, ObservableObject {
     /// Dictionary mapping trip bookmark keys to arrival/departure data.
     private var arrDepDic = [TripBookmarkKey: [ArrivalDeparture]]()
 
+    /// Dictionary mapping stop IDs to all upcoming arrivals/departures (for stop bookmarks).
+    private var stopArrDepDic = [StopID: [ArrivalDeparture]]()
+
     /// Formatters for localization and styling.
     let formatters = Formatters(
         locale: Locale.autoupdatingCurrent,
@@ -46,6 +49,7 @@ class WidgetDataProvider: NSObject, ObservableObject {
     func loadData() async {
 
         arrDepDic = [:]
+        stopArrDepDic = [:]
         app.refreshServices()
 
         guard let apiService = app.apiService else {
@@ -78,8 +82,13 @@ class WidgetDataProvider: NSObject, ObservableObject {
             ).entry
 
             await MainActor.run {
-                stopArrivals.arrivalsAndDepartures.tripKeyGroupedElements.forEach { key, deps in
-                    arrDepDic[key] = deps
+                if bookmark.isTripBookmark {
+                    stopArrivals.arrivalsAndDepartures.tripKeyGroupedElements.forEach { key, deps in
+                        arrDepDic[key] = deps
+                    }
+                } else {
+                    stopArrDepDic[bookmark.stopID] = stopArrivals.arrivalsAndDepartures
+                        .sorted { $0.arrivalDepartureDate < $1.arrivalDepartureDate }
                 }
             }
         } catch {
@@ -95,8 +104,13 @@ class WidgetDataProvider: NSObject, ObservableObject {
         arrDepDic[key, default: []]
     }
 
+    /// Looks up all upcoming arrivals/departures for a stop bookmark.
+    func lookupStopArrivals(for stopID: StopID) -> [ArrivalDeparture] {
+        stopArrDepDic[stopID, default: []]
+    }
+
     /// Gets bookmarks of the selected region.
     public func getBookmarks() -> [Bookmark] {
-        return bestAvailableBookmarks.filter { $0.isTripBookmark && $0.regionIdentifier == app.regionsService.currentRegion?.id }
+        return bestAvailableBookmarks.filter { $0.regionIdentifier == app.regionsService.currentRegion?.id }
     }
 }
