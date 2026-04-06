@@ -84,7 +84,7 @@ struct WidgetRowView: View {
                 .lineLimit(1)
                 .truncationMode(.tail)
 
-            if let departures, !departures.isEmpty {
+            if let departures {
                 ForEach(departures.prefix(Constants.maxStopDeparturesToShow), id: \.self) { departure in
                     HStack {
                         Text(departure.routeAndHeadsign)
@@ -98,10 +98,6 @@ struct WidgetRowView: View {
                             .foregroundStyle(Color(formatters.backgroundColorForScheduleStatus(departure.scheduleStatus)))
                     }
                 }
-            } else {
-                Text("--")
-                    .font(.system(size: Constants.fontSize))
-                    .foregroundStyle(.secondary)
             }
         }
     }
