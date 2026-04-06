@@ -61,8 +61,12 @@ struct OBAWidgetEntryView: View {
 
     // MARK: Helper functions
     private func loadArrivalDeparture(with bookmark: Bookmark) -> [ArrivalDeparture]? {
-        TripBookmarkKey(bookmark: bookmark).flatMap {
-            dataProvider.lookupArrivalDeparture(with: $0)
+        if bookmark.isTripBookmark {
+            return TripBookmarkKey(bookmark: bookmark).flatMap {
+                dataProvider.lookupArrivalDeparture(with: $0)
+            }
+        } else {
+            return dataProvider.lookupStopArrivals(for: bookmark.stopID)
         }
     }
 
