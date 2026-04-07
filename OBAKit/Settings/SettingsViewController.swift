@@ -254,8 +254,7 @@ class SettingsViewController: FormViewController {
    // MARK: - Privacy
 
     private let privacySectionReportingEnabled = "privacySectionReportingEnabled"
-    private let alwaysShowSurveysOnStops = "alwaysShowSurveysOnStops"
-    
+
     // MARK: - Walking Speed Keys
     private let walkingSpeedMetersPerSecondKey = "walkingSpeedMetersPerSecond"
     private let walkingSpeedUseHealthKitKey = "walkingSpeedUseHealthKit"
