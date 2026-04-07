@@ -70,6 +70,7 @@ public class MapRegionManager: NSObject,
     private let application: Application
 
     private var regionChangeRequestTimer: Timer?
+    private var stopHideTimer: Timer?
 
     private var userLocationAnnotationView: PulsingAnnotationView? {
         didSet {
@@ -223,6 +224,7 @@ public class MapRegionManager: NSObject,
         application.locationService.removeDelegate(self)
         application.regionsService.removeDelegate(self)
         regionChangeRequestTimer?.invalidate()
+        stopHideTimer?.invalidate()
 
         // Cancel all ongoing geocoding operations
         for geocoder in activeGeocoders.values {
@@ -415,7 +417,7 @@ public class MapRegionManager: NSObject,
         }
     }
 
-    private func displayUniqueStopAnnotations() {
+    private func displayUniqueStopAnnotations(notifyDelegates: Bool = true) {
         var bookmarksHash = [StopID: Bookmark]()
         // When multiple bookmarks exist for the same stop, the last one in the bookmarks array takes precedence
         for bm in bookmarks {
@@ -484,7 +486,9 @@ public class MapRegionManager: NSObject,
         }
         mapView.addAnnotations(stopsToAdd)
         refreshAnnotationViews(for: Array(affectedStopIDs))
-        notifyDelegatesStopsChanged()
+        if notifyDelegates {
+            notifyDelegatesStopsChanged()
+        }
     }
 
     private func refreshAnnotationViews(for affectedStopIDs: [StopID]) {
@@ -503,6 +507,7 @@ public class MapRegionManager: NSObject,
                 continue
             }
             view.prepareForReuse()
+            view.clusteringIdentifier = StopAnnotationView.stopClusterIdentifier
             view.annotation = annotation
             view.delegate = self
             mapViewDelegate?.mapRegionManager(self, customize: view)
@@ -511,13 +516,25 @@ public class MapRegionManager: NSObject,
     // MARK: - Zoom In Warning
 
     private static let requiredHeightToShowStops = 40000.0
+    private static let stopHideThreshold = 42000.0
+    private static let stopShowThreshold = 38000.0
+    private static let stopHideDelay: TimeInterval = 0.35
+    private var shouldShowStopAnnotations = true
 
     public var zoomInStatus: Bool {
         mapView.visibleMapRect.height > MapRegionManager.requiredHeightToShowStops
     }
 
-    private func updateZoomWarningOverlay(mapHeight: Double) {
-        notifyDelegatesZoomInStatus(status: zoomInStatus)
+    static func shouldShowStopAnnotations(previouslyShowing: Bool, mapHeight: Double) -> Bool {
+        if previouslyShowing {
+            return mapHeight <= stopHideThreshold
+        } else {
+            return mapHeight <= stopShowThreshold
+        }
+    }
+
+    private func updateZoomWarningOverlay(showZoomWarning: Bool) {
+        notifyDelegatesZoomInStatus(status: showZoomWarning)
     }
 
     // MARK: - Search
@@ -673,12 +690,29 @@ public class MapRegionManager: NSObject,
             return
         }
 
-        updateZoomWarningOverlay(mapHeight: mapView.visibleMapRect.height)
+        let mapHeight = mapView.visibleMapRect.height
+        shouldShowStopAnnotations = Self.shouldShowStopAnnotations(previouslyShowing: shouldShowStopAnnotations, mapHeight: mapHeight)
+        updateZoomWarningOverlay(showZoomWarning: !shouldShowStopAnnotations)
 
-        guard mapView.visibleMapRect.height <= MapRegionManager.requiredHeightToShowStops else {
-            mapView.removeAnnotations(type: Stop.self)
+        guard shouldShowStopAnnotations else {
+            if stopHideTimer == nil {
+                stopHideTimer = Timer.scheduledTimer(
+                    timeInterval: MapRegionManager.stopHideDelay,
+                    target: self,
+                    selector: #selector(hideStopAnnotations),
+                    userInfo: nil,
+                    repeats: false
+                )
+            }
+            regionChangeRequestTimer?.invalidate()
             return
         }
+
+        stopHideTimer?.invalidate()
+        stopHideTimer = nil
+
+        //show existing stops instantly while new data is loading in the background
+        displayUniqueStopAnnotations(notifyDelegates: false)
 
         let visibleStops = mapView.annotations(in: mapView.visibleMapRect).filter(type: Stop.self)
         for s in visibleStops {
@@ -690,6 +724,17 @@ public class MapRegionManager: NSObject,
         regionChangeRequestTimer?.invalidate()
 
         regionChangeRequestTimer = Timer.scheduledTimer(timeInterval: 0.25, target: self, selector: #selector(requestDataForMapRegion(_:)), userInfo: nil, repeats: false)
+    }
+
+    @objc private func hideStopAnnotations() {
+        stopHideTimer?.invalidate()
+        stopHideTimer = nil
+
+        guard !shouldShowStopAnnotations else {
+            return
+        }
+
+        mapView.removeAnnotations(type: Stop.self)
     }
 
     private var isHidingRegions: Bool? {
@@ -793,6 +838,7 @@ public class MapRegionManager: NSObject,
         }
 
         if let stopAnnotation = annotationView as? StopAnnotationView {
+            stopAnnotation.clusteringIdentifier = StopAnnotationView.stopClusterIdentifier
             stopAnnotation.delegate = self
             mapViewDelegate?.mapRegionManager(self, customize: stopAnnotation)
         }

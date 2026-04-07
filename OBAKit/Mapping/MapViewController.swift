@@ -635,6 +635,105 @@ class MapViewController: UIViewController,
         application.viewRouter.navigateTo(stop: stop, from: self)
     }
 
+    struct ClusterStopMember: Hashable {
+        let stopID: Stop.ID
+        let title: String
+        let subtitle: String?
+        let isBookmarked: Bool
+    }
+
+    private func presentClusterStopPicker(
+        members: [ClusterStopMember],
+        sourceView: UIView,
+        sourceRect: CGRect
+    ) {
+        guard !members.isEmpty else { return }
+
+        let title = String(
+            format: OBALoc(
+                "map_controller.grouped_stop_picker.title_fmt",
+                value: "Select a Stop (%d)",
+                comment: "Title for the action sheet used to select one of many co-located stops."
+            ),
+            members.count
+        )
+
+        let alert = UIAlertController(title: title, message: nil, preferredStyle: .actionSheet)
+        let sortedMembers = Self.sortedClusterStopMembers(members)
+
+        for member in sortedMembers {
+            alert.addAction(UIAlertAction(title: Self.clusterStopActionTitle(for: member), style: .default, handler: { _ in
+                self.application.analytics?.reportEvent(pageURL: "app://localhost/map", label: AnalyticsLabels.mapStopAnnotationTapped, value: nil)
+                self.application.viewRouter.navigateTo(stopID: member.stopID, from: self)
+            }))
+        }
+
+        alert.addAction(UIAlertAction(title: OBALoc("map_controller.grouped_stop_picker.cancel", value: "Cancel", comment: "Cancel button for grouped stop picker on map."), style: .cancel))
+
+        if let popover = alert.popoverPresentationController {
+            popover.sourceView = sourceView
+            popover.sourceRect = sourceRect
+        }
+
+        present(alert, animated: true)
+    }
+
+    static func clusterStopMembers(from memberAnnotations: [MKAnnotation]) -> [ClusterStopMember] {
+        var deduped: [Stop.ID: ClusterStopMember] = [:]
+
+        for annotation in memberAnnotations {
+            let member: ClusterStopMember?
+
+            if let stop = annotation as? Stop {
+                member = ClusterStopMember(
+                    stopID: stop.id,
+                    title: stop.nameWithLocalizedDirectionAbbreviation,
+                    subtitle: stop.subtitle,
+                    isBookmarked: false
+                )
+            } else if let bookmark = annotation as? Bookmark {
+                member = ClusterStopMember(
+                    stopID: bookmark.stop.id,
+                    title: bookmark.stop.nameWithLocalizedDirectionAbbreviation,
+                    subtitle: bookmark.stop.subtitle,
+                    isBookmarked: true
+                )
+            } else {
+                member = nil
+            }
+
+            guard let member else { continue }
+
+            if let existing = deduped[member.stopID], existing.isBookmarked && !member.isBookmarked {
+                continue
+            }
+            deduped[member.stopID] = member
+        }
+
+        return sortedClusterStopMembers(Array(deduped.values))
+    }
+
+    static func sortedClusterStopMembers(_ members: [ClusterStopMember]) -> [ClusterStopMember] {
+        members.sorted {
+            if $0.isBookmarked != $1.isBookmarked {
+                return $0.isBookmarked && !$1.isBookmarked
+            }
+
+            let titleCompare = $0.title.localizedCaseInsensitiveCompare($1.title)
+            if titleCompare == .orderedSame {
+                return $0.stopID < $1.stopID
+            }
+            return titleCompare == .orderedAscending
+        }
+    }
+
+    static func clusterStopActionTitle(for member: ClusterStopMember) -> String {
+        guard let subtitle = String.nilifyBlankValue(member.subtitle) else {
+            return member.title
+        }
+        return "\(member.title) (\(subtitle))"
+    }
+
     // MARK: - Overlays
 
     private let mapStatusView = MapStatusView.autolayoutNew()
@@ -897,6 +996,10 @@ class MapViewController: UIViewController,
             // and just go directly to pushing the stop onto the navigation stack.
             application.analytics?.reportEvent(pageURL: "app://localhost/map", label: AnalyticsLabels.mapStopAnnotationTapped, value: nil)
             show(stop: stop)
+        } else if let cluster = view.annotation as? MKClusterAnnotation {
+            let members = Self.clusterStopMembers(from: cluster.memberAnnotations)
+            presentClusterStopPicker(members: members, sourceView: view, sourceRect: view.bounds)
+            mapView.deselectAnnotation(cluster, animated: false)
         } else if let annotation = view.annotation as? UserDroppedPin {
             // Sheet presentation for user-dropped pins is handled via
             // mapRegionManager(_:didSelectUserAnnotation:) delegate callback.

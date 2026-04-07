@@ -18,6 +18,7 @@ protocol StopAnnotationDelegate: NSObjectProtocol {
 }
 
 class StopAnnotationView: MKAnnotationView {
+    static let stopClusterIdentifier = "oba-stop"
 
     // MARK: - Delegate
     public weak var delegate: StopAnnotationDelegate?
@@ -70,6 +71,7 @@ class StopAnnotationView: MKAnnotationView {
         }
 
         rightCalloutAccessoryView = UIButton.chevronButton
+        applyClusteringIdentifier()
 
         annotationSize = ThemeMetrics.defaultMapAnnotationSize
         updateAccessibility()
@@ -93,6 +95,7 @@ class StopAnnotationView: MKAnnotationView {
 
     public override func prepareForReuse() {
         super.prepareForReuse()
+        applyClusteringIdentifier()
 
         labelStack.isHidden = true
 
@@ -101,6 +104,7 @@ class StopAnnotationView: MKAnnotationView {
 
     public override func prepareForDisplay() {
         super.prepareForDisplay()
+        applyClusteringIdentifier()
 
         guard let delegate = delegate else {
             return
@@ -200,5 +204,9 @@ class StopAnnotationView: MKAnnotationView {
         else { return }
 
         image = delegate.iconFactory.buildIcon(for: stop, isBookmarked: delegate.isStopBookmarked(stop), traits: traitCollection)
+    }
+
+    private func applyClusteringIdentifier() {
+        clusteringIdentifier = Self.stopClusterIdentifier
     }
 }
