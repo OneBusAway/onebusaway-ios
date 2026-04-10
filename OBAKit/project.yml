@@ -11,6 +11,7 @@ targets:
       - package: FloatingPanel
       - package: MarqueeLabel
       - package: OTPKit
+      - sdk: HealthKit.framework
     postBuildScripts:
       - path: "../scripts/swiftlint.sh"
         name: Swiftlint

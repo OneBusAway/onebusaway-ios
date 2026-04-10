@@ -90,6 +90,9 @@ public class Application: CoreApplication, PushServiceDelegate {
 
     lazy var toastManager = ToastManager()
 
+    @MainActor
+    lazy var walkingSpeedManager = WalkingSpeedManager(userDataStore: userDataStore)
+
     @objc lazy var userActivityBuilder = UserActivityBuilder(application: self)
 
     /// Handles all deep-linking into the app.
@@ -374,6 +377,10 @@ public class Application: CoreApplication, PushServiceDelegate {
         reportAnalyticsUserProperties()
 
         configureTipKit()
+
+        if userDataStore.walkingSpeedSource == .healthKit {
+            Task { await walkingSpeedManager.requestHealthKitAuthorizationAndSync() }
+        }
     }
 
     @objc public func applicationDidBecomeActive(_ application: UIApplication) {
