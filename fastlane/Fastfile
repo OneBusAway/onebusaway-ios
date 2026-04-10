@@ -26,12 +26,14 @@ platform :ios do
     )
 
     # Archive the app for App Store distribution.
+    # Passing the api_key lets xcodebuild resolve signing via App Store Connect.
     build_app(
       project: "OBAKit.xcodeproj",
       scheme: "App",
       export_method: "app-store",
       output_directory: "./build",
-      clean: true
+      clean: true,
+      xcargs: "-allowProvisioningUpdates"
     )
 
     # Upload the archive to TestFlight.
