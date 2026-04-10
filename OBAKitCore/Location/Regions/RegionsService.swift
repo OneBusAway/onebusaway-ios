@@ -20,7 +20,7 @@ public protocol RegionsServiceDelegate {
 
     /// This delegate method is called when the region list update is cancelled before retrieving data.
     ///
-    /// The update will be cancelled when the regions list has been updated within the past week, and an update is not forced.
+    /// The update will be cancelled when the regions list has been updated within the past day, and an update is not forced.
     /// - parameter service: The `RegionsService` object.
     @objc optional func regionsServiceListUpdateCancelled(_ service: RegionsService)
 
@@ -34,8 +34,16 @@ public class RegionsService: NSObject, LocationServiceDelegate {
     private let userDefaults: UserDefaults
     private let bundledRegionsFilePath: String
     private let apiPath: String?
+
+    private let fileStorage: RegionsFileStorageProtocol
     private let fixedRegionName: String?
     private let fixedRegionOBABaseURL: URL?
+
+    /// In-memory cache for custom regions. Loaded lazily and invalidated whenever a custom region is added or deleted.
+    /// Access must be performed under `customRegionsCacheLock` to prevent data races between
+    /// CoreLocation callbacks and async mutation methods (`add`/`delete`).
+    private let customRegionsCacheLock = NSLock()
+    private var customRegionsCache: [Region]?
 
     /// Initializes a `RegionsService` object, which coordinates the current region, downloading new data, and storage.
     /// - Parameters:
@@ -44,15 +52,18 @@ public class RegionsService: NSObject, LocationServiceDelegate {
     ///   - userDefaults: The user defaults object.
     ///   - bundledRegionsFilePath: The path to the bundled regions file. It is probably named "regions.json" or something similar.
     ///   - apiPath: The path to the remote regions.json file on the server. e.g. /path/to/regions.json
+    ///   - fileStorage: The file-based storage implementation. Defaults to `RegionsFileStorage`.
     ///   - delegate: A delegate object for callbacks.
     ///   - fixedRegionName: A region name from `OBAKitConfig` to auto-select, bypassing the region picker.
     ///   - fixedRegionOBABaseURL: A fallback OBA base URL used when `fixedRegionName` doesn't match any known region.
-    public init(apiService: RegionsAPIService?, locationService: LocationService, userDefaults: UserDefaults, bundledRegionsFilePath: String, apiPath: String?, delegate: RegionsServiceDelegate? = nil, fixedRegionName: String? = nil, fixedRegionOBABaseURL: URL? = nil) {
+    public init(apiService: RegionsAPIService?, locationService: LocationService, userDefaults: UserDefaults, bundledRegionsFilePath: String, apiPath: String?, fileStorage: RegionsFileStorageProtocol = RegionsFileStorage(), delegate: RegionsServiceDelegate? = nil, fixedRegionName: String? = nil, fixedRegionOBABaseURL: URL? = nil) {
         self.apiService = apiService
         self.locationService = locationService
         self.userDefaults = userDefaults
         self.bundledRegionsFilePath = bundledRegionsFilePath
         self.apiPath = apiPath
+        self.fileStorage = fileStorage
+
         self.fixedRegionName = fixedRegionName
         self.fixedRegionOBABaseURL = fixedRegionOBABaseURL
 
@@ -61,7 +72,10 @@ public class RegionsService: NSObject, LocationServiceDelegate {
             RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey: false
         ])
 
-        if let regions = RegionsService.loadStoredRegions(from: userDefaults), regions.count > 0 {
+        // One-time migration from UserDefaults to disk-based storage.
+        RegionsService.migrateFromUserDefaultsIfNeeded(userDefaults: userDefaults, fileStorage: fileStorage)
+
+        if let regions = RegionsService.loadStoredRegions(from: fileStorage), regions.count > 0 {
             self.regions = regions
         }
         else {
@@ -169,32 +183,30 @@ public class RegionsService: NSObject, LocationServiceDelegate {
         }
     }
 
-    /// The app's currently-selected `Region`. Note that this may be different from `physicallyLocatedRegion`.
+    /// The app's currently-selected `Region`.
+    ///
+    /// The region identifier is persisted in `UserDefaults`. On read, the full `Region` is
+    /// looked up by identifier so that stale object data is never stored on disk.
+    ///
+    /// - Note: The getter can return `nil` when no region has been selected yet, or when the
+    ///   stored identifier no longer matches any known region (e.g. after a region is deleted).
+    ///   The setter silently ignores `nil` — assigning `nil` has no effect and does not clear
+    ///   the stored identifier.
     public var currentRegion: Region? {
         get {
-            do {
-                return try userDefaults.decodeUserDefaultsObjects(type: Region.self, key: RegionsService.currentRegionUserDefaultsKey)
-            }
-            catch let error {
-                Logger.error("Unable to read region from user defaults: \(error)")
+            guard let identifier = userDefaults.object(forKey: RegionsService.currentRegionIdentifierUserDefaultsKey) as? Int else {
                 return nil
             }
+            return find(id: identifier)
         }
         set {
-            guard
-                let newValue = newValue,
-                newValue != currentRegion
-            else {
-                return
-            }
+            guard let newValue else { return }
 
-            do {
-                try userDefaults.encodeUserDefaultsObjects(newValue, key: RegionsService.currentRegionUserDefaultsKey)
-                notifyDelegatesRegionChanged(newValue)
-            }
-            catch {
-                Logger.error("Unable to write currentRegion to user defaults: \(error)")
-            }
+            let storedIdentifier = userDefaults.object(forKey: RegionsService.currentRegionIdentifierUserDefaultsKey) as? Int
+            guard newValue.regionIdentifier != storedIdentifier else { return }
+
+            userDefaults.set(newValue.regionIdentifier, forKey: RegionsService.currentRegionIdentifierUserDefaultsKey)
+            notifyDelegatesRegionChanged(newValue)
         }
     }
 
@@ -224,106 +236,187 @@ public class RegionsService: NSObject, LocationServiceDelegate {
     public func find(id: Int) -> Region? {
         if let region = regions.first(where: { $0.regionIdentifier == id }) {
             return region
-        }
-        else {
+        } else {
             return customRegions.first { $0.regionIdentifier == id }
         }
     }
 
     // MARK: - Custom Regions
+
     /// Adds the provided custom region to the RegionsService.
     /// If an existing custom region with the same `regionIdentifier` exists, the new region replaces the existing region.
     /// - throws: Persistence storage errors.
     public func add(customRegion newRegion: Region) async throws {
-        var regions = customRegions
-        if let index = regions.firstIndex(where: { $0.regionIdentifier == newRegion.regionIdentifier }) {
-            regions.remove(at: index)
-        }
-
-        regions.append(newRegion)
-
-        try userDefaults.encodeUserDefaultsObjects(regions, key: RegionsService.storedCustomRegionsUserDefaultsKey)
+        try fileStorage.saveCustomRegion(newRegion)
+        customRegionsCacheLock.withLock { customRegionsCache = nil }
     }
 
     /// Deletes the custom region. If the region could not be found, this method exits normally.
     /// - parameter customRegion: The custom region to delete.
-    /// - throws: If `customRegion` is not a custom region, this method will throw.
+    /// - throws: If `customRegion` is the currently selected region, this method will throw.
     public func delete(customRegion: Region) async throws {
         try await delete(customRegionIdentifier: customRegion.regionIdentifier)
     }
 
     /// Deletes the custom region with the matching identifier. If a region with the given identifier could not be found, this method exits normally.
     /// - parameter identifier: The region identifier used to find the custom region to delete.
-    /// - throws: If a custom region with the provided `identifier` could not be found, or is not a custom region, this method will throw.
+    /// - throws: If the custom region cannot be deleted.
     public func delete(customRegionIdentifier identifier: RegionIdentifier) async throws {
-        var regions = customRegions
-
         guard self.currentRegion?.regionIdentifier != identifier else {
             throw UnstructuredError(
                 "Cannot delete the current selected region",
                 recoverySuggestion: "Choose a different region to be the currently selected region, before deleting this region.")
         }
 
-        guard let index = regions.firstIndex(where: { $0.regionIdentifier == identifier }) else {
-            return
-        }
-
-        regions.remove(at: index)
-        try userDefaults.encodeUserDefaultsObjects(regions, key: RegionsService.storedCustomRegionsUserDefaultsKey)
+        try fileStorage.deleteCustomRegion(identifier: identifier)
+        customRegionsCacheLock.withLock { customRegionsCache = nil }
     }
 
     public var customRegions: [Region] {
-        let regions: [Region]
+        customRegionsCacheLock.lock()
+        defer { customRegionsCacheLock.unlock() }
+
+        if let cached = customRegionsCache { return cached }
         do {
-            regions = try userDefaults.decodeUserDefaultsObjects(type: [Region].self, key: RegionsService.storedCustomRegionsUserDefaultsKey) ?? []
+            let loaded = try fileStorage.loadCustomRegions()
+            customRegionsCache = loaded
+            return loaded
         } catch {
-            regions = []
+            Logger.error("RegionsService: Failed to load custom regions: \(error)")
+            return []
         }
-        return regions
     }
 
     public var allRegions: [Region] {
         return regions + customRegions
     }
 
-    // MARK: - Region Data Storage
+    // MARK: - Region Data Storage — UserDefaults Keys
 
     public static let alwaysRefreshRegionsOnLaunchUserDefaultsKey = "OBAAlwaysRefreshRegionsOnLaunchUserDefaultsKey"
     static let automaticallySelectRegionUserDefaultsKey = "OBAAutomaticallySelectRegionUserDefaultsKey"
-    static let storedRegionsUserDefaultsKey = "OBAStoredRegionsUserDefaultsKey"
-    static let storedCustomRegionsUserDefaultsKey = "OBAStoredCustomRegionsUserDefaultsKey"
-    static let currentRegionUserDefaultsKey = "OBACurrentRegionUserDefaultsKey"
+    static let currentRegionIdentifierUserDefaultsKey = "OBACurrentRegionIdentifierUserDefaultsKey"
     static let regionsUpdatedAtUserDefaultsKey = "OBARegionsUpdatedAtUserDefaultsKey"
+
+    // Legacy keys — kept only for the one-time migration read; not written after migration.
+    static let legacyStoredRegionsUserDefaultsKey = "OBAStoredRegionsUserDefaultsKey"
+    static let legacyStoredCustomRegionsUserDefaultsKey = "OBAStoredCustomRegionsUserDefaultsKey"
+    static let legacyCurrentRegionUserDefaultsKey = "OBACurrentRegionUserDefaultsKey"
 
     // MARK: - Save Regions
 
     private func storeRegions() {
         do {
-            try userDefaults.encodeUserDefaultsObjects(regions, key: RegionsService.storedRegionsUserDefaultsKey)
+            try fileStorage.saveDefaultRegions(regions)
             userDefaults.set(Date(), forKey: RegionsService.regionsUpdatedAtUserDefaultsKey)
         }
         catch {
-            Logger.error("Unable to write regions to user defaults: \(error)")
+            Logger.error("RegionsService: Unable to write regions to disk: \(error)")
         }
     }
 
     // MARK: - Load Stored Regions
 
-    private class func loadStoredRegions(from userDefaults: UserDefaults) -> [Region]? {
-        let regions: [Region]
+    private class func loadStoredRegions(from fileStorage: RegionsFileStorageProtocol) -> [Region]? {
+        do {
+            let regions = try fileStorage.loadDefaultRegions()
+            if let regions = regions, !regions.isEmpty {
+                return regions
+            }
+            return nil
+        } catch {
+            Logger.error("RegionsService: Unable to load regions from disk: \(error)")
+            return nil
+        }
+    }
+
+    // MARK: - UserDefaults → Disk Migration
+
+    /// Performs a one-time migration of region data from the legacy UserDefaults
+    /// storage format to the new disk-based storage format.
+    ///
+    /// After migrating, the legacy UserDefaults keys are removed so this runs only once.
+    private static func migrateFromUserDefaultsIfNeeded(userDefaults: UserDefaults, fileStorage: RegionsFileStorageProtocol) {
+        let decoder = PropertyListDecoder()
+        migrateDefaultRegions(userDefaults: userDefaults, fileStorage: fileStorage, decoder: decoder)
+        migrateCustomRegions(userDefaults: userDefaults, fileStorage: fileStorage, decoder: decoder)
+        migrateCurrentRegion(userDefaults: userDefaults, decoder: decoder)
+    }
+
+    /// Migrates the downloaded server region list from UserDefaults to disk.
+    ///
+    /// The legacy key is removed only after a successful disk write, so a failed write
+    /// retries automatically on the next launch.
+    private static func migrateDefaultRegions(userDefaults: UserDefaults, fileStorage: RegionsFileStorageProtocol, decoder: PropertyListDecoder) {
+        guard let data = userDefaults.data(forKey: legacyStoredRegionsUserDefaultsKey) else { return }
+
+        guard let regions = try? decoder.decode([Region].self, from: data) else {
+            Logger.error("RegionsService: Could not decode legacy regions data (\(data)); discarding.")
+            userDefaults.removeObject(forKey: legacyStoredRegionsUserDefaultsKey)
+            return
+        }
+
+        guard !regions.isEmpty else {
+            // Decoded successfully but no regions present — nothing to migrate; clear the key.
+            userDefaults.removeObject(forKey: legacyStoredRegionsUserDefaultsKey)
+            return
+        }
 
         do {
-            regions = try userDefaults.decodeUserDefaultsObjects(type: [Region].self, key: RegionsService.storedRegionsUserDefaultsKey) ?? []
+            try fileStorage.saveDefaultRegions(regions)
+            Logger.info("RegionsService: Migrated \(regions.count) regions from UserDefaults to disk.")
+            userDefaults.removeObject(forKey: legacyStoredRegionsUserDefaultsKey)
         } catch {
-            return nil
+            Logger.error("RegionsService: Migration failed for default regions: \(error)")
+        }
+    }
+
+    /// Migrates custom regions from UserDefaults to disk, one region at a time.
+    ///
+    /// The legacy key is removed only if every region was saved successfully. If any
+    /// save fails, the key is left intact so the full migration retries on the next launch.
+    private static func migrateCustomRegions(userDefaults: UserDefaults, fileStorage: RegionsFileStorageProtocol, decoder: PropertyListDecoder) {
+        guard let data = userDefaults.data(forKey: legacyStoredCustomRegionsUserDefaultsKey) else { return }
+
+        guard let regions = try? decoder.decode([Region].self, from: data) else {
+            Logger.error("RegionsService: Could not decode legacy custom regions data (\(data)); discarding.")
+            userDefaults.removeObject(forKey: legacyStoredCustomRegionsUserDefaultsKey)
+            return
         }
 
-        if regions.count == 0 {
-            return nil
+        let failedCount = regions.reduce(0) { count, region in
+            do {
+                try fileStorage.saveCustomRegion(region)
+                return count
+            } catch {
+                Logger.error("RegionsService: Migration failed for custom region '\(region)': \(error)")
+                return count + 1
+            }
         }
-        else {
-            return regions
+
+        guard failedCount == 0 else { return }
+
+        if !regions.isEmpty {
+            Logger.info("RegionsService: Migrated \(regions.count) custom regions from UserDefaults to disk.")
         }
+        userDefaults.removeObject(forKey: legacyStoredCustomRegionsUserDefaultsKey)
+    }
+
+    /// Migrates the selected region from a full stored `Region` object to just its integer identifier.
+    ///
+    /// The legacy key is always removed after this runs — either the identifier was
+    /// successfully written or the data is unreadable, so there is nothing to retry.
+    private static func migrateCurrentRegion(userDefaults: UserDefaults, decoder: PropertyListDecoder) {
+        guard let data = userDefaults.data(forKey: legacyCurrentRegionUserDefaultsKey) else { return }
+
+        defer { userDefaults.removeObject(forKey: legacyCurrentRegionUserDefaultsKey) }
+
+        guard let region = try? decoder.decode(Region.self, from: data) else {
+            Logger.error("RegionsService: Could not decode legacy current region data (\(data)); discarding.")
+            return
+        }
+
+        userDefaults.set(region.regionIdentifier, forKey: currentRegionIdentifierUserDefaultsKey)
     }
 
     // MARK: - Bundled Regions
@@ -377,9 +470,9 @@ public class RegionsService: NSObject, LocationServiceDelegate {
     }
 
     /// Fetches the current list of `Region`s from the network.
-    /// - Parameter forceUpdate: Forces an update of the regions list, even if the last update happened less than one week ago.
+    /// - Parameter forceUpdate: Forces an update of the regions list, even if the last update happened less than one day ago.
     public func updateRegionsList(forceUpdate: Bool = false) async {
-        // only update once per week, unless forceUpdate is true.
+        // only update once per day, unless forceUpdate is true.
         if !shouldUpdateRegionList && !forceUpdate {
             notifyDelegatesRegionListUpdateCancelled()
             return
