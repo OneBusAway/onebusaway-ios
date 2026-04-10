@@ -47,6 +47,12 @@ targets:
           AppGroup: group.pl.kiedybus.iphone
           BundledRegionsFileName: regions.json
           ExtensionURLScheme: kiedybus
+          MoreTab:
+            HeaderSupportText: "Powered by goEuropa"
+            ShowHelpOutSection: false
+            CustomLinks:
+              - Title: "goEuropa Website"
+                URL: "https://www.goeuropa.eu"
           PrivacyPolicyURL: https://www.goeuropa.eu
           RESTServerAPIKey: web
           RegionsServerBaseAddress: https://kiedybus.pl
