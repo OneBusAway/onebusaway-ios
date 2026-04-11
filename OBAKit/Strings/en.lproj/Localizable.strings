@@ -340,6 +340,12 @@
 /* Title for the action sheet used to select one of many co-located stops. */
 "map_controller.grouped_stop_picker.title_fmt" = "Select a Stop (%d)";
 
+/* Secondary text for grouped stop picker rows when only direction is available. */
+"map_controller.grouped_stop_picker.direction_fmt" = "Direction: %@";
+
+/* Secondary text for grouped stop picker rows when both direction and location details are available. */
+"map_controller.grouped_stop_picker.direction_subtitle_fmt" = "%1$@ · %2$@";
+
 /* Accessibility label for the My Trip button on the map toolbar. */
 "map_controller.my_trip_button" = "My Trip";
 

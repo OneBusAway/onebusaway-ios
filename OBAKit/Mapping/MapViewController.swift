@@ -27,6 +27,7 @@ class MapViewController: UIViewController,
     MapRegionMapViewDelegate,
     ModalDelegate,
     MapPanelDelegate,
+    ClusterStopPickerViewControllerDelegate,
     UIContextMenuInteractionDelegate,
     UILargeContentViewerInteractionDelegate,
     UIGestureRecognizerDelegate {
@@ -638,44 +639,39 @@ class MapViewController: UIViewController,
     struct ClusterStopMember: Hashable {
         let stopID: Stop.ID
         let title: String
+        let directionText: String?
         let subtitle: String?
         let isBookmarked: Bool
     }
 
-    private func presentClusterStopPicker(
-        members: [ClusterStopMember],
-        sourceView: UIView,
-        sourceRect: CGRect
-    ) {
+    private func displayClusterStopPicker(members: [ClusterStopMember]) {
         guard !members.isEmpty else { return }
 
         let title = String(
             format: OBALoc(
                 "map_controller.grouped_stop_picker.title_fmt",
                 value: "Select a Stop (%d)",
-                comment: "Title for the action sheet used to select one of many co-located stops."
+                comment: "Title for the grouped stop picker used to select one of many co-located stops."
             ),
             members.count
         )
 
-        let alert = UIAlertController(title: title, message: nil, preferredStyle: .actionSheet)
         let sortedMembers = Self.sortedClusterStopMembers(members)
-
-        for member in sortedMembers {
-            alert.addAction(UIAlertAction(title: Self.clusterStopActionTitle(for: member), style: .default, handler: { _ in
-                self.application.analytics?.reportEvent(pageURL: "app://localhost/map", label: AnalyticsLabels.mapStopAnnotationTapped, value: nil)
-                self.application.viewRouter.navigateTo(stopID: member.stopID, from: self)
-            }))
+        let items = sortedMembers.map { member in
+            ClusterStopPickerViewController.Item(
+                stopID: member.stopID,
+                title: member.title,
+                secondaryText: Self.clusterStopPickerSecondaryText(for: member),
+                isBookmarked: member.isBookmarked
+            )
         }
 
-        alert.addAction(UIAlertAction(title: OBALoc("map_controller.grouped_stop_picker.cancel", value: "Cancel", comment: "Cancel button for grouped stop picker on map."), style: .cancel))
+        dismissExistingClusterStopPicker()
 
-        if let popover = alert.popoverPresentationController {
-            popover.sourceView = sourceView
-            popover.sourceRect = sourceRect
-        }
-
-        present(alert, animated: true)
+        let controller = ClusterStopPickerViewController(title: title, items: items, delegate: self)
+        let panel = createSemiModalPanel(childController: controller)
+        panel.addPanel(toParent: self)
+        semiModalClusterStopPickerController = panel
     }
 
     static func clusterStopMembers(from memberAnnotations: [MKAnnotation]) -> [ClusterStopMember] {
@@ -688,6 +684,7 @@ class MapViewController: UIViewController,
                 member = ClusterStopMember(
                     stopID: stop.id,
                     title: stop.nameWithLocalizedDirectionAbbreviation,
+                    directionText: Formatters.adjectiveFormOfCardinalDirection(stop.direction),
                     subtitle: stop.subtitle,
                     isBookmarked: false
                 )
@@ -695,6 +692,7 @@ class MapViewController: UIViewController,
                 member = ClusterStopMember(
                     stopID: bookmark.stop.id,
                     title: bookmark.stop.nameWithLocalizedDirectionAbbreviation,
+                    directionText: Formatters.adjectiveFormOfCardinalDirection(bookmark.stop.direction),
                     subtitle: bookmark.stop.subtitle,
                     isBookmarked: true
                 )
@@ -727,11 +725,30 @@ class MapViewController: UIViewController,
         }
     }
 
-    static func clusterStopActionTitle(for member: ClusterStopMember) -> String {
-        guard let subtitle = String.nilifyBlankValue(member.subtitle) else {
-            return member.title
+    static func clusterStopPickerSecondaryText(for member: ClusterStopMember) -> String? {
+        let directionText = String.nilifyBlankValue(member.directionText)
+        let subtitleText = String.nilifyBlankValue(member.subtitle)
+
+        switch (directionText, subtitleText) {
+        case let (direction?, subtitle?):
+            let directionAndSubtitleFormat = OBALoc(
+                "map_controller.grouped_stop_picker.direction_subtitle_fmt",
+                value: "%1$@ · %2$@",
+                comment: "Secondary text for grouped stop picker rows when both direction and location details are available."
+            )
+            return String(format: directionAndSubtitleFormat, direction, subtitle)
+        case let (direction?, nil):
+            let directionFormat = OBALoc(
+                "map_controller.grouped_stop_picker.direction_fmt",
+                value: "Direction: %@",
+                comment: "Secondary text for grouped stop picker rows when only direction is available."
+            )
+            return String(format: directionFormat, direction)
+        case let (nil, subtitle?):
+            return subtitle
+        case (nil, nil):
+            return nil
         }
-        return "\(member.title) (\(subtitle))"
     }
 
     // MARK: - Overlays
@@ -878,6 +895,11 @@ class MapViewController: UIViewController,
             mapRegionManager.cancelSearch()
             semiModalPanel?.removePanelFromParent(animated: true)
         }
+        else if controller == semiModalClusterStopPickerController?.contentViewController,
+                let panel = semiModalClusterStopPickerController {
+            removeSemiModalPanel(panel, animated: true)
+            semiModalClusterStopPickerController = nil
+        }
         else {
             controller.dismiss(animated: true, completion: nil)
         }
@@ -886,6 +908,7 @@ class MapViewController: UIViewController,
     // MARK: - Map Item Controller
 
     private var semiModalMapItemController: FloatingPanelController?
+    private var semiModalClusterStopPickerController: FloatingPanelController?
 
     /// Dismisses the currently displayed map item controller panel, if one exists.
     /// Ensures proper cleanup before displaying a new map item or when the associated pin is removed.
@@ -898,11 +921,19 @@ class MapViewController: UIViewController,
         }
     }
 
+    private func dismissExistingClusterStopPicker(animated: Bool = false) {
+        if let existingController = semiModalClusterStopPickerController {
+            removeSemiModalPanel(existingController, animated: animated)
+            semiModalClusterStopPickerController = nil
+        }
+    }
+
     /// Presents a `MapItemController` with the provided `MKMapItem` as a semi-modal panel.
     /// - Parameters:
     ///   - mapItem: The map item to display
     ///   - userPin: Optional user-dropped pin associated with this map item (for removal functionality)
     private func displayMapItemController(_ mapItem: MKMapItem, userPin: UserDroppedPin? = nil) {
+        dismissExistingClusterStopPicker()
         dismissExistingMapItemController()
         // Create remove pin handler if this is a user-dropped pin
         let removePinHandler: (() -> Void)?
@@ -974,9 +1005,25 @@ class MapViewController: UIViewController,
         floatingPanel.move(to: state, animated: animated)
     }
 
+    // MARK: - Cluster Stop Picker Delegate
+
+    func clusterStopPicker(_ controller: ClusterStopPickerViewController, didSelectStopID stopID: Stop.ID) {
+        dismissExistingClusterStopPicker(animated: true)
+        application.analytics?.reportEvent(pageURL: "app://localhost/map", label: AnalyticsLabels.mapStopAnnotationTapped, value: nil)
+        application.viewRouter.navigateTo(stopID: stopID, from: self)
+    }
+
+    func clusterStopPickerDidRequestClose(_ controller: ClusterStopPickerViewController) {
+        dismissExistingClusterStopPicker(animated: true)
+    }
+
     // MARK: - MapRegionDelegate
 
     func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
+        if !(view.annotation is MKClusterAnnotation) {
+            dismissExistingClusterStopPicker(animated: true)
+        }
+
         if let region = view.annotation as? Region {
             let title = OBALoc("map_controller.change_region_alert.title", value: "Change Region?", comment: "Title of the alert that appears when the user is updating their current region manually.")
             let messageFmt = OBALoc("map_controller.change_region_alert.message_fmt", value: "Would you like to change your region to %@?", comment: "Body of the alert that appears when the user is updating their current region manually.")
@@ -998,7 +1045,7 @@ class MapViewController: UIViewController,
             show(stop: stop)
         } else if let cluster = view.annotation as? MKClusterAnnotation {
             let members = Self.clusterStopMembers(from: cluster.memberAnnotations)
-            presentClusterStopPicker(members: members, sourceView: view, sourceRect: view.bounds)
+            displayClusterStopPicker(members: members)
             mapView.deselectAnnotation(cluster, animated: false)
         } else if let annotation = view.annotation as? UserDroppedPin {
             // Sheet presentation for user-dropped pins is handled via
@@ -1237,6 +1284,237 @@ class MapViewController: UIViewController,
         }
     }
 
+}
+
+protocol ClusterStopPickerViewControllerDelegate: AnyObject {
+    func clusterStopPicker(_ controller: ClusterStopPickerViewController, didSelectStopID stopID: Stop.ID)
+    func clusterStopPickerDidRequestClose(_ controller: ClusterStopPickerViewController)
+}
+
+final class ClusterStopPickerViewController: UIViewController, Scrollable {
+    struct Item: Hashable {
+        let stopID: Stop.ID
+        let title: String
+        let secondaryText: String?
+        let isBookmarked: Bool
+    }
+
+    var scrollView: UIScrollView {
+        resolveHostedScrollView() ?? fallbackScrollView
+    }
+
+    private let titleText: String
+    private let items: [Item]
+    private weak var delegate: ClusterStopPickerViewControllerDelegate?
+
+    private var hostingController: UIHostingController<ClusterStopPickerSheetView>?
+    private let fallbackScrollView = UIScrollView()
+    private weak var hostedScrollView: UIScrollView?
+
+#if DEBUG
+    private var hasLoggedMissingHostedScrollView = false
+#endif
+
+    init(title: String, items: [Item], delegate: ClusterStopPickerViewControllerDelegate?) {
+        self.titleText = title
+        self.items = items
+        self.delegate = delegate
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+
+        view.backgroundColor = .clear
+        let sheetItems = items.map {
+            ClusterStopPickerSheetView.Item(
+                id: $0.stopID,
+                title: $0.title,
+                secondaryText: $0.secondaryText,
+                isBookmarked: $0.isBookmarked
+            )
+        }
+
+        let sheetView = ClusterStopPickerSheetView(
+            title: titleText,
+            items: sheetItems,
+            onSelectStopID: { [weak self] stopID in
+                guard let self else { return }
+                self.delegate?.clusterStopPicker(self, didSelectStopID: stopID)
+            },
+            onClose: { [weak self] in
+                guard let self else { return }
+                self.delegate?.clusterStopPickerDidRequestClose(self)
+            }
+        )
+
+        let hostingController = UIHostingController(rootView: sheetView)
+        hostingController.view.backgroundColor = .clear
+
+        addChild(hostingController)
+        view.addSubview(hostingController.view)
+        hostingController.view.pinToSuperview(.edges)
+        hostingController.didMove(toParent: self)
+
+        self.hostingController = hostingController
+        _ = resolveHostedScrollView()
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+
+        guard
+            let panel = parent as? FloatingPanelController,
+            let scrollView = resolveHostedScrollView()
+        else { return }
+
+        panel.track(scrollView: scrollView)
+    }
+
+    private func resolveHostedScrollView() -> UIScrollView? {
+        if let hostedScrollView { return hostedScrollView }
+
+        loadViewIfNeeded()
+        view.layoutIfNeeded()
+
+        guard let hostingView = hostingController?.view else { return nil }
+        let scrollView = findHostedScrollView(in: hostingView)
+        hostedScrollView = scrollView
+
+#if DEBUG
+        if scrollView == nil && !hasLoggedMissingHostedScrollView {
+            Logger.warn("ClusterStopPickerViewController: Unable to locate hosted UIScrollView for FloatingPanel tracking.")
+            hasLoggedMissingHostedScrollView = true
+        }
+#endif
+
+        return scrollView
+    }
+
+    private func findHostedScrollView(in rootView: UIView) -> UIScrollView? {
+        var stack = [rootView]
+
+        while let candidate = stack.popLast() {
+            if let scrollView = candidate as? UIScrollView {
+                return scrollView
+            }
+            stack.append(contentsOf: candidate.subviews)
+        }
+
+        return nil
+    }
+}
+
+private struct ClusterStopPickerSheetView: View {
+    struct Item: Hashable, Identifiable {
+        let id: Stop.ID
+        let title: String
+        let secondaryText: String?
+        let isBookmarked: Bool
+    }
+
+    let title: String
+    let items: [Item]
+    let onSelectStopID: (Stop.ID) -> Void
+    let onClose: () -> Void
+
+    var body: some View {
+        ZStack {
+            Rectangle()
+                .fill(.ultraThinMaterial)
+                .ignoresSafeArea()
+
+            VStack(spacing: 0) {
+                header
+                stopList
+            }
+        }
+    }
+
+    private var header: some View {
+        ZStack {
+            Text(title)
+                .font(.headline.weight(.bold))
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
+
+            HStack {
+                Spacer()
+
+                Button(action: onClose) {
+                    Image(systemName: "xmark")
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(Color(uiColor: .secondaryLabel))
+                        .frame(width: 32, height: 32)
+                        .background(
+                            Circle()
+                                .fill(Color(uiColor: .tertiarySystemFill))
+                        )
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text(Strings.close))
+            }
+        }
+        .padding(.top, 16)
+        .padding(.horizontal, ThemeMetrics.padding)
+    }
+
+    private var stopList: some View {
+        List {
+            ForEach(items) { item in
+                ClusterStopPickerSheetRow(item: item)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        onSelectStopID(item.id)
+                    }
+                    .listRowBackground(Color(uiColor: .secondarySystemBackground))
+            }
+        }
+        .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(Color.clear)
+    }
+}
+
+private struct ClusterStopPickerSheetRow: View {
+    let item: ClusterStopPickerSheetView.Item
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            if item.isBookmarked {
+                Image(systemName: "bookmark.fill")
+                    .foregroundStyle(Color(uiColor: .secondaryLabel))
+                    .padding(.top, 2)
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(item.title)
+                    .foregroundStyle(Color(uiColor: .label))
+                    .font(.body)
+
+                if let secondaryText = item.secondaryText {
+                    Text(secondaryText)
+                        .foregroundStyle(Color(uiColor: .secondaryLabel))
+                        .font(.body)
+                }
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(.vertical, 6)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityLabel)
+    }
+
+    private var accessibilityLabel: Text {
+        if let secondaryText = item.secondaryText {
+            Text("\(item.title), \(secondaryText)")
+        } else {
+            Text(item.title)
+        }
+    }
 }
 
 // swiftlint:enable file_length
