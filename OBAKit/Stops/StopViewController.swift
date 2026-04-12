@@ -422,7 +422,26 @@ public class StopViewController: UIViewController,
             alertsAction.attributes = .disabled
         }
 
-        return UIMenu(title: "File", options: .displayInline, children: [bookmarkAction, alertsAction])
+        var menuChildren: [UIMenuElement] = [bookmarkAction, alertsAction]
+
+        // Share stop link — only available when the region provides a sidecar URL.
+        if let stop = stop,
+           let region = application.currentRegion,
+           let url = application.appLinksRouter?.url(for: stop, region: region) {
+            let shareAction = UIAction(
+                title: OBALoc("stops_controller.share_stop", value: "Share Stop", comment: "Menu item to share a link to this stop"),
+                image: UIImage(systemName: "square.and.arrow.up")
+            ) { [weak self] _ in
+                guard let self else { return }
+                let activity = UIActivityViewController(activityItems: [url], applicationActivities: nil)
+                // On iPad, UIActivityViewController requires a source view/bar button item.
+                activity.popoverPresentationController?.barButtonItem = self.moreMenuButton
+                self.present(activity, animated: true)
+            }
+            menuChildren.append(shareAction)
+        }
+
+        return UIMenu(title: "File", options: .displayInline, children: menuChildren)
     }
 
     fileprivate func locationMenu() -> UIMenu {
