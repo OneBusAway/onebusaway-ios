@@ -8,6 +8,7 @@
 //
 
 import UIKit
+import SwiftUI
 import OBAKitCore
 
 // MARK: - List Item
@@ -56,16 +57,16 @@ struct TransferArrivalContentConfiguration: OBAContentConfiguration {
     }
 }
 
-// MARK: - Cell (reuses WalkTimeView for identical look)
+// MARK: - Cell (reuses WalkTimeBanner for identical look)
 
 class TransferArrivalCell: OBAListViewCell {
-    let walkTimeView = WalkTimeView.autolayoutNew()
+
+    private var hostingController: UIHostingController<WalkTimeBanner>?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-
-        contentView.addSubview(walkTimeView)
-        walkTimeView.pinToSuperview(.edges)
+        backgroundColor = .clear
+        contentView.backgroundColor = .clear
     }
 
     required init?(coder aDecoder: NSCoder) {
@@ -73,8 +74,28 @@ class TransferArrivalCell: OBAListViewCell {
     }
 
     override func apply(_ config: OBAContentConfiguration) {
-        guard let config = config as? TransferArrivalContentConfiguration else { return }
-        walkTimeView.formatters = config.formatters
-        walkTimeView.setTransferArrival(arrivalTime: config.arrivalTime, routeDisplay: config.routeDisplay)
+        guard let config = config as? TransferArrivalContentConfiguration,
+              let formatters = config.formatters else { return }
+
+        let banner = WalkTimeBanner(
+            content: .transfer(arrivalTime: config.arrivalTime, routeDisplay: config.routeDisplay),
+            formatters: formatters
+        )
+
+        if let hc = hostingController {
+            hc.rootView = banner
+        } else {
+            let hc = UIHostingController(rootView: banner)
+            hc.view.backgroundColor = .clear
+            hc.view.translatesAutoresizingMaskIntoConstraints = false
+            contentView.addSubview(hc.view)
+            NSLayoutConstraint.activate([
+                hc.view.topAnchor.constraint(equalTo: contentView.topAnchor),
+                hc.view.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
+                hc.view.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+                hc.view.trailingAnchor.constraint(equalTo: contentView.trailingAnchor)
+            ])
+            hostingController = hc
+        }
     }
 }
