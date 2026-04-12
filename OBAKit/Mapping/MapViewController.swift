@@ -628,11 +628,15 @@ class MapViewController: UIViewController,
 
     // MARK: - Content Presentation
 
-    /// Displays the specified stop.
+    /// Displays the specified stop as a native sheet so the map stays visible.
     ///
     /// - Parameter stop: The stop to display.
     func show(stop: Stop) {
-        application.viewRouter.navigateTo(stop: stop, from: self)
+        // Hide the floating panel so it doesn't sit on top of the stop sheet
+        floatingPanel.move(to: .hidden, animated: true)
+        let sheet = application.viewRouter.makeStopSheet(stop: stop)
+        sheet.stopSheetDelegate = self
+        sheet.present(from: self, centeringMap: mapRegionManager.mapView)
     }
 
     // MARK: - Overlays
@@ -836,7 +840,10 @@ class MapViewController: UIViewController,
     private lazy var mapPanelController = MapFloatingPanelController(application: application, mapRegionManager: application.mapRegionManager, delegate: self)
 
     func mapPanelController(_ controller: MapFloatingPanelController, didSelectStop stopID: Stop.ID) {
-        application.viewRouter.navigateTo(stopID: stopID, from: self)
+        floatingPanel.move(to: .hidden, animated: true)
+        let sheet = application.viewRouter.makeStopSheet(stopID: stopID)
+        sheet.stopSheetDelegate = self
+        sheet.present(from: self, centeringMap: mapRegionManager.mapView)
     }
 
     func mapPanelController(_ controller: MapFloatingPanelController, didSelectMapItem mapItem: MKMapItem) {
@@ -1134,6 +1141,25 @@ class MapViewController: UIViewController,
         }
     }
 
+}
+
+// MARK: - StopSheetDelegate
+
+extension MapViewController: StopSheetDelegate {
+    func stopSheetDidDismiss(_ sheet: StopSheetViewController) {
+        mapRegionManager.mapView.selectedAnnotations.forEach {
+            mapRegionManager.mapView.deselectAnnotation($0, animated: true)
+        }
+        floatingPanel.move(to: .tip, animated: true)
+    }
+
+    func stopSheetDidExpand(_ sheet: StopSheetViewController) {
+        floatingPanel.move(to: .hidden, animated: true)
+    }
+
+    func stopSheetDidCollapse(_ sheet: StopSheetViewController) {
+        // Sheet returned to half — no action needed, map offset stays as-is
+    }
 }
 
 // swiftlint:enable file_length
