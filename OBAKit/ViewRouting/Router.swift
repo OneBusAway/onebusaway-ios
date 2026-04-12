@@ -28,7 +28,7 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
 
     private let application: Application
 
-    var rootController: ClassicApplicationRootController?
+    var rootController: (any ApplicationRootController)?
 
     public init(application: Application) {
         self.application = application
@@ -101,8 +101,7 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
     }
 
     public func rootNavigateTo(page: ClassicApplicationRootController.Page) {
-        guard let rootController = self.rootController else { return }
-        rootController.navigate(to: page)
+        rootController?.navigate(to: page)
     }
 
     public func navigateTo(alert: TransitAlertViewModel, locale: Locale = .current, from fromController: UIViewController) {

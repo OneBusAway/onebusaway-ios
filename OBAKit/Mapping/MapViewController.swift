@@ -124,13 +124,18 @@ class MapViewController: UIViewController,
         // trailing constraint references toolbar.leadingAnchor.
         view.insertSubview(toolbar, aboveSubview: mapView)
 
+        // In mapsStyleMode apply Apple Maps-style dark glass look to the toolbar.
+        if mapsStyleMode {
+            applyGlassStyleToToolbar()
+        }
+
         // Toolbar: anchored to safe area top-right, independent of status pill.
         // This matches Apple Maps where right-side buttons stay fixed regardless
         // of whether a floating status element is visible.
         NSLayoutConstraint.activate([
             toolbar.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -ThemeMetrics.controllerMargin),
             toolbar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: ThemeMetrics.controllerMargin),
-            toolbar.widthAnchor.constraint(equalToConstant: 42.0),
+            toolbar.widthAnchor.constraint(equalToConstant: mapsStyleMode ? 44.0 : 42.0),
             locationButton.heightAnchor.constraint(equalTo: locationButton.widthAnchor),
             weatherButton.heightAnchor.constraint(equalTo: weatherButton.widthAnchor),
             toggleMapTypeButton.heightAnchor.constraint(equalTo: toggleMapTypeButton.widthAnchor),
@@ -516,7 +521,7 @@ class MapViewController: UIViewController,
             self.dismissTripPlannerController()
         }
 
-        self.floatingPanel.move(to: .tip, animated: true)
+        if !mapsStyleMode { self.floatingPanel.move(to: .tip, animated: true) }
 
         let hostingController = UIHostingController(rootView: tripPlannerView)
         hostingController.view.backgroundColor = .clear
@@ -645,7 +650,8 @@ class MapViewController: UIViewController,
         if traitCollection.horizontalSizeClass == .regular {
             self.mapRegionManager.mapView.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 0, leading: MapPanelLandscapeLayout.WidthSize + ThemeMetrics.padding, bottom: 0, trailing: 0)
         } else {
-            self.mapRegionManager.mapView.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 0, leading: 0, bottom: MapPanelLayout.EstimatedDrawerTipStateHeight, trailing: 0)
+            let bottomInset: CGFloat = mapsStyleMode ? 0 : MapPanelLayout.EstimatedDrawerTipStateHeight
+            self.mapRegionManager.mapView.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 0, leading: 0, bottom: bottomInset, trailing: 0)
         }
     }
 
@@ -715,6 +721,9 @@ class MapViewController: UIViewController,
     }()
 
     public func floatingPanel(_ vc: FloatingPanelController, layoutFor newCollection: UITraitCollection) -> FloatingPanelLayout {
+        if mapsStyleMode {
+            return MapPanelMapsStyleLayout()
+        }
         switch newCollection.horizontalSizeClass {
         case .regular:
             return MapPanelLandscapeLayout(initialState: .half)
@@ -727,7 +736,6 @@ class MapViewController: UIViewController,
         // Don't allow the status overlay to be shown when the
         // Floating Panel is fully open because it looks weird.
         let floatingPanelPositionIsCollapsed = vc.state == .tip || vc.state == .hidden
-        mapPanelController.currentScrollView?.accessibilityElementsHidden = floatingPanelPositionIsCollapsed
 
         if let controller = vc.contentViewController as? MapFloatingPanelController {
             controller.didCollapse(floatingPanelPositionIsCollapsed)
@@ -748,7 +756,7 @@ class MapViewController: UIViewController,
         mapRegionManager.preferredLoadDataRegionFudgeFactor = UIAccessibility.isVoiceOverRunning ? 1.5 : MapRegionManager.DefaultLoadDataRegionFudgeFactor
 
         if UIAccessibility.isVoiceOverRunning {
-            floatingPanel.move(to: .half, animated: true)
+            if !mapsStyleMode { floatingPanel.move(to: .half, animated: true) }
 
             if !floatingPanel.userHasSeenFullSheetVoiceoverChange {
                 self.present(floatingPanel.fullSheetVoiceoverAlert(), animated: true)
@@ -823,7 +831,7 @@ class MapViewController: UIViewController,
             self.semiModalPanel?.move(to: .tip, animated: false)
         }
 
-        self.floatingPanel.move(to: .tip, animated: true)
+        if !mapsStyleMode { self.floatingPanel.move(to: .tip, animated: true) }
 
         let mapItemController = MapItemViewController(viewModel)
         let semiModal = createSemiModalPanel(childController: mapItemController)
@@ -833,14 +841,95 @@ class MapViewController: UIViewController,
 
     // MARK: - Map Panel Controller
 
+    /// Called by MapsStyleRootController when the user selects a map item from the bottom sheet search.
+    func handleMapItemSelection(_ mapItem: MKMapItem) {
+        mapPanelController(mapPanelController, didSelectMapItem: mapItem)
+    }
+
+    /// Called by MapsStyleRootController when the user selects a stop from the bottom sheet search.
+    func handleStopSelection(stopID: Stop.ID) {
+        application.viewRouter.navigateTo(stopID: stopID, from: self)
+    }
+
+    /// Applies Apple Maps-style Liquid Glass appearance to the right-side toolbar.
+    private func applyGlassStyleToToolbar() {
+        if #available(iOS 26.0, *) {
+            // iOS 26: swap the existing blur effect to UIGlassEffect in-place.
+            // The HoverBar's visualEffectView already has the buttons in its contentView,
+            // so replacing the effect keeps icons visible on top of the glass material.
+            toolbar.visualEffectView.effect = UIGlassEffect()
+            toolbar.visualEffectView.layer.cornerRadius = 21
+            toolbar.visualEffectView.layer.cornerCurve = .continuous
+            toolbar.showShadow = false
+            toolbar.tintColor = .label
+        } else {
+            // iOS 17-25 fallback: dark ultra-thin blur pill
+            toolbar.visualEffectView.effect = UIBlurEffect(style: .systemUltraThinMaterialDark)
+            toolbar.visualEffectView.layer.cornerRadius = 21
+            toolbar.visualEffectView.layer.cornerCurve = .continuous
+            toolbar.showShadow = false
+            toolbar.tintColor = .white
+        }
+    }
+
+    /// In mapsStyleMode, MapsStyleRootController is already presenting bottomSheetNav,
+    /// so any presentation from MapViewController must go through bottomSheetNav instead.
+    override func present(_ viewControllerToPresent: UIViewController, animated flag: Bool, completion: (() -> Void)? = nil) {
+        guard mapsStyleMode else {
+            super.present(viewControllerToPresent, animated: flag, completion: completion)
+            return
+        }
+        // Walk up to find the topmost free presenter
+        var presenter: UIViewController = self
+        while let p = presenter.presentingViewController { presenter = p }
+        // presenter is now the root; walk down presented chain to find the top
+        var top: UIViewController = presenter
+        while let next = top.presentedViewController, !next.isBeingDismissed { top = next }
+        if top === self {
+            super.present(viewControllerToPresent, animated: flag, completion: completion)
+        } else {
+            top.present(viewControllerToPresent, animated: flag, completion: completion)
+        }
+    }
+
     private lazy var mapPanelController = MapFloatingPanelController(application: application, mapRegionManager: application.mapRegionManager, delegate: self)
+
+    /// Activates the search sheet — called by MapsStyleRootController when the search pill is tapped.
+    func activateSearch() {
+        // In mapsStyleMode the floating panel stays hidden; only the search sheet is presented.
+        if !mapsStyleMode {
+            floatingPanel.move(to: .half, animated: true)
+        }
+        // Forward the dismiss callback so MapsStyleRootController can restore its pill.
+        mapPanelController.searchSheetViewModel.onDismiss = onSearchDismissed
+        mapPanelController.enterSearchMode()
+    }
+
+    /// Hides the floating panel's built-in search bar.
+    /// Call this when the host (e.g. MapsStyleRootController) provides its own search entry point.
+    func hideFloatingPanelSearchBar() {
+        mapPanelController.hidesSearchBar = true
+    }
+
+    /// Switches the floating panel to Maps-style mode: no persistent tip state,
+    /// panel starts hidden and only appears on demand.
+    /// Must be called before the view loads.
+    var mapsStyleMode: Bool = false
+
+    /// Called when the search sheet is dismissed (cancel or swipe-down).
+    /// Set by MapsStyleRootController to restore the bottom pill.
+    var onSearchDismissed: (() -> Void)?
+
+    /// Called in mapsStyleMode when a search returns a MKMapItem result,
+    /// so the bottom sheet can show the detail inline.
+    var onSearchMapItem: ((MKMapItem) -> Void)?
 
     func mapPanelController(_ controller: MapFloatingPanelController, didSelectStop stopID: Stop.ID) {
         application.viewRouter.navigateTo(stopID: stopID, from: self)
     }
 
     func mapPanelController(_ controller: MapFloatingPanelController, didSelectMapItem mapItem: MKMapItem) {
-        floatingPanel.move(to: .half, animated: false)
+        if !mapsStyleMode { floatingPanel.move(to: .half, animated: false) }
 
         let mapDestination = mapItem.placemark.coordinate
 
@@ -857,21 +946,9 @@ class MapViewController: UIViewController,
         displayMapItemController(mapItem)
     }
 
-    func mapPanelControllerDisplaySearch(_ controller: MapFloatingPanelController) {
-        floatingPanel.move(to: .full, animated: true)
-    }
-
-    func mapPanelControllerDidChangeChildViewController(_ controller: MapFloatingPanelController) {
-        // If there is a new scroll view, tell floating panel to track the new scroll view.
-        // Else, untrack its currently tracking scroll view.
-        if let newScrollView = controller.currentScrollView {
-            floatingPanel.track(scrollView: newScrollView)
-        } else if let currentTrackingScrollView = floatingPanel.trackingScrollView {
-            floatingPanel.untrack(scrollView: currentTrackingScrollView)
-        }
-    }
-
     func mapPanelController(_ controller: MapFloatingPanelController, moveTo state: FloatingPanelState, animated: Bool) {
+        // In Maps-style mode the floating panel is never shown — ignore all move requests.
+        guard !mapsStyleMode else { return }
         floatingPanel.move(to: state, animated: animated)
     }
 
@@ -968,7 +1045,12 @@ class MapViewController: UIViewController,
 
             switch result {
             case let result as MKMapItem:
-                // Check if this MapItem is associated with a user-dropped pin
+                // In mapsStyleMode the bottom sheet shows the detail inline — skip the floating panel.
+                if mapsStyleMode {
+                    mapRegionManager.mapView.setCenter(result.placemark.coordinate, animated: true)
+                    onSearchMapItem?(result)
+                    return
+                }
                 let userPin = manager.findUserPin(for: result)
                 displayMapItemController(result, userPin: userPin)
             case let result as StopsForRoute:
