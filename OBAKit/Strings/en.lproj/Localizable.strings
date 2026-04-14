@@ -334,6 +334,18 @@
 /* Voiceover text indicating the current map type as the standard base map. */
 "map_controller.map_type.standard.accessibility_value" = "standard";
 
+/* Cancel button for grouped stop picker on map. */
+"map_controller.grouped_stop_picker.cancel" = "Cancel";
+
+/* Title for the action sheet used to select one of many co-located stops. */
+"map_controller.grouped_stop_picker.title_fmt" = "Select a Stop (%d)";
+
+/* Secondary text for grouped stop picker rows when only direction is available. */
+"map_controller.grouped_stop_picker.direction_fmt" = "Direction: %@";
+
+/* Secondary text for grouped stop picker rows when both direction and location details are available. */
+"map_controller.grouped_stop_picker.direction_subtitle_fmt" = "%1$@ · %2$@";
+
 /* Accessibility label for the My Trip button on the map toolbar. */
 "map_controller.my_trip_button" = "My Trip";
 
@@ -967,4 +979,3 @@
 
 /* Format string with placeholders for distance from stop, walking time to stop, and predicted arrival time. e.g. 1.2 miles, 17m: arriving at 09:41 A.M. */
 "walk_time_view.distance_time_fmt" = "%1$@, %2$@: arriving at %3$@";
-
