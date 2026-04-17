@@ -10,6 +10,7 @@
 import Foundation
 import CoreGraphics
 import UIKit
+import OBAKitCore
 
 /// Creates image 'badges', or squircles with overlayed monochromatic images.
 public class ImageBadgeRenderer: NSObject {
