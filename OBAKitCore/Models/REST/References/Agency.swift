@@ -81,4 +81,18 @@ public class Agency: NSObject, Identifiable, Codable {
         guard let cleaned = cleanedPhoneNumber() else { return nil }
         return URL(string: "tel://\(cleaned)")
     }
+
+    /// Returns this agency's time zone as a `TimeZone`, if the `timeZone` identifier is valid.
+    ///
+    /// The agency's raw `timeZone` property is an IANA time zone identifier (e.g., "America/Los_Angeles").
+    /// If the identifier is empty or cannot be resolved, this property returns `nil` instead of falling back
+    /// to the device's current time zone.
+    public var regionTimeZone: TimeZone? {
+        guard !timeZone.isEmpty,
+              let resolvedTimeZone = TimeZone(identifier: timeZone)
+        else { return nil }
+
+        return resolvedTimeZone
+    }
+
 }
