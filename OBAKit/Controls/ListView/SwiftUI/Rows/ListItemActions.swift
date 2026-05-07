@@ -5,53 +5,112 @@
 
 import SwiftUI
 
+/// A value type describing a single user-initiated action on a list item
+/// (tap, swipe button, or context menu entry).
+
+public struct ListAction: Identifiable {
+
+    public var id: String { title }
+    public let title: String
+    public let image: Image?
+    public let role: ButtonRole?
+    public let tintColor: Color?
+    public let handler: () -> Void
+
+    // MARK: Init
+
+    public init(
+        title: String,
+        image: Image? = nil,
+        role: ButtonRole? = nil,
+        tintColor: Color? = nil,
+        handler: @escaping () -> Void
+    ) {
+        self.title = title
+        self.image = image
+        self.role = role
+        self.tintColor = tintColor
+        self.handler = handler
+    }
+}
+
+// MARK: - OBAListElement
+
+/// A protocol for view models that want automatic action wiring via `.listItemActions(for:)`.
+
+public protocol ListElement: Identifiable {
+
+    var onTapAction: (() -> Void)? { get }
+
+    var leadingSwipeActions: [ListAction] { get }
+
+    var trailingSwipeActions: [ListAction] { get }
+
+    var contextMenuActions: [ListAction] { get }
+
+}
+
+public extension ListElement {
+
+    var onTapAction: (() -> Void)? { nil }
+
+    var leadingSwipeActions: [ListAction] { [] }
+
+    var trailingSwipeActions: [ListAction] { [] }
+
+    var contextMenuActions: [ListAction] { [] }
+
+}
+
 // MARK: - OBAItemActionModifier
 
-/// Translates `OBAListElement` action properties into native SwiftUI modifiers.
-///
-/// Applied automatically via `.obaItemActions(for:)`. Handles:
-/// - **Tap** — via `.onTapGesture` (avoids `Button` semantics interfering with row styling)
-/// - **Leading / trailing swipe actions** — via `.swipeActions`
-/// - **Context menu** — via `.contextMenu`
-///
-///     ForEach(items) { item in
-///         ListSubtitleRow(title: item.name, subtitle: item.detail)
-///             .obaItemActions(for: item)
-///     }
-///
-public struct OBAItemActionModifier<Item: OBAListElement>: ViewModifier {
-
-    // MARK: Stored Properties
+public struct OBAItemActionModifier<Item: ListElement>: ViewModifier {
 
     public let item: Item
 
     // MARK: Body
 
+    @ViewBuilder
     public func body(content: Content) -> some View {
-        content
-            .contentShape(Rectangle())
-            .onTapGesture { item.onTapAction?() }
-            .swipeActions(edge: .leading, allowsFullSwipe: false) {
-                ForEach(item.leadingSwipeActions) { action in
-                    actionButton(for: action)
+        let hasActions = !item.leadingSwipeActions.isEmpty
+            || !item.trailingSwipeActions.isEmpty
+            || !item.contextMenuActions.isEmpty
+
+        if hasActions {
+            contentWithTap(content)
+                .swipeActions(edge: .leading, allowsFullSwipe: false) {
+                    ForEach(item.leadingSwipeActions) { actionButton(for: $0) }
                 }
-            }
-            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                ForEach(item.trailingSwipeActions) { action in
-                    actionButton(for: action)
+                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                    ForEach(item.trailingSwipeActions) { actionButton(for: $0) }
                 }
-            }
-            .contextMenu {
-                ForEach(item.contextMenuActions) { action in
-                    actionButton(for: action)
+                .contextMenu {
+                    ForEach(item.contextMenuActions) { actionButton(for: $0) }
                 }
-            }
+        } else {
+            contentWithTap(content)
+        }
     }
 
     // MARK: Private Views
 
     @ViewBuilder
-    private func actionButton(for action: OBAListAction) -> some View {
+    private func contentWithTap(_ content: Content) -> some View {
+        if let onTap = item.onTapAction {
+            Button {
+                onTap()
+            } label: {
+                content
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+        } else {
+            content
+        }
+    }
+
+    @ViewBuilder
+    private func actionButton(for action: ListAction) -> some View {
         Button(role: action.role, action: action.handler) {
             if let image = action.image {
                 Label { Text(action.title) } icon: { image }
@@ -66,8 +125,8 @@ public struct OBAItemActionModifier<Item: OBAListElement>: ViewModifier {
 // MARK: - View Extension
 
 extension View {
-    /// Wires up tap, swipe, and context-menu actions declared on an `OBAListElement`.
-    public func obaItemActions<Item: OBAListElement>(for item: Item) -> some View {
+    /// Wires up tap, swipe, and context-menu actions.
+    public func listItemActions<Item: ListElement>(for item: Item) -> some View {
         modifier(OBAItemActionModifier(item: item))
     }
 }

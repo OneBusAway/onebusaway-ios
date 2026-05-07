@@ -7,20 +7,20 @@ import SwiftUI
 
 // MARK: - ListViewState
 
-/// Represents the display state of a `ListView`.
 public enum ListViewState {
     case content
-    case loading
     case empty(EmptyStateConfiguration)
 }
 
 extension ListViewState: Equatable {
     public static func == (lhs: ListViewState, rhs: ListViewState) -> Bool {
         switch (lhs, rhs) {
-        case (.content, .content): return true
-        case (.loading, .loading): return true
-        case (.empty(let l), .empty(let r)): return l == r
-        default: return false
+        case (.content, .content):
+            return true
+        case (.empty(let l), .empty(let r)):
+            return l == r
+        default:
+            return false
         }
     }
 }
@@ -28,6 +28,9 @@ extension ListViewState: Equatable {
 // MARK: - EmptyStateConfiguration
 
 /// Configuration for the empty-state overlay shown when `ListViewState` is `.empty`.
+///
+/// - Note: Equality ignores `image` and `buttonAction` (non-equatable types).
+///   Changing only the image or action closure will **not** trigger a view update.
 public struct EmptyStateConfiguration {
     public let title: String
     public let body: String?
@@ -49,19 +52,14 @@ public struct EmptyStateConfiguration {
         self.buttonAction = buttonAction
     }
 
-    /// A convenience factory for standard informational empty states.
-    public static func standard(
-        title: String,
-        body: String? = nil,
-        image: Image? = nil
-    ) -> EmptyStateConfiguration {
-        EmptyStateConfiguration(title: title, body: body, image: image)
-    }
-
     /// A convenience factory that builds an empty state from an error.
     public static func error(_ error: Error) -> EmptyStateConfiguration {
         EmptyStateConfiguration(
-            title: NSLocalizedString("list_empty_error_title", value: "Something Went Wrong", comment: ""),
+            title: OBALoc(
+                "list_empty_error_title",
+                value: "Something Went Wrong",
+                comment: "Title shown in the empty-state overlay when a list fails to load due to an error."
+            ),
             body: error.localizedDescription,
             image: Image(systemName: "exclamationmark.triangle")
         )
@@ -83,10 +81,7 @@ struct ListStateModifier: ViewModifier {
     let state: ListViewState
 
     func body(content: Content) -> some View {
-        ZStack {
-            content
-            stateOverlay
-        }
+        content.overlay { stateOverlay }
     }
 
     @ViewBuilder
@@ -94,8 +89,6 @@ struct ListStateModifier: ViewModifier {
         switch state {
         case .content:
             EmptyView()
-        case .loading:
-            ListLoadingView()
         case .empty(let config):
             ListEmptyStateView(configuration: config)
         }
@@ -105,10 +98,6 @@ struct ListStateModifier: ViewModifier {
 // MARK: - View Extension
 
 extension View {
-    /// Overlays a loading or empty-state view on top of the receiver.
-    ///
-    ///     ListView(items: stops) { ListRow(title: $0.name) }
-    ///         .listState(viewModel.state)
     public func listState(_ state: ListViewState) -> some View {
         modifier(ListStateModifier(state: state))
     }

@@ -1,10 +1,12 @@
 //
-//  ListRowStyleValues.swift
+//  ListRowStyleConfig.swift
 //  OBAKit
 //
 //  Created by Mohamed Sliem on 07/05/2026.
 //
 
+import SwiftUI
+import OBAKitCore
 
 // MARK: - ListRowStyleValues
 
