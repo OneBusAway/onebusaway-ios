@@ -128,13 +128,13 @@ class NearbyStopsViewController: UIViewController,
             directions[stop.direction] = list
         }
 
-        let tapHandler = { [unowned self] (vm: StopViewModel) in
+        let tapHandler = { [unowned self] (vm: StopRowItem) in
             self.application.viewRouter.navigateTo(stopID: vm.stopID, from: self)
         }
 
         return directions.sorted(by: \.key).map { (direction, _) -> OBAListViewSection in
             let stops = directions[direction] ?? []
-            let cells = stops.map { StopViewModel(withStop: $0, showDirectionInTitle: false, onSelect: tapHandler, onDelete: nil) }
+            let cells = stops.map { StopRowItem(withStop: $0, showDirectionInTitle: false, onSelect: tapHandler, onDelete: nil) }
             let header = Formatters.adjectiveFormOfCardinalDirection(direction) ?? ""
             return OBAListViewSection(id: "\(direction.rawValue)", title: header, contents: cells)
         }

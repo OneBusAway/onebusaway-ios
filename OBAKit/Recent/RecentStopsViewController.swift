@@ -138,17 +138,17 @@ public class RecentStopsViewController: UIViewController,
             return nil
         }
 
-        let rows = stops.map { stop -> StopViewModel in
-            let onSelect: OBAListViewAction<StopViewModel> = { [unowned self] viewModel in
+        let rows = stops.map { stop -> StopRowItem in
+            let onSelect: OBAListViewAction<StopRowItem> = { [unowned self] viewModel in
                 self.application.viewRouter.navigateTo(stopID: viewModel.stopID, from: self)
             }
 
-            let onDelete: OBAListViewAction<StopViewModel> = { [unowned self] _ in
+            let onDelete: OBAListViewAction<StopRowItem> = { [unowned self] _ in
                 self.application.userDataStore.delete(recentStop: stop)
                 self.listView.applyData(animated: true)
             }
 
-            return StopViewModel(withStop: stop, onSelect: onSelect, onDelete: onDelete)
+            return StopRowItem(withStop: stop, onSelect: onSelect, onDelete: onDelete)
         }
 
         let title = application.userDataStore.alarms.count > 0 ? Strings.recentStops : nil
@@ -177,7 +177,7 @@ public class RecentStopsViewController: UIViewController,
 
     fileprivate var currentPreviewingViewController: UIViewController?
     public func contextMenu(_ listView: OBAListView, for item: AnyOBAListViewItem) -> OBAListViewMenuActions? {
-        guard let stopViewModel = item.as(StopViewModel.self) else { return nil }
+        guard let stopViewModel = item.as(StopRowItem.self) else { return nil }
 
         let previewProvider: OBAListViewMenuActions.PreviewProvider = { [unowned self] () -> UIViewController? in
             let stopVC = StopViewController(application: self.application, stopID: stopViewModel.stopID)

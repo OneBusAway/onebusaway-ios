@@ -337,7 +337,7 @@ class MapFloatingPanelController: VisualEffectViewController,
 
     fileprivate var currentPreviewingViewController: UIViewController?
     func contextMenu(_ listView: OBAListView, for item: AnyOBAListViewItem) -> OBAListViewMenuActions? {
-        guard let stopViewModel = item.as(StopViewModel.self) else { return nil }
+        guard let stopViewModel = item.as(StopRowItem.self) else { return nil }
 
         let previewProvider: OBAListViewMenuActions.PreviewProvider = { [unowned self] () -> UIViewController? in
             let stopVC = StopViewController(application: self.application, stopID: stopViewModel.stopID)
