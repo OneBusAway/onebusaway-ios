@@ -11,6 +11,7 @@
 
 import UIKit
 import MapKit
+import Combine
 import FloatingPanel
 import OBAKitCore
 import SwiftUI
@@ -63,6 +64,9 @@ class MapViewController: UIViewController,
         return application.mapRegionManager
     }
 
+    let viewModel: MapViewModel
+    private var cancellables = Set<AnyCancellable>()
+
     // MARK: - Surveys
 
     private var surveyDisplayManager: SurveyDisplayManager?
@@ -72,6 +76,7 @@ class MapViewController: UIViewController,
 
     public init(application: Application) {
         self.application = application
+        self.viewModel = MapViewModel(application: application)
 
         super.init(nibName: nil, bundle: nil)
 
@@ -154,6 +159,26 @@ class MapViewController: UIViewController,
         longPressGesture.delegate = self
         mapView.addGestureRecognizer(longPressGesture)
 
+        bindViewModel()
+    }
+
+    private func bindViewModel() {
+        viewModel.$weather
+            .receive(on: RunLoop.main)
+            .sink { [weak self] forecast in self?.forecast = forecast }
+            .store(in: &cancellables)
+
+        // EC6: Observe zoom-warning state from ViewModel so UIKit and future SwiftUI share the same source of truth.
+        viewModel.$showZoomWarning
+            .receive(on: RunLoop.main)
+            .sink { [weak self] showStatus in
+                guard let self else { return }
+                mapStatusView.configure(
+                    for: mapStatusView.state(for: application.locationService),
+                    zoomInStatus: showStatus
+                )
+            }
+            .store(in: &cancellables)
     }
 
     public override func viewWillAppear(_ animated: Bool) {
@@ -164,7 +189,7 @@ class MapViewController: UIViewController,
         // at different times. I think this expectation will become
         // unfounded when UIScene gets adopted in the app. TODO.
         application.mapRegionManager.mapViewDelegate = self
-        application.mapRegionManager.bookmarks = application.userDataStore.findBookmarks(in: application.currentRegion)
+        viewModel.reloadBookmarks()
 
         navigationController?.setNavigationBarHidden(true, animated: false)
 
@@ -176,7 +201,7 @@ class MapViewController: UIViewController,
     public override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
 
-        loadWeather()
+        viewModel.start()
         updateVoiceover()
         checkForMapSurvey()
     }
@@ -240,12 +265,10 @@ class MapViewController: UIViewController,
 
     // MARK: - Status View Handlers
 
-    private var isShowingZoomWarning = false
-
     private static let zoomInForStopsSpan = 0.01
 
     @objc private func handleMapStatusTap(_ sender: UITapGestureRecognizer) {
-        if isShowingZoomWarning {
+        if viewModel.showZoomWarning {
             didTapZoomInForStops()
         } else {
             didTapMapStatus(sender)
@@ -609,6 +632,9 @@ class MapViewController: UIViewController,
     }
 
     @objc func applicationDidBecomeActive(_ notification: NSNotification) {
+        // EC12: notify ViewModel so it can refresh data (e.g. weather) without UIKit imports.
+        viewModel.onAppBecameActive()
+
         guard
             let resignedActiveAt = resignedActiveAt,
             abs(resignedActiveAt.timeIntervalSinceNow) > 600
@@ -621,8 +647,7 @@ class MapViewController: UIViewController,
 
     @objc private func reloadBookmarkAnnotations() {
         DispatchQueue.main.async { [weak self] in
-            guard let self, let region = self.application.currentRegion else { return }
-            self.application.mapRegionManager.bookmarks = self.application.userDataStore.findBookmarks(in: region)
+            self?.viewModel.reloadBookmarks()
         }
     }
 
@@ -997,12 +1022,8 @@ class MapViewController: UIViewController,
     }
 
     @objc public func mapRegionManagerShowZoomInStatus(_ manager: MapRegionManager, showStatus: Bool) {
-        isShowingZoomWarning = showStatus
-
-        mapStatusView.configure(
-            for: mapStatusView.state(for: application.locationService),
-            zoomInStatus: showStatus
-        )
+        // EC6: Update ViewModel so both UIKit and future SwiftUI consumers share the same state.
+        viewModel.showZoomWarning = showStatus
     }
 
     // MARK: Loading Indicator
