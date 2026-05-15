@@ -8,6 +8,7 @@
 //
 
 import UIKit
+import Combine
 import CoreLocation
 import OBAKitCore
 import WidgetKit
@@ -17,7 +18,6 @@ import WidgetKit
 public class BookmarksViewController: UIViewController,
                                       AppContext,
                                       BookmarkEditorDelegate,
-                                      BookmarkDataDelegate,
                                       ManageBookmarksDelegate,
                                       ModalDelegate,
                                       OBAListViewDataSource,
@@ -25,6 +25,8 @@ public class BookmarksViewController: UIViewController,
                                       OBAListViewContextMenuDelegate {
 
     let application: Application
+    let viewModel: BookmarksViewModel
+    private var cancellables = Set<AnyCancellable>()
 
     // TODO: property wrapper??
     public var collapsedSections: Set<OBAListViewSection.ID> {
@@ -54,6 +56,7 @@ public class BookmarksViewController: UIViewController,
 
     public init(application: Application) {
         self.application = application
+        self.viewModel = BookmarksViewModel(application: application)
         super.init(nibName: nil, bundle: nil)
 
         title = OBALoc("bookmarks_controller.title", value: "Bookmarks", comment: "Title of the Bookmarks tab")
@@ -61,34 +64,15 @@ public class BookmarksViewController: UIViewController,
         tabBarItem.selectedImage = Icons.bookmarksSelectedTabIcon
 
         navigationItem.leftBarButtonItem = UIBarButtonItem(title: OBALoc("bookmarks_controller.groups_button_title", value: "Edit", comment: "Groups button title in Bookmarks controller"), style: .plain, target: self, action: #selector(manageGroups))
-
-        application.userDefaults.register(defaults: [
-            userDefaultsKeys.sortBookmarksByGroup.rawValue: true
-        ])
     }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
-    deinit {
-        dataLoader.cancelUpdates()
-    }
-
-    // MARK: - User Defaults
-
-    private enum userDefaultsKeys: String {
-        case sortBookmarksByGroup = "OBABookmarksController_SortBookmarksByGroup"
-    }
-
     private var sortBookmarksByGroup: Bool {
-        get {
-            application.userDefaults.bool(forKey: userDefaultsKeys.sortBookmarksByGroup.rawValue)
-        }
-        set {
-            application.userDefaults.setValue(newValue, forKey: userDefaultsKeys.sortBookmarksByGroup.rawValue)
-            listView.applyData(animated: false)
-        }
+        get { viewModel.sortByGroup }
+        set { viewModel.updateSortType(byGroup: newValue) }
     }
 
     // MARK: - UIViewController
@@ -105,8 +89,8 @@ public class BookmarksViewController: UIViewController,
         listView.pinToSuperview(.edges)
 
         rebuildSortMenu()
-
-        dataLoader.loadData()
+        bindViewModel()
+        viewModel.start()
     }
 
     public override func viewWillAppear(_ animated: Bool) {
@@ -128,7 +112,7 @@ public class BookmarksViewController: UIViewController,
 
         application.notificationCenter.removeObserver(self, name: UIApplication.didEnterBackgroundNotification, object: nil)
 
-        dataLoader.cancelUpdates()
+        viewModel.deactivate()
     }
 
     // MARK: - Sorting
@@ -168,7 +152,7 @@ public class BookmarksViewController: UIViewController,
     // MARK: - Refresh Control
 
     @objc private func refreshControlPulled() {
-        dataLoader.loadData()
+        viewModel.refresh()
         refreshControl.beginRefreshing()
         reloadWidget()
 
@@ -206,15 +190,10 @@ public class BookmarksViewController: UIViewController,
         let arrivalData = bookmarks
             .filter { $0.regionIdentifier == application.regionsService.currentRegion?.id }
             .compactMap { bookmark -> BookmarkArrivalViewModel? in
-                var arrDeps: [BookmarkArrivalViewModel.ArrivalDepartureShouldHighlightPair] = []
-
-                if let key = TripBookmarkKey(bookmark: bookmark) {
-                    let data = dataLoader.dataForKey(key)
-                    arrDeps = data.map { arrDep -> BookmarkArrivalViewModel.ArrivalDepartureShouldHighlightPair in
-                        return (arrDep, shouldHighlight(arrivalDeparture: arrDep))
-                    }
+                let deps = viewModel.arrivalDepartures(for: bookmark)
+                let arrDeps = deps.map { arrDep -> BookmarkArrivalViewModel.ArrivalDepartureShouldHighlightPair in
+                    return (arrDep, shouldHighlight(arrivalDeparture: arrDep))
                 }
-
                 return BookmarkArrivalViewModel(bookmark: bookmark, arrivalDepartures: arrDeps, onSelect: onSelectBookmark)
             }
 
@@ -315,7 +294,7 @@ public class BookmarksViewController: UIViewController,
             }
 
             // Delete bookmark
-            self.application.userDataStore.delete(bookmark: bookmark)
+            self.viewModel.deleteBookmark(bookmark)
             self.listView.applyData(animated: true)
         }
 
@@ -387,21 +366,30 @@ public class BookmarksViewController: UIViewController,
         listView.applyData(animated: false)
     }
 
-    // MARK: - Data Loading
+    // MARK: - ViewModel Binding
 
-    private lazy var dataLoader = BookmarkDataLoader(application: application, delegate: self)
+    private func bindViewModel() {
+        viewModel.$updateToken
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                listView.applyData(animated: false)
+                dataLoadFeedbackGenerator.dataLoad(.success)
+            }
+            .store(in: &cancellables)
 
-    public func dataLoaderDidUpdate(_ dataLoader: BookmarkDataLoader) {
-        listView.applyData(animated: false)
-
-        // TOOD: handle error cases. currently, this view is not notified of an error.
-        dataLoadFeedbackGenerator.dataLoad(.success)
+        viewModel.$sortByGroup
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.listView.applyData(animated: false)
+            }
+            .store(in: &cancellables)
     }
 
     // MARK: - Notifications
 
     @objc private func applicationEnteredBackground(note: Notification) {
-        dataLoader.cancelUpdates()
+        viewModel.deactivate()
     }
 
     // MARK: - Bookmark Groups

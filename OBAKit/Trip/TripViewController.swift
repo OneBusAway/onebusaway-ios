@@ -9,6 +9,7 @@
 
 import UIKit
 import MapKit
+import Combine
 import FloatingPanel
 import OBAKitCore
 
@@ -21,13 +22,16 @@ class TripViewController: UIViewController,
 
     public let application: Application
 
-    private(set) var tripConvertible: TripConvertible
+    let viewModel: TripViewModel
 
+    var tripConvertible: TripConvertible { viewModel.tripConvertible }
+
+    private var cancellables = Set<AnyCancellable>()
     private lazy var dataLoadFeedbackGenerator = DataLoadFeedbackGenerator(application: application)
 
     init(application: Application, tripConvertible: TripConvertible) {
         self.application = application
-        self.tripConvertible = tripConvertible
+        self.viewModel = TripViewModel(application: application, tripConvertible: tripConvertible)
 
         super.init(nibName: nil, bundle: nil)
 
@@ -36,7 +40,10 @@ class TripViewController: UIViewController,
 
     init(application: Application, arrivalDeparture: ArrivalDeparture) {
         self.application = application
-        self.tripConvertible = TripConvertible(arrivalDeparture: arrivalDeparture)
+        self.viewModel = TripViewModel(
+            application: application,
+            tripConvertible: TripConvertible(arrivalDeparture: arrivalDeparture)
+        )
 
         super.init(nibName: nil, bundle: nil)
 
@@ -45,11 +52,6 @@ class TripViewController: UIViewController,
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
-    }
-
-    deinit {
-        refreshTimer?.invalidate()
-        loadDataTask?.cancel()
     }
 
     private func registerTraitChangeCallback() {
@@ -84,7 +86,7 @@ class TripViewController: UIViewController,
         view.addSubview(mapView)
         mapView.pinToSuperview(.edges)
 
-        loadData(isProgrammatic: true)
+        bindViewModel()
 
         if !isBeingPreviewed {
             floatingPanel.addPanel(toParent: self)
@@ -100,7 +102,7 @@ class TripViewController: UIViewController,
 
         disableIdleTimer()
         beginUserActivity()
-        startRefreshTimer()
+        viewModel.start()
 
         setContentScrollView(tripDetailsController.listView, for: .bottom)
     }
@@ -113,8 +115,7 @@ class TripViewController: UIViewController,
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         enableIdleTimer()
-        refreshTimer?.invalidate()
-        refreshTimer = nil
+        viewModel.deactivate()
     }
 
     // MARK: - NSUserActivity
@@ -266,7 +267,8 @@ class TripViewController: UIViewController,
         }
     }
 
-    // MARK: - Trip Details Data
+    // MARK: - Map Data
+
     private var currentTripStatus: TripStatus? {
         didSet {
             guard let currentTripStatus = currentTripStatus else {
@@ -300,165 +302,79 @@ class TripViewController: UIViewController,
         vehicleAnnotationView = nil
     }
 
-    private func loadTripConvertible(isProgrammatic: Bool) async throws {
-        guard let apiService = application.apiService else {
-            Logger.error("API service unavailable in loadTripConvertible")
-            return
-        }
-
-        guard let arrivalDeparture = tripConvertible.arrivalDeparture else {
-            Logger.warn("No arrivalDeparture available for trip convertible refresh")
-            return
-        }
-
-        let newArrDep = try await apiService.getTripArrivalDepartureAtStop(
-            stopID: arrivalDeparture.stopID,
-            tripID: arrivalDeparture.tripID,
-            serviceDate: arrivalDeparture.serviceDate,
-            vehicleID: arrivalDeparture.vehicleID,
-            stopSequence: arrivalDeparture.stopSequence
-        ).entry
-
-        await MainActor.run {
-            self.tripConvertible = TripConvertible(arrivalDeparture: newArrDep)
-            self.tripDetailsController.tripConvertible = TripConvertible(arrivalDeparture: newArrDep)
-        }
-    }
-
-    private func loadTripDetails(isProgrammatic: Bool) async throws {
-        guard let apiService = application.apiService else {
-            Logger.error("API service unavailable in loadTripDetails")
-            return
-        }
-
-        // Let the user still look at data if there was already details from a previous request.
-        self.floatingPanel.surfaceView.grabberHandle.isHidden = self.tripDetailsController.tripDetails == nil
-
-        let trip = try await apiService.getTrip(tripID: tripConvertible.trip.id, vehicleID: tripConvertible.vehicleID, serviceDate: tripConvertible.serviceDate).entry
-
-        await MainActor.run {
-            self.tripDetailsController.tripDetails = trip
-
-            self.mapView.updateAnnotations(with: trip.stopTimes)
-
-            self.currentTripStatus = trip.status
-
-            // In cases where TripStatus.coordinates is (0,0), we don't want to show it.
-            var annotationsToShow = self.mapView.annotations.filter { !($0 is MKUserLocation) }
-            annotationsToShow.removeAll(where: { $0.coordinate.isNullIsland })
-
-            if !self.mapView.hasBeenTouched {
-                self.mapView.showAnnotations(annotationsToShow, animated: true)
-            }
-
-            if let arrivalDeparture = self.tripConvertible.arrivalDeparture {
-                let userDestinationStopTime = trip.stopTimes.filter { $0.stopID == arrivalDeparture.stopID }.first
-                self.selectedStopTime = userDestinationStopTime
-            }
-
-            self.floatingPanel.surfaceView.grabberHandle.isHidden = false
-        }
-    }
-
-    // MARK: - Map Data
-
-    private var routePolyline: MKPolyline?
-
-    private func loadMapPolyline(isProgrammatic: Bool) async throws {
-        guard
-            let apiService = application.apiService,
-            routePolyline == nil // No need to reload the polyline if we already have it
-        else {
-            return
-        }
-
-        let response = try await apiService.getShape(id: tripConvertible.trip.shapeID)
-        await MainActor.run {
-            guard let polyline = response.entry.polyline else {
-                return
-            }
-            self.routePolyline = polyline
-            self.mapView.addOverlay(polyline)
-            if !self.mapView.hasBeenTouched {
-                self.mapView.visibleMapRect = self.mapView.mapRectThatFits(polyline.boundingMapRect, edgePadding: UIEdgeInsets(top: 60, left: 20, bottom: 128, right: 20))
-            }
-        }
-    }
-
     // MARK: - Load Data
 
     @objc private func refresh(_ sender: Any) {
-        loadData(isProgrammatic: false)
+        viewModel.refresh()
     }
 
-    // MARK: - Refresh Timer
+    // MARK: - ViewModel Binding
 
-    /// Interval between automatic vehicle position refreshes.
-    /// Matches CurrentTripViewController's refresh interval.
-    private static let refreshInterval: TimeInterval = 20.0
+    private func bindViewModel() {
+        viewModel.$tripConvertible
+            .receive(on: RunLoop.main)
+            .sink { [weak self] convertible in
+                guard let self else { return }
+                tripDetailsController.tripConvertible = convertible
+                updateTitleView()
+            }
+            .store(in: &cancellables)
 
-    private var refreshTimer: Timer?
+        viewModel.$tripDetails
+            .receive(on: RunLoop.main)
+            .sink { [weak self] details in
+                guard let self else { return }
+                floatingPanel.surfaceView.grabberHandle.isHidden = details == nil
+                guard let details else { return }
+                tripDetailsController.tripDetails = details
+                mapView.updateAnnotations(with: details.stopTimes)
+                currentTripStatus = details.status
 
-    private func startRefreshTimer() {
-        refreshTimer?.invalidate()
-        refreshTimer = Timer.scheduledTimer(
-            withTimeInterval: Self.refreshInterval,
-            repeats: true
-        ) { [weak self] _ in
-            guard let self else { return }
-            // Skip refresh when VoiceOver is active to avoid
-            // disrupting screen reader users mid-navigation.
-            guard !UIAccessibility.isVoiceOverRunning else { return }
-            self.loadData(isProgrammatic: true)
-        }
-    }
-
-    private var loadDataTask: Task<Void, Never>?
-    private func loadData(isProgrammatic: Bool) {
-        if let loadDataTask {
-            loadDataTask.cancel()
-        }
-
-        loadDataTask = Task { [weak self] in
-            guard let self else { return }
-            self.navigationItem.rightBarButtonItem = self.activityIndicatorButton
-
-            do {
-                try await withThrowingTaskGroup(of: Void.self) { group in
-                    group.addTask { [weak self] in
-                        guard let self else { return }
-                        try await self.loadTripDetails(isProgrammatic: isProgrammatic)
-                    }
-
-                    group.addTask { [weak self] in
-                        guard let self else { return }
-                        try await self.loadTripConvertible(isProgrammatic: isProgrammatic)
-                    }
-
-                    group.addTask { [weak self] in
-                        guard let self else { return }
-                        try await self.loadMapPolyline(isProgrammatic: isProgrammatic)
-                    }
-
-                    try await group.waitForAll()
+                var annotationsToShow = mapView.annotations.filter { !($0 is MKUserLocation) }
+                annotationsToShow.removeAll(where: { $0.coordinate.isNullIsland })
+                if !mapView.hasBeenTouched {
+                    mapView.showAnnotations(annotationsToShow, animated: true)
                 }
 
-                await MainActor.run { [weak self] in
-                    self?.dataLoadFeedbackGenerator.dataLoad(.success)
-                }
-            } catch is CancellationError {
-                return
-            } catch {
-                await self.application.displayError(error)
-                await MainActor.run { [weak self] in
-                    self?.dataLoadFeedbackGenerator.dataLoad(.failed)
+                if let arrivalDeparture = tripConvertible.arrivalDeparture {
+                    selectedStopTime = details.stopTimes.filter { $0.stopID == arrivalDeparture.stopID }.first
                 }
             }
+            .store(in: &cancellables)
 
-            await MainActor.run { [weak self] in
-                self?.navigationItem.rightBarButtonItem = self?.reloadButton
+        viewModel.$routePolylineCoordinates
+            .receive(on: RunLoop.main)
+            .compactMap { $0 }
+            .sink { [weak self] coordinates in
+                guard let self else { return }
+                let polyline = MKPolyline(coordinates: coordinates, count: coordinates.count)
+                mapView.addOverlay(polyline)
+                if !mapView.hasBeenTouched {
+                    mapView.visibleMapRect = mapView.mapRectThatFits(
+                        polyline.boundingMapRect,
+                        edgePadding: UIEdgeInsets(top: 60, left: 20, bottom: 128, right: 20)
+                    )
+                }
             }
-        }
+            .store(in: &cancellables)
+
+        viewModel.$isLoading
+            .receive(on: RunLoop.main)
+            .sink { [weak self] loading in
+                guard let self else { return }
+                navigationItem.rightBarButtonItem = loading ? activityIndicatorButton : reloadButton
+            }
+            .store(in: &cancellables)
+
+        viewModel.$operationError
+            .receive(on: RunLoop.main)
+            .compactMap { $0 }
+            .sink { [weak self] error in
+                guard let self else { return }
+                dataLoadFeedbackGenerator.dataLoad(.failed)
+                Task { await self.application.displayError(error) }
+            }
+            .store(in: &cancellables)
     }
 
     // MARK: - Map View
