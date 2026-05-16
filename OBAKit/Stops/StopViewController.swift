@@ -78,6 +78,7 @@ public class StopViewController: UIViewController,
 
     let viewModel: StopViewModel
     private var cancellables = Set<AnyCancellable>()
+    private var firstLoad = true
 
     // MARK: - Forwarded Properties (external API compat)
 
@@ -195,27 +196,45 @@ public class StopViewController: UIViewController,
 
     private func bindViewModel() {
         viewModel.$stopArrivals
-            .receive(on: RunLoop.main)
             .sink { [weak self] arrivals in
-                guard let self else { return }
-                if arrivals != nil {
-                    self.listView.applyData(animated: false)
-                    self.configureTabBarButtons()
-                    self.beginUserActivity()
+                guard let self, let arrivals else { return }
+                if firstLoad {
+                    if pastDeparturesCollapsed {
+                        if viewModel.stopPreferences.sortType == .time {
+                            collapsedSections.insert(ListSections.pastArrivalDepartures(suffix: "all").sectionID)
+                        } else {
+                            let groups = arrivals.arrivalsAndDepartures.group(
+                                preferences: viewModel.stopPreferences,
+                                filter: viewModel.isListFiltered
+                            )
+                            for group in groups {
+                                collapsedSections.insert(ListSections.pastArrivalDepartures(suffix: group.route.id).sectionID)
+                            }
+                        }
+                    }
+                    firstLoad = false
                 }
+                listView.applyData(animated: false)
+                configureTabBarButtons()
+                beginUserActivity()
             }
             .store(in: &cancellables)
 
         viewModel.$stop
-            .receive(on: RunLoop.main)
-            .sink { [weak self] _ in
-                self?.listView.applyData(animated: false)
-                self?.configureTabBarButtons()
+            .sink { [weak self] stop in
+                guard let self else { return }
+                title = stop?.name ?? Strings.liveArrivals
+                listView.applyData(animated: false)
+                configureTabBarButtons()
             }
             .store(in: &cancellables)
 
+        viewModel.$surveysRefreshToken
+            .dropFirst()
+            .sink { [weak self] _ in self?.listView.applyData(animated: false) }
+            .store(in: &cancellables)
+
         viewModel.$stopPreferences
-            .receive(on: RunLoop.main)
             .sink { [weak self] _ in
                 self?.listView.applyData(animated: false)
                 self?.configureTabBarButtons()
@@ -223,7 +242,6 @@ public class StopViewController: UIViewController,
             .store(in: &cancellables)
 
         viewModel.$isListFiltered
-            .receive(on: RunLoop.main)
             .sink { [weak self] _ in
                 self?.listView.applyData(animated: false)
                 self?.configureTabBarButtons()
@@ -231,17 +249,14 @@ public class StopViewController: UIViewController,
             .store(in: &cancellables)
 
         viewModel.$operationError
-            .receive(on: RunLoop.main)
             .sink { [weak self] _ in self?.listView.applyData(animated: true) }
             .store(in: &cancellables)
 
         viewModel.$statusText
-            .receive(on: RunLoop.main)
             .sink { [weak self] text in self?.statusLabel.text = text }
             .store(in: &cancellables)
 
         viewModel.$isLoading
-            .receive(on: RunLoop.main)
             .sink { [weak self] loading in
                 if !loading { self?.refreshControl.endRefreshing() }
             }
@@ -249,7 +264,6 @@ public class StopViewController: UIViewController,
 
         // EC2: execute navigation intents published by the ViewModel so it never needs a VC reference.
         viewModel.$navigationIntent
-            .receive(on: RunLoop.main)
             .compactMap { $0 }
             .sink { [weak self] intent in
                 guard let self else { return }
@@ -450,7 +464,8 @@ public class StopViewController: UIViewController,
 
     fileprivate func locationMenu() -> UIMenu {
         let nearbyAction = UIAction(title: OBALoc("stops_controller.nearby_stops", value: "Nearby Stops", comment: "Title of the row that will show stops that are near this one."), image: UIImage(systemName: "location")) { [unowned self] _ in
-            let nearbyController = NearbyStopsViewController(coordinate: self.stop!.coordinate, application: self.application)
+            guard let coordinate = self.stop?.coordinate else { return }
+            let nearbyController = NearbyStopsViewController(coordinate: coordinate, application: self.application)
             self.application.viewRouter.navigate(to: nearbyController, from: self)
         }
 
@@ -1080,7 +1095,7 @@ public class StopViewController: UIViewController,
     }
 
     fileprivate var dataAttributionSection: OBAListViewSection {
-        let agencies = Formatters.formattedAgenciesForRoutes(self.stop!.routes)
+        let agencies = Formatters.formattedAgenciesForRoutes(self.stop?.routes ?? [])
         let dataAttributionStringFormat = OBALoc("stop_controller.data_attribution_format", value: "Data provided by %@", comment: "A string listing the data providers (agencies) for this stop's data. It contains one or more providers separated by commas. e.g. Data provided by King County Metro, Sound Transit")
 
         let dataDateRangeBeforeTime = Date().addingTimeInterval(Double(minutesBefore) * -60.0)
@@ -1342,7 +1357,6 @@ public class StopViewController: UIViewController,
     }
 
 }
-
 
 // MARK: - Transfer Helpers
 

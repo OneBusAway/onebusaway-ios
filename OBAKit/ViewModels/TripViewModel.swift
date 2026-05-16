@@ -37,6 +37,12 @@ class TripViewModel: ObservableObject {
     /// Non-nil when a network error occurred.
     @Published private(set) var operationError: Error?
 
+    // MARK: - Configuration
+
+    /// Set by the UI layer to gate programmatic auto-refreshes.
+    /// e.g. `viewModel.shouldSkipProgrammaticRefresh = { UIAccessibility.isVoiceOverRunning }`
+    var shouldSkipProgrammaticRefresh: (() -> Bool)?
+
     // MARK: - Private
 
     let application: Application
@@ -61,7 +67,7 @@ class TripViewModel: ObservableObject {
     /// Call from `viewWillAppear`.
     func start() {
         startRefreshTimer()
-        loadData(isProgrammatic: true)
+        loadData()
     }
 
     /// Call from `viewWillDisappear`.
@@ -73,12 +79,12 @@ class TripViewModel: ObservableObject {
     // MARK: - Refresh
 
     func refresh() {
-        loadData(isProgrammatic: false)
+        loadData()
     }
 
     // MARK: - Data Loading
 
-    func loadData(isProgrammatic: Bool) {
+    func loadData() {
         loadDataTask?.cancel()
         loadDataTask = Task { [weak self] in
             guard let self else { return }
@@ -87,15 +93,15 @@ class TripViewModel: ObservableObject {
                 try await withThrowingTaskGroup(of: Void.self) { group in
                     group.addTask { [weak self] in
                         guard let self else { return }
-                        try await self.loadTripDetails(isProgrammatic: isProgrammatic)
+                        try await self.loadTripDetails()
                     }
                     group.addTask { [weak self] in
                         guard let self else { return }
-                        try await self.loadTripConvertible(isProgrammatic: isProgrammatic)
+                        try await self.loadTripConvertible()
                     }
                     group.addTask { [weak self] in
                         guard let self else { return }
-                        try await self.loadMapPolyline(isProgrammatic: isProgrammatic)
+                        try await self.loadMapPolyline()
                     }
                     try await group.waitForAll()
                 }
@@ -109,7 +115,7 @@ class TripViewModel: ObservableObject {
         }
     }
 
-    private func loadTripConvertible(isProgrammatic: Bool) async throws {
+    private func loadTripConvertible() async throws {
         guard let apiService = application.apiService else { return }
         guard let arrivalDeparture = tripConvertible.arrivalDeparture else { return }
 
@@ -124,7 +130,7 @@ class TripViewModel: ObservableObject {
         tripConvertible = TripConvertible(arrivalDeparture: newArrDep)
     }
 
-    private func loadTripDetails(isProgrammatic: Bool) async throws {
+    private func loadTripDetails() async throws {
         guard let apiService = application.apiService else { return }
 
         let trip = try await apiService.getTrip(
@@ -136,7 +142,7 @@ class TripViewModel: ObservableObject {
         tripDetails = trip
     }
 
-    private func loadMapPolyline(isProgrammatic: Bool) async throws {
+    private func loadMapPolyline() async throws {
         guard let apiService = application.apiService,
               routePolylineCoordinates == nil else { return }
 
@@ -152,9 +158,9 @@ class TripViewModel: ObservableObject {
             withTimeInterval: Self.refreshInterval,
             repeats: true
         ) { [weak self] _ in
-            guard let self else { return }
+            guard let self, !(self.shouldSkipProgrammaticRefresh?() ?? false) else { return }
             Task { @MainActor in
-                self.loadData(isProgrammatic: true)
+                self.loadData()
             }
         }
     }

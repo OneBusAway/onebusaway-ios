@@ -311,8 +311,9 @@ class TripViewController: UIViewController,
     // MARK: - ViewModel Binding
 
     private func bindViewModel() {
+        viewModel.shouldSkipProgrammaticRefresh = { UIAccessibility.isVoiceOverRunning }
+
         viewModel.$tripConvertible
-            .receive(on: RunLoop.main)
             .sink { [weak self] convertible in
                 guard let self else { return }
                 tripDetailsController.tripConvertible = convertible
@@ -321,7 +322,6 @@ class TripViewController: UIViewController,
             .store(in: &cancellables)
 
         viewModel.$tripDetails
-            .receive(on: RunLoop.main)
             .sink { [weak self] details in
                 guard let self else { return }
                 floatingPanel.surfaceView.grabberHandle.isHidden = details == nil
@@ -343,7 +343,6 @@ class TripViewController: UIViewController,
             .store(in: &cancellables)
 
         viewModel.$routePolylineCoordinates
-            .receive(on: RunLoop.main)
             .compactMap { $0 }
             .sink { [weak self] coordinates in
                 guard let self else { return }
@@ -359,7 +358,6 @@ class TripViewController: UIViewController,
             .store(in: &cancellables)
 
         viewModel.$isLoading
-            .receive(on: RunLoop.main)
             .sink { [weak self] loading in
                 guard let self else { return }
                 navigationItem.rightBarButtonItem = loading ? activityIndicatorButton : reloadButton
@@ -367,7 +365,6 @@ class TripViewController: UIViewController,
             .store(in: &cancellables)
 
         viewModel.$operationError
-            .receive(on: RunLoop.main)
             .compactMap { $0 }
             .sink { [weak self] error in
                 guard let self else { return }

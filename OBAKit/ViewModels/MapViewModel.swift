@@ -10,6 +10,7 @@
 import Foundation
 import Combine
 import CoreLocation
+import MapKit
 import OBAKitCore
 
 /// Shared ViewModel for the main map screen.
@@ -18,10 +19,9 @@ import OBAKitCore
 /// future `NewMapView` (SwiftUI, via `@StateObject`).
 /// Contains no UIKit or SwiftUI imports.
 ///
-/// MapViewModel must subclass NSObject to adopt the @objc MapRegionDelegate
-/// and LocationServiceDelegate protocols (EdgeCase 6 in the implementation plan).
+/// Subclasses NSObject to adopt @objc delegate protocols (EC6).
 @MainActor
-class MapViewModel: NSObject, ObservableObject {
+class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
 
     // MARK: - Published State
 
@@ -34,6 +34,12 @@ class MapViewModel: NSObject, ObservableObject {
     /// `true` when the map is zoomed out too far to load stops.
     @Published var showZoomWarning = false
 
+    /// The currently selected base map type (standard vs. hybrid). Persisted by MapRegionManager.
+    @Published private(set) var mapType: MKMapType
+
+    /// The current location authorization status. Used by the UI to show/hide location controls.
+    @Published private(set) var locationAuthStatus: CLAuthorizationStatus
+
     // MARK: - Private
 
     let application: Application
@@ -42,7 +48,14 @@ class MapViewModel: NSObject, ObservableObject {
 
     init(application: Application) {
         self.application = application
+        self.mapType = application.mapRegionManager.userSelectedMapType
+        self.locationAuthStatus = application.locationService.authorizationStatus
         super.init()
+        application.locationService.addDelegate(self)
+    }
+
+    deinit {
+        application.locationService.removeDelegate(self)
     }
 
     // MARK: - Lifecycle
@@ -69,6 +82,15 @@ class MapViewModel: NSObject, ObservableObject {
         isLoadingWeather = false
     }
 
+    // MARK: - Map Type
+
+    /// Toggles between the standard and hybrid base map types and persists the selection.
+    func toggleMapType() {
+        let newType: MKMapType = application.mapRegionManager.userSelectedMapType == .mutedStandard ? .hybrid : .mutedStandard
+        application.mapRegionManager.userSelectedMapType = newType
+        mapType = newType
+    }
+
     // MARK: - Bookmarks
 
     func reloadBookmarks() {
@@ -84,4 +106,11 @@ class MapViewModel: NSObject, ObservableObject {
         Task { await loadWeather() }
     }
 
+    // MARK: - LocationServiceDelegate
+
+    nonisolated func locationService(_ service: LocationService, authorizationStatusChanged status: CLAuthorizationStatus) {
+        Task { @MainActor in
+            self.locationAuthStatus = status
+        }
+    }
 }

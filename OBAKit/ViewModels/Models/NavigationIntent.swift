@@ -16,6 +16,6 @@ enum NavigationIntent {
     case showStop(Stop)
     case showArrivalDeparture(ArrivalDeparture)
     case showAlert(TransitAlertDataListViewModel)
-    case showSchedule(StopID)
+    case showSchedule
     case showNearbyStops(CLLocationCoordinate2D)
 }

@@ -25,6 +25,9 @@ class StopViewModel: ObservableObject {
     /// The stop being displayed.
     @Published private(set) var stop: Stop?
 
+    /// Incremented after each successful survey fetch so the UI layer re-renders survey rows.
+    @Published private(set) var surveysRefreshToken: Int = 0
+
     /// The arrivals/departures fetched from the server.
     @Published private(set) var stopArrivals: StopArrivals?
 
@@ -132,7 +135,7 @@ class StopViewModel: ObservableObject {
 
     /// Fetches fresh arrivals/departures from the server.
     func refresh() async {
-        guard let apiService = application.apiService else { return }
+        guard !isLoading, let apiService = application.apiService else { return }
         isLoading = true
         do {
             let result = try await apiService.getArrivalsAndDeparturesForStop(
@@ -141,13 +144,16 @@ class StopViewModel: ObservableObject {
                 minutesAfter: minutesAfter
             ).entry
 
+            guard let loadedStop = result.stop else {
+                isLoading = false
+                return
+            }
             operationError = nil
             isBrokenBookmark = false
             lastUpdated = Date()
             updateStatus()
-            stopArrivals = result
-            let loadedStop = result.stop!
             self.stop = loadedStop
+            stopArrivals = result
             if let region = application.currentRegion {
                 recordRecentStop(loadedStop, region: region)
                 reportStopViewed(loadedStop)
@@ -155,6 +161,14 @@ class StopViewModel: ObservableObject {
 
             if result.arrivalsAndDepartures.isEmpty {
                 autoExtendWindowIfNeeded()
+            }
+
+            // fetchSurveys() is async, not throws — it handles errors internally.
+            // Incrementing the token always triggers a list re-render after the fetch completes.
+            Task { [weak self] in
+                guard let self else { return }
+                await self.application.surveyService.fetchSurveys()
+                self.surveysRefreshToken += 1
             }
         } catch APIError.requestNotFound {
             isBrokenBookmark = bookmarkContext != nil
@@ -213,6 +227,9 @@ class StopViewModel: ObservableObject {
             return
         }
         let additional: UInt = minutesAfter < 60 ? 60 : minutesAfter < 240 ? 60 : 120
+        // The spawned Task runs after the current refresh() scope yields and sets isLoading = false,
+        // so the guard !isLoading at the top of refresh() permits the follow-up load.
+        // If refresh() is ever refactored to yield before that assignment, auto-extension will silently stop working.
         Task { await loadMore(minutes: additional) }
     }
 

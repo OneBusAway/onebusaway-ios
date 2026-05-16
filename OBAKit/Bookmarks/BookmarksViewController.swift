@@ -370,16 +370,15 @@ public class BookmarksViewController: UIViewController,
 
     private func bindViewModel() {
         viewModel.$updateToken
-            .receive(on: RunLoop.main)
             .sink { [weak self] _ in
                 guard let self else { return }
                 listView.applyData(animated: false)
                 dataLoadFeedbackGenerator.dataLoad(.success)
+                reloadWidget()
             }
             .store(in: &cancellables)
 
         viewModel.$sortByGroup
-            .receive(on: RunLoop.main)
             .sink { [weak self] _ in
                 self?.listView.applyData(animated: false)
             }

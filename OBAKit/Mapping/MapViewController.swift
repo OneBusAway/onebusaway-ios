@@ -164,19 +164,33 @@ class MapViewController: UIViewController,
 
     private func bindViewModel() {
         viewModel.$weather
-            .receive(on: RunLoop.main)
             .sink { [weak self] forecast in self?.forecast = forecast }
             .store(in: &cancellables)
 
         // EC6: Observe zoom-warning state from ViewModel so UIKit and future SwiftUI share the same source of truth.
         viewModel.$showZoomWarning
-            .receive(on: RunLoop.main)
             .sink { [weak self] showStatus in
                 guard let self else { return }
                 mapStatusView.configure(
                     for: mapStatusView.state(for: application.locationService),
                     zoomInStatus: showStatus
                 )
+            }
+            .store(in: &cancellables)
+
+        viewModel.$mapType
+            .sink { [weak self] _ in
+                guard let self else { return }
+                setMapTypeButtonImage(toggleMapTypeButton)
+            }
+            .store(in: &cancellables)
+
+        viewModel.$locationAuthStatus
+            .sink { [weak self] _ in
+                guard let self else { return }
+                mapStatusView.configure(with: application.locationService)
+                locationButton.isHidden = !application.locationService.isLocationUseAuthorized
+                layoutMapMargins()
             }
             .store(in: &cancellables)
     }
@@ -604,13 +618,7 @@ class MapViewController: UIViewController,
     }()
 
     @objc private func toggleMapType() {
-        if application.mapRegionManager.userSelectedMapType == .mutedStandard {
-            application.mapRegionManager.userSelectedMapType = .hybrid
-        } else {
-            application.mapRegionManager.userSelectedMapType = .mutedStandard
-        }
-
-        setMapTypeButtonImage(toggleMapTypeButton)
+        viewModel.toggleMapType()
     }
 
     private func setMapTypeButtonImage(_ button: UIButton) {
@@ -1115,9 +1123,7 @@ class MapViewController: UIViewController,
     }
 
     public func locationService(_ service: LocationService, authorizationStatusChanged status: CLAuthorizationStatus) {
-        mapStatusView.configure(with: service)
-        layoutMapMargins()
-        locationButton.isHidden = !service.isLocationUseAuthorized
+        // Handled via viewModel.$locationAuthStatus binding in bindViewModel().
     }
 
     // MARK: - Context Menus
