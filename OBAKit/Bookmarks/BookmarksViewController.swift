@@ -121,13 +121,11 @@ public class BookmarksViewController: UIViewController,
         let groupTitle = OBALoc("bookmarks_controller.sort_menu.sort_by_group", value: "Sort by Group", comment: "A menu item that allows the user to sort their bookmarks into groups.")
         let groupSortAction = UIAction(title: groupTitle, image: UIImage(systemName: "folder")) { _ in
             self.sortBookmarksByGroup = true
-            self.rebuildSortMenu()
         }
 
         let distanceTitle = OBALoc("bookmarks_controller.sort_menu.sort_by_distance", value: "Sort by Distance", comment: "A menu item that allows the user to sort their bookmarks by distance from the user.")
         let distanceSortAction = UIAction(title: distanceTitle, image: UIImage(systemName: "location.circle")) { _ in
             self.sortBookmarksByGroup = false
-            self.rebuildSortMenu()
         }
 
         if self.sortBookmarksByGroup {
@@ -380,7 +378,11 @@ public class BookmarksViewController: UIViewController,
 
         viewModel.$sortByGroup
             .sink { [weak self] _ in
-                self?.listView.applyData(animated: false)
+                Task { @MainActor [weak self] in
+                    guard let self else { return }
+                    listView.applyData(animated: false)
+                    rebuildSortMenu()
+                }
             }
             .store(in: &cancellables)
     }

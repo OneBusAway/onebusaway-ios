@@ -236,15 +236,19 @@ public class StopViewController: UIViewController,
 
         viewModel.$stopPreferences
             .sink { [weak self] _ in
-                self?.listView.applyData(animated: false)
-                self?.configureTabBarButtons()
+                Task { @MainActor [weak self] in
+                    self?.listView.applyData(animated: false)
+                    self?.configureTabBarButtons()
+                }
             }
             .store(in: &cancellables)
 
         viewModel.$isListFiltered
             .sink { [weak self] _ in
-                self?.listView.applyData(animated: false)
-                self?.configureTabBarButtons()
+                Task { @MainActor [weak self] in
+                    self?.listView.applyData(animated: false)
+                    self?.configureTabBarButtons()
+                }
             }
             .store(in: &cancellables)
 
