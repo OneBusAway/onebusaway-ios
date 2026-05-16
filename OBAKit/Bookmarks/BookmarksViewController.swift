@@ -401,6 +401,7 @@ public class BookmarksViewController: UIViewController,
 private extension BookmarksViewController {
     func bindListUpdate() {
         viewModel.$updateToken
+            .dropFirst()
             .sink { [weak self] _ in
                 guard let self else { return }
                 listView.applyData(animated: false)

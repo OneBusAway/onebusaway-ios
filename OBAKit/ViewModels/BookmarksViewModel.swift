@@ -42,12 +42,9 @@ class BookmarksViewModel: NSObject, ObservableObject, BookmarkDataDelegate {
 
     init(application: Application) {
         self.application = application
+        application.userDefaults.register(defaults: [UserDefaultsKey.sortByGroup.rawValue: true])
         self.sortByGroup = application.userDefaults.bool(forKey: UserDefaultsKey.sortByGroup.rawValue)
         super.init()
-
-        application.userDefaults.register(defaults: [
-            UserDefaultsKey.sortByGroup.rawValue: true
-        ])
     }
 
     // MARK: - Lifecycle

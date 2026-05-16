@@ -403,6 +403,7 @@ class TripViewController: UIViewController,
         return renderer
     }
 
+    private var routeOverlay: MKPolyline?
     private var userLocationAnnotationView: PulsingAnnotationView?
 
     private var vehicleAnnotationView: PulsingAnnotationView?
@@ -515,7 +516,9 @@ private extension TripViewController {
             .compactMap { $0 }
             .sink { [weak self] coordinates in
                 guard let self else { return }
+                if let existing = routeOverlay { mapView.removeOverlay(existing) }
                 let polyline = MKPolyline(coordinates: coordinates, count: coordinates.count)
+                routeOverlay = polyline
                 mapView.addOverlay(polyline)
                 if !mapView.hasBeenTouched {
                     mapView.visibleMapRect = mapView.mapRectThatFits(

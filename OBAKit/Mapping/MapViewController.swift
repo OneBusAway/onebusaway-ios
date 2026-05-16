@@ -1150,19 +1150,14 @@ private extension MapViewController {
         viewModel.$showZoomWarning
             .sink { [weak self] showStatus in
                 guard let self else { return }
-                mapStatusView.configure(
-                    for: mapStatusView.state(for: application.locationService),
-                    zoomInStatus: showStatus
-                )
+                self.renderMapStatus()
             }
             .store(in: &cancellables)
 
         viewModel.$locationAuthStatus
             .sink { [weak self] _ in
                 guard let self else { return }
-                mapStatusView.configure(with: application.locationService)
-                locationButton.isHidden = !application.locationService.isLocationUseAuthorized
-                layoutMapMargins()
+                self.renderMapStatus()
             }
             .store(in: &cancellables)
     }
@@ -1174,6 +1169,13 @@ private extension MapViewController {
                 setMapTypeButtonImage(toggleMapTypeButton)
             }
             .store(in: &cancellables)
+    }
+
+    func renderMapStatus() {
+        let locationState = mapStatusView.state(for: application.locationService)
+        mapStatusView.configure(for: locationState, zoomInStatus: viewModel.showZoomWarning)
+        locationButton.isHidden = !application.locationService.isLocationUseAuthorized
+        layoutMapMargins()
     }
 }
 

@@ -46,7 +46,7 @@ class TripViewModel: ObservableObject {
     // MARK: - Private
 
     let application: Application
-    private static let refreshInterval: TimeInterval = 20.0
+    private static let refreshInterval: TimeInterval = 30.0
     private var refreshTimer: Timer?
     private var loadDataTask: Task<Void, Never>?
 
@@ -74,6 +74,9 @@ class TripViewModel: ObservableObject {
     func deactivate() {
         refreshTimer?.invalidate()
         refreshTimer = nil
+        loadDataTask?.cancel()
+        loadDataTask = nil
+        isLoading = false
     }
 
     // MARK: - Refresh

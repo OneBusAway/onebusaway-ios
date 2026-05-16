@@ -122,7 +122,6 @@ class MapFloatingPanelController: VisualEffectViewController,
         didSet {
             if inSearchMode {
                 application.analytics?.reportEvent(pageURL: "app://localhost/map", label: AnalyticsLabels.searchSelected, value: nil)
-                mapPanelDelegate?.mapPanelControllerDisplaySearch(self)
                 viewModel.enterSearchMode()
             }
             else {
