@@ -163,36 +163,9 @@ class MapViewController: UIViewController,
     }
 
     private func bindViewModel() {
-        viewModel.$weather
-            .sink { [weak self] forecast in self?.forecast = forecast }
-            .store(in: &cancellables)
-
-        // EC6: Observe zoom-warning state from ViewModel so UIKit and future SwiftUI share the same source of truth.
-        viewModel.$showZoomWarning
-            .sink { [weak self] showStatus in
-                guard let self else { return }
-                mapStatusView.configure(
-                    for: mapStatusView.state(for: application.locationService),
-                    zoomInStatus: showStatus
-                )
-            }
-            .store(in: &cancellables)
-
-        viewModel.$mapType
-            .sink { [weak self] _ in
-                guard let self else { return }
-                setMapTypeButtonImage(toggleMapTypeButton)
-            }
-            .store(in: &cancellables)
-
-        viewModel.$locationAuthStatus
-            .sink { [weak self] _ in
-                guard let self else { return }
-                mapStatusView.configure(with: application.locationService)
-                locationButton.isHidden = !application.locationService.isLocationUseAuthorized
-                layoutMapMargins()
-            }
-            .store(in: &cancellables)
+        bindWeather()
+        bindMapStatus()
+        bindMapType()
     }
 
     public override func viewWillAppear(_ animated: Bool) {
@@ -1161,6 +1134,47 @@ class MapViewController: UIViewController,
         }
     }
 
+}
+
+// MARK: - ViewModel Binding
+
+private extension MapViewController {
+    func bindWeather() {
+        viewModel.$weather
+            .sink { [weak self] forecast in self?.forecast = forecast }
+            .store(in: &cancellables)
+    }
+
+    func bindMapStatus() {
+        // EC6: Observe zoom-warning state from ViewModel so UIKit and future SwiftUI share the same source of truth.
+        viewModel.$showZoomWarning
+            .sink { [weak self] showStatus in
+                guard let self else { return }
+                mapStatusView.configure(
+                    for: mapStatusView.state(for: application.locationService),
+                    zoomInStatus: showStatus
+                )
+            }
+            .store(in: &cancellables)
+
+        viewModel.$locationAuthStatus
+            .sink { [weak self] _ in
+                guard let self else { return }
+                mapStatusView.configure(with: application.locationService)
+                locationButton.isHidden = !application.locationService.isLocationUseAuthorized
+                layoutMapMargins()
+            }
+            .store(in: &cancellables)
+    }
+
+    func bindMapType() {
+        viewModel.$mapType
+            .sink { [weak self] _ in
+                guard let self else { return }
+                setMapTypeButtonImage(toggleMapTypeButton)
+            }
+            .store(in: &cancellables)
+    }
 }
 
 // swiftlint:enable file_length

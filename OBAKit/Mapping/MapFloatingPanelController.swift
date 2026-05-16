@@ -203,28 +203,8 @@ class MapFloatingPanelController: VisualEffectViewController,
     }
 
     private func bindViewModel() {
-        viewModel.$nearbyStops
-            .sink { [weak self] _ in self?.nearbyStopsListViewController.updateList() }
-            .store(in: &cancellables)
-
-        viewModel.$highSeverityAlerts
-            .sink { [weak self] _ in self?.nearbyStopsListViewController.updateList() }
-            .store(in: &cancellables)
-
-        // EC11: map PanelDetent to FloatingPanel state so UIKit and future SwiftUI share the same source of truth.
-        viewModel.$requestedPanelDetent
-            .dropFirst()
-            .sink { [weak self] detent in
-                guard let self else { return }
-                let state: FloatingPanelState
-                switch detent {
-                case .tip:  state = .tip
-                case .half: state = .half
-                case .full: state = .full
-                }
-                mapPanelDelegate?.mapPanelController(self, moveTo: state, animated: true)
-            }
-            .store(in: &cancellables)
+        bindNearbyContent()
+        bindPanelDetent()
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -381,6 +361,37 @@ class MapFloatingPanelController: VisualEffectViewController,
         }
 
         return OBAListViewMenuActions(previewProvider: previewProvider, performPreviewAction: commitPreviewAction, contextMenuProvider: nil)
+    }
+}
+
+// MARK: - ViewModel Binding
+
+private extension MapFloatingPanelController {
+    func bindNearbyContent() {
+        viewModel.$nearbyStops
+            .sink { [weak self] _ in self?.nearbyStopsListViewController.updateList() }
+            .store(in: &cancellables)
+
+        viewModel.$highSeverityAlerts
+            .sink { [weak self] _ in self?.nearbyStopsListViewController.updateList() }
+            .store(in: &cancellables)
+    }
+
+    func bindPanelDetent() {
+        // EC11: map PanelDetent to FloatingPanel state so UIKit and future SwiftUI share the same source of truth.
+        viewModel.$requestedPanelDetent
+            .dropFirst()
+            .sink { [weak self] detent in
+                guard let self else { return }
+                let state: FloatingPanelState
+                switch detent {
+                case .tip:  state = .tip
+                case .half: state = .half
+                case .full: state = .full
+                }
+                mapPanelDelegate?.mapPanelController(self, moveTo: state, animated: true)
+            }
+            .store(in: &cancellables)
     }
 }
 

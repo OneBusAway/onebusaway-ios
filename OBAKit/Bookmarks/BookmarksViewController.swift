@@ -364,27 +364,9 @@ public class BookmarksViewController: UIViewController,
         listView.applyData(animated: false)
     }
 
-    // MARK: - ViewModel Binding
-
     private func bindViewModel() {
-        viewModel.$updateToken
-            .sink { [weak self] _ in
-                guard let self else { return }
-                listView.applyData(animated: false)
-                dataLoadFeedbackGenerator.dataLoad(.success)
-                reloadWidget()
-            }
-            .store(in: &cancellables)
-
-        viewModel.$sortByGroup
-            .sink { [weak self] _ in
-                Task { @MainActor [weak self] in
-                    guard let self else { return }
-                    listView.applyData(animated: false)
-                    rebuildSortMenu()
-                }
-            }
-            .store(in: &cancellables)
+        bindListUpdate()
+        bindSortPreference()
     }
 
     // MARK: - Notifications
@@ -411,5 +393,32 @@ public class BookmarksViewController: UIViewController,
 
     func manageBookmarksReloadData(_ controller: ManageBookmarksAndGroupsViewController) {
         listView.applyData(animated: false)
+    }
+}
+
+// MARK: - ViewModel Binding
+
+private extension BookmarksViewController {
+    func bindListUpdate() {
+        viewModel.$updateToken
+            .sink { [weak self] _ in
+                guard let self else { return }
+                listView.applyData(animated: false)
+                dataLoadFeedbackGenerator.dataLoad(.success)
+                reloadWidget()
+            }
+            .store(in: &cancellables)
+    }
+
+    func bindSortPreference() {
+        viewModel.$sortByGroup
+            .sink { [weak self] _ in
+                Task { @MainActor [weak self] in
+                    guard let self else { return }
+                    listView.applyData(animated: false)
+                    rebuildSortMenu()
+                }
+            }
+            .store(in: &cancellables)
     }
 }

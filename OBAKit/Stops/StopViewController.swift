@@ -195,99 +195,9 @@ public class StopViewController: UIViewController,
     }
 
     private func bindViewModel() {
-        viewModel.$stopArrivals
-            .sink { [weak self] arrivals in
-                guard let self, let arrivals else { return }
-                if firstLoad {
-                    if pastDeparturesCollapsed {
-                        if viewModel.stopPreferences.sortType == .time {
-                            collapsedSections.insert(ListSections.pastArrivalDepartures(suffix: "all").sectionID)
-                        } else {
-                            let groups = arrivals.arrivalsAndDepartures.group(
-                                preferences: viewModel.stopPreferences,
-                                filter: viewModel.isListFiltered
-                            )
-                            for group in groups {
-                                collapsedSections.insert(ListSections.pastArrivalDepartures(suffix: group.route.id).sectionID)
-                            }
-                        }
-                    }
-                    firstLoad = false
-                }
-                listView.applyData(animated: false)
-                configureTabBarButtons()
-                beginUserActivity()
-            }
-            .store(in: &cancellables)
-
-        viewModel.$stop
-            .sink { [weak self] stop in
-                guard let self else { return }
-                title = stop?.name ?? Strings.liveArrivals
-                listView.applyData(animated: false)
-                configureTabBarButtons()
-            }
-            .store(in: &cancellables)
-
-        viewModel.$surveysRefreshToken
-            .dropFirst()
-            .sink { [weak self] _ in self?.listView.applyData(animated: false) }
-            .store(in: &cancellables)
-
-        viewModel.$stopPreferences
-            .sink { [weak self] _ in
-                Task { @MainActor [weak self] in
-                    self?.listView.applyData(animated: false)
-                    self?.configureTabBarButtons()
-                }
-            }
-            .store(in: &cancellables)
-
-        viewModel.$isListFiltered
-            .sink { [weak self] _ in
-                Task { @MainActor [weak self] in
-                    self?.listView.applyData(animated: false)
-                    self?.configureTabBarButtons()
-                }
-            }
-            .store(in: &cancellables)
-
-        viewModel.$operationError
-            .sink { [weak self] _ in self?.listView.applyData(animated: true) }
-            .store(in: &cancellables)
-
-        viewModel.$statusText
-            .sink { [weak self] text in self?.statusLabel.text = text }
-            .store(in: &cancellables)
-
-        viewModel.$isLoading
-            .sink { [weak self] loading in
-                if !loading { self?.refreshControl.endRefreshing() }
-            }
-            .store(in: &cancellables)
-
-        // EC2: execute navigation intents published by the ViewModel so it never needs a VC reference.
-        viewModel.$navigationIntent
-            .compactMap { $0 }
-            .sink { [weak self] intent in
-                guard let self else { return }
-                switch intent {
-                case .showStop(let stop):
-                    application.viewRouter.navigateTo(stop: stop, from: self)
-                case .showArrivalDeparture(let arrDep):
-                    application.viewRouter.navigateTo(arrivalDeparture: arrDep, from: self)
-                case .showAlert(let alertVM):
-                    application.viewRouter.navigateTo(alert: alertVM.transitAlert, from: self)
-                case .showSchedule:
-                    let scheduleVC = ScheduleForStopViewController(stopID: stopID, application: application)
-                    present(scheduleVC, animated: true)
-                case .showNearbyStops(let coordinate):
-                    let nearbyVC = NearbyStopsViewController(coordinate: coordinate, application: application)
-                    application.viewRouter.navigate(to: nearbyVC, from: self)
-                }
-                viewModel.navigationIntent = nil
-            }
-            .store(in: &cancellables)
+        bindListData()
+        bindLoadingState()
+        bindNavigationIntents()
     }
 
     public override func viewWillAppear(_ animated: Bool) {
@@ -1360,6 +1270,110 @@ public class StopViewController: UIViewController,
         inPreviewMode = false
     }
 
+}
+
+// MARK: - ViewModel Binding
+
+private extension StopViewController {
+    func bindListData() {
+        viewModel.$stopArrivals
+            .sink { [weak self] arrivals in
+                guard let self, let arrivals else { return }
+                if firstLoad {
+                    if pastDeparturesCollapsed {
+                        if viewModel.stopPreferences.sortType == .time {
+                            collapsedSections.insert(ListSections.pastArrivalDepartures(suffix: "all").sectionID)
+                        } else {
+                            let groups = arrivals.arrivalsAndDepartures.group(
+                                preferences: viewModel.stopPreferences,
+                                filter: viewModel.isListFiltered
+                            )
+                            for group in groups {
+                                collapsedSections.insert(ListSections.pastArrivalDepartures(suffix: group.route.id).sectionID)
+                            }
+                        }
+                    }
+                    firstLoad = false
+                }
+                listView.applyData(animated: false)
+                configureTabBarButtons()
+                beginUserActivity()
+            }
+            .store(in: &cancellables)
+
+        viewModel.$stop
+            .sink { [weak self] stop in
+                guard let self else { return }
+                title = stop?.name ?? Strings.liveArrivals
+                listView.applyData(animated: false)
+                configureTabBarButtons()
+            }
+            .store(in: &cancellables)
+
+        viewModel.$surveysRefreshToken
+            .dropFirst()
+            .sink { [weak self] _ in self?.listView.applyData(animated: false) }
+            .store(in: &cancellables)
+
+        viewModel.$stopPreferences
+            .sink { [weak self] _ in
+                Task { @MainActor [weak self] in
+                    self?.listView.applyData(animated: false)
+                    self?.configureTabBarButtons()
+                }
+            }
+            .store(in: &cancellables)
+
+        viewModel.$isListFiltered
+            .sink { [weak self] _ in
+                Task { @MainActor [weak self] in
+                    self?.listView.applyData(animated: false)
+                    self?.configureTabBarButtons()
+                }
+            }
+            .store(in: &cancellables)
+    }
+
+    func bindLoadingState() {
+        viewModel.$operationError
+            .sink { [weak self] _ in self?.listView.applyData(animated: true) }
+            .store(in: &cancellables)
+
+        viewModel.$statusText
+            .sink { [weak self] text in self?.statusLabel.text = text }
+            .store(in: &cancellables)
+
+        viewModel.$isLoading
+            .sink { [weak self] loading in
+                if !loading { self?.refreshControl.endRefreshing() }
+            }
+            .store(in: &cancellables)
+    }
+
+    func bindNavigationIntents() {
+        // EC2: execute navigation intents published by the ViewModel so it never needs a VC reference.
+        viewModel.$navigationIntent
+            .compactMap { $0 }
+            .sink { [weak self] intent in
+                guard let self else { return }
+                switch intent {
+                case .showStop(let stop):
+                    application.viewRouter.navigateTo(stop: stop, from: self)
+                case .showArrivalDeparture(let arrDep):
+                    application.viewRouter.navigateTo(arrivalDeparture: arrDep, from: self)
+                case .showAlert(let alertVM):
+                    application.viewRouter.navigateTo(alert: alertVM.transitAlert, from: self)
+                case .showSchedule:
+                    let scheduleVC = ScheduleForStopViewController(stopID: stopID, application: application)
+                    present(scheduleVC, animated: true)
+                case .showNearbyStops(let coordinate):
+                    let nearbyVC = NearbyStopsViewController(coordinate: coordinate, application: application)
+                    application.viewRouter.navigate(to: nearbyVC, from: self)
+                }
+                viewModel.navigationIntent = nil
+            }
+            .store(in: &cancellables)
+    }
 }
 
 // MARK: - Transfer Helpers

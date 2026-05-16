@@ -308,70 +308,11 @@ class TripViewController: UIViewController,
         viewModel.refresh()
     }
 
-    // MARK: - ViewModel Binding
-
     private func bindViewModel() {
         viewModel.shouldSkipProgrammaticRefresh = { UIAccessibility.isVoiceOverRunning }
-
-        viewModel.$tripConvertible
-            .sink { [weak self] convertible in
-                guard let self else { return }
-                tripDetailsController.tripConvertible = convertible
-                updateTitleView()
-            }
-            .store(in: &cancellables)
-
-        viewModel.$tripDetails
-            .sink { [weak self] details in
-                guard let self else { return }
-                floatingPanel.surfaceView.grabberHandle.isHidden = details == nil
-                guard let details else { return }
-                tripDetailsController.tripDetails = details
-                mapView.updateAnnotations(with: details.stopTimes)
-                currentTripStatus = details.status
-
-                var annotationsToShow = mapView.annotations.filter { !($0 is MKUserLocation) }
-                annotationsToShow.removeAll(where: { $0.coordinate.isNullIsland })
-                if !mapView.hasBeenTouched {
-                    mapView.showAnnotations(annotationsToShow, animated: true)
-                }
-
-                if let arrivalDeparture = tripConvertible.arrivalDeparture {
-                    selectedStopTime = details.stopTimes.filter { $0.stopID == arrivalDeparture.stopID }.first
-                }
-            }
-            .store(in: &cancellables)
-
-        viewModel.$routePolylineCoordinates
-            .compactMap { $0 }
-            .sink { [weak self] coordinates in
-                guard let self else { return }
-                let polyline = MKPolyline(coordinates: coordinates, count: coordinates.count)
-                mapView.addOverlay(polyline)
-                if !mapView.hasBeenTouched {
-                    mapView.visibleMapRect = mapView.mapRectThatFits(
-                        polyline.boundingMapRect,
-                        edgePadding: UIEdgeInsets(top: 60, left: 20, bottom: 128, right: 20)
-                    )
-                }
-            }
-            .store(in: &cancellables)
-
-        viewModel.$isLoading
-            .sink { [weak self] loading in
-                guard let self else { return }
-                navigationItem.rightBarButtonItem = loading ? activityIndicatorButton : reloadButton
-            }
-            .store(in: &cancellables)
-
-        viewModel.$operationError
-            .compactMap { $0 }
-            .sink { [weak self] error in
-                guard let self else { return }
-                dataLoadFeedbackGenerator.dataLoad(.failed)
-                Task { await self.application.displayError(error) }
-            }
-            .store(in: &cancellables)
+        bindTripContent()
+        bindRouteOverlay()
+        bindLoadingState()
     }
 
     // MARK: - Map View
@@ -533,4 +474,74 @@ class TripViewController: UIViewController,
         }
     }
     private var isFirstStopTimeLoad = true
+}
+
+// MARK: - ViewModel Binding
+
+private extension TripViewController {
+    func bindTripContent() {
+        viewModel.$tripConvertible
+            .sink { [weak self] convertible in
+                guard let self else { return }
+                tripDetailsController.tripConvertible = convertible
+                updateTitleView()
+            }
+            .store(in: &cancellables)
+
+        viewModel.$tripDetails
+            .sink { [weak self] details in
+                guard let self else { return }
+                floatingPanel.surfaceView.grabberHandle.isHidden = details == nil
+                guard let details else { return }
+                tripDetailsController.tripDetails = details
+                mapView.updateAnnotations(with: details.stopTimes)
+                currentTripStatus = details.status
+
+                var annotationsToShow = mapView.annotations.filter { !($0 is MKUserLocation) }
+                annotationsToShow.removeAll(where: { $0.coordinate.isNullIsland })
+                if !mapView.hasBeenTouched {
+                    mapView.showAnnotations(annotationsToShow, animated: true)
+                }
+
+                if let arrivalDeparture = tripConvertible.arrivalDeparture {
+                    selectedStopTime = details.stopTimes.filter { $0.stopID == arrivalDeparture.stopID }.first
+                }
+            }
+            .store(in: &cancellables)
+    }
+
+    func bindRouteOverlay() {
+        viewModel.$routePolylineCoordinates
+            .compactMap { $0 }
+            .sink { [weak self] coordinates in
+                guard let self else { return }
+                let polyline = MKPolyline(coordinates: coordinates, count: coordinates.count)
+                mapView.addOverlay(polyline)
+                if !mapView.hasBeenTouched {
+                    mapView.visibleMapRect = mapView.mapRectThatFits(
+                        polyline.boundingMapRect,
+                        edgePadding: UIEdgeInsets(top: 60, left: 20, bottom: 128, right: 20)
+                    )
+                }
+            }
+            .store(in: &cancellables)
+    }
+
+    func bindLoadingState() {
+        viewModel.$isLoading
+            .sink { [weak self] loading in
+                guard let self else { return }
+                navigationItem.rightBarButtonItem = loading ? activityIndicatorButton : reloadButton
+            }
+            .store(in: &cancellables)
+
+        viewModel.$operationError
+            .compactMap { $0 }
+            .sink { [weak self] error in
+                guard let self else { return }
+                dataLoadFeedbackGenerator.dataLoad(.failed)
+                Task { await self.application.displayError(error) }
+            }
+            .store(in: &cancellables)
+    }
 }
