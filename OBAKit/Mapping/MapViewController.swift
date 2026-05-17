@@ -1148,7 +1148,7 @@ private extension MapViewController {
     func bindMapStatus() {
         // EC6: Observe zoom-warning state from ViewModel so UIKit and future SwiftUI share the same source of truth.
         viewModel.$showZoomWarning
-            .sink { [weak self] showStatus in
+            .sink { [weak self] _  in
                 guard let self else { return }
                 self.renderMapStatus()
             }

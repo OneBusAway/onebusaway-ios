@@ -90,13 +90,14 @@ public class BookmarksViewController: UIViewController,
 
         rebuildSortMenu()
         bindViewModel()
-        viewModel.start()
     }
 
     public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        viewModel.start()
 
         application.notificationCenter.addObserver(self, selector: #selector(applicationEnteredBackground), name: UIApplication.didEnterBackgroundNotification, object: nil)
+        application.notificationCenter.addObserver(self, selector: #selector(applicationWillEnterForeground), name: UIApplication.willEnterForegroundNotification, object: nil)
 
         if application.userDataStore.bookmarks.count == 0 {
             refreshControl.removeFromSuperview()
@@ -111,6 +112,7 @@ public class BookmarksViewController: UIViewController,
         super.viewWillDisappear(animated)
 
         application.notificationCenter.removeObserver(self, name: UIApplication.didEnterBackgroundNotification, object: nil)
+        application.notificationCenter.removeObserver(self, name: UIApplication.willEnterForegroundNotification, object: nil)
 
         viewModel.deactivate()
     }
@@ -152,7 +154,6 @@ public class BookmarksViewController: UIViewController,
     @objc private func refreshControlPulled() {
         viewModel.refresh()
         refreshControl.beginRefreshing()
-        reloadWidget()
 
         Timer.scheduledTimer(withTimeInterval: 2.0, repeats: false) { [weak self] _ in
             guard let self = self else { return }
@@ -373,6 +374,10 @@ public class BookmarksViewController: UIViewController,
 
     @objc private func applicationEnteredBackground(note: Notification) {
         viewModel.deactivate()
+    }
+
+    @objc private func applicationWillEnterForeground() {
+        viewModel.start()
     }
 
     // MARK: - Bookmark Groups

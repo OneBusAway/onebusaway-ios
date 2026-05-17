@@ -171,6 +171,7 @@ class StopViewModel: ObservableObject {
                 self.surveysRefreshToken += 1
             }
         } catch APIError.requestNotFound {
+            operationError = nil
             isBrokenBookmark = bookmarkContext != nil
         } catch {
             operationError = error
@@ -217,7 +218,13 @@ class StopViewModel: ObservableObject {
     // MARK: - Private Helpers
 
     private func loadMore(minutes: UInt) async {
-        minutesAfter += minutes
+        let cappedMinutes = min(minutesAfter + minutes, 720)
+        minutesAfter = cappedMinutes
+
+        if cappedMinutes >= 720 {
+            isLoadMoreExhausted = true
+        }
+
         await refresh()
     }
 
@@ -230,7 +237,9 @@ class StopViewModel: ObservableObject {
         // The spawned Task runs after the current refresh() scope yields and sets isLoading = false,
         // so the guard !isLoading at the top of refresh() permits the follow-up load.
         // If refresh() is ever refactored to yield before that assignment, auto-extension will silently stop working.
-        Task { await loadMore(minutes: additional) }
+        Task { [weak self] in
+            await self?.loadMore(minutes: additional)
+        }
     }
 
     private func recordRecentStop(_ stop: Stop, region: Region) {
@@ -295,7 +304,9 @@ class StopViewModel: ObservableObject {
     private func startStatusTimer() {
         guard statusTimer == nil else { return }
         statusTimer = Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { [weak self] _ in
-            self?.updateStatus()
+            Task { @MainActor [weak self] in
+                self?.updateStatus()
+            }
         }
     }
 
