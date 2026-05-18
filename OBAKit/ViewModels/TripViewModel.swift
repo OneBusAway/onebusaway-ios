@@ -161,8 +161,8 @@ class TripViewModel: ObservableObject {
             withTimeInterval: Self.refreshInterval,
             repeats: true
         ) { [weak self] _ in
-            guard let self, !(self.shouldSkipProgrammaticRefresh?() ?? false) else { return }
-            Task { @MainActor in
+            Task { @MainActor [weak self] in
+                guard let self, !(self.shouldSkipProgrammaticRefresh?() ?? false) else { return }
                 self.loadData()
             }
         }

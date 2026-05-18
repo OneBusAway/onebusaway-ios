@@ -418,6 +418,7 @@ private extension BookmarksViewController {
 
     func bindSortPreference() {
         viewModel.$sortByGroup
+            .dropFirst()
             .sink { [weak self] _ in
                 Task { @MainActor [weak self] in
                     guard let self else { return }

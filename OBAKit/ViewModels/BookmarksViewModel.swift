@@ -89,8 +89,8 @@ class BookmarksViewModel: NSObject, ObservableObject, BookmarkDataDelegate {
     // MARK: - BookmarkDataDelegate
 
     nonisolated func dataLoaderDidUpdate(_ dataLoader: BookmarkDataLoader) {
-        Task { @MainActor in
-            self.updateToken += 1
+        Task { @MainActor [weak self] in
+            self?.updateToken += 1
         }
     }
 }

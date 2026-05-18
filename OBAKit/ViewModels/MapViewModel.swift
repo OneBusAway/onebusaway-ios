@@ -63,7 +63,7 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
     /// Call from `viewDidAppear` / `.task`.
     func start() {
         reloadBookmarks()
-        Task { await loadWeather() }
+        Task { [weak self] in await self?.loadWeather() }
     }
 
     /// Call from `viewWillDisappear` / `.onDisappear`.
@@ -103,7 +103,7 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
     /// Call when the app becomes active after a background stint.
     /// Re-fetches weather so the display stays fresh without relying on UIKit notification names.
     func onAppBecameActive() {
-        Task { await loadWeather() }
+        Task { [weak self] in await self?.loadWeather() }
     }
 
     // MARK: - LocationServiceDelegate
