@@ -19,7 +19,6 @@ protocol MapPanelDelegate: NSObjectProtocol {
     func mapPanelController(_ controller: MapFloatingPanelController, didSelectStop stopID: Stop.ID)
     func mapPanelController(_ controller: MapFloatingPanelController, didSelectMapItem mapItem: MKMapItem)
     func mapPanelControllerDidChangeChildViewController(_ controller: MapFloatingPanelController)
-    func mapPanelControllerDisplaySearch(_ controller: MapFloatingPanelController)
     func mapPanelController(_ controller: MapFloatingPanelController, moveTo state: FloatingPanelState, animated: Bool)
 }
 

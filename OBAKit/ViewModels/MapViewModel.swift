@@ -19,7 +19,11 @@ import OBAKitCore
 /// future `NewMapView` (SwiftUI, via `@StateObject`).
 /// Contains no UIKit or SwiftUI imports.
 ///
-/// Subclasses NSObject to adopt @objc delegate protocols (EC6).
+/// Subclasses NSObject so it can adopt `LocationServiceDelegate`, which is
+/// `@objc` (declared in OBAKitCore for legacy Obj-C interop). Other map
+/// delegates (`MapRegionDelegate`, `MapPanelDelegate`) intentionally stay
+/// on `MapViewController` because their callbacks are UIKit/router-shaped,
+/// not state-shaped.
 @MainActor
 class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
 
@@ -78,6 +82,7 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
             weather = try await apiService.getWeather()
         } catch {
             weather = nil
+            Logger.error("Failed to load weather: \(error.localizedDescription)")
         }
         isLoadingWeather = false
     }

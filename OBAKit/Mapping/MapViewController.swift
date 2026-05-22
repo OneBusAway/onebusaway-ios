@@ -391,22 +391,6 @@ class MapViewController: UIViewController,
         }
     }
 
-    private func loadWeather() {
-        guard let apiService = application.obacoService else { return }
-
-        Task {
-            do {
-                let forecast = try await apiService.getWeather()
-                await MainActor.run {
-                    self.forecast = forecast
-                }
-            } catch {
-                weatherButton.isHidden = true
-                Logger.error(error.localizedDescription)
-            }
-        }
-    }
-
     // MARK: - Long Press Gesture
 
     @objc private func handleLongPress(_ gesture: UILongPressGestureRecognizer) {
@@ -861,10 +845,6 @@ class MapViewController: UIViewController,
 
         mapRegionManager.mapView.setCenter(mapDestination, animated: animated)
         displayMapItemController(mapItem)
-    }
-
-    func mapPanelControllerDisplaySearch(_ controller: MapFloatingPanelController) {
-        floatingPanel.move(to: .full, animated: true)
     }
 
     func mapPanelControllerDidChangeChildViewController(_ controller: MapFloatingPanelController) {
