@@ -998,6 +998,14 @@ public class StopViewController: UIViewController,
             items.append(ErrorCaptionItem(error: error, regionName: application.currentRegionName).typeErased)
         }
 
+        // Suppress the Load More affordance once auto-extend has walked the
+        // window to the 12 h cap — tapping the button at that point would just
+        // re-fetch the same window. The existing $stopArrivals sink rebuilds
+        // the list when this flag flips, so no extra subscription is needed.
+        guard !viewModel.isLoadMoreExhausted else {
+            return items
+        }
+
         let loadMoreButton = MessageButtonItem(asLoadMoreButtonWithID: UUID().uuidString, showActivityIndicatorOnSelect: true) { [weak self] _ in
             self?.shouldScrollToBottomOfArrivalsDeparuresOnDataLoad = true
             self?.loadMoreDepartures()

@@ -57,13 +57,9 @@ public class BookmarkDataLoader: NSObject {
 
     public func cancelUpdates() {
         timer?.invalidate()
-
-        for op in operations {
-            op.cancel()
-        }
+        // In-flight per-bookmark Tasks are not stored; they're allowed to finish
+        // but their completion is gated on a batch ID so stale writes become no-ops.
     }
-
-    private var operations = [Operation]()
 
     public func loadData() {
         cancelUpdates()
@@ -100,6 +96,11 @@ public class BookmarkDataLoader: NSObject {
                 let stopArrivals = try await apiService.getArrivalsAndDeparturesForStop(id: bookmark.stopID, minutesBefore: 0, minutesAfter: 60).entry
 
                 await MainActor.run {
+                    // Skip stale completions: a newer batch has already started, so
+                    // writing this fetch's data would overwrite fresher results and
+                    // fire dataLoaderDidUpdate with stale state for the consumer.
+                    guard batchID == self.currentBatchID else { return }
+
                     let keysAndDeps = stopArrivals.arrivalsAndDepartures.tripKeyGroupedElements
                     for (key, deps) in keysAndDeps {
                         self.tripBookmarkKeys[key] = deps

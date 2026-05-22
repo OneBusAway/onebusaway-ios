@@ -407,26 +407,30 @@ public class BookmarksViewController: UIViewController,
 
 private extension BookmarksViewController {
     func bindListUpdate() {
+        // Per-bookmark fetch completions: rebuild the list so each row's arrival
+        // times update as soon as that bookmark's data lands.
         viewModel.didUpdate
             .sink { [weak self] _ in
-                guard let self else { return }
-                listView.applyData(animated: false)
-                dataLoadFeedbackGenerator.dataLoad(.success)
-                reloadWidget()
+                self?.listView.applyData(animated: false)
             }
             .store(in: &cancellables)
     }
 
-    /// Ends the refresh-control spinner when the data loader reports its batch finished.
-    /// Only acts while `isUserRefreshing` is set, so background 30 s auto-refreshes don't
-    /// drive the spinner.
+    /// Reacts to the data loader's batch-boundary signal. Ends the user-pull spinner
+    /// and fires the once-per-batch side effects (haptic pulse, widget reload) — these
+    /// belong here rather than in `didUpdate`, which fires once per per-bookmark fetch
+    /// and would multiply the side effects by the bookmark count.
     func bindLoadingState() {
         viewModel.$isLoading
             .filter { !$0 }
             .sink { [weak self] _ in
-                guard let self, isUserRefreshing else { return }
-                refreshControl.endRefreshing()
-                isUserRefreshing = false
+                guard let self else { return }
+                if isUserRefreshing {
+                    refreshControl.endRefreshing()
+                    isUserRefreshing = false
+                }
+                dataLoadFeedbackGenerator.dataLoad(.success)
+                reloadWidget()
             }
             .store(in: &cancellables)
     }
