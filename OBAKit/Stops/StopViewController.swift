@@ -197,7 +197,6 @@ public class StopViewController: UIViewController,
     private func bindViewModel() {
         bindListData()
         bindLoadingState()
-        bindNavigationIntents()
     }
 
     public override func viewWillAppear(_ animated: Bool) {
@@ -1310,8 +1309,7 @@ private extension StopViewController {
             }
             .store(in: &cancellables)
 
-        viewModel.$surveysRefreshToken
-            .dropFirst()
+        viewModel.surveysDidRefresh
             .sink { [weak self] _ in self?.listView.applyData(animated: false) }
             .store(in: &cancellables)
 
@@ -1350,30 +1348,6 @@ private extension StopViewController {
             .store(in: &cancellables)
     }
 
-    func bindNavigationIntents() {
-        // EC2: execute navigation intents published by the ViewModel so it never needs a VC reference.
-        viewModel.$navigationIntent
-            .compactMap { $0 }
-            .sink { [weak self] intent in
-                guard let self else { return }
-                switch intent {
-                case .showStop(let stop):
-                    application.viewRouter.navigateTo(stop: stop, from: self)
-                case .showArrivalDeparture(let arrDep):
-                    application.viewRouter.navigateTo(arrivalDeparture: arrDep, from: self)
-                case .showAlert(let alertVM):
-                    application.viewRouter.navigateTo(alert: alertVM.transitAlert, from: self)
-                case .showSchedule:
-                    let scheduleVC = ScheduleForStopViewController(stopID: stopID, application: application)
-                    present(scheduleVC, animated: true)
-                case .showNearbyStops(let coordinate):
-                    let nearbyVC = NearbyStopsViewController(coordinate: coordinate, application: application)
-                    application.viewRouter.navigate(to: nearbyVC, from: self)
-                }
-                viewModel.navigationIntent = nil
-            }
-            .store(in: &cancellables)
-    }
 }
 
 // MARK: - Transfer Helpers

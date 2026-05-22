@@ -23,8 +23,11 @@ class BookmarksViewModel: NSObject, ObservableObject, BookmarkDataDelegate {
 
     // MARK: - Published State
 
-    /// Incremented each time arrival data is refreshed. Observers call `arrivalDepartures(for:)` to rebuild their list.
-    @Published private(set) var updateToken: Int = 0
+    /// Fires each time arrival data is refreshed. Observers call `arrivalDepartures(for:)` to rebuild their list.
+    var didUpdate: AnyPublisher<Void, Never> {
+        didUpdateSubject.eraseToAnyPublisher()
+    }
+    private let didUpdateSubject = PassthroughSubject<Void, Never>()
 
     /// `true` when the user has chosen to sort bookmarks by group (vs. by distance).
     @Published var sortByGroup: Bool
@@ -90,7 +93,7 @@ class BookmarksViewModel: NSObject, ObservableObject, BookmarkDataDelegate {
 
     nonisolated func dataLoaderDidUpdate(_ dataLoader: BookmarkDataLoader) {
         Task { @MainActor [weak self] in
-            self?.updateToken += 1
+            self?.didUpdateSubject.send()
         }
     }
 }

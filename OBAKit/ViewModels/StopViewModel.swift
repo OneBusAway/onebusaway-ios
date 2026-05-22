@@ -25,8 +25,11 @@ class StopViewModel: ObservableObject {
     /// The stop being displayed.
     @Published private(set) var stop: Stop?
 
-    /// Incremented after each successful survey fetch so the UI layer re-renders survey rows.
-    @Published private(set) var surveysRefreshToken: Int = 0
+    /// Fires after each successful survey fetch so the UI layer re-renders survey rows.
+    var surveysDidRefresh: AnyPublisher<Void, Never> {
+        surveysDidRefreshSubject.eraseToAnyPublisher()
+    }
+    private let surveysDidRefreshSubject = PassthroughSubject<Void, Never>()
 
     /// The arrivals/departures fetched from the server.
     @Published private(set) var stopArrivals: StopArrivals?
@@ -61,12 +64,6 @@ class StopViewModel: ObservableObject {
     /// The time window has been extended at least once and there are still no arrivals,
     /// so auto-extension is exhausted (capped at 12 h).
     @Published private(set) var isLoadMoreExhausted = false
-
-    // MARK: - Navigation Intent
-
-    /// Published when the ViewModel wants the UI layer to navigate somewhere.
-    /// Consumers must reset this to `nil` after handling.
-    @Published var navigationIntent: NavigationIntent?
 
     // MARK: - Init Context
 
@@ -164,11 +161,11 @@ class StopViewModel: ObservableObject {
             }
 
             // fetchSurveys() is async, not throws — it handles errors internally.
-            // Incrementing the token always triggers a list re-render after the fetch completes.
+            // Emitting on the subject always triggers a list re-render after the fetch completes.
             Task { [weak self] in
                 guard let self else { return }
                 await self.application.surveyService.fetchSurveys()
-                self.surveysRefreshToken += 1
+                self.surveysDidRefreshSubject.send()
             }
         } catch APIError.requestNotFound {
             operationError = nil
