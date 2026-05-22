@@ -29,13 +29,18 @@ class BookmarksViewModel: NSObject, ObservableObject, BookmarkDataDelegate {
     }
     private let didUpdateSubject = PassthroughSubject<Void, Never>()
 
+    /// `true` while the data loader has any per-bookmark fetch in flight.
+    /// Drives spinner UI in consumers; transitions are reported by the loader
+    /// once per batch boundary (not once per individual fetch).
+    @Published private(set) var isLoading: Bool = false
+
     /// `true` when the user has chosen to sort bookmarks by group (vs. by distance).
     @Published var sortByGroup: Bool
 
     // MARK: - Private
 
     let application: Application
-    private lazy var dataLoader = BookmarkDataLoader(application: application, delegate: self)
+    private var dataLoader: BookmarkDataLoader!
 
     private enum UserDefaultsKey: String {
         case sortByGroup = "OBABookmarksController_SortBookmarksByGroup"
@@ -48,6 +53,11 @@ class BookmarksViewModel: NSObject, ObservableObject, BookmarkDataDelegate {
         application.userDefaults.register(defaults: [UserDefaultsKey.sortByGroup.rawValue: true])
         self.sortByGroup = application.userDefaults.bool(forKey: UserDefaultsKey.sortByGroup.rawValue)
         super.init()
+        self.dataLoader = BookmarkDataLoader(application: application, delegate: self)
+    }
+
+    deinit {
+        dataLoader?.cancelUpdates()
     }
 
     // MARK: - Lifecycle
@@ -92,8 +102,17 @@ class BookmarksViewModel: NSObject, ObservableObject, BookmarkDataDelegate {
     // MARK: - BookmarkDataDelegate
 
     nonisolated func dataLoaderDidUpdate(_ dataLoader: BookmarkDataLoader) {
-        Task { @MainActor [weak self] in
-            self?.didUpdateSubject.send()
+        // BookmarkDataLoader dispatches this callback inside `await MainActor.run`, so
+        // we're already on the main actor. `assumeIsolated` confirms that without the
+        // round-trip Task hop. Traps loudly if the loader's contract ever changes.
+        MainActor.assumeIsolated {
+            didUpdateSubject.send()
+        }
+    }
+
+    nonisolated func dataLoader(_ dataLoader: BookmarkDataLoader, isLoadingChanged isLoading: Bool) {
+        MainActor.assumeIsolated {
+            self.isLoading = isLoading
         }
     }
 }

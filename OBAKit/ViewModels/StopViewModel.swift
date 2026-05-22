@@ -183,7 +183,13 @@ class StopViewModel: ObservableObject {
         isBrokenBookmark = false
         lastUpdated = Date()
         updateStatus()
-        self.stop = stop
+        // Guard the @Published re-emit. The same VM is bound to a single stopID for
+        // its lifetime, so `stop` only meaningfully changes when the server returns
+        // new routes/wheelchair info — re-emitting on every refresh would re-run
+        // the VC's title/applyData/configureTabBarButtons sink for no reason.
+        if self.stop != stop {
+            self.stop = stop
+        }
         stopArrivals = arrivals
     }
 

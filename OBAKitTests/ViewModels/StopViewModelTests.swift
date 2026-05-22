@@ -184,6 +184,36 @@ class StopViewModelTests: OBATestCase {
         expect(viewModel.isListFiltered).to(beFalse())
     }
 
+    // MARK: - $stop re-emit guard
+
+    /// `$stop` must not re-emit across refreshes when the underlying value is unchanged.
+    /// Re-emission would re-run the VC's `applyData` + `configureTabBarButtons` + title
+    /// assignment for no reason on every 30 s refresh cycle.
+    @MainActor
+    func test_stop_doesNotReEmitWhenUnchangedAcrossRefreshes() async {
+        let dataLoader = MockDataLoader(testName: name)
+        let analytics = AnalyticsMock()
+        let app = createApplication(dataLoader: dataLoader, analytics: analytics)
+
+        let viewModel = StopViewModel(application: app, stopID: testStopID)
+
+        var emissions = 0
+        let cancellable = viewModel.$stop.sink { _ in emissions += 1 }
+        defer { cancellable.cancel() }
+
+        await viewModel.refresh()
+        let afterFirstRefresh = emissions
+
+        await viewModel.refresh()
+        await viewModel.refresh()
+
+        // Baseline: @Published delivers the current value on subscription (nil),
+        // plus the first real assignment in refresh() — so afterFirstRefresh is the
+        // expected steady state. Subsequent refreshes with the same stop must not
+        // increase the count.
+        expect(emissions) == afterFirstRefresh
+    }
+
     // MARK: - shouldRefresh threshold
 
     /// `shouldRefresh` returns `true` when no successful fetch has happened yet, and `false`

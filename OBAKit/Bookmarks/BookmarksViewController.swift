@@ -151,14 +151,15 @@ public class BookmarksViewController: UIViewController,
 
     // MARK: - Refresh Control
 
-    @objc private func refreshControlPulled() {
-        viewModel.refresh()
-        refreshControl.beginRefreshing()
+    /// `true` when the user pulled to refresh and the spinner is currently driven by that
+    /// gesture. Auto-refreshes (the 30 s timer) leave this `false`, so the refresh control
+    /// only animates for explicit user pulls.
+    private var isUserRefreshing = false
 
-        Timer.scheduledTimer(withTimeInterval: 2.0, repeats: false) { [weak self] _ in
-            guard let self = self else { return }
-            self.refreshControl.endRefreshing()
-        }
+    @objc private func refreshControlPulled() {
+        isUserRefreshing = true
+        refreshControl.beginRefreshing()
+        viewModel.refresh()
     }
 
     private lazy var refreshControl: UIRefreshControl = {
@@ -368,6 +369,7 @@ public class BookmarksViewController: UIViewController,
     private func bindViewModel() {
         bindListUpdate()
         bindSortPreference()
+        bindLoadingState()
     }
 
     // MARK: - Notifications
@@ -411,6 +413,20 @@ private extension BookmarksViewController {
                 listView.applyData(animated: false)
                 dataLoadFeedbackGenerator.dataLoad(.success)
                 reloadWidget()
+            }
+            .store(in: &cancellables)
+    }
+
+    /// Ends the refresh-control spinner when the data loader reports its batch finished.
+    /// Only acts while `isUserRefreshing` is set, so background 30 s auto-refreshes don't
+    /// drive the spinner.
+    func bindLoadingState() {
+        viewModel.$isLoading
+            .filter { !$0 }
+            .sink { [weak self] _ in
+                guard let self, isUserRefreshing else { return }
+                refreshControl.endRefreshing()
+                isUserRefreshing = false
             }
             .store(in: &cancellables)
     }

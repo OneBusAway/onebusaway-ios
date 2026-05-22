@@ -101,4 +101,36 @@ class BookmarksViewModelTests: OBATestCase {
         expect(viewModel.sortByGroup).to(beFalse())
         expect(self.userDefaults.bool(forKey: self.sortByGroupKey)).to(beFalse())
     }
+
+    // MARK: - isLoading
+
+    /// `isLoading` starts `false` before any refresh.
+    @MainActor
+    func test_isLoading_defaultsToFalse() {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader)
+
+        let viewModel = BookmarksViewModel(application: app)
+
+        expect(viewModel.isLoading).to(beFalse())
+    }
+
+    /// A refresh that finds no eligible bookmarks must not leave `isLoading` stuck on `true`.
+    /// `beginBatch(count: 0)` is the zero-fetch edge case in `BookmarkDataLoader` — the
+    /// loader still has to report a clean `false` transition so consumer UI can recover.
+    @MainActor
+    func test_isLoading_remainsFalseWhenNoBookmarksToLoad() async {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader)
+
+        let viewModel = BookmarksViewModel(application: app)
+        // userDataStore has zero bookmarks in this test's fresh UserDefaults suite.
+
+        viewModel.refresh()
+        // beginBatch is dispatched via `Task { @MainActor }` inside loadData() —
+        // yield enough times for it to run and emit the delegate callback.
+        for _ in 0..<5 { await Task.yield() }
+
+        expect(viewModel.isLoading).to(beFalse())
+    }
 }
