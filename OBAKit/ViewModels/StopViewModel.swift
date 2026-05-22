@@ -85,6 +85,10 @@ class StopViewModel: ObservableObject {
     private var refreshTimer: Timer?
     private var statusTimer: Timer?
 
+    /// Gates one-shot work that should run only on the first successful fetch per VM lifetime:
+    /// analytics, recent-stops recording, and the "all routes hidden" filter invariant.
+    private var hasPerformedInitialStopSetup = false
+
     // MARK: - Init
 
     init(
@@ -131,9 +135,18 @@ class StopViewModel: ObservableObject {
     // MARK: - Data Loading
 
     /// Fetches fresh arrivals/departures from the server.
+    ///
+    /// When the response is empty and the time window has room to grow, `refresh()`
+    /// recurses linearly via `loadMore(minutes:)` after clearing `isLoading`, walking
+    /// the window upward until arrivals appear or the 12 h cap is hit. The recursion
+    /// is intentionally in-scope so the `!isLoading` ordering is expressed in code,
+    /// not in a comment.
     func refresh() async {
         guard !isLoading, let apiService = application.apiService else { return }
         isLoading = true
+
+        var pendingExtensionMinutes: UInt?
+
         do {
             let result = try await apiService.getArrivalsAndDeparturesForStop(
                 id: stopID,
@@ -141,31 +154,15 @@ class StopViewModel: ObservableObject {
                 minutesAfter: minutesAfter
             ).entry
 
-            guard let loadedStop = result.stop else {
-                isLoading = false
-                return
-            }
-            operationError = nil
-            isBrokenBookmark = false
-            lastUpdated = Date()
-            updateStatus()
-            self.stop = loadedStop
-            stopArrivals = result
-            if let region = application.currentRegion {
-                recordRecentStop(loadedStop, region: region)
-                reportStopViewed(loadedStop)
-            }
+            if let loadedStop = result.stop {
+                applySuccessfulFetch(stop: loadedStop, arrivals: result)
+                performInitialStopSetupIfNeeded(for: loadedStop)
 
-            if result.arrivalsAndDepartures.isEmpty {
-                autoExtendWindowIfNeeded()
-            }
+                if result.arrivalsAndDepartures.isEmpty {
+                    pendingExtensionMinutes = pendingAutoExtensionAmount()
+                }
 
-            // fetchSurveys() is async, not throws — it handles errors internally.
-            // Emitting on the subject always triggers a list re-render after the fetch completes.
-            Task { [weak self] in
-                guard let self else { return }
-                await self.application.surveyService.fetchSurveys()
-                self.surveysDidRefreshSubject.send()
+                refreshSurveys()
             }
         } catch APIError.requestNotFound {
             operationError = nil
@@ -173,7 +170,46 @@ class StopViewModel: ObservableObject {
         } catch {
             operationError = error
         }
+
         isLoading = false
+
+        if let additionalMinutes = pendingExtensionMinutes {
+            await loadMore(minutes: additionalMinutes)
+        }
+    }
+
+    private func applySuccessfulFetch(stop: Stop, arrivals: StopArrivals) {
+        operationError = nil
+        isBrokenBookmark = false
+        lastUpdated = Date()
+        updateStatus()
+        self.stop = stop
+        stopArrivals = arrivals
+    }
+
+    /// Runs exactly once per VM lifetime on the first successful fetch:
+    /// records the stop in recents, fires the `stop_viewed` analytics event, and
+    /// re-enforces the "all routes hidden → drop the filter" invariant so a
+    /// returning user doesn't land on an empty list.
+    private func performInitialStopSetupIfNeeded(for stop: Stop) {
+        guard !hasPerformedInitialStopSetup else { return }
+        hasPerformedInitialStopSetup = true
+
+        if let region = application.currentRegion {
+            recordRecentStop(stop, region: region)
+            reportStopViewed(stop)
+        }
+        disableFilterIfAllRoutesHidden()
+    }
+
+    private func refreshSurveys() {
+        // fetchSurveys() is async, not throws — it handles errors internally.
+        // Emitting on the subject always triggers a list re-render after the fetch completes.
+        Task { [weak self] in
+            guard let self else { return }
+            await self.application.surveyService.fetchSurveys()
+            self.surveysDidRefreshSubject.send()
+        }
     }
 
     /// Extends the time window and reloads data. Call when the user taps "Load More".
@@ -225,18 +261,15 @@ class StopViewModel: ObservableObject {
         await refresh()
     }
 
-    private func autoExtendWindowIfNeeded() {
+    /// Returns the next time-window increment for empty-result auto-extension,
+    /// or `nil` if the window is already at the 12 h cap. Flips
+    /// `isLoadMoreExhausted` when the cap is reached.
+    private func pendingAutoExtensionAmount() -> UInt? {
         guard minutesAfter < 720 else {
             isLoadMoreExhausted = true
-            return
+            return nil
         }
-        let additional: UInt = minutesAfter < 60 ? 60 : minutesAfter < 240 ? 60 : 120
-        // The spawned Task runs after the current refresh() scope yields and sets isLoading = false,
-        // so the guard !isLoading at the top of refresh() permits the follow-up load.
-        // If refresh() is ever refactored to yield before that assignment, auto-extension will silently stop working.
-        Task { [weak self] in
-            await self?.loadMore(minutes: additional)
-        }
+        return minutesAfter < 60 ? 60 : minutesAfter < 240 ? 60 : 120
     }
 
     private func recordRecentStop(_ stop: Stop, region: Region) {
@@ -279,9 +312,9 @@ class StopViewModel: ObservableObject {
     private func startAutoRefresh() {
         guard refreshTimer == nil else { return }
         refreshTimer = Timer.scheduledTimer(withTimeInterval: StopViewModel.timerInterval, repeats: true) { [weak self] _ in
-            guard let self else { return }
-            Task { @MainActor in
-                if self.shouldRefresh { await self.refresh() }
+            Task { @MainActor [weak self] in
+                guard let self, self.shouldRefresh else { return }
+                await self.refresh()
             }
         }
     }
@@ -291,7 +324,9 @@ class StopViewModel: ObservableObject {
         refreshTimer = nil
     }
 
-    private var shouldRefresh: Bool {
+    /// Exposed (rather than `private`) so tests can assert the threshold behavior
+    /// without spinning the auto-refresh timer.
+    var shouldRefresh: Bool {
         guard let lastUpdated else { return true }
         return abs(lastUpdated.timeIntervalSinceNow) > StopViewModel.refreshThreshold
     }
