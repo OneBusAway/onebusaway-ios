@@ -93,21 +93,18 @@ class TripViewModel: ObservableObject {
             guard let self else { return }
             isLoading = true
             do {
-                try await withThrowingTaskGroup(of: Void.self) { group in
-                    group.addTask { [weak self] in
-                        guard let self else { return }
-                        try await self.loadTripDetails()
-                    }
-                    group.addTask { [weak self] in
-                        guard let self else { return }
-                        try await self.loadTripConvertible()
-                    }
-                    group.addTask { [weak self] in
-                        guard let self else { return }
-                        try await self.loadMapPolyline()
-                    }
-                    try await group.waitForAll()
-                }
+                async let convertible = fetchTripConvertible()
+                async let details = fetchTripDetails()
+                async let polyline = fetchMapPolyline()
+
+                // `try await` rethrows the first failure and cancels the sibling
+                // async-lets. No @Published state has been mutated up to this point.
+                let (newConvertible, newDetails, newPolyline) = try await (convertible, details, polyline)
+
+                // All three fetches succeeded — apply atomically.
+                if let newConvertible { tripConvertible = newConvertible }
+                if let newDetails { tripDetails = newDetails }
+                if let newPolyline { routePolylineCoordinates = newPolyline }
                 operationError = nil
             } catch is CancellationError {
                 return
@@ -118,9 +115,9 @@ class TripViewModel: ObservableObject {
         }
     }
 
-    private func loadTripConvertible() async throws {
-        guard let apiService = application.apiService else { return }
-        guard let arrivalDeparture = tripConvertible.arrivalDeparture else { return }
+    private func fetchTripConvertible() async throws -> TripConvertible? {
+        guard let apiService = application.apiService,
+              let arrivalDeparture = tripConvertible.arrivalDeparture else { return nil }
 
         let newArrDep = try await apiService.getTripArrivalDepartureAtStop(
             stopID: arrivalDeparture.stopID,
@@ -130,27 +127,25 @@ class TripViewModel: ObservableObject {
             stopSequence: arrivalDeparture.stopSequence
         ).entry
 
-        tripConvertible = TripConvertible(arrivalDeparture: newArrDep)
+        return TripConvertible(arrivalDeparture: newArrDep)
     }
 
-    private func loadTripDetails() async throws {
-        guard let apiService = application.apiService else { return }
+    private func fetchTripDetails() async throws -> TripDetails? {
+        guard let apiService = application.apiService else { return nil }
 
-        let trip = try await apiService.getTrip(
+        return try await apiService.getTrip(
             tripID: tripConvertible.trip.id,
             vehicleID: tripConvertible.vehicleID,
             serviceDate: tripConvertible.serviceDate
         ).entry
-
-        tripDetails = trip
     }
 
-    private func loadMapPolyline() async throws {
+    private func fetchMapPolyline() async throws -> [CLLocationCoordinate2D]? {
         guard let apiService = application.apiService,
-              routePolylineCoordinates == nil else { return }
+              routePolylineCoordinates == nil else { return nil }
 
         let response = try await apiService.getShape(id: tripConvertible.trip.shapeID)
-        routePolylineCoordinates = Polyline(encodedPolyline: response.entry.points).coordinates
+        return Polyline(encodedPolyline: response.entry.points).coordinates
     }
 
     // MARK: - Refresh Timer
