@@ -107,6 +107,44 @@ class MapPanelViewModelTests: OBATestCase {
         expect(viewModel.highSeverityAlerts).to(beEmpty())
     }
 
+    /// `refreshAlerts()` reflects non-empty store state and maps every qualifying alert.
+    /// Injects a recent high-severity alert directly, bypassing the network fetch so
+    /// the test is not sensitive to fixture timestamp decay.
+    @MainActor
+    func test_refreshAlerts_nonEmptyStore() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader)
+
+        // Build a high-severity alert with a start time of "now" so it passes the
+        // 8-hour recency filter in `recentHighSeverityAlerts`.
+        let agencies = try Fixtures.loadRESTAPIPayload(type: [AgencyWithCoverage].self, fileName: "agencies_with_coverage.json")
+        let agency = try XCTUnwrap(agencies.first)
+
+        var period = TransitRealtime_TimeRange()
+        period.start = UInt64(Date().timeIntervalSince1970)
+
+        var entitySelector = TransitRealtime_EntitySelector()
+        entitySelector.agencyID = agency.agencyID
+
+        var transitAlert = TransitRealtime_Alert()
+        transitAlert.severityLevel = .warning
+        transitAlert.informedEntity = [entitySelector]
+        transitAlert.activePeriod = [period]
+
+        var feedEntity = TransitRealtime_FeedEntity()
+        feedEntity.id = "test-recent-high-severity"
+        feedEntity.alert = transitAlert
+
+        let agencyAlert = try AgencyAlert(feedEntity: feedEntity, agency: agency)
+        app.alertsStore.insertAlerts([agencyAlert])
+
+        let viewModel = MapPanelViewModel(application: app)
+        viewModel.refreshAlerts()
+
+        expect(viewModel.highSeverityAlerts.count) == 1
+        expect(viewModel.highSeverityAlerts.count) == app.alertsStore.recentHighSeverityAlerts.count
+    }
+
     // MARK: - Search Mode → Panel Detent
 
     /// `enterSearchMode()` requests the full detent; `exitSearchMode()` returns to the tip.

@@ -40,7 +40,7 @@ class MapPanelViewModel: ObservableObject {
 
     // MARK: - Private
 
-    let application: Application
+    private let application: Application
 
     // MARK: - Init
 

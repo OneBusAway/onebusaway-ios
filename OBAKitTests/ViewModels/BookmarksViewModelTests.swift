@@ -9,6 +9,7 @@
 
 import XCTest
 import Nimble
+import Combine
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -132,5 +133,73 @@ class BookmarksViewModelTests: OBATestCase {
         for _ in 0..<5 { await Task.yield() }
 
         expect(viewModel.isLoading).to(beFalse())
+    }
+
+    // MARK: - lastRefreshHadError
+
+    /// A failed batch sets `lastRefreshHadError` to `true`; a subsequent clean batch resets it.
+    ///
+    /// Regression test for the `lastBatchHadError` → `lastRefreshHadError` plumbing added in
+    /// `BookmarkDataLoader` and `BookmarksViewModel`. Requires a region-eligible trip bookmark so
+    /// the loader dispatches a real per-bookmark fetch that can fail.
+    @MainActor
+    func test_refresh_setsAndResetsLastRefreshHadError() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader)
+
+        // Add a region-eligible trip bookmark so the loader dispatches one fetch.
+        let stopArrivals = try Fixtures.loadRESTAPIPayload(
+            type: StopArrivals.self,
+            fileName: "arrivals-and-departures-for-stop-1_10914.json"
+        )
+        let arrivalDep = try XCTUnwrap(stopArrivals.arrivalsAndDepartures.first)
+        let bookmark = Bookmark(
+            name: "Route 49",
+            regionIdentifier: pugetSoundRegionIdentifier,
+            arrivalDeparture: arrivalDep
+        )
+        app.userDataStore.add(bookmark, to: nil)
+
+        // Stub the arrivals endpoint to return an error.
+        dataLoader.mock(response: MockDataResponse(
+            data: nil, urlResponse: nil,
+            error: URLError(.badServerResponse)
+        ) { $0.url?.path.contains("/api/where/arrivals-and-departures-for-stop") ?? false })
+
+        let viewModel = BookmarksViewModel(application: app)
+        expect(viewModel.lastRefreshHadError).to(beFalse())
+
+        // Wait for the batch to fully complete (isLoading: false → true → false).
+        let errBatchDone = expectation(description: "error batch finishes")
+        var seenLoading = false
+        var cancellables = Set<AnyCancellable>()
+        viewModel.$isLoading.sink { isLoading in
+            if isLoading { seenLoading = true }
+            if seenLoading && !isLoading { errBatchDone.fulfill() }
+        }.store(in: &cancellables)
+
+        viewModel.refresh()
+        await fulfillment(of: [errBatchDone], timeout: 2.0)
+        cancellables.removeAll()
+
+        expect(viewModel.lastRefreshHadError).to(beTrue())
+
+        // Swap to a success stub — a clean batch must reset the flag.
+        dataLoader.removeMappedResponses()
+        dataLoader.mock(
+            data: Fixtures.loadData(file: "arrivals-and-departures-for-stop-1_10914.json")
+        ) { $0.url?.path.contains("/api/where/arrivals-and-departures-for-stop") ?? false }
+
+        let cleanBatchDone = expectation(description: "clean batch finishes")
+        var seenLoading2 = false
+        viewModel.$isLoading.sink { isLoading in
+            if isLoading { seenLoading2 = true }
+            if seenLoading2 && !isLoading { cleanBatchDone.fulfill() }
+        }.store(in: &cancellables)
+
+        viewModel.refresh()
+        await fulfillment(of: [cleanBatchDone], timeout: 2.0)
+
+        expect(viewModel.lastRefreshHadError).to(beFalse())
     }
 }

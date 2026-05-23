@@ -45,7 +45,7 @@ class TripViewModel: ObservableObject {
 
     // MARK: - Private
 
-    let application: Application
+    private let application: Application
     private static let refreshInterval: TimeInterval = 30.0
     private var refreshTimer: Timer?
     private var loadDataTask: Task<Void, Never>?

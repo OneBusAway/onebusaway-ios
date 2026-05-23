@@ -77,7 +77,7 @@ class StopViewModel: ObservableObject {
 
     // MARK: - Private
 
-    let application: Application
+    private let application: Application
     let stopID: StopID
 
     private static let defaultMinutesAfter: UInt = 35
@@ -211,9 +211,10 @@ class StopViewModel: ObservableObject {
     }
 
     private func refreshSurveys() {
-        // fetchSurveys() is async, not throws — it records failures on `lastError` rather
-        // than rethrowing. Only emit when the fetch actually produced fresh data, so a
-        // failed (or cooldown-skipped) fetch doesn't trigger a no-op list re-render.
+        // fetchSurveys() records failures on `lastError` rather than rethrowing.
+        // Only emit when no error is present, so a failed fetch doesn't trigger a
+        // no-op list re-render. A cooldown-skipped fetch after a prior success still
+        // emits; the guard is an error gate, not a dedup gate.
         Task { [weak self] in
             guard let self else { return }
             let surveyService = self.application.surveyService

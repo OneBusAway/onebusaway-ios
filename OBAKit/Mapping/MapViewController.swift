@@ -43,7 +43,7 @@ class MapViewController: UIViewController,
 
         hover.stackView.addArrangedSubview(HoverBarSeparator())
         hover.stackView.addArrangedSubview(toggleMapTypeButton)
-        setMapTypeButtonImage(toggleMapTypeButton)
+        setMapTypeButtonImage(toggleMapTypeButton, mapType: viewModel.mapType)
 
         if application.features.obaco == .running {
             hover.stackView.addArrangedSubview(HoverBarSeparator())
@@ -76,7 +76,8 @@ class MapViewController: UIViewController,
 
     public init(application: Application) {
         self.application = application
-        self.viewModel = MapViewModel(application: application)
+        let initialMapType: MapBaseType = application.mapRegionManager.userSelectedMapType == .mutedStandard ? .standard : .hybrid
+        self.viewModel = MapViewModel(application: application, initialMapType: initialMapType)
 
         super.init(nibName: nil, bundle: nil)
 
@@ -566,8 +567,8 @@ class MapViewController: UIViewController,
         viewModel.toggleMapType()
     }
 
-    private func setMapTypeButtonImage(_ button: UIButton) {
-        if application.mapRegionManager.userSelectedMapType == .mutedStandard {
+    private func setMapTypeButtonImage(_ button: UIButton, mapType: MapBaseType) {
+        if mapType == .standard {
             button.setImage(UIImage(systemName: "map"), for: .normal)
             button.accessibilityValue = OBALoc("map_controller.map_type.standard.accessibility_value", value: "standard", comment: "Voiceover text indicating the current map type as the standard base map.")
         } else {
@@ -1063,7 +1064,6 @@ class MapViewController: UIViewController,
         programmaticallyUpdateVisibleMapRegion(location: location)
     }
 
-
     // MARK: - Context Menus
 
     public func contextMenuInteraction(_ interaction: UIContextMenuInteraction, configurationForMenuAtLocation location: CGPoint) -> UIContextMenuConfiguration? {
@@ -1129,9 +1129,11 @@ private extension MapViewController {
 
     func bindMapType() {
         viewModel.$mapType
-            .sink { [weak self] _ in
+            .sink { [weak self] mapType in
                 guard let self else { return }
-                setMapTypeButtonImage(toggleMapTypeButton)
+                let mkType: MKMapType = mapType == .standard ? .mutedStandard : .hybrid
+                application.mapRegionManager.userSelectedMapType = mkType
+                setMapTypeButtonImage(toggleMapTypeButton, mapType: mapType)
             }
             .store(in: &cancellables)
     }

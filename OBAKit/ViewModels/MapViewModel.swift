@@ -10,14 +10,21 @@
 import Foundation
 import Combine
 import CoreLocation
-import MapKit
 import OBAKitCore
+
+/// The selected base map style. UIKit maps `.standard` → `MKMapType.mutedStandard`
+/// and `.hybrid` → `MKMapType.hybrid`; SwiftUI can map directly to `MapStyle`.
+/// Keeping this MapKit-free matches the `PanelDetent` pattern in `MapPanelViewModel`.
+enum MapBaseType {
+    case standard
+    case hybrid
+}
 
 /// Shared ViewModel for the main map screen.
 ///
 /// Consumed by `MapViewController` (UIKit, via Combine `sink`) and by
 /// future `NewMapView` (SwiftUI, via `@StateObject`).
-/// Contains no UIKit or SwiftUI imports.
+/// Contains no UIKit, MapKit, or SwiftUI imports.
 ///
 /// Subclasses NSObject so it can adopt `LocationServiceDelegate`, which is
 /// `@objc` (declared in OBAKitCore for legacy Obj-C interop). Other map
@@ -37,21 +44,22 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
     /// callback routes through the VM rather than mutating published state directly.
     @Published private(set) var showZoomWarning = false
 
-    /// The currently selected base map type (standard vs. hybrid). Persisted by MapRegionManager.
-    @Published private(set) var mapType: MKMapType
+    /// The currently selected base map type (standard vs. hybrid).
+    /// Persistence is handled by the consuming layer (UIKit: `MapViewController`'s `$mapType` sink).
+    @Published private(set) var mapType: MapBaseType
 
     /// The current location authorization status. Used by the UI to show/hide location controls.
     @Published private(set) var locationAuthStatus: CLAuthorizationStatus
 
     // MARK: - Private
 
-    let application: Application
+    private let application: Application
 
     // MARK: - Init
 
-    init(application: Application) {
+    init(application: Application, initialMapType: MapBaseType = .standard) {
         self.application = application
-        self.mapType = application.mapRegionManager.userSelectedMapType
+        self.mapType = initialMapType
         self.locationAuthStatus = application.locationService.authorizationStatus
         super.init()
         application.locationService.addDelegate(self)
@@ -91,11 +99,10 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
 
     // MARK: - Map Type
 
-    /// Toggles between the standard and hybrid base map types and persists the selection.
+    /// Toggles between the standard and hybrid base map types.
+    /// The consuming layer (UIKit: `MapViewController`'s `$mapType` sink) persists the selection.
     func toggleMapType() {
-        let newType: MKMapType = application.mapRegionManager.userSelectedMapType == .mutedStandard ? .hybrid : .mutedStandard
-        application.mapRegionManager.userSelectedMapType = newType
-        mapType = newType
+        mapType = mapType == .standard ? .hybrid : .standard
     }
 
     // MARK: - Bookmarks

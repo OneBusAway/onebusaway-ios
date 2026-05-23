@@ -11,7 +11,6 @@ import XCTest
 import Nimble
 import Combine
 import CoreLocation
-import MapKit
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -126,30 +125,28 @@ class MapViewModelTests: OBATestCase {
 
     // MARK: - Map Type
 
-    /// `toggleMapType()` flips the published `mapType` and persists the selection through
-    /// `MapRegionManager` (which writes to UserDefaults).
+    /// `toggleMapType()` flips the published `mapType` between `.standard` and `.hybrid`.
+    /// Persistence to `MapRegionManager` is the VC's responsibility (via `$mapType` sink).
     @MainActor
-    func test_toggleMapType_persistsAndPublishes() {
+    func test_toggleMapType_flipsAndPublishes() {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
 
         let viewModel = MapViewModel(application: app)
-        expect(viewModel.mapType) == .mutedStandard  // registered default
+        expect(viewModel.mapType) == .standard
 
-        var observed: [MKMapType] = []
+        var observed: [MapBaseType] = []
         let cancellable = viewModel.$mapType.sink { observed.append($0) }
         defer { cancellable.cancel() }
 
         viewModel.toggleMapType()
         expect(viewModel.mapType) == .hybrid
-        expect(app.mapRegionManager.userSelectedMapType) == .hybrid
 
         viewModel.toggleMapType()
-        expect(viewModel.mapType) == .mutedStandard
-        expect(app.mapRegionManager.userSelectedMapType) == .mutedStandard
+        expect(viewModel.mapType) == .standard
 
         // Initial value + two toggles.
-        expect(observed) == [.mutedStandard, .hybrid, .mutedStandard]
+        expect(observed) == [.standard, .hybrid, .standard]
     }
 
     // MARK: - Location Authorization

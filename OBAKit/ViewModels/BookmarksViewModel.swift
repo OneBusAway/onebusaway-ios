@@ -44,7 +44,7 @@ class BookmarksViewModel: NSObject, ObservableObject, BookmarkDataDelegate {
 
     // MARK: - Private
 
-    let application: Application
+    private let application: Application
     private var dataLoader: BookmarkDataLoader!
 
     private enum UserDefaultsKey: String {

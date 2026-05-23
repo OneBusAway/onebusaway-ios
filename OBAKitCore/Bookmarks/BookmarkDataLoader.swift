@@ -62,20 +62,20 @@ public class BookmarkDataLoader: NSObject {
 
     public func cancelUpdates() {
         timer?.invalidate()
-        // Retire the current batch: advance the batch ID so any in-flight per-bookmark
-        // Task completions (success or failure) see the mismatch and no-op. Necessary
-        // for the deinit/deactivate paths — `loadData()` advances the ID itself when
-        // starting a new batch, so the extra advance along the refresh path is harmless.
+        // Retire the current batch so any in-flight per-bookmark Task completions
+        // (success or failure) see the mismatch and no-op. Used by deactivate/deinit paths.
         Task { @MainActor in
             self.currentBatchID &+= 1
         }
     }
 
     public func loadData() {
-        cancelUpdates()
+        timer?.invalidate()  // retire the timer inline; no separate main-actor hop needed
         let bookmarks = application.userDataStore.bookmarks.filter {
             $0.regionIdentifier == application.regionsService.currentRegion?.id
         }
+        // Retiring the old batch (ID advance) and starting the new one happen in a single
+        // main-actor Task, so there's no FIFO dependency between two independent Tasks.
         Task { @MainActor in
             self.currentBatchID &+= 1
             let batchID = self.currentBatchID
