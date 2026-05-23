@@ -37,8 +37,10 @@ class StopViewModel: ObservableObject {
     /// `true` while a network request is in-flight.
     @Published private(set) var isLoading = false
 
-    /// The last time data was successfully loaded.
-    @Published private(set) var lastUpdated: Date?
+    /// The last time data was successfully loaded. Not `@Published`: no consumer observes
+    /// it directly. It feeds `statusText` (via `updateStatus()`, called right after each
+    /// assignment) and the `shouldRefresh` threshold check — both internal reads.
+    private(set) var lastUpdated: Date?
 
     /// A human-readable status string (e.g. "Updated 2 min ago").
     @Published private(set) var statusText: String = ""
@@ -209,11 +211,14 @@ class StopViewModel: ObservableObject {
     }
 
     private func refreshSurveys() {
-        // fetchSurveys() is async, not throws — it handles errors internally.
-        // Emitting on the subject always triggers a list re-render after the fetch completes.
+        // fetchSurveys() is async, not throws — it records failures on `lastError` rather
+        // than rethrowing. Only emit when the fetch actually produced fresh data, so a
+        // failed (or cooldown-skipped) fetch doesn't trigger a no-op list re-render.
         Task { [weak self] in
             guard let self else { return }
-            await self.application.surveyService.fetchSurveys()
+            let surveyService = self.application.surveyService
+            await surveyService.fetchSurveys()
+            guard surveyService.lastError == nil else { return }
             self.surveysDidRefreshSubject.send()
         }
     }

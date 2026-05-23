@@ -33,7 +33,9 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
     @Published private(set) var weather: WeatherForecast?
 
     /// `true` when the map is zoomed out too far to load stops.
-    @Published var showZoomWarning = false
+    /// Written only through `updateZoomWarning(_:)` so the VC's `MapRegionDelegate`
+    /// callback routes through the VM rather than mutating published state directly.
+    @Published private(set) var showZoomWarning = false
 
     /// The currently selected base map type (standard vs. hybrid). Persisted by MapRegionManager.
     @Published private(set) var mapType: MKMapType
@@ -77,6 +79,14 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
             weather = nil
             Logger.error("Failed to load weather: \(error.localizedDescription)")
         }
+    }
+
+    // MARK: - Zoom Warning
+
+    /// Updates the "zoomed out too far" banner state. Called by the VC's
+    /// `MapRegionDelegate.mapRegionManagerShowZoomInStatus` callback.
+    func updateZoomWarning(_ show: Bool) {
+        showZoomWarning = show
     }
 
     // MARK: - Map Type

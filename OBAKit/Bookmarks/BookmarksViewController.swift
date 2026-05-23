@@ -423,8 +423,10 @@ private extension BookmarksViewController {
                 if isUserRefreshing {
                     refreshControl.endRefreshing()
                     // Haptic confirms the user-pull completed; suppress on background
-                    // 30 s auto-refreshes so the device doesn't buzz unprompted.
-                    dataLoadFeedbackGenerator.dataLoad(.success)
+                    // 30 s auto-refreshes so the device doesn't buzz unprompted. Reflect
+                    // whether any bookmark fetch in the batch failed so a partial/total
+                    // failure doesn't masquerade as a success buzz.
+                    dataLoadFeedbackGenerator.dataLoad(viewModel.lastRefreshHadError ? .failed : .success)
                     isUserRefreshing = false
                 }
                 reloadWidget()

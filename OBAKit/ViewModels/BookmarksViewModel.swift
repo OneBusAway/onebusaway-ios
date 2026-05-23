@@ -37,6 +37,11 @@ class BookmarksViewModel: NSObject, ObservableObject, BookmarkDataDelegate {
     /// `true` when the user has chosen to sort bookmarks by group (vs. by distance).
     @Published var sortByGroup: Bool
 
+    /// Whether the most-recently-completed refresh batch had any failed fetch.
+    /// Read by the VC when `isLoading` transitions to `false` to pick success vs.
+    /// failure haptic feedback. Not `@Published` — it's a direct read, not an observed sink.
+    private(set) var lastRefreshHadError: Bool = false
+
     // MARK: - Private
 
     let application: Application
@@ -112,6 +117,11 @@ class BookmarksViewModel: NSObject, ObservableObject, BookmarkDataDelegate {
 
     nonisolated func dataLoader(_ dataLoader: BookmarkDataLoader, isLoadingChanged isLoading: Bool) {
         MainActor.assumeIsolated {
+            // Capture the batch's error state before flipping `isLoading`, so the VC's
+            // `$isLoading` sink reads an up-to-date `lastRefreshHadError` when it fires.
+            if !isLoading {
+                self.lastRefreshHadError = dataLoader.lastBatchHadError
+            }
             self.isLoading = isLoading
         }
     }

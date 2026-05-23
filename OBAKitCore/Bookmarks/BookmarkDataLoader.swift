@@ -41,6 +41,11 @@ public class BookmarkDataLoader: NSObject {
     /// Drives spinner UI in consumers.
     @MainActor public private(set) var isLoading: Bool = false
 
+    /// `true` if any per-bookmark fetch in the most-recently-completed batch failed.
+    /// Reset to `false` at the start of each batch. Consumers read this when `isLoading`
+    /// transitions to `false` to decide success vs. failure feedback (e.g. haptics).
+    @MainActor public private(set) var lastBatchHadError: Bool = false
+
     public init(application: CoreApplication, delegate: BookmarkDataDelegate) {
         self.application = application
         self.delegate = delegate
@@ -117,7 +122,13 @@ public class BookmarkDataLoader: NSObject {
                 // Same staleness gate as the success path: if cancelUpdates() retired
                 // the batch (or a newer batch started) while this fetch was in flight,
                 // suppress the error — the consumer has moved on and shouldn't see it.
-                let isCurrent = await MainActor.run { batchID == self.currentBatchID }
+                let isCurrent = await MainActor.run { () -> Bool in
+                    let current = batchID == self.currentBatchID
+                    // Record the failure against the live batch so the batch-complete
+                    // signal can report whether any fetch errored.
+                    if current { self.lastBatchHadError = true }
+                    return current
+                }
                 guard isCurrent else { return }
                 await self.application.displayError(error)
             }
@@ -125,6 +136,7 @@ public class BookmarkDataLoader: NSObject {
     }
 
     @MainActor private func beginBatch(count: Int) {
+        lastBatchHadError = false
         pendingFetchCount = count
         let nowLoading = pendingFetchCount > 0
         if nowLoading != isLoading {

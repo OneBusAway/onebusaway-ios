@@ -972,7 +972,7 @@ class MapViewController: UIViewController,
 
     @objc public func mapRegionManagerShowZoomInStatus(_ manager: MapRegionManager, showStatus: Bool) {
         // EC6: Update ViewModel so both UIKit and future SwiftUI consumers share the same state.
-        viewModel.showZoomWarning = showStatus
+        viewModel.updateZoomWarning(showStatus)
     }
 
     // MARK: Loading Indicator
