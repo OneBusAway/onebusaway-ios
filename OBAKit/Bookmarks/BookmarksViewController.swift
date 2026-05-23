@@ -250,11 +250,6 @@ public class BookmarksViewController: UIViewController,
 
     // MARK: - Distance Sort
 
-    /// Provides a way to check if the user wants to sort by distance, but cannot for whatever reason right now.
-    private var distanceSortRequestedButUnavailable: Bool {
-        !sortBookmarksByGroup && application.locationService.currentLocation == nil
-    }
-
     /// Builds a single item array that contains a list of all bookmarks in the current region sorted by distance from the current user.
     private func listItemsSortedByDistance() -> [OBAListViewSection] {
         guard let currentLocation = application.locationService.currentLocation else {

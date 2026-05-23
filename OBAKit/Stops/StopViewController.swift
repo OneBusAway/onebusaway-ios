@@ -462,8 +462,6 @@ public class StopViewController: UIViewController,
         self.userActivity = userActivityBuilder.userActivity(for: stop, region: region)
     }
 
-    // MARK: - Data Loading
-
     private lazy var dataLoadFeedbackGenerator = DataLoadFeedbackGenerator(application: application)
 
     // MARK: - OBAListView
@@ -1042,15 +1040,6 @@ public class StopViewController: UIViewController,
         self?.refresh()
     }
 
-//    public func emptyView(for listAdapter: ListAdapter) -> UIView? {
-//        guard let error = operationError else { return nil }
-//
-//        let emptyView = EmptyDataSetView(alignment: .center)
-//        emptyView.configure(with: error, buttonConfig: operationRetryButton)
-//
-//        return emptyView
-//    }
-
     // MARK: - Collection Controller
     private lazy var listView = OBAListView()
     public var selectionFeedbackGenerator: UISelectionFeedbackGenerator? = UISelectionFeedbackGenerator()
@@ -1301,6 +1290,7 @@ private extension StopViewController {
                         }
                     }
                     firstLoad = false
+                    dataLoadFeedbackGenerator.dataLoad(.success)
                 }
                 listView.applyData(animated: false)
                 configureTabBarButtons()
@@ -1342,7 +1332,16 @@ private extension StopViewController {
 
     func bindLoadingState() {
         viewModel.$operationError
-            .sink { [weak self] _ in self?.listView.applyData(animated: true) }
+            .sink { [weak self] error in
+                guard let self else { return }
+                if error != nil { dataLoadFeedbackGenerator.dataLoad(.failed) }
+                listView.applyData(animated: true)
+            }
+            .store(in: &cancellables)
+
+        viewModel.$isBrokenBookmark
+            .filter { $0 }
+            .sink { [weak self] _ in self?.dataLoadFeedbackGenerator.dataLoad(.failed) }
             .store(in: &cancellables)
 
         viewModel.$statusText

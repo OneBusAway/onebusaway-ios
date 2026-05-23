@@ -32,9 +32,6 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
     /// The current weather forecast, if loaded.
     @Published private(set) var weather: WeatherForecast?
 
-    /// `true` while weather is being fetched.
-    @Published private(set) var isLoadingWeather = false
-
     /// `true` when the map is zoomed out too far to load stops.
     @Published var showZoomWarning = false
 
@@ -70,21 +67,16 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
         Task { [weak self] in await self?.loadWeather() }
     }
 
-    /// Call from `viewWillDisappear` / `.onDisappear`.
-    func deactivate() { }
-
     // MARK: - Weather
 
     func loadWeather() async {
         guard let apiService = application.obacoService else { return }
-        isLoadingWeather = true
         do {
             weather = try await apiService.getWeather()
         } catch {
             weather = nil
             Logger.error("Failed to load weather: \(error.localizedDescription)")
         }
-        isLoadingWeather = false
     }
 
     // MARK: - Map Type

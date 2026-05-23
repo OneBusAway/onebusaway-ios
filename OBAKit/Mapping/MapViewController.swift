@@ -536,28 +536,16 @@ class MapViewController: UIViewController,
 
     private func subscribeToTripPlannerNotifications() {
         application.notificationCenter.addObserver(self, selector: #selector(itinerariesUpdated), name: Notifications.itinerariesUpdated, object: nil)
-        application.notificationCenter.addObserver(self, selector: #selector(itineraryPreviewStarted), name: Notifications.itineraryPreviewStarted, object: nil)
-        application.notificationCenter.addObserver(self, selector: #selector(itineraryPreviewEnded), name: Notifications.itineraryPreviewEnded, object: nil)
         application.notificationCenter.addObserver(self, selector: #selector(tripStarted), name: Notifications.tripStarted, object: nil)
     }
 
     private func unsubscribeFromTripPlannerNotifications() {
         application.notificationCenter.removeObserver(self, name: Notifications.itinerariesUpdated, object: nil)
-        application.notificationCenter.removeObserver(self, name: Notifications.itineraryPreviewStarted, object: nil)
-        application.notificationCenter.removeObserver(self, name: Notifications.itineraryPreviewEnded, object: nil)
         application.notificationCenter.removeObserver(self, name: Notifications.tripStarted, object: nil)
     }
 
     @objc private func itinerariesUpdated(_ note: NSNotification) {
         semiModalTripPlannerController?.move(to: .full, animated: true)
-    }
-
-    @objc private func itineraryPreviewStarted(_ note: NSNotification) {
-        // nop
-    }
-
-    @objc private func itineraryPreviewEnded(_ note: NSNotification) {
-        //
     }
 
     @objc private func tripStarted(_ note: NSNotification) {
@@ -1075,9 +1063,6 @@ class MapViewController: UIViewController,
         programmaticallyUpdateVisibleMapRegion(location: location)
     }
 
-    public func locationService(_ service: LocationService, authorizationStatusChanged status: CLAuthorizationStatus) {
-        // Handled via viewModel.$locationAuthStatus binding in bindViewModel().
-    }
 
     // MARK: - Context Menus
 

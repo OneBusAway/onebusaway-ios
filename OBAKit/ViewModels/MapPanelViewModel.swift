@@ -38,12 +38,6 @@ class MapPanelViewModel: ObservableObject {
     /// High-severity agency alerts to display as a banner.
     @Published private(set) var highSeverityAlerts: [AgencyAlert] = []
 
-    /// `true` when the panel is in search mode.
-    @Published var isSearchMode = false
-
-    /// Current search response (when `isSearchMode` is `true`).
-    @Published private(set) var searchResponse: SearchResponse?
-
     // MARK: - Private
 
     let application: Application
@@ -70,13 +64,10 @@ class MapPanelViewModel: ObservableObject {
     // MARK: - Search
 
     func enterSearchMode() {
-        isSearchMode = true
         requestedPanelDetent = .full
     }
 
     func exitSearchMode() {
-        isSearchMode = false
-        searchResponse = nil
         requestedPanelDetent = .tip
     }
 }
