@@ -57,8 +57,13 @@ public class BookmarkDataLoader: NSObject {
 
     public func cancelUpdates() {
         timer?.invalidate()
-        // In-flight per-bookmark Tasks are not stored; they're allowed to finish
-        // but their completion is gated on a batch ID so stale writes become no-ops.
+        // Retire the current batch: advance the batch ID so any in-flight per-bookmark
+        // Task completions (success or failure) see the mismatch and no-op. Necessary
+        // for the deinit/deactivate paths — `loadData()` advances the ID itself when
+        // starting a new batch, so the extra advance along the refresh path is harmless.
+        Task { @MainActor in
+            self.currentBatchID &+= 1
+        }
     }
 
     public func loadData() {
@@ -109,6 +114,11 @@ public class BookmarkDataLoader: NSObject {
                     self.delegate?.dataLoaderDidUpdate(self)
                 }
             } catch {
+                // Same staleness gate as the success path: if cancelUpdates() retired
+                // the batch (or a newer batch started) while this fetch was in flight,
+                // suppress the error — the consumer has moved on and shouldn't see it.
+                let isCurrent = await MainActor.run { batchID == self.currentBatchID }
+                guard isCurrent else { return }
                 await self.application.displayError(error)
             }
         }

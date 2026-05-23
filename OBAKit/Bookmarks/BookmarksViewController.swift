@@ -427,9 +427,11 @@ private extension BookmarksViewController {
                 guard let self else { return }
                 if isUserRefreshing {
                     refreshControl.endRefreshing()
+                    // Haptic confirms the user-pull completed; suppress on background
+                    // 30 s auto-refreshes so the device doesn't buzz unprompted.
+                    dataLoadFeedbackGenerator.dataLoad(.success)
                     isUserRefreshing = false
                 }
-                dataLoadFeedbackGenerator.dataLoad(.success)
                 reloadWidget()
             }
             .store(in: &cancellables)
