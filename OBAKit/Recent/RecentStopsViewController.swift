@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import Combine
 import OBAKitCore
 
 /// Provides an interface to browse recently-viewed information, mostly `Stop`s.
@@ -16,12 +17,15 @@ public class RecentStopsViewController: UIViewController,
 
     let application: Application
 
-    let listView = OBAListView()
+    private let viewModel: RecentStopsViewModel
+    private let listView = OBAListView()
+    private var cancellables = Set<AnyCancellable>()
 
     // MARK: - Init
 
     public init(application: Application) {
         self.application = application
+        self.viewModel = RecentStopsViewModel(application: application)
 
         super.init(nibName: nil, bundle: nil)
 
@@ -47,13 +51,28 @@ public class RecentStopsViewController: UIViewController,
         view.addSubview(listView)
         listView.contextMenuDelegate = self
         listView.pinToSuperview(.edges)
+
+        bindViewModel()
+    }
+
+    private func bindViewModel() {
+        Publishers.CombineLatest(viewModel.$alarms, viewModel.$recentStops)
+            .sink { [weak self] _ in self?.listView.applyData(animated: true) }
+            .store(in: &cancellables)
+
+        viewModel.$deletionError
+            .compactMap { $0 }
+            .sink { [weak self] error in
+                guard let self else { return }
+                Task { await self.application.displayError(error) }
+            }
+            .store(in: &cancellables)
     }
 
     public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
-        application.userDataStore.deleteExpiredAlarms()
-        listView.applyData()
+        viewModel.loadData()
     }
 
     // MARK: - Actions
@@ -62,9 +81,7 @@ public class RecentStopsViewController: UIViewController,
         let title = OBALoc("recent_stops.confirmation_alert.title", value: "Are you sure you want to delete all of your recent stops?", comment: "Title for a confirmation alert displayed before the user deletes all of their recent stops.")
 
         let alertController = UIAlertController.deletionAlert(title: title) { [weak self] _ in
-            guard let self = self else { return }
-            self.application.userDataStore.deleteAllRecentStops()
-            self.listView.applyData(animated: true)
+            self?.viewModel.deleteAllRecentStops()
         }
 
         present(alertController, animated: true, completion: nil)
@@ -104,21 +121,15 @@ public class RecentStopsViewController: UIViewController,
         }
     }
 
-    func onDeleteAlarm(_ viewModel: AlarmViewModel) {
-        Task {
-            try? await self.application.obacoService?.deleteAlarm(url: viewModel.alarm.url)
-        }
-        self.application.userDataStore.delete(alarm: viewModel.alarm)
-        self.listView.applyData(animated: true)
+    func onDeleteAlarm(_ alarmViewModel: AlarmViewModel) {
+        viewModel.delete(alarm: alarmViewModel.alarm)
     }
 
     // MARK: - Sections
 
-    private var alarms: OBAListViewSection? {
-        let alarms = application.userDataStore.alarms
-        guard alarms.count > 0 else {
-            return nil
-        }
+    private var alarmSection: OBAListViewSection? {
+        let alarms = viewModel.alarms
+        guard alarms.count > 0 else { return nil }
 
         let rows = alarms.compactMap { alarm in
             return AlarmViewModel(withAlarm: alarm, onSelect: onSelectAlarm, onDelete: onDeleteAlarm)
@@ -128,15 +139,9 @@ public class RecentStopsViewController: UIViewController,
         return OBAListViewSection(id: "alarms", title: title, contents: rows)
     }
 
-    private var stops: OBAListViewSection? {
-        guard let currentRegion = application.currentRegion else {
-            return nil
-        }
-
-        let stops = application.userDataStore.recentStops.filter { $0.regionIdentifier == currentRegion.regionIdentifier }
-        guard stops.count > 0 else {
-            return nil
-        }
+    private var stopsSection: OBAListViewSection? {
+        let stops = viewModel.recentStops
+        guard stops.count > 0 else { return nil }
 
         let rows = stops.map { stop -> StopRowItem in
             let onSelect: OBAListViewAction<StopRowItem> = { [unowned self] viewModel in
@@ -144,21 +149,20 @@ public class RecentStopsViewController: UIViewController,
             }
 
             let onDelete: OBAListViewAction<StopRowItem> = { [unowned self] _ in
-                self.application.userDataStore.delete(recentStop: stop)
-                self.listView.applyData(animated: true)
+                self.viewModel.delete(recentStop: stop)
             }
 
             return StopRowItem(withStop: stop, onSelect: onSelect, onDelete: onDelete)
         }
 
-        let title = application.userDataStore.alarms.count > 0 ? Strings.recentStops : nil
+        let title = viewModel.alarms.count > 0 ? Strings.recentStops : nil
         return OBAListViewSection(id: "recent_stops", title: title, contents: rows)
     }
 
     // MARK: - OBAListView
 
     public func items(for listView: OBAListView) -> [OBAListViewSection] {
-        return [alarms, stops].compactMap { $0 }
+        return [alarmSection, stopsSection].compactMap { $0 }
     }
 
     public func emptyData(for listView: OBAListView) -> OBAListView.EmptyData? {
