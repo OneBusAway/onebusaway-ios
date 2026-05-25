@@ -12,8 +12,6 @@ import Nimble
 @testable import OBAKit
 @testable import OBAKitCore
 
-// swiftlint:disable force_try
-
 /// Tests for `ManageBookmarksViewModel`. Covers data access delegation, bookmark deletion
 /// (with analytics), name persistence, transit-name restoration, and reorder logic.
 class ManageBookmarksViewModelTests: OBATestCase {

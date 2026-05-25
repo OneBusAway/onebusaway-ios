@@ -17,7 +17,7 @@ import OBAKitCore
 /// and transit-name restore logic. The Eureka form UX stays in the VC.
 /// Contains no UIKit or SwiftUI imports.
 @MainActor
-class ManageBookmarksViewModel {
+final class ManageBookmarksViewModel {
 
     private let application: Application
 
@@ -50,11 +50,11 @@ class ManageBookmarksViewModel {
     }
 
     func deleteBookmark(_ bookmark: Bookmark) {
-        if let routeID = bookmark.routeID, let headsign = bookmark.tripHeadsign {
+        if let routeID = bookmark.routeID {
             application.analytics?.reportEvent(
                 pageURL: "app://localhost/bookmarks",
                 label: AnalyticsLabels.removeBookmark,
-                value: AnalyticsLabels.addRemoveBookmarkValue(routeID: routeID, headsign: headsign, stopID: bookmark.stopID)
+                value: AnalyticsLabels.addRemoveBookmarkValue(routeID: routeID, headsign: bookmark.tripHeadsign, stopID: bookmark.stopID)
             )
         }
         application.userDataStore.delete(bookmark: bookmark)

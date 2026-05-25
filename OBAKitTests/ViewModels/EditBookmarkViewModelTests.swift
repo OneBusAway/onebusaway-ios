@@ -12,8 +12,6 @@ import Nimble
 @testable import OBAKit
 @testable import OBAKitCore
 
-// swiftlint:disable force_try
-
 /// Tests for `EditBookmarkViewModel`. Covers initial state derivation, save outcome
 /// routing (add vs edit, duplicate detection), persistence, and analytics emission.
 class EditBookmarkViewModelTests: OBATestCase {

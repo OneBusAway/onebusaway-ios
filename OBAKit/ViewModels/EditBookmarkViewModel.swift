@@ -39,7 +39,7 @@ enum SaveOutcome {
 /// and bookmark persistence. The Eureka form itself stays in the VC.
 /// Contains no UIKit or SwiftUI imports.
 @MainActor
-class EditBookmarkViewModel {
+final class EditBookmarkViewModel {
 
     // MARK: - Static Context
 

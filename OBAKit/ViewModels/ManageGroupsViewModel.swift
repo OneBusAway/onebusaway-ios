@@ -16,7 +16,7 @@ import OBAKitCore
 /// The Eureka `MultivaluedSection` UI stays in the VC.
 /// Contains no UIKit or SwiftUI imports.
 @MainActor
-class ManageGroupsViewModel {
+final class ManageGroupsViewModel {
 
     private let application: Application
 
