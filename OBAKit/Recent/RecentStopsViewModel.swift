@@ -26,9 +26,12 @@ final class RecentStopsViewModel: ObservableObject {
     func loadData() {
         application.userDataStore.deleteExpiredAlarms()
         alarms = application.userDataStore.alarms
-        let currentRegion = application.currentRegion
+        guard let currentRegion = application.currentRegion else {
+            recentStops = []
+            return
+        }
         recentStops = application.userDataStore.recentStops.filter {
-            $0.regionIdentifier == currentRegion?.regionIdentifier
+            $0.regionIdentifier == currentRegion.regionIdentifier
         }
     }
 
@@ -43,6 +46,7 @@ final class RecentStopsViewModel: ObservableObject {
     }
 
     func delete(alarm: Alarm) {
+        deletionError = nil
         application.userDataStore.delete(alarm: alarm)
         loadData()
         Task { [weak self] in

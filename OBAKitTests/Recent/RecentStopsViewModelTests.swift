@@ -8,6 +8,7 @@
 //
 
 import XCTest
+import CoreLocation
 import Nimble
 @testable import OBAKit
 @testable import OBAKitCore
@@ -207,5 +208,77 @@ class RecentStopsViewModelTests: OBATestCase {
         // The remote delete runs in a fire-and-forget Task on @MainActor.
         // Poll until the Task has had a chance to run and set deletionError.
         await expect(viewModel.deletionError).toEventually(beAKindOf(NSError.self))
+    }
+
+    @MainActor
+    func test_delete_alarm_remoteSuccessPath_doesNotSetDeletionError() async {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader)
+
+        let alarm = try! Fixtures.loadAlarm()
+        alarm.set(tripDate: Date(timeIntervalSinceNow: 300), alarmOffset: 2)
+        app.userDataStore.add(alarm: alarm)
+
+        let successURLResponse = HTTPURLResponse(
+            url: alarm.url, statusCode: 200, httpVersion: "2",
+            headerFields: ["Content-Type": "application/json"]
+        )!
+        dataLoader.mock(response: MockDataResponse(data: Data(), urlResponse: successURLResponse, error: nil) { request in
+            request.url?.absoluteString.contains("alarms") == true && request.httpMethod == "DELETE"
+        })
+
+        let viewModel = RecentStopsViewModel(application: app)
+        viewModel.loadData()
+
+        viewModel.delete(alarm: alarm)
+
+        // Drain pending tasks — the mock is synchronous, so a few yields are enough.
+        for _ in 0..<10 { await Task.yield() }
+        expect(viewModel.deletionError).to(beNil())
+    }
+
+    // MARK: - loadData / nil currentRegion
+
+    @MainActor
+    func test_loadData_nilCurrentRegion_recentStopsIsEmpty() {
+        // Use "Null Island" (0, 0) which is in the Gulf of Guinea — not covered by any
+        // transit region — so application.currentRegion is nil when loadData() runs.
+        let dataLoader = MockDataLoader(testName: name)
+        stubRegions(dataLoader: dataLoader)
+        stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
+        Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
+
+        let nullIslandLocation = CLLocation(latitude: 0, longitude: 0)
+        let locManager = MockAuthorizedLocationManager(
+            updateLocation: nullIslandLocation,
+            updateHeading: TestData.mockHeading
+        )
+        let locationService = LocationService(userDefaults: userDefaults, locationManager: locManager)
+        locationService.startUpdates()
+
+        let config = AppConfig(
+            regionsBaseURL: regionsURL,
+            apiKey: apiKey,
+            appVersion: appVersion,
+            userDefaults: userDefaults,
+            analytics: AnalyticsMock(),
+            queue: queue,
+            locationService: locationService,
+            bundledRegionsFilePath: bundledRegionsPath,
+            regionsAPIPath: regionsAPIPath,
+            dataLoader: dataLoader
+        )
+        let app = Application(config: config)
+
+        let stop = try! Fixtures.loadSomeStops().first!
+        stop.regionIdentifier = nil
+        app.userDataStore.addRecentStop(stop, region: Fixtures.pugetSoundRegion)
+        let viewModel = RecentStopsViewModel(application: app)
+
+        viewModel.loadData()
+
+        // When currentRegion is nil, loadData() exits early and returns an empty list —
+        // no accidental nil == nil matches.
+        expect(viewModel.recentStops).to(beEmpty())
     }
 }
