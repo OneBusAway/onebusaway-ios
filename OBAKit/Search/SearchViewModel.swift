@@ -23,11 +23,8 @@ final class SearchViewModel: ObservableObject {
     private let apiService: RESTAPIService?
     private var isLoading = false
 
-    init(searchResponse: SearchResponse, application: Application) {
-        self.searchResponse = searchResponse
-        self.apiService = application.apiService
-        self.subtitle = SearchViewModel.subtitleText(from: searchResponse)
-        self.results = searchResponse.results
+    convenience init(searchResponse: SearchResponse, application: Application) {
+        self.init(searchResponse: searchResponse, apiService: application.apiService)
     }
 
     init(searchResponse: SearchResponse, apiService: RESTAPIService?) {

@@ -73,9 +73,14 @@ class NearbyStopsViewController: UIViewController,
             }
             .store(in: &cancellables)
 
+        // Deliver on the main queue so the sink runs *after* @Published commits the new
+        // value (it publishes in willSet). Otherwise items(for:) would read the old `stops`.
+        // Apply directly rather than routing through `searchFilter`, whose nil != nil guard
+        // would swallow the refresh on first load.
         viewModel.$stops
+            .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                self?.searchFilter = nil
+                self?.listView.applyData(animated: false)
             }
             .store(in: &cancellables)
 

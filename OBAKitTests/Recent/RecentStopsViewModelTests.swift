@@ -78,14 +78,6 @@ class RecentStopsViewModelTests: OBATestCase {
         expect(viewModel.recentStops).to(beEmpty())
     }
 
-    @MainActor
-    func test_init_deletionErrorIsNil() {
-        let app = createApplication(dataLoader: MockDataLoader(testName: name))
-        let viewModel = RecentStopsViewModel(application: app)
-
-        expect(viewModel.deletionError).to(beNil())
-    }
-
     // MARK: - loadData
 
     @MainActor
@@ -182,59 +174,6 @@ class RecentStopsViewModelTests: OBATestCase {
         viewModel.delete(alarm: alarm)
 
         expect(viewModel.alarms.map(\.url)).toNot(contain(alarm.url))
-    }
-
-    @MainActor
-    func test_delete_alarm_setsErrorWhenRemoteDeleteFails() async {
-        let dataLoader = MockDataLoader(testName: name)
-        let app = createApplication(dataLoader: dataLoader)
-
-        let alarm = try! Fixtures.loadAlarm()
-        alarm.set(tripDate: Date(timeIntervalSinceNow: 300), alarmOffset: 2)
-        app.userDataStore.add(alarm: alarm)
-
-        // Mock the remote deleteAlarm endpoint to fail.
-        let remoteError = NSError(domain: "RemoteDeleteError", code: 503, userInfo: nil)
-        let failResponse = MockDataResponse(data: nil, urlResponse: nil, error: remoteError) { request in
-            request.url?.absoluteString.contains("alarms") == true && request.httpMethod == "DELETE"
-        }
-        dataLoader.mock(response: failResponse)
-
-        let viewModel = RecentStopsViewModel(application: app)
-        viewModel.loadData()
-
-        viewModel.delete(alarm: alarm)
-
-        // The remote delete runs in a fire-and-forget Task on @MainActor.
-        // Poll until the Task has had a chance to run and set deletionError.
-        await expect(viewModel.deletionError).toEventually(beAKindOf(NSError.self))
-    }
-
-    @MainActor
-    func test_delete_alarm_remoteSuccessPath_doesNotSetDeletionError() async {
-        let dataLoader = MockDataLoader(testName: name)
-        let app = createApplication(dataLoader: dataLoader)
-
-        let alarm = try! Fixtures.loadAlarm()
-        alarm.set(tripDate: Date(timeIntervalSinceNow: 300), alarmOffset: 2)
-        app.userDataStore.add(alarm: alarm)
-
-        let successURLResponse = HTTPURLResponse(
-            url: alarm.url, statusCode: 200, httpVersion: "2",
-            headerFields: ["Content-Type": "application/json"]
-        )!
-        dataLoader.mock(response: MockDataResponse(data: Data(), urlResponse: successURLResponse, error: nil) { request in
-            request.url?.absoluteString.contains("alarms") == true && request.httpMethod == "DELETE"
-        })
-
-        let viewModel = RecentStopsViewModel(application: app)
-        viewModel.loadData()
-
-        viewModel.delete(alarm: alarm)
-
-        // Drain pending tasks — the mock is synchronous, so a few yields are enough.
-        for _ in 0..<10 { await Task.yield() }
-        expect(viewModel.deletionError).to(beNil())
     }
 
     // MARK: - loadData / nil currentRegion

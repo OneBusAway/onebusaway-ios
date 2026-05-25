@@ -15,7 +15,6 @@ final class RecentStopsViewModel: ObservableObject {
 
     @Published private(set) var alarms: [Alarm] = []
     @Published private(set) var recentStops: [Stop] = []
-    @Published private(set) var deletionError: Error?
 
     private let application: Application
 
@@ -46,15 +45,16 @@ final class RecentStopsViewModel: ObservableObject {
     }
 
     func delete(alarm: Alarm) {
-        deletionError = nil
         application.userDataStore.delete(alarm: alarm)
         loadData()
+        // The alarm is already gone locally; a remote-delete failure isn't actionable by
+        // the user, so log it rather than surfacing a modal error for a background op.
         Task { [weak self] in
             guard let self else { return }
             do {
                 try await application.obacoService?.deleteAlarm(url: alarm.url)
             } catch {
-                deletionError = error
+                Logger.error("Failed to delete alarm remotely: \(error.localizedDescription)")
             }
         }
     }

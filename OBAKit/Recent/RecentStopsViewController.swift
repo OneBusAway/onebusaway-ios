@@ -56,16 +56,12 @@ public class RecentStopsViewController: UIViewController,
     }
 
     private func bindViewModel() {
+        // Deliver on the main queue so the sink runs *after* @Published commits its new
+        // value (it publishes in willSet). Otherwise items(for:) would read stale
+        // alarms / recentStops and the list would render one update behind.
         Publishers.CombineLatest(viewModel.$alarms, viewModel.$recentStops)
+            .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in self?.listView.applyData(animated: true) }
-            .store(in: &cancellables)
-
-        viewModel.$deletionError
-            .compactMap { $0 }
-            .sink { [weak self] error in
-                guard let self else { return }
-                Task { await self.application.displayError(error) }
-            }
             .store(in: &cancellables)
     }
 

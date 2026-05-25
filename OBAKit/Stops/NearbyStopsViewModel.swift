@@ -21,9 +21,8 @@ final class NearbyStopsViewModel: ObservableObject {
     private let coordinate: CLLocationCoordinate2D
     private let apiService: RESTAPIService?
 
-    init(coordinate: CLLocationCoordinate2D, application: Application) {
-        self.coordinate = coordinate
-        self.apiService = application.apiService
+    convenience init(coordinate: CLLocationCoordinate2D, application: Application) {
+        self.init(coordinate: coordinate, apiService: application.apiService)
     }
 
     init(coordinate: CLLocationCoordinate2D, apiService: RESTAPIService?) {

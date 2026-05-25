@@ -720,7 +720,11 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
     }
 
     public func delete(alarm: Alarm) {
-        alarms.removeAll { $0 == alarm }
+        // Match on `url` (the stable server identifier), not full equality: Alarm.isEqual
+        // compares tripDate/alarmDate, which lose sub-microsecond precision on the
+        // timeIntervalSince1970 round-trip through UserDefaults, so a stored alarm would
+        // never equal its in-memory counterpart and nothing would be removed.
+        alarms.removeAll { $0.url == alarm.url }
     }
 
     // MARK: - Proximity Alerts

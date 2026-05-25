@@ -13,31 +13,6 @@ import CoreLocation
 @testable import OBAKit
 @testable import OBAKitCore
 
-// swiftlint:disable force_cast
-
-// MARK: - CountingDataLoader
-
-/// Wraps a MockDataLoader, counts how many times data(for:) is called, and inserts a
-/// Task.yield() before forwarding so that concurrent tasks genuinely interleave on @MainActor.
-private class CountingDataLoader: NSObject, URLDataLoader {
-    let inner: MockDataLoader
-    private(set) var callCount = 0
-
-    init(_ inner: MockDataLoader) { self.inner = inner }
-
-    func dataTask(with request: URLRequest, completionHandler: @escaping (Data?, URLResponse?, Error?) -> Void) -> URLSessionDataTask {
-        inner.dataTask(with: request, completionHandler: completionHandler)
-    }
-
-    func data(for request: URLRequest) async throws -> (Data, URLResponse) {
-        callCount += 1
-        await Task.yield()
-        return try await inner.data(for: request)
-    }
-}
-
-// MARK: -
-
 class NearbyStopsViewModelTests: OBATestCase {
 
     let coordinate = TestData.seattleCoordinate
