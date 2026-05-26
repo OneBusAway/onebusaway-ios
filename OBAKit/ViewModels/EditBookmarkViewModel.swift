@@ -103,7 +103,10 @@ final class EditBookmarkViewModel {
 
     /// Builds the `Bookmark` from form values and checks for duplicates.
     /// Returns `nil` if `application.currentRegion` is not available.
-    /// Does NOT persist — call `persist(_:to:isNewBookmark:)` after any duplicate confirmation.
+    ///
+    /// In edit mode this mutates `existingBookmark`'s `name`/`isFavorite` in memory so the
+    /// returned bookmark reflects the form values; it does NOT write to the data store.
+    /// Call `persist(_:to:isNewBookmark:)` to save, after any duplicate confirmation.
     func prepareToSave(name: String, isFavorite: Bool, selectedGroupID: String) -> SaveOutcome? {
         guard let region = application.currentRegion else { return nil }
 
