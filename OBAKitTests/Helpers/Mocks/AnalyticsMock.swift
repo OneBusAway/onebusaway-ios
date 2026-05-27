@@ -21,8 +21,12 @@ class AnalyticsMock: NSObject, Analytics {
         //
     }
     
+    public private(set) var stopViewedCount = 0
+    public private(set) var lastReportedStopID: String?
+
     func reportStopViewed(name: String, id: String, stopDistance: String) {
-        //
+        stopViewedCount += 1
+        lastReportedStopID = id
     }
     
     func reportSetRegion(_ name: String) {

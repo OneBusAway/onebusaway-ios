@@ -8,6 +8,7 @@
 //
 
 import UIKit
+import Combine
 import FloatingPanel
 import OBAKitCore
 import MapKit
@@ -18,7 +19,6 @@ protocol MapPanelDelegate: NSObjectProtocol {
     func mapPanelController(_ controller: MapFloatingPanelController, didSelectStop stopID: Stop.ID)
     func mapPanelController(_ controller: MapFloatingPanelController, didSelectMapItem mapItem: MKMapItem)
     func mapPanelControllerDidChangeChildViewController(_ controller: MapFloatingPanelController)
-    func mapPanelControllerDisplaySearch(_ controller: MapFloatingPanelController)
     func mapPanelController(_ controller: MapFloatingPanelController, moveTo state: FloatingPanelState, animated: Bool)
 }
 
@@ -42,19 +42,17 @@ class MapFloatingPanelController: VisualEffectViewController,
 
     public let application: Application
 
+    let viewModel: MapPanelViewModel
+    private var cancellables = Set<AnyCancellable>()
+
     // Nearby Stops
     private var nearbyStopsListViewController: NearbyStopsListViewController!
-    var highSeverityAlerts: [AgencyAlert] {
-        application.alertsStore.recentHighSeverityAlerts
-    }
+
+    // NearbyStopsListDataSource — forwarded from ViewModel
+    var highSeverityAlerts: [AgencyAlert] { viewModel.highSeverityAlerts }
+    var stops: [Stop] { viewModel.nearbyStops }
 
     private var resetFudgeFactorWorkItem: DispatchWorkItem?
-
-    private(set) var stops = [Stop]() {
-        didSet {
-            nearbyStopsListViewController.updateList()
-        }
-    }
 
     // Search
     private var searchListViewController: UIHostingController<SearchListView>!
@@ -65,6 +63,7 @@ class MapFloatingPanelController: VisualEffectViewController,
         self.application = application
         self.mapRegionManager = mapRegionManager
         self.mapPanelDelegate = delegate
+        self.viewModel = MapPanelViewModel(application: application)
 
         super.init(nibName: nil, bundle: nil)
 
@@ -122,10 +121,11 @@ class MapFloatingPanelController: VisualEffectViewController,
         didSet {
             if inSearchMode {
                 application.analytics?.reportEvent(pageURL: "app://localhost/map", label: AnalyticsLabels.searchSelected, value: nil)
-                mapPanelDelegate?.mapPanelControllerDisplaySearch(self)
+                viewModel.enterSearchMode()
             }
             else {
-                mapPanelDelegate?.mapPanelController(self, moveTo: .tip, animated: true)
+                viewModel.exitSearchMode()
+                // Panel move to .tip is handled by viewModel.$requestedPanelDetent binding.
             }
 
             toggleSearch(showingSearch: inSearchMode)
@@ -196,6 +196,13 @@ class MapFloatingPanelController: VisualEffectViewController,
         searchListViewController = searchListView
         searchListViewController.view.translatesAutoresizingMaskIntoConstraints = false
         searchListViewController.view.backgroundColor = .clear
+
+        bindViewModel()
+    }
+
+    private func bindViewModel() {
+        bindNearbyContent()
+        bindPanelDetent()
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -232,7 +239,7 @@ class MapFloatingPanelController: VisualEffectViewController,
     // MARK: - Agency Alerts
 
     public func agencyAlertsUpdated() {
-        nearbyStopsListViewController.updateList()
+        viewModel.refreshAlerts()
     }
 
     // MARK: - NearbyStopsListViewControllerDelegate methods
@@ -337,7 +344,7 @@ class MapFloatingPanelController: VisualEffectViewController,
 
     fileprivate var currentPreviewingViewController: UIViewController?
     func contextMenu(_ listView: OBAListView, for item: AnyOBAListViewItem) -> OBAListViewMenuActions? {
-        guard let stopViewModel = item.as(StopViewModel.self) else { return nil }
+        guard let stopViewModel = item.as(StopRowItem.self) else { return nil }
 
         let previewProvider: OBAListViewMenuActions.PreviewProvider = { [unowned self] () -> UIViewController? in
             let stopVC = StopViewController(application: self.application, stopID: stopViewModel.stopID)
@@ -355,6 +362,37 @@ class MapFloatingPanelController: VisualEffectViewController,
     }
 }
 
+// MARK: - ViewModel Binding
+
+private extension MapFloatingPanelController {
+    func bindNearbyContent() {
+        viewModel.$nearbyStops
+            .sink { [weak self] _ in self?.nearbyStopsListViewController.updateList() }
+            .store(in: &cancellables)
+
+        viewModel.$highSeverityAlerts
+            .sink { [weak self] _ in self?.nearbyStopsListViewController.updateList() }
+            .store(in: &cancellables)
+    }
+
+    func bindPanelDetent() {
+        // EC11: map PanelDetent to FloatingPanel state so UIKit and future SwiftUI share the same source of truth.
+        viewModel.$requestedPanelDetent
+            .dropFirst()
+            .sink { [weak self] detent in
+                guard let self else { return }
+                let state: FloatingPanelState
+                switch detent {
+                case .tip:  state = .tip
+                case .half: state = .half
+                case .full: state = .full
+                }
+                mapPanelDelegate?.mapPanelController(self, moveTo: state, animated: true)
+            }
+            .store(in: &cancellables)
+    }
+}
+
 // MARK: - MapRegionDelegate
 
 extension MapFloatingPanelController: MapRegionDelegate {
@@ -363,7 +401,7 @@ extension MapFloatingPanelController: MapRegionDelegate {
     }
 
     public func mapRegionManager(_ manager: MapRegionManager, stopsUpdated stops: [Stop]) {
-        self.stops = stops
+        viewModel.updateNearbyStops(stops)
     }
 
     // MARK: - RegionsServiceDelegate

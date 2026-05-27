@@ -175,6 +175,15 @@ public class AgencyAlertsStore: NSObject, RegionsServiceDelegate {
         self.notifyDelegatesAlertsUpdated()
     }
 
+    /// Injects alerts directly without the network fetch cycle.
+    /// Internal so `@testable` imports can populate the store with fixtures.
+    @MainActor
+    func insertAlerts(_ newAlerts: [AgencyAlert]) {
+        for alert in newAlerts {
+            alerts.insert(alert)
+        }
+    }
+
     /// Deletes all local data. Useful in preparation for changing the region.
     private func deleteAgencyAlerts() {
         queue.addOperation { [weak self] in

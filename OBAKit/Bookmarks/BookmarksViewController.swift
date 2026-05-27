@@ -8,6 +8,7 @@
 //
 
 import UIKit
+import Combine
 import CoreLocation
 import OBAKitCore
 import WidgetKit
@@ -17,7 +18,6 @@ import WidgetKit
 public class BookmarksViewController: UIViewController,
                                       AppContext,
                                       BookmarkEditorDelegate,
-                                      BookmarkDataDelegate,
                                       ManageBookmarksDelegate,
                                       ModalDelegate,
                                       OBAListViewDataSource,
@@ -25,6 +25,8 @@ public class BookmarksViewController: UIViewController,
                                       OBAListViewContextMenuDelegate {
 
     let application: Application
+    let viewModel: BookmarksViewModel
+    private var cancellables = Set<AnyCancellable>()
 
     // TODO: property wrapper??
     public var collapsedSections: Set<OBAListViewSection.ID> {
@@ -54,6 +56,7 @@ public class BookmarksViewController: UIViewController,
 
     public init(application: Application) {
         self.application = application
+        self.viewModel = BookmarksViewModel(application: application)
         super.init(nibName: nil, bundle: nil)
 
         title = OBALoc("bookmarks_controller.title", value: "Bookmarks", comment: "Title of the Bookmarks tab")
@@ -61,34 +64,15 @@ public class BookmarksViewController: UIViewController,
         tabBarItem.selectedImage = Icons.bookmarksSelectedTabIcon
 
         navigationItem.leftBarButtonItem = UIBarButtonItem(title: OBALoc("bookmarks_controller.groups_button_title", value: "Edit", comment: "Groups button title in Bookmarks controller"), style: .plain, target: self, action: #selector(manageGroups))
-
-        application.userDefaults.register(defaults: [
-            userDefaultsKeys.sortBookmarksByGroup.rawValue: true
-        ])
     }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
-    deinit {
-        dataLoader.cancelUpdates()
-    }
-
-    // MARK: - User Defaults
-
-    private enum userDefaultsKeys: String {
-        case sortBookmarksByGroup = "OBABookmarksController_SortBookmarksByGroup"
-    }
-
     private var sortBookmarksByGroup: Bool {
-        get {
-            application.userDefaults.bool(forKey: userDefaultsKeys.sortBookmarksByGroup.rawValue)
-        }
-        set {
-            application.userDefaults.setValue(newValue, forKey: userDefaultsKeys.sortBookmarksByGroup.rawValue)
-            listView.applyData(animated: false)
-        }
+        get { viewModel.sortByGroup }
+        set { viewModel.updateSortType(byGroup: newValue) }
     }
 
     // MARK: - UIViewController
@@ -105,14 +89,15 @@ public class BookmarksViewController: UIViewController,
         listView.pinToSuperview(.edges)
 
         rebuildSortMenu()
-
-        dataLoader.loadData()
+        bindViewModel()
     }
 
     public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        viewModel.start()
 
         application.notificationCenter.addObserver(self, selector: #selector(applicationEnteredBackground), name: UIApplication.didEnterBackgroundNotification, object: nil)
+        application.notificationCenter.addObserver(self, selector: #selector(applicationWillEnterForeground), name: UIApplication.willEnterForegroundNotification, object: nil)
 
         if application.userDataStore.bookmarks.count == 0 {
             refreshControl.removeFromSuperview()
@@ -127,8 +112,9 @@ public class BookmarksViewController: UIViewController,
         super.viewWillDisappear(animated)
 
         application.notificationCenter.removeObserver(self, name: UIApplication.didEnterBackgroundNotification, object: nil)
+        application.notificationCenter.removeObserver(self, name: UIApplication.willEnterForegroundNotification, object: nil)
 
-        dataLoader.cancelUpdates()
+        viewModel.deactivate()
     }
 
     // MARK: - Sorting
@@ -137,13 +123,11 @@ public class BookmarksViewController: UIViewController,
         let groupTitle = OBALoc("bookmarks_controller.sort_menu.sort_by_group", value: "Sort by Group", comment: "A menu item that allows the user to sort their bookmarks into groups.")
         let groupSortAction = UIAction(title: groupTitle, image: UIImage(systemName: "folder")) { _ in
             self.sortBookmarksByGroup = true
-            self.rebuildSortMenu()
         }
 
         let distanceTitle = OBALoc("bookmarks_controller.sort_menu.sort_by_distance", value: "Sort by Distance", comment: "A menu item that allows the user to sort their bookmarks by distance from the user.")
         let distanceSortAction = UIAction(title: distanceTitle, image: UIImage(systemName: "location.circle")) { _ in
             self.sortBookmarksByGroup = false
-            self.rebuildSortMenu()
         }
 
         if self.sortBookmarksByGroup {
@@ -167,15 +151,15 @@ public class BookmarksViewController: UIViewController,
 
     // MARK: - Refresh Control
 
-    @objc private func refreshControlPulled() {
-        dataLoader.loadData()
-        refreshControl.beginRefreshing()
-        reloadWidget()
+    /// `true` when the user pulled to refresh and the spinner is currently driven by that
+    /// gesture. Auto-refreshes (the 30 s timer) leave this `false`, so the refresh control
+    /// only animates for explicit user pulls.
+    private var isUserRefreshing = false
 
-        Timer.scheduledTimer(withTimeInterval: 2.0, repeats: false) { [weak self] _ in
-            guard let self = self else { return }
-            self.refreshControl.endRefreshing()
-        }
+    @objc private func refreshControlPulled() {
+        isUserRefreshing = true
+        refreshControl.beginRefreshing()
+        viewModel.refresh()
     }
 
     private lazy var refreshControl: UIRefreshControl = {
@@ -206,15 +190,10 @@ public class BookmarksViewController: UIViewController,
         let arrivalData = bookmarks
             .filter { $0.regionIdentifier == application.regionsService.currentRegion?.id }
             .compactMap { bookmark -> BookmarkArrivalViewModel? in
-                var arrDeps: [BookmarkArrivalViewModel.ArrivalDepartureShouldHighlightPair] = []
-
-                if let key = TripBookmarkKey(bookmark: bookmark) {
-                    let data = dataLoader.dataForKey(key)
-                    arrDeps = data.map { arrDep -> BookmarkArrivalViewModel.ArrivalDepartureShouldHighlightPair in
-                        return (arrDep, shouldHighlight(arrivalDeparture: arrDep))
-                    }
+                let deps = viewModel.arrivalDepartures(for: bookmark)
+                let arrDeps = deps.map { arrDep -> BookmarkArrivalViewModel.ArrivalDepartureShouldHighlightPair in
+                    return (arrDep, shouldHighlight(arrivalDeparture: arrDep))
                 }
-
                 return BookmarkArrivalViewModel(bookmark: bookmark, arrivalDepartures: arrDeps, onSelect: onSelectBookmark)
             }
 
@@ -271,11 +250,6 @@ public class BookmarksViewController: UIViewController,
 
     // MARK: - Distance Sort
 
-    /// Provides a way to check if the user wants to sort by distance, but cannot for whatever reason right now.
-    private var distanceSortRequestedButUnavailable: Bool {
-        !sortBookmarksByGroup && application.locationService.currentLocation == nil
-    }
-
     /// Builds a single item array that contains a list of all bookmarks in the current region sorted by distance from the current user.
     private func listItemsSortedByDistance() -> [OBAListViewSection] {
         guard let currentLocation = application.locationService.currentLocation else {
@@ -315,7 +289,7 @@ public class BookmarksViewController: UIViewController,
             }
 
             // Delete bookmark
-            self.application.userDataStore.delete(bookmark: bookmark)
+            self.viewModel.deleteBookmark(bookmark)
             self.listView.applyData(animated: true)
         }
 
@@ -387,21 +361,20 @@ public class BookmarksViewController: UIViewController,
         listView.applyData(animated: false)
     }
 
-    // MARK: - Data Loading
-
-    private lazy var dataLoader = BookmarkDataLoader(application: application, delegate: self)
-
-    public func dataLoaderDidUpdate(_ dataLoader: BookmarkDataLoader) {
-        listView.applyData(animated: false)
-
-        // TOOD: handle error cases. currently, this view is not notified of an error.
-        dataLoadFeedbackGenerator.dataLoad(.success)
+    private func bindViewModel() {
+        bindListUpdate()
+        bindSortPreference()
+        bindLoadingState()
     }
 
     // MARK: - Notifications
 
     @objc private func applicationEnteredBackground(note: Notification) {
-        dataLoader.cancelUpdates()
+        viewModel.deactivate()
+    }
+
+    @objc private func applicationWillEnterForeground() {
+        viewModel.start()
     }
 
     // MARK: - Bookmark Groups
@@ -422,5 +395,55 @@ public class BookmarksViewController: UIViewController,
 
     func manageBookmarksReloadData(_ controller: ManageBookmarksAndGroupsViewController) {
         listView.applyData(animated: false)
+    }
+}
+
+// MARK: - ViewModel Binding
+
+private extension BookmarksViewController {
+    func bindListUpdate() {
+        // Per-bookmark fetch completions: rebuild the list so each row's arrival
+        // times update as soon as that bookmark's data lands.
+        viewModel.didUpdate
+            .sink { [weak self] _ in
+                self?.listView.applyData(animated: false)
+            }
+            .store(in: &cancellables)
+    }
+
+    /// Reacts to the data loader's batch-boundary signal. Ends the user-pull spinner
+    /// and fires the once-per-batch side effects (haptic pulse, widget reload) — these
+    /// belong here rather than in `didUpdate`, which fires once per per-bookmark fetch
+    /// and would multiply the side effects by the bookmark count.
+    func bindLoadingState() {
+        viewModel.$isLoading
+            .filter { !$0 }
+            .sink { [weak self] _ in
+                guard let self else { return }
+                if isUserRefreshing {
+                    refreshControl.endRefreshing()
+                    // Haptic confirms the user-pull completed; suppress on background
+                    // 30 s auto-refreshes so the device doesn't buzz unprompted. Reflect
+                    // whether any bookmark fetch in the batch failed so a partial/total
+                    // failure doesn't masquerade as a success buzz.
+                    dataLoadFeedbackGenerator.dataLoad(viewModel.lastRefreshHadError ? .failed : .success)
+                    isUserRefreshing = false
+                }
+                reloadWidget()
+            }
+            .store(in: &cancellables)
+    }
+
+    func bindSortPreference() {
+        viewModel.$sortByGroup
+            .dropFirst()
+            .sink { [weak self] _ in
+                Task { @MainActor [weak self] in
+                    guard let self else { return }
+                    listView.applyData(animated: false)
+                    rebuildSortMenu()
+                }
+            }
+            .store(in: &cancellables)
     }
 }

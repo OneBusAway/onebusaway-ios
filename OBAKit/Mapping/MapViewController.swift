@@ -11,6 +11,7 @@
 
 import UIKit
 import MapKit
+import Combine
 import FloatingPanel
 import OBAKitCore
 import SwiftUI
@@ -42,7 +43,7 @@ class MapViewController: UIViewController,
 
         hover.stackView.addArrangedSubview(HoverBarSeparator())
         hover.stackView.addArrangedSubview(toggleMapTypeButton)
-        setMapTypeButtonImage(toggleMapTypeButton)
+        setMapTypeButtonImage(toggleMapTypeButton, mapType: viewModel.mapType)
 
         if application.features.obaco == .running {
             hover.stackView.addArrangedSubview(HoverBarSeparator())
@@ -63,6 +64,9 @@ class MapViewController: UIViewController,
         return application.mapRegionManager
     }
 
+    let viewModel: MapViewModel
+    private var cancellables = Set<AnyCancellable>()
+
     // MARK: - Surveys
 
     private var surveyDisplayManager: SurveyDisplayManager?
@@ -72,6 +76,8 @@ class MapViewController: UIViewController,
 
     public init(application: Application) {
         self.application = application
+        let initialMapType: MapBaseType = application.mapRegionManager.userSelectedMapType == .mutedStandard ? .standard : .hybrid
+        self.viewModel = MapViewModel(application: application, initialMapType: initialMapType)
 
         super.init(nibName: nil, bundle: nil)
 
@@ -154,6 +160,13 @@ class MapViewController: UIViewController,
         longPressGesture.delegate = self
         mapView.addGestureRecognizer(longPressGesture)
 
+        bindViewModel()
+    }
+
+    private func bindViewModel() {
+        bindWeather()
+        bindMapStatus()
+        bindMapType()
     }
 
     public override func viewWillAppear(_ animated: Bool) {
@@ -164,7 +177,7 @@ class MapViewController: UIViewController,
         // at different times. I think this expectation will become
         // unfounded when UIScene gets adopted in the app. TODO.
         application.mapRegionManager.mapViewDelegate = self
-        application.mapRegionManager.bookmarks = application.userDataStore.findBookmarks(in: application.currentRegion)
+        viewModel.reloadBookmarks()
 
         navigationController?.setNavigationBarHidden(true, animated: false)
 
@@ -176,7 +189,7 @@ class MapViewController: UIViewController,
     public override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
 
-        loadWeather()
+        viewModel.start()
         updateVoiceover()
         checkForMapSurvey()
     }
@@ -240,12 +253,10 @@ class MapViewController: UIViewController,
 
     // MARK: - Status View Handlers
 
-    private var isShowingZoomWarning = false
-
     private static let zoomInForStopsSpan = 0.01
 
     @objc private func handleMapStatusTap(_ sender: UITapGestureRecognizer) {
-        if isShowingZoomWarning {
+        if viewModel.showZoomWarning {
             didTapZoomInForStops()
         } else {
             didTapMapStatus(sender)
@@ -377,22 +388,6 @@ class MapViewController: UIViewController,
             }
             else {
                 weatherButton.isHidden = true
-            }
-        }
-    }
-
-    private func loadWeather() {
-        guard let apiService = application.obacoService else { return }
-
-        Task {
-            do {
-                let forecast = try await apiService.getWeather()
-                await MainActor.run {
-                    self.forecast = forecast
-                }
-            } catch {
-                weatherButton.isHidden = true
-                Logger.error(error.localizedDescription)
             }
         }
     }
@@ -542,28 +537,16 @@ class MapViewController: UIViewController,
 
     private func subscribeToTripPlannerNotifications() {
         application.notificationCenter.addObserver(self, selector: #selector(itinerariesUpdated), name: Notifications.itinerariesUpdated, object: nil)
-        application.notificationCenter.addObserver(self, selector: #selector(itineraryPreviewStarted), name: Notifications.itineraryPreviewStarted, object: nil)
-        application.notificationCenter.addObserver(self, selector: #selector(itineraryPreviewEnded), name: Notifications.itineraryPreviewEnded, object: nil)
         application.notificationCenter.addObserver(self, selector: #selector(tripStarted), name: Notifications.tripStarted, object: nil)
     }
 
     private func unsubscribeFromTripPlannerNotifications() {
         application.notificationCenter.removeObserver(self, name: Notifications.itinerariesUpdated, object: nil)
-        application.notificationCenter.removeObserver(self, name: Notifications.itineraryPreviewStarted, object: nil)
-        application.notificationCenter.removeObserver(self, name: Notifications.itineraryPreviewEnded, object: nil)
         application.notificationCenter.removeObserver(self, name: Notifications.tripStarted, object: nil)
     }
 
     @objc private func itinerariesUpdated(_ note: NSNotification) {
         semiModalTripPlannerController?.move(to: .full, animated: true)
-    }
-
-    @objc private func itineraryPreviewStarted(_ note: NSNotification) {
-        // nop
-    }
-
-    @objc private func itineraryPreviewEnded(_ note: NSNotification) {
-        //
     }
 
     @objc private func tripStarted(_ note: NSNotification) {
@@ -581,17 +564,11 @@ class MapViewController: UIViewController,
     }()
 
     @objc private func toggleMapType() {
-        if application.mapRegionManager.userSelectedMapType == .mutedStandard {
-            application.mapRegionManager.userSelectedMapType = .hybrid
-        } else {
-            application.mapRegionManager.userSelectedMapType = .mutedStandard
-        }
-
-        setMapTypeButtonImage(toggleMapTypeButton)
+        viewModel.toggleMapType()
     }
 
-    private func setMapTypeButtonImage(_ button: UIButton) {
-        if application.mapRegionManager.userSelectedMapType == .mutedStandard {
+    private func setMapTypeButtonImage(_ button: UIButton, mapType: MapBaseType) {
+        if mapType == .standard {
             button.setImage(UIImage(systemName: "map"), for: .normal)
             button.accessibilityValue = OBALoc("map_controller.map_type.standard.accessibility_value", value: "standard", comment: "Voiceover text indicating the current map type as the standard base map.")
         } else {
@@ -609,6 +586,9 @@ class MapViewController: UIViewController,
     }
 
     @objc func applicationDidBecomeActive(_ notification: NSNotification) {
+        // EC12: notify ViewModel so it can refresh data (e.g. weather) without UIKit imports.
+        viewModel.onAppBecameActive()
+
         guard
             let resignedActiveAt = resignedActiveAt,
             abs(resignedActiveAt.timeIntervalSinceNow) > 600
@@ -621,8 +601,7 @@ class MapViewController: UIViewController,
 
     @objc private func reloadBookmarkAnnotations() {
         DispatchQueue.main.async { [weak self] in
-            guard let self, let region = self.application.currentRegion else { return }
-            self.application.mapRegionManager.bookmarks = self.application.userDataStore.findBookmarks(in: region)
+            self?.viewModel.reloadBookmarks()
         }
     }
 
@@ -857,10 +836,6 @@ class MapViewController: UIViewController,
         displayMapItemController(mapItem)
     }
 
-    func mapPanelControllerDisplaySearch(_ controller: MapFloatingPanelController) {
-        floatingPanel.move(to: .full, animated: true)
-    }
-
     func mapPanelControllerDidChangeChildViewController(_ controller: MapFloatingPanelController) {
         // If there is a new scroll view, tell floating panel to track the new scroll view.
         // Else, untrack its currently tracking scroll view.
@@ -997,12 +972,8 @@ class MapViewController: UIViewController,
     }
 
     @objc public func mapRegionManagerShowZoomInStatus(_ manager: MapRegionManager, showStatus: Bool) {
-        isShowingZoomWarning = showStatus
-
-        mapStatusView.configure(
-            for: mapStatusView.state(for: application.locationService),
-            zoomInStatus: showStatus
-        )
+        // EC6: Update ViewModel so both UIKit and future SwiftUI consumers share the same state.
+        viewModel.updateZoomWarning(showStatus)
     }
 
     // MARK: Loading Indicator
@@ -1093,12 +1064,6 @@ class MapViewController: UIViewController,
         programmaticallyUpdateVisibleMapRegion(location: location)
     }
 
-    public func locationService(_ service: LocationService, authorizationStatusChanged status: CLAuthorizationStatus) {
-        mapStatusView.configure(with: service)
-        layoutMapMargins()
-        locationButton.isHidden = !service.isLocationUseAuthorized
-    }
-
     // MARK: - Context Menus
 
     public func contextMenuInteraction(_ interaction: UIContextMenuInteraction, configurationForMenuAtLocation location: CGPoint) -> UIContextMenuConfiguration? {
@@ -1134,6 +1099,51 @@ class MapViewController: UIViewController,
         }
     }
 
+}
+
+// MARK: - ViewModel Binding
+
+private extension MapViewController {
+    func bindWeather() {
+        viewModel.$weather
+            .sink { [weak self] forecast in self?.forecast = forecast }
+            .store(in: &cancellables)
+    }
+
+    func bindMapStatus() {
+        // EC6: Observe zoom-warning state from ViewModel so UIKit and future SwiftUI share the same source of truth.
+        viewModel.$showZoomWarning
+            .sink { [weak self] _  in
+                guard let self else { return }
+                self.renderMapStatus()
+            }
+            .store(in: &cancellables)
+
+        viewModel.$locationAuthStatus
+            .sink { [weak self] _ in
+                guard let self else { return }
+                self.renderMapStatus()
+            }
+            .store(in: &cancellables)
+    }
+
+    func bindMapType() {
+        viewModel.$mapType
+            .sink { [weak self] mapType in
+                guard let self else { return }
+                let mkType: MKMapType = mapType == .standard ? .mutedStandard : .hybrid
+                application.mapRegionManager.userSelectedMapType = mkType
+                setMapTypeButtonImage(toggleMapTypeButton, mapType: mapType)
+            }
+            .store(in: &cancellables)
+    }
+
+    func renderMapStatus() {
+        let locationState = mapStatusView.state(for: application.locationService)
+        mapStatusView.configure(for: locationState, zoomInStatus: viewModel.showZoomWarning)
+        locationButton.isHidden = !application.locationService.isLocationUseAuthorized
+        layoutMapMargins()
+    }
 }
 
 // swiftlint:enable file_length

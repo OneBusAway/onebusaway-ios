@@ -1,5 +1,5 @@
 //
-//  RecentStopViewModels.swift
+//  RecentStopRowItems.swift
 //  OBAKit
 //
 //  Created by Alan Chu on 11/3/20.
@@ -11,7 +11,7 @@ import OBAKitCore
 ///
 /// This model uses a default content configuration, there is no need to register this
 /// item with OBAListView before use.
-struct StopViewModel: OBAListViewItem {
+struct StopRowItem: OBAListViewItem {
     let name: String
     let subtitle: String?
 
@@ -34,13 +34,13 @@ struct StopViewModel: OBAListViewItem {
         return .custom(config)
     }
 
-    let onSelectAction: OBAListViewAction<StopViewModel>?
-    let onDeleteAction: OBAListViewAction<StopViewModel>?
+    let onSelectAction: OBAListViewAction<StopRowItem>?
+    let onDeleteAction: OBAListViewAction<StopRowItem>?
 
     init(withStop stop: Stop,
          showDirectionInTitle: Bool = false,
-         onSelect selectAction: OBAListViewAction<StopViewModel>?,
-         onDelete deleteAction: OBAListViewAction<StopViewModel>?) {
+         onSelect selectAction: OBAListViewAction<StopRowItem>?,
+         onDelete deleteAction: OBAListViewAction<StopRowItem>?) {
 
         self.name = showDirectionInTitle ? stop.nameWithLocalizedDirectionAbbreviation : stop.name
         self.subtitle = stop.subtitle
@@ -58,7 +58,7 @@ struct StopViewModel: OBAListViewItem {
         hasher.combine(routeType)
     }
 
-    static func == (lhs: StopViewModel, rhs: StopViewModel) -> Bool {
+    static func == (lhs: StopRowItem, rhs: StopRowItem) -> Bool {
         return lhs.id == rhs.id &&
             lhs.stopID == rhs.stopID &&
             lhs.name == rhs.name &&
