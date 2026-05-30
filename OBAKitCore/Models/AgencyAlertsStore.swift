@@ -64,12 +64,12 @@ public class AgencyAlertsStore: NSObject, RegionsServiceDelegate {
 
     /// Serializes access to this store's mutable state (`agencies`, `alerts`,
     /// `readAlertIDs`). Those are touched from several execution contexts that don't
-    /// coordinate on their own: `update()` runs on a background `Task` executor,
-    /// `deleteAgencyAlerts()` on the serial `queue`, and the `@MainActor` storage
-    /// methods / UI reads on the main thread. Without this lock those accesses race —
-    /// Thread Sanitizer flags `agencies` (written by `update()`, mutated by
-    /// `deleteAgencyAlerts()`), and the corruption segfaults under load on CI.
-    /// Never hold this lock across an `await`.
+    /// coordinate on their own: `update()` is `async` and inherits its caller's
+    /// context, `deleteAgencyAlerts()` runs on the serial `queue`, and the
+    /// `@MainActor` storage methods / UI reads run on the main thread. Without this
+    /// lock those accesses race — Thread Sanitizer flags `agencies` (written by
+    /// `update()`, mutated by `deleteAgencyAlerts()`), and the corruption segfaults
+    /// under load on CI. Never hold this lock across an `await`.
     private let stateLock = NSLock()
 
     public func update() async throws {
@@ -210,11 +210,11 @@ public class AgencyAlertsStore: NSObject, RegionsServiceDelegate {
     private func deleteAgencyAlerts() {
         queue.addOperation { [weak self] in
             guard let self = self else { return }
-            self.userDefaults.set([], forKey: UserDefaultKeys.readAgencyAlertIDs)
             self.stateLock.withLock {
                 self.agencies.removeAll()
                 self.readAlertIDs.removeAll()
                 self.alerts.removeAll()
+                self.userDefaults.set([], forKey: UserDefaultKeys.readAgencyAlertIDs)
             }
         }
     }
