@@ -162,8 +162,13 @@ class RecentStopsViewModelTests: OBATestCase {
     // MARK: - delete(alarm:)
 
     @MainActor
-    func test_delete_alarm_removesItLocally() {
-        let app = createApplication(dataLoader: MockDataLoader(testName: name))
+    func test_delete_alarm_removesItLocally() async {
+        let dataLoader = MockDataLoader(testName: name)
+        // Stub anything the obaco service might hit — the remote DELETE is now a real
+        // fire-and-forget detached Task (no `[weak self]` early-out), and without a
+        // catch-all the MockDataLoader fatals if/when the Task lands.
+        dataLoader.mock(data: Data()) { _ in true }
+        let app = createApplication(dataLoader: dataLoader)
         let alarm = try! Fixtures.loadAlarm()
         alarm.set(tripDate: Date(timeIntervalSinceNow: 300), alarmOffset: 2)
         app.userDataStore.add(alarm: alarm)
@@ -171,7 +176,9 @@ class RecentStopsViewModelTests: OBATestCase {
         viewModel.loadData()
         expect(viewModel.alarms.map(\.url)).to(contain(alarm.url))
 
-        viewModel.delete(alarm: alarm)
+        // Await the returned Task so the remote DELETE completes inside the test
+        // boundary — otherwise it races past tearDown.
+        await viewModel.delete(alarm: alarm).value
 
         expect(viewModel.alarms.map(\.url)).toNot(contain(alarm.url))
     }
@@ -213,6 +220,11 @@ class RecentStopsViewModelTests: OBATestCase {
         stop.regionIdentifier = nil
         app.userDataStore.addRecentStop(stop, region: Fixtures.pugetSoundRegion)
         let viewModel = RecentStopsViewModel(application: app)
+
+        // Pin the precondition the test relies on: if a future stub region ever covers
+        // (0,0) (e.g. a worldwide bounding box), `currentRegion` would become non-nil
+        // and the assertion below would pass for the wrong reason.
+        expect(app.currentRegion).to(beNil())
 
         viewModel.loadData()
 

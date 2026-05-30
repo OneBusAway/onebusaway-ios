@@ -56,9 +56,9 @@ public class RecentStopsViewController: UIViewController,
     }
 
     private func bindViewModel() {
-        // Deliver on the main queue so the sink runs *after* @Published commits its new
-        // value (it publishes in willSet). Otherwise items(for:) would read stale
-        // alarms / recentStops and the list would render one update behind.
+        // `@Published` fires from `willSet`, so a synchronous sink would read the *old*
+        // stored values via `items(for:)` (alarms / recentStops). The main-queue hop
+        // defers the closure until after the property writes complete.
         Publishers.CombineLatest(viewModel.$alarms, viewModel.$recentStops)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in self?.listView.applyData(animated: true) }

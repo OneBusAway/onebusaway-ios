@@ -31,7 +31,14 @@ final class NearbyStopsViewModel: ObservableObject {
     }
 
     func loadStops() async {
-        guard !isLoading, let apiService else { return }
+        guard !isLoading else { return }
+        guard let apiService else {
+            // Misconfiguration (no API service available, e.g. region not selected). Surface
+            // it through the same error channel as a load failure so the screen doesn't
+            // sit silently empty with no signal to the user or in the logs.
+            operationError = UnstructuredError("No API service available for nearby stops.")
+            return
+        }
 
         isLoading = true
         operationError = nil

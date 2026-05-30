@@ -44,10 +44,14 @@ class SearchViewModelTests: OBATestCase {
     }
 
     func makeKeyNotFoundLoader() -> MockDataLoader {
-        // Returns a valid OBA API envelope but with "entry" missing from "data",
-        // which causes DecodingError.keyNotFound when the vehicle model is decoded.
+        // Returns a valid VehicleStatus envelope but with `tripId` omitted from `entry`,
+        // mirroring the real "vehicle isn't on any trip" payload — this is the specific
+        // keyNotFound case SearchViewModel maps to `noTripsAvailable`. Other missing
+        // keys (envelope, tripStatus, etc.) deliberately do *not* map to that error.
         let loader = MockDataLoader(testName: name)
-        let json = #"{"code":200,"currentTime":1588888802143,"data":{},"text":"OK","version":2}"#
+        let json = #"""
+        {"code":200,"currentTime":1588888802143,"data":{"entry":{"lastUpdateTime":1588888744000,"lastLocationUpdateTime":1588888744000,"phase":"in_progress","status":"SCHEDULED","tripStatus":{"activeTripId":"","blockTripSequence":0,"closestStop":"","closestStopTimeOffset":0,"distanceAlongTrip":0,"lastKnownDistanceAlongTrip":0,"lastLocationUpdateTime":0,"lastUpdateTime":0,"nextStop":"","nextStopTimeOffset":0,"orientation":0,"phase":"","position":{"lat":0,"lon":0},"predicted":false,"scheduleDeviation":0,"scheduledDistanceAlongTrip":0,"serviceDate":0,"situationIds":[],"status":"","totalDistanceAlongTrip":0,"vehicleId":""},"vehicleId":"1_4351"},"references":{"agencies":[],"routes":[],"situations":[],"stops":[],"trips":[]}},"text":"OK","version":2}
+        """#
         loader.mock(URLString: vehicleURLString, with: Data(json.utf8))
         return loader
     }
@@ -159,10 +163,12 @@ class SearchViewModelTests: OBATestCase {
     }
 
     @MainActor
-    func test_selectVehicle_nilApiService_vehicleErrorRemainsNil() async {
+    func test_selectVehicle_nilApiService_setsVehicleError() async {
+        // Without an API service, the call would otherwise silently no-op. Surface the
+        // misconfiguration through `vehicleError` so the existing error sink can present it.
         let vm = SearchViewModel(searchResponse: makeSearchResponse(searchType: .vehicleID), apiService: nil)
         await vm.selectVehicle(vehicleID: vehicleID)
-        expect(vm.vehicleError).to(beNil())
+        expect(vm.vehicleError).toNot(beNil())
     }
 
     // MARK: - selectVehicle / success

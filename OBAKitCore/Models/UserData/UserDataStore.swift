@@ -720,10 +720,14 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
     }
 
     public func delete(alarm: Alarm) {
-        // Match on `url` (the stable server identifier), not full equality: Alarm.isEqual
-        // compares tripDate/alarmDate, which lose sub-microsecond precision on the
-        // timeIntervalSince1970 round-trip through UserDefaults, so a stored alarm would
-        // never equal its in-memory counterpart and nothing would be removed.
+        // Match on `url` — the stable server-side identifier for the alarm. Full
+        // `Alarm` equality is now date-precision-safe (see Alarm.isEqual), but `url`
+        // is still the right notion of identity here: two alarms with the same URL
+        // are the same alarm regardless of any other field drift.
+        let matches = alarms.filter { $0.url == alarm.url }
+        if matches.count > 1 {
+            Logger.warn("delete(alarm:) found \(matches.count) alarms sharing url \(alarm.url) — removing all.")
+        }
         alarms.removeAll { $0.url == alarm.url }
     }
 

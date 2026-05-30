@@ -73,10 +73,11 @@ class NearbyStopsViewController: UIViewController,
             }
             .store(in: &cancellables)
 
-        // Deliver on the main queue so the sink runs *after* @Published commits the new
-        // value (it publishes in willSet). Otherwise items(for:) would read the old `stops`.
-        // Apply directly rather than routing through `searchFilter`, whose nil != nil guard
-        // would swallow the refresh on first load.
+        // `@Published` fires from `willSet`, so a synchronous sink would read the *old*
+        // stored value via `items(for:)`. The main-queue hop defers the closure until
+        // after the property write completes. Apply directly rather than routing through
+        // `searchFilter`, whose `oldValue != searchFilter` guard would swallow the
+        // refresh on first load when both are nil.
         viewModel.$stops
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
@@ -84,10 +85,12 @@ class NearbyStopsViewController: UIViewController,
             }
             .store(in: &cancellables)
 
+        // Sink on the full optional (not `.compactMap`): an explicit reset to nil at the
+        // start of `loadStops()` is a valid signal that the previous error is no longer
+        // current. Filtering nils means a retry leaves the prior alert state stale.
         viewModel.$operationError
-            .compactMap { $0 }
             .sink { [weak self] error in
-                guard let self else { return }
+                guard let self, let error else { return }
                 Task { await self.application.displayError(error) }
             }
             .store(in: &cancellables)

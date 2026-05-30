@@ -26,6 +26,9 @@ final class RecentStopsViewModel: ObservableObject {
         application.userDataStore.deleteExpiredAlarms()
         alarms = application.userDataStore.alarms
         guard let currentRegion = application.currentRegion else {
+            // No current region (mid-region-change, first launch race, denied location).
+            // The user sees a generic empty state — log so the condition is observable.
+            Logger.warn("RecentStopsViewModel.loadData: currentRegion is nil; returning empty recent stops.")
             recentStops = []
             return
         }
@@ -44,15 +47,20 @@ final class RecentStopsViewModel: ObservableObject {
         loadData()
     }
 
-    func delete(alarm: Alarm) {
+    @discardableResult
+    func delete(alarm: Alarm) -> Task<Void, Never> {
         application.userDataStore.delete(alarm: alarm)
         loadData()
-        // The alarm is already gone locally; a remote-delete failure isn't actionable by
-        // the user, so log it rather than surfacing a modal error for a background op.
-        Task { [weak self] in
-            guard let self else { return }
+        // Capture the service directly: if the VM is deallocated mid-delete (common when
+        // the user pops the view right after tapping delete), [weak self] would abort
+        // the DELETE before it ran, leaving the alarm live on the Obaco server.
+        // The returned Task is `@discardableResult` for the call site, but tests can
+        // await it to assert on remote-side behaviour.
+        let service = application.obacoService
+        let url = alarm.url
+        return Task {
             do {
-                try await application.obacoService?.deleteAlarm(url: alarm.url)
+                try await service?.deleteAlarm(url: url)
             } catch {
                 Logger.error("Failed to delete alarm remotely: \(error.localizedDescription)")
             }

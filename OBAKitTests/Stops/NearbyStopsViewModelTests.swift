@@ -73,10 +73,13 @@ class NearbyStopsViewModelTests: OBATestCase {
     }
 
     @MainActor
-    func test_loadStops_nilApiService_operationErrorRemainsNil() async {
+    func test_loadStops_nilApiService_setsOperationError() async {
+        // Without an API service, the screen would otherwise sit empty with no signal.
+        // Surface the misconfiguration through `operationError` so the existing error
+        // sink can present it.
         let viewModel = NearbyStopsViewModel(coordinate: coordinate, apiService: nil)
         await viewModel.loadStops()
-        expect(viewModel.operationError).to(beNil())
+        expect(viewModel.operationError).toNot(beNil())
     }
 
     // MARK: - Successful load

@@ -50,19 +50,31 @@ public class Alarm: NSObject, Codable {
 
     public override func isEqual(_ object: Any?) -> Bool {
         guard let rhs = object as? Alarm else { return false }
+        // Compare dates via timeIntervalSince1970 so an in-memory alarm equals the same
+        // alarm after a UserDefaults round-trip — `Date` carries sub-microsecond precision
+        // that is lost on encode/decode (see init(from:) / encode(to:) above), so a raw
+        // `==` would falsely report inequality for an alarm that was just persisted.
         return
             url == rhs.url &&
             deepLink == rhs.deepLink &&
-            tripDate == rhs.tripDate &&
-            alarmDate == rhs.alarmDate
+            Alarm.datesEqual(tripDate, rhs.tripDate) &&
+            Alarm.datesEqual(alarmDate, rhs.alarmDate)
+    }
+
+    private static func datesEqual(_ lhs: Date?, _ rhs: Date?) -> Bool {
+        switch (lhs, rhs) {
+        case (nil, nil): return true
+        case let (l?, r?): return l.timeIntervalSince1970 == r.timeIntervalSince1970
+        default: return false
+        }
     }
 
     override public var hash: Int {
         var hasher = Hasher()
         hasher.combine(url)
         hasher.combine(deepLink)
-        hasher.combine(tripDate)
-        hasher.combine(alarmDate)
+        hasher.combine(tripDate?.timeIntervalSince1970)
+        hasher.combine(alarmDate?.timeIntervalSince1970)
         return hasher.finalize()
     }
 

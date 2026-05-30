@@ -65,10 +65,12 @@ public class SearchResultsController: UIViewController, AppContext, OBAListViewD
             }
             .store(in: &cancellables)
 
+        // Sink on the full optional (not `.compactMap`): an explicit reset to nil at the
+        // start of `selectVehicle(...)` is a valid signal that the previous error is no
+        // longer current. Filtering nils leaves a retry's alert state stale.
         viewModel.$vehicleError
-            .compactMap { $0 }
             .sink { [weak self] error in
-                guard let self else { return }
+                guard let self, let error else { return }
                 Task { await self.application.displayError(error) }
             }
             .store(in: &cancellables)

@@ -39,7 +39,13 @@ final class SearchViewModel: ObservableObject {
     }
 
     func selectVehicle(vehicleID: String) async {
-        guard let apiService, !isLoading else { return }
+        guard !isLoading else { return }
+        guard let apiService else {
+            // Misconfiguration (no API service available). Surface it through the same
+            // error channel as a request failure so the screen doesn't silently no-op.
+            vehicleError = UnstructuredError("No API service available for vehicle search.")
+            return
+        }
         isLoading = true
         vehicleError = nil
         vehicleSearchResponse = nil
@@ -47,9 +53,13 @@ final class SearchViewModel: ObservableObject {
         do {
             let vehicle = try await apiService.getVehicle(vehicleID: vehicleID).entry
             vehicleSearchResponse = SearchResponse(response: searchResponse, substituteResult: vehicle)
-        } catch DecodingError.keyNotFound {
+        } catch let DecodingError.keyNotFound(key, _) where key.stringValue == "tripId" {
+            // VehicleStatus requires `tripId`; its absence means the vehicle isn't on
+            // any trip right now. Any *other* missing key signals a real decode failure
+            // (renamed field, malformed payload) and should surface as-is.
             vehicleError = SearchError.noTripsAvailable
         } catch {
+            Logger.error("selectVehicle decode failure: \(error)")
             vehicleError = error
         }
     }
