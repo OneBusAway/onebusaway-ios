@@ -12,9 +12,9 @@ import OBAKitCore
 
 /// Shared ViewModel for creating, renaming, reordering, and deleting bookmark groups.
 ///
-/// Consumed by `ManageGroupsViewController` (UIKit, via direct calls).
-/// The Eureka `MultivaluedSection` UI stays in the VC.
-/// Contains no UIKit or SwiftUI imports.
+/// Owns: the live list of `BookmarkGroup`s and the rules for turning ordered form
+/// rows back into groups (preserving identity for existing groups, minting new
+/// UUIDs for new ones, and skipping blank rows).
 @MainActor
 final class ManageGroupsViewModel {
 
@@ -40,7 +40,7 @@ final class ManageGroupsViewModel {
         var result = [BookmarkGroup]()
         var sortOrder = 0
         for row in rows {
-            guard let name = row.value, !name.trimmingCharacters(in: .whitespaces).isEmpty else { continue }
+            guard let name = row.value, !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { continue }
             let id = UUID(optionalUUIDString: row.tag) ?? UUID()
             result.append(BookmarkGroup(name: name, id: id, sortOrder: sortOrder))
             sortOrder += 1

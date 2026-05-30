@@ -12,10 +12,9 @@ import OBAKitCore
 
 /// Shared ViewModel for reordering and deleting bookmarks.
 ///
-/// Consumed by `ManageBookmarksViewController` (UIKit, via direct calls).
-/// Owns: bookmark reordering, deletion (with analytics), name persistence,
-/// and transit-name restore logic. The Eureka form UX stays in the VC.
-/// Contains no UIKit or SwiftUI imports.
+/// Owns: bookmark reordering, deletion (with the `removeBookmark` analytics event),
+/// name persistence, and resetting a bookmark's name back to its transit-derived
+/// default when the user clears the field.
 @MainActor
 final class ManageBookmarksViewModel {
 
@@ -64,10 +63,11 @@ final class ManageBookmarksViewModel {
     /// Empty or whitespace-only names are ignored here; they are restored via
     /// `restoreTransitName(for:)` when the screen closes.
     func saveNameChange(bookmarkID: UUID, newName: String) {
-        guard
-            !newName.trimmingCharacters(in: .whitespaces).isEmpty,
-            let bookmark = application.userDataStore.findBookmark(id: bookmarkID)
-        else { return }
+        guard !newName.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+        guard let bookmark = application.userDataStore.findBookmark(id: bookmarkID) else {
+            Logger.warn("saveNameChange: bookmark \(bookmarkID) not found in data store; dropping name edit")
+            return
+        }
 
         bookmark.name = newName
         let currentGroup = bookmark.groupID.flatMap { application.userDataStore.findGroup(id: $0) }
@@ -80,9 +80,9 @@ final class ManageBookmarksViewModel {
     /// `"<routeShortName> - <tripHeadsign>"` for trip bookmarks,
     /// or the formatted stop title for stop bookmarks.
     private func originalTransitName(for bookmark: Bookmark) -> String {
-        if bookmark.isTripBookmark,
-           let routeShortName = bookmark.routeShortName,
-           let tripHeadsign = bookmark.tripHeadsign {
+        if let routeShortName = bookmark.routeShortName,
+           let tripHeadsign = bookmark.tripHeadsign,
+           bookmark.routeID != nil {
             return "\(routeShortName) - \(tripHeadsign)"
         }
         return Formatters.formattedTitle(stop: bookmark.stop)
