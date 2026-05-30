@@ -92,12 +92,12 @@ class AddBookmarkViewControllerTests: OBATestCase {
         // the preloaded short-circuit and hits the network, MockDataLoader fatalErrors.
         let vc = AddBookmarkViewController(application: app, stop: stop, preloadedArrivals: preloaded, delegate: nil)
 
-        let baseline = self.arrivalsRequestCount(dataLoader)
+        dataLoader.resetRecordedRequestURLs()
         let result = try await vc.loadData()
 
         expect(result.count) == preloaded.count
         expect(result.first?.tripID) == preloaded.first?.tripID
-        expect(self.arrivalsRequestCount(dataLoader) - baseline) == 0
+        expect(self.arrivalsRequestCount(dataLoader)) == 0
     }
 
     // MARK: - Fallback to API
@@ -116,10 +116,10 @@ class AddBookmarkViewControllerTests: OBATestCase {
 
         let vc = AddBookmarkViewController(application: app, stop: stop, preloadedArrivals: nil, delegate: nil)
 
-        let baseline = self.arrivalsRequestCount(dataLoader)
+        dataLoader.resetRecordedRequestURLs()
         let result = try await vc.loadData()
 
         expect(result).toNot(beEmpty())
-        expect(self.arrivalsRequestCount(dataLoader) - baseline) == 1
+        expect(self.arrivalsRequestCount(dataLoader)) == 1
     }
 }

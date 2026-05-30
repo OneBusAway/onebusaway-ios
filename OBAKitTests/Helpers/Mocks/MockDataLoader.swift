@@ -61,6 +61,13 @@ class MockDataLoader: NSObject, URLDataLoader {
         recordedRequestURLsLock.withLock { _recordedRequestURLs.append(url) }
     }
 
+    /// Clears recorded request URLs. Useful in tests that need to ignore the
+    /// requests made during `Application` startup and only assert about calls
+    /// that happen after a specific action.
+    func resetRecordedRequestURLs() {
+        recordedRequestURLsLock.withLock { _recordedRequestURLs.removeAll() }
+    }
+
     let testName: String
 
     init(testName: String) {
