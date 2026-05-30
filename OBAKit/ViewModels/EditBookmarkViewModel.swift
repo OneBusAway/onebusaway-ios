@@ -28,16 +28,15 @@ enum BookmarkSource {
 }
 
 enum SaveOutcome {
-    case readyToSave(Bookmark, isNewBookmark: Bool)
-    case duplicateFound(Bookmark, isNewBookmark: Bool)
+    case ready(Bookmark, isNew: Bool, isDuplicate: Bool)
+    case regionUnavailable
 }
 
 /// Shared ViewModel for creating and editing a single bookmark.
 ///
-/// Consumed by `EditBookmarkViewController` (UIKit, via direct property reads).
-/// Owns: initial form field values, bookmark groups list, duplicate detection,
-/// and bookmark persistence. The Eureka form itself stays in the VC.
-/// Contains no UIKit or SwiftUI imports.
+/// Owns: initial form field values, the live list of bookmark groups, duplicate
+/// detection against the data store, and bookmark persistence (including the
+/// `addBookmark` analytics event for new trip bookmarks).
 @MainActor
 final class EditBookmarkViewModel {
 
@@ -53,8 +52,8 @@ final class EditBookmarkViewModel {
     /// Pre-filled initial value for the bookmark name field.
     let initialName: String
 
-    /// UUID string of the initially selected group, or `""` for (No Group).
-    let initialGroupID: String
+    /// UUID of the initially selected group, or `nil` for (No Group).
+    let initialGroupID: UUID?
 
     /// Initial value for the "Show in Today View" toggle.
     let initialIsFavorite: Bool
@@ -82,37 +81,37 @@ final class EditBookmarkViewModel {
         self.dataObjectName = source.dataObjectName
         self.initialName = bookmark?.name ?? source.dataObjectName
         self.initialIsFavorite = bookmark?.isFavorite ?? true
-        self.initialGroupID = bookmark?.groupID?.uuidString ?? ""
+        self.initialGroupID = bookmark?.groupID
     }
 
     // MARK: - Group Selection
 
-    /// Returns the UUID string of the group currently containing `existingBookmark`
-    /// per the data store, or `""` if ungrouped or in add mode.
-    /// Call this in `viewWillAppear` to refresh the selection state.
-    func currentGroupID() -> String {
-        guard let existingBookmark else { return "" }
+    /// Returns the data store's live view of which group currently contains
+    /// `existingBookmark`, or `nil` if ungrouped or in add mode. Distinct from the
+    /// cached `initialGroupID` captured at init time, which may be stale if the
+    /// user moved the bookmark in another screen.
+    func currentGroupID() -> UUID? {
+        guard let existingBookmark else { return nil }
         return application.userDataStore.bookmarkGroups
             .first { group in
                 application.userDataStore.bookmarksInGroup(group).contains { $0.id == existingBookmark.id }
             }?
-            .id.uuidString ?? ""
+            .id
     }
 
     // MARK: - Save
 
-    /// Builds the `Bookmark` from form values and checks for duplicates.
-    /// Returns `nil` if `application.currentRegion` is not available.
+    /// Validates that a region is available and, in add mode, builds the `Bookmark`
+    /// and checks for duplicates against the data store.
     ///
-    /// In edit mode this mutates `existingBookmark`'s `name`/`isFavorite` in memory so the
-    /// returned bookmark reflects the form values; it does NOT write to the data store.
-    /// Call `persist(_:to:isNewBookmark:)` to save, after any duplicate confirmation.
-    func prepareToSave(name: String, isFavorite: Bool, selectedGroupID: String) -> SaveOutcome? {
-        guard let region = application.currentRegion else { return nil }
-
-        let resolvedName = name.trimmingCharacters(in: .whitespaces).isEmpty ? dataObjectName : name
+    /// Does NOT mutate `existingBookmark` or write to the data store. The form
+    /// values (`name`, `isFavorite`) are applied to the bookmark inside
+    /// `persist(_:name:isFavorite:to:isNewBookmark:)`.
+    func prepareToSave(name: String, isFavorite: Bool) -> SaveOutcome {
+        guard let region = application.currentRegion else { return .regionUnavailable }
 
         if isAddMode {
+            let resolvedName = resolveName(name)
             let bookmark: Bookmark
             switch source {
             case .stop(let stop):
@@ -121,21 +120,24 @@ final class EditBookmarkViewModel {
                 bookmark = Bookmark(name: resolvedName, regionIdentifier: region.regionIdentifier, arrivalDeparture: ad, stop: ad.stop)
             }
             bookmark.isFavorite = isFavorite
-            if application.userDataStore.checkForDuplicates(bookmark: bookmark) {
-                return .duplicateFound(bookmark, isNewBookmark: true)
-            }
-            return .readyToSave(bookmark, isNewBookmark: true)
+            let isDuplicate = application.userDataStore.checkForDuplicates(bookmark: bookmark)
+            return .ready(bookmark, isNew: true, isDuplicate: isDuplicate)
         } else {
-            guard let bookmark = existingBookmark else { return nil }
-            bookmark.name = resolvedName
-            bookmark.isFavorite = isFavorite
-            return .readyToSave(bookmark, isNewBookmark: false)
+            guard let bookmark = existingBookmark else {
+                assertionFailure("Edit mode requires an existingBookmark; the init populated it.")
+                return .regionUnavailable
+            }
+            return .ready(bookmark, isNew: false, isDuplicate: false)
         }
     }
 
-    /// Saves `bookmark` to the data store and reports analytics for new trip bookmarks.
-    func persist(_ bookmark: Bookmark, to groupID: String, isNewBookmark: Bool) {
-        let group = UUID(optionalUUIDString: groupID).flatMap { application.userDataStore.findGroup(id: $0) }
+    /// Applies the form values to `bookmark`, saves it to the data store, and
+    /// reports analytics for new trip bookmarks.
+    func persist(_ bookmark: Bookmark, name: String, isFavorite: Bool, to groupID: UUID?, isNewBookmark: Bool) {
+        bookmark.name = resolveName(name)
+        bookmark.isFavorite = isFavorite
+
+        let group = groupID.flatMap { application.userDataStore.findGroup(id: $0) }
         application.userDataStore.add(bookmark, to: group)
 
         if isNewBookmark, case .arrivalDeparture(let ad) = source {
@@ -150,5 +152,9 @@ final class EditBookmarkViewModel {
                 value: value
             )
         }
+    }
+
+    private func resolveName(_ name: String) -> String {
+        name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? dataObjectName : name
     }
 }
