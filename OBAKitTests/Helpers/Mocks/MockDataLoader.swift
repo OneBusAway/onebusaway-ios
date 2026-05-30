@@ -46,6 +46,11 @@ class MockTask: URLSessionDataTask {
 class MockDataLoader: NSObject, URLDataLoader {
     var mockResponses = [MockDataResponse]()
 
+    /// URLs of every request seen by `dataTask(with:)` or `data(for:)`.
+    /// Lets tests assert that no network call was made (e.g. when a fetch should be
+    /// short-circuited by cached/preloaded data).
+    var recordedRequestURLs = [URL]()
+
     let testName: String
 
     init(testName: String) {
@@ -53,6 +58,7 @@ class MockDataLoader: NSObject, URLDataLoader {
     }
 
     func dataTask(with request: URLRequest, completionHandler: @escaping (Data?, URLResponse?, Error?) -> Void) -> URLSessionDataTask {
+        if let url = request.url { recordedRequestURLs.append(url) }
         guard let response = matchResponse(to: request) else {
             fatalError("\(testName): Missing response to URL: \(request.url!)")
         }
@@ -61,6 +67,7 @@ class MockDataLoader: NSObject, URLDataLoader {
     }
 
     func data(for request: URLRequest) async throws -> (Data, URLResponse) {
+        if let url = request.url { recordedRequestURLs.append(url) }
         guard let response = matchResponse(to: request) else {
             fatalError("\(testName): Missing response to URL: \(request.url!)")
         }
