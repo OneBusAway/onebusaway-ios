@@ -186,6 +186,60 @@ class RecentStopsViewModelTests: OBATestCase {
         expect(viewModel.alarms.map(\.url)).toNot(contain(alarm.url))
     }
 
+    @MainActor
+    func test_delete_alarm_remoteSuccess_keepsLocalRemoval() async {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader)
+        let alarm = try! Fixtures.loadAlarm()
+
+        // Track whether the remote DELETE actually hit the stub. The catch-all matcher
+        // pattern from the local-only test would silently disable obaco; we want this
+        // test to *fail* if the remote call is short-circuited.
+        var didHitRemote = false
+        dataLoader.mock(data: Data(), matcher: { req in
+            if req.url?.path.contains("/alarms/") == true {
+                didHitRemote = true
+                return true
+            }
+            return false
+        })
+
+        alarm.set(tripDate: Date(timeIntervalSinceNow: 300), alarmOffset: 2)
+        app.userDataStore.add(alarm: alarm)
+        let viewModel = RecentStopsViewModel(application: app)
+        viewModel.loadData()
+
+        await viewModel.delete(alarm: alarm).value
+
+        expect(viewModel.alarms.map(\.url)).toNot(contain(alarm.url))
+        expect(didHitRemote).to(beTrue())
+    }
+
+    @MainActor
+    func test_delete_alarm_remoteFailure_keepsLocalRemoval() async {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader)
+        let alarm = try! Fixtures.loadAlarm()
+
+        // Stub the obaco DELETE to fail. Local removal should still hold and the Task
+        // should swallow the error via Logger.error (so awaiting it doesn't throw).
+        let remoteError = NSError(domain: "RecentStopsViewModelTests", code: 503, userInfo: nil)
+        dataLoader.mock(response: MockDataResponse(
+            data: nil, urlResponse: nil, error: remoteError,
+            matcher: { $0.url?.path.contains("/alarms/") ?? false }
+        ))
+
+        alarm.set(tripDate: Date(timeIntervalSinceNow: 300), alarmOffset: 2)
+        app.userDataStore.add(alarm: alarm)
+        let viewModel = RecentStopsViewModel(application: app)
+        viewModel.loadData()
+
+        await viewModel.delete(alarm: alarm).value
+
+        // Remote failure does not undo the local removal — that's the contract.
+        expect(viewModel.alarms.map(\.url)).toNot(contain(alarm.url))
+    }
+
     // MARK: - loadData / nil currentRegion
 
     @MainActor
