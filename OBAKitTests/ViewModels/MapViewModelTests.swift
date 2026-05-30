@@ -113,9 +113,14 @@ class MapViewModelTests: OBATestCase {
         await viewModel.loadWeather()
         expect(viewModel.weather).toNot(beNil())
 
-        // Swap the weather mock for an error. getWeather() only hits the weather URL, so
-        // dropping the other mocks is safe for this second load.
+        // Swap the weather mock for an error. removeMappedResponses() wipes *every*
+        // stub — including the regions / agencies-with-coverage / agency-alerts ones
+        // that the Application's async region resolver may still be hitting — so we
+        // have to re-register them or in-flight requests will fatal on MockDataLoader.
         dataLoader.removeMappedResponses()
+        stubRegions(dataLoader: dataLoader)
+        stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
+        Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
         stubWeatherError(dataLoader: dataLoader)
 
         await viewModel.loadWeather()
