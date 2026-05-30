@@ -17,6 +17,9 @@ final class RecentStopsViewModel: ObservableObject {
     @Published private(set) var recentStops: [Stop] = []
 
     private let application: Application
+    // `viewWillAppear` calls `loadData()` every time the Recent tab is shown; without
+    // this flag a user with no current region would flood the log on every tab switch.
+    private var didWarnNilRegion = false
 
     init(application: Application) {
         self.application = application
@@ -27,11 +30,17 @@ final class RecentStopsViewModel: ObservableObject {
         alarms = application.userDataStore.alarms
         guard let currentRegion = application.currentRegion else {
             // No current region (mid-region-change, first launch race, denied location).
-            // The user sees a generic empty state — log so the condition is observable.
-            Logger.warn("RecentStopsViewModel.loadData: currentRegion is nil; returning empty recent stops.")
+            // The user sees a generic empty state — log once per VM so the condition is
+            // observable without spamming on every viewWillAppear.
+            if !didWarnNilRegion {
+                Logger.warn("RecentStopsViewModel.loadData: currentRegion is nil; returning empty recent stops.")
+                didWarnNilRegion = true
+            }
             recentStops = []
             return
         }
+        // Region resolved — re-arm the warn so a *later* region loss is still observable.
+        didWarnNilRegion = false
         recentStops = application.userDataStore.recentStops.filter {
             $0.regionIdentifier == currentRegion.regionIdentifier
         }

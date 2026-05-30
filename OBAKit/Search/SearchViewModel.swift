@@ -43,7 +43,11 @@ final class SearchViewModel: ObservableObject {
         guard let apiService else {
             // Misconfiguration (no API service available). Surface it through the same
             // error channel as a request failure so the screen doesn't silently no-op.
-            vehicleError = UnstructuredError("No API service available for vehicle search.")
+            vehicleError = UnstructuredError(OBALoc(
+                "search_results_controller.no_api_service_error",
+                value: "No transit data service is available. Please choose a region in Settings.",
+                comment: "Error shown when vehicle search is attempted with no API service configured (e.g. no region selected)."
+            ))
             return
         }
         isLoading = true

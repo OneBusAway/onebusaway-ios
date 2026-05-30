@@ -36,7 +36,11 @@ final class NearbyStopsViewModel: ObservableObject {
             // Misconfiguration (no API service available, e.g. region not selected). Surface
             // it through the same error channel as a load failure so the screen doesn't
             // sit silently empty with no signal to the user or in the logs.
-            operationError = UnstructuredError("No API service available for nearby stops.")
+            operationError = UnstructuredError(OBALoc(
+                "nearby_stops_controller.no_api_service_error",
+                value: "No transit data service is available. Please choose a region in Settings.",
+                comment: "Error shown on the Nearby Stops screen when no API service is configured (e.g. no region selected)."
+            ))
             return
         }
 

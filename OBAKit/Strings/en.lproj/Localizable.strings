@@ -482,6 +482,9 @@
 /* Title for the empty set indicator on the Nearby controller */
 "nearby_controller.empty_set.title" = "No Nearby Stops";
 
+/* Error shown on the Nearby Stops screen when no API service is configured (e.g. no region selected). */
+"nearby_stops_controller.no_api_service_error" = "No transit data service is available. Please choose a region in Settings.";
+
 /* Body for the empty set indicator on the Nearby Stops controller. */
 "nearby_stops_controller.empty_set.body" = "There are no other stops in the vicinity.";
 
@@ -682,6 +685,9 @@
 
 /* Quick search prefix for Vehicle. */
 "search_interactor.quick_search.vehicle_prefix" = "Vehicle:";
+
+/* Error shown when vehicle search is attempted with no API service configured (e.g. no region selected). */
+"search_results_controller.no_api_service_error" = "No transit data service is available. Please choose a region in Settings.";
 
 /* Error message shown when a vehicle has no trips available. */
 "search_results_controller.no_trips_available" = "This vehicle is not currently on any trips.";

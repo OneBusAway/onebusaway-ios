@@ -164,12 +164,15 @@ class RecentStopsViewModelTests: OBATestCase {
     @MainActor
     func test_delete_alarm_removesItLocally() async {
         let dataLoader = MockDataLoader(testName: name)
-        // Stub anything the obaco service might hit — the remote DELETE is now a real
-        // fire-and-forget detached Task (no `[weak self]` early-out), and without a
-        // catch-all the MockDataLoader fatals if/when the Task lands.
-        dataLoader.mock(data: Data()) { _ in true }
         let app = createApplication(dataLoader: dataLoader)
         let alarm = try! Fixtures.loadAlarm()
+        // Stub the obaco DELETE *after* createApplication so we don't shadow the
+        // regions-v3.json stub it registers (mockResponses is iterated in registration
+        // order, and a catch-all here would blank the regions load and silently
+        // disable obacoService construction).
+        dataLoader.mock(data: Data()) { req in
+            req.url?.path.contains("/alarms/") ?? false
+        }
         alarm.set(tripDate: Date(timeIntervalSinceNow: 300), alarmOffset: 2)
         app.userDataStore.add(alarm: alarm)
         let viewModel = RecentStopsViewModel(application: app)

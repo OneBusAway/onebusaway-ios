@@ -62,6 +62,10 @@ public class Alarm: NSObject, Codable {
     }
 
     private static func datesEqual(_ lhs: Date?, _ rhs: Date?) -> Bool {
+        // TODO: If `ArrivalDepartureDeepLink` (combined into isEqual above) ever grows
+        // its own Date fields that round-trip through TimeInterval, apply the same
+        // normalization there — otherwise the precision-drift bug returns silently
+        // through `deepLink ==`.
         switch (lhs, rhs) {
         case (nil, nil): return true
         case let (l?, r?): return l.timeIntervalSince1970 == r.timeIntervalSince1970
