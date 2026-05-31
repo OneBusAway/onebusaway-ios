@@ -146,11 +146,11 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
 
         await surveyOrchestrator.refreshSurveys()
 
-        // Re-check after the await: a second `checkForSurveyPrompt()` can pass
-        // the pre-await guard while this task is suspended, so without this
-        // both tasks would emit and present a card twice.
-        guard !hasShownSurveyThisSession else { return }
-        guard let survey = application.surveyService.findSurveyForMap() else { return }
+        // Eligibility can change while the refresh is in flight (a different
+        // path completing or dismissing a survey, the reminder advancing).
+        // Re-check before emitting.
+        guard !hasShownSurveyThisSession, surveyOrchestrator.isEligible() else { return }
+        guard let survey = surveyOrchestrator.findMapSurvey() else { return }
 
         surveyToPresentSubject.send(survey)
     }
@@ -161,12 +161,6 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
         guard !hasShownSurveyThisSession else { return }
         surveyOrchestrator.noteReminderAndAdvanceSession()
         hasShownSurveyThisSession = true
-    }
-
-    /// Re-enables the session prompt. Used by tests and any future
-    /// region-change flow that wants the next map appearance to re-prompt.
-    func resetSurveySession() {
-        hasShownSurveyThisSession = false
     }
 
     // MARK: - LocationServiceDelegate

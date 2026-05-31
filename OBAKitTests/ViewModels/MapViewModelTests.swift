@@ -256,35 +256,4 @@ class MapViewModelTests: OBATestCase {
         expect(app.userDataStore.nextSurveyReminderDate) == before
     }
 
-    /// `resetSurveySession()` allows `didPresentSurveyPrompt` to re-advance the
-    /// reminder after a previous present in the same session.
-    @MainActor
-    func test_resetSurveySession_reEnablesPresentTracking() async {
-        let dataLoader = MockDataLoader(testName: name)
-        stubEmptySurveys(dataLoader: dataLoader)
-        let app = createApplication(dataLoader: dataLoader)
-        let viewModel = MapViewModel(application: app)
-
-        let hero = SurveyQuestion(id: 1, position: 1, required: false, content: QuestionContent(labelText: "q", type: .text))
-        let survey = Survey(
-            id: 7200, name: "Test", createdAt: Date(), updatedAt: Date(),
-            showOnMap: true, showOnStops: false,
-            startDate: nil, endDate: nil,
-            visibleStopsList: nil, visibleRoutesList: nil,
-            allowsMultipleResponses: false, alwaysVisible: true,
-            study: Study(id: 1, name: "S", description: nil),
-            questions: [hero]
-        )
-
-        viewModel.didPresentSurveyPrompt(survey)
-        let firstReminder = app.userDataStore.nextSurveyReminderDate
-        expect(firstReminder).toNot(beNil())
-
-        // Erase reminder, reset session, present again — reminder must come back.
-        app.userDataStore.nextSurveyReminderDate = nil
-        viewModel.resetSurveySession()
-        viewModel.didPresentSurveyPrompt(survey)
-
-        expect(app.userDataStore.nextSurveyReminderDate).toNot(beNil())
-    }
 }
