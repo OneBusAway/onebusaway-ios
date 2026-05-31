@@ -70,8 +70,7 @@ final class ManageBookmarksViewModel {
         }
 
         bookmark.name = newName
-        let currentGroup = bookmark.groupID.flatMap { application.userDataStore.findGroup(id: $0) }
-        application.userDataStore.add(bookmark, to: currentGroup)
+        resaveInPlace(bookmark)
     }
 
     // MARK: - Transit Name Restore
@@ -91,6 +90,10 @@ final class ManageBookmarksViewModel {
     /// Resets `bookmark.name` to its transit-derived name and re-saves it to the store.
     func restoreTransitName(for bookmark: Bookmark) {
         bookmark.name = originalTransitName(for: bookmark)
+        resaveInPlace(bookmark)
+    }
+
+    private func resaveInPlace(_ bookmark: Bookmark) {
         let currentGroup = bookmark.groupID.flatMap { application.userDataStore.findGroup(id: $0) }
         application.userDataStore.add(bookmark, to: currentGroup)
     }
