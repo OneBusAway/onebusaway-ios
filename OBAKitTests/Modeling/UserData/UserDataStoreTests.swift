@@ -148,6 +148,29 @@ class UserDefaultsStoreTests: OBATestCase {
         expect(IDs2) == ["2"]
     }
 
+    /// Regression test for the `tripDate`/`alarmDate` precision-loss bug in `Alarm.isEqual`.
+    /// Before the fix, encoding to UserDefaults stripped sub-microsecond precision from
+    /// the `Date` fields (via the `TimeInterval` round-trip in `Alarm.{init(from:),encode(to:)}`),
+    /// so the reloaded Alarm would no longer compare equal to its in-memory original — and
+    /// any equality-based delete would silently no-op. This test persists, reloads, then
+    /// deletes by the round-tripped instance to anchor the fix path to a named test.
+    func test_alarms_delete_afterUserDefaultsRoundTrip() {
+        let alarm = try! Fixtures.loadAlarm(id: "round-trip")
+        alarm.set(tripDate: Date(timeIntervalSinceNow: 300), alarmOffset: 2)
+
+        userDefaultsStore.add(alarm: alarm)
+
+        // Force the encode → decode round-trip by going through the `alarms` getter,
+        // which reads back from UserDefaults rather than returning the in-memory instance.
+        let reloaded = userDefaultsStore.alarms.first { $0.url == alarm.url }
+        expect(reloaded).toNot(beNil())
+        expect(reloaded) == alarm
+
+        userDefaultsStore.delete(alarm: reloaded!)
+
+        expect(self.userDefaultsStore.alarms.map(\.url)).toNot(contain(alarm.url))
+    }
+
     // MARK: - Selected Tab Index
 
     func test_selectedTabIndex_mapSelectedByDefault() {

@@ -8,6 +8,7 @@
 //
 
 import UIKit
+import Combine
 import OBAKitCore
 import MapKit
 
@@ -18,20 +19,21 @@ public class SearchResultsController: UIViewController, AppContext, OBAListViewD
 
     let application: Application
 
-    private let searchResponse: SearchResponse
+    private let viewModel: SearchViewModel
 
     private let listView = OBAListView()
     private let titleView = StackedTitleView.autolayoutNew()
+    private var cancellables = Set<AnyCancellable>()
 
     public init(searchResponse: SearchResponse, application: Application, delegate: ModalDelegate?) {
-        self.searchResponse = searchResponse
+        self.viewModel = SearchViewModel(searchResponse: searchResponse, application: application)
         self.application = application
         self.delegate = delegate
         super.init(nibName: nil, bundle: nil)
 
         title = OBALoc("search_results_controller.title", value: "Search Results", comment: "The title of the Search Results controller.")
         titleView.titleLabel.text = title
-        titleView.subtitleLabel.text = subtitleText(from: searchResponse)
+        titleView.subtitleLabel.text = viewModel.subtitle
 
         listView.obaDataSource = self
         view.addSubview(listView)
@@ -49,6 +51,29 @@ public class SearchResultsController: UIViewController, AppContext, OBAListViewD
         navigationItem.leftBarButtonItem = UIBarButtonItem(title: Strings.close, style: .plain, target: self, action: #selector(close))
 
         view.backgroundColor = ThemeColors.shared.systemBackground
+
+        bindViewModel()
+    }
+
+    private func bindViewModel() {
+        viewModel.$vehicleSearchResponse
+            .compactMap { $0 }
+            .sink { [weak self] response in
+                guard let self else { return }
+                self.application.mapRegionManager.searchResponse = response
+                self.delegate?.dismissModalController(self)
+            }
+            .store(in: &cancellables)
+
+        // Sink on the full optional (not `.compactMap`): an explicit reset to nil at the
+        // start of `selectVehicle(...)` is a valid signal that the previous error is no
+        // longer current. Filtering nils leaves a retry's alert state stale.
+        viewModel.$vehicleError
+            .sink { [weak self] error in
+                guard let self, let error else { return }
+                Task { await self.application.displayError(error) }
+            }
+            .store(in: &cancellables)
     }
 
     override public func viewWillAppear(_ animated: Bool) {
@@ -60,23 +85,6 @@ public class SearchResultsController: UIViewController, AppContext, OBAListViewD
 
     @objc private func close() {
         delegate?.dismissModalController(self)
-    }
-
-    // MARK: - Private
-
-    private func subtitleText(from response: SearchResponse) -> String {
-        let subtitleFormat: String
-        switch searchResponse.request.searchType {
-        case .address:
-            subtitleFormat = OBALoc("search_results_controller.subtitle.address_fmt", value: "%@", comment: "A format string for address searches. In English, this is just the address itself without any adornment.")
-        case .route:
-            subtitleFormat = OBALoc("search_results_controller.subtitle.route_fmt", value: "Route %@", comment: "A format string for route searches. e.g. in english: Route \"{SEARCH TEXT}\"")
-        case .stopNumber:
-            subtitleFormat = OBALoc("search_results_controller.subtitle.stop_number_fmt", value: "Stop number %@", comment: "A format string for stop number searches. e.g. in english: Stop number \"{SEARCH TEXT}\"")
-        case .vehicleID:
-            subtitleFormat = OBALoc("search_results_controller.subtitle.vehicle_id_fmt", value: "Vehicle ID %@", comment: "A format string for vehicle ID searches. e.g. in english: Vehicle ID \"{SEARCH TEXT}\"")
-        }
-        return String(format: subtitleFormat, searchResponse.request.query)
     }
 
     // MARK: - Rows
@@ -102,35 +110,16 @@ public class SearchResultsController: UIViewController, AppContext, OBAListViewD
 
     private func row(for agencyVehicle: AgencyVehicle) -> AnyOBAListViewItem? {
         guard let vehicleID = agencyVehicle.vehicleID, application.apiService != nil else { return nil }
-        return OBAListRowView.SubtitleViewModel(title: vehicleID, subtitle: agencyVehicle.agencyName, accessoryType: .none) { _ in
-            self.didSelectAgencyVehicle(vehicleID: vehicleID)
+        return OBAListRowView.SubtitleViewModel(title: vehicleID, subtitle: agencyVehicle.agencyName, accessoryType: .none) { [weak self] _ in
+            guard let self else { return }
+            Task(priority: .userInitiated) { await self.viewModel.selectVehicle(vehicleID: vehicleID) }
         }.typeErased
     }
 
-    private func didSelectAgencyVehicle(vehicleID: String) {
-        guard let apiService = application.apiService else { return }
-
-        Task(priority: .userInitiated) {
-            do {
-                let vehicle = try await apiService.getVehicle(vehicleID: vehicleID).entry
-                await MainActor.run {
-                    let response = SearchResponse(response: self.searchResponse, substituteResult: vehicle)
-                    self.application.mapRegionManager.searchResponse = response
-                    self.delegate?.dismissModalController(self)
-                }
-            } catch DecodingError.keyNotFound {
-                let error = SearchError.noTripsAvailable
-                await self.application.displayError(error)
-            } catch {
-                await self.application.displayError(error)
-            }
-        }
-    }
-
     private func listViewItem(for item: Any) -> AnyOBAListViewItem? {
-        let tapHandler: VoidBlock = {
-            let mgr = self.application.mapRegionManager
-            mgr.searchResponse = SearchResponse(response: self.searchResponse, substituteResult: item)
+        let tapHandler: VoidBlock = { [weak self] in
+            guard let self else { return }
+            self.application.mapRegionManager.searchResponse = self.viewModel.response(substituting: item)
             self.delegate?.dismissModalController(self)
         }
 
@@ -150,7 +139,7 @@ public class SearchResultsController: UIViewController, AppContext, OBAListViewD
 
     // MARK: - OBAListView
     public func items(for listView: OBAListView) -> [OBAListViewSection] {
-        let rows = searchResponse.results.compactMap { listViewItem(for: $0) }
+        let rows = viewModel.results.compactMap { listViewItem(for: $0) }
         return [OBAListViewSection(id: "results", contents: rows)]
     }
 }
