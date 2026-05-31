@@ -1,0 +1,103 @@
+//
+//  SurveyOrchestrator.swift
+//  OBAKit
+//
+//  Copyright © Open Transit Software Foundation
+//  This source code is licensed under the Apache 2.0 license found in the
+//  LICENSE file in the root directory of this source tree.
+//
+
+import CoreLocation
+import Foundation
+import OBAKitCore
+
+/// Shared, stateless coordination layer over `SurveyService`.
+///
+/// Owns the survey primitives that are identical across screens: eligibility
+/// gate, refresh, hero submission + outcome decision, mark-completed,
+/// dismiss-with-reminder, and the post-present reminder advance. Held by
+/// `MapViewModel` (prompt flow) and `StopViewModel` (inline hero card) so
+/// neither VM has to reimplement the bookkeeping.
+@MainActor
+final class SurveyOrchestrator {
+
+    /// Outcome of `submitHero(survey:answer:stopID:stopLocation:)`. Tells the
+    /// caller whether the survey is fully done or whether the remaining
+    /// questions need to be presented in the full survey screen.
+    enum HeroSubmissionOutcome {
+        case completed
+        case needsRemainingQuestions(heroResponseID: String)
+    }
+
+    private let surveyService: SurveyService
+
+    nonisolated init(surveyService: SurveyService) {
+        self.surveyService = surveyService
+    }
+
+    /// Whether a survey should be shown right now (launch-count cooldown,
+    /// reminder date, global toggle).
+    func isEligible() -> Bool {
+        surveyService.shouldShowSurvey()
+    }
+
+    /// Refreshes the survey list. Failures are recorded on
+    /// `surveyService.lastError`; callers inspect it if they care.
+    func refreshSurveys() async {
+        await surveyService.fetchSurveys()
+    }
+
+    /// Submits the hero question and advances the reminder. On success, either
+    /// marks the survey completed (no remaining questions) or returns the
+    /// submission ID so the caller can present the rest in the full survey
+    /// screen.
+    ///
+    /// Precondition: `survey.heroQuestion != nil`.
+    func submitHero(
+        survey: Survey,
+        answer: String,
+        stopID: String?,
+        stopLocation: CLLocationCoordinate2D?
+    ) async throws -> HeroSubmissionOutcome {
+        guard let heroQuestion = survey.heroQuestion else {
+            preconditionFailure("submitHero called for survey \(survey.id) with no hero question")
+        }
+
+        let heroResponse = SurveyService.createQuestionResponse(question: heroQuestion, answer: answer)
+
+        let submission = try await surveyService.submitHeroQuestion(
+            survey: survey,
+            heroQuestionResponse: heroResponse,
+            stopID: stopID,
+            stopLocation: stopLocation
+        )
+
+        surveyService.setNextReminderDate()
+
+        if survey.remainingQuestions.isEmpty {
+            surveyService.markSurveyCompleted(survey)
+            return .completed
+        }
+
+        return .needsRemainingQuestions(heroResponseID: submission.id)
+    }
+
+    /// User dismissed the survey card. Records the dismissal and pushes the
+    /// next reminder out.
+    func dismiss(_ survey: Survey) {
+        surveyService.dismissSurvey(survey)
+        surveyService.setNextReminderDate()
+    }
+
+    /// Marks the survey completed without going through the hero path. Used by
+    /// screens that complete a survey by other means.
+    func markCompleted(_ survey: Survey) {
+        surveyService.markSurveyCompleted(survey)
+    }
+
+    /// Pushes the next reminder out. Called by the map prompt after a
+    /// successful present so the same session doesn't re-prompt.
+    func noteReminderAndAdvanceSession() {
+        surveyService.setNextReminderDate()
+    }
+}
