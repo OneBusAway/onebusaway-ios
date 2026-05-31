@@ -223,27 +223,68 @@ class MapViewModelTests: OBATestCase {
         expect(app.userDataStore.nextSurveyReminderDate).to(beNil())
     }
 
-    /// `resetSurveySession()` clears the "already shown" flag — verified indirectly by
-    /// repeatedly calling `checkForSurveyPrompt` and confirming the no-emit behavior
-    /// stays stable across reset (we can't observe a positive emission without a real
-    /// map survey, but reset must not crash and must not turn a no-match into an emit).
+    /// `didPresentSurveyPrompt(_:)` advances the reminder and flips the session
+    /// flag so a subsequent `checkForSurveyPrompt` in the same session no-ops.
+    /// Verifies the intent contract directly rather than going through the
+    /// `findSurveyForMap` integration path (orchestrator-level happy paths
+    /// cover the find + submit sequence).
     @MainActor
-    func test_resetSurveySession_doesNotCrashAndKeepsContractStable() async {
+    func test_didPresentSurveyPrompt_advancesReminderAndFlipsSession() async {
         let dataLoader = MockDataLoader(testName: name)
         stubEmptySurveys(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
-        userDefaults.set(true, forKey: "UserDataStore.isSurveyEnabled")
-        userDefaults.set(true, forKey: "UserDataStore.alwaysShowSurveysOnStops")
-
         let viewModel = MapViewModel(application: app)
-        var received: [Survey] = []
-        let cancellable = viewModel.surveyToPresent.sink { received.append($0) }
-        defer { cancellable.cancel() }
 
-        await viewModel.checkForSurveyPrompt()
+        let hero = SurveyQuestion(id: 1, position: 1, required: false, content: QuestionContent(labelText: "q", type: .text))
+        let survey = Survey(
+            id: 7100, name: "Test", createdAt: Date(), updatedAt: Date(),
+            showOnMap: true, showOnStops: false,
+            startDate: nil, endDate: nil,
+            visibleStopsList: nil, visibleRoutesList: nil,
+            allowsMultipleResponses: false, alwaysVisible: true,
+            study: Study(id: 1, name: "S", description: nil),
+            questions: [hero]
+        )
+
+        expect(app.userDataStore.nextSurveyReminderDate).to(beNil())
+        viewModel.didPresentSurveyPrompt(survey)
+        expect(app.userDataStore.nextSurveyReminderDate).toNot(beNil())
+
+        // A second `didPresentSurveyPrompt` in the same session is idempotent.
+        let before = app.userDataStore.nextSurveyReminderDate
+        viewModel.didPresentSurveyPrompt(survey)
+        expect(app.userDataStore.nextSurveyReminderDate) == before
+    }
+
+    /// `resetSurveySession()` allows `didPresentSurveyPrompt` to re-advance the
+    /// reminder after a previous present in the same session.
+    @MainActor
+    func test_resetSurveySession_reEnablesPresentTracking() async {
+        let dataLoader = MockDataLoader(testName: name)
+        stubEmptySurveys(dataLoader: dataLoader)
+        let app = createApplication(dataLoader: dataLoader)
+        let viewModel = MapViewModel(application: app)
+
+        let hero = SurveyQuestion(id: 1, position: 1, required: false, content: QuestionContent(labelText: "q", type: .text))
+        let survey = Survey(
+            id: 7200, name: "Test", createdAt: Date(), updatedAt: Date(),
+            showOnMap: true, showOnStops: false,
+            startDate: nil, endDate: nil,
+            visibleStopsList: nil, visibleRoutesList: nil,
+            allowsMultipleResponses: false, alwaysVisible: true,
+            study: Study(id: 1, name: "S", description: nil),
+            questions: [hero]
+        )
+
+        viewModel.didPresentSurveyPrompt(survey)
+        let firstReminder = app.userDataStore.nextSurveyReminderDate
+        expect(firstReminder).toNot(beNil())
+
+        // Erase reminder, reset session, present again — reminder must come back.
+        app.userDataStore.nextSurveyReminderDate = nil
         viewModel.resetSurveySession()
-        await viewModel.checkForSurveyPrompt()
+        viewModel.didPresentSurveyPrompt(survey)
 
-        expect(received).to(beEmpty())
+        expect(app.userDataStore.nextSurveyReminderDate).toNot(beNil())
     }
 }

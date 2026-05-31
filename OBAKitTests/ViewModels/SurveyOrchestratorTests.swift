@@ -9,8 +9,11 @@
 
 import XCTest
 import Nimble
+import CoreLocation
 @testable import OBAKit
 @testable import OBAKitCore
+
+// swiftlint:disable force_try
 
 /// Tests for `SurveyOrchestrator`. Covers the shared primitives once so the
 /// `MapViewModel` / `StopViewModel` survey tests can stay narrow.
@@ -110,6 +113,80 @@ class SurveyOrchestratorTests: OBATestCase {
 
         expect(self.dataStore.isSurveyCompleted(surveyId: survey.id, userIdentifier: self.dataStore.surveyUserIdentifier)).to(beFalse())
         expect(self.dataStore.nextSurveyReminderDate).to(beNil())
+    }
+
+    /// Hero submit with no remaining questions returns `.completed`, marks the
+    /// survey completed, and sets the reminder.
+    @MainActor
+    func test_submitHero_returnsCompletedWhenNoRemainingQuestions() async throws {
+        let hero = Self.makeQuestion(id: 1, position: 1)
+        let survey = Self.makeSurvey(questions: [hero])
+        let (service, _) = Self.buildLiveSurveyService(testName: name, userDataStore: dataStore)
+        let liveOrchestrator = SurveyOrchestrator(surveyService: service)
+
+        let outcome = try await liveOrchestrator.submitHero(
+            survey: survey, answer: "yes", stopID: "1_TEST", stopLocation: nil
+        )
+
+        guard case .completed = outcome else {
+            fail("Expected .completed; got \(outcome)")
+            return
+        }
+        let userID = dataStore.surveyUserIdentifier
+        expect(self.dataStore.isSurveyCompleted(surveyId: survey.id, userIdentifier: userID)).to(beTrue())
+        expect(self.dataStore.nextSurveyReminderDate).toNot(beNil())
+    }
+
+    /// Hero submit on a survey with remaining questions returns
+    /// `.needsRemainingQuestions(heroResponseID:)`, advances the reminder, but
+    /// does NOT mark the survey completed.
+    @MainActor
+    func test_submitHero_returnsNeedsRemainingWhenFollowupsExist() async throws {
+        let hero = Self.makeQuestion(id: 1, position: 1)
+        let follow = Self.makeQuestion(id: 2, position: 2, required: false)
+        let survey = Self.makeSurvey(questions: [hero, follow])
+        let (service, _) = Self.buildLiveSurveyService(testName: name, userDataStore: dataStore)
+        let liveOrchestrator = SurveyOrchestrator(surveyService: service)
+
+        let outcome = try await liveOrchestrator.submitHero(
+            survey: survey, answer: "yes", stopID: "1_TEST", stopLocation: CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3)
+        )
+
+        switch outcome {
+        case .completed:
+            fail("Expected .needsRemainingQuestions; got .completed")
+        case .needsRemainingQuestions(let heroResponseID):
+            expect(heroResponseID).toNot(beEmpty())
+        }
+        let userID = dataStore.surveyUserIdentifier
+        expect(self.dataStore.isSurveyCompleted(surveyId: survey.id, userIdentifier: userID)).to(beFalse())
+        expect(self.dataStore.nextSurveyReminderDate).toNot(beNil())
+    }
+
+    // MARK: - Live SurveyService builder (for happy-path network)
+
+    /// Builds a real `SurveyService` whose `apiService` routes through a
+    /// `MockDataLoader` stubbed to return the canned submit response. Used by
+    /// the happy-path `submitHero` tests above so we exercise the real network
+    /// branch + reminder/mark-completed bookkeeping in one shot.
+    private static func buildLiveSurveyService(testName: String, userDataStore: UserDataStore) -> (SurveyService, MockDataLoader) {
+        let mockLoader = MockDataLoader(testName: testName)
+        let data = try! Data(contentsOf: Bundle(for: SurveyOrchestratorTests.self).url(forResource: "survey_submission_response", withExtension: "json")!)
+        mockLoader.mock(data: data) { request in
+            request.url?.path.contains("/api/v1/survey_responses") ?? false
+        }
+
+        let config = APIServiceConfiguration(
+            baseURL: URL(string: "https://api.pugetsound.onebusaway.org/")!,
+            apiKey: "org.onebusaway.iphone.test",
+            uuid: "test-uuid",
+            appVersion: "2018.12.31",
+            regionIdentifier: 1,
+            surveyBaseURL: URL(string: "https://onebusaway.co")!
+        )
+        let apiService = RESTAPIService(config, dataLoader: mockLoader)
+        let service = SurveyService(apiService: apiService, userDataStore: userDataStore)
+        return (service, mockLoader)
     }
 
     // MARK: - dismiss
