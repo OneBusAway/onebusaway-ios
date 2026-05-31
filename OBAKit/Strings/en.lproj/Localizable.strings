@@ -67,6 +67,18 @@
 /* This is displayed to confirm that something has been copied to clipboard. */
 "clipboard.copied_text_confirmation" = "Copied to clipboard";
 
+/* Accessibility value for a collapsible section header that is currently collapsed. */
+"collapsible_section_header.collapsed" = "Collapsed";
+
+/* Accessibility value for a collapsible section header that is currently expanded. */
+"collapsible_section_header.expanded" = "Expanded";
+
+/* Accessibility hint for a collapsible section header that is currently expanded. */
+"collapsible_section_header.hint_collapse" = "Double-tap to collapse";
+
+/* Accessibility hint for a collapsible section header that is currently collapsed. */
+"collapsible_section_header.hint_expand" = "Double-tap to expand";
+
 /* Body of the the alert that appears when you try sending an email without Mail.app set up */
 "contact_us_helper.cant_send_email.body_fmt" = "In order to contact us, you'll need to email us at %@. Please tap 'Copy Debug Info' to copy information to the clipboard that will be helpful for us to fix this problem. Please include this information in your email.";
 
@@ -249,6 +261,12 @@
 
 /* A voiceover title describing that the card's visibility taking up the minimum amount of screen. */
 "floating_panel.controller.position.minimized" = "Minimized";
+
+/* Title shown in the empty-state overlay when a list fails to load due to an error. */
+"list_empty_error_title" = "Something Went Wrong";
+
+/* Accessibility label for the pagination loading footer shown at the bottom of a list when more items are being fetched. */
+"list_view.pagination_footer.loading_more" = "Loading more items";
 
 /* Description of why we need location services */
 "location_permission_bulletin.description_text" = "Please allow the app to access your location to make it easier to find your transit stops.";
