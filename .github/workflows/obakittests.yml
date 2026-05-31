@@ -68,10 +68,9 @@ jobs:
         -derivedDataPath DerivedData
         -enableCodeCoverage NO
         -resultBundlePath OBAKitTests.xcresult
-        -quiet
 
     # Upload results
-    - uses: kishikawakatsumi/xcresulttool@v1.7.0
+    - uses: slidoapp/xcresulttool@v3.1.1
       continue-on-error: true
       with:
         show-passed-tests: false    # Avoid truncation of annotations by GitHub by omitting succeeding tests.
