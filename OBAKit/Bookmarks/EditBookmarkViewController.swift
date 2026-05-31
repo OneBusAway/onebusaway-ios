@@ -125,6 +125,9 @@ class EditBookmarkViewController: FormViewController, AddGroupAlertDelegate {
             addRow(for: group, to: section)
         }
 
+        // `ListCheckRow<String>` requires a non-nil String, so "no group" is
+        // represented as the empty string here and round-tripped back to
+        // `UUID?` via `UUID(optionalUUIDString:)` in `save()`.
         section <<< ListCheckRow<String>("") {
             $0.tag = selectedGroupTag
             $0.title = OBALoc("edit_bookmark_controller.no_group_row", value: "(No Group)", comment: "Don't add this bookmark to a group.")
