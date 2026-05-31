@@ -171,6 +171,7 @@ class MapViewController: UIViewController,
 
     private func bindSurveyPrompt() {
         viewModel.surveyToPresent
+            .receive(on: DispatchQueue.main)
             .sink { [weak self] survey in self?.presentSurvey(survey) }
             .store(in: &cancellables)
     }
@@ -214,6 +215,9 @@ class MapViewController: UIViewController,
         // Guard against a stray double-emit from racing the floating card.
         guard surveyCardView == nil else { return }
         presentMapSurveyCard(for: survey)
+        // Confirm to the VM so the reminder advances + session flag flips only
+        // once the card is actually on screen.
+        viewModel.didPresentSurveyPrompt(survey)
     }
 
     /// Presents the floating survey launcher card above the search panel. The

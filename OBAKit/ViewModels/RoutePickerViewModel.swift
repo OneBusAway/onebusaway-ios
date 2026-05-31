@@ -82,7 +82,12 @@ final class RoutePickerViewModel: ObservableObject {
             let stops = try await apiService.getStops(coordinate: location.coordinate).list
             applyRoutes(from: stops)
         } catch {
-            if error is CancellationError { return }
+            // Cancellation finalizes the load without surfacing an error so a
+            // re-observed VM doesn't get stuck on "Loading routes…".
+            if error is CancellationError {
+                didFinishLoading = true
+                return
+            }
             Logger.error("Failed to load routes for picker: \(error)")
             loadError = error.localizedDescription
             didFinishLoading = true

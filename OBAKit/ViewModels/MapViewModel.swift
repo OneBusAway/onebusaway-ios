@@ -135,10 +135,11 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
 
     // MARK: - Survey Prompt
 
-    /// Checks once per session whether a map survey should be presented. On the
-    /// first eligible hit, sets the reminder, flips the session flag, and emits
-    /// the survey on `surveyToPresent`. Subsequent calls in the same session
-    /// no-op. Mirrors the previous `MapViewController.checkForMapSurvey()`.
+    /// Checks once per session whether a map survey should be presented. On
+    /// the first eligible hit emits the survey on `surveyToPresent`; the
+    /// consumer presents it and reports back via `didPresentSurveyPrompt(_:)`
+    /// so the reminder + session flag advance only on confirmed presentation.
+    /// Matches the previous `MapViewController.checkForMapSurvey()` semantics.
     func checkForSurveyPrompt() async {
         guard !hasShownSurveyThisSession else { return }
         guard surveyOrchestrator.isEligible() else { return }
@@ -151,9 +152,15 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
         guard !hasShownSurveyThisSession else { return }
         guard let survey = application.surveyService.findSurveyForMap() else { return }
 
-        hasShownSurveyThisSession = true
-        surveyOrchestrator.noteReminderAndAdvanceSession()
         surveyToPresentSubject.send(survey)
+    }
+
+    /// Reports back from the consumer after a successful presentation. Advances
+    /// the reminder and flips the session flag. Idempotent within a session.
+    func didPresentSurveyPrompt(_ survey: Survey) {
+        guard !hasShownSurveyThisSession else { return }
+        surveyOrchestrator.noteReminderAndAdvanceSession()
+        hasShownSurveyThisSession = true
     }
 
     /// Re-enables the session prompt. Used by tests and any future
