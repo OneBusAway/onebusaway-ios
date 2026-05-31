@@ -66,10 +66,8 @@ public class AgencyAlertsStore: NSObject, RegionsServiceDelegate {
     /// `readAlertIDs`). Those are touched from several execution contexts that don't
     /// coordinate on their own: `update()` is `async` and inherits its caller's
     /// context, `deleteAgencyAlerts()` runs on the serial `queue`, and the
-    /// `@MainActor` storage methods / UI reads run on the main thread. Without this
-    /// lock those accesses race — Thread Sanitizer flags `agencies` (written by
-    /// `update()`, mutated by `deleteAgencyAlerts()`), and the corruption segfaults
-    /// under load on CI. Never hold this lock across an `await`.
+    /// `@MainActor` storage methods / UI reads run on the main thread.
+    /// Never hold this lock across an `await`.
     private let stateLock = NSLock()
 
     public func update() async throws {
