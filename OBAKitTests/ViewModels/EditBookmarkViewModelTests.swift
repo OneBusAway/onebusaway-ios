@@ -232,13 +232,12 @@ class EditBookmarkViewModelTests: OBATestCase {
         let vm = EditBookmarkViewModel(application: app, source: .stop(stop), bookmark: nil)
         let outcome = vm.prepareToSave(name: "My Stop", isFavorite: true)
 
-        guard case .ready(let bookmark, let isNew, let isDuplicate) = outcome else {
-            XCTFail("Expected .ready, got \(outcome)")
+        guard case .readyToSave(let bookmark, let isNew) = outcome else {
+            XCTFail("Expected .readyToSave, got \(outcome)")
             return
         }
         expect(bookmark.name) == "My Stop"
         expect(isNew).to(beTrue())
-        expect(isDuplicate).to(beFalse())
     }
 
     @MainActor
@@ -250,8 +249,8 @@ class EditBookmarkViewModelTests: OBATestCase {
         let vm = EditBookmarkViewModel(application: app, source: .stop(stop), bookmark: nil)
         let outcome = vm.prepareToSave(name: "   ", isFavorite: true)
 
-        guard case .ready(let bookmark, _, _) = outcome else {
-            XCTFail("Expected .ready"); return
+        guard case .readyToSave(let bookmark, _) = outcome else {
+            XCTFail("Expected .readyToSave"); return
         }
         expect(bookmark.name) == Formatters.formattedTitle(stop: stop)
     }
@@ -268,12 +267,11 @@ class EditBookmarkViewModelTests: OBATestCase {
         let vm = EditBookmarkViewModel(application: app, source: .stop(stop), bookmark: nil)
         let outcome = vm.prepareToSave(name: "Stop", isFavorite: true)
 
-        guard case .ready(_, let isNew, let isDuplicate) = outcome else {
-            XCTFail("Expected .ready, got \(outcome)")
+        guard case .duplicateRequiresConfirmation(let dup) = outcome else {
+            XCTFail("Expected .duplicateRequiresConfirmation, got \(outcome)")
             return
         }
-        expect(isNew).to(beTrue())
-        expect(isDuplicate).to(beTrue())
+        expect(dup.name) == "Stop"
     }
 
     // MARK: - prepareToSave (edit mode)
@@ -291,14 +289,13 @@ class EditBookmarkViewModelTests: OBATestCase {
         let vm = EditBookmarkViewModel(application: app, source: .stop(stop), bookmark: bookmark)
         let outcome = vm.prepareToSave(name: "Updated Name", isFavorite: false)
 
-        guard case .ready(let saved, let isNew, let isDuplicate) = outcome else {
-            XCTFail("Expected .ready, got \(outcome)")
+        guard case .readyToSave(let saved, let isNew) = outcome else {
+            XCTFail("Expected .readyToSave, got \(outcome)")
             return
         }
         expect(saved.name) == "Original"
         expect(saved.isFavorite).to(beTrue())
         expect(isNew).to(beFalse())
-        expect(isDuplicate).to(beFalse())
 
         vm.persist(saved, name: "Updated Name", isFavorite: false, to: nil, isNewBookmark: isNew)
         expect(saved.name) == "Updated Name"
@@ -317,8 +314,8 @@ class EditBookmarkViewModelTests: OBATestCase {
         let vm = EditBookmarkViewModel(application: app, source: .stop(stop), bookmark: bookmark)
         let outcome = vm.prepareToSave(name: "   ", isFavorite: true)
 
-        guard case .ready(let saved, let isNew, _) = outcome else {
-            XCTFail("Expected .ready"); return
+        guard case .readyToSave(let saved, let isNew) = outcome else {
+            XCTFail("Expected .readyToSave"); return
         }
         vm.persist(saved, name: "   ", isFavorite: true, to: nil, isNewBookmark: isNew)
         expect(saved.name) == Formatters.formattedTitle(stop: stop)
@@ -336,12 +333,11 @@ class EditBookmarkViewModelTests: OBATestCase {
         let vm = EditBookmarkViewModel(application: app, source: .stop(stop), bookmark: bookmark)
         let outcome = vm.prepareToSave(name: "Stop", isFavorite: true)
 
-        guard case .ready(_, let isNew, let isDuplicate) = outcome else {
-            XCTFail("Expected .ready, got \(outcome)")
+        guard case .readyToSave(_, let isNew) = outcome else {
+            XCTFail("Expected .readyToSave, got \(outcome)")
             return
         }
         expect(isNew).to(beFalse())
-        expect(isDuplicate).to(beFalse())
     }
 
     // MARK: - persist
@@ -355,8 +351,8 @@ class EditBookmarkViewModelTests: OBATestCase {
         let vm = EditBookmarkViewModel(application: app, source: .stop(stop), bookmark: nil)
         let outcome = vm.prepareToSave(name: "Home", isFavorite: false)
 
-        guard case .ready(let bookmark, let isNew, _) = outcome else {
-            XCTFail("Expected .ready"); return
+        guard case .readyToSave(let bookmark, let isNew) = outcome else {
+            XCTFail("Expected .readyToSave"); return
         }
 
         vm.persist(bookmark, name: "Home", isFavorite: false, to: nil, isNewBookmark: isNew)
@@ -376,8 +372,8 @@ class EditBookmarkViewModelTests: OBATestCase {
         let vm = EditBookmarkViewModel(application: app, source: .stop(stop), bookmark: nil)
         let outcome = vm.prepareToSave(name: "Stop", isFavorite: true)
 
-        guard case .ready(let bookmark, let isNew, _) = outcome else {
-            XCTFail("Expected .ready"); return
+        guard case .readyToSave(let bookmark, let isNew) = outcome else {
+            XCTFail("Expected .readyToSave"); return
         }
 
         vm.persist(bookmark, name: "Stop", isFavorite: true, to: group.id, isNewBookmark: isNew)
@@ -403,8 +399,8 @@ class EditBookmarkViewModelTests: OBATestCase {
         let vm = EditBookmarkViewModel(application: app, source: .stop(stop), bookmark: bookmark)
         let outcome = vm.prepareToSave(name: "Stop", isFavorite: true)
 
-        guard case .ready(let saved, let isNew, _) = outcome else {
-            XCTFail("Expected .ready"); return
+        guard case .readyToSave(let saved, let isNew) = outcome else {
+            XCTFail("Expected .readyToSave"); return
         }
 
         vm.persist(saved, name: "Stop", isFavorite: true, to: groupB.id, isNewBookmark: isNew)
@@ -422,8 +418,8 @@ class EditBookmarkViewModelTests: OBATestCase {
         let vm = EditBookmarkViewModel(application: app, source: .arrivalDeparture(arrivalDep), bookmark: nil)
         let outcome = vm.prepareToSave(name: "Route", isFavorite: true)
 
-        guard case .ready(let bookmark, let isNew, _) = outcome else {
-            XCTFail("Expected .ready"); return
+        guard case .readyToSave(let bookmark, let isNew) = outcome else {
+            XCTFail("Expected .readyToSave"); return
         }
 
         vm.persist(bookmark, name: "Route", isFavorite: true, to: nil, isNewBookmark: isNew)
@@ -445,8 +441,8 @@ class EditBookmarkViewModelTests: OBATestCase {
         let vm = EditBookmarkViewModel(application: app, source: .arrivalDeparture(arrivalDep), bookmark: existing)
         let outcome = vm.prepareToSave(name: "Updated Route", isFavorite: true)
 
-        guard case .ready(let bookmark, let isNew, _) = outcome else {
-            XCTFail("Expected .ready"); return
+        guard case .readyToSave(let bookmark, let isNew) = outcome else {
+            XCTFail("Expected .readyToSave"); return
         }
 
         vm.persist(bookmark, name: "Updated Route", isFavorite: true, to: nil, isNewBookmark: isNew)
@@ -464,8 +460,8 @@ class EditBookmarkViewModelTests: OBATestCase {
         let vm = EditBookmarkViewModel(application: app, source: .stop(stop), bookmark: nil)
         let outcome = vm.prepareToSave(name: "Stop", isFavorite: true)
 
-        guard case .ready(let bookmark, let isNew, _) = outcome else {
-            XCTFail("Expected .ready"); return
+        guard case .readyToSave(let bookmark, let isNew) = outcome else {
+            XCTFail("Expected .readyToSave"); return
         }
 
         vm.persist(bookmark, name: "Stop", isFavorite: true, to: nil, isNewBookmark: isNew)

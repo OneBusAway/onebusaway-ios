@@ -28,8 +28,9 @@ enum BookmarkSource {
 }
 
 enum SaveOutcome {
-    case ready(Bookmark, isNew: Bool, isDuplicate: Bool)
     case regionUnavailable
+    case readyToSave(Bookmark, isNew: Bool)
+    case duplicateRequiresConfirmation(Bookmark)
 }
 
 /// Shared ViewModel for creating and editing a single bookmark.
@@ -43,7 +44,10 @@ final class EditBookmarkViewModel {
     // MARK: - Static Context
 
     /// `true` when creating a new bookmark; `false` when editing an existing one.
-    let isAddMode: Bool
+    var isAddMode: Bool {
+        if case .add = mode { return true }
+        return false
+    }
 
     /// Transit-derived name (stop title or route + headsign).
     /// Used as the fallback when the user leaves the name field empty.
@@ -67,17 +71,21 @@ final class EditBookmarkViewModel {
 
     // MARK: - Private
 
+    private enum Mode {
+        case add
+        case edit(Bookmark)
+    }
+
     private let application: Application
     private let source: BookmarkSource
-    private let existingBookmark: Bookmark?
+    private let mode: Mode
 
     // MARK: - Init
 
     init(application: Application, source: BookmarkSource, bookmark: Bookmark?) {
         self.application = application
         self.source = source
-        self.existingBookmark = bookmark
-        self.isAddMode = bookmark == nil
+        self.mode = bookmark.map(Mode.edit) ?? .add
         self.dataObjectName = source.dataObjectName
         self.initialName = bookmark?.name ?? source.dataObjectName
         self.initialIsFavorite = bookmark?.isFavorite ?? true
@@ -86,15 +94,15 @@ final class EditBookmarkViewModel {
 
     // MARK: - Group Selection
 
-    /// Returns the data store's live view of which group currently contains
-    /// `existingBookmark`, or `nil` if ungrouped or in add mode. Distinct from the
-    /// cached `initialGroupID` captured at init time, which may be stale if the
-    /// user moved the bookmark in another screen.
+    /// Returns the data store's live view of which group currently contains the
+    /// bookmark being edited, or `nil` if ungrouped or in add mode. Distinct from
+    /// the cached `initialGroupID` captured at init time, which may be stale if
+    /// the user moved the bookmark in another screen.
     func currentGroupID() -> UUID? {
-        guard let existingBookmark else { return nil }
+        guard case .edit(let bookmark) = mode else { return nil }
         return application.userDataStore.bookmarkGroups
             .first { group in
-                application.userDataStore.bookmarksInGroup(group).contains { $0.id == existingBookmark.id }
+                application.userDataStore.bookmarksInGroup(group).contains { $0.id == bookmark.id }
             }?
             .id
     }
@@ -104,13 +112,14 @@ final class EditBookmarkViewModel {
     /// Validates that a region is available and, in add mode, builds the `Bookmark`
     /// and checks for duplicates against the data store.
     ///
-    /// Does NOT mutate `existingBookmark` or write to the data store. The form
+    /// Does NOT mutate the existing bookmark or write to the data store. The form
     /// values (`name`, `isFavorite`) are applied to the bookmark inside
     /// `persist(_:name:isFavorite:to:isNewBookmark:)`.
     func prepareToSave(name: String, isFavorite: Bool) -> SaveOutcome {
         guard let region = application.currentRegion else { return .regionUnavailable }
 
-        if isAddMode {
+        switch mode {
+        case .add:
             let resolvedName = resolveName(name)
             let bookmark: Bookmark
             switch source {
@@ -119,15 +128,12 @@ final class EditBookmarkViewModel {
             case .arrivalDeparture(let ad):
                 bookmark = Bookmark(name: resolvedName, regionIdentifier: region.regionIdentifier, arrivalDeparture: ad, stop: ad.stop)
             }
-            bookmark.isFavorite = isFavorite
-            let isDuplicate = application.userDataStore.checkForDuplicates(bookmark: bookmark)
-            return .ready(bookmark, isNew: true, isDuplicate: isDuplicate)
-        } else {
-            guard let bookmark = existingBookmark else {
-                assertionFailure("Edit mode requires an existingBookmark; the init populated it.")
-                return .regionUnavailable
+            if application.userDataStore.checkForDuplicates(bookmark: bookmark) {
+                return .duplicateRequiresConfirmation(bookmark)
             }
-            return .ready(bookmark, isNew: false, isDuplicate: false)
+            return .readyToSave(bookmark, isNew: true)
+        case .edit(let bookmark):
+            return .readyToSave(bookmark, isNew: false)
         }
     }
 
