@@ -83,6 +83,10 @@ final class SurveyViewModel: ObservableObject {
     }
 
     /// Updates checkbox selection state and stores the JSON-encoded array as the answer.
+    ///
+    /// `formatCheckboxAnswer` only encodes a `[String]` via `JSONEncoder`, which cannot
+    /// realistically fail. The `try!` ensures a silent encode failure can never leave the
+    /// UI showing a checked row whose answer never landed in `responses`.
     func toggleCheckbox(option: String, selected: Bool, for question: SurveyQuestion) {
         if selected {
             checkboxSelections[question.id, default: []].insert(option)
@@ -91,12 +95,9 @@ final class SurveyViewModel: ObservableObject {
         }
 
         let selections = Array(checkboxSelections[question.id, default: []])
-        do {
-            let jsonAnswer = try SurveyService.formatCheckboxAnswer(selections)
-            updateAnswer(for: question, answer: jsonAnswer)
-        } catch {
-            Logger.error("Failed to encode checkbox selections for question \(question.id): \(error)")
-        }
+        // swiftlint:disable:next force_try
+        let jsonAnswer = try! SurveyService.formatCheckboxAnswer(selections)
+        updateAnswer(for: question, answer: jsonAnswer)
     }
 
     /// User cancelled — reschedule the survey for later.
