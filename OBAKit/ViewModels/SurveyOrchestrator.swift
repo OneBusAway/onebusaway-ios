@@ -89,15 +89,19 @@ final class SurveyOrchestrator {
         surveyService.setNextReminderDate()
     }
 
-    /// Marks the survey completed without going through the hero path. Used by
-    /// screens that complete a survey by other means.
-    func markCompleted(_ survey: Survey) {
-        surveyService.markSurveyCompleted(survey)
-    }
-
     /// Pushes the next reminder out. Called by the map prompt after a
     /// successful present so the same session doesn't re-prompt.
     func noteReminderAndAdvanceSession() {
         surveyService.setNextReminderDate()
+    }
+
+    /// The survey to show on the map right now, or `nil` if none applies.
+    func findMapSurvey() -> Survey? {
+        surveyService.findSurveyForMap()
+    }
+
+    /// The survey to show for the given stop right now, or `nil` if none applies.
+    func findStopSurvey(stopID: String, routeIDs: [String]) -> Survey? {
+        surveyService.findSurveyForStop(stopID: stopID, routeIDs: routeIDs)
     }
 }

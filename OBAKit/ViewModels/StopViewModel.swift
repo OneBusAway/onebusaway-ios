@@ -267,7 +267,7 @@ class StopViewModel: ObservableObject {
             return
         }
         let routeIDs = stop.routes.map { $0.id }
-        currentSurvey = application.surveyService.findSurveyForStop(stopID: stopID, routeIDs: routeIDs)
+        currentSurvey = surveyOrchestrator.findStopSurvey(stopID: stopID, routeIDs: routeIDs)
     }
 
     /// Submits the hero answer for the currently displayed survey. On success
@@ -295,10 +295,11 @@ class StopViewModel: ObservableObject {
             case .completed:
                 currentSurvey = nil
             case .needsRemainingQuestions(let heroResponseID):
-                // Keep `currentSurvey` non-nil; the next refresh will clear it
-                // once the survey is no longer applicable, matching the
-                // previous VC behavior of leaving the card in place during
-                // the full-survey hand-off.
+                // Clear the card before handing off to the full-survey screen so
+                // a re-tap can't re-submit the hero question while the modal is
+                // being presented. The card reappears on the next refresh only
+                // if the survey is still applicable.
+                currentSurvey = nil
                 presentFullSurveySubject.send(.init(
                     survey: survey,
                     heroResponseID: heroResponseID,

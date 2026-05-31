@@ -205,19 +205,6 @@ class SurveyOrchestratorTests: OBATestCase {
         expect(self.dataStore.isSurveyCompleted(surveyId: survey.id, userIdentifier: userID)).to(beTrue())
     }
 
-    // MARK: - markCompleted
-
-    /// `markCompleted(_:)` records the survey as done for the current user.
-    @MainActor
-    func test_markCompleted_recordsForCurrentUser() {
-        let survey = Self.makeSurvey(questions: [Self.makeQuestion(id: 1)])
-        let userID = dataStore.surveyUserIdentifier
-
-        orchestrator.markCompleted(survey)
-
-        expect(self.dataStore.isSurveyCompleted(surveyId: survey.id, userIdentifier: userID)).to(beTrue())
-    }
-
     // MARK: - noteReminderAndAdvanceSession
 
     /// `noteReminderAndAdvanceSession()` advances the reminder by ~3 days.
