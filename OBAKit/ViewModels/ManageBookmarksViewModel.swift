@@ -79,12 +79,12 @@ final class ManageBookmarksViewModel {
     /// `"<routeShortName> - <tripHeadsign>"` for trip bookmarks,
     /// or the formatted stop title for stop bookmarks.
     private func originalTransitName(for bookmark: Bookmark) -> String {
-        if let routeShortName = bookmark.routeShortName,
-           let tripHeadsign = bookmark.tripHeadsign,
-           bookmark.routeID != nil {
-            return "\(routeShortName) - \(tripHeadsign)"
+        // `isTripBookmark` is defined as all three of `routeShortName`, `routeID`,
+        // and `tripHeadsign` being non-nil, so the unwraps here are sound.
+        guard bookmark.isTripBookmark else {
+            return Formatters.formattedTitle(stop: bookmark.stop)
         }
-        return Formatters.formattedTitle(stop: bookmark.stop)
+        return "\(bookmark.routeShortName!) - \(bookmark.tripHeadsign!)"
     }
 
     /// Resets `bookmark.name` to its transit-derived name and re-saves it to the store.
