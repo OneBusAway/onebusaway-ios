@@ -233,4 +233,52 @@ class StopViewModelTests: OBATestCase {
         expect(viewModel.lastUpdated).toNot(beNil())
         expect(viewModel.shouldRefresh).to(beFalse())  // <30 s elapsed → below threshold
     }
+
+    // MARK: - Inline Hero Survey
+
+    /// On a fresh VM (before any fetch), `currentSurvey` is `nil`.
+    @MainActor
+    func test_currentSurvey_isNilBeforeFetch() {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock())
+
+        let viewModel = StopViewModel(application: app, stopID: testStopID)
+
+        expect(viewModel.currentSurvey).to(beNil())
+    }
+
+    /// `submitHeroAnswer` with no current survey is a no-op (no error emission, no
+    /// presentFullSurvey emission).
+    @MainActor
+    func test_submitHeroAnswer_isNoOpWhenNoCurrentSurvey() async {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock())
+
+        let viewModel = StopViewModel(application: app, stopID: testStopID)
+        var errors: [Error] = []
+        var presented: [StopViewModel.FullSurveyPresentation] = []
+        let errSub = viewModel.surveySubmissionError.sink { errors.append($0) }
+        let presSub = viewModel.presentFullSurvey.sink { presented.append($0) }
+        defer { errSub.cancel(); presSub.cancel() }
+
+        await viewModel.submitHeroAnswer("yes", stopLocation: nil)
+
+        expect(errors).to(beEmpty())
+        expect(presented).to(beEmpty())
+    }
+
+    /// `dismissCurrentSurvey()` with no current survey is a no-op and does not set
+    /// the reminder date.
+    @MainActor
+    func test_dismissCurrentSurvey_isNoOpWhenNoCurrentSurvey() {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock())
+
+        let viewModel = StopViewModel(application: app, stopID: testStopID)
+        expect(app.userDataStore.nextSurveyReminderDate).to(beNil())
+
+        viewModel.dismissCurrentSurvey()
+
+        expect(app.userDataStore.nextSurveyReminderDate).to(beNil())
+    }
 }

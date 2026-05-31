@@ -31,6 +31,32 @@ class StopViewModel: ObservableObject {
     }
     private let surveysDidRefreshSubject = PassthroughSubject<Void, Never>()
 
+    /// The survey to render as an inline hero card on this stop, or `nil` for no card.
+    /// Recomputed when the stop is loaded and after every survey refresh.
+    @Published private(set) var currentSurvey: Survey?
+
+    /// Emits when the inline hero answer succeeds but the survey has remaining
+    /// questions. Consumers present the full survey screen with the supplied
+    /// `heroResponseID` so the hero isn't re-submitted on retry.
+    var presentFullSurvey: AnyPublisher<FullSurveyPresentation, Never> {
+        presentFullSurveySubject.eraseToAnyPublisher()
+    }
+    private let presentFullSurveySubject = PassthroughSubject<FullSurveyPresentation, Never>()
+
+    /// Emits when the inline hero submission fails. Consumers show the alert.
+    var surveySubmissionError: AnyPublisher<Error, Never> {
+        surveySubmissionErrorSubject.eraseToAnyPublisher()
+    }
+    private let surveySubmissionErrorSubject = PassthroughSubject<Error, Never>()
+
+    /// Payload for `presentFullSurvey`: the survey, the hero submission id (so
+    /// the full screen skips the hero), and the stop coordinate at submission time.
+    struct FullSurveyPresentation {
+        let survey: Survey
+        let heroResponseID: String
+        let stopLocation: CLLocationCoordinate2D?
+    }
+
     /// The arrivals/departures fetched from the server.
     @Published private(set) var stopArrivals: StopArrivals?
 
@@ -80,6 +106,9 @@ class StopViewModel: ObservableObject {
     private let application: Application
     let stopID: StopID
 
+    private let surveyOrchestrator: SurveyOrchestrator
+    private var heroSubmitInFlight: Bool = false
+
     private static let defaultMinutesAfter: UInt = 35
     private static let timerInterval: TimeInterval = 15
     private static let refreshThreshold: TimeInterval = 30
@@ -106,6 +135,7 @@ class StopViewModel: ObservableObject {
         self.bookmarkContext = bookmarkContext
         self.transferContext = transferContext
         self.minutesAfter = StopViewModel.defaultMinutesAfter
+        self.surveyOrchestrator = SurveyOrchestrator(surveyService: application.surveyService)
 
         if let currentRegion = application.currentRegion {
             self.stopPreferences = application.stopPreferencesDataStore.preferences(stopID: stopID, region: currentRegion)
@@ -193,6 +223,7 @@ class StopViewModel: ObservableObject {
             self.stop = stop
         }
         stopArrivals = arrivals
+        recomputeCurrentSurvey()
     }
 
     /// Runs exactly once per VM lifetime on the first successful fetch:
@@ -220,8 +251,93 @@ class StopViewModel: ObservableObject {
             let surveyService = self.application.surveyService
             await surveyService.fetchSurveys()
             guard surveyService.lastError == nil else { return }
+            self.recomputeCurrentSurvey()
             self.surveysDidRefreshSubject.send()
         }
+    }
+
+    // MARK: - Inline Hero Survey
+
+    /// Updates `currentSurvey` to the survey applicable for this stop right now,
+    /// or `nil` if the gate is closed or no survey matches. Called whenever the
+    /// stop is refreshed or the survey list is reloaded.
+    private func recomputeCurrentSurvey() {
+        guard surveyOrchestrator.isEligible(), let stop else {
+            currentSurvey = nil
+            return
+        }
+        let routeIDs = stop.routes.map { $0.id }
+        currentSurvey = application.surveyService.findSurveyForStop(stopID: stopID, routeIDs: routeIDs)
+    }
+
+    /// Submits the hero answer for the currently displayed survey. On success
+    /// either clears the card (no remaining questions) or emits
+    /// `presentFullSurvey` for the consumer to push the full survey screen.
+    /// Errors are surfaced on `surveySubmissionError`.
+    func submitHeroAnswer(_ answer: String, stopLocation: CLLocationCoordinate2D?) async {
+        guard !heroSubmitInFlight,
+              let survey = currentSurvey,
+              survey.heroQuestion != nil
+        else { return }
+
+        heroSubmitInFlight = true
+        defer { heroSubmitInFlight = false }
+
+        do {
+            let outcome = try await surveyOrchestrator.submitHero(
+                survey: survey,
+                answer: answer,
+                stopID: stopID,
+                stopLocation: stopLocation
+            )
+
+            switch outcome {
+            case .completed:
+                currentSurvey = nil
+            case .needsRemainingQuestions(let heroResponseID):
+                // Keep `currentSurvey` non-nil; the next refresh will clear it
+                // once the survey is no longer applicable, matching the
+                // previous VC behavior of leaving the card in place during
+                // the full-survey hand-off.
+                presentFullSurveySubject.send(.init(
+                    survey: survey,
+                    heroResponseID: heroResponseID,
+                    stopLocation: stopLocation
+                ))
+            }
+        } catch {
+            Logger.error("Survey \(survey.id) hero submission failed: \(error)")
+            surveySubmissionErrorSubject.send(error)
+        }
+    }
+
+    /// Dismisses the currently displayed survey card and pushes the next
+    /// reminder out. No-op when there is no current survey.
+    func dismissCurrentSurvey() {
+        guard let survey = currentSurvey else { return }
+        surveyOrchestrator.dismiss(survey)
+        currentSurvey = nil
+    }
+
+    /// Launches the external survey for `survey` (or the current one if `nil`).
+    /// The launcher marks the survey completed only when the system actually
+    /// opens the URL; on success we recompute the card so it drops from view.
+    func launchExternalSurvey(
+        _ survey: Survey? = nil,
+        onSuccess: @escaping () -> Void = {},
+        onFailure: @escaping () -> Void = {}
+    ) {
+        guard let target = survey ?? currentSurvey else { return }
+        let launcher = ExternalSurveyLauncher(surveyService: application.surveyService)
+        launcher.launch(
+            survey: target,
+            stop: stop,
+            onSuccess: { [weak self] in
+                self?.recomputeCurrentSurvey()
+                onSuccess()
+            },
+            onFailure: onFailure
+        )
     }
 
     /// Extends the time window and reloads data. Call when the user taps "Load More".
