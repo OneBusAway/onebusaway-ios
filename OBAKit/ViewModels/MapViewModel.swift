@@ -51,6 +51,18 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
     /// The current location authorization status. Used by the UI to show/hide location controls.
     @Published private(set) var locationAuthStatus: CLAuthorizationStatus
 
+    // MARK: - Survey Prompt
+
+    /// Emits the survey to present when one is eligible and found. One-shot per
+    /// session; observers handle presentation (modal sheet, fullScreenCover, etc.).
+    var surveyToPresent: AnyPublisher<Survey, Never> {
+        surveyToPresentSubject.eraseToAnyPublisher()
+    }
+    private let surveyToPresentSubject = PassthroughSubject<Survey, Never>()
+
+    private var hasShownSurveyThisSession = false
+    private let surveyOrchestrator: SurveyOrchestrator
+
     // MARK: - Private
 
     private let application: Application
@@ -61,6 +73,7 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
         self.application = application
         self.mapType = initialMapType
         self.locationAuthStatus = application.locationService.authorizationStatus
+        self.surveyOrchestrator = SurveyOrchestrator(surveyService: application.surveyService)
         super.init()
         application.locationService.addDelegate(self)
     }
@@ -118,6 +131,35 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
     /// Re-fetches weather so the display stays fresh without relying on UIKit notification names.
     func onAppBecameActive() {
         Task { [weak self] in await self?.loadWeather() }
+    }
+
+    // MARK: - Survey Prompt
+
+    /// Checks once per session whether a map survey should be presented. On the
+    /// first eligible hit, sets the reminder, flips the session flag, and emits
+    /// the survey on `surveyToPresent`. Subsequent calls in the same session
+    /// no-op. Mirrors the previous `MapViewController.checkForMapSurvey()`.
+    func checkForSurveyPrompt() async {
+        guard !hasShownSurveyThisSession else { return }
+        guard surveyOrchestrator.isEligible() else { return }
+
+        await surveyOrchestrator.refreshSurveys()
+
+        // Re-check after the await: a second `checkForSurveyPrompt()` can pass
+        // the pre-await guard while this task is suspended, so without this
+        // both tasks would emit and present a card twice.
+        guard !hasShownSurveyThisSession else { return }
+        guard let survey = application.surveyService.findSurveyForMap() else { return }
+
+        hasShownSurveyThisSession = true
+        surveyOrchestrator.noteReminderAndAdvanceSession()
+        surveyToPresentSubject.send(survey)
+    }
+
+    /// Re-enables the session prompt. Used by tests and any future
+    /// region-change flow that wants the next map appearance to re-prompt.
+    func resetSurveySession() {
+        hasShownSurveyThisSession = false
     }
 
     // MARK: - LocationServiceDelegate

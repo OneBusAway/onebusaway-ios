@@ -172,4 +172,78 @@ class MapViewModelTests: OBATestCase {
 
         expect(viewModel.locationAuthStatus) == .denied
     }
+
+    // MARK: - Survey Prompt
+
+    /// Stubs the survey list endpoint with an empty payload so `fetchSurveys()` succeeds
+    /// without surfacing an error.
+    private func stubEmptySurveys(dataLoader: MockDataLoader) {
+        let emptySurveys = #"{"surveys":[]}"#.data(using: .utf8)!
+        dataLoader.mock(data: emptySurveys) { request in
+            request.url?.path.contains("/surveys.json") ?? false
+        }
+    }
+
+    /// When the gate is closed, `checkForSurveyPrompt` neither fetches nor emits.
+    @MainActor
+    func test_checkForSurveyPrompt_doesNothingWhenIneligible() async {
+        let dataLoader = MockDataLoader(testName: name)
+        stubEmptySurveys(dataLoader: dataLoader)
+        let app = createApplication(dataLoader: dataLoader)
+        userDefaults.set(false, forKey: "UserDataStore.isSurveyEnabled")
+
+        let viewModel = MapViewModel(application: app)
+        var received: [Survey] = []
+        let cancellable = viewModel.surveyToPresent.sink { received.append($0) }
+        defer { cancellable.cancel() }
+
+        await viewModel.checkForSurveyPrompt()
+
+        expect(received).to(beEmpty())
+    }
+
+    /// When eligible but no survey matches the map, `surveyToPresent` does not emit
+    /// and the reminder is not advanced.
+    @MainActor
+    func test_checkForSurveyPrompt_doesNotEmitWhenNoMapSurvey() async {
+        let dataLoader = MockDataLoader(testName: name)
+        stubEmptySurveys(dataLoader: dataLoader)
+        let app = createApplication(dataLoader: dataLoader)
+        userDefaults.set(true, forKey: "UserDataStore.isSurveyEnabled")
+        userDefaults.set(true, forKey: "UserDataStore.alwaysShowSurveysOnStops")
+
+        let viewModel = MapViewModel(application: app)
+        var received: [Survey] = []
+        let cancellable = viewModel.surveyToPresent.sink { received.append($0) }
+        defer { cancellable.cancel() }
+
+        await viewModel.checkForSurveyPrompt()
+
+        expect(received).to(beEmpty())
+        expect(app.userDataStore.nextSurveyReminderDate).to(beNil())
+    }
+
+    /// `resetSurveySession()` clears the "already shown" flag — verified indirectly by
+    /// repeatedly calling `checkForSurveyPrompt` and confirming the no-emit behavior
+    /// stays stable across reset (we can't observe a positive emission without a real
+    /// map survey, but reset must not crash and must not turn a no-match into an emit).
+    @MainActor
+    func test_resetSurveySession_doesNotCrashAndKeepsContractStable() async {
+        let dataLoader = MockDataLoader(testName: name)
+        stubEmptySurveys(dataLoader: dataLoader)
+        let app = createApplication(dataLoader: dataLoader)
+        userDefaults.set(true, forKey: "UserDataStore.isSurveyEnabled")
+        userDefaults.set(true, forKey: "UserDataStore.alwaysShowSurveysOnStops")
+
+        let viewModel = MapViewModel(application: app)
+        var received: [Survey] = []
+        let cancellable = viewModel.surveyToPresent.sink { received.append($0) }
+        defer { cancellable.cancel() }
+
+        await viewModel.checkForSurveyPrompt()
+        viewModel.resetSurveySession()
+        await viewModel.checkForSurveyPrompt()
+
+        expect(received).to(beEmpty())
+    }
 }
