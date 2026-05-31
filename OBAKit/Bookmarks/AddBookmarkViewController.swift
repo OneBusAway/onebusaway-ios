@@ -107,6 +107,8 @@ class AddBookmarkViewController: TaskController<[ArrivalDeparture]>, OBAListView
 
     // MARK: - Data and UI
     override func loadData() async throws -> [ArrivalDeparture] {
+        // An empty `preloadedArrivals` array deliberately short-circuits the fetch
+        // and surfaces the "no upcoming departures" view; pass `nil` to fetch fresh.
         if let preloadedArrivals {
             return preloadedArrivals
         }

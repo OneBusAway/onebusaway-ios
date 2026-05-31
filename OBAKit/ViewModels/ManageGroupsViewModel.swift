@@ -34,8 +34,10 @@ final class ManageGroupsViewModel {
 
     /// Converts an ordered sequence of (tag, value) pairs — as read from the Eureka form —
     /// into `BookmarkGroup` objects. Rows with empty or whitespace-only names are skipped.
-    /// Existing groups are identified by their UUID tag and renamed in-place;
-    /// rows without a valid UUID tag produce a new group with a fresh ID.
+    /// Existing groups are identified by their UUID tag and a new `BookmarkGroup` is
+    /// constructed reusing that UUID so identity is preserved when `replaceBookmarkGroups`
+    /// later merges these into the store; rows without a valid UUID tag produce a new
+    /// group with a fresh ID.
     func groups(from rows: [(tag: String?, value: String?)]) -> [BookmarkGroup] {
         var result = [BookmarkGroup]()
         var sortOrder = 0

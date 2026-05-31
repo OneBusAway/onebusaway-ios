@@ -115,6 +115,7 @@ class ManageBookmarksViewController: FormViewController {
             return nil
         }
         guard let id = UUID(optionalUUIDString: row.tag) else {
+            Logger.warn("bookmarkForBookmarkIndexPath: NameRow at \(indexPath) has non-UUID tag \(row.tag ?? "nil")")
             return nil
         }
 
