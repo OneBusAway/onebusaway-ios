@@ -10,15 +10,14 @@ on:
 # https://github.com/actions/runner-images?tab=readme-ov-file
 # Installed versions of Xcode on macOS 15 are documented at:
 # https://github.com/actions/runner-images/blob/main/images/macos/macos-15-Readme.md
-
-permissions:
-  checks: write
-  contents: read
   
 jobs:
   build:
     runs-on: macos-15
-
+    permissions:
+      checks: write
+      contents: read
+      
     steps:
     - uses: actions/checkout@v4
 
@@ -76,8 +75,8 @@ jobs:
     # Upload results
     - uses: slidoapp/xcresulttool@v3.1.1
       continue-on-error: true
-      with:
-        show-passed-tests: false    # Avoid truncation of annotations by GitHub by omitting succeeding tests.
-        path: |
-          OBAKitTests.xcresult
       if: success() || failure()
+      with:
+         path: OBAKitTests.xcresult
+         show-passed-tests: false
+         show-code-coverage: false
