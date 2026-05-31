@@ -11,32 +11,15 @@ import Foundation
 import Combine
 import OBAKitCore
 
-/// Describes the desired expansion state of the bottom panel / sheet (EC11).
-/// UIKit maps each case to a `FloatingPanelState`; SwiftUI maps each case to a
-/// `PresentationDetent` using the values below so the two layers stay in sync
-/// on a single shared enum.
+/// Describes the desired expansion state of the bottom panel (EC11).
+/// `MapFloatingPanelController` maps each case to a `FloatingPanelState`.
+/// A SwiftUI `PresentationDetent` mapping will be added alongside the future
+/// SwiftUI sheet that consumes it, so its detent values can be pinned against
+/// the real layout constants in `Layouts.swift`.
 enum PanelDetent: Equatable {
     case tip
     case half
     case full
-
-    /// SwiftUI presentation value for this detent. `.tip` pins to a fixed
-    /// point height so the grabber stays a consistent size across devices;
-    /// `.half` / `.full` scale with the containing view as fractions.
-    /// Callers map this directly to `PresentationDetent.height(_:)` or
-    /// `PresentationDetent.fraction(_:)`.
-    enum Value: Equatable {
-        case height(CGFloat)
-        case fraction(Double)
-    }
-
-    var value: Value {
-        switch self {
-        case .tip:  return .height(120)
-        case .half: return .fraction(0.5)
-        case .full: return .fraction(1.0)
-        }
-    }
 }
 
 /// Shared ViewModel for the map bottom panel (nearby stops + search).

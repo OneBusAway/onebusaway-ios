@@ -206,7 +206,7 @@ class StopViewModel: ObservableObject {
             reportStopViewed(stop)
         }
         disableFilterIfAllRoutesHidden()
-        // Surveys don't change per 30s refresh; fetch once per stop entry,
+        // Surveys don't change between auto-refreshes; fetch once per stop entry,
         // alongside the other first-fetch-only side effects above.
         refreshSurveys()
     }
