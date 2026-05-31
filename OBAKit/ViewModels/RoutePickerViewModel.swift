@@ -1,0 +1,128 @@
+//
+//  RoutePickerViewModel.swift
+//  OBAKit
+//
+//  Copyright © Open Transit Software Foundation
+//  This source code is licensed under the Apache 2.0 license found in the
+//  LICENSE file in the root directory of this source tree.
+//
+
+import Combine
+import CoreLocation
+import Foundation
+import OBAKitCore
+
+/// Shared ViewModel for `RoutePickerViewController`.
+///
+/// Owns route loading (cache-first, API fallback), search filtering, and load-error
+/// surfacing. The VC keeps `UISearchController` and `OBAListView` presentation.
+@MainActor
+final class RoutePickerViewModel: ObservableObject {
+
+    // MARK: - Published State
+
+    /// Routes matching the current search filter. Drives the list.
+    @Published private(set) var filteredRoutes: [Route] = []
+
+    /// `true` once `loadRoutes()` has resolved (success or failure).
+    @Published private(set) var didFinishLoading: Bool = false
+
+    /// Localized error message from the last `loadRoutes()` attempt, or `nil`.
+    @Published private(set) var loadError: String?
+
+    // MARK: - Direct Reads (not observed)
+
+    /// All routes available for selection, sorted alphabetically. VC reads to detect
+    /// the "no routes found" empty state.
+    private(set) var allRoutes: [Route] = []
+
+    // MARK: - Private
+
+    private let application: Application
+    private var searchQuery: String = ""
+
+    // MARK: - Init
+
+    init(application: Application) {
+        self.application = application
+    }
+
+    // MARK: - Load
+
+    func loadRoutes() async {
+        // Primary: extract routes from stops already loaded by MapRegionManager.
+        let cachedStops = application.mapRegionManager.stops
+        if !cachedStops.isEmpty {
+            applyRoutes(from: cachedStops)
+            return
+        }
+
+        // Fallback: fetch nearby stops from the API.
+        guard let apiService = application.apiService else {
+            loadError = OBALoc(
+                "route_picker.error_no_service",
+                value: "Unable to connect to the transit service.",
+                comment: "Error when the API service is unavailable in the route picker."
+            )
+            didFinishLoading = true
+            return
+        }
+
+        guard let location = application.locationService.currentLocation else {
+            loadError = OBALoc(
+                "route_picker.error_no_location",
+                value: "Location unavailable. Please enable location services to find nearby routes.",
+                comment: "Error when location is unavailable in the route picker."
+            )
+            didFinishLoading = true
+            return
+        }
+
+        do {
+            let stops = try await apiService.getStops(coordinate: location.coordinate).list
+            applyRoutes(from: stops)
+        } catch {
+            if error is CancellationError { return }
+            Logger.error("Failed to load routes for picker: \(error)")
+            loadError = error.localizedDescription
+            didFinishLoading = true
+        }
+    }
+
+    // MARK: - Search
+
+    func updateSearch(_ query: String) {
+        searchQuery = query
+        recomputeFilteredRoutes()
+    }
+
+    // MARK: - Private
+
+    /// Extracts unique routes from stops, sorts, and refreshes the filtered list.
+    private func applyRoutes(from stops: [Stop]) {
+        var seen = Set<RouteID>()
+        var uniqueRoutes = [Route]()
+
+        for stop in stops {
+            for route in stop.routes where seen.insert(route.id).inserted {
+                uniqueRoutes.append(route)
+            }
+        }
+
+        allRoutes = uniqueRoutes.localizedCaseInsensitiveSort()
+        didFinishLoading = true
+        recomputeFilteredRoutes()
+    }
+
+    private func recomputeFilteredRoutes() {
+        if searchQuery.isEmpty {
+            filteredRoutes = allRoutes
+            return
+        }
+        let query = searchQuery.lowercased()
+        filteredRoutes = allRoutes.filter { route in
+            route.shortName.lowercased().contains(query)
+                || (route.longName?.lowercased().contains(query) ?? false)
+        }
+    }
+}
