@@ -11,6 +11,10 @@ on:
 # Installed versions of Xcode on macOS 15 are documented at:
 # https://github.com/actions/runner-images/blob/main/images/macos/macos-15-Readme.md
 
+permissions:
+  checks: write
+  contents: read
+  
 jobs:
   build:
     runs-on: macos-15
