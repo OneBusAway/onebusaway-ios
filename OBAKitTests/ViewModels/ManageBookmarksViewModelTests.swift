@@ -166,6 +166,12 @@ class ManageBookmarksViewModelTests: OBATestCase {
 
         let removeEvents = analyticsMock.reportedEvents.filter { $0.label == AnalyticsLabels.removeBookmark }
         expect(removeEvents).to(haveCount(1))
+        let expectedValue = AnalyticsLabels.addRemoveBookmarkValue(
+            routeID: bookmark.routeID!,
+            headsign: bookmark.tripHeadsign,
+            stopID: bookmark.stopID
+        )
+        expect(removeEvents.first?.value as? String) == expectedValue
     }
 
     @MainActor

@@ -206,6 +206,30 @@ class EditBookmarkViewModelTests: OBATestCase {
         expect(vm.currentGroupID()) == group.id
     }
 
+    @MainActor
+    func test_currentGroupID_reflectsLiveMove_divergingFromInitialGroupID() throws {
+        let stop = try makeStop()
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader)
+
+        let groupA = BookmarkGroup(name: "Group A", sortOrder: 0)
+        let groupB = BookmarkGroup(name: "Group B", sortOrder: 1)
+        app.userDataStore.upsert(bookmarkGroup: groupA)
+        app.userDataStore.upsert(bookmarkGroup: groupB)
+
+        let bookmark = Bookmark(name: "Stop", regionIdentifier: pugetSoundRegionIdentifier, stop: stop)
+        app.userDataStore.add(bookmark, to: groupA)
+
+        let vm = EditBookmarkViewModel(application: app, source: .stop(stop), bookmark: bookmark)
+        expect(vm.initialGroupID) == groupA.id
+
+        // Simulate another screen moving the bookmark while this VM is alive.
+        app.userDataStore.add(bookmark, to: groupB)
+
+        expect(vm.currentGroupID()) == groupB.id
+        expect(vm.initialGroupID) == groupA.id
+    }
+
     // MARK: - prepareToSave (add mode)
 
     @MainActor
@@ -426,6 +450,12 @@ class EditBookmarkViewModelTests: OBATestCase {
 
         let addBookmarkEvents = analyticsMock.reportedEvents.filter { $0.label == AnalyticsLabels.addBookmark }
         expect(addBookmarkEvents).to(haveCount(1))
+        let expectedValue = AnalyticsLabels.addRemoveBookmarkValue(
+            routeID: arrivalDep.routeID,
+            headsign: arrivalDep.tripHeadsign,
+            stopID: arrivalDep.stopID
+        )
+        expect(addBookmarkEvents.first?.value as? String) == expectedValue
     }
 
     @MainActor
