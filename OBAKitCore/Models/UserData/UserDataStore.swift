@@ -14,9 +14,20 @@ import MapKit
     case map, recentStops, bookmarks, vehicles, settings
 }
 
+// Raw values are persisted to UserDefaults — do not reorder or renumber existing cases.
 @objc public enum WalkingSpeedSource: Int {
-    case manual    // user picked a preset
-    case healthKit // synced from HealthKit
+    case manual = 0    // user picked a preset
+    case healthKit = 1 // synced from HealthKit
+}
+
+/// Shared constants for walking speed handling.
+public enum WalkingSpeed {
+    /// Average human walking speed (≈3.1 mph).
+    public static let defaultMetersPerSecond: Double = 1.4
+
+    /// Acceptable range for a stored walking speed, in meters per second.
+    /// Values outside this range are treated as invalid (divide-hostile or implausible).
+    public static let validRange: ClosedRange<Double> = 0.5...5.0
 }
 
 public extension Notification.Name {
@@ -378,7 +389,7 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
 
         self.userDefaults.register(defaults: [
             UserDefaultsKeys.debugMode: false,
-            UserDefaultsKeys.walkingSpeedMetersPerSecond: 1.4,
+            UserDefaultsKeys.walkingSpeedMetersPerSecond: WalkingSpeed.defaultMetersPerSecond,
             UserDefaultsKeys.walkingSpeedSource: WalkingSpeedSource.manual.rawValue
         ])
     }
@@ -1038,7 +1049,8 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
             userDefaults.double(forKey: UserDefaultsKeys.walkingSpeedMetersPerSecond)
         }
         set {
-            userDefaults.set(newValue, forKey: UserDefaultsKeys.walkingSpeedMetersPerSecond)
+            let clamped = min(max(newValue, WalkingSpeed.validRange.lowerBound), WalkingSpeed.validRange.upperBound)
+            userDefaults.set(clamped, forKey: UserDefaultsKeys.walkingSpeedMetersPerSecond)
         }
     }
 

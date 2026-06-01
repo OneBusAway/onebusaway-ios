@@ -297,4 +297,14 @@ class UserDefaultsStoreTests: OBATestCase {
         expect(self.userDefaultsStore.walkingSpeedSource) == .manual
     }
 
+    func test_walkingSpeedMetersPerSecond_clampsBelowRange() {
+        userDefaultsStore.walkingSpeedMetersPerSecond = 0.1
+        expect(self.userDefaultsStore.walkingSpeedMetersPerSecond).to(beCloseTo(WalkingSpeed.validRange.lowerBound))
+    }
+
+    func test_walkingSpeedMetersPerSecond_clampsAboveRange() {
+        userDefaultsStore.walkingSpeedMetersPerSecond = 10.0
+        expect(self.userDefaultsStore.walkingSpeedMetersPerSecond).to(beCloseTo(WalkingSpeed.validRange.upperBound))
+    }
+
 }
