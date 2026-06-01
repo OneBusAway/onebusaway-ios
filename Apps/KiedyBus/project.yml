@@ -19,6 +19,7 @@ targets:
       properties:
         com.apple.security.application-groups:
           - group.pl.kiedybus.iphone
+        com.apple.developer.healthkit: true
     info:
       path: Apps/KiedyBus/Info.plist
       properties:
