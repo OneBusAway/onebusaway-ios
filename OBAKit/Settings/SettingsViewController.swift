@@ -187,10 +187,8 @@ class SettingsViewController: FormViewController {
 
     // MARK: - Walking Speed
 
-    private let walkingSpeedPresets: [Double] = [0.9, 1.4, 1.8]
-
     private func snapToPreset(_ speed: Double) -> Double {
-        walkingSpeedPresets.min(by: { abs($0 - speed) < abs($1 - speed) }) ?? 1.4
+        WalkingSpeedPreset.nearest(to: speed).rawValue
     }
 
     private lazy var walkingSpeedSection: Section = {
@@ -201,13 +199,9 @@ class SettingsViewController: FormViewController {
             $0.title = OBALoc("settings_controller.walking_speed.title",
                               value: "Walking speed",
                               comment: "Settings > Walking Speed section > Speed picker")
-            $0.options = walkingSpeedPresets
+            $0.options = WalkingSpeedPreset.allCases.map { $0.rawValue }
             $0.displayValueFor = { speed in
-                switch speed {
-                case 0.9: return OBALoc("settings_controller.walking_speed.slow", value: "Slow (~2 mph)", comment: "")
-                case 1.8: return OBALoc("settings_controller.walking_speed.fast", value: "Fast (~4 mph)", comment: "")
-                default:  return OBALoc("settings_controller.walking_speed.avg", value: "Average (~3 mph)", comment: "")
-                }
+                WalkingSpeedPreset.nearest(to: speed ?? WalkingSpeed.defaultMetersPerSecond).localizedTitle
             }
             $0.disabled = Condition.function([walkingSpeedUseHealthKitKey], { [weak self] form in
                 guard let self = self else { return false }
@@ -228,7 +222,14 @@ class SettingsViewController: FormViewController {
                         if !granted {
                             row.value = false
                             row.reload()
-                            self.application.userDataStore.walkingSpeedSource = .manual
+                            self.showErrorToast(
+                                OBALoc(
+                                    "settings_controller.walking_speed.healthkit_unavailable",
+                                    value: "Couldn't sync walking speed from Health. Check Settings > Privacy & Security > Health to allow access.",
+                                    comment: "Settings > Walking Speed > HealthKit denial or no-data toast"
+                                ),
+                                using: self.application.toastManager
+                            )
                         }
                     }
                 }
