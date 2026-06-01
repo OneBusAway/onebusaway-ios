@@ -64,4 +64,16 @@ class WalkingDirectionsTests: XCTestCase {
         let time = WalkingDirections.travelTime(from: nil, to: nil)
         expect(time).to(beNil())
     }
+
+    // MARK: - Invalid Velocity
+
+    func test_travelTime_zeroVelocity_returnsNil() {
+        let time = WalkingDirections.travelTime(from: locationA, to: locationB, velocity: 0)
+        expect(time).to(beNil())
+    }
+
+    func test_travelTime_negativeVelocity_returnsNil() {
+        let time = WalkingDirections.travelTime(from: locationA, to: locationB, velocity: -1.5)
+        expect(time).to(beNil())
+    }
 }

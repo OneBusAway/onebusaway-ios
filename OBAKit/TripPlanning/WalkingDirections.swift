@@ -9,23 +9,21 @@
 
 import Foundation
 import CoreLocation
+import OBAKitCore
 
 /// Provides facilities for calculating walking directions and travel times.
 class WalkingDirections: NSObject {
 
-    /// Average human walking speed is 1.4 meters per second (about 3.1 miles per hour).
-    private static let walkingVelocity = 1.4
-
     /// Calculates travel time, optionally using a custom walking velocity.
     /// - Parameter location: Starting location
     /// - Parameter toLocation: Ending location
-    /// - Parameter velocity: Walking speed in meters per second. Defaults to 1.4 (average human walking speed).
+    /// - Parameter velocity: Walking speed in meters per second. Defaults to the average human walking speed.
     public class func travelTime(
         from location: CLLocation?,
         to toLocation: CLLocation?,
-        velocity: Double = 1.4
+        velocity: Double = WalkingSpeed.defaultMetersPerSecond
     ) -> TimeInterval? {
-        guard let location = location, let toLocation = toLocation else { return nil }
+        guard let location = location, let toLocation = toLocation, velocity > 0 else { return nil }
         return location.distance(from: toLocation) / velocity
     }
 }
