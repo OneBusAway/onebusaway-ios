@@ -119,21 +119,26 @@ class SettingsViewController: FormViewController {
             application.userDefaults.set(false, forKey: RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey)
         }
 
-        // Walking Speed — save source first to avoid race condition
-        if let useHK = values[walkingSpeedUseHealthKitKey] as? Bool {
-            application.userDataStore.walkingSpeedSource = useHK ? .healthKit : .manual
+        saveWalkingSpeedValues(values)
+    }
+
+    private func saveWalkingSpeedValues(_ values: [String: Any?]) {
+        let store = application.userDataStore
+        let useHK = values[walkingSpeedUseHealthKitKey] as? Bool
+
+        // Source first so the manual-only speed write below sees the new source.
+        if let useHK {
+            store.walkingSpeedSource = useHK ? .healthKit : .manual
         }
 
         if let speed = values[walkingSpeedMetersPerSecondKey] as? Double,
-           application.userDataStore.walkingSpeedSource == .manual {
-            application.userDataStore.walkingSpeedMetersPerSecond = speed
+           store.walkingSpeedSource == .manual {
+            store.walkingSpeedMetersPerSecond = speed
         }
 
-        // Snap to nearest preset when toggling HealthKit OFF
-        if let useHK = values[walkingSpeedUseHealthKitKey] as? Bool, !useHK {
-            application.userDataStore.walkingSpeedMetersPerSecond = snapToPreset(
-                application.userDataStore.walkingSpeedMetersPerSecond
-            )
+        // Snap to nearest preset when toggling HealthKit OFF so the segmented row matches.
+        if useHK == false {
+            store.walkingSpeedMetersPerSecond = snapToPreset(store.walkingSpeedMetersPerSecond)
         }
     }
 
