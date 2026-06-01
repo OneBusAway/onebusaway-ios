@@ -379,7 +379,7 @@ public class Application: CoreApplication, PushServiceDelegate {
         configureTipKit()
 
         if userDataStore.walkingSpeedSource == .healthKit {
-            Task { await walkingSpeedManager.requestHealthKitAuthorizationAndSync() }
+            Task { await walkingSpeedManager.refreshFromHealthKitIfPossible() }
         }
     }
 

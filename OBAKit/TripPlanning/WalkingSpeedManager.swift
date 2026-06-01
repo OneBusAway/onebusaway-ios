@@ -53,6 +53,19 @@ final class WalkingSpeedManager {
         return didSync
     }
 
+    /// Passive refresh used at launch when the user already opted into HealthKit previously.
+    /// Updates `walkingSpeedMetersPerSecond` if a fresh sample is available, but never
+    /// flips `walkingSpeedSource` to `.manual` — an idle user (e.g. left their Apple Watch
+    /// at home for a month) keeps their previously-synced value and their stated intent.
+    /// Only the active toggle-on path in Settings can downgrade the source.
+    func refreshFromHealthKitIfPossible() async {
+        guard HKHealthStore.isHealthDataAvailable(),
+              let speedType = HKQuantityType.quantityType(forIdentifier: .walkingSpeed)
+        else { return }
+
+        await syncLatestWalkingSpeed(speedType: speedType)
+    }
+
     /// Queries HealthKit for the most recent walking speed sample from the last 30 days.
     /// If a valid sample is found, writes it to UserDataStore.
     /// If no sample is found or it's out of range, does nothing (keeps current manual preset).
