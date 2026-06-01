@@ -22,13 +22,21 @@ final class WalkingSpeedManager {
     }
 
     /// Requests HealthKit authorization and attempts to sync the latest walking speed.
-    /// Returns `true` if the authorization request completed without error.
-    /// Returns `false` only if HealthKit is unavailable or the authorization request threw an error.
+    ///
+    /// Apple's HealthKit privacy model does not surface read-permission denials: the
+    /// authorization request succeeds even when the user taps "Don't Allow", and a
+    /// subsequent query just returns no samples. To avoid leaving the toggle stuck ON
+    /// for a denying user, success here is defined as "actually retrieved a usable
+    /// sample". A user who genuinely granted access but has no recent walking-speed
+    /// samples (e.g. no Apple Watch) is also routed to `.manual` — that's intentional.
     @discardableResult
     func requestHealthKitAuthorizationAndSync() async -> Bool {
         guard HKHealthStore.isHealthDataAvailable(),
               let speedType = HKQuantityType.quantityType(forIdentifier: .walkingSpeed)
-        else { return false }
+        else {
+            userDataStore.walkingSpeedSource = .manual
+            return false
+        }
 
         do {
             try await healthStore.requestAuthorization(toShare: [], read: [speedType])
@@ -38,8 +46,11 @@ final class WalkingSpeedManager {
             return false
         }
 
-        await syncLatestWalkingSpeed(speedType: speedType)
-        return true
+        let didSync = await syncLatestWalkingSpeed(speedType: speedType)
+        if !didSync {
+            userDataStore.walkingSpeedSource = .manual
+        }
+        return didSync
     }
 
     /// Queries HealthKit for the most recent walking speed sample from the last 30 days.
@@ -50,9 +61,7 @@ final class WalkingSpeedManager {
         let thirtyDaysAgo = Calendar.current.date(byAdding: .day, value: -30, to: Date())!
         let predicate = HKQuery.predicateForSamples(withStart: thirtyDaysAgo, end: Date())
         let sort = NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)
-
-        // Snapshot the static range outside the closure to make the non-capture explicit.
-        let validRange = 0.5...5.0
+        let validRange = WalkingSpeed.validRange
 
         let validSpeed: Double? = await withCheckedContinuation { continuation in
             let query = HKSampleQuery(
@@ -60,8 +69,13 @@ final class WalkingSpeedManager {
                 predicate: predicate,
                 limit: 1,
                 sortDescriptors: [sort]
-            ) { _, samples, _ in
-                // This callback runs on a background thread. No self captured here.
+            ) { _, samples, error in
+                if let error {
+                    Logger.error("WalkingSpeedManager: HealthKit sample query failed: \(error)")
+                    continuation.resume(returning: nil)
+                    return
+                }
+
                 guard let sample = samples?.first as? HKQuantitySample else {
                     continuation.resume(returning: nil)
                     return
@@ -81,6 +95,7 @@ final class WalkingSpeedManager {
 
         if let speed = validSpeed {
             userDataStore.walkingSpeedMetersPerSecond = speed
+            userDataStore.walkingSpeedSource = .healthKit
             return true
         }
         return false
