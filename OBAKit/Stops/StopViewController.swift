@@ -1301,10 +1301,6 @@ private extension StopViewController {
             }
             .store(in: &cancellables)
 
-        viewModel.surveysDidRefresh
-            .sink { [weak self] _ in self?.listView.applyData(animated: false) }
-            .store(in: &cancellables)
-
         viewModel.$currentSurvey
             .dropFirst()
             .sink { [weak self] _ in self?.listView.applyData(animated: false) }

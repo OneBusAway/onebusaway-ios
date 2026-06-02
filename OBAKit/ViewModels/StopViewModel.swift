@@ -25,14 +25,10 @@ class StopViewModel: ObservableObject {
     /// The stop being displayed.
     @Published private(set) var stop: Stop?
 
-    /// Fires after each successful survey fetch so the UI layer re-renders survey rows.
-    var surveysDidRefresh: AnyPublisher<Void, Never> {
-        surveysDidRefreshSubject.eraseToAnyPublisher()
-    }
-    private let surveysDidRefreshSubject = PassthroughSubject<Void, Never>()
-
     /// The survey to render as an inline hero card on this stop, or `nil` for no card.
-    /// Recomputed when the stop is loaded and after every survey refresh.
+    /// Recomputed on every stop refresh and after every survey-list refresh, so
+    /// the publisher fires per-cycle even when the resolved value is unchanged —
+    /// the VC's `$currentSurvey` sink is the sole driver of survey-row reloads.
     @Published private(set) var currentSurvey: Survey?
 
     /// Emits when the inline hero answer succeeds but the survey has remaining
@@ -243,16 +239,18 @@ class StopViewModel: ObservableObject {
 
     private func refreshSurveys() {
         // fetchSurveys() records failures on `lastError` rather than rethrowing.
-        // Only emit when no error is present, so a failed fetch doesn't trigger a
-        // no-op list re-render. A cooldown-skipped fetch after a prior success still
-        // emits; the guard is an error gate, not a dedup gate.
+        // Skip the recompute when `lastError` is set so a failed fetch doesn't
+        // overwrite the current card. A cooldown-skipped fetch after a prior
+        // *success* still recomputes (lastError stays nil); after a prior
+        // *failure*, lastError is still set so the recompute is skipped — by
+        // then `applySuccessfulFetch` will have already run a recompute on the
+        // current survey list, so the card state is still correct.
         Task { [weak self] in
             guard let self else { return }
             let surveyService = self.application.surveyService
             await surveyService.fetchSurveys()
             guard surveyService.lastError == nil else { return }
             self.recomputeCurrentSurvey()
-            self.surveysDidRefreshSubject.send()
         }
     }
 
