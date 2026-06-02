@@ -46,6 +46,28 @@ class MockTask: URLSessionDataTask {
 class MockDataLoader: NSObject, URLDataLoader {
     var mockResponses = [MockDataResponse]()
 
+    /// URLs of every request seen by `dataTask(with:)` or `data(for:)`.
+    /// Lets tests assert that no network call was made (e.g. when a fetch should be
+    /// short-circuited by cached/preloaded data). Reads/writes go through
+    /// `recordedRequestURLsLock` because real callers fan out across multiple
+    /// concurrent tasks (e.g. `AgencyAlertsStore.update()`'s alerts task group).
+    private var _recordedRequestURLs = [URL]()
+    private let recordedRequestURLsLock = NSLock()
+    var recordedRequestURLs: [URL] {
+        recordedRequestURLsLock.withLock { _recordedRequestURLs }
+    }
+    private func recordRequest(_ url: URL?) {
+        guard let url else { return }
+        recordedRequestURLsLock.withLock { _recordedRequestURLs.append(url) }
+    }
+
+    /// Clears recorded request URLs. Useful in tests that need to ignore the
+    /// requests made during `Application` startup and only assert about calls
+    /// that happen after a specific action.
+    func resetRecordedRequestURLs() {
+        recordedRequestURLsLock.withLock { _recordedRequestURLs.removeAll() }
+    }
+
     let testName: String
 
     init(testName: String) {
@@ -53,6 +75,7 @@ class MockDataLoader: NSObject, URLDataLoader {
     }
 
     func dataTask(with request: URLRequest, completionHandler: @escaping (Data?, URLResponse?, Error?) -> Void) -> URLSessionDataTask {
+        recordRequest(request.url)
         guard let response = matchResponse(to: request) else {
             fatalError("\(testName): Missing response to URL: \(request.url!)")
         }
@@ -61,6 +84,7 @@ class MockDataLoader: NSObject, URLDataLoader {
     }
 
     func data(for request: URLRequest) async throws -> (Data, URLResponse) {
+        recordRequest(request.url)
         guard let response = matchResponse(to: request) else {
             fatalError("\(testName): Missing response to URL: \(request.url!)")
         }

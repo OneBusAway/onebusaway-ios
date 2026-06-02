@@ -197,7 +197,7 @@
 "donations.donations_dismiss_alert.title" = "Please don't dismiss this request";
 
 /* Indicates that the user wants to create a duplicate bookmark. */
-"edit_book_controller.duplicate_alert.affirmative_button" = "Create Duplicate";
+"edit_bookmark_controller.duplicate_alert.affirmative_button" = "Create Duplicate";
 
 /* Title of the button that lets the user add a new Bookmark Group. */
 "edit_bookmark_controller.add_group_button_title" = "Add Bookmark Group";
@@ -216,6 +216,12 @@
 
 /* Don't add this bookmark to a group. */
 "edit_bookmark_controller.no_group_row" = "(No Group)";
+
+/* Body of an alert shown when a bookmark cannot be saved because the current region is unavailable. */
+"edit_bookmark_controller.region_error.body" = "The current region is not available. Please try again.";
+
+/* Title of an alert shown when a bookmark cannot be saved because the current region is unavailable. */
+"edit_bookmark_controller.region_error.title" = "Unable to Save";
 
 /* Title next to the switch that toggles whether a bookmark will appear in the today view. */
 "edit_bookmark_controller.show_in_today_view_switch_title" = "Show in Today View widget";

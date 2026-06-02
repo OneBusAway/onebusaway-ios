@@ -1212,7 +1212,7 @@ public class StopViewController: UIViewController,
     @objc private func addBookmark(sender: Any?) {
         guard let stop = stop else { return }
 
-        let bookmarkController = AddBookmarkViewController(application: application, stop: stop, delegate: self)
+        let bookmarkController = AddBookmarkViewController(application: application, stop: stop, preloadedArrivals: viewModel.stopArrivals?.arrivalsAndDepartures, delegate: self)
 
         let navigation = application.viewRouter.buildNavigation(controller: bookmarkController)
         application.viewRouter.present(navigation, from: self, isModal: true)
