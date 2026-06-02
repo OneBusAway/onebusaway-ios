@@ -75,7 +75,8 @@ class StopViewModelTests: OBATestCase {
         }
     }
 
-    /// Stubs the surveys endpoint with an empty-list payload so `refreshSurveys()` doesn't fatal-error.
+    /// Stubs the surveys endpoint with an empty-list payload so `refreshSurveys()` succeeds
+    /// (routing nothing to `lastError`) instead of leaving the request unmocked.
     private func stubSurveys(dataLoader: MockDataLoader) {
         let emptySurveys = #"{"surveys":[],"region":{"id":1,"name":"Puget Sound"}}"#.data(using: .utf8)!
         dataLoader.mock(data: emptySurveys) { request in
@@ -177,6 +178,9 @@ class StopViewModelTests: OBATestCase {
         await viewModel.refresh()
 
         await expect(emissions).toEventually(equal(1))
+        // Guard against regression to per-refresh fetching: emissions must not climb past 1.
+        // Without this, `toEventually` would latch onto the transient `1` on its way to 2/3.
+        await expect(emissions).toNever(beGreaterThan(1))
     }
 
     // MARK: - Filter invariant on initial load (issue #2)

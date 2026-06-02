@@ -1294,21 +1294,6 @@ private extension StopViewController {
             .store(in: &cancellables)
     }
 
-    func seedCollapsedPastDepartureSections(for arrivals: StopArrivals) {
-        guard pastDeparturesCollapsed else { return }
-        if viewModel.stopPreferences.sortType == .time {
-            collapsedSections.insert(ListSections.pastArrivalDepartures(suffix: "all").sectionID)
-        } else {
-            let groups = arrivals.arrivalsAndDepartures.group(
-                preferences: viewModel.stopPreferences,
-                filter: viewModel.isListFiltered
-            )
-            for group in groups {
-                collapsedSections.insert(ListSections.pastArrivalDepartures(suffix: group.route.id).sectionID)
-            }
-        }
-    }
-
     func bindStopSink() {
         viewModel.$stop
             .sink { [weak self] stop in
@@ -1344,6 +1329,21 @@ private extension StopViewController {
                 }
             }
             .store(in: &cancellables)
+    }
+
+    func seedCollapsedPastDepartureSections(for arrivals: StopArrivals) {
+        guard pastDeparturesCollapsed else { return }
+        if viewModel.stopPreferences.sortType == .time {
+            collapsedSections.insert(ListSections.pastArrivalDepartures(suffix: "all").sectionID)
+        } else {
+            let groups = arrivals.arrivalsAndDepartures.group(
+                preferences: viewModel.stopPreferences,
+                filter: viewModel.isListFiltered
+            )
+            for group in groups {
+                collapsedSections.insert(ListSections.pastArrivalDepartures(suffix: group.route.id).sectionID)
+            }
+        }
     }
 
     func bindLoadingState() {
