@@ -77,6 +77,10 @@ final class RoutePickerViewModel: ObservableObject {
     // MARK: - Load
 
     func loadRoutes() async {
+        // Clear any error from a prior attempt so a retry doesn't leave the VC
+        // short-circuiting on stale state.
+        loadError = nil
+
         // Primary: extract routes from stops already loaded by MapRegionManager.
         let cachedStops = application.mapRegionManager.stops
         if !cachedStops.isEmpty {
@@ -102,8 +106,19 @@ final class RoutePickerViewModel: ObservableObject {
             applyRoutes(from: stops)
         } catch {
             // Cancellation finalizes the load without surfacing an error so a
-            // re-observed VM doesn't get stuck on "Loading routes…".
-            if error is CancellationError {
+            // re-observed VM doesn't get stuck on "Loading routes…". Match the
+            // three shapes a cancelled request can arrive as:
+            //   1. The parent Task itself was cancelled (most common path).
+            //   2. Swift Concurrency surfaced `CancellationError`.
+            //   3. URLSession returned `URLError(.cancelled)` — which the API
+            //      layer re-throws as an `NSError` in the `NSURLErrorDomain`,
+            //      so check `NSError.code` against `NSURLErrorCancelled` for
+            //      the safest cast.
+            let nsError = error as NSError
+            let isCancelled = Task.isCancelled
+                || error is CancellationError
+                || (nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorCancelled)
+            if isCancelled {
                 didFinishLoading = true
                 return
             }
