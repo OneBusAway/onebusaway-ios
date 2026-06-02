@@ -147,7 +147,7 @@ class RoutePickerViewController: UIViewController,
         if let loadError = viewModel.loadError {
             return .standard(.init(
                 alignment: .center,
-                title: loadError,
+                title: loadError.localizedDescription,
                 body: nil
             ))
         }

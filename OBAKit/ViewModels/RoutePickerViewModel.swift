@@ -19,6 +19,31 @@ import OBAKitCore
 @MainActor
 final class RoutePickerViewModel: ObservableObject {
 
+    /// Reasons `loadRoutes()` can fail short of a thrown network/decoding error.
+    /// Conforms to `LocalizedError` so a SwiftUI consumer can read
+    /// `errorDescription` without going through the typed enum.
+    enum RoutePickerError: LocalizedError {
+        case serviceUnavailable
+        case locationUnavailable
+
+        var errorDescription: String? {
+            switch self {
+            case .serviceUnavailable:
+                return OBALoc(
+                    "route_picker.error_no_service",
+                    value: "Unable to connect to the transit service.",
+                    comment: "Error when the API service is unavailable in the route picker."
+                )
+            case .locationUnavailable:
+                return OBALoc(
+                    "route_picker.error_no_location",
+                    value: "Location unavailable. Please enable location services to find nearby routes.",
+                    comment: "Error when location is unavailable in the route picker."
+                )
+            }
+        }
+    }
+
     // MARK: - Published State
 
     /// Routes matching the current search filter. Drives the list.
@@ -27,8 +52,10 @@ final class RoutePickerViewModel: ObservableObject {
     /// `true` once `loadRoutes()` has resolved (success or failure).
     @Published private(set) var didFinishLoading: Bool = false
 
-    /// Localized error message from the last `loadRoutes()` attempt, or `nil`.
-    @Published private(set) var loadError: String?
+    /// Error from the last `loadRoutes()` attempt, or `nil`. Kept as `Error` so a
+    /// SwiftUI consumer can classify on type rather than parsing a flattened
+    /// `String`. The VC reads `localizedDescription` for display.
+    @Published private(set) var loadError: Error?
 
     // MARK: - Direct Reads (not observed)
 
@@ -59,21 +86,13 @@ final class RoutePickerViewModel: ObservableObject {
 
         // Fallback: fetch nearby stops from the API.
         guard let apiService = application.apiService else {
-            loadError = OBALoc(
-                "route_picker.error_no_service",
-                value: "Unable to connect to the transit service.",
-                comment: "Error when the API service is unavailable in the route picker."
-            )
+            loadError = RoutePickerError.serviceUnavailable
             didFinishLoading = true
             return
         }
 
         guard let location = application.locationService.currentLocation else {
-            loadError = OBALoc(
-                "route_picker.error_no_location",
-                value: "Location unavailable. Please enable location services to find nearby routes.",
-                comment: "Error when location is unavailable in the route picker."
-            )
+            loadError = RoutePickerError.locationUnavailable
             didFinishLoading = true
             return
         }
@@ -89,7 +108,7 @@ final class RoutePickerViewModel: ObservableObject {
                 return
             }
             Logger.error("Failed to load routes for picker: \(error)")
-            loadError = error.localizedDescription
+            loadError = error
             didFinishLoading = true
         }
     }
