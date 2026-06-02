@@ -68,7 +68,9 @@ class SurveyViewController: FormViewController {
                     self?.dismiss(animated: true)
                 case .failure(.validationFailed):
                     self?.showValidationError()
-                case .failure(.network(let error)):
+                case .failure(.malformedSurveyData):
+                    self?.showMalformedSurveyError()
+                case .failure(.submissionFailed(let error)):
                     self?.showSubmissionError(error)
                 }
             }
@@ -221,6 +223,17 @@ class SurveyViewController: FormViewController {
         let alert = UIAlertController(
             title: OBALoc("survey_vc.validation_error.title", value: "Incomplete Survey", comment: "Title for incomplete survey alert"),
             message: OBALoc("survey_vc.validation_error.message", value: "Please answer all required questions before submitting.", comment: "Message when required survey questions are unanswered"),
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: OBALoc("survey_vc.ok_button", value: "OK", comment: "OK button on survey alerts"), style: .default))
+        present(alert, animated: true)
+    }
+
+    private func showMalformedSurveyError() {
+        Logger.error("Survey \(viewModel.survey.id) is malformed (no answerable hero question on the fresh path).")
+        let alert = UIAlertController(
+            title: OBALoc("survey_vc.malformed_error.title", value: "Survey Unavailable", comment: "Title for malformed survey alert"),
+            message: OBALoc("survey_vc.malformed_error.message", value: "This survey can't be submitted right now. Please try again later.", comment: "Message when the survey data itself is malformed (no answerable hero question)."),
             preferredStyle: .alert
         )
         alert.addAction(UIAlertAction(title: OBALoc("survey_vc.ok_button", value: "OK", comment: "OK button on survey alerts"), style: .default))

@@ -237,17 +237,19 @@ class SurveyViewModelTests: OBATestCase {
         expect(self.isNetworkFailure(result)).to(beTrue(), description: "expected validation to pass; got \(result)")
     }
 
-    /// A survey whose hero question can't be answered (e.g. label-only) cannot be submitted on
-    /// the fresh path — the hero-answer lookup fails and the VM emits `.validationFailed`.
+    /// A survey whose hero question can't be answered (e.g. label-only) cannot be
+    /// submitted on the fresh path — the hero-answer lookup fails. Because the
+    /// hero question exists (a label *is* a question at position 1) but has no
+    /// captured answer, the VM surfaces `.malformedSurveyData`.
     @MainActor
-    func test_submit_labelOnlySurvey_emitsValidationFailed() async {
+    func test_submit_labelOnlySurvey_emitsMalformedSurveyData() async {
         let label = Self.makeQuestion(id: 1, position: 1, required: false, type: .label)
         let vm = makeViewModel(questions: [label])
 
         let result = await firstSubmissionResult(vm: vm)
         switch result {
-        case .failure(.validationFailed): break
-        default: fail("Expected .validationFailed for label-only survey; got \(result)")
+        case .failure(.malformedSurveyData): break
+        default: fail("Expected .malformedSurveyData for label-only survey; got \(result)")
         }
     }
 
@@ -291,19 +293,20 @@ class SurveyViewModelTests: OBATestCase {
         expect(self.dataStore.isSurveyCompleted(surveyId: vm.survey.id, userIdentifier: self.dataStore.surveyUserIdentifier)).to(beFalse())
     }
 
-    /// On the fresh path, if the survey has no hero question at all, submission fails validation.
+    /// On the fresh path, if the survey has no hero question at all, submission
+    /// surfaces `.malformedSurveyData` (an invariant violation, not user error).
     @MainActor
-    func test_submit_freshPath_emitsValidationFailedWhenNoHeroQuestion() async {
+    func test_submit_freshPath_emitsMalformedSurveyDataWhenNoHeroQuestion() async {
         // No question has position == 1, so `survey.heroQuestion` is nil.
         let q = Self.makeQuestion(id: 1, position: 2, required: false, type: .text)
         let vm = makeViewModel(questions: [q])
 
         // No required questions, so initial validation passes, but then the
-        // hero lookup fails and the VM falls through to .validationFailed.
+        // hero lookup fails and the VM falls through to .malformedSurveyData.
         let result = await firstSubmissionResult(vm: vm)
         switch result {
-        case .failure(.validationFailed): break
-        default: fail("Expected .validationFailed when hero is missing; got \(result)")
+        case .failure(.malformedSurveyData): break
+        default: fail("Expected .malformedSurveyData when hero is missing; got \(result)")
         }
     }
 
@@ -388,7 +391,174 @@ class SurveyViewModelTests: OBATestCase {
     }
 
     private func isNetworkFailure(_ result: Result<Void, SurveyViewModel.SubmissionError>) -> Bool {
-        if case .failure(.network) = result { return true }
+        if case .failure(.submissionFailed) = result { return true }
         return false
+    }
+
+    // MARK: - Two-Stage Submit (happy path, retry, re-entrancy)
+
+    /// Counter wrapper passed into MockDataLoader matcher closures so the test
+    /// can verify how many times each leg of the two-stage submit fired.
+    ///
+    /// `MockDataLoader` calls matchers on the request thread (off the main
+    /// actor). The two legs run strictly sequentially today (POST → PUT) so
+    /// there's no concurrent write in practice; `nonisolated(unsafe)` keeps
+    /// Swift 6 from complaining while accurately marking the field as
+    /// unsynchronized — if a future test exercises legitimate concurrent
+    /// submits this needs a real atomic.
+    private final class HitCounter: @unchecked Sendable {
+        nonisolated(unsafe) var posts = 0   // hero submit (POST /api/v1/survey_responses/)
+        nonisolated(unsafe) var puts  = 0   // additional questions (PUT /api/v1/survey_responses/{id})
+    }
+
+    /// Builds a real `SurveyService` whose `apiService` returns the canned
+    /// submission response for every call. The provided counter is incremented
+    /// per call so the test can verify which legs fired.
+    @MainActor
+    private func buildLiveSurveyService(counter: HitCounter) -> SurveyService {
+        let mockLoader = MockDataLoader(testName: name)
+        let data = try! Data(contentsOf: Bundle(for: SurveyViewModelTests.self)
+            .url(forResource: "survey_submission_response", withExtension: "json")!)
+
+        // POST hero: exact-path match (no trailing response id).
+        mockLoader.mock(data: data) { request in
+            guard request.httpMethod == "POST" else { return false }
+            guard let path = request.url?.path else { return false }
+            // Hero submits hit `/api/v1/survey_responses/` (or without trailing slash).
+            let endsAtRoot = path.hasSuffix("/api/v1/survey_responses/") || path.hasSuffix("/api/v1/survey_responses")
+            if endsAtRoot { counter.posts += 1; return true }
+            return false
+        }
+        // PUT additional questions: path contains a response id segment.
+        mockLoader.mock(data: data) { request in
+            guard request.httpMethod == "PUT" else { return false }
+            guard request.url?.path.contains("/api/v1/survey_responses/") ?? false else { return false }
+            counter.puts += 1
+            return true
+        }
+
+        let config = APIServiceConfiguration(
+            baseURL: URL(string: "https://api.pugetsound.onebusaway.org/")!,
+            apiKey: "org.onebusaway.iphone.test",
+            uuid: "test-uuid",
+            appVersion: "2018.12.31",
+            regionIdentifier: 1,
+            surveyBaseURL: URL(string: "https://onebusaway.co")!
+        )
+        let apiService = RESTAPIService(config, dataLoader: mockLoader)
+        return SurveyService(apiService: apiService, userDataStore: dataStore)
+    }
+
+    /// Fresh path with hero only: one POST, zero PUTs, success, survey marked completed,
+    /// and `heroResponseID` populated from the canned submission ID.
+    @MainActor
+    func test_submit_freshPath_heroOnly_succeedsAndMarksCompleted() async {
+        let counter = HitCounter()
+        let liveService = buildLiveSurveyService(counter: counter)
+        let hero = Self.makeQuestion(id: 1, position: 1, type: .text)
+        let vm = SurveyViewModel(survey: Self.makeSurvey(questions: [hero]), surveyService: liveService)
+        vm.updateAnswer(for: hero, answer: "yes")
+
+        let result = await firstSubmissionResult(vm: vm)
+
+        guard case .success = result else {
+            fail("Expected .success; got \(result)"); return
+        }
+        expect(counter.posts) == 1
+        expect(counter.puts) == 0
+        expect(vm.heroResponseID) == "808d3a515daa39f4c15a"
+        let userID = dataStore.surveyUserIdentifier
+        expect(self.dataStore.isSurveyCompleted(surveyId: vm.survey.id, userIdentifier: userID)).to(beTrue())
+    }
+
+    /// Fresh path with hero + follow-up: hero POST first, then a single PUT for the
+    /// remaining responses. Both legs fire; survey is marked completed.
+    @MainActor
+    func test_submit_freshPath_heroPlusFollowup_runsBothLegs() async {
+        let counter = HitCounter()
+        let liveService = buildLiveSurveyService(counter: counter)
+        let hero = Self.makeQuestion(id: 1, position: 1, type: .text)
+        let follow = Self.makeQuestion(id: 2, position: 2, type: .text)
+        let vm = SurveyViewModel(survey: Self.makeSurvey(questions: [hero, follow]), surveyService: liveService)
+        vm.updateAnswer(for: hero, answer: "yes")
+        vm.updateAnswer(for: follow, answer: "additional")
+
+        let result = await firstSubmissionResult(vm: vm)
+
+        guard case .success = result else {
+            fail("Expected .success; got \(result)"); return
+        }
+        expect(counter.posts) == 1
+        expect(counter.puts) == 1
+        expect(vm.heroResponseID) == "808d3a515daa39f4c15a"
+        let userID = dataStore.surveyUserIdentifier
+        expect(self.dataStore.isSurveyCompleted(surveyId: vm.survey.id, userIdentifier: userID)).to(beTrue())
+    }
+
+    /// Retry path (`heroResponseID` preset): the hero POST is skipped entirely;
+    /// only the PUT fires; survey is marked completed.
+    @MainActor
+    func test_submit_retryPath_skipsHeroSubmit() async {
+        let counter = HitCounter()
+        let liveService = buildLiveSurveyService(counter: counter)
+        let hero = Self.makeQuestion(id: 1, position: 1, type: .text)
+        let follow = Self.makeQuestion(id: 2, position: 2, type: .text)
+        let vm = SurveyViewModel(
+            survey: Self.makeSurvey(questions: [hero, follow]),
+            surveyService: liveService,
+            heroResponseID: "preset-hero"
+        )
+        vm.updateAnswer(for: follow, answer: "answered")
+
+        let result = await firstSubmissionResult(vm: vm)
+
+        guard case .success = result else {
+            fail("Expected .success; got \(result)"); return
+        }
+        expect(counter.posts) == 0
+        expect(counter.puts) == 1
+        // heroResponseID is unchanged — we didn't re-submit the hero.
+        expect(vm.heroResponseID) == "preset-hero"
+    }
+
+    /// Fresh path with hero only and no follow-up: the `remainingResponses.isEmpty`
+    /// branch is taken, so zero PUTs fire and submission still succeeds.
+    @MainActor
+    func test_submit_freshPath_remainingResponsesEmpty_skipsAdditionalLeg() async {
+        let counter = HitCounter()
+        let liveService = buildLiveSurveyService(counter: counter)
+        let hero = Self.makeQuestion(id: 1, position: 1, required: false, type: .text)
+        let label = Self.makeQuestion(id: 2, position: 2, required: false, type: .label)
+        let vm = SurveyViewModel(survey: Self.makeSurvey(questions: [hero, label]), surveyService: liveService)
+        vm.updateAnswer(for: hero, answer: "yes")
+        // The label is not answerable, so `responses` only contains the hero — the
+        // `remainingResponses.isEmpty` branch fires.
+
+        let result = await firstSubmissionResult(vm: vm)
+
+        guard case .success = result else {
+            fail("Expected .success; got \(result)"); return
+        }
+        expect(counter.posts) == 1
+        expect(counter.puts) == 0
+    }
+
+    /// Concurrent `submit()` calls: the in-flight guard prevents the second from
+    /// firing a second hero POST.
+    @MainActor
+    func test_submit_inFlightGuard_blocksConcurrentSubmit() async {
+        let counter = HitCounter()
+        let liveService = buildLiveSurveyService(counter: counter)
+        let hero = Self.makeQuestion(id: 1, position: 1, type: .text)
+        let vm = SurveyViewModel(survey: Self.makeSurvey(questions: [hero]), surveyService: liveService)
+        vm.updateAnswer(for: hero, answer: "yes")
+
+        // Kick off two submits concurrently.
+        async let a: Void = vm.submit()
+        async let b: Void = vm.submit()
+        _ = await (a, b)
+
+        // Only one of the two reached the network leg.
+        expect(counter.posts) == 1
     }
 }

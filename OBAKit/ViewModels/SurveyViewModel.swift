@@ -21,8 +21,18 @@ import OBAKitCore
 final class SurveyViewModel: ObservableObject {
 
     enum SubmissionError: Error {
+        /// User-recoverable: a required answer is missing.
         case validationFailed
-        case network(Error)
+        /// Programmer/data error: the survey itself has no answerable hero
+        /// question on the fresh path. Distinct from `.validationFailed` so
+        /// the VC can route to a "survey unavailable" alert + log line rather
+        /// than blaming the user.
+        case malformedSurveyData
+        /// Anything thrown during the hero/additional submit (encoding,
+        /// `APIError.surveyServiceNotConfigured`, decoding, network, …).
+        /// Named `submissionFailed` rather than `network` because not every
+        /// underlying failure is a transport issue.
+        case submissionFailed(Error)
     }
 
     // MARK: - Public Inputs (VC reads for form layout)
@@ -55,6 +65,7 @@ final class SurveyViewModel: ObservableObject {
     private(set) var heroResponseID: String?
     private var responses: [SurveyQuestionResponse] = []
     private var checkboxSelections: [Int: Set<String>] = [:]
+    private var submitInFlight = false
 
     // MARK: - Init
 
@@ -120,10 +131,15 @@ final class SurveyViewModel: ObservableObject {
     /// Validates required answers and runs the two-stage submission. Emits the outcome
     /// on `submissionResult`.
     func submit() async {
+        guard !submitInFlight else { return }
+
         guard validateResponses() else {
             submissionResultSubject.send(.failure(.validationFailed))
             return
         }
+
+        submitInFlight = true
+        defer { submitInFlight = false }
 
         do {
             if let heroResponseID = heroResponseID {
@@ -134,7 +150,7 @@ final class SurveyViewModel: ObservableObject {
             } else {
                 guard let heroQuestion = survey.heroQuestion,
                       let heroResponse = responses.first(where: { $0.questionId == heroQuestion.id }) else {
-                    submissionResultSubject.send(.failure(.validationFailed))
+                    submissionResultSubject.send(.failure(.malformedSurveyData))
                     return
                 }
 
@@ -161,7 +177,7 @@ final class SurveyViewModel: ObservableObject {
             submissionResultSubject.send(.success(()))
         } catch {
             Logger.error("Survey \(survey.id) submission failed: \(error)")
-            submissionResultSubject.send(.failure(.network(error)))
+            submissionResultSubject.send(.failure(.submissionFailed(error)))
         }
     }
 
