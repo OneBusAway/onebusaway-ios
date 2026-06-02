@@ -212,12 +212,17 @@ class MapViewController: UIViewController,
     /// Called from `bindViewModel()` when `MapViewModel.surveyToPresent` emits.
     /// The VM owns "once per session" + reminder scheduling; the VC owns the UI.
     private func presentSurvey(_ survey: Survey) {
-        // Guard against a stray double-emit from racing the floating card.
-        guard surveyCardView == nil else { return }
+        // Guard against a stray double-emit from racing the floating card. If
+        // a card is already up, tell the VM we didn't present so it rolls back
+        // its session flag and a later check can re-emit.
+        guard surveyCardView == nil else {
+            viewModel.didPresentSurveyPrompt(survey, presented: false)
+            return
+        }
         presentMapSurveyCard(for: survey)
-        // Confirm to the VM so the reminder advances + session flag flips only
-        // once the card is actually on screen.
-        viewModel.didPresentSurveyPrompt(survey)
+        // Reminder advances on confirmed presentation; the VM rolls back its
+        // session flag if `presented` is false.
+        viewModel.didPresentSurveyPrompt(survey, presented: true)
     }
 
     /// Presents the floating survey launcher card above the search panel. The

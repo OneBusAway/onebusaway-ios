@@ -137,9 +137,10 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
 
     /// Checks once per session whether a map survey should be presented. On
     /// the first eligible hit emits the survey on `surveyToPresent`; the
-    /// consumer presents it and reports back via `didPresentSurveyPrompt(_:)`
-    /// so the reminder + session flag advance only on confirmed presentation.
-    /// Matches the previous `MapViewController.checkForMapSurvey()` semantics.
+    /// consumer presents it and reports back via
+    /// `didPresentSurveyPrompt(_:presented:)` so the reminder advances only
+    /// on confirmed presentation, and the session flag rolls back if the
+    /// presenter dropped the survey.
     func checkForSurveyPrompt() async {
         guard !hasShownSurveyThisSession else { return }
         guard surveyOrchestrator.isEligible() else { return }
@@ -152,15 +153,24 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
         guard !hasShownSurveyThisSession, surveyOrchestrator.isEligible() else { return }
         guard let survey = surveyOrchestrator.findMapSurvey() else { return }
 
+        // Flip the flag synchronously *before* `send`, so a second
+        // `checkForSurveyPrompt()` racing through the post-await re-check
+        // sees the flag set and bails out. `didPresentSurveyPrompt` rolls
+        // it back if presentation didn't actually happen.
+        hasShownSurveyThisSession = true
         surveyToPresentSubject.send(survey)
     }
 
-    /// Reports back from the consumer after a successful presentation. Advances
-    /// the reminder and flips the session flag. Idempotent within a session.
-    func didPresentSurveyPrompt(_ survey: Survey) {
-        guard !hasShownSurveyThisSession else { return }
-        surveyOrchestrator.noteReminderAndAdvanceSession()
-        hasShownSurveyThisSession = true
+    /// Reports back from the consumer after attempting to present. On
+    /// `presented == true`, advances the reminder. On `presented == false`
+    /// (presenter went away between emit and present), rolls back the
+    /// session flag so a later check can re-emit.
+    func didPresentSurveyPrompt(_ survey: Survey, presented: Bool) {
+        if presented {
+            surveyOrchestrator.noteReminderAndAdvanceSession()
+        } else {
+            hasShownSurveyThisSession = false
+        }
     }
 
     // MARK: - LocationServiceDelegate
