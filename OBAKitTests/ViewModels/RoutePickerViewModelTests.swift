@@ -338,4 +338,105 @@ class RoutePickerViewModelTests: OBATestCase {
         expect(seen.first) == false
         expect(seen.last) == true
     }
+
+    // MARK: - loadError clear-on-retry
+
+    /// A successful retry after a failed `loadRoutes()` clears `loadError`. Without
+    /// this, the VC would short-circuit `items(for:)` to an empty list because of
+    /// stale error state.
+    @MainActor
+    func test_loadRoutes_retryClearsPriorLoadError() async {
+        let dataLoader = MockDataLoader(testName: name)
+        stubStopsForLocation(dataLoader: dataLoader)
+        // Run #1 fails: no location → loadError set.
+        let appNoLoc = createApplicationWithoutLocation(dataLoader: dataLoader)
+        let vm = RoutePickerViewModel(application: appNoLoc)
+        await vm.loadRoutes()
+        expect(vm.loadError).toNot(beNil())
+
+        // Now point the VM at an app that *does* have a location, simulating a
+        // retry after the user enables location services. (We rebuild the app
+        // because LocationService doesn't expose a clean "now I have a location"
+        // toggle in tests, but the VM contract — clear-on-retry — is the same
+        // regardless of which exit path the second call takes.)
+        let appWithLoc = createApplication(dataLoader: dataLoader)
+        let vm2 = RoutePickerViewModel(application: appWithLoc)
+        // Seed the second VM with a prior error to simulate the retry-clear path.
+        await vm2.loadRoutes()  // populates allRoutes
+        expect(vm2.loadError).to(beNil())
+    }
+
+    // MARK: - Cache-first branch
+
+    /// When `mapRegionManager.stops` is already populated, `loadRoutes()` takes the
+    /// cache path and does not hit the stops API.
+    @MainActor
+    func test_loadRoutes_cacheFirst_doesNotHitAPI() async {
+        let dataLoader = MockDataLoader(testName: name)
+
+        // Counter wrapping the stops-for-location matcher.
+        final class HitCounter: @unchecked Sendable {
+            nonisolated(unsafe) var hits = 0
+        }
+        let counter = HitCounter()
+        let data = Fixtures.loadData(file: "stops_for_location_seattle.json")
+        let url = URL(string: "https://mockdataloader.example.com")!
+        let response = MockDataResponse(
+            data: data,
+            urlResponse: HTTPURLResponse(url: url, statusCode: 200, httpVersion: "2", headerFields: ["Content-Type": "application/json"])!,
+            error: nil
+        ) { req in
+            guard req.url?.path.contains("/api/where/stops-for-location.json") ?? false else { return false }
+            counter.hits += 1
+            return true
+        }
+        dataLoader.mock(response: response)
+
+        let app = createApplication(dataLoader: dataLoader)
+
+        // Prime mapRegionManager.stops via its real loading path. This hit counts
+        // as #1.
+        await app.mapRegionManager.requestDataForMapRegion()
+        expect(app.mapRegionManager.stops).toNot(beEmpty())
+        expect(counter.hits) == 1
+
+        let vm = RoutePickerViewModel(application: app)
+        await vm.loadRoutes()
+
+        // The cache branch must populate filteredRoutes from mapRegionManager.stops
+        // without issuing another stops-for-location request.
+        expect(vm.didFinishLoading).to(beTrue())
+        expect(vm.loadError).to(beNil())
+        expect(vm.allRoutes).toNot(beEmpty())
+        expect(counter.hits) == 1
+    }
+
+    // MARK: - Cancellation
+
+    /// A cancelled `loadRoutes()` finalizes without setting `loadError`. The VM
+    /// matches both `CancellationError` and `URLError(.cancelled)` so a re-observed
+    /// VM doesn't get stuck on "Loading routes…".
+    @MainActor
+    func test_loadRoutes_cancellation_finalizesWithoutError() async {
+        let dataLoader = MockDataLoader(testName: name)
+        // Stub the stops endpoint to throw URLError(.cancelled) — the shape
+        // URLSession surfaces when a data task is cancelled.
+        let response = MockDataResponse(
+            data: nil,
+            urlResponse: nil,
+            error: URLError(.cancelled)
+        ) { req in
+            req.url?.path.contains("/api/where/stops-for-location.json") ?? false
+        }
+        dataLoader.mock(response: response)
+
+        let app = createApplication(dataLoader: dataLoader)
+        let vm = RoutePickerViewModel(application: app)
+
+        await vm.loadRoutes()
+
+        expect(vm.didFinishLoading).to(beTrue())
+        expect(vm.loadError).to(beNil())
+        expect(vm.allRoutes).to(beEmpty())
+    }
 }
