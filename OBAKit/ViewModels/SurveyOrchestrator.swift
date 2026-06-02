@@ -11,13 +11,16 @@ import CoreLocation
 import Foundation
 import OBAKitCore
 
-/// Shared, stateless coordination layer over `SurveyService`.
+/// Shared façade over `SurveyService`.
 ///
 /// Owns the survey primitives that are identical across screens: eligibility
 /// gate, refresh, hero submission + outcome decision, mark-completed,
 /// dismiss-with-reminder, and the post-present reminder advance. Held by
 /// `MapViewModel` (prompt flow) and `StopViewModel` (inline hero card) so
-/// neither VM has to reimplement the bookkeeping.
+/// neither VM has to reimplement the bookkeeping. Carries no per-screen
+/// state of its own — but `submitHero`, `dismiss`, and
+/// `noteReminderAndAdvanceSession` do mutate persistent reminder state on
+/// `SurveyService`, so the façade is not side-effect free.
 @MainActor
 final class SurveyOrchestrator {
 
@@ -27,6 +30,13 @@ final class SurveyOrchestrator {
     enum HeroSubmissionOutcome {
         case completed
         case needsRemainingQuestions(heroResponseID: String)
+    }
+
+    enum OrchestratorError: Error {
+        /// `submitHero` was called for a survey whose `heroQuestion` is nil.
+        /// Callers guard before calling, but `Survey` is decoded from the
+        /// network so the shape is defensible rather than impossible.
+        case missingHeroQuestion(surveyID: Int)
     }
 
     private let surveyService: SurveyService
@@ -52,7 +62,9 @@ final class SurveyOrchestrator {
     /// submission ID so the caller can present the rest in the full survey
     /// screen.
     ///
-    /// Precondition: `survey.heroQuestion != nil`.
+    /// Throws `OrchestratorError.missingHeroQuestion` if `survey.heroQuestion`
+    /// is nil. Callers are expected to guard before calling, but the throw
+    /// keeps us from crashing on malformed server data.
     func submitHero(
         survey: Survey,
         answer: String,
@@ -60,7 +72,7 @@ final class SurveyOrchestrator {
         stopLocation: CLLocationCoordinate2D?
     ) async throws -> HeroSubmissionOutcome {
         guard let heroQuestion = survey.heroQuestion else {
-            preconditionFailure("submitHero called for survey \(survey.id) with no hero question")
+            throw OrchestratorError.missingHeroQuestion(surveyID: survey.id)
         }
 
         let heroResponse = SurveyService.createQuestionResponse(question: heroQuestion, answer: answer)
