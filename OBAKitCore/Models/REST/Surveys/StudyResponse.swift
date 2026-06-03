@@ -167,6 +167,12 @@ extension Survey {
         return showOnMap && isActive
     }
 
+    /// Returns true when the survey's hero question links out to an external
+    /// survey (e.g. Qualtrics) rather than collecting answers in-app.
+    public var isExternalSurvey: Bool {
+        return heroQuestion?.content.type == .externalSurvey
+    }
+
 }
 
 public struct Study: Codable, Hashable {
