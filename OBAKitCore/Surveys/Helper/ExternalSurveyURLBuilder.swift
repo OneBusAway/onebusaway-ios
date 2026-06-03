@@ -38,7 +38,9 @@ final public class ExternalSurveyURLBuilder: ExternalSurveyURLBuilderProtocol {
             setEmbeddedKeyValue(to: &queryItems, for: keys, stop: stop)
         }
 
-        components.queryItems = queryItems
+        // Only assign when non-empty: assigning an empty array makes
+        // URLComponents emit a trailing "?" (e.g. "https://oba.co/s?").
+        components.queryItems = queryItems.isEmpty ? nil : queryItems
         return components.url
     }
 
