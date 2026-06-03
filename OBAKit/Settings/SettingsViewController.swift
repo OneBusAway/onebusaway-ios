@@ -184,6 +184,9 @@ class SettingsViewController: FormViewController {
 
     // MARK: - Walking Speed
 
+    private let walkingSpeedMetersPerSecondKey = "walkingSpeedMetersPerSecond"
+    private let walkingSpeedUseHealthKitKey = "walkingSpeedUseHealthKit"
+
     private func snapToPreset(_ speed: Double) -> Double {
         WalkingSpeedPreset.nearest(to: speed).rawValue
     }
@@ -252,10 +255,6 @@ class SettingsViewController: FormViewController {
    // MARK: - Privacy
 
     private let privacySectionReportingEnabled = "privacySectionReportingEnabled"
-
-    // MARK: - Walking Speed Keys
-    private let walkingSpeedMetersPerSecondKey = "walkingSpeedMetersPerSecond"
-    private let walkingSpeedUseHealthKitKey = "walkingSpeedUseHealthKit"
 
     private lazy var privacySection: Section = {
         let section = Section(OBALoc("settings_controller.privacy_section.title", value: "Privacy", comment: "Settings > Privacy section title"))

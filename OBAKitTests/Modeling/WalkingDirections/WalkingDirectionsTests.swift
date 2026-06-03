@@ -11,6 +11,7 @@ import XCTest
 import Nimble
 import CoreLocation
 @testable import OBAKit
+@testable import OBAKitCore
 
 class WalkingDirectionsTests: XCTestCase {
 
@@ -30,7 +31,7 @@ class WalkingDirectionsTests: XCTestCase {
     func test_travelTime_defaultVelocity() {
         let time = WalkingDirections.travelTime(from: locationA, to: locationB)
         expect(time).toNot(beNil())
-        expect(time).to(beCloseTo(knownDistance / 1.4, within: 0.01))
+        expect(time).to(beCloseTo(knownDistance / WalkingSpeed.defaultMetersPerSecond, within: 0.01))
     }
 
     // MARK: - Custom Velocity
