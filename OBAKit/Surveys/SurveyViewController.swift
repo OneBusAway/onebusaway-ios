@@ -24,6 +24,8 @@ class SurveyViewController: FormViewController {
     private var heroResponseID: String?
     private var checkboxSelections: [Int: Set<String>] = [:]
 
+    private lazy var externalSurveyLauncher = ExternalSurveyLauncher(surveyService: surveyService)
+
     init(survey: Survey, surveyService: SurveyService, stop: Stop? = nil, stopID: String? = nil, stopLocation: CLLocationCoordinate2D? = nil, heroResponseID: String? = nil) {
         self.survey = survey
         self.surveyService = surveyService
@@ -185,9 +187,16 @@ class SurveyViewController: FormViewController {
             }
 
         case .externalSurvey:
-            section <<< LabelRow(questionTag) { row in
+            section <<< LabelRow("\(questionTag)_label") { row in
                 row.title = question.content.labelText
                 row.cell.textLabel?.numberOfLines = 0
+            }
+
+            section <<< ButtonRow(questionTag) { row in
+                row.title = OBALoc("survey_vc.open_external_survey_button", value: "Open Survey", comment: "Button that opens an external survey in the browser")
+                row.onCellSelection { [weak self] _, _ in
+                    self?.openExternalSurvey()
+                }
             }
         }
     }
@@ -286,6 +295,25 @@ class SurveyViewController: FormViewController {
         let alert = UIAlertController(
             title: OBALoc("survey_vc.submission_error.title", value: "Submission Error", comment: "Title for survey submission error alert"),
             message: error.localizedDescription,
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: OBALoc("survey_vc.ok_button", value: "OK", comment: "OK button on survey alerts"), style: .default))
+        present(alert, animated: true)
+    }
+
+    private func openExternalSurvey() {
+        externalSurveyLauncher.launch(
+            survey: survey,
+            stop: stop,
+            onSuccess: { [weak self] in self?.dismiss(animated: true) },
+            onFailure: { [weak self] in self?.showExternalSurveyError() }
+        )
+    }
+
+    private func showExternalSurveyError() {
+        let alert = UIAlertController(
+            title: OBALoc("survey_vc.external_survey_error.title", value: "Can't Open Survey", comment: "Title shown when an external survey link cannot be opened"),
+            message: OBALoc("survey_vc.external_survey_error.message", value: "This survey link couldn't be opened. Please try again later.", comment: "Message shown when an external survey link cannot be opened"),
             preferredStyle: .alert
         )
         alert.addAction(UIAlertAction(title: OBALoc("survey_vc.ok_button", value: "OK", comment: "OK button on survey alerts"), style: .default))
