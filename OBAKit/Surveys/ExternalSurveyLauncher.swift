@@ -19,8 +19,8 @@ import OBAKitCore
 struct ExternalSurveyLauncher {
     let surveyService: SurveyService
 
-    /// Opens `url`, calling back with whether the system handled it.
-    var urlOpener: (URL, @escaping (Bool) -> Void) -> Void = { url, completion in
+    /// Opens `url`, calling back on the main actor with whether the system handled it.
+    var urlOpener: (URL, @escaping @MainActor (Bool) -> Void) -> Void = { url, completion in
         UIApplication.shared.open(url, options: [:], completionHandler: completion)
     }
 

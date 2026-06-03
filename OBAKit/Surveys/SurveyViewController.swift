@@ -306,6 +306,8 @@ class SurveyViewController: FormViewController {
             survey: survey,
             stop: stop,
             onSuccess: { [weak self] in self?.dismiss(animated: true) },
+            // On failure, keep the form on screen so the rider can retry; the
+            // launcher does not mark the survey completed unless the open succeeds.
             onFailure: { [weak self] in self?.showExternalSurveyError() }
         )
     }
