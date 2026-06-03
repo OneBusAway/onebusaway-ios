@@ -1030,7 +1030,8 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
 
     public var walkingSpeedMetersPerSecond: Double {
         get {
-            userDefaults.double(forKey: UserDefaultsKeys.walkingSpeedMetersPerSecond)
+            let stored = userDefaults.double(forKey: UserDefaultsKeys.walkingSpeedMetersPerSecond)
+            return min(max(stored, WalkingSpeed.validRange.lowerBound), WalkingSpeed.validRange.upperBound)
         }
         set {
             let clamped = min(max(newValue, WalkingSpeed.validRange.lowerBound), WalkingSpeed.validRange.upperBound)

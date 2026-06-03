@@ -770,6 +770,27 @@
 /* Settings > Privacy section title */
 "settings_controller.privacy_section.title" = "Privacy";
 
+/* Settings > Walking Speed > Average preset label */
+"settings_controller.walking_speed.avg" = "Average (~3 mph)";
+
+/* Settings > Walking Speed > Fast preset label */
+"settings_controller.walking_speed.fast" = "Fast (~4 mph)";
+
+/* Settings > Walking Speed > HealthKit denial or no-data toast */
+"settings_controller.walking_speed.healthkit_unavailable" = "Couldn't sync walking speed from Health. Check Settings > Privacy & Security > Health to allow access.";
+
+/* Settings > Walking Speed > Slow preset label */
+"settings_controller.walking_speed.slow" = "Slow (~2 mph)";
+
+/* Settings > Walking Speed section > Speed picker */
+"settings_controller.walking_speed.title" = "Walking speed";
+
+/* Settings > Walking Speed section > HealthKit toggle */
+"settings_controller.walking_speed.use_healthkit" = "Use Health app data";
+
+/* Settings > Walking Speed section title */
+"settings_controller.walking_speed_section.title" = "Walking Speed";
+
 /* A message that appears when a user's alarm is created. */
 "stop_controller.alarm_created_message" = "Alarm created";
 

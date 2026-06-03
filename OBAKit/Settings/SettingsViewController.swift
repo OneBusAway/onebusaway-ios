@@ -124,22 +124,14 @@ class SettingsViewController: FormViewController {
 
     private func saveWalkingSpeedValues(_ values: [String: Any?]) {
         let store = application.userDataStore
-        let useHK = values[walkingSpeedUseHealthKitKey] as? Bool
-
-        // Source first so the manual-only speed write below sees the new source.
-        if let useHK {
-            store.walkingSpeedSource = useHK ? .healthKit : .manual
-        }
-
-        if let speed = values[walkingSpeedMetersPerSecondKey] as? Double,
-           store.walkingSpeedSource == .manual {
-            store.walkingSpeedMetersPerSecond = speed
-        }
-
-        // Snap to nearest preset when toggling HealthKit OFF so the segmented row matches.
-        if useHK == false {
-            store.walkingSpeedMetersPerSecond = snapToPreset(store.walkingSpeedMetersPerSecond)
-        }
+        let decision = WalkingSpeedSettingsDecision.compute(
+            currentSource: store.walkingSpeedSource,
+            currentSpeed: store.walkingSpeedMetersPerSecond,
+            useHealthKit: values[walkingSpeedUseHealthKitKey] as? Bool,
+            segmentSpeed: values[walkingSpeedMetersPerSecondKey] as? Double
+        )
+        store.walkingSpeedSource = decision.source
+        store.walkingSpeedMetersPerSecond = decision.speed
     }
 
     // MARK: - Map Section
