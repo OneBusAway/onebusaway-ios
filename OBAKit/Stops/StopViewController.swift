@@ -168,6 +168,7 @@ public class StopViewController: UIViewController,
         listView.register(listViewItem: StopHeaderItem.self)
         listView.register(listViewItem: TransferArrivalItem.self)
         listView.register(listViewItem: SurveyStopListItem.self)
+        listView.register(listViewItem: SurveyLauncherListItem.self)
 
         view.addSubview(statusLabel)
         view.addSubview(listView)
@@ -639,6 +640,18 @@ public class StopViewController: UIViewController,
         guard let survey = application.surveyService.findSurveyForStop(
             stopID: stopID, routeIDs: routeIDs
         ) else { return nil }
+
+        // External surveys present as a compact launcher card:
+        // a teaser that opens the survey on tap, with no "study name" header.
+        if survey.isExternalSurvey {
+            let launcher = SurveyLauncherListItem(
+                survey: survey,
+                title: OBALoc("survey_launcher.title", value: "Help improve transit", comment: "Title of the survey launcher card on the stop screen."),
+                onTakeSurvey: { [weak self] in self?.handleOpenExternalSurvey(survey: survey) },
+                onDismiss: { [weak self] in self?.handleSurveyDismiss(survey: survey) }
+            )
+            return listViewSection(for: .survey, title: nil, items: [launcher])
+        }
 
         let item = SurveyStopListItem(
             survey: survey,
