@@ -42,6 +42,7 @@ targets:
           - twitter
           - comgooglemaps
         NSLocationWhenInUseUsageDescription: See where you are in relation to transit, and help you navigate more easily.
+        NSHealthShareUsageDescription: OneBusAway uses your walking speed from the Health app to give you more accurate arrival time estimates.
         NSLocationTemporaryUsageDescriptionDictionary:
           MapStatusView: See where you are in relation to transit, and help you navigate more easily.
         UILaunchStoryboardName: LaunchScreen

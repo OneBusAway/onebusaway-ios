@@ -282,6 +282,14 @@ public protocol UserDataStore: NSObjectProtocol {
     ///   - agencyIDs: All agency IDs to update.
     func setAllAgenciesEnabledForVehicleFeed(_ enabled: Bool, agencyIDs: [String])
 
+    // MARK: - Walking Speed
+
+    /// The user's preferred walking speed in meters per second.
+    var walkingSpeedMetersPerSecond: Double { get set }
+
+    /// The source of the walking speed value (manual preset or HealthKit).
+    var walkingSpeedSource: WalkingSpeedSource { get set }
+
 }
 
 // MARK: - Survey Tracking Data Models
@@ -356,12 +364,18 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         static let isSurveyEnabled = "UserDataStore.isSurveyEnabled"
         static let nextSurveyReminderDate = "UserDataStore.nextSurveyReminderDate"
         static let alwaysShowSurveysOnStops = "UserDataStore.alwaysShowSurveysOnStops"
+        static let walkingSpeedMetersPerSecond = "UserDataStore.walkingSpeedMetersPerSecond"
+        static let walkingSpeedSource = "UserDataStore.walkingSpeedSource"
     }
 
     public init(userDefaults: UserDefaults) {
         self.userDefaults = userDefaults
 
-        self.userDefaults.register(defaults: [UserDefaultsKeys.debugMode: false])
+        self.userDefaults.register(defaults: [
+            UserDefaultsKeys.debugMode: false,
+            UserDefaultsKeys.walkingSpeedMetersPerSecond: WalkingSpeed.defaultMetersPerSecond,
+            UserDefaultsKeys.walkingSpeedSource: WalkingSpeedSource.manual.rawValue
+        ])
     }
 
     // MARK: - Debug Mode
@@ -1009,6 +1023,28 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
             disabledVehicleFeedAgencyIDs = []
         } else {
             disabledVehicleFeedAgencyIDs = Set(agencyIDs)
+        }
+    }
+
+    // MARK: - Walking Speed
+
+    public var walkingSpeedMetersPerSecond: Double {
+        get {
+            let stored = userDefaults.double(forKey: UserDefaultsKeys.walkingSpeedMetersPerSecond)
+            return min(max(stored, WalkingSpeed.validRange.lowerBound), WalkingSpeed.validRange.upperBound)
+        }
+        set {
+            let clamped = min(max(newValue, WalkingSpeed.validRange.lowerBound), WalkingSpeed.validRange.upperBound)
+            userDefaults.set(clamped, forKey: UserDefaultsKeys.walkingSpeedMetersPerSecond)
+        }
+    }
+
+    public var walkingSpeedSource: WalkingSpeedSource {
+        get {
+            WalkingSpeedSource(rawValue: userDefaults.integer(forKey: UserDefaultsKeys.walkingSpeedSource)) ?? .manual
+        }
+        set {
+            userDefaults.set(newValue.rawValue, forKey: UserDefaultsKeys.walkingSpeedSource)
         }
     }
 

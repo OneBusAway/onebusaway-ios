@@ -25,6 +25,7 @@ targets:
           - applinks:sidecar.onebusaway.org
         com.apple.developer.in-app-payments:
           - merchant.org.onebusaway.iphone
+        com.apple.developer.healthkit: true
     info:
       path: Apps/OneBusAway/Info.plist
       properties:
