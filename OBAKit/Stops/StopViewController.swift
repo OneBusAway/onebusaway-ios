@@ -699,6 +699,7 @@ public class StopViewController: UIViewController,
         let surveyVC = SurveyViewController(
             survey: survey,
             surveyService: application.surveyService,
+            stop: stop,
             stopID: stopID,
             stopLocation: stop?.coordinate,
             heroResponseID: heroResponseID

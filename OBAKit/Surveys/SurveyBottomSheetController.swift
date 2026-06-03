@@ -15,17 +15,20 @@ import OBAKitCore
 class SurveyBottomSheetController: FloatingPanelController {
     private let survey: Survey
     private let surveyService: SurveyService
+    private let stop: Stop?
     private let stopID: String?
     private let stopLocation: CLLocationCoordinate2D?
 
     init(
         survey: Survey,
         surveyService: SurveyService,
+        stop: Stop? = nil,
         stopID: String? = nil,
         stopLocation: CLLocationCoordinate2D? = nil
     ) {
         self.survey = survey
         self.surveyService = surveyService
+        self.stop = stop
         self.stopID = stopID
         self.stopLocation = stopLocation
 
@@ -44,6 +47,7 @@ class SurveyBottomSheetController: FloatingPanelController {
         let surveyVC = SurveyViewController(
             survey: survey,
             surveyService: surveyService,
+            stop: stop,
             stopID: stopID,
             stopLocation: stopLocation
         )

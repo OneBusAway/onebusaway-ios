@@ -16,6 +16,7 @@ class SurveyViewController: FormViewController {
 
     private let survey: Survey
     private let surveyService: SurveyService
+    private let stop: Stop?
     private let stopID: String?
     private let stopLocation: CLLocationCoordinate2D?
 
@@ -23,9 +24,10 @@ class SurveyViewController: FormViewController {
     private var heroResponseID: String?
     private var checkboxSelections: [Int: Set<String>] = [:]
 
-    init(survey: Survey, surveyService: SurveyService, stopID: String? = nil, stopLocation: CLLocationCoordinate2D? = nil, heroResponseID: String? = nil) {
+    init(survey: Survey, surveyService: SurveyService, stop: Stop? = nil, stopID: String? = nil, stopLocation: CLLocationCoordinate2D? = nil, heroResponseID: String? = nil) {
         self.survey = survey
         self.surveyService = surveyService
+        self.stop = stop
         self.stopID = stopID
         self.stopLocation = stopLocation
         self.heroResponseID = heroResponseID

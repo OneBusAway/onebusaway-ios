@@ -28,6 +28,7 @@ public class SurveyDisplayManager {
     public func showSurvey(
         _ survey: Survey,
         in viewController: UIViewController,
+        stop: Stop? = nil,
         stopID: String? = nil,
         stopLocation: CLLocationCoordinate2D? = nil,
         presentationStyle: SurveyPresentationStyle = .bottomSheet
@@ -36,11 +37,11 @@ public class SurveyDisplayManager {
 
         switch presentationStyle {
         case .bottomSheet:
-            return showBottomSheet(survey: survey, stopID: stopID, stopLocation: stopLocation)
+            return showBottomSheet(survey: survey, stop: stop, stopID: stopID, stopLocation: stopLocation)
         }
     }
 
-    private func showBottomSheet(survey: Survey, stopID: String?, stopLocation: CLLocationCoordinate2D?) -> Bool {
+    private func showBottomSheet(survey: Survey, stop: Stop?, stopID: String?, stopLocation: CLLocationCoordinate2D?) -> Bool {
         guard let presentingViewController = presentingViewController else {
             Logger.warn("Cannot present survey bottom sheet: presentingViewController was deallocated")
             return false
@@ -49,6 +50,7 @@ public class SurveyDisplayManager {
         let bottomSheet = SurveyBottomSheetController(
             survey: survey,
             surveyService: surveyService,
+            stop: stop,
             stopID: stopID,
             stopLocation: stopLocation
         )
