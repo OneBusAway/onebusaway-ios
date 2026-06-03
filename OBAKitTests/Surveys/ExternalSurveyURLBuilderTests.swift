@@ -64,6 +64,7 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
         expect(url).toNot(beNil())
         expect(url?.host).to(equal("oba.co"))
         expect(url?.path).to(equal("/survey"))
+        expect(url?.absoluteString).to(equal("https://oba.co/survey"))
     }
 
     func test_buildURL_preservesExistingQueryItems() {
