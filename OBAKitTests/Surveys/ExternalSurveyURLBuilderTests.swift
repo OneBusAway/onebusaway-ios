@@ -301,6 +301,32 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
         expect(self.queryValue(in: url, for: "current_location")).to(equal("47.6062,-122.3321"))
     }
 
+    // MARK: - Lifecycle
+
+    func test_builder_doesNotRetainApplicationContext() {
+        weak var weakContext: MockSurveyURLApplicationContext?
+        let localBuilder: ExternalSurveyURLBuilder = {
+            let ctx = MockSurveyURLApplicationContext()
+            ctx.currentRegionIdentifier = 5
+            weakContext = ctx
+            return ExternalSurveyURLBuilder(
+                userStore: userDefaultsStore,
+                userID: "u",
+                application: ctx
+            )
+        }()
+
+        // ctx is released at the end of the closure. If the builder held a strong
+        // reference, weakContext would still be non-nil.
+        expect(weakContext).to(beNil())
+
+        // And with the context gone, region_id resolves to nil instead of crashing.
+        let survey = SurveysTestHelpers.makeSurvey(questions: [
+            SurveysTestHelpers.makeSurveyQuestion(url: "https://oba.co/s", embeddedDataFields: ["region_id"])
+        ])
+        expect(self.queryValue(in: localBuilder.buildURL(for: survey, stop: nil), for: "region_id")).to(beNil())
+    }
+
     // MARK: - Helpers
 
     private func makeQuestionWithFields(_ fields: [String], baseURL: String = "https://oba.co/survey") -> SurveyQuestion {

@@ -13,7 +13,7 @@ final public class ExternalSurveyURLBuilder: ExternalSurveyURLBuilderProtocol {
 
     private let userStore: UserDataStore
 
-    private let application: SurveyURLApplicationContext
+    private weak var application: SurveyURLApplicationContext?
 
     private let userID: String
 
@@ -70,7 +70,7 @@ final public class ExternalSurveyURLBuilder: ExternalSurveyURLBuilderProtocol {
     }
 
     private func getRegionID() -> String? {
-        guard let regionId = application.currentRegionIdentifier else {
+        guard let regionId = application?.currentRegionIdentifier else {
             return nil
         }
         return "\(regionId)"
@@ -92,7 +92,7 @@ final public class ExternalSurveyURLBuilder: ExternalSurveyURLBuilderProtocol {
     }
 
     private func getCurrentLocation() -> String? {
-        guard let coordinate = application.currentCoordinate else {
+        guard let coordinate = application?.currentCoordinate else {
             return nil
         }
         return "\(coordinate.latitude),\(coordinate.longitude)"
