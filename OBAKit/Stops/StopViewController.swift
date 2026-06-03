@@ -650,7 +650,10 @@ public class StopViewController: UIViewController,
             onDismiss: { [weak self] in
                 self?.handleSurveyDismiss(survey: survey)
             },
-            onSelectionChanged: { _ in }
+            onSelectionChanged: { _ in },
+            onOpenExternalSurvey: { [weak self] in
+                self?.handleOpenExternalSurvey(survey: survey)
+            }
         )
         return listViewSection(for: .survey, title: survey.study.name, items: [item])
     }
@@ -693,6 +696,26 @@ public class StopViewController: UIViewController,
         application.surveyService.dismissSurvey(survey)
         application.surveyService.setNextReminderDate()
         listView.applyData()
+    }
+
+    private func handleOpenExternalSurvey(survey: Survey) {
+        let launcher = ExternalSurveyLauncher(surveyService: application.surveyService)
+        launcher.launch(
+            survey: survey,
+            stop: stop,
+            onSuccess: { [weak self] in self?.listView.applyData() },
+            onFailure: { [weak self] in self?.showExternalSurveyError() }
+        )
+    }
+
+    private func showExternalSurveyError() {
+        let alert = UIAlertController(
+            title: OBALoc("stop_controller.external_survey_error.title", value: "Can't Open Survey", comment: "Title shown when an external survey link cannot be opened"),
+            message: OBALoc("stop_controller.external_survey_error.message", value: "This survey link couldn't be opened. Please try again later.", comment: "Message shown when an external survey link cannot be opened"),
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: Strings.ok, style: .default))
+        present(alert, animated: true)
     }
 
     private func showFullSurvey(_ survey: Survey, heroResponseID: String? = nil) {

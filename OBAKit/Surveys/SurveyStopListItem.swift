@@ -32,6 +32,7 @@ struct SurveyStopListItem: OBAListViewItem {
     let onNext: (String) -> Void  // Called when next is tapped with selected option
     let onDismiss: () -> Void
     let onSelectionChanged: (String?) -> Void
+    let onOpenExternalSurvey: () -> Void
 
     // MARK: - Initializer
     init(
@@ -40,7 +41,8 @@ struct SurveyStopListItem: OBAListViewItem {
         selectedOption: String? = nil,
         onNext: @escaping (String) -> Void,
         onDismiss: @escaping () -> Void,
-        onSelectionChanged: @escaping (String?) -> Void
+        onSelectionChanged: @escaping (String?) -> Void,
+        onOpenExternalSurvey: @escaping () -> Void = {}
     ) {
         self.survey = survey
         self.stopID = stopID
@@ -48,6 +50,7 @@ struct SurveyStopListItem: OBAListViewItem {
         self.onNext = onNext
         self.onDismiss = onDismiss
         self.onSelectionChanged = onSelectionChanged
+        self.onOpenExternalSurvey = onOpenExternalSurvey
     }
 
 }

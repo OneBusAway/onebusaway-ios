@@ -91,6 +91,26 @@ class SurveyCell: OBAListViewCell {
         return button
     }()
 
+    lazy var externalSurveyButton: UIButton = {
+        var config = UIButton.Configuration.filled()
+        config.title = OBALoc("survey_cell.open_external_survey_button", value: "Open Survey", comment: "Button that opens an external survey in the browser")
+        config.baseBackgroundColor = .systemGreen
+        config.baseForegroundColor = .white
+        config.contentInsets = NSDirectionalEdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16)
+
+        let button = UIButton(configuration: config)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.layer.cornerRadius = 8
+        button.clipsToBounds = true
+        button.isHidden = true
+
+        let action = UIAction { [weak self] _ in
+            self?.viewModel?.onOpenExternalSurvey()
+        }
+        button.addAction(action, for: .touchUpInside)
+        return button
+    }()
+
     lazy var actionButtonsStack: UIStackView = {
         let stack = UIStackView.horizontalStack(arrangedSubviews: [dismissButton, nextButton])
         stack.spacing = ThemeMetrics.compactPadding
@@ -102,6 +122,7 @@ class SurveyCell: OBAListViewCell {
         let stack = UIStackView.verticalStack(arrangedSubviews: [
             questionLabel,
             optionsStack,
+            externalSurveyButton,
             UIView.spacerView(height: 8.0),
             actionButtonsStack
         ])
@@ -158,6 +179,9 @@ class SurveyCell: OBAListViewCell {
         optionButtons.removeAll()
         optionsStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
 
+        externalSurveyButton.isHidden = true
+        nextButton.isHidden = false
+
         switch question.content.type {
         case .radio:
             let options = question.content.options ?? []
@@ -173,8 +197,13 @@ class SurveyCell: OBAListViewCell {
             optionsStack.isHidden = false
             createCheckboxButtons(options: Array(options.prefix(3))) // Show first 3 for space
 
-        case .label, .externalSurvey:
+        case .label:
             optionsStack.isHidden = true
+
+        case .externalSurvey:
+            optionsStack.isHidden = true
+            nextButton.isHidden = true
+            externalSurveyButton.isHidden = false
         }
     }
 
