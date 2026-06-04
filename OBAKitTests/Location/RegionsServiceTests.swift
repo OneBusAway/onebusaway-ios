@@ -38,11 +38,14 @@ private class RegionsServiceTestDelegate: NSObject, RegionsServiceDelegate {
     }
 }
 
+// MARK: - Test Case
+
 class RegionsServiceTests: OBATestCase {
     private var testDelegate: RegionsServiceTestDelegate!
     var locationManagerMock: LocationManagerMock!
     var locationService: LocationService!
     var dataLoader: MockDataLoader!
+    var mockFileStorage: MockRegionsFileStorage!
 
     override func setUp() {
         super.setUp()
@@ -51,6 +54,21 @@ class RegionsServiceTests: OBATestCase {
         locationManagerMock = LocationManagerMock()
         locationService = LocationService(userDefaults: UserDefaults(), locationManager: locationManagerMock)
         dataLoader = (regionsAPIService.dataLoader as! MockDataLoader)
+        mockFileStorage = MockRegionsFileStorage()
+    }
+
+    // MARK: - Convenience builder
+
+    private func makeRegionsService(delegate: RegionsServiceTestDelegate? = nil) -> RegionsService {
+        RegionsService(
+            apiService: regionsAPIService,
+            locationService: locationService,
+            userDefaults: userDefaults,
+            bundledRegionsFilePath: bundledRegionsPath,
+            apiPath: regionsPath,
+            fileStorage: mockFileStorage,
+            delegate: delegate
+        )
     }
 
     // MARK: - Upon creating the Regions Service
@@ -59,38 +77,34 @@ class RegionsServiceTests: OBATestCase {
     func test_init_loadsBundledRegions() {
         stubRegions(dataLoader: dataLoader)
 
-        let service = RegionsService(apiService: regionsAPIService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: bundledRegionsPath, apiPath: regionsPath)
+        let service = makeRegionsService()
         XCTAssertEqual(service.regions.count, 17)
     }
 
-    // It loads regions saved to the user defaults when they exist
+    // It loads regions saved to disk when they exist
     func test_init_loadsSavedRegions() throws {
         stubRegions(dataLoader: dataLoader)
 
         let customRegion = Fixtures.customMinneapolisRegion
-        let plistData = try PropertyListEncoder().encode([customRegion])
-        userDefaults.set(plistData, forKey: RegionsService.storedRegionsUserDefaultsKey)
+        mockFileStorage.storedDefaultRegions = [customRegion]
 
-        let service = RegionsService(apiService: regionsAPIService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: bundledRegionsPath, apiPath: regionsPath)
+        let service = makeRegionsService()
 
         let firstRegion = try XCTUnwrap(service.regions.first)
         XCTAssertEqual(firstRegion.name, "Custom Region", "Expected the first region to be the custom region")
         XCTAssertEqual(service.regions.count, 1)
     }
 
-    // It loads the current region from user defaults when it exists
+    // It loads the current region identifier from user defaults when it exists (auto-select disabled)
     func test_init_loadsCurrentRegion_autoSelectDisabled() throws {
         stubRegions(dataLoader: dataLoader)
 
         let customRegion = Fixtures.customMinneapolisRegion
-        let plistArrayData = try PropertyListEncoder().encode([customRegion])
-        userDefaults.set(plistArrayData, forKey: RegionsService.storedRegionsUserDefaultsKey)
+        mockFileStorage.storedDefaultRegions = [customRegion]
         userDefaults.set(false, forKey: RegionsService.automaticallySelectRegionUserDefaultsKey)
+        userDefaults.set(customRegion.regionIdentifier, forKey: RegionsService.currentRegionIdentifierUserDefaultsKey)
 
-        let plistData = try PropertyListEncoder().encode(customRegion)
-        userDefaults.set(plistData, forKey: RegionsService.currentRegionUserDefaultsKey)
-
-        let service = RegionsService(apiService: regionsAPIService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: bundledRegionsPath, apiPath: regionsPath)
+        let service = makeRegionsService()
 
         XCTAssertEqual(service.currentRegion, customRegion)
     }
@@ -98,11 +112,13 @@ class RegionsServiceTests: OBATestCase {
     func test_init_loadsCurrentRegion_autoSelectEnabled() throws {
         stubRegions(dataLoader: dataLoader)
 
-        let plistData = try PropertyListEncoder().encode(Fixtures.customMinneapolisRegion)
-        userDefaults.set(plistData, forKey: RegionsService.currentRegionUserDefaultsKey)
+        // Store the Minneapolis region identifier, but location points to Puget Sound —
+        // auto-select should override and pick Puget Sound.
+        let minneapolis = Fixtures.customMinneapolisRegion
+        userDefaults.set(minneapolis.regionIdentifier, forKey: RegionsService.currentRegionIdentifierUserDefaultsKey)
         locationManagerMock.location = CLLocation(latitude: 47.632445, longitude: -122.312607)
 
-        let service = RegionsService(apiService: regionsAPIService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: bundledRegionsPath, apiPath: regionsPath)
+        let service = makeRegionsService()
 
         let currentRegion = try XCTUnwrap(service.currentRegion)
         XCTAssertEqual(currentRegion.name, "Puget Sound")
@@ -112,7 +128,15 @@ class RegionsServiceTests: OBATestCase {
     func test_init_updateRegionsList() async {
         stubRegionsJustPugetSound(dataLoader: dataLoader)
 
-        let regionsService = RegionsService(apiService: regionsAPIService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: bundledRegionsPath, apiPath: regionsAPIPath, delegate: testDelegate)
+        let regionsService = RegionsService(
+            apiService: regionsAPIService,
+            locationService: locationService,
+            userDefaults: userDefaults,
+            bundledRegionsFilePath: bundledRegionsPath,
+            apiPath: regionsAPIPath,
+            fileStorage: mockFileStorage,
+            delegate: testDelegate
+        )
 
         await regionsService.updateRegionsList()
 
@@ -124,7 +148,15 @@ class RegionsServiceTests: OBATestCase {
         stubRegionsJustPugetSound(dataLoader: dataLoader)
         userDefaults.set(Date(), forKey: RegionsService.regionsUpdatedAtUserDefaultsKey)
 
-        let regionsService = RegionsService(apiService: regionsAPIService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: bundledRegionsPath, apiPath: regionsAPIPath, delegate: testDelegate)
+        let regionsService = RegionsService(
+            apiService: regionsAPIService,
+            locationService: locationService,
+            userDefaults: userDefaults,
+            bundledRegionsFilePath: bundledRegionsPath,
+            apiPath: regionsAPIPath,
+            fileStorage: mockFileStorage,
+            delegate: testDelegate
+        )
 
         await regionsService.updateRegionsList()
 
@@ -132,12 +164,20 @@ class RegionsServiceTests: OBATestCase {
         XCTAssertEqual(regionsService.regions.count, 17)
     }
 
-    /// It *does* download a list of regions—even if the list was last updated less than a week ago—if the update is forced..
+    /// It *does* download a list of regions—even if the list was last updated less than a week ago—if the update is forced.
     func test_init_forceUpdateRegionsList() async {
         stubRegionsJustPugetSound(dataLoader: dataLoader)
         userDefaults.set(Date(), forKey: RegionsService.regionsUpdatedAtUserDefaultsKey)
 
-        let regionsService = RegionsService(apiService: regionsAPIService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: bundledRegionsPath, apiPath: regionsAPIPath, delegate: testDelegate)
+        let regionsService = RegionsService(
+            apiService: regionsAPIService,
+            locationService: locationService,
+            userDefaults: userDefaults,
+            bundledRegionsFilePath: bundledRegionsPath,
+            apiPath: regionsAPIPath,
+            fileStorage: mockFileStorage,
+            delegate: testDelegate
+        )
 
         await regionsService.updateRegionsList(forceUpdate: true)
         XCTAssertFalse(testDelegate.regionUpdateCancelled.didCall, "Expected RegionsService to not inform delegates that a region update was cancelled")
@@ -151,7 +191,15 @@ class RegionsServiceTests: OBATestCase {
         userDefaults.set(Date(), forKey: RegionsService.regionsUpdatedAtUserDefaultsKey)
         userDefaults.set(true, forKey: RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey)
 
-        let regionsService = RegionsService(apiService: regionsAPIService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: bundledRegionsPath, apiPath: regionsAPIPath, delegate: testDelegate)
+        let regionsService = RegionsService(
+            apiService: regionsAPIService,
+            locationService: locationService,
+            userDefaults: userDefaults,
+            bundledRegionsFilePath: bundledRegionsPath,
+            apiPath: regionsAPIPath,
+            fileStorage: mockFileStorage,
+            delegate: testDelegate
+        )
 
         await regionsService.updateRegionsList()
         XCTAssertTrue(testDelegate.updatedRegionsList.didCall, "Expected RegionsService to inform delegates that the regionsList was updated")
@@ -160,33 +208,41 @@ class RegionsServiceTests: OBATestCase {
 
     // MARK: - Persistence
 
-    // It stores downloaded region data in user defaults when the regions property is set.
+    // It stores downloaded region data in file storage when the regions property is set.
     func test_persistence() async throws {
         stubRegionsJustPugetSound(dataLoader: dataLoader)
         userDefaults.set(Date(), forKey: RegionsService.regionsUpdatedAtUserDefaultsKey)
 
-        let regionsService = RegionsService(apiService: regionsAPIService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: bundledRegionsPath, apiPath: regionsAPIPath, delegate: testDelegate)
+        let regionsService = RegionsService(
+            apiService: regionsAPIService,
+            locationService: locationService,
+            userDefaults: userDefaults,
+            bundledRegionsFilePath: bundledRegionsPath,
+            apiPath: regionsAPIPath,
+            fileStorage: mockFileStorage,
+            delegate: testDelegate
+        )
 
         await regionsService.updateRegionsList(forceUpdate: true)
         XCTAssertTrue(testDelegate.updatedRegionsList.didCall)
 
-        // Get regions from Persistence to ensure they were saved.
+        // Verify regions were saved to file storage (not UserDefaults).
         let regions = try XCTUnwrap(
-            try userDefaults.decodeUserDefaultsObjects(type: [Region].self, key: RegionsService.storedRegionsUserDefaultsKey),
-            "Expected to get [Region] for \(RegionsService.storedRegionsUserDefaultsKey)"
+            mockFileStorage.storedDefaultRegions,
+            "Expected regions to be saved to file storage"
         )
 
         XCTAssertEqual(regions.count, 1)
         XCTAssertEqual(regions.first?.name, "Puget Sound")
     }
 
-    /// It loads the bundled regions when the data in the user defaults is corrupted.
-    func test_corruptedDefaults() {
+    /// It loads the bundled regions when file storage returns an error (e.g. corrupted data).
+    func test_corruptedStorage() {
         stubRegions(dataLoader: dataLoader)
 
-        self.userDefaults.set(["hello world!"], forKey: RegionsService.storedRegionsUserDefaultsKey)
+        mockFileStorage.loadDefaultRegionsError = CocoaError(.fileReadCorruptFile)
 
-        let regionsService = RegionsService(apiService: regionsAPIService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: bundledRegionsPath, apiPath: regionsAPIPath, delegate: testDelegate)
+        let regionsService = makeRegionsService()
 
         XCTAssertEqual(regionsService.regions.count, 17)
     }
@@ -195,9 +251,19 @@ class RegionsServiceTests: OBATestCase {
     func test_regionUpdated_notifications() {
         stubRegions(dataLoader: dataLoader)
 
-        let regionsService = RegionsService(apiService: regionsAPIService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: bundledRegionsPath, apiPath: regionsAPIPath, delegate: testDelegate)
+        let regionsService = RegionsService(
+            apiService: regionsAPIService,
+            locationService: locationService,
+            userDefaults: userDefaults,
+            bundledRegionsFilePath: bundledRegionsPath,
+            apiPath: regionsAPIPath,
+            fileStorage: mockFileStorage,
+            delegate: testDelegate
+        )
 
         let newRegion = Fixtures.customMinneapolisRegion
+        // Put the region in file storage so it can be looked up by identifier.
+        mockFileStorage.storedCustomRegions = [newRegion]
 
         regionsService.currentRegion = newRegion
 
@@ -212,7 +278,15 @@ class RegionsServiceTests: OBATestCase {
         stubRegionsJustPugetSound(dataLoader: dataLoader)
         userDefaults.set(Date.distantPast, forKey: RegionsService.regionsUpdatedAtUserDefaultsKey)
 
-        let regionsService = RegionsService(apiService: regionsAPIService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: bundledRegionsPath, apiPath: regionsAPIPath, delegate: testDelegate)
+        let regionsService = RegionsService(
+            apiService: regionsAPIService,
+            locationService: locationService,
+            userDefaults: userDefaults,
+            bundledRegionsFilePath: bundledRegionsPath,
+            apiPath: regionsAPIPath,
+            fileStorage: mockFileStorage,
+            delegate: testDelegate
+        )
 
         await regionsService.updateRegionsList()
         XCTAssertTrue(testDelegate.updatedRegionsList.didCall, "Expected RegionsService to inform delegates that the regionsList was updated")
@@ -227,7 +301,176 @@ class RegionsServiceTests: OBATestCase {
         XCTAssertEqual(regionsService.regions.first?.name, "Puget Sound", "Expected a region to exist in the regionsService")
     }
 
-    // It updates the current region when the regions list is downloaded.
+    // MARK: - Migration
+
+    /// It migrates downloaded regions from UserDefaults to disk storage on first launch.
+    func test_migration_defaultRegions() throws {
+        stubRegions(dataLoader: dataLoader)
+
+        let customRegion = Fixtures.customMinneapolisRegion
+        let plistData = try PropertyListEncoder().encode([customRegion])
+        userDefaults.set(plistData, forKey: RegionsService.legacyStoredRegionsUserDefaultsKey)
+
+        _ = makeRegionsService()
+
+        // After init, the region should have been migrated to file storage.
+        let migratedRegions = try XCTUnwrap(mockFileStorage.storedDefaultRegions, "Expected regions to be migrated to file storage")
+        XCTAssertEqual(migratedRegions.count, 1)
+        XCTAssertEqual(migratedRegions.first?.name, "Custom Region")
+
+        // Legacy UserDefaults key should be cleared.
+        XCTAssertNil(userDefaults.data(forKey: RegionsService.legacyStoredRegionsUserDefaultsKey), "Expected legacy UserDefaults key to be cleared after migration")
+    }
+
+    /// It migrates custom regions from UserDefaults to individual disk files on first launch.
+    func test_migration_customRegions() throws {
+        stubRegions(dataLoader: dataLoader)
+
+        let customRegion = Fixtures.customMinneapolisRegion
+        let plistData = try PropertyListEncoder().encode([customRegion])
+        userDefaults.set(plistData, forKey: RegionsService.legacyStoredCustomRegionsUserDefaultsKey)
+
+        _ = makeRegionsService()
+
+        XCTAssertEqual(mockFileStorage.storedCustomRegions.count, 1)
+        XCTAssertEqual(mockFileStorage.storedCustomRegions.first?.name, "Custom Region")
+
+        XCTAssertNil(userDefaults.data(forKey: RegionsService.legacyStoredCustomRegionsUserDefaultsKey), "Expected legacy custom regions key to be cleared after migration")
+    }
+
+    /// It migrates the current region from a full Region object to just the identifier.
+    func test_migration_currentRegion() throws {
+        stubRegions(dataLoader: dataLoader)
+
+        let customRegion = Fixtures.customMinneapolisRegion
+        let plistData = try PropertyListEncoder().encode(customRegion)
+        userDefaults.set(plistData, forKey: RegionsService.legacyCurrentRegionUserDefaultsKey)
+
+        _ = makeRegionsService()
+
+        let migratedIdentifier = userDefaults.integer(forKey: RegionsService.currentRegionIdentifierUserDefaultsKey)
+        XCTAssertEqual(migratedIdentifier, customRegion.regionIdentifier, "Expected current region identifier to be migrated")
+
+        XCTAssertNil(userDefaults.data(forKey: RegionsService.legacyCurrentRegionUserDefaultsKey), "Expected legacy current region key to be cleared after migration")
+    }
+
+    /// Corrupt plist in the legacy default-regions key must be discarded (key cleared) without saving anything to disk.
+    func test_migration_defaultRegions_corruptData_discardsKey() {
+        stubRegions(dataLoader: dataLoader)
+
+        let data = "corrupted data".data(using: .utf8)
+        userDefaults.set(data, forKey: RegionsService.legacyStoredRegionsUserDefaultsKey)
+
+        _ = makeRegionsService()
+
+        XCTAssertNil(
+            userDefaults.data(forKey: RegionsService.legacyStoredRegionsUserDefaultsKey),
+            "Corrupt legacy data should be discarded — the key must be cleared so migration does not retry on bad data"
+        )
+        XCTAssertNil(mockFileStorage.storedDefaultRegions, "Nothing should be written to file storage when the legacy data is undecodable")
+    }
+
+    /// An empty region list in the legacy key must clear the key without touching file storage.
+    func test_migration_defaultRegions_emptyArray_clearsKeyWithoutSaving() throws {
+        stubRegions(dataLoader: dataLoader)
+
+        let plistData = try PropertyListEncoder().encode([Region]())
+        userDefaults.set(plistData, forKey: RegionsService.legacyStoredRegionsUserDefaultsKey)
+
+        _ = makeRegionsService()
+
+        XCTAssertNil(
+            userDefaults.data(forKey: RegionsService.legacyStoredRegionsUserDefaultsKey),
+            "An empty legacy region array should clear the key"
+        )
+        XCTAssertNil(mockFileStorage.storedDefaultRegions, "Nothing should be written to file storage for an empty region list")
+    }
+
+    /// Corrupt plist in the legacy custom-regions key must be discarded (key cleared).
+    func test_migration_customRegions_corruptData_discardsKey() {
+        stubRegions(dataLoader: dataLoader)
+
+        let data = "corrupted data".data(using: .utf8)
+        userDefaults.set(data, forKey: RegionsService.legacyStoredCustomRegionsUserDefaultsKey)
+
+        _ = makeRegionsService()
+
+        XCTAssertNil(
+            userDefaults.data(forKey: RegionsService.legacyStoredCustomRegionsUserDefaultsKey),
+            "Corrupt legacy custom-region data should be discarded — key must be cleared"
+        )
+        XCTAssertTrue(mockFileStorage.storedCustomRegions.isEmpty, "Nothing should be written to file storage when the legacy data is undecodable")
+    }
+
+    /// When any `saveCustomRegion` throws during migration the legacy key must be preserved for retry.
+    func test_migration_customRegions_saveFailure_preservesLegacyKey() throws {
+        stubRegions(dataLoader: dataLoader)
+
+        let customRegion = Fixtures.customMinneapolisRegion
+        let plistData = try PropertyListEncoder().encode([customRegion])
+        userDefaults.set(plistData, forKey: RegionsService.legacyStoredCustomRegionsUserDefaultsKey)
+
+        mockFileStorage.saveCustomRegionError = CocoaError(.fileWriteNoPermission)
+
+        _ = makeRegionsService()
+
+        let preservedData = userDefaults.data(forKey: RegionsService.legacyStoredCustomRegionsUserDefaultsKey)
+        XCTAssertNotNil(
+            preservedData,
+            "Legacy custom-regions key must NOT be deleted when saveCustomRegion throws — data would be lost permanently"
+        )
+        XCTAssertEqual(preservedData, plistData, "Preserved legacy data must be byte-for-byte identical to the original")
+        XCTAssertTrue(mockFileStorage.storedCustomRegions.isEmpty, "No custom regions should be stored when the save threw an error")
+    }
+
+    /// Corrupt plist in the legacy current-region key must be discarded via defer and must not
+    /// write any identifier — unlike the default/custom cases this path does not retry on next launch.
+    func test_migration_currentRegion_corruptData_clearsKeyWithoutWritingIdentifier() {
+        stubRegions(dataLoader: dataLoader)
+        
+        let data = "corrupted data".data(using: .utf8)
+        userDefaults.set(data, forKey: RegionsService.legacyCurrentRegionUserDefaultsKey)
+
+        _ = makeRegionsService()
+
+        XCTAssertNil(
+            userDefaults.data(forKey: RegionsService.legacyCurrentRegionUserDefaultsKey),
+            "Corrupt legacy current-region data should be cleared — there is nothing to retry"
+        )
+        XCTAssertNil(
+            userDefaults.object(forKey: RegionsService.currentRegionIdentifierUserDefaultsKey),
+            "No region identifier should be written when the legacy current-region data is undecodable"
+        )
+    }
+
+    /// When `saveDefaultRegions` throws during migration the legacy UserDefaults key must not be deleted
+    /// — preserving the data so the migration can retry on the next launch.
+    func test_migration_defaultRegions_saveFailure_preservesLegacyKey() throws {
+        stubRegions(dataLoader: dataLoader)
+
+        let customRegion = Fixtures.customMinneapolisRegion
+        let plistData = try PropertyListEncoder().encode([customRegion])
+        userDefaults.set(plistData, forKey: RegionsService.legacyStoredRegionsUserDefaultsKey)
+
+        // Simulate a disk-write failure during migration.
+        mockFileStorage.saveDefaultRegionsError = CocoaError(.fileWriteNoPermission)
+
+        _ = makeRegionsService()
+
+        // The legacy key must still be present with its original data intact so the migration retries on next launch.
+        let preservedData = userDefaults.data(forKey: RegionsService.legacyStoredRegionsUserDefaultsKey)
+        XCTAssertNotNil(
+            preservedData,
+            "Legacy UserDefaults key must NOT be deleted when saveDefaultRegions throws — data would be lost permanently"
+        )
+        XCTAssertEqual(preservedData, plistData, "Preserved legacy data must be byte-for-byte identical to the original")
+
+        // Nothing should have been written to file storage.
+        XCTAssertNil(
+            mockFileStorage.storedDefaultRegions,
+            "No regions should be stored in file storage when the save threw an error"
+        )
+    }
 
     // MARK: - Location Services
 
