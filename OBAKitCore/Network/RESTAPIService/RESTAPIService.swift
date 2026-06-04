@@ -21,7 +21,11 @@ public actor RESTAPIService: @preconcurrency APIService {
     public init(_ configuration: APIServiceConfiguration, dataLoader: URLDataLoader = URLSession.shared) {
         self.configuration = configuration
         self.dataLoader = dataLoader
-        self.urlBuilder = RESTAPIURLBuilder(baseURL: configuration.baseURL, defaultQueryItems: configuration.defaultQueryItems)
+        self.urlBuilder = RESTAPIURLBuilder(
+            baseURL: configuration.baseURL,
+            defaultQueryItems: configuration.defaultQueryItems,
+            surveyBaseURL: configuration.surveyBaseURL
+        )
         self.decoder = JSONDecoder.RESTDecoder(regionIdentifier: configuration.regionIdentifier)
     }
 }

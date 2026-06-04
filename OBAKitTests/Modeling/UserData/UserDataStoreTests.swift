@@ -148,6 +148,29 @@ class UserDefaultsStoreTests: OBATestCase {
         expect(IDs2) == ["2"]
     }
 
+    /// Regression test for the `tripDate`/`alarmDate` precision-loss bug in `Alarm.isEqual`.
+    /// Before the fix, encoding to UserDefaults stripped sub-microsecond precision from
+    /// the `Date` fields (via the `TimeInterval` round-trip in `Alarm.{init(from:),encode(to:)}`),
+    /// so the reloaded Alarm would no longer compare equal to its in-memory original — and
+    /// any equality-based delete would silently no-op. This test persists, reloads, then
+    /// deletes by the round-tripped instance to anchor the fix path to a named test.
+    func test_alarms_delete_afterUserDefaultsRoundTrip() {
+        let alarm = try! Fixtures.loadAlarm(id: "round-trip")
+        alarm.set(tripDate: Date(timeIntervalSinceNow: 300), alarmOffset: 2)
+
+        userDefaultsStore.add(alarm: alarm)
+
+        // Force the encode → decode round-trip by going through the `alarms` getter,
+        // which reads back from UserDefaults rather than returning the in-memory instance.
+        let reloaded = userDefaultsStore.alarms.first { $0.url == alarm.url }
+        expect(reloaded).toNot(beNil())
+        expect(reloaded) == alarm
+
+        userDefaultsStore.delete(alarm: reloaded!)
+
+        expect(self.userDefaultsStore.alarms.map(\.url)).toNot(contain(alarm.url))
+    }
+
     // MARK: - Selected Tab Index
 
     func test_selectedTabIndex_mapSelectedByDefault() {
@@ -178,91 +201,110 @@ class UserDefaultsStoreTests: OBATestCase {
         expect(newStore.debugMode).to(beTrue())
     }
 
-    // MARK: - SurveyPreferencesStore
+    // MARK: - Survey Properties
 
-    func test_userSurveyId_generatesUUID() {
-        let id = userDefaultsStore.userSurveyId
-
+    func test_surveyUserIdentifier_generatesUUID() {
+        let id = userDefaultsStore.surveyUserIdentifier
         expect(id).toNot(beEmpty())
     }
 
-    func test_userSurveyId_persistsBetweenCalls() {
-        let first = userDefaultsStore.userSurveyId
-        let second = userDefaultsStore.userSurveyId
-
+    func test_surveyUserIdentifier_persistsBetweenCalls() {
+        let first = userDefaultsStore.surveyUserIdentifier
+        let second = userDefaultsStore.surveyUserIdentifier
         expect(first) == second
     }
 
     // MARK: - App Launch Counter
 
-    func test_appLaunch_defaultValueIsZero() {
-        expect(self.userDefaultsStore.appLaunch) == 0
+    func test_appLaunchCount_defaultValueIsZero() {
+        expect(self.userDefaultsStore.appLaunchCount) == 0
     }
 
-    func test_appLaunch_readsStoredValue() {
-        userDefaultsStore.increaseAppLaunchCount()
+    func test_appLaunchCount_incrementsCorrectly() {
+        userDefaultsStore.incrementAppLaunchCount()
+        expect(self.userDefaultsStore.appLaunchCount) == 1
 
-        expect(self.userDefaultsStore.appLaunch) == 1
+        userDefaultsStore.incrementAppLaunchCount()
+        expect(self.userDefaultsStore.appLaunchCount) == 2
     }
 
-    // MARK: - Survey Preferences
+    // MARK: - Survey Enabled
 
-    func test_surveyPreferences_defaultValue() {
-        let preferences = userDefaultsStore.surveyPreferences()
-
-        expect(preferences.isSurveyEnabled).to(beTrue())
-        expect(preferences.completedSurveyIDs).to(beEmpty())
-        expect(preferences.skippedSurveyIDs).to(beEmpty())
-        expect(preferences.nextReminderDate).to(beNil())
+    func test_isSurveyEnabled_defaultsToTrue() {
+        expect(self.userDefaultsStore.isSurveyEnabled).to(beTrue())
     }
 
-    func test_surveyPreferences_persistedValue() {
-        let preferences = SurveyPreferences(
-            isSurveyEnabled: true,
-            completedSurveyIDs: [1, 2], skippedSurveyIDs: [3], nextReminderDate: Date()
-        )
+    func test_isSurveyEnabled_persistsValue() {
+        userDefaultsStore.isSurveyEnabled = false
+        expect(self.userDefaultsStore.isSurveyEnabled).to(beFalse())
 
-        userDefaultsStore.setSurveyPreferences(preferences)
-
-        let storedPreferences = userDefaultsStore.surveyPreferences()
-
-        expect(storedPreferences.completedSurveyIDs).to(equal(preferences.completedSurveyIDs))
-        expect(storedPreferences.isSurveyEnabled).to(equal(preferences.isSurveyEnabled))
-        expect(storedPreferences.skippedSurveyIDs).to(equal(preferences.skippedSurveyIDs))
-        expect(storedPreferences.nextReminderDate).to(equal(preferences.nextReminderDate))
+        userDefaultsStore.isSurveyEnabled = true
+        expect(self.userDefaultsStore.isSurveyEnabled).to(beTrue())
     }
 
-    func test_surveyPreferences_overwritesExistingValue() {
-        userDefaultsStore.setSurveyPreferences(.init(isSurveyEnabled: false))
-        userDefaultsStore.setSurveyPreferences(.init(isSurveyEnabled: true))
+    // MARK: - Next Survey Reminder Date
 
-        expect(self.userDefaultsStore.surveyPreferences().isSurveyEnabled).to(beTrue())
+    func test_nextSurveyReminderDate_defaultsToNil() {
+        expect(self.userDefaultsStore.nextSurveyReminderDate).to(beNil())
     }
 
-    // MARK: - Completed Surveys
-
-    func test_completedSurveys_defaultEmpty() {
-        expect(self.userDefaultsStore.completedSurveys).to(beEmpty())
+    func test_nextSurveyReminderDate_persistsValue() {
+        let date = Date().addingTimeInterval(3600)
+        userDefaultsStore.nextSurveyReminderDate = date
+        expect(self.userDefaultsStore.nextSurveyReminderDate).to(beCloseTo(date, within: 1))
     }
 
-    func test_completedSurveys_returnsStoredValues() {
-        let preferences = SurveyPreferences(completedSurveyIDs: [1, 2, 3])
-        userDefaultsStore.setSurveyPreferences(preferences)
+    // MARK: - Survey Completion Tracking
 
-        expect(self.userDefaultsStore.completedSurveys) == [1, 2, 3]
+    func test_markSurveyCompleted_tracksCompletedSurvey() {
+        userDefaultsStore.markSurveyCompleted(surveyId: 1, userIdentifier: "user1")
+        expect(self.userDefaultsStore.isSurveyCompleted(surveyId: 1, userIdentifier: "user1")).to(beTrue())
+        expect(self.userDefaultsStore.isSurveyCompleted(surveyId: 2, userIdentifier: "user1")).to(beFalse())
     }
 
-    // MARK: - Skipped Surveys
-
-    func test_skippedSurveys_defaultEmpty() {
-        expect(self.userDefaultsStore.skippedSurveys).to(beEmpty())
+    func test_markSurveyForLater_tracksLaterSurvey() {
+        userDefaultsStore.markSurveyForLater(surveyId: 1, userIdentifier: "user1")
+        // Immediately after marking, shouldShowSurveyLater returns false (0 launches since marking)
+        expect(self.userDefaultsStore.shouldShowSurveyLater(surveyId: 1, userIdentifier: "user1")).to(beFalse())
     }
 
-    func test_skippedSurveys_returnsStoredValues() {
-        let preferences = SurveyPreferences(skippedSurveyIDs: [4, 5])
-        userDefaultsStore.setSurveyPreferences(preferences)
+    // MARK: - Walking Speed
 
-        expect(self.userDefaultsStore.skippedSurveys) == [4, 5]
+    func test_walkingSpeed_defaultValue() {
+        expect(self.userDefaultsStore.walkingSpeedMetersPerSecond).to(beCloseTo(1.4))
+    }
+
+    func test_walkingSpeed_roundTrip() {
+        userDefaultsStore.walkingSpeedMetersPerSecond = 0.9
+        expect(self.userDefaultsStore.walkingSpeedMetersPerSecond).to(beCloseTo(0.9))
+
+        userDefaultsStore.walkingSpeedMetersPerSecond = 1.8
+        expect(self.userDefaultsStore.walkingSpeedMetersPerSecond).to(beCloseTo(1.8))
+
+        let newStore = UserDefaultsStore(userDefaults: userDefaults)
+        expect(newStore.walkingSpeedMetersPerSecond).to(beCloseTo(1.8))
+    }
+
+    func test_walkingSpeedSource_defaultValue() {
+        expect(self.userDefaultsStore.walkingSpeedSource) == .manual
+    }
+
+    func test_walkingSpeedSource_roundTrip() {
+        userDefaultsStore.walkingSpeedSource = .healthKit
+        expect(self.userDefaultsStore.walkingSpeedSource) == .healthKit
+
+        userDefaultsStore.walkingSpeedSource = .manual
+        expect(self.userDefaultsStore.walkingSpeedSource) == .manual
+    }
+
+    func test_walkingSpeedMetersPerSecond_clampsBelowRange() {
+        userDefaultsStore.walkingSpeedMetersPerSecond = 0.1
+        expect(self.userDefaultsStore.walkingSpeedMetersPerSecond).to(beCloseTo(WalkingSpeed.validRange.lowerBound))
+    }
+
+    func test_walkingSpeedMetersPerSecond_clampsAboveRange() {
+        userDefaultsStore.walkingSpeedMetersPerSecond = 10.0
+        expect(self.userDefaultsStore.walkingSpeedMetersPerSecond).to(beCloseTo(WalkingSpeed.validRange.upperBound))
     }
 
 }

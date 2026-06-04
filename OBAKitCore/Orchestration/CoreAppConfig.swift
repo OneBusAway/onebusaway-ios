@@ -29,6 +29,12 @@ open class CoreAppConfig: NSObject {
     public let bundledRegionsFilePath: String
     public let dataLoader: URLDataLoader
 
+    /// The name of a fixed region to auto-select at launch, bypassing the region picker.
+    public let fixedRegionName: String?
+
+    /// The OBA base URL for a fixed region, used as a fallback when `fixedRegionName` doesn't match.
+    public let fixedRegionOBABaseURL: URL?
+
     /// Convenience initializer that pulls from the host application's main `Bundle`.
     /// - Parameter appBundle: The application `Bundle` from which initialization properties will be extracted.
     /// - Parameter userDefaults: The user defaults object.
@@ -47,7 +53,9 @@ open class CoreAppConfig: NSObject {
             locationService: LocationService(userDefaults: userDefaults, locationManager: CLLocationManager()),
             bundledRegionsFilePath: bundledRegionsFilePath,
             regionsAPIPath: appBundle.regionsServerAPIPath!,
-            dataLoader: URLSession.shared
+            dataLoader: URLSession.shared,
+            fixedRegionName: appBundle.fixedRegionName,
+            fixedRegionOBABaseURL: appBundle.fixedRegionOBABaseURL
         )
     }
 
@@ -69,7 +77,9 @@ open class CoreAppConfig: NSObject {
         locationService: LocationService,
         bundledRegionsFilePath: String,
         regionsAPIPath: String?,
-        dataLoader: URLDataLoader
+        dataLoader: URLDataLoader,
+        fixedRegionName: String? = nil,
+        fixedRegionOBABaseURL: URL? = nil
     ) {
         self.regionsBaseURL = regionsBaseURL
         self.apiKey = apiKey
@@ -80,5 +90,7 @@ open class CoreAppConfig: NSObject {
         self.bundledRegionsFilePath = bundledRegionsFilePath
         self.regionsAPIPath = regionsAPIPath
         self.dataLoader = dataLoader
+        self.fixedRegionName = fixedRegionName
+        self.fixedRegionOBABaseURL = fixedRegionOBABaseURL
     }
 }

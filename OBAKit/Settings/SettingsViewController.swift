@@ -9,6 +9,7 @@
 
 import Eureka
 import Foundation
+import HealthKit
 import OBAKitCore
 import UIKit
 
@@ -38,6 +39,8 @@ class SettingsViewController: FormViewController {
             +++ mapSection
             +++ alertsSection
             +++ accessibilitySection
+            +++ walkingSpeedSection
+            +++ surveySection
             +++ debugSection
 
         if application.analytics != nil {
@@ -56,7 +59,10 @@ class SettingsViewController: FormViewController {
             AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts: application.userDefaults.bool(forKey: AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts),
             RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey: application.userDefaults.bool(forKey: RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey),
             MapRegionManager.mapViewShowsStopAnnotationLabelsDefaultsKey: application.userDefaults.bool(forKey: MapRegionManager.mapViewShowsStopAnnotationLabelsDefaultsKey),
-            debugModeEnabled: application.userDataStore.debugMode
+            debugModeEnabled: application.userDataStore.debugMode,
+            alwaysShowSurveysOnStops: application.userDataStore.alwaysShowSurveysOnStops,
+            walkingSpeedMetersPerSecondKey: snapToPreset(application.userDataStore.walkingSpeedMetersPerSecond),
+            walkingSpeedUseHealthKitKey: application.userDataStore.walkingSpeedSource == .healthKit
         ])
     }
 
@@ -103,11 +109,29 @@ class SettingsViewController: FormViewController {
             application.userDataStore.debugMode = debugEnabled
         }
 
+        if let alwaysShowSurveys = values[alwaysShowSurveysOnStops] as? Bool {
+            application.userDataStore.alwaysShowSurveysOnStops = alwaysShowSurveys
+        }
+
         if let alwaysRefreshRegions = values[RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey] as? Bool {
             application.userDefaults.set(alwaysRefreshRegions, forKey: RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey)
         } else {
             application.userDefaults.set(false, forKey: RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey)
         }
+
+        saveWalkingSpeedValues(values)
+    }
+
+    private func saveWalkingSpeedValues(_ values: [String: Any?]) {
+        let store = application.userDataStore
+        let decision = WalkingSpeedSettingsDecision.compute(
+            currentSource: store.walkingSpeedSource,
+            currentSpeed: store.walkingSpeedMetersPerSecond,
+            useHealthKit: values[walkingSpeedUseHealthKitKey] as? Bool,
+            segmentSpeed: values[walkingSpeedMetersPerSecondKey] as? Double
+        )
+        store.walkingSpeedSource = decision.source
+        store.walkingSpeedMetersPerSecond = decision.speed
     }
 
     // MARK: - Map Section
@@ -158,6 +182,63 @@ class SettingsViewController: FormViewController {
         return section
     }()
 
+    // MARK: - Walking Speed
+
+    private let walkingSpeedMetersPerSecondKey = "walkingSpeedMetersPerSecond"
+    private let walkingSpeedUseHealthKitKey = "walkingSpeedUseHealthKit"
+
+    private func snapToPreset(_ speed: Double) -> Double {
+        WalkingSpeedPreset.nearest(to: speed).rawValue
+    }
+
+    private lazy var walkingSpeedSection: Section = {
+        let section = Section(OBALoc("settings_controller.walking_speed_section.title", value: "Walking Speed", comment: "Settings > Walking Speed section title"))
+
+        section <<< SegmentedRow<Double> {
+            $0.tag = walkingSpeedMetersPerSecondKey
+            $0.title = OBALoc("settings_controller.walking_speed.title",
+                              value: "Walking speed",
+                              comment: "Settings > Walking Speed section > Speed picker")
+            $0.options = WalkingSpeedPreset.allCases.map { $0.rawValue }
+            $0.displayValueFor = { speed in
+                WalkingSpeedPreset.nearest(to: speed ?? WalkingSpeed.defaultMetersPerSecond).localizedTitle
+            }
+            $0.disabled = Condition.function([walkingSpeedUseHealthKitKey], { [weak self] form in
+                guard let self = self else { return false }
+                return (form.rowBy(tag: self.walkingSpeedUseHealthKitKey) as? SwitchRow)?.value ?? false
+            })
+        }
+
+        if HKHealthStore.isHealthDataAvailable() {
+            section <<< SwitchRow {
+                $0.tag = walkingSpeedUseHealthKitKey
+                $0.title = OBALoc("settings_controller.walking_speed.use_healthkit",
+                                  value: "Use Health app data",
+                                  comment: "Settings > Walking Speed section > HealthKit toggle")
+                $0.onChange { [weak self] row in
+                    guard let self, row.value == true else { return }
+                    Task {
+                        let granted = await self.application.walkingSpeedManager.requestHealthKitAuthorizationAndSync()
+                        if !granted {
+                            row.value = false
+                            row.reload()
+                            self.showErrorToast(
+                                OBALoc(
+                                    "settings_controller.walking_speed.healthkit_unavailable",
+                                    value: "Couldn't sync walking speed from Health. Check Settings > Privacy & Security > Health to allow access.",
+                                    comment: "Settings > Walking Speed > HealthKit denial or no-data toast"
+                                ),
+                                using: self.application.toastManager
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        return section
+    }()
+
     // MARK: - Agency Alerts
 
     private lazy var alertsSection: Section = {
@@ -181,6 +262,21 @@ class SettingsViewController: FormViewController {
         section <<< SwitchRow {
             $0.tag = privacySectionReportingEnabled
             $0.title = OBALoc("settings_controller.privacy_section.reporting_enabled", value: "Send usage data to developer", comment: "Settings > Privacy section > Send usage data")
+        }
+
+        return section
+    }()
+
+    // MARK: - Surveys Section
+
+    private let alwaysShowSurveysOnStops = "alwaysShowSurveysOnStops"
+
+    private lazy var surveySection: Section = {
+        let section = Section(OBALoc("settings_controller.survey_section.title", value: "Surveys", comment: "Settings > Surveys section title"))
+
+        section <<< SwitchRow {
+            $0.tag = alwaysShowSurveysOnStops
+            $0.title = OBALoc("settings_controller.survey_section.always_show_on_stops", value: "Always show on stops", comment: "Settings > Surveys section > Always show surveys on stops")
         }
 
         return section

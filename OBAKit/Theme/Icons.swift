@@ -189,6 +189,11 @@ class Icons: NSObject {
         configureForButtonIcon(systemImage(named: "location.fill"))
     }
 
+    /// A bus icon sized consistently with other HoverBar buttons.
+    public class var busButton: UIImage {
+        configureForButtonIcon(systemImage(named: "bus.fill"))
+    }
+
     // MARK: - Search Icons
 
     public class var route: UIImage {

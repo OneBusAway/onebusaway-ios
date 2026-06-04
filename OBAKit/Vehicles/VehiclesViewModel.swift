@@ -123,7 +123,9 @@ class VehiclesViewModel: ObservableObject {
             allVehicles = results.flatMap { $0.vehicles }
             allStatuses.append(contentsOf: results.map { $0.status })
 
-            self.vehicles = allVehicles
+            withAnimation(.easeInOut(duration: 0.5)) {
+                self.vehicles = allVehicles
+            }
             self.feedStatuses = allStatuses.sorted { $0.agencyName < $1.agencyName }
             self.lastUpdated = Date()
         } catch {

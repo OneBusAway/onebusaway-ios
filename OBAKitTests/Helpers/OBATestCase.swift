@@ -26,12 +26,6 @@ open class OBATestCase: XCTestCase {
         obacoService = buildObacoService()
 
         restService = buildRESTService()
-
-        surveyAPIService = buildSurveyService()
-
-        surveyPrioritizer = buildSurveyPrioritizer()
-
-        surveyStateManager = buildSurveyStateManager()
     }
 
     open override func tearDown() {
@@ -85,10 +79,12 @@ open class OBATestCase: XCTestCase {
 
     var baseURL: URL { URL(string: "https://\(host)")! }
 
+    var surveyBaseURL: URL { URL(string: "https://onebusaway.co")! }
+
     var restService: RESTAPIService!
 
     func buildRESTService(dataLoader: MockDataLoader? = nil) -> RESTAPIService {
-        let config = APIServiceConfiguration(baseURL: baseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, regionIdentifier: pugetSoundRegionIdentifier)
+        let config = APIServiceConfiguration(baseURL: baseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, regionIdentifier: pugetSoundRegionIdentifier, surveyBaseURL: surveyBaseURL)
         return RESTAPIService(config, dataLoader: dataLoader ?? MockDataLoader(testName: name))
     }
 
@@ -165,36 +161,19 @@ open class OBATestCase: XCTestCase {
 
     // MARK: - Surveys
 
-    var surveyAPIService: SurveyAPIService!
-
-    func buildSurveyService() -> SurveyAPIService {
-        let url = URL(string: "https://onebusaway.co")!
+    @MainActor
+    func buildSurveyService(dataLoader: MockDataLoader? = nil) -> SurveyService {
         let config = APIServiceConfiguration(
-            baseURL: url,
+            baseURL: baseURL,
+            apiKey: apiKey,
             uuid: uuid,
-            regionIdentifier: pugetSoundRegionIdentifier
+            appVersion: appVersion,
+            regionIdentifier: pugetSoundRegionIdentifier,
+            surveyBaseURL: surveyBaseURL
         )
-        
-        let surveyAPIService = SurveyAPIService(config, dataLoader: MockDataLoader(testName: name))
-        return surveyAPIService
-    }
-
-    // MARK: - Survey Prioritizer
-
-    var surveyPrioritizer: SurveyPrioritizing!
-
-    func buildSurveyPrioritizer() -> SurveyPrioritizing {
-        let surveyStore = SurveyPreferencesStoreMock()
-        return SurveyPrioritizer(surveyStore: surveyStore)
-    }
-
-    // MARK: - Survey State Manager
-
-    var surveyStateManager: SurveyStateProtocol!
-
-    func buildSurveyStateManager() -> SurveyStateManager {
-        let surveyStore = SurveyPreferencesStoreMock()
-        return SurveyStateManager(surveyStore: surveyStore)
+        let apiService = RESTAPIService(config, dataLoader: dataLoader ?? MockDataLoader(testName: name))
+        let store = UserDefaultsStore(userDefaults: buildUserDefaults())
+        return SurveyService(apiService: apiService, userDataStore: store)
     }
 
 }

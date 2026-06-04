@@ -37,7 +37,7 @@ swiftlint                              # Run SwiftLint directly
 
 ### Documentation
 ```bash
-scripts/docs                          # Generate DocC documentation (output in docs/)
+scripts/docs                          # Generate DocC documentation (output in api-docs/)
 ```
 
 ### Other Utilities

@@ -14,32 +14,27 @@ import OBAKitCore
 /// This view controller offers support for creating and editing bookmarks.
 class EditBookmarkViewController: FormViewController, AddGroupAlertDelegate {
     private let application: Application
-    private let stop: Stop?
-    private let arrivalDeparture: ArrivalDeparture?
-    private let bookmark: Bookmark?
+    private let viewModel: EditBookmarkViewModel
     private weak var delegate: BookmarkEditorDelegate?
 
     convenience init(application: Application, stop: Stop, bookmark: Bookmark?, delegate: BookmarkEditorDelegate?) {
-        self.init(application: application, stop: stop, arrivalDeparture: nil, bookmark: bookmark, delegate: delegate)
+        self.init(application: application, source: .stop(stop), bookmark: bookmark, delegate: delegate)
     }
 
     convenience init(application: Application, arrivalDeparture: ArrivalDeparture, bookmark: Bookmark?, delegate: BookmarkEditorDelegate?) {
-        self.init(application: application, stop: nil, arrivalDeparture: arrivalDeparture, bookmark: bookmark, delegate: delegate)
+        self.init(application: application, source: .arrivalDeparture(arrivalDeparture), bookmark: bookmark, delegate: delegate)
     }
 
-    private init(application: Application, stop: Stop?, arrivalDeparture: ArrivalDeparture?, bookmark: Bookmark?, delegate: BookmarkEditorDelegate?) {
+    private init(application: Application, source: BookmarkSource, bookmark: Bookmark?, delegate: BookmarkEditorDelegate?) {
         self.application = application
-        self.stop = stop
-        self.arrivalDeparture = arrivalDeparture
-        self.bookmark = bookmark
         self.delegate = delegate
+        self.viewModel = EditBookmarkViewModel(application: application, source: source, bookmark: bookmark)
 
         super.init(nibName: nil, bundle: nil)
 
-        if self.bookmark == nil {
+        if viewModel.isAddMode {
             title = Strings.addBookmark
-        }
-        else {
+        } else {
             title = OBALoc("edit_bookmark_controller.title_edit", value: "Edit Bookmark", comment: "Title for the Edit Bookmark controller in edit mode")
         }
 
@@ -62,26 +57,6 @@ class EditBookmarkViewController: FormViewController, AddGroupAlertDelegate {
         refreshGroupSelection()
     }
 
-    // MARK: - Data Helpers
-
-    /// Determines the selected bookmark group from the form.
-    private var selectedBookmarkGroup: BookmarkGroup? {
-        guard let id = UUID(optionalUUIDString: selectedBookmarkGroupSection.selectedRows().first?.value) else {
-            return nil
-        }
-
-        return application.userDataStore.findGroup(id: id)
-    }
-
-    private var dataObjectName: String {
-        if let stop = stop {
-            return Formatters.formattedTitle(stop: stop)
-        }
-        else {
-            return arrivalDeparture!.routeAndHeadsign
-        }
-    }
-
     // MARK: - Eureka Form
 
     private let selectedGroupTag = "groupTag"
@@ -96,11 +71,11 @@ class EditBookmarkViewController: FormViewController, AddGroupAlertDelegate {
             +++ selectedBookmarkGroupSection
             +++ addGroupSection
 
-        let name = bookmark?.name ?? dataObjectName
-        let groupID = bookmark?.groupID?.uuidString ?? ""
-        let todayViewSwitch = bookmark?.isFavorite ?? true
-
-        form.setValues([bookmarkNameTag: name, selectedGroupTag: groupID, showInTodayViewTag: todayViewSwitch])
+        form.setValues([
+            bookmarkNameTag: viewModel.initialName,
+            selectedGroupTag: viewModel.initialGroupID?.uuidString ?? "",
+            showInTodayViewTag: viewModel.initialIsFavorite
+        ])
     }
 
     /// The `Form` section that contains the Bookmark Name `TextRow`.
@@ -146,10 +121,13 @@ class EditBookmarkViewController: FormViewController, AddGroupAlertDelegate {
             selectionType: .singleSelection(enableDeselection: false)
         )
 
-        for group in application.userDataStore.bookmarkGroups {
+        for group in viewModel.bookmarkGroups {
             addRow(for: group, to: section)
         }
 
+        // `ListCheckRow<String>` requires a non-nil String, so "no group" is
+        // represented as the empty string here and round-tripped back to
+        // `UUID?` via `UUID(optionalUUIDString:)` in `save()`.
         section <<< ListCheckRow<String>("") {
             $0.tag = selectedGroupTag
             $0.title = OBALoc("edit_bookmark_controller.no_group_row", value: "(No Group)", comment: "Don't add this bookmark to a group.")
@@ -160,8 +138,6 @@ class EditBookmarkViewController: FormViewController, AddGroupAlertDelegate {
     }()
 
     /// Adds a new selectable `BookmarkGroup` row to the specified `section`.
-    /// - Parameter group: The `BookmarkGroup` to add to the section.
-    /// - Parameter section: The `SelectableSection` to which the group will be added.
     private func addRow(for group: BookmarkGroup, to section: SelectableSection<ListCheckRow<String>>) {
         let uuid = group.id.uuidString
         section <<< ListCheckRow<String>(uuid) {
@@ -173,24 +149,18 @@ class EditBookmarkViewController: FormViewController, AddGroupAlertDelegate {
 
     // MARK: - Add Group Alert
 
-    /// A wrapper object that allows the user to create a new `BookmarkGroup`
     private lazy var addGroupAlert: AddGroupAlertController = {
         return AddGroupAlertController(dataStore: application.userDataStore, group: nil, delegate: self)
     }()
 
-    /// A callback that fires when the user creates a new `BookmarkGroup` through the `addGroupAlert`
     func bookmarkGroupSaved(_ group: BookmarkGroup) {
         addRow(for: group, to: selectedBookmarkGroupSection)
     }
 
     // MARK: - Group Selection
+
     private func refreshGroupSelection() {
-        guard let existingBookmark = bookmark else { return }
-        let currentGroupID = application.userDataStore.bookmarkGroups
-            .first { group in
-                application.userDataStore.bookmarksInGroup(group).contains { $0.id == existingBookmark.id }
-            }?
-            .id.uuidString ?? ""
+        let currentGroupID = viewModel.currentGroupID()?.uuidString ?? ""
         for row in selectedBookmarkGroupSection.allRows {
             guard let checkRow = row as? ListCheckRow<String> else { continue }
             checkRow.value = (checkRow.selectableValue == currentGroupID) ? checkRow.selectableValue : nil
@@ -205,66 +175,40 @@ class EditBookmarkViewController: FormViewController, AddGroupAlertDelegate {
     }
 
     @objc private func save() {
-        guard let region = application.currentRegion else { return }
+        let rawName = form.values()[bookmarkNameTag] as? String ?? ""
+        let isFavorite = (form.values()[showInTodayViewTag] as? Bool) ?? true
+        let rawSelectedGroupID = selectedBookmarkGroupSection.selectedRows().first?.value ?? ""
+        let selectedGroupID = UUID(optionalUUIDString: rawSelectedGroupID)
 
-        // If the user cleared the name, restore the original transit-derived name.
-        let rawName = form.values()[bookmarkNameTag] as? String
-        let name: String
-        if let rawName, !rawName.trimmingCharacters(in: .whitespaces).isEmpty {
-            name = rawName
-        } else {
-            name = dataObjectName
+        let commit: (Bookmark, Bool) -> Void = { [weak self] bookmark, isNew in
+            guard let self else { return }
+            self.viewModel.persist(bookmark, name: rawName, isFavorite: isFavorite, to: selectedGroupID, isNewBookmark: isNew)
+            self.delegate?.bookmarkEditor(self, editedBookmark: bookmark, isNewBookmark: isNew)
         }
 
-        let addMode = self.bookmark == nil
+        switch viewModel.prepareToSave(name: rawName, isFavorite: isFavorite) {
+        case .regionUnavailable:
+            let alert = UIAlertController(
+                title: OBALoc("edit_bookmark_controller.region_error.title", value: "Unable to Save", comment: "Title of an alert shown when a bookmark cannot be saved because the current region is unavailable."),
+                message: OBALoc("edit_bookmark_controller.region_error.body", value: "The current region is not available. Please try again.", comment: "Body of an alert shown when a bookmark cannot be saved because the current region is unavailable."),
+                preferredStyle: .alert
+            )
+            alert.addAction(UIAlertAction(title: Strings.ok, style: .default, handler: nil))
+            present(alert, animated: true, completion: nil)
 
-        let bookmark: Bookmark
+        case .readyToSave(let bookmark, let isNew):
+            commit(bookmark, isNew)
 
-        if addMode {
-            if let stop = stop {
-                bookmark = Bookmark(name: name, regionIdentifier: region.regionIdentifier, stop: stop)
-            }
-            else if let arrivalDeparture = arrivalDeparture {
-                bookmark = Bookmark(name: name, regionIdentifier: region.regionIdentifier, arrivalDeparture: arrivalDeparture, stop: arrivalDeparture.stop)
-
-                let analyticsValue = AnalyticsLabels.addRemoveBookmarkValue(routeID: arrivalDeparture.routeID, headsign: arrivalDeparture.tripHeadsign, stopID: arrivalDeparture.stopID)
-                application.analytics?.reportEvent(
-                    pageURL: "app://localhost/bookmarks",
-                    label: AnalyticsLabels.addBookmark,
-                    value: analyticsValue
-                )
-            }
-            else {
-                fatalError()
-            }
-        }
-        else {
-            bookmark = self.bookmark!
-            bookmark.name = name
-        }
-
-        let faveVal = form.values()[showInTodayViewTag]
-        bookmark.isFavorite = faveVal as! Bool // swiftlint:disable:this force_cast
-
-        // If user is creating a bookmark, we need to check if this is a dup
-        if addMode && application.userDataStore.checkForDuplicates(bookmark: bookmark) {
+        case .duplicateRequiresConfirmation(let bookmark):
             let alert = UIAlertController(
                 title: OBALoc("edit_bookmark_controller.duplicate_alert.title", value: "Duplicate Bookmark", comment: "The title of an alert telling the user that they have already bookmarked this thing. Noun form of 'duplicate', not the verb."),
                 message: OBALoc("edit_bookmark_controller.duplicate_alert.body", value: "You already have this bookmarked. Did you mean to create a duplicate?", comment: "Body of an alert telling the user they have already bookmarked this thing."), preferredStyle: .alert
             )
             alert.addAction(UIAlertAction(title: Strings.cancel, style: .cancel, handler: nil))
-            alert.addAction(UIAlertAction(title: OBALoc("edit_book_controller.duplicate_alert.affirmative_button", value: "Create Duplicate", comment: "Indicates that the user wants to create a duplicate bookmark."), style: .default, handler: { _ in
-                self.addBookmarkToStore(bookmark, isNewBookmark: addMode)
+            alert.addAction(UIAlertAction(title: OBALoc("edit_bookmark_controller.duplicate_alert.affirmative_button", value: "Create Duplicate", comment: "Indicates that the user wants to create a duplicate bookmark."), style: .default, handler: { _ in
+                commit(bookmark, true)
             }))
             present(alert, animated: true, completion: nil)
         }
-        else {
-            self.addBookmarkToStore(bookmark, isNewBookmark: addMode)
-        }
-    }
-
-    private func addBookmarkToStore(_ bookmark: Bookmark, isNewBookmark: Bool) {
-        application.userDataStore.add(bookmark, to: selectedBookmarkGroup)
-        delegate?.bookmarkEditor(self, editedBookmark: bookmark, isNewBookmark: isNewBookmark)
     }
 }

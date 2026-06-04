@@ -97,6 +97,8 @@ class WalkTimeView: UIView {
             return
         }
 
+        walkerImageView.image = Icons.walkTransport
+
         let distanceString = formatters.distanceFormatter.string(fromDistance: distance)
         let arrivalTime = formatters.timeFormatter.string(from: Date().addingTimeInterval(timeToWalk))
 
@@ -119,6 +121,19 @@ class WalkTimeView: UIView {
         else {
             accessibilityValue = distanceString
         }
+    }
+
+    /// Configures this view to show a transfer arrival banner instead of walk time.
+    public func setTransferArrival(arrivalTime: Date, routeDisplay: String) {
+        walkerImageView.image = Icons.vehiclesSelectedTabIcon
+
+        let text = formatters.transferArrivalBannerText(arrivalTime: arrivalTime, routeDisplay: routeDisplay)
+        label.text = text
+
+        accessibilityLabel = OBALoc("walk_time_view.transfer_accessibility_label", value: "Transfer arrival time", comment: "Accessibility label for the transfer arrival banner shown when navigating to a connecting stop.")
+        accessibilityValue = text
+        accessibilityTraits = [.staticText]
+        isAccessibilityElement = true
     }
 
     private var maximumIntrinsicHeight: CGFloat = 24.0

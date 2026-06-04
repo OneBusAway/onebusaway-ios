@@ -22,7 +22,7 @@ class AlarmModelOperationTests: OBATestCase {
         let arrivalDeparture = try Fixtures.loadRESTAPIPayload(type: ArrivalDeparture.self, fileName: "arrival-and-departure-for-stop-1_11420.json")
 
         let dataLoader = (obacoService.dataLoader as! MockDataLoader)
-        dataLoader.mock(URLString: "https://alerts.example.com/api/v1/regions/1/alarms", with: data)
+        dataLoader.mock(URLString: "https://alerts.example.com/api/v2/regions/1/alarms", with: data)
 
         let alarm = try await obacoService.postAlarm(minutesBefore: 1, arrivalDeparture: arrivalDeparture, userPushID: "123")
         XCTAssertEqual(alarm.url.absoluteString, "https://alerts.example.com/regions/1/alarms/1234567890")

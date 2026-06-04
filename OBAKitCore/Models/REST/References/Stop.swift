@@ -137,7 +137,7 @@ public class Stop: NSObject, Identifiable, Codable, HasReferences {
     /// Denotes the availability of wheelchair boarding at this stop.
     public let wheelchairBoarding: WheelchairBoarding
 
-    public private(set) var regionIdentifier: Int?
+    public internal(set) var regionIdentifier: Int?
 
     private enum CodingKeys: String, CodingKey {
         case code

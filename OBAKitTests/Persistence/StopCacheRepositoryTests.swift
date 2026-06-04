@@ -135,7 +135,7 @@ class StopCacheRepositoryTests: XCTestCase {
         XCTAssertEqual(results.count, 0)
     }
 
-    func test_stopsInRegion_filtersbyRegionId() {
+    func test_stopsInRegion_filtersByRegionId() {
         let stop = makeStop(id: "1_100", lat: 47.6, lon: -122.3)
         repository.saveStops([stop], regionId: 1)
 
@@ -273,15 +273,15 @@ class StopCacheRepositoryTests: XCTestCase {
 
     // MARK: - Corrupted Data
 
-    func test_stopsInRegion_gracefullyHandlesCorruptedRouteIDs() throws {
-        // Insert a record with invalid JSON in routeIDs directly via GRDB
+    func test_stopsInRegion_gracefullyHandlesCorruptedStopData() throws {
+        // Insert a record with invalid blob data directly via GRDB
         try database.dbQueue.write { db in
             try db.execute(
                 sql: """
-                    INSERT INTO cachedStop (id, regionId, code, name, latitude, longitude, direction, locationType, wheelchairBoarding, routeIDs, lastUpdated)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    INSERT INTO cachedStop (id, regionId, latitude, longitude, lastUpdated, stopData)
+                    VALUES (?, ?, ?, ?, ?, ?)
                     """,
-                arguments: ["corrupt_1", 1, "0000", "Corrupt Stop", 47.6, -122.3, "N", 0, "unknown", "NOT_VALID_JSON", Date().timeIntervalSince1970]
+                arguments: ["corrupt_1", 1, 47.6, -122.3, Date().timeIntervalSince1970, Data("NOT_VALID_JSON".utf8)]
             )
         }
 
@@ -298,8 +298,8 @@ class StopCacheRepositoryTests: XCTestCase {
     // MARK: - Nil Direction / WheelchairBoarding
 
     func test_stopWithNilDirectionAndWheelchairBoarding_roundTripsCorrectly() {
-        // direction=nil and wheelchairBoarding=nil must not produce NSNull in
-        // the JSON dictionary, which would break JSONDecoder's decodeIfPresent.
+        // direction=nil and wheelchairBoarding=nil should round-trip cleanly
+        // through Stop's own Codable (no manual dictionary involved).
         let dict: [String: Any] = [
             "id": "nil_fields",
             "code": "0000",
@@ -319,6 +319,20 @@ class StopCacheRepositoryTests: XCTestCase {
         XCTAssertEqual(results.count, 1)
         XCTAssertEqual(results[0].id, "nil_fields")
         XCTAssertEqual(results[0].direction, .unknown)
+    }
+
+    // MARK: - Failable Init
+
+    func test_saveStops_persistsAllValidStops() {
+        // Verifies the failable CachedStop.init? doesn't accidentally skip valid stops.
+        // Note: The encoding-failure path (init? returning nil) isn't practically testable
+        // because Stop always encodes successfully. The read-side filtering of corrupted
+        // data is covered by test_stopsInRegion_gracefullyHandlesCorruptedStopData.
+        let stops = (1...5).map { makeStop(id: "stop_\($0)", lat: 47.6 + Double($0) * 0.001, lon: -122.3) }
+        repository.saveStops(stops, regionId: 1)
+
+        let results = repository.stopsInRegion(minLat: 47.0, maxLat: 48.0, minLon: -123.0, maxLon: -122.0, regionId: 1)
+        XCTAssertEqual(results.count, 5)
     }
 
     // MARK: - Multiple Stops

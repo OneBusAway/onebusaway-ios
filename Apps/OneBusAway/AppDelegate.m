@@ -10,7 +10,6 @@
 #import "AppDelegate.h"
 @import OBAKitCore;
 @import OBAKit;
-@import OneSignal;
 #import <FirebaseCrashlytics/FirebaseCrashlytics.h>
 #import "App-Swift.h"
 
@@ -19,6 +18,7 @@
 @property(nonatomic,strong) NSUserDefaults *userDefaults;
 @property(nonatomic,strong) OBAClassicApplicationRootController *rootController;
 @property(nonatomic,strong) OBAAnalyticsOrchestrator *analyticsClient;
+@property(nonatomic,strong) OBACloudPushService *pushService;
 @end
 
 @implementation AppDelegate
@@ -49,9 +49,8 @@
 
         OBAAppConfig *appConfig = [[OBAAppConfig alloc] initWithAppBundle:NSBundle.mainBundle userDefaults:_userDefaults analytics:_analyticsClient];
 
-        NSString *pushKey = NSBundle.mainBundle.infoDictionary[@"OBAKitConfig"][@"PushNotificationAPIKey"];
-        OBAOneSignalPushService *pushService = [[OBAOneSignalPushService alloc] initWithAPIKey:pushKey];
-        appConfig.pushServiceProvider = pushService;
+        _pushService = [[OBACloudPushService alloc] init];
+        appConfig.pushServiceProvider = _pushService;
 
         _app = [[OBAApplication alloc] initWithConfig:appConfig];
         _app.delegate = self;
@@ -144,8 +143,16 @@
 
 #pragma mark - Push Notifications
 
+- (void)application:(UIApplication *)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken {
+    [self.pushService didRegisterForRemoteNotificationsWithDeviceToken:deviceToken];
+}
+
+- (void)application:(UIApplication *)application didFailToRegisterForRemoteNotificationsWithError:(NSError *)error {
+    [self.pushService didFailToRegisterForRemoteNotificationsWithError:error];
+}
+
 - (BOOL)isRegisteredForRemoteNotifications {
-    return [OneSignal getDeviceState].notificationPermissionStatus == OSNotificationPermissionAuthorized;
+    return UIApplication.sharedApplication.registeredForRemoteNotifications;
 }
 
 @end

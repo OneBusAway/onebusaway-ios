@@ -37,7 +37,9 @@ public class AppConfig: CoreAppConfig {
             locationService: LocationService(userDefaults: userDefaults, locationManager: CLLocationManager()),
             bundledRegionsFilePath: appBundle.bundledRegionsFilePath!,
             regionsAPIPath: appBundle.regionsServerAPIPath,
-            dataLoader: URLSession.shared
+            dataLoader: URLSession.shared,
+            fixedRegionName: appBundle.fixedRegionName,
+            fixedRegionOBABaseURL: appBundle.fixedRegionOBABaseURL
         )
     }
 
@@ -61,7 +63,9 @@ public class AppConfig: CoreAppConfig {
         locationService: LocationService,
         bundledRegionsFilePath: String,
         regionsAPIPath: String?,
-        dataLoader: URLDataLoader
+        dataLoader: URLDataLoader,
+        fixedRegionName: String? = nil,
+        fixedRegionOBABaseURL: URL? = nil
     ) {
         self.analytics = analytics
         super.init(
@@ -73,7 +77,9 @@ public class AppConfig: CoreAppConfig {
             locationService: locationService,
             bundledRegionsFilePath: bundledRegionsFilePath,
             regionsAPIPath: regionsAPIPath,
-            dataLoader: dataLoader
+            dataLoader: dataLoader,
+            fixedRegionName: fixedRegionName,
+            fixedRegionOBABaseURL: fixedRegionOBABaseURL
         )
     }
 }

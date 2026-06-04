@@ -12,106 +12,61 @@ import CoreLocation
 import GRDB
 
 /// A lightweight database record representing a cached transit stop.
-/// This is separate from the API `Stop` model — it only serves as a persistence layer.
+///
+/// Instead of duplicating every Stop field as individual columns (which is fragile
+/// if Stop.CodingKeys change), we store the full JSON-encoded Stop as a blob.
+/// Only the fields needed for spatial queries and cache management are kept as
+/// indexed columns: `id`, `regionId`, `latitude`, `longitude`, `lastUpdated`.
+///
 /// See: https://github.com/OneBusAway/onebusaway-ios/issues/62
 struct CachedStop: Codable, FetchableRecord, PersistableRecord {
     static let databaseTableName = "cachedStop"
 
     let id: String
     let regionId: Int
-    let code: String
-    let name: String
     let latitude: Double
     let longitude: Double
-    let direction: String?
-    let locationType: Int
-    let wheelchairBoarding: String?
-    let routeIDs: String
     let lastUpdated: Double
+    let stopData: Data
 
     /// Creates a cache record from an API `Stop` model.
-    init(stop: Stop, regionId: Int) {
+    /// Returns `nil` if the stop cannot be encoded, ensuring we never persist corrupted data.
+    init?(stop: Stop, regionId: Int) {
+        do {
+            self.stopData = try JSONEncoder().encode(stop)
+        } catch {
+            Logger.error("Failed to encode stop \(stop.id) for caching: \(error)")
+            return nil
+        }
+
         self.id = stop.id
         self.regionId = regionId
-        self.code = stop.code
-        self.name = stop.name
         self.latitude = stop.location.coordinate.latitude
         self.longitude = stop.location.coordinate.longitude
-        self.locationType = stop.locationType.rawValue
-        self.wheelchairBoarding = stop.wheelchairBoarding.rawValue
         self.lastUpdated = Date().timeIntervalSince1970
-
-        // Store direction as the raw string for round-trip fidelity.
-        // The Stop model's _direction is private, so we convert back from the enum.
-        self.direction = CachedStop.directionString(from: stop.direction)
-
-        // Encode routeIDs as a JSON array string for simple storage without a junction table.
-        do {
-            let data = try JSONEncoder().encode(stop.routeIDs)
-            self.routeIDs = String(data: data, encoding: .utf8) ?? "[]"
-        } catch {
-            Logger.error("Failed to encode routeIDs for stop \(stop.id): \(error)")
-            self.routeIDs = "[]"
-        }
     }
 
-    /// Reconstructs an API `Stop` by decoding this record through Stop's Codable conformance.
+    /// Reconstructs an API `Stop` by decoding the stored JSON blob.
+    /// Uses Stop's own Codable conformance — no manual key matching required.
     func toStop() -> Stop? {
-        let decodedRouteIDs: [String]
         do {
-            guard let data = routeIDs.data(using: .utf8) else {
-                Logger.error("Failed to convert routeIDs string to data for stop \(id)")
-                return nil
+            let stop = try JSONDecoder().decode(Stop.self, from: stopData)
+            // Restore region context from the indexed column. The blob may have
+            // been encoded before loadReferences() set regionIdentifier, and
+            // Stop.isEqual() / hash use regionIdentifier for identity.
+            stop.regionIdentifier = regionId
+            // Ensure routes is never nil to prevent force-unwrap crashes.
+            // In production, API stops have routes populated via loadReferences()
+            // before caching. But as a safety net (e.g., if a stop was cached before
+            // loadReferences ran), we default to an empty array.
+            if stop.routes == nil {
+                Logger.info("Cached stop \(id) has nil routes; defaulting to empty array")
+                stop.routes = []
             }
-            decodedRouteIDs = try JSONDecoder().decode([String].self, from: data)
-        } catch {
-            Logger.error("Failed to decode routeIDs for stop \(id): \(error)")
-            return nil
-        }
-
-        // Decode through Stop's Codable init. Empty "routes" array prevents nil crash
-        // on Stop.routes (which is [Route]!).
-        var stopDict: [String: Any] = [
-            "id": id,
-            "code": code,
-            "name": name,
-            "lat": latitude,
-            "lon": longitude,
-            "locationType": locationType,
-            "routeIds": decodedRouteIDs,
-            "regionIdentifier": regionId,
-            "routes": [] as [[String: Any]]
-        ]
-        if let direction {
-            stopDict["direction"] = direction
-        }
-        if let wheelchairBoarding {
-            stopDict["wheelchairBoarding"] = wheelchairBoarding
-        }
-
-        do {
-            let data = try JSONSerialization.data(withJSONObject: stopDict)
-            let stop = try JSONDecoder().decode(Stop.self, from: data)
             return stop
         } catch {
-            Logger.error("Failed to reconstruct Stop from cache for \(id): \(error)")
+            Logger.error("Failed to decode cached stop \(id): \(error)")
             return nil
-        }
-    }
-
-    // MARK: - Direction Helpers
-
-    private static func directionString(from direction: Direction) -> String? {
-        switch direction {
-        case .n: return "N"
-        case .ne: return "NE"
-        case .e: return "E"
-        case .se: return "SE"
-        case .s: return "S"
-        case .sw: return "SW"
-        case .w: return "W"
-        case .nw: return "NW"
-        case .unknown: return nil
         }
     }
 }

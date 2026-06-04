@@ -80,10 +80,11 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
         fromController.navigationController?.pushViewController(viewController, animated: animated)
     }
 
-    public func navigateTo(stop: Stop, from fromController: UIViewController, bookmark: Bookmark? = nil) {
+    public func navigateTo(stop: Stop, from fromController: UIViewController, bookmark: Bookmark? = nil, transferContext: TransferContext? = nil) {
         guard shouldNavigate(from: fromController, to: .stop(stop)) else { return }
         let stopController = StopViewController(application: application, stop: stop)
         stopController.bookmarkContext = bookmark
+        stopController.transferContext = transferContext
         navigate(to: stopController, from: fromController)
     }
 
@@ -112,6 +113,15 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
         present(navigationController, from: fromController)
     }
 
+    /// Presents the route picker modal, then navigates to the current trip flow.
+    ///
+    /// - Parameter fromController: The view controller presenting the modal.
+    public func navigateToCurrentTrip(from fromController: UIViewController) {
+        let picker = RoutePickerViewController(application: application, delegate: self)
+        let navigation = buildNavigation(controller: picker)
+        present(navigation, from: fromController)
+    }
+
     // MARK: - Helpers
 
     /// Creates and configures a `UINavigationController` for the specified controller, setting some preferred options along the way.
@@ -128,5 +138,16 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
     private func shouldNavigate(from fromController: UIViewController, to destination: NavigationDestination) -> Bool {
         guard let routerDelegate = fromController as? ViewRouterDelegate else { return true }
         return routerDelegate.shouldNavigate(to: destination)
+    }
+}
+
+// MARK: - RoutePickerDelegate
+
+extension ViewRouter: RoutePickerDelegate {
+    func routePicker(_ picker: RoutePickerViewController, didSelectRoute route: Route) {
+        guard let navigation = picker.navigationController else { return }
+
+        let currentTripController = CurrentTripViewController(application: application, route: route)
+        navigation.pushViewController(currentTripController, animated: true)
     }
 }

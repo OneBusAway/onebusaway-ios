@@ -11,10 +11,12 @@
 
 import UIKit
 import MapKit
+import Combine
 import FloatingPanel
 import OBAKitCore
 import SwiftUI
 import OTPKit
+import SafariServices
 
 /// Displays a map, a set of stops rendered as annotation views, and the user's location if authorized.
 ///
@@ -41,12 +43,15 @@ class MapViewController: UIViewController,
 
         hover.stackView.addArrangedSubview(HoverBarSeparator())
         hover.stackView.addArrangedSubview(toggleMapTypeButton)
-        setMapTypeButtonImage(toggleMapTypeButton)
+        setMapTypeButtonImage(toggleMapTypeButton, mapType: viewModel.mapType)
 
         if application.features.obaco == .running {
             hover.stackView.addArrangedSubview(HoverBarSeparator())
             hover.stackView.addArrangedSubview(weatherButton)
         }
+
+        hover.stackView.addArrangedSubview(HoverBarSeparator())
+        hover.stackView.addArrangedSubview(myTripButton)
 
         return hover
     }()
@@ -59,10 +64,20 @@ class MapViewController: UIViewController,
         return application.mapRegionManager
     }
 
+    let viewModel: MapViewModel
+    private var cancellables = Set<AnyCancellable>()
+
+    // MARK: - Surveys
+
+    private var surveyCardView: SurveyLauncherCardView?
+    private var hasShownMapSurveyThisSession = false
+
     // MARK: - Init
 
     public init(application: Application) {
         self.application = application
+        let initialMapType: MapBaseType = application.mapRegionManager.userSelectedMapType == .mutedStandard ? .standard : .hybrid
+        self.viewModel = MapViewModel(application: application, initialMapType: initialMapType)
 
         super.init(nibName: nil, bundle: nil)
 
@@ -97,13 +112,11 @@ class MapViewController: UIViewController,
         mapView.pinToSuperview(.edges)
 
         mapStatusView.configure(with: application.locationService)
-        mapStatusView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(didTapMapStatus)))
+
+        let statusTapGesture = UITapGestureRecognizer(target: self, action: #selector(handleMapStatusTap(_:)))
+        mapStatusView.addGestureRecognizer(statusTapGesture)
+
         view.addSubview(mapStatusView)
-        NSLayoutConstraint.activate([
-            mapStatusView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            mapStatusView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            mapStatusView.topAnchor.constraint(equalTo: view.topAnchor)
-        ])
 
         mapStatusView.addInteraction(UILargeContentViewerInteraction(delegate: self))
 
@@ -113,15 +126,31 @@ class MapViewController: UIViewController,
         appearance.configureWithDefaultBackground()
         tabBarItem.scrollEdgeAppearance = appearance
 
+        // Add toolbar before constraining the status pill, since the pill's
+        // trailing constraint references toolbar.leadingAnchor.
         view.insertSubview(toolbar, aboveSubview: mapView)
 
+        // Toolbar: anchored to safe area top-right, independent of status pill.
+        // This matches Apple Maps where right-side buttons stay fixed regardless
+        // of whether a floating status element is visible.
         NSLayoutConstraint.activate([
             toolbar.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -ThemeMetrics.controllerMargin),
-            toolbar.topAnchor.constraint(equalTo: mapStatusView.bottomAnchor, constant: ThemeMetrics.controllerMargin),
+            toolbar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: ThemeMetrics.controllerMargin),
             toolbar.widthAnchor.constraint(equalToConstant: 42.0),
             locationButton.heightAnchor.constraint(equalTo: locationButton.widthAnchor),
             weatherButton.heightAnchor.constraint(equalTo: weatherButton.widthAnchor),
-            toggleMapTypeButton.heightAnchor.constraint(equalTo: toggleMapTypeButton.widthAnchor)
+            toggleMapTypeButton.heightAnchor.constraint(equalTo: toggleMapTypeButton.widthAnchor),
+            myTripButton.heightAnchor.constraint(equalTo: myTripButton.widthAnchor)
+        ])
+
+        // Status pill: centered horizontally, anchored to safe area top.
+        // Max width prevents overflow on long status text or large Dynamic Type.
+        // Trailing constraint keeps the pill from overlapping the toolbar on narrow devices.
+        NSLayoutConstraint.activate([
+            mapStatusView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            mapStatusView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: ThemeMetrics.padding),
+            mapStatusView.widthAnchor.constraint(lessThanOrEqualTo: view.widthAnchor, multiplier: 0.85),
+            mapStatusView.trailingAnchor.constraint(lessThanOrEqualTo: toolbar.leadingAnchor, constant: -ThemeMetrics.padding),
         ])
 
         // Long press gesture to add a pin to the map
@@ -130,6 +159,14 @@ class MapViewController: UIViewController,
         longPressGesture.minimumPressDuration = 0.5
         longPressGesture.delegate = self
         mapView.addGestureRecognizer(longPressGesture)
+
+        bindViewModel()
+    }
+
+    private func bindViewModel() {
+        bindWeather()
+        bindMapStatus()
+        bindMapType()
     }
 
     public override func viewWillAppear(_ animated: Bool) {
@@ -140,25 +177,129 @@ class MapViewController: UIViewController,
         // at different times. I think this expectation will become
         // unfounded when UIScene gets adopted in the app. TODO.
         application.mapRegionManager.mapViewDelegate = self
-        application.mapRegionManager.bookmarks = application.userDataStore.findBookmarks(in: application.currentRegion)
+        viewModel.reloadBookmarks()
 
         navigationController?.setNavigationBarHidden(true, animated: false)
 
         updateVisibleMapRect()
         layoutMapMargins()
+
     }
 
     public override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
 
-        loadWeather()
+        viewModel.start()
         updateVoiceover()
+        checkForMapSurvey()
     }
 
     public override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
 
         navigationController?.setNavigationBarHidden(false, animated: false)
+    }
+
+    // MARK: - Surveys
+
+    private func checkForMapSurvey() {
+        guard !hasShownMapSurveyThisSession, surveyCardView == nil else { return }
+
+        let surveyService = application.surveyService
+        guard surveyService.shouldShowSurvey() else { return }
+
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            await surveyService.fetchSurveys()
+
+            // Re-check after the await: a second `checkForMapSurvey()` can pass
+            // the pre-await guard while this task is suspended, so without this
+            // both tasks would present a card and stack them.
+            guard !self.hasShownMapSurveyThisSession, self.surveyCardView == nil else { return }
+            guard let survey = surveyService.findSurveyForMap() else { return }
+
+            self.hasShownMapSurveyThisSession = true
+            self.presentMapSurveyCard(for: survey)
+            surveyService.setNextReminderDate()
+        }
+    }
+
+    /// Presents the floating survey launcher card above the search panel. The
+    /// card is the single entry point for every map survey: tapping `Take survey`
+    /// opens an external survey, or presents the full in-app survey for others.
+    private func presentMapSurveyCard(for survey: Survey) {
+        var title = survey.name
+        if survey.isExternalSurvey, let hero = survey.heroQuestion {
+            title = hero.content.labelText
+        }
+        let card = SurveyLauncherCardView(style: .floating)
+        card.configure(title: title, subtitle: nil)
+        card.onTakeSurvey = { [weak self] in self?.handleMapSurveyTakeSurvey(survey) }
+        card.onDismiss = { [weak self] in self?.handleMapSurveyDismiss(survey) }
+
+        // 16pt insets and gap above the search panel, per the design handoff.
+        let cardInset: CGFloat = 16.0
+        view.addSubview(card)
+        NSLayoutConstraint.activate([
+            card.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: cardInset),
+            card.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -cardInset),
+            card.bottomAnchor.constraint(equalTo: floatingPanel.surfaceView.topAnchor, constant: -cardInset)
+        ])
+        surveyCardView = card
+
+        card.alpha = 0
+        card.transform = CGAffineTransform(translationX: 0, y: 12)
+        UIView.animate(withDuration: 0.3, delay: 0, options: .curveEaseOut) {
+            card.alpha = 1
+            card.transform = .identity
+        }
+    }
+
+    private func handleMapSurveyTakeSurvey(_ survey: Survey) {
+        if survey.isExternalSurvey {
+            let launcher = ExternalSurveyLauncher(surveyService: application.surveyService)
+            launcher.launch(
+                survey: survey,
+                stop: nil,
+                onSuccess: { [weak self] in self?.dismissMapSurveyCard() },
+                onFailure: { [weak self] in
+                    self?.dismissMapSurveyCard()
+                    self?.showMapExternalSurveyError()
+                }
+            )
+        } else {
+            let surveyVC = SurveyViewController(survey: survey, surveyService: application.surveyService)
+            let navigation = UINavigationController(rootViewController: surveyVC)
+            present(navigation, animated: true)
+            dismissMapSurveyCard()
+        }
+    }
+
+    private func handleMapSurveyDismiss(_ survey: Survey) {
+        application.surveyService.markSurveyForLater(survey)
+        application.surveyService.setNextReminderDate()
+        dismissMapSurveyCard()
+    }
+
+    private func dismissMapSurveyCard() {
+        guard let card = surveyCardView else { return }
+        surveyCardView = nil
+        UIView.animate(withDuration: 0.25, delay: 0, options: .curveEaseIn, animations: {
+            card.alpha = 0
+            card.transform = CGAffineTransform(translationX: 0, y: 12)
+        }, completion: { _ in
+            card.removeFromSuperview()
+        })
+    }
+
+    private func showMapExternalSurveyError() {
+        let alert = UIAlertController(
+            title: OBALoc("survey_launcher.external_survey_error.title", value: "Can't Open Survey", comment: "Title shown when an external survey link cannot be opened"),
+            message: OBALoc("survey_launcher.external_survey_error.message", value: "This survey link couldn't be opened. Please try again later.", comment: "Message shown when an external survey link cannot be opened"),
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: Strings.ok, style: .default))
+        present(alert, animated: true)
     }
 
     // MARK: - User Location
@@ -187,6 +328,30 @@ class MapViewController: UIViewController,
         if floatingPanel.state == .full {
             floatingPanel.move(to: .half, animated: true)
         }
+    }
+
+    // MARK: - Status View Handlers
+
+    private static let zoomInForStopsSpan = 0.01
+
+    @objc private func handleMapStatusTap(_ sender: UITapGestureRecognizer) {
+        if viewModel.showZoomWarning {
+            didTapZoomInForStops()
+        } else {
+            didTapMapStatus(sender)
+        }
+    }
+
+    private func didTapZoomInForStops() {
+        let currentCenter = mapRegionManager.mapView.region.center
+
+        let targetSpan = MKCoordinateSpan(
+            latitudeDelta: MapViewController.zoomInForStopsSpan,
+            longitudeDelta: MapViewController.zoomInForStopsSpan
+        )
+
+        let newRegion = MKCoordinateRegion(center: currentCenter, span: targetSpan)
+        mapRegionManager.mapView.setRegion(newRegion, animated: true)
     }
 
     @objc func didTapMapStatus(_ sender: Any) {
@@ -234,6 +399,24 @@ class MapViewController: UIViewController,
         button.accessibilityLabel = OBALoc("map_controller.center_user_location", value: "Center map on current location", comment: "Map controller for centering the map on the user's current location.")
         return button
     }()
+
+    // MARK: - My Trip
+
+    private lazy var myTripButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setImage(Icons.busButton, for: .normal)
+        button.addTarget(self, action: #selector(showCurrentTrip), for: .touchUpInside)
+        button.accessibilityLabel = OBALoc(
+            "map_controller.my_trip_button",
+            value: "My Trip",
+            comment: "Accessibility label for the My Trip button on the map toolbar."
+        )
+        return button
+    }()
+
+    @objc private func showCurrentTrip() {
+        application.viewRouter.navigateToCurrentTrip(from: self)
+    }
 
     // MARK: - Weather
 
@@ -284,22 +467,6 @@ class MapViewController: UIViewController,
             }
             else {
                 weatherButton.isHidden = true
-            }
-        }
-    }
-
-    private func loadWeather() {
-        guard let apiService = application.obacoService else { return }
-
-        Task {
-            do {
-                let forecast = try await apiService.getWeather()
-                await MainActor.run {
-                    self.forecast = forecast
-                }
-            } catch {
-                weatherButton.isHidden = true
-                Logger.error(error.localizedDescription)
             }
         }
     }
@@ -449,28 +616,16 @@ class MapViewController: UIViewController,
 
     private func subscribeToTripPlannerNotifications() {
         application.notificationCenter.addObserver(self, selector: #selector(itinerariesUpdated), name: Notifications.itinerariesUpdated, object: nil)
-        application.notificationCenter.addObserver(self, selector: #selector(itineraryPreviewStarted), name: Notifications.itineraryPreviewStarted, object: nil)
-        application.notificationCenter.addObserver(self, selector: #selector(itineraryPreviewEnded), name: Notifications.itineraryPreviewEnded, object: nil)
         application.notificationCenter.addObserver(self, selector: #selector(tripStarted), name: Notifications.tripStarted, object: nil)
     }
 
     private func unsubscribeFromTripPlannerNotifications() {
         application.notificationCenter.removeObserver(self, name: Notifications.itinerariesUpdated, object: nil)
-        application.notificationCenter.removeObserver(self, name: Notifications.itineraryPreviewStarted, object: nil)
-        application.notificationCenter.removeObserver(self, name: Notifications.itineraryPreviewEnded, object: nil)
         application.notificationCenter.removeObserver(self, name: Notifications.tripStarted, object: nil)
     }
 
     @objc private func itinerariesUpdated(_ note: NSNotification) {
         semiModalTripPlannerController?.move(to: .full, animated: true)
-    }
-
-    @objc private func itineraryPreviewStarted(_ note: NSNotification) {
-        // nop
-    }
-
-    @objc private func itineraryPreviewEnded(_ note: NSNotification) {
-        //
     }
 
     @objc private func tripStarted(_ note: NSNotification) {
@@ -488,17 +643,11 @@ class MapViewController: UIViewController,
     }()
 
     @objc private func toggleMapType() {
-        if application.mapRegionManager.userSelectedMapType == .mutedStandard {
-            application.mapRegionManager.userSelectedMapType = .hybrid
-        } else {
-            application.mapRegionManager.userSelectedMapType = .mutedStandard
-        }
-
-        setMapTypeButtonImage(toggleMapTypeButton)
+        viewModel.toggleMapType()
     }
 
-    private func setMapTypeButtonImage(_ button: UIButton) {
-        if application.mapRegionManager.userSelectedMapType == .mutedStandard {
+    private func setMapTypeButtonImage(_ button: UIButton, mapType: MapBaseType) {
+        if mapType == .standard {
             button.setImage(UIImage(systemName: "map"), for: .normal)
             button.accessibilityValue = OBALoc("map_controller.map_type.standard.accessibility_value", value: "standard", comment: "Voiceover text indicating the current map type as the standard base map.")
         } else {
@@ -516,6 +665,9 @@ class MapViewController: UIViewController,
     }
 
     @objc func applicationDidBecomeActive(_ notification: NSNotification) {
+        // EC12: notify ViewModel so it can refresh data (e.g. weather) without UIKit imports.
+        viewModel.onAppBecameActive()
+
         guard
             let resignedActiveAt = resignedActiveAt,
             abs(resignedActiveAt.timeIntervalSinceNow) > 600
@@ -528,8 +680,7 @@ class MapViewController: UIViewController,
 
     @objc private func reloadBookmarkAnnotations() {
         DispatchQueue.main.async { [weak self] in
-            guard let self, let region = self.application.currentRegion else { return }
-            self.application.mapRegionManager.bookmarks = self.application.userDataStore.findBookmarks(in: region)
+            self?.viewModel.reloadBookmarks()
         }
     }
 
@@ -670,6 +821,8 @@ class MapViewController: UIViewController,
         // Check if it's the map item controller
         if controller == semiModalMapItemController?.contentViewController,
            let panel = semiModalMapItemController {
+            // Only deselect user-dropped pin annotations — other annotation types
+            // (stops, bookmarks) manage their own selection state.
             mapRegionManager.mapView.selectedAnnotations.forEach { annotation in
                 if annotation is UserDroppedPin {
                     mapRegionManager.mapView.deselectAnnotation(annotation, animated: true)
@@ -760,10 +913,6 @@ class MapViewController: UIViewController,
 
         mapRegionManager.mapView.setCenter(mapDestination, animated: animated)
         displayMapItemController(mapItem)
-    }
-
-    func mapPanelControllerDisplaySearch(_ controller: MapFloatingPanelController) {
-        floatingPanel.move(to: .full, animated: true)
     }
 
     func mapPanelControllerDidChangeChildViewController(_ controller: MapFloatingPanelController) {
@@ -902,10 +1051,8 @@ class MapViewController: UIViewController,
     }
 
     @objc public func mapRegionManagerShowZoomInStatus(_ manager: MapRegionManager, showStatus: Bool) {
-        mapStatusView.configure(
-            for: mapStatusView.state(for: application.locationService),
-            zoomInStatus: showStatus
-        )
+        // EC6: Update ViewModel so both UIKit and future SwiftUI consumers share the same state.
+        viewModel.updateZoomWarning(showStatus)
     }
 
     // MARK: Loading Indicator
@@ -996,12 +1143,6 @@ class MapViewController: UIViewController,
         programmaticallyUpdateVisibleMapRegion(location: location)
     }
 
-    public func locationService(_ service: LocationService, authorizationStatusChanged status: CLAuthorizationStatus) {
-        mapStatusView.configure(with: service)
-        layoutMapMargins()
-        locationButton.isHidden = !service.isLocationUseAuthorized
-    }
-
     // MARK: - Context Menus
 
     public func contextMenuInteraction(_ interaction: UIContextMenuInteraction, configurationForMenuAtLocation location: CGPoint) -> UIContextMenuConfiguration? {
@@ -1035,6 +1176,52 @@ class MapViewController: UIViewController,
         if mapStatusView.frame.contains(point) {
             didTapMapStatus(interaction)
         }
+    }
+
+}
+
+// MARK: - ViewModel Binding
+
+private extension MapViewController {
+    func bindWeather() {
+        viewModel.$weather
+            .sink { [weak self] forecast in self?.forecast = forecast }
+            .store(in: &cancellables)
+    }
+
+    func bindMapStatus() {
+        // EC6: Observe zoom-warning state from ViewModel so UIKit and future SwiftUI share the same source of truth.
+        viewModel.$showZoomWarning
+            .sink { [weak self] _  in
+                guard let self else { return }
+                self.renderMapStatus()
+            }
+            .store(in: &cancellables)
+
+        viewModel.$locationAuthStatus
+            .sink { [weak self] _ in
+                guard let self else { return }
+                self.renderMapStatus()
+            }
+            .store(in: &cancellables)
+    }
+
+    func bindMapType() {
+        viewModel.$mapType
+            .sink { [weak self] mapType in
+                guard let self else { return }
+                let mkType: MKMapType = mapType == .standard ? .mutedStandard : .hybrid
+                application.mapRegionManager.userSelectedMapType = mkType
+                setMapTypeButtonImage(toggleMapTypeButton, mapType: mapType)
+            }
+            .store(in: &cancellables)
+    }
+
+    func renderMapStatus() {
+        let locationState = mapStatusView.state(for: application.locationService)
+        mapStatusView.configure(for: locationState, zoomInStatus: viewModel.showZoomWarning)
+        locationButton.isHidden = !application.locationService.isLocationUseAuthorized
+        layoutMapMargins()
     }
 }
 

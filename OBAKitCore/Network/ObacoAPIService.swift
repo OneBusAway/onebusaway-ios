@@ -116,7 +116,7 @@ public actor ObacoAPIService: @preconcurrency APIService {
         stopSequence: Int,
         userPushID: String
     ) async throws -> Alarm {
-        let url = await buildURL(path: String(format: "/api/v1/regions/%d/alarms", regionID))
+        let url = await buildURL(path: String(format: "/api/v2/regions/%d/alarms", regionID))
         let urlRequest = NSMutableURLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10)
         urlRequest.httpMethod = "POST"
 
@@ -126,7 +126,8 @@ public actor ObacoAPIService: @preconcurrency APIService {
             "trip_id": tripID,
             "service_date": Int64(serviceDate.timeIntervalSince1970 * 1000),
             "stop_sequence": stopSequence,
-            "user_push_id": userPushID
+            "user_push_id": userPushID,
+            "operating_system": "ios"
         ]
 
         if let vehicleID = vehicleID {

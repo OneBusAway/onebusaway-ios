@@ -6,8 +6,11 @@ if [ ! -f "OBAKit.xcodeproj/project.pbxproj" ]; then
   scripts/generate_project OneBusAway
 fi
 
+# NOTE: Output goes to api-docs/, NOT docs/. The docs/ directory holds
+# committed Markdown (specs, plans, guides) and must not be clobbered by the
+# generated DocC site, which is published to GitHub Pages via CI.
 DERIVED_DATA=".docc-build"
-OUTPUT_DIR="docs"
+OUTPUT_DIR="api-docs"
 
 # Build documentation archives (produces one per framework target)
 xcodebuild docbuild \
