@@ -276,7 +276,10 @@ class SurveyViewController: FormViewController {
         let answeredQuestionIDs = Set(responses.map { $0.questionId })
         let questionsToValidate = heroResponseID != nil ? survey.remainingQuestions : survey.questions
         return questionsToValidate
-            .filter { $0.required }
+            // External-survey questions are answered out-of-app (tapping "Open
+            // Survey" launches the URL and dismisses this form), so they can
+            // never be satisfied in-form. Exclude them from required checks.
+            .filter { $0.required && $0.content.type != .externalSurvey }
             .allSatisfy { answeredQuestionIDs.contains($0.id) }
     }
 

@@ -17,7 +17,10 @@ final public class ExternalSurveyURLBuilder: ExternalSurveyURLBuilderProtocol {
 
     private let userID: String
 
-    public init(userStore: UserDataStore, userID: String, application: SurveyURLApplicationContext) {
+    /// - Parameter application: Optional. When `nil`, only the context-dependent
+    ///   embedded fields (`region_id`, `current_location`) are omitted; the base
+    ///   URL and all other fields still build normally.
+    public init(userStore: UserDataStore, userID: String, application: SurveyURLApplicationContext?) {
         self.userStore = userStore
         self.userID = userID
         self.application = application

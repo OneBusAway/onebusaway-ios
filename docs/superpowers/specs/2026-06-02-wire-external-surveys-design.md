@@ -151,7 +151,7 @@ closures (closures aren't `Equatable`; the struct diffs on `survey` / `stopID` /
 that context *is* `CoreApplication`. That forms a strong reference cycle (two,
 counting both the service's and the builder's references):
 
-```
+```text
 CoreApplication ──strong──▶ surveyService ──strong──▶ builder ──▶ application (== CoreApplication)
 ```
 

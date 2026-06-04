@@ -212,11 +212,15 @@ class MapViewController: UIViewController,
             guard let self else { return }
             await surveyService.fetchSurveys()
 
+            // Re-check after the await: a second `checkForMapSurvey()` can pass
+            // the pre-await guard while this task is suspended, so without this
+            // both tasks would present a card and stack them.
+            guard !self.hasShownMapSurveyThisSession, self.surveyCardView == nil else { return }
             guard let survey = surveyService.findSurveyForMap() else { return }
 
+            self.hasShownMapSurveyThisSession = true
             self.presentMapSurveyCard(for: survey)
             surveyService.setNextReminderDate()
-            self.hasShownMapSurveyThisSession = true
         }
     }
 

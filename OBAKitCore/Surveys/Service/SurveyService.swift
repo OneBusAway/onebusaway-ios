@@ -59,10 +59,11 @@ public final class SurveyService: ObservableObject {
 
     /// Builds external-survey URLs. Lazily created so it is not constructed until
     /// first use (deferring the read of `application`); `public` so it can be
-    /// replaced with a mock in tests. `nil` when no application context was provided.
-    public lazy var externalSurveyURLBuilder: ExternalSurveyURLBuilderProtocol? = {
-        guard let application else { return nil }
-        return ExternalSurveyURLBuilder(
+    /// replaced with a mock in tests. The builder degrades gracefully when
+    /// `application` is nil, omitting only the context-dependent embedded fields,
+    /// so it is always available rather than itself being optional.
+    public lazy var externalSurveyURLBuilder: ExternalSurveyURLBuilderProtocol = {
+        ExternalSurveyURLBuilder(
             userStore: userDataStore,
             userID: userDataStore.surveyUserIdentifier,
             application: application
@@ -71,7 +72,7 @@ public final class SurveyService: ObservableObject {
 
     /// Destination URL for an external survey, or `nil` if it cannot be built.
     public func externalSurveyURL(for survey: Survey, stop: Stop?) -> URL? {
-        externalSurveyURLBuilder?.buildURL(for: survey, stop: stop)
+        externalSurveyURLBuilder.buildURL(for: survey, stop: stop)
     }
 
     // MARK: - Fetching

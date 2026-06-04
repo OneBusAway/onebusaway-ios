@@ -45,11 +45,21 @@ final class SurveyServiceExternalURLTests: OBATestCase {
         expect(items.first { $0.name == "region_id" }?.value).to(equal("7"))
     }
 
-    func test_externalSurveyURL_returnsNil_whenNoContext() {
+    func test_externalSurveyURL_buildsWithoutContext_omittingOnlyContextFields() {
+        // No application context: the URL still builds, but the context-dependent
+        // embedded fields (region_id, current_location) are omitted while
+        // non-context fields (user_id) are still appended.
         let svc = SurveyService(apiService: nil, userDataStore: store, application: nil)
         let survey = SurveysTestHelpers.makeSurvey(questions: [
-            SurveysTestHelpers.makeSurveyQuestion(url: "https://oba.co/s")
+            SurveysTestHelpers.makeSurveyQuestion(url: "https://oba.co/s", embeddedDataFields: ["user_id", "region_id"])
         ])
-        expect(svc.externalSurveyURL(for: survey, stop: nil)).to(beNil())
+
+        let url = svc.externalSurveyURL(for: survey, stop: nil)
+        expect(url).toNot(beNil())
+        guard let url else { return }
+        let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
+
+        expect(items.first { $0.name == "user_id" }?.value).to(equal("test-user-123"))
+        expect(items.contains { $0.name == "region_id" }).to(beFalse())
     }
 }

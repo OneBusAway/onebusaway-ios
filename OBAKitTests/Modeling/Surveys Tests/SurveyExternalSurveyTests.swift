@@ -39,10 +39,18 @@ final class SurveyExternalSurveyTests: XCTestCase {
         expect(survey.isExternalSurvey).to(beFalse())
     }
 
-    // Nil along the line: there is no hero question (no question at position 1),
-    // so `heroQuestion` is nil and the optional chain yields false.
+    // Nil along the line: questions exist but none is at position 1, so
+    // `heroQuestion` is nil and the optional chain yields false. Using a
+    // non-empty list (with an external question at a non-hero position) locks
+    // in the `position == 1` lookup that `isExternalSurvey` depends on, rather
+    // than only exercising the empty-array path.
     func test_isExternalSurvey_whenNoHeroQuestion_returnsFalse() {
-        let survey = SurveysTestHelpers.makeSurvey(questions: [])
+        let nonHero = SurveysTestHelpers.makeSurveyQuestion(
+            position: 2,
+            type: .externalSurvey,
+            url: "https://example.com/survey"
+        )
+        let survey = SurveysTestHelpers.makeSurvey(questions: [nonHero])
 
         expect(survey.heroQuestion).to(beNil())
         expect(survey.isExternalSurvey).to(beFalse())
