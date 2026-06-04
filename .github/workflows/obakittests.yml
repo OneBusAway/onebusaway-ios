@@ -64,14 +64,24 @@ jobs:
         HOMEBREW_NO_INSTALL_CLEANUP: 1
       run: brew install xcodegen
 
-    # Make iOS runtime acquisition explicit and time-boxed. If the runtime is
-    # already on the image this is a no-op (seconds). If it is NOT, xcodebuild
-    # would otherwise download it *silently* during the test step — appearing as
-    # a ~20 min hang with no log output. Surfacing it here means it is visible,
-    # attributable, and fails fast on a real stall.
+    # Make iOS runtime acquisition explicit and time-boxed. The macOS runner image
+    # ships several iOS simulator runtimes preinstalled, so this is normally a skip.
+    # Only download when none is present: `xcodebuild -downloadPlatform iOS` insists
+    # on fetching the *newest* runtime (e.g. 26.3.1) even when an older one Xcode can
+    # use is already installed — which wastes ~2-3 min and is flaky on CI ("Unable to
+    # connect to simulator", exit 70, which failed an earlier run here). If a download
+    # genuinely IS needed it stays visible and time-boxed rather than stalling
+    # silently inside the test step.
     - name: Download iOS platform (if needed)
       timeout-minutes: 30
-      run: xcodebuild -downloadPlatform iOS
+      run: |
+        if xcrun simctl runtime list 2>/dev/null | grep -qE "iOS [0-9].*\(Ready\)"; then
+          echo "An iOS simulator runtime is already installed; skipping download:"
+          xcrun simctl runtime list | grep -E "iOS [0-9]" || true
+        else
+          echo "No iOS simulator runtime found; downloading…"
+          xcodebuild -downloadPlatform iOS
+        fi
 
     # Diagnostic preflight: logs whether the iOS runtime is actually installed.
     # If `simctl runtime list` doesn't show the targeted iOS version as Ready,
