@@ -60,20 +60,13 @@ OBAKit is written almost entirely in Swift, with the exception of a few small, a
 
 ## Documentation
 
-This project uses [Jazzy](https://github.com/realm/jazzy/) and [Sourcekitten](https://github.com/jpsim/SourceKitten) to generate its documentation. To rebuild documentation, you will first need to have both projects installed:
-
-```bash
-bundle install
-brew install sourcekitten
-```
-
-Once you have the necessary tools installed, you can regenerate documentation by running the command:
+This project uses Apple's [DocC](https://www.swift.org/documentation/docc/) to generate its API documentation, so no extra tooling is required beyond Xcode. To build the documentation, run:
 
 ```bash
 scripts/docs
 ```
 
-Configuration data for the Jazzy-generated documentation can be found in the file `.jazzy.json` in the root of the repository.
+This produces a statically-hostable site in the `api-docs/` directory. On every push to `main`, the `Documentation` GitHub Actions workflow regenerates the docs and deploys them to GitHub Pages.
 
 ## How-To's
 

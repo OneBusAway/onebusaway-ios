@@ -1,5 +1,7 @@
 # White Labeling and Embeddable Frameworks
 
+Learn how to create a custom-branded version of OneBusAway for iOS.
+
 ## What is OBAKit
 
 [OBAKit](https://www.github.com/onebusaway/obakit) is a total rewrite of OneBusAway for iOS. It is built in Apple's modern Swift programming language, and is designed to allow transit agencies to easily build and ship their own custom branded versions of OneBusAway for iOS or embed OneBusAway features into their existing iOS apps.
@@ -87,7 +89,7 @@ Example use cases:
 
 ## Apple Developer Accounts and Settings
 
-### Sign up 
+### Sign up
 
 Building your app for submission to Apple will require you to have a [Apple Developer account](https://developer.apple.com/programs/).
 
@@ -97,13 +99,13 @@ In Xcode, navigate to the Xcode menu > Preferences > Accounts
 
 Log in to your Apple Developer account
 
-![The Accounts tab in Xcode preferences](images/white_label_xcode_prefs.png)
+![The Accounts tab in Xcode preferences](white_label_xcode_prefs.png)
 
 ### Create identifier
 
 Once you have an Apple Developer account, you will need to create an identifier for your app. (if you already have an identifier, then skip this step!)
 
-![Identifiers page on Apple Developer website](images/white_label_identifiers.png)
+![Identifiers page on Apple Developer website](white_label_identifiers.png)
 
 ### Configure identifier
 
@@ -113,13 +115,13 @@ Once your identifier has been created, configure it with the following settings:
 * Associated Domains - Used to allow OneBusAway.co to work with OBAKit apps. This is necessary for apps that support alarms.
 * Push Notifications - Only if you want to support alarms. Currently, only the free [OneSignal service](https://onesignal.com) is supported within OBAKit.
 
-![Configure your identifier](images/white_label_config_identifiers.png)
+![Configure your identifier](white_label_config_identifiers.png)
 
 ### Verify in Xcode
 
-If your app has been correctly configured, you should see a Signing &amp; Capabilities screen in Xcode that looks similar to what is depicted below. Namely, the "Team", "Provisioning Profile", and "Signing Certificate" fields are populated, an App Group is listed, Associated Domains are populated with "applinks", the "Remote notifications" Background Mode is checked, and the "Push Notifications" capability is included in the app.
+If your app has been correctly configured, you should see a Signing & Capabilities screen in Xcode that looks similar to what is depicted below. Namely, the "Team", "Provisioning Profile", and "Signing Certificate" fields are populated, an App Group is listed, Associated Domains are populated with "applinks", the "Remote notifications" Background Mode is checked, and the "Push Notifications" capability is included in the app.
 
-![A correctly configured app in Xcode](images/white_label_xcode.png)
+![A correctly configured app in Xcode](white_label_xcode.png)
 
 ### Run your app in the Simulator
 
@@ -131,7 +133,7 @@ Once you are satisfied, create an Archive of your app by changing your build opt
 
 Then, you can submit your app to Apple for distribution via TestFlight and the App Store.
 
-![The Archive menu item in the Product menu](images/white_label_build_archive.png)
+![The Archive menu item in the Product menu](white_label_build_archive.png)
 
 ## OBAKitConfig
 
