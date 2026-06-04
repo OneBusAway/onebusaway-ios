@@ -34,4 +34,21 @@ xcrun docc process-archive transform-for-static-hosting \
   --output-path "$OUTPUT_DIR" \
   --hosting-base-path "${HOSTING_BASE_PATH:-}"
 
+# Work around a docc bug: when merging archives, transform-for-static-hosting
+# rewrites every page's baseUrl/asset paths for the hosting base path EXCEPT the
+# synthesized root landing page (api-docs/index.html), which keeps baseUrl="/".
+# On GitHub Pages (served under /<base>/) that leaves the landing page loading
+# its JS/CSS from the domain root and 404ing. Apply the base path to it by hand.
+if [ -n "${HOSTING_BASE_PATH:-}" ]; then
+  base="/${HOSTING_BASE_PATH#/}"   # ensure exactly one leading slash
+  base="${base%/}"                 # and no trailing slash
+  root_index="$OUTPUT_DIR/index.html"
+  if grep -q 'baseUrl = "/"' "$root_index"; then
+    sed -i '' -E \
+      -e "s#baseUrl = \"/\"#baseUrl = \"${base}/\"#g" \
+      -e "s#(src|href)=\"/#\1=\"${base}/#g" \
+      "$root_index"
+  fi
+fi
+
 rm -rf "$DERIVED_DATA" Combined.doccarchive
