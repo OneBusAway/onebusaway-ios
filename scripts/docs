@@ -1,10 +1,8 @@
 #!/bin/bash
 set -euo pipefail
 
-# Generate project if needed
-if [ ! -f "OBAKit.xcodeproj/project.pbxproj" ]; then
-  scripts/generate_project OneBusAway
-fi
+# Regenerate the project so the build reflects the current project.yml
+scripts/generate_project OneBusAway
 
 # NOTE: Output goes to api-docs/, NOT docs/. The docs/ directory holds
 # committed Markdown (specs, plans, guides) and must not be clobbered by the

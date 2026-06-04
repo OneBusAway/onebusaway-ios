@@ -21,7 +21,6 @@ OBAKit is a higher-level framework that contains the OneBusAway application UI. 
 ### Classic UI
 
 - ``ClassicApplicationRootController``
-- ``MapViewController``
 - ``MoreViewController``
 - ``RecentStopsViewController``
 - ``StopViewController``
@@ -38,16 +37,9 @@ OBAKit is a higher-level framework that contains the OneBusAway application UI. 
 
 - ``AppInterop``
 - ``AppLinksRouter``
-- ``URLSchemeRouter``
 - ``ViewRouter``
 
 ### Miscellaneous UI
 
-- ``CollectionController``
-- ``DepartureTimeBadge``
-- ``EmptyDataSetView``
-- ``Formatters``
-- ``ImageBadgeRenderer``
-- ``ThemeColors``
-- ``ThemeMetrics``
+- ``OBAListView``
 - ``VisualEffectViewController``

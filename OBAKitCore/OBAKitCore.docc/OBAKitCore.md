@@ -4,7 +4,7 @@ Core business logic framework for the OneBusAway iOS app, providing networking, 
 
 ## Overview
 
-OBAKitCore is a lower-level framework whose primary function is to provide networking and data modeling services. It is application extension safe and serves as the foundation for ``OBAKit``.
+OBAKitCore is a lower-level framework whose primary function is to provide networking and data modeling services. It is application extension safe and serves as the foundation for `OBAKit`.
 
 Use OBAKitCore when you want to:
 - Access OneBusAway data from a service or extension.
@@ -52,13 +52,21 @@ Use OBAKitCore when you want to:
 ### Networking
 
 - ``APIService``
-- ``NetworkOperation``
+- ``APIServiceConfiguration``
+- ``APIError``
 
-### Analytics
+### Deep Linking
 
-- ``Analytics``
-- ``AnalyticsEvent``
+- ``URLSchemeRouter``
 
-### Push Notifications
+### Theming
 
-- ``PushService``
+- ``ThemeColors``
+- ``ThemeMetrics``
+
+### Formatting and Shared UI
+
+- ``Formatters``
+- ``DepartureTimeBadge``
+- ``EmptyDataSetView``
+- ``ImageBadgeRenderer``
