@@ -43,6 +43,11 @@ public protocol LocationManager {
     var isHeadingAvailable: Bool { get }
     func startUpdatingHeading()
     func stopUpdatingHeading()
+
+    // MARK: - Region Monitoring
+    func startMonitoring(for region: CLRegion)
+    func stopMonitoring(for region: CLRegion)
+    var monitoredRegions: Set<CLRegion> { get }
 }
 
 extension CLLocationManager: LocationManager {
