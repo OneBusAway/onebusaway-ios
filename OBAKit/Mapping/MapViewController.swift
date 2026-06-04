@@ -69,7 +69,7 @@ class MapViewController: UIViewController,
 
     // MARK: - Surveys
 
-    private var surveyDisplayManager: SurveyDisplayManager?
+    private var surveyCardView: SurveyLauncherCardView?
     private var hasShownMapSurveyThisSession = false
 
     // MARK: - Init
@@ -203,7 +203,7 @@ class MapViewController: UIViewController,
     // MARK: - Surveys
 
     private func checkForMapSurvey() {
-        guard !hasShownMapSurveyThisSession else { return }
+        guard !hasShownMapSurveyThisSession, surveyCardView == nil else { return }
 
         let surveyService = application.surveyService
         guard surveyService.shouldShowSurvey() else { return }
@@ -214,13 +214,88 @@ class MapViewController: UIViewController,
 
             guard let survey = surveyService.findSurveyForMap() else { return }
 
-            let displayManager = SurveyDisplayManager(surveyService: surveyService)
-            self.surveyDisplayManager = displayManager
-            let presented = displayManager.showSurvey(survey, in: self, presentationStyle: .bottomSheet)
-            guard presented else { return }
+            self.presentMapSurveyCard(for: survey)
             surveyService.setNextReminderDate()
-            hasShownMapSurveyThisSession = true
+            self.hasShownMapSurveyThisSession = true
         }
+    }
+
+    /// Presents the floating survey launcher card above the search panel. The
+    /// card is the single entry point for every map survey: tapping `Take survey`
+    /// opens an external survey, or presents the full in-app survey for others.
+    private func presentMapSurveyCard(for survey: Survey) {
+        var title = survey.name
+        if survey.isExternalSurvey, let hero = survey.heroQuestion {
+            title = hero.content.labelText
+        }
+        let card = SurveyLauncherCardView(style: .floating)
+        card.configure(title: title, subtitle: nil)
+        card.onTakeSurvey = { [weak self] in self?.handleMapSurveyTakeSurvey(survey) }
+        card.onDismiss = { [weak self] in self?.handleMapSurveyDismiss(survey) }
+
+        // 16pt insets and gap above the search panel, per the design handoff.
+        let cardInset: CGFloat = 16.0
+        view.addSubview(card)
+        NSLayoutConstraint.activate([
+            card.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: cardInset),
+            card.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -cardInset),
+            card.bottomAnchor.constraint(equalTo: floatingPanel.surfaceView.topAnchor, constant: -cardInset)
+        ])
+        surveyCardView = card
+
+        card.alpha = 0
+        card.transform = CGAffineTransform(translationX: 0, y: 12)
+        UIView.animate(withDuration: 0.3, delay: 0, options: .curveEaseOut) {
+            card.alpha = 1
+            card.transform = .identity
+        }
+    }
+
+    private func handleMapSurveyTakeSurvey(_ survey: Survey) {
+        if survey.isExternalSurvey {
+            let launcher = ExternalSurveyLauncher(surveyService: application.surveyService)
+            launcher.launch(
+                survey: survey,
+                stop: nil,
+                onSuccess: { [weak self] in self?.dismissMapSurveyCard() },
+                onFailure: { [weak self] in
+                    self?.dismissMapSurveyCard()
+                    self?.showMapExternalSurveyError()
+                }
+            )
+        } else {
+            let surveyVC = SurveyViewController(survey: survey, surveyService: application.surveyService)
+            let navigation = UINavigationController(rootViewController: surveyVC)
+            present(navigation, animated: true)
+            dismissMapSurveyCard()
+        }
+    }
+
+    private func handleMapSurveyDismiss(_ survey: Survey) {
+        application.surveyService.markSurveyForLater(survey)
+        application.surveyService.setNextReminderDate()
+        dismissMapSurveyCard()
+    }
+
+    private func dismissMapSurveyCard() {
+        guard let card = surveyCardView else { return }
+        surveyCardView = nil
+        UIView.animate(withDuration: 0.25, delay: 0, options: .curveEaseIn, animations: {
+            card.alpha = 0
+            card.transform = CGAffineTransform(translationX: 0, y: 12)
+        }, completion: { _ in
+            card.removeFromSuperview()
+        })
+    }
+
+    private func showMapExternalSurveyError() {
+        let alert = UIAlertController(
+            title: OBALoc("survey_launcher.external_survey_error.title", value: "Can't Open Survey", comment: "Title shown when an external survey link cannot be opened"),
+            message: OBALoc("survey_launcher.external_survey_error.message", value: "This survey link couldn't be opened. Please try again later.", comment: "Message shown when an external survey link cannot be opened"),
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: Strings.ok, style: .default))
+        present(alert, animated: true)
     }
 
     // MARK: - User Location
