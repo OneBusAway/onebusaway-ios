@@ -50,12 +50,6 @@ fastlane/Preview.html
 fastlane/screenshots/**/*.png
 fastlane/test_output
 
-# Don't bother saving docs.
-docs
-
-# But do save the docs script
-!scripts/docs
-
 OBAKitTests.xcresult
 .DS_Store
 .claude/settings.local.json

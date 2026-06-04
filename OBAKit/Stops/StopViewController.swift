@@ -168,6 +168,7 @@ public class StopViewController: UIViewController,
         listView.register(listViewItem: StopHeaderItem.self)
         listView.register(listViewItem: TransferArrivalItem.self)
         listView.register(listViewItem: SurveyStopListItem.self)
+        listView.register(listViewItem: SurveyLauncherListItem.self)
 
         view.addSubview(statusLabel)
         view.addSubview(listView)
@@ -640,6 +641,18 @@ public class StopViewController: UIViewController,
             stopID: stopID, routeIDs: routeIDs
         ) else { return nil }
 
+        // External surveys present as a compact launcher card:
+        // a teaser that opens the survey on tap, with no "study name" header.
+        if survey.isExternalSurvey {
+            let launcher = SurveyLauncherListItem(
+                survey: survey,
+                title: OBALoc("survey_launcher.title", value: "Help improve transit", comment: "Title of the survey launcher card on the stop screen."),
+                onTakeSurvey: { [weak self] in self?.handleOpenExternalSurvey(survey: survey) },
+                onDismiss: { [weak self] in self?.handleSurveyDismiss(survey: survey) }
+            )
+            return listViewSection(for: .survey, title: nil, items: [launcher])
+        }
+
         let item = SurveyStopListItem(
             survey: survey,
             stopID: stopID,
@@ -650,7 +663,10 @@ public class StopViewController: UIViewController,
             onDismiss: { [weak self] in
                 self?.handleSurveyDismiss(survey: survey)
             },
-            onSelectionChanged: { _ in }
+            onSelectionChanged: { _ in },
+            onOpenExternalSurvey: { [weak self] in
+                self?.handleOpenExternalSurvey(survey: survey)
+            }
         )
         return listViewSection(for: .survey, title: survey.study.name, items: [item])
     }
@@ -695,10 +711,31 @@ public class StopViewController: UIViewController,
         listView.applyData()
     }
 
+    private func handleOpenExternalSurvey(survey: Survey) {
+        let launcher = ExternalSurveyLauncher(surveyService: application.surveyService)
+        launcher.launch(
+            survey: survey,
+            stop: stop,
+            onSuccess: { [weak self] in self?.listView.applyData() },
+            onFailure: { [weak self] in self?.showExternalSurveyError() }
+        )
+    }
+
+    private func showExternalSurveyError() {
+        let alert = UIAlertController(
+            title: OBALoc("stop_controller.external_survey_error.title", value: "Can't Open Survey", comment: "Title shown when an external survey link cannot be opened"),
+            message: OBALoc("stop_controller.external_survey_error.message", value: "This survey link couldn't be opened. Please try again later.", comment: "Message shown when an external survey link cannot be opened"),
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: Strings.ok, style: .default))
+        present(alert, animated: true)
+    }
+
     private func showFullSurvey(_ survey: Survey, heroResponseID: String? = nil) {
         let surveyVC = SurveyViewController(
             survey: survey,
             surveyService: application.surveyService,
+            stop: stop,
             stopID: stopID,
             stopLocation: stop?.coordinate,
             heroResponseID: heroResponseID

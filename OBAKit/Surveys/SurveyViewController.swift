@@ -16,6 +16,7 @@ class SurveyViewController: FormViewController {
 
     private let survey: Survey
     private let surveyService: SurveyService
+    private let stop: Stop?
     private let stopID: String?
     private let stopLocation: CLLocationCoordinate2D?
 
@@ -23,9 +24,12 @@ class SurveyViewController: FormViewController {
     private var heroResponseID: String?
     private var checkboxSelections: [Int: Set<String>] = [:]
 
-    init(survey: Survey, surveyService: SurveyService, stopID: String? = nil, stopLocation: CLLocationCoordinate2D? = nil, heroResponseID: String? = nil) {
+    private lazy var externalSurveyLauncher = ExternalSurveyLauncher(surveyService: surveyService)
+
+    init(survey: Survey, surveyService: SurveyService, stop: Stop? = nil, stopID: String? = nil, stopLocation: CLLocationCoordinate2D? = nil, heroResponseID: String? = nil) {
         self.survey = survey
         self.surveyService = surveyService
+        self.stop = stop
         self.stopID = stopID
         self.stopLocation = stopLocation
         self.heroResponseID = heroResponseID
@@ -183,9 +187,16 @@ class SurveyViewController: FormViewController {
             }
 
         case .externalSurvey:
-            section <<< LabelRow(questionTag) { row in
+            section <<< LabelRow("\(questionTag)_label") { row in
                 row.title = question.content.labelText
                 row.cell.textLabel?.numberOfLines = 0
+            }
+
+            section <<< ButtonRow(questionTag) { row in
+                row.title = OBALoc("survey_vc.open_external_survey_button", value: "Open Survey", comment: "Button that opens an external survey in the browser")
+                row.onCellSelection { [weak self] _, _ in
+                    self?.openExternalSurvey()
+                }
             }
         }
     }
@@ -265,7 +276,10 @@ class SurveyViewController: FormViewController {
         let answeredQuestionIDs = Set(responses.map { $0.questionId })
         let questionsToValidate = heroResponseID != nil ? survey.remainingQuestions : survey.questions
         return questionsToValidate
-            .filter { $0.required }
+            // External-survey questions are answered out-of-app (tapping "Open
+            // Survey" launches the URL and dismisses this form), so they can
+            // never be satisfied in-form. Exclude them from required checks.
+            .filter { $0.required && $0.content.type != .externalSurvey }
             .allSatisfy { answeredQuestionIDs.contains($0.id) }
     }
 
@@ -284,6 +298,27 @@ class SurveyViewController: FormViewController {
         let alert = UIAlertController(
             title: OBALoc("survey_vc.submission_error.title", value: "Submission Error", comment: "Title for survey submission error alert"),
             message: error.localizedDescription,
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: OBALoc("survey_vc.ok_button", value: "OK", comment: "OK button on survey alerts"), style: .default))
+        present(alert, animated: true)
+    }
+
+    private func openExternalSurvey() {
+        externalSurveyLauncher.launch(
+            survey: survey,
+            stop: stop,
+            onSuccess: { [weak self] in self?.dismiss(animated: true) },
+            // On failure, keep the form on screen so the rider can retry; the
+            // launcher does not mark the survey completed unless the open succeeds.
+            onFailure: { [weak self] in self?.showExternalSurveyError() }
+        )
+    }
+
+    private func showExternalSurveyError() {
+        let alert = UIAlertController(
+            title: OBALoc("survey_vc.external_survey_error.title", value: "Can't Open Survey", comment: "Title shown when an external survey link cannot be opened"),
+            message: OBALoc("survey_vc.external_survey_error.message", value: "This survey link couldn't be opened. Please try again later.", comment: "Message shown when an external survey link cannot be opened"),
             preferredStyle: .alert
         )
         alert.addAction(UIAlertAction(title: OBALoc("survey_vc.ok_button", value: "OK", comment: "OK button on survey alerts"), style: .default))

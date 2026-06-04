@@ -33,6 +33,11 @@ public final class SurveyService: ObservableObject {
     private let apiService: RESTAPIService?
     private let userDataStore: UserDataStore
 
+    /// Context used to build external-survey URLs. Held weakly: the owning
+    /// application is the long-lived object and must not be retained here
+    /// (see spec §5). Read only on the main actor.
+    public weak var application: SurveyURLApplicationContext?
+
     // MARK: - Constants
 
     private let surveyLaunchInterval = 3
@@ -44,9 +49,30 @@ public final class SurveyService: ObservableObject {
 
     // MARK: - Initialization
 
-    public nonisolated init(apiService: RESTAPIService?, userDataStore: UserDataStore) {
+    public nonisolated init(apiService: RESTAPIService?, userDataStore: UserDataStore, application: SurveyURLApplicationContext? = nil) {
         self.apiService = apiService
         self.userDataStore = userDataStore
+        self.application = application
+    }
+
+    // MARK: - External Surveys
+
+    /// Builds external-survey URLs. Lazily created so it is not constructed until
+    /// first use (deferring the read of `application`); `public` so it can be
+    /// replaced with a mock in tests. The builder degrades gracefully when
+    /// `application` is nil, omitting only the context-dependent embedded fields,
+    /// so it is always available rather than itself being optional.
+    public lazy var externalSurveyURLBuilder: ExternalSurveyURLBuilderProtocol = {
+        ExternalSurveyURLBuilder(
+            userStore: userDataStore,
+            userID: userDataStore.surveyUserIdentifier,
+            application: application
+        )
+    }()
+
+    /// Destination URL for an external survey, or `nil` if it cannot be built.
+    public func externalSurveyURL(for survey: Survey, stop: Stop?) -> URL? {
+        externalSurveyURLBuilder.buildURL(for: survey, stop: stop)
     }
 
     // MARK: - Fetching
