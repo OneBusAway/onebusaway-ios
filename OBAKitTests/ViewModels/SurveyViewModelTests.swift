@@ -51,13 +51,14 @@ class SurveyViewModelTests: OBATestCase {
         position: Int = 1,
         required: Bool = true,
         type: QuestionType = .text,
-        options: [String]? = nil
+        options: [String]? = nil,
+        url: String? = nil
     ) -> SurveyQuestion {
         SurveyQuestion(
             id: id,
             position: position,
             required: required,
-            content: QuestionContent(labelText: "q\(id)", type: type, options: options)
+            content: QuestionContent(labelText: "q\(id)", type: type, options: options, url: url)
         )
     }
 
@@ -393,6 +394,71 @@ class SurveyViewModelTests: OBATestCase {
     private func isNetworkFailure(_ result: Result<Void, SurveyViewModel.SubmissionError>) -> Bool {
         if case .failure(.submissionFailed) = result { return true }
         return false
+    }
+
+    // MARK: - External Survey Validation
+
+    /// A required `.externalSurvey` question is answered out-of-app (via the
+    /// "Open Survey" button) so it can never be satisfied in-form. Validation
+    /// must skip required external-survey questions, otherwise `submit()`
+    /// could never proceed for a hero-external-survey configuration.
+    @MainActor
+    func test_validation_requiredExternalSurveyQuestion_isExcluded() async {
+        let hero = Self.makeQuestion(id: 1, position: 1, required: true, type: .text)
+        let external = Self.makeQuestion(id: 2, position: 2, required: true, type: .externalSurvey)
+        let vm = makeViewModel(questions: [hero, external])
+
+        // Answer only the hero — the required external question is left
+        // unanswered, which would normally block validation but should be
+        // excluded by type.
+        vm.updateAnswer(for: hero, answer: "yes")
+
+        let result = await firstSubmissionResult(vm: vm)
+        expect(self.isNetworkFailure(result)).to(beTrue(), description: "expected validation to pass with required external survey question unanswered; got \(result)")
+    }
+
+    /// Excluding external-survey questions must not bypass *other* unanswered
+    /// required questions — validation should still fail if a required text
+    /// question is missing.
+    @MainActor
+    func test_validation_externalSurveyExclusion_doesNotBypassOtherRequired() async {
+        let hero = Self.makeQuestion(id: 1, position: 1, required: true, type: .text)
+        let followUp = Self.makeQuestion(id: 2, position: 2, required: true, type: .text)
+        let external = Self.makeQuestion(id: 3, position: 3, required: true, type: .externalSurvey)
+        let vm = makeViewModel(questions: [hero, followUp, external])
+
+        // Hero answered; required follow-up text NOT answered; external skipped.
+        vm.updateAnswer(for: hero, answer: "yes")
+
+        let result = await firstSubmissionResult(vm: vm)
+        switch result {
+        case .failure(.validationFailed): break
+        default: fail("Expected .validationFailed when a non-external required is unanswered; got \(result)")
+        }
+    }
+
+    // MARK: - launchExternalSurvey
+
+    /// When the survey has no openable URL, the launcher's failure path runs:
+    /// `onFailure` fires, `onSuccess` does not, and the survey is NOT marked
+    /// completed. Exercises the integration with the real `ExternalSurveyLauncher`
+    /// owned by the VM.
+    @MainActor
+    func test_launchExternalSurvey_noURL_callsFailureAndDoesNotMarkCompleted() {
+        // No `url:` on the question → `externalSurveyURL(for:stop:)` returns nil.
+        let external = Self.makeQuestion(id: 1, position: 1, required: true, type: .externalSurvey)
+        let vm = makeViewModel(questions: [external])
+
+        var successCount = 0
+        var failureCount = 0
+        vm.launchExternalSurvey(
+            onSuccess: { successCount += 1 },
+            onFailure: { failureCount += 1 }
+        )
+
+        expect(failureCount) == 1
+        expect(successCount) == 0
+        expect(self.dataStore.isSurveyCompleted(surveyId: vm.survey.id, userIdentifier: self.dataStore.surveyUserIdentifier)).to(beFalse())
     }
 
     // MARK: - Two-Stage Submit (happy path, retry, re-entrancy)

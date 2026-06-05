@@ -283,6 +283,73 @@ class StopViewModelTests: OBATestCase {
         expect(app.userDataStore.nextSurveyReminderDate).to(beNil())
     }
 
+    /// `launchExternalSurvey()` with no explicit target and no `currentSurvey`
+    /// must be a no-op: neither callback fires, and no survey is touched.
+    @MainActor
+    func test_launchExternalSurvey_noCurrentSurveyAndNoTarget_isNoOp() {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock())
+
+        let viewModel = StopViewModel(application: app, stopID: testStopID)
+        expect(viewModel.currentSurvey).to(beNil())
+
+        var successCount = 0
+        var failureCount = 0
+        viewModel.launchExternalSurvey(
+            onSuccess: { successCount += 1 },
+            onFailure: { failureCount += 1 }
+        )
+
+        expect(successCount) == 0
+        expect(failureCount) == 0
+    }
+
+    /// When an explicit target is passed but the URL cannot be built, the
+    /// launcher's failure path runs: `onFailure` fires, `onSuccess` does not,
+    /// and the survey stays uncompleted.
+    @MainActor
+    func test_launchExternalSurvey_explicitTargetWithNoURL_callsFailure() {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock())
+        let viewModel = StopViewModel(application: app, stopID: testStopID)
+
+        // External-survey question with no `url:` → builder returns nil → launcher fails.
+        let external = SurveyQuestion(
+            id: 1,
+            position: 1,
+            required: true,
+            content: QuestionContent(labelText: "q1", type: .externalSurvey)
+        )
+        let survey = Survey(
+            id: 99,
+            name: "External",
+            createdAt: Date(),
+            updatedAt: Date(),
+            showOnMap: false,
+            showOnStops: true,
+            startDate: nil,
+            endDate: nil,
+            visibleStopsList: nil,
+            visibleRoutesList: nil,
+            allowsMultipleResponses: false,
+            alwaysVisible: false,
+            study: Study(id: 1, name: "Study", description: "desc"),
+            questions: [external]
+        )
+
+        var successCount = 0
+        var failureCount = 0
+        viewModel.launchExternalSurvey(
+            survey,
+            onSuccess: { successCount += 1 },
+            onFailure: { failureCount += 1 }
+        )
+
+        expect(failureCount) == 1
+        expect(successCount) == 0
+        expect(app.userDataStore.isSurveyCompleted(surveyId: survey.id, userIdentifier: app.userDataStore.surveyUserIdentifier)).to(beFalse())
+    }
+
     // MARK: - Inline Hero Success Paths
 
     /// Builds an application with a non-empty surveys.json stub. The stubbed survey
