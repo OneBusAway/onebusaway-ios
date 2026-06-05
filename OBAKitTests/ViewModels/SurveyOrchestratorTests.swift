@@ -205,6 +205,38 @@ class SurveyOrchestratorTests: OBATestCase {
         expect(self.dataStore.isSurveyCompleted(surveyId: survey.id, userIdentifier: userID)).to(beTrue())
     }
 
+    // MARK: - lastError accessor
+
+    /// `lastError` is `nil` before any refresh runs. The gate in
+    /// `MapViewModel.checkForSurveyPrompt` relies on this so the very first
+    /// session check doesn't get short-circuited by a stale value.
+    @MainActor
+    func test_lastError_isNilBeforeRefresh() {
+        expect(self.orchestrator.lastError).to(beNil())
+    }
+
+    /// `lastError` proxies the underlying `SurveyService.lastError`. With
+    /// `apiService: nil`, `fetchSurveys` records `APIError.surveyServiceNotConfigured`
+    /// rather than throwing — this verifies the orchestrator surfaces it so
+    /// `MapViewModel.checkForSurveyPrompt` can gate on it.
+    @MainActor
+    func test_lastError_reflectsUnderlyingService_afterFetchFailure() async {
+        expect(self.orchestrator.lastError).to(beNil())
+
+        await orchestrator.refreshSurveys()
+
+        guard let error = orchestrator.lastError as? APIError else {
+            fail("Expected APIError; got \(String(describing: orchestrator.lastError))")
+            return
+        }
+        switch error {
+        case .surveyServiceNotConfigured:
+            break  // expected
+        default:
+            fail("Expected .surveyServiceNotConfigured; got \(error)")
+        }
+    }
+
     // MARK: - noteReminderAndAdvanceSession
 
     /// `noteReminderAndAdvanceSession()` advances the reminder by ~3 days.

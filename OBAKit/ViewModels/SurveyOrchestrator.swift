@@ -51,10 +51,18 @@ final class SurveyOrchestrator {
         surveyService.shouldShowSurvey()
     }
 
-    /// Refreshes the survey list. Failures are recorded on
-    /// `surveyService.lastError`; callers inspect it if they care.
+    /// Refreshes the survey list. Failures are recorded on `lastError` rather
+    /// than thrown; callers gate off it when they need to avoid acting on a
+    /// stale cached list.
     func refreshSurveys() async {
         await surveyService.fetchSurveys()
+    }
+
+    /// The most recent fetch error, or `nil` if the last `refreshSurveys()`
+    /// succeeded. Cleared on the next successful refresh, not on a cooldown
+    /// skip — so a value here means the *last actual fetch* failed.
+    var lastError: Error? {
+        surveyService.lastError
     }
 
     /// Submits the hero question and advances the reminder. On success, either

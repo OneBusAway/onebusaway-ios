@@ -334,4 +334,44 @@ class MapViewModelTests: OBATestCase {
         expect(app.userDataStore.nextSurveyReminderDate).to(beNil())
     }
 
+    /// Stubs the survey list endpoint to error so `fetchSurveys()` records
+    /// `surveyService.lastError` instead of clearing it.
+    private func stubSurveysError(dataLoader: MockDataLoader) {
+        let response = MockDataResponse(
+            data: nil,
+            urlResponse: nil,
+            error: URLError(.badServerResponse)
+        ) { request in
+            request.url?.path.contains("/surveys.json") ?? false
+        }
+        dataLoader.mock(response: response)
+    }
+
+    /// When the refresh fails, `surveyToPresent` must not emit even if the
+    /// cached survey list would otherwise resolve `findSurveyForMap()`.
+    /// Prevents prompting off a stale cached survey after a transient network
+    /// failure.
+    @MainActor
+    func test_checkForSurveyPrompt_doesNotEmitWhenRefreshFailed() async {
+        let dataLoader = MockDataLoader(testName: name)
+        stubSurveysError(dataLoader: dataLoader)
+        let app = createApplication(dataLoader: dataLoader)
+        userDefaults.set(true, forKey: "UserDataStore.isSurveyEnabled")
+        userDefaults.set(true, forKey: "UserDataStore.alwaysShowSurveysOnStops")
+
+        let viewModel = MapViewModel(application: app)
+        var received: [Survey] = []
+        let cancellable = viewModel.surveyToPresent.sink { received.append($0) }
+        defer { cancellable.cancel() }
+
+        await viewModel.checkForSurveyPrompt()
+
+        // No emission, no reminder advance. Pairs with the orchestrator-level
+        // `test_lastError_reflectsUnderlyingService_afterFetchFailure` which
+        // verifies that the orchestrator's `lastError` accessor (the gate's
+        // input) actually surfaces on a failed refresh.
+        expect(received).to(beEmpty())
+        expect(app.userDataStore.nextSurveyReminderDate).to(beNil())
+    }
+
 }

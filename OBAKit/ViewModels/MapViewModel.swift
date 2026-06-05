@@ -147,6 +147,12 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
 
         await surveyOrchestrator.refreshSurveys()
 
+        // Skip the prompt if the refresh itself failed. `SurveyService` falls
+        // back to its cached list on error, so without this gate a transient
+        // network failure could surface a survey that the server may have
+        // already retired. Matches the policy in `StopViewModel.refreshSurveys`.
+        guard surveyOrchestrator.lastError == nil else { return }
+
         // Eligibility can change while the refresh is in flight (a different
         // path completing or dismissing a survey, the reminder advancing).
         // Re-check before emitting.
