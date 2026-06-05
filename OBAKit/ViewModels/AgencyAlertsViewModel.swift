@@ -29,7 +29,8 @@ final class AgencyAlertsViewModel: NSObject, ObservableObject, AgencyAlertsDeleg
     @Published private(set) var isLoading: Bool = false
 
     /// IDs of collapsed sections; round-tripped by the VC's collapsible-sections delegate.
-    @Published var collapsedSections: Set<String> = []
+    /// Not `@Published` — no observer in the VC, the VC reads/writes through directly.
+    var collapsedSections: Set<String> = []
 
     // MARK: - Private
 
@@ -44,10 +45,6 @@ final class AgencyAlertsViewModel: NSObject, ObservableObject, AgencyAlertsDeleg
         super.init()
         self.alertsStore.addDelegate(self)
         self.alerts = dedupedAlerts()
-    }
-
-    deinit {
-        alertsStore.removeDelegate(self)
     }
 
     // MARK: - Intent

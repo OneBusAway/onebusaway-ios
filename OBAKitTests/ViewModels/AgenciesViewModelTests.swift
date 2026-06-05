@@ -65,8 +65,6 @@ final class AgenciesViewModelTests: OBATestCase {
         let viewModel = AgenciesViewModel(application: app)
 
         expect(viewModel.agencies).to(beEmpty())
-        expect(viewModel.isLoading).to(beFalse())
-        expect(viewModel.loadError).to(beNil())
     }
 
     @MainActor
@@ -82,8 +80,6 @@ final class AgenciesViewModelTests: OBATestCase {
         let viewModel = AgenciesViewModel(application: app)
         _ = try? await viewModel.loadData()
 
-        expect(viewModel.loadError).to(beNil())
-        expect(viewModel.isLoading).to(beFalse())
         expect(viewModel.agencies).toNot(beEmpty())
 
         let names = viewModel.agencies.map { $0.agency.name }

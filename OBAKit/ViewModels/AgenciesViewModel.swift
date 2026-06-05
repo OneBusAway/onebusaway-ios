@@ -13,8 +13,9 @@ import OBAKitCore
 
 /// Shared ViewModel for `AgenciesViewController`.
 ///
-/// Owns the agency list fetch, sorting, and error state. The VC keeps the
-/// `OBAListView`/`ProgressHUD`/`UIAlertController` wiring.
+/// Owns the agency list fetch and sorting. The VC keeps the
+/// `OBAListView`/`ProgressHUD`/`UIAlertController` wiring and routes errors
+/// through `TaskController`.
 @MainActor
 final class AgenciesViewModel: ObservableObject {
 
@@ -22,12 +23,6 @@ final class AgenciesViewModel: ObservableObject {
 
     /// Agencies sorted by name. Empty until `loadData()` completes successfully.
     @Published private(set) var agencies: [AgencyWithCoverage] = []
-
-    /// `true` while `loadData()` is in flight.
-    @Published private(set) var isLoading: Bool = false
-
-    /// Non-nil when the most recent `loadData()` call failed.
-    @Published private(set) var loadError: Error?
 
     // MARK: - Private
 
@@ -43,23 +38,12 @@ final class AgenciesViewModel: ObservableObject {
 
     func loadData() async throws -> [AgencyWithCoverage] {
         guard let apiService = application.apiService else {
-            let error = UnstructuredError("No API Service")
-            loadError = error
-            throw error
+            throw UnstructuredError("No API Service")
         }
 
-        isLoading = true
-        loadError = nil
-        defer { isLoading = false }
-
-        do {
-            let list = try await apiService.getAgenciesWithCoverage().list
-            let sorted = list.sorted { $0.agency.name < $1.agency.name }
-            agencies = sorted
-            return sorted
-        } catch {
-            loadError = error
-            throw error
-        }
+        let list = try await apiService.getAgenciesWithCoverage().list
+        let sorted = list.sorted { $0.agency.name < $1.agency.name }
+        agencies = sorted
+        return sorted
     }
 }
