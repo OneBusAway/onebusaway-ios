@@ -22,11 +22,18 @@ class CurrentTripViewModel: ObservableObject {
 
     /// Loading / error / result state for the screen.
     enum State {
+        /// Initial state, and while a find is in flight.
         case loading
+        /// No user location is available — the location service returned `nil`.
         case noLocation
+        /// The matcher returned an empty array — no active vehicle is currently
+        /// on the selected route near the user.
         case noResults
+        /// The selected route has no real-time tracking data.
         case noRealtime
+        /// Two or more vehicles matched; the UI shows a disambiguation list.
         case multipleResults
+        /// A network or service error surfaced from the matcher.
         case error(Error)
     }
 
@@ -124,8 +131,8 @@ class CurrentTripViewModel: ObservableObject {
         }
     }
 
-    /// Applies a fresh set of matches. Internal so tests can drive the result branches
-    /// directly without staging a full `NearbyTripMatcher` round trip.
+    /// Routes a fresh set of matches into the appropriate state transition:
+    /// empty → `.noResults`, one → `pendingNavigation`, more → `.multipleResults`.
     func handle(results: [NearbyTripMatcher.MatchResult]) {
         matchResults = results
 
@@ -139,7 +146,8 @@ class CurrentTripViewModel: ObservableObject {
         }
     }
 
-    /// Maps a matcher error onto VM state. Internal so tests can drive both branches.
+    /// Maps a matcher error onto VM state. `MatchError.noRealtimeData` gets its own
+    /// `.noRealtime` state; everything else surfaces as `.error(error)`.
     func handle(error: Error) {
         if let matchError = error as? NearbyTripMatcher.MatchError, matchError == .noRealtimeData {
             state = .noRealtime
@@ -175,6 +183,8 @@ class CurrentTripViewModel: ObservableObject {
 
     // MARK: - Helpers
 
+    /// Builds the localized "transit service unavailable" error used when no
+    /// `apiService` is resolved (e.g. the user has no region selected).
     private static func noServiceError() -> NSError {
         NSError(
             domain: "CurrentTripViewModel",
