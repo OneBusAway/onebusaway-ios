@@ -238,18 +238,18 @@ class StopViewModel: ObservableObject {
     }
 
     private func refreshSurveys() {
-        // fetchSurveys() records failures on `lastError` rather than rethrowing.
-        // Skip the recompute when `lastError` is set so a failed fetch doesn't
-        // overwrite the current card. A cooldown-skipped fetch after a prior
-        // *success* still recomputes (lastError stays nil); after a prior
-        // *failure*, lastError is still set so the recompute is skipped — by
-        // then `applySuccessfulFetch` will have already run a recompute on the
-        // current survey list, so the card state is still correct.
+        // `refreshSurveys` records failures on the orchestrator's `lastError`
+        // rather than rethrowing. Skip the recompute when it's set so a failed
+        // fetch doesn't overwrite the current card. A cooldown-skipped fetch
+        // after a prior *success* still recomputes (lastError stays nil);
+        // after a prior *failure*, lastError is still set so the recompute is
+        // skipped — by then `applySuccessfulFetch` will have already run a
+        // recompute on the current survey list, so the card state is still
+        // correct.
         Task { [weak self] in
             guard let self else { return }
-            let surveyService = self.application.surveyService
-            await surveyService.fetchSurveys()
-            guard surveyService.lastError == nil else { return }
+            await self.surveyOrchestrator.refreshSurveys()
+            guard self.surveyOrchestrator.lastError == nil else { return }
             self.recomputeCurrentSurvey()
         }
     }
