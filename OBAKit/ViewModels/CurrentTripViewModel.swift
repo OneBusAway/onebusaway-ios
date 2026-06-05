@@ -44,10 +44,18 @@ class CurrentTripViewModel: ObservableObject {
     /// drive it to `nil` on pop).
     @Published var pendingNavigation: ArrivalDeparture?
 
+    // MARK: - Configuration
+
+    /// Set by the UI layer to gate programmatic auto-refreshes.
+    /// e.g. `viewModel.shouldSkipProgrammaticRefresh = { UIAccessibility.isVoiceOverRunning }`
+    var shouldSkipProgrammaticRefresh: (() -> Bool)?
+
     // MARK: - Private
 
     private let application: Application
     private let route: Route
+    private static let refreshInterval: TimeInterval = 20.0
+    private var refreshTimer: Timer?
     private var findVehicleTask: Task<Void, Never>?
 
     // MARK: - Init
@@ -58,7 +66,24 @@ class CurrentTripViewModel: ObservableObject {
     }
 
     deinit {
+        refreshTimer?.invalidate()
         findVehicleTask?.cancel()
+    }
+
+    // MARK: - Lifecycle
+
+    /// Call from `viewWillAppear`. Starts the refresh timer and kicks off an initial find.
+    func start() {
+        startRefreshTimer()
+        findVehicle()
+    }
+
+    /// Call from `viewWillDisappear`. Stops the timer and cancels any in-flight find.
+    func deactivate() {
+        refreshTimer?.invalidate()
+        refreshTimer = nil
+        findVehicleTask?.cancel()
+        findVehicleTask = nil
     }
 
     // MARK: - Intent
@@ -131,6 +156,21 @@ class CurrentTripViewModel: ObservableObject {
     func pendingNavigationUnavailable() {
         state = .multipleResults
         pendingNavigation = nil
+    }
+
+    // MARK: - Refresh Timer
+
+    private func startRefreshTimer() {
+        refreshTimer?.invalidate()
+        refreshTimer = Timer.scheduledTimer(
+            withTimeInterval: Self.refreshInterval,
+            repeats: true
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                guard let self, !(self.shouldSkipProgrammaticRefresh?() ?? false) else { return }
+                self.findVehicle()
+            }
+        }
     }
 
     // MARK: - Helpers
