@@ -101,6 +101,9 @@ class CurrentTripViewModel: ObservableObject {
 
         findVehicleTask = Task { [weak self] in
             guard let self else { return }
+            // `deactivate()` cancels the task. Bail out before the synchronous early-return
+            // paths so a cancelled task can't still publish a final `.noLocation` / `.error`.
+            if Task.isCancelled { return }
 
             guard let userLocation = self.application.locationService.currentLocation else {
                 self.state = .noLocation
