@@ -243,6 +243,27 @@ class CurrentTripViewModelTests: OBATestCase {
         expect(viewModel.matchResults.count) == 1
     }
 
+    // MARK: - Lifecycle
+
+    /// `start()` must kick off `findVehicle()` — guards against a future refactor
+    /// accidentally turning it into a no-op (e.g. only starting the timer).
+    @MainActor
+    func test_start_invokesFindVehicle() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader, withLocation: false)
+        let viewModel = CurrentTripViewModel(application: app, route: route30())
+
+        viewModel.start()
+        for _ in 0..<5 { await Task.yield() }
+
+        guard case .noLocation = viewModel.state else {
+            XCTFail("Expected start() to kick findVehicle() into the no-location branch, got \(viewModel.state)")
+            return
+        }
+
+        viewModel.deactivate()
+    }
+
     // MARK: - findVehicle()
 
     @MainActor
