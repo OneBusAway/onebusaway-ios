@@ -30,11 +30,6 @@ class CurrentTripViewController: UIViewController,
     private lazy var dataLoadFeedbackGenerator = DataLoadFeedbackGenerator(application: application)
     private var cancellables = Set<AnyCancellable>()
 
-    // MARK: - Timer
-
-    private static let refreshInterval: TimeInterval = 20.0
-    private var refreshTimer: Timer?
-
     // MARK: - Init
 
     init(application: Application, route: Route) {
@@ -51,10 +46,6 @@ class CurrentTripViewController: UIViewController,
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
-    deinit {
-        refreshTimer?.invalidate()
-    }
-
     // MARK: - UIViewController Lifecycle
 
     override func viewDidLoad() {
@@ -66,21 +57,20 @@ class CurrentTripViewController: UIViewController,
         view.addSubview(listView)
         listView.pinToSuperview(.edges)
 
+        viewModel.shouldSkipProgrammaticRefresh = { UIAccessibility.isVoiceOverRunning }
         bindViewModel()
-        viewModel.findVehicle()
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         disableIdleTimer()
-        startRefreshTimer()
+        viewModel.start()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         enableIdleTimer()
-        refreshTimer?.invalidate()
-        refreshTimer = nil
+        viewModel.deactivate()
     }
 
     // MARK: - Idle Timer
@@ -124,21 +114,6 @@ class CurrentTripViewController: UIViewController,
                 self.viewModel.pendingNavigation = nil
             }
             .store(in: &cancellables)
-    }
-
-    // MARK: - Refresh Timer
-
-    private func startRefreshTimer() {
-        refreshTimer?.invalidate()
-        refreshTimer = Timer.scheduledTimer(
-            withTimeInterval: Self.refreshInterval,
-            repeats: true
-        ) { [weak self] _ in
-            guard let self else { return }
-            // Skip refresh when VoiceOver is active to avoid disrupting screen reader users.
-            guard !UIAccessibility.isVoiceOverRunning else { return }
-            self.viewModel.findVehicle()
-        }
     }
 
     // MARK: - OBAListViewDataSource
