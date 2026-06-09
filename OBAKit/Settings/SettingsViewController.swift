@@ -120,8 +120,7 @@ class SettingsViewController: FormViewController {
             application.userDefaults.set(false, forKey: RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey)
         }
 
-        if let selectedFilterTitle = values[arrivalFilterTag] as? String {
-            let filter = Self.arrivalFilterFromDisplayTitle(selectedFilterTitle)
+        if let filter = values[arrivalFilterTag] as? ArrivalDepartureFilter {
             application.userDefaults.set(filter.rawValue, forKey: CoreAppConfig.arrivalDepartureFilterUserDefaultsKey)
         }
 
@@ -140,21 +139,13 @@ class SettingsViewController: FormViewController {
         store.walkingSpeedMetersPerSecond = decision.speed
     }
 
-    private static func arrivalFilterFromDisplayTitle(_ title: String) -> ArrivalDepartureFilter {
-        for filter in ArrivalDepartureFilter.allCases where filter.displayTitle == title {
-            return filter
-        }
-        return .all
-    }
-
     // MARK: - Arrival Display Section
 
     private let arrivalFilterTag = "arrivalDepartureFilter"
 
-    private func currentArrivalFilterDisplayTitle() -> String {
+    private func currentArrivalFilter() -> ArrivalDepartureFilter {
         let saved = application.userDefaults.string(forKey: CoreAppConfig.arrivalDepartureFilterUserDefaultsKey)
-        let filter = ArrivalDepartureFilter(rawValue: saved ?? "") ?? application.defaultArrivalDepartureFilter
-        return filter.displayTitle
+        return ArrivalDepartureFilter(rawValue: saved ?? "") ?? application.defaultArrivalDepartureFilter
     }
 
     private lazy var arrivalDisplaySection: Section = {
@@ -162,12 +153,13 @@ class SettingsViewController: FormViewController {
             OBALoc("settings_controller.arrival_display_section.title", value: "Arrival Display", comment: "Settings section title for controlling which arrivals/departures are shown")
         )
 
-        section <<< AlertRow<String> {
+        section <<< AlertRow<ArrivalDepartureFilter> {
             $0.tag = arrivalFilterTag
             $0.title = OBALoc("settings_controller.arrival_filter.title", value: "Show Departures", comment: "Title for the departure filter setting row")
             $0.selectorTitle = OBALoc("settings_controller.arrival_filter.selector_title", value: "Show Departures", comment: "Title for the departure filter selection alert")
-            $0.options = ArrivalDepartureFilter.allCases.map { $0.displayTitle }
-            $0.value = self.currentArrivalFilterDisplayTitle()
+            $0.options = Array(ArrivalDepartureFilter.allCases)
+            $0.displayValueFor = { $0?.displayTitle }
+            $0.value = self.currentArrivalFilter()
         }
 
         return section

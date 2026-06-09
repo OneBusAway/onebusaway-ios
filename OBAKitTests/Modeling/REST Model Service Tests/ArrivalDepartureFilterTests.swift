@@ -107,6 +107,32 @@ class ArrivalDepartureFilterTests: OBATestCase {
         expect(result).to(beEmpty())
     }
 
+    func test_filterByScheduledOnly_noRealtimeData_returnsAll() async throws {
+        let stopArrivals = try await restService.getArrivalsAndDeparturesForStop(
+            id: stopWithoutRealtime,
+            minutesBefore: 0,
+            minutesAfter: 60
+        ).entry
+        let allArrivals = stopArrivals.arrivalsAndDepartures
+
+        expect(allArrivals).toNot(beEmpty())
+        let result = allArrivals.filter(by: .scheduledOnly)
+        expect(result.count) == allArrivals.count
+    }
+
+    func test_filterByAll_noRealtimeData_returnsAll() async throws {
+        let stopArrivals = try await restService.getArrivalsAndDeparturesForStop(
+            id: stopWithoutRealtime,
+            minutesBefore: 0,
+            minutesAfter: 60
+        ).entry
+        let allArrivals = stopArrivals.arrivalsAndDepartures
+
+        expect(allArrivals).toNot(beEmpty())
+        let result = allArrivals.filter(by: .all)
+        expect(result.count) == allArrivals.count
+    }
+
     // MARK: - Filter .scheduledOnly
 
     func test_filterByScheduledOnly_returnsOnlyNonPredicted() async throws {
@@ -206,5 +232,20 @@ class ArrivalDepartureFilterUserDefaultsTests: XCTestCase {
         let saved = userDefaults.string(forKey: CoreAppConfig.arrivalDepartureFilterUserDefaultsKey)
         let filter = ArrivalDepartureFilter(rawValue: saved ?? "")
         expect(filter).to(beNil())
+    }
+
+    func test_nilValue_withConfiguredDefault_resolvesToConfiguredDefault() {
+        let saved = userDefaults.string(forKey: CoreAppConfig.arrivalDepartureFilterUserDefaultsKey)
+        let configuredDefault = ArrivalDepartureFilter.scheduledOnly
+        let filter = ArrivalDepartureFilter(rawValue: saved ?? "") ?? configuredDefault
+        expect(filter) == .scheduledOnly
+    }
+
+    func test_invalidValue_withConfiguredDefault_resolvesToConfiguredDefault() {
+        userDefaults.set("garbage", forKey: CoreAppConfig.arrivalDepartureFilterUserDefaultsKey)
+        let saved = userDefaults.string(forKey: CoreAppConfig.arrivalDepartureFilterUserDefaultsKey)
+        let configuredDefault = ArrivalDepartureFilter.estimatedOnly
+        let filter = ArrivalDepartureFilter(rawValue: saved ?? "") ?? configuredDefault
+        expect(filter) == .estimatedOnly
     }
 }

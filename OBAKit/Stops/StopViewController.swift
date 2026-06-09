@@ -434,13 +434,12 @@ public class StopViewController: UIViewController, // swiftlint:disable:this typ
         }
 
         switch currentSort {
-        case .time:  sortByTime.image =  UIImage(systemName: "checkmark")
-        case .route: sortByRoute.image = UIImage(systemName: "checkmark")
+        case .time:  sortByTime.image =  Icons.checkmark
+        case .route: sortByRoute.image = Icons.checkmark
         }
 
         let sortMenuTitle = OBALoc("stop_preferences_controller.sorting_section.header_title", value: "Sort By", comment: "Title of the Sorting section")
-        let sortMenuImage = UIImage(systemName: "arrow.up.arrow.down")
-        return UIMenu(title: sortMenuTitle, image: sortMenuImage, children: [sortByTime, sortByRoute])
+        return UIMenu(title: sortMenuTitle, image: Icons.sort, children: [sortByTime, sortByRoute])
     }
 
     private var activeArrivalDepartureFilter: ArrivalDepartureFilter {
@@ -459,12 +458,12 @@ public class StopViewController: UIViewController, // swiftlint:disable:this typ
                 self.application.userDefaults.set(filter.rawValue, forKey: CoreAppConfig.arrivalDepartureFilterUserDefaultsKey)
                 self.dataDidReload()
             }
-            if filter == currentFilter { action.image = UIImage(systemName: "checkmark") }
+            if filter == currentFilter { action.image = Icons.checkmark }
             return action
         }
 
         let menuTitle = OBALoc("stop_controller.arrival_filter.menu_title", value: "Departure Type", comment: "Title for the menu that filters departures by data type")
-        return UIMenu(title: menuTitle, image: UIImage(systemName: "antenna.radiowaves.left.and.right"), children: actions)
+        return UIMenu(title: menuTitle, image: Icons.departureType, children: actions)
     }
 
     fileprivate func helpMenu() -> UIMenu {
@@ -794,19 +793,33 @@ public class StopViewController: UIViewController, // swiftlint:disable:this typ
                 .group(preferences: stopPreferences, filter: isListFiltered)
                 .localizedStandardCompare()
 
-            sections = groups.flatMap { group -> [OBAListViewSection] in
-                var groupSections: [OBAListViewSection] = []
-                let filtered = group.arrivalDepartures.filteringTerminalDuplicates()
-                let pastDeps = filtered.filter { $0.arrivalDepartureMinutes < 0 }
-                let upcomingDeps = filtered.filter { $0.arrivalDepartureMinutes >= 0 }
+            if groups.isEmpty, activeArrivalDepartureFilter != .all {
+                let noResultsItem = EmptyDataSetItem(
+                    id: "arrival_filter_no_results",
+                    alignment: .top,
+                    title: nil,
+                    body: OBALoc(
+                        "stop_controller.arrival_filter.no_results",
+                        value: "No departures match the current filter. Change the Departure Type in the ⋯ menu.",
+                        comment: "Message shown when the arrival type filter hides all departures in route-sorted mode"
+                    )
+                )
+                sections.append(listViewSection(for: .emptyData, title: nil, items: [noResultsItem]))
+            } else {
+                sections = groups.flatMap { group -> [OBAListViewSection] in
+                    var groupSections: [OBAListViewSection] = []
+                    let filtered = group.arrivalDepartures.filteringTerminalDuplicates()
+                    let pastDeps = filtered.filter { $0.arrivalDepartureMinutes < 0 }
+                    let upcomingDeps = filtered.filter { $0.arrivalDepartureMinutes >= 0 }
 
-                if !pastDeps.isEmpty {
-                    groupSections.append(sectionForPastDepartures(groupRoute: group.route, arrDeps: pastDeps))
+                    if !pastDeps.isEmpty {
+                        groupSections.append(sectionForPastDepartures(groupRoute: group.route, arrDeps: pastDeps))
+                    }
+
+                    // Always append upcoming section to keep the main route header visible
+                    groupSections.append(sectionForGroup(groupRoute: group.route, arrDeps: upcomingDeps))
+                    return groupSections
                 }
-
-                // Always append upcoming section to keep the main route header visible
-                groupSections.append(sectionForGroup(groupRoute: group.route, arrDeps: upcomingDeps))
-                return groupSections
             }
         }
 

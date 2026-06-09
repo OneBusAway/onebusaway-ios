@@ -170,6 +170,16 @@ class Icons: NSObject {
         imageNamed("header")
     }
 
+    /// An icon for the departure-type filter menu (antenna radiowaves).
+    public class var departureType: UIImage {
+        systemImage(named: "antenna.radiowaves.left.and.right")
+    }
+
+    /// An icon for the sort-order menu (up/down arrows).
+    public class var sort: UIImage {
+        systemImage(named: "arrow.up.arrow.down")
+    }
+
     // MARK: - Miscellaneous
 
     /// An image used to represent an offline internet connection.
