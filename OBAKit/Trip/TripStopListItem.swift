@@ -17,6 +17,13 @@ enum TripStopTemporalState: Hashable {
     case past
     case current
     case future
+
+    static func classify(stopIndex: Int, closestStopIndex: Int?) -> TripStopTemporalState {
+        guard let closestStopIndex else { return .future }
+        if stopIndex < closestStopIndex { return .past }
+        if stopIndex == closestStopIndex { return .current }
+        return .future
+    }
 }
 
 fileprivate let tripStopCellMinimumHeight: CGFloat = 48.0
@@ -56,12 +63,6 @@ struct TripStopViewModel: OBAListViewItem {
     /// Whether this stop is in the past, present, or future relative to the vehicle position.
     let temporalState: TripStopTemporalState
 
-    /// Zero-based index of this stop within the trip.
-    let stopIndex: Int
-
-    /// Total number of stops in the trip.
-    let totalStops: Int
-
     /// The title of this item. e.g., "15th Ave E & E Galer St"
     let title: String
 
@@ -80,41 +81,20 @@ struct TripStopViewModel: OBAListViewItem {
         stopTime: TripStopTime,
         arrivalDeparture: ArrivalDeparture?,
         stopIndex: Int,
-        totalStops: Int,
         closestStopIndex: Int?,
         onSelectAction: OBAListViewAction<TripStopViewModel>?
     ) {
         self.stopTime = stopTime
-        self.stopIndex = stopIndex
-        self.totalStops = totalStops
 
         stop = stopTime.stop
 
-        if let arrivalDeparture = arrivalDeparture {
-            isUserDestination = stopTime.stopID == arrivalDeparture.stopID
-        }
-        else {
-            isUserDestination = false
-        }
+        isUserDestination = arrivalDeparture.map { stopTime.stopID == $0.stopID } ?? false
 
-        if let closestStopID = arrivalDeparture?.tripStatus?.closestStopID {
-            isCurrentVehicleLocation = stopTime.stopID == closestStopID
-        }
-        else {
-            isCurrentVehicleLocation = false
-        }
+        // Derive isCurrentVehicleLocation from the same closestStopIndex used for
+        // temporalState so both properties always agree on which stop is "current".
+        isCurrentVehicleLocation = closestStopIndex.map { stopIndex == $0 } ?? false
 
-        if let closestStopIndex = closestStopIndex {
-            if stopIndex < closestStopIndex {
-                temporalState = .past
-            } else if stopIndex == closestStopIndex {
-                temporalState = .current
-            } else {
-                temporalState = .future
-            }
-        } else {
-            temporalState = .future
-        }
+        temporalState = TripStopTemporalState.classify(stopIndex: stopIndex, closestStopIndex: closestStopIndex)
 
         title = stopTime.stop.name
         date = stopTime.arrivalDate
@@ -128,8 +108,6 @@ struct TripStopViewModel: OBAListViewItem {
         hasher.combine(isCurrentVehicleLocation)
         hasher.combine(isUserDestination)
         hasher.combine(temporalState)
-        hasher.combine(stopIndex)
-        hasher.combine(totalStops)
         hasher.combine(title)
         hasher.combine(date)
         hasher.combine(routeType)
@@ -139,8 +117,6 @@ struct TripStopViewModel: OBAListViewItem {
         return lhs.isCurrentVehicleLocation == rhs.isCurrentVehicleLocation &&
             lhs.isUserDestination == rhs.isUserDestination &&
             lhs.temporalState == rhs.temporalState &&
-            lhs.stopIndex == rhs.stopIndex &&
-            lhs.totalStops == rhs.totalStops &&
             lhs.title == rhs.title &&
             lhs.date == rhs.date &&
             lhs.routeType == rhs.routeType
@@ -286,6 +262,7 @@ final class TripStopCell: OBAListViewCell {
     private func applyTemporalStateStyling(_ viewModel: TripStopViewModel) {
         switch viewModel.temporalState {
         case .past:
+            titleLabel.font = .preferredFont(forTextStyle: .body)
             titleLabel.textColor = ThemeColors.shared.secondaryLabel
             timeLabel.textColor = ThemeColors.shared.secondaryLabel
 
@@ -295,9 +272,9 @@ final class TripStopCell: OBAListViewCell {
             timeLabel.textColor = ThemeColors.shared.label
 
         case .future:
-            if viewModel.isUserDestination {
-                titleLabel.font = .preferredFont(forTextStyle: .headline)
-            }
+            titleLabel.font = viewModel.isUserDestination
+                ? .preferredFont(forTextStyle: .headline)
+                : .preferredFont(forTextStyle: .body)
             titleLabel.textColor = ThemeColors.shared.label
             timeLabel.textColor = ThemeColors.shared.secondaryLabel
         }

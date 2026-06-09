@@ -11,6 +11,64 @@ import UIKit
 import OBAKitCore
 import FloatingPanel
 
+// MARK: - TripProgressViewModel
+
+/// Testable value type encapsulating the "Stop X of Y" header data.
+/// Returns `nil` when progress data is unavailable and the header should be hidden.
+struct TripProgressViewModel {
+    let stopCountText: String
+    let etaText: String?
+    let progress: Float
+
+    init?(closestStopIndex: Int, totalStops: Int, userStopIndex: Int?, arrivalDepartureMinutes: Int?) {
+        guard totalStops > 0 else { return nil }
+        let currentStopNumber = closestStopIndex + 1
+        progress = Float(currentStopNumber) / Float(totalStops)
+        stopCountText = String(
+            format: OBALoc(
+                "trip_progress.stop_count_fmt",
+                value: "Stop %1$d of %2$d",
+                comment: "Shows the current stop position. e.g. Stop 5 of 18"
+            ),
+            currentStopNumber, totalStops
+        )
+        if let userStopIndex {
+            if userStopIndex < closestStopIndex {
+                etaText = OBALoc(
+                    "trip_progress.passed_your_stop",
+                    value: "Passed your stop",
+                    comment: "Shown when the vehicle has already passed the user's destination stop"
+                )
+            } else if userStopIndex == closestStopIndex {
+                etaText = OBALoc(
+                    "trip_progress.arriving_now",
+                    value: "Arriving now",
+                    comment: "Shown when the vehicle is arriving at the user's stop"
+                )
+            } else if let minutes = arrivalDepartureMinutes, minutes > 0 {
+                etaText = String(
+                    format: OBALoc(
+                        "trip_progress.eta_to_stop_fmt",
+                        value: "~%d min to your stop",
+                        comment: "Estimated time of arrival to the user's stop. e.g. ~8 min to your stop"
+                    ),
+                    minutes
+                )
+            } else {
+                etaText = OBALoc(
+                    "trip_progress.arriving_now",
+                    value: "Arriving now",
+                    comment: "Shown when the vehicle is arriving at the user's stop"
+                )
+            }
+        } else {
+            etaText = nil
+        }
+    }
+}
+
+// MARK: -
+
 /// Displays a list of stops for the trip corresponding to an `ArrivalDeparture` object.
 class TripFloatingPanelController: UIViewController,
     AppContext,
@@ -38,6 +96,11 @@ class TripFloatingPanelController: UIViewController,
     }
 
     weak var parentTripViewController: TripViewController?
+
+    /// Tracks whether the floating panel is expanded enough to show the progress header.
+    /// Combined with data availability in `updateProgressView` to give `tripProgressWrapper`
+    /// a single source of truth for its hidden state.
+    private var isPanelExpandedEnoughForProgress = false
 
     // MARK: - Init/Deinit
 
@@ -121,23 +184,25 @@ class TripFloatingPanelController: UIViewController,
         switch panelState {
         case .tip:
             self.separatorView.isHidden = true
-            self.tripProgressWrapper.isHidden = true
+            self.isPanelExpandedEnoughForProgress = false
             self.stopArrivalView.normalInfoStack.forEach { $0.isHidden = isAccessibility }
             self.stopArrivalView.accessibilityInfoStack.forEach { $0.isHidden = true }
         case .half:
             self.separatorView.isHidden = false
-            self.tripProgressWrapper.isHidden = false
+            self.isPanelExpandedEnoughForProgress = true
             self.stopArrivalView.normalInfoStack.forEach { $0.isHidden = isAccessibility }
             self.stopArrivalView.accessibilityInfoStack.forEach { $0.isHidden = true }
             self.stopArrivalView.accessibilityMinimalInfoStack.forEach { $0.isHidden = !isAccessibility }
         case .full:
             self.separatorView.isHidden = false
-            self.tripProgressWrapper.isHidden = false
+            self.isPanelExpandedEnoughForProgress = true
             self.stopArrivalView.normalInfoStack.forEach { $0.isHidden = isAccessibility }
             self.stopArrivalView.accessibilityInfoStack.forEach { $0.isHidden = !isAccessibility }
-        case .hidden: break
+        case .hidden:
+            self.isPanelExpandedEnoughForProgress = false
         default: break
         }
+        updateProgressView()
     }
 
     public func setListVisibility(isVisible: Bool) {
@@ -188,14 +253,11 @@ class TripFloatingPanelController: UIViewController,
         return view
     }()
 
-    private lazy var tripProgressView: TripProgressView = {
-        let view = TripProgressView.autolayoutNew()
-        view.isHidden = true
-        return view
-    }()
+    private lazy var tripProgressView: TripProgressView = TripProgressView.autolayoutNew()
 
     private lazy var tripProgressWrapper: UIView = {
         let wrapper = tripProgressView.embedInWrapperView(setConstraints: false)
+        wrapper.isHidden = true
         NSLayoutConstraint.activate([
             tripProgressView.topAnchor.constraint(equalTo: wrapper.topAnchor, constant: ThemeMetrics.compactPadding),
             tripProgressView.leadingAnchor.constraint(equalTo: wrapper.readableContentGuide.leadingAnchor),
@@ -324,13 +386,11 @@ class TripFloatingPanelController: UIViewController,
 
         // Stop times
         let selectTripStopAction: OBAListViewAction<TripStopViewModel> = { [unowned self] item in self.onSelectTripStop(item) }
-        let totalStops = tripDetails.stopTimes.count
         let stopTimes: [AnyOBAListViewItem] = tripDetails.stopTimes.enumerated().map { index, stopTime in
             TripStopViewModel(
                 stopTime: stopTime,
                 arrivalDeparture: arrivalDeparture,
                 stopIndex: index,
-                totalStops: totalStops,
                 closestStopIndex: closestStopIdx,
                 onSelectAction: selectTripStopAction
             ).typeErased
@@ -349,79 +409,32 @@ class TripFloatingPanelController: UIViewController,
     // MARK: - Trip Progress
 
     private func updateProgressView() {
-        guard let tripDetails = tripDetails else {
-            tripProgressView.isHidden = true
+        guard
+            isPanelExpandedEnoughForProgress,
+            let tripDetails = tripDetails,
+            let currentIndex = closestStopIndex(in: tripDetails)
+        else {
+            tripProgressWrapper.isHidden = true
             return
         }
 
-        let totalStops = tripDetails.stopTimes.count
-        guard totalStops > 0 else {
-            tripProgressView.isHidden = true
+        let arrivalDeparture = tripConvertible?.arrivalDeparture
+        let userStopIndex = arrivalDeparture.flatMap { ad in
+            tripDetails.stopTimes.firstIndex { $0.stopID == ad.stopID }
+        }
+
+        guard let vm = TripProgressViewModel(
+            closestStopIndex: currentIndex,
+            totalStops: tripDetails.stopTimes.count,
+            userStopIndex: userStopIndex,
+            arrivalDepartureMinutes: arrivalDeparture?.arrivalDepartureMinutes
+        ) else {
+            tripProgressWrapper.isHidden = true
             return
         }
 
-        guard let currentIndex = closestStopIndex(in: tripDetails) else {
-            tripProgressView.isHidden = true
-            return
-        }
-
-        // 1-based stop number for display
-        let currentStopNumber = currentIndex + 1
-        let progress = Float(currentStopNumber) / Float(totalStops)
-
-        let stopCountText = String(
-            format: OBALoc(
-                "trip_progress.stop_count_fmt",
-                value: "Stop %d of %d",
-                comment: "Shows the current stop position. e.g. Stop 5 of 18"
-            ),
-            currentStopNumber,
-            totalStops
-        )
-
-        // Compute ETA to user's destination stop, if available.
-        // Uses arrivalDepartureMinutes from ArrivalDeparture which already
-        // accounts for predicted/real-time arrival — same value as the "Xm" badge.
-        var etaText: String?
-        if let arrivalDeparture = tripConvertible?.arrivalDeparture {
-            let userStopIndex = tripDetails.stopTimes.firstIndex { $0.stopID == arrivalDeparture.stopID }
-            if let userStopIndex = userStopIndex {
-                if userStopIndex < currentIndex {
-                    etaText = OBALoc(
-                        "trip_progress.passed_your_stop",
-                        value: "Passed your stop",
-                        comment: "Shown when the vehicle has already passed the user's destination stop"
-                    )
-                } else if userStopIndex == currentIndex {
-                    etaText = OBALoc(
-                        "trip_progress.arriving_now",
-                        value: "Arriving now",
-                        comment: "Shown when the vehicle is arriving at the user's stop"
-                    )
-                } else {
-                    let minutes = arrivalDeparture.arrivalDepartureMinutes
-                    if minutes > 0 {
-                        etaText = String(
-                            format: OBALoc(
-                                "trip_progress.eta_to_stop_fmt",
-                                value: "~%d min to your stop",
-                                comment: "Estimated time of arrival to the user's stop. e.g. ~8 min to your stop"
-                            ),
-                            minutes
-                        )
-                    } else {
-                        etaText = OBALoc(
-                            "trip_progress.arriving_now",
-                            value: "Arriving now",
-                            comment: "Shown when the vehicle is arriving at the user's stop"
-                        )
-                    }
-                }
-            }
-        }
-
-        tripProgressView.configure(stopCountText: stopCountText, etaText: etaText, progress: progress)
-        tripProgressView.isHidden = false
+        tripProgressView.configure(stopCountText: vm.stopCountText, etaText: vm.etaText, progress: vm.progress)
+        tripProgressWrapper.isHidden = false
     }
 
     // MARK: - TripStop actions
@@ -554,7 +567,7 @@ final class TripProgressView: UIView {
         stopCountLabel.text = stopCountText
         etaLabel.text = etaText
         etaLabel.isHidden = etaText == nil
-        progressBar.setProgress(progress, animated: true)
+        progressBar.setProgress(progress, animated: false)
 
         accessibilityLabel = [stopCountText, etaText].compactMap { $0 }.joined(separator: ". ")
     }

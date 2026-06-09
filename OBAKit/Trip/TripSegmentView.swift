@@ -46,7 +46,9 @@ class TripSegmentView: UIView {
     var routeType: Route.RouteType = .unknown
 
     /// The temporal state of this stop relative to the vehicle's current position.
-    var temporalState: TripStopTemporalState = .future
+    var temporalState: TripStopTemporalState = .future {
+        didSet { setNeedsDisplay() }
+    }
 
     private var isUserDestination: Bool = false
     private var isCurrentVehicleLocation: Bool = false
