@@ -321,7 +321,7 @@ public class StopViewController: UIViewController,
     }
 
     fileprivate func pulldownMenu() -> UIMenu {
-        return UIMenu(children: [fileMenu(), locationMenu(), sortMenu(), helpMenu()])
+        return UIMenu(children: [fileMenu(), locationMenu(), sortMenu(), arrivalDepartureFilterMenu(), helpMenu()])
     }
 
     func filterMenu() -> UIMenu {
@@ -434,13 +434,36 @@ public class StopViewController: UIViewController,
         }
 
         switch currentSort {
-        case .time:  sortByTime.image =  UIImage(systemName: "checkmark")
-        case .route: sortByRoute.image = UIImage(systemName: "checkmark")
+        case .time:  sortByTime.image =  Icons.checkmark
+        case .route: sortByRoute.image = Icons.checkmark
         }
 
         let sortMenuTitle = OBALoc("stop_preferences_controller.sorting_section.header_title", value: "Sort By", comment: "Title of the Sorting section")
-        let sortMenuImage = UIImage(systemName: "arrow.up.arrow.down")
-        return UIMenu(title: sortMenuTitle, image: sortMenuImage, children: [sortByTime, sortByRoute])
+        return UIMenu(title: sortMenuTitle, image: Icons.sort, children: [sortByTime, sortByRoute])
+    }
+
+    private var activeArrivalDepartureFilter: ArrivalDepartureFilter {
+        if let saved = application.userDefaults.string(forKey: CoreAppConfig.arrivalDepartureFilterUserDefaultsKey),
+           let filter = ArrivalDepartureFilter(rawValue: saved) {
+            return filter
+        }
+        return application.defaultArrivalDepartureFilter
+    }
+
+    fileprivate func arrivalDepartureFilterMenu() -> UIMenu {
+        let currentFilter = activeArrivalDepartureFilter
+        let actions = ArrivalDepartureFilter.allCases.map { filter -> UIAction in
+            let action = UIAction(title: filter.displayTitle) { [weak self] _ in
+                guard let self else { return }
+                self.application.userDefaults.set(filter.rawValue, forKey: CoreAppConfig.arrivalDepartureFilterUserDefaultsKey)
+                self.dataDidReload()
+            }
+            if filter == currentFilter { action.image = Icons.checkmark }
+            return action
+        }
+
+        let menuTitle = OBALoc("stop_controller.arrival_filter.menu_title", value: "Departure Type", comment: "Title for the menu that filters departures by data type")
+        return UIMenu(title: menuTitle, image: Icons.departureType, children: actions)
     }
 
     fileprivate func helpMenu() -> UIMenu {
@@ -751,15 +774,9 @@ public class StopViewController: UIViewController,
         var sections: [OBAListViewSection] = []
 
         if stopPreferences.sortType == .time {
-            let arrDeps: [ArrivalDeparture]
-            if isListFiltered {
-                arrDeps = stopArrivals.arrivalsAndDepartures
-                    .filter(preferences: stopPreferences)
-                    .filteringTerminalDuplicates()
-            } else {
-                arrDeps = stopArrivals.arrivalsAndDepartures
-                    .filteringTerminalDuplicates()
-            }
+            var arrDeps = stopArrivals.arrivalsAndDepartures
+            if isListFiltered { arrDeps = arrDeps.filter(preferences: stopPreferences) }
+            arrDeps = arrDeps.filter(by: activeArrivalDepartureFilter).filteringTerminalDuplicates()
 
             let pastDeps = arrDeps.filter { $0.arrivalDepartureMinutes < 0 }
             let upcomingDeps = arrDeps.filter { $0.arrivalDepartureMinutes >= 0 }
@@ -772,23 +789,37 @@ public class StopViewController: UIViewController,
 
         } else {
             let groups = stopArrivals.arrivalsAndDepartures
+                .filter(by: activeArrivalDepartureFilter)
                 .group(preferences: stopPreferences, filter: isListFiltered)
                 .localizedStandardCompare()
 
-            sections = groups.flatMap { group -> [OBAListViewSection] in
-                var groupSections: [OBAListViewSection] = []
-                let filtered = group.arrivalDepartures.filteringTerminalDuplicates()
-                let pastDeps = filtered.filter { $0.arrivalDepartureMinutes < 0 }
-                let upcomingDeps = filtered.filter { $0.arrivalDepartureMinutes >= 0 }
+            if groups.isEmpty, activeArrivalDepartureFilter != .all {
+                let noResultsItem = EmptyDataSetItem(
+                    id: "arrival_filter_no_results",
+                    alignment: .top,
+                    title: nil,
+                    body: OBALoc(
+                        "stop_controller.arrival_filter.no_results",
+                        value: "No departures match the current filter. Change the Departure Type in the ⋯ menu.",
+                        comment: "Message shown when the arrival type filter hides all departures in route-sorted mode"
+                    )
+                )
+                sections.append(listViewSection(for: .emptyData, title: nil, items: [noResultsItem]))
+            } else {
+                sections = groups.flatMap { group -> [OBAListViewSection] in
+                    var groupSections: [OBAListViewSection] = []
+                    let filtered = group.arrivalDepartures.filteringTerminalDuplicates()
+                    let pastDeps = filtered.filter { $0.arrivalDepartureMinutes < 0 }
+                    let upcomingDeps = filtered.filter { $0.arrivalDepartureMinutes >= 0 }
 
-                if !pastDeps.isEmpty {
-                    groupSections.append(sectionForPastDepartures(groupRoute: group.route, arrDeps: pastDeps))
+                    if !pastDeps.isEmpty {
+                        groupSections.append(sectionForPastDepartures(groupRoute: group.route, arrDeps: pastDeps))
+                    }
+
+                    // Always append upcoming section to keep the main route header visible
+                    groupSections.append(sectionForGroup(groupRoute: group.route, arrDeps: upcomingDeps))
+                    return groupSections
                 }
-
-                // Always append upcoming section to keep the main route header visible
-                groupSections.append(sectionForGroup(groupRoute: group.route, arrDeps: upcomingDeps))
-
-                return groupSections
             }
         }
 

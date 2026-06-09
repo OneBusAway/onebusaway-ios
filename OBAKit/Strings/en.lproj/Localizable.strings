@@ -43,6 +43,15 @@
 /* Title of the Alarm Time Picker page. */
 "alarm_time_picker.title" = "Add Reminder";
 
+/* Filter option to show all departures regardless of real-time data availability */
+"arrival_departure_filter.all_departures" = "All Departures";
+
+/* Filter option to show only departures with real-time estimated data */
+"arrival_departure_filter.real_time_only" = "Real-Time Only";
+
+/* Filter option to show only departures with scheduled data and no real-time information */
+"arrival_departure_filter.scheduled_only" = "Scheduled Only";
+
 /* The title to display to confirm the user's action to delete a bookmark. */
 "bookmarks_controller.delete_bookmark.actionsheet.title" = "Delete Bookmark";
 
@@ -749,6 +758,15 @@
 /* Settings > Alerts section title */
 "settings_controller.alerts_section.title" = "Agency Alerts";
 
+/* Settings section title for controlling which arrivals/departures are shown */
+"settings_controller.arrival_display_section.title" = "Arrival Display";
+
+/* Title for the departure filter selection alert */
+"settings_controller.arrival_filter.selector_title" = "Show Departures";
+
+/* Title for the departure filter setting row */
+"settings_controller.arrival_filter.title" = "Show Departures";
+
 /* Settings > Debug section > Refresh regions on every launch */
 "settings_controller.debug_section.always_refresh_regions" = "Refresh regions on every launch";
 
@@ -802,6 +820,12 @@
 
 /* A header for the arrivals and departures section of the stop controller. */
 "stop_controller.arrival_departure_header" = "Arrivals and Departures";
+
+/* Title for the menu that filters departures by data type */
+"stop_controller.arrival_filter.menu_title" = "Departure Type";
+
+/* Message shown when the arrival type filter hides all departures in route-sorted mode */
+"stop_controller.arrival_filter.no_results" = "No departures match the current filter. Change the Departure Type in the ⋯ menu.";
 
 /* An error message displayed when a stop is shown by tapping on a bookmark—and the bookmark doesn't seem to point to a valid stop any longer. This problem will occur when a transit agency changes its stop IDs, perhaps as part of an annual transit system realignment. */
 "stop_controller.bad_bookmark_error_message" = "This bookmark may not work anymore. Did your transit agency change something? Please delete and recreate the bookmark.";

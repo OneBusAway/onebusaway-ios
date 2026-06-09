@@ -35,4 +35,27 @@ class AppConfigTests: OBATestCase {
         expect(appConfig.queue) == queue
         expect(appConfig.userDefaults) == userDefaults
     }
+
+    func testAppConfig_defaultArrivalDepartureFilter_propagates() {
+        let queue = OperationQueue()
+        let locationManager = MockAuthorizedLocationManager(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
+        let locationService = LocationService(userDefaults: UserDefaults(), locationManager: locationManager)
+        let dataLoader = MockDataLoader(testName: name)
+
+        let appConfig = AppConfig(
+            regionsBaseURL: regionsBaseURL,
+            apiKey: apiKey,
+            appVersion: appVersion,
+            userDefaults: userDefaults,
+            analytics: nil,
+            queue: queue,
+            locationService: locationService,
+            bundledRegionsFilePath: bundledRegionsPath,
+            regionsAPIPath: regionsAPIPath,
+            dataLoader: dataLoader,
+            defaultArrivalDepartureFilter: .scheduledOnly
+        )
+
+        expect(appConfig.defaultArrivalDepartureFilter) == .scheduledOnly
+    }
 }
