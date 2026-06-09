@@ -15,8 +15,7 @@ import OBAKitCore
 protocol DestinationStopPickerDelegate: AnyObject {
     func destinationStopPicker(
         _ controller: DestinationStopPickerController,
-        didSelectStop stopTime: TripStopTime,
-        for arrivalDeparture: ArrivalDeparture
+        didSelectStop stopTime: TripStopTime
     )
     func destinationStopPickerDidCancel(_ controller: DestinationStopPickerController)
 }
@@ -25,11 +24,12 @@ protocol DestinationStopPickerDelegate: AnyObject {
 
 /// Presents a list of stops along a trip so the user can select their destination before sharing.
 /// See: https://github.com/OneBusAway/onebusaway-ios/issues/449
+@MainActor
 class DestinationStopPickerController: UIViewController, AppContext, OBAListViewDataSource {
 
     let application: Application
 
-    private let arrivalDeparture: ArrivalDeparture
+    let arrivalDeparture: ArrivalDeparture
 
     weak var delegate: DestinationStopPickerDelegate?
 
@@ -37,6 +37,7 @@ class DestinationStopPickerController: UIViewController, AppContext, OBAListView
 
     private enum State {
         case loading
+        case empty
         case data([TripStopTime])
         case error(Error)
     }
@@ -97,11 +98,22 @@ class DestinationStopPickerController: UIViewController, AppContext, OBAListView
 
     private func loadStopTimes() {
         guard let apiService = application.apiService else {
-            state = .error(APIError.noResponseBody)
-            Logger.error("API service unavailable in DestinationStopPickerController.")
+            let error = NSError(
+                domain: "DestinationStopPickerController",
+                code: 0,
+                userInfo: [NSLocalizedDescriptionKey: OBALoc(
+                    "destination_stop_picker.error_no_service",
+                    value: "Unable to connect to the transit service.",
+                    comment: "Error shown when the API service is unavailable in the destination stop picker."
+                )]
+            )
+            Logger.error("API service unavailable in DestinationStopPickerController for trip \(arrivalDeparture.tripID).")
+            state = .error(error)
             return
         }
 
+        state = .loading
+        fetchTask?.cancel()
         fetchTask = Task { [weak self] in
             guard let self else { return }
 
@@ -115,27 +127,29 @@ class DestinationStopPickerController: UIViewController, AppContext, OBAListView
                 let allStopTimes = response.entry.stopTimes
                 let boardingStopID = self.arrivalDeparture.stopID
 
-                // Only show stops after the boarding stop.
-                let boardingIndex = allStopTimes.firstIndex { $0.stopID == boardingStopID }
-                let forwardStops: [TripStopTime]
-                if let boardingIndex {
-                    forwardStops = Array(allStopTimes.suffix(from: allStopTimes.index(after: boardingIndex)))
-                } else {
-                    Logger.warn("Boarding stop \(boardingStopID) not found in trip stop times; showing all stops.")
-                    forwardStops = allStopTimes
+                guard let boardingIndex = allStopTimes.firstIndex(where: { $0.stopID == boardingStopID }) else {
+                    let error = NSError(
+                        domain: "DestinationStopPickerController",
+                        code: 1,
+                        userInfo: [NSLocalizedDescriptionKey: OBALoc(
+                            "destination_stop_picker.error_boarding_stop_not_found",
+                            value: "Couldn't determine your boarding point on this trip.",
+                            comment: "Error shown when the boarding stop cannot be found in the trip's stop list."
+                        )]
+                    )
+                    Logger.error("Boarding stop \(boardingStopID) not found in trip \(self.arrivalDeparture.tripID) stop times.")
+                    self.state = .error(error)
+                    return
                 }
 
-                await MainActor.run {
-                    self.state = .data(forwardStops)
-                }
+                let forwardStops = Array(allStopTimes.suffix(from: allStopTimes.index(after: boardingIndex)))
+                self.state = forwardStops.isEmpty ? .empty : .data(forwardStops)
             } catch {
                 if error is CancellationError { return }
-                Logger.error("Failed to load trip stop times: \(error)")
-                await MainActor.run {
-                    self.state = .error(
-                        ErrorClassifier.classify(error, regionName: self.application.currentRegion?.name)
-                    )
-                }
+                Logger.error("Failed to load trip \(self.arrivalDeparture.tripID) stop times: \(error)")
+                self.state = .error(
+                    ErrorClassifier.classify(error, regionName: self.application.currentRegion?.name)
+                )
             }
         }
     }
@@ -153,7 +167,7 @@ class DestinationStopPickerController: UIViewController, AppContext, OBAListView
     // MARK: - OBAListViewDataSource
 
     func items(for listView: OBAListView) -> [OBAListViewSection] {
-        guard case .data(let stopTimes) = state, !stopTimes.isEmpty else {
+        guard case .data(let stopTimes) = state else {
             return []
         }
 
@@ -162,7 +176,7 @@ class DestinationStopPickerController: UIViewController, AppContext, OBAListView
 
             let action: OBAListViewAction<OBAListRowView.ValueViewModel> = { [weak self] _ in
                 guard let self else { return }
-                self.delegate?.destinationStopPicker(self, didSelectStop: stopTime, for: self.arrivalDeparture)
+                self.delegate?.destinationStopPicker(self, didSelectStop: stopTime)
             }
 
             return OBAListRowView.ValueViewModel(
@@ -193,9 +207,7 @@ class DestinationStopPickerController: UIViewController, AppContext, OBAListView
                 ),
                 body: nil
             ))
-        case .error(let error):
-            return .standard(.init(error: error))
-        case .data(let stops) where stops.isEmpty:
+        case .empty:
             return .standard(.init(
                 title: OBALoc(
                     "destination_stop_picker.no_stops_title",
@@ -208,6 +220,18 @@ class DestinationStopPickerController: UIViewController, AppContext, OBAListView
                     comment: "Body text shown when there are no stops available after the boarding stop."
                 )
             ))
+        case .error(let error):
+            let retryConfig = ActivityIndicatedButton.Configuration(
+                text: OBALoc(
+                    "destination_stop_picker.retry_button",
+                    value: "Try Again",
+                    comment: "Button to retry loading stops after an error."
+                ),
+                largeContentImage: nil,
+                showsActivityIndicatorOnTap: true,
+                action: { [weak self] in self?.loadStopTimes() }
+            )
+            return .standard(.init(error: error, buttonConfig: retryConfig))
         case .data:
             return nil
         }

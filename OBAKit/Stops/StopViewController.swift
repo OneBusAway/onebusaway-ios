@@ -1149,15 +1149,16 @@ public class StopViewController: UIViewController,
     }
 
     // MARK: - Share Trip Status
-    func shareTripStatus(viewModel: ArrivalDepartureItem) {
+    private func shareTripStatus(viewModel: ArrivalDepartureItem) {
         guard let arrivalDeparture = arrivalDeparture(forViewModel: viewModel) else {
             Logger.error("No arrivalDeparture found for share trip status view model.")
+            presentShareError()
             return
         }
         shareTripStatus(arrivalDeparture: arrivalDeparture)
     }
 
-    func shareTripStatus(arrivalDeparture: ArrivalDeparture) {
+    private func shareTripStatus(arrivalDeparture: ArrivalDeparture) {
         let picker = DestinationStopPickerController(
             application: application,
             arrivalDeparture: arrivalDeparture
@@ -1422,9 +1423,9 @@ private extension StopViewController {
 extension StopViewController: DestinationStopPickerDelegate {
     func destinationStopPicker(
         _ controller: DestinationStopPickerController,
-        didSelectStop stopTime: TripStopTime,
-        for arrivalDeparture: ArrivalDeparture
+        didSelectStop stopTime: TripStopTime
     ) {
+        let arrivalDeparture = controller.arrivalDeparture
         dismiss(animated: true) { [weak self] in
             guard let self else { return }
             guard
