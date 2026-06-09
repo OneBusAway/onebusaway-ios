@@ -22,7 +22,7 @@ import SafariServices
 /// arrivals and departures at this stop, along with the ability to create push
 /// notification 'alarms' and bookmarks, view information about the location of a
 /// particular vehicle, and report problems with a trip.
-public class StopViewController: UIViewController, // swiftlint:disable:this type_body_length
+public class StopViewController: UIViewController,
     AlarmBuilderDelegate,
     AgencyAlertListViewConverters,
     AppContext,
