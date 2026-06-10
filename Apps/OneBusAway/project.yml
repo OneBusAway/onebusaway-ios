@@ -97,6 +97,7 @@ targets:
         DEVELOPMENT_TEAM: 4ZQCMA634J
         PRODUCT_BUNDLE_IDENTIFIER: org.onebusaway.iphone.OBAWidget
 include:
+  - path: OBAKitUITests/project.yml
   - path: Apps/Shared/app_shared.yml
   - path: Apps/Shared/analytics_fx_config.yml
   - path: Apps/Shared/push_config.yml

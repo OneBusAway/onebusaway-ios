@@ -184,11 +184,13 @@ class BookmarksViewModelTests: OBATestCase {
 
         expect(viewModel.lastRefreshHadError).to(beTrue())
 
-        // Swap to a success stub — a clean batch must reset the flag.
-        dataLoader.removeMappedResponses()
-        dataLoader.mock(
-            data: Fixtures.loadData(file: "arrivals-and-departures-for-stop-1_10914.json")
-        ) { $0.url?.path.contains("/api/where/arrivals-and-departures-for-stop") ?? false }
+        // Swap to a success stub — a clean batch must reset the flag. The swap is
+        // atomic so in-flight background requests can never hit an empty mock table.
+        dataLoader.replaceMappedResponses { staging in
+            staging.mock(
+                data: Fixtures.loadData(file: "arrivals-and-departures-for-stop-1_10914.json")
+            ) { $0.url?.path.contains("/api/where/arrivals-and-departures-for-stop") ?? false }
+        }
 
         let cleanBatchDone = expectation(description: "clean batch finishes")
         var seenLoading2 = false

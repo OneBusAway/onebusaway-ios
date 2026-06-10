@@ -44,7 +44,11 @@ class MockTask: URLSessionDataTask {
 }
 
 class MockDataLoader: NSObject, URLDataLoader {
-    var mockResponses = [MockDataResponse]()
+    /// Guarded by `mockResponsesLock`: tests mutate the response table from the main
+    /// thread while `Application` background tasks (regions refresh, agency alerts)
+    /// concurrently match requests against it.
+    private var mockResponses = [MockDataResponse]()
+    private let mockResponsesLock = NSLock()
 
     /// URLs of every request seen by `dataTask(with:)` or `data(for:)`.
     /// Lets tests assert that no network call was made (e.g. when a fetch should be
@@ -107,7 +111,8 @@ class MockDataLoader: NSObject, URLDataLoader {
     // MARK: - Response Mapping
 
     func matchResponse(to request: URLRequest) -> MockDataResponse? {
-        for r in mockResponses {
+        let responses = mockResponsesLock.withLock { mockResponses }
+        for r in responses {
             if r.matcher(request) {
                 return r
             }
@@ -136,11 +141,24 @@ class MockDataLoader: NSObject, URLDataLoader {
     }
 
     func mock(response: MockDataResponse) {
-        mockResponses.append(response)
+        mockResponsesLock.withLock { mockResponses.append(response) }
     }
 
     func removeMappedResponses() {
-        mockResponses.removeAll()
+        mockResponsesLock.withLock { mockResponses.removeAll() }
+    }
+
+    /// Atomically replaces every mocked response with the ones registered in `register`.
+    ///
+    /// Use this instead of `removeMappedResponses()` + re-mocking when the test's
+    /// `Application` may have background requests in flight: a separate clear-then-mock
+    /// sequence leaves a window with no registered responses, and any request landing
+    /// in that window hits `fatalError` and takes down the whole suite.
+    func replaceMappedResponses(_ register: (MockDataLoader) -> Void) {
+        let staging = MockDataLoader(testName: testName)
+        register(staging)
+        let newResponses = staging.mockResponsesLock.withLock { staging.mockResponses }
+        mockResponsesLock.withLock { mockResponses = newResponses }
     }
 
     // MARK: - URL Response
@@ -153,7 +171,7 @@ class MockDataLoader: NSObject, URLDataLoader {
 
     override var debugDescription: String {
         var descriptionBuilder = DebugDescriptionBuilder(baseDescription: super.debugDescription)
-        descriptionBuilder.add(key: "mockResponses", value: mockResponses)
+        descriptionBuilder.add(key: "mockResponses", value: mockResponsesLock.withLock { mockResponses })
         return descriptionBuilder.description
     }
 }
