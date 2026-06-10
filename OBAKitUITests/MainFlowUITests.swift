@@ -61,8 +61,10 @@ final class MainFlowUITests: XCTestCase {
             let tab = tabBar.buttons[tabName]
             XCTAssertTrue(tab.waitForExistence(timeout: 10), "Tab '\(tabName)' should exist")
             tab.tap()
-            // Interact with the app to trigger the interruption monitor if an alert is up.
-            app.tap()
+            // Re-tap the (already selected) tab: a harmless interaction that gives the
+            // interruption monitor a chance to dismiss any permission alert. A blind
+            // center-screen tap could hit a row and navigate away.
+            tab.tap()
             XCTAssertTrue(tabBar.exists, "App should still be running after opening '\(tabName)'")
         }
     }
@@ -71,8 +73,10 @@ final class MainFlowUITests: XCTestCase {
         let tabBar = app.tabBars.firstMatch
         XCTAssertTrue(tabBar.waitForExistence(timeout: 30))
 
-        tabBar.buttons["More"].tap()
-        app.tap()
+        let moreTab = tabBar.buttons["More"]
+        moreTab.tap()
+        // Re-tap to trigger the interruption monitor without touching screen content.
+        moreTab.tap()
 
         let moreNavBar = app.navigationBars["More"]
         XCTAssertTrue(moreNavBar.waitForExistence(timeout: 10), "More tab should display its navigation bar")
