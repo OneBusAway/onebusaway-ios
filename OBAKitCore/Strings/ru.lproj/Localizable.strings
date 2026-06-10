@@ -1,0 +1,482 @@
+/* An error message that tells the user that they are connected to a captive portal WiFi network. */
+"api_error.captive_portal" = "Похоже, вы подключены к сети Wi-Fi, которая не даёт доступа к интернету. Чтобы продолжить, попробуйте отключиться от Wi-Fi или авторизоваться в сети.";
+
+/* An error message that informs the user that the wrong kind of content was received from the server. */
+"api_error.invalid_content_type_fmt" = "От сервера ожидались данные типа %1$@, но вместо этого получены %2$@.";
+
+/* An error that tells the user that the network connection isn't working. */
+"api_error.network_failure" = "Не удаётся подключиться к интернету или серверу. Проверьте сетевое подключение и повторите попытку.";
+
+/* An error that tells the user that the server unexpectedly failed to return data. */
+"api_error.no_response_body" = "Сервер неожиданно не вернул данных в ответ на ваш запрос.";
+
+/* An error that is produced in response to HTTP status codes outside of 200-299. */
+"api_error.request_failure_fmt" = "При обработке вашего запроса на сервере произошла ошибка с кодом состояния %1$d. (URL: %2$@)";
+
+/* An error that is produced in response to HTTP status code 404 */
+"api_error.request_not_found" = "404 Не найдено (%@)";
+
+/* This will appear on a button or as a title, and indicates that this UI will create a new bookmark. */
+"common.add_alarm" = "Добавить напоминание";
+
+/* This will appear on a button or as a title, and indicates that this UI will create a new bookmark. */
+"common.add_bookmark" = "Добавить закладку";
+
+/* The noun, like an alarm clock or an alarm bell. */
+"common.alarm" = "Напоминание";
+
+/* Back, as in 'back to the previous screen.' */
+"common.back" = "Назад";
+
+/* The verb 'to bookmark'. */
+"common.bookmark" = "В закладки";
+
+/* The verb 'to cancel', i.e. to stop an action. */
+"common.cancel" = "Отменить";
+
+/* Button to clear recent search results */
+"common.clear_recent_searches" = "Очистить недавние запросы";
+
+/* Confirmation message before clearing recent search results */
+"common.clear_recent_searches.confirmation" = "Вы действительно хотите очистить недавние запросы?";
+
+/* The verb 'to close'. */
+"common.close" = "Закрыть";
+
+/* Asks the user to confirm a delete action. Typically this is showned when the user taps a 'delete' button on an important item. */
+"common.confirmdelete" = "Подтвердите удаление";
+
+/* The verb 'to continue'. */
+"common.continue" = "Продолжить";
+
+/* The verb 'to delete', as in to destroy something. */
+"common.delete" = "Удалить";
+
+/* The verb 'to dismiss', as in to hide or get rid of something. Used as a button title on alerts. */
+"common.dismiss" = "Скрыть";
+
+/* The verb 'to donate', as in to give money to a charitable cause. */
+"common.donate" = "Пожертвовать";
+
+/* The body of the message to display to the user after they donate to OTSF */
+"common.donation_thank_you.body" = "Ваша поддержка поможет нам и дальше улучшать OneBusAway.";
+
+/* Title of an alert to display to the user after they donate to OTSF */
+"common.donation_thank_you.title" = "Спасибо за вашу поддержку!";
+
+/* Past participle of 'do'. As in 'I am done' or 'I am finished.' */
+"common.done" = "Готово";
+
+/* The verb 'to edit', as in to change or modify something. Used as a button title. */
+"common.edit" = "Изменить";
+
+/* Title for the alert empty set indicator. */
+"common.empty_alert_set.title" = "Нет оповещений";
+
+/* Body for the bookmark empty set indicator. */
+"common.empty_bookmark_set.body" = "Добавьте в закладки остановку или рейс, чтобы быстро открывать их здесь.";
+
+/* Body for the bookmark empty set indicator when the user has a pending migration from the old version of the app. */
+"common.empty_bookmark_set.body_with_pending_migration" = "Откройте вкладку «Ещё» > «Настройки» > «Перенести данные», чтобы ваши закладки появились здесь.";
+
+/* Title for the bookmark empty set indicator. */
+"common.empty_bookmark_set.title" = "Нет закладок";
+
+/* The noun 'error', as in 'something went wrong'. */
+"common.error" = "Ошибка";
+
+/* The title of a button that exports all of the user's data into a file. */
+"common.export_data" = "Экспорт данных";
+
+/* The verb 'to filter'. */
+"common.filter" = "Фильтр";
+
+/* This is button text that tells the user they can tap on it to learn more about the topic at hand. */
+"common.learn_more" = "Подробнее";
+
+/* Used to indicate that content is loading. */
+"common.loading" = "Загрузка…";
+
+/* A common error message that can be used when the user's location is not available and we need it to accomplish something. */
+"common.location_unavailable" = "Геопозиция недоступна";
+
+/* The noun for a map. */
+"common.map" = "Карта";
+
+/* A title or command for upgrading data from older versions of OBA. */
+"common.migrate_data" = "Перенести данные";
+
+/* An explanation about what the Migrate Data feature does. */
+"common.migrate_data_description" = "Обновите недавние остановки и закладки для работы с последней версией приложения. (Требуется подключение к интернету.)";
+
+/* As in 'see more' or 'learn more'. */
+"common.more" = "Ещё";
+
+/* OK */
+"common.ok" = "ОК";
+
+/* i.e. recently selected search results for map locations from the trip planner. */
+"common.recent_searches" = "Недавние запросы";
+
+/* i.e. recently viewed or visited stops for transit vehicles, like a bus stop, ferry terminal, or train station. */
+"common.recent_stops" = "Недавние остановки";
+
+/* The verb 'refresh', as in 'reload'. */
+"common.refresh" = "Обновить";
+
+/* The verb 'retry'. */
+"common.retry" = "Повторить";
+
+/* The verb 'save', as in 'save data'. */
+"common.save" = "Сохранить";
+
+/* A noun referring to a bus/train schedule or timetable. */
+"common.schedule" = "Расписание";
+
+/* Explains that this is departure comes from schedule data, not from a real-time vehicle location. */
+"common.scheduled_not_real_time" = "По расписанию / не в реальном времени";
+
+/* Plural form of schedule, referring to bus/train schedules or timetables. */
+"common.schedules" = "Расписания";
+
+/* A noun referring to an alert about service interruptions, reroutes, or other disruptions or changes. */
+"common.service_alert" = "Сервисное оповещение";
+
+/* Plural form of a noun referring to an alert about service interruptions, reroutes, or other disruptions or changes. */
+"common.service_alerts" = "Сервисные оповещения";
+
+/* A noun referring to a collection of options for adjusting app behavior. */
+"common.settings" = "Настройки";
+
+/* A verb referring to sharing something generic. */
+"common.share" = "Поделиться";
+
+/* Button title for sharing the status of your trip (i.e. location, arrival time, etc.) */
+"common.share_trip" = "Поделиться поездкой";
+
+/* The verb 'to skip' as in 'don't perform a particular step and go on to the next one instead.' */
+"common.skip" = "Пропустить";
+
+/* The verb 'to sort' as in to arrange things in an order. */
+"common.sort" = "Сортировать";
+
+/* Noun. Plural form of a transit stop. */
+"common.stops" = "Остановки";
+
+/* A format string used to tell the user when the UI they are looking at was last updated. e.g. Updated: 9:41 AM. The time is calculated at runtime. */
+"common.updated_at_fmt" = "Обновлено: %@";
+
+/* Used to tell the user that the UI they are looking at is actively being updated with new data from the server. */
+"common.updating" = "Обновление…";
+
+/* The title of the Vehicles tab showing real-time vehicle positions on a map. */
+"common.vehicles" = "Транспорт";
+
+/* Description of the privacy policy for sharing data with the external survey service. */
+"common.external_survey_privacy_info.description" = "Этот опрос передаст данные о вашей остановке, маршруте, регионе и текущей геопозиции.";
+
+"common.go" = "Перейти";
+
+"common.submit" = "Отправить";
+
+"common.next" = "Далее";
+
+"survey_alert.dismissal.title" = "Скрыть опрос";
+
+"survey_alert.dismissal.body" = "Ваши отзывы помогают улучшать транспортные услуги и приложение.";
+
+"survey_alert.skip.survey" = "Пропустить этот опрос";
+
+"survey_alert.remind.later" = "Напомнить позже";
+
+"survey_error.required_remaining_questions.error" = "Ответьте на все обязательные вопросы";
+
+"survey_error.hero_question_answer.error" = "Введите корректный ответ";
+
+"survey_success.submitted" = "Ответ на опрос отправлен! Ответьте на остальные вопросы, чтобы отзыв был полнее.";
+
+"survey_alert.do.not.show.again" = "Больше не показывать";
+
+"survey_service.not.available" = "Сервис опросов недоступен.";
+
+"survey.external.url.missing" = "Не удалось открыть опрос. Повторите попытку позже.";
+
+"survey_service.update.path.missing" = "При отправке ваших ответов произошла ошибка. Повторите попытку позже.";
+
+/* Use for vehicles that arrived X minutes ago. */
+"formatters.arrived_x_min_ago_fmt" = "Прибыл %d мин. назад";
+
+/* Use for vehicles arriving in X minutes. */
+"formatters.arrives_in_x_min_fmt" = "Прибудет через %d мин.";
+
+/* Use for vehicles arriving now. */
+"formatters.arriving_now" = "Прибывает сейчас";
+
+/* Headed in an eastern direction */
+"formatters.cardinal_adjective.east" = "На восток";
+
+/* Headed in a northern direction */
+"formatters.cardinal_adjective.north" = "На север";
+
+/* Headed in a northeastern direction */
+"formatters.cardinal_adjective.northeast" = "На северо-восток";
+
+/* Headed in a northwestern direction */
+"formatters.cardinal_adjective.northwest" = "На северо-запад";
+
+/* Headed in a southern direction */
+"formatters.cardinal_adjective.south" = "На юг";
+
+/* Headed in an southeastern direction */
+"formatters.cardinal_adjective.southeast" = "На юго-восток";
+
+/* Headed in a southwestern direction */
+"formatters.cardinal_adjective.southwest" = "На юго-запад";
+
+/* Headed in a western direction */
+"formatters.cardinal_adjective.west" = "На запад";
+
+/* East Direction */
+"formatters.cardinal_direction.east" = "Восток";
+
+/* North Direction */
+"formatters.cardinal_direction.north" = "Север";
+
+/* Northeast Direction */
+"formatters.cardinal_direction.northeast" = "Северо-восток";
+
+/* Northwest Direction */
+"formatters.cardinal_direction.northwest" = "Северо-запад";
+
+/* South Direction */
+"formatters.cardinal_direction.south" = "Юг";
+
+/* Southeast Direction */
+"formatters.cardinal_direction.southeast" = "Юго-восток";
+
+/* Southwest Direction */
+"formatters.cardinal_direction.southwest" = "Юго-запад";
+
+/* West Direction */
+"formatters.cardinal_direction.west" = "Запад";
+
+/* Abbreviation for East */
+"formatters.cardinal_direction_abbrev.east" = "В";
+
+/* Abbreviation for North */
+"formatters.cardinal_direction_abbrev.north" = "С";
+
+/* Abbreviation for Northeast */
+"formatters.cardinal_direction_abbrev.northeast" = "СВ";
+
+/* Abbreviation for Northwest */
+"formatters.cardinal_direction_abbrev.northwest" = "СЗ";
+
+/* Abbreviation for South */
+"formatters.cardinal_direction_abbrev.south" = "Ю";
+
+/* Abbreviation for Southeast */
+"formatters.cardinal_direction_abbrev.southeast" = "ЮВ";
+
+/* Abbreviation for Southwest */
+"formatters.cardinal_direction_abbrev.southwest" = "ЮЗ";
+
+/* Abbreviation for West */
+"formatters.cardinal_direction_abbrev.west" = "З";
+
+/* Use for vehicles that departed X minutes ago. */
+"formatters.departed_x_min_ago_fmt" = "Отправился %d мин. назад";
+
+/* Use for vehicles departing now. */
+"formatters.departing_now" = "Отправляется сейчас";
+
+/* Use for vehicles departing in X minutes. */
+"formatters.departs_in_x_min_fmt" = "Отправится через %d мин.";
+
+/* Format string for describing an early future arrival schedule deviation. e.g. arrives 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
+"formatters.deviation.arrival_future_early_fmt" = "прибудет на %d мин. раньше";
+
+/* Format string for describing a late future arrival schedule deviation. e.g. arrives 3 min late. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
+"formatters.deviation.arrival_future_late_fmt" = "прибудет на %d мин. позже";
+
+/* Describes an on-time arrival. e.g. arrives on time. */
+"formatters.deviation.arrival_future_on_time" = "прибудет вовремя";
+
+/* Format string for describing an early arrival schedule deviation. e.g. Arrived 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
+"formatters.deviation.arrival_past_early_fmt" = "прибыл на %d мин. раньше";
+
+/* Format string for describing a late arrival schedule deviation. e.g. Arrived 3 min late. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
+"formatters.deviation.arrival_past_late_fmt" = "прибыл на %d мин. позже";
+
+/* Describes an on-time arrival. e.g. arrived on time. */
+"formatters.deviation.arrival_past_on_time" = "прибыл вовремя";
+
+/* Describes an on-time departure. e.g. departs on time. */
+"formatters.deviation.departs_future_on_time" = "отправится вовремя";
+
+/* Format string for describing an early future departure schedule deviation. e.g. departs 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
+"formatters.deviation.departure_future_early_fmt" = "отправится на %d мин. раньше";
+
+/* Format string for describing a late future departure schedule deviation. e.g. departs 3 min late. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
+"formatters.deviation.departure_future_late_fmt" = "отправится на %d мин. позже";
+
+/* Format string for describing an early departure schedule deviation. e.g. Departed 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
+"formatters.deviation.departure_past_early_fmt" = "отправился на %d мин. раньше";
+
+/* Format string for describing a late departure schedule deviation. e.g. Departed 3 min late. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
+"formatters.deviation.departure_past_late_fmt" = "отправился на %d мин. позже";
+
+/* Describes an on-time departure. e.g. departed on time. */
+"formatters.deviation.departure_past_on_time" = "отправился вовремя";
+
+/* Short formatted time text for arrivals/departures occurring now. */
+"formatters.now" = "СЕЙЧАС";
+
+/* Formatted time text for arrivals/departures that occur in one minute. */
+"formatters.one_minute" = "Одна минута";
+
+/* Formatted time text for arrivals/departures that occurred one minute ago. */
+"formatters.one_minute_ago" = "Минуту назад";
+
+/* A format string used to denote the list of routes served by this stop. e.g. 'Routes: 10, 12, 49' */
+"formatters.routes_label_fmt" = "Маршруты: %@";
+
+/* A format string used to denote the overflowing list of routes served by this stop. e.g. 'Routes: 10, 12, 49, + 3 more */
+"formatters.routes_label_plus_more_fmt" = "Маршруты: %1$@ и ещё %2$d";
+
+/* Placeholder text for the search bar: 'Search in {REGION NAME}' */
+"formatters.search_bar_placeholder_fmt" = "Поиск в %@";
+
+/* Short formatted time text for arrivals/departures. Example: 7m means that this event happens 7 minutes in the future. -7m means 7 minutes in the past. */
+"formatters.short_time_fmt" = "%d мин";
+
+/* Format string representing a non-numeric stop number. e.g. Stop: 'Old Library' */
+"formatters.stop.stop_code_non_numeric" = "Остановка: «%@»";
+
+/* Format string representing a numeric stop number. e.g. Stop #1234 */
+"formatters.stop.stop_code_numeric" = "Остановка № %@";
+
+/* A string that prefixes a stop ID to tell the user what that value is. */
+"formatters.stop_id_fmt" = "ID остановки: %@";
+
+/* Indicates that an event just took place. */
+"formatters.time_ago_just_now" = "Только что";
+
+/* Formatted time text for arrivals/departures. Used for accessibility labels, so be sure to spell out the word for 'minute'. Example: 7 minutes means that this event happens 7 minutes in the future. -7 minutes means 7 minutes in the past. */
+"formatters.time_fmt" = "%d мин.";
+
+/* Bus. Used for short- and long-distance bus routes. */
+"route_type.bus" = "Автобус";
+
+/* Cable car. Used for street-level cable cars where the cable runs beneath the car. */
+"route_type.cable_car" = "Канатный трамвай";
+
+/* Ferry. Used for short- and long-distance boat service. */
+"route_type.ferry" = "Паром";
+
+/* Funicular. Any rail system designed for steep inclines. */
+"route_type.funicular" = "Фуникулёр";
+
+/* Gondola, Suspended cable car. Typically used for aerial cable cars where the car is suspended from the cable. */
+"route_type.gondola" = "Канатная дорога";
+
+/* Tram, Streetcar, Light rail. Any light rail or street level system within a metropolitan area. */
+"route_type.light_rail" = "Трамвай";
+
+/* Rail. Used for intercity or long-distance travel. */
+"route_type.rail" = "Поезд";
+
+/* Subway, Metro. Any underground rail system within a metropolitan area. */
+"route_type.subway" = "Метро";
+
+/* The body of the schedule/timetable feature tip */
+"schedule_tip.message" = "Нажмите здесь, а затем выберите «Расписания», чтобы посмотреть расписание ваших автобусов и поездов.";
+
+/* Title for the schedule/timetable feature tip */
+"schedule_tip.title" = "Смотрите расписание маршрута";
+
+/* User-facing string that means the location of the stop on the map is wrong. */
+"stop_problem_code.user_description.location_wrong" = "Неверное местоположение";
+
+/* User-facing string that means the name of the stop is wrong. */
+"stop_problem_code.user_description.name_wrong" = "Неверное название";
+
+/* User-facing string that means the number/ID of the stop is wrong. */
+"stop_problem_code.user_description.number_wrong" = "Неверный номер";
+
+/* User-facing string that means that something else is wrong */
+"stop_problem_code.user_description.other" = "Другое";
+
+/* User-facing string that means our data is wrong about a route or a scheduled trip */
+"stop_problem_code.user_description.route_or_trip_missing" = "Отсутствует маршрут или рейс по расписанию";
+
+/* Message for the trip planner tip */
+"trip_planner_tip.message" = "Нажмите здесь, чтобы искать места и планировать поездку на общественном транспорте.";
+
+/* Title for the trip planner tip */
+"trip_planner_tip.title" = "Спланируйте поездку";
+
+/* User-facing string that means the vehicle came early. */
+"trip_problem_code.user_description.came_early" = "Пришёл раньше";
+
+/* User-facing string that means the vehicle came late. */
+"trip_problem_code.user_description.came_late" = "Опоздал";
+
+/* User-facing string that means the vehicle does not stop here. */
+"trip_problem_code.user_description.does_not_stop_here" = "Здесь не останавливается";
+
+/* User-facing string that means the vehicle never came. */
+"trip_problem_code.user_description.never_came" = "Так и не пришёл";
+
+/* User-facing string that means that something else is wrong */
+"trip_problem_code.user_description.other" = "Другое";
+
+/* User-facing string that means the vehicle headsign was wrong. */
+"trip_problem_code.user_description.wrong_headsign" = "Неверное направление на табло";
+
+/* VoiceOver text describing a route that has already arrived, regardless of realtime data availability. */
+"voiceover.arrivaldeparture_arrived_x_minutes_ago_fmt" = "прибыл %1$d мин. назад в %2$@.";
+
+/* VoiceOver text describing a future arrival that is based off realtime data. */
+"voiceover.arrivaldeparture_arriving_in_x_minutes" = "прибудет через %1$d мин. в %2$@.";
+
+/* VoiceOver text describing a route that is arriving now, regardless of realtime data availability. */
+"voiceover.arrivaldeparture_arriving_now" = "прибывает прямо сейчас!";
+
+/* VoiceOver text describing a route that has already departed, regardless of realtime data availability. */
+"voiceover.arrivaldeparture_departed_x_minutes_ago_fmt" = "отправился %1$d мин. назад в %2$@.";
+
+/* VoiceOver text describing a future departure that is based off realtime data. */
+"voiceover.arrivaldeparture_departing_in_x_minutes_fmt" = "отправится через %1$d мин. в %2$@.";
+
+/* VoiceOver text describing a route that is departing now, regardless of realtime data availability. */
+"voiceover.arrivaldeparture_departing_now" = "отправляется прямо сейчас!";
+
+/* VoiceOver text describing the name of a route in a verbose fashion to compensate for no visuals. */
+"voiceover.arrivaldeparture_route_fmt" = "Маршрут %@";
+
+/* VoiceOver text describing a route that is scheduled to arrive (no realtime data was available). */
+"voiceover.arrivaldeparture_scheduled_arrives_in_x_minutes_fmt" = "по расписанию прибудет через %1$d мин. в %2$@.";
+
+/* VoiceOver text describing a route that is scheduled to depart. (no realtime data was available) */
+"voiceover.arrivaldeparture_scheduled_departs_in_x_minutes_fmt" = "по расписанию отправится через %1$d мин. в %2$@.";
+
+/* Error when no transit stops are found near the user's location. */
+"nearby_trip_matcher.error.no_stops" = "Поблизости не найдено остановок.";
+
+/* Error when a route has no real-time vehicle tracking data. */
+"nearby_trip_matcher.error.no_realtime" = "Для этого маршрута нет данных отслеживания в реальном времени.";
+
+"surveys.accessibility_selected_value" = "Выбрано";
+
+"surveys.accessibility_not_selected_value" = "Не выбрано";
+
+"surveys.accessibility_tap_toggle_selection" = "Нажмите, чтобы изменить выбор";
+
+"surveys.accessibility_tap_to_select" = "Нажмите, чтобы выбрать";
+
+"surveys.accessibility_answer.input" = "Поле ответа";
+
+"surveys.accessibility.hint_answer.input" = "Введите ответ на вопрос опроса";
+
+"surveys.accessibility_survey_label" = "Метка опроса";

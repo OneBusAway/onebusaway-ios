@@ -1,185 +1,249 @@
 /* An error message that tells the user that they are connected to a captive portal WiFi network. */
-"api_error.captive_portal" = "您所使用的无线网络WiFi未能连接到互联网。请尝试关闭WiFi或者在当前的网络上登录验证。";
+"api_error.captive_portal" = "您目前連接的 Wi-Fi 網路似乎無法存取網際網路。請嘗試中斷 Wi-Fi 連線，或完成網路登入驗證後再繼續。";
 
 /* An error message that informs the user that the wrong kind of content was received from the server. */
-"api_error.invalid_content_type_fmt" = "预计从服务器收到%1$@数据，但收到了%2$@。";
+"api_error.invalid_content_type_fmt" = "預期從伺服器收到 %1$@ 資料，但實際收到的是 %2$@。";
 
 /* An error that tells the user that the network connection isn't working. */
-"api_error.network_failure" = "无法连接到互联网或者服务器。请检查网络连接后重试。";
+"api_error.network_failure" = "無法連線至網際網路或伺服器。請檢查您的網路連線後再試一次。";
 
 /* An error that tells the user that the server unexpectedly failed to return data. */
-"api_error.no_response_body" = "服务器意外地没有返回任何数据。";
+"api_error.no_response_body" = "伺服器未如預期回傳任何資料。";
 
 /* An error that is produced in response to HTTP status codes outside of 200-299. */
-"api_error.request_failure_fmt" = "服务器在处理您的请求时遇到错误，代码%1$d。（URL：%2$@）";
+"api_error.request_failure_fmt" = "伺服器在處理您的要求時發生錯誤，狀態碼為 %1$d。（URL：%2$@）";
+
+/* An error that is produced in response to HTTP status code 404 */
+"api_error.request_not_found" = "404 找不到（%@）";
 
 /* This will appear on a button or as a title, and indicates that this UI will create a new bookmark. */
-"common.add_alarm" = "添加闹钟";
+"common.add_alarm" = "加入提醒";
 
 /* This will appear on a button or as a title, and indicates that this UI will create a new bookmark. */
-"common.add_bookmark" = "添加书签";
+"common.add_bookmark" = "加入書籤";
 
 /* The noun, like an alarm clock or an alarm bell. */
-"common.alarm" = "闹钟";
+"common.alarm" = "提醒";
 
 /* Back, as in 'back to the previous screen.' */
 "common.back" = "返回";
 
 /* The verb 'to bookmark'. */
-"common.bookmark" = "设为书签";
+"common.bookmark" = "加入書籤";
 
 /* The verb 'to cancel', i.e. to stop an action. */
 "common.cancel" = "取消";
 
+/* Button to clear recent search results */
+"common.clear_recent_searches" = "清除最近的搜尋";
+
+/* Confirmation message before clearing recent search results */
+"common.clear_recent_searches.confirmation" = "確定要清除最近的搜尋記錄嗎？";
+
 /* The verb 'to close'. */
-"common.close" = "关闭";
+"common.close" = "關閉";
 
 /* Asks the user to confirm a delete action. Typically this is showned when the user taps a 'delete' button on an important item. */
-"common.confirmdelete" = "确认删除";
+"common.confirmdelete" = "確認刪除";
 
 /* The verb 'to continue'. */
-"common.continue" = "继续";
+"common.continue" = "繼續";
 
 /* The verb 'to delete', as in to destroy something. */
-"common.delete" = "删除";
+"common.delete" = "刪除";
 
 /* The verb 'to dismiss', as in to hide or get rid of something. Used as a button title on alerts. */
-"common.dismiss" = "关闭";
+"common.dismiss" = "關閉";
+
+/* The verb 'to donate', as in to give money to a charitable cause. */
+"common.donate" = "捐款";
+
+/* The body of the message to display to the user after they donate to OTSF */
+"common.donation_thank_you.body" = "您的支持將協助我們持續改善 OneBusAway。";
+
+/* Title of an alert to display to the user after they donate to OTSF */
+"common.donation_thank_you.title" = "感謝您的支持！";
 
 /* Past participle of 'do'. As in 'I am done' or 'I am finished.' */
 "common.done" = "完成";
 
 /* The verb 'to edit', as in to change or modify something. Used as a button title. */
-"common.edit" = "编辑";
+"common.edit" = "編輯";
 
 /* Title for the alert empty set indicator. */
-"common.empty_alert_set.title" = "无新消息提醒";
+"common.empty_alert_set.title" = "沒有警示";
 
 /* Body for the bookmark empty set indicator. */
-"common.empty_bookmark_set.body" = "为车站或车程标记书签以便在这里访问。";
+"common.empty_bookmark_set.body" = "將站牌或班次加入書籤，即可在此快速取用。";
 
 /* Body for the bookmark empty set indicator when the user has a pending migration from the old version of the app. */
-"common.empty_bookmark_set.body_with_pending_migration" = "前往 更多>设置>转移数据 导入已有书签";
+"common.empty_bookmark_set.body_with_pending_migration" = "前往「更多」標籤頁 >「設定」>「轉移資料」，即可在此看到您的書籤。";
 
 /* Title for the bookmark empty set indicator. */
-"common.empty_bookmark_set.title" = "没有书签";
+"common.empty_bookmark_set.title" = "沒有書籤";
 
 /* The noun 'error', as in 'something went wrong'. */
-"common.error" = "错误";
+"common.error" = "錯誤";
 
 /* The title of a button that exports all of the user's data into a file. */
-"common.export_data" = "导出数据";
+"common.export_data" = "輸出資料";
 
 /* The verb 'to filter'. */
-"common.filter" = "筛选";
+"common.filter" = "篩選";
 
 /* This is button text that tells the user they can tap on it to learn more about the topic at hand. */
-"common.learn_more" = "了解更多";
+"common.learn_more" = "進一步瞭解";
 
 /* Used to indicate that content is loading. */
-"common.loading" = "加载中……";
+"common.loading" = "載入中…";
 
 /* A common error message that can be used when the user's location is not available and we need it to accomplish something. */
-"common.location_unavailable" = "无法获取位置";
+"common.location_unavailable" = "無法取得位置";
 
 /* The noun for a map. */
-"common.map" = "地图";
+"common.map" = "地圖";
 
 /* A title or command for upgrading data from older versions of OBA. */
-"common.migrate_data" = "迁移数据";
+"common.migrate_data" = "轉移資料";
 
 /* An explanation about what the Migrate Data feature does. */
-"common.migrate_data_description" = "为您升级最近访问的车站和书签，以便使用最新版的app。（需要连接互联网。）";
+"common.migrate_data_description" = "升級您最近瀏覽的站牌和書籤，以配合最新版本的 App。（需要網際網路連線。）";
 
 /* As in 'see more' or 'learn more'. */
 "common.more" = "更多";
 
 /* OK */
-"common.ok" = "OK";
+"common.ok" = "好";
+
+/* i.e. recently selected search results for map locations from the trip planner. */
+"common.recent_searches" = "最近的搜尋";
 
 /* i.e. recently viewed or visited stops for transit vehicles, like a bus stop, ferry terminal, or train station. */
-"common.recent_stops" = "最近浏览过的车站";
+"common.recent_stops" = "最近瀏覽的站牌";
 
 /* The verb 'refresh', as in 'reload'. */
-"common.refresh" = "刷新";
+"common.refresh" = "重新整理";
+
+/* The verb 'retry'. */
+"common.retry" = "重試";
 
 /* The verb 'save', as in 'save data'. */
-"common.save" = "保存";
+"common.save" = "儲存";
+
+/* A noun referring to a bus/train schedule or timetable. */
+"common.schedule" = "時刻表";
 
 /* Explains that this is departure comes from schedule data, not from a real-time vehicle location. */
-"common.scheduled_not_real_time" = "按时刻表推算/非实时数据";
+"common.scheduled_not_real_time" = "依時刻表／非即時";
+
+/* Plural form of schedule, referring to bus/train schedules or timetables. */
+"common.schedules" = "時刻表";
 
 /* A noun referring to an alert about service interruptions, reroutes, or other disruptions or changes. */
-"common.service_alert" = "服务通知";
+"common.service_alert" = "服務警示";
 
 /* Plural form of a noun referring to an alert about service interruptions, reroutes, or other disruptions or changes. */
-"common.service_alerts" = "服务通知";
+"common.service_alerts" = "服務警示";
 
 /* A noun referring to a collection of options for adjusting app behavior. */
-"common.settings" = "设置";
+"common.settings" = "設定";
 
 /* A verb referring to sharing something generic. */
 "common.share" = "分享";
 
 /* Button title for sharing the status of your trip (i.e. location, arrival time, etc.) */
-"common.share_trip" = "分享车程";
+"common.share_trip" = "分享行程";
 
 /* The verb 'to skip' as in 'don't perform a particular step and go on to the next one instead.' */
-"common.skip" = "跳过";
+"common.skip" = "略過";
 
 /* The verb 'to sort' as in to arrange things in an order. */
 "common.sort" = "排序";
 
 /* Noun. Plural form of a transit stop. */
-"common.stops" = "公交车站";
+"common.stops" = "站牌";
 
 /* A format string used to tell the user when the UI they are looking at was last updated. e.g. Updated: 9:41 AM. The time is calculated at runtime. */
-"common.updated_at_fmt" = "上次更新：%@";
+"common.updated_at_fmt" = "更新時間：%@";
 
 /* Used to tell the user that the UI they are looking at is actively being updated with new data from the server. */
-"common.updating" = "正在更新……";
+"common.updating" = "更新中…";
+
+/* The title of the Vehicles tab showing real-time vehicle positions on a map. */
+"common.vehicles" = "車輛";
+
+/* Description of the privacy policy for sharing data with the external survey service. */
+"common.external_survey_privacy_info.description" = "此問卷將分享您的站牌、路線、區域和目前位置。";
+
+"common.go" = "前往";
+
+"common.submit" = "送出";
+
+"common.next" = "下一步";
+
+"survey_alert.dismissal.title" = "關閉問卷";
+
+"survey_alert.dismissal.body" = "您的意見回饋有助於改善大眾運輸服務與 App 體驗。";
+
+"survey_alert.skip.survey" = "略過此問卷";
+
+"survey_alert.remind.later" = "稍後提醒我";
+
+"survey_error.required_remaining_questions.error" = "請回答所有必答問題";
+
+"survey_error.hero_question_answer.error" = "請輸入有效的答案";
+
+"survey_success.submitted" = "問卷答案已送出！請繼續回答其餘問題，以提供更完整的意見回饋。";
+
+"survey_alert.do.not.show.again" = "不再顯示";
+
+"survey_service.not.available" = "問卷服務目前無法使用。";
+
+"survey.external.url.missing" = "目前無法開啟問卷。請稍後再試。";
+
+"survey_service.update.path.missing" = "送出您的回覆時發生問題。請稍後再試。";
 
 /* Use for vehicles that arrived X minutes ago. */
-"formatters.arrived_x_min_ago_fmt" = "%d分钟前已到站";
+"formatters.arrived_x_min_ago_fmt" = "%d 分鐘前到站";
 
 /* Use for vehicles arriving in X minutes. */
-"formatters.arrives_in_x_min_fmt" = "%d分钟后到站";
+"formatters.arrives_in_x_min_fmt" = "%d 分鐘後到站";
 
 /* Use for vehicles arriving now. */
-"formatters.arriving_now" = "正在进站";
+"formatters.arriving_now" = "進站中";
 
 /* Headed in an eastern direction */
-"formatters.cardinal_adjective.east" = "东向";
+"formatters.cardinal_adjective.east" = "東行";
 
 /* Headed in a northern direction */
-"formatters.cardinal_adjective.north" = "北向";
+"formatters.cardinal_adjective.north" = "北行";
 
 /* Headed in a northeastern direction */
-"formatters.cardinal_adjective.northeast" = "东北向";
+"formatters.cardinal_adjective.northeast" = "東北行";
 
 /* Headed in a northwestern direction */
-"formatters.cardinal_adjective.northwest" = "东西向";
+"formatters.cardinal_adjective.northwest" = "西北行";
 
 /* Headed in a southern direction */
-"formatters.cardinal_adjective.south" = "南向";
+"formatters.cardinal_adjective.south" = "南行";
 
 /* Headed in an southeastern direction */
-"formatters.cardinal_adjective.southeast" = "东南向";
+"formatters.cardinal_adjective.southeast" = "東南行";
 
 /* Headed in a southwestern direction */
-"formatters.cardinal_adjective.southwest" = "西南向";
+"formatters.cardinal_adjective.southwest" = "西南行";
 
 /* Headed in a western direction */
-"formatters.cardinal_adjective.west" = "西向";
+"formatters.cardinal_adjective.west" = "西行";
 
 /* East Direction */
-"formatters.cardinal_direction.east" = "东";
+"formatters.cardinal_direction.east" = "東";
 
 /* North Direction */
 "formatters.cardinal_direction.north" = "北";
 
 /* Northeast Direction */
-"formatters.cardinal_direction.northeast" = "东北";
+"formatters.cardinal_direction.northeast" = "東北";
 
 /* Northwest Direction */
 "formatters.cardinal_direction.northwest" = "西北";
@@ -188,7 +252,7 @@
 "formatters.cardinal_direction.south" = "南";
 
 /* Southeast Direction */
-"formatters.cardinal_direction.southeast" = "东南";
+"formatters.cardinal_direction.southeast" = "東南";
 
 /* Southwest Direction */
 "formatters.cardinal_direction.southwest" = "西南";
@@ -197,13 +261,13 @@
 "formatters.cardinal_direction.west" = "西";
 
 /* Abbreviation for East */
-"formatters.cardinal_direction_abbrev.east" = "东";
+"formatters.cardinal_direction_abbrev.east" = "東";
 
 /* Abbreviation for North */
 "formatters.cardinal_direction_abbrev.north" = "北";
 
 /* Abbreviation for Northeast */
-"formatters.cardinal_direction_abbrev.northeast" = "东北";
+"formatters.cardinal_direction_abbrev.northeast" = "東北";
 
 /* Abbreviation for Northwest */
 "formatters.cardinal_direction_abbrev.northwest" = "西北";
@@ -212,7 +276,7 @@
 "formatters.cardinal_direction_abbrev.south" = "南";
 
 /* Abbreviation for Southeast */
-"formatters.cardinal_direction_abbrev.southeast" = "东南";
+"formatters.cardinal_direction_abbrev.southeast" = "東南";
 
 /* Abbreviation for Southwest */
 "formatters.cardinal_direction_abbrev.southwest" = "西南";
@@ -221,263 +285,198 @@
 "formatters.cardinal_direction_abbrev.west" = "西";
 
 /* Use for vehicles that departed X minutes ago. */
-"formatters.departed_x_min_ago_fmt" = "%d分钟前已离站";
+"formatters.departed_x_min_ago_fmt" = "%d 分鐘前離站";
 
 /* Use for vehicles departing now. */
-"formatters.departing_now" = "正在离站";
+"formatters.departing_now" = "離站中";
 
 /* Use for vehicles departing in X minutes. */
-"formatters.departs_in_x_min_fmt" = "%d分钟后离站";
+"formatters.departs_in_x_min_fmt" = "%d 分鐘後離站";
 
 /* Format string for describing an early future arrival schedule deviation. e.g. arrives 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
-"formatters.deviation.arrival_future_early_fmt" = "将提前%d分钟到站";
+"formatters.deviation.arrival_future_early_fmt" = "提早 %d 分鐘到站";
 
 /* Format string for describing a late future arrival schedule deviation. e.g. arrives 3 min late. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
-"formatters.deviation.arrival_future_late_fmt" = "将延迟%d分钟到站";
+"formatters.deviation.arrival_future_late_fmt" = "誤點 %d 分鐘到站";
 
 /* Describes an on-time arrival. e.g. arrives on time. */
-"formatters.deviation.arrival_future_on_time" = "准时到站";
+"formatters.deviation.arrival_future_on_time" = "準點到站";
 
 /* Format string for describing an early arrival schedule deviation. e.g. Arrived 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
-"formatters.deviation.arrival_past_early_fmt" = "已提前%d分钟到站";
+"formatters.deviation.arrival_past_early_fmt" = "已提早 %d 分鐘到站";
 
 /* Format string for describing a late arrival schedule deviation. e.g. Arrived 3 min late. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
-"formatters.deviation.arrival_past_late_fmt" = "已在延迟%d分钟后到站";
+"formatters.deviation.arrival_past_late_fmt" = "已誤點 %d 分鐘到站";
 
 /* Describes an on-time arrival. e.g. arrived on time. */
-"formatters.deviation.arrival_past_on_time" = "已准时到站";
+"formatters.deviation.arrival_past_on_time" = "已準點到站";
 
 /* Describes an on-time departure. e.g. departs on time. */
-"formatters.deviation.departs_future_on_time" = "准时离站";
+"formatters.deviation.departs_future_on_time" = "準點離站";
 
 /* Format string for describing an early future departure schedule deviation. e.g. departs 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
-"formatters.deviation.departure_future_early_fmt" = "将提前%d分钟离站";
+"formatters.deviation.departure_future_early_fmt" = "提早 %d 分鐘離站";
 
 /* Format string for describing a late future departure schedule deviation. e.g. departs 3 min late. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
-"formatters.deviation.departure_future_late_fmt" = "将延迟%d分钟离站";
+"formatters.deviation.departure_future_late_fmt" = "誤點 %d 分鐘離站";
 
 /* Format string for describing an early departure schedule deviation. e.g. Departed 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
-"formatters.deviation.departure_past_early_fmt" = "已提前%d分钟离站";
+"formatters.deviation.departure_past_early_fmt" = "已提早 %d 分鐘離站";
 
 /* Format string for describing a late departure schedule deviation. e.g. Departed 3 min late. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
-"formatters.deviation.departure_past_late_fmt" = "已在延迟%d分钟后离站";
+"formatters.deviation.departure_past_late_fmt" = "已誤點 %d 分鐘離站";
 
 /* Describes an on-time departure. e.g. departed on time. */
-"formatters.deviation.departure_past_on_time" = "已准时离站";
+"formatters.deviation.departure_past_on_time" = "已準點離站";
 
 /* Short formatted time text for arrivals/departures occurring now. */
-"formatters.now" = "现在";
+"formatters.now" = "現在";
 
 /* Formatted time text for arrivals/departures that occur in one minute. */
-"formatters.one_minute" = "一分钟";
+"formatters.one_minute" = "1 分鐘";
 
 /* Formatted time text for arrivals/departures that occurred one minute ago. */
-"formatters.one_minute_ago" = "一分钟前";
+"formatters.one_minute_ago" = "1 分鐘前";
 
 /* A format string used to denote the list of routes served by this stop. e.g. 'Routes: 10, 12, 49' */
-"formatters.routes_label_fmt" = "公交线路：%@";
+"formatters.routes_label_fmt" = "路線：%@";
 
 /* A format string used to denote the overflowing list of routes served by this stop. e.g. 'Routes: 10, 12, 49, + 3 more */
-"formatters.routes_label_plus_more_fmt" = "线路：%1$@，+其他%2$d个";
+"formatters.routes_label_plus_more_fmt" = "路線：%1$@，還有 %2$d 條";
 
 /* Placeholder text for the search bar: 'Search in {REGION NAME}' */
-"formatters.search_bar_placeholder_fmt" = "在%@地区搜索";
+"formatters.search_bar_placeholder_fmt" = "在 %@ 中搜尋";
 
 /* Short formatted time text for arrivals/departures. Example: 7m means that this event happens 7 minutes in the future. -7m means 7 minutes in the past. */
-"formatters.short_time_fmt" = "%d分钟";
+"formatters.short_time_fmt" = "%d分";
 
 /* Format string representing a non-numeric stop number. e.g. Stop: 'Old Library' */
-"formatters.stop.stop_code_non_numeric" = "公交车站：“%@”";
+"formatters.stop.stop_code_non_numeric" = "站牌：「%@」";
 
 /* Format string representing a numeric stop number. e.g. Stop #1234 */
-"formatters.stop.stop_code_numeric" = "公交车站 #%@";
+"formatters.stop.stop_code_numeric" = "站牌 #%@";
 
 /* A string that prefixes a stop ID to tell the user what that value is. */
-"formatters.stop_id_fmt" = "车站：%@";
+"formatters.stop_id_fmt" = "站牌代碼：%@";
 
 /* Indicates that an event just took place. */
-"formatters.time_ago_just_now" = "刚刚";
+"formatters.time_ago_just_now" = "剛剛";
 
 /* Formatted time text for arrivals/departures. Used for accessibility labels, so be sure to spell out the word for 'minute'. Example: 7 minutes means that this event happens 7 minutes in the future. -7 minutes means 7 minutes in the past. */
-"formatters.time_fmt" = "%d分钟";
+"formatters.time_fmt" = "%d 分鐘";
 
 /* Bus. Used for short- and long-distance bus routes. */
-"route_type.bus" = "公交车";
+"route_type.bus" = "公車";
 
 /* Cable car. Used for street-level cable cars where the cable runs beneath the car. */
-"route_type.cable_car" = "缆车";
+"route_type.cable_car" = "纜車";
 
 /* Ferry. Used for short- and long-distance boat service. */
-"route_type.ferry" = "轮渡";
+"route_type.ferry" = "渡輪";
 
 /* Funicular. Any rail system designed for steep inclines. */
-"route_type.funicular" = "索道";
+"route_type.funicular" = "纜索鐵路";
 
 /* Gondola, Suspended cable car. Typically used for aerial cable cars where the car is suspended from the cable. */
-"route_type.gondola" = "悬挂式缆车";
+"route_type.gondola" = "空中纜車";
 
 /* Tram, Streetcar, Light rail. Any light rail or street level system within a metropolitan area. */
-"route_type.light_rail" = "轻轨";
+"route_type.light_rail" = "輕軌";
 
 /* Rail. Used for intercity or long-distance travel. */
-"route_type.rail" = "有轨列车";
+"route_type.rail" = "鐵路";
 
 /* Subway, Metro. Any underground rail system within a metropolitan area. */
-"route_type.subway" = "地铁";
-
-/* User-facing string that means the location of the stop on the map is wrong. */
-"stop_problem_code.user_description.location_wrong" = "地址错误";
-
-/* User-facing string that means the name of the stop is wrong. */
-"stop_problem_code.user_description.name_wrong" = "名称错误";
-
-/* User-facing string that means the number/ID of the stop is wrong. */
-"stop_problem_code.user_description.number_wrong" = "编号错误";
-
-/* User-facing string that means that something else is wrong */
-"stop_problem_code.user_description.other" = "其他错误";
-
-/* User-facing string that means our data is wrong about a route or a scheduled trip */
-"stop_problem_code.user_description.route_or_trip_missing" = "无法找到公交线路或计划中的车程";
-
-/* User-facing string that means the vehicle came early. */
-"trip_problem_code.user_description.came_early" = "提前到达";
-
-/* User-facing string that means the vehicle came late. */
-"trip_problem_code.user_description.came_late" = "延误到达";
-
-/* User-facing string that means the vehicle does not stop here. */
-"trip_problem_code.user_description.does_not_stop_here" = "在此不停车";
-
-/* User-facing string that means the vehicle never came. */
-"trip_problem_code.user_description.never_came" = "从未到达";
-
-/* User-facing string that means that something else is wrong */
-"trip_problem_code.user_description.other" = "其他错误";
-
-/* User-facing string that means the vehicle headsign was wrong. */
-"trip_problem_code.user_description.wrong_headsign" = "公交车报站显示屏错误";
-
-/* VoiceOver text describing a route that has already arrived, regardless of realtime data availability. */
-"voiceover.arrivaldeparture_arrived_x_minutes_ago_fmt" = "已在%1$d分钟前的%2$@到站";
-
-/* VoiceOver text describing a future arrival that is based off realtime data. */
-"voiceover.arrivaldeparture_arriving_in_x_minutes" = "将在%1$d分钟后的%2$@到站";
-
-/* VoiceOver text describing a route that is arriving now, regardless of realtime data availability. */
-"voiceover.arrivaldeparture_arriving_now" = "正在进站！";
-
-/* VoiceOver text describing a route that has already departed, regardless of realtime data availability. */
-"voiceover.arrivaldeparture_departed_x_minutes_ago_fmt" = "已在%1$d分钟前的%2$@离站";
-
-/* VoiceOver text describing a future departure that is based off realtime data. */
-"voiceover.arrivaldeparture_departing_in_x_minutes_fmt" = "将在%1$d分钟后的%2$@离站";
-
-/* VoiceOver text describing a route that is departing now, regardless of realtime data availability. */
-"voiceover.arrivaldeparture_departing_now" = "正在离站！";
-
-/* VoiceOver text describing the name of a route in a verbose fashion to compensate for no visuals. */
-"voiceover.arrivaldeparture_route_fmt" = "%@号公交线路";
-
-/* VoiceOver text describing a route that is scheduled to arrive (no realtime data was available). */
-"voiceover.arrivaldeparture_scheduled_arrives_in_x_minutes_fmt" = "计划在%1$d分钟后的%2$@到站";
-
-/* VoiceOver text describing a route that is scheduled to depart. (no realtime data was available) */
-"voiceover.arrivaldeparture_scheduled_departs_in_x_minutes_fmt" = "计划在%1$d分钟后的%2$@离站";
-
-
-/* The verb 'retry'. */
-"common.retry" = "重试";
-
-/* A noun referring to a bus/train schedule or timetable. */
-"common.schedule" = "时刻表";
-
-/* Plural form of schedule, referring to bus/train schedules or timetables. */
-"common.schedules" = "时刻表";
-
-/* An error that is produced in response to HTTP status code 404 */
-"api_error.request_not_found" = "404 未找到（%@）";
-
-/* Button to clear recent search results */
-"common.clear_recent_searches" = "清除最近搜索";
-
-/* Confirmation message before clearing recent search results */
-"common.clear_recent_searches.confirmation" = "您确定要清除最近的搜索记录吗？";
-
-/* The verb 'to donate', as in to give money to a charitable cause. */
-"common.donate" = "捐款";
-
-/* The body of the message to display to the user after they donate to OTSF */
-"common.donation_thank_you.body" = "您的支持将帮助我们继续改进OneBusAway。";
-
-/* Title of an alert to display to the user after they donate to OTSF */
-"common.donation_thank_you.title" = "感谢您的支持！";
-
-/* i.e. recently selected search results for map locations from the trip planner. */
-"common.recent_searches" = "最近搜索";
-
-/* The title of the Vehicles tab showing real-time vehicle positions on a map. */
-"common.vehicles" = "车辆";
-
-/* Description of the privacy policy for sharing data with the external survey service. */
-"common.external_survey_privacy_info.description" = "此问卷将分享您的车站、线路、地区和当前位置。";
-
-"common.go" = "出发";
-
-"common.submit" = "提交";
-
-"common.next" = "下一步";
-
-"survey_alert.dismissal.title" = "关闭问卷";
-
-"survey_alert.dismissal.body" = "您的反馈有助于改进公交服务和App体验。";
-
-"survey_alert.skip.survey" = "跳过此问卷";
-
-"survey_alert.remind.later" = "稍后提醒我";
-
-"survey_error.required_remaining_questions.error" = "请回答所有必答问题";
-
-"survey_error.hero_question_answer.error" = "请输入有效的回答";
-
-"survey_success.submitted" = "问卷回答已提交！请回答其余问题，以便提供更完整的反馈。";
-
-"survey_alert.do.not.show.again" = "不再显示";
-
-"survey_service.not.available" = "问卷服务不可用。";
-
-"survey.external.url.missing" = "目前无法打开问卷。请稍后重试。";
-
-"survey_service.update.path.missing" = "提交您的回答时出现问题。请稍后重试。";
+"route_type.subway" = "捷運";
 
 /* The body of the schedule/timetable feature tip */
-"schedule_tip.message" = "轻点这里，然后轻点“时刻表”，即可查看您乘坐的公交车和列车的时刻表。";
+"schedule_tip.message" = "點一下這裡，再點一下「時刻表」，即可檢視您的公車和火車時刻表。";
 
 /* Title for the schedule/timetable feature tip */
-"schedule_tip.title" = "查看您所乘线路的时刻表";
+"schedule_tip.title" = "檢視您路線的時刻表";
+
+/* User-facing string that means the location of the stop on the map is wrong. */
+"stop_problem_code.user_description.location_wrong" = "位置有誤";
+
+/* User-facing string that means the name of the stop is wrong. */
+"stop_problem_code.user_description.name_wrong" = "名稱有誤";
+
+/* User-facing string that means the number/ID of the stop is wrong. */
+"stop_problem_code.user_description.number_wrong" = "編號有誤";
+
+/* User-facing string that means that something else is wrong */
+"stop_problem_code.user_description.other" = "其他";
+
+/* User-facing string that means our data is wrong about a route or a scheduled trip */
+"stop_problem_code.user_description.route_or_trip_missing" = "缺少路線或排定的班次";
 
 /* Message for the trip planner tip */
-"trip_planner_tip.message" = "轻点这里即可搜索地点，并通过公交导航规划您的行程。";
+"trip_planner_tip.message" = "點一下這裡即可搜尋地點，並透過大眾運輸路線規劃您的行程。";
 
 /* Title for the trip planner tip */
-"trip_planner_tip.title" = "规划您的行程";
+"trip_planner_tip.title" = "規劃您的行程";
+
+/* User-facing string that means the vehicle came early. */
+"trip_problem_code.user_description.came_early" = "提早抵達";
+
+/* User-facing string that means the vehicle came late. */
+"trip_problem_code.user_description.came_late" = "誤點抵達";
+
+/* User-facing string that means the vehicle does not stop here. */
+"trip_problem_code.user_description.does_not_stop_here" = "未停靠此站";
+
+/* User-facing string that means the vehicle never came. */
+"trip_problem_code.user_description.never_came" = "車輛一直沒來";
+
+/* User-facing string that means that something else is wrong */
+"trip_problem_code.user_description.other" = "其他";
+
+/* User-facing string that means the vehicle headsign was wrong. */
+"trip_problem_code.user_description.wrong_headsign" = "目的地顯示錯誤";
+
+/* VoiceOver text describing a route that has already arrived, regardless of realtime data availability. */
+"voiceover.arrivaldeparture_arrived_x_minutes_ago_fmt" = "已於 %1$d 分鐘前（%2$@）到站。";
+
+/* VoiceOver text describing a future arrival that is based off realtime data. */
+"voiceover.arrivaldeparture_arriving_in_x_minutes" = "將於 %1$d 分鐘後（%2$@）到站。";
+
+/* VoiceOver text describing a route that is arriving now, regardless of realtime data availability. */
+"voiceover.arrivaldeparture_arriving_now" = "正在進站！";
+
+/* VoiceOver text describing a route that has already departed, regardless of realtime data availability. */
+"voiceover.arrivaldeparture_departed_x_minutes_ago_fmt" = "已於 %1$d 分鐘前（%2$@）離站。";
+
+/* VoiceOver text describing a future departure that is based off realtime data. */
+"voiceover.arrivaldeparture_departing_in_x_minutes_fmt" = "將於 %1$d 分鐘後（%2$@）離站。";
+
+/* VoiceOver text describing a route that is departing now, regardless of realtime data availability. */
+"voiceover.arrivaldeparture_departing_now" = "正在離站！";
+
+/* VoiceOver text describing the name of a route in a verbose fashion to compensate for no visuals. */
+"voiceover.arrivaldeparture_route_fmt" = "路線 %@";
+
+/* VoiceOver text describing a route that is scheduled to arrive (no realtime data was available). */
+"voiceover.arrivaldeparture_scheduled_arrives_in_x_minutes_fmt" = "依時刻表將於 %1$d 分鐘後（%2$@）到站。";
+
+/* VoiceOver text describing a route that is scheduled to depart. (no realtime data was available) */
+"voiceover.arrivaldeparture_scheduled_departs_in_x_minutes_fmt" = "依時刻表將於 %1$d 分鐘後（%2$@）離站。";
 
 /* Error when no transit stops are found near the user's location. */
-"nearby_trip_matcher.error.no_stops" = "附近未找到车站。";
+"nearby_trip_matcher.error.no_stops" = "附近找不到站牌。";
 
 /* Error when a route has no real-time vehicle tracking data. */
-"nearby_trip_matcher.error.no_realtime" = "此线路暂无实时追踪数据。";
+"nearby_trip_matcher.error.no_realtime" = "此路線沒有可用的即時追蹤資料。";
 
-"surveys.accessibility_selected_value" = "已选择";
+"surveys.accessibility_selected_value" = "已選取";
 
-"surveys.accessibility_not_selected_value" = "未选择";
+"surveys.accessibility_not_selected_value" = "未選取";
 
-"surveys.accessibility_tap_toggle_selection" = "轻点以切换选择";
+"surveys.accessibility_tap_toggle_selection" = "點一下以切換選取狀態";
 
-"surveys.accessibility_tap_to_select" = "轻点以选择";
+"surveys.accessibility_tap_to_select" = "點一下以選取";
 
-"surveys.accessibility_answer.input" = "回答输入框";
+"surveys.accessibility_answer.input" = "答案輸入欄";
 
-"surveys.accessibility.hint_answer.input" = "输入您对问卷问题的回答";
+"surveys.accessibility.hint_answer.input" = "輸入您對問卷問題的答案";
 
-"surveys.accessibility_survey_label" = "问卷标签";
+"surveys.accessibility_survey_label" = "問卷標籤";

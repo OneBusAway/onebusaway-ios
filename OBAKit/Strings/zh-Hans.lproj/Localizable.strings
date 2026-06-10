@@ -818,3 +818,210 @@
 /* Error message when schedule fails to load */
 "stop_schedule_view.unable_to_load" = "无法加载时刻表";
 
+/* Explanatory text shown when route bookmarking is unavailable due to no upcoming departures. */
+"add_bookmark_controller.trip_bookmark_unavailable" = "只有当此车站有即将离站的班次时，才能添加车程书签。";
+
+/* Action to call agency */
+"agencies_controller.call_agency" = "致电交通局";
+
+/* Error dialog title */
+"agencies_controller.error_title" = "错误";
+
+/* Error message for invalid phone */
+"agencies_controller.invalid_phone" = "电话号码无效。";
+
+/* Action to open agency website */
+"agencies_controller.open_website" = "打开网站";
+
+/* Loading message while searching for the user's vehicle. */
+"current_trip_controller.detecting" = "正在寻找您乘坐的车辆……";
+
+/* Distance from user to vehicle. e.g. '0.2 mi away' */
+"current_trip_controller.distance_fmt" = "距您%@";
+
+/* Error message when the user's location is not available. */
+"current_trip_controller.location_unavailable" = "无法获取位置。请开启定位服务。";
+
+/* Section header when multiple vehicles are found on the selected route. */
+"current_trip_controller.multiple_vehicles" = "找到多辆车辆";
+
+/* Title for the current trip screen. */
+"current_trip_controller.my_trip" = "我的车程";
+
+/* Message when the route has no real-time tracking data. */
+"current_trip_controller.no_realtime" = "此线路暂无实时追踪数据";
+
+/* Message when no active vehicle is found near the user on the selected route. */
+"current_trip_controller.no_results" = "未在您附近找到此线路上正在运行的车辆";
+
+/* Error when the API service is unavailable. */
+"current_trip_controller.error_no_service" = "无法连接到公交数据服务。";
+
+/* Button to retry finding the user's vehicle. */
+"current_trip_controller.retry" = "重试";
+
+/* Data migration report label for showing the number of failed migration tasks. */
+"data_migration_bulletin.report_summary_number_of_failures" = "%d项失败";
+
+/* Data migration report label for showing the number of successful migration tasks. */
+"data_migration_bulletin.report_summary_number_of_successes" = "%d项成功";
+
+/* Body of the donation widget that appears on the stop view controller */
+"donation_cell.body" = "本App目前完全由志愿者开发，我们需要您的帮助来资助未来的开发工作。";
+
+/* Title of the button that shows the donation UI. */
+"donation_cell.donate_button_title" = "立即捐款";
+
+/* Title of the button that shows the donation explanation UI. */
+"donation_cell.learn_more_button_title" = "了解更多";
+
+/* Title of the donation widget that appears on the stop view controller. */
+"donation_cell.title" = "🚨 OneBusAway需要您的帮助";
+
+/* Dismiss button on the alert */
+"donations.donations_dismiss_alert.button_dismiss" = "我现在不想提供帮助";
+
+/* A button that prompts the system to remind them to donate later. */
+"donations.donations_dismiss_alert.button_remind_later" = "稍后提醒我";
+
+/* Body of the alert that appears when the user chooses to dismiss the donations request UI on a stop page */
+"donations.donations_dismiss_alert.message" = "OneBusAway是一个由志愿者运营、几乎没有资金来源的组织。我们需要您的帮助来维持本App的运转。";
+
+/* Title of the alert that appears when the user chooses to dismiss the donations request UI on a stop page */
+"donations.donations_dismiss_alert.title" = "请不要忽略这个请求";
+
+/* Body of an alert shown when a bookmark cannot be saved because the current region is unavailable. */
+"edit_bookmark_controller.region_error.body" = "当前地区不可用。请重试。";
+
+/* Title of an alert shown when a bookmark cannot be saved because the current region is unavailable. */
+"edit_bookmark_controller.region_error.title" = "无法保存";
+
+/* Message shown when there are no logs to display */
+"log_viewer_controller.no_logs" = "暂无日志。";
+
+/* Message for alert when there are no logs to share */
+"log_viewer_controller.no_logs_to_share.message" = "没有可分享的日志文件。";
+
+/* Title for alert when there are no logs to share */
+"log_viewer_controller.no_logs_to_share.title" = "无日志";
+
+/* Title of the Logs viewer controller */
+"log_viewer_controller.title" = "日志";
+
+/* Accessibility label for the My Trip button on the map toolbar. */
+"map_controller.my_trip_button" = "我的车程";
+
+/* Search bar placeholder on the map floating panel when the trip planner is enabled. */
+"map_floating_panel.where_are_you_going" = "您要去哪里？";
+
+/* Call button */
+"map_item_controller.call" = "致电";
+
+/* Accessibility label for call button */
+"map_item_controller.call_accessibility" = "拨打电话号码";
+
+/* Accessibility label for close button */
+"map_item_controller.close_button" = "关闭";
+
+/* Accessibility label for Look Around preview */
+"map_item_controller.look_around" = "“四处看看”预览。轻点以打开全屏查看器";
+
+/* Button to view nearby stops
+   Nearby stops button */
+"map_item_controller.nearby_stops" = "附近的车站";
+
+/* Accessibility label for nearby stops button */
+"map_item_controller.nearby_stops_accessibility" = "查看附近的公交车站";
+
+/* Plan trip button */
+"map_item_controller.plan_trip" = "规划行程";
+
+/* Accessibility label for plan trip button */
+"map_item_controller.plan_trip_accessibility" = "规划前往此地点的行程";
+
+/* Button to remove a dropped pin from the map */
+"map_item_controller.remove_pin" = "移除大头针";
+
+/* Accessibility label for remove pin button */
+"map_item_controller.remove_pin_accessibility" = "从地图上移除此大头针";
+
+/* Accessibility label for share button */
+"map_item_controller.share_button" = "分享位置";
+
+/* Website button */
+"map_item_controller.website" = "网站";
+
+/* Accessibility label for website button */
+"map_item_controller.website_accessibility" = "打开网站";
+
+/* Displayed in the map status view at the top of the map when the user must zoom in to see stops on the map */
+"map_status_view.zoom_in_for_stops" = "放大地图以查看车站";
+
+/* Header for the donate section. */
+"more_controller.donate" = "成为支持者";
+
+/* The call to action for the More controller's donate buton */
+"more_controller.donate_description" = "向OneBusAway捐款";
+
+/* A button that will open a web based donation portal. */
+"more_controller.manage_donations" = "管理捐款";
+
+/* A link to view application logs */
+"more_controller.view_logs_row_title" = "查看日志";
+
+/* Error shown on the Nearby Stops screen when no API service is configured (e.g. no region selected). */
+"nearby_stops_controller.no_api_service_error" = "没有可用的公交数据服务。请在“设置”中选择一个地区。";
+
+/* Placeholder text in the route search field. */
+"route_picker.search_placeholder" = "搜索线路……";
+
+/* Title for the route picker screen where the user selects their transit route. */
+"route_picker.title" = "选择您的线路";
+
+/* Error when API service is unavailable in the route picker. */
+"route_picker.error_no_service" = "无法连接到公交数据服务。";
+
+/* Error when location is unavailable in the route picker. */
+"route_picker.error_no_location" = "无法获取位置。请开启定位服务以查找附近的线路。";
+
+/* Loading message while fetching nearby routes. */
+"route_picker.loading" = "正在加载线路……";
+
+/* Message when no routes are found near the user's location. */
+"route_picker.no_routes" = "附近未找到线路。";
+
+/* Placemark search header */
+"search_controller.placemarks.header" = "结果";
+
+/* Loading message for placemark search */
+"search_controller.placemarks.loading" = "正在搜索地点……";
+
+/* No results message for placemark search */
+"search_controller.placemarks.no_results" = "未找到结果";
+
+/* Subtitle on search error row prompting the user to retry. */
+"search_controller.placemarks.error_retry" = "轻点以重试";
+
+/* Error shown when vehicle search is attempted with no API service configured (e.g. no region selected). */
+"search_results_controller.no_api_service_error" = "没有可用的公交数据服务。请在“设置”中选择一个地区。";
+
+/* Settings > Walking Speed > Average preset label */
+"settings_controller.walking_speed.avg" = "中等（约3英里/小时）";
+
+/* Settings > Walking Speed > Fast preset label */
+"settings_controller.walking_speed.fast" = "快速（约4英里/小时）";
+
+/* Settings > Walking Speed > HealthKit denial or no-data toast */
+"settings_controller.walking_speed.healthkit_unavailable" = "无法从“健康”App同步步行速度。请检查“设置”>“隐私与安全性”>“健康”以允许访问。";
+
+/* Settings > Walking Speed > Slow preset label */
+"settings_controller.walking_speed.slow" = "慢速（约2英里/小时）";
+
+/* Settings > Walking Speed section > Speed picker */
+"settings_controller.walking_speed.title" = "步行速度";
+
+/* Settings > Walking Speed section > HealthKit toggle */
+"settings_controller.walking_speed.use_healthkit" = "使用“健康”App数据";
+
+/* Settings > Walking Speed section title */
+"settings_controller.walking_speed_section.title" = "步行速度";

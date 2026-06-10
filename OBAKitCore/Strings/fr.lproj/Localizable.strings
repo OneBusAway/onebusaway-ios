@@ -1,0 +1,482 @@
+/* An error message that tells the user that they are connected to a captive portal WiFi network. */
+"api_error.captive_portal" = "Il semble que vous soyez connecté à un réseau Wi-Fi qui ne vous permet pas d'accéder à Internet. Essayez de vous déconnecter du Wi-Fi ou de vous authentifier auprès du réseau pour continuer.";
+
+/* An error message that informs the user that the wrong kind of content was received from the server. */
+"api_error.invalid_content_type_fmt" = "Nous attendions des données %1$@ du serveur, mais nous avons reçu %2$@ à la place.";
+
+/* An error that tells the user that the network connection isn't working. */
+"api_error.network_failure" = "Impossible de se connecter à Internet ou au serveur. Veuillez vérifier votre connexion réseau et réessayer.";
+
+/* An error that tells the user that the server unexpectedly failed to return data. */
+"api_error.no_response_body" = "De façon inattendue, le serveur n'a renvoyé aucune donnée en réponse à votre requête.";
+
+/* An error that is produced in response to HTTP status codes outside of 200-299. */
+"api_error.request_failure_fmt" = "Le serveur a rencontré une erreur en essayant de répondre à votre requête, produisant le code d'état %1$d. (URL : %2$@)";
+
+/* An error that is produced in response to HTTP status code 404 */
+"api_error.request_not_found" = "404 Introuvable (%@)";
+
+/* This will appear on a button or as a title, and indicates that this UI will create a new bookmark. */
+"common.add_alarm" = "Ajouter un rappel";
+
+/* This will appear on a button or as a title, and indicates that this UI will create a new bookmark. */
+"common.add_bookmark" = "Ajouter un favori";
+
+/* The noun, like an alarm clock or an alarm bell. */
+"common.alarm" = "Rappel";
+
+/* Back, as in 'back to the previous screen.' */
+"common.back" = "Retour";
+
+/* The verb 'to bookmark'. */
+"common.bookmark" = "Ajouter aux favoris";
+
+/* The verb 'to cancel', i.e. to stop an action. */
+"common.cancel" = "Annuler";
+
+/* Button to clear recent search results */
+"common.clear_recent_searches" = "Effacer les recherches récentes";
+
+/* Confirmation message before clearing recent search results */
+"common.clear_recent_searches.confirmation" = "Voulez-vous vraiment effacer vos recherches récentes ?";
+
+/* The verb 'to close'. */
+"common.close" = "Fermer";
+
+/* Asks the user to confirm a delete action. Typically this is showned when the user taps a 'delete' button on an important item. */
+"common.confirmdelete" = "Confirmer la suppression";
+
+/* The verb 'to continue'. */
+"common.continue" = "Continuer";
+
+/* The verb 'to delete', as in to destroy something. */
+"common.delete" = "Supprimer";
+
+/* The verb 'to dismiss', as in to hide or get rid of something. Used as a button title on alerts. */
+"common.dismiss" = "Ignorer";
+
+/* The verb 'to donate', as in to give money to a charitable cause. */
+"common.donate" = "Faire un don";
+
+/* The body of the message to display to the user after they donate to OTSF */
+"common.donation_thank_you.body" = "Votre soutien nous aidera à continuer d'améliorer OneBusAway.";
+
+/* Title of an alert to display to the user after they donate to OTSF */
+"common.donation_thank_you.title" = "Merci pour votre soutien !";
+
+/* Past participle of 'do'. As in 'I am done' or 'I am finished.' */
+"common.done" = "OK";
+
+/* The verb 'to edit', as in to change or modify something. Used as a button title. */
+"common.edit" = "Modifier";
+
+/* Title for the alert empty set indicator. */
+"common.empty_alert_set.title" = "Aucune alerte";
+
+/* Body for the bookmark empty set indicator. */
+"common.empty_bookmark_set.body" = "Ajoutez un favori pour un arrêt ou un trajet afin d'y accéder facilement ici.";
+
+/* Body for the bookmark empty set indicator when the user has a pending migration from the old version of the app. */
+"common.empty_bookmark_set.body_with_pending_migration" = "Allez dans l'onglet Plus > Réglages > Migrer les données pour voir vos favoris apparaître ici.";
+
+/* Title for the bookmark empty set indicator. */
+"common.empty_bookmark_set.title" = "Aucun favori";
+
+/* The noun 'error', as in 'something went wrong'. */
+"common.error" = "Erreur";
+
+/* The title of a button that exports all of the user's data into a file. */
+"common.export_data" = "Exporter les données";
+
+/* The verb 'to filter'. */
+"common.filter" = "Filtrer";
+
+/* This is button text that tells the user they can tap on it to learn more about the topic at hand. */
+"common.learn_more" = "En savoir plus";
+
+/* Used to indicate that content is loading. */
+"common.loading" = "Chargement…";
+
+/* A common error message that can be used when the user's location is not available and we need it to accomplish something. */
+"common.location_unavailable" = "Position indisponible";
+
+/* The noun for a map. */
+"common.map" = "Carte";
+
+/* A title or command for upgrading data from older versions of OBA. */
+"common.migrate_data" = "Migrer les données";
+
+/* An explanation about what the Migrate Data feature does. */
+"common.migrate_data_description" = "Mettez à niveau vos arrêts récents et vos favoris pour qu'ils fonctionnent avec la dernière version de l'app. (Connexion Internet requise.)";
+
+/* As in 'see more' or 'learn more'. */
+"common.more" = "Plus";
+
+/* OK */
+"common.ok" = "OK";
+
+/* i.e. recently selected search results for map locations from the trip planner. */
+"common.recent_searches" = "Recherches récentes";
+
+/* i.e. recently viewed or visited stops for transit vehicles, like a bus stop, ferry terminal, or train station. */
+"common.recent_stops" = "Arrêts récents";
+
+/* The verb 'refresh', as in 'reload'. */
+"common.refresh" = "Actualiser";
+
+/* The verb 'retry'. */
+"common.retry" = "Réessayer";
+
+/* The verb 'save', as in 'save data'. */
+"common.save" = "Enregistrer";
+
+/* A noun referring to a bus/train schedule or timetable. */
+"common.schedule" = "Horaires";
+
+/* Explains that this is departure comes from schedule data, not from a real-time vehicle location. */
+"common.scheduled_not_real_time" = "Horaire théorique/pas en temps réel";
+
+/* Plural form of schedule, referring to bus/train schedules or timetables. */
+"common.schedules" = "Horaires";
+
+/* A noun referring to an alert about service interruptions, reroutes, or other disruptions or changes. */
+"common.service_alert" = "Alerte de service";
+
+/* Plural form of a noun referring to an alert about service interruptions, reroutes, or other disruptions or changes. */
+"common.service_alerts" = "Alertes de service";
+
+/* A noun referring to a collection of options for adjusting app behavior. */
+"common.settings" = "Réglages";
+
+/* A verb referring to sharing something generic. */
+"common.share" = "Partager";
+
+/* Button title for sharing the status of your trip (i.e. location, arrival time, etc.) */
+"common.share_trip" = "Partager le trajet";
+
+/* The verb 'to skip' as in 'don't perform a particular step and go on to the next one instead.' */
+"common.skip" = "Ignorer";
+
+/* The verb 'to sort' as in to arrange things in an order. */
+"common.sort" = "Trier";
+
+/* Noun. Plural form of a transit stop. */
+"common.stops" = "Arrêts";
+
+/* A format string used to tell the user when the UI they are looking at was last updated. e.g. Updated: 9:41 AM. The time is calculated at runtime. */
+"common.updated_at_fmt" = "Mis à jour : %@";
+
+/* Used to tell the user that the UI they are looking at is actively being updated with new data from the server. */
+"common.updating" = "Mise à jour…";
+
+/* The title of the Vehicles tab showing real-time vehicle positions on a map. */
+"common.vehicles" = "Véhicules";
+
+/* Description of the privacy policy for sharing data with the external survey service. */
+"common.external_survey_privacy_info.description" = "Cette enquête partagera votre arrêt, votre ligne, votre région et votre position actuelle.";
+
+"common.go" = "Aller";
+
+"common.submit" = "Envoyer";
+
+"common.next" = "Suivant";
+
+"survey_alert.dismissal.title" = "Ignorer l'enquête";
+
+"survey_alert.dismissal.body" = "Vos commentaires aident à améliorer les services de transport et l'expérience de l'app.";
+
+"survey_alert.skip.survey" = "Ignorer cette enquête";
+
+"survey_alert.remind.later" = "Me le rappeler plus tard";
+
+"survey_error.required_remaining_questions.error" = "Veuillez répondre à toutes les questions obligatoires";
+
+"survey_error.hero_question_answer.error" = "Veuillez saisir une réponse valide";
+
+"survey_success.submitted" = "Réponse à l'enquête envoyée ! Veuillez répondre au reste des questions pour un retour plus complet.";
+
+"survey_alert.do.not.show.again" = "Ne plus afficher";
+
+"survey_service.not.available" = "Le service d'enquêtes est indisponible.";
+
+"survey.external.url.missing" = "Impossible d'ouvrir l'enquête pour le moment. Veuillez réessayer plus tard.";
+
+"survey_service.update.path.missing" = "Un problème est survenu lors de l'envoi de vos réponses. Veuillez réessayer plus tard.";
+
+/* Use for vehicles that arrived X minutes ago. */
+"formatters.arrived_x_min_ago_fmt" = "Arrivé il y a %d min";
+
+/* Use for vehicles arriving in X minutes. */
+"formatters.arrives_in_x_min_fmt" = "Arrive dans %d min";
+
+/* Use for vehicles arriving now. */
+"formatters.arriving_now" = "Arrive maintenant";
+
+/* Headed in an eastern direction */
+"formatters.cardinal_adjective.east" = "Direction est";
+
+/* Headed in a northern direction */
+"formatters.cardinal_adjective.north" = "Direction nord";
+
+/* Headed in a northeastern direction */
+"formatters.cardinal_adjective.northeast" = "Direction NE";
+
+/* Headed in a northwestern direction */
+"formatters.cardinal_adjective.northwest" = "Direction NO";
+
+/* Headed in a southern direction */
+"formatters.cardinal_adjective.south" = "Direction sud";
+
+/* Headed in an southeastern direction */
+"formatters.cardinal_adjective.southeast" = "Direction SE";
+
+/* Headed in a southwestern direction */
+"formatters.cardinal_adjective.southwest" = "Direction SO";
+
+/* Headed in a western direction */
+"formatters.cardinal_adjective.west" = "Direction ouest";
+
+/* East Direction */
+"formatters.cardinal_direction.east" = "Est";
+
+/* North Direction */
+"formatters.cardinal_direction.north" = "Nord";
+
+/* Northeast Direction */
+"formatters.cardinal_direction.northeast" = "Nord-est";
+
+/* Northwest Direction */
+"formatters.cardinal_direction.northwest" = "Nord-ouest";
+
+/* South Direction */
+"formatters.cardinal_direction.south" = "Sud";
+
+/* Southeast Direction */
+"formatters.cardinal_direction.southeast" = "Sud-est";
+
+/* Southwest Direction */
+"formatters.cardinal_direction.southwest" = "Sud-ouest";
+
+/* West Direction */
+"formatters.cardinal_direction.west" = "Ouest";
+
+/* Abbreviation for East */
+"formatters.cardinal_direction_abbrev.east" = "E";
+
+/* Abbreviation for North */
+"formatters.cardinal_direction_abbrev.north" = "N";
+
+/* Abbreviation for Northeast */
+"formatters.cardinal_direction_abbrev.northeast" = "NE";
+
+/* Abbreviation for Northwest */
+"formatters.cardinal_direction_abbrev.northwest" = "NO";
+
+/* Abbreviation for South */
+"formatters.cardinal_direction_abbrev.south" = "S";
+
+/* Abbreviation for Southeast */
+"formatters.cardinal_direction_abbrev.southeast" = "SE";
+
+/* Abbreviation for Southwest */
+"formatters.cardinal_direction_abbrev.southwest" = "SO";
+
+/* Abbreviation for West */
+"formatters.cardinal_direction_abbrev.west" = "O";
+
+/* Use for vehicles that departed X minutes ago. */
+"formatters.departed_x_min_ago_fmt" = "Parti il y a %d min";
+
+/* Use for vehicles departing now. */
+"formatters.departing_now" = "Part maintenant";
+
+/* Use for vehicles departing in X minutes. */
+"formatters.departs_in_x_min_fmt" = "Part dans %d min";
+
+/* Format string for describing an early future arrival schedule deviation. e.g. arrives 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
+"formatters.deviation.arrival_future_early_fmt" = "arrive avec %d min d'avance";
+
+/* Format string for describing a late future arrival schedule deviation. e.g. arrives 3 min late. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
+"formatters.deviation.arrival_future_late_fmt" = "arrive avec %d min de retard";
+
+/* Describes an on-time arrival. e.g. arrives on time. */
+"formatters.deviation.arrival_future_on_time" = "arrive à l'heure";
+
+/* Format string for describing an early arrival schedule deviation. e.g. Arrived 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
+"formatters.deviation.arrival_past_early_fmt" = "arrivé avec %d min d'avance";
+
+/* Format string for describing a late arrival schedule deviation. e.g. Arrived 3 min late. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
+"formatters.deviation.arrival_past_late_fmt" = "arrivé avec %d min de retard";
+
+/* Describes an on-time arrival. e.g. arrived on time. */
+"formatters.deviation.arrival_past_on_time" = "arrivé à l'heure";
+
+/* Describes an on-time departure. e.g. departs on time. */
+"formatters.deviation.departs_future_on_time" = "part à l'heure";
+
+/* Format string for describing an early future departure schedule deviation. e.g. departs 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
+"formatters.deviation.departure_future_early_fmt" = "part avec %d min d'avance";
+
+/* Format string for describing a late future departure schedule deviation. e.g. departs 3 min late. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
+"formatters.deviation.departure_future_late_fmt" = "part avec %d min de retard";
+
+/* Format string for describing an early departure schedule deviation. e.g. Departed 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
+"formatters.deviation.departure_past_early_fmt" = "parti avec %d min d'avance";
+
+/* Format string for describing a late departure schedule deviation. e.g. Departed 3 min late. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
+"formatters.deviation.departure_past_late_fmt" = "parti avec %d min de retard";
+
+/* Describes an on-time departure. e.g. departed on time. */
+"formatters.deviation.departure_past_on_time" = "parti à l'heure";
+
+/* Short formatted time text for arrivals/departures occurring now. */
+"formatters.now" = "MAINT.";
+
+/* Formatted time text for arrivals/departures that occur in one minute. */
+"formatters.one_minute" = "Une minute";
+
+/* Formatted time text for arrivals/departures that occurred one minute ago. */
+"formatters.one_minute_ago" = "Il y a une minute";
+
+/* A format string used to denote the list of routes served by this stop. e.g. 'Routes: 10, 12, 49' */
+"formatters.routes_label_fmt" = "Lignes : %@";
+
+/* A format string used to denote the overflowing list of routes served by this stop. e.g. 'Routes: 10, 12, 49, + 3 more */
+"formatters.routes_label_plus_more_fmt" = "Lignes : %1$@, + %2$d autres";
+
+/* Placeholder text for the search bar: 'Search in {REGION NAME}' */
+"formatters.search_bar_placeholder_fmt" = "Rechercher dans %@";
+
+/* Short formatted time text for arrivals/departures. Example: 7m means that this event happens 7 minutes in the future. -7m means 7 minutes in the past. */
+"formatters.short_time_fmt" = "%d min";
+
+/* Format string representing a non-numeric stop number. e.g. Stop: 'Old Library' */
+"formatters.stop.stop_code_non_numeric" = "Arrêt : « %@ »";
+
+/* Format string representing a numeric stop number. e.g. Stop #1234 */
+"formatters.stop.stop_code_numeric" = "Arrêt n° %@";
+
+/* A string that prefixes a stop ID to tell the user what that value is. */
+"formatters.stop_id_fmt" = "ID de l'arrêt : %@";
+
+/* Indicates that an event just took place. */
+"formatters.time_ago_just_now" = "À l'instant";
+
+/* Formatted time text for arrivals/departures. Used for accessibility labels, so be sure to spell out the word for 'minute'. Example: 7 minutes means that this event happens 7 minutes in the future. -7 minutes means 7 minutes in the past. */
+"formatters.time_fmt" = "%d minutes";
+
+/* Bus. Used for short- and long-distance bus routes. */
+"route_type.bus" = "Bus";
+
+/* Cable car. Used for street-level cable cars where the cable runs beneath the car. */
+"route_type.cable_car" = "Tramway à câble";
+
+/* Ferry. Used for short- and long-distance boat service. */
+"route_type.ferry" = "Ferry";
+
+/* Funicular. Any rail system designed for steep inclines. */
+"route_type.funicular" = "Funiculaire";
+
+/* Gondola, Suspended cable car. Typically used for aerial cable cars where the car is suspended from the cable. */
+"route_type.gondola" = "Télécabine";
+
+/* Tram, Streetcar, Light rail. Any light rail or street level system within a metropolitan area. */
+"route_type.light_rail" = "Tramway";
+
+/* Rail. Used for intercity or long-distance travel. */
+"route_type.rail" = "Train";
+
+/* Subway, Metro. Any underground rail system within a metropolitan area. */
+"route_type.subway" = "Métro";
+
+/* The body of the schedule/timetable feature tip */
+"schedule_tip.message" = "Touchez ici, puis touchez « Horaires » pour consulter les horaires de vos bus et trains.";
+
+/* Title for the schedule/timetable feature tip */
+"schedule_tip.title" = "Consultez les horaires de votre ligne";
+
+/* User-facing string that means the location of the stop on the map is wrong. */
+"stop_problem_code.user_description.location_wrong" = "L'emplacement est incorrect";
+
+/* User-facing string that means the name of the stop is wrong. */
+"stop_problem_code.user_description.name_wrong" = "Le nom est incorrect";
+
+/* User-facing string that means the number/ID of the stop is wrong. */
+"stop_problem_code.user_description.number_wrong" = "Le numéro est incorrect";
+
+/* User-facing string that means that something else is wrong */
+"stop_problem_code.user_description.other" = "Autre";
+
+/* User-facing string that means our data is wrong about a route or a scheduled trip */
+"stop_problem_code.user_description.route_or_trip_missing" = "Une ligne ou un trajet prévu est manquant";
+
+/* Message for the trip planner tip */
+"trip_planner_tip.message" = "Touchez ici pour rechercher des lieux et planifier votre voyage avec des itinéraires en transports en commun.";
+
+/* Title for the trip planner tip */
+"trip_planner_tip.title" = "Planifiez votre trajet";
+
+/* User-facing string that means the vehicle came early. */
+"trip_problem_code.user_description.came_early" = "Passé en avance";
+
+/* User-facing string that means the vehicle came late. */
+"trip_problem_code.user_description.came_late" = "Passé en retard";
+
+/* User-facing string that means the vehicle does not stop here. */
+"trip_problem_code.user_description.does_not_stop_here" = "Ne s'arrête pas ici";
+
+/* User-facing string that means the vehicle never came. */
+"trip_problem_code.user_description.never_came" = "N'est jamais passé";
+
+/* User-facing string that means that something else is wrong */
+"trip_problem_code.user_description.other" = "Autre";
+
+/* User-facing string that means the vehicle headsign was wrong. */
+"trip_problem_code.user_description.wrong_headsign" = "Destination affichée incorrecte";
+
+/* VoiceOver text describing a route that has already arrived, regardless of realtime data availability. */
+"voiceover.arrivaldeparture_arrived_x_minutes_ago_fmt" = "arrivé il y a %1$d minutes, à %2$@.";
+
+/* VoiceOver text describing a future arrival that is based off realtime data. */
+"voiceover.arrivaldeparture_arriving_in_x_minutes" = "arrive dans %1$d minutes, à %2$@.";
+
+/* VoiceOver text describing a route that is arriving now, regardless of realtime data availability. */
+"voiceover.arrivaldeparture_arriving_now" = "arrive maintenant !";
+
+/* VoiceOver text describing a route that has already departed, regardless of realtime data availability. */
+"voiceover.arrivaldeparture_departed_x_minutes_ago_fmt" = "parti il y a %1$d minutes, à %2$@.";
+
+/* VoiceOver text describing a future departure that is based off realtime data. */
+"voiceover.arrivaldeparture_departing_in_x_minutes_fmt" = "part dans %1$d minutes, à %2$@.";
+
+/* VoiceOver text describing a route that is departing now, regardless of realtime data availability. */
+"voiceover.arrivaldeparture_departing_now" = "part maintenant !";
+
+/* VoiceOver text describing the name of a route in a verbose fashion to compensate for no visuals. */
+"voiceover.arrivaldeparture_route_fmt" = "Ligne %@";
+
+/* VoiceOver text describing a route that is scheduled to arrive (no realtime data was available). */
+"voiceover.arrivaldeparture_scheduled_arrives_in_x_minutes_fmt" = "arrivée prévue dans %1$d minutes, à %2$@.";
+
+/* VoiceOver text describing a route that is scheduled to depart. (no realtime data was available) */
+"voiceover.arrivaldeparture_scheduled_departs_in_x_minutes_fmt" = "départ prévu dans %1$d minutes, à %2$@.";
+
+/* Error when no transit stops are found near the user's location. */
+"nearby_trip_matcher.error.no_stops" = "Aucun arrêt trouvé à proximité.";
+
+/* Error when a route has no real-time vehicle tracking data. */
+"nearby_trip_matcher.error.no_realtime" = "Aucune donnée de suivi en temps réel n'est disponible pour cette ligne.";
+
+"surveys.accessibility_selected_value" = "Sélectionné";
+
+"surveys.accessibility_not_selected_value" = "Non sélectionné";
+
+"surveys.accessibility_tap_toggle_selection" = "Touchez pour modifier la sélection";
+
+"surveys.accessibility_tap_to_select" = "Touchez pour sélectionner";
+
+"surveys.accessibility_answer.input" = "Champ de réponse";
+
+"surveys.accessibility.hint_answer.input" = "Saisissez votre réponse à la question de l'enquête";
+
+"surveys.accessibility_survey_label" = "Libellé de l'enquête";

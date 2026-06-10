@@ -819,3 +819,210 @@
 /* Error message when schedule fails to load */
 "stop_schedule_view.unable_to_load" = "No se pudo cargar el horario";
 
+/* Explanatory text shown when route bookmarking is unavailable due to no upcoming departures. */
+"add_bookmark_controller.trip_bookmark_unavailable" = "Los marcadores de ruta solo están disponibles cuando hay próximas salidas para esta parada.";
+
+/* Action to call agency */
+"agencies_controller.call_agency" = "Llamar a la Agencia";
+
+/* Error dialog title */
+"agencies_controller.error_title" = "Error";
+
+/* Error message for invalid phone */
+"agencies_controller.invalid_phone" = "Número de teléfono no válido.";
+
+/* Action to open agency website */
+"agencies_controller.open_website" = "Abrir Sitio Web";
+
+/* Loading message while searching for the user's vehicle. */
+"current_trip_controller.detecting" = "Buscando su vehículo…";
+
+/* Distance from user to vehicle. e.g. '0.2 mi away' */
+"current_trip_controller.distance_fmt" = "a %@ de distancia";
+
+/* Error message when the user's location is not available. */
+"current_trip_controller.location_unavailable" = "Ubicación no disponible. Por favor active los servicios de ubicación.";
+
+/* Section header when multiple vehicles are found on the selected route. */
+"current_trip_controller.multiple_vehicles" = "Se encontraron varios vehículos";
+
+/* Title for the current trip screen. */
+"current_trip_controller.my_trip" = "Mi Viaje";
+
+/* Message when the route has no real-time tracking data. */
+"current_trip_controller.no_realtime" = "No hay seguimiento en tiempo real disponible para esta ruta";
+
+/* Message when no active vehicle is found near the user on the selected route. */
+"current_trip_controller.no_results" = "No se encontró ningún vehículo activo en esta ruta cerca de usted";
+
+/* Error when the API service is unavailable. */
+"current_trip_controller.error_no_service" = "No se pudo conectar al servicio de transporte.";
+
+/* Button to retry finding the user's vehicle. */
+"current_trip_controller.retry" = "Reintentar";
+
+/* Data migration report label for showing the number of failed migration tasks. */
+"data_migration_bulletin.report_summary_number_of_failures" = "%d fallos";
+
+/* Data migration report label for showing the number of successful migration tasks. */
+"data_migration_bulletin.report_summary_number_of_successes" = "%d exitosos";
+
+/* Body of the donation widget that appears on the stop view controller */
+"donation_cell.body" = "Esta aplicación se desarrolla actualmente con trabajo 100% voluntario, y necesitamos su ayuda para financiar el desarrollo futuro.";
+
+/* Title of the button that shows the donation UI. */
+"donation_cell.donate_button_title" = "Donar Ahora";
+
+/* Title of the button that shows the donation explanation UI. */
+"donation_cell.learn_more_button_title" = "Saber Más";
+
+/* Title of the donation widget that appears on the stop view controller. */
+"donation_cell.title" = "🚨 OneBusAway necesita su ayuda";
+
+/* Dismiss button on the alert */
+"donations.donations_dismiss_alert.button_dismiss" = "No quiero ayudar en este momento";
+
+/* A button that prompts the system to remind them to donate later. */
+"donations.donations_dismiss_alert.button_remind_later" = "Recordarme Más Tarde";
+
+/* Body of the alert that appears when the user chooses to dismiss the donations request UI on a stop page */
+"donations.donations_dismiss_alert.message" = "OneBusAway es una organización dirigida por voluntarios y casi sin financiamiento. Necesitamos su ayuda para mantener esta aplicación en funcionamiento.";
+
+/* Title of the alert that appears when the user chooses to dismiss the donations request UI on a stop page */
+"donations.donations_dismiss_alert.title" = "Por favor no descarte esta solicitud";
+
+/* Body of an alert shown when a bookmark cannot be saved because the current region is unavailable. */
+"edit_bookmark_controller.region_error.body" = "La región actual no está disponible. Por favor inténtelo de nuevo.";
+
+/* Title of an alert shown when a bookmark cannot be saved because the current region is unavailable. */
+"edit_bookmark_controller.region_error.title" = "No se pudo guardar";
+
+/* Message shown when there are no logs to display */
+"log_viewer_controller.no_logs" = "No hay registros disponibles.";
+
+/* Message for alert when there are no logs to share */
+"log_viewer_controller.no_logs_to_share.message" = "No hay archivos de registro para compartir.";
+
+/* Title for alert when there are no logs to share */
+"log_viewer_controller.no_logs_to_share.title" = "Sin Registros";
+
+/* Title of the Logs viewer controller */
+"log_viewer_controller.title" = "Registros";
+
+/* Accessibility label for the My Trip button on the map toolbar. */
+"map_controller.my_trip_button" = "Mi Viaje";
+
+/* Search bar placeholder on the map floating panel when the trip planner is enabled. */
+"map_floating_panel.where_are_you_going" = "¿A dónde va?";
+
+/* Call button */
+"map_item_controller.call" = "Llamar";
+
+/* Accessibility label for call button */
+"map_item_controller.call_accessibility" = "Llamar al número de teléfono";
+
+/* Accessibility label for close button */
+"map_item_controller.close_button" = "Cerrar";
+
+/* Accessibility label for Look Around preview */
+"map_item_controller.look_around" = "Vista previa de Look Around. Toque para abrir el visor a pantalla completa";
+
+/* Button to view nearby stops
+   Nearby stops button */
+"map_item_controller.nearby_stops" = "Paradas Cercanas";
+
+/* Accessibility label for nearby stops button */
+"map_item_controller.nearby_stops_accessibility" = "Ver paradas de transporte cercanas";
+
+/* Plan trip button */
+"map_item_controller.plan_trip" = "Planificar Viaje";
+
+/* Accessibility label for plan trip button */
+"map_item_controller.plan_trip_accessibility" = "Planificar un viaje a esta ubicación";
+
+/* Button to remove a dropped pin from the map */
+"map_item_controller.remove_pin" = "Eliminar Pin";
+
+/* Accessibility label for remove pin button */
+"map_item_controller.remove_pin_accessibility" = "Eliminar este pin del mapa";
+
+/* Accessibility label for share button */
+"map_item_controller.share_button" = "Compartir Ubicación";
+
+/* Website button */
+"map_item_controller.website" = "Sitio Web";
+
+/* Accessibility label for website button */
+"map_item_controller.website_accessibility" = "Abrir el sitio web";
+
+/* Displayed in the map status view at the top of the map when the user must zoom in to see stops on the map */
+"map_status_view.zoom_in_for_stops" = "Acérquese para ver paradas";
+
+/* Header for the donate section. */
+"more_controller.donate" = "Apóyenos";
+
+/* The call to action for the More controller's donate buton */
+"more_controller.donate_description" = "Donar a OneBusAway";
+
+/* A button that will open a web based donation portal. */
+"more_controller.manage_donations" = "Administrar Donaciones";
+
+/* A link to view application logs */
+"more_controller.view_logs_row_title" = "Ver Registros";
+
+/* Error shown on the Nearby Stops screen when no API service is configured (e.g. no region selected). */
+"nearby_stops_controller.no_api_service_error" = "No hay un servicio de datos de transporte disponible. Por favor elija una región en Configuración.";
+
+/* Placeholder text in the route search field. */
+"route_picker.search_placeholder" = "Buscar rutas…";
+
+/* Title for the route picker screen where the user selects their transit route. */
+"route_picker.title" = "Seleccione su Ruta";
+
+/* Error when API service is unavailable in the route picker. */
+"route_picker.error_no_service" = "No se pudo conectar al servicio de transporte.";
+
+/* Error when location is unavailable in the route picker. */
+"route_picker.error_no_location" = "Ubicación no disponible. Por favor active los servicios de ubicación para encontrar rutas cercanas.";
+
+/* Loading message while fetching nearby routes. */
+"route_picker.loading" = "Cargando rutas…";
+
+/* Message when no routes are found near the user's location. */
+"route_picker.no_routes" = "No se encontraron rutas cercanas.";
+
+/* Placemark search header */
+"search_controller.placemarks.header" = "Resultados";
+
+/* Loading message for placemark search */
+"search_controller.placemarks.loading" = "Buscando lugares...";
+
+/* No results message for placemark search */
+"search_controller.placemarks.no_results" = "No se encontraron resultados";
+
+/* Subtitle on search error row prompting the user to retry. */
+"search_controller.placemarks.error_retry" = "Toque para reintentar";
+
+/* Error shown when vehicle search is attempted with no API service configured (e.g. no region selected). */
+"search_results_controller.no_api_service_error" = "No hay un servicio de datos de transporte disponible. Por favor elija una región en Configuración.";
+
+/* Settings > Walking Speed > Average preset label */
+"settings_controller.walking_speed.avg" = "Promedio (~3 mph)";
+
+/* Settings > Walking Speed > Fast preset label */
+"settings_controller.walking_speed.fast" = "Rápida (~4 mph)";
+
+/* Settings > Walking Speed > HealthKit denial or no-data toast */
+"settings_controller.walking_speed.healthkit_unavailable" = "No se pudo sincronizar la velocidad al caminar desde Salud. Revise Configuración > Privacidad y seguridad > Salud para permitir el acceso.";
+
+/* Settings > Walking Speed > Slow preset label */
+"settings_controller.walking_speed.slow" = "Lenta (~2 mph)";
+
+/* Settings > Walking Speed section > Speed picker */
+"settings_controller.walking_speed.title" = "Velocidad al caminar";
+
+/* Settings > Walking Speed section > HealthKit toggle */
+"settings_controller.walking_speed.use_healthkit" = "Usar datos de la app Salud";
+
+/* Settings > Walking Speed section title */
+"settings_controller.walking_speed_section.title" = "Velocidad al Caminar";
