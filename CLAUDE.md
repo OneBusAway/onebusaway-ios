@@ -45,7 +45,6 @@ scripts/docs                          # Generate DocC documentation (output in a
 scripts/version                        # Version management
 scripts/update_package_resolved        # Update Swift Package Manager dependencies
 scripts/extract_strings               # Extract strings for localization
-scripts/tx_pull                       # Pull translations from Transifex
 ```
 
 ## Architecture
@@ -103,7 +102,7 @@ scripts/tx_pull                       # Pull translations from Transifex
 - **Swift Version**: 5.3+
 - **Package Manager**: Swift Package Manager
 - **Project Generation**: XcodeGen from YAML configurations
-- **Localization**: Transifex integration
+- **Localization**: in-repo .strings files (OBAKit/Strings, OBAKitCore/Strings)
 - **Linting**: SwiftLint with relaxed rules for flexibility
 
 ## White-Label Features
