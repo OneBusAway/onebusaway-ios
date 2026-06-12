@@ -155,11 +155,12 @@ class TripFloatingPanelController: UIViewController,
             return label
         }()
 
-        private lazy var etaStopsLabel: UILabel = {
+    private lazy var etaStopsLabel: UILabel = {
             let label = UILabel.autolayoutNew()
             label.font = .preferredFont(forTextStyle: .footnote)
             label.textColor = ThemeColors.shared.label
             label.textAlignment = .natural
+            label.isAccessibilityElement = false
             return label
         }()
 
@@ -218,7 +219,7 @@ class TripFloatingPanelController: UIViewController,
             }
             etaStopsLabel.text = stopsText
 
-        etaInfoPanel.accessibilityLabel = "\(distance), \(stopsText)"
+        etaDistanceLabel.accessibilityLabel = "\(distance), \(stopsText)"
         }
 
     private lazy var etaInfoPanel: UIView = {
@@ -237,7 +238,6 @@ class TripFloatingPanelController: UIViewController,
             stack.leadingAnchor.constraint(equalTo: wrapper.readableContentGuide.leadingAnchor),
             stack.trailingAnchor.constraint(equalTo: wrapper.readableContentGuide.trailingAnchor)
         ])
-        wrapper.isAccessibilityElement = true
         return wrapper
     }()
 
