@@ -155,6 +155,16 @@ public class Application: CoreApplication, PushServiceDelegate {
     }
 
     private func configureTipKit() {
+        // Shows all tips all the time, regardless of display frequency or
+        // invalidation state. Used by UI tests to make tip presentation
+        // deterministic. Must be called before `Tips.configure()`.
+        // https://developer.apple.com/documentation/tipkit/tips/showalltipsfortesting()
+        #if DEBUG
+        if ProcessInfo.processInfo.environment["TEST_SHOW_ALL_TIPS"] == "1" {
+            Tips.showAllTipsForTesting()
+        }
+        #endif
+
         do {
             try Tips.configure([
                 .displayFrequency(.hourly),
@@ -163,10 +173,6 @@ public class Application: CoreApplication, PushServiceDelegate {
         } catch {
             Logger.error("Failed to configure TipKit: \(error)")
         }
-
-        // Enable this to show all tips all the time.
-        // https://developer.apple.com/documentation/tipkit/tips/showalltipsfortesting()
-        // Tips.showAllTipsForTesting()
     }
 
     // MARK: - Onboarding/Data Migration

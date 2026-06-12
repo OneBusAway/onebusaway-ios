@@ -69,6 +69,26 @@ final class MainFlowUITests: XCTestCase {
         }
     }
 
+    func test_tripPlannerTip_rendersContent() throws {
+        // Relaunch with all tips forced visible (DEBUG-only hook) so the test
+        // doesn't depend on TipKit's display-frequency or invalidation state.
+        app.launchEnvironment["TEST_SHOW_ALL_TIPS"] = "1"
+        app.launch()
+
+        XCTAssertTrue(app.tabBars.firstMatch.waitForExistence(timeout: 30))
+
+        // On iOS 26, TipUIPopoverViewController rendered the tip as an empty
+        // bubble: its content view was never resized to the popover and the
+        // text was clipped out of view. TipHostingViewController fixes this;
+        // assert the tip's actual content is visible.
+        XCTAssertTrue(
+            app.staticTexts["Plan Your Trip"].waitForExistence(timeout: 15),
+            "Trip planner tip popover should display its title")
+        XCTAssertTrue(
+            app.staticTexts["Tap here to search for places and plan your journey with transit directions."].exists,
+            "Trip planner tip popover should display its message")
+    }
+
     func test_moreTab_showsSettingsContent() throws {
         let tabBar = app.tabBars.firstMatch
         XCTAssertTrue(tabBar.waitForExistence(timeout: 30))
