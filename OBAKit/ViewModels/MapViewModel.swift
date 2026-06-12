@@ -51,6 +51,18 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
     /// The current location authorization status. Used by the UI to show/hide location controls.
     @Published private(set) var locationAuthStatus: CLAuthorizationStatus
 
+    // MARK: - Survey Prompt
+
+    /// Emits the survey to present when one is eligible and found. One-shot per
+    /// session; observers handle presentation (modal sheet, fullScreenCover, etc.).
+    var surveyToPresent: AnyPublisher<Survey, Never> {
+        surveyToPresentSubject.eraseToAnyPublisher()
+    }
+    private let surveyToPresentSubject = PassthroughSubject<Survey, Never>()
+
+    private var hasShownSurveyThisSession = false
+    private let surveyOrchestrator: SurveyOrchestrator
+
     // MARK: - Private
 
     private let application: Application
@@ -61,6 +73,7 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
         self.application = application
         self.mapType = initialMapType
         self.locationAuthStatus = application.locationService.authorizationStatus
+        self.surveyOrchestrator = SurveyOrchestrator(surveyService: application.surveyService)
         super.init()
         application.locationService.addDelegate(self)
     }
@@ -118,6 +131,52 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
     /// Re-fetches weather so the display stays fresh without relying on UIKit notification names.
     func onAppBecameActive() {
         Task { [weak self] in await self?.loadWeather() }
+    }
+
+    // MARK: - Survey Prompt
+
+    /// Checks once per session whether a map survey should be presented. On
+    /// the first eligible hit emits the survey on `surveyToPresent`; the
+    /// consumer presents it and reports back via
+    /// `didPresentSurveyPrompt(_:presented:)` so the reminder advances only
+    /// on confirmed presentation, and the session flag rolls back if the
+    /// presenter dropped the survey.
+    func checkForSurveyPrompt() async {
+        guard !hasShownSurveyThisSession else { return }
+        guard surveyOrchestrator.isEligible() else { return }
+
+        await surveyOrchestrator.refreshSurveys()
+
+        // Skip the prompt if the refresh itself failed. `SurveyService` falls
+        // back to its cached list on error, so without this gate a transient
+        // network failure could surface a survey that the server may have
+        // already retired. Matches the policy in `StopViewModel.refreshSurveys`.
+        guard surveyOrchestrator.lastError == nil else { return }
+
+        // Eligibility can change while the refresh is in flight (a different
+        // path completing or dismissing a survey, the reminder advancing).
+        // Re-check before emitting.
+        guard !hasShownSurveyThisSession, surveyOrchestrator.isEligible() else { return }
+        guard let survey = surveyOrchestrator.findMapSurvey() else { return }
+
+        // Flip the flag synchronously *before* `send`, so a second
+        // `checkForSurveyPrompt()` racing through the post-await re-check
+        // sees the flag set and bails out. `didPresentSurveyPrompt` rolls
+        // it back if presentation didn't actually happen.
+        hasShownSurveyThisSession = true
+        surveyToPresentSubject.send(survey)
+    }
+
+    /// Reports back from the consumer after attempting to present. On
+    /// `presented == true`, advances the reminder. On `presented == false`
+    /// (presenter went away between emit and present), rolls back the
+    /// session flag so a later check can re-emit.
+    func didPresentSurveyPrompt(_ survey: Survey, presented: Bool) {
+        if presented {
+            surveyOrchestrator.noteReminderAndAdvanceSession()
+        } else {
+            hasShownSurveyThisSession = false
+        }
     }
 
     // MARK: - LocationServiceDelegate

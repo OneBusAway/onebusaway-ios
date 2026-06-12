@@ -7,6 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
+import Combine
 import CoreLocation
 import UIKit
 import Eureka
@@ -14,26 +15,30 @@ import OBAKitCore
 
 class SurveyViewController: FormViewController {
 
-    private let survey: Survey
-    private let surveyService: SurveyService
-    private let stop: Stop?
-    private let stopID: String?
-    private let stopLocation: CLLocationCoordinate2D?
+    private let viewModel: SurveyViewModel
+    private var cancellables = Set<AnyCancellable>()
 
-    private var responses: [SurveyQuestionResponse] = []
-    private var heroResponseID: String?
-    private var checkboxSelections: [Int: Set<String>] = [:]
-
-    private lazy var externalSurveyLauncher = ExternalSurveyLauncher(surveyService: surveyService)
-
-    init(survey: Survey, surveyService: SurveyService, stop: Stop? = nil, stopID: String? = nil, stopLocation: CLLocationCoordinate2D? = nil, heroResponseID: String? = nil) {
-        self.survey = survey
-        self.surveyService = surveyService
-        self.stop = stop
-        self.stopID = stopID
-        self.stopLocation = stopLocation
-        self.heroResponseID = heroResponseID
+    init(viewModel: SurveyViewModel) {
+        self.viewModel = viewModel
         super.init(nibName: nil, bundle: nil)
+    }
+
+    convenience init(
+        survey: Survey,
+        surveyService: SurveyService,
+        stop: Stop? = nil,
+        stopID: String? = nil,
+        stopLocation: CLLocationCoordinate2D? = nil,
+        heroResponseID: String? = nil
+    ) {
+        self.init(viewModel: SurveyViewModel(
+            survey: survey,
+            surveyService: surveyService,
+            stop: stop,
+            stopID: stopID,
+            stopLocation: stopLocation,
+            heroResponseID: heroResponseID
+        ))
     }
 
     required init?(coder: NSCoder) {
@@ -44,20 +49,39 @@ class SurveyViewController: FormViewController {
         super.viewDidLoad()
         setupNavigationBar()
         setupForm()
+        bindViewModel()
     }
 
     private func setupNavigationBar() {
-        title = survey.name
+        title = viewModel.survey.name
         navigationItem.leftBarButtonItem = UIBarButtonItem(
             barButtonSystemItem: .close, target: self, action: #selector(cancelTapped)
         )
+    }
+
+    private func bindViewModel() {
+        viewModel.submissionResult
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] result in
+                switch result {
+                case .success:
+                    self?.dismiss(animated: true)
+                case .failure(.validationFailed):
+                    self?.showValidationError()
+                case .failure(.malformedSurveyData):
+                    self?.showMalformedSurveyError()
+                case .failure(.submissionFailed(let error)):
+                    self?.showSubmissionError(error)
+                }
+            }
+            .store(in: &cancellables)
     }
 
     private func setupForm() {
         // Header section with survey info
         form +++ Section()
         <<< LabelRow("survey_header") { row in
-            row.title = survey.study.description
+            row.title = viewModel.survey.study.description
             row.cell.textLabel?.numberOfLines = 0
         }
 
@@ -65,10 +89,7 @@ class SurveyViewController: FormViewController {
         let questionsSection = Section(OBALoc("survey_vc.questions_section_title", value: "Questions", comment: "Section header for survey questions"))
         form +++ questionsSection
 
-        // Skip hero question if already answered
-        let questionsToShow = heroResponseID != nil ? survey.remainingQuestions : survey.questions
-
-        for question in questionsToShow {
+        for question in viewModel.questionsToShow {
             addQuestionRow(question, to: questionsSection)
         }
 
@@ -108,7 +129,7 @@ class SurveyViewController: FormViewController {
                     row.value = nil
                 }.onChange { [weak self] row in
                     if let value = row.value {
-                        self?.updateResponse(for: question, answer: value)
+                        self?.viewModel.updateAnswer(for: question, answer: value)
                     }
                 }
             } else {
@@ -130,7 +151,7 @@ class SurveyViewController: FormViewController {
                                     }
                                 }
                             }
-                            self.updateResponse(for: question, answer: option)
+                            self.viewModel.updateAnswer(for: question, answer: option)
                         }
                     }
                 }
@@ -146,25 +167,13 @@ class SurveyViewController: FormViewController {
             }
 
             // Add individual checkbox options
-            checkboxSelections[question.id] = []
             for (index, option) in options.enumerated() {
                 let optionTag = "\(questionTag)_checkbox_\(index)"
                 section <<< CheckRow(optionTag) { row in
                     row.title = option
                     row.value = false
                 }.onChange { [weak self] row in
-                    guard let self = self else { return }
-
-                    if row.value == true {
-                        self.checkboxSelections[question.id, default: []].insert(option)
-                    } else {
-                        self.checkboxSelections[question.id, default: []].remove(option)
-                    }
-
-                    let selections = Array(self.checkboxSelections[question.id, default: []])
-                    if let jsonAnswer = try? SurveyService.formatCheckboxAnswer(selections) {
-                        self.updateResponse(for: question, answer: jsonAnswer)
-                    }
+                    self?.viewModel.toggleCheckbox(option: option, selected: row.value == true, for: question)
                 }
             }
 
@@ -182,7 +191,7 @@ class SurveyViewController: FormViewController {
                 row.textAreaHeight = .dynamic(initialTextViewHeight: 60)
             }.onChange { [weak self] row in
                 if let value = row.value {
-                    self?.updateResponse(for: question, answer: value)
+                    self?.viewModel.updateAnswer(for: question, answer: value)
                 }
             }
 
@@ -201,86 +210,13 @@ class SurveyViewController: FormViewController {
         }
     }
 
-    private func updateResponse(for question: SurveyQuestion, answer: String) {
-        // Remove existing response for this question
-        responses.removeAll { $0.questionId == question.id }
-
-        // Add new response
-        let response = SurveyService.createQuestionResponse(question: question, answer: answer)
-        responses.append(response)
-    }
-
     @objc private func cancelTapped() {
-        surveyService.markSurveyForLater(survey)
-        surveyService.setNextReminderDate()
+        viewModel.cancel()
         dismiss(animated: true)
     }
 
     @objc private func submitTapped() {
-        Task {
-            await submitSurvey()
-        }
-    }
-
-    private func submitSurvey() async {
-        // Validate required questions
-        guard validateResponses() else {
-            showValidationError()
-            return
-        }
-
-        do {
-            if let heroResponseID = heroResponseID {
-                // Submit additional questions
-                _ = try await surveyService.submitAdditionalQuestions(
-                    responseID: heroResponseID,
-                    additionalResponses: responses
-                )
-            } else {
-                // Submit complete survey
-                guard let heroQuestion = survey.heroQuestion,
-                      let heroResponse = responses.first(where: { $0.questionId == heroQuestion.id }) else {
-                    showValidationError()
-                    return
-                }
-
-                let submissionResponse = try await surveyService.submitHeroQuestion(
-                    survey: survey,
-                    heroQuestionResponse: heroResponse,
-                    stopID: stopID,
-                    stopLocation: stopLocation
-                )
-
-                // Save hero response ID so retry skips re-submitting the hero
-                self.heroResponseID = submissionResponse.id
-
-                // Submit remaining questions if any
-                let remainingResponses = responses.filter { $0.questionId != heroQuestion.id }
-                if !remainingResponses.isEmpty {
-                    _ = try await surveyService.submitAdditionalQuestions(
-                        responseID: submissionResponse.id,
-                        additionalResponses: remainingResponses
-                    )
-                }
-            }
-
-            surveyService.markSurveyCompleted(survey)
-            dismiss(animated: true)
-
-        } catch {
-            showSubmissionError(error)
-        }
-    }
-
-    private func validateResponses() -> Bool {
-        let answeredQuestionIDs = Set(responses.map { $0.questionId })
-        let questionsToValidate = heroResponseID != nil ? survey.remainingQuestions : survey.questions
-        return questionsToValidate
-            // External-survey questions are answered out-of-app (tapping "Open
-            // Survey" launches the URL and dismisses this form), so they can
-            // never be satisfied in-form. Exclude them from required checks.
-            .filter { $0.required && $0.content.type != .externalSurvey }
-            .allSatisfy { answeredQuestionIDs.contains($0.id) }
+        Task { await viewModel.submit() }
     }
 
     private func showValidationError() {
@@ -293,8 +229,18 @@ class SurveyViewController: FormViewController {
         present(alert, animated: true)
     }
 
+    private func showMalformedSurveyError() {
+        Logger.error("Survey \(viewModel.survey.id) is malformed (no answerable hero question on the fresh path).")
+        let alert = UIAlertController(
+            title: OBALoc("survey_vc.malformed_error.title", value: "Survey Unavailable", comment: "Title for malformed survey alert"),
+            message: OBALoc("survey_vc.malformed_error.message", value: "This survey can't be submitted right now. Please try again later.", comment: "Message when the survey data itself is malformed (no answerable hero question)."),
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: OBALoc("survey_vc.ok_button", value: "OK", comment: "OK button on survey alerts"), style: .default))
+        present(alert, animated: true)
+    }
+
     private func showSubmissionError(_ error: Error) {
-        Logger.error("Survey \(survey.id) submission failed: \(error)")
         let alert = UIAlertController(
             title: OBALoc("survey_vc.submission_error.title", value: "Submission Error", comment: "Title for survey submission error alert"),
             message: error.localizedDescription,
@@ -305,9 +251,7 @@ class SurveyViewController: FormViewController {
     }
 
     private func openExternalSurvey() {
-        externalSurveyLauncher.launch(
-            survey: survey,
-            stop: stop,
+        viewModel.launchExternalSurvey(
             onSuccess: { [weak self] in self?.dismiss(animated: true) },
             // On failure, keep the form on screen so the rider can retry; the
             // launcher does not mark the survey completed unless the open succeeds.
