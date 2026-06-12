@@ -146,9 +146,22 @@ class TripFloatingPanelController: UIViewController,
 
     var collapsedSections: Set<OBAListViewSection.ID> = []
     var selectionFeedbackGenerator: UISelectionFeedbackGenerator? = UISelectionFeedbackGenerator()
-    
-    private var etaDistanceLabel: UILabel?
-    private var etaStopsLabel: UILabel?
+
+    private lazy var etaDistanceLabel: UILabel = {
+            let label = UILabel.autolayoutNew()
+            label.font = .preferredFont(forTextStyle: .footnote)
+            label.textColor = ThemeColors.shared.label
+            label.textAlignment = .natural
+            return label
+        }()
+
+        private lazy var etaStopsLabel: UILabel = {
+            let label = UILabel.autolayoutNew()
+            label.font = .preferredFont(forTextStyle: .footnote)
+            label.textColor = ThemeColors.shared.label
+            label.textAlignment = .natural
+            return label
+        }()
 
     private lazy var stopArrivalView: StopArrivalView = {
         let view = StopArrivalView.autolayoutNew()
@@ -189,35 +202,31 @@ class TripFloatingPanelController: UIViewController,
 
     // MARK: - ETA Info Panel
     // Displays distance from stop and number of stops away for the arriving vehicle.
-    // Added to address feature #2 in issue #1109.
     private func updateETAInfoPanel(with arrDep: ArrivalDeparture) {
-        let distance = application.formatters.distanceFormatter.string(fromDistance: arrDep.distanceFromStop)
-        etaDistanceLabel?.text = distance
-        let stopCount = arrDep.numberOfStopsAway
-        let stopsFormat = stopCount == 1
-            ? OBALoc("trip_floating_panel.one_stop_away", value: "%d stop away", comment: "One stop away from the vehicle")
-            : OBALoc("trip_floating_panel.multiple_stops_away", value: "%d stops away", comment: "Multiple stops away from the vehicle")
-        etaStopsLabel?.text = String(format: stopsFormat, stopCount)
-    }
-    
-    private lazy var etaInfoPanel: UIView = {
-        let distanceLabel = UILabel.autolayoutNew()
-        etaDistanceLabel = distanceLabel
-        distanceLabel.font = .preferredFont(forTextStyle: .footnote)
-        distanceLabel.textColor = ThemeColors.shared.label
-        distanceLabel.textAlignment = .natural
+            let distance = application.formatters.distanceFormatter.string(fromDistance: arrDep.distanceFromStop)
+            etaDistanceLabel.text = distance
 
-        let stopsLabel = UILabel.autolayoutNew()
-        etaStopsLabel = stopsLabel
-        stopsLabel.font = .preferredFont(forTextStyle: .footnote)
-        stopsLabel.textColor = ThemeColors.shared.label
-        stopsLabel.textAlignment = .right
+            let stopCount = arrDep.numberOfStopsAway
+            let stopsText: String
+            if stopCount <= 0 {
+                stopsText = OBALoc("trip_floating_panel.at_stop", value: "At stop", comment: "The vehicle is at or has passed the selected stop")
+            } else {
+                let stopsFormat = stopCount == 1
+                    ? OBALoc("trip_floating_panel.one_stop_away", value: "%d stop away", comment: "One stop away from the vehicle")
+                    : OBALoc("trip_floating_panel.multiple_stops_away", value: "%d stops away", comment: "Multiple stops away from the vehicle")
+                stopsText = String(format: stopsFormat, stopCount)
+            }
+            etaStopsLabel.text = stopsText
 
-        if let arrDep = tripConvertible?.arrivalDeparture {
-            updateETAInfoPanel(with: arrDep)
+        etaInfoPanel.accessibilityLabel = "\(distance), \(stopsText)"
         }
 
-        let stack = UIStackView.horizontalStack(arrangedSubviews: [distanceLabel, stopsLabel])
+    private lazy var etaInfoPanel: UIView = {
+            if let arrDep = tripConvertible?.arrivalDeparture {
+                updateETAInfoPanel(with: arrDep)
+            }
+
+        let stack = UIStackView.horizontalStack(arrangedSubviews: [etaDistanceLabel, etaStopsLabel])
         stack.distribution = .fillEqually
         stack.spacing = ThemeMetrics.compactPadding
 
@@ -228,6 +237,7 @@ class TripFloatingPanelController: UIViewController,
             stack.leadingAnchor.constraint(equalTo: wrapper.readableContentGuide.leadingAnchor),
             stack.trailingAnchor.constraint(equalTo: wrapper.readableContentGuide.trailingAnchor)
         ])
+        wrapper.isAccessibilityElement = true
         return wrapper
     }()
 
