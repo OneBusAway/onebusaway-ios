@@ -337,6 +337,15 @@ public class Application: CoreApplication, PushServiceDelegate {
     private var alertBulletin: AgencyAlertBulletin?
 
     public func agencyAlertsUpdated() {
+        #if DEBUG
+        // UI tests run against the live network, so a real high-severity alert can
+        // pop a modal bulletin over the UI mid-test. Tests that aren't about the
+        // bulletin set this to keep their runs deterministic.
+        if ProcessInfo.processInfo.environment["TEST_SUPPRESS_ALERT_BULLETINS"] == "1" {
+            return
+        }
+        #endif
+
         guard
             let alert = alertsStore.recentUnreadHighSeverityAlerts.first,
             let app = self.delegate?.uiApplication
@@ -395,6 +404,15 @@ public class Application: CoreApplication, PushServiceDelegate {
         }
 
         configureConnectivity()
+
+        #if DEBUG
+        // Lets UI tests exercise the modal alert bulletin deterministically,
+        // without depending on a high-severity alert being live in the region.
+        if ProcessInfo.processInfo.environment["TEST_INJECT_REGION_WIDE_ALERT"] == "1" {
+            alertsStore.seedRegionWideAlertForTesting()
+        }
+        #endif
+
         alertsStore.checkForUpdates()
 
         if presentDonationUIOnActive, let topViewController {
