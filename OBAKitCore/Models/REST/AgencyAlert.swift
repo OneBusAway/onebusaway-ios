@@ -34,7 +34,11 @@ public class AgencyAlert: NSObject, Identifiable {
         return nil
     }
 
+    /// The agency this alert applies to, or `nil` for a region-wide alert.
     public let agency: AgencyWithCoverage?
+
+    /// `true` when this alert applies to the whole region rather than a single agency.
+    public var isRegionWide: Bool { agency == nil }
 
     // MARK: - Localized Content Accessors
 
@@ -86,20 +90,26 @@ public class AgencyAlert: NSObject, Identifiable {
             throw AlertError.invalidAlert
         }
 
-        guard let selectedAgency = agencies.filter({ $0.agencyID == gtfsAgency.agencyID }).first else {
+        let selectedAgency = agencies.first { $0.agencyID == gtfsAgency.agencyID }
+
+        // Obaco marks region-wide alerts — ones that apply to every agency in the
+        // region rather than to one in particular — with an empty agency ID.
+        guard selectedAgency != nil || gtfsAgency.agencyID.isEmpty else {
             throw AlertError.unknownAgency
         }
 
         try self.init(feedEntity: feedEntity, agency: selectedAgency)
     }
 
-    public init(feedEntity: TransitRealtime_FeedEntity, agency: AgencyWithCoverage) throws {
+    public init(feedEntity: TransitRealtime_FeedEntity, agency: AgencyWithCoverage?) throws {
         guard
             feedEntity.hasAlert,
             AgencyAlert.isAgencyWideAlert(alert: feedEntity.alert),
             let gtfsAgency = AgencyAlert.findAgencyInList(list: feedEntity.alert.informedEntity),
             gtfsAgency.hasAgencyID,
-            gtfsAgency.agencyID == agency.agencyID
+            // A region-wide alert (no agency) must carry the empty agency ID Obaco
+            // uses to mark it; an agency-specific alert's ID must match its agency.
+            agency == nil ? gtfsAgency.agencyID.isEmpty : gtfsAgency.agencyID == agency?.agencyID
         else {
             throw AlertError.invalidAlert
         }

@@ -28,6 +28,11 @@ final class MainFlowUITests: XCTestCase {
             "-OBACurrentRegionIdentifierUserDefaultsKey", "<integer>1</integer>"
         ]
 
+        // These tests run against the live network: a real high-severity alert in
+        // the region would otherwise pop a modal bulletin over the UI mid-test.
+        // The bulletin itself is covered by test_regionWideAlertBulletin_appears_andIsDismissible.
+        app.launchEnvironment["TEST_SUPPRESS_ALERT_BULLETINS"] = "1"
+
         // The map requests location authorization on first appearance; dismiss the
         // system alert so it can't block tab interactions.
         addUIInterruptionMonitor(withDescription: "Location permission") { alert in
@@ -66,6 +71,59 @@ final class MainFlowUITests: XCTestCase {
             // center-screen tap could hit a row and navigate away.
             tab.tap()
             XCTAssertTrue(tabBar.exists, "App should still be running after opening '\(tabName)'")
+        }
+    }
+
+    /// Regression test: a high-severity region-wide alert must surface as a modal
+    /// bulletin above all other content. Region-wide alerts (empty GTFS-RT `agency_id`,
+    /// as served by sidecar.onebusaway.org) used to be silently dropped during parsing,
+    /// so the bulletin never appeared.
+    func test_regionWideAlertBulletin_appears_andIsDismissible() throws {
+        // Relaunch with the bulletin suppression removed and a synthetic
+        // region-wide alert injected (DEBUG-only hook), so this test does not
+        // depend on a real alert being live in the region.
+        app.launchEnvironment.removeValue(forKey: "TEST_SUPPRESS_ALERT_BULLETINS")
+        app.launchEnvironment["TEST_INJECT_REGION_WIDE_ALERT"] = "1"
+        app.launch()
+
+        // The alert is seeded in `applicationDidBecomeActive`, which the system
+        // withholds while a permission dialog is up. Clear the notification and
+        // location prompts first so the scene can become active and seed the alert.
+        dismissSystemPermissionDialogs()
+
+        let title = app.staticTexts["Test Region-Wide Alert"]
+        XCTAssertTrue(
+            title.waitForExistence(timeout: 30),
+            "The region-wide alert bulletin should appear above the main UI")
+
+        let dismissButton = app.buttons["Dismiss"]
+        XCTAssertTrue(dismissButton.waitForExistence(timeout: 5))
+        dismissButton.tap()
+
+        XCTAssertTrue(
+            title.waitForNonExistence(timeout: 10),
+            "The bulletin should disappear after tapping Dismiss")
+        XCTAssertTrue(app.tabBars.firstMatch.exists, "Main UI should still be present after dismissal")
+    }
+
+    /// Dismisses the notification and location permission dialogs that the OS presents
+    /// on first launch. These are SpringBoard alerts, so they're tapped through the
+    /// SpringBoard proxy rather than `app` — and directly, rather than via an
+    /// interruption monitor, since a withheld scene never delivers the interaction
+    /// an interruption monitor depends on.
+    private func dismissSystemPermissionDialogs() {
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        let buttonLabels = ["Allow", "Allow Once", "Allow While Using App", "Allow While Using the App", "OK", "Don't Allow"]
+
+        // Two passes: one for the notification prompt, one for the location prompt.
+        for _ in 0..<2 {
+            guard let button = buttonLabels
+                .map({ springboard.buttons[$0] })
+                .first(where: { $0.waitForExistence(timeout: 5) })
+            else {
+                break
+            }
+            button.tap()
         }
     }
 
