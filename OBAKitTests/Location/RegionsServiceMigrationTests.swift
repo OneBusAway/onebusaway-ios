@@ -30,6 +30,8 @@ class RegionsServiceMigrationTests: OBATestCase {
     }
 
     private func encode<T: Encodable>(_ value: T) -> Data {
+        // Force-try is safe: these are static test fixtures, so a failure here
+        // is a test-authoring bug that should crash immediately rather than be handled.
         try! PropertyListEncoder().encode(value)
     }
 

@@ -179,6 +179,7 @@ class VehiclesViewModelTests: OBATestCase {
 
         expect(viewModel.isAgencyEnabled("40")).to(beTrue())
         expect(viewModel.allAgenciesEnabled).to(beTrue())
+        expect(app.userDataStore.disabledVehicleFeedAgencyIDs).to(beEmpty())
     }
 
     // MARK: - Auto-Refresh Lifecycle
