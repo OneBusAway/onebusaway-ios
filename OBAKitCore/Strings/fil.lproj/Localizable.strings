@@ -1,0 +1,482 @@
+/* An error message that tells the user that they are connected to a captive portal WiFi network. */
+"api_error.captive_portal" = "Mukhang nakakonekta ka sa isang WiFi network na hindi ka pinapayagang ma-access ang Internet. Subukang dumiskonekta sa WiFi o mag-authenticate sa network para magpatuloy.";
+
+/* An error message that informs the user that the wrong kind of content was received from the server. */
+"api_error.invalid_content_type_fmt" = "Inaasahan naming makatanggap ng %1$@ na data mula sa server, pero %2$@ ang natanggap namin.";
+
+/* An error that tells the user that the network connection isn't working. */
+"api_error.network_failure" = "Hindi makakonekta sa Internet o sa server. Pakisuri ang iyong koneksyon sa network at subukang muli.";
+
+/* An error that tells the user that the server unexpectedly failed to return data. */
+"api_error.no_response_body" = "Hindi inaasahang walang ibinalik na data ang server bilang tugon sa iyong kahilingan.";
+
+/* An error that is produced in response to HTTP status codes outside of 200-299. */
+"api_error.request_failure_fmt" = "Nagkaroon ng error ang server habang sinusubukang tumugon sa iyong kahilingan, na nagdulot ng status code %1$d. (URL: %2$@)";
+
+/* An error that is produced in response to HTTP status code 404 */
+"api_error.request_not_found" = "404 Hindi nahanap (%@)";
+
+/* This will appear on a button or as a title, and indicates that this UI will create a new bookmark. */
+"common.add_alarm" = "Magdagdag ng Paalala";
+
+/* This will appear on a button or as a title, and indicates that this UI will create a new bookmark. */
+"common.add_bookmark" = "Magdagdag ng Bookmark";
+
+/* The noun, like an alarm clock or an alarm bell. */
+"common.alarm" = "Paalala";
+
+/* Back, as in 'back to the previous screen.' */
+"common.back" = "Bumalik";
+
+/* The verb 'to bookmark'. */
+"common.bookmark" = "I-bookmark";
+
+/* The verb 'to cancel', i.e. to stop an action. */
+"common.cancel" = "Kanselahin";
+
+/* Button to clear recent search results */
+"common.clear_recent_searches" = "I-clear ang Mga Kamakailang Paghahanap";
+
+/* Confirmation message before clearing recent search results */
+"common.clear_recent_searches.confirmation" = "Sigurado ka bang gusto mong i-clear ang iyong mga kamakailang paghahanap?";
+
+/* The verb 'to close'. */
+"common.close" = "Isara";
+
+/* Asks the user to confirm a delete action. Typically this is showned when the user taps a 'delete' button on an important item. */
+"common.confirmdelete" = "Kumpirmahin ang Pag-delete";
+
+/* The verb 'to continue'. */
+"common.continue" = "Magpatuloy";
+
+/* The verb 'to delete', as in to destroy something. */
+"common.delete" = "I-delete";
+
+/* The verb 'to dismiss', as in to hide or get rid of something. Used as a button title on alerts. */
+"common.dismiss" = "I-dismiss";
+
+/* The verb 'to donate', as in to give money to a charitable cause. */
+"common.donate" = "Mag-donate";
+
+/* The body of the message to display to the user after they donate to OTSF */
+"common.donation_thank_you.body" = "Makakatulong ang iyong suporta para patuloy naming mapahusay ang OneBusAway.";
+
+/* Title of an alert to display to the user after they donate to OTSF */
+"common.donation_thank_you.title" = "Salamat sa iyong suporta!";
+
+/* Past participle of 'do'. As in 'I am done' or 'I am finished.' */
+"common.done" = "Tapos Na";
+
+/* The verb 'to edit', as in to change or modify something. Used as a button title. */
+"common.edit" = "I-edit";
+
+/* Title for the alert empty set indicator. */
+"common.empty_alert_set.title" = "Walang Alerto";
+
+/* Body for the bookmark empty set indicator. */
+"common.empty_bookmark_set.body" = "Magdagdag ng bookmark para sa isang hintuan o biyahe para madali itong ma-access dito.";
+
+/* Body for the bookmark empty set indicator when the user has a pending migration from the old version of the app. */
+"common.empty_bookmark_set.body_with_pending_migration" = "Pumunta sa tab na Higit Pa > Mga Setting > Maglipat ng Data para makita ang iyong mga bookmark dito.";
+
+/* Title for the bookmark empty set indicator. */
+"common.empty_bookmark_set.title" = "Walang Bookmark";
+
+/* The noun 'error', as in 'something went wrong'. */
+"common.error" = "Error";
+
+/* The title of a button that exports all of the user's data into a file. */
+"common.export_data" = "I-export ang Data";
+
+/* The verb 'to filter'. */
+"common.filter" = "I-filter";
+
+/* This is button text that tells the user they can tap on it to learn more about the topic at hand. */
+"common.learn_more" = "Alamin Pa";
+
+/* Used to indicate that content is loading. */
+"common.loading" = "Naglo-load…";
+
+/* A common error message that can be used when the user's location is not available and we need it to accomplish something. */
+"common.location_unavailable" = "Hindi Available ang Lokasyon";
+
+/* The noun for a map. */
+"common.map" = "Mapa";
+
+/* A title or command for upgrading data from older versions of OBA. */
+"common.migrate_data" = "Maglipat ng Data";
+
+/* An explanation about what the Migrate Data feature does. */
+"common.migrate_data_description" = "I-upgrade ang iyong mga kamakailang hintuan at bookmark para gumana sa pinakabagong bersyon ng app. (Kailangan ng koneksyon sa internet.)";
+
+/* As in 'see more' or 'learn more'. */
+"common.more" = "Higit Pa";
+
+/* OK */
+"common.ok" = "OK";
+
+/* i.e. recently selected search results for map locations from the trip planner. */
+"common.recent_searches" = "Mga Kamakailang Paghahanap";
+
+/* i.e. recently viewed or visited stops for transit vehicles, like a bus stop, ferry terminal, or train station. */
+"common.recent_stops" = "Mga Kamakailang Hintuan";
+
+/* The verb 'refresh', as in 'reload'. */
+"common.refresh" = "I-refresh";
+
+/* The verb 'retry'. */
+"common.retry" = "Subukang Muli";
+
+/* The verb 'save', as in 'save data'. */
+"common.save" = "I-save";
+
+/* A noun referring to a bus/train schedule or timetable. */
+"common.schedule" = "Iskedyul";
+
+/* Explains that this is departure comes from schedule data, not from a real-time vehicle location. */
+"common.scheduled_not_real_time" = "Nakaiskedyul/hindi real-time";
+
+/* Plural form of schedule, referring to bus/train schedules or timetables. */
+"common.schedules" = "Mga Iskedyul";
+
+/* A noun referring to an alert about service interruptions, reroutes, or other disruptions or changes. */
+"common.service_alert" = "Alerto sa Serbisyo";
+
+/* Plural form of a noun referring to an alert about service interruptions, reroutes, or other disruptions or changes. */
+"common.service_alerts" = "Mga Alerto sa Serbisyo";
+
+/* A noun referring to a collection of options for adjusting app behavior. */
+"common.settings" = "Mga Setting";
+
+/* A verb referring to sharing something generic. */
+"common.share" = "Ibahagi";
+
+/* Button title for sharing the status of your trip (i.e. location, arrival time, etc.) */
+"common.share_trip" = "Ibahagi ang Biyahe";
+
+/* The verb 'to skip' as in 'don't perform a particular step and go on to the next one instead.' */
+"common.skip" = "Laktawan";
+
+/* The verb 'to sort' as in to arrange things in an order. */
+"common.sort" = "I-sort";
+
+/* Noun. Plural form of a transit stop. */
+"common.stops" = "Mga Hintuan";
+
+/* A format string used to tell the user when the UI they are looking at was last updated. e.g. Updated: 9:41 AM. The time is calculated at runtime. */
+"common.updated_at_fmt" = "Na-update: %@";
+
+/* Used to tell the user that the UI they are looking at is actively being updated with new data from the server. */
+"common.updating" = "Ina-update…";
+
+/* The title of the Vehicles tab showing real-time vehicle positions on a map. */
+"common.vehicles" = "Mga Sasakyan";
+
+/* Description of the privacy policy for sharing data with the external survey service. */
+"common.external_survey_privacy_info.description" = "Ibabahagi ng survey na ito ang iyong hintuan, ruta, rehiyon, at kasalukuyang lokasyon.";
+
+"common.go" = "Sige";
+
+"common.submit" = "Isumite";
+
+"common.next" = "Susunod";
+
+"survey_alert.dismissal.title" = "I-dismiss ang Survey";
+
+"survey_alert.dismissal.body" = "Nakakatulong ang iyong feedback para mapahusay ang mga serbisyo ng transit at ang karanasan sa app.";
+
+"survey_alert.skip.survey" = "Laktawan ang Survey na Ito";
+
+"survey_alert.remind.later" = "Paalalahanan Ako Mamaya";
+
+"survey_error.required_remaining_questions.error" = "Pakisagutan ang lahat ng kinakailangang tanong";
+
+"survey_error.hero_question_answer.error" = "Maglagay ng valid na sagot";
+
+"survey_success.submitted" = "Naisumite ang sagot sa survey! Pakisagutan ang natitirang mga tanong para sa mas mahusay na feedback.";
+
+"survey_alert.do.not.show.again" = "Huwag Nang Ipakita Muli";
+
+"survey_service.not.available" = "Hindi available ang Serbisyo ng Survey.";
+
+"survey.external.url.missing" = "Hindi namin mabuksan ang survey sa ngayon. Pakisubukang muli mamaya.";
+
+"survey_service.update.path.missing" = "May nangyaring mali sa pagsusumite ng iyong mga sagot. Pakisubukang muli mamaya.";
+
+/* Use for vehicles that arrived X minutes ago. */
+"formatters.arrived_x_min_ago_fmt" = "Dumating %d min ang nakalipas";
+
+/* Use for vehicles arriving in X minutes. */
+"formatters.arrives_in_x_min_fmt" = "Darating sa loob ng %d min";
+
+/* Use for vehicles arriving now. */
+"formatters.arriving_now" = "Dumarating na";
+
+/* Headed in an eastern direction */
+"formatters.cardinal_adjective.east" = "Pasilangan";
+
+/* Headed in a northern direction */
+"formatters.cardinal_adjective.north" = "Pahilaga";
+
+/* Headed in a northeastern direction */
+"formatters.cardinal_adjective.northeast" = "Pa-NE";
+
+/* Headed in a northwestern direction */
+"formatters.cardinal_adjective.northwest" = "Pa-NW";
+
+/* Headed in a southern direction */
+"formatters.cardinal_adjective.south" = "Patimog";
+
+/* Headed in an southeastern direction */
+"formatters.cardinal_adjective.southeast" = "Pa-SE";
+
+/* Headed in a southwestern direction */
+"formatters.cardinal_adjective.southwest" = "Pa-SW";
+
+/* Headed in a western direction */
+"formatters.cardinal_adjective.west" = "Pakanluran";
+
+/* East Direction */
+"formatters.cardinal_direction.east" = "Silangan";
+
+/* North Direction */
+"formatters.cardinal_direction.north" = "Hilaga";
+
+/* Northeast Direction */
+"formatters.cardinal_direction.northeast" = "Hilagang-silangan";
+
+/* Northwest Direction */
+"formatters.cardinal_direction.northwest" = "Hilagang-kanluran";
+
+/* South Direction */
+"formatters.cardinal_direction.south" = "Timog";
+
+/* Southeast Direction */
+"formatters.cardinal_direction.southeast" = "Timog-silangan";
+
+/* Southwest Direction */
+"formatters.cardinal_direction.southwest" = "Timog-kanluran";
+
+/* West Direction */
+"formatters.cardinal_direction.west" = "Kanluran";
+
+/* Abbreviation for East */
+"formatters.cardinal_direction_abbrev.east" = "E";
+
+/* Abbreviation for North */
+"formatters.cardinal_direction_abbrev.north" = "N";
+
+/* Abbreviation for Northeast */
+"formatters.cardinal_direction_abbrev.northeast" = "NE";
+
+/* Abbreviation for Northwest */
+"formatters.cardinal_direction_abbrev.northwest" = "NW";
+
+/* Abbreviation for South */
+"formatters.cardinal_direction_abbrev.south" = "S";
+
+/* Abbreviation for Southeast */
+"formatters.cardinal_direction_abbrev.southeast" = "SE";
+
+/* Abbreviation for Southwest */
+"formatters.cardinal_direction_abbrev.southwest" = "SW";
+
+/* Abbreviation for West */
+"formatters.cardinal_direction_abbrev.west" = "W";
+
+/* Use for vehicles that departed X minutes ago. */
+"formatters.departed_x_min_ago_fmt" = "Umalis %d min ang nakalipas";
+
+/* Use for vehicles departing now. */
+"formatters.departing_now" = "Aalis na";
+
+/* Use for vehicles departing in X minutes. */
+"formatters.departs_in_x_min_fmt" = "Aalis sa loob ng %d min";
+
+/* Format string for describing an early future arrival schedule deviation. e.g. arrives 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
+"formatters.deviation.arrival_future_early_fmt" = "darating nang %d min na mas maaga";
+
+/* Format string for describing a late future arrival schedule deviation. e.g. arrives 3 min late. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
+"formatters.deviation.arrival_future_late_fmt" = "darating nang %d min na huli";
+
+/* Describes an on-time arrival. e.g. arrives on time. */
+"formatters.deviation.arrival_future_on_time" = "darating sa oras";
+
+/* Format string for describing an early arrival schedule deviation. e.g. Arrived 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
+"formatters.deviation.arrival_past_early_fmt" = "dumating nang %d min na mas maaga";
+
+/* Format string for describing a late arrival schedule deviation. e.g. Arrived 3 min late. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
+"formatters.deviation.arrival_past_late_fmt" = "dumating nang %d min na huli";
+
+/* Describes an on-time arrival. e.g. arrived on time. */
+"formatters.deviation.arrival_past_on_time" = "dumating sa oras";
+
+/* Describes an on-time departure. e.g. departs on time. */
+"formatters.deviation.departs_future_on_time" = "aalis sa oras";
+
+/* Format string for describing an early future departure schedule deviation. e.g. departs 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
+"formatters.deviation.departure_future_early_fmt" = "aalis nang %d min na mas maaga";
+
+/* Format string for describing a late future departure schedule deviation. e.g. departs 3 min late. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
+"formatters.deviation.departure_future_late_fmt" = "aalis nang %d min na huli";
+
+/* Format string for describing an early departure schedule deviation. e.g. Departed 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
+"formatters.deviation.departure_past_early_fmt" = "umalis nang %d min na mas maaga";
+
+/* Format string for describing a late departure schedule deviation. e.g. Departed 3 min late. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
+"formatters.deviation.departure_past_late_fmt" = "umalis nang %d min na huli";
+
+/* Describes an on-time departure. e.g. departed on time. */
+"formatters.deviation.departure_past_on_time" = "umalis sa oras";
+
+/* Short formatted time text for arrivals/departures occurring now. */
+"formatters.now" = "NGAYON";
+
+/* Formatted time text for arrivals/departures that occur in one minute. */
+"formatters.one_minute" = "Isang minuto";
+
+/* Formatted time text for arrivals/departures that occurred one minute ago. */
+"formatters.one_minute_ago" = "Isang minuto ang nakalipas";
+
+/* A format string used to denote the list of routes served by this stop. e.g. 'Routes: 10, 12, 49' */
+"formatters.routes_label_fmt" = "Mga Ruta: %@";
+
+/* A format string used to denote the overflowing list of routes served by this stop. e.g. 'Routes: 10, 12, 49, + 3 more */
+"formatters.routes_label_plus_more_fmt" = "Mga Ruta: %1$@, + %2$d pa";
+
+/* Placeholder text for the search bar: 'Search in {REGION NAME}' */
+"formatters.search_bar_placeholder_fmt" = "Maghanap sa %@";
+
+/* Short formatted time text for arrivals/departures. Example: 7m means that this event happens 7 minutes in the future. -7m means 7 minutes in the past. */
+"formatters.short_time_fmt" = "%dm";
+
+/* Format string representing a non-numeric stop number. e.g. Stop: 'Old Library' */
+"formatters.stop.stop_code_non_numeric" = "Hintuan: '%@'";
+
+/* Format string representing a numeric stop number. e.g. Stop #1234 */
+"formatters.stop.stop_code_numeric" = "Hintuan #%@";
+
+/* A string that prefixes a stop ID to tell the user what that value is. */
+"formatters.stop_id_fmt" = "Stop ID: %@";
+
+/* Indicates that an event just took place. */
+"formatters.time_ago_just_now" = "Ngayon Lang";
+
+/* Formatted time text for arrivals/departures. Used for accessibility labels, so be sure to spell out the word for 'minute'. Example: 7 minutes means that this event happens 7 minutes in the future. -7 minutes means 7 minutes in the past. */
+"formatters.time_fmt" = "%d minuto";
+
+/* Bus. Used for short- and long-distance bus routes. */
+"route_type.bus" = "Bus";
+
+/* Cable car. Used for street-level cable cars where the cable runs beneath the car. */
+"route_type.cable_car" = "Cable Car";
+
+/* Ferry. Used for short- and long-distance boat service. */
+"route_type.ferry" = "Ferry";
+
+/* Funicular. Any rail system designed for steep inclines. */
+"route_type.funicular" = "Funicular";
+
+/* Gondola, Suspended cable car. Typically used for aerial cable cars where the car is suspended from the cable. */
+"route_type.gondola" = "Gondola";
+
+/* Tram, Streetcar, Light rail. Any light rail or street level system within a metropolitan area. */
+"route_type.light_rail" = "Light Rail";
+
+/* Rail. Used for intercity or long-distance travel. */
+"route_type.rail" = "Tren";
+
+/* Subway, Metro. Any underground rail system within a metropolitan area. */
+"route_type.subway" = "Subway";
+
+/* The body of the schedule/timetable feature tip */
+"schedule_tip.message" = "I-tap dito at pagkatapos ay i-tap ang 'Mga Iskedyul' para makita ang iskedyul o timetable ng iyong mga bus at tren.";
+
+/* Title for the schedule/timetable feature tip */
+"schedule_tip.title" = "Tingnan ang Iskedyul ng Iyong Ruta";
+
+/* User-facing string that means the location of the stop on the map is wrong. */
+"stop_problem_code.user_description.location_wrong" = "Mali ang lokasyon";
+
+/* User-facing string that means the name of the stop is wrong. */
+"stop_problem_code.user_description.name_wrong" = "Mali ang pangalan";
+
+/* User-facing string that means the number/ID of the stop is wrong. */
+"stop_problem_code.user_description.number_wrong" = "Mali ang numero";
+
+/* User-facing string that means that something else is wrong */
+"stop_problem_code.user_description.other" = "Iba pa";
+
+/* User-facing string that means our data is wrong about a route or a scheduled trip */
+"stop_problem_code.user_description.route_or_trip_missing" = "Nawawala ang ruta o nakaiskedyul na biyahe";
+
+/* Message for the trip planner tip */
+"trip_planner_tip.message" = "I-tap dito para maghanap ng mga lugar at planuhin ang iyong biyahe gamit ang mga direksyon sa transit.";
+
+/* Title for the trip planner tip */
+"trip_planner_tip.title" = "Planuhin ang Iyong Biyahe";
+
+/* User-facing string that means the vehicle came early. */
+"trip_problem_code.user_description.came_early" = "Dumating nang maaga";
+
+/* User-facing string that means the vehicle came late. */
+"trip_problem_code.user_description.came_late" = "Dumating nang huli";
+
+/* User-facing string that means the vehicle does not stop here. */
+"trip_problem_code.user_description.does_not_stop_here" = "Hindi humihinto rito";
+
+/* User-facing string that means the vehicle never came. */
+"trip_problem_code.user_description.never_came" = "Hindi dumating";
+
+/* User-facing string that means that something else is wrong */
+"trip_problem_code.user_description.other" = "Iba pa";
+
+/* User-facing string that means the vehicle headsign was wrong. */
+"trip_problem_code.user_description.wrong_headsign" = "Mali ang headsign";
+
+/* VoiceOver text describing a route that has already arrived, regardless of realtime data availability. */
+"voiceover.arrivaldeparture_arrived_x_minutes_ago_fmt" = "dumating %1$d minuto ang nakalipas, sa %2$@.";
+
+/* VoiceOver text describing a future arrival that is based off realtime data. */
+"voiceover.arrivaldeparture_arriving_in_x_minutes" = "darating sa loob ng %1$d minuto, sa %2$@.";
+
+/* VoiceOver text describing a route that is arriving now, regardless of realtime data availability. */
+"voiceover.arrivaldeparture_arriving_now" = "dumarating na!";
+
+/* VoiceOver text describing a route that has already departed, regardless of realtime data availability. */
+"voiceover.arrivaldeparture_departed_x_minutes_ago_fmt" = "umalis %1$d minuto ang nakalipas, sa %2$@.";
+
+/* VoiceOver text describing a future departure that is based off realtime data. */
+"voiceover.arrivaldeparture_departing_in_x_minutes_fmt" = "aalis sa loob ng %1$d minuto, sa %2$@.";
+
+/* VoiceOver text describing a route that is departing now, regardless of realtime data availability. */
+"voiceover.arrivaldeparture_departing_now" = "aalis na!";
+
+/* VoiceOver text describing the name of a route in a verbose fashion to compensate for no visuals. */
+"voiceover.arrivaldeparture_route_fmt" = "Ruta %@";
+
+/* VoiceOver text describing a route that is scheduled to arrive (no realtime data was available). */
+"voiceover.arrivaldeparture_scheduled_arrives_in_x_minutes_fmt" = "nakaiskedyul na dumating sa loob ng %1$d minuto, sa %2$@.";
+
+/* VoiceOver text describing a route that is scheduled to depart. (no realtime data was available) */
+"voiceover.arrivaldeparture_scheduled_departs_in_x_minutes_fmt" = "nakaiskedyul na umalis sa loob ng %1$d minuto, sa %2$@.";
+
+/* Error when no transit stops are found near the user's location. */
+"nearby_trip_matcher.error.no_stops" = "Walang nahanap na hintuan sa malapit.";
+
+/* Error when a route has no real-time vehicle tracking data. */
+"nearby_trip_matcher.error.no_realtime" = "Walang available na real-time na data ng pagsubaybay para sa rutang ito.";
+
+"surveys.accessibility_selected_value" = "Napili";
+
+"surveys.accessibility_not_selected_value" = "Hindi Napili";
+
+"surveys.accessibility_tap_toggle_selection" = "I-tap para i-toggle ang pagpili";
+
+"surveys.accessibility_tap_to_select" = "I-tap para pumili";
+
+"surveys.accessibility_answer.input" = "Input ng sagot";
+
+"surveys.accessibility.hint_answer.input" = "Ilagay ang iyong sagot sa tanong ng survey";
+
+"surveys.accessibility_survey_label" = "Label ng Survey";

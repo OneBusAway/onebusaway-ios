@@ -42,17 +42,9 @@ Breaking it down:
 
 _Note: There's a lot more to be written on this topic. Don't hesitate to ask questions if something is wrong or confusing._
 
-We are using Transifex to localize OneBusAway. You can help out by visiting [the OBA page on Transifex](https://explore.transifex.com/open-transit-software-foundation/onebusaway-ios/).
+Translations live directly in this repository as Apple `.strings` files (`OBAKit/Strings/*.lproj` and `OBAKitCore/Strings/*.lproj`), with `Apps/OneBusAway/*.lproj/InfoPlist.strings` for system permission prompts. To improve a translation or add a language, edit those files (UTF-8) and open a pull request.
 
-Install the Transifex command line client (`tx`) by following the instructions here: https://developers.transifex.com/docs/cli#transifex-client
-
-Use `tx` by following the instructions here: https://developers.transifex.com/docs/using-the-client
-
-Get an API token to use with `tx` by following the instructions here: https://developers.transifex.com/reference/api-authentication
-
-Fetch updated strings from Transifex by running the command `scripts/tx_pull`.
-
-`tx_pull` extracts the full list of localizations that are specified in `app_shared.yml`, and requests the latest list of strings for each language from Transifex by calling `tx pull -l {LANG CODE}` under the hood.
+Run `scripts/extract_strings` to regenerate the English source files from code after adding new `OBALoc`/`Strings` entries. New languages must also be added to `CFBundleLocalizations` in `Apps/Shared/app_shared.yml`.
 
 ## Objective-C Compatibility
 

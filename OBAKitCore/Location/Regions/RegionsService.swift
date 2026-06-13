@@ -336,7 +336,9 @@ public class RegionsService: NSObject, LocationServiceDelegate {
     /// storage format to the new disk-based storage format.
     ///
     /// After migrating, the legacy UserDefaults keys are removed so this runs only once.
-    private static func migrateFromUserDefaultsIfNeeded(userDefaults: UserDefaults, fileStorage: RegionsFileStorageProtocol) {
+    ///
+    /// Internal (not private) so the migration paths can be unit tested directly.
+    static func migrateFromUserDefaultsIfNeeded(userDefaults: UserDefaults, fileStorage: RegionsFileStorageProtocol) {
         let decoder = PropertyListDecoder()
         migrateDefaultRegions(userDefaults: userDefaults, fileStorage: fileStorage, decoder: decoder)
         migrateCustomRegions(userDefaults: userDefaults, fileStorage: fileStorage, decoder: decoder)

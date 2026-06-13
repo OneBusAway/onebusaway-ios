@@ -18,10 +18,7 @@ class MoreTabConfigurationTests: XCTestCase {
         let config = MoreTabConfiguration.default
         XCTAssertNil(config.headerSupportText)
         XCTAssertTrue(config.showHelpOutSection)
-        XCTAssertEqual(
-            config.translateURL?.absoluteString,
-            "https://www.transifex.com/open-transit-software-foundation/onebusaway-ios/"
-        )
+        XCTAssertNil(config.translateURL)
         XCTAssertEqual(
             config.developURL?.absoluteString,
             "https://github.com/oneBusAway/onebusaway-ios"
@@ -62,10 +59,7 @@ class MoreTabConfigurationTests: XCTestCase {
 
         XCTAssertNil(config.headerSupportText)
         XCTAssertTrue(config.showHelpOutSection)
-        XCTAssertEqual(
-            config.translateURL?.absoluteString,
-            "https://www.transifex.com/open-transit-software-foundation/onebusaway-ios/"
-        )
+        XCTAssertNil(config.translateURL)
         XCTAssertEqual(
             config.developURL?.absoluteString,
             "https://github.com/oneBusAway/onebusaway-ios"

@@ -1,0 +1,483 @@
+/* An error message that tells the user that they are connected to a captive portal WiFi network. */
+"api_error.captive_portal" = "인터넷 접속이 차단된 WiFi 네트워크에 연결되어 있는 것 같습니다. WiFi 연결을 해제하거나 네트워크에 로그인한 후 계속 진행해 주세요.";
+
+/* An error message that informs the user that the wrong kind of content was received from the server. */
+"api_error.invalid_content_type_fmt" = "서버에서 %1$@ 데이터를 받을 것으로 예상했지만 %2$@ 데이터를 받았습니다.";
+
+/* An error that tells the user that the network connection isn't working. */
+"api_error.network_failure" = "인터넷 또는 서버에 연결할 수 없습니다. 네트워크 연결을 확인한 후 다시 시도해 주세요.";
+
+/* An error that tells the user that the server unexpectedly failed to return data. */
+"api_error.no_response_body" = "서버가 요청에 대해 예기치 않게 아무런 데이터도 반환하지 않았습니다.";
+
+/* An error that is produced in response to HTTP status codes outside of 200-299. */
+"api_error.request_failure_fmt" = "서버가 요청에 응답하는 동안 오류가 발생했습니다. 상태 코드: %1$d (URL: %2$@)";
+
+/* An error that is produced in response to HTTP status code 404 */
+"api_error.request_not_found" = "404 찾을 수 없음 (%@)";
+
+/* This will appear on a button or as a title, and indicates that this UI will create a new bookmark. */
+"common.add_alarm" = "미리 알림 추가";
+
+/* This will appear on a button or as a title, and indicates that this UI will create a new bookmark. */
+"common.add_bookmark" = "즐겨찾기 추가";
+
+/* The noun, like an alarm clock or an alarm bell. */
+"common.alarm" = "미리 알림";
+
+/* Back, as in 'back to the previous screen.' */
+"common.back" = "뒤로";
+
+/* The verb 'to bookmark'. */
+"common.bookmark" = "즐겨찾기";
+
+/* The verb 'to cancel', i.e. to stop an action. */
+"common.cancel" = "취소";
+
+/* Button to clear recent search results */
+"common.clear_recent_searches" = "최근 검색 기록 지우기";
+
+/* Confirmation message before clearing recent search results */
+"common.clear_recent_searches.confirmation" = "최근 검색 기록을 지우시겠습니까?";
+
+/* The verb 'to close'. */
+"common.close" = "닫기";
+
+/* Asks the user to confirm a delete action. Typically this is showned when the user taps a 'delete' button on an important item. */
+"common.confirmdelete" = "삭제 확인";
+
+/* The verb 'to continue'. */
+"common.continue" = "계속";
+
+/* The verb 'to delete', as in to destroy something. */
+"common.delete" = "삭제";
+
+/* The verb 'to dismiss', as in to hide or get rid of something. Used as a button title on alerts. */
+"common.dismiss" = "닫기";
+
+/* The verb 'to donate', as in to give money to a charitable cause. */
+"common.donate" = "기부";
+
+/* The body of the message to display to the user after they donate to OTSF */
+"common.donation_thank_you.body" = "여러분의 후원은 OneBusAway를 계속 개선하는 데 큰 도움이 됩니다.";
+
+/* Title of an alert to display to the user after they donate to OTSF */
+"common.donation_thank_you.title" = "후원해 주셔서 감사합니다!";
+
+/* Past participle of 'do'. As in 'I am done' or 'I am finished.' */
+"common.done" = "완료";
+
+/* The verb 'to edit', as in to change or modify something. Used as a button title. */
+"common.edit" = "편집";
+
+/* Title for the alert empty set indicator. */
+"common.empty_alert_set.title" = "알림 없음";
+
+/* Body for the bookmark empty set indicator. */
+"common.empty_bookmark_set.body" = "정류장이나 운행을 즐겨찾기에 추가하면 여기에서 쉽게 확인할 수 있습니다.";
+
+/* Body for the bookmark empty set indicator when the user has a pending migration from the old version of the app. */
+"common.empty_bookmark_set.body_with_pending_migration" = "더 보기 탭 > 설정 > 데이터 마이그레이션으로 이동하면 즐겨찾기가 여기에 표시됩니다.";
+
+/* Title for the bookmark empty set indicator. */
+"common.empty_bookmark_set.title" = "즐겨찾기 없음";
+
+/* The noun 'error', as in 'something went wrong'. */
+"common.error" = "오류";
+
+/* The title of a button that exports all of the user's data into a file. */
+"common.export_data" = "데이터 내보내기";
+
+/* The verb 'to filter'. */
+"common.filter" = "필터";
+
+/* This is button text that tells the user they can tap on it to learn more about the topic at hand. */
+"common.learn_more" = "더 알아보기";
+
+/* Used to indicate that content is loading. */
+"common.loading" = "불러오는 중…";
+
+/* A common error message that can be used when the user's location is not available and we need it to accomplish something. */
+"common.location_unavailable" = "위치를 사용할 수 없음";
+
+/* The noun for a map. */
+"common.map" = "지도";
+
+/* A title or command for upgrading data from older versions of OBA. */
+"common.migrate_data" = "데이터 마이그레이션";
+
+/* An explanation about what the Migrate Data feature does. */
+"common.migrate_data_description" = "최근 정류장과 즐겨찾기를 최신 버전의 앱에서 사용할 수 있도록 업그레이드합니다. (인터넷 연결 필요)";
+
+/* As in 'see more' or 'learn more'. */
+"common.more" = "더 보기";
+
+/* OK */
+"common.ok" = "확인";
+
+/* i.e. recently selected search results for map locations from the trip planner. */
+"common.recent_searches" = "최근 검색";
+
+/* i.e. recently viewed or visited stops for transit vehicles, like a bus stop, ferry terminal, or train station. */
+"common.recent_stops" = "최근 정류장";
+
+/* The verb 'refresh', as in 'reload'. */
+"common.refresh" = "새로고침";
+
+/* The verb 'retry'. */
+"common.retry" = "다시 시도";
+
+/* The verb 'save', as in 'save data'. */
+"common.save" = "저장";
+
+/* A noun referring to a bus/train schedule or timetable. */
+"common.schedule" = "시간표";
+
+/* Explains that this is departure comes from schedule data, not from a real-time vehicle location. */
+"common.scheduled_not_real_time" = "시간표 기준/실시간 아님";
+
+/* Plural form of schedule, referring to bus/train schedules or timetables. */
+"common.schedules" = "시간표";
+
+/* A noun referring to an alert about service interruptions, reroutes, or other disruptions or changes. */
+"common.service_alert" = "운행 알림";
+
+/* Plural form of a noun referring to an alert about service interruptions, reroutes, or other disruptions or changes. */
+"common.service_alerts" = "운행 알림";
+
+/* A noun referring to a collection of options for adjusting app behavior. */
+"common.settings" = "설정";
+
+/* A verb referring to sharing something generic. */
+"common.share" = "공유";
+
+/* Button title for sharing the status of your trip (i.e. location, arrival time, etc.) */
+"common.share_trip" = "여정 공유";
+
+/* The verb 'to skip' as in 'don't perform a particular step and go on to the next one instead.' */
+"common.skip" = "건너뛰기";
+
+/* The verb 'to sort' as in to arrange things in an order. */
+"common.sort" = "정렬";
+
+/* Noun. Plural form of a transit stop. */
+"common.stops" = "정류장";
+
+/* A format string used to tell the user when the UI they are looking at was last updated. e.g. Updated: 9:41 AM. The time is calculated at runtime. */
+"common.updated_at_fmt" = "업데이트: %@";
+
+/* Used to tell the user that the UI they are looking at is actively being updated with new data from the server. */
+"common.updating" = "업데이트 중…";
+
+/* The title of the Vehicles tab showing real-time vehicle positions on a map. */
+"common.vehicles" = "차량";
+
+/* Description of the privacy policy for sharing data with the external survey service. */
+"common.external_survey_privacy_info.description" = "이 설문조사에서는 정류장, 노선, 지역, 현재 위치 정보가 공유됩니다.";
+
+"common.go" = "이동";
+
+"common.submit" = "제출";
+
+"common.next" = "다음";
+
+"survey_alert.dismissal.title" = "설문조사 닫기";
+
+"survey_alert.dismissal.body" = "여러분의 피드백은 대중교통 서비스와 앱 사용 경험을 개선하는 데 도움이 됩니다.";
+
+"survey_alert.skip.survey" = "이 설문조사 건너뛰기";
+
+"survey_alert.remind.later" = "나중에 알려주기";
+
+"survey_error.required_remaining_questions.error" = "모든 필수 질문에 답해 주세요";
+
+"survey_error.hero_question_answer.error" = "유효한 답변을 입력해 주세요";
+
+"survey_success.submitted" = "설문 답변이 제출되었습니다! 더 나은 피드백을 위해 나머지 질문에도 답해 주세요.";
+
+"survey_alert.do.not.show.again" = "다시 표시 안 함";
+
+"survey_service.not.available" = "설문조사 서비스를 사용할 수 없습니다.";
+
+"survey.external.url.missing" = "지금은 설문조사를 열 수 없습니다. 나중에 다시 시도해 주세요.";
+
+"survey_service.update.path.missing" = "응답을 제출하는 중 문제가 발생했습니다. 나중에 다시 시도해 주세요.";
+
+/* Use for vehicles that arrived X minutes ago. */
+"formatters.arrived_x_min_ago_fmt" = "%d분 전 도착";
+
+/* Use for vehicles arriving in X minutes. */
+"formatters.arrives_in_x_min_fmt" = "%d분 후 도착";
+
+/* Use for vehicles arriving now. */
+"formatters.arriving_now" = "지금 도착";
+
+/* Headed in an eastern direction */
+"formatters.cardinal_adjective.east" = "동쪽 방면";
+
+/* Headed in a northern direction */
+"formatters.cardinal_adjective.north" = "북쪽 방면";
+
+/* Headed in a northeastern direction */
+"formatters.cardinal_adjective.northeast" = "북동 방면";
+
+/* Headed in a northwestern direction */
+"formatters.cardinal_adjective.northwest" = "북서 방면";
+
+/* Headed in a southern direction */
+"formatters.cardinal_adjective.south" = "남쪽 방면";
+
+/* Headed in an southeastern direction */
+"formatters.cardinal_adjective.southeast" = "남동 방면";
+
+/* Headed in a southwestern direction */
+"formatters.cardinal_adjective.southwest" = "남서 방면";
+
+/* Headed in a western direction */
+"formatters.cardinal_adjective.west" = "서쪽 방면";
+
+/* East Direction */
+"formatters.cardinal_direction.east" = "동쪽";
+
+/* North Direction */
+"formatters.cardinal_direction.north" = "북쪽";
+
+/* Northeast Direction */
+"formatters.cardinal_direction.northeast" = "북동쪽";
+
+/* Northwest Direction */
+"formatters.cardinal_direction.northwest" = "북서쪽";
+
+/* South Direction */
+"formatters.cardinal_direction.south" = "남쪽";
+
+/* Southeast Direction */
+"formatters.cardinal_direction.southeast" = "남동쪽";
+
+/* Southwest Direction */
+"formatters.cardinal_direction.southwest" = "남서쪽";
+
+/* West Direction */
+"formatters.cardinal_direction.west" = "서쪽";
+
+/* Abbreviation for East */
+"formatters.cardinal_direction_abbrev.east" = "동";
+
+/* Abbreviation for North */
+"formatters.cardinal_direction_abbrev.north" = "북";
+
+/* Abbreviation for Northeast */
+"formatters.cardinal_direction_abbrev.northeast" = "북동";
+
+/* Abbreviation for Northwest */
+"formatters.cardinal_direction_abbrev.northwest" = "북서";
+
+/* Abbreviation for South */
+"formatters.cardinal_direction_abbrev.south" = "남";
+
+/* Abbreviation for Southeast */
+"formatters.cardinal_direction_abbrev.southeast" = "남동";
+
+/* Abbreviation for Southwest */
+"formatters.cardinal_direction_abbrev.southwest" = "남서";
+
+/* Abbreviation for West */
+"formatters.cardinal_direction_abbrev.west" = "서";
+
+/* Use for vehicles that departed X minutes ago. */
+"formatters.departed_x_min_ago_fmt" = "%d분 전 출발";
+
+/* Use for vehicles departing now. */
+"formatters.departing_now" = "지금 출발";
+
+/* Use for vehicles departing in X minutes. */
+"formatters.departs_in_x_min_fmt" = "%d분 후 출발";
+
+/* Format string for describing an early future arrival schedule deviation. e.g. arrives 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
+"formatters.deviation.arrival_future_early_fmt" = "%d분 일찍 도착 예정";
+
+/* Format string for describing a late future arrival schedule deviation. e.g. arrives 3 min late. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
+"formatters.deviation.arrival_future_late_fmt" = "%d분 늦게 도착 예정";
+
+/* Describes an on-time arrival. e.g. arrives on time. */
+"formatters.deviation.arrival_future_on_time" = "정시 도착 예정";
+
+/* Format string for describing an early arrival schedule deviation. e.g. Arrived 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
+"formatters.deviation.arrival_past_early_fmt" = "%d분 일찍 도착함";
+
+/* Format string for describing a late arrival schedule deviation. e.g. Arrived 3 min late. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
+"formatters.deviation.arrival_past_late_fmt" = "%d분 늦게 도착함";
+
+/* Describes an on-time arrival. e.g. arrived on time. */
+"formatters.deviation.arrival_past_on_time" = "정시에 도착함";
+
+/* Describes an on-time departure. e.g. departs on time. */
+"formatters.deviation.departs_future_on_time" = "정시 출발 예정";
+
+/* Format string for describing an early future departure schedule deviation. e.g. departs 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
+"formatters.deviation.departure_future_early_fmt" = "%d분 일찍 출발 예정";
+
+/* Format string for describing a late future departure schedule deviation. e.g. departs 3 min late. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
+"formatters.deviation.departure_future_late_fmt" = "%d분 늦게 출발 예정";
+
+/* Format string for describing an early departure schedule deviation. e.g. Departed 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
+"formatters.deviation.departure_past_early_fmt" = "%d분 일찍 출발함";
+
+/* Format string for describing a late departure schedule deviation. e.g. Departed 3 min late. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
+"formatters.deviation.departure_past_late_fmt" = "%d분 늦게 출발함";
+
+/* Describes an on-time departure. e.g. departed on time. */
+"formatters.deviation.departure_past_on_time" = "정시에 출발함";
+
+/* Short formatted time text for arrivals/departures occurring now. */
+"formatters.now" = "지금";
+
+/* Formatted time text for arrivals/departures that occur in one minute. */
+"formatters.one_minute" = "1분";
+
+/* Formatted time text for arrivals/departures that occurred one minute ago. */
+"formatters.one_minute_ago" = "1분 전";
+
+/* A format string used to denote the list of routes served by this stop. e.g. 'Routes: 10, 12, 49' */
+"formatters.routes_label_fmt" = "노선: %@";
+
+/* A format string used to denote the overflowing list of routes served by this stop. e.g. 'Routes: 10, 12, 49, + 3 more */
+"formatters.routes_label_plus_more_fmt" = "노선: %1$@ 외 %2$d개";
+
+/* Placeholder text for the search bar: 'Search in {REGION NAME}' */
+"formatters.search_bar_placeholder_fmt" = "%@에서 검색";
+
+/* Short formatted time text for arrivals/departures. Example: 7m means that this event happens 7 minutes in the future. -7m means 7 minutes in the past. */
+"formatters.short_time_fmt" = "%d분";
+
+/* Format string representing a non-numeric stop number. e.g. Stop: 'Old Library' */
+"formatters.stop.stop_code_non_numeric" = "정류장: '%@'";
+
+/* Format string representing a numeric stop number. e.g. Stop #1234 */
+"formatters.stop.stop_code_numeric" = "정류장 #%@";
+
+/* A string that prefixes a stop ID to tell the user what that value is. */
+"formatters.stop_id_fmt" = "정류장 ID: %@";
+
+/* Indicates that an event just took place. */
+"formatters.time_ago_just_now" = "방금 전";
+
+/* Formatted time text for arrivals/departures. Used for accessibility labels, so be sure to spell out the word for 'minute'. Example: 7 minutes means that this event happens 7 minutes in the future. -7 minutes means 7 minutes in the past. */
+"formatters.time_fmt" = "%d분";
+
+/* Bus. Used for short- and long-distance bus routes. */
+"route_type.bus" = "버스";
+
+/* Cable car. Used for street-level cable cars where the cable runs beneath the car. */
+"route_type.cable_car" = "케이블카";
+
+/* Ferry. Used for short- and long-distance boat service. */
+"route_type.ferry" = "페리";
+
+/* Funicular. Any rail system designed for steep inclines. */
+"route_type.funicular" = "푸니쿨라";
+
+/* Gondola, Suspended cable car. Typically used for aerial cable cars where the car is suspended from the cable. */
+"route_type.gondola" = "곤돌라";
+
+/* Tram, Streetcar, Light rail. Any light rail or street level system within a metropolitan area. */
+"route_type.light_rail" = "경전철";
+
+/* Rail. Used for intercity or long-distance travel. */
+"route_type.rail" = "철도";
+
+/* Subway, Metro. Any underground rail system within a metropolitan area. */
+"route_type.subway" = "지하철";
+
+/* The body of the schedule/timetable feature tip */
+"schedule_tip.message" = "여기를 탭한 다음 '시간표'를 탭하면 버스와 기차의 시간표를 볼 수 있습니다.";
+
+/* Title for the schedule/timetable feature tip */
+"schedule_tip.title" = "노선 시간표 보기";
+
+/* User-facing string that means the location of the stop on the map is wrong. */
+"stop_problem_code.user_description.location_wrong" = "위치가 잘못됨";
+
+/* User-facing string that means the name of the stop is wrong. */
+"stop_problem_code.user_description.name_wrong" = "이름이 잘못됨";
+
+/* User-facing string that means the number/ID of the stop is wrong. */
+"stop_problem_code.user_description.number_wrong" = "번호가 잘못됨";
+
+/* User-facing string that means that something else is wrong */
+"stop_problem_code.user_description.other" = "기타";
+
+/* User-facing string that means our data is wrong about a route or a scheduled trip */
+"stop_problem_code.user_description.route_or_trip_missing" = "노선 또는 예정된 운행이 누락됨";
+
+/* Message for the trip planner tip */
+"trip_planner_tip.message" = "여기를 탭하면 장소를 검색하고 대중교통 길찾기로 여정을 계획할 수 있습니다.";
+
+/* Title for the trip planner tip */
+"trip_planner_tip.title" = "경로 계획하기";
+
+/* User-facing string that means the vehicle came early. */
+"trip_problem_code.user_description.came_early" = "일찍 옴";
+
+/* User-facing string that means the vehicle came late. */
+"trip_problem_code.user_description.came_late" = "늦게 옴";
+
+/* User-facing string that means the vehicle does not stop here. */
+"trip_problem_code.user_description.does_not_stop_here" = "여기에 정차하지 않음";
+
+/* User-facing string that means the vehicle never came. */
+"trip_problem_code.user_description.never_came" = "오지 않음";
+
+/* User-facing string that means that something else is wrong */
+"trip_problem_code.user_description.other" = "기타";
+
+/* User-facing string that means the vehicle headsign was wrong. */
+"trip_problem_code.user_description.wrong_headsign" = "행선지 표시가 잘못됨";
+
+/* VoiceOver text describing a route that has already arrived, regardless of realtime data availability. */
+"voiceover.arrivaldeparture_arrived_x_minutes_ago_fmt" = "%1$d분 전인 %2$@에 도착했습니다.";
+
+/* VoiceOver text describing a future arrival that is based off realtime data. */
+"voiceover.arrivaldeparture_arriving_in_x_minutes" = "%1$d분 후인 %2$@에 도착합니다.";
+
+/* VoiceOver text describing a route that is arriving now, regardless of realtime data availability. */
+"voiceover.arrivaldeparture_arriving_now" = "지금 도착합니다!";
+
+/* VoiceOver text describing a route that has already departed, regardless of realtime data availability. */
+"voiceover.arrivaldeparture_departed_x_minutes_ago_fmt" = "%1$d분 전인 %2$@에 출발했습니다.";
+
+/* VoiceOver text describing a future departure that is based off realtime data. */
+"voiceover.arrivaldeparture_departing_in_x_minutes_fmt" = "%1$d분 후인 %2$@에 출발합니다.";
+
+/* VoiceOver text describing a route that is departing now, regardless of realtime data availability. */
+"voiceover.arrivaldeparture_departing_now" = "지금 출발합니다!";
+
+/* VoiceOver text describing the name of a route in a verbose fashion to compensate for no visuals. */
+"voiceover.arrivaldeparture_route_fmt" = "노선 %@";
+
+/* VoiceOver text describing a route that is scheduled to arrive (no realtime data was available). */
+"voiceover.arrivaldeparture_scheduled_arrives_in_x_minutes_fmt" = "%1$d분 후인 %2$@에 도착할 예정입니다.";
+
+/* VoiceOver text describing a route that is scheduled to depart. (no realtime data was available) */
+"voiceover.arrivaldeparture_scheduled_departs_in_x_minutes_fmt" = "%1$d분 후인 %2$@에 출발할 예정입니다.";
+
+/* Error when no transit stops are found near the user's location. */
+"nearby_trip_matcher.error.no_stops" = "주변에서 정류장을 찾을 수 없습니다.";
+
+/* Error when a route has no real-time vehicle tracking data. */
+"nearby_trip_matcher.error.no_realtime" = "이 노선에는 실시간 차량 추적 데이터가 없습니다.";
+
+"surveys.accessibility_selected_value" = "선택됨";
+
+"surveys.accessibility_not_selected_value" = "선택 안 됨";
+
+"surveys.accessibility_tap_toggle_selection" = "탭하여 선택 전환";
+
+"surveys.accessibility_tap_to_select" = "탭하여 선택";
+
+"surveys.accessibility_answer.input" = "답변 입력";
+
+"surveys.accessibility.hint_answer.input" = "설문조사 질문에 대한 답변을 입력하세요";
+
+"surveys.accessibility_survey_label" = "설문조사 레이블";
+

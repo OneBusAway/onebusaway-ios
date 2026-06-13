@@ -31,11 +31,19 @@ targets:
       properties:
         CFBundleShortVersionString: "$(MARKETING_VERSION)"
         CFBundleLocalizations:
+          - ar
           - en
           - es
+          - fil
+          - fr
           - it
+          - ko
           - pl
+          - pt-BR
+          - ru
+          - vi
           - zh-Hans
+          - zh-Hant
         ITSAppUsesNonExemptEncryption: false
         LSApplicationQueriesSchemes:
           - fb
