@@ -14,6 +14,14 @@ import OBAKitCore
 /// Loads and displays a list of agencies in the current region.
 class AgenciesViewController: TaskController<[AgencyWithCoverage]>, OBAListViewDataSource {
     let listView = OBAListView()
+    private let viewModel: AgenciesViewModel
+
+    override init(application: Application) {
+        self.viewModel = AgenciesViewModel(application: application)
+        super.init(application: application)
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -28,10 +36,6 @@ class AgenciesViewController: TaskController<[AgencyWithCoverage]>, OBAListViewD
     }
 
     override func loadData() async throws -> [AgencyWithCoverage] {
-        guard let apiService = application.apiService else {
-            throw UnstructuredError("No API Service")
-        }
-
         ProgressHUD.show()
         defer {
             Task { @MainActor in
@@ -39,7 +43,7 @@ class AgenciesViewController: TaskController<[AgencyWithCoverage]>, OBAListViewD
             }
         }
 
-        return try await apiService.getAgenciesWithCoverage().list
+        return try await viewModel.loadData()
     }
 
     @MainActor
@@ -49,10 +53,10 @@ class AgenciesViewController: TaskController<[AgencyWithCoverage]>, OBAListViewD
 
     // MARK: - OBAListKit
     func items(for listView: OBAListView) -> [OBAListViewSection] {
-        guard let agencies = data else { return [] }
+        let agencies = viewModel.agencies
+        guard !agencies.isEmpty else { return [] }
 
         let rows = agencies
-            .sorted(by: { $0.agency.name < $1.agency.name })
             .map { agency -> OBAListRowView.DefaultViewModel in
                 OBAListRowView.DefaultViewModel(
                     title: agency.agency.name,
