@@ -398,3 +398,87 @@
 /* Plural form of schedule, referring to bus/train schedules or timetables. */
 "common.schedules" = "Rozkłady jazdy";
 
+
+/* Button to clear recent search results */
+"common.clear_recent_searches" = "Wyczyść ostatnie wyszukiwania";
+
+/* Confirmation message before clearing recent search results */
+"common.clear_recent_searches.confirmation" = "Czy na pewno chcesz wyczyścić ostatnie wyszukiwania?";
+
+/* The verb 'to donate', as in to give money to a charitable cause. */
+"common.donate" = "Przekaż darowiznę";
+
+/* The body of the message to display to the user after they donate to OTSF */
+"common.donation_thank_you.body" = "Twoje wsparcie pomoże nam dalej ulepszać OneBusAway.";
+
+/* Title of an alert to display to the user after they donate to OTSF */
+"common.donation_thank_you.title" = "Dziękujemy za Twoje wsparcie!";
+
+/* Description of the privacy policy for sharing data with the external survey service. */
+"common.external_survey_privacy_info.description" = "Ta ankieta udostępni Twój przystanek, linię, region i bieżącą lokalizację.";
+
+"common.go" = "Przejdź";
+
+"common.next" = "Dalej";
+
+/* i.e. recently selected search results for map locations from the trip planner. */
+"common.recent_searches" = "Ostatnie wyszukiwania";
+
+"common.submit" = "Wyślij";
+
+/* The title of the Vehicles tab showing real-time vehicle positions on a map. */
+"common.vehicles" = "Pojazdy";
+
+/* Error when a route has no real-time vehicle tracking data. */
+"nearby_trip_matcher.error.no_realtime" = "Brak danych śledzenia na żywo dla tej linii.";
+
+/* Error when no transit stops are found near the user's location. */
+"nearby_trip_matcher.error.no_stops" = "Nie znaleziono przystanków w pobliżu.";
+
+/* The body of the schedule/timetable feature tip */
+"schedule_tip.message" = "Dotknij tutaj, a następnie dotknij „Rozkłady”, aby zobaczyć rozkład jazdy autobusów i pociągów.";
+
+/* Title for the schedule/timetable feature tip */
+"schedule_tip.title" = "Zobacz rozkład swojej linii";
+
+"survey.external.url.missing" = "Nie udało się teraz otworzyć ankiety. Spróbuj ponownie później.";
+
+"survey_alert.dismissal.body" = "Twoja opinia pomaga ulepszać usługi transportowe i działanie aplikacji.";
+
+"survey_alert.dismissal.title" = "Odrzuć ankietę";
+
+"survey_alert.do.not.show.again" = "Nie pokazuj ponownie";
+
+"survey_alert.remind.later" = "Przypomnij mi później";
+
+"survey_alert.skip.survey" = "Pomiń tę ankietę";
+
+"survey_error.hero_question_answer.error" = "Wprowadź prawidłową odpowiedź";
+
+"survey_error.required_remaining_questions.error" = "Odpowiedz na wszystkie wymagane pytania";
+
+"survey_service.not.available" = "Usługa ankiet jest niedostępna.";
+
+"survey_service.update.path.missing" = "Coś poszło nie tak podczas przesyłania Twoich odpowiedzi. Spróbuj ponownie później.";
+
+"survey_success.submitted" = "Odpowiedź w ankiecie została wysłana! Odpowiedz na pozostałe pytania, aby przekazać lepszą opinię.";
+
+"surveys.accessibility.hint_answer.input" = "Wprowadź odpowiedź na pytanie ankiety";
+
+"surveys.accessibility_answer.input" = "Pole odpowiedzi";
+
+"surveys.accessibility_not_selected_value" = "Nie wybrano";
+
+"surveys.accessibility_selected_value" = "Wybrano";
+
+"surveys.accessibility_survey_label" = "Etykieta ankiety";
+
+"surveys.accessibility_tap_to_select" = "Dotknij, aby wybrać";
+
+"surveys.accessibility_tap_toggle_selection" = "Dotknij, aby przełączyć wybór";
+
+/* Message for the trip planner tip */
+"trip_planner_tip.message" = "Dotknij tutaj, aby wyszukać miejsca i zaplanować podróż ze wskazówkami dojazdu komunikacją.";
+
+/* Title for the trip planner tip */
+"trip_planner_tip.title" = "Zaplanuj swoją podróż";

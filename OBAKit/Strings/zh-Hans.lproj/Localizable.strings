@@ -46,9 +46,6 @@
 /* Title of the Bookmarks tab */
 "bookmarks_controller.title" = "书签";
 
-/* An error message displayed on the bookmarks tab when the user has Sort By Distance enabled and their location isn't available. */
-"bookmarks_controller.unable_to_sort_by_distance_error" = "无法按距离排序，因为未能获取您的位置。";
-
 /* The title for the bookmarks controller section that shows bookmarks that aren't in a group. */
 "bookmarks_controller.ungrouped_bookmarks_section.title" = "未分类书签";
 
@@ -121,7 +118,6 @@
 /* This comment is displayed after the user's data is upgraded in the DataMigrationBulletinPage. */
 "data_migration_bulletin.finished_loading" = "Data Upgrade Complete!";
 
-
 /* Title for the Summary section of a data migration report */
 "data_migration_bulletin.report_summary_title" = "Summary";
 
@@ -186,7 +182,7 @@
 "location_permission_bulletin.description_text" = "请允许本App使用您的定位信息，以便更好地帮您找到附近的公交车站。";
 
 /* Button the user can tap on to disallow access to their location. */
-"location_permission_bulletin.do_not_use_location_button_text" = "Don't use my location";
+"location_permission_bulletin.do_not_use_location_button_text" = "暂不";
 
 /* Title of the alert that appears to request your location. */
 "location_permission_bulletin.title" = "您好！";
@@ -269,15 +265,6 @@
 /* about section header */
 "map_item_controller.about_header" = "关于";
 
-/* More options header */
-"map_item_controller.more_header" = "更多";
-
-/* A table row that shows stops nearby. */
-"map_item_controller.nearby_stops_row" = "附近的车站";
-
-/* Map region manager message to the user when they need to zoom in more to view stops */
-"map_region_manager.status_overlay.zoom_to_see_stops" = "请将放大地图后寻找车站";
-
 /* Displayed in the map status view at the top of the map when the user has declined to give the app access to their location */
 "map_status_view.location_services_unavailable" = "无法获取位置";
 
@@ -307,9 +294,6 @@
 
 /* Title for a button that will crash the app. */
 "more_controller.debug_section.crash_row" = "使App崩溃";
-
-/* Section title for debugging helpers */
-"more_controller.debug_section.header" = "排错";
 
 /* This is displayed instead of the user's push ID if the value is not available. */
 "more_controller.debug_section.push_id.not_available" = "无";
@@ -346,12 +330,6 @@
 
 /* Updates and Alerts header text */
 "more_controller.updates_and_alerts.header" = "更新与通知";
-
-/* Title of the alert that tells the user they've disabled debug mode. */
-"more_header.debug_disabled.title" = "关闭排错模式";
-
-/* Title of the alert that tells the user they've enabled debug mode. */
-"more_header.debug_enabled.title" = "启动排错模式";
 
 /* Explanation about how this app is built and maintained by volunteers. */
 "more_header.support_us_label_text" = "本App由志愿者开发并提供支持";
@@ -1025,3 +1003,6 @@
 
 /* Settings > Walking Speed section title */
 "settings_controller.walking_speed_section.title" = "步行速度";
+
+/* Button the user taps to grant access to their location. */
+"location_permission_bulletin.use_location_button_text" = "使用我的位置";
