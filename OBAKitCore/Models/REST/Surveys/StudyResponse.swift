@@ -148,17 +148,19 @@ extension Survey {
 
     /// Returns true if the survey should be shown on the specified stop.
     /// Checks `showOnStops` and `isActive` before matching the stop list.
+    /// A `nil` or empty `visibleStopsList` means "no stop restriction" (all stops).
     public func shouldShowOnStop(_ stopID: String) -> Bool {
         guard showOnStops, isActive else { return false }
-        guard let visibleStops = visibleStopsList else { return true }
+        guard let visibleStops = visibleStopsList, !visibleStops.isEmpty else { return true }
         return visibleStops.contains(stopID)
     }
 
     /// Returns true if the survey should be shown for the specified route.
     /// Checks `showOnStops` and `isActive` before matching the route list.
+    /// A `nil` or empty `visibleRoutesList` means "no route restriction" (all routes).
     public func shouldShowOnRoute(_ routeID: String) -> Bool {
         guard showOnStops, isActive else { return false }
-        guard let visibleRoutes = visibleRoutesList else { return true }
+        guard let visibleRoutes = visibleRoutesList, !visibleRoutes.isEmpty else { return true }
         return visibleRoutes.contains(routeID)
     }
 

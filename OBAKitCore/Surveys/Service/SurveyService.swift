@@ -312,16 +312,29 @@ public final class SurveyService: ObservableObject {
     }
 
     private func checkStopVisibility(survey: Survey, stopID: String?, routeIDs: [String]) -> Bool {
-        guard survey.showOnStops else { return false }
+        guard survey.showOnStops, survey.isActive else { return false }
         guard let stopID = stopID else { return true }
 
-        if survey.shouldShowOnStop(stopID) {
+        let hasStopTargeting = !(survey.visibleStopsList?.isEmpty ?? true)
+        let hasRouteTargeting = !(survey.visibleRoutesList?.isEmpty ?? true)
+
+        // No stop or route targeting at all → show on every (active) stop.
+        if !hasStopTargeting && !hasRouteTargeting {
             return true
         }
 
-        return routeIDs.contains { routeID in
-            survey.shouldShowOnRoute(routeID)
+        // Each present dimension contributes to an OR; an absent (nil/empty)
+        // dimension contributes nothing rather than matching everything, so a
+        // stop-scoped survey doesn't leak onto unlisted stops via nil routes.
+        if hasStopTargeting, survey.shouldShowOnStop(stopID) {
+            return true
         }
+
+        if hasRouteTargeting {
+            return routeIDs.contains { survey.shouldShowOnRoute($0) }
+        }
+
+        return false
     }
 
     private func applySurveyPriorityLogic(survey: Survey, userID: String, index: Int) -> SurveyPriorityResult {
@@ -334,13 +347,15 @@ public final class SurveyService: ObservableObject {
                 return isSurveyCompleted ? .continue : .returnImmediately(survey)
             }
         } else {
-            if !isSurveyCompleted {
-                return .setOneTime(index)
-            } else if userDataStore.shouldShowSurveyLater(surveyId: survey.id, userIdentifier: userID) {
-                return .setOneTime(index)
-            } else {
-                return .continue
+            // A survey deferred via "show later" stays hidden until it is due to
+            // reappear (regardless of completion state); this is self-contained
+            // and does not rely on the global reminder gate. Otherwise show it
+            // unless it has already been completed.
+            if userDataStore.isSurveyMarkedForLater(surveyId: survey.id, userIdentifier: userID) {
+                return userDataStore.shouldShowSurveyLater(surveyId: survey.id, userIdentifier: userID)
+                    ? .setOneTime(index) : .continue
             }
+            return isSurveyCompleted ? .continue : .setOneTime(index)
         }
     }
 }
