@@ -259,8 +259,14 @@
 /* Description of why we need location services */
 "location_permission_bulletin.description_text" = "Please allow the app to access your location to make it easier to find your transit stops.";
 
+/* Button the user can tap on to decline access to their location. */
+"location_permission_bulletin.do_not_use_location_button_text" = "Not Now";
+
 /* Title of the alert that appears to request your location. */
 "location_permission_bulletin.title" = "Welcome!";
+
+/* Button the user taps to grant access to their location. */
+"location_permission_bulletin.use_location_button_text" = "Use My Location";
 
 /* No comment provided by engineer. */
 "locationservices_alert_gotosettings.button" = "Turn On in Settings";
