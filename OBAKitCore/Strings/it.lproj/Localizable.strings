@@ -395,3 +395,90 @@
 /* Plural form of schedule, referring to bus/train schedules or timetables. */
 "common.schedules" = "Orari";
 
+
+/* An error that is produced in response to HTTP status code 404 */
+"api_error.request_not_found" = "404 Non trovato (%@)";
+
+/* Button to clear recent search results */
+"common.clear_recent_searches" = "Cancella ricerche recenti";
+
+/* Confirmation message before clearing recent search results */
+"common.clear_recent_searches.confirmation" = "Vuoi davvero cancellare le tue ricerche recenti?";
+
+/* The verb 'to donate', as in to give money to a charitable cause. */
+"common.donate" = "Dona";
+
+/* The body of the message to display to the user after they donate to OTSF */
+"common.donation_thank_you.body" = "Il tuo sostegno ci aiuterà a continuare a migliorare OneBusAway.";
+
+/* Title of an alert to display to the user after they donate to OTSF */
+"common.donation_thank_you.title" = "Grazie per il tuo sostegno!";
+
+/* Description of the privacy policy for sharing data with the external survey service. */
+"common.external_survey_privacy_info.description" = "Questo sondaggio condividerà la tua fermata, linea, regione e posizione attuale.";
+
+"common.go" = "Vai";
+
+"common.next" = "Avanti";
+
+/* i.e. recently selected search results for map locations from the trip planner. */
+"common.recent_searches" = "Ricerche recenti";
+
+"common.submit" = "Invia";
+
+/* The title of the Vehicles tab showing real-time vehicle positions on a map. */
+"common.vehicles" = "Veicoli";
+
+/* Error when a route has no real-time vehicle tracking data. */
+"nearby_trip_matcher.error.no_realtime" = "Nessun dato di tracciamento in tempo reale disponibile per questa linea.";
+
+/* Error when no transit stops are found near the user's location. */
+"nearby_trip_matcher.error.no_stops" = "Nessuna fermata trovata nelle vicinanze.";
+
+/* The body of the schedule/timetable feature tip */
+"schedule_tip.message" = "Tocca qui e poi tocca \"Orari\" per visualizzare l'orario dei tuoi autobus e treni.";
+
+/* Title for the schedule/timetable feature tip */
+"schedule_tip.title" = "Visualizza l'orario della tua linea";
+
+"survey.external.url.missing" = "Non è stato possibile aprire il sondaggio in questo momento. Riprova più tardi.";
+
+"survey_alert.dismissal.body" = "Il tuo feedback aiuta a migliorare i servizi di trasporto e l'esperienza dell'app.";
+
+"survey_alert.dismissal.title" = "Ignora sondaggio";
+
+"survey_alert.do.not.show.again" = "Non mostrare più";
+
+"survey_alert.remind.later" = "Ricordamelo più tardi";
+
+"survey_alert.skip.survey" = "Salta questo sondaggio";
+
+"survey_error.hero_question_answer.error" = "Inserisci una risposta valida";
+
+"survey_error.required_remaining_questions.error" = "Rispondi a tutte le domande obbligatorie";
+
+"survey_service.not.available" = "Il servizio sondaggi non è disponibile.";
+
+"survey_service.update.path.missing" = "Si è verificato un errore durante l'invio delle tue risposte. Riprova più tardi.";
+
+"survey_success.submitted" = "Risposta al sondaggio inviata! Rispondi alle restanti domande per un feedback migliore.";
+
+"surveys.accessibility.hint_answer.input" = "Inserisci la tua risposta alla domanda del sondaggio";
+
+"surveys.accessibility_answer.input" = "Campo risposta";
+
+"surveys.accessibility_not_selected_value" = "Non selezionato";
+
+"surveys.accessibility_selected_value" = "Selezionato";
+
+"surveys.accessibility_survey_label" = "Etichetta sondaggio";
+
+"surveys.accessibility_tap_to_select" = "Tocca per selezionare";
+
+"surveys.accessibility_tap_toggle_selection" = "Tocca per attivare/disattivare la selezione";
+
+/* Message for the trip planner tip */
+"trip_planner_tip.message" = "Tocca qui per cercare luoghi e pianificare il tuo viaggio con le indicazioni del trasporto pubblico.";
+
+/* Title for the trip planner tip */
+"trip_planner_tip.title" = "Pianifica il tuo viaggio";

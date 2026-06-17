@@ -1000,3 +1000,9 @@
 
 /* Format string with placeholders for distance from stop, walking time to stop, and predicted arrival time. e.g. 1.2 miles, 17m: arriving at 09:41 A.M. */
 "walk_time_view.distance_time_fmt" = "%1$@, %2$@: darating sa %3$@";
+
+/* Button the user can tap on to decline access to their location. */
+"location_permission_bulletin.do_not_use_location_button_text" = "Hindi Ngayon";
+
+/* Button the user taps to grant access to their location. */
+"location_permission_bulletin.use_location_button_text" = "Gamitin ang Aking Lokasyon";

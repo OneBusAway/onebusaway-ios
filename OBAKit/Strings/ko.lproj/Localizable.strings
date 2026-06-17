@@ -1001,3 +1001,9 @@
 /* Format string with placeholders for distance from stop, walking time to stop, and predicted arrival time. e.g. 1.2 miles, 17m: arriving at 09:41 A.M. */
 "walk_time_view.distance_time_fmt" = "%1$@, %2$@: %3$@ 도착";
 
+
+/* Button the user can tap on to decline access to their location. */
+"location_permission_bulletin.do_not_use_location_button_text" = "나중에";
+
+/* Button the user taps to grant access to their location. */
+"location_permission_bulletin.use_location_button_text" = "내 위치 사용";
