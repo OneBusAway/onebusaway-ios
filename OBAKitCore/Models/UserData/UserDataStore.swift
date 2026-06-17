@@ -208,7 +208,14 @@ public protocol UserDataStore: NSObjectProtocol {
     /// - Parameter userIdentifier: The user's UUID
     func markSurveyForLater(surveyId: Int, userIdentifier: String)
 
-    /// Checks if a survey should be shown again based on app launch count
+    /// Checks whether a survey has been deferred via "show later".
+    /// - Parameter surveyId: The ID of the survey to check
+    /// - Parameter userIdentifier: The user's UUID
+    /// - Returns: True if the survey is currently marked for later.
+    func isSurveyMarkedForLater(surveyId: Int, userIdentifier: String) -> Bool
+
+    /// Checks if a deferred ("show later") survey is due to be shown again,
+    /// based on the number of app launches since it was deferred.
     /// - Parameter surveyId: The ID of the survey to check
     /// - Parameter userIdentifier: The user's UUID
     /// - Returns: True if the survey should be shown again
@@ -298,26 +305,24 @@ public protocol UserDataStore: NSObjectProtocol {
 public struct CompletedSurvey: Codable, Hashable {
     public let surveyId: Int
     public let userIdentifier: String
-    public let completedAt: Date
 
-    public init(surveyId: Int, userIdentifier: String, completedAt: Date = Date()) {
+    public init(surveyId: Int, userIdentifier: String) {
         self.surveyId = surveyId
         self.userIdentifier = userIdentifier
-        self.completedAt = completedAt
     }
 }
 
-/// Represents a survey marked for later viewing
+/// Represents a survey marked for later viewing. `appLaunchCountWhenMarked`
+/// records the launch count at deferral so the survey can be re-shown a fixed
+/// number of launches later (see `shouldShowSurveyLater`).
 public struct SurveyForLater: Codable, Hashable {
     public let surveyId: Int
     public let userIdentifier: String
-    public let markedAt: Date
     public let appLaunchCountWhenMarked: Int
 
-    public init(surveyId: Int, userIdentifier: String, markedAt: Date = Date(), appLaunchCountWhenMarked: Int) {
+    public init(surveyId: Int, userIdentifier: String, appLaunchCountWhenMarked: Int) {
         self.surveyId = surveyId
         self.userIdentifier = userIdentifier
-        self.markedAt = markedAt
         self.appLaunchCountWhenMarked = appLaunchCountWhenMarked
     }
 }
@@ -819,6 +824,10 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         surveysForLater.append(surveyForLater)
 
         self.surveysForLater = surveysForLater
+    }
+
+    public func isSurveyMarkedForLater(surveyId: Int, userIdentifier: String) -> Bool {
+        return surveysForLater.contains { $0.surveyId == surveyId && $0.userIdentifier == userIdentifier }
     }
 
     public func shouldShowSurveyLater(surveyId: Int, userIdentifier: String) -> Bool {
