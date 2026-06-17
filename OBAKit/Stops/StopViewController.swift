@@ -646,7 +646,7 @@ public class StopViewController: UIViewController,
         if survey.isExternalSurvey {
             let launcher = SurveyLauncherListItem(
                 survey: survey,
-                title: OBALoc("survey_launcher.title", value: "Help improve transit", comment: "Title of the survey launcher card on the stop screen."),
+                title: survey.heroQuestion?.content.labelText ?? OBALoc("survey_launcher.title", value: "Help improve transit", comment: "Title of the survey launcher card on the stop screen."),
                 onTakeSurvey: { [weak self] in self?.handleOpenExternalSurvey(survey: survey) },
                 onDismiss: { [weak self] in self?.handleSurveyDismiss(survey: survey) }
             )
