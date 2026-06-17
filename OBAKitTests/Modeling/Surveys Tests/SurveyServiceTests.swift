@@ -541,6 +541,43 @@ final class SurveyServiceTests: OBATestCase {
         expect(survey.remainingQuestions.map(\.id)).to(equal([20, 30]))
     }
 
+    // MARK: - heroQuestionTitle
+
+    func test_heroQuestionTitle_returnsTrimmedHeroText() {
+        let survey = makeSurveyWithHero(labelText: "  Help us improve transit  ")
+        expect(survey.heroQuestionTitle).to(equal("Help us improve transit"))
+    }
+
+    func test_heroQuestionTitle_nilWhenHeroTextIsEmpty() {
+        let survey = makeSurveyWithHero(labelText: "")
+        expect(survey.heroQuestionTitle).to(beNil())
+    }
+
+    func test_heroQuestionTitle_nilWhenHeroTextIsWhitespaceOnly() {
+        let survey = makeSurveyWithHero(labelText: "   \n\t ")
+        expect(survey.heroQuestionTitle).to(beNil())
+    }
+
+    func test_heroQuestionTitle_nilWhenNoHeroQuestion() {
+        // Only a non-hero (position != 1) question exists.
+        let survey = makeSurveyWithHero(labelText: "Question", position: 2)
+        expect(survey.heroQuestionTitle).to(beNil())
+    }
+
+    private func makeSurveyWithHero(labelText: String, position: Int = 1) -> Survey {
+        Survey(
+            id: 1, name: "Test", createdAt: Date(), updatedAt: Date(),
+            showOnMap: true, showOnStops: true, startDate: nil, endDate: nil,
+            visibleStopsList: nil, visibleRoutesList: nil,
+            allowsMultipleResponses: false, alwaysVisible: false,
+            study: Study(id: 1, name: "S", description: nil),
+            questions: [
+                SurveyQuestion(id: 1, position: position, required: false,
+                               content: QuestionContent(labelText: labelText, type: .text))
+            ]
+        )
+    }
+
     private func makeResponseFailureMock(_ data: Data, url: URL, statusCode: Int, error: Error? = nil) {
         let urlResponse = mockDataLoader.buildURLResponse(URL: url, statusCode: statusCode)
         let response = MockDataResponse(data: data, urlResponse: urlResponse, error: error) { request in

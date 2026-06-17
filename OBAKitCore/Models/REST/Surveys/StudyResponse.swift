@@ -132,6 +132,18 @@ extension Survey {
         return questions.first { $0.position == 1 }
     }
 
+    /// The hero question's display text, trimmed of surrounding whitespace, or
+    /// `nil` when there is no hero question or its text is blank. Callers supply
+    /// their own (localized) fallback — e.g. a survey launcher title — since the
+    /// model layer has no access to UI localization.
+    public var heroQuestionTitle: String? {
+        guard let title = heroQuestion?.content.labelText.trimmingCharacters(in: .whitespacesAndNewlines),
+              !title.isEmpty else {
+            return nil
+        }
+        return title
+    }
+
     /// Returns all questions except the hero question
     public var remainingQuestions: [SurveyQuestion] {
         guard let hero = heroQuestion else { return questions }
