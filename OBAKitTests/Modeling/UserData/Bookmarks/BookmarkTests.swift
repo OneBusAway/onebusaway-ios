@@ -62,4 +62,36 @@ class BookmarkTests: OBATestCase {
 
         expect(bookmark.stop.id) == stops[0].id
     }
+
+    func testStopBookmarkIsNotTripBookmark() {
+        let bookmark = Bookmark(name: "BM 1", regionIdentifier: region.regionIdentifier, stop: stops[0])
+        expect(bookmark.isTripBookmark) == false
+    }
+
+    func testTripBookmarkIsTripBookmark() {
+        let arrDepData: [String: Any] = [
+            "arrivalEnabled": true,
+            "blockTripSequence": 1,
+            "departureEnabled": true,
+            "distanceFromStop": 0.0,
+            "lastUpdateTime": 1234567890,
+            "numberOfStopsAway": 1,
+            "predicted": false,
+            "routeId": "1_route",
+            "routeShortName": "49",
+            "scheduledArrivalTime": 1234567900,
+            "scheduledDepartureTime": 1234567930,
+            "serviceDate": 1234512000,
+            "situationIds": [],
+            "status": "SCHEDULED",
+            "stopId": "1_stop",
+            "stopSequence": 1,
+            "tripHeadsign": "University District",
+            "tripId": "1_trip",
+            "vehicleId": ""
+        ]
+        let arrDep = try! Fixtures.dictionaryToModel(type: ArrivalDeparture.self, dictionary: arrDepData)
+        let bookmark = Bookmark(name: "BM 1", regionIdentifier: region.regionIdentifier, arrivalDeparture: arrDep)
+        expect(bookmark.isTripBookmark) == true
+    }
 }
