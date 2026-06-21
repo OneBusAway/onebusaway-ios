@@ -23,7 +23,11 @@ exactly as it does for Plausible today.
   `reportSearchQuery`, `reportStopViewed`). No new event call sites in view
   controllers.
 - **User-Agent:** send an explicit `OneBusAway/<appVersion> (iOS <systemVersion>;
-  <deviceModel>)` header so Umami's `isbot` check passes.
+  <deviceModel>)` header so Umami's `isbot` check passes. Build it from existing
+  repo helpers — `Bundle.main.appVersion` (`CFBundleShortVersionString`),
+  `UIDevice.current.systemVersion`, and `UIDevice.current.modelName` (the `uname`
+  identifier, e.g. `iPhone14,5`) — **not** `UIDevice.current.model`, which returns
+  a generic `"iPhone"` that risks the bot filter.
 - **`updateServer` signature:** change from
   `updateServer(defaultDomainURL:analyticsServerURL:)` to `updateServer(region:)`
   so the orchestrator reads both the Plausible URL and the Umami config from a
@@ -77,15 +81,22 @@ failure.
 
 ### 1. Region model (`OBAKitCore/Models/Region.swift`)
 
-Add a nested Codable config type mirroring the JSON shape:
+Add a nested config type mirroring the JSON shape. Use a **plain Swift `struct`**
+— `Region` is persisted via `Codable` (PropertyList/JSON), not `NSCoding`, and
+nothing reads this sub-model from Objective-C, so `@objc`/`NSObject` buys nothing.
+A `struct` gets `Equatable`, `Hashable`, and `Codable` synthesized for free,
+which is exactly what `Region.isEqual`/`hash` need:
 
 ```swift
-@objc(OBAUmamiAnalytics)
-public class UmamiAnalytics: NSObject, Codable {
+public struct UmamiAnalytics: Codable, Equatable, Hashable {
     public let url: URL
     public let id: String
 }
 ```
+
+(The existing `Open311Server` is `NSObject`-based for historical reasons; we are
+not following that here. If a later check finds `Region` is NSCoding-archived
+somewhere, revisit — but it is not today.)
 
 On `Region`:
 
@@ -97,10 +108,11 @@ On `Region`:
   `plausibleAnalyticsServerURL` pattern.
 - Encoder: `try container.encodeIfPresent(umamiAnalytics, forKey: .umamiAnalytics)`
 - Custom user-region `init`: `umamiAnalytics = nil`
-- `isEqual` and `hash`: include `umamiAnalytics`
-- `UmamiAnalytics` implements `Codable` equality so it composes with `Region`'s
-  `isEqual`/`hash` (provide `==`/`hash` on the nested type, matching
-  `Open311Server`).
+- `isEqual` and `hash`: **must** include `umamiAnalytics` (the hand-rolled
+  `isEqual`/`hash` on lines ~329–392 do not pick it up automatically — without
+  this, two regions differing only in Umami config compare equal). The struct's
+  synthesized `==`/`hashValue` compose directly:
+  `umamiAnalytics == rhs.umamiAnalytics` and `hasher.combine(umamiAnalytics)`.
 
 ### 2. Emitter — `UmamiReporter` (`OBAKit/Analytics/UmamiReporter.swift`)
 
@@ -108,16 +120,29 @@ Placed in OBAKit (alongside the `Analytics` protocol) so it is reachable by
 `OBAKitTests`. Modeled on `PlausibleAnalytics`, but builds the request by hand
 (no SDK).
 
-- **Init:** `init(serverURL: URL, websiteID: String, hostname: String, session: URLSession = .shared)`.
-  `session` is injectable for tests. `hostname` is the current region's
-  `OBABaseURL.host`.
-- **User-Agent:** computed once — `OneBusAway/<CFBundleShortVersionString>
-  (iOS <UIDevice.systemVersion>; <device model>)`.
+- **Init:** `init(serverURL: URL, websiteID: String, hostname: String, dataLoader: URLDataLoader = URLSession.shared)`.
+  Inject the existing **`URLDataLoader`** protocol (OBAKitCore/Network) rather than
+  a live `URLSession` — that is the seam the rest of the networking suite already
+  mocks via `MockDataLoader`, so the emitter is testable with the same double the
+  codebase uses (and no bespoke `URLProtocol` subclass). `URLDataLoader` exposes
+  `func data(for: URLRequest) async throws -> (Data, URLResponse)`. `hostname` is
+  the current region's `OBABaseURL.host`.
+- **User-Agent:** computed once — `OneBusAway/\(Bundle.main.appVersion) (iOS
+  \(UIDevice.current.systemVersion); \(UIDevice.current.modelName))`, e.g.
+  `OneBusAway/2.5.0 (iOS 17.0; iPhone14,5)`. Uses the repo helpers noted in §1.
 - **`postEvent(path:name:data:) async`:** builds the payload JSON, POSTs to
   `serverURL` + `/api/send` with `Content-Type: application/json` and the
-  explicit `User-Agent` header. Parses the response body; a `beep`/`boop` body is
-  treated as failure (logged in DEBUG, swallowed otherwise). Request timeout
-  ~10s. All errors swallowed — never throws to callers.
+  explicit `User-Agent` header via `dataLoader.data(for:)`. Parses the response
+  body; a `beep`/`boop` body is treated as failure (logged in DEBUG, swallowed
+  otherwise). All errors swallowed — never throws to callers.
+- **Timeout (fail-safe):** do **not** rely on `URLRequest.timeoutInterval` as a
+  total cap — per Apple it is an *idle/stall* timer, not a wall-clock duration.
+  Enforce a short end-to-end cap deliberately. Preferred: build the request from a
+  `URLSessionConfiguration` with a tight `timeoutIntervalForResource` (when the
+  injected loader is a real `URLSession`), or wrap the `await data(for:)` in a
+  cancellable `Task` with a timeout. This intentionally deviates from Apple's
+  "avoid short timeouts" guidance because this is best-effort telemetry with all
+  errors swallowed and must stay off the UI hot path.
 - **Mirror methods** (parallel to `PlausibleAnalytics`):
   - `reportEvent(pageURL:label:value:)` → named event: `name = label`,
     `url = path(of: pageURL)`, `data = ["value": value]` (omitted when value nil).
@@ -153,7 +178,10 @@ Placed in OBAKit (alongside the `Analytics` protocol) so it is reachable by
   `OBAKit/Analytics/Analytics.swift`.
 - Update both call sites in `OBAKit/Orchestration/Application.swift` (≈ lines 437
   and 582) to pass `region`.
-- Update any test/mock conformers of `Analytics` to the new signature.
+- Update the existing mock conformer `AnalyticsMock`
+  (`OBAKitTests/Helpers/Mocks/AnalyticsMock.swift`) for the new signature — or
+  simply drop its `updateServer` override, since the protocol method is
+  `@objc optional`.
 
 ## Testing
 
@@ -161,13 +189,16 @@ Placed in OBAKit (alongside the `Analytics` protocol) so it is reachable by
   `umamiAnalytics:{url,id}` decodes `url`/`id`; a region without the key → `nil`;
   an explicit `"umamiAnalytics": null` → `nil`. Extend an existing region in
   `OBAKitTests/fixtures/regions-v3.json` (or add a focused fixture).
-- **`UmamiReporter`** (`OBAKitTests`, injected mock `URLSession`/protocol):
+- **`UmamiReporter`** (`OBAKitTests`, injected `MockDataLoader`):
   - The POST body JSON matches the contract (`type`, nested `payload` with
-    `website`, `hostname`, `url`, `name`, `data`).
-  - A real, non-bot `User-Agent` header is present.
-  - A `{"beep":"boop"}` response body is treated as a failure (explicitly called
-    out by the issue).
+    `website`, `hostname`, `url`, `name`, `data`) — assert off the recorded
+    request.
+  - A real, non-bot `User-Agent` header is present on the recorded request.
+  - A `{"beep":"boop"}` 200 response body is treated as a failure (register it
+    via `MockDataLoader.mock(data:matcher:)`; explicitly called out by the issue).
   - `pageURL` → path reduction is correct.
+  - "Never emit" assertions can use `MockDataLoader.recordedRequestURLs` to prove
+    no request was made.
 - **Orchestrator:** emitter is created when config is present and reporting is on,
   and destroyed on opt-out or null config. (Run in the App test target if
   reachable; otherwise this behavior is covered via the reporter + region tests.)
