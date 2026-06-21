@@ -27,6 +27,7 @@ final class AppSheetRouteTests: XCTestCase {
         expect(AppSheetRoute.tripPlanner.id) == "tripPlanner"
         expect(AppSheetRoute.routePicker.id) == "routePicker"
         expect(AppSheetRoute.more.id) == "more"
+        expect(AppSheetRoute.settings.id) == "settings"
     }
 
     func test_id_embedsAssociatedValues() {
@@ -60,6 +61,7 @@ final class AppSheetRouteTests: XCTestCase {
         expect(AppSheetRoute.nearbyAll.prefersStacking) == true
         expect(AppSheetRoute.recentStopsAll.prefersStacking) == true
         expect(AppSheetRoute.bookmarksAll.prefersStacking) == true
+        expect(AppSheetRoute.settings.prefersStacking) == true
     }
 
     // MARK: - Detent configuration
@@ -102,7 +104,8 @@ final class AppSheetRouteTests: XCTestCase {
             .routePicker,
             .currentTrip(routeID: "r"),
             .transitAlert(alertID: "a"),
-            .more
+            .more,
+            .settings
         ]
 
         for route in routes {
@@ -115,5 +118,18 @@ final class AppSheetRouteTests: XCTestCase {
 
     func test_largeDetent_isFractionedJustBelowFullScreen() {
         expect(AppSheetRoute.largeDetent) == .fraction(0.99)
+    }
+
+    // MARK: - Exhaustiveness guard
+
+    /// Adding a new `AppSheetRoute` case must fail to compile here, forcing
+    /// the author to extend the id / stacking / detent tests above.
+    private func exhaustivenessGuard(_ route: AppSheetRoute) {
+        switch route {
+        case .home, .search, .nearbyAll, .recentStopsAll, .bookmarksAll,
+             .stopDetails, .tripPlanner, .tripDetails, .routePicker,
+             .currentTrip, .transitAlert, .more, .settings:
+            break
+        }
     }
 }
