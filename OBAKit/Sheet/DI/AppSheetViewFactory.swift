@@ -20,7 +20,7 @@ import OBAKitCore
 /// per-route view builders look eager but are evaluated lazily — SwiftUI
 /// invokes the underlying VM builder exactly once per view identity.
 @MainActor
-final class AppSheetViewFactory: ObservableObject {
+final class AppSheetViewFactory {
 
     let application: Application
 
@@ -38,13 +38,29 @@ final class AppSheetViewFactory: ObservableObject {
         case .search, .nearbyAll, .recentStopsAll, .bookmarksAll,
              .stopDetails, .tripPlanner, .tripDetails, .routePicker,
              .currentTrip, .transitAlert, .more, .settings:
-            EmptyView()
+            unimplementedView(for: route)
         }
     }
+
     // MARK: - Per-route view builders
 
     func homeView() -> HomeSheetView {
         HomeSheetView(viewModel: HomeSheetViewModel())
     }
 
+    /// Placeholder until each route gets its own real view. In debug builds we
+    /// surface a visible label and fire an assertion so a stray `push(...)`
+    /// during development can't silently render a blank sheet.
+    @ViewBuilder
+    private func unimplementedView(for route: AppSheetRoute) -> some View {
+        #if DEBUG
+        let _ = assertionFailure("AppSheetRoute.\(route.id) has no view registered yet.")
+        Text("Unimplemented route: \(route.id)")
+            .font(.headline)
+            .foregroundStyle(.secondary)
+            .padding()
+        #else
+        EmptyView()
+        #endif
+    }
 }

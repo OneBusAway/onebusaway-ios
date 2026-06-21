@@ -81,12 +81,15 @@ final class AppSheetRouteTests: XCTestCase {
         expect(config.isDismissDisabled) == true
     }
 
-    func test_baseListRoutes_shareSearchConfig() {
+    func test_stackedAllListRoutes_shareLargeAndAllowDismiss() {
+        // These all-list routes are stacked sheets, so the OS owns dismissal
+        // and `isDismissDisabled` must be `false` for `truncateStacked` to stay
+        // in sync with the drag-down gesture.
         for route in [AppSheetRoute.nearbyAll, .recentStopsAll, .bookmarksAll] {
             let config = route.detentConfiguration
             expect(config.detents) == [.large]
             expect(config.initialDetent) == .large
-            expect(config.isDismissDisabled) == true
+            expect(config.isDismissDisabled) == false
         }
     }
 

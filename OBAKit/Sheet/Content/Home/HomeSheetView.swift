@@ -34,7 +34,11 @@ struct HomeSheetView: View {
         HStack(spacing: 12) {
             Image(systemName: "magnifyingglass")
                 .foregroundStyle(.secondary)
-            Text("Search stops, routes…")
+            Text(OBALoc(
+                "home_sheet.search_bar.placeholder",
+                value: "Search stops, routes…",
+                comment: "Placeholder text inside the search bar on the home sheet."
+            ))
                 .foregroundStyle(.secondary)
             Spacer()
         }

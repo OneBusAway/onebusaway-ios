@@ -136,11 +136,23 @@ extension AppSheetRoute {
                 initialDetent: .height(AppSheetRoute.homeCollapsedHeight),
                 isDismissDisabled: true
             )
-        case .search, .nearbyAll, .recentStopsAll, .bookmarksAll:
+        case .search:
+            // Base-layer: dismiss is locked so the user pops via the back affordance,
+            // not by dragging the sheet off-screen.
             return SheetDetentConfiguration(
                 detents: [.large],
                 initialDetent: .large,
-                isDismissDisabled: true
+                isDismissDisabled: true,
+                backgroundInteraction: .disabled
+            )
+        case .nearbyAll, .recentStopsAll, .bookmarksAll:
+            // Stacked-layer: the OS owns dismissal so storage stays in sync with
+            // the drag-down gesture via `truncateStacked`.
+            return SheetDetentConfiguration(
+                detents: [.large],
+                initialDetent: .large,
+                isDismissDisabled: false,
+                backgroundInteraction: .disabled
             )
         case .stopDetails:
             return SheetDetentConfiguration(

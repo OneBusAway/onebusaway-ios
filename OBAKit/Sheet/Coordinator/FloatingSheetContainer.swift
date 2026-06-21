@@ -86,7 +86,7 @@ private struct StackedSheetLayer<Route: SheetRouteable, SheetContent: View>: Vie
                 .applyDetentConfig(
                     route.detentConfiguration,
                     selection: detentBinding(for: route),
-                    interactiveDismissDisabled: false
+                    interactiveDismissDisabled: route.detentConfiguration.isDismissDisabled
                 )
                 .environmentObject(coordinator)
                 .modifier(StackedSheetLayer(
@@ -111,6 +111,9 @@ private extension View {
             .presentationDragIndicator(config.showDragIndicator ? .visible : .hidden)
             .interactiveDismissDisabled(interactiveDismissDisabled)
             .presentationBackgroundInteraction(config.backgroundInteraction)
+            // On iPad / regular size class, force the sheet shape instead of
+            // adapting to a popover — the map panel is map-first, and a
+            // popover wouldn't preserve the floating-over-the-map model.
             .presentationCompactAdaptation(.none)
             .legacyFloatingCornerRadius()
     }

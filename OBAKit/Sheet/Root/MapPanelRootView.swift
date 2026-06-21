@@ -17,18 +17,17 @@ import OBAKitCore
 /// `Map` with the persistent floating sheet system layered on top.
 ///
 /// This is the SwiftUI-native composition root for the sheet system:
-/// `Application` enters the SwiftUI tree here, the factory + coordinator are
-/// owned here as sibling `@StateObject`s, and the sheet content is rendered
-/// over the SwiftUI `Map`.
+/// `Application` enters the SwiftUI tree here, the factory + coordinator and the sheet content is rendered  over the SwiftUI `Map`.
 struct MapPanelRootView: View {
 
     @StateObject private var coordinator: SheetCoordinator<AppSheetRoute>
-    @StateObject private var factory: AppSheetViewFactory
     @State private var cameraPosition: MapCameraPosition = .userLocation(fallback: .automatic)
+
+    private let factory: AppSheetViewFactory
 
     init(application: Application) {
         _coordinator = StateObject(wrappedValue: SheetCoordinator<AppSheetRoute>(root: .home))
-        _factory = StateObject(wrappedValue: AppSheetViewFactory(application: application))
+        factory = AppSheetViewFactory(application: application)
     }
 
     var body: some View {

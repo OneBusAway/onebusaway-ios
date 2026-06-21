@@ -11,6 +11,14 @@ import SwiftUI
 import UIKit
 import OBAKitCore
 
+// TODO: Transitional shape — in map-panel mode this class hides the tab bar
+// and hosts a single `UIHostingController(MapPanelRootView)`, leaving the
+// tab-VC properties as `Optional`. Once the map-panel experience graduates
+// from experimental, split into a dedicated `MapPanelRootController:
+// UIViewController` and have the AppDelegates (Apps/OneBusAway, Apps/KiedyBus)
+// + `ViewRouter.rootController` pick between the two. That removes the
+// optional properties and the `useMapPanel` guards in `navigate(to:)` and
+// `tabBar(_:didSelect:)`.
 @objc(OBAClassicApplicationRootController)
 public class ClassicApplicationRootController: UITabBarController {
     public enum Page: Int {
