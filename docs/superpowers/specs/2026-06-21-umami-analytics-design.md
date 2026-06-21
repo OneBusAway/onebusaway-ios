@@ -120,29 +120,49 @@ Placed in OBAKit (alongside the `Analytics` protocol) so it is reachable by
 `OBAKitTests`. Modeled on `PlausibleAnalytics`, but builds the request by hand
 (no SDK).
 
-- **Init:** `init(serverURL: URL, websiteID: String, hostname: String, dataLoader: URLDataLoader = URLSession.shared)`.
+- **Init:** `init(serverURL: URL, websiteID: String, hostname: String, dataLoader: URLDataLoader = UmamiReporter.makeDefaultSession())`.
   Inject the existing **`URLDataLoader`** protocol (OBAKitCore/Network) rather than
   a live `URLSession` — that is the seam the rest of the networking suite already
   mocks via `MockDataLoader`, so the emitter is testable with the same double the
   codebase uses (and no bespoke `URLProtocol` subclass). `URLDataLoader` exposes
   `func data(for: URLRequest) async throws -> (Data, URLResponse)`. `hostname` is
   the current region's `OBABaseURL.host`.
+  - **Default loader is a purpose-built session, NOT `URLSession.shared`.**
+    `URLSession.shared` is an unconfigurable singleton, so the resource-timeout
+    strategy below can't apply to it. The default comes from a small factory
+    `static func makeDefaultSession() -> URLSession` that builds a
+    `URLSession(configuration:)` whose `timeoutIntervalForResource` (and a short
+    `timeoutIntervalForRequest`) are set to the fail-safe values. `MockDataLoader`
+    is still injected in tests.
 - **User-Agent:** computed once — `OneBusAway/\(Bundle.main.appVersion) (iOS
   \(UIDevice.current.systemVersion); \(UIDevice.current.modelName))`, e.g.
   `OneBusAway/2.5.0 (iOS 17.0; iPhone14,5)`. Uses the repo helpers noted in §1.
-- **`postEvent(path:name:data:) async`:** builds the payload JSON, POSTs to
-  `serverURL` + `/api/send` with `Content-Type: application/json` and the
-  explicit `User-Agent` header via `dataLoader.data(for:)`. Parses the response
-  body; a `beep`/`boop` body is treated as failure (logged in DEBUG, swallowed
-  otherwise). All errors swallowed — never throws to callers.
-- **Timeout (fail-safe):** do **not** rely on `URLRequest.timeoutInterval` as a
-  total cap — per Apple it is an *idle/stall* timer, not a wall-clock duration.
-  Enforce a short end-to-end cap deliberately. Preferred: build the request from a
-  `URLSessionConfiguration` with a tight `timeoutIntervalForResource` (when the
-  injected loader is a real `URLSession`), or wrap the `await data(for:)` in a
-  cancellable `Task` with a timeout. This intentionally deviates from Apple's
-  "avoid short timeouts" guidance because this is best-effort telemetry with all
-  errors swallowed and must stay off the UI hot path.
+- **JSON body construction (fail-safe — do NOT use raw `JSONSerialization`):**
+  the `Analytics` protocol passes `value: Any?`, so the Umami `data` dict holds
+  heterogeneous values. `JSONSerialization.data(withJSONObject:)` throws an
+  **Objective-C `NSException`** (not a Swift `Error`) for non-JSON input — a Swift
+  `do/catch` will **not** catch it, so it would crash inside the fire-and-forget
+  `Task`, violating "all errors swallowed." Instead, model the payload as an
+  `Encodable` struct and coerce `data` values into a closed JSON enum
+  (`String`/`Int`/`Double`/`Bool`, stringifying anything else, dropping non-finite
+  doubles). Encode with `JSONEncoder`, whose `EncodingError` is a catchable Swift
+  error. This also keeps the outer payload type-safe.
+- **`postEvent(path:name:data:) async`:** builds the payload via the `Encodable`
+  struct above, POSTs to `serverURL` + `/api/send` with
+  `Content-Type: application/json` and the explicit `User-Agent` header via
+  `dataLoader.data(for:)`. Parses the response **defensively**: a 200 whose body
+  is `{"beep":"boop"}` is a failure, and so is any body lacking the success
+  markers (`cache`/`sessionId`/`visitId`) or that fails to parse — none of these
+  may throw out of the method. Logged in DEBUG, swallowed otherwise. All errors
+  swallowed — never throws to callers.
+- **Timeout (fail-safe):** set on the factory session's `URLSessionConfiguration`.
+  `timeoutIntervalForResource` is the wall-clock end-to-end cap (Apple default is
+  7 days); set it tight (~10s). `timeoutIntervalForRequest` is the separate
+  *idle/stall* timer — do not treat it as the total cap. This intentionally
+  deviates from Apple's "avoid short timeouts" guidance because this is
+  best-effort telemetry with all errors swallowed and must stay off the UI hot
+  path. (Do not use `URLRequest.timeoutInterval` for the total cap — it is the
+  idle timer.)
 - **Mirror methods** (parallel to `PlausibleAnalytics`):
   - `reportEvent(pageURL:label:value:)` → named event: `name = label`,
     `url = path(of: pageURL)`, `data = ["value": value]` (omitted when value nil).
@@ -165,9 +185,20 @@ Placed in OBAKit (alongside the `Analytics` protocol) so it is reachable by
     `region.umamiAnalytics != nil`, build a new `UmamiReporter(serverURL:
     config.url, websiteID: config.id, hostname: region.OBABaseURL.host ?? "")`.
 - `setReportingEnabled(false)` nils `umami` (same as Plausible) → privacy opt-out
-  is respected with no extra code.
+  takes effect immediately.
+- **Opt-in asymmetry (documented, parity with Plausible):** `setReportingEnabled(true)`
+  only persists the flag — it does **not** rebuild `umami` (or Plausible), because
+  both are constructed solely in `updateServer(region:)`. So re-enabling reporting
+  takes effect on the **next** `updateServer` call (next app-foreground via
+  `applicationDidBecomeActive`, or a region change). This matches existing
+  Plausible behavior and is acceptable for this PR; the orchestrator test must
+  therefore not assert *instantaneous* emitter creation on opt-in.
 - Forward to `umami` inside a `Task` from `reportEvent`, `reportSearchQuery`,
-  `reportStopViewed`, and `setUserProperty`.
+  `reportStopViewed`, and `setUserProperty`. `UmamiReporter` stays a plain class
+  (no `actor`/`Sendable` ceremony) — parity with the existing Plausible `Task`
+  pattern, which the orchestrator solely owns and mutates on the main thread. To
+  avoid the latent `defaultProperties` read/write race Plausible also has, snapshot
+  the default `data` at `postEvent` entry rather than reading it mid-flight.
 - `reportSetRegion` is a no-op for Umami (per-region by construction, keyed by
   website UUID — like Plausible).
 - `reportError` skips Umami.
@@ -189,6 +220,10 @@ Placed in OBAKit (alongside the `Analytics` protocol) so it is reachable by
   `umamiAnalytics:{url,id}` decodes `url`/`id`; a region without the key → `nil`;
   an explicit `"umamiAnalytics": null` → `nil`. Extend an existing region in
   `OBAKitTests/fixtures/regions-v3.json` (or add a focused fixture).
+- **Region encode→decode round-trip:** assert `umamiAnalytics` survives a full
+  `encode(to:)` → `decode` cycle. `Region` is persisted to disk via `encode(to:)`,
+  so a missing `encodeIfPresent` line would silently drop the field on next load —
+  decode-only tests would not catch it.
 - **`UmamiReporter`** (`OBAKitTests`, injected `MockDataLoader`):
   - The POST body JSON matches the contract (`type`, nested `payload` with
     `website`, `hostname`, `url`, `name`, `data`) — assert off the recorded
@@ -196,12 +231,23 @@ Placed in OBAKit (alongside the `Analytics` protocol) so it is reachable by
   - A real, non-bot `User-Agent` header is present on the recorded request.
   - A `{"beep":"boop"}` 200 response body is treated as a failure (register it
     via `MockDataLoader.mock(data:matcher:)`; explicitly called out by the issue).
-  - `pageURL` → path reduction is correct.
+    Also assert a success body (`cache`/`sessionId`/`visitId`) is treated as
+    success.
+  - `pageURL` → path reduction: `app://localhost/map` → `/map`; define and test
+    the edge cases — no path (`app://localhost` → `/`) and a query
+    (`app://localhost/search?q=x`).
+  - **Non-JSON safety:** feeding a non-JSON / non-finite `value` (e.g. `Double.nan`
+    or a model object) must not crash and must not throw out of `postEvent` —
+    guards the fire-and-forget guarantee against the `JSONSerialization` NSException
+    hazard.
   - "Never emit" assertions can use `MockDataLoader.recordedRequestURLs` to prove
     no request was made.
-- **Orchestrator:** emitter is created when config is present and reporting is on,
-  and destroyed on opt-out or null config. (Run in the App test target if
-  reachable; otherwise this behavior is covered via the reporter + region tests.)
+- **Orchestrator:** on `updateServer(region:)`, the emitter is created when config
+  is present and reporting is on, and is absent for null config; it is destroyed on
+  opt-out. Do **not** assert instantaneous creation on `setReportingEnabled(true)`
+  — re-enable takes effect on the next `updateServer` (see Opt-in asymmetry above).
+  (Run in the App test target if reachable; otherwise this behavior is covered via
+  the reporter + region tests.)
 
 ## Fail-safe guarantees
 
