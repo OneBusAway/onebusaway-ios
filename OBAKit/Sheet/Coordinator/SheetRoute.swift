@@ -1,0 +1,156 @@
+//
+//  SheetRoute.swift
+//  OBAKit
+//
+//  Copyright © Open Transit Software Foundation
+//  This source code is licensed under the Apache 2.0 license found in the
+//  LICENSE file in the root directory of this source tree.
+//
+
+import SwiftUI
+import OBAKitCore
+
+// MARK: - SheetDetentConfiguration
+
+/// Per-route configuration for detent behaviour, drag indicator, dismiss lock, and background interaction.
+struct SheetDetentConfiguration {
+    let detents: Set<PresentationDetent>
+    let initialDetent: PresentationDetent
+    let showDragIndicator: Bool
+    let isDismissDisabled: Bool
+    let backgroundInteraction: PresentationBackgroundInteraction
+
+    init(
+        detents: Set<PresentationDetent>,
+        initialDetent: PresentationDetent,
+        showDragIndicator: Bool = true,
+        isDismissDisabled: Bool,
+        backgroundInteraction: PresentationBackgroundInteraction = .enabled(upThrough: .medium)
+    ) {
+        self.detents = detents
+        self.initialDetent = initialDetent
+        self.showDragIndicator = showDragIndicator
+        self.isDismissDisabled = isDismissDisabled
+        self.backgroundInteraction = backgroundInteraction
+    }
+}
+
+// MARK: - SheetRouteable
+
+/// Protocol that all sheet route enums must conform to.
+/// Each case provides detent configuration and a stacking preference.
+/// ViewModel construction lives in `AppSheetViewFactory`, not on the route itself.
+protocol SheetRouteable: Identifiable, Hashable {
+    var detentConfiguration: SheetDetentConfiguration { get }
+    /// When `true`, `SheetCoordinator.push(_:)` routes this case to the stacked
+    /// layer (a second sheet over the base sheet); otherwise content-swap.
+    var prefersStacking: Bool { get }
+}
+
+// MARK: - AppSheetRoute
+
+/// All navigable destinations within the floating sheet.
+enum AppSheetRoute: SheetRouteable {
+    // Base layer
+    case home
+    case search
+    case nearbyAll
+    case recentStopsAll
+    case bookmarksAll
+
+    // Stacked layer
+    case stopDetails(stopID: Stop.ID)
+    case tripPlanner
+    case tripDetails(tripID: TripIdentifier)
+    case routePicker
+    case currentTrip(routeID: RouteID)
+    case transitAlert(alertID: String)
+
+    case more
+    case settings
+
+}
+
+extension AppSheetRoute {
+    // MARK: Identifiable
+
+    var id: String {
+        switch self {
+        case .home:
+            return "home"
+        case .search:
+            return "search"
+        case .nearbyAll:
+            return "nearbyAll"
+        case .recentStopsAll:
+            return "recentStopsAll"
+        case .bookmarksAll:
+            return "bookmarksAll"
+        case .stopDetails(let stopID):
+            return "stopDetails-\(stopID)"
+        case .tripPlanner:
+            return "tripPlanner"
+        case .tripDetails(let tripID):
+            return "tripDetails-\(tripID)"
+        case .routePicker:
+            return "routePicker"
+        case .currentTrip(let routeID):
+            return "currentTrip-\(routeID)"
+        case .transitAlert(let alertID):
+            return "transitAlert-\(alertID)"
+        case .more:
+            return "more"
+        case .settings:
+            return "settings"
+        }
+    }
+}
+
+extension AppSheetRoute {
+    /// Detail destinations prefer the stacked layer so the base sheet peeks beneath.
+    var prefersStacking: Bool {
+        switch self {
+        case .stopDetails, .tripPlanner, .tripDetails, .currentTrip, .transitAlert, .more, .nearbyAll, .recentStopsAll, .bookmarksAll, .settings:
+            return true
+        case .home, .search, .routePicker:
+            return false
+        }
+    }
+}
+
+extension AppSheetRoute {
+
+    static var `largeDetent`: PresentationDetent {
+        return .fraction(0.99)
+    }
+
+    var detentConfiguration: SheetDetentConfiguration {
+        switch self {
+        case .home:
+            return SheetDetentConfiguration(
+                detents: [.height(80), .medium, AppSheetRoute.largeDetent],
+                initialDetent: .height(80),
+                isDismissDisabled: true
+            )
+        case .search, .nearbyAll, .recentStopsAll, .bookmarksAll:
+            return SheetDetentConfiguration(
+                detents: [.large],
+                initialDetent: .large,
+                isDismissDisabled: true
+            )
+        case .stopDetails:
+            return SheetDetentConfiguration(
+                detents: [.medium, .large],
+                initialDetent: .medium,
+                isDismissDisabled: false
+            )
+        case .tripPlanner, .tripDetails, .routePicker, .currentTrip, .transitAlert, .more, .settings:
+            return SheetDetentConfiguration(
+                detents: [.medium, .large],
+                initialDetent: .large,
+                isDismissDisabled: false
+            )
+        }
+    }
+
+}
