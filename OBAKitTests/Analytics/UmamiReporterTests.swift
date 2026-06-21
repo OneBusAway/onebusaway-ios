@@ -68,9 +68,10 @@ final class UmamiReporterTests: OBATestCase {
         expect(request.httpMethod) == "POST"
         expect(request.value(forHTTPHeaderField: "Content-Type")) == "application/json"
 
-        // Explicit, non-bot User-Agent.
+        // Explicit, non-bot User-Agent — full format: "OneBusAway/<version> (iOS <ver>; <model>)".
         let ua = try XCTUnwrap(request.value(forHTTPHeaderField: "User-Agent"))
         expect(ua).to(contain("OneBusAway/"))
+        expect(ua).to(match("^OneBusAway/.+ \\(iOS .+; .+\\)$"))
 
         // Body matches the Umami contract.
         let body = try JSONSerialization.jsonObject(with: try XCTUnwrap(request.httpBody)) as! [String: Any]
@@ -111,6 +112,8 @@ final class UmamiReporterTests: OBATestCase {
         let reporter = makeReporter(loader: loader)
         // Double.nan is not representable; the event still emits without the value, no crash.
         await reporter.reportEvent(pageURL: "app://localhost/map", label: "x", value: Double.nan)
+        // Confirm the event was still fired (unrepresentable value dropped, not the whole event).
+        expect(loader.recordedRequestURLs.count) == 1
     }
 
     func testBeepBoopResponseIsSwallowed() async throws {

@@ -31,6 +31,9 @@ enum UmamiJSONValue: Encodable {
         case let v as Double:
             guard v.isFinite else { return nil }
             self = .double(v)
+        case let v as Float:
+            guard v.isFinite else { return nil }
+            self = .double(Double(v))
         case let v as String: self = .string(v)
         case let v as CustomStringConvertible: self = .string(v.description)
         default: return nil
@@ -61,6 +64,7 @@ final class UmamiReporter {
 
     /// Default properties merged into every event's `data`. Set via `setUserProperty`.
     private var defaultData: [String: UmamiJSONValue] = [:]
+    private let defaultDataLock = NSLock()
 
     init(serverURL: URL,
          websiteID: String,
@@ -86,7 +90,7 @@ final class UmamiReporter {
     // MARK: - Event API (mirrors the Analytics protocol)
 
     func reportEvent(pageURL: String, label: String, value: Any?) async {
-        var data = defaultData
+        var data = defaultDataLock.withLock { defaultData }
         if let jsonValue = UmamiJSONValue(value) {
             data["value"] = jsonValue
         }
@@ -98,7 +102,7 @@ final class UmamiReporter {
     }
 
     func reportStopViewed(name: String, id: String, stopDistance: String) async {
-        var data = defaultData
+        var data = defaultDataLock.withLock { defaultData }
         data["id"] = .string(id)
         data["distance"] = .string(stopDistance)
         // No `name` → recorded as a pageview at /stop.
@@ -106,10 +110,12 @@ final class UmamiReporter {
     }
 
     func setUserProperty(key: String, value: String?) {
-        if let value {
-            defaultData[key] = .string(value)
-        } else {
-            defaultData.removeValue(forKey: key)
+        defaultDataLock.withLock {
+            if let value {
+                defaultData[key] = .string(value)
+            } else {
+                defaultData.removeValue(forKey: key)
+            }
         }
     }
 
