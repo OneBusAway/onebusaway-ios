@@ -18,27 +18,39 @@ class SheetCoordinator<Route: SheetRouteable>: ObservableObject {
 
     // MARK: - Content-swap layer (base sheet)
 
-    @Published private(set) var routeStack: [Route]
+    /// The route always present at the bottom of the content-swap stack.
+    /// Stored separately so `currentRoute` never has to force-unwrap.
+    let root: Route
+
+    /// Routes pushed on top of `root`. Empty when the base sheet is showing root.
+    @Published private(set) var additionalRoutes: [Route] = []
+
     @Published var currentDetent: PresentationDetent
 
-    var currentRoute: Route { routeStack.last! }
+    var currentRoute: Route { additionalRoutes.last ?? root }
+    var routeStack: [Route] { [root] + additionalRoutes }
     var currentDetents: Set<PresentationDetent> { currentRoute.detentConfiguration.detents }
-    var canPop: Bool { routeStack.count > 1 || !stackedRoutes.isEmpty }
+    var canPop: Bool { !additionalRoutes.isEmpty || !stackedEntries.isEmpty }
 
     // MARK: - Stacked layer
 
-    /// One physical sheet per entry; index 0 is the closest to the base sheet,
-    /// `last` is the frontmost. Empty when no stacked sheets are presented.
-    @Published var stackedRoutes: [Route] = []
+    /// A route paired with its currently-selected detent. One entry per
+    /// physical sheet in the stacked pile, index 0 closest to the base sheet.
+    struct StackedEntry: Equatable {
+        let route: Route
+        var detent: PresentationDetent
+    }
 
-    /// Detents parallel to `stackedRoutes`. `stackedDetents[i]` selects the
-    /// current detent of the sheet at depth `i`.
-    @Published var stackedDetents: [PresentationDetent] = []
+    /// Stacked-sheet pile. Empty when no stacked sheets are presented.
+    @Published private(set) var stackedEntries: [StackedEntry] = []
+
+    var stackedRoutes: [Route] { stackedEntries.map(\.route) }
+    var stackedDetents: [PresentationDetent] { stackedEntries.map(\.detent) }
 
     // MARK: - Init
 
     init(root: Route) {
-        routeStack = [root]
+        self.root = root
         currentDetent = root.detentConfiguration.initialDetent
     }
 
@@ -49,10 +61,9 @@ class SheetCoordinator<Route: SheetRouteable>: ObservableObject {
     /// content-swap routes append to the base content stack.
     func push(_ route: Route) {
         if route.prefersStacking {
-            stackedRoutes.append(route)
-            stackedDetents.append(route.detentConfiguration.initialDetent)
+            stackedEntries.append(StackedEntry(route: route, detent: route.detentConfiguration.initialDetent))
         } else {
-            routeStack.append(route)
+            additionalRoutes.append(route)
             currentDetent = route.detentConfiguration.initialDetent
         }
     }
@@ -60,30 +71,33 @@ class SheetCoordinator<Route: SheetRouteable>: ObservableObject {
     /// Pops the top of whichever layer is on top: frontmost stacked sheet if
     /// any, otherwise the content-stack top. No-op at root.
     func pop() {
-        if !stackedRoutes.isEmpty {
-            stackedRoutes.removeLast()
-            stackedDetents.removeLast()
+        if !stackedEntries.isEmpty {
+            stackedEntries.removeLast()
             return
         }
-        guard routeStack.count > 1 else { return }
-        routeStack.removeLast()
+        guard !additionalRoutes.isEmpty else { return }
+        additionalRoutes.removeLast()
         currentDetent = currentRoute.detentConfiguration.initialDetent
     }
 
     /// Removes every stacked sheet at or above the given depth. Called by the
-    /// container when the OS dismisses a sheet (drag-down) so the array stays
-    /// in sync with what's actually on screen.
+    /// container when the OS dismisses a sheet (drag-down) so storage stays in
+    /// sync with what's actually on screen.
     func truncateStacked(toDepth depth: Int) {
-        guard depth >= 0, depth < stackedRoutes.count else { return }
-        stackedRoutes.removeSubrange(depth...)
-        stackedDetents.removeSubrange(depth...)
+        guard depth >= 0, depth < stackedEntries.count else { return }
+        stackedEntries.removeSubrange(depth...)
+    }
+
+    /// Updates the stored detent for the stacked sheet at `depth`.
+    func setStackedDetent(_ detent: PresentationDetent, at depth: Int) {
+        guard stackedEntries.indices.contains(depth) else { return }
+        stackedEntries[depth].detent = detent
     }
 
     /// Clears the stacked layer and unwinds the content stack to its root.
     func popToRoot() {
-        stackedRoutes.removeAll()
-        stackedDetents.removeAll()
-        routeStack = [routeStack[0]]
-        currentDetent = currentRoute.detentConfiguration.initialDetent
+        stackedEntries.removeAll()
+        additionalRoutes.removeAll()
+        currentDetent = root.detentConfiguration.initialDetent
     }
 }
