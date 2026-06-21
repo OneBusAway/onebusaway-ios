@@ -23,61 +23,9 @@ struct HomeSheetView: View {
             VStack(spacing: 0) {
                 searchBarRow
                     .padding(.top, 16)
-                stackedSheetDebugRow
             }
         }
         .ignoresSafeArea(.container, edges: .bottom)
-    }
-
-    // MARK: - Stacked sheet debug buttons (temporary)
-
-    private var stackedSheetDebugRow: some View {
-        VStack(spacing: 8) {
-            Text("Stacked sheet debug")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-
-            Button("Push 1: recentStopsAll") {
-                coordinator.push(.recentStopsAll)
-            }
-
-            Button("Push 2: stopDetails") {
-                coordinator.push(.stopDetails(stopID: "debug-stop"))
-            }
-
-            Button("Push 3: tripDetails") {
-                coordinator.push(.tripDetails(tripID: "debug-trip"))
-            }
-
-            Button("Push full chain (1 → 2 → 3)") {
-                coordinator.push(.recentStopsAll)
-                coordinator.push(.stopDetails(stopID: "debug-stop"))
-                coordinator.push(.tripDetails(tripID: "debug-trip"))
-            }
-
-            Button("Push 6 sheets deep (staggered)") {
-                Task { @MainActor in
-                    let routes: [AppSheetRoute] = [
-                        .recentStopsAll,
-                        .stopDetails(stopID: "debug-stop-1"),
-                        .tripDetails(tripID: "debug-trip-1"),
-                        .stopDetails(stopID: "debug-stop-2"),
-                        .tripDetails(tripID: "debug-trip-2"),
-                        .transitAlert(alertID: "debug-alert")
-                    ]
-                    for route in routes {
-                        coordinator.push(route)
-                        try? await Task.sleep(for: .milliseconds(450))
-                    }
-                }
-            }
-
-            Button("Pop") {
-                coordinator.pop()
-            }
-        }
-        .buttonStyle(.bordered)
-        .padding(.vertical, 16)
     }
 
     // MARK: - Search Bar
@@ -112,12 +60,9 @@ struct HomeSheetView: View {
     private func expandThenPushSearch() {
         withAnimation(.smooth(duration: 0.3)) {
             coordinator.currentDetent = AppSheetRoute.largeDetent
-        }
-
-        Task { @MainActor in
-            try? await Task.sleep(for: .seconds(0.4))
+        } completion: {
             guard coordinator.currentRoute == .home,
-                coordinator.currentDetent == AppSheetRoute.largeDetent
+                  coordinator.currentDetent == AppSheetRoute.largeDetent
             else { return }
             coordinator.push(.search)
         }

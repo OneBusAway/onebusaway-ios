@@ -13,6 +13,6 @@ import OBAKitCore
 // MARK: - HomeSheetViewModel
 
 @MainActor
-class HomeSheetViewModel: ObservableObject {
+final class HomeSheetViewModel: ObservableObject {
 
 }

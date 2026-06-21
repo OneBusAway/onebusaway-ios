@@ -22,10 +22,6 @@ import OBAKitCore
 /// over the SwiftUI `Map`.
 struct MapPanelRootView: View {
 
-    /// UserDefaults key that gates the map panel experience.
-    /// Read at tab-construction time; changes apply on next launch.
-    static let useMapPanelExperienceUserDefaultsKey = "OBAUseMapPanelExperience"
-
     @StateObject private var coordinator: SheetCoordinator<AppSheetRoute>
     @StateObject private var factory: AppSheetViewFactory
     @State private var cameraPosition: MapCameraPosition = .userLocation(fallback: .automatic)
@@ -39,7 +35,7 @@ struct MapPanelRootView: View {
         Map(position: $cameraPosition) {
             UserAnnotation()
         }
-        .safeAreaPadding(.bottom, 80)
+        .safeAreaPadding(.bottom, AppSheetRoute.homeCollapsedHeight)
         .floatingSheet(coordinator: coordinator) { route in
             factory.view(for: route)
         }
