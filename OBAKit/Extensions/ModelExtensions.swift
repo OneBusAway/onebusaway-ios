@@ -98,3 +98,19 @@ extension TripStopTime: @retroactive MKAnnotation {
         nil
     }
 }
+
+// MARK: - ArrivalDepartureFilter Display Titles
+
+extension ArrivalDepartureFilter {
+    /// Localized display title for use in menus and settings.
+    var displayTitle: String {
+        switch self {
+        case .all:
+            return OBALoc("arrival_departure_filter.all_departures", value: "All Departures", comment: "Filter option to show all departures regardless of real-time data availability")
+        case .estimatedOnly:
+            return OBALoc("arrival_departure_filter.real_time_only", value: "Real-Time Only", comment: "Filter option to show only departures with real-time estimated data")
+        case .scheduledOnly:
+            return OBALoc("arrival_departure_filter.scheduled_only", value: "Scheduled Only", comment: "Filter option to show only departures with scheduled data and no real-time information")
+        }
+    }
+}
