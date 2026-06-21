@@ -26,9 +26,7 @@ public class ClassicApplicationRootController: UITabBarController {
     @objc public init(application: Application) {
         self.application = application
 
-        let useMapPanel = application.userDefaults.bool(
-            forKey: MapPanelRootView.useMapPanelExperienceUserDefaultsKey
-        )
+        let useMapPanel = application.userDefaults.bool(forKey: FeatureFlags.useMapPanelExperienceKey)
         self.useMapPanel = useMapPanel
 
         if useMapPanel {
@@ -48,10 +46,15 @@ public class ClassicApplicationRootController: UITabBarController {
             let host = UIHostingController(rootView: MapPanelRootView(application: application))
             viewControllers = [host]
         } else {
-            self.mapController = MapViewController(application: application)
-            self.recentStopsController = RecentStopsViewController(application: application)
-            self.bookmarksController = BookmarksViewController(application: application)
-            self.moreController = MoreViewController(application: application)
+            let mapController = MapViewController(application: application)
+            let recentStopsController = RecentStopsViewController(application: application)
+            let bookmarksController = BookmarksViewController(application: application)
+            let moreController = MoreViewController(application: application)
+
+            self.mapController = mapController
+            self.recentStopsController = recentStopsController
+            self.bookmarksController = bookmarksController
+            self.moreController = moreController
 
             super.init(nibName: nil, bundle: nil)
 
@@ -63,10 +66,10 @@ public class ClassicApplicationRootController: UITabBarController {
 
             self.application.viewRouter.rootController = self
 
-            let mapNav = application.viewRouter.buildNavigation(controller: self.mapController!, prefersLargeTitles: false)
-            let recentStopsNav = application.viewRouter.buildNavigation(controller: self.recentStopsController!)
-            let bookmarksNav = application.viewRouter.buildNavigation(controller: self.bookmarksController!)
-            let moreNav = application.viewRouter.buildNavigation(controller: self.moreController!)
+            let mapNav = application.viewRouter.buildNavigation(controller: mapController, prefersLargeTitles: false)
+            let recentStopsNav = application.viewRouter.buildNavigation(controller: recentStopsController)
+            let bookmarksNav = application.viewRouter.buildNavigation(controller: bookmarksController)
+            let moreNav = application.viewRouter.buildNavigation(controller: moreController)
 
             viewControllers = [mapNav, recentStopsNav, bookmarksNav, moreNav]
 

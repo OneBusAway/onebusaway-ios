@@ -55,7 +55,7 @@ class SettingsViewController: FormViewController {
             mapSectionShowsScale: application.mapRegionManager.mapViewShowsScale,
             mapSectionShowsTraffic: application.mapRegionManager.mapViewShowsTraffic,
             mapSectionShowsHeading: application.mapRegionManager.mapViewShowsHeading,
-            MapPanelRootView.useMapPanelExperienceUserDefaultsKey: application.userDefaults.bool(forKey: MapPanelRootView.useMapPanelExperienceUserDefaultsKey),
+            FeatureFlags.useMapPanelExperienceKey: application.userDefaults.bool(forKey: FeatureFlags.useMapPanelExperienceKey),
             privacySectionReportingEnabled: application.analytics?.reportingEnabled() ?? false,
             DataLoadFeedbackGenerator.EnabledUserDefaultsKey: application.userDefaults.bool(forKey: DataLoadFeedbackGenerator.EnabledUserDefaultsKey),
             AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts: application.userDefaults.bool(forKey: AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts),
@@ -99,8 +99,8 @@ class SettingsViewController: FormViewController {
             application.userDefaults.set(mapViewShowsStopAnnotationLabels, forKey: MapRegionManager.mapViewShowsStopAnnotationLabelsDefaultsKey)
         }
 
-        if let useMapPanel = values[MapPanelRootView.useMapPanelExperienceUserDefaultsKey] as? Bool {
-            application.userDefaults.set(useMapPanel, forKey: MapPanelRootView.useMapPanelExperienceUserDefaultsKey)
+        if let useMapPanel = values[FeatureFlags.useMapPanelExperienceKey] as? Bool {
+            application.userDefaults.set(useMapPanel, forKey: FeatureFlags.useMapPanelExperienceKey)
         }
 
         if let testAlerts = values[AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts] as? Bool {
@@ -176,7 +176,7 @@ class SettingsViewController: FormViewController {
         )
 
         section <<< SwitchRow {
-            $0.tag = MapPanelRootView.useMapPanelExperienceUserDefaultsKey
+            $0.tag = FeatureFlags.useMapPanelExperienceKey
             $0.title = OBALoc("settings_controller.experimental_section.map_panel", value: "Use map panel experience", comment: "Settings > Experimental section > Map panel toggle")
         }
 
