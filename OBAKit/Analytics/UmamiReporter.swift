@@ -55,7 +55,7 @@ enum UmamiJSONValue: Encodable {
 ///
 /// Never throws, never blocks the UI, swallows all errors. Constructed per-region
 /// by `AnalyticsOrchestrator`; one instance is bound to a single Umami website.
-final class UmamiReporter {
+public final class UmamiReporter {
     private let serverURL: URL
     private let websiteID: String
     private let hostname: String
@@ -66,7 +66,7 @@ final class UmamiReporter {
     private var defaultData: [String: UmamiJSONValue] = [:]
     private let defaultDataLock = NSLock()
 
-    init(serverURL: URL,
+    public init(serverURL: URL,
          websiteID: String,
          hostname: String,
          dataLoader: URLDataLoader = UmamiReporter.makeDefaultSession()) {
@@ -79,7 +79,7 @@ final class UmamiReporter {
 
     /// A session with a tight end-to-end resource timeout. `URLSession.shared`
     /// cannot be configured, so we build our own.
-    static func makeDefaultSession() -> URLSession {
+    public static func makeDefaultSession() -> URLSession {
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 10   // idle/stall timer
         config.timeoutIntervalForResource = 10  // wall-clock end-to-end cap
@@ -89,7 +89,7 @@ final class UmamiReporter {
 
     // MARK: - Event API (mirrors the Analytics protocol)
 
-    func reportEvent(pageURL: String, label: String, value: Any?) async {
+    public func reportEvent(pageURL: String, label: String, value: Any?) async {
         var data = defaultDataLock.withLock { defaultData }
         if let jsonValue = UmamiJSONValue(value) {
             data["value"] = jsonValue
@@ -97,11 +97,11 @@ final class UmamiReporter {
         await postEvent(path: Self.path(from: pageURL), name: label, data: data)
     }
 
-    func reportSearchQuery(_ query: String) async {
+    public func reportSearchQuery(_ query: String) async {
         await reportEvent(pageURL: "app://localhost/search", label: "query", value: query)
     }
 
-    func reportStopViewed(name: String, id: String, stopDistance: String) async {
+    public func reportStopViewed(name: String, id: String, stopDistance: String) async {
         var data = defaultDataLock.withLock { defaultData }
         data["id"] = .string(id)
         data["distance"] = .string(stopDistance)
@@ -109,7 +109,7 @@ final class UmamiReporter {
         await postEvent(path: "/stop", name: nil, data: data)
     }
 
-    func setUserProperty(key: String, value: String?) {
+    public func setUserProperty(key: String, value: String?) {
         defaultDataLock.withLock {
             if let value {
                 defaultData[key] = .string(value)

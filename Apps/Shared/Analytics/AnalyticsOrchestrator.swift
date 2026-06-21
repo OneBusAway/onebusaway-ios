@@ -15,14 +15,15 @@ import FirebaseCrashlytics
     private let userDefaults: UserDefaults
     private var firebaseAnalytics: FirebaseAnalytics?
     private var plausibleAnalytics: PlausibleAnalytics?
+    private var umami: UmamiReporter?
 
     @objc required public init(userDefaults: UserDefaults) {
         self.userDefaults = userDefaults
     }
-    
+
     @objc public func configure(userID: String) {
         firebaseAnalytics = FirebaseAnalytics(userID: userID)
-        
+
         DecodingErrorReporter.reportHandler = { [weak self] error, url, httpMethod, message in
             guard let self = self else { return }
             guard self.reportingEnabled() else {
@@ -33,7 +34,7 @@ import FirebaseCrashlytics
             }
 
             let crashlytics = Crashlytics.crashlytics()
-            
+
             let errorType: String
             switch error {
             case .keyNotFound:
@@ -47,25 +48,31 @@ import FirebaseCrashlytics
             @unknown default:
                 errorType = "unknown"
             }
-            
+
             crashlytics.setCustomValue(url.absoluteString, forKey: "request_url")
             crashlytics.setCustomValue(httpMethod, forKey: "http_method")
             crashlytics.setCustomValue(errorType, forKey: "decoding_error_type")
             crashlytics.setCustomValue(message, forKey: "decoding_error_detail")
-            
+
             crashlytics.record(error: error)
         }
     }
-    
-    public func updateServer(defaultDomainURL: URL, analyticsServerURL: URL?) {
-        plausibleAnalytics = nil
 
-        guard let analyticsServerURL else {
-            return
+    public func updateServer(region: Region) {
+        // Rebuild per-region analytics backends from scratch on every region change.
+        plausibleAnalytics = nil
+        umami = nil
+
+        guard reportingEnabled() else { return }
+
+        if let plausibleURL = region.plausibleAnalyticsServerURL {
+            plausibleAnalytics = PlausibleAnalytics(defaultDomainURL: region.OBABaseURL, analyticsServerURL: plausibleURL)
         }
 
-        if reportingEnabled() {
-            plausibleAnalytics = PlausibleAnalytics(defaultDomainURL: defaultDomainURL, analyticsServerURL: analyticsServerURL)
+        if let umamiConfig = region.umamiAnalytics {
+            umami = UmamiReporter(serverURL: umamiConfig.url,
+                                  websiteID: umamiConfig.id,
+                                  hostname: region.OBABaseURL.host ?? "")
         }
     }
 
@@ -79,6 +86,7 @@ import FirebaseCrashlytics
         firebaseAnalytics?.reportEvent(label: label, value: value)
         Task {
             await plausibleAnalytics?.reportEvent(pageURL: pageURL, label: label, value: value)
+            await umami?.reportEvent(pageURL: pageURL, label: label, value: value)
         }
     }
 
@@ -87,6 +95,7 @@ import FirebaseCrashlytics
 
         Task {
             await plausibleAnalytics?.reportSearchQuery(query)
+            await umami?.reportSearchQuery(query)
         }
     }
 
@@ -95,12 +104,14 @@ import FirebaseCrashlytics
 
         Task {
             await plausibleAnalytics?.reportStopViewed(name: name, id: id, stopDistance: stopDistance)
+            await umami?.reportStopViewed(name: name, id: id, stopDistance: stopDistance)
         }
     }
 
     @objc public func reportSetRegion(_ name: String) {
         setUserProperty(key: "RegionName", value: name)
         // n/a for Plausible since it'll be constrained on a per-region basis by the server URL.
+        // n/a for Umami (no per-region forwarding needed).
     }
 
     @objc public func setReportingEnabled(_ enabled: Bool) {
@@ -108,6 +119,7 @@ import FirebaseCrashlytics
         firebaseAnalytics?.setReportingEnabled(enabled)
         if !enabled {
             plausibleAnalytics = nil
+            umami = nil
         }
     }
 
@@ -118,5 +130,6 @@ import FirebaseCrashlytics
     @objc public func setUserProperty(key: String, value: String?) {
         firebaseAnalytics?.setUserProperty(key: key, value: value)
         plausibleAnalytics?.setUserProperty(key: key, value: value)
+        umami?.setUserProperty(key: key, value: value)
     }
 }
