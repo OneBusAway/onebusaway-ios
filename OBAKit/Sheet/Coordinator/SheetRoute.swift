@@ -20,18 +20,27 @@ struct SheetDetentConfiguration {
     let isDismissDisabled: Bool
     let backgroundInteraction: PresentationBackgroundInteraction
 
+    /// When set, background interaction is forced to `.disabled` while the sheet
+    /// is parked at this detent — useful for the iPhone-landscape case where the
+    /// sheet covers the full screen and nothing remains behind it to interact
+    /// with. The `upThrough:` form of `PresentationBackgroundInteraction` isn't
+    /// honored with custom `.height` detents, hence the explicit field.
+    let fullScreenDetent: PresentationDetent?
+
     init(
         detents: Set<PresentationDetent>,
         initialDetent: PresentationDetent,
         showDragIndicator: Bool = true,
         isDismissDisabled: Bool,
-        backgroundInteraction: PresentationBackgroundInteraction = .enabled(upThrough: .medium)
+        backgroundInteraction: PresentationBackgroundInteraction = .enabled(upThrough: .medium),
+        fullScreenDetent: PresentationDetent? = nil
     ) {
         self.detents = detents
         self.initialDetent = initialDetent
         self.showDragIndicator = showDragIndicator
         self.isDismissDisabled = isDismissDisabled
         self.backgroundInteraction = backgroundInteraction
+        self.fullScreenDetent = fullScreenDetent
     }
 }
 
@@ -131,10 +140,17 @@ extension AppSheetRoute {
     var detentConfiguration: SheetDetentConfiguration {
         switch self {
         case .home:
+            // Keep background interaction enabled at small/medium detents so the
+            // map and its overlays remain tappable. `upThrough:` isn't honored
+            // with custom `.height` detents, so `fullScreenDetent` flips
+            // background interaction to `.disabled` only when the sheet is
+            // parked at `largeDetent` (covers ~the full screen).
             return SheetDetentConfiguration(
                 detents: [.height(AppSheetRoute.homeCollapsedHeight), .medium, AppSheetRoute.largeDetent],
                 initialDetent: .height(AppSheetRoute.homeCollapsedHeight),
-                isDismissDisabled: true
+                isDismissDisabled: true,
+                backgroundInteraction: .enabled,
+                fullScreenDetent: AppSheetRoute.largeDetent
             )
         case .search:
             // Base-layer: dismiss is locked so the user pops via the back affordance,

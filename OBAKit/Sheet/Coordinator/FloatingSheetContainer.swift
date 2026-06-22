@@ -106,7 +106,16 @@ private extension View {
         selection: Binding<PresentationDetent>,
         interactiveDismissDisabled: Bool
     ) -> some View {
-        self
+        // When parked at `fullScreenDetent` (sheet covers the screen — common on iPhone landscape with the full-coverage detent),
+        // background interaction is forced off since nothing remains behind to touch.
+        let effectiveBackgroundInteraction: PresentationBackgroundInteraction = {
+            if let fullScreen = config.fullScreenDetent, selection.wrappedValue == fullScreen {
+                return .disabled
+            }
+            return config.backgroundInteraction
+        }()
+
+        return self
             .presentationDetents(config.detents, selection: selection)
             .presentationDragIndicator(config.showDragIndicator ? .visible : .hidden)
             .interactiveDismissDisabled(interactiveDismissDisabled)
