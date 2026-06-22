@@ -74,11 +74,20 @@ final class AppSheetRouteTests: XCTestCase {
         expect(config.isDismissDisabled) == true
     }
 
+    func test_homeDetent_flipsToFullScreenAtLargeDetent() {
+        // `upThrough:` isn't honored with custom `.height` detents, so the home
+        // route flips background interaction to `.disabled` only when parked at
+        // `largeDetent` via `fullScreenDetent`.
+        let config = AppSheetRoute.home.detentConfiguration
+        expect(config.fullScreenDetent) == AppSheetRoute.largeDetent
+    }
+
     func test_searchDetent_isFullLargeAndDismissDisabled() {
         let config = AppSheetRoute.search.detentConfiguration
         expect(config.detents) == [.large]
         expect(config.initialDetent) == .large
         expect(config.isDismissDisabled) == true
+        expect(config.fullScreenDetent).to(beNil())
     }
 
     func test_stackedAllListRoutes_shareLargeAndAllowDismiss() {
@@ -90,6 +99,7 @@ final class AppSheetRouteTests: XCTestCase {
             expect(config.detents) == [.large]
             expect(config.initialDetent) == .large
             expect(config.isDismissDisabled) == false
+            expect(config.fullScreenDetent).to(beNil())
         }
     }
 
@@ -98,6 +108,7 @@ final class AppSheetRouteTests: XCTestCase {
         expect(config.detents) == [.medium, .large]
         expect(config.initialDetent) == .medium
         expect(config.isDismissDisabled) == false
+        expect(config.fullScreenDetent).to(beNil())
     }
 
     func test_stackedDetailRoutes_shareLargeStartAndAllowDismiss() {
@@ -116,11 +127,56 @@ final class AppSheetRouteTests: XCTestCase {
             expect(config.detents) == [.medium, .large]
             expect(config.initialDetent) == .large
             expect(config.isDismissDisabled) == false
+            expect(config.fullScreenDetent).to(beNil())
+        }
+    }
+
+    func test_allRoutes_showDragIndicator() {
+        // No route currently opts out of the drag indicator; this guards against
+        // an accidental flip when adding a new case.
+        let routes: [AppSheetRoute] = [
+            .home, .search, .nearbyAll, .recentStopsAll, .bookmarksAll,
+            .stopDetails(stopID: "1"), .tripPlanner, .tripDetails(tripID: "t"),
+            .routePicker, .currentTrip(routeID: "r"), .transitAlert(alertID: "a"),
+            .more, .settings
+        ]
+        for route in routes {
+            expect(route.detentConfiguration.showDragIndicator) == true
         }
     }
 
     func test_largeDetent_isFractionedJustBelowFullScreen() {
         expect(AppSheetRoute.largeDetent) == .fraction(0.99)
+    }
+
+    func test_homeCollapsedHeight_matchesMapBottomInset() {
+        // Shared with `MapPanelRootView` so the map's bottom safe-area padding
+        // matches the collapsed sheet — keep the constant pinned.
+        expect(AppSheetRoute.homeCollapsedHeight) == 80
+    }
+
+    // MARK: - SheetDetentConfiguration defaults
+
+    func test_sheetDetentConfiguration_appliesDefaultsForOptionalFields() {
+        let config = SheetDetentConfiguration(
+            detents: [.medium],
+            initialDetent: .medium,
+            isDismissDisabled: false
+        )
+        expect(config.showDragIndicator) == true
+        expect(config.fullScreenDetent).to(beNil())
+    }
+
+    // MARK: - Hashable / Equatable
+
+    func test_equality_sameCaseSameAssociatedValueAreEqual() {
+        expect(AppSheetRoute.stopDetails(stopID: "1_1")) == AppSheetRoute.stopDetails(stopID: "1_1")
+        expect(AppSheetRoute.tripDetails(tripID: "t")) == AppSheetRoute.tripDetails(tripID: "t")
+    }
+
+    func test_equality_differentAssociatedValuesAreNotEqual() {
+        expect(AppSheetRoute.stopDetails(stopID: "1_1")) != AppSheetRoute.stopDetails(stopID: "1_2")
+        expect(AppSheetRoute.currentTrip(routeID: "r1")) != AppSheetRoute.currentTrip(routeID: "r2")
     }
 
     // MARK: - Exhaustiveness guard
