@@ -23,12 +23,18 @@ import OBAKitCore
 struct MapPanelRootView: View {
 
     @StateObject private var coordinator: SheetCoordinator<AppSheetRoute>
+    @StateObject private var mapViewModel: MapViewModel
+
     @State private var cameraPosition: MapCameraPosition = .userLocation(fallback: .automatic)
+    @State private var presentedWeather: WeatherDisplay?
+
+    @Environment(\.scenePhase) private var scenePhase
 
     private let factory: AppSheetViewFactory
 
     init(application: Application) {
         _coordinator = StateObject(wrappedValue: SheetCoordinator<AppSheetRoute>(root: .home))
+        _mapViewModel = StateObject(wrappedValue: MapViewModel(application: application))
         factory = AppSheetViewFactory(application: application)
     }
 
@@ -37,8 +43,34 @@ struct MapPanelRootView: View {
             UserAnnotation()
         }
         .safeAreaPadding(.bottom, AppSheetRoute.homeCollapsedHeight)
+        .overlay(alignment: .topLeading) {
+            weatherButton
+        }
+        .overlay {
+            WeatherDetailPopup(display: $presentedWeather)
+        }
+        .onAppear {
+            mapViewModel.start()
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .active {
+                mapViewModel.onAppBecameActive()
+            }
+        }
         .floatingSheet(coordinator: coordinator) { route in
             factory.view(for: route)
+        }
+    }
+
+    @ViewBuilder
+    private var weatherButton: some View {
+        if mapViewModel.isWeatherFeatureAvailable {
+            WeatherButton(display: mapViewModel.weatherDisplay) { display in
+                withAnimation(.smooth(duration: 0.25)) {
+                    presentedWeather = display
+                }
+            }
+            .padding(ThemeMetrics.controllerMargin)
         }
     }
 }
