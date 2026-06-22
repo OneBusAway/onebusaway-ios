@@ -4,7 +4,7 @@
 
 **Goal:** Add Umami analytics as an additive, per-region, fire-and-forget HTTP event backend alongside the existing Plausible and Firebase analytics.
 
-**Architecture:** A new `UmamiReporter` (in OBAKit) POSTs events to a per-region Umami `/api/send` endpoint discovered from a new `Region.umamiAnalytics` config object (in OBAKitCore). `AnalyticsOrchestrator` constructs/destroys the reporter on region change and opt-out, and forwards the events the app already reports — no view-controller changes. All emission is off the UI hot path and swallows every error.
+**Architecture:** A new `UmamiAnalytics` (in OBAKit) POSTs events to a per-region Umami `/api/send` endpoint discovered from a new `Region.umamiAnalytics` config object (in OBAKitCore). `AnalyticsOrchestrator` constructs/destroys the reporter on region change and opt-out, and forwards the events the app already reports — no view-controller changes. All emission is off the UI hot path and swallows every error.
 
 **Tech Stack:** Swift 5 / UIKit, iOS 17+, `URLSession` via the repo's `URLDataLoader` seam, `JSONEncoder`/`Codable`, XCTest + Nimble, XcodeGen.
 
@@ -178,19 +178,19 @@ git commit -m "Add Region.umamiAnalytics config decoding (#1162)"
 
 ---
 
-### Task 2: `UmamiReporter` HTTP emitter
+### Task 2: `UmamiAnalytics` HTTP emitter
 
 The self-contained emitter and its JSON-value coercion, with the crash-safe body construction, explicit UA, defensive response parsing, and a tight resource timeout. All logic is unit-tested via the existing `MockDataLoader`.
 
 **Files:**
-- Create: `OBAKit/Analytics/UmamiReporter.swift`
-- Create: `OBAKitTests/Analytics/UmamiReporterTests.swift`
-- Test: `OBAKitTests/Analytics/UmamiReporterTests.swift`
+- Create: `OBAKit/Analytics/UmamiAnalytics.swift`
+- Create: `OBAKitTests/Analytics/UmamiAnalyticsTests.swift`
+- Test: `OBAKitTests/Analytics/UmamiAnalyticsTests.swift`
 
 **Interfaces:**
 - Consumes: `URLDataLoader` (OBAKitCore), `Bundle.appVersion` (OBAKitCore), `UIDevice.modelName` (OBAKitCore), `Region.UmamiAnalytics` (Task 1).
 - Produces (all `internal`, reachable via `@testable import OBAKit`):
-  - `final class UmamiReporter` with `init(serverURL: URL, websiteID: String, hostname: String, dataLoader: URLDataLoader = UmamiReporter.makeDefaultSession())`
+  - `final class UmamiAnalytics` with `init(serverURL: URL, websiteID: String, hostname: String, dataLoader: URLDataLoader = UmamiAnalytics.makeDefaultSession())`
   - `func reportEvent(pageURL: String, label: String, value: Any?) async`
   - `func reportSearchQuery(_ query: String) async`
   - `func reportStopViewed(name: String, id: String, stopDistance: String) async`
@@ -201,11 +201,11 @@ The self-contained emitter and its JSON-value coercion, with the crash-safe body
 
 - [ ] **Step 1: Create the emitter source file**
 
-Create `OBAKit/Analytics/UmamiReporter.swift` with the full implementation:
+Create `OBAKit/Analytics/UmamiAnalytics.swift` with the full implementation:
 
 ```swift
 //
-//  UmamiReporter.swift
+//  UmamiAnalytics.swift
 //  OBAKit
 //
 //  Copyright © Open Transit Software Foundation
@@ -258,7 +258,7 @@ enum UmamiJSONValue: Encodable {
 ///
 /// Never throws, never blocks the UI, swallows all errors. Constructed per-region
 /// by `AnalyticsOrchestrator`; one instance is bound to a single Umami website.
-final class UmamiReporter {
+final class UmamiAnalytics {
     private let serverURL: URL
     private let websiteID: String
     private let hostname: String
@@ -271,7 +271,7 @@ final class UmamiReporter {
     init(serverURL: URL,
          websiteID: String,
          hostname: String,
-         dataLoader: URLDataLoader = UmamiReporter.makeDefaultSession()) {
+         dataLoader: URLDataLoader = UmamiAnalytics.makeDefaultSession()) {
         self.serverURL = serverURL
         self.websiteID = websiteID
         self.hostname = hostname
@@ -357,12 +357,12 @@ final class UmamiReporter {
             if !Self.isSuccessfulIngest(responseData) {
                 #if DEBUG
                 let body = String(data: responseData, encoding: .utf8) ?? "<non-utf8>"
-                print("[UmamiReporter] event dropped (bot UA / bad config?). Body: \(body)")
+                print("[UmamiAnalytics] event dropped (bot UA / bad config?). Body: \(body)")
                 #endif
             }
         } catch {
             #if DEBUG
-            print("[UmamiReporter] emit failed: \(error)")
+            print("[UmamiAnalytics] emit failed: \(error)")
             #endif
         }
     }
@@ -392,11 +392,11 @@ final class UmamiReporter {
 
 - [ ] **Step 2: Create the failing test file**
 
-Create `OBAKitTests/Analytics/UmamiReporterTests.swift`:
+Create `OBAKitTests/Analytics/UmamiAnalyticsTests.swift`:
 
 ```swift
 //
-//  UmamiReporterTests.swift
+//  UmamiAnalyticsTests.swift
 //  OBAKitTests
 //
 //  Copyright © Open Transit Software Foundation
@@ -409,13 +409,13 @@ import Nimble
 @testable import OBAKit
 @testable import OBAKitCore
 
-final class UmamiReporterTests: OBATestCase {
+final class UmamiAnalyticsTests: OBATestCase {
 
     private let successBody = #"{"cache":"x","sessionId":"s","visitId":"v"}"#.data(using: .utf8)!
     private let beepBoopBody = #"{"beep":"boop"}"#.data(using: .utf8)!
 
-    private func makeReporter(loader: MockDataLoader) -> UmamiReporter {
-        UmamiReporter(serverURL: URL(string: "https://analytics.example.com")!,
+    private func makeReporter(loader: MockDataLoader) -> UmamiAnalytics {
+        UmamiAnalytics(serverURL: URL(string: "https://analytics.example.com")!,
                       websiteID: "site-uuid",
                       hostname: "api.example.org",
                       dataLoader: loader)
@@ -424,17 +424,17 @@ final class UmamiReporterTests: OBATestCase {
     // MARK: - path(from:)
 
     func testPathReduction() {
-        expect(UmamiReporter.path(from: "app://localhost/map")) == "/map"
-        expect(UmamiReporter.path(from: "app://localhost")) == "/"
-        expect(UmamiReporter.path(from: "app://localhost/search?q=x")) == "/search"
+        expect(UmamiAnalytics.path(from: "app://localhost/map")) == "/map"
+        expect(UmamiAnalytics.path(from: "app://localhost")) == "/"
+        expect(UmamiAnalytics.path(from: "app://localhost/search?q=x")) == "/search"
     }
 
     // MARK: - isSuccessfulIngest
 
     func testSuccessDetection() {
-        expect(UmamiReporter.isSuccessfulIngest(self.successBody)).to(beTrue())
-        expect(UmamiReporter.isSuccessfulIngest(self.beepBoopBody)).to(beFalse())
-        expect(UmamiReporter.isSuccessfulIngest("not json".data(using: .utf8)!)).to(beFalse())
+        expect(UmamiAnalytics.isSuccessfulIngest(self.successBody)).to(beTrue())
+        expect(UmamiAnalytics.isSuccessfulIngest(self.beepBoopBody)).to(beFalse())
+        expect(UmamiAnalytics.isSuccessfulIngest("not json".data(using: .utf8)!)).to(beFalse())
     }
 
     // MARK: - UmamiJSONValue coercion
@@ -529,15 +529,15 @@ The new source + test files must be added to the Xcode targets first.
 scripts/generate_project OneBusAway
 xcodebuild test -project OBAKit.xcodeproj -scheme App \
   -destination 'platform=iOS Simulator,name=iPhone 17' \
-  -only-testing:OBAKitTests/UmamiReporterTests
+  -only-testing:OBAKitTests/UmamiAnalyticsTests
 ```
 Expected: PASS (all 7 test methods).
 
 - [ ] **Step 4: Commit**
 
 ```bash
-git add OBAKit/Analytics/UmamiReporter.swift OBAKitTests/Analytics/UmamiReporterTests.swift OBAKit.xcodeproj
-git commit -m "Add UmamiReporter event emitter (#1162)"
+git add OBAKit/Analytics/UmamiAnalytics.swift OBAKitTests/Analytics/UmamiAnalyticsTests.swift OBAKit.xcodeproj
+git commit -m "Add UmamiAnalytics event emitter (#1162)"
 ```
 
 ---
@@ -553,7 +553,7 @@ Changes `Analytics.updateServer` to take a `Region`, builds/tears down the Umami
 - Modify: `OBAKitTests/Helpers/Mocks/AnalyticsMock.swift:40-42` (drop stale override)
 
 **Interfaces:**
-- Consumes: `UmamiReporter` (Task 2), `Region.umamiAnalytics` (Task 1).
+- Consumes: `UmamiAnalytics` (Task 2), `Region.umamiAnalytics` (Task 1).
 - Produces: `Analytics.updateServer(region: Region)`.
 
 - [ ] **Step 1: Change the protocol signature**
@@ -611,7 +611,7 @@ In `OBAKitTests/Helpers/Mocks/AnalyticsMock.swift`, delete lines 40-42 (the `upd
 In `Apps/Shared/Analytics/AnalyticsOrchestrator.swift`, add the field after line 17 (`private var plausibleAnalytics: PlausibleAnalytics?`):
 
 ```swift
-    private var umami: UmamiReporter?
+    private var umami: UmamiAnalytics?
 ```
 
 Then replace the entire `updateServer` method (lines 60-70):
@@ -645,7 +645,7 @@ with:
         }
 
         if let umamiConfig = region.umamiAnalytics {
-            umami = UmamiReporter(serverURL: umamiConfig.url,
+            umami = UmamiAnalytics(serverURL: umamiConfig.url,
                                   websiteID: umamiConfig.id,
                                   hostname: region.OBABaseURL.host ?? "")
         }
@@ -761,7 +761,7 @@ Switch to a region without `umamiAnalytics` (or toggle the privacy switch off), 
 
 ## Notes for the implementer
 
-- **`@testable import OBAKit`** exposes `UmamiReporter` and `UmamiJSONValue` even though they're `internal` — keep them `internal`, not `private`/`public`.
+- **`@testable import OBAKit`** exposes `UmamiAnalytics` and `UmamiJSONValue` even though they're `internal` — keep them `internal`, not `private`/`public`.
 - **`OBATestCase`** is the base class for these tests (see `OBAKitTests/Helpers/OBATestCase.swift`); `Fixtures.loadRESTAPIPayload` and `MockDataLoader(testName:)` come from there.
 - **Do not** reach for `XCTestExpectation` in the async reporter tests — the methods are `async`, so just `await` them directly in `async` test methods.
 - If `xcodebuild` reports "0 tests ran" for a new file, you forgot `scripts/generate_project OneBusAway`.

@@ -84,28 +84,23 @@ import FirebaseCrashlytics
 
     @objc public func reportEvent(pageURL: String, label: String, value: Any?) {
         firebaseAnalytics?.reportEvent(label: label, value: value)
-        Task {
-            await plausibleAnalytics?.reportEvent(pageURL: pageURL, label: label, value: value)
-            await umami?.reportEvent(pageURL: pageURL, label: label, value: value)
-        }
+        // Independent Tasks so a stall in one backend can't delay the other.
+        Task { await plausibleAnalytics?.reportEvent(pageURL: pageURL, label: label, value: value) }
+        Task { await umami?.reportEvent(pageURL: pageURL, label: label, value: value) }
     }
 
     @objc public func reportSearchQuery(_ query: String) {
         firebaseAnalytics?.reportSearchQuery(query)
 
-        Task {
-            await plausibleAnalytics?.reportSearchQuery(query)
-            await umami?.reportSearchQuery(query)
-        }
+        Task { await plausibleAnalytics?.reportSearchQuery(query) }
+        Task { await umami?.reportSearchQuery(query) }
     }
 
     @objc public func reportStopViewed(name: String, id: String, stopDistance: String) {
         firebaseAnalytics?.reportStopViewed(name: name, id: id, stopDistance: stopDistance)
 
-        Task {
-            await plausibleAnalytics?.reportStopViewed(name: name, id: id, stopDistance: stopDistance)
-            await umami?.reportStopViewed(name: name, id: id, stopDistance: stopDistance)
-        }
+        Task { await plausibleAnalytics?.reportStopViewed(name: name, id: id, stopDistance: stopDistance) }
+        Task { await umami?.reportStopViewed(name: name, id: id, stopDistance: stopDistance) }
     }
 
     @objc public func reportSetRegion(_ name: String) {

@@ -33,7 +33,7 @@ exactly as it does for Plausible today.
   so the orchestrator reads both the Plausible URL and the Umami config from a
   single source. Both call sites already hold the `Region`.
 - **Naming:** the region-feed config model is `UmamiAnalytics` (mirrors the
-  `umamiAnalytics` JSON key); the HTTP emitter is `UmamiReporter`.
+  `umamiAnalytics` JSON key); the HTTP emitter is `UmamiAnalytics`.
 
 ## Discovery contract (region feed)
 
@@ -85,7 +85,7 @@ Add a nested config type mirroring the JSON shape. Use a **plain Swift `struct`*
 — `Region` is persisted via `Codable` (PropertyList/JSON), not `NSCoding`, and
 nothing reads this sub-model from Objective-C, so `@objc`/`NSObject` buys nothing.
 A `struct` gets `Equatable`, `Hashable`, and `Codable` synthesized for free,
-which is exactly what `Region.isEqual`/`hash` need:
+which is what `Region.isEqual`/`hash` need:
 
 ```swift
 public struct UmamiAnalytics: Codable, Equatable, Hashable {
@@ -114,13 +114,13 @@ On `Region`:
   synthesized `==`/`hashValue` compose directly:
   `umamiAnalytics == rhs.umamiAnalytics` and `hasher.combine(umamiAnalytics)`.
 
-### 2. Emitter — `UmamiReporter` (`OBAKit/Analytics/UmamiReporter.swift`)
+### 2. Emitter — `UmamiAnalytics` (`OBAKit/Analytics/UmamiAnalytics.swift`)
 
 Placed in OBAKit (alongside the `Analytics` protocol) so it is reachable by
 `OBAKitTests`. Modeled on `PlausibleAnalytics`, but builds the request by hand
 (no SDK).
 
-- **Init:** `init(serverURL: URL, websiteID: String, hostname: String, dataLoader: URLDataLoader = UmamiReporter.makeDefaultSession())`.
+- **Init:** `init(serverURL: URL, websiteID: String, hostname: String, dataLoader: URLDataLoader = UmamiAnalytics.makeDefaultSession())`.
   Inject the existing **`URLDataLoader`** protocol (OBAKitCore/Network) rather than
   a live `URLSession` — that is the seam the rest of the networking suite already
   mocks via `MockDataLoader`, so the emitter is testable with the same double the
@@ -176,13 +176,13 @@ Placed in OBAKit (alongside the `Analytics` protocol) so it is reachable by
 
 ### 3. Orchestrator wiring (`Apps/Shared/Analytics/AnalyticsOrchestrator.swift`)
 
-- Add `private var umami: UmamiReporter?`.
+- Add `private var umami: UmamiAnalytics?`.
 - Change `updateServer(defaultDomainURL:analyticsServerURL:)` →
   `updateServer(region:)`. Inside:
   - Configure Plausible as today, reading `region.OBABaseURL` /
     `region.plausibleAnalyticsServerURL`.
   - Tear down `umami`. Then, if `reportingEnabled()` **and**
-    `region.umamiAnalytics != nil`, build a new `UmamiReporter(serverURL:
+    `region.umamiAnalytics != nil`, build a new `UmamiAnalytics(serverURL:
     config.url, websiteID: config.id, hostname: region.OBABaseURL.host ?? "")`.
 - `setReportingEnabled(false)` nils `umami` (same as Plausible) → privacy opt-out
   takes effect immediately.
@@ -194,7 +194,7 @@ Placed in OBAKit (alongside the `Analytics` protocol) so it is reachable by
   Plausible behavior and is acceptable for this PR; the orchestrator test must
   therefore not assert *instantaneous* emitter creation on opt-in.
 - Forward to `umami` inside a `Task` from `reportEvent`, `reportSearchQuery`,
-  `reportStopViewed`, and `setUserProperty`. `UmamiReporter` stays a plain class
+  `reportStopViewed`, and `setUserProperty`. `UmamiAnalytics` stays a plain class
   (no `actor`/`Sendable` ceremony) — parity with the existing Plausible `Task`
   pattern, which the orchestrator solely owns and mutates on the main thread. To
   avoid the latent `defaultProperties` read/write race Plausible also has, snapshot
@@ -224,7 +224,7 @@ Placed in OBAKit (alongside the `Analytics` protocol) so it is reachable by
   `encode(to:)` → `decode` cycle. `Region` is persisted to disk via `encode(to:)`,
   so a missing `encodeIfPresent` line would silently drop the field on next load —
   decode-only tests would not catch it.
-- **`UmamiReporter`** (`OBAKitTests`, injected `MockDataLoader`):
+- **`UmamiAnalytics`** (`OBAKitTests`, injected `MockDataLoader`):
   - The POST body JSON matches the contract (`type`, nested `payload` with
     `website`, `hostname`, `url`, `name`, `data`) — assert off the recorded
     request.
@@ -254,7 +254,7 @@ Placed in OBAKit (alongside the `Analytics` protocol) so it is reachable by
 - Emission is fire-and-forget off the UI hot path (`Task`).
 - All network/parse errors are swallowed.
 - Short request timeout (~10s).
-- Null/absent config and the opt-out switch both result in no `UmamiReporter`,
+- Null/absent config and the opt-out switch both result in no `UmamiAnalytics`,
   so no request is ever made.
 
 ## Manual verification (not automatable)
