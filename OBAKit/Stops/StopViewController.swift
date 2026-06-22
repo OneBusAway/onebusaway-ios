@@ -14,7 +14,7 @@ import Combine
 import SwiftUI
 import SafariServices
 
-// swiftlint:disable file_length type_body_length
+// swiftlint:disable file_length
 
 /// This is the core view controller for displaying information about a transit stop.
 ///
@@ -1309,23 +1309,18 @@ public class StopViewController: UIViewController,
 
 private extension StopViewController {
     func bindListData() {
+        bindArrivalsSink()
+        bindStopSink()
+        bindSurveysSink()
+        bindPreferencesSinks()
+    }
+
+    func bindArrivalsSink() {
         viewModel.$stopArrivals
             .sink { [weak self] arrivals in
                 guard let self, let arrivals else { return }
                 if firstLoad {
-                    if pastDeparturesCollapsed {
-                        if viewModel.stopPreferences.sortType == .time {
-                            collapsedSections.insert(ListSections.pastArrivalDepartures(suffix: "all").sectionID)
-                        } else {
-                            let groups = arrivals.arrivalsAndDepartures.group(
-                                preferences: viewModel.stopPreferences,
-                                filter: viewModel.isListFiltered
-                            )
-                            for group in groups {
-                                collapsedSections.insert(ListSections.pastArrivalDepartures(suffix: group.route.id).sectionID)
-                            }
-                        }
-                    }
+                    seedCollapsedPastDepartureSections(for: arrivals)
                     firstLoad = false
                     dataLoadFeedbackGenerator.dataLoad(.success)
                 }
@@ -1334,7 +1329,9 @@ private extension StopViewController {
                 beginUserActivity()
             }
             .store(in: &cancellables)
+    }
 
+    func bindStopSink() {
         viewModel.$stop
             .sink { [weak self] stop in
                 guard let self else { return }
@@ -1343,11 +1340,15 @@ private extension StopViewController {
                 configureTabBarButtons()
             }
             .store(in: &cancellables)
+    }
 
+    func bindSurveysSink() {
         viewModel.surveysDidRefresh
             .sink { [weak self] _ in self?.listView.applyData(animated: false) }
             .store(in: &cancellables)
+    }
 
+    func bindPreferencesSinks() {
         viewModel.$stopPreferences
             .sink { [weak self] _ in
                 Task { @MainActor [weak self] in
@@ -1365,6 +1366,21 @@ private extension StopViewController {
                 }
             }
             .store(in: &cancellables)
+    }
+
+    func seedCollapsedPastDepartureSections(for arrivals: StopArrivals) {
+        guard pastDeparturesCollapsed else { return }
+        if viewModel.stopPreferences.sortType == .time {
+            collapsedSections.insert(ListSections.pastArrivalDepartures(suffix: "all").sectionID)
+        } else {
+            let groups = arrivals.arrivalsAndDepartures.group(
+                preferences: viewModel.stopPreferences,
+                filter: viewModel.isListFiltered
+            )
+            for group in groups {
+                collapsedSections.insert(ListSections.pastArrivalDepartures(suffix: group.route.id).sectionID)
+            }
+        }
     }
 
     func bindLoadingState() {

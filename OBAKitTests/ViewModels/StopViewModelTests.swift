@@ -75,9 +75,10 @@ class StopViewModelTests: OBATestCase {
         }
     }
 
-    /// Stubs the surveys endpoint with an empty-list payload so `refreshSurveys()` doesn't fatal-error.
+    /// Stubs the surveys endpoint with an empty-list payload so `refreshSurveys()` succeeds
+    /// (routing nothing to `lastError`) instead of leaving the request unmocked.
     private func stubSurveys(dataLoader: MockDataLoader) {
-        let emptySurveys = #"{"surveys":[]}"#.data(using: .utf8)!
+        let emptySurveys = #"{"surveys":[],"region":{"id":1,"name":"Puget Sound"}}"#.data(using: .utf8)!
         dataLoader.mock(data: emptySurveys) { request in
             request.url?.path.contains("/surveys.json") ?? false
         }
@@ -153,6 +154,33 @@ class StopViewModelTests: OBATestCase {
 
         expect(app.userDataStore.recentStops.count) == 1
         expect(app.userDataStore.recentStops.first?.id) == testStopID
+    }
+
+    // MARK: - Surveys fetched once
+
+    /// `refreshSurveys()` runs as part of the one-shot initial-fetch block, not on every
+    /// auto-refresh — so `surveysDidRefresh` should emit exactly once across multiple
+    /// refreshes. The emission happens from a detached `Task`, so assert eventually.
+    @MainActor
+    func test_surveys_refreshedExactlyOnceAcrossRefreshes() async {
+        let dataLoader = MockDataLoader(testName: name)
+        let analytics = AnalyticsMock()
+        let app = createApplication(dataLoader: dataLoader, analytics: analytics)
+
+        let viewModel = StopViewModel(application: app, stopID: testStopID)
+
+        var emissions = 0
+        let cancellable = viewModel.surveysDidRefresh.sink { emissions += 1 }
+        defer { cancellable.cancel() }
+
+        await viewModel.refresh()
+        await viewModel.refresh()
+        await viewModel.refresh()
+
+        await expect(emissions).toEventually(equal(1))
+        // Guard against regression to per-refresh fetching: emissions must not climb past 1.
+        // Without this, `toEventually` would latch onto the transient `1` on its way to 2/3.
+        await expect(emissions).toNever(beGreaterThan(1))
     }
 
     // MARK: - Filter invariant on initial load (issue #2)
