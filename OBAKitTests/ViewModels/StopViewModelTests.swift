@@ -179,8 +179,39 @@ class StopViewModelTests: OBATestCase {
 
         await expect(emissions).toEventually(equal(1))
         // Guard against regression to per-refresh fetching: emissions must not climb past 1.
-        // Without this, `toEventually` would latch onto the transient `1` on its way to 2/3.
+        // Without this, `toEventually` would latch onto the transient `1` on its way to a higher count.
         await expect(emissions).toNever(beGreaterThan(1))
+    }
+
+    /// A *failed* survey fetch records `lastError` and must NOT emit `surveysDidRefresh` —
+    /// otherwise every failed fetch would trigger a pointless, no-op list re-render. This
+    /// guards the `lastError == nil` gate in `refreshSurveys()`, the one branch the happy
+    /// path can't distinguish from an unconditional emit.
+    @MainActor
+    func test_surveys_failedFetch_doesNotEmit() async {
+        let dataLoader = MockDataLoader(testName: name)
+        let analytics = AnalyticsMock()
+
+        // Register a malformed surveys payload *before* `createApplication` appends its
+        // success stub: `MockDataLoader` returns the first matching mock, so this one wins.
+        // The wrong shape fails `StudyResponse` decoding, landing on `SurveyService.lastError`.
+        let malformedSurveys = #"{"unexpected":true}"#.data(using: .utf8)!
+        dataLoader.mock(data: malformedSurveys) { request in
+            request.url?.path.contains("/surveys.json") ?? false
+        }
+
+        let app = createApplication(dataLoader: dataLoader, analytics: analytics)
+        let viewModel = StopViewModel(application: app, stopID: testStopID)
+
+        var emissions = 0
+        let cancellable = viewModel.surveysDidRefresh.sink { emissions += 1 }
+        defer { cancellable.cancel() }
+
+        await viewModel.refresh()
+
+        // Poll the full window so the detached fetch Task has time to run and (correctly)
+        // stay silent — a regression that drops the error gate would push this past 0.
+        await expect(emissions).toNever(beGreaterThan(0))
     }
 
     // MARK: - Filter invariant on initial load (issue #2)

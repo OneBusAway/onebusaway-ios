@@ -379,6 +379,8 @@ private extension MapFloatingPanelController {
         // EC11: map PanelDetent to FloatingPanel state so UIKit and future SwiftUI share the same source of truth.
         viewModel.$requestedPanelDetent
             .dropFirst()
+            // Re-publishing the same detent shouldn't re-trigger a `move(to:)` animation.
+            .removeDuplicates()
             .sink { [weak self] detent in
                 guard let self else { return }
                 let state: FloatingPanelState
