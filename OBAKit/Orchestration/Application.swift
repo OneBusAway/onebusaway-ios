@@ -434,7 +434,7 @@ public class Application: CoreApplication, PushServiceDelegate {
         }
 
         if let region = regionsService.currentRegion, let analytics {
-            analytics.updateServer!(defaultDomainURL: region.OBABaseURL, analyticsServerURL: region.plausibleAnalyticsServerURL)
+            analytics.updateServer?(region: region)
         }
     }
 
@@ -579,7 +579,7 @@ public class Application: CoreApplication, PushServiceDelegate {
         super.regionsService(service, updatedRegion: region)
 
         if let analytics {
-            analytics.updateServer!(defaultDomainURL: region.OBABaseURL, analyticsServerURL: region.plausibleAnalyticsServerURL)
+            analytics.updateServer?(region: region)
 
             analytics.reportSetRegion(region.name)
 

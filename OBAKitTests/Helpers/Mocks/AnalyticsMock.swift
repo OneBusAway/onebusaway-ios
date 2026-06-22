@@ -37,7 +37,7 @@ class AnalyticsMock: NSObject, Analytics {
         //
     }
 
-    func updateServer(defaultDomainURL: URL, analyticsServerURL: URL?) {
+    func updateServer(region: Region) {
         //
     }
 
