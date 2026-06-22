@@ -31,6 +31,14 @@ class StopViewModel: ObservableObject {
     /// the VC's `$currentSurvey` sink is the sole driver of survey-row reloads.
     @Published private(set) var currentSurvey: Survey?
 
+    /// Emits after a survey-list refresh completes successfully (regardless of whether
+    /// `currentSurvey` actually changed). Drives the VC's list re-render so a stop with
+    /// no inline hero still gets a chance to show a freshly fetched survey row.
+    var surveysDidRefresh: AnyPublisher<Void, Never> {
+        surveysDidRefreshSubject.eraseToAnyPublisher()
+    }
+    private let surveysDidRefreshSubject = PassthroughSubject<Void, Never>()
+
     /// Emits when the inline hero answer succeeds but the survey has remaining
     /// questions. Consumers present the full survey screen with the supplied
     /// `heroResponseID` so the hero isn't re-submitted on retry.
@@ -189,8 +197,6 @@ class StopViewModel: ObservableObject {
                 if result.arrivalsAndDepartures.isEmpty {
                     pendingExtensionMinutes = pendingAutoExtensionAmount()
                 }
-
-                refreshSurveys()
             }
         } catch APIError.requestNotFound {
             operationError = nil
@@ -235,6 +241,9 @@ class StopViewModel: ObservableObject {
             reportStopViewed(stop)
         }
         disableFilterIfAllRoutesHidden()
+        // Surveys don't change between auto-refreshes; fetch once per stop entry,
+        // alongside the other first-fetch-only side effects above.
+        refreshSurveys()
     }
 
     private func refreshSurveys() {
@@ -251,6 +260,7 @@ class StopViewModel: ObservableObject {
             await self.surveyOrchestrator.refreshSurveys()
             guard self.surveyOrchestrator.lastError == nil else { return }
             self.recomputeCurrentSurvey()
+            self.surveysDidRefreshSubject.send()
         }
     }
 

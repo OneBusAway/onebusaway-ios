@@ -1,0 +1,1009 @@
+/* Text for the table header for bookmarking an entire stop. */
+"add_bookmark_controller.bookmark_stop_header" = "정류장 즐겨찾기";
+
+/* Text for the table header for bookmarking an individual trip. */
+"add_bookmark_controller.bookmark_trip_header" = "운행 즐겨찾기";
+
+/* Explanatory text shown when route bookmarking is unavailable due to no upcoming departures. */
+"add_bookmark_controller.trip_bookmark_unavailable" = "노선 즐겨찾기는 이 정류장에 예정된 출발이 있을 때만 사용할 수 있습니다.";
+
+/* Text field placeholder on the Add Group Alert. */
+"add_group_alert.placeholder" = "즐겨찾기 그룹 이름";
+
+/* Title of the Add Bookmark Group controller */
+"add_group_alert.title" = "그룹 추가";
+
+/* Action to call agency */
+"agencies_controller.call_agency" = "운영 기관에 전화";
+
+/* Error dialog title */
+"agencies_controller.error_title" = "오류";
+
+/* Error message for invalid phone */
+"agencies_controller.invalid_phone" = "잘못된 전화번호입니다.";
+
+/* Action to open agency website */
+"agencies_controller.open_website" = "웹 사이트 열기";
+
+/* Title of the Agencies controller */
+"agencies_controller.title" = "운영 기관";
+
+/* The title of the Agency Alerts controller. */
+"agency_alerts_controller.title" = "알림";
+
+/* {X} minutes. always plural. */
+"alarm_builder_controller.minutes_fmt" = "%d분";
+
+/* One minute/1 minute */
+"alarm_builder_controller.one_minute" = "1분";
+
+/* Explains what the Alarm Time Picker page does. */
+"alarm_time_picker.description" = "이 차량이 출발하기 전에 미리 알림 받기:";
+
+/* Title of the Alarm Time Picker page. */
+"alarm_time_picker.title" = "미리 알림 추가";
+
+/* The title to display to confirm the user's action to delete a bookmark. */
+"bookmarks_controller.delete_bookmark.actionsheet.title" = "즐겨찾기 삭제";
+
+/* Groups button title in Bookmarks controller */
+"bookmarks_controller.groups_button_title" = "편집";
+
+/* A menu item that allows the user to sort their bookmarks by distance from the user. */
+"bookmarks_controller.sort_menu.sort_by_distance" = "거리순 정렬";
+
+/* A menu item that allows the user to sort their bookmarks into groups. */
+"bookmarks_controller.sort_menu.sort_by_group" = "그룹별 정렬";
+
+/* The table section header on the bookmarks controller for when bookmarks are sorted by distance. */
+"bookmarks_controller.sorted_by_distance_header" = "거리순으로 정렬됨";
+
+/* Title of the Bookmarks tab */
+"bookmarks_controller.title" = "즐겨찾기";
+
+/* The title for the bookmarks controller section that shows bookmarks that aren't in a group. */
+"bookmarks_controller.ungrouped_bookmarks_section.title" = "즐겨찾기";
+
+/* This is displayed to confirm that something has been copied to clipboard. */
+"clipboard.copied_text_confirmation" = "클립보드에 복사됨";
+
+/* Body of the the alert that appears when you try sending an email without Mail.app set up */
+"contact_us_helper.cant_send_email.body_fmt" = "문의하시려면 %@(으)로 이메일을 보내주세요. '디버그 정보 복사'를 탭하여 문제 해결에 도움이 되는 정보를 클립보드에 복사한 다음, 해당 정보를 이메일에 포함해 주세요.";
+
+/* A button that lets the user copy an email address to the clipboard. */
+"contact_us_helper.cant_send_email.copy_email_button" = "이메일 주소 복사";
+
+/* A button that lets the user copy a default message, including debug info, to the clipboard. */
+"contact_us_helper.cant_send_email.copy_message_button" = "디버그 정보 복사";
+
+/* Title of the alert that appears when the user's device isn't configured to send email. */
+"contact_us_helper.cant_send_email.title" = "Mail 앱으로 이메일을 보낼 수 없음";
+
+/* Feedback email template subject for the app developers */
+"contact_use_helper.feedback_subject.app" = "OneBusAway 피드백";
+
+/* Feedback email template subject for the transit agency */
+"contact_use_helper.feedback_subject.transit_agency" = "대중교통 이용자 피드백";
+
+/* Title of the Credits controller */
+"credits_controller.title" = "크레딧";
+
+/* Loading message while searching for the user's vehicle. */
+"current_trip_controller.detecting" = "차량을 찾는 중…";
+
+/* Distance from user to vehicle. e.g. '0.2 mi away' */
+"current_trip_controller.distance_fmt" = "%@ 거리";
+
+/* Error message when the user's location is not available. */
+"current_trip_controller.location_unavailable" = "위치를 사용할 수 없습니다. 위치 서비스를 활성화해 주세요.";
+
+/* Section header when multiple vehicles are found on the selected route. */
+"current_trip_controller.multiple_vehicles" = "여러 대의 차량을 찾았습니다";
+
+/* Title for the current trip screen. */
+"current_trip_controller.my_trip" = "내 여정";
+
+/* Message when the route has no real-time tracking data. */
+"current_trip_controller.no_realtime" = "이 노선에는 실시간 추적 정보가 없습니다";
+
+/* Message when no active vehicle is found near the user on the selected route. */
+"current_trip_controller.no_results" = "주변에서 이 노선의 운행 중인 차량을 찾을 수 없습니다";
+
+/* Error when the API service is unavailable. */
+"current_trip_controller.error_no_service" = "대중교통 서비스에 연결할 수 없습니다.";
+
+/* Button to retry finding the user's vehicle. */
+"current_trip_controller.retry" = "다시 시도";
+
+/* Title of the Base URL header. */
+"custom_region_builder_controller.base_url_section.header_title" = "기본 URL";
+
+/* Title of the Contact Email header. */
+"custom_region_builder_controller.contact_email_section.header_title" = "연락처 이메일";
+
+/* Example custom region name */
+"custom_region_builder_controller.example_data.region_name" = "내 사용자 지정 지역";
+
+/* An explanation of dragging the map to highlight the service area of a custom region. */
+"custom_region_builder_controller.service_area_section.explanation" = "지도를 드래그하여 이 지역의 대략적인 서비스 구역을 지정하세요.";
+
+/* Title of the Service Area header. */
+"custom_region_builder_controller.service_area_section.header_title" = "서비스 구역";
+
+/* Action button title for the DataMigrationBulletinPage. */
+"data_migration_bulletin.action_button" = "계속";
+
+/* Title for the DataMigrationBulletinPage. */
+"data_migration_bulletin.data_upgrade_title" = "데이터 업그레이드";
+
+/* Dismissal button title for the DataMigrationBulletinPage. */
+"data_migration_bulletin.dismiss_button" = "나중에";
+
+/* An error message that appears when the user needs to have data migrated, but is not connected to the Internet. */
+"data_migration_bulletin.errors.no_api_service_available" = "인터넷 연결을 확인한 후 다시 시도해 주세요.";
+
+/* An error message that appears when the data migrator runs but no data can be migrated. */
+"data_migration_bulletin.errors.no_data_to_migrate" = "업그레이드할 데이터가 없습니다";
+
+/* An error message that appears when the data migrator runs without a pending migration. */
+"data_migration_bulletin.errors.no_migration_pending" = "대기 중인 데이터 마이그레이션이 없습니다";
+
+/* First bullet point of DataMigrationBulletinPage explanation */
+"data_migration_bulletin.explanation_1" = "최근 정류장과 즐겨찾기를 최신 버전의 앱에서 사용할 수 있도록 업그레이드하세요. 한 번만 하면 됩니다.";
+
+/* Second bullet point of DataMigrationBulletinPage explanation */
+"data_migration_bulletin.explanation_2" = "업그레이드하기 전까지는 최근 정류장과 즐겨찾기를 볼 수 없습니다.";
+
+/* Third bullet point of DataMigrationBulletinPage explanation */
+"data_migration_bulletin.explanation_3" = "업그레이드에는 다소 시간이 걸릴 수 있으며, 업그레이드 중에는 Wi-Fi 또는 모바일 데이터 연결이 필요합니다.";
+
+/* This comment is displayed after the user's data is upgraded in the DataMigrationBulletinPage. */
+"data_migration_bulletin.finished_loading" = "데이터 업그레이드 완료!";
+
+/* Data migration report label for showing the number of failed migration tasks. */
+"data_migration_bulletin.report_summary_number_of_failures" = "실패 %d건";
+
+/* Data migration report label for showing the number of successful migration tasks. */
+"data_migration_bulletin.report_summary_number_of_successes" = "성공 %d건";
+
+/* Title for the Summary section of a data migration report */
+"data_migration_bulletin.report_summary_title" = "요약";
+
+/* Button title to let the user view a data migration report. */
+"data_migration_bulletin.view_report_button" = "보고서 보기";
+
+/* Body of the donation widget that appears on the stop view controller */
+"donation_cell.body" = "이 앱은 현재 100% 자원봉사로 만들어지고 있으며, 향후 개발 자금 마련을 위해 여러분의 도움이 필요합니다.";
+
+/* Title of the button that shows the donation UI. */
+"donation_cell.donate_button_title" = "지금 기부하기";
+
+/* Title of the button that shows the donation explanation UI. */
+"donation_cell.learn_more_button_title" = "더 알아보기";
+
+/* Title of the donation widget that appears on the stop view controller. */
+"donation_cell.title" = "🚨 OneBusAway에 여러분의 도움이 필요합니다";
+
+/* Dismiss button on the alert */
+"donations.donations_dismiss_alert.button_dismiss" = "지금은 돕고 싶지 않습니다";
+
+/* A button that prompts the system to remind them to donate later. */
+"donations.donations_dismiss_alert.button_remind_later" = "나중에 알려주기";
+
+/* Body of the alert that appears when the user chooses to dismiss the donations request UI on a stop page */
+"donations.donations_dismiss_alert.message" = "OneBusAway는 자금이 거의 없는 자원봉사 단체입니다. 이 앱을 계속 운영하려면 여러분의 도움이 필요합니다.";
+
+/* Title of the alert that appears when the user chooses to dismiss the donations request UI on a stop page */
+"donations.donations_dismiss_alert.title" = "이 요청을 무시하지 말아 주세요";
+
+/* Indicates that the user wants to create a duplicate bookmark. */
+"edit_bookmark_controller.duplicate_alert.affirmative_button" = "복사본 만들기";
+
+/* Title of the button that lets the user add a new Bookmark Group. */
+"edit_bookmark_controller.add_group_button_title" = "즐겨찾기 그룹 추가";
+
+/* Body of an alert telling the user they have already bookmarked this thing. */
+"edit_bookmark_controller.duplicate_alert.body" = "이미 즐겨찾기에 추가되어 있습니다. 복사본을 만드시겠습니까?";
+
+/* The title of an alert telling the user that they have already bookmarked this thing. Noun form of 'duplicate', not the verb. */
+"edit_bookmark_controller.duplicate_alert.title" = "중복된 즐겨찾기";
+
+/* Title of the Bookmark Group header. */
+"edit_bookmark_controller.group_section.header_title" = "즐겨찾기 그룹";
+
+/* Title of the Bookmark Name header. */
+"edit_bookmark_controller.name_section.header_title" = "즐겨찾기 이름";
+
+/* Don't add this bookmark to a group. */
+"edit_bookmark_controller.no_group_row" = "(그룹 없음)";
+
+/* Body of an alert shown when a bookmark cannot be saved because the current region is unavailable. */
+"edit_bookmark_controller.region_error.body" = "현재 지역을 사용할 수 없습니다. 다시 시도해 주세요.";
+
+/* Title of an alert shown when a bookmark cannot be saved because the current region is unavailable. */
+"edit_bookmark_controller.region_error.title" = "저장할 수 없음";
+
+/* Title next to the switch that toggles whether a bookmark will appear in the today view. */
+"edit_bookmark_controller.show_in_today_view_switch_title" = "투데이 보기 위젯에 표시";
+
+/* Title for the Edit Bookmark controller in edit mode */
+"edit_bookmark_controller.title_edit" = "즐겨찾기 편집";
+
+/* A button that says continue and don't show again. */
+"fare_payments.dont_show_again" = "계속하고 다시 표시 안 함";
+
+/* A voiceover title describing the 'grabber' for controlling the visibility of a card. */
+"floating_panel.controller.accessibility_label" = "카드 컨트롤러";
+
+/* A voiceover title describing the action to minimize (or collapse) the visibility of a card. */
+"floating_panel.controller.collapse_action_name" = "접기";
+
+/* A voiceover title describing the action to expand the visibility of a card. */
+"floating_panel.controller.expand_action_name" = "펼치기";
+
+/* No comment provided by engineer. */
+"floating_panel.controller.full_sheet_voiceover_change_alert.message" = "VoiceOver가 켜지면 시트가 자동으로 펼쳐집니다. 이 동작을 비활성화하려면 설정 페이지로 이동하세요.";
+
+/* No comment provided by engineer. */
+"floating_panel.controller.full_sheet_voiceover_change_alert.title" = "VoiceOver 감지됨";
+
+/* A voiceover title describing that the card's visibility is taking up the full screen. */
+"floating_panel.controller.position.full" = "전체 화면";
+
+/* A voiceover title describing that the card's visibility is taking up half of the screen. */
+"floating_panel.controller.position.half" = "화면 절반";
+
+/* A voiceover title describing that the card's visibility taking up the minimum amount of screen. */
+"floating_panel.controller.position.minimized" = "최소화됨";
+
+/* Description of why we need location services */
+"location_permission_bulletin.description_text" = "대중교통 정류장을 더 쉽게 찾을 수 있도록 앱이 사용자의 위치에 접근하도록 허용해 주세요.";
+
+/* Title of the alert that appears to request your location. */
+"location_permission_bulletin.title" = "환영합니다!";
+
+/* No comment provided by engineer. */
+"locationservices_alert_gotosettings.button" = "설정에서 켜기";
+
+/* No comment provided by engineer. */
+"locationservices_alert_imprecise.message" = "지도에서 내 위치와 주변 정류장을 확인하여 목적지까지 더 쉽게 이동할 수 있습니다.";
+
+/* No comment provided by engineer. */
+"locationservices_alert_imprecise.title" = "OneBusAway는 정확한 위치를 사용할 때 가장 잘 작동합니다";
+
+/* No comment provided by engineer. */
+"locationservices_alert_keep_precise_location_off.button" = "정확한 위치 끈 상태로 유지";
+
+/* No comment provided by engineer. */
+"locationservices_alert_keepoff.button" = "위치 끈 상태로 유지";
+
+/* No comment provided by engineer. */
+"locationservices_alert_off.message" = "지도에서 내 위치와 주변 정류장을 확인하여 목적지까지 더 쉽게 이동할 수 있습니다.";
+
+/* No comment provided by engineer. */
+"locationservices_alert_off.title" = "OneBusAway는 위치 정보를 사용할 때 가장 잘 작동합니다.";
+
+/* No comment provided by engineer. */
+"locationservices_alert_request_precise_location_once.button" = "한 번 허용";
+
+/* Message shown when there are no logs to display */
+"log_viewer_controller.no_logs" = "표시할 로그가 없습니다.";
+
+/* Message for alert when there are no logs to share */
+"log_viewer_controller.no_logs_to_share.message" = "공유할 로그 파일이 없습니다.";
+
+/* Title for alert when there are no logs to share */
+"log_viewer_controller.no_logs_to_share.title" = "로그 없음";
+
+/* Title of the Logs viewer controller */
+"log_viewer_controller.title" = "로그";
+
+/* Explains the purpose of the Manage Bookmarks controller */
+"manage_bookmarks.controller_footer" = "이 화면에서 즐겨찾기를 재정렬하거나 삭제할 수 있습니다.";
+
+/* Segmented control item for bookmarks */
+"manage_bookmarks_groups.toggle.bookmarks" = "즐겨찾기";
+
+/* Segmented control item for Groups */
+"manage_bookmarks_groups.toggle.groups" = "그룹";
+
+/* 'Add Bookmark Group' button text */
+"manage_groups_controller.add_group_button" = "즐겨찾기 그룹 추가";
+
+/* Footer explanation on the Groups section of the Manage Groups controller. */
+"manage_groups_controller.groups.footer_text" = "즐겨찾기 그룹의 이름 변경, 추가, 삭제, 재정렬을 할 수 있습니다. 삭제된 그룹에 있던 즐겨찾기는 삭제되지 않습니다.";
+
+/* Placeholder text for Bookmark Group. */
+"manage_groups_controller.text_field_placeholder" = "그룹 이름";
+
+/* Manage Groups controller title */
+"manage_groups_controller.title" = "즐겨찾기 편집";
+
+/* Map controller for centering the map on the user's current location. */
+"map_controller.center_user_location" = "현재 위치를 지도 중앙에 표시";
+
+/* Change Region button on the alert that appears when the user is updating their current region manually. */
+"map_controller.change_region_alert.button" = "지역 변경";
+
+/* Body of the alert that appears when the user is updating their current region manually. */
+"map_controller.change_region_alert.message_fmt" = "지역을 %@(으)로 변경하시겠습니까?";
+
+/* Title of the alert that appears when the user is updating their current region manually. */
+"map_controller.change_region_alert.title" = "지역을 변경하시겠습니까?";
+
+/* Voiceover text indicating that this button toggles the base map type. */
+"map_controller.map_type.accessibility_label" = "지도 유형";
+
+/* Voiceover text indicating the current map type as the hybrid base map (satellite view with labels). */
+"map_controller.map_type.hybrid.accessibility_value" = "하이브리드";
+
+/* Voiceover text indicating the current map type as the standard base map. */
+"map_controller.map_type.standard.accessibility_value" = "표준";
+
+/* Accessibility label for the My Trip button on the map toolbar. */
+"map_controller.my_trip_button" = "내 여정";
+
+/* A generic message shown when the user's search query produces no search results. */
+"map_controller.no_search_results_found" = "검색 결과가 없습니다.";
+
+/* Accessibility label for a button that provides the current forecast */
+"map_controller.show_weather_button" = "일기 예보 표시";
+
+/* This message appears when a searched-for vehicle doesn't have an assigned trip. */
+"map_controller.vehicle_not_on_trip_error" = "선택하신 차량은 현재 운행 중이 아닌 것으로 보여 표시할 수 없습니다.";
+
+/* Search bar placeholder on the map floating panel when the trip planner is enabled. */
+"map_floating_panel.where_are_you_going" = "어디로 가시나요?";
+
+/* About section header */
+"map_item_controller.about_header" = "정보";
+
+/* Call button */
+"map_item_controller.call" = "전화";
+
+/* Accessibility label for call button */
+"map_item_controller.call_accessibility" = "전화번호로 전화 걸기";
+
+/* Accessibility label for close button */
+"map_item_controller.close_button" = "닫기";
+
+/* Accessibility label for Look Around preview */
+"map_item_controller.look_around" = "Look Around 미리보기. 탭하여 전체 화면으로 보기";
+
+/* Button to view nearby stops
+   Nearby stops button */
+"map_item_controller.nearby_stops" = "주변 정류장";
+
+/* Accessibility label for nearby stops button */
+"map_item_controller.nearby_stops_accessibility" = "주변 대중교통 정류장 보기";
+
+/* Plan trip button */
+"map_item_controller.plan_trip" = "경로 계획";
+
+/* Accessibility label for plan trip button */
+"map_item_controller.plan_trip_accessibility" = "이 위치까지의 경로 계획하기";
+
+/* Button to remove a dropped pin from the map */
+"map_item_controller.remove_pin" = "핀 제거";
+
+/* Accessibility label for remove pin button */
+"map_item_controller.remove_pin_accessibility" = "지도에서 이 핀 제거";
+
+/* Accessibility label for share button */
+"map_item_controller.share_button" = "위치 공유";
+
+/* Website button */
+"map_item_controller.website" = "웹 사이트";
+
+/* Accessibility label for website button */
+"map_item_controller.website_accessibility" = "웹 사이트 열기";
+
+/* Displayed in the map status view at the top of the map when the user has declined to give the app access to their location */
+"map_status_view.location_services_unavailable" = "위치 서비스를 사용할 수 없음";
+
+/* Displayed in the map status view at the top of the map when the user has declined to give the app access to their precise location */
+"map_status_view.precise_location_unavailable" = "정확한 위치를 사용할 수 없음";
+
+/* Displayed in the map status view at the top of the map when the user must zoom in to see stops on the map */
+"map_status_view.zoom_in_for_stops" = "정류장을 보려면 확대하세요";
+
+/* Header for a section that shows the user information about this app. */
+"more_controller.about_app" = "이 앱 정보";
+
+/* Alerts for region row in the More controller */
+"more_controller.alerts_for_region" = "알림";
+
+/* Title of the action sheet option for contacting the developers of the app. */
+"more_controller.contact_developers" = "기능 요청/버그 신고";
+
+/* Title of the action sheet option for contacting a user's transit agency. */
+"more_controller.contact_transit" = "차량/시간표 문제";
+
+/* A button to contact transit agency/developers. */
+"more_controller.contact_us" = "문의하기";
+
+/* Contact Us alert title. */
+"more_controller.contact_us_alert_title" = "문의하기";
+
+/* Credits - like who should get credit for creating this. */
+"more_controller.credits_row_title" = "크레딧";
+
+/* Title for a button that will crash the app. */
+"more_controller.debug_section.crash_row" = "앱 충돌시키기";
+
+/* This is displayed instead of the user's push ID if the value is not available. */
+"more_controller.debug_section.push_id.not_available" = "사용할 수 없음";
+
+/* Title for the Push Notification ID row in the More Controller */
+"more_controller.debug_section.push_id.title" = "푸시 ID";
+
+/* Request to help develop the app */
+"more_controller.develop_the_app" = "버그 수정 및 새 기능 개발 돕기";
+
+/* Header for the donate section. */
+"more_controller.donate" = "후원자 되기";
+
+/* The call to action for the More controller's donate buton */
+"more_controller.donate_description" = "OneBusAway에 기부하기";
+
+/* Header for the volunteer section. */
+"more_controller.help_out" = "앱 개선에 참여하기";
+
+/* A button that will open a web based donation portal. */
+"more_controller.manage_donations" = "기부 관리";
+
+/* Title of the Agencies row in the My Location section */
+"more_controller.my_location.agencies" = "운영 기관";
+
+/* 'My Location' section header on the 'More' controller. */
+"more_controller.my_location.header" = "내 위치";
+
+/* Title of the mobile fare payment row */
+"more_controller.my_location.pay_fare" = "요금 결제";
+
+/* Title of the row that lets the user choose their current region. */
+"more_controller.my_location.region_row_title" = "지역";
+
+/* A link to the app's Privacy Policy */
+"more_controller.privacy_row_title" = "개인정보 처리방침";
+
+/* Title of the More tab */
+"more_controller.title" = "더 보기";
+
+/* Request to help localize OneBusAway */
+"more_controller.translate_the_app" = "앱 번역 돕기";
+
+/* Updates and Alerts header text */
+"more_controller.updates_and_alerts.header" = "업데이트 및 알림";
+
+/* A link to view application logs */
+"more_controller.view_logs_row_title" = "로그 보기";
+
+/* Explanation about how this app is built and maintained by volunteers. */
+"more_header.support_us_label_text" = "이 앱은 자원봉사자들이 만들고 지원합니다.";
+
+/* Body for the empty set indicator on the Nearby controller. */
+"nearby_controller.empty_set.body" = "지도를 축소하거나 이동하여 정류장을 찾아보세요.";
+
+/* Title for the empty set indicator on the Nearby controller */
+"nearby_controller.empty_set.title" = "주변 정류장 없음";
+
+/* Error shown on the Nearby Stops screen when no API service is configured (e.g. no region selected). */
+"nearby_stops_controller.no_api_service_error" = "사용 가능한 대중교통 데이터 서비스가 없습니다. 설정에서 지역을 선택해 주세요.";
+
+/* Body for the empty set indicator on the Nearby Stops controller. */
+"nearby_stops_controller.empty_set.body" = "주변에 다른 정류장이 없습니다.";
+
+/* Title for the empty set indicator on the Nearby Stops controller. */
+"nearby_stops_controller.empty_set.title" = "주변 정류장 없음";
+
+/* The title of the Nearby Stops controller. */
+"nearby_stops_controller.title" = "주변 정류장";
+
+/* Vehicle occupancy is very high */
+"occupancy_status.crushed_standing_room_only" = "입석만 가능 (매우 혼잡)";
+
+/* Vehicle occupancy is zero */
+"occupancy_status.empty" = "비어 있음";
+
+/* Vehicle occupancy is medium */
+"occupancy_status.few_seats_available" = "좌석 여유 적음";
+
+/* Vehicle occupancy is full */
+"occupancy_status.full" = "만차";
+
+/* A format string that denotes that the associated occupancy status is historical data. e.g. 'Historical: Standing room only' */
+"occupancy_status.historical_fmt" = "과거 기록: %@";
+
+/* Vehicle occupancy is low */
+"occupancy_status.many_seats_available" = "좌석 여유 많음";
+
+/* Vehicle is not accepting any passengers */
+"occupancy_status.not_accepting_passengers" = "승객 탑승 불가";
+
+/* Vehicle occupancy is high */
+"occupancy_status.standing_room_only" = "입석만 가능";
+
+/* Vehicle occupancy status is unknown. */
+"occupancy_status.unknown" = "알 수 없음";
+
+/* Reachability bulletin for a cellular connection that can't access the Internet. */
+"reachability_bulletin.description.cellular_no_internet" = "셀룰러 연결로 인터넷에 접속할 수 없습니다.\r\n\r\nWiFi에 연결하거나 다른 곳으로 이동해 보세요.";
+
+/* Reachability bulletin for a phone with no connection. */
+"reachability_bulletin.description.not_connected" = "인터넷에 접속할 수 없습니다. WiFi 또는 셀룰러 데이터로 연결해 보세요.";
+
+/* Reachability bulletin for a WiFi network that can't access the Internet. */
+"reachability_bulletin.description.wifi_no_internet" = "WiFi 연결로 인터넷에 접속할 수 없습니다.\r\n\r\nWiFi를 끄거나 다른 네트워크에 연결해 보세요.";
+
+/* Title of the alert that appears when the app can't connect to the server. */
+"reachability_bulletin.title" = "인터넷 연결 없음";
+
+/* Title for a confirmation alert displayed before the user deletes all of their recent stops. */
+"recent_stops.confirmation_alert.title" = "최근 정류장을 모두 삭제하시겠습니까?";
+
+/* A button that deletes all of the recent stops in the app. */
+"recent_stops.delete_all" = "모두 삭제";
+
+/* Body for the empty set indicator on the Recent Stops controller. */
+"recent_stops.empty_set.body" = "앱에서 확인한 대중교통 정류장이 여기에 표시됩니다.";
+
+/* The button title for taking the user to the map view to find stops. */
+"recent_stops.empty_set.button" = "지도에서 정류장 찾기";
+
+/* Title for the empty set indicator on the Recent Stops controller. */
+"recent_stops.empty_set.title" = "최근 정류장 없음";
+
+/* Title of the Alarms section of the Recents controller */
+"recent_stops_controller.alarms_section.title" = "미리 알림";
+
+/* The title of the Recent Stops controller. */
+"recent_stops_controller.title" = "최근";
+
+/* Formatted alert body shown when there is a mismatch between the user location and selected region. e.g. 'Your region is set to Puget Sound, but you appear to be in San Diego.' */
+"region_mismatch_bulletin.body_fmt" = "지역이 %1$@(으)로 설정되어 있지만, 현재 %2$@에 계신 것 같습니다.";
+
+/* A button on the region mismatch alert that changes the user's current region. e.g. 'Change to San Diego' */
+"region_mismatch_bulletin.change_region_button_fmt" = "%@(으)로 변경";
+
+/* Alert title shown when there is a mismatch between the user location and selected region. */
+"region_mismatch_bulletin.title" = "지역을 변경하시겠습니까?";
+
+/* A button on the region mismatch alert that updates the map's current location to be the specified region. e.g. 'Show Puget Sound on the map' */
+"region_mismatch_bulletin.update_map_button_fmt" = "지도에 %@ 표시";
+
+/* Help text displayed on a custom (user-created) region. */
+"region_picker.custom_region_help_text" = "사용자 지정 지역";
+
+/* Help text displayed on an experimental region. */
+"region_picker.experimental_region_help_text" = "실험적 지역";
+
+/* Help text displayed on an inactive region. */
+"region_picker.inactive_region_help_text" = "비활성 지역";
+
+/* Title of a button that shows a region creation view controller. */
+"region_picker.new_custom_region_button" = "새 사용자 지정 지역";
+
+/* Title of a toggle that shows experimental (beta) regions. */
+"region_picker.show_experimental_regions_toggle" = "실험적 지역 표시";
+
+/* Title of a toggle that shows inactive regions. */
+"region_picker.show_inactive_regions_toggle" = "비활성 지역 표시";
+
+/* Title of the Region Picker Item, which lets the user choose a new region from the map. */
+"region_picker.title" = "지역 선택";
+
+/* Error message of Custom Region URL if it's invalid or does not point to a functional OBA server */
+"region_url.error_messsage" = "입력한 지역 URL이 잘못되었거나 작동하는 OBA 서버를 가리키지 않습니다.";
+
+/* Placeholder text in the route search field. */
+"route_picker.search_placeholder" = "노선 검색…";
+
+/* Title for the route picker screen where the user selects their transit route. */
+"route_picker.title" = "노선 선택";
+
+/* Error when API service is unavailable in the route picker. */
+"route_picker.error_no_service" = "대중교통 서비스에 연결할 수 없습니다.";
+
+/* Error when location is unavailable in the route picker. */
+"route_picker.error_no_location" = "위치를 사용할 수 없습니다. 주변 노선을 찾으려면 위치 서비스를 활성화해 주세요.";
+
+/* Loading message while fetching nearby routes. */
+"route_picker.loading" = "노선을 불러오는 중…";
+
+/* Message when no routes are found near the user's location. */
+"route_picker.no_routes" = "주변에서 노선을 찾을 수 없습니다.";
+
+/* Title of the Report Problem view controller. */
+"report_problem.title" = "문제 신고";
+
+/* Report a problem with the stop at {Stop Name} */
+"report_problem_controller.report_stop_problem_fmt" = "%@ 정류장의 문제 신고";
+
+/* A table header in the 'Report Problem' view controller. */
+"report_problem_controller.stop_problem.header" = "정류장 관련 문제";
+
+/* A table header in the 'Report Problem' view controller. */
+"report_problem_controller.vehicle_problem.header" = "정류장의 차량 관련 문제";
+
+/* Morning time period label */
+"schedule_view.am_period" = "오전";
+
+/* Label for date picker in schedule view */
+"schedule_view.date" = "날짜";
+
+/* Label for direction picker in schedule view */
+"schedule_view.direction" = "방향";
+
+/* Default direction label when no headsign is available */
+"schedule_view.direction_number_fmt" = "방향 %d";
+
+/* Accessibility text when there is no departure time */
+"schedule_view.no_departure" = "출발 없음";
+
+/* Message shown when schedule data is not available */
+"schedule_view.no_schedule_data" = "시간표 데이터가 없습니다";
+
+/* Message when no stops are available for the selected direction */
+"schedule_view.no_stops_found" = "이 방향에는 정류장이 없습니다";
+
+/* Afternoon/evening time period label */
+"schedule_view.pm_period" = "오후";
+
+/* Headsign label showing destination */
+"schedule_view.to_headsign_fmt" = "행선지: %@";
+
+/* Error message when schedule fails to load */
+"schedule_view.unable_to_load" = "시간표를 불러올 수 없습니다";
+
+/* Title of the Bookmarks search header */
+"search_controller.bookmarks.header" = "즐겨찾기";
+
+/* Body for the empty set indicator on the Search controller. */
+"search_controller.empty_set.body" = "주소, 노선 이름, 정류장 번호 또는 차량을 입력하여 검색하세요.";
+
+/* Title for the empty set indicator on the Search controller. */
+"search_controller.empty_set.title" = "검색";
+
+/* Placemark search header */
+"search_controller.placemarks.header" = "결과";
+
+/* Loading message for placemark search */
+"search_controller.placemarks.loading" = "장소를 검색하는 중...";
+
+/* No results message for placemark search */
+"search_controller.placemarks.no_results" = "결과 없음";
+
+/* Subtitle on search error row prompting the user to retry. */
+"search_controller.placemarks.error_retry" = "탭하여 다시 시도";
+
+/* Quick Search section header in search */
+"search_controller.quick_search.header" = "빠른 검색";
+
+/* Quick search prefix for Address. */
+"search_interactor.quick_search.address_prefix" = "주소:";
+
+/* Quick search prefix for Route. */
+"search_interactor.quick_search.route_prefix" = "노선:";
+
+/* Quick search prefix for Stop. */
+"search_interactor.quick_search.stop_prefix" = "정류장:";
+
+/* Quick search prefix for Vehicle. */
+"search_interactor.quick_search.vehicle_prefix" = "차량:";
+
+/* Error shown when vehicle search is attempted with no API service configured (e.g. no region selected). */
+"search_results_controller.no_api_service_error" = "사용 가능한 대중교통 데이터 서비스가 없습니다. 설정에서 지역을 선택해 주세요.";
+
+/* Error message shown when a vehicle has no trips available. */
+"search_results_controller.no_trips_available" = "이 차량은 현재 운행 중이 아닙니다.";
+
+/* A format string for address searches. In English, this is just the address itself without any adornment. */
+"search_results_controller.subtitle.address_fmt" = "%@";
+
+/* A format string for route searches. e.g. in english: Route \"{SEARCH TEXT}\" */
+"search_results_controller.subtitle.route_fmt" = "노선 %@";
+
+/* A format string for stop number searches. e.g. in english: Stop number \"{SEARCH TEXT}\" */
+"search_results_controller.subtitle.stop_number_fmt" = "정류장 번호 %@";
+
+/* A format string for vehicle ID searches. e.g. in english: Vehicle ID \"{SEARCH TEXT}\" */
+"search_results_controller.subtitle.vehicle_id_fmt" = "차량 ID %@";
+
+/* The title of the Search Results controller. */
+"search_results_controller.title" = "검색 결과";
+
+/* The transit agencies affected by this service alert. */
+"service_alert_controller.affected_agencies" = "영향을 받는 운영 기관";
+
+/* The routes affected by this service alert. */
+"service_alert_controller.affected_routes" = "영향을 받는 노선";
+
+/* The stops affected by this service alert. */
+"service_alert_controller.affected_stops" = "영향을 받는 정류장";
+
+/* The trips affected by this service alert. */
+"service_alert_controller.affected_trips" = "영향을 받는 운행";
+
+/* As in 'this is in effect/occurring' from/to */
+"service_alert_controller.in_effect" = "적용 기간";
+
+/* Directs the user to tap on the link that comes at the end of the string. Learn more: <HYPERLINK IS INSERTED HERE> */
+"service_alert_controller.learn_more_fmt" = "더 알아보기: %@";
+
+/* Settings > Accessibility section > Always show full sheet on Voiceover */
+"settings_controller.accessibility_section.default_full_sheet_voiceover" = "VoiceOver 사용 시 항상 전체 시트 표시";
+
+/* Settings > Accessibility section > Haptic feedback on reload */
+"settings_controller.accessibility_section.enable_reload_haptic" = "새로고침 시 햅틱 피드백";
+
+/* Settings > Accessibility section > Show route labels on the map */
+"settings_controller.accessibility_section.show_stop_annotation_labels" = "지도에 노선 레이블 표시";
+
+/* Settings > Accessibility section title */
+"settings_controller.accessibility_section.title" = "손쉬운 사용";
+
+/* Settings > Alerts section > Display test alerts */
+"settings_controller.alerts_section.display_test_alerts" = "테스트 알림 표시";
+
+/* Settings > Alerts section title */
+"settings_controller.alerts_section.title" = "운영 기관 알림";
+
+/* Settings > Debug section > Refresh regions on every launch */
+"settings_controller.debug_section.always_refresh_regions" = "실행할 때마다 지역 새로고침";
+
+/* Settings > Debug section > Debug mode */
+"settings_controller.debug_section.debug_mode" = "디버그 모드";
+
+/* Settings > Debug section title */
+"settings_controller.debug_section.title" = "디버그";
+
+/* Settings > Map section > Show my current heading */
+"settings_controller.map_section.shows_heading" = "현재 방향 표시";
+
+/* Settings > Map section > Shows scale */
+"settings_controller.map_section.shows_scale" = "축척 표시";
+
+/* Settings > Map section > Shows traffic */
+"settings_controller.map_section.shows_traffic" = "교통 상황 표시";
+
+/* Settings > Map section title */
+"settings_controller.map_section.title" = "지도";
+
+/* Settings > Privacy section > Send usage data */
+"settings_controller.privacy_section.reporting_enabled" = "개발자에게 사용 데이터 보내기";
+
+/* Settings > Privacy section title */
+"settings_controller.privacy_section.title" = "개인정보 보호";
+
+/* Settings > Walking Speed > Average preset label */
+"settings_controller.walking_speed.avg" = "보통 (시속 약 5km)";
+
+/* Settings > Walking Speed > Fast preset label */
+"settings_controller.walking_speed.fast" = "빠름 (시속 약 6.5km)";
+
+/* Settings > Walking Speed > HealthKit denial or no-data toast */
+"settings_controller.walking_speed.healthkit_unavailable" = "건강 앱에서 보행 속도를 동기화할 수 없습니다. 설정 > 개인정보 보호 및 보안 > 건강에서 접근을 허용해 주세요.";
+
+/* Settings > Walking Speed > Slow preset label */
+"settings_controller.walking_speed.slow" = "느림 (시속 약 3km)";
+
+/* Settings > Walking Speed section > Speed picker */
+"settings_controller.walking_speed.title" = "보행 속도";
+
+/* Settings > Walking Speed section > HealthKit toggle */
+"settings_controller.walking_speed.use_healthkit" = "건강 앱 데이터 사용";
+
+/* Settings > Walking Speed section title */
+"settings_controller.walking_speed_section.title" = "보행 속도";
+
+/* A message that appears when a user's alarm is created. */
+"stop_controller.alarm_created_message" = "미리 알림이 생성되었습니다";
+
+/* A header for the arrivals and departures section of the stop controller. */
+"stop_controller.arrival_departure_header" = "도착 및 출발";
+
+/* An error message displayed when a stop is shown by tapping on a bookmark—and the bookmark doesn't seem to point to a valid stop any longer. This problem will occur when a transit agency changes its stop IDs, perhaps as part of an annual transit system realignment. */
+"stop_controller.bad_bookmark_error_message" = "이 즐겨찾기는 더 이상 작동하지 않을 수 있습니다. 운영 기관에서 무언가를 변경했나요? 즐겨찾기를 삭제하고 다시 만들어 주세요.";
+
+/* A string listing the data providers (agencies) for this stop's data. It contains one or more providers separated by commas. e.g. Data provided by King County Metro, Sound Transit */
+"stop_controller.data_attribution_format" = "데이터 제공: %@";
+
+/* Load More button */
+"stop_controller.load_more_button" = "더 불러오기";
+
+/* This is an instruction given to the user the first time they look at a stop view instructing them on how to access more options, including the ability to add alarms. */
+"stop_controller.swipe_spotlight_text.with_alarm" = "행을 쓸어넘기면 미리 알림 추가를 포함한 더 많은 옵션을 볼 수 있습니다.";
+
+/* This is an instruction given to the user the first time they look at a stop view instructing them on how to access more options, EXCLUDING the ability to add alarms. */
+"stop_controller.swipe_spotlight_text.without_alarm" = "행을 쓸어넘기면 더 많은 옵션을 볼 수 있습니다.";
+
+/* Title of the Sorting section */
+"stop_preferences_controller.sorting_section.header_title" = "정렬 기준";
+
+/* Sort by route option */
+"stop_preferences_controller.sorting_section.sort_by_route" = "노선순 정렬";
+
+/* Sort by time option */
+"stop_preferences_controller.sorting_section.sort_by_time" = "시간순 정렬";
+
+/* Title of the Edit Stop preferences controller */
+"stop_preferences_controller.title" = "노선 필터";
+
+/* The section header to a free-form comments field that the user does not have to add text to in order to submit this form. */
+"stop_problem_controller.comments_section.section_title" = "추가 의견 (선택 사항)";
+
+/* Footer text of the Share Location section in the Stop Problem Controller */
+"stop_problem_controller.location_section.section_footer" = "위치를 공유하면 운영 기관에서 이 문제를 해결하는 데 도움이 됩니다.";
+
+/* Title of the Share Location section in the Stop Problem Controller. */
+"stop_problem_controller.location_section.section_title" = "위치를 공유하시겠습니까?";
+
+/* Title of the Share Location switch on stop problem controller */
+"stop_problem_controller.location_section.switch_title" = "위치 공유";
+
+/* Title label for the 'choose a problem type' row. */
+"stop_problem_controller.problem_section.row_label" = "하나를 선택하세요:";
+
+/* Title of the first section in the Stop Problem Controller. */
+"stop_problem_controller.problem_section.section_title" = "어떤 문제가 있나요?";
+
+/* The 'send' button that actually sends along the problem report. */
+"stop_problem_controller.send_button" = "메시지 보내기";
+
+/* Title for the Report Stop Problem controller */
+"stop_problem_controller.title" = "문제 신고";
+
+/* Label for date picker in schedule view */
+"stop_schedule_view.date" = "날짜";
+
+/* Message when no departures are scheduled */
+"stop_schedule_view.no_departures" = "이 날짜에는 예정된 출발이 없습니다";
+
+/* Message shown when schedule data is not available */
+"stop_schedule_view.no_schedule_data" = "시간표 데이터가 없습니다";
+
+/* Label for route picker in schedule view */
+"stop_schedule_view.route" = "노선";
+
+/* Error message when schedule fails to load */
+"stop_schedule_view.unable_to_load" = "시간표를 불러올 수 없습니다";
+
+/* Message displayed when a new bookmark is created. */
+"stops_controller.created_new_bookmark" = "즐겨찾기 추가됨";
+
+/* A menu item on a Stop page that toggles the visible list of transit vehicles from a filtered list to all of the list items. e.g. a stop serves routes 1, 2, and 3. The user has filtered the stop to only show route 3. Chooosing this item will show 1, 2, and 3 again. */
+"stops_controller.filter.all_routes" = "모든 노선";
+
+/* A menu item on a Stop page that toggles the visible list of transit vehicles from a list of all items to a filtered list. e.g. a stop serves routes 1, 2, and 3. The user wants to only view route 3. Choosing this item would show that subset of routes. */
+"stops_controller.filter.filtered_routes" = "필터링된 노선";
+
+/* Title of the row that will show stops that are near this one. */
+"stops_controller.nearby_stops" = "주변 정류장";
+
+/* Button that launches the 'Report Problem' UI. */
+"stops_controller.report_problem" = "문제 신고";
+
+/* Message displayed an existing bookmark is updated. */
+"stops_controller.updated_bookmark" = "즐겨찾기 업데이트됨";
+
+/* Button that launches a maps app with walking directions to this stop */
+"stops_controller.walking_directions" = "도보 경로";
+
+/* Button that launches Apple's maps.app with walking directions to this stop */
+"stops_controller.walking_directions_apple" = "도보 경로 (Apple 지도)";
+
+/* Button that launches Google Maps with walking directions to this stop */
+"stops_controller.walking_directions_google" = "도보 경로 (Google 지도)";
+
+/* A notice when a transit alert doesn't have body text. */
+"transit_alert.no_additional_details.body" = "추가 세부 정보가 없습니다.";
+
+/* Describes the next trip of this vehicle. e.g. Continues as 10 - Downtown Seattle */
+"trip_details_controller.continues_as_fmt" = "%@(으)로 운행 계속";
+
+/* Last report: <TIME> */
+"trip_details_controller.last_report_fmt" = "마지막 보고: %@";
+
+/* Service alerts header in the trip details controller. */
+"trip_details_controller.service_alerts_footer" = "운행 세부 정보";
+
+/* Button that moves the map to focus on the selected stop */
+"trip_details_controller.show_on_map" = "지도에 표시";
+
+/* Describes the previous trip of this vehicle. e.g. Starts as 10 - Downtown Seattle */
+"trip_details_controller.starts_as_fmt" = "%@(으)로 운행 시작";
+
+/* A formatted string for displaying a vehicle's ID on the trip status map. e.g. 'Vehicle ID: 12345' */
+"trip_status_annotation.title_fmt" = "차량 ID: %@";
+
+/* Shown on the map when the user taps on a vehicle to indicate we don't know the vehicle's ID. */
+"trip_status_annotation.vehicle_id_unavailable" = "차량 ID를 알 수 없음";
+
+/* Voiceover text explaining that this stop is the user's destination */
+"trip_stop.user_destination.accessibility_label" = "내 목적지";
+
+/* Voiceover text explaining that the vehicle is currently at this stop */
+"trip_stop.vehicle_location.accessibility_label" = "차량이 여기에 있습니다";
+
+/* Suggested invocation phrase for Siri Shortcut */
+"user_activity_builder.show_me_my_bus" = "내 버스 보여줘";
+
+/* The section header to a free-form comments field that the user does not have to add text to in order to submit this form. */
+"vehicle_problem_controller.comments_section.section_title" = "추가 의견 (선택 사항)";
+
+/* Footer text of the Share Location section in the Vehicle Problem Controller */
+"vehicle_problem_controller.location_section.section_footer" = "위치를 공유하면 운영 기관에서 이 문제를 해결하는 데 도움이 됩니다.";
+
+/* Title of the Share Location section in the Vehicle Problem Controller. */
+"vehicle_problem_controller.location_section.section_title" = "위치를 공유하시겠습니까?";
+
+/* Title of the Share Location switch */
+"vehicle_problem_controller.location_section.switch_title" = "위치 공유";
+
+/* Title of the 'on the vehicle' section in the Vehicle Problem Controller. */
+"vehicle_problem_controller.on_vehicle_section.section_title" = "이 차량에 탑승 중이신가요?";
+
+/* Title of the 'on the vehicle' switch in the Vehicle Problem Controller. */
+"vehicle_problem_controller.on_vehicle_section.switch_title" = "차량에 탑승 중";
+
+/* Title of the vehicle ID text field in the Vehicle Problem Controller. */
+"vehicle_problem_controller.on_vehicle_section.vehicle_id_title" = "차량 ID";
+
+/* Title label for the 'choose a problem type' row. */
+"vehicle_problem_controller.problem_section.row_label" = "하나를 선택하세요";
+
+/* Title of the first section in the Vehicle Problem Controller. */
+"vehicle_problem_controller.problem_section.section_title" = "어떤 문제가 있나요?";
+
+/* The 'send' button that actually sends along the problem report. */
+"vehicle_problem_controller.send_button" = "메시지 보내기";
+
+/* Title for the Report Vehicle Problem controller */
+"vehicle_problem_controller.title" = "문제 신고";
+
+/* Format string describing a favorite route (or trip) bookmark with a placeholder for the bookmark's name. */
+"voiceover.bookmarkarrivaldata.label.favoriteroutebookmark_fmt" = "자주 찾는 노선 즐겨찾기, %@";
+
+/* Format string describing a normal route (or trip) bookmark with a placeholder for the bookmark's name. */
+"voiceover.bookmarkarrivaldata.label.routebookmark_fmt" = "노선 즐겨찾기, %@";
+
+/* Format string describing a stop bookmark with a placeholder for the bookmark's name. */
+"voiceover.bookmarkarrivaldata.label.stopbookmark_fmt" = "정류장 즐겨찾기, %@";
+
+/* Voiceover text describing an arrival, then a departure in the near-future, regardless of realtime data availability. */
+"voiceover.bookmarkarrivaldata.value.followingarrivalthendeparture_fmt" = "다음 도착은 %1$d분 후, 출발은 %2$d분 후입니다.";
+
+/* Voiceover text describing a departure, then an arrival in the near-future, regardless of realtime data availability. */
+"voiceover.bookmarkarrivaldata.value.followingdeparturethenarrival_fmt" = "다음 출발은 %1$d분 후, 도착은 %2$d분 후입니다.";
+
+/* Voiceover text describing the one additional arrival in the near-future, regardless of realtime data availability. */
+"voiceover.bookmarkarrivaldata.value.followingonearrival_fmt" = "다음 도착은 %d분 후입니다.";
+
+/* Voiceover text describing the one additional departure in the near-future, regardless of realtime data availability. */
+"voiceover.bookmarkarrivaldata.value.followingonedeparture_fmt" = "다음 출발은 %d분 후입니다.";
+
+/* Voiceover text describing the two additional arrivals in the near-future, regardless of realtime data availability. */
+"voiceover.bookmarkarrivaldata.value.followingtwoarrivals_fmt" = "다음 두 번의 도착은 %1$d분 후와 %2$d분 후입니다.";
+
+/* Voiceover text describing the two additional departures in the near-future, regardless of realtime data availability. */
+"voiceover.bookmarkarrivaldata.value.followingtwodepartures_fmt" = "다음 두 번의 출발은 %1$d분 후와 %2$d분 후입니다.";
+
+/* Voiceover text describing no departures in the near-future. */
+"voiceover.bookmarkarrivaldata.value.noupcomingdepartures_fmt" = "예정된 출발 없음";
+
+/* A label for blind or low-vision users on the UI element that describes how long it takes to walk to the stop. */
+"walk_time_view.accessibility_label" = "정류장까지 도보 시간";
+
+/* Accessibility string with placeholders for distance from stop, walking time to stop, and predicted arrival time. e.g. 1.2 miles. Takes 17 minutes to walk, arriving at 9:41 am */
+"walk_time_view.accessibility_value" = "%1$@. 도보로 %2$@ 걸리며, %3$@에 도착합니다";
+
+/* Format string with placeholders for distance from stop, walking time to stop, and predicted arrival time. e.g. 1.2 miles, 17m: arriving at 09:41 A.M. */
+"walk_time_view.distance_time_fmt" = "%1$@, %2$@: %3$@ 도착";
+
+
+/* Button the user can tap on to decline access to their location. */
+"location_permission_bulletin.do_not_use_location_button_text" = "나중에";
+
+/* Button the user taps to grant access to their location. */
+"location_permission_bulletin.use_location_button_text" = "내 위치 사용";

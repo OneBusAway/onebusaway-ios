@@ -1,0 +1,482 @@
+/* An error message that tells the user that they are connected to a captive portal WiFi network. */
+"api_error.captive_portal" = "Có vẻ bạn đang kết nối với một mạng WiFi không cho phép truy cập Internet. Hãy thử ngắt kết nối WiFi hoặc xác thực với mạng để tiếp tục.";
+
+/* An error message that informs the user that the wrong kind of content was received from the server. */
+"api_error.invalid_content_type_fmt" = "Dự kiến nhận dữ liệu %1$@ từ máy chủ, nhưng chúng tôi lại nhận được %2$@.";
+
+/* An error that tells the user that the network connection isn't working. */
+"api_error.network_failure" = "Không thể kết nối với Internet hoặc máy chủ. Vui lòng kiểm tra kết nối mạng của bạn và thử lại.";
+
+/* An error that tells the user that the server unexpectedly failed to return data. */
+"api_error.no_response_body" = "Máy chủ bất ngờ không trả về dữ liệu nào cho yêu cầu của bạn.";
+
+/* An error that is produced in response to HTTP status codes outside of 200-299. */
+"api_error.request_failure_fmt" = "Máy chủ gặp lỗi khi xử lý yêu cầu của bạn, trả về mã trạng thái %1$d. (URL: %2$@)";
+
+/* An error that is produced in response to HTTP status code 404 */
+"api_error.request_not_found" = "404 Không tìm thấy (%@)";
+
+/* This will appear on a button or as a title, and indicates that this UI will create a new bookmark. */
+"common.add_alarm" = "Thêm lời nhắc";
+
+/* This will appear on a button or as a title, and indicates that this UI will create a new bookmark. */
+"common.add_bookmark" = "Thêm dấu trang";
+
+/* The noun, like an alarm clock or an alarm bell. */
+"common.alarm" = "Lời nhắc";
+
+/* Back, as in 'back to the previous screen.' */
+"common.back" = "Quay lại";
+
+/* The verb 'to bookmark'. */
+"common.bookmark" = "Đánh dấu";
+
+/* The verb 'to cancel', i.e. to stop an action. */
+"common.cancel" = "Hủy";
+
+/* Button to clear recent search results */
+"common.clear_recent_searches" = "Xóa tìm kiếm gần đây";
+
+/* Confirmation message before clearing recent search results */
+"common.clear_recent_searches.confirmation" = "Bạn có chắc chắn muốn xóa các tìm kiếm gần đây của mình không?";
+
+/* The verb 'to close'. */
+"common.close" = "Đóng";
+
+/* Asks the user to confirm a delete action. Typically this is showned when the user taps a 'delete' button on an important item. */
+"common.confirmdelete" = "Xác nhận xóa";
+
+/* The verb 'to continue'. */
+"common.continue" = "Tiếp tục";
+
+/* The verb 'to delete', as in to destroy something. */
+"common.delete" = "Xóa";
+
+/* The verb 'to dismiss', as in to hide or get rid of something. Used as a button title on alerts. */
+"common.dismiss" = "Bỏ qua";
+
+/* The verb 'to donate', as in to give money to a charitable cause. */
+"common.donate" = "Quyên góp";
+
+/* The body of the message to display to the user after they donate to OTSF */
+"common.donation_thank_you.body" = "Sự ủng hộ của bạn sẽ giúp chúng tôi tiếp tục cải thiện OneBusAway.";
+
+/* Title of an alert to display to the user after they donate to OTSF */
+"common.donation_thank_you.title" = "Cảm ơn bạn đã ủng hộ!";
+
+/* Past participle of 'do'. As in 'I am done' or 'I am finished.' */
+"common.done" = "Xong";
+
+/* The verb 'to edit', as in to change or modify something. Used as a button title. */
+"common.edit" = "Sửa";
+
+/* Title for the alert empty set indicator. */
+"common.empty_alert_set.title" = "Không có cảnh báo";
+
+/* Body for the bookmark empty set indicator. */
+"common.empty_bookmark_set.body" = "Thêm dấu trang cho một điểm dừng hoặc chuyến đi để truy cập dễ dàng tại đây.";
+
+/* Body for the bookmark empty set indicator when the user has a pending migration from the old version of the app. */
+"common.empty_bookmark_set.body_with_pending_migration" = "Vào tab Thêm > Cài đặt > Di chuyển dữ liệu để dấu trang của bạn xuất hiện ở đây.";
+
+/* Title for the bookmark empty set indicator. */
+"common.empty_bookmark_set.title" = "Không có dấu trang";
+
+/* The noun 'error', as in 'something went wrong'. */
+"common.error" = "Lỗi";
+
+/* The title of a button that exports all of the user's data into a file. */
+"common.export_data" = "Xuất dữ liệu";
+
+/* The verb 'to filter'. */
+"common.filter" = "Lọc";
+
+/* This is button text that tells the user they can tap on it to learn more about the topic at hand. */
+"common.learn_more" = "Tìm hiểu thêm";
+
+/* Used to indicate that content is loading. */
+"common.loading" = "Đang tải…";
+
+/* A common error message that can be used when the user's location is not available and we need it to accomplish something. */
+"common.location_unavailable" = "Không có thông tin vị trí";
+
+/* The noun for a map. */
+"common.map" = "Bản đồ";
+
+/* A title or command for upgrading data from older versions of OBA. */
+"common.migrate_data" = "Di chuyển dữ liệu";
+
+/* An explanation about what the Migrate Data feature does. */
+"common.migrate_data_description" = "Nâng cấp các điểm dừng gần đây và dấu trang của bạn để hoạt động với phiên bản mới nhất của ứng dụng. (Cần kết nối Internet.)";
+
+/* As in 'see more' or 'learn more'. */
+"common.more" = "Thêm";
+
+/* OK */
+"common.ok" = "OK";
+
+/* i.e. recently selected search results for map locations from the trip planner. */
+"common.recent_searches" = "Tìm kiếm gần đây";
+
+/* i.e. recently viewed or visited stops for transit vehicles, like a bus stop, ferry terminal, or train station. */
+"common.recent_stops" = "Điểm dừng gần đây";
+
+/* The verb 'refresh', as in 'reload'. */
+"common.refresh" = "Làm mới";
+
+/* The verb 'retry'. */
+"common.retry" = "Thử lại";
+
+/* The verb 'save', as in 'save data'. */
+"common.save" = "Lưu";
+
+/* A noun referring to a bus/train schedule or timetable. */
+"common.schedule" = "Lịch trình";
+
+/* Explains that this is departure comes from schedule data, not from a real-time vehicle location. */
+"common.scheduled_not_real_time" = "Theo lịch trình/không phải thời gian thực";
+
+/* Plural form of schedule, referring to bus/train schedules or timetables. */
+"common.schedules" = "Lịch trình";
+
+/* A noun referring to an alert about service interruptions, reroutes, or other disruptions or changes. */
+"common.service_alert" = "Cảnh báo dịch vụ";
+
+/* Plural form of a noun referring to an alert about service interruptions, reroutes, or other disruptions or changes. */
+"common.service_alerts" = "Cảnh báo dịch vụ";
+
+/* A noun referring to a collection of options for adjusting app behavior. */
+"common.settings" = "Cài đặt";
+
+/* A verb referring to sharing something generic. */
+"common.share" = "Chia sẻ";
+
+/* Button title for sharing the status of your trip (i.e. location, arrival time, etc.) */
+"common.share_trip" = "Chia sẻ chuyến đi";
+
+/* The verb 'to skip' as in 'don't perform a particular step and go on to the next one instead.' */
+"common.skip" = "Bỏ qua";
+
+/* The verb 'to sort' as in to arrange things in an order. */
+"common.sort" = "Sắp xếp";
+
+/* Noun. Plural form of a transit stop. */
+"common.stops" = "Điểm dừng";
+
+/* A format string used to tell the user when the UI they are looking at was last updated. e.g. Updated: 9:41 AM. The time is calculated at runtime. */
+"common.updated_at_fmt" = "Đã cập nhật: %@";
+
+/* Used to tell the user that the UI they are looking at is actively being updated with new data from the server. */
+"common.updating" = "Đang cập nhật…";
+
+/* The title of the Vehicles tab showing real-time vehicle positions on a map. */
+"common.vehicles" = "Phương tiện";
+
+/* Description of the privacy policy for sharing data with the external survey service. */
+"common.external_survey_privacy_info.description" = "Khảo sát này sẽ chia sẻ điểm dừng, tuyến, khu vực và vị trí hiện tại của bạn.";
+
+"common.go" = "Đi";
+
+"common.submit" = "Gửi";
+
+"common.next" = "Tiếp theo";
+
+"survey_alert.dismissal.title" = "Bỏ qua khảo sát";
+
+"survey_alert.dismissal.body" = "Phản hồi của bạn giúp cải thiện dịch vụ vận tải và trải nghiệm ứng dụng.";
+
+"survey_alert.skip.survey" = "Bỏ qua khảo sát này";
+
+"survey_alert.remind.later" = "Nhắc tôi sau";
+
+"survey_error.required_remaining_questions.error" = "Vui lòng trả lời tất cả các câu hỏi bắt buộc";
+
+"survey_error.hero_question_answer.error" = "Vui lòng nhập câu trả lời hợp lệ";
+
+"survey_success.submitted" = "Đã gửi câu trả lời khảo sát! Vui lòng trả lời các câu hỏi còn lại để phản hồi tốt hơn.";
+
+"survey_alert.do.not.show.again" = "Không hiển thị lại";
+
+"survey_service.not.available" = "Dịch vụ khảo sát không khả dụng.";
+
+"survey.external.url.missing" = "Hiện không thể mở khảo sát. Vui lòng thử lại sau.";
+
+"survey_service.update.path.missing" = "Đã xảy ra lỗi khi gửi câu trả lời của bạn. Vui lòng thử lại sau.";
+
+/* Use for vehicles that arrived X minutes ago. */
+"formatters.arrived_x_min_ago_fmt" = "Đã đến %d phút trước";
+
+/* Use for vehicles arriving in X minutes. */
+"formatters.arrives_in_x_min_fmt" = "Đến sau %d phút";
+
+/* Use for vehicles arriving now. */
+"formatters.arriving_now" = "Đang đến";
+
+/* Headed in an eastern direction */
+"formatters.cardinal_adjective.east" = "Hướng Đông";
+
+/* Headed in a northern direction */
+"formatters.cardinal_adjective.north" = "Hướng Bắc";
+
+/* Headed in a northeastern direction */
+"formatters.cardinal_adjective.northeast" = "Hướng ĐB";
+
+/* Headed in a northwestern direction */
+"formatters.cardinal_adjective.northwest" = "Hướng TB";
+
+/* Headed in a southern direction */
+"formatters.cardinal_adjective.south" = "Hướng Nam";
+
+/* Headed in an southeastern direction */
+"formatters.cardinal_adjective.southeast" = "Hướng ĐN";
+
+/* Headed in a southwestern direction */
+"formatters.cardinal_adjective.southwest" = "Hướng TN";
+
+/* Headed in a western direction */
+"formatters.cardinal_adjective.west" = "Hướng Tây";
+
+/* East Direction */
+"formatters.cardinal_direction.east" = "Đông";
+
+/* North Direction */
+"formatters.cardinal_direction.north" = "Bắc";
+
+/* Northeast Direction */
+"formatters.cardinal_direction.northeast" = "Đông Bắc";
+
+/* Northwest Direction */
+"formatters.cardinal_direction.northwest" = "Tây Bắc";
+
+/* South Direction */
+"formatters.cardinal_direction.south" = "Nam";
+
+/* Southeast Direction */
+"formatters.cardinal_direction.southeast" = "Đông Nam";
+
+/* Southwest Direction */
+"formatters.cardinal_direction.southwest" = "Tây Nam";
+
+/* West Direction */
+"formatters.cardinal_direction.west" = "Tây";
+
+/* Abbreviation for East */
+"formatters.cardinal_direction_abbrev.east" = "Đ";
+
+/* Abbreviation for North */
+"formatters.cardinal_direction_abbrev.north" = "B";
+
+/* Abbreviation for Northeast */
+"formatters.cardinal_direction_abbrev.northeast" = "ĐB";
+
+/* Abbreviation for Northwest */
+"formatters.cardinal_direction_abbrev.northwest" = "TB";
+
+/* Abbreviation for South */
+"formatters.cardinal_direction_abbrev.south" = "N";
+
+/* Abbreviation for Southeast */
+"formatters.cardinal_direction_abbrev.southeast" = "ĐN";
+
+/* Abbreviation for Southwest */
+"formatters.cardinal_direction_abbrev.southwest" = "TN";
+
+/* Abbreviation for West */
+"formatters.cardinal_direction_abbrev.west" = "T";
+
+/* Use for vehicles that departed X minutes ago. */
+"formatters.departed_x_min_ago_fmt" = "Đã khởi hành %d phút trước";
+
+/* Use for vehicles departing now. */
+"formatters.departing_now" = "Đang khởi hành";
+
+/* Use for vehicles departing in X minutes. */
+"formatters.departs_in_x_min_fmt" = "Khởi hành sau %d phút";
+
+/* Format string for describing an early future arrival schedule deviation. e.g. arrives 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
+"formatters.deviation.arrival_future_early_fmt" = "đến sớm %d phút";
+
+/* Format string for describing a late future arrival schedule deviation. e.g. arrives 3 min late. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
+"formatters.deviation.arrival_future_late_fmt" = "đến trễ %d phút";
+
+/* Describes an on-time arrival. e.g. arrives on time. */
+"formatters.deviation.arrival_future_on_time" = "đến đúng giờ";
+
+/* Format string for describing an early arrival schedule deviation. e.g. Arrived 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
+"formatters.deviation.arrival_past_early_fmt" = "đã đến sớm %d phút";
+
+/* Format string for describing a late arrival schedule deviation. e.g. Arrived 3 min late. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
+"formatters.deviation.arrival_past_late_fmt" = "đã đến trễ %d phút";
+
+/* Describes an on-time arrival. e.g. arrived on time. */
+"formatters.deviation.arrival_past_on_time" = "đã đến đúng giờ";
+
+/* Describes an on-time departure. e.g. departs on time. */
+"formatters.deviation.departs_future_on_time" = "khởi hành đúng giờ";
+
+/* Format string for describing an early future departure schedule deviation. e.g. departs 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
+"formatters.deviation.departure_future_early_fmt" = "khởi hành sớm %d phút";
+
+/* Format string for describing a late future departure schedule deviation. e.g. departs 3 min late. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
+"formatters.deviation.departure_future_late_fmt" = "khởi hành trễ %d phút";
+
+/* Format string for describing an early departure schedule deviation. e.g. Departed 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
+"formatters.deviation.departure_past_early_fmt" = "đã khởi hành sớm %d phút";
+
+/* Format string for describing a late departure schedule deviation. e.g. Departed 3 min late. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
+"formatters.deviation.departure_past_late_fmt" = "đã khởi hành trễ %d phút";
+
+/* Describes an on-time departure. e.g. departed on time. */
+"formatters.deviation.departure_past_on_time" = "đã khởi hành đúng giờ";
+
+/* Short formatted time text for arrivals/departures occurring now. */
+"formatters.now" = "NGAY";
+
+/* Formatted time text for arrivals/departures that occur in one minute. */
+"formatters.one_minute" = "Một phút";
+
+/* Formatted time text for arrivals/departures that occurred one minute ago. */
+"formatters.one_minute_ago" = "Một phút trước";
+
+/* A format string used to denote the list of routes served by this stop. e.g. 'Routes: 10, 12, 49' */
+"formatters.routes_label_fmt" = "Tuyến: %@";
+
+/* A format string used to denote the overflowing list of routes served by this stop. e.g. 'Routes: 10, 12, 49, + 3 more */
+"formatters.routes_label_plus_more_fmt" = "Tuyến: %1$@, + %2$d tuyến khác";
+
+/* Placeholder text for the search bar: 'Search in {REGION NAME}' */
+"formatters.search_bar_placeholder_fmt" = "Tìm kiếm tại %@";
+
+/* Short formatted time text for arrivals/departures. Example: 7m means that this event happens 7 minutes in the future. -7m means 7 minutes in the past. */
+"formatters.short_time_fmt" = "%dp";
+
+/* Format string representing a non-numeric stop number. e.g. Stop: 'Old Library' */
+"formatters.stop.stop_code_non_numeric" = "Điểm dừng: '%@'";
+
+/* Format string representing a numeric stop number. e.g. Stop #1234 */
+"formatters.stop.stop_code_numeric" = "Điểm dừng số %@";
+
+/* A string that prefixes a stop ID to tell the user what that value is. */
+"formatters.stop_id_fmt" = "Mã điểm dừng: %@";
+
+/* Indicates that an event just took place. */
+"formatters.time_ago_just_now" = "Vừa xong";
+
+/* Formatted time text for arrivals/departures. Used for accessibility labels, so be sure to spell out the word for 'minute'. Example: 7 minutes means that this event happens 7 minutes in the future. -7 minutes means 7 minutes in the past. */
+"formatters.time_fmt" = "%d phút";
+
+/* Bus. Used for short- and long-distance bus routes. */
+"route_type.bus" = "Xe buýt";
+
+/* Cable car. Used for street-level cable cars where the cable runs beneath the car. */
+"route_type.cable_car" = "Xe điện cáp kéo";
+
+/* Ferry. Used for short- and long-distance boat service. */
+"route_type.ferry" = "Phà";
+
+/* Funicular. Any rail system designed for steep inclines. */
+"route_type.funicular" = "Đường sắt leo dốc";
+
+/* Gondola, Suspended cable car. Typically used for aerial cable cars where the car is suspended from the cable. */
+"route_type.gondola" = "Cáp treo";
+
+/* Tram, Streetcar, Light rail. Any light rail or street level system within a metropolitan area. */
+"route_type.light_rail" = "Đường sắt nhẹ";
+
+/* Rail. Used for intercity or long-distance travel. */
+"route_type.rail" = "Đường sắt";
+
+/* Subway, Metro. Any underground rail system within a metropolitan area. */
+"route_type.subway" = "Tàu điện ngầm";
+
+/* The body of the schedule/timetable feature tip */
+"schedule_tip.message" = "Nhấn vào đây rồi nhấn 'Lịch trình' để xem lịch trình hoặc thời gian biểu cho xe buýt và tàu của bạn.";
+
+/* Title for the schedule/timetable feature tip */
+"schedule_tip.title" = "Xem lịch trình tuyến của bạn";
+
+/* User-facing string that means the location of the stop on the map is wrong. */
+"stop_problem_code.user_description.location_wrong" = "Vị trí sai";
+
+/* User-facing string that means the name of the stop is wrong. */
+"stop_problem_code.user_description.name_wrong" = "Tên sai";
+
+/* User-facing string that means the number/ID of the stop is wrong. */
+"stop_problem_code.user_description.number_wrong" = "Số hiệu sai";
+
+/* User-facing string that means that something else is wrong */
+"stop_problem_code.user_description.other" = "Khác";
+
+/* User-facing string that means our data is wrong about a route or a scheduled trip */
+"stop_problem_code.user_description.route_or_trip_missing" = "Thiếu tuyến hoặc chuyến theo lịch trình";
+
+/* Message for the trip planner tip */
+"trip_planner_tip.message" = "Nhấn vào đây để tìm kiếm địa điểm và lên kế hoạch hành trình với chỉ đường phương tiện công cộng.";
+
+/* Title for the trip planner tip */
+"trip_planner_tip.title" = "Lên kế hoạch chuyến đi";
+
+/* User-facing string that means the vehicle came early. */
+"trip_problem_code.user_description.came_early" = "Đến sớm";
+
+/* User-facing string that means the vehicle came late. */
+"trip_problem_code.user_description.came_late" = "Đến trễ";
+
+/* User-facing string that means the vehicle does not stop here. */
+"trip_problem_code.user_description.does_not_stop_here" = "Không dừng ở đây";
+
+/* User-facing string that means the vehicle never came. */
+"trip_problem_code.user_description.never_came" = "Không hề đến";
+
+/* User-facing string that means that something else is wrong */
+"trip_problem_code.user_description.other" = "Khác";
+
+/* User-facing string that means the vehicle headsign was wrong. */
+"trip_problem_code.user_description.wrong_headsign" = "Biển báo điểm đến sai";
+
+/* VoiceOver text describing a route that has already arrived, regardless of realtime data availability. */
+"voiceover.arrivaldeparture_arrived_x_minutes_ago_fmt" = "đã đến %1$d phút trước, lúc %2$@.";
+
+/* VoiceOver text describing a future arrival that is based off realtime data. */
+"voiceover.arrivaldeparture_arriving_in_x_minutes" = "sẽ đến sau %1$d phút, lúc %2$@.";
+
+/* VoiceOver text describing a route that is arriving now, regardless of realtime data availability. */
+"voiceover.arrivaldeparture_arriving_now" = "đang đến!";
+
+/* VoiceOver text describing a route that has already departed, regardless of realtime data availability. */
+"voiceover.arrivaldeparture_departed_x_minutes_ago_fmt" = "đã khởi hành %1$d phút trước, lúc %2$@.";
+
+/* VoiceOver text describing a future departure that is based off realtime data. */
+"voiceover.arrivaldeparture_departing_in_x_minutes_fmt" = "sẽ khởi hành sau %1$d phút, lúc %2$@.";
+
+/* VoiceOver text describing a route that is departing now, regardless of realtime data availability. */
+"voiceover.arrivaldeparture_departing_now" = "đang khởi hành!";
+
+/* VoiceOver text describing the name of a route in a verbose fashion to compensate for no visuals. */
+"voiceover.arrivaldeparture_route_fmt" = "Tuyến %@";
+
+/* VoiceOver text describing a route that is scheduled to arrive (no realtime data was available). */
+"voiceover.arrivaldeparture_scheduled_arrives_in_x_minutes_fmt" = "theo lịch sẽ đến sau %1$d phút, lúc %2$@.";
+
+/* VoiceOver text describing a route that is scheduled to depart. (no realtime data was available) */
+"voiceover.arrivaldeparture_scheduled_departs_in_x_minutes_fmt" = "theo lịch sẽ khởi hành sau %1$d phút, lúc %2$@.";
+
+/* Error when no transit stops are found near the user's location. */
+"nearby_trip_matcher.error.no_stops" = "Không tìm thấy điểm dừng nào ở gần.";
+
+/* Error when a route has no real-time vehicle tracking data. */
+"nearby_trip_matcher.error.no_realtime" = "Không có dữ liệu theo dõi thời gian thực cho tuyến này.";
+
+"surveys.accessibility_selected_value" = "Đã chọn";
+
+"surveys.accessibility_not_selected_value" = "Chưa chọn";
+
+"surveys.accessibility_tap_toggle_selection" = "Nhấn để chuyển đổi lựa chọn";
+
+"surveys.accessibility_tap_to_select" = "Nhấn để chọn";
+
+"surveys.accessibility_answer.input" = "Ô nhập câu trả lời";
+
+"surveys.accessibility.hint_answer.input" = "Nhập câu trả lời của bạn cho câu hỏi khảo sát";
+
+"surveys.accessibility_survey_label" = "Nhãn khảo sát";

@@ -14,7 +14,6 @@
 #import "App-Swift.h"
 
 @interface AppDelegate ()<OBAApplicationDelegate>
-@property(nonatomic,strong) OBAApplication *app;
 @property(nonatomic,strong) NSUserDefaults *userDefaults;
 @property(nonatomic,strong) OBAClassicApplicationRootController *rootController;
 @property(nonatomic,strong) OBAAnalyticsOrchestrator *analyticsClient;
@@ -60,24 +59,13 @@
 }
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-    self.window = [[UIWindow alloc] initWithFrame:UIScreen.mainScreen.bounds];
-    [self.window makeKeyAndVisible];
-
-    // This method will call -applicationReloadRootInterface:, which creates the
-    // application's UI and attaches it to the window, so no need to do that here.
-    [self.app application:application didFinishLaunching:launchOptions];
+    // The window, root interface, and active/resign lifecycle now live in
+    // SceneDelegate, which forwards these launch options to the app stack.
+    self.launchOptions = launchOptions;
 
     [self.analyticsClient configureWithUserID:self.app.userUUID];
 
     return YES;
-}
-
-- (void)applicationDidBecomeActive:(UIApplication *)application {
-    [self.app applicationDidBecomeActive:application];
-}
-
-- (void)applicationWillResignActive:(UIApplication *)application {
-    [self.app applicationWillResignActive:application];
 }
 
 #pragma mark - OBAApplicationDelegate

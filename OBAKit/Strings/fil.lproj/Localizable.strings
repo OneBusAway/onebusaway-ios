@@ -1,0 +1,1008 @@
+/* Text for the table header for bookmarking an entire stop. */
+"add_bookmark_controller.bookmark_stop_header" = "I-bookmark ang Hintuan";
+
+/* Text for the table header for bookmarking an individual trip. */
+"add_bookmark_controller.bookmark_trip_header" = "Mag-bookmark ng Biyahe";
+
+/* Explanatory text shown when route bookmarking is unavailable due to no upcoming departures. */
+"add_bookmark_controller.trip_bookmark_unavailable" = "Available lang ang mga bookmark ng ruta kapag may mga paparating na pag-alis para sa hintuang ito.";
+
+/* Text field placeholder on the Add Group Alert. */
+"add_group_alert.placeholder" = "Pangalan ng Grupo ng Bookmark";
+
+/* Title of the Add Bookmark Group controller */
+"add_group_alert.title" = "Magdagdag ng Grupo";
+
+/* Action to call agency */
+"agencies_controller.call_agency" = "Tawagan ang Ahensya";
+
+/* Error dialog title */
+"agencies_controller.error_title" = "Error";
+
+/* Error message for invalid phone */
+"agencies_controller.invalid_phone" = "Hindi valid ang numero ng telepono.";
+
+/* Action to open agency website */
+"agencies_controller.open_website" = "Buksan ang Website";
+
+/* Title of the Agencies controller */
+"agencies_controller.title" = "Mga Ahensya";
+
+/* The title of the Agency Alerts controller. */
+"agency_alerts_controller.title" = "Mga Alerto";
+
+/* {X} minutes. always plural. */
+"alarm_builder_controller.minutes_fmt" = "%d minuto";
+
+/* One minute/1 minute */
+"alarm_builder_controller.one_minute" = "1 minuto";
+
+/* Explains what the Alarm Time Picker page does. */
+"alarm_time_picker.description" = "Paalalahanan ako kapag aalis na ang sasakyang ito sa loob ng:";
+
+/* Title of the Alarm Time Picker page. */
+"alarm_time_picker.title" = "Magdagdag ng Paalala";
+
+/* The title to display to confirm the user's action to delete a bookmark. */
+"bookmarks_controller.delete_bookmark.actionsheet.title" = "I-delete ang Bookmark";
+
+/* Groups button title in Bookmarks controller */
+"bookmarks_controller.groups_button_title" = "I-edit";
+
+/* A menu item that allows the user to sort their bookmarks by distance from the user. */
+"bookmarks_controller.sort_menu.sort_by_distance" = "I-sort ayon sa Distansya";
+
+/* A menu item that allows the user to sort their bookmarks into groups. */
+"bookmarks_controller.sort_menu.sort_by_group" = "I-sort ayon sa Grupo";
+
+/* The table section header on the bookmarks controller for when bookmarks are sorted by distance. */
+"bookmarks_controller.sorted_by_distance_header" = "Naka-sort ayon sa Distansya";
+
+/* Title of the Bookmarks tab */
+"bookmarks_controller.title" = "Mga Bookmark";
+
+/* The title for the bookmarks controller section that shows bookmarks that aren't in a group. */
+"bookmarks_controller.ungrouped_bookmarks_section.title" = "Mga Bookmark";
+
+/* This is displayed to confirm that something has been copied to clipboard. */
+"clipboard.copied_text_confirmation" = "Nakopya sa clipboard";
+
+/* Body of the the alert that appears when you try sending an email without Mail.app set up */
+"contact_us_helper.cant_send_email.body_fmt" = "Para makipag-ugnayan sa amin, kailangan mo kaming i-email sa %@. Paki-tap ang 'Kopyahin ang Debug Info' para makopya sa clipboard ang impormasyong makakatulong sa amin na ayusin ang problemang ito. Pakisama ang impormasyong ito sa iyong email.";
+
+/* A button that lets the user copy an email address to the clipboard. */
+"contact_us_helper.cant_send_email.copy_email_button" = "Kopyahin ang Email Address";
+
+/* A button that lets the user copy a default message, including debug info, to the clipboard. */
+"contact_us_helper.cant_send_email.copy_message_button" = "Kopyahin ang Debug Info";
+
+/* Title of the alert that appears when the user's device isn't configured to send email. */
+"contact_us_helper.cant_send_email.title" = "Hindi Makapagpadala ng Email gamit ang Mail.app";
+
+/* Feedback email template subject for the app developers */
+"contact_use_helper.feedback_subject.app" = "Feedback para sa OneBusAway";
+
+/* Feedback email template subject for the transit agency */
+"contact_use_helper.feedback_subject.transit_agency" = "Feedback mula sa Pasahero ng Transit";
+
+/* Title of the Credits controller */
+"credits_controller.title" = "Mga Credit";
+
+/* Loading message while searching for the user's vehicle. */
+"current_trip_controller.detecting" = "Hinahanap ang iyong sasakyan…";
+
+/* Distance from user to vehicle. e.g. '0.2 mi away' */
+"current_trip_controller.distance_fmt" = "%@ ang layo";
+
+/* Error message when the user's location is not available. */
+"current_trip_controller.location_unavailable" = "Hindi available ang lokasyon. Paki-enable ang mga serbisyo ng lokasyon.";
+
+/* Section header when multiple vehicles are found on the selected route. */
+"current_trip_controller.multiple_vehicles" = "Maraming sasakyan ang natagpuan";
+
+/* Title for the current trip screen. */
+"current_trip_controller.my_trip" = "Aking Biyahe";
+
+/* Message when the route has no real-time tracking data. */
+"current_trip_controller.no_realtime" = "Walang real-time na pagsubaybay para sa rutang ito";
+
+/* Message when no active vehicle is found near the user on the selected route. */
+"current_trip_controller.no_results" = "Walang aktibong sasakyan na natagpuan sa rutang ito malapit sa iyo";
+
+/* Error when the API service is unavailable. */
+"current_trip_controller.error_no_service" = "Hindi makakonekta sa serbisyo ng transit.";
+
+/* Button to retry finding the user's vehicle. */
+"current_trip_controller.retry" = "Subukang Muli";
+
+/* Title of the Base URL header. */
+"custom_region_builder_controller.base_url_section.header_title" = "Base URL";
+
+/* Title of the Contact Email header. */
+"custom_region_builder_controller.contact_email_section.header_title" = "Email sa Pakikipag-ugnayan";
+
+/* Example custom region name */
+"custom_region_builder_controller.example_data.region_name" = "Aking Custom na Rehiyon";
+
+/* An explanation of dragging the map to highlight the service area of a custom region. */
+"custom_region_builder_controller.service_area_section.explanation" = "I-drag ang mapa sa tinatayang sakop ng serbisyo ng rehiyong ito.";
+
+/* Title of the Service Area header. */
+"custom_region_builder_controller.service_area_section.header_title" = "Sakop ng Serbisyo";
+
+/* Action button title for the DataMigrationBulletinPage. */
+"data_migration_bulletin.action_button" = "Magpatuloy";
+
+/* Title for the DataMigrationBulletinPage. */
+"data_migration_bulletin.data_upgrade_title" = "Pag-upgrade ng Data";
+
+/* Dismissal button title for the DataMigrationBulletinPage. */
+"data_migration_bulletin.dismiss_button" = "Huwag Muna Ngayon";
+
+/* An error message that appears when the user needs to have data migrated, but is not connected to the Internet. */
+"data_migration_bulletin.errors.no_api_service_available" = "Suriin ang iyong koneksyon sa internet at subukang muli.";
+
+/* An error message that appears when the data migrator runs but no data can be migrated. */
+"data_migration_bulletin.errors.no_data_to_migrate" = "Walang data na ia-upgrade";
+
+/* An error message that appears when the data migrator runs without a pending migration. */
+"data_migration_bulletin.errors.no_migration_pending" = "Walang nakabinbing paglilipat ng data";
+
+/* First bullet point of DataMigrationBulletinPage explanation */
+"data_migration_bulletin.explanation_1" = "I-upgrade ang iyong Mga Kamakailang Hintuan at Mga Bookmark para gumana sa pinakabagong bersyon ng app; isang beses mo lang itong kailangang gawin.";
+
+/* Second bullet point of DataMigrationBulletinPage explanation */
+"data_migration_bulletin.explanation_2" = "Hindi mo makikita ang iyong Mga Kamakailang Hintuan o Mga Bookmark hangga't hindi ka nag-a-upgrade.";
+
+/* Third bullet point of DataMigrationBulletinPage explanation */
+"data_migration_bulletin.explanation_3" = "Maaaring tumagal nang kaunti ang pag-upgrade, at kailangan ng Wi-Fi o mobile na koneksyon habang nag-a-upgrade.";
+
+/* This comment is displayed after the user's data is upgraded in the DataMigrationBulletinPage. */
+"data_migration_bulletin.finished_loading" = "Tapos Na ang Pag-upgrade ng Data!";
+
+/* Data migration report label for showing the number of failed migration tasks. */
+"data_migration_bulletin.report_summary_number_of_failures" = "%d ang nabigo";
+
+/* Data migration report label for showing the number of successful migration tasks. */
+"data_migration_bulletin.report_summary_number_of_successes" = "%d ang matagumpay";
+
+/* Title for the Summary section of a data migration report */
+"data_migration_bulletin.report_summary_title" = "Buod";
+
+/* Button title to let the user view a data migration report. */
+"data_migration_bulletin.view_report_button" = "Tingnan ang Ulat";
+
+/* Body of the donation widget that appears on the stop view controller */
+"donation_cell.body" = "Ang app na ito ay kasalukuyang ginagawa nang 100% boluntaryo, at kailangan namin ang tulong mo para pondohan ang susunod na development.";
+
+/* Title of the button that shows the donation UI. */
+"donation_cell.donate_button_title" = "Mag-donate Ngayon";
+
+/* Title of the button that shows the donation explanation UI. */
+"donation_cell.learn_more_button_title" = "Alamin Pa";
+
+/* Title of the donation widget that appears on the stop view controller. */
+"donation_cell.title" = "🚨 Kailangan ng OneBusAway ang tulong mo";
+
+/* Dismiss button on the alert */
+"donations.donations_dismiss_alert.button_dismiss" = "Ayoko Munang Tumulong Ngayon";
+
+/* A button that prompts the system to remind them to donate later. */
+"donations.donations_dismiss_alert.button_remind_later" = "Paalalahanan Ako Mamaya";
+
+/* Body of the alert that appears when the user chooses to dismiss the donations request UI on a stop page */
+"donations.donations_dismiss_alert.message" = "Ang OneBusAway ay isang organisasyong pinapatakbo ng mga boluntaryo na halos walang pondo. Kailangan namin ang tulong mo para mapanatiling tumatakbo ang app na ito.";
+
+/* Title of the alert that appears when the user chooses to dismiss the donations request UI on a stop page */
+"donations.donations_dismiss_alert.title" = "Huwag sanang balewalain ang kahilingang ito";
+
+/* Indicates that the user wants to create a duplicate bookmark. */
+"edit_bookmark_controller.duplicate_alert.affirmative_button" = "Gumawa ng Duplicate";
+
+/* Title of the button that lets the user add a new Bookmark Group. */
+"edit_bookmark_controller.add_group_button_title" = "Magdagdag ng Grupo ng Bookmark";
+
+/* Body of an alert telling the user they have already bookmarked this thing. */
+"edit_bookmark_controller.duplicate_alert.body" = "Na-bookmark mo na ito. Sinadya mo bang gumawa ng duplicate?";
+
+/* The title of an alert telling the user that they have already bookmarked this thing. Noun form of 'duplicate', not the verb. */
+"edit_bookmark_controller.duplicate_alert.title" = "Duplicate na Bookmark";
+
+/* Title of the Bookmark Group header. */
+"edit_bookmark_controller.group_section.header_title" = "Grupo ng Bookmark";
+
+/* Title of the Bookmark Name header. */
+"edit_bookmark_controller.name_section.header_title" = "Pangalan ng Bookmark";
+
+/* Don't add this bookmark to a group. */
+"edit_bookmark_controller.no_group_row" = "(Walang Grupo)";
+
+/* Body of an alert shown when a bookmark cannot be saved because the current region is unavailable. */
+"edit_bookmark_controller.region_error.body" = "Hindi available ang kasalukuyang rehiyon. Pakisubukang muli.";
+
+/* Title of an alert shown when a bookmark cannot be saved because the current region is unavailable. */
+"edit_bookmark_controller.region_error.title" = "Hindi Ma-save";
+
+/* Title next to the switch that toggles whether a bookmark will appear in the today view. */
+"edit_bookmark_controller.show_in_today_view_switch_title" = "Ipakita sa Today View widget";
+
+/* Title for the Edit Bookmark controller in edit mode */
+"edit_bookmark_controller.title_edit" = "I-edit ang Bookmark";
+
+/* A button that says continue and don't show again. */
+"fare_payments.dont_show_again" = "Magpatuloy at Huwag Nang Ipakita Muli";
+
+/* A voiceover title describing the 'grabber' for controlling the visibility of a card. */
+"floating_panel.controller.accessibility_label" = "Kontrol ng card";
+
+/* A voiceover title describing the action to minimize (or collapse) the visibility of a card. */
+"floating_panel.controller.collapse_action_name" = "I-collapse";
+
+/* A voiceover title describing the action to expand the visibility of a card. */
+"floating_panel.controller.expand_action_name" = "I-expand";
+
+/* No comment provided by engineer. */
+"floating_panel.controller.full_sheet_voiceover_change_alert.message" = "Awtomatikong lalawak ang sheet kapag naka-on ang VoiceOver. Para i-disable ito, pumunta sa pahina ng Mga Setting.";
+
+/* No comment provided by engineer. */
+"floating_panel.controller.full_sheet_voiceover_change_alert.title" = "May na-detect na VoiceOver";
+
+/* A voiceover title describing that the card's visibility is taking up the full screen. */
+"floating_panel.controller.position.full" = "Buong screen";
+
+/* A voiceover title describing that the card's visibility is taking up half of the screen. */
+"floating_panel.controller.position.half" = "Kalahating screen";
+
+/* A voiceover title describing that the card's visibility taking up the minimum amount of screen. */
+"floating_panel.controller.position.minimized" = "Naka-minimize";
+
+/* Description of why we need location services */
+"location_permission_bulletin.description_text" = "Pakipayagan ang app na ma-access ang iyong lokasyon para mas madaling mahanap ang mga hintuan ng transit.";
+
+/* Title of the alert that appears to request your location. */
+"location_permission_bulletin.title" = "Maligayang Pagdating!";
+
+/* No comment provided by engineer. */
+"locationservices_alert_gotosettings.button" = "I-on sa Mga Setting";
+
+/* No comment provided by engineer. */
+"locationservices_alert_imprecise.message" = "Makikita mo kung nasaan ka sa mapa at ang mga kalapit na hintuan, para mas madali kang makarating sa pupuntahan mo.";
+
+/* No comment provided by engineer. */
+"locationservices_alert_imprecise.title" = "Pinakamahusay gumagana ang OneBusAway gamit ang iyong tumpak na lokasyon";
+
+/* No comment provided by engineer. */
+"locationservices_alert_keep_precise_location_off.button" = "Panatilihing Naka-off ang Tumpak na Lokasyon";
+
+/* No comment provided by engineer. */
+"locationservices_alert_keepoff.button" = "Panatilihing Naka-off ang Lokasyon";
+
+/* No comment provided by engineer. */
+"locationservices_alert_off.message" = "Makikita mo kung nasaan ka sa mapa at ang mga kalapit na hintuan, para mas madali kang makarating sa pupuntahan mo.";
+
+/* No comment provided by engineer. */
+"locationservices_alert_off.title" = "Pinakamahusay gumagana ang OneBusAway gamit ang iyong lokasyon.";
+
+/* No comment provided by engineer. */
+"locationservices_alert_request_precise_location_once.button" = "Payagan Nang Isang Beses";
+
+/* Message shown when there are no logs to display */
+"log_viewer_controller.no_logs" = "Walang available na log.";
+
+/* Message for alert when there are no logs to share */
+"log_viewer_controller.no_logs_to_share.message" = "Walang log file na maibabahagi.";
+
+/* Title for alert when there are no logs to share */
+"log_viewer_controller.no_logs_to_share.title" = "Walang Log";
+
+/* Title of the Logs viewer controller */
+"log_viewer_controller.title" = "Mga Log";
+
+/* Explains the purpose of the Manage Bookmarks controller */
+"manage_bookmarks.controller_footer" = "Maaari mong ayusin muli at i-delete ang Mga Bookmark mula sa screen na ito.";
+
+/* Segmented control item for bookmarks */
+"manage_bookmarks_groups.toggle.bookmarks" = "Mga Bookmark";
+
+/* Segmented control item for Groups */
+"manage_bookmarks_groups.toggle.groups" = "Mga Grupo";
+
+/* 'Add Bookmark Group' button text */
+"manage_groups_controller.add_group_button" = "Magdagdag ng Grupo ng Bookmark";
+
+/* Footer explanation on the Groups section of the Manage Groups controller. */
+"manage_groups_controller.groups.footer_text" = "Maaari mong palitan ang pangalan, magdagdag, mag-delete, at mag-ayos muli ng mga grupo ng bookmark. Hindi made-delete ang mga bookmark sa mga na-delete na grupo.";
+
+/* Placeholder text for Bookmark Group. */
+"manage_groups_controller.text_field_placeholder" = "Pangalan ng grupo";
+
+/* Manage Groups controller title */
+"manage_groups_controller.title" = "I-edit ang Mga Bookmark";
+
+/* Map controller for centering the map on the user's current location. */
+"map_controller.center_user_location" = "I-center ang mapa sa kasalukuyang lokasyon";
+
+/* Change Region button on the alert that appears when the user is updating their current region manually. */
+"map_controller.change_region_alert.button" = "Palitan ang Rehiyon";
+
+/* Body of the alert that appears when the user is updating their current region manually. */
+"map_controller.change_region_alert.message_fmt" = "Gusto mo bang palitan ang iyong rehiyon sa %@?";
+
+/* Title of the alert that appears when the user is updating their current region manually. */
+"map_controller.change_region_alert.title" = "Palitan ang Rehiyon?";
+
+/* Voiceover text indicating that this button toggles the base map type. */
+"map_controller.map_type.accessibility_label" = "Uri ng mapa";
+
+/* Voiceover text indicating the current map type as the hybrid base map (satellite view with labels). */
+"map_controller.map_type.hybrid.accessibility_value" = "hybrid";
+
+/* Voiceover text indicating the current map type as the standard base map. */
+"map_controller.map_type.standard.accessibility_value" = "standard";
+
+/* Accessibility label for the My Trip button on the map toolbar. */
+"map_controller.my_trip_button" = "Aking Biyahe";
+
+/* A generic message shown when the user's search query produces no search results. */
+"map_controller.no_search_results_found" = "Walang nahanap na resulta ng paghahanap.";
+
+/* Accessibility label for a button that provides the current forecast */
+"map_controller.show_weather_button" = "Ipakita ang Taya ng Panahon";
+
+/* This message appears when a searched-for vehicle doesn't have an assigned trip. */
+"map_controller.vehicle_not_on_trip_error" = "Mukhang wala sa biyahe ngayon ang sasakyang pinili mo, kaya hindi namin alam kung paano ito ipapakita sa iyo.";
+
+/* Search bar placeholder on the map floating panel when the trip planner is enabled. */
+"map_floating_panel.where_are_you_going" = "Saan ka pupunta?";
+
+/* About section header */
+"map_item_controller.about_header" = "Tungkol Dito";
+
+/* Call button */
+"map_item_controller.call" = "Tumawag";
+
+/* Accessibility label for call button */
+"map_item_controller.call_accessibility" = "Tawagan ang numero ng telepono";
+
+/* Accessibility label for close button */
+"map_item_controller.close_button" = "Isara";
+
+/* Accessibility label for Look Around preview */
+"map_item_controller.look_around" = "Preview ng Look Around. I-tap para buksan sa buong screen";
+
+/* Button to view nearby stops
+   Nearby stops button */
+"map_item_controller.nearby_stops" = "Mga Kalapit na Hintuan";
+
+/* Accessibility label for nearby stops button */
+"map_item_controller.nearby_stops_accessibility" = "Tingnan ang mga kalapit na hintuan ng transit";
+
+/* Plan trip button */
+"map_item_controller.plan_trip" = "Magplano ng Biyahe";
+
+/* Accessibility label for plan trip button */
+"map_item_controller.plan_trip_accessibility" = "Magplano ng biyahe papunta sa lokasyong ito";
+
+/* Button to remove a dropped pin from the map */
+"map_item_controller.remove_pin" = "Alisin ang Pin";
+
+/* Accessibility label for remove pin button */
+"map_item_controller.remove_pin_accessibility" = "Alisin ang pin na ito sa mapa";
+
+/* Accessibility label for share button */
+"map_item_controller.share_button" = "Ibahagi ang Lokasyon";
+
+/* Website button */
+"map_item_controller.website" = "Website";
+
+/* Accessibility label for website button */
+"map_item_controller.website_accessibility" = "Buksan ang website";
+
+/* Displayed in the map status view at the top of the map when the user has declined to give the app access to their location */
+"map_status_view.location_services_unavailable" = "Hindi available ang mga serbisyo ng lokasyon";
+
+/* Displayed in the map status view at the top of the map when the user has declined to give the app access to their precise location */
+"map_status_view.precise_location_unavailable" = "Hindi available ang tumpak na lokasyon";
+
+/* Displayed in the map status view at the top of the map when the user must zoom in to see stops on the map */
+"map_status_view.zoom_in_for_stops" = "Mag-zoom in para makita ang mga hintuan";
+
+/* Header for a section that shows the user information about this app. */
+"more_controller.about_app" = "Tungkol sa App na Ito";
+
+/* Alerts for region row in the More controller */
+"more_controller.alerts_for_region" = "Mga Alerto";
+
+/* Title of the action sheet option for contacting the developers of the app. */
+"more_controller.contact_developers" = "Kahilingan sa Feature/Ulat ng Bug";
+
+/* Title of the action sheet option for contacting a user's transit agency. */
+"more_controller.contact_transit" = "Problema sa Sasakyan/Iskedyul";
+
+/* A button to contact transit agency/developers. */
+"more_controller.contact_us" = "Makipag-ugnayan sa Amin";
+
+/* Contact Us alert title. */
+"more_controller.contact_us_alert_title" = "Makipag-ugnayan sa Amin";
+
+/* Credits - like who should get credit for creating this. */
+"more_controller.credits_row_title" = "Mga Credit";
+
+/* Title for a button that will crash the app. */
+"more_controller.debug_section.crash_row" = "I-crash ang app";
+
+/* This is displayed instead of the user's push ID if the value is not available. */
+"more_controller.debug_section.push_id.not_available" = "Hindi available";
+
+/* Title for the Push Notification ID row in the More Controller */
+"more_controller.debug_section.push_id.title" = "Push ID";
+
+/* Request to help develop the app */
+"more_controller.develop_the_app" = "Tumulong Mag-ayos ng Bug at Gumawa ng Bagong Feature";
+
+/* Header for the donate section. */
+"more_controller.donate" = "Maging Supporter";
+
+/* The call to action for the More controller's donate buton */
+"more_controller.donate_description" = "Mag-donate sa OneBusAway";
+
+/* Header for the volunteer section. */
+"more_controller.help_out" = "Tumulong na pagandahin ang app";
+
+/* A button that will open a web based donation portal. */
+"more_controller.manage_donations" = "Pamahalaan ang Mga Donasyon";
+
+/* Title of the Agencies row in the My Location section */
+"more_controller.my_location.agencies" = "Mga Ahensya";
+
+/* 'My Location' section header on the 'More' controller. */
+"more_controller.my_location.header" = "Aking Lokasyon";
+
+/* Title of the mobile fare payment row */
+"more_controller.my_location.pay_fare" = "Magbayad ng Pamasahe";
+
+/* Title of the row that lets the user choose their current region. */
+"more_controller.my_location.region_row_title" = "Rehiyon";
+
+/* A link to the app's Privacy Policy */
+"more_controller.privacy_row_title" = "Patakaran sa Privacy";
+
+/* Title of the More tab */
+"more_controller.title" = "Higit Pa";
+
+/* Request to help localize OneBusAway */
+"more_controller.translate_the_app" = "Tumulong sa Pagsasalin ng App";
+
+/* Updates and Alerts header text */
+"more_controller.updates_and_alerts.header" = "Mga Update at Alerto";
+
+/* A link to view application logs */
+"more_controller.view_logs_row_title" = "Tingnan ang Mga Log";
+
+/* Explanation about how this app is built and maintained by volunteers. */
+"more_header.support_us_label_text" = "Ang app na ito ay ginawa at sinusuportahan ng mga boluntaryo.";
+
+/* Body for the empty set indicator on the Nearby controller. */
+"nearby_controller.empty_set.body" = "Mag-zoom out o mag-ikot sa mapa para makahanap ng mga hintuan.";
+
+/* Title for the empty set indicator on the Nearby controller */
+"nearby_controller.empty_set.title" = "Walang Kalapit na Hintuan";
+
+/* Error shown on the Nearby Stops screen when no API service is configured (e.g. no region selected). */
+"nearby_stops_controller.no_api_service_error" = "Walang available na serbisyo ng data ng transit. Pakipili ng rehiyon sa Mga Setting.";
+
+/* Body for the empty set indicator on the Nearby Stops controller. */
+"nearby_stops_controller.empty_set.body" = "Walang ibang hintuan sa paligid.";
+
+/* Title for the empty set indicator on the Nearby Stops controller. */
+"nearby_stops_controller.empty_set.title" = "Walang Kalapit na Hintuan";
+
+/* The title of the Nearby Stops controller. */
+"nearby_stops_controller.title" = "Mga Kalapit na Hintuan";
+
+/* Vehicle occupancy is very high */
+"occupancy_status.crushed_standing_room_only" = "Sobrang siksikan, tayuan na lang";
+
+/* Vehicle occupancy is zero */
+"occupancy_status.empty" = "Walang sakay";
+
+/* Vehicle occupancy is medium */
+"occupancy_status.few_seats_available" = "Kaunting upuan na lang";
+
+/* Vehicle occupancy is full */
+"occupancy_status.full" = "Puno";
+
+/* A format string that denotes that the associated occupancy status is historical data. e.g. 'Historical: Standing room only' */
+"occupancy_status.historical_fmt" = "Batay sa nakaraang data: %@";
+
+/* Vehicle occupancy is low */
+"occupancy_status.many_seats_available" = "Maraming upuan";
+
+/* Vehicle is not accepting any passengers */
+"occupancy_status.not_accepting_passengers" = "Hindi tumatanggap ng pasahero";
+
+/* Vehicle occupancy is high */
+"occupancy_status.standing_room_only" = "Tayuan na lang";
+
+/* Vehicle occupancy status is unknown. */
+"occupancy_status.unknown" = "Hindi alam";
+
+/* Reachability bulletin for a cellular connection that can't access the Internet. */
+"reachability_bulletin.description.cellular_no_internet" = "Hindi kami maka-access sa Internet gamit ang iyong cellular na koneksyon.\r\n\r\nSubukang kumonekta sa WiFi o lumipat sa ibang lugar.";
+
+/* Reachability bulletin for a phone with no connection. */
+"reachability_bulletin.description.not_connected" = "Hindi kami maka-access sa Internet. Subukang kumonekta gamit ang WiFi o cellular data.";
+
+/* Reachability bulletin for a WiFi network that can't access the Internet. */
+"reachability_bulletin.description.wifi_no_internet" = "Hindi kami maka-access sa Internet gamit ang iyong WiFi na koneksyon.\r\n\r\nSubukang i-off ang WiFi o kumonekta sa ibang network.";
+
+/* Title of the alert that appears when the app can't connect to the server. */
+"reachability_bulletin.title" = "Walang Internet";
+
+/* Title for a confirmation alert displayed before the user deletes all of their recent stops. */
+"recent_stops.confirmation_alert.title" = "Sigurado ka bang gusto mong i-delete ang lahat ng iyong kamakailang hintuan?";
+
+/* A button that deletes all of the recent stops in the app. */
+"recent_stops.delete_all" = "I-delete Lahat";
+
+/* Body for the empty set indicator on the Recent Stops controller. */
+"recent_stops.empty_set.body" = "Lalabas dito ang mga hintuan ng transit na tiningnan mo sa app.";
+
+/* The button title for taking the user to the map view to find stops. */
+"recent_stops.empty_set.button" = "Maghanap ng Hintuan sa Mapa";
+
+/* Title for the empty set indicator on the Recent Stops controller. */
+"recent_stops.empty_set.title" = "Walang Kamakailang Hintuan";
+
+/* Title of the Alarms section of the Recents controller */
+"recent_stops_controller.alarms_section.title" = "Mga Paalala";
+
+/* The title of the Recent Stops controller. */
+"recent_stops_controller.title" = "Kamakailan";
+
+/* Formatted alert body shown when there is a mismatch between the user location and selected region. e.g. 'Your region is set to Puget Sound, but you appear to be in San Diego.' */
+"region_mismatch_bulletin.body_fmt" = "Nakatakda ang iyong rehiyon sa %1$@, pero mukhang nasa %2$@ ka.";
+
+/* A button on the region mismatch alert that changes the user's current region. e.g. 'Change to San Diego' */
+"region_mismatch_bulletin.change_region_button_fmt" = "Lumipat sa %@";
+
+/* Alert title shown when there is a mismatch between the user location and selected region. */
+"region_mismatch_bulletin.title" = "Palitan ang Rehiyon?";
+
+/* A button on the region mismatch alert that updates the map's current location to be the specified region. e.g. 'Show Puget Sound on the map' */
+"region_mismatch_bulletin.update_map_button_fmt" = "Ipakita ang %@ sa mapa";
+
+/* Help text displayed on a custom (user-created) region. */
+"region_picker.custom_region_help_text" = "Custom na rehiyon";
+
+/* Help text displayed on an experimental region. */
+"region_picker.experimental_region_help_text" = "Eksperimental na rehiyon";
+
+/* Help text displayed on an inactive region. */
+"region_picker.inactive_region_help_text" = "Hindi aktibong rehiyon";
+
+/* Title of a button that shows a region creation view controller. */
+"region_picker.new_custom_region_button" = "Bagong Custom na Rehiyon";
+
+/* Title of a toggle that shows experimental (beta) regions. */
+"region_picker.show_experimental_regions_toggle" = "Ipakita ang Eksperimental";
+
+/* Title of a toggle that shows inactive regions. */
+"region_picker.show_inactive_regions_toggle" = "Ipakita ang Hindi Aktibo";
+
+/* Title of the Region Picker Item, which lets the user choose a new region from the map. */
+"region_picker.title" = "Pumili ng Rehiyon";
+
+/* Error message of Custom Region URL if it's invalid or does not point to a functional OBA server */
+"region_url.error_messsage" = "Ang ibinigay na URL ng rehiyon ay hindi valid o hindi tumuturo sa gumaganang OBA server.";
+
+/* Placeholder text in the route search field. */
+"route_picker.search_placeholder" = "Maghanap ng ruta…";
+
+/* Title for the route picker screen where the user selects their transit route. */
+"route_picker.title" = "Piliin ang Iyong Ruta";
+
+/* Error when API service is unavailable in the route picker. */
+"route_picker.error_no_service" = "Hindi makakonekta sa serbisyo ng transit.";
+
+/* Error when location is unavailable in the route picker. */
+"route_picker.error_no_location" = "Hindi available ang lokasyon. Paki-enable ang mga serbisyo ng lokasyon para makahanap ng mga kalapit na ruta.";
+
+/* Loading message while fetching nearby routes. */
+"route_picker.loading" = "Naglo-load ng mga ruta…";
+
+/* Message when no routes are found near the user's location. */
+"route_picker.no_routes" = "Walang nahanap na ruta sa malapit.";
+
+/* Title of the Report Problem view controller. */
+"report_problem.title" = "Mag-ulat ng Problema";
+
+/* Report a problem with the stop at {Stop Name} */
+"report_problem_controller.report_stop_problem_fmt" = "Mag-ulat ng problema sa hintuan sa %@";
+
+/* A table header in the 'Report Problem' view controller. */
+"report_problem_controller.stop_problem.header" = "Problema sa Hintuan";
+
+/* A table header in the 'Report Problem' view controller. */
+"report_problem_controller.vehicle_problem.header" = "Problema sa Sasakyan sa Hintuan";
+
+/* Morning time period label */
+"schedule_view.am_period" = "AM";
+
+/* Label for date picker in schedule view */
+"schedule_view.date" = "Petsa";
+
+/* Label for direction picker in schedule view */
+"schedule_view.direction" = "Direksyon";
+
+/* Default direction label when no headsign is available */
+"schedule_view.direction_number_fmt" = "Direksyon %d";
+
+/* Accessibility text when there is no departure time */
+"schedule_view.no_departure" = "Walang pag-alis";
+
+/* Message shown when schedule data is not available */
+"schedule_view.no_schedule_data" = "Walang available na data ng iskedyul";
+
+/* Message when no stops are available for the selected direction */
+"schedule_view.no_stops_found" = "Walang nahanap na hintuan para sa direksyong ito";
+
+/* Afternoon/evening time period label */
+"schedule_view.pm_period" = "PM";
+
+/* Headsign label showing destination */
+"schedule_view.to_headsign_fmt" = "Papunta sa: %@";
+
+/* Error message when schedule fails to load */
+"schedule_view.unable_to_load" = "Hindi ma-load ang iskedyul";
+
+/* Title of the Bookmarks search header */
+"search_controller.bookmarks.header" = "Mga Bookmark";
+
+/* Body for the empty set indicator on the Search controller. */
+"search_controller.empty_set.body" = "Mag-type ng address, pangalan ng ruta, numero ng hintuan, o sasakyan dito para maghanap.";
+
+/* Title for the empty set indicator on the Search controller. */
+"search_controller.empty_set.title" = "Maghanap";
+
+/* Placemark search header */
+"search_controller.placemarks.header" = "Mga Resulta";
+
+/* Loading message for placemark search */
+"search_controller.placemarks.loading" = "Naghahanap ng mga lugar...";
+
+/* No results message for placemark search */
+"search_controller.placemarks.no_results" = "Walang nahanap na resulta";
+
+/* Subtitle on search error row prompting the user to retry. */
+"search_controller.placemarks.error_retry" = "I-tap para subukang muli";
+
+/* Quick Search section header in search */
+"search_controller.quick_search.header" = "Mabilisang Paghahanap";
+
+/* Quick search prefix for Address. */
+"search_interactor.quick_search.address_prefix" = "Address:";
+
+/* Quick search prefix for Route. */
+"search_interactor.quick_search.route_prefix" = "Ruta:";
+
+/* Quick search prefix for Stop. */
+"search_interactor.quick_search.stop_prefix" = "Hintuan:";
+
+/* Quick search prefix for Vehicle. */
+"search_interactor.quick_search.vehicle_prefix" = "Sasakyan:";
+
+/* Error shown when vehicle search is attempted with no API service configured (e.g. no region selected). */
+"search_results_controller.no_api_service_error" = "Walang available na serbisyo ng data ng transit. Pakipili ng rehiyon sa Mga Setting.";
+
+/* Error message shown when a vehicle has no trips available. */
+"search_results_controller.no_trips_available" = "Ang sasakyang ito ay kasalukuyang wala sa anumang biyahe.";
+
+/* A format string for address searches. In English, this is just the address itself without any adornment. */
+"search_results_controller.subtitle.address_fmt" = "%@";
+
+/* A format string for route searches. e.g. in english: Route \"{SEARCH TEXT}\" */
+"search_results_controller.subtitle.route_fmt" = "Ruta %@";
+
+/* A format string for stop number searches. e.g. in english: Stop number \"{SEARCH TEXT}\" */
+"search_results_controller.subtitle.stop_number_fmt" = "Hintuan numero %@";
+
+/* A format string for vehicle ID searches. e.g. in english: Vehicle ID \"{SEARCH TEXT}\" */
+"search_results_controller.subtitle.vehicle_id_fmt" = "Vehicle ID %@";
+
+/* The title of the Search Results controller. */
+"search_results_controller.title" = "Mga Resulta ng Paghahanap";
+
+/* The transit agencies affected by this service alert. */
+"service_alert_controller.affected_agencies" = "Mga Apektadong Ahensya";
+
+/* The routes affected by this service alert. */
+"service_alert_controller.affected_routes" = "Mga Apektadong Ruta";
+
+/* The stops affected by this service alert. */
+"service_alert_controller.affected_stops" = "Mga Apektadong Hintuan";
+
+/* The trips affected by this service alert. */
+"service_alert_controller.affected_trips" = "Mga Apektadong Biyahe";
+
+/* As in 'this is in effect/occurring' from/to */
+"service_alert_controller.in_effect" = "May Bisa";
+
+/* Directs the user to tap on the link that comes at the end of the string. Learn more: <HYPERLINK IS INSERTED HERE> */
+"service_alert_controller.learn_more_fmt" = "Alamin pa: %@";
+
+/* Settings > Accessibility section > Always show full sheet on Voiceover */
+"settings_controller.accessibility_section.default_full_sheet_voiceover" = "Laging ipakita ang buong sheet sa VoiceOver";
+
+/* Settings > Accessibility section > Haptic feedback on reload */
+"settings_controller.accessibility_section.enable_reload_haptic" = "Haptic feedback kapag nag-reload";
+
+/* Settings > Accessibility section > Show route labels on the map */
+"settings_controller.accessibility_section.show_stop_annotation_labels" = "Ipakita ang mga label ng ruta sa mapa";
+
+/* Settings > Accessibility section title */
+"settings_controller.accessibility_section.title" = "Accessibility";
+
+/* Settings > Alerts section > Display test alerts */
+"settings_controller.alerts_section.display_test_alerts" = "Ipakita ang mga test alert";
+
+/* Settings > Alerts section title */
+"settings_controller.alerts_section.title" = "Mga Alerto ng Ahensya";
+
+/* Settings > Debug section > Refresh regions on every launch */
+"settings_controller.debug_section.always_refresh_regions" = "I-refresh ang mga rehiyon sa bawat paglunsad";
+
+/* Settings > Debug section > Debug mode */
+"settings_controller.debug_section.debug_mode" = "Debug Mode";
+
+/* Settings > Debug section title */
+"settings_controller.debug_section.title" = "Debug";
+
+/* Settings > Map section > Show my current heading */
+"settings_controller.map_section.shows_heading" = "Ipakita ang kasalukuyan kong direksyon";
+
+/* Settings > Map section > Shows scale */
+"settings_controller.map_section.shows_scale" = "Ipakita ang scale";
+
+/* Settings > Map section > Shows traffic */
+"settings_controller.map_section.shows_traffic" = "Ipakita ang trapiko";
+
+/* Settings > Map section title */
+"settings_controller.map_section.title" = "Mapa";
+
+/* Settings > Privacy section > Send usage data */
+"settings_controller.privacy_section.reporting_enabled" = "Magpadala ng data ng paggamit sa developer";
+
+/* Settings > Privacy section title */
+"settings_controller.privacy_section.title" = "Privacy";
+
+/* Settings > Walking Speed > Average preset label */
+"settings_controller.walking_speed.avg" = "Katamtaman (~5 km/h)";
+
+/* Settings > Walking Speed > Fast preset label */
+"settings_controller.walking_speed.fast" = "Mabilis (~6.5 km/h)";
+
+/* Settings > Walking Speed > HealthKit denial or no-data toast */
+"settings_controller.walking_speed.healthkit_unavailable" = "Hindi ma-sync ang bilis ng paglalakad mula sa Health. Tingnan ang Settings > Privacy & Security > Health para payagan ang access.";
+
+/* Settings > Walking Speed > Slow preset label */
+"settings_controller.walking_speed.slow" = "Mabagal (~3 km/h)";
+
+/* Settings > Walking Speed section > Speed picker */
+"settings_controller.walking_speed.title" = "Bilis ng paglalakad";
+
+/* Settings > Walking Speed section > HealthKit toggle */
+"settings_controller.walking_speed.use_healthkit" = "Gamitin ang data ng Health app";
+
+/* Settings > Walking Speed section title */
+"settings_controller.walking_speed_section.title" = "Bilis ng Paglalakad";
+
+/* A message that appears when a user's alarm is created. */
+"stop_controller.alarm_created_message" = "Nagawa ang paalala";
+
+/* A header for the arrivals and departures section of the stop controller. */
+"stop_controller.arrival_departure_header" = "Mga Pagdating at Pag-alis";
+
+/* An error message displayed when a stop is shown by tapping on a bookmark—and the bookmark doesn't seem to point to a valid stop any longer. This problem will occur when a transit agency changes its stop IDs, perhaps as part of an annual transit system realignment. */
+"stop_controller.bad_bookmark_error_message" = "Maaaring hindi na gumagana ang bookmark na ito. May binago ba ang iyong ahensya ng transit? Paki-delete at gawin muli ang bookmark.";
+
+/* A string listing the data providers (agencies) for this stop's data. It contains one or more providers separated by commas. e.g. Data provided by King County Metro, Sound Transit */
+"stop_controller.data_attribution_format" = "Data mula sa %@";
+
+/* Load More button */
+"stop_controller.load_more_button" = "Mag-load Pa";
+
+/* This is an instruction given to the user the first time they look at a stop view instructing them on how to access more options, including the ability to add alarms. */
+"stop_controller.swipe_spotlight_text.with_alarm" = "Mag-swipe sa isang row para makita ang higit pang opsyon, kasama ang pagdaragdag ng mga paalala.";
+
+/* This is an instruction given to the user the first time they look at a stop view instructing them on how to access more options, EXCLUDING the ability to add alarms. */
+"stop_controller.swipe_spotlight_text.without_alarm" = "Mag-swipe sa isang row para makita ang higit pang opsyon.";
+
+/* Title of the Sorting section */
+"stop_preferences_controller.sorting_section.header_title" = "I-sort Ayon Sa";
+
+/* Sort by route option */
+"stop_preferences_controller.sorting_section.sort_by_route" = "I-sort ayon sa ruta";
+
+/* Sort by time option */
+"stop_preferences_controller.sorting_section.sort_by_time" = "I-sort ayon sa oras";
+
+/* Title of the Edit Stop preferences controller */
+"stop_preferences_controller.title" = "I-filter ang Mga Ruta";
+
+/* The section header to a free-form comments field that the user does not have to add text to in order to submit this form. */
+"stop_problem_controller.comments_section.section_title" = "Karagdagang komento (opsyonal)";
+
+/* Footer text of the Share Location section in the Stop Problem Controller */
+"stop_problem_controller.location_section.section_footer" = "Makakatulong ang pagbabahagi ng iyong lokasyon sa ahensya ng transit para maayos ang problemang ito.";
+
+/* Title of the Share Location section in the Stop Problem Controller. */
+"stop_problem_controller.location_section.section_title" = "Ibahagi ang iyong lokasyon?";
+
+/* Title of the Share Location switch on stop problem controller */
+"stop_problem_controller.location_section.switch_title" = "Ibahagi ang lokasyon";
+
+/* Title label for the 'choose a problem type' row. */
+"stop_problem_controller.problem_section.row_label" = "Pumili ng isa:";
+
+/* Title of the first section in the Stop Problem Controller. */
+"stop_problem_controller.problem_section.section_title" = "Ano ang problema?";
+
+/* The 'send' button that actually sends along the problem report. */
+"stop_problem_controller.send_button" = "Ipadala ang Mensahe";
+
+/* Title for the Report Stop Problem controller */
+"stop_problem_controller.title" = "Mag-ulat ng Problema";
+
+/* Label for date picker in schedule view */
+"stop_schedule_view.date" = "Petsa";
+
+/* Message when no departures are scheduled */
+"stop_schedule_view.no_departures" = "Walang nakaiskedyul na pag-alis para sa petsang ito";
+
+/* Message shown when schedule data is not available */
+"stop_schedule_view.no_schedule_data" = "Walang available na data ng iskedyul";
+
+/* Label for route picker in schedule view */
+"stop_schedule_view.route" = "Ruta";
+
+/* Error message when schedule fails to load */
+"stop_schedule_view.unable_to_load" = "Hindi ma-load ang iskedyul";
+
+/* Message displayed when a new bookmark is created. */
+"stops_controller.created_new_bookmark" = "Naidagdag ang Bookmark";
+
+/* A menu item on a Stop page that toggles the visible list of transit vehicles from a filtered list to all of the list items. e.g. a stop serves routes 1, 2, and 3. The user has filtered the stop to only show route 3. Chooosing this item will show 1, 2, and 3 again. */
+"stops_controller.filter.all_routes" = "Lahat ng Ruta";
+
+/* A menu item on a Stop page that toggles the visible list of transit vehicles from a list of all items to a filtered list. e.g. a stop serves routes 1, 2, and 3. The user wants to only view route 3. Choosing this item would show that subset of routes. */
+"stops_controller.filter.filtered_routes" = "Mga Na-filter na Ruta";
+
+/* Title of the row that will show stops that are near this one. */
+"stops_controller.nearby_stops" = "Mga Kalapit na Hintuan";
+
+/* Button that launches the 'Report Problem' UI. */
+"stops_controller.report_problem" = "Mag-ulat ng Problema";
+
+/* Message displayed an existing bookmark is updated. */
+"stops_controller.updated_bookmark" = "Na-update ang Bookmark";
+
+/* Button that launches a maps app with walking directions to this stop */
+"stops_controller.walking_directions" = "Direksyon sa Paglalakad";
+
+/* Button that launches Apple's maps.app with walking directions to this stop */
+"stops_controller.walking_directions_apple" = "Direksyon sa Paglalakad (Apple Maps)";
+
+/* Button that launches Google Maps with walking directions to this stop */
+"stops_controller.walking_directions_google" = "Direksyon sa Paglalakad (Google Maps)";
+
+/* A notice when a transit alert doesn't have body text. */
+"transit_alert.no_additional_details.body" = "Walang karagdagang detalyeng available.";
+
+/* Describes the next trip of this vehicle. e.g. Continues as 10 - Downtown Seattle */
+"trip_details_controller.continues_as_fmt" = "Magpapatuloy bilang %@";
+
+/* Last report: <TIME> */
+"trip_details_controller.last_report_fmt" = "Huling ulat: %@";
+
+/* Service alerts header in the trip details controller. */
+"trip_details_controller.service_alerts_footer" = "Mga Detalye ng Biyahe";
+
+/* Button that moves the map to focus on the selected stop */
+"trip_details_controller.show_on_map" = "Ipakita sa Mapa";
+
+/* Describes the previous trip of this vehicle. e.g. Starts as 10 - Downtown Seattle */
+"trip_details_controller.starts_as_fmt" = "Magsisimula bilang %@";
+
+/* A formatted string for displaying a vehicle's ID on the trip status map. e.g. 'Vehicle ID: 12345' */
+"trip_status_annotation.title_fmt" = "Vehicle ID: %@";
+
+/* Shown on the map when the user taps on a vehicle to indicate we don't know the vehicle's ID. */
+"trip_status_annotation.vehicle_id_unavailable" = "Hindi Available ang Vehicle ID";
+
+/* Voiceover text explaining that this stop is the user's destination */
+"trip_stop.user_destination.accessibility_label" = "Ang iyong destinasyon";
+
+/* Voiceover text explaining that the vehicle is currently at this stop */
+"trip_stop.vehicle_location.accessibility_label" = "Nandito ang sasakyan";
+
+/* Suggested invocation phrase for Siri Shortcut */
+"user_activity_builder.show_me_my_bus" = "Ipakita ang bus ko";
+
+/* The section header to a free-form comments field that the user does not have to add text to in order to submit this form. */
+"vehicle_problem_controller.comments_section.section_title" = "Karagdagang komento (opsyonal)";
+
+/* Footer text of the Share Location section in the Vehicle Problem Controller */
+"vehicle_problem_controller.location_section.section_footer" = "Makakatulong ang pagbabahagi ng iyong lokasyon sa ahensya ng transit para maayos ang problemang ito.";
+
+/* Title of the Share Location section in the Vehicle Problem Controller. */
+"vehicle_problem_controller.location_section.section_title" = "Ibahagi ang iyong lokasyon?";
+
+/* Title of the Share Location switch */
+"vehicle_problem_controller.location_section.switch_title" = "Ibahagi ang lokasyon";
+
+/* Title of the 'on the vehicle' section in the Vehicle Problem Controller. */
+"vehicle_problem_controller.on_vehicle_section.section_title" = "Nakasakay ka ba sa sasakyang ito?";
+
+/* Title of the 'on the vehicle' switch in the Vehicle Problem Controller. */
+"vehicle_problem_controller.on_vehicle_section.switch_title" = "Nakasakay sa sasakyan";
+
+/* Title of the vehicle ID text field in the Vehicle Problem Controller. */
+"vehicle_problem_controller.on_vehicle_section.vehicle_id_title" = "Vehicle ID";
+
+/* Title label for the 'choose a problem type' row. */
+"vehicle_problem_controller.problem_section.row_label" = "Pumili ng isa";
+
+/* Title of the first section in the Vehicle Problem Controller. */
+"vehicle_problem_controller.problem_section.section_title" = "Ano ang problema?";
+
+/* The 'send' button that actually sends along the problem report. */
+"vehicle_problem_controller.send_button" = "Ipadala ang Mensahe";
+
+/* Title for the Report Vehicle Problem controller */
+"vehicle_problem_controller.title" = "Mag-ulat ng Problema";
+
+/* Format string describing a favorite route (or trip) bookmark with a placeholder for the bookmark's name. */
+"voiceover.bookmarkarrivaldata.label.favoriteroutebookmark_fmt" = "Paboritong Bookmark ng Ruta, %@";
+
+/* Format string describing a normal route (or trip) bookmark with a placeholder for the bookmark's name. */
+"voiceover.bookmarkarrivaldata.label.routebookmark_fmt" = "Bookmark ng Ruta, %@";
+
+/* Format string describing a stop bookmark with a placeholder for the bookmark's name. */
+"voiceover.bookmarkarrivaldata.label.stopbookmark_fmt" = "Bookmark ng Hintuan, %@";
+
+/* Voiceover text describing an arrival, then a departure in the near-future, regardless of realtime data availability. */
+"voiceover.bookmarkarrivaldata.value.followingarrivalthendeparture_fmt" = "Susunod na pagdating sa loob ng %1$d minuto at pag-alis sa loob ng %2$d minuto.";
+
+/* Voiceover text describing a departure, then an arrival in the near-future, regardless of realtime data availability. */
+"voiceover.bookmarkarrivaldata.value.followingdeparturethenarrival_fmt" = "Susunod na pag-alis sa loob ng %1$d minuto at pagdating sa loob ng %2$d minuto.";
+
+/* Voiceover text describing the one additional arrival in the near-future, regardless of realtime data availability. */
+"voiceover.bookmarkarrivaldata.value.followingonearrival_fmt" = "Susunod na pagdating sa loob ng %d minuto.";
+
+/* Voiceover text describing the one additional departure in the near-future, regardless of realtime data availability. */
+"voiceover.bookmarkarrivaldata.value.followingonedeparture_fmt" = "Susunod na pag-alis sa loob ng %d minuto.";
+
+/* Voiceover text describing the two additional arrivals in the near-future, regardless of realtime data availability. */
+"voiceover.bookmarkarrivaldata.value.followingtwoarrivals_fmt" = "Susunod na dalawang pagdating sa loob ng %1$d minuto at %2$d minuto.";
+
+/* Voiceover text describing the two additional departures in the near-future, regardless of realtime data availability. */
+"voiceover.bookmarkarrivaldata.value.followingtwodepartures_fmt" = "Susunod na dalawang pag-alis sa loob ng %1$d minuto at %2$d minuto.";
+
+/* Voiceover text describing no departures in the near-future. */
+"voiceover.bookmarkarrivaldata.value.noupcomingdepartures_fmt" = "Walang paparating na pag-alis";
+
+/* A label for blind or low-vision users on the UI element that describes how long it takes to walk to the stop. */
+"walk_time_view.accessibility_label" = "Oras ng paglalakad papunta sa hintuan";
+
+/* Accessibility string with placeholders for distance from stop, walking time to stop, and predicted arrival time. e.g. 1.2 miles. Takes 17 minutes to walk, arriving at 9:41 am */
+"walk_time_view.accessibility_value" = "%1$@. Aabutin ng %2$@ ang paglalakad, darating sa %3$@";
+
+/* Format string with placeholders for distance from stop, walking time to stop, and predicted arrival time. e.g. 1.2 miles, 17m: arriving at 09:41 A.M. */
+"walk_time_view.distance_time_fmt" = "%1$@, %2$@: darating sa %3$@";
+
+/* Button the user can tap on to decline access to their location. */
+"location_permission_bulletin.do_not_use_location_button_text" = "Hindi Ngayon";
+
+/* Button the user taps to grant access to their location. */
+"location_permission_bulletin.use_location_button_text" = "Gamitin ang Aking Lokasyon";

@@ -23,3 +23,21 @@ class ThemedBulletinPage: BLTNPageItem {
         appearance.imageViewTintColor = ThemeColors.shared.brand
     }
 }
+
+extension BLTNItemManager {
+    /// Presents the bulletin above the topmost view controller of the application's key window.
+    ///
+    /// Use this instead of `showBulletin(in:)`: that method presents inside a `UIWindow`
+    /// it creates without a `windowScene`, and iOS never displays such a window in a
+    /// scene-based app, so the bulletin silently fails to appear.
+    func show(in application: UIApplication) {
+        guard
+            !isShowingBulletin,
+            let topViewController = application.keyWindowFromScene?.topViewController
+        else {
+            return
+        }
+
+        showBulletin(above: topViewController)
+    }
+}

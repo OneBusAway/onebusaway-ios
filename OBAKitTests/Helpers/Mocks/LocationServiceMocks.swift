@@ -19,6 +19,18 @@ public class LocationManagerMock: NSObject, LocationManager {
     public var locationUpdatesStarted = false
     public var headingUpdatesStarted = false
 
+    // MARK: - Region Monitoring
+
+    public private(set) var monitoredRegions = Set<CLRegion>()
+
+    public func startMonitoring(for region: CLRegion) {
+        monitoredRegions.insert(region)
+    }
+
+    public func stopMonitoring(for region: CLRegion) {
+        monitoredRegions.remove(region)
+    }
+
     public func requestWhenInUseAuthorization() { }
 
     @available(iOS 14, *)
@@ -118,6 +130,9 @@ class LocDelegate: NSObject, LocationServiceDelegate {
     var heading: CLHeading?
     var status: CLAuthorizationStatus?
     var error: Error?
+    var enteredRegionIdentifier: String?
+    var monitoringFailedIdentifier: String?
+    var monitoringFailedError: Error?
 
     func locationService(_ service: LocationService, locationChanged location: CLLocation) {
         self.location = location
@@ -133,5 +148,14 @@ class LocDelegate: NSObject, LocationServiceDelegate {
 
     func locationService(_ service: LocationService, errorReceived error: Error) {
         self.error = error
+    }
+
+    func locationService(_ service: LocationService, didEnterMonitoredRegion identifier: String) {
+        self.enteredRegionIdentifier = identifier
+    }
+
+    func locationService(_ service: LocationService, monitoringDidFailFor identifier: String?, error: Error) {
+        self.monitoringFailedIdentifier = identifier
+        self.monitoringFailedError = error
     }
 }

@@ -105,6 +105,15 @@ public class AgencyAlertsStore: NSObject, RegionsServiceDelegate {
 
     /// Convenience wrapper for ``update()``. Errors are reported via ``AgencyAlertsDelegate``.
     public func checkForUpdates() {
+        #if DEBUG
+        // Once a UI test has injected a synthetic alert (`seedRegionWideAlertForTesting()`),
+        // skip live fetches entirely so the seeded alert is the only bulletin the
+        // test can encounter.
+        guard !suppressLiveFetchesForTesting else {
+            return
+        }
+        #endif
+
         Task {
             do {
                 try await update()
@@ -203,6 +212,63 @@ public class AgencyAlertsStore: NSObject, RegionsServiceDelegate {
             }
         }
     }
+
+    #if DEBUG
+    /// Set once a synthetic alert has been seeded, so ``checkForUpdates()`` stops
+    /// issuing live network fetches that could surface a competing bulletin.
+    private var suppressLiveFetchesForTesting = false
+
+    /// Seeds a synthetic, unread, high-severity region-wide alert and notifies delegates,
+    /// exactly as a live alerts fetch would. Lets UI tests exercise the modal
+    /// `AgencyAlertBulletin` presentation without depending on live alert data.
+    /// The entity ID is unique per call so the read-state persisted in UserDefaults
+    /// by earlier runs never suppresses the bulletin.
+    public func seedRegionWideAlertForTesting() {
+        suppressLiveFetchesForTesting = true
+
+        var period = TransitRealtime_TimeRange()
+        period.start = UInt64(Date().timeIntervalSince1970)
+
+        var entitySelector = TransitRealtime_EntitySelector()
+        entitySelector.agencyID = ""
+
+        var title = TransitRealtime_TranslatedString.Translation()
+        title.text = "Test Region-Wide Alert"
+        title.language = "en"
+
+        var body = TransitRealtime_TranslatedString.Translation()
+        body.text = "This synthetic alert exists to test bulletin presentation."
+        body.language = "en"
+
+        var transitAlert = TransitRealtime_Alert()
+        transitAlert.severityLevel = .warning
+        transitAlert.activePeriod = [period]
+        transitAlert.informedEntity = [entitySelector]
+        transitAlert.headerText.translation = [title]
+        transitAlert.descriptionText.translation = [body]
+
+        var feedEntity = TransitRealtime_FeedEntity()
+        feedEntity.id = "ui-test-region-wide-alert-\(UUID().uuidString)"
+        feedEntity.alert = transitAlert
+
+        let agencyAlert: AgencyAlert
+        do {
+            agencyAlert = try AgencyAlert(feedEntity: feedEntity, agency: nil)
+        } catch {
+            // This entity is constructed right here to satisfy AgencyAlert's invariants,
+            // so a failure means the model changed out from under the test hook. Fail
+            // loudly rather than letting the UI test time out waiting for a bulletin
+            // that was never seeded.
+            assertionFailure("seedRegionWideAlertForTesting failed to construct an AgencyAlert: \(error)")
+            return
+        }
+
+        stateLock.withLock {
+            _ = alerts.insert(agencyAlert)
+        }
+        notifyDelegatesAlertsUpdated()
+    }
+    #endif
 
     /// Deletes all local data. Useful in preparation for changing the region.
     private func deleteAgencyAlerts() {

@@ -50,6 +50,11 @@ fastlane/Preview.html
 fastlane/screenshots/**/*.png
 fastlane/test_output
 
+# DocC build intermediates and generated API documentation
+.docc-build
+Combined.doccarchive
+api-docs
+
 OBAKitTests.xcresult
 .DS_Store
 .claude/settings.local.json

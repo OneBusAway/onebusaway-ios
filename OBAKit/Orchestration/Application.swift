@@ -155,6 +155,16 @@ public class Application: CoreApplication, PushServiceDelegate {
     }
 
     private func configureTipKit() {
+        // Shows all tips all the time, regardless of display frequency or
+        // invalidation state. Used by UI tests to make tip presentation
+        // deterministic. Must be called before `Tips.configure()`.
+        // https://developer.apple.com/documentation/tipkit/tips/showalltipsfortesting()
+        #if DEBUG
+        if ProcessInfo.processInfo.environment["TEST_SHOW_ALL_TIPS"] == "1" {
+            Tips.showAllTipsForTesting()
+        }
+        #endif
+
         do {
             try Tips.configure([
                 .displayFrequency(.hourly),
@@ -163,10 +173,6 @@ public class Application: CoreApplication, PushServiceDelegate {
         } catch {
             Logger.error("Failed to configure TipKit: \(error)")
         }
-
-        // Enable this to show all tips all the time.
-        // https://developer.apple.com/documentation/tipkit/tips/showalltipsfortesting()
-        // Tips.showAllTipsForTesting()
     }
 
     // MARK: - Onboarding/Data Migration
@@ -331,6 +337,15 @@ public class Application: CoreApplication, PushServiceDelegate {
     private var alertBulletin: AgencyAlertBulletin?
 
     public func agencyAlertsUpdated() {
+        #if DEBUG
+        // UI tests run against the live network, so a real high-severity alert can
+        // pop a modal bulletin over the UI mid-test. Tests that aren't about the
+        // bulletin set this to keep their runs deterministic.
+        if ProcessInfo.processInfo.environment["TEST_SUPPRESS_ALERT_BULLETINS"] == "1" {
+            return
+        }
+        #endif
+
         guard
             let alert = alertsStore.recentUnreadHighSeverityAlerts.first,
             let app = self.delegate?.uiApplication
@@ -389,6 +404,15 @@ public class Application: CoreApplication, PushServiceDelegate {
         }
 
         configureConnectivity()
+
+        #if DEBUG
+        // Lets UI tests exercise the modal alert bulletin deterministically,
+        // without depending on a high-severity alert being live in the region.
+        if ProcessInfo.processInfo.environment["TEST_INJECT_REGION_WIDE_ALERT"] == "1" {
+            alertsStore.seedRegionWideAlertForTesting()
+        }
+        #endif
+
         alertsStore.checkForUpdates()
 
         if presentDonationUIOnActive, let topViewController {

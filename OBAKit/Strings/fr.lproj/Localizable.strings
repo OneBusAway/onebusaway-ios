@@ -1,0 +1,1008 @@
+/* Text for the table header for bookmarking an entire stop. */
+"add_bookmark_controller.bookmark_stop_header" = "Ajouter l'arrêt aux favoris";
+
+/* Text for the table header for bookmarking an individual trip. */
+"add_bookmark_controller.bookmark_trip_header" = "Ajouter un trajet aux favoris";
+
+/* Explanatory text shown when route bookmarking is unavailable due to no upcoming departures. */
+"add_bookmark_controller.trip_bookmark_unavailable" = "Les favoris de ligne ne sont disponibles que lorsqu'il y a des départs à venir pour cet arrêt.";
+
+/* Text field placeholder on the Add Group Alert. */
+"add_group_alert.placeholder" = "Nom du groupe de favoris";
+
+/* Title of the Add Bookmark Group controller */
+"add_group_alert.title" = "Ajouter un groupe";
+
+/* Action to call agency */
+"agencies_controller.call_agency" = "Appeler l'agence";
+
+/* Error dialog title */
+"agencies_controller.error_title" = "Erreur";
+
+/* Error message for invalid phone */
+"agencies_controller.invalid_phone" = "Numéro de téléphone non valide.";
+
+/* Action to open agency website */
+"agencies_controller.open_website" = "Ouvrir le site web";
+
+/* Title of the Agencies controller */
+"agencies_controller.title" = "Agences";
+
+/* The title of the Agency Alerts controller. */
+"agency_alerts_controller.title" = "Alertes";
+
+/* {X} minutes. always plural. */
+"alarm_builder_controller.minutes_fmt" = "%d minutes";
+
+/* One minute/1 minute */
+"alarm_builder_controller.one_minute" = "1 minute";
+
+/* Explains what the Alarm Time Picker page does. */
+"alarm_time_picker.description" = "Me rappeler quand ce véhicule partira dans :";
+
+/* Title of the Alarm Time Picker page. */
+"alarm_time_picker.title" = "Ajouter un rappel";
+
+/* The title to display to confirm the user's action to delete a bookmark. */
+"bookmarks_controller.delete_bookmark.actionsheet.title" = "Supprimer le favori";
+
+/* Groups button title in Bookmarks controller */
+"bookmarks_controller.groups_button_title" = "Modifier";
+
+/* A menu item that allows the user to sort their bookmarks by distance from the user. */
+"bookmarks_controller.sort_menu.sort_by_distance" = "Trier par distance";
+
+/* A menu item that allows the user to sort their bookmarks into groups. */
+"bookmarks_controller.sort_menu.sort_by_group" = "Trier par groupe";
+
+/* The table section header on the bookmarks controller for when bookmarks are sorted by distance. */
+"bookmarks_controller.sorted_by_distance_header" = "Triés par distance";
+
+/* Title of the Bookmarks tab */
+"bookmarks_controller.title" = "Favoris";
+
+/* The title for the bookmarks controller section that shows bookmarks that aren't in a group. */
+"bookmarks_controller.ungrouped_bookmarks_section.title" = "Favoris";
+
+/* This is displayed to confirm that something has been copied to clipboard. */
+"clipboard.copied_text_confirmation" = "Copié dans le presse-papiers";
+
+/* Body of the the alert that appears when you try sending an email without Mail.app set up */
+"contact_us_helper.cant_send_email.body_fmt" = "Pour nous contacter, vous devrez nous écrire à %@. Touchez « Copier les infos de débogage » pour copier dans le presse-papiers des informations qui nous aideront à résoudre ce problème. Veuillez les inclure dans votre e-mail.";
+
+/* A button that lets the user copy an email address to the clipboard. */
+"contact_us_helper.cant_send_email.copy_email_button" = "Copier l'adresse e-mail";
+
+/* A button that lets the user copy a default message, including debug info, to the clipboard. */
+"contact_us_helper.cant_send_email.copy_message_button" = "Copier les infos de débogage";
+
+/* Title of the alert that appears when the user's device isn't configured to send email. */
+"contact_us_helper.cant_send_email.title" = "Impossible d'envoyer un e-mail via Mail";
+
+/* Feedback email template subject for the app developers */
+"contact_use_helper.feedback_subject.app" = "Commentaires sur OneBusAway";
+
+/* Feedback email template subject for the transit agency */
+"contact_use_helper.feedback_subject.transit_agency" = "Commentaires d'un usager des transports";
+
+/* Title of the Credits controller */
+"credits_controller.title" = "Crédits";
+
+/* Loading message while searching for the user's vehicle. */
+"current_trip_controller.detecting" = "Recherche de votre véhicule…";
+
+/* Distance from user to vehicle. e.g. '0.2 mi away' */
+"current_trip_controller.distance_fmt" = "À %@";
+
+/* Error message when the user's location is not available. */
+"current_trip_controller.location_unavailable" = "Position indisponible. Veuillez activer les services de localisation.";
+
+/* Section header when multiple vehicles are found on the selected route. */
+"current_trip_controller.multiple_vehicles" = "Plusieurs véhicules trouvés";
+
+/* Title for the current trip screen. */
+"current_trip_controller.my_trip" = "Mon trajet";
+
+/* Message when the route has no real-time tracking data. */
+"current_trip_controller.no_realtime" = "Aucun suivi en temps réel disponible pour cette ligne";
+
+/* Message when no active vehicle is found near the user on the selected route. */
+"current_trip_controller.no_results" = "Aucun véhicule actif trouvé sur cette ligne près de vous";
+
+/* Error when the API service is unavailable. */
+"current_trip_controller.error_no_service" = "Impossible de se connecter au service de transport.";
+
+/* Button to retry finding the user's vehicle. */
+"current_trip_controller.retry" = "Réessayer";
+
+/* Title of the Base URL header. */
+"custom_region_builder_controller.base_url_section.header_title" = "URL de base";
+
+/* Title of the Contact Email header. */
+"custom_region_builder_controller.contact_email_section.header_title" = "E-mail de contact";
+
+/* Example custom region name */
+"custom_region_builder_controller.example_data.region_name" = "Ma région personnalisée";
+
+/* An explanation of dragging the map to highlight the service area of a custom region. */
+"custom_region_builder_controller.service_area_section.explanation" = "Faites glisser la carte vers la zone de service approximative de cette région.";
+
+/* Title of the Service Area header. */
+"custom_region_builder_controller.service_area_section.header_title" = "Zone de service";
+
+/* Action button title for the DataMigrationBulletinPage. */
+"data_migration_bulletin.action_button" = "Continuer";
+
+/* Title for the DataMigrationBulletinPage. */
+"data_migration_bulletin.data_upgrade_title" = "Mise à niveau des données";
+
+/* Dismissal button title for the DataMigrationBulletinPage. */
+"data_migration_bulletin.dismiss_button" = "Pas maintenant";
+
+/* An error message that appears when the user needs to have data migrated, but is not connected to the Internet. */
+"data_migration_bulletin.errors.no_api_service_available" = "Vérifiez votre connexion Internet et réessayez.";
+
+/* An error message that appears when the data migrator runs but no data can be migrated. */
+"data_migration_bulletin.errors.no_data_to_migrate" = "Aucune donnée à mettre à niveau";
+
+/* An error message that appears when the data migrator runs without a pending migration. */
+"data_migration_bulletin.errors.no_migration_pending" = "Aucune migration de données en attente";
+
+/* First bullet point of DataMigrationBulletinPage explanation */
+"data_migration_bulletin.explanation_1" = "Mettez à niveau vos arrêts récents et vos favoris pour qu'ils fonctionnent avec la dernière version de l'app ; vous n'avez besoin de le faire qu'une seule fois.";
+
+/* Second bullet point of DataMigrationBulletinPage explanation */
+"data_migration_bulletin.explanation_2" = "Vous ne pourrez pas voir vos arrêts récents ni vos favoris tant que vous n'aurez pas effectué la mise à niveau.";
+
+/* Third bullet point of DataMigrationBulletinPage explanation */
+"data_migration_bulletin.explanation_3" = "La mise à niveau peut prendre un peu de temps, et une connexion Wi-Fi ou mobile est requise pendant l'opération.";
+
+/* This comment is displayed after the user's data is upgraded in the DataMigrationBulletinPage. */
+"data_migration_bulletin.finished_loading" = "Mise à niveau des données terminée !";
+
+/* Data migration report label for showing the number of failed migration tasks. */
+"data_migration_bulletin.report_summary_number_of_failures" = "%d échecs";
+
+/* Data migration report label for showing the number of successful migration tasks. */
+"data_migration_bulletin.report_summary_number_of_successes" = "%d réussites";
+
+/* Title for the Summary section of a data migration report */
+"data_migration_bulletin.report_summary_title" = "Résumé";
+
+/* Button title to let the user view a data migration report. */
+"data_migration_bulletin.view_report_button" = "Afficher le rapport";
+
+/* Body of the donation widget that appears on the stop view controller */
+"donation_cell.body" = "Cette app est actuellement développée à 100 % par des bénévoles, et nous avons besoin de votre aide pour financer son développement futur.";
+
+/* Title of the button that shows the donation UI. */
+"donation_cell.donate_button_title" = "Faire un don";
+
+/* Title of the button that shows the donation explanation UI. */
+"donation_cell.learn_more_button_title" = "En savoir plus";
+
+/* Title of the donation widget that appears on the stop view controller. */
+"donation_cell.title" = "🚨 OneBusAway a besoin de votre aide";
+
+/* Dismiss button on the alert */
+"donations.donations_dismiss_alert.button_dismiss" = "Je ne veux pas aider pour le moment";
+
+/* A button that prompts the system to remind them to donate later. */
+"donations.donations_dismiss_alert.button_remind_later" = "Me le rappeler plus tard";
+
+/* Body of the alert that appears when the user chooses to dismiss the donations request UI on a stop page */
+"donations.donations_dismiss_alert.message" = "OneBusAway est une organisation gérée par des bénévoles et presque sans financement. Nous avons besoin de votre aide pour faire vivre cette app.";
+
+/* Title of the alert that appears when the user chooses to dismiss the donations request UI on a stop page */
+"donations.donations_dismiss_alert.title" = "Veuillez ne pas ignorer cette demande";
+
+/* Indicates that the user wants to create a duplicate bookmark. */
+"edit_bookmark_controller.duplicate_alert.affirmative_button" = "Créer un doublon";
+
+/* Title of the button that lets the user add a new Bookmark Group. */
+"edit_bookmark_controller.add_group_button_title" = "Ajouter un groupe de favoris";
+
+/* Body of an alert telling the user they have already bookmarked this thing. */
+"edit_bookmark_controller.duplicate_alert.body" = "Vous avez déjà ajouté cet élément à vos favoris. Vouliez-vous créer un doublon ?";
+
+/* The title of an alert telling the user that they have already bookmarked this thing. Noun form of 'duplicate', not the verb. */
+"edit_bookmark_controller.duplicate_alert.title" = "Favori en double";
+
+/* Title of the Bookmark Group header. */
+"edit_bookmark_controller.group_section.header_title" = "Groupe de favoris";
+
+/* Title of the Bookmark Name header. */
+"edit_bookmark_controller.name_section.header_title" = "Nom du favori";
+
+/* Don't add this bookmark to a group. */
+"edit_bookmark_controller.no_group_row" = "(Aucun groupe)";
+
+/* Body of an alert shown when a bookmark cannot be saved because the current region is unavailable. */
+"edit_bookmark_controller.region_error.body" = "La région actuelle n'est pas disponible. Veuillez réessayer.";
+
+/* Title of an alert shown when a bookmark cannot be saved because the current region is unavailable. */
+"edit_bookmark_controller.region_error.title" = "Enregistrement impossible";
+
+/* Title next to the switch that toggles whether a bookmark will appear in the today view. */
+"edit_bookmark_controller.show_in_today_view_switch_title" = "Afficher dans le widget Aujourd'hui";
+
+/* Title for the Edit Bookmark controller in edit mode */
+"edit_bookmark_controller.title_edit" = "Modifier le favori";
+
+/* A button that says continue and don't show again. */
+"fare_payments.dont_show_again" = "Continuer et ne plus afficher";
+
+/* A voiceover title describing the 'grabber' for controlling the visibility of a card. */
+"floating_panel.controller.accessibility_label" = "Contrôleur du panneau";
+
+/* A voiceover title describing the action to minimize (or collapse) the visibility of a card. */
+"floating_panel.controller.collapse_action_name" = "Réduire";
+
+/* A voiceover title describing the action to expand the visibility of a card. */
+"floating_panel.controller.expand_action_name" = "Développer";
+
+/* No comment provided by engineer. */
+"floating_panel.controller.full_sheet_voiceover_change_alert.message" = "Le panneau se développera automatiquement lorsque VoiceOver est activé. Pour désactiver ce comportement, rendez-vous dans les Réglages.";
+
+/* No comment provided by engineer. */
+"floating_panel.controller.full_sheet_voiceover_change_alert.title" = "VoiceOver détecté";
+
+/* A voiceover title describing that the card's visibility is taking up the full screen. */
+"floating_panel.controller.position.full" = "Plein écran";
+
+/* A voiceover title describing that the card's visibility is taking up half of the screen. */
+"floating_panel.controller.position.half" = "Demi-écran";
+
+/* A voiceover title describing that the card's visibility taking up the minimum amount of screen. */
+"floating_panel.controller.position.minimized" = "Réduit";
+
+/* Description of why we need location services */
+"location_permission_bulletin.description_text" = "Veuillez autoriser l'app à accéder à votre position pour faciliter la recherche de vos arrêts de transport.";
+
+/* Title of the alert that appears to request your location. */
+"location_permission_bulletin.title" = "Bienvenue !";
+
+/* No comment provided by engineer. */
+"locationservices_alert_gotosettings.button" = "Activer dans Réglages";
+
+/* No comment provided by engineer. */
+"locationservices_alert_imprecise.message" = "Vous pourrez voir où vous êtes sur la carte et afficher les arrêts à proximité, pour rejoindre plus facilement votre destination.";
+
+/* No comment provided by engineer. */
+"locationservices_alert_imprecise.title" = "OneBusAway fonctionne mieux avec votre position exacte";
+
+/* No comment provided by engineer. */
+"locationservices_alert_keep_precise_location_off.button" = "Garder la position exacte désactivée";
+
+/* No comment provided by engineer. */
+"locationservices_alert_keepoff.button" = "Garder la localisation désactivée";
+
+/* No comment provided by engineer. */
+"locationservices_alert_off.message" = "Vous pourrez voir où vous êtes sur la carte et afficher les arrêts à proximité, pour rejoindre plus facilement votre destination.";
+
+/* No comment provided by engineer. */
+"locationservices_alert_off.title" = "OneBusAway fonctionne mieux avec votre position.";
+
+/* No comment provided by engineer. */
+"locationservices_alert_request_precise_location_once.button" = "Autoriser une fois";
+
+/* Message shown when there are no logs to display */
+"log_viewer_controller.no_logs" = "Aucun journal disponible.";
+
+/* Message for alert when there are no logs to share */
+"log_viewer_controller.no_logs_to_share.message" = "Il n'y a aucun fichier journal à partager.";
+
+/* Title for alert when there are no logs to share */
+"log_viewer_controller.no_logs_to_share.title" = "Aucun journal";
+
+/* Title of the Logs viewer controller */
+"log_viewer_controller.title" = "Journaux";
+
+/* Explains the purpose of the Manage Bookmarks controller */
+"manage_bookmarks.controller_footer" = "Vous pouvez réorganiser et supprimer des favoris depuis cet écran.";
+
+/* Segmented control item for bookmarks */
+"manage_bookmarks_groups.toggle.bookmarks" = "Favoris";
+
+/* Segmented control item for Groups */
+"manage_bookmarks_groups.toggle.groups" = "Groupes";
+
+/* 'Add Bookmark Group' button text */
+"manage_groups_controller.add_group_button" = "Ajouter un groupe de favoris";
+
+/* Footer explanation on the Groups section of the Manage Groups controller. */
+"manage_groups_controller.groups.footer_text" = "Vous pouvez renommer, ajouter, supprimer et réorganiser les groupes de favoris. Les favoris des groupes supprimés ne sont pas supprimés.";
+
+/* Placeholder text for Bookmark Group. */
+"manage_groups_controller.text_field_placeholder" = "Nom du groupe";
+
+/* Manage Groups controller title */
+"manage_groups_controller.title" = "Modifier les favoris";
+
+/* Map controller for centering the map on the user's current location. */
+"map_controller.center_user_location" = "Centrer la carte sur la position actuelle";
+
+/* Change Region button on the alert that appears when the user is updating their current region manually. */
+"map_controller.change_region_alert.button" = "Changer de région";
+
+/* Body of the alert that appears when the user is updating their current region manually. */
+"map_controller.change_region_alert.message_fmt" = "Voulez-vous changer votre région pour %@ ?";
+
+/* Title of the alert that appears when the user is updating their current region manually. */
+"map_controller.change_region_alert.title" = "Changer de région ?";
+
+/* Voiceover text indicating that this button toggles the base map type. */
+"map_controller.map_type.accessibility_label" = "Type de carte";
+
+/* Voiceover text indicating the current map type as the hybrid base map (satellite view with labels). */
+"map_controller.map_type.hybrid.accessibility_value" = "hybride";
+
+/* Voiceover text indicating the current map type as the standard base map. */
+"map_controller.map_type.standard.accessibility_value" = "standard";
+
+/* Accessibility label for the My Trip button on the map toolbar. */
+"map_controller.my_trip_button" = "Mon trajet";
+
+/* A generic message shown when the user's search query produces no search results. */
+"map_controller.no_search_results_found" = "Aucun résultat de recherche trouvé.";
+
+/* Accessibility label for a button that provides the current forecast */
+"map_controller.show_weather_button" = "Afficher les prévisions météo";
+
+/* This message appears when a searched-for vehicle doesn't have an assigned trip. */
+"map_controller.vehicle_not_on_trip_error" = "Le véhicule que vous avez choisi ne semble pas effectuer de trajet en ce moment, nous ne savons donc pas comment vous l'afficher.";
+
+/* Search bar placeholder on the map floating panel when the trip planner is enabled. */
+"map_floating_panel.where_are_you_going" = "Où allez-vous ?";
+
+/* About section header */
+"map_item_controller.about_header" = "À propos";
+
+/* Call button */
+"map_item_controller.call" = "Appeler";
+
+/* Accessibility label for call button */
+"map_item_controller.call_accessibility" = "Appeler le numéro de téléphone";
+
+/* Accessibility label for close button */
+"map_item_controller.close_button" = "Fermer";
+
+/* Accessibility label for Look Around preview */
+"map_item_controller.look_around" = "Aperçu Look Around. Touchez pour ouvrir en plein écran";
+
+/* Button to view nearby stops
+   Nearby stops button */
+"map_item_controller.nearby_stops" = "Arrêts à proximité";
+
+/* Accessibility label for nearby stops button */
+"map_item_controller.nearby_stops_accessibility" = "Afficher les arrêts de transport à proximité";
+
+/* Plan trip button */
+"map_item_controller.plan_trip" = "Planifier un trajet";
+
+/* Accessibility label for plan trip button */
+"map_item_controller.plan_trip_accessibility" = "Planifier un trajet vers ce lieu";
+
+/* Button to remove a dropped pin from the map */
+"map_item_controller.remove_pin" = "Supprimer le repère";
+
+/* Accessibility label for remove pin button */
+"map_item_controller.remove_pin_accessibility" = "Supprimer ce repère de la carte";
+
+/* Accessibility label for share button */
+"map_item_controller.share_button" = "Partager le lieu";
+
+/* Website button */
+"map_item_controller.website" = "Site web";
+
+/* Accessibility label for website button */
+"map_item_controller.website_accessibility" = "Ouvrir le site web";
+
+/* Displayed in the map status view at the top of the map when the user has declined to give the app access to their location */
+"map_status_view.location_services_unavailable" = "Services de localisation indisponibles";
+
+/* Displayed in the map status view at the top of the map when the user has declined to give the app access to their precise location */
+"map_status_view.precise_location_unavailable" = "Position exacte indisponible";
+
+/* Displayed in the map status view at the top of the map when the user must zoom in to see stops on the map */
+"map_status_view.zoom_in_for_stops" = "Zoomez pour voir les arrêts";
+
+/* Header for a section that shows the user information about this app. */
+"more_controller.about_app" = "À propos de cette app";
+
+/* Alerts for region row in the More controller */
+"more_controller.alerts_for_region" = "Alertes";
+
+/* Title of the action sheet option for contacting the developers of the app. */
+"more_controller.contact_developers" = "Suggestion / Signalement de bug";
+
+/* Title of the action sheet option for contacting a user's transit agency. */
+"more_controller.contact_transit" = "Problème de véhicule/d'horaires";
+
+/* A button to contact transit agency/developers. */
+"more_controller.contact_us" = "Nous contacter";
+
+/* Contact Us alert title. */
+"more_controller.contact_us_alert_title" = "Nous contacter";
+
+/* Credits - like who should get credit for creating this. */
+"more_controller.credits_row_title" = "Crédits";
+
+/* Title for a button that will crash the app. */
+"more_controller.debug_section.crash_row" = "Faire planter l'app";
+
+/* This is displayed instead of the user's push ID if the value is not available. */
+"more_controller.debug_section.push_id.not_available" = "Non disponible";
+
+/* Title for the Push Notification ID row in the More Controller */
+"more_controller.debug_section.push_id.title" = "ID push";
+
+/* Request to help develop the app */
+"more_controller.develop_the_app" = "Aidez à corriger des bugs et à créer de nouvelles fonctionnalités";
+
+/* Header for the donate section. */
+"more_controller.donate" = "Soutenez-nous";
+
+/* The call to action for the More controller's donate buton */
+"more_controller.donate_description" = "Faire un don à OneBusAway";
+
+/* Header for the volunteer section. */
+"more_controller.help_out" = "Aidez à améliorer l'app";
+
+/* A button that will open a web based donation portal. */
+"more_controller.manage_donations" = "Gérer les dons";
+
+/* Title of the Agencies row in the My Location section */
+"more_controller.my_location.agencies" = "Agences";
+
+/* 'My Location' section header on the 'More' controller. */
+"more_controller.my_location.header" = "Ma position";
+
+/* Title of the mobile fare payment row */
+"more_controller.my_location.pay_fare" = "Payer mon titre de transport";
+
+/* Title of the row that lets the user choose their current region. */
+"more_controller.my_location.region_row_title" = "Région";
+
+/* A link to the app's Privacy Policy */
+"more_controller.privacy_row_title" = "Politique de confidentialité";
+
+/* Title of the More tab */
+"more_controller.title" = "Plus";
+
+/* Request to help localize OneBusAway */
+"more_controller.translate_the_app" = "Aidez à traduire l'app";
+
+/* Updates and Alerts header text */
+"more_controller.updates_and_alerts.header" = "Actualités et alertes";
+
+/* A link to view application logs */
+"more_controller.view_logs_row_title" = "Afficher les journaux";
+
+/* Explanation about how this app is built and maintained by volunteers. */
+"more_header.support_us_label_text" = "Cette app est créée et maintenue par des bénévoles.";
+
+/* Body for the empty set indicator on the Nearby controller. */
+"nearby_controller.empty_set.body" = "Faites un zoom arrière ou déplacez la carte pour trouver des arrêts.";
+
+/* Title for the empty set indicator on the Nearby controller */
+"nearby_controller.empty_set.title" = "Aucun arrêt à proximité";
+
+/* Error shown on the Nearby Stops screen when no API service is configured (e.g. no region selected). */
+"nearby_stops_controller.no_api_service_error" = "Aucun service de données de transport n'est disponible. Veuillez choisir une région dans les Réglages.";
+
+/* Body for the empty set indicator on the Nearby Stops controller. */
+"nearby_stops_controller.empty_set.body" = "Il n'y a pas d'autres arrêts dans les environs.";
+
+/* Title for the empty set indicator on the Nearby Stops controller. */
+"nearby_stops_controller.empty_set.title" = "Aucun arrêt à proximité";
+
+/* The title of the Nearby Stops controller. */
+"nearby_stops_controller.title" = "Arrêts à proximité";
+
+/* Vehicle occupancy is very high */
+"occupancy_status.crushed_standing_room_only" = "Bondé, places debout uniquement";
+
+/* Vehicle occupancy is zero */
+"occupancy_status.empty" = "Vide";
+
+/* Vehicle occupancy is medium */
+"occupancy_status.few_seats_available" = "Peu de places assises disponibles";
+
+/* Vehicle occupancy is full */
+"occupancy_status.full" = "Complet";
+
+/* A format string that denotes that the associated occupancy status is historical data. e.g. 'Historical: Standing room only' */
+"occupancy_status.historical_fmt" = "Historique : %@";
+
+/* Vehicle occupancy is low */
+"occupancy_status.many_seats_available" = "Nombreuses places assises disponibles";
+
+/* Vehicle is not accepting any passengers */
+"occupancy_status.not_accepting_passengers" = "N'accepte pas de passagers";
+
+/* Vehicle occupancy is high */
+"occupancy_status.standing_room_only" = "Places debout uniquement";
+
+/* Vehicle occupancy status is unknown. */
+"occupancy_status.unknown" = "Inconnu";
+
+/* Reachability bulletin for a cellular connection that can't access the Internet. */
+"reachability_bulletin.description.cellular_no_internet" = "Impossible d'accéder à Internet via votre connexion cellulaire.\r\n\r\nEssayez de vous connecter au Wi-Fi ou de vous déplacer.";
+
+/* Reachability bulletin for a phone with no connection. */
+"reachability_bulletin.description.not_connected" = "Impossible d'accéder à Internet. Essayez de vous connecter via le Wi-Fi ou les données cellulaires.";
+
+/* Reachability bulletin for a WiFi network that can't access the Internet. */
+"reachability_bulletin.description.wifi_no_internet" = "Impossible d'accéder à Internet via votre connexion Wi-Fi.\r\n\r\nEssayez de désactiver le Wi-Fi ou de vous connecter à un autre réseau.";
+
+/* Title of the alert that appears when the app can't connect to the server. */
+"reachability_bulletin.title" = "Pas d'Internet";
+
+/* Title for a confirmation alert displayed before the user deletes all of their recent stops. */
+"recent_stops.confirmation_alert.title" = "Voulez-vous vraiment supprimer tous vos arrêts récents ?";
+
+/* A button that deletes all of the recent stops in the app. */
+"recent_stops.delete_all" = "Tout supprimer";
+
+/* Body for the empty set indicator on the Recent Stops controller. */
+"recent_stops.empty_set.body" = "Les arrêts de transport que vous consultez dans l'app apparaîtront ici.";
+
+/* The button title for taking the user to the map view to find stops. */
+"recent_stops.empty_set.button" = "Trouver des arrêts sur la carte";
+
+/* Title for the empty set indicator on the Recent Stops controller. */
+"recent_stops.empty_set.title" = "Aucun arrêt récent";
+
+/* Title of the Alarms section of the Recents controller */
+"recent_stops_controller.alarms_section.title" = "Rappels";
+
+/* The title of the Recent Stops controller. */
+"recent_stops_controller.title" = "Récents";
+
+/* Formatted alert body shown when there is a mismatch between the user location and selected region. e.g. 'Your region is set to Puget Sound, but you appear to be in San Diego.' */
+"region_mismatch_bulletin.body_fmt" = "Votre région est définie sur %1$@, mais vous semblez vous trouver à %2$@.";
+
+/* A button on the region mismatch alert that changes the user's current region. e.g. 'Change to San Diego' */
+"region_mismatch_bulletin.change_region_button_fmt" = "Passer à %@";
+
+/* Alert title shown when there is a mismatch between the user location and selected region. */
+"region_mismatch_bulletin.title" = "Changer de région ?";
+
+/* A button on the region mismatch alert that updates the map's current location to be the specified region. e.g. 'Show Puget Sound on the map' */
+"region_mismatch_bulletin.update_map_button_fmt" = "Afficher %@ sur la carte";
+
+/* Help text displayed on a custom (user-created) region. */
+"region_picker.custom_region_help_text" = "Région personnalisée";
+
+/* Help text displayed on an experimental region. */
+"region_picker.experimental_region_help_text" = "Région expérimentale";
+
+/* Help text displayed on an inactive region. */
+"region_picker.inactive_region_help_text" = "Région inactive";
+
+/* Title of a button that shows a region creation view controller. */
+"region_picker.new_custom_region_button" = "Nouvelle région personnalisée";
+
+/* Title of a toggle that shows experimental (beta) regions. */
+"region_picker.show_experimental_regions_toggle" = "Afficher les régions expérimentales";
+
+/* Title of a toggle that shows inactive regions. */
+"region_picker.show_inactive_regions_toggle" = "Afficher les régions inactives";
+
+/* Title of the Region Picker Item, which lets the user choose a new region from the map. */
+"region_picker.title" = "Choisir une région";
+
+/* Error message of Custom Region URL if it's invalid or does not point to a functional OBA server */
+"region_url.error_messsage" = "L'URL de région fournie est non valide ou ne pointe pas vers un serveur OBA fonctionnel.";
+
+/* Placeholder text in the route search field. */
+"route_picker.search_placeholder" = "Rechercher des lignes…";
+
+/* Title for the route picker screen where the user selects their transit route. */
+"route_picker.title" = "Sélectionnez votre ligne";
+
+/* Error when API service is unavailable in the route picker. */
+"route_picker.error_no_service" = "Impossible de se connecter au service de transport.";
+
+/* Error when location is unavailable in the route picker. */
+"route_picker.error_no_location" = "Position indisponible. Veuillez activer les services de localisation pour trouver les lignes à proximité.";
+
+/* Loading message while fetching nearby routes. */
+"route_picker.loading" = "Chargement des lignes…";
+
+/* Message when no routes are found near the user's location. */
+"route_picker.no_routes" = "Aucune ligne trouvée à proximité.";
+
+/* Title of the Report Problem view controller. */
+"report_problem.title" = "Signaler un problème";
+
+/* Report a problem with the stop at {Stop Name} */
+"report_problem_controller.report_stop_problem_fmt" = "Signaler un problème concernant l'arrêt %@";
+
+/* A table header in the 'Report Problem' view controller. */
+"report_problem_controller.stop_problem.header" = "Problème concernant l'arrêt";
+
+/* A table header in the 'Report Problem' view controller. */
+"report_problem_controller.vehicle_problem.header" = "Problème concernant un véhicule à cet arrêt";
+
+/* Morning time period label */
+"schedule_view.am_period" = "Matin";
+
+/* Label for date picker in schedule view */
+"schedule_view.date" = "Date";
+
+/* Label for direction picker in schedule view */
+"schedule_view.direction" = "Direction";
+
+/* Default direction label when no headsign is available */
+"schedule_view.direction_number_fmt" = "Direction %d";
+
+/* Accessibility text when there is no departure time */
+"schedule_view.no_departure" = "Aucun départ";
+
+/* Message shown when schedule data is not available */
+"schedule_view.no_schedule_data" = "Aucune donnée d'horaires disponible";
+
+/* Message when no stops are available for the selected direction */
+"schedule_view.no_stops_found" = "Aucun arrêt trouvé pour cette direction";
+
+/* Afternoon/evening time period label */
+"schedule_view.pm_period" = "Après-midi";
+
+/* Headsign label showing destination */
+"schedule_view.to_headsign_fmt" = "Vers : %@";
+
+/* Error message when schedule fails to load */
+"schedule_view.unable_to_load" = "Impossible de charger les horaires";
+
+/* Title of the Bookmarks search header */
+"search_controller.bookmarks.header" = "Favoris";
+
+/* Body for the empty set indicator on the Search controller. */
+"search_controller.empty_set.body" = "Saisissez ici une adresse, un nom de ligne, un numéro d'arrêt ou un véhicule pour effectuer une recherche.";
+
+/* Title for the empty set indicator on the Search controller. */
+"search_controller.empty_set.title" = "Recherche";
+
+/* Placemark search header */
+"search_controller.placemarks.header" = "Résultats";
+
+/* Loading message for placemark search */
+"search_controller.placemarks.loading" = "Recherche de lieux…";
+
+/* No results message for placemark search */
+"search_controller.placemarks.no_results" = "Aucun résultat trouvé";
+
+/* Subtitle on search error row prompting the user to retry. */
+"search_controller.placemarks.error_retry" = "Touchez pour réessayer";
+
+/* Quick Search section header in search */
+"search_controller.quick_search.header" = "Recherche rapide";
+
+/* Quick search prefix for Address. */
+"search_interactor.quick_search.address_prefix" = "Adresse :";
+
+/* Quick search prefix for Route. */
+"search_interactor.quick_search.route_prefix" = "Ligne :";
+
+/* Quick search prefix for Stop. */
+"search_interactor.quick_search.stop_prefix" = "Arrêt :";
+
+/* Quick search prefix for Vehicle. */
+"search_interactor.quick_search.vehicle_prefix" = "Véhicule :";
+
+/* Error shown when vehicle search is attempted with no API service configured (e.g. no region selected). */
+"search_results_controller.no_api_service_error" = "Aucun service de données de transport n'est disponible. Veuillez choisir une région dans les Réglages.";
+
+/* Error message shown when a vehicle has no trips available. */
+"search_results_controller.no_trips_available" = "Ce véhicule n'effectue actuellement aucun trajet.";
+
+/* A format string for address searches. In English, this is just the address itself without any adornment. */
+"search_results_controller.subtitle.address_fmt" = "%@";
+
+/* A format string for route searches. e.g. in english: Route \"{SEARCH TEXT}\" */
+"search_results_controller.subtitle.route_fmt" = "Ligne %@";
+
+/* A format string for stop number searches. e.g. in english: Stop number \"{SEARCH TEXT}\" */
+"search_results_controller.subtitle.stop_number_fmt" = "Arrêt numéro %@";
+
+/* A format string for vehicle ID searches. e.g. in english: Vehicle ID \"{SEARCH TEXT}\" */
+"search_results_controller.subtitle.vehicle_id_fmt" = "ID du véhicule %@";
+
+/* The title of the Search Results controller. */
+"search_results_controller.title" = "Résultats de recherche";
+
+/* The transit agencies affected by this service alert. */
+"service_alert_controller.affected_agencies" = "Agences concernées";
+
+/* The routes affected by this service alert. */
+"service_alert_controller.affected_routes" = "Lignes concernées";
+
+/* The stops affected by this service alert. */
+"service_alert_controller.affected_stops" = "Arrêts concernés";
+
+/* The trips affected by this service alert. */
+"service_alert_controller.affected_trips" = "Trajets concernés";
+
+/* As in 'this is in effect/occurring' from/to */
+"service_alert_controller.in_effect" = "En vigueur";
+
+/* Directs the user to tap on the link that comes at the end of the string. Learn more: <HYPERLINK IS INSERTED HERE> */
+"service_alert_controller.learn_more_fmt" = "En savoir plus : %@";
+
+/* Settings > Accessibility section > Always show full sheet on Voiceover */
+"settings_controller.accessibility_section.default_full_sheet_voiceover" = "Toujours afficher le panneau complet avec VoiceOver";
+
+/* Settings > Accessibility section > Haptic feedback on reload */
+"settings_controller.accessibility_section.enable_reload_haptic" = "Retour haptique lors de l'actualisation";
+
+/* Settings > Accessibility section > Show route labels on the map */
+"settings_controller.accessibility_section.show_stop_annotation_labels" = "Afficher les noms des lignes sur la carte";
+
+/* Settings > Accessibility section title */
+"settings_controller.accessibility_section.title" = "Accessibilité";
+
+/* Settings > Alerts section > Display test alerts */
+"settings_controller.alerts_section.display_test_alerts" = "Afficher les alertes de test";
+
+/* Settings > Alerts section title */
+"settings_controller.alerts_section.title" = "Alertes des agences";
+
+/* Settings > Debug section > Refresh regions on every launch */
+"settings_controller.debug_section.always_refresh_regions" = "Actualiser les régions à chaque lancement";
+
+/* Settings > Debug section > Debug mode */
+"settings_controller.debug_section.debug_mode" = "Mode débogage";
+
+/* Settings > Debug section title */
+"settings_controller.debug_section.title" = "Débogage";
+
+/* Settings > Map section > Show my current heading */
+"settings_controller.map_section.shows_heading" = "Afficher mon orientation actuelle";
+
+/* Settings > Map section > Shows scale */
+"settings_controller.map_section.shows_scale" = "Afficher l'échelle";
+
+/* Settings > Map section > Shows traffic */
+"settings_controller.map_section.shows_traffic" = "Afficher la circulation";
+
+/* Settings > Map section title */
+"settings_controller.map_section.title" = "Carte";
+
+/* Settings > Privacy section > Send usage data */
+"settings_controller.privacy_section.reporting_enabled" = "Envoyer des données d'utilisation au développeur";
+
+/* Settings > Privacy section title */
+"settings_controller.privacy_section.title" = "Confidentialité";
+
+/* Settings > Walking Speed > Average preset label */
+"settings_controller.walking_speed.avg" = "Moyenne (~5 km/h)";
+
+/* Settings > Walking Speed > Fast preset label */
+"settings_controller.walking_speed.fast" = "Rapide (~6,5 km/h)";
+
+/* Settings > Walking Speed > HealthKit denial or no-data toast */
+"settings_controller.walking_speed.healthkit_unavailable" = "Impossible de synchroniser la vitesse de marche depuis Santé. Vérifiez Réglages > Confidentialité et sécurité > Santé pour autoriser l'accès.";
+
+/* Settings > Walking Speed > Slow preset label */
+"settings_controller.walking_speed.slow" = "Lente (~3 km/h)";
+
+/* Settings > Walking Speed section > Speed picker */
+"settings_controller.walking_speed.title" = "Vitesse de marche";
+
+/* Settings > Walking Speed section > HealthKit toggle */
+"settings_controller.walking_speed.use_healthkit" = "Utiliser les données de l'app Santé";
+
+/* Settings > Walking Speed section title */
+"settings_controller.walking_speed_section.title" = "Vitesse de marche";
+
+/* A message that appears when a user's alarm is created. */
+"stop_controller.alarm_created_message" = "Rappel créé";
+
+/* A header for the arrivals and departures section of the stop controller. */
+"stop_controller.arrival_departure_header" = "Arrivées et départs";
+
+/* An error message displayed when a stop is shown by tapping on a bookmark—and the bookmark doesn't seem to point to a valid stop any longer. This problem will occur when a transit agency changes its stop IDs, perhaps as part of an annual transit system realignment. */
+"stop_controller.bad_bookmark_error_message" = "Ce favori ne fonctionne peut-être plus. Votre agence de transport a-t-elle modifié quelque chose ? Veuillez supprimer puis recréer le favori.";
+
+/* A string listing the data providers (agencies) for this stop's data. It contains one or more providers separated by commas. e.g. Data provided by King County Metro, Sound Transit */
+"stop_controller.data_attribution_format" = "Données fournies par %@";
+
+/* Load More button */
+"stop_controller.load_more_button" = "Charger plus";
+
+/* This is an instruction given to the user the first time they look at a stop view instructing them on how to access more options, including the ability to add alarms. */
+"stop_controller.swipe_spotlight_text.with_alarm" = "Balayez une rangée pour afficher plus d'options, dont l'ajout de rappels.";
+
+/* This is an instruction given to the user the first time they look at a stop view instructing them on how to access more options, EXCLUDING the ability to add alarms. */
+"stop_controller.swipe_spotlight_text.without_alarm" = "Balayez une rangée pour afficher plus d'options.";
+
+/* Title of the Sorting section */
+"stop_preferences_controller.sorting_section.header_title" = "Trier par";
+
+/* Sort by route option */
+"stop_preferences_controller.sorting_section.sort_by_route" = "Trier par ligne";
+
+/* Sort by time option */
+"stop_preferences_controller.sorting_section.sort_by_time" = "Trier par heure";
+
+/* Title of the Edit Stop preferences controller */
+"stop_preferences_controller.title" = "Filtrer les lignes";
+
+/* The section header to a free-form comments field that the user does not have to add text to in order to submit this form. */
+"stop_problem_controller.comments_section.section_title" = "Commentaires supplémentaires (facultatif)";
+
+/* Footer text of the Share Location section in the Stop Problem Controller */
+"stop_problem_controller.location_section.section_footer" = "Partager votre position peut aider votre agence de transport à résoudre ce problème.";
+
+/* Title of the Share Location section in the Stop Problem Controller. */
+"stop_problem_controller.location_section.section_title" = "Partager votre position ?";
+
+/* Title of the Share Location switch on stop problem controller */
+"stop_problem_controller.location_section.switch_title" = "Partager la position";
+
+/* Title label for the 'choose a problem type' row. */
+"stop_problem_controller.problem_section.row_label" = "Choisissez-en un :";
+
+/* Title of the first section in the Stop Problem Controller. */
+"stop_problem_controller.problem_section.section_title" = "Quel semble être le problème ?";
+
+/* The 'send' button that actually sends along the problem report. */
+"stop_problem_controller.send_button" = "Envoyer le message";
+
+/* Title for the Report Stop Problem controller */
+"stop_problem_controller.title" = "Signaler un problème";
+
+/* Label for date picker in schedule view */
+"stop_schedule_view.date" = "Date";
+
+/* Message when no departures are scheduled */
+"stop_schedule_view.no_departures" = "Aucun départ prévu à cette date";
+
+/* Message shown when schedule data is not available */
+"stop_schedule_view.no_schedule_data" = "Aucune donnée d'horaires disponible";
+
+/* Label for route picker in schedule view */
+"stop_schedule_view.route" = "Ligne";
+
+/* Error message when schedule fails to load */
+"stop_schedule_view.unable_to_load" = "Impossible de charger les horaires";
+
+/* Message displayed when a new bookmark is created. */
+"stops_controller.created_new_bookmark" = "Favori ajouté";
+
+/* A menu item on a Stop page that toggles the visible list of transit vehicles from a filtered list to all of the list items. e.g. a stop serves routes 1, 2, and 3. The user has filtered the stop to only show route 3. Chooosing this item will show 1, 2, and 3 again. */
+"stops_controller.filter.all_routes" = "Toutes les lignes";
+
+/* A menu item on a Stop page that toggles the visible list of transit vehicles from a list of all items to a filtered list. e.g. a stop serves routes 1, 2, and 3. The user wants to only view route 3. Choosing this item would show that subset of routes. */
+"stops_controller.filter.filtered_routes" = "Lignes filtrées";
+
+/* Title of the row that will show stops that are near this one. */
+"stops_controller.nearby_stops" = "Arrêts à proximité";
+
+/* Button that launches the 'Report Problem' UI. */
+"stops_controller.report_problem" = "Signaler un problème";
+
+/* Message displayed an existing bookmark is updated. */
+"stops_controller.updated_bookmark" = "Favori mis à jour";
+
+/* Button that launches a maps app with walking directions to this stop */
+"stops_controller.walking_directions" = "Itinéraire à pied";
+
+/* Button that launches Apple's maps.app with walking directions to this stop */
+"stops_controller.walking_directions_apple" = "Itinéraire à pied (Apple Plans)";
+
+/* Button that launches Google Maps with walking directions to this stop */
+"stops_controller.walking_directions_google" = "Itinéraire à pied (Google Maps)";
+
+/* A notice when a transit alert doesn't have body text. */
+"transit_alert.no_additional_details.body" = "Aucun détail supplémentaire disponible.";
+
+/* Describes the next trip of this vehicle. e.g. Continues as 10 - Downtown Seattle */
+"trip_details_controller.continues_as_fmt" = "Continue en tant que %@";
+
+/* Last report: <TIME> */
+"trip_details_controller.last_report_fmt" = "Dernier relevé : %@";
+
+/* Service alerts header in the trip details controller. */
+"trip_details_controller.service_alerts_footer" = "Détails du trajet";
+
+/* Button that moves the map to focus on the selected stop */
+"trip_details_controller.show_on_map" = "Afficher sur la carte";
+
+/* Describes the previous trip of this vehicle. e.g. Starts as 10 - Downtown Seattle */
+"trip_details_controller.starts_as_fmt" = "Commence en tant que %@";
+
+/* A formatted string for displaying a vehicle's ID on the trip status map. e.g. 'Vehicle ID: 12345' */
+"trip_status_annotation.title_fmt" = "ID du véhicule : %@";
+
+/* Shown on the map when the user taps on a vehicle to indicate we don't know the vehicle's ID. */
+"trip_status_annotation.vehicle_id_unavailable" = "ID du véhicule indisponible";
+
+/* Voiceover text explaining that this stop is the user's destination */
+"trip_stop.user_destination.accessibility_label" = "Votre destination";
+
+/* Voiceover text explaining that the vehicle is currently at this stop */
+"trip_stop.vehicle_location.accessibility_label" = "Le véhicule est ici";
+
+/* Suggested invocation phrase for Siri Shortcut */
+"user_activity_builder.show_me_my_bus" = "Montre-moi mon bus";
+
+/* The section header to a free-form comments field that the user does not have to add text to in order to submit this form. */
+"vehicle_problem_controller.comments_section.section_title" = "Commentaires supplémentaires (facultatif)";
+
+/* Footer text of the Share Location section in the Vehicle Problem Controller */
+"vehicle_problem_controller.location_section.section_footer" = "Partager votre position peut aider votre agence de transport à résoudre ce problème.";
+
+/* Title of the Share Location section in the Vehicle Problem Controller. */
+"vehicle_problem_controller.location_section.section_title" = "Partager votre position ?";
+
+/* Title of the Share Location switch */
+"vehicle_problem_controller.location_section.switch_title" = "Partager la position";
+
+/* Title of the 'on the vehicle' section in the Vehicle Problem Controller. */
+"vehicle_problem_controller.on_vehicle_section.section_title" = "Êtes-vous à bord de ce véhicule ?";
+
+/* Title of the 'on the vehicle' switch in the Vehicle Problem Controller. */
+"vehicle_problem_controller.on_vehicle_section.switch_title" = "À bord du véhicule";
+
+/* Title of the vehicle ID text field in the Vehicle Problem Controller. */
+"vehicle_problem_controller.on_vehicle_section.vehicle_id_title" = "ID du véhicule";
+
+/* Title label for the 'choose a problem type' row. */
+"vehicle_problem_controller.problem_section.row_label" = "Choisissez-en un";
+
+/* Title of the first section in the Vehicle Problem Controller. */
+"vehicle_problem_controller.problem_section.section_title" = "Quel semble être le problème ?";
+
+/* The 'send' button that actually sends along the problem report. */
+"vehicle_problem_controller.send_button" = "Envoyer le message";
+
+/* Title for the Report Vehicle Problem controller */
+"vehicle_problem_controller.title" = "Signaler un problème";
+
+/* Format string describing a favorite route (or trip) bookmark with a placeholder for the bookmark's name. */
+"voiceover.bookmarkarrivaldata.label.favoriteroutebookmark_fmt" = "Favori de ligne préféré, %@";
+
+/* Format string describing a normal route (or trip) bookmark with a placeholder for the bookmark's name. */
+"voiceover.bookmarkarrivaldata.label.routebookmark_fmt" = "Favori de ligne, %@";
+
+/* Format string describing a stop bookmark with a placeholder for the bookmark's name. */
+"voiceover.bookmarkarrivaldata.label.stopbookmark_fmt" = "Favori d'arrêt, %@";
+
+/* Voiceover text describing an arrival, then a departure in the near-future, regardless of realtime data availability. */
+"voiceover.bookmarkarrivaldata.value.followingarrivalthendeparture_fmt" = "Arrivée suivante dans %1$d minutes et départ dans %2$d minutes.";
+
+/* Voiceover text describing a departure, then an arrival in the near-future, regardless of realtime data availability. */
+"voiceover.bookmarkarrivaldata.value.followingdeparturethenarrival_fmt" = "Départ suivant dans %1$d minutes et arrivée dans %2$d minutes.";
+
+/* Voiceover text describing the one additional arrival in the near-future, regardless of realtime data availability. */
+"voiceover.bookmarkarrivaldata.value.followingonearrival_fmt" = "Arrivée suivante dans %d minutes.";
+
+/* Voiceover text describing the one additional departure in the near-future, regardless of realtime data availability. */
+"voiceover.bookmarkarrivaldata.value.followingonedeparture_fmt" = "Départ suivant dans %d minutes.";
+
+/* Voiceover text describing the two additional arrivals in the near-future, regardless of realtime data availability. */
+"voiceover.bookmarkarrivaldata.value.followingtwoarrivals_fmt" = "Deux arrivées suivantes dans %1$d minutes et %2$d minutes.";
+
+/* Voiceover text describing the two additional departures in the near-future, regardless of realtime data availability. */
+"voiceover.bookmarkarrivaldata.value.followingtwodepartures_fmt" = "Deux départs suivants dans %1$d minutes et %2$d minutes.";
+
+/* Voiceover text describing no departures in the near-future. */
+"voiceover.bookmarkarrivaldata.value.noupcomingdepartures_fmt" = "Aucun départ à venir";
+
+/* A label for blind or low-vision users on the UI element that describes how long it takes to walk to the stop. */
+"walk_time_view.accessibility_label" = "Temps de marche jusqu'à l'arrêt";
+
+/* Accessibility string with placeholders for distance from stop, walking time to stop, and predicted arrival time. e.g. 1.2 miles. Takes 17 minutes to walk, arriving at 9:41 am */
+"walk_time_view.accessibility_value" = "%1$@. %2$@ de marche, arrivée à %3$@";
+
+/* Format string with placeholders for distance from stop, walking time to stop, and predicted arrival time. e.g. 1.2 miles, 17m: arriving at 09:41 A.M. */
+"walk_time_view.distance_time_fmt" = "%1$@, %2$@ : arrivée à %3$@";
+
+/* Button the user can tap on to decline access to their location. */
+"location_permission_bulletin.do_not_use_location_button_text" = "Plus tard";
+
+/* Button the user taps to grant access to their location. */
+"location_permission_bulletin.use_location_button_text" = "Utiliser ma position";
