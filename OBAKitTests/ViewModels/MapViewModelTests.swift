@@ -85,33 +85,33 @@ class MapViewModelTests: OBATestCase {
 
     // MARK: - Weather
 
-    /// A successful weather fetch publishes a non-nil forecast.
+    /// A successful weather fetch publishes a non-nil display.
     @MainActor
-    func test_loadWeather_successPublishesForecast() async {
+    func test_loadWeather_successPublishesDisplay() async {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         stubWeatherSuccess(dataLoader: dataLoader)
 
         let viewModel = MapViewModel(application: app)
-        expect(viewModel.weather).to(beNil())
+        expect(viewModel.weatherDisplay).to(beNil())
 
         await viewModel.loadWeather()
 
-        expect(viewModel.weather).toNot(beNil())
-        expect(viewModel.weather?.regionName) == "Puget Sound"
+        expect(viewModel.weatherDisplay).toNot(beNil())
+        expect(viewModel.weatherDisplay?.header.regionName) == "Puget Sound"
     }
 
-    /// A weather fetch that errors must clear `weather` (back to nil) and not crash.
+    /// A weather fetch that errors must clear `weatherDisplay` (back to nil) and not crash.
     /// First loads successfully so we can prove the error path actually clears the value.
     @MainActor
-    func test_loadWeather_errorClearsForecast() async {
+    func test_loadWeather_errorClearsDisplay() async {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         stubWeatherSuccess(dataLoader: dataLoader)
 
         let viewModel = MapViewModel(application: app)
         await viewModel.loadWeather()
-        expect(viewModel.weather).toNot(beNil())
+        expect(viewModel.weatherDisplay).toNot(beNil())
 
         // Swap the weather mock for an error. The swap must be atomic: the
         // Application's background tasks (regions refresh, agency alerts) may have
@@ -126,7 +126,7 @@ class MapViewModelTests: OBATestCase {
 
         await viewModel.loadWeather()
 
-        expect(viewModel.weather).to(beNil())
+        expect(viewModel.weatherDisplay).to(beNil())
     }
 
     // MARK: - Map Type

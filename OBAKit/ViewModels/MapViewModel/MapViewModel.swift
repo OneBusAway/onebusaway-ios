@@ -36,11 +36,10 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
 
     // MARK: - Published State
 
-    /// The current weather forecast, if loaded.
-    @Published private(set) var weather: WeatherForecast?
-
-    /// View-ready data derived from `weather`, recomputed only when the
-    /// forecast changes so SwiftUI body re-reads don't pay the formatting cost.
+    /// View-ready weather data, rebuilt only when `loadWeather()` finishes —
+    /// SwiftUI body re-reads don't pay the formatting cost. The raw
+    /// `WeatherForecast` model isn't surfaced; reintroduce it on demand if a
+    /// future consumer needs it.
     @Published private(set) var weatherDisplay: WeatherDisplay?
 
     /// `true` when the map is zoomed out too far to load stops.
@@ -93,10 +92,8 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
         guard let apiService = application.obacoService else { return }
         do {
             let forecast = try await apiService.getWeather()
-            weather = forecast
             weatherDisplay = WeatherDisplay(forecast: forecast, locale: application.locale)
         } catch {
-            weather = nil
             weatherDisplay = nil
             Logger.error("Failed to load weather: \(error.localizedDescription)")
         }
