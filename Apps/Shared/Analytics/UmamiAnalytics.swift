@@ -1,6 +1,6 @@
 //
-//  UmamiReporter.swift
-//  OBAKit
+//  UmamiAnalytics.swift
+//  App
 //
 //  Copyright © Open Transit Software Foundation
 //  This source code is licensed under the Apache 2.0 license found in the
@@ -55,7 +55,7 @@ enum UmamiJSONValue: Encodable {
 ///
 /// Never throws, never blocks the UI, swallows all errors. Constructed per-region
 /// by `AnalyticsOrchestrator`; one instance is bound to a single Umami website.
-public final class UmamiReporter {
+final class UmamiAnalytics {
     private let serverURL: URL
     private let websiteID: String
     private let hostname: String
@@ -66,10 +66,10 @@ public final class UmamiReporter {
     private var defaultData: [String: UmamiJSONValue] = [:]
     private let defaultDataLock = NSLock()
 
-    public init(serverURL: URL,
+    init(serverURL: URL,
          websiteID: String,
          hostname: String,
-         dataLoader: URLDataLoader = UmamiReporter.makeDefaultSession()) {
+         dataLoader: URLDataLoader = UmamiAnalytics.makeDefaultSession()) {
         self.serverURL = serverURL
         self.websiteID = websiteID
         self.hostname = hostname
@@ -79,7 +79,7 @@ public final class UmamiReporter {
 
     /// A session with a tight end-to-end resource timeout. `URLSession.shared`
     /// cannot be configured, so we build our own.
-    public static func makeDefaultSession() -> URLSession {
+    static func makeDefaultSession() -> URLSession {
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 10   // idle/stall timer
         config.timeoutIntervalForResource = 10  // wall-clock end-to-end cap
@@ -89,7 +89,7 @@ public final class UmamiReporter {
 
     // MARK: - Event API (mirrors the Analytics protocol)
 
-    public func reportEvent(pageURL: String, label: String, value: Any?) async {
+    func reportEvent(pageURL: String, label: String, value: Any?) async {
         var data = defaultDataLock.withLock { defaultData }
         if let jsonValue = UmamiJSONValue(value) {
             data["value"] = jsonValue
@@ -97,11 +97,11 @@ public final class UmamiReporter {
         await postEvent(path: Self.path(from: pageURL), name: label, data: data)
     }
 
-    public func reportSearchQuery(_ query: String) async {
+    func reportSearchQuery(_ query: String) async {
         await reportEvent(pageURL: "app://localhost/search", label: "query", value: query)
     }
 
-    public func reportStopViewed(name: String, id: String, stopDistance: String) async {
+    func reportStopViewed(name: String, id: String, stopDistance: String) async {
         var data = defaultDataLock.withLock { defaultData }
         data["id"] = .string(id)
         data["distance"] = .string(stopDistance)
@@ -109,7 +109,7 @@ public final class UmamiReporter {
         await postEvent(path: "/stop", name: nil, data: data)
     }
 
-    public func setUserProperty(key: String, value: String?) {
+    func setUserProperty(key: String, value: String?) {
         defaultDataLock.withLock {
             if let value {
                 defaultData[key] = .string(value)
@@ -157,12 +157,12 @@ public final class UmamiReporter {
             if !Self.isSuccessfulIngest(responseData) {
                 #if DEBUG
                 let body = String(data: responseData, encoding: .utf8) ?? "<non-utf8>"
-                print("[UmamiReporter] event dropped (bot UA / bad config?). Body: \(body)")
+                print("[UmamiAnalytics] event dropped (bot UA / bad config?). Body: \(body)")
                 #endif
             }
         } catch {
             #if DEBUG
-            print("[UmamiReporter] emit failed: \(error)")
+            print("[UmamiAnalytics] emit failed: \(error)")
             #endif
         }
     }

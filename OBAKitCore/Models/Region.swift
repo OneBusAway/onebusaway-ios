@@ -53,7 +53,7 @@ public class Region: NSObject, Identifiable, Codable {
     public let plausibleAnalyticsServerURL: URL?
 
     /// Per-region Umami analytics config, or `nil` when analytics is disabled for this region.
-    public let umamiAnalytics: UmamiAnalytics?
+    public let umamiAnalytics: UmamiAnalyticsConfig?
 
     /// The base URL for making Service Interface for Real Time Information (SIRI) requests.
     ///
@@ -262,7 +262,7 @@ public class Region: NSObject, Identifiable, Codable {
         openTripPlannerURL = try? container.decodeIfPresent(URL.self, forKey: .openTripPlannerURL)
         stopInfoURL = try? container.decodeIfPresent(URL.self, forKey: .stopInfoURL)
         plausibleAnalyticsServerURL = try? container.decodeIfPresent(URL.self, forKey: .plausibleAnalyticsServerURL)
-        umamiAnalytics = try? container.decodeIfPresent(UmamiAnalytics.self, forKey: .umamiAnalytics)
+        umamiAnalytics = try? container.decodeIfPresent(UmamiAnalyticsConfig.self, forKey: .umamiAnalytics)
 
         regionBounds = try container.decode([RegionBound].self, forKey: .regionBounds)
 
@@ -529,13 +529,13 @@ public class Region: NSObject, Identifiable, Codable {
     }
 }
 
-// MARK: - UmamiAnalytics
+// MARK: - UmamiAnalyticsConfig
 
 /// Per-region Umami analytics discovery info, published in the region feed.
 ///
 /// `nil` (a JSON `null` or an absent key) means analytics is disabled for the
 /// region and no events should be emitted.
-public struct UmamiAnalytics: Codable, Equatable, Hashable {
+public struct UmamiAnalyticsConfig: Codable, Equatable, Hashable {
     /// The Umami host to POST events to, e.g. `https://analytics.onebusawaycloud.com`.
     public let url: URL
 

@@ -1,5 +1,5 @@
 //
-//  UmamiReporterTests.swift
+//  UmamiAnalyticsTests.swift
 //  OBAKitTests
 //
 //  Copyright © Open Transit Software Foundation
@@ -9,35 +9,35 @@
 
 import XCTest
 import Nimble
-@testable import OBAKit
+@testable import App
 @testable import OBAKitCore
 
-final class UmamiReporterTests: OBATestCase {
+final class UmamiAnalyticsTests: OBATestCase {
 
     private let successBody = #"{"cache":"x","sessionId":"s","visitId":"v"}"#.data(using: .utf8)!
     private let beepBoopBody = #"{"beep":"boop"}"#.data(using: .utf8)!
 
-    private func makeReporter(loader: MockDataLoader) -> UmamiReporter {
-        UmamiReporter(serverURL: URL(string: "https://analytics.example.com")!,
-                      websiteID: "site-uuid",
-                      hostname: "api.example.org",
-                      dataLoader: loader)
+    private func makeReporter(loader: MockDataLoader) -> UmamiAnalytics {
+        UmamiAnalytics(serverURL: URL(string: "https://analytics.example.com")!,
+                       websiteID: "site-uuid",
+                       hostname: "api.example.org",
+                       dataLoader: loader)
     }
 
     // MARK: - path(from:)
 
     func testPathReduction() {
-        expect(UmamiReporter.path(from: "app://localhost/map")) == "/map"
-        expect(UmamiReporter.path(from: "app://localhost")) == "/"
-        expect(UmamiReporter.path(from: "app://localhost/search?q=x")) == "/search"
+        expect(UmamiAnalytics.path(from: "app://localhost/map")) == "/map"
+        expect(UmamiAnalytics.path(from: "app://localhost")) == "/"
+        expect(UmamiAnalytics.path(from: "app://localhost/search?q=x")) == "/search"
     }
 
     // MARK: - isSuccessfulIngest
 
     func testSuccessDetection() {
-        expect(UmamiReporter.isSuccessfulIngest(self.successBody)).to(beTrue())
-        expect(UmamiReporter.isSuccessfulIngest(self.beepBoopBody)).to(beFalse())
-        expect(UmamiReporter.isSuccessfulIngest("not json".data(using: .utf8)!)).to(beFalse())
+        expect(UmamiAnalytics.isSuccessfulIngest(self.successBody)).to(beTrue())
+        expect(UmamiAnalytics.isSuccessfulIngest(self.beepBoopBody)).to(beFalse())
+        expect(UmamiAnalytics.isSuccessfulIngest("not json".data(using: .utf8)!)).to(beFalse())
     }
 
     // MARK: - UmamiJSONValue coercion

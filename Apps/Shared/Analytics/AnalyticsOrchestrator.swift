@@ -15,7 +15,7 @@ import FirebaseCrashlytics
     private let userDefaults: UserDefaults
     private var firebaseAnalytics: FirebaseAnalytics?
     private var plausibleAnalytics: PlausibleAnalytics?
-    private var umami: UmamiReporter?
+    private var umami: UmamiAnalytics?
 
     @objc required public init(userDefaults: UserDefaults) {
         self.userDefaults = userDefaults
@@ -70,16 +70,16 @@ import FirebaseCrashlytics
         }
 
         if let umamiConfig = region.umamiAnalytics {
-            umami = UmamiReporter(serverURL: umamiConfig.url,
-                                  websiteID: umamiConfig.id,
-                                  hostname: region.OBABaseURL.host ?? "")
+            umami = UmamiAnalytics(serverURL: umamiConfig.url,
+                                   websiteID: umamiConfig.id,
+                                   hostname: region.OBABaseURL.host ?? "")
         }
     }
 
     @objc public func reportError(_ error: any Error) {
         firebaseAnalytics?.reportError(error)
 
-        // TODO: figure out how to report errors to a plausible-compatible destination.
+        // TODO: figure out how to report errors to an umami/plausible-compatible destination.
     }
 
     @objc public func reportEvent(pageURL: String, label: String, value: Any?) {
