@@ -7,11 +7,14 @@
 
 import SwiftUI
 import OBAKitCore
-import CoreLocationUI
 
-/// Asks the user for one-time location authorization.
+/// Asks the user for "while in use" location authorization so the app can
+/// automatically select their region. Unlike a one-time authorization, this
+/// grant persists across launches.
 public struct RegionPickerLocationAuthorizationView<Provider: RegionProvider>: View, OnboardingView {
     @ObservedObject var regionProvider: Provider
+
+    @Environment(\.coreApplication) var application
 
     public var dismissBlock: VoidBlock?
     @Environment(\.dismiss) public var dismissAction
@@ -33,17 +36,26 @@ public struct RegionPickerLocationAuthorizationView<Provider: RegionProvider>: V
         }
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 16) {
-                // LocationButton API is picky, so this button won't stretch across the width of the screen.
-                LocationButton {
+                Button {
                     regionProvider.automaticallySelectRegion = true
+                    application.locationService.requestInUseAuthorization()
                     dismiss()
+                } label: {
+                    Label(OBALoc("location_permission_bulletin.use_location_button_text", value: "Use My Location", comment: "Button the user taps to grant access to their location."), systemImage: "location.fill")
+                        .frame(maxWidth: .infinity)
                 }
-                .cornerRadius(8)
-                .labelStyle(.titleAndIcon)
-                .foregroundColor(.white)
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+
+                Button {
+                    regionProvider.automaticallySelectRegion = false
+                    dismiss()
+                } label: {
+                    Label(OBALoc("location_permission_bulletin.do_not_use_location_button_text", value: "Not Now", comment: "Button the user can tap on to decline access to their location."), systemImage: "location.slash")
+                }
             }
             .symbolVariant(.fill)
-            .tint(.blue) // .accentColor might fail LocationButton's contrast test, so we'll just use the standard blue.
+            .tint(.blue)
         }
         .navigationBarHidden(true)
         .padding()

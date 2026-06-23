@@ -81,6 +81,28 @@ class RegionsEncodingTests: OBATestCase {
         expect(bounds[1].lonSpan).to(beCloseTo(0.3967700000000036))
     }
 
+    func testUmamiAnalyticsDecoding() {
+        let regions = try! Fixtures.loadRESTAPIPayload(type: [Region].self, fileName: "regions-v3.json")
+
+        // Present: region 0 decodes url + id.
+        let umami = regions[0].umamiAnalytics
+        expect(umami?.url) == URL(string: "https://analytics.onebusawaycloud.com")!
+        expect(umami?.id) == "abc-123-uuid"
+
+        // Explicit JSON null (region 1) → nil.
+        expect(regions[1].umamiAnalytics).to(beNil())
+
+        // Absent key (region 2) → nil.
+        expect(regions[2].umamiAnalytics).to(beNil())
+
+        // Survives a property-list encode → decode round trip (Region is persisted to disk).
+        let plist = try! PropertyListEncoder().encode(regions)
+        let roundTripped = try! PropertyListDecoder().decode([Region].self, from: plist)
+        expect(roundTripped[0].umamiAnalytics?.url) == URL(string: "https://analytics.onebusawaycloud.com")!
+        expect(roundTripped[0].umamiAnalytics?.id) == "abc-123-uuid"
+        expect(roundTripped[1].umamiAnalytics).to(beNil())
+    }
+
     func testCustomRegions_creation() {
         let customRegion = Fixtures.customMinneapolisRegion
 

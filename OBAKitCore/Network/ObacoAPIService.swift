@@ -176,7 +176,12 @@ public actor ObacoAPIService: @preconcurrency APIService {
         }
 
         return qualifiedEntities.compactMap { (entity: TransitRealtime_FeedEntity) -> AgencyAlert? in
-            return try? AgencyAlert(feedEntity: entity, agencies: agencies)
+            do {
+                return try AgencyAlert(feedEntity: entity, agencies: agencies)
+            } catch {
+                logger.error("Dropped alert \(entity.id, privacy: .public) from regional alerts feed: \(error, privacy: .public)")
+                return nil
+            }
         }
     }
 }

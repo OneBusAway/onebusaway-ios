@@ -12,13 +12,18 @@ import OBAKitCore
 
 struct MoreHeaderItem: OBAListViewItem {
     let id: UUID = UUID()
+    let supportText: String?
+
+    init(supportText: String? = nil) {
+        self.supportText = supportText
+    }
 
     static var customCellType: OBAListViewCell.Type? {
         return MoreHeaderViewCell.self
     }
 
     var configuration: OBAListViewItemConfiguration {
-        return .custom(MoreHeaderItemContentConfiguration())
+        return .custom(MoreHeaderItemContentConfiguration(supportText: supportText))
     }
 
     var onSelectAction: OBAListViewAction<MoreHeaderItem>?
@@ -34,6 +39,13 @@ struct MoreHeaderItem: OBAListViewItem {
 
 struct MoreHeaderItemContentConfiguration: OBAContentConfiguration {
     public var formatters: Formatters?
+    let supportText: String?
+
+    init(supportText: String? = nil, formatters: Formatters? = nil) {
+        self.supportText = supportText
+        self.formatters = formatters
+    }
+
     var obaContentView: (OBAContentView & ReuseIdentifierProviding).Type {
         return MoreHeaderViewCell.self
     }
@@ -53,7 +65,11 @@ final class MoreHeaderViewCell: OBAListViewCell {
     }
 
     override func apply(_ config: OBAContentConfiguration) {
-        // nop.
+        guard let moreConfig = config as? MoreHeaderItemContentConfiguration else {
+            assertionFailure("MoreHeaderViewCell received unexpected config: \(type(of: config))")
+            return
+        }
+        moreHeader.configure(supportText: moreConfig.supportText)
     }
 }
 
@@ -109,6 +125,14 @@ final class MoreHeaderView: UIView {
         return view
     }()
 
+    fileprivate func configure(supportText: String?) {
+        if let customText = supportText, !customText.isEmpty {
+            supportUsLabel.text = customText
+        } else {
+            supportUsLabel.text = OBALoc("more_header.support_us_label_text", value: "This app is made and supported by volunteers.", comment: "Explanation about how this app is built and maintained by volunteers.")
+        }
+    }
+
     override init(frame: CGRect) {
         super.init(frame: frame)
 
@@ -117,7 +141,7 @@ final class MoreHeaderView: UIView {
         appNameLabel.text = Bundle.main.appName
         appVersionLabel.text = Bundle.main.appVersion
         copyrightLabel.text = Bundle.main.copyright
-        supportUsLabel.text = OBALoc("more_header.support_us_label_text", value: "This app is made and supported by volunteers.", comment: "Explanation about how this app is built and maintained by volunteers.")
+        configure(supportText: nil)
 
         addSubview(stackView)
 

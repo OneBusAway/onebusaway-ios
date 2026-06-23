@@ -72,13 +72,17 @@ public class MoreViewController: UIViewController,
             updatesAndAlertsSection,
             myLocationSection,
             helpOutSection,
+            customLinksSection,
             aboutSection
         ].compactMap { $0 }
     }
 
     // MARK: Header section
     var headerSection: OBAListViewSection {
-        return OBAListViewSection(id: "header", contents: [MoreHeaderItem()])
+        let config = application.applicationBundle.moreTabConfiguration
+        return OBAListViewSection(id: "header", contents: [
+            MoreHeaderItem(supportText: config.headerSupportText)
+        ])
     }
 
     // MARK: Donate section
@@ -91,12 +95,18 @@ public class MoreViewController: UIViewController,
             comment: "Header for the donate section."
         )
 
+        let donateTitle = String(
+            format: OBALoc(
+                "more_controller.donate_description_fmt",
+                value: "Donate to %@",
+                comment: "Call to action for donations. %@ is the app name."
+            ),
+            Bundle.main.appName
+        )
+
         return OBAListViewSection(id: "donate", title: header, contents: [
             OBAListRowView.DefaultViewModel(
-                title: OBALoc(
-                    "more_controller.donate_description",
-                    value: "Donate to OneBusAway",
-                    comment: "The call to action for the More controller's donate buton"),
+                title: donateTitle,
                 onSelectAction: { [weak self] _ in
                     self?.showDonationUI()
                 }
@@ -108,7 +118,7 @@ public class MoreViewController: UIViewController,
                     comment: "A button that will open a web based donation portal."),
                 onSelectAction: { [weak self] _ in
                     guard
-                        let self = self,
+                        let self,
                         let donationManagementPortal = self.application.applicationBundle.donationManagementPortal
                     else {
                         return
@@ -142,8 +152,10 @@ public class MoreViewController: UIViewController,
             comment: "Alerts for region row in the More controller")
 
         return OBAListViewSection(id: "updates_and_alerts", title: header, contents: [
-            OBAListRowView.DefaultViewModel(title: row, onSelectAction: { _ in
-                self.application.viewRouter.navigate(to: AgencyAlertsViewController(application: self.application), from: self)
+            OBAListRowView.DefaultViewModel(title: row, onSelectAction: { [weak self] _ in
+                guard let self else { return }
+                let alerts = AgencyAlertsViewController(application: self.application)
+                self.application.viewRouter.navigate(to: alerts, from: self)
             })
         ])
     }
@@ -152,7 +164,8 @@ public class MoreViewController: UIViewController,
     var myLocationSection: OBAListViewSection {
         var contents: [AnyOBAListViewItem] = []
 
-        contents.append(OBAListRowView.ValueViewModel(title: OBALoc("more_controller.my_location.region_row_title", value: "Region", comment: "Title of the row that lets the user choose their current region."), subtitle: application.currentRegion?.name, onSelectAction: { [unowned self] _ in
+        contents.append(OBAListRowView.ValueViewModel(title: OBALoc("more_controller.my_location.region_row_title", value: "Region", comment: "Title of the row that lets the user choose their current region."), subtitle: application.currentRegion?.name, onSelectAction: { [weak self] _ in
+            guard let self else { return }
 
             let regionPicker = UIHostingController(
                 rootView: NavigationView {
@@ -165,12 +178,13 @@ public class MoreViewController: UIViewController,
         }).typeErased)
 
         if let currentRegion = application.currentRegion, currentRegion.supportsMobileFarePayment {
-            contents.append(OBAListRowView.DefaultViewModel(title: OBALoc("more_controller.my_location.pay_fare", value: "Pay My Fare", comment: "Title of the mobile fare payment row"), onSelectAction: { _ in
-                self.farePayments.beginFarePaymentsWorkflow()
+            contents.append(OBAListRowView.DefaultViewModel(title: OBALoc("more_controller.my_location.pay_fare", value: "Pay My Fare", comment: "Title of the mobile fare payment row"), onSelectAction: { [weak self] _ in
+                self?.farePayments.beginFarePaymentsWorkflow()
             }).typeErased)
         }
 
-        contents.append(OBAListRowView.DefaultViewModel(title: OBALoc("more_controller.my_location.agencies", value: "Agencies", comment: "Title of the Agencies row in the My Location section"), onSelectAction: { _ in
+        contents.append(OBAListRowView.DefaultViewModel(title: OBALoc("more_controller.my_location.agencies", value: "Agencies", comment: "Title of the Agencies row in the My Location section"), onSelectAction: { [weak self] _ in
+            guard let self else { return }
             let agencies = AgenciesViewController(application: self.application)
             self.application.viewRouter.navigate(to: agencies, from: self)
         }).typeErased)
@@ -191,7 +205,8 @@ public class MoreViewController: UIViewController,
                     "more_controller.credits_row_title",
                     value: "Credits",
                     comment: "Credits - like who should get credit for creating this."),
-                onSelectAction: { _ in
+                onSelectAction: { [weak self] _ in
+                    guard let self else { return }
                     let credits = CreditsViewController(application: self.application)
                     self.application.viewRouter.navigate(to: credits, from: self)
                 }),
@@ -201,8 +216,8 @@ public class MoreViewController: UIViewController,
                     "more_controller.privacy_row_title",
                     value: "Privacy Policy",
                     comment: "A link to the app's Privacy Policy"),
-                onSelectAction: { _ in
-                    guard let url = Bundle.main.privacyPolicyURL else { return }
+                onSelectAction: { [weak self] _ in
+                    guard let self, let url = Bundle.main.privacyPolicyURL else { return }
                     let safari = SFSafariViewController(url: url)
                     self.application.viewRouter.present(safari, from: self)
                 }),
@@ -212,7 +227,8 @@ public class MoreViewController: UIViewController,
                     "more_controller.view_logs_row_title",
                     value: "View Logs",
                     comment: "A link to view application logs"),
-                onSelectAction: { _ in
+                onSelectAction: { [weak self] _ in
+                    guard let self else { return }
                     let logViewer = LogViewerViewController(application: self.application)
                     self.application.viewRouter.navigate(to: logViewer, from: self)
                 })
@@ -220,33 +236,66 @@ public class MoreViewController: UIViewController,
     }
 
     // MARK: - Help Out section
-    var helpOutSection: OBAListViewSection {
+    var helpOutSection: OBAListViewSection? {
+        let config = application.applicationBundle.moreTabConfiguration
+        guard config.showHelpOutSection else { return nil }
+
         let header = OBALoc(
             "more_controller.help_out",
             value: "Help make the app better",
             comment: "Header for the volunteer section.")
 
-        return OBAListViewSection(id: "help_out", title: header, contents: [
-            OBAListRowView.DefaultViewModel(
+        var contents: [AnyOBAListViewItem] = []
+
+        if let translateURL = config.translateURL {
+            contents.append(OBAListRowView.DefaultViewModel(
                 title: OBALoc(
                     "more_controller.translate_the_app",
                     value: "Help Translate the App",
                     comment: "Request to help localize OneBusAway"),
-                onSelectAction: { _ in
-                    let url = URL(string: "https://www.transifex.com/open-transit-software-foundation/onebusaway-ios/")!
-                    self.application.open(url, options: [:], completionHandler: nil)
-                }),
+                onSelectAction: { [weak self] _ in
+                    self?.application.open(translateURL, options: [:], completionHandler: nil)
+                }
+            ).typeErased)
+        }
 
-            OBAListRowView.DefaultViewModel(
+        if let developURL = config.developURL {
+            contents.append(OBAListRowView.DefaultViewModel(
                 title: OBALoc(
                     "more_controller.develop_the_app",
                     value: "Help Fix Bugs & Build New Features",
                     comment: "Request to help develop the app"),
-                onSelectAction: { _ in
-                    let url = URL(string: "https://github.com/oneBusAway/onebusaway-ios")!
-                    self.application.open(url, options: [:], completionHandler: nil)
-                }),
-        ])
+                onSelectAction: { [weak self] _ in
+                    self?.application.open(developURL, options: [:], completionHandler: nil)
+                }
+            ).typeErased)
+        }
+
+        guard !contents.isEmpty else { return nil }
+        return OBAListViewSection(id: "help_out", title: header, contents: contents)
+    }
+
+    // MARK: - Custom Links section
+    var customLinksSection: OBAListViewSection? {
+        let links = application.applicationBundle.moreTabConfiguration.customLinks
+        guard !links.isEmpty else { return nil }
+
+        let header = OBALoc(
+            "more_controller.custom_links.header",
+            value: "Resources",
+            comment: "Header for the custom links section configured by the transit agency."
+        )
+
+        let contents = links.map { link in
+            OBAListRowView.DefaultViewModel(
+                title: link.title,
+                onSelectAction: { [weak self] _ in
+                    self?.application.open(link.url, options: [:], completionHandler: nil)
+                }
+            ).typeErased
+        }
+
+        return OBAListViewSection(id: "custom_links", title: header, contents: contents)
     }
 
     // MARK: - Actions
@@ -286,14 +335,14 @@ public class MoreViewController: UIViewController,
 
         // Contact Developers
         sheet.addAction(title: OBALoc("more_controller.contact_developers", value: "Feature Request/Bug Report", comment: "Title of the action sheet option for contacting the developers of the app.")) { [weak self] _ in
-            guard let self = self else { return }
+            guard let self else { return }
             self.application.analytics?.reportEvent(pageURL: "app://localhost/more", label: AnalyticsLabels.reportProblem, value: "feedback_app_feedback_email")
             self.presentEmailFeedbackForm(target: .appDevelopers)
         }
 
         // Contact Transit Agency
         sheet.addAction(title: OBALoc("more_controller.contact_transit", value: "Vehicle/Schedule Problem", comment: "Title of the action sheet option for contacting a user's transit agency.")) { [weak self] _ in
-            guard let self = self else { return }
+            guard let self else { return }
             self.application.analytics?.reportEvent(pageURL: "app://localhost/more", label: AnalyticsLabels.reportProblem, value: "feedback_customer_service")
             self.presentEmailFeedbackForm(target: .transitAgency)
         }

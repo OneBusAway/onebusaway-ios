@@ -62,21 +62,34 @@ public class AgencyAlertsStore: NSObject, RegionsServiceDelegate {
 
     private var agencies = [AgencyWithCoverage]()
 
+    /// Serializes access to this store's mutable state (`agencies`, `alerts`,
+    /// `readAlertIDs`). Those are touched from several execution contexts that don't
+    /// coordinate on their own: `update()` is `async` and inherits its caller's
+    /// context, `deleteAgencyAlerts()` runs on the serial `queue`, and the
+    /// `@MainActor` storage methods / UI reads run on the main thread.
+    /// Never hold this lock across an `await`.
+    private let stateLock = NSLock()
+
     public func update() async throws {
         guard let apiService else { return }
 
-        if agencies.isEmpty {
-            agencies = try await apiService.getAgenciesWithCoverage().list
+        // Touch `agencies` only under the lock (never across the network `await`), then
+        // hand the concurrent task group an immutable snapshot rather than letting its
+        // child tasks read `self.agencies` while another context mutates it.
+        if stateLock.withLock({ self.agencies.isEmpty }) {
+            let fetched = try await apiService.getAgenciesWithCoverage().list
+            stateLock.withLock { self.agencies = fetched }
         }
+        let agenciesSnapshot = stateLock.withLock { self.agencies }
 
         // Get agency alerts from OBA and Obaco.
         let agencyAlerts = try await withThrowingTaskGroup(of: [AgencyAlert].self) { group -> [AgencyAlert] in
             group.addTask {
-                await self.fetchRegionalAlerts(service: apiService)
+                await self.fetchRegionalAlerts(service: apiService, agencies: agenciesSnapshot)
             }
 
             group.addTask {
-                try await self.fetchObacoAlerts()
+                try await self.fetchObacoAlerts(agencies: agenciesSnapshot)
             }
 
             var alerts: [AgencyAlert] = []
@@ -92,6 +105,15 @@ public class AgencyAlertsStore: NSObject, RegionsServiceDelegate {
 
     /// Convenience wrapper for ``update()``. Errors are reported via ``AgencyAlertsDelegate``.
     public func checkForUpdates() {
+        #if DEBUG
+        // Once a UI test has injected a synthetic alert (`seedRegionWideAlertForTesting()`),
+        // skip live fetches entirely so the seeded alert is the only bulletin the
+        // test can encounter.
+        guard !suppressLiveFetchesForTesting else {
+            return
+        }
+        #endif
+
         Task {
             do {
                 try await update()
@@ -104,12 +126,12 @@ public class AgencyAlertsStore: NSObject, RegionsServiceDelegate {
     }
 
     // MARK: - REST API
-    private func fetchRegionalAlerts(service: RESTAPIService) async -> [AgencyAlert] {
+    private func fetchRegionalAlerts(service: RESTAPIService, agencies: [AgencyWithCoverage]) async -> [AgencyAlert] {
         return await service.getAlerts(agencies: agencies)
     }
 
     // MARK: - Obaco
-    private func fetchObacoAlerts() async throws -> [AgencyAlert] {
+    private func fetchObacoAlerts(agencies: [AgencyWithCoverage]) async throws -> [AgencyAlert] {
         guard let obacoService else {
             return []
         }
@@ -150,39 +172,114 @@ public class AgencyAlertsStore: NSObject, RegionsServiceDelegate {
     }()
 
     public func markAlertRead(_ alert: AgencyAlert) {
-        readAlertIDs.insert(alert.id)
-        userDefaults.set(readAlertIDs.allObjects, forKey: UserDefaultKeys.readAgencyAlertIDs)
+        stateLock.withLock {
+            readAlertIDs.insert(alert.id)
+            userDefaults.set(readAlertIDs.allObjects, forKey: UserDefaultKeys.readAgencyAlertIDs)
+        }
     }
 
     public func isAlertUnread(_ alert: AgencyAlert) -> Bool {
-        !readAlertIDs.contains(alert.id)
+        stateLock.withLock { !readAlertIDs.contains(alert.id) }
     }
 
     // MARK: - Data Storage
 
     public var agencyAlerts: [AgencyAlert] {
-        alerts.allObjects.sorted { ($0.startDate ?? Date.distantPast) > ($1.startDate ?? Date.distantPast) }
+        let snapshot = stateLock.withLock { alerts.allObjects }
+        return snapshot.sorted { ($0.startDate ?? Date.distantPast) > ($1.startDate ?? Date.distantPast) }
     }
 
     private var alerts: Set<AgencyAlert> = []
 
     @MainActor
     private func storeAgencyAlerts(_ agencyAlerts: [AgencyAlert]) {
-        for alert in agencyAlerts {
-            self.alerts.insert(alert)
+        stateLock.withLock {
+            for alert in agencyAlerts {
+                self.alerts.insert(alert)
+            }
         }
 
         self.notifyDelegatesAlertsUpdated()
     }
 
+    /// Injects alerts directly without the network fetch cycle.
+    /// Internal so `@testable` imports can populate the store with fixtures.
+    @MainActor
+    func insertAlerts(_ newAlerts: [AgencyAlert]) {
+        stateLock.withLock {
+            for alert in newAlerts {
+                alerts.insert(alert)
+            }
+        }
+    }
+
+    #if DEBUG
+    /// Set once a synthetic alert has been seeded, so ``checkForUpdates()`` stops
+    /// issuing live network fetches that could surface a competing bulletin.
+    private var suppressLiveFetchesForTesting = false
+
+    /// Seeds a synthetic, unread, high-severity region-wide alert and notifies delegates,
+    /// exactly as a live alerts fetch would. Lets UI tests exercise the modal
+    /// `AgencyAlertBulletin` presentation without depending on live alert data.
+    /// The entity ID is unique per call so the read-state persisted in UserDefaults
+    /// by earlier runs never suppresses the bulletin.
+    public func seedRegionWideAlertForTesting() {
+        suppressLiveFetchesForTesting = true
+
+        var period = TransitRealtime_TimeRange()
+        period.start = UInt64(Date().timeIntervalSince1970)
+
+        var entitySelector = TransitRealtime_EntitySelector()
+        entitySelector.agencyID = ""
+
+        var title = TransitRealtime_TranslatedString.Translation()
+        title.text = "Test Region-Wide Alert"
+        title.language = "en"
+
+        var body = TransitRealtime_TranslatedString.Translation()
+        body.text = "This synthetic alert exists to test bulletin presentation."
+        body.language = "en"
+
+        var transitAlert = TransitRealtime_Alert()
+        transitAlert.severityLevel = .warning
+        transitAlert.activePeriod = [period]
+        transitAlert.informedEntity = [entitySelector]
+        transitAlert.headerText.translation = [title]
+        transitAlert.descriptionText.translation = [body]
+
+        var feedEntity = TransitRealtime_FeedEntity()
+        feedEntity.id = "ui-test-region-wide-alert-\(UUID().uuidString)"
+        feedEntity.alert = transitAlert
+
+        let agencyAlert: AgencyAlert
+        do {
+            agencyAlert = try AgencyAlert(feedEntity: feedEntity, agency: nil)
+        } catch {
+            // This entity is constructed right here to satisfy AgencyAlert's invariants,
+            // so a failure means the model changed out from under the test hook. Fail
+            // loudly rather than letting the UI test time out waiting for a bulletin
+            // that was never seeded.
+            assertionFailure("seedRegionWideAlertForTesting failed to construct an AgencyAlert: \(error)")
+            return
+        }
+
+        stateLock.withLock {
+            _ = alerts.insert(agencyAlert)
+        }
+        notifyDelegatesAlertsUpdated()
+    }
+    #endif
+
     /// Deletes all local data. Useful in preparation for changing the region.
     private func deleteAgencyAlerts() {
         queue.addOperation { [weak self] in
             guard let self = self else { return }
-            self.userDefaults.set([], forKey: UserDefaultKeys.readAgencyAlertIDs)
-            self.agencies.removeAll()
-            self.readAlertIDs.removeAll()
-            self.alerts.removeAll()
+            self.stateLock.withLock {
+                self.agencies.removeAll()
+                self.readAlertIDs.removeAll()
+                self.alerts.removeAll()
+                self.userDefaults.set([], forKey: UserDefaultKeys.readAgencyAlertIDs)
+            }
         }
     }
 

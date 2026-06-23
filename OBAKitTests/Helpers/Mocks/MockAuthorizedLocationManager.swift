@@ -20,6 +20,7 @@ class MockAuthorizedLocationManager: NSObject, LocationManager {
 
     var updatingLocation = false
     var updatingHeading = false
+    private(set) var monitoredRegions = Set<CLRegion>()
 
     init(updateLocation: CLLocation, updateHeading: CLHeading) {
         self.updateLocation = updateLocation
@@ -76,5 +77,13 @@ class MockAuthorizedLocationManager: NSObject, LocationManager {
 
     func stopUpdatingHeading() {
         updatingHeading = false
+    }
+
+    func startMonitoring(for region: CLRegion) {
+        monitoredRegions.insert(region)
+    }
+
+    func stopMonitoring(for region: CLRegion) {
+        monitoredRegions.remove(region)
     }
 }

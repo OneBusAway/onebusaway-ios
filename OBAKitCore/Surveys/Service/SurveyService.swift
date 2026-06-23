@@ -33,6 +33,11 @@ public final class SurveyService: ObservableObject {
     private let apiService: RESTAPIService?
     private let userDataStore: UserDataStore
 
+    /// Context used to build external-survey URLs. Held weakly: the owning
+    /// application is the long-lived object and must not be retained here
+    /// (see spec §5). Read only on the main actor.
+    public weak var application: SurveyURLApplicationContext?
+
     // MARK: - Constants
 
     private let surveyLaunchInterval = 3
@@ -44,9 +49,30 @@ public final class SurveyService: ObservableObject {
 
     // MARK: - Initialization
 
-    public nonisolated init(apiService: RESTAPIService?, userDataStore: UserDataStore) {
+    public nonisolated init(apiService: RESTAPIService?, userDataStore: UserDataStore, application: SurveyURLApplicationContext? = nil) {
         self.apiService = apiService
         self.userDataStore = userDataStore
+        self.application = application
+    }
+
+    // MARK: - External Surveys
+
+    /// Builds external-survey URLs. Lazily created so it is not constructed until
+    /// first use (deferring the read of `application`); `public` so it can be
+    /// replaced with a mock in tests. The builder degrades gracefully when
+    /// `application` is nil, omitting only the context-dependent embedded fields,
+    /// so it is always available rather than itself being optional.
+    public lazy var externalSurveyURLBuilder: ExternalSurveyURLBuilderProtocol = {
+        ExternalSurveyURLBuilder(
+            userStore: userDataStore,
+            userID: userDataStore.surveyUserIdentifier,
+            application: application
+        )
+    }()
+
+    /// Destination URL for an external survey, or `nil` if it cannot be built.
+    public func externalSurveyURL(for survey: Survey, stop: Stop?) -> URL? {
+        externalSurveyURLBuilder.buildURL(for: survey, stop: stop)
     }
 
     // MARK: - Fetching
@@ -286,16 +312,29 @@ public final class SurveyService: ObservableObject {
     }
 
     private func checkStopVisibility(survey: Survey, stopID: String?, routeIDs: [String]) -> Bool {
-        guard survey.showOnStops else { return false }
+        guard survey.showOnStops, survey.isActive else { return false }
         guard let stopID = stopID else { return true }
 
-        if survey.shouldShowOnStop(stopID) {
+        let hasStopTargeting = !(survey.visibleStopsList?.isEmpty ?? true)
+        let hasRouteTargeting = !(survey.visibleRoutesList?.isEmpty ?? true)
+
+        // No stop or route targeting at all → show on every (active) stop.
+        if !hasStopTargeting && !hasRouteTargeting {
             return true
         }
 
-        return routeIDs.contains { routeID in
-            survey.shouldShowOnRoute(routeID)
+        // Each present dimension contributes to an OR; an absent (nil/empty)
+        // dimension contributes nothing rather than matching everything, so a
+        // stop-scoped survey doesn't leak onto unlisted stops via nil routes.
+        if hasStopTargeting, survey.shouldShowOnStop(stopID) {
+            return true
         }
+
+        if hasRouteTargeting {
+            return routeIDs.contains { survey.shouldShowOnRoute($0) }
+        }
+
+        return false
     }
 
     private func applySurveyPriorityLogic(survey: Survey, userID: String, index: Int) -> SurveyPriorityResult {
@@ -308,13 +347,15 @@ public final class SurveyService: ObservableObject {
                 return isSurveyCompleted ? .continue : .returnImmediately(survey)
             }
         } else {
-            if !isSurveyCompleted {
-                return .setOneTime(index)
-            } else if userDataStore.shouldShowSurveyLater(surveyId: survey.id, userIdentifier: userID) {
-                return .setOneTime(index)
-            } else {
-                return .continue
+            // A survey deferred via "show later" stays hidden until it is due to
+            // reappear (regardless of completion state); this is self-contained
+            // and does not rely on the global reminder gate. Otherwise show it
+            // unless it has already been completed.
+            if userDataStore.isSurveyMarkedForLater(surveyId: survey.id, userIdentifier: userID) {
+                return userDataStore.shouldShowSurveyLater(surveyId: survey.id, userIdentifier: userID)
+                    ? .setOneTime(index) : .continue
             }
+            return isSurveyCompleted ? .continue : .setOneTime(index)
         }
     }
 }

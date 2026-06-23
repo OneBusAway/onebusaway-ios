@@ -13,11 +13,14 @@ final public class ExternalSurveyURLBuilder: ExternalSurveyURLBuilderProtocol {
 
     private let userStore: UserDataStore
 
-    private let application: SurveyURLApplicationContext
+    private weak var application: SurveyURLApplicationContext?
 
     private let userID: String
 
-    public init(userStore: UserDataStore, userID: String, application: SurveyURLApplicationContext) {
+    /// - Parameter application: Optional. When `nil`, only the context-dependent
+    ///   embedded fields (`region_id`, `current_location`) are omitted; the base
+    ///   URL and all other fields still build normally.
+    public init(userStore: UserDataStore, userID: String, application: SurveyURLApplicationContext?) {
         self.userStore = userStore
         self.userID = userID
         self.application = application
@@ -38,7 +41,9 @@ final public class ExternalSurveyURLBuilder: ExternalSurveyURLBuilderProtocol {
             setEmbeddedKeyValue(to: &queryItems, for: keys, stop: stop)
         }
 
-        components.queryItems = queryItems
+        // Only assign when non-empty: assigning an empty array makes
+        // URLComponents emit a trailing "?" (e.g. "https://oba.co/s?").
+        components.queryItems = queryItems.isEmpty ? nil : queryItems
         return components.url
     }
 
@@ -70,7 +75,7 @@ final public class ExternalSurveyURLBuilder: ExternalSurveyURLBuilderProtocol {
     }
 
     private func getRegionID() -> String? {
-        guard let regionId = application.currentRegionIdentifier else {
+        guard let regionId = application?.currentRegionIdentifier else {
             return nil
         }
         return "\(regionId)"
@@ -92,7 +97,7 @@ final public class ExternalSurveyURLBuilder: ExternalSurveyURLBuilderProtocol {
     }
 
     private func getCurrentLocation() -> String? {
-        guard let coordinate = application.currentCoordinate else {
+        guard let coordinate = application?.currentCoordinate else {
             return nil
         }
         return "\(coordinate.latitude),\(coordinate.longitude)"

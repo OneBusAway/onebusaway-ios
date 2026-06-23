@@ -11,9 +11,13 @@ extension APIService {
     nonisolated func data(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {
         let (data, response): (Data, URLResponse)
         do {
-            logger.info("Begin network request for \(request.description, privacy: .public)")
+            // Per-request begin/finish is high-volume trace detail (the unit-test
+            // suite alone fires ~1,600 mocked requests), so log it at `.debug` to
+            // keep it out of the default os_log / CI capture. Failures below stay
+            // at `.error`.
+            logger.debug("Begin network request for \(request.description, privacy: .public)")
             (data, response) = try await dataLoader.data(for: request)
-            logger.info("Finish network request for \(request.description, privacy: .public)")
+            logger.debug("Finish network request for \(request.description, privacy: .public)")
         } catch let error as NSError {
             logger.error("Failed network request for \(request.description, privacy: .public): \(error, privacy: .public)")
             if errorLooksLikeCaptivePortal(error) {

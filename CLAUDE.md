@@ -37,9 +37,7 @@ swiftlint                              # Run SwiftLint directly
 
 ### Documentation
 ```bash
-bundle install                         # Install Ruby dependencies
-brew install sourcekitten             # Install documentation tool
-scripts/docs                          # Generate Jazzy documentation
+scripts/docs                          # Generate DocC documentation (output in api-docs/)
 ```
 
 ### Other Utilities
@@ -47,7 +45,6 @@ scripts/docs                          # Generate Jazzy documentation
 scripts/version                        # Version management
 scripts/update_package_resolved        # Update Swift Package Manager dependencies
 scripts/extract_strings               # Extract strings for localization
-scripts/tx_pull                       # Pull translations from Transifex
 ```
 
 ## Architecture
@@ -105,7 +102,7 @@ scripts/tx_pull                       # Pull translations from Transifex
 - **Swift Version**: 5.3+
 - **Package Manager**: Swift Package Manager
 - **Project Generation**: XcodeGen from YAML configurations
-- **Localization**: Transifex integration
+- **Localization**: in-repo .strings files (OBAKit/Strings, OBAKitCore/Strings)
 - **Linting**: SwiftLint with relaxed rules for flexibility
 
 ## White-Label Features
@@ -129,4 +126,4 @@ onebusaway://add-region?name=REGION_NAME&oba-url=ENCODED_SERVER_URL
 - SwiftLint has relaxed rules - check `.swiftlint.yml` for disabled rules
 - Core framework (OBAKitCore) must remain application extension safe
 - UI tests are minimal - focus is on unit tests
-- Documentation is generated with Jazzy and requires Sourcekitten
+- Documentation is generated with DocC via `scripts/docs`

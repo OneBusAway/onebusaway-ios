@@ -14,7 +14,7 @@ import OBAKitCore
 // MARK: - SearchError
 
 /// Defines errors that can occur during search operations in the app.
-public enum SearchError: Error, LocalizedError {
+public enum SearchError: Error, LocalizedError, Equatable {
     case noTripsAvailable
 
     public var errorDescription: String? {

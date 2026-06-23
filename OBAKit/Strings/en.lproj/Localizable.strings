@@ -197,7 +197,7 @@
 "donations.donations_dismiss_alert.title" = "Please don't dismiss this request";
 
 /* Indicates that the user wants to create a duplicate bookmark. */
-"edit_book_controller.duplicate_alert.affirmative_button" = "Create Duplicate";
+"edit_bookmark_controller.duplicate_alert.affirmative_button" = "Create Duplicate";
 
 /* Title of the button that lets the user add a new Bookmark Group. */
 "edit_bookmark_controller.add_group_button_title" = "Add Bookmark Group";
@@ -216,6 +216,12 @@
 
 /* Don't add this bookmark to a group. */
 "edit_bookmark_controller.no_group_row" = "(No Group)";
+
+/* Body of an alert shown when a bookmark cannot be saved because the current region is unavailable. */
+"edit_bookmark_controller.region_error.body" = "The current region is not available. Please try again.";
+
+/* Title of an alert shown when a bookmark cannot be saved because the current region is unavailable. */
+"edit_bookmark_controller.region_error.title" = "Unable to Save";
 
 /* Title next to the switch that toggles whether a bookmark will appear in the today view. */
 "edit_bookmark_controller.show_in_today_view_switch_title" = "Show in Today View widget";
@@ -253,8 +259,14 @@
 /* Description of why we need location services */
 "location_permission_bulletin.description_text" = "Please allow the app to access your location to make it easier to find your transit stops.";
 
+/* Button the user can tap on to decline access to their location. */
+"location_permission_bulletin.do_not_use_location_button_text" = "Not Now";
+
 /* Title of the alert that appears to request your location. */
 "location_permission_bulletin.title" = "Welcome!";
+
+/* Button the user taps to grant access to their location. */
+"location_permission_bulletin.use_location_button_text" = "Use My Location";
 
 /* No comment provided by engineer. */
 "locationservices_alert_gotosettings.button" = "Turn On in Settings";
@@ -482,6 +494,9 @@
 /* Title for the empty set indicator on the Nearby controller */
 "nearby_controller.empty_set.title" = "No Nearby Stops";
 
+/* Error shown on the Nearby Stops screen when no API service is configured (e.g. no region selected). */
+"nearby_stops_controller.no_api_service_error" = "No transit data service is available. Please choose a region in Settings.";
+
 /* Body for the empty set indicator on the Nearby Stops controller. */
 "nearby_stops_controller.empty_set.body" = "There are no other stops in the vicinity.";
 
@@ -683,6 +698,9 @@
 /* Quick search prefix for Vehicle. */
 "search_interactor.quick_search.vehicle_prefix" = "Vehicle:";
 
+/* Error shown when vehicle search is attempted with no API service configured (e.g. no region selected). */
+"search_results_controller.no_api_service_error" = "No transit data service is available. Please choose a region in Settings.";
+
 /* Error message shown when a vehicle has no trips available. */
 "search_results_controller.no_trips_available" = "This vehicle is not currently on any trips.";
 
@@ -763,6 +781,27 @@
 
 /* Settings > Privacy section title */
 "settings_controller.privacy_section.title" = "Privacy";
+
+/* Settings > Walking Speed > Average preset label */
+"settings_controller.walking_speed.avg" = "Average (~3 mph)";
+
+/* Settings > Walking Speed > Fast preset label */
+"settings_controller.walking_speed.fast" = "Fast (~4 mph)";
+
+/* Settings > Walking Speed > HealthKit denial or no-data toast */
+"settings_controller.walking_speed.healthkit_unavailable" = "Couldn't sync walking speed from Health. Check Settings > Privacy & Security > Health to allow access.";
+
+/* Settings > Walking Speed > Slow preset label */
+"settings_controller.walking_speed.slow" = "Slow (~2 mph)";
+
+/* Settings > Walking Speed section > Speed picker */
+"settings_controller.walking_speed.title" = "Walking speed";
+
+/* Settings > Walking Speed section > HealthKit toggle */
+"settings_controller.walking_speed.use_healthkit" = "Use Health app data";
+
+/* Settings > Walking Speed section title */
+"settings_controller.walking_speed_section.title" = "Walking Speed";
 
 /* A message that appears when a user's alarm is created. */
 "stop_controller.alarm_created_message" = "Alarm created";

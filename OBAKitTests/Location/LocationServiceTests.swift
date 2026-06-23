@@ -81,13 +81,14 @@ class LocationServiceTests: XCTestCase {
 
         expect(service.currentLocation).to(beNil())
 
-        service.locationManager(locManager, didUpdateLocations: [TestData.mockSeattleLocation])
-        expect(service.currentLocation) == TestData.mockSeattleLocation
+        let seattle = CLLocation(coordinate: TestData.seattleCoordinate, altitude: 100.0, horizontalAccuracy: 10.0, verticalAccuracy: 10.0, timestamp: Date())
+        service.locationManager(locManager, didUpdateLocations: [seattle])
+        expect(service.currentLocation) == seattle
 
         let badLocation = CLLocation(coordinate: TestData.tampaCoordinate, altitude: 10.0, horizontalAccuracy: 1000, verticalAccuracy: 1000, timestamp: Date())
         service.locationManager(locManager, didUpdateLocations: [badLocation])
 
-        expect(service.currentLocation) == TestData.mockSeattleLocation
+        expect(service.currentLocation) == seattle
     }
 
     func test_stopUpdates_disablesUpdates() {

@@ -8,6 +8,7 @@
 //
 
 import UIKit
+import Combine
 import CoreLocation
 import OBAKitCore
 
@@ -17,7 +18,7 @@ class NearbyStopsViewController: UIViewController,
     UISearchResultsUpdating {
 
     let application: Application
-    private let coordinate: CLLocationCoordinate2D
+    private let viewModel: NearbyStopsViewModel
 
     private var searchFilter: String? {
         didSet {
@@ -28,13 +29,13 @@ class NearbyStopsViewController: UIViewController,
     }
 
     private let listView = OBAListView()
-    private var stops: [Stop] = []
+    private var cancellables = Set<AnyCancellable>()
 
     // MARK: - Init
 
     public init(coordinate: CLLocationCoordinate2D, application: Application) {
-        self.coordinate = coordinate
         self.application = application
+        self.viewModel = NearbyStopsViewModel(coordinate: coordinate, application: application)
 
         super.init(nibName: nil, bundle: nil)
 
@@ -54,10 +55,45 @@ class NearbyStopsViewController: UIViewController,
         listView.obaDataSource = self
 
         configureSearchController()
+        bindViewModel()
 
         Task(priority: .userInitiated) {
-            await loadStops()
+            await viewModel.loadStops()
         }
+    }
+
+    private func bindViewModel() {
+        viewModel.$isLoading
+            .sink { [weak self] isLoading in
+                if isLoading {
+                    self?.startLoading()
+                } else {
+                    self?.finishLoading()
+                }
+            }
+            .store(in: &cancellables)
+
+        // `@Published` fires from `willSet`, so a synchronous sink would read the *old*
+        // stored value via `items(for:)`. The main-queue hop defers the closure until
+        // after the property write completes. Apply directly rather than routing through
+        // `searchFilter`, whose `oldValue != searchFilter` guard would swallow the
+        // refresh on first load when both are nil.
+        viewModel.$stops
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.listView.applyData(animated: false)
+            }
+            .store(in: &cancellables)
+
+        // Sink on the full optional (not `.compactMap`): an explicit reset to nil at the
+        // start of `loadStops()` is a valid signal that the previous error is no longer
+        // current. Filtering nils means a retry leaves the prior alert state stale.
+        viewModel.$operationError
+            .sink { [weak self] error in
+                guard let self, let error else { return }
+                Task { await self.application.displayError(error) }
+            }
+            .store(in: &cancellables)
     }
 
     func startLoading() {
@@ -66,35 +102,6 @@ class NearbyStopsViewController: UIViewController,
 
     func finishLoading() {
         navigationItem.rightBarButtonItem = nil
-    }
-
-    func loadStops() async {
-        guard let apiService = application.apiService else {
-            return
-        }
-
-        await MainActor.run {
-            self.startLoading()
-        }
-
-        defer {
-            Task { @MainActor in
-                self.finishLoading()
-            }
-        }
-
-        try? await Task.sleep(nanoseconds: 3_000_000_000)
-        do {
-            let stops = try await apiService.getStops(coordinate: coordinate).list
-            await MainActor.run {
-                self.stops = stops
-                self.searchFilter = nil
-                self.listView.applyData()
-            }
-        } catch {
-            // TODO: (ualch9) Show error inline instead of presenting an ugly error.
-            await self.application.displayError(error)
-        }
     }
 
     // MARK: - Search
@@ -113,6 +120,7 @@ class NearbyStopsViewController: UIViewController,
 
     // MARK: - Data and Collection Controller
     func items(for listView: OBAListView) -> [OBAListViewSection] {
+        let stops = viewModel.stops
         guard !stops.isEmpty else { return [] }
 
         let filter = String.nilifyBlankValue(searchFilter?.localizedLowercase.trimmingCharacters(in: .whitespacesAndNewlines)) ?? nil
@@ -128,13 +136,13 @@ class NearbyStopsViewController: UIViewController,
             directions[stop.direction] = list
         }
 
-        let tapHandler = { [unowned self] (vm: StopViewModel) in
+        let tapHandler = { [unowned self] (vm: StopRowItem) in
             self.application.viewRouter.navigateTo(stopID: vm.stopID, from: self)
         }
 
         return directions.sorted(by: \.key).map { (direction, _) -> OBAListViewSection in
             let stops = directions[direction] ?? []
-            let cells = stops.map { StopViewModel(withStop: $0, showDirectionInTitle: false, onSelect: tapHandler, onDelete: nil) }
+            let cells = stops.map { StopRowItem(withStop: $0, showDirectionInTitle: false, onSelect: tapHandler, onDelete: nil) }
             let header = Formatters.adjectiveFormOfCardinalDirection(direction) ?? ""
             return OBAListViewSection(id: "\(direction.rawValue)", title: header, contents: cells)
         }

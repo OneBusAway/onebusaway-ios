@@ -9,6 +9,7 @@
 
 import Eureka
 import Foundation
+import HealthKit
 import OBAKitCore
 import UIKit
 
@@ -38,6 +39,7 @@ class SettingsViewController: FormViewController {
             +++ mapSection
             +++ alertsSection
             +++ accessibilitySection
+            +++ walkingSpeedSection
             +++ surveySection
             +++ debugSection
 
@@ -58,7 +60,9 @@ class SettingsViewController: FormViewController {
             RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey: application.userDefaults.bool(forKey: RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey),
             MapRegionManager.mapViewShowsStopAnnotationLabelsDefaultsKey: application.userDefaults.bool(forKey: MapRegionManager.mapViewShowsStopAnnotationLabelsDefaultsKey),
             debugModeEnabled: application.userDataStore.debugMode,
-            alwaysShowSurveysOnStops: application.userDataStore.alwaysShowSurveysOnStops
+            alwaysShowSurveysOnStops: application.userDataStore.alwaysShowSurveysOnStops,
+            walkingSpeedMetersPerSecondKey: snapToPreset(application.userDataStore.walkingSpeedMetersPerSecond),
+            walkingSpeedUseHealthKitKey: application.userDataStore.walkingSpeedSource == .healthKit
         ])
     }
 
@@ -114,6 +118,20 @@ class SettingsViewController: FormViewController {
         } else {
             application.userDefaults.set(false, forKey: RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey)
         }
+
+        saveWalkingSpeedValues(values)
+    }
+
+    private func saveWalkingSpeedValues(_ values: [String: Any?]) {
+        let store = application.userDataStore
+        let decision = WalkingSpeedSettingsDecision.compute(
+            currentSource: store.walkingSpeedSource,
+            currentSpeed: store.walkingSpeedMetersPerSecond,
+            useHealthKit: values[walkingSpeedUseHealthKitKey] as? Bool,
+            segmentSpeed: values[walkingSpeedMetersPerSecondKey] as? Double
+        )
+        store.walkingSpeedSource = decision.source
+        store.walkingSpeedMetersPerSecond = decision.speed
     }
 
     // MARK: - Map Section
@@ -159,6 +177,63 @@ class SettingsViewController: FormViewController {
         section <<< SwitchRow {
             $0.tag = MapRegionManager.mapViewShowsStopAnnotationLabelsDefaultsKey
             $0.title = OBALoc("settings_controller.accessibility_section.show_stop_annotation_labels", value: "Show route labels on the map", comment: "Settings > Accessibility section > Show route labels on the map")
+        }
+
+        return section
+    }()
+
+    // MARK: - Walking Speed
+
+    private let walkingSpeedMetersPerSecondKey = "walkingSpeedMetersPerSecond"
+    private let walkingSpeedUseHealthKitKey = "walkingSpeedUseHealthKit"
+
+    private func snapToPreset(_ speed: Double) -> Double {
+        WalkingSpeedPreset.nearest(to: speed).rawValue
+    }
+
+    private lazy var walkingSpeedSection: Section = {
+        let section = Section(OBALoc("settings_controller.walking_speed_section.title", value: "Walking Speed", comment: "Settings > Walking Speed section title"))
+
+        section <<< SegmentedRow<Double> {
+            $0.tag = walkingSpeedMetersPerSecondKey
+            $0.title = OBALoc("settings_controller.walking_speed.title",
+                              value: "Walking speed",
+                              comment: "Settings > Walking Speed section > Speed picker")
+            $0.options = WalkingSpeedPreset.allCases.map { $0.rawValue }
+            $0.displayValueFor = { speed in
+                WalkingSpeedPreset.nearest(to: speed ?? WalkingSpeed.defaultMetersPerSecond).localizedTitle
+            }
+            $0.disabled = Condition.function([walkingSpeedUseHealthKitKey], { [weak self] form in
+                guard let self = self else { return false }
+                return (form.rowBy(tag: self.walkingSpeedUseHealthKitKey) as? SwitchRow)?.value ?? false
+            })
+        }
+
+        if HKHealthStore.isHealthDataAvailable() {
+            section <<< SwitchRow {
+                $0.tag = walkingSpeedUseHealthKitKey
+                $0.title = OBALoc("settings_controller.walking_speed.use_healthkit",
+                                  value: "Use Health app data",
+                                  comment: "Settings > Walking Speed section > HealthKit toggle")
+                $0.onChange { [weak self] row in
+                    guard let self, row.value == true else { return }
+                    Task {
+                        let granted = await self.application.walkingSpeedManager.requestHealthKitAuthorizationAndSync()
+                        if !granted {
+                            row.value = false
+                            row.reload()
+                            self.showErrorToast(
+                                OBALoc(
+                                    "settings_controller.walking_speed.healthkit_unavailable",
+                                    value: "Couldn't sync walking speed from Health. Check Settings > Privacy & Security > Health to allow access.",
+                                    comment: "Settings > Walking Speed > HealthKit denial or no-data toast"
+                                ),
+                                using: self.application.toastManager
+                            )
+                        }
+                    }
+                }
+            }
         }
 
         return section

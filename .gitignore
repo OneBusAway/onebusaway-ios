@@ -50,11 +50,10 @@ fastlane/Preview.html
 fastlane/screenshots/**/*.png
 fastlane/test_output
 
-# Don't bother saving docs.
-docs
-
-# But do save the docs script
-!scripts/docs
+# DocC build intermediates and generated API documentation
+.docc-build
+Combined.doccarchive
+api-docs
 
 OBAKitTests.xcresult
 .DS_Store

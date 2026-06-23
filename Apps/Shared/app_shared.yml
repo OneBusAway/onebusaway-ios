@@ -6,7 +6,7 @@ name: OBAKit
 
 settings:
   base:
-    MARKETING_VERSION: 26.1.0
+    MARKETING_VERSION: 26.2.1
 
 options:
   minimumXcodeGenVersion: 2.42
@@ -31,17 +31,27 @@ targets:
       properties:
         CFBundleShortVersionString: "$(MARKETING_VERSION)"
         CFBundleLocalizations:
+          - ar
           - en
           - es
+          - fil
+          - fr
           - it
+          - ko
           - pl
+          - pt-BR
+          - ru
+          - vi
           - zh-Hans
+          - zh-Hant
         ITSAppUsesNonExemptEncryption: false
         LSApplicationQueriesSchemes:
           - fb
           - twitter
           - comgooglemaps
         NSLocationWhenInUseUsageDescription: See where you are in relation to transit, and help you navigate more easily.
+        NSHealthShareUsageDescription: OneBusAway uses your walking speed from the Health app to give you more accurate arrival time estimates.
+        NSHealthUpdateUsageDescription: OneBusAway uses your walking speed from the Health app to give you more accurate arrival time estimates.
         NSLocationTemporaryUsageDescriptionDictionary:
           MapStatusView: See where you are in relation to transit, and help you navigate more easily.
         UILaunchStoryboardName: LaunchScreen
@@ -52,6 +62,12 @@ targets:
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
           - UIInterfaceOrientationPortraitUpsideDown
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+          UISceneConfigurations:
+            UIWindowSceneSessionRoleApplication:
+              - UISceneConfigurationName: Default Configuration
+                UISceneDelegateClassName: SceneDelegate
     preBuildScripts:
       - name: Versioning
         script: "${PROJECT_DIR}/scripts/version"

@@ -10,10 +10,11 @@
 import UIKit
 import OBAKitCore
 import CoreLocation
+import Combine
 import SwiftUI
 import SafariServices
 
-// swiftlint:disable file_length type_body_length
+// swiftlint:disable file_length
 
 /// This is the core view controller for displaying information about a transit stop.
 ///
@@ -72,80 +73,39 @@ public class StopViewController: UIViewController,
         return label
     }()
 
-    let stopID: StopID
+    // MARK: - ViewModel
 
-    private var schedulesButton: UIBarButtonItem?
+    let viewModel: StopViewModel
+    private var cancellables = Set<AnyCancellable>()
+    private var firstLoad = true
 
-    public var bookmarkContext: Bookmark?
+    // MARK: - Forwarded Properties (external API compat)
 
-    /// When non-nil, the stop was opened as a transfer destination from an in-progress trip.
-    /// This filters departures, adjusts ETAs, and replaces the walk-time banner.
-    var transferContext: TransferContext?
+    var stopID: StopID { viewModel.stopID }
 
-    /// Controls whether departures before the transfer arrival time are visible.
+    public var bookmarkContext: Bookmark? {
+        get { viewModel.bookmarkContext }
+        set { viewModel.bookmarkContext = newValue }
+    }
+
+    var transferContext: TransferContext? {
+        get { viewModel.transferContext }
+        set { viewModel.transferContext = newValue }
+    }
+
+    var stop: Stop? { viewModel.stop }
+    var stopArrivals: StopArrivals? { viewModel.stopArrivals }
+    var stopPreferences: StopPreferences { viewModel.stopPreferences }
+    var isListFiltered: Bool { viewModel.isListFiltered }
+    var minutesBefore: UInt { viewModel.minutesBefore }
+    var minutesAfter: UInt { viewModel.minutesAfter }
+    var operationError: Error? { viewModel.operationError }
+    var isBrokenBookmark: Bool { viewModel.isBrokenBookmark }
+
+    /// Controls whether departures before the transfer arrival time are visible (local UI state).
     private var showAllTransferDepartures = false
 
-    let minutesBefore: UInt = 5
-    static let defaultMinutesAfter: UInt = 35
-    var minutesAfter: UInt = StopViewController.defaultMinutesAfter
-
-    private var lastUpdated: Date?
-
-    /// The number of seconds since this view controller was last updated.
-    private var timeIntervalSinceLastUpdate: TimeInterval {
-        if let lastUpdated = lastUpdated {
-            return abs(lastUpdated.timeIntervalSinceNow)
-        }
-        else {
-            return Double.greatestFiniteMagnitude
-        }
-    }
-
-    /// Automatically reloads data every 'n' seconds.
-    ///
-    /// - Note: Calls  `timerFired()`  when its interval has elapsed.
-    private var reloadTimer: Timer!
-
-    /// The amount of time that must elapse before `timerFired()` will update data.
-    private static let defaultTimerReloadInterval: TimeInterval = 30.0
-
-    // MARK: - Data
-    /// The stop displayed by this controller.
-    var stop: Stop? {
-        didSet {
-            if stop != oldValue, let stop = stop {
-                stopUpdated(stop)
-
-            }
-        }
-    }
-
-    private func stopUpdated(_ stop: Stop) {
-        if let region = application.currentRegion {
-            application.userDataStore.addRecentStop(stop, region: region)
-        }
-        application.analytics?.reportStopViewed(name: stop.name, id: stop.id, stopDistance: analyticsDistanceToStop)
-
-        // Disable filtering if all routes are hidden to ensure data visibility
-        if isListFiltered {
-            let allRoutesHidden = stop.routes.allSatisfy { stopPreferences.hiddenRoutes.contains($0.id) }
-            if allRoutesHidden {
-                isListFiltered = false
-                dataDidReload() // Refresh UI to reflect the change
-            }
-        }
-    }
-
-    /// Arrival/Departure data for this stop.
-    var stopArrivals: StopArrivals? {
-        didSet {
-            if let stopArrivals = stopArrivals {
-                stop = stopArrivals.stop
-                dataDidReload()
-                beginUserActivity()
-            }
-        }
-    }
+    private var schedulesButton: UIBarButtonItem?
 
     // MARK: - Init/Deinit
 
@@ -157,11 +117,7 @@ public class StopViewController: UIViewController,
     ///   - application: The application object
     ///   - stop: The stop the user is viewing
     public convenience init(application: Application, stop: Stop) {
-        self.init(application: application, stopID: stop.id)
-        self.stop = stop
-        self.stopPreferences = application.stopPreferencesDataStore.preferences(stopID: stop.id, region: application.currentRegion!)
-
-        stopUpdated(stop)
+        self.init(application: application, stopID: stop.id, stop: stop)
     }
 
     /// Creates the view controller with only a `stopID`, which requires
@@ -174,27 +130,17 @@ public class StopViewController: UIViewController,
     /// - Parameters:
     ///   - application: The application object
     ///   - stopID: The ID of the stop the user is viewing
-    public init(application: Application, stopID: StopID) {
+    public init(application: Application, stopID: StopID, stop: Stop? = nil) {
         self.application = application
-        self.stopID = stopID
-        self.stopPreferences = application.stopPreferencesDataStore.preferences(stopID: stopID, region: application.currentRegion!)
+        self.viewModel = StopViewModel(application: application, stopID: stopID, stop: stop)
 
         super.init(nibName: nil, bundle: nil)
 
         registerDefaults()
-
-        reloadTimer = Timer.scheduledTimer(withTimeInterval: StopViewController.defaultTimerReloadInterval / 2.0, repeats: true) { [weak self] _ in
-            self?.timerFired()
-        }
-
         navigationItem.backBarButtonItem = UIBarButtonItem.backButton
     }
 
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
-
-    deinit {
-        reloadTimer.invalidate()
-    }
 
     // MARK: - UIViewController Overrides
 
@@ -220,6 +166,7 @@ public class StopViewController: UIViewController,
         listView.register(listViewItem: StopHeaderItem.self)
         listView.register(listViewItem: TransferArrivalItem.self)
         listView.register(listViewItem: SurveyStopListItem.self)
+        listView.register(listViewItem: SurveyLauncherListItem.self)
 
         view.addSubview(statusLabel)
         view.addSubview(listView)
@@ -243,6 +190,12 @@ public class StopViewController: UIViewController,
             collapsedSections.insert(ListSections.serviceAlerts.sectionID)
         }
 
+        bindViewModel()
+    }
+
+    private func bindViewModel() {
+        bindListData()
+        bindLoadingState()
     }
 
     public override func viewWillAppear(_ animated: Bool) {
@@ -250,14 +203,11 @@ public class StopViewController: UIViewController,
 
         disableIdleTimer()
 
-        if stopArrivals != nil {
+        if viewModel.stopArrivals != nil {
             beginUserActivity()
         }
 
-        Task {
-            await updateData()
-        }
-
+        Task { await viewModel.start() }
     }
 
     public override func viewDidAppear(_ animated: Bool) {
@@ -279,6 +229,7 @@ public class StopViewController: UIViewController,
     public override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         enableIdleTimer()
+        viewModel.deactivate()
     }
 
     // MARK: - Tips
@@ -348,7 +299,7 @@ public class StopViewController: UIViewController,
         let filterButtonImage: UIImage?
         let filterButtonTitle: String
 
-        if stopPreferences.hasHiddenRoutes && isListFiltered {
+        if viewModel.stopPreferences.hasHiddenRoutes && viewModel.isListFiltered {
             filterButtonTitle = "FILTER (ON)"
             filterButtonImage = UIImage(systemName: "line.3.horizontal.decrease.circle.fill")
         } else {
@@ -376,13 +327,13 @@ public class StopViewController: UIViewController,
         let filteredRoutesTitle = OBALoc("stops_controller.filter.filtered_routes", value: "Filtered Routes", comment: "A menu item on a Stop page that toggles the visible list of transit vehicles from a list of all items to a filtered list. e.g. a stop serves routes 1, 2, and 3. The user wants to only view route 3. Choosing this item would show that subset of routes.")
 
         let showAll = UIAction(title: allRoutesTitle) { [unowned self] _ in
-            if self.isListFiltered {
-                self.isListFiltered = false
+            if self.viewModel.isListFiltered {
+                self.viewModel.isListFiltered = false
             }
         }
 
         let showFiltered = UIAction(title: filteredRoutesTitle) { [unowned self] _ in
-            self.isListFiltered = true
+            self.viewModel.isListFiltered = true
             self.filter()
         }
 
@@ -393,7 +344,7 @@ public class StopViewController: UIViewController,
         var children = [showAll]
 
         if stop.routes.count > 1 {
-            if isListFiltered && stopPreferences.hasHiddenRoutes {
+            if viewModel.isListFiltered && viewModel.stopPreferences.hasHiddenRoutes {
                 showFiltered.image = UIImage(systemName: "checkmark")
             } else {
                 showAll.image = UIImage(systemName: "checkmark")
@@ -425,7 +376,8 @@ public class StopViewController: UIViewController,
 
     fileprivate func locationMenu() -> UIMenu {
         let nearbyAction = UIAction(title: OBALoc("stops_controller.nearby_stops", value: "Nearby Stops", comment: "Title of the row that will show stops that are near this one."), image: UIImage(systemName: "location")) { [unowned self] _ in
-            let nearbyController = NearbyStopsViewController(coordinate: self.stop!.coordinate, application: self.application)
+            guard let coordinate = self.stop?.coordinate else { return }
+            let nearbyController = NearbyStopsViewController(coordinate: coordinate, application: self.application)
             self.application.viewRouter.navigate(to: nearbyController, from: self)
         }
 
@@ -466,35 +418,27 @@ public class StopViewController: UIViewController,
     }
 
     fileprivate func sortMenu() -> UIMenu {
-        var preferences = application.stopPreferencesDataStore.preferences(stopID: self.stopID, region: self.application.currentRegion!)
+        let currentSort = viewModel.stopPreferences.sortType
 
         let sortByTimeTitle = OBALoc("stop_preferences_controller.sorting_section.sort_by_time", value: "Sort by time", comment: "Sort by time option")
         let sortByRouteTitle = OBALoc("stop_preferences_controller.sorting_section.sort_by_route", value: "Sort by route", comment: "Sort by route option")
 
         let sortByTime = UIAction(title: sortByTimeTitle) { [unowned self] _ in
-            preferences.sortType = .time
-            self.application.stopPreferencesDataStore.set(stopPreferences: preferences, stop: self.stop!, region: self.application.currentRegion!)
-            self.stopPreferences = preferences
+            self.viewModel.updateSortType(.time)
         }
 
         let sortByRoute = UIAction(title: sortByRouteTitle) { [unowned self] _ in
-            preferences.sortType = .route
-            self.application.stopPreferencesDataStore.set(stopPreferences: preferences, stop: self.stop!, region: self.application.currentRegion!)
-            self.stopPreferences = preferences
+            self.viewModel.updateSortType(.route)
         }
 
-        // Show a checkmark by the current sort type.
-        switch preferences.sortType {
+        switch currentSort {
         case .time:  sortByTime.image =  UIImage(systemName: "checkmark")
         case .route: sortByRoute.image = UIImage(systemName: "checkmark")
         }
 
-        var sortMenu: UIMenu
         let sortMenuTitle = OBALoc("stop_preferences_controller.sorting_section.header_title", value: "Sort By", comment: "Title of the Sorting section")
         let sortMenuImage = UIImage(systemName: "arrow.up.arrow.down")
-        sortMenu = UIMenu(title: sortMenuTitle, image: sortMenuImage, children: [sortByTime, sortByRoute])
-
-        return sortMenu
+        return UIMenu(title: sortMenuTitle, image: sortMenuImage, children: [sortByTime, sortByRoute])
     }
 
     fileprivate func helpMenu() -> UIMenu {
@@ -517,118 +461,7 @@ public class StopViewController: UIViewController,
         self.userActivity = userActivityBuilder.userActivity(for: stop, region: region)
     }
 
-    // MARK: - Data Loading
-
     private lazy var dataLoadFeedbackGenerator = DataLoadFeedbackGenerator(application: application)
-
-    /// Used to control behavior on the first load of data from the server in this controller.
-    private var firstLoad = true
-
-    /// Reloads data from the server and repopulates the UI once it finishes loading.
-    func updateData() async {
-        guard let apiService = application.apiService else { return }
-
-        statusLabel.text = Strings.updating
-
-        do {
-            let stopArrivals = try await apiService.getArrivalsAndDeparturesForStop(id: stopID, minutesBefore: minutesBefore, minutesAfter: minutesAfter).entry
-
-            await MainActor.run {
-                self.operationError = nil
-                self.lastUpdated = Date()
-                self.stopArrivals = stopArrivals
-
-                if self.firstLoad {
-                    if self.pastDeparturesCollapsed {
-                        if self.stopPreferences.sortType == .time {
-                            self.collapsedSections.insert(ListSections.pastArrivalDepartures(suffix: "all").sectionID)
-                        } else {
-                            let groups = stopArrivals.arrivalsAndDepartures.group(preferences: self.stopPreferences, filter: self.isListFiltered)
-                            for group in groups {
-                                let routeID = group.route.id
-                                self.collapsedSections.insert(ListSections.pastArrivalDepartures(suffix: routeID).sectionID)
-                            }
-                        }
-                    }
-                    self.firstLoad = false
-                } else {
-                    self.dataLoadFeedbackGenerator.dataLoad(.success)
-                }
-
-                self.refreshControl.endRefreshing()
-                self.updateTitle()
-                if stopArrivals.arrivalsAndDepartures.count == 0 {
-                    self.extendLoadMoreWindow()
-                }
-            }
-        } catch APIError.requestNotFound {
-            self.isBrokenBookmark = self.bookmarkContext != nil
-            self.dataLoadFeedbackGenerator.dataLoad(.failed)
-        } catch {
-            self.operationError = error
-            self.dataLoadFeedbackGenerator.dataLoad(.failed)
-        }
-
-        self.listView.applyData()
-
-        Task { [weak self] in
-            guard let self else { return }
-            await application.surveyService.fetchSurveys()
-            self.listView.applyData(scrollBehavior: isLoadingMore ? .scrollToBottom : .preserve)
-            self.isLoadingMore = false
-        }
-
-    }
-
-    /// Loads more departures for this `Stop` in cases where no `ArrivalDeparture` objects are being returned.
-    /// This is useful for instances where you are looking at a `Stop` in the middle of the night and want to
-    /// see when morning trips begin.
-    private func extendLoadMoreWindow() {
-        // Only load up to 12 hours worth of data.
-        guard minutesAfter < 720 else { return }
-
-        let minutes: UInt
-
-        if self.minutesAfter < 60 {
-            minutes = 60
-        }
-        else if self.minutesAfter < 240 {
-            minutes = 60
-        }
-        else {
-            minutes = 120
-        }
-
-        self.loadMore(minutes: minutes)
-    }
-
-    /// Callback used to reload the view controller every 'n' seconds.
-    ///
-    /// - Note: Driven by the private `reloadTimer` variable in this class.
-    @objc private func timerFired() {
-        updateTitle()
-
-        if timeIntervalSinceLastUpdate > StopViewController.defaultTimerReloadInterval {
-            Task {
-                await updateData()
-            }
-        }
-    }
-
-    /// Refreshes the view controller's title with the last time its data was reloaded.
-    private func updateTitle() {
-        self.title = stop?.name ?? Strings.liveArrivals
-
-        guard let lastUpdated = lastUpdated else {
-            statusLabel.text = ""
-            return
-        }
-
-        statusLabel.text = String(format: Strings.updatedAtFormat, application.formatters.timeAgoInWords(date: lastUpdated))
-    }
-
-    // MARK: - Broken Bookmarks
-    private var isBrokenBookmark: Bool = false
 
     // MARK: - OBAListView
     public func items(for listView: OBAListView) -> [OBAListViewSection] {
@@ -791,6 +624,18 @@ public class StopViewController: UIViewController,
             stopID: stopID, routeIDs: routeIDs
         ) else { return nil }
 
+        // External surveys present as a compact launcher card:
+        // a teaser that opens the survey on tap, with no "study name" header.
+        if survey.isExternalSurvey {
+            let launcher = SurveyLauncherListItem(
+                survey: survey,
+                title: survey.heroQuestionTitle ?? OBALoc("survey_launcher.title", value: "Help improve transit", comment: "Title of the survey launcher card on the stop screen."),
+                onTakeSurvey: { [weak self] in self?.handleOpenExternalSurvey(survey: survey) },
+                onDismiss: { [weak self] in self?.handleSurveyDismiss(survey: survey) }
+            )
+            return listViewSection(for: .survey, title: nil, items: [launcher])
+        }
+
         let item = SurveyStopListItem(
             survey: survey,
             stopID: stopID,
@@ -801,7 +646,10 @@ public class StopViewController: UIViewController,
             onDismiss: { [weak self] in
                 self?.handleSurveyDismiss(survey: survey)
             },
-            onSelectionChanged: { _ in }
+            onSelectionChanged: { _ in },
+            onOpenExternalSurvey: { [weak self] in
+                self?.handleOpenExternalSurvey(survey: survey)
+            }
         )
         return listViewSection(for: .survey, title: survey.study.name, items: [item])
     }
@@ -846,10 +694,31 @@ public class StopViewController: UIViewController,
         listView.applyData()
     }
 
+    private func handleOpenExternalSurvey(survey: Survey) {
+        let launcher = ExternalSurveyLauncher(surveyService: application.surveyService)
+        launcher.launch(
+            survey: survey,
+            stop: stop,
+            onSuccess: { [weak self] in self?.listView.applyData() },
+            onFailure: { [weak self] in self?.showExternalSurveyError() }
+        )
+    }
+
+    private func showExternalSurveyError() {
+        let alert = UIAlertController(
+            title: OBALoc("stop_controller.external_survey_error.title", value: "Can't Open Survey", comment: "Title shown when an external survey link cannot be opened"),
+            message: OBALoc("stop_controller.external_survey_error.message", value: "This survey link couldn't be opened. Please try again later.", comment: "Message shown when an external survey link cannot be opened"),
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: Strings.ok, style: .default))
+        present(alert, animated: true)
+    }
+
     private func showFullSurvey(_ survey: Survey, heroResponseID: String? = nil) {
         let surveyVC = SurveyViewController(
             survey: survey,
             surveyService: application.surveyService,
+            stop: stop,
             stopID: stopID,
             stopLocation: stop?.coordinate,
             heroResponseID: heroResponseID
@@ -1121,7 +990,7 @@ public class StopViewController: UIViewController,
         guard items.count > 0,
               let currentLocation = application.locationService.currentLocation,
               let stopLocation = stop?.location,
-              let walkingTime = WalkingDirections.travelTime(from: currentLocation, to: stopLocation)
+              let walkingTime = WalkingDirections.travelTime(from: currentLocation, to: stopLocation, velocity: application.userDataStore.walkingSpeedMetersPerSecond)
         else { return }
 
         if let insertionIndex = findInsertionIndexForWalkTime(walkingTime, items: items) {
@@ -1147,6 +1016,14 @@ public class StopViewController: UIViewController,
             items.append(ErrorCaptionItem(error: error, regionName: application.currentRegionName).typeErased)
         }
 
+        // Suppress the Load More affordance once auto-extend has walked the
+        // window to the 12 h cap — tapping the button at that point would just
+        // re-fetch the same window. The existing $stopArrivals sink rebuilds
+        // the list when this flag flips, so no extra subscription is needed.
+        guard !viewModel.isLoadMoreExhausted else {
+            return items
+        }
+
         let loadMoreButton = MessageButtonItem(asLoadMoreButtonWithID: UUID().uuidString, showActivityIndicatorOnSelect: true) { [weak self] _ in
             self?.isLoadingMore = true
             self?.loadMoreDepartures()
@@ -1157,7 +1034,7 @@ public class StopViewController: UIViewController,
     }
 
     fileprivate var dataAttributionSection: OBAListViewSection {
-        let agencies = Formatters.formattedAgenciesForRoutes(self.stop!.routes)
+        let agencies = Formatters.formattedAgenciesForRoutes(self.stop?.routes ?? [])
         let dataAttributionStringFormat = OBALoc("stop_controller.data_attribution_format", value: "Data provided by %@", comment: "A string listing the data providers (agencies) for this stop's data. It contains one or more providers separated by commas. e.g. Data provided by King County Metro, Sound Transit")
 
         let dataDateRangeBeforeTime = Date().addingTimeInterval(Double(minutesBefore) * -60.0)
@@ -1179,26 +1056,9 @@ public class StopViewController: UIViewController,
         self.configureTabBarButtons()
     }
 
-    var operationError: Error? {
-        didSet {
-            if operationError?.localizedDescription != oldValue?.localizedDescription {
-                self.listView.applyData(animated: true)
-            }
-        }
-    }
-
     lazy var operationRetryButton = ActivityIndicatedButton.Configuration(text: "Retry", largeContentImage: Icons.refresh, showsActivityIndicatorOnTap: true) { [weak self] in
         self?.refresh()
     }
-
-//    public func emptyView(for listAdapter: ListAdapter) -> UIView? {
-//        guard let error = operationError else { return nil }
-//
-//        let emptyView = EmptyDataSetView(alignment: .center)
-//        emptyView.configure(with: error, buttonConfig: operationRetryButton)
-//
-//        return emptyView
-//    }
 
     // MARK: - Collection Controller
     private lazy var listView = OBAListView()
@@ -1264,14 +1124,7 @@ public class StopViewController: UIViewController,
     // MARK: - Alarms
 
     private func canCreateAlarm(for arrivalDeparture: ArrivalDeparture) -> Bool {
-        guard
-            application.features.obaco == .running,
-            application.features.push == .running
-        else {
-            return false
-        }
-
-        return arrivalDeparture.arrivalDepartureMinutes > 1
+        viewModel.canCreateAlarm(for: arrivalDeparture)
     }
 
     private var alarmBuilder: AlarmBuilder?
@@ -1291,7 +1144,7 @@ public class StopViewController: UIViewController,
     }
 
     func alarmBuilder(_ alarmBuilder: AlarmBuilder, alarmCreated alarm: Alarm) {
-        application.userDataStore.add(alarm: alarm)
+        viewModel.recordAlarmCreated(alarm)
 
         let message = OBALoc("stop_controller.alarm_created_message", value: "Alarm created", comment: "A message that appears when a user's alarm is created.")
         ProgressHUD.showSuccessAndDismiss(message: message)
@@ -1369,13 +1222,9 @@ public class StopViewController: UIViewController,
 
     /// Reloads data.
     @objc private func refresh() {
-        // Debounce this action in order to prevent the user
-        // from spamming the server with a ton of requests.
         DispatchQueue.main.debounce(interval: 1.0) { [weak self] in
-            guard let self = self else { return }
-            Task(priority: .userInitiated) {
-                await self.updateData()
-            }
+            guard let self else { return }
+            Task(priority: .userInitiated) { await self.viewModel.refresh() }
         }
     }
 
@@ -1383,7 +1232,7 @@ public class StopViewController: UIViewController,
     @objc private func addBookmark(sender: Any?) {
         guard let stop = stop else { return }
 
-        let bookmarkController = AddBookmarkViewController(application: application, stop: stop, delegate: self)
+        let bookmarkController = AddBookmarkViewController(application: application, stop: stop, preloadedArrivals: viewModel.stopArrivals?.arrivalsAndDepartures, delegate: self)
 
         let navigation = application.viewRouter.buildNavigation(controller: bookmarkController)
         application.viewRouter.present(navigation, from: self, isModal: true)
@@ -1399,16 +1248,8 @@ public class StopViewController: UIViewController,
         present(UIHostingController(rootView: stopPreferencesView), animated: true)
     }
 
-    /// Extends the `ArrivalDeparture` time window visualized by this view controller and reloads data.
-    private func loadMore(minutes: UInt) {
-        minutesAfter += minutes
-        Task {
-            await updateData()
-        }
-    }
-
     @objc private func loadMoreDepartures() {
-        loadMore(minutes: 30)
+        Task { await viewModel.loadMoreDepartures() }
     }
 
     /// Shows the Report Problem UI.
@@ -1429,27 +1270,8 @@ public class StopViewController: UIViewController,
 
     // MARK: - Stop Preferences
 
-    private var stopPreferences: StopPreferences {
-        didSet {
-            dataDidReload()
-            if let stop = stop, isListFiltered {
-                stopUpdated(stop)
-            }
-        }
-    }
-
     func stopPreferences(stopID: StopID, updated stopPreferences: StopPreferences) {
-        self.stopPreferences = stopPreferences
-
-        if let stop = self.stop, let region = application.currentRegion {
-            self.application.stopPreferencesDataStore.set(stopPreferences: stopPreferences, stop: stop, region: region)
-        }
-    }
-
-    private var isListFiltered: Bool = true {
-        didSet {
-            dataDidReload()
-        }
+        viewModel.updateStopPreferences(stopPreferences)
     }
 
     // MARK: - Previewable
@@ -1464,42 +1286,109 @@ public class StopViewController: UIViewController,
         inPreviewMode = false
     }
 
-    // MARK: - Analytics
+}
 
-    private var analyticsDistanceToStop: String {
-        guard
-            let userLocation = application.locationService.currentLocation,
-            let stopLocation = stop?.location
-        else {
-            return "User Distance: 03200-INFINITY"
-        }
+// MARK: - ViewModel Binding
 
-        let distance = userLocation.distance(from: stopLocation)
+private extension StopViewController {
+    func bindListData() {
+        bindArrivalsSink()
+        bindStopSink()
+        bindSurveysSink()
+        bindPreferencesSinks()
+    }
 
-        if distance < 50 {
-            return "User Distance: 00000-00050m"
+    func bindArrivalsSink() {
+        viewModel.$stopArrivals
+            .sink { [weak self] arrivals in
+                guard let self, let arrivals else { return }
+                if firstLoad {
+                    seedCollapsedPastDepartureSections(for: arrivals)
+                    firstLoad = false
+                    dataLoadFeedbackGenerator.dataLoad(.success)
+                }
+                listView.applyData(animated: false)
+                configureTabBarButtons()
+                beginUserActivity()
+            }
+            .store(in: &cancellables)
+    }
+
+    func bindStopSink() {
+        viewModel.$stop
+            .sink { [weak self] stop in
+                guard let self else { return }
+                title = stop?.name ?? Strings.liveArrivals
+                listView.applyData(animated: false)
+                configureTabBarButtons()
+            }
+            .store(in: &cancellables)
+    }
+
+    func bindSurveysSink() {
+        viewModel.surveysDidRefresh
+            .sink { [weak self] _ in self?.listView.applyData(animated: false) }
+            .store(in: &cancellables)
+    }
+
+    func bindPreferencesSinks() {
+        viewModel.$stopPreferences
+            .sink { [weak self] _ in
+                Task { @MainActor [weak self] in
+                    self?.listView.applyData(animated: false)
+                    self?.configureTabBarButtons()
+                }
+            }
+            .store(in: &cancellables)
+
+        viewModel.$isListFiltered
+            .sink { [weak self] _ in
+                Task { @MainActor [weak self] in
+                    self?.listView.applyData(animated: false)
+                    self?.configureTabBarButtons()
+                }
+            }
+            .store(in: &cancellables)
+    }
+
+    func seedCollapsedPastDepartureSections(for arrivals: StopArrivals) {
+        guard pastDeparturesCollapsed else { return }
+        if viewModel.stopPreferences.sortType == .time {
+            collapsedSections.insert(ListSections.pastArrivalDepartures(suffix: "all").sectionID)
+        } else {
+            let groups = arrivals.arrivalsAndDepartures.group(
+                preferences: viewModel.stopPreferences,
+                filter: viewModel.isListFiltered
+            )
+            for group in groups {
+                collapsedSections.insert(ListSections.pastArrivalDepartures(suffix: group.route.id).sectionID)
+            }
         }
-        else if distance < 100 {
-            return "User Distance: 00050-00100m"
-        }
-        else if distance < 200 {
-            return "User Distance: 00100-00200m"
-        }
-        else if distance < 400 {
-            return "User Distance: 00200-00400m"
-        }
-        else if distance < 800 {
-            return "User Distance: 00400-00800m"
-        }
-        else if distance < 1600 {
-            return "User Distance: 00800-01600m"
-        }
-        else if distance < 3200 {
-            return "User Distance: 01600-03200m"
-        }
-        else {
-            return "User Distance: 03200-INFINITY"
-        }
+    }
+
+    func bindLoadingState() {
+        viewModel.$operationError
+            .sink { [weak self] error in
+                guard let self else { return }
+                if error != nil { dataLoadFeedbackGenerator.dataLoad(.failed) }
+                listView.applyData(animated: true)
+            }
+            .store(in: &cancellables)
+
+        viewModel.$isBrokenBookmark
+            .filter { $0 }
+            .sink { [weak self] _ in self?.dataLoadFeedbackGenerator.dataLoad(.failed) }
+            .store(in: &cancellables)
+
+        viewModel.$statusText
+            .sink { [weak self] text in self?.statusLabel.text = text }
+            .store(in: &cancellables)
+
+        viewModel.$isLoading
+            .sink { [weak self] loading in
+                if !loading { self?.refreshControl.endRefreshing() }
+            }
+            .store(in: &cancellables)
     }
 
 }

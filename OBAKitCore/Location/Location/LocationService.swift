@@ -16,6 +16,8 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
     @objc optional func locationService(_ service: LocationService, locationChanged location: CLLocation)
     @objc optional func locationService(_ service: LocationService, headingChanged heading: CLHeading?)
     @objc optional func locationService(_ service: LocationService, errorReceived error: Error)
+    @objc optional func locationService(_ service: LocationService, didEnterMonitoredRegion identifier: String)
+    @objc optional func locationService(_ service: LocationService, monitoringDidFailFor identifier: String?, error: Error)
 }
 
 @objc(OBALocationService) public class LocationService: NSObject, CLLocationManagerDelegate {
@@ -100,6 +102,18 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
     private func notifyDelegatesErrorReceived(_ error: Error) {
         for delegate in delegates.allObjects {
             delegate.locationService?(self, errorReceived: error)
+        }
+    }
+
+    private func notifyDelegatesDidEnterMonitoredRegion(_ identifier: String) {
+        for delegate in delegates.allObjects {
+            delegate.locationService?(self, didEnterMonitoredRegion: identifier)
+        }
+    }
+
+    private func notifyDelegatesMonitoringDidFail(_ identifier: String?, error: Error) {
+        for delegate in delegates.allObjects {
+            delegate.locationService?(self, monitoringDidFailFor: identifier, error: error)
         }
     }
 
@@ -250,5 +264,55 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
 
     public func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         notifyDelegatesErrorReceived(error)
+    }
+
+    // MARK: - Region Monitoring
+
+    static let proximityRegionPrefix = "oba.proximity."
+
+    /// Starts monitoring a geofence region for the given proximity alert.
+    ///
+    /// - Note: Region monitoring requires `.authorizedAlways` for background delivery.
+    ///   The caller (e.g. ProximityAlertManager) is responsible for ensuring appropriate authorization.
+    public func startMonitoringProximity(for alert: ProximityAlert) {
+        guard isLocationUseAuthorized else { return }
+
+        let region = CLCircularRegion(
+            center: alert.coordinate,
+            radius: alert.radiusMeters,
+            identifier: Self.proximityRegionPrefix + alert.id.uuidString
+        )
+        region.notifyOnEntry = true
+        region.notifyOnExit = false
+        locationManager.startMonitoring(for: region)
+    }
+
+    /// Stops monitoring the geofence region for the given proximity alert.
+    public func stopMonitoringProximity(for alert: ProximityAlert) {
+        let identifier = Self.proximityRegionPrefix + alert.id.uuidString
+        guard let matchingRegion = locationManager.monitoredRegions.first(where: {
+            $0.identifier == identifier
+        }) else {
+            Logger.warn("No monitored region found for proximity alert \(alert.id)")
+            return
+        }
+        locationManager.stopMonitoring(for: matchingRegion)
+    }
+
+    /// Stops monitoring all proximity alert regions without affecting other monitored regions.
+    public func stopMonitoringAllProximityAlerts() {
+        for region in locationManager.monitoredRegions where region.identifier.hasPrefix(Self.proximityRegionPrefix) {
+            locationManager.stopMonitoring(for: region)
+        }
+    }
+
+    public func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
+        guard region is CLCircularRegion, region.identifier.hasPrefix(Self.proximityRegionPrefix) else { return }
+        notifyDelegatesDidEnterMonitoredRegion(region.identifier)
+    }
+
+    public func locationManager(_ manager: CLLocationManager, monitoringDidFailFor region: CLRegion?, withError error: Error) {
+        Logger.error("Region monitoring failed for \(region?.identifier ?? "unknown"): \(error)")
+        notifyDelegatesMonitoringDidFail(region?.identifier, error: error)
     }
 }

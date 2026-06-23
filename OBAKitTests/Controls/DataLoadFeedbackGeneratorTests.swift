@@ -29,10 +29,28 @@ class DataLoadFeedbackGeneratorTests: OBATestCase {
     }
     
     func test_init_withApplication() {
-        let config = AppConfig(appBundle: Bundle.main, userDefaults: userDefaults, analytics: nil)
+        // Inject a MockDataLoader instead of the `AppConfig(appBundle:userDefaults:analytics:)`
+        // convenience init, which defaults to `URLSession.shared`. `Application.init` calls
+        // `regionsService.updateRegionsList()`, so that init would hit the live regions server.
+        let dataLoader = MockDataLoader(testName: name)
+        stubRegions(dataLoader: dataLoader)
+
+        let locationService = LocationService(userDefaults: userDefaults, locationManager: LocationManagerMock())
+        let config = AppConfig(
+            regionsBaseURL: regionsURL,
+            apiKey: apiKey,
+            appVersion: appVersion,
+            userDefaults: userDefaults,
+            analytics: nil,
+            queue: OperationQueue(),
+            locationService: locationService,
+            bundledRegionsFilePath: bundledRegionsPath,
+            regionsAPIPath: regionsAPIPath,
+            dataLoader: dataLoader
+        )
         let application = Application(config: config)
         let generator = DataLoadFeedbackGenerator(application: application)
-        
+
         expect(generator).toNot(beNil())
     }
     
