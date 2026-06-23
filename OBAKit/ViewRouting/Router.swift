@@ -28,6 +28,10 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
 
     private let application: Application
 
+    /// Set by `ClassicApplicationRootController.init`. `nil` when the
+    /// experimental SwiftUI map-panel experience is the active root —
+    /// `SheetCoordinator` owns navigation in that mode and bypasses
+    /// `ViewRouter` entirely.
     var rootController: ClassicApplicationRootController?
 
     public init(application: Application) {

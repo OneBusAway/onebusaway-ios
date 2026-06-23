@@ -46,7 +46,7 @@ struct HomeSheetView: View {
         .padding(.vertical, 14)
         .background {
             Capsule()
-                .fill(.gray.opacity(0.3))
+                .fill(Color(.tertiarySystemFill))
         }
         .padding(.horizontal, 12)
         .contentShape(.rect(cornerRadius: 16))

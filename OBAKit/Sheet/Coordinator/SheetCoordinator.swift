@@ -14,7 +14,7 @@ import SwiftUI
 /// Owns the route stacks for both the base (content-swap) sheet and the
 /// stacked layer (a stack of physical sheets, each peeking behind the next).
 @MainActor
-class SheetCoordinator<Route: SheetRouteable>: ObservableObject {
+final class SheetCoordinator<Route: SheetRouteable>: ObservableObject {
 
     // MARK: - Content-swap layer (base sheet)
 

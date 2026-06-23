@@ -129,7 +129,13 @@ extension AppSheetRoute {
 
 extension AppSheetRoute {
 
-    static var `largeDetent`: PresentationDetent {
+    /// "Almost-full" detent used as the largest stop for the home sheet and
+    /// other content-swap routes. `.fraction(0.99)` rather than `.large`
+    /// preserves the floating-card look (a sliver of map remains visible at
+    /// the top edge) and lets `fullScreenDetent` reliably match — `.large`
+    /// reports through a different detent identity that `==` comparison can't
+    /// catch.
+    static var largeDetent: PresentationDetent {
         return .fraction(0.99)
     }
 

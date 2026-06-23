@@ -54,6 +54,10 @@ final class AppSheetViewFactory {
     @ViewBuilder
     private func unimplementedView(for route: AppSheetRoute) -> some View {
         #if DEBUG
+        // `let _` (not `_ =`) so SwiftUI's @ViewBuilder treats this as a
+        // declaration rather than an expression statement — the latter fails
+        // to build because `Void` doesn't conform to `View`.
+        // swiftlint:disable:next redundant_discardable_let
         let _ = assertionFailure("AppSheetRoute.\(route.id) has no view registered yet.")
         Text("Unimplemented route: \(route.id)")
             .font(.headline)

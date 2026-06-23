@@ -119,7 +119,7 @@ private extension View {
             .presentationDetents(config.detents, selection: selection)
             .presentationDragIndicator(config.showDragIndicator ? .visible : .hidden)
             .interactiveDismissDisabled(interactiveDismissDisabled)
-            .presentationBackgroundInteraction(config.backgroundInteraction)
+            .presentationBackgroundInteraction(effectiveBackgroundInteraction)
             // On iPad / regular size class, force the sheet shape instead of
             // adapting to a popover — the map panel is map-first, and a
             // popover wouldn't preserve the floating-over-the-map model.
