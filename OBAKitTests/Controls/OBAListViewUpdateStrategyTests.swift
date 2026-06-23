@@ -83,7 +83,7 @@ final class OBAListViewUpdateStrategyTests: XCTestCase {
         let new = [OBAListViewSection.stub(id: "s1", items: items)]
 
         let strategy = listView.getUpdateStrategy(oldSections: old, newSections: new)
-        expect(strategy) == .contentUpdate
+        expect(strategy) == .noChange
     }
 
     // MARK: - .fullRebuild
@@ -192,10 +192,12 @@ final class OBAListViewUpdateStrategyTests: XCTestCase {
         expect(strategy) == .sectionReload
     }
 
-    // MARK: - .contentUpdate
+    // MARK: - .sectionReload for value-only changes
 
-    func test_contentUpdate_whenOnlyItemValuesChange() {
+    func test_sectionReload_whenOnlyItemValuesChange() {
         // Same section IDs, same item IDs, same count, but values differ.
+        // We route value-only changes through .sectionReload so the diffable data source
+        // computes the minimal diff against full-value item identity.
         let old = [OBAListViewSection.stub(id: "s1", items: [
             StubItem(id: "a", value: 1),
             StubItem(id: "b", value: 2)
@@ -205,10 +207,10 @@ final class OBAListViewUpdateStrategyTests: XCTestCase {
             StubItem(id: "b", value: 2)
         ])]
         let strategy = listView.getUpdateStrategy(oldSections: old, newSections: new)
-        expect(strategy) == .contentUpdate
+        expect(strategy) == .sectionReload
     }
 
-    func test_contentUpdate_withMultipleSectionsAllUnchangedIDs() {
+    func test_sectionReload_withMultipleSectionsAllUnchangedIDsButChangedValues() {
         let old = [
             OBAListViewSection.stub(id: "s1", items: [StubItem(id: "a", value: 1)]),
             OBAListViewSection.stub(id: "s2", items: [StubItem(id: "b", value: 2)])
@@ -218,16 +220,15 @@ final class OBAListViewUpdateStrategyTests: XCTestCase {
             OBAListViewSection.stub(id: "s2", items: [StubItem(id: "b", value: 20)])
         ]
         let strategy = listView.getUpdateStrategy(oldSections: old, newSections: new)
-        expect(strategy) == .contentUpdate
+        expect(strategy) == .sectionReload
     }
 
-    func test_contentUpdate_whenItemsAreExactlyEqual() {
-        // No change at all → diffable data source will do nothing meaningful,
-        // but the strategy should still be .contentUpdate (not .noChange),
-        // because the sections are non-empty.
+    // MARK: - .noChange
+
+    func test_noChange_whenItemsAreExactlyEqual() {
         let items = [StubItem(id: "a", value: 1)]
         let section = OBAListViewSection.stub(id: "s1", items: items)
         let strategy = listView.getUpdateStrategy(oldSections: [section], newSections: [section])
-        expect(strategy) == .contentUpdate
+        expect(strategy) == .noChange
     }
 }

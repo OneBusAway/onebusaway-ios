@@ -309,10 +309,7 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate {
             return
         }
 
-        guard validateSnapshot(sections) else {
-            Logger.error("Invalid snapshot detected, skipping update")
-            return
-        }
+        guard validateSnapshot(sections) else { return }
 
         applyDataSmartly(to: sections, animated: animated, scrollBehavior: scrollBehavior)
     }
@@ -369,6 +366,18 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate {
 
         self.scrollToItem(at: indexPath, at: position, animated: animated)
     }
+
+    /// Index path of the last item in the last section currently applied to the data source.
+    /// Queries the live snapshot rather than `lastDataSourceSnapshot` so the result reflects
+    /// any section-snapshot updates already applied during the same `applyData` pass.
+    private var lastItemIndexPath: IndexPath? {
+        let snapshot = diffableDataSource.snapshot()
+        guard let lastSection = snapshot.sectionIdentifiers.last else { return nil }
+        let items = snapshot.itemIdentifiers(inSection: lastSection)
+        guard let lastItem = items.last,
+              let indexPath = diffableDataSource.indexPath(for: lastItem) else { return nil }
+        return indexPath
+    }
 }
 
 // MARK: - Smart Apply / Reloading
@@ -380,8 +389,6 @@ extension OBAListView {
         case fullRebuild
 
         case sectionReload
-
-        case contentUpdate
 
         case noChange
 
@@ -401,9 +408,14 @@ extension OBAListView {
 
         self.lastDataSourceSnapshot = newSections
 
-        applyUpdate(with: strategy, to: newSections, animated: animated)
-
-        scrollState.restore(to: self, for: strategy)
+        // `diffableDataSource.apply` is asynchronous when the collection view is
+        // on screen, so the snapshot read by `lastItemIndexPath` is only accurate
+        // once the final section-snapshot apply completes. Restore scroll state
+        // in that completion so `.scrollToBottom` targets the new last item, not
+        // the pre-apply one.
+        applyUpdate(with: strategy, to: newSections, animated: animated) {
+            scrollState.restore(for: strategy)
+        }
     }
 
     private func applyCollapseState(
@@ -438,62 +450,44 @@ extension OBAListView {
 
         for (oldSection, newSection) in zip(oldSections, newSections) {
 
-            if oldSection.contents.count != newSection.contents.count ||
-                oldSection.hasHeader != newSection.hasHeader ||
-                oldSection.collapseState != newSection.collapseState {
-                return .sectionReload
-            }
-
-            let oldItemTypes = oldSection.contents.map { type(of: $0) }
-            let newItemTypes = newSection.contents.map { type(of: $0) }
-
-            if !zip(oldItemTypes, newItemTypes).allSatisfy({ $0 == $1 }) {
-                return .sectionReload
-            }
-
-            let oldIDs = Set(oldSection.contents.map { $0.id })
-            let newIDs = Set(newSection.contents.map { $0.id })
-
-            if oldIDs != newIDs {
+            if oldSection.hasHeader != newSection.hasHeader ||
+                oldSection.collapseState != newSection.collapseState ||
+                oldSection.contents != newSection.contents {
                 return .sectionReload
             }
         }
 
-        return .contentUpdate
+        return .noChange
     }
 
     private func applyUpdate(
         with strategy: UpdateStrategy,
         to newSections: [OBAListViewSection],
-        animated: Bool
+        animated: Bool,
+        completion: @escaping () -> Void
     ) {
         switch strategy {
         case .noChange:
-            break
+            completion()
 
         case .fullRebuild:
-            applyFullRebuild(newSections: newSections, animated: animated)
+            applyFullRebuild(newSections: newSections, animated: animated, completion: completion)
 
         case .sectionReload:
-            applySectionReload(newSections: newSections, animated: animated)
-
-        case .contentUpdate:
-            applyContentUpdate(newSections: newSections)
+            applySectionReload(newSections: newSections, animated: animated, completion: completion)
         }
     }
 
-    private func applyFullRebuild(newSections: [OBAListViewSection], animated: Bool) {
+    private func applyFullRebuild(newSections: [OBAListViewSection], animated: Bool, completion: @escaping () -> Void) {
         var snapshot = NSDiffableDataSourceSnapshot<SectionType, ItemType>()
         snapshot.appendSections(newSections)
 
         diffableDataSource.apply(snapshot, animatingDifferences: animated)
 
-        for section in newSections {
-            applySectionSnapshot(for: section, animatingDifferences: false)
-        }
+        applySectionSnapshots(newSections.map { ($0, nil) }, completion: completion)
     }
 
-    private func applySectionReload(newSections: [OBAListViewSection], animated: Bool) {
+    private func applySectionReload(newSections: [OBAListViewSection], animated: Bool, completion: @escaping () -> Void) {
         var snapshot = diffableDataSource.snapshot()
 
         // Map existing section identifiers by id so we can target the identifiers in the snapshot
@@ -506,8 +500,9 @@ extension OBAListView {
         }
 
         if pairs.isEmpty {
-            // Fall back to full rebuild if no sections match
-            applyFullRebuild(newSections: newSections, animated: animated)
+            // The live snapshot has diverged from `lastDataSourceSnapshot` — log so this desync is observable.
+            Logger.warn("applySectionReload: no section identifiers matched live snapshot; falling back to full rebuild.")
+            applyFullRebuild(newSections: newSections, animated: animated, completion: completion)
             return
         }
 
@@ -516,42 +511,40 @@ extension OBAListView {
         diffableDataSource.apply(snapshot, animatingDifferences: animated)
 
         // Apply new content snapshots to the existing section identifiers
-        for pair in pairs {
-            self.applySectionSnapshot(for: pair.new, applyingTo: pair.existing, animatingDifferences: false)
-        }
+        applySectionSnapshots(pairs.map { ($0.new, $0.existing) }, completion: completion)
     }
 
-    private func applyContentUpdate(newSections: [OBAListViewSection]) {
-        var snapshot = diffableDataSource.snapshot()
-
-        let existingIdentifiers = Set(snapshot.itemIdentifiers)
-
-        let itemsToReconfigure: [ItemType] = newSections
-            .flatMap { $0.contents }
-            .filter { existingIdentifiers.contains($0) }
-
-        guard !itemsToReconfigure.isEmpty else {
-            applySectionReload(newSections: newSections, animated: false)
+    /// Enqueues a section-snapshot apply for each entry and attaches `completion` to the
+    /// last one. `UICollectionViewDiffableDataSource` serializes apply calls on the same
+    /// data source, so the last apply's completion fires after all earlier ones have
+    /// flushed — which is the synchronization point we need for scroll restoration,
+    /// since `diffableDataSource.snapshot()` only reflects the newly-added items once
+    /// the queued applies have drained.
+    private func applySectionSnapshots(
+        _ sections: [(new: OBAListViewSection, applyingTo: OBAListViewSection?)],
+        completion: @escaping () -> Void
+    ) {
+        guard !sections.isEmpty else {
+            completion()
             return
         }
 
-        snapshot.reconfigureItems(itemsToReconfigure)
-        diffableDataSource.apply(snapshot, animatingDifferences: false)
-
-        let currentSectionsById: [String: SectionType] = Dictionary(
-            uniqueKeysWithValues: diffableDataSource.snapshot().sectionIdentifiers.map { ($0.id, $0) }
-        )
-        for section in newSections where section.collapseState != nil {
-            if let existing = currentSectionsById[section.id] {
-                applySectionSnapshot(for: section, applyingTo: existing, animatingDifferences: false)
-            }
+        for (index, section) in sections.enumerated() {
+            let isLast = index == sections.count - 1
+            applySectionSnapshot(
+                for: section.new,
+                applyingTo: section.applyingTo,
+                animatingDifferences: false,
+                completion: isLast ? completion : nil
+            )
         }
     }
 
     private func applySectionSnapshot(
         for section: OBAListViewSection,
         applyingTo targetSection: OBAListViewSection? = nil,
-        animatingDifferences: Bool
+        animatingDifferences: Bool,
+        completion: (() -> Void)? = nil
     ) {
         var sectionSnapshot = NSDiffableDataSourceSectionSnapshot<ItemType>()
 
@@ -581,7 +574,7 @@ extension OBAListView {
         }
 
         let sectionToApply = targetSection ?? section
-        diffableDataSource.apply(sectionSnapshot, to: sectionToApply, animatingDifferences: animatingDifferences)
+        diffableDataSource.apply(sectionSnapshot, to: sectionToApply, animatingDifferences: animatingDifferences, completion: completion)
     }
 
 }
@@ -590,23 +583,35 @@ extension OBAListView {
 
 extension OBAListView {
 
-    /// Validates that the data source snapshot is consistent
+    /// Validates that the data source snapshot is consistent. Surfaces the offending IDs so the
+    /// upstream data defect can be diagnosed instead of silently dropping the update.
     private func validateSnapshot(_ sections: [OBAListViewSection]) -> Bool {
         let sectionIDs = sections.map { $0.id }
-        guard Set(sectionIDs).count == sectionIDs.count else {
-            Logger.error("Duplicate section IDs detected in snapshot")
+        let duplicateSectionIDs = duplicates(in: sectionIDs)
+        guard duplicateSectionIDs.isEmpty else {
+            Logger.error("Invalid snapshot: duplicate section IDs \(duplicateSectionIDs); skipping update.")
             return false
         }
 
         for section in sections {
             let itemIDs = section.contents.map { $0.id }
-            guard Set(itemIDs).count == itemIDs.count else {
-                Logger.error("Duplicate item IDs detected in section: \(section.id)")
+            let duplicateItemIDs = duplicates(in: itemIDs)
+            guard duplicateItemIDs.isEmpty else {
+                Logger.error("Invalid snapshot: duplicate item IDs \(duplicateItemIDs) in section '\(section.id)'; skipping update.")
                 return false
             }
         }
 
         return true
+    }
+
+    private func duplicates<T: Hashable>(in values: [T]) -> [T] {
+        var seen: Set<T> = []
+        var dupes: [T] = []
+        for value in values where !seen.insert(value).inserted {
+            dupes.append(value)
+        }
+        return dupes
     }
 
     /// Handles edge case where data source returns nil or empty
@@ -635,21 +640,28 @@ extension OBAListView {
         let offset: CGPoint
         let isUserScrolling: Bool
         let behavior: ScrollBehavior
+        weak var listView: OBAListView?
 
         init(from listView: OBAListView, behavior: ScrollBehavior) {
             self.offset = listView.contentOffset
             self.isUserScrolling = listView.isTracking || listView.isDecelerating
             self.behavior = behavior
+            self.listView = listView
         }
 
-        func restore(to listView: OBAListView, for strategy: UpdateStrategy) {
-            guard !isUserScrolling else { return }
-
+        func restore(for strategy: UpdateStrategy) {
             switch behavior {
             case .preserve:
+                // Don't fight a finger drag. `.scrollToBottom` is an explicit
+                // caller intent (e.g. Load More) and bypasses this guard below.
+                guard !isUserScrolling else { return }
                 guard strategy != .fullRebuild, strategy != .noChange else { return }
-                DispatchQueue.main.async { [weak listView] in
+                DispatchQueue.main.async { [weak listView, offset] in
                     guard let listView else { return }
+                    // Force the post-apply layout pass so `contentSize` reflects
+                    // the new item heights before we clamp the restored offset.
+                    // Without this the clamp can run against the pre-apply size.
+                    listView.layoutIfNeeded()
                     let maxY = max(0, listView.contentSize.height - listView.bounds.height + listView.contentInset.bottom)
                     let safeOffset = CGPoint(x: offset.x, y: min(offset.y, maxY))
                     listView.setContentOffset(safeOffset, animated: false)
@@ -658,13 +670,20 @@ extension OBAListView {
             case .scrollToBottom:
                 // Skip scrolling when nothing actually changed.
                 guard strategy != .noChange else { return }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak listView] in
-                    guard let listView else { return }
+                DispatchQueue.main.async { [weak listView] in
+                    guard let listView, let indexPath = listView.lastItemIndexPath else { return }
+                    // Compositional layout sizes cells lazily, so a single
+                    // scrollToItem against a distant last item lands against
+                    // estimated heights and falls short of the real bottom.
+                    // First snap (no animation) to provoke the layout pass that
+                    // measures the cells we'd scroll past, then re-scroll
+                    // against the now-accurate heights to land exactly at the
+                    // last item.
                     listView.layoutIfNeeded()
-                    let maxY = max(0, listView.contentSize.height - listView.bounds.height + listView.contentInset.bottom)
-                    listView.setContentOffset(CGPoint(x: 0, y: maxY), animated: true)
+                    listView.scrollToItem(at: indexPath, at: .bottom, animated: false)
+                    listView.layoutIfNeeded()
+                    listView.scrollToItem(at: indexPath, at: .bottom, animated: true)
                 }
-
             }
         }
     }
