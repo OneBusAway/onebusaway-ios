@@ -105,7 +105,13 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
     }
 
     public func rootNavigateTo(page: ClassicApplicationRootController.Page) {
-        guard let rootController = self.rootController else { return }
+        guard let rootController = self.rootController else {
+            // Map-panel mode bypasses ViewRouter — `SheetCoordinator` owns
+            // navigation. Surface dropped page navigations so deep-link and
+            // recent-stops paths that still call this don't silently degrade.
+            Logger.error("rootNavigateTo(page: \(page)) dropped: no classic root controller (map-panel mode is active)")
+            return
+        }
         rootController.navigate(to: page)
     }
 

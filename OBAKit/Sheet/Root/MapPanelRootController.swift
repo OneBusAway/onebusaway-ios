@@ -20,11 +20,9 @@ import OBAKitCore
 /// The AppDelegates pick between the two via `ApplicationRootControllerFactory`.
 public final class MapPanelRootController: UIViewController {
 
-    private let application: Application
     private let host: UIHostingController<MapPanelRootView>
 
     public init(application: Application) {
-        self.application = application
         self.host = UIHostingController(rootView: MapPanelRootView(application: application))
         super.init(nibName: nil, bundle: nil)
     }

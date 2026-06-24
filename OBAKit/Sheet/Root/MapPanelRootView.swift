@@ -36,6 +36,10 @@ struct MapPanelRootView: View {
         Map(position: $cameraPosition) {
             UserAnnotation()
         }
+        // TODO: Detent-aware bottom padding. Pinned to the collapsed sheet
+        // height today, so dragging the sheet up to `.medium` or
+        // `largeDetent` lets the user-location annotation and any future map
+        // overlays slip under the sheet.
         .safeAreaPadding(.bottom, AppSheetRoute.homeCollapsedHeight)
         .floatingSheet(coordinator: coordinator) { route in
             factory.view(for: route)

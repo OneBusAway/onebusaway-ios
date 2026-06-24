@@ -26,6 +26,7 @@ import BLTNBoard
 /// Single-page bulletins only: BLTN fires the dismissal handler on the
 /// `currentItem`, which equals `rootItem` until something is pushed. OBA's
 /// bulletins are all single-page today; revisit if that changes.
+@MainActor
 final class BulletinOverlayWindow {
 
     static let shared = BulletinOverlayWindow()

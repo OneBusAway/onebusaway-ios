@@ -35,6 +35,10 @@ final class AppSheetViewFactory {
         switch route {
         case .home:
             homeView()
+        // TODO: `.search` is base-layer and has `isDismissDisabled: true`
+        // — its real view needs to wire up an explicit back affordance
+        // (the home sheet only knows how to push, not pop), otherwise the
+        // route is unreachable once entered.
         case .search, .nearbyAll, .recentStopsAll, .bookmarksAll,
              .stopDetails, .tripPlanner, .tripDetails, .routePicker,
              .currentTrip, .transitAlert, .more, .settings:

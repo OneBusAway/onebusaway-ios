@@ -51,24 +51,19 @@ struct HomeSheetView: View {
         .padding(.horizontal, 12)
         .contentShape(.rect(cornerRadius: 16))
         .onTapGesture {
-            expandThenPushSearch()
+            expandSheet()
         }
     }
 
-    /// Animates the home sheet to its largest detent, then swaps content to
-    /// `.search`. The two-step flow avoids the jarring small→large+swap in one
-    /// frame; the user sees the sheet expand, then the search UI replace home.
+    /// Animates the home sheet to its largest detent.
     ///
-    /// If the user collapses the sheet (or the route changes) before the
-    /// expansion finishes, the swap is skipped.
-    private func expandThenPushSearch() {
+    /// TODO: Push `.search` once `AppSheetViewFactory` has a real view for it
+    /// — the two-step expand-then-push flow lives in git history. Pushing
+    /// today would land on `unimplementedView(for:)` and trip the debug
+    /// assertion that guards stray routes.
+    private func expandSheet() {
         withAnimation(.smooth(duration: 0.3)) {
             coordinator.currentDetent = AppSheetRoute.largeDetent
-        } completion: {
-            guard coordinator.currentRoute == .home,
-                  coordinator.currentDetent == AppSheetRoute.largeDetent
-            else { return }
-            coordinator.push(.search)
         }
     }
 

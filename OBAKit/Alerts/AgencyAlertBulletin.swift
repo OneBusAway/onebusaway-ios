@@ -49,6 +49,7 @@ class AgencyAlertBulletin: NSObject {
         }
     }
 
+    @MainActor
     func show(in application: UIApplication) {
         bulletinManager.show(in: application, rootItem: alertPage)
     }

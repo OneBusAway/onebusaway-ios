@@ -256,17 +256,21 @@ public class Application: CoreApplication, PushServiceDelegate {
             .eraseToAnyPublisher()
             .sink(receiveValue: { [weak self] result in
                 guard let self = self else { return }
-                if result.isConnected {
-                    self.reachabilityBulletin?.dismiss()
-                }
-                else {
-                    guard let app = self.delegate?.uiApplication else { return }
-
-                    if self.reachabilityBulletin == nil {
-                        self.reachabilityBulletin = ReachabilityBulletin()
+                // `.receive(on: DispatchQueue.main)` above guarantees main —
+                // bulletin presentation is `@MainActor` and needs that asserted.
+                MainActor.assumeIsolated {
+                    if result.isConnected {
+                        self.reachabilityBulletin?.dismiss()
                     }
+                    else {
+                        guard let app = self.delegate?.uiApplication else { return }
 
-                    self.reachabilityBulletin?.showStatus(result, in: app, isCellularDataRestricted: self.isCellularDataRestricted)
+                        if self.reachabilityBulletin == nil {
+                            self.reachabilityBulletin = ReachabilityBulletin()
+                        }
+
+                        self.reachabilityBulletin?.showStatus(result, in: app, isCellularDataRestricted: self.isCellularDataRestricted)
+                    }
                 }
             })
     }
@@ -336,6 +340,7 @@ public class Application: CoreApplication, PushServiceDelegate {
 
     private var alertBulletin: AgencyAlertBulletin?
 
+    @MainActor
     public func agencyAlertsUpdated() {
         #if DEBUG
         // UI tests run against the live network, so a real high-severity alert can

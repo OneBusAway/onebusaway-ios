@@ -39,16 +39,35 @@ extension BLTNItemManager {
     /// `rootItem` is the item passed to `BLTNItemManager.init(rootItem:)`; it
     /// has to be supplied here because the manager keeps its reference private,
     /// and we hook its `dismissalHandler` to retire the overlay window.
+    @MainActor
     func show(in application: UIApplication, rootItem: BLTNItem) {
-        guard
-            !isShowingBulletin,
-            let scene = application.connectedScenes
-                .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene
-        else {
+        guard !isShowingBulletin, let scene = application.bulletinTargetScene else {
             return
         }
 
         let host = BulletinOverlayWindow.shared.install(in: scene, rootItem: rootItem)
         showBulletin(above: host)
+    }
+}
+
+extension UIApplication {
+    /// The `UIWindowScene` a bulletin should target.
+    ///
+    /// Prefers the scene whose key window is actually key — that's where the
+    /// user is interacting on multi-window iPad. Filters out external displays
+    /// (`.windowExternalDisplayNonInteractive`) so bulletins never land on a
+    /// secondary screen no one is touching. Falls back to the first
+    /// foreground-active application scene when no key window can be found.
+    fileprivate var bulletinTargetScene: UIWindowScene? {
+        let activeAppScenes = connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .filter { $0.activationState == .foregroundActive && $0.session.role == .windowApplication }
+
+        if let interactiveScene = activeAppScenes.first(where: { scene in
+            scene.windows.contains(where: \.isKeyWindow)
+        }) {
+            return interactiveScene
+        }
+        return activeAppScenes.first
     }
 }
