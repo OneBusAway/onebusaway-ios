@@ -25,19 +25,30 @@ class ThemedBulletinPage: BLTNPageItem {
 }
 
 extension BLTNItemManager {
-    /// Presents the bulletin above the topmost view controller of the application's key window.
+    /// Presents the bulletin in a dedicated overlay `UIWindow` attached to the
+    /// active scene.
     ///
-    /// Use this instead of `showBulletin(in:)`: that method presents inside a `UIWindow`
-    /// it creates without a `windowScene`, and iOS never displays such a window in a
-    /// scene-based app, so the bulletin silently fails to appear.
-    func show(in application: UIApplication) {
+    /// Avoid `showBulletin(in:)` (BLTNBoard's built-in): it creates a `UIWindow`
+    /// without a `windowScene`, which iOS won't display in a scene-based app.
+    /// Avoid presenting from `keyWindowFromScene?.topViewController` directly:
+    /// in the SwiftUI map-panel experience that walk lands inside the home
+    /// sheet's hosting controller, and `UISheetPresentationController` clamps
+    /// modal presentations to the sheet's current detent — the bulletin then
+    /// renders inside the collapsed sheet's ~80pt strip.
+    ///
+    /// `rootItem` is the item passed to `BLTNItemManager.init(rootItem:)`; it
+    /// has to be supplied here because the manager keeps its reference private,
+    /// and we hook its `dismissalHandler` to retire the overlay window.
+    func show(in application: UIApplication, rootItem: BLTNItem) {
         guard
             !isShowingBulletin,
-            let topViewController = application.keyWindowFromScene?.topViewController
+            let scene = application.connectedScenes
+                .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene
         else {
             return
         }
 
-        showBulletin(above: topViewController)
+        let host = BulletinOverlayWindow.shared.install(in: scene, rootItem: rootItem)
+        showBulletin(above: host)
     }
 }

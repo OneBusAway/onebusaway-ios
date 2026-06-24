@@ -50,6 +50,6 @@ class AgencyAlertBulletin: NSObject {
     }
 
     func show(in application: UIApplication) {
-        bulletinManager.show(in: application)
+        bulletinManager.show(in: application, rootItem: alertPage)
     }
 }

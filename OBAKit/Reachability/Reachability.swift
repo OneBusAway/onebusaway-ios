@@ -82,7 +82,7 @@ class ReachabilityBulletin: NSObject {
 
         dismiss()
 
-        bulletinManager.show(in: application)
+        bulletinManager.show(in: application, rootItem: connectivityPage)
     }
 
     func dismiss() {

@@ -56,6 +56,6 @@ class RegionMismatchBulletin: NSObject {
     }
 
     func show(in app: UIApplication) {
-        bulletinManager.show(in: app)
+        bulletinManager.show(in: app, rootItem: page)
     }
 }
