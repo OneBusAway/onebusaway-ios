@@ -77,13 +77,21 @@ final class AppSheetViewFactory {
         #else
         // swiftlint:disable:next redundant_discardable_let
         let _ = Logger.error("AppSheetRoute.\(route.id) pushed but no view is registered — rendering placeholder.")
-        Text(OBALoc(
-            "app_sheet.unimplemented_route.placeholder",
-            value: "This screen is coming soon.",
-            comment: "Placeholder shown in release builds when a sheet route is pushed but has no view registered."
-        ))
-            .font(.headline)
-            .foregroundStyle(.secondary)
+        // Embed `route.id` in the visible copy so an experimental-flag tester
+        // who hits this in the wild has something concrete to report back —
+        // the `Logger.error` line above is invisible to them.
+        VStack(spacing: 4) {
+            Text(OBALoc(
+                "app_sheet.unimplemented_route.placeholder",
+                value: "This screen is coming soon.",
+                comment: "Placeholder shown in release builds when a sheet route is pushed but has no view registered."
+            ))
+                .font(.headline)
+                .foregroundStyle(.secondary)
+            Text(route.id)
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+        }
             .padding()
         #endif
     }
