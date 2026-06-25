@@ -51,6 +51,15 @@ final class BulletinOverlayWindow {
     /// release builds still return the existing host so the second bulletin at
     /// worst piggybacks on the first's window rather than crashing.
     func install(in scene: UIWindowScene, rootItem: BLTNItem) -> UIViewController {
+        // Single-page only: teardown rides `rootItem.dismissalHandler`, but
+        // BLTN fires the dismissal handler on `currentItem` — which only
+        // equals `rootItem` until something gets pushed. A multi-page item
+        // would tear the window down on the first page's dismissal rather
+        // than the flow's final dismissal. Catch the violation at install
+        // time so a future contributor sees the contract instead of debugging
+        // a teardown-mid-flow weirdness in the wild.
+        assert(rootItem.next == nil, "BulletinOverlayWindow only supports single-page bulletins — multi-page flows would tear down on the first page's dismissal. See type docstring.")
+
         if let host = window?.rootViewController {
             assertionFailure("BulletinOverlayWindow already in use — concurrent bulletin presentations aren't supported (shared singleton, single-bulletin-at-a-time).")
             return host

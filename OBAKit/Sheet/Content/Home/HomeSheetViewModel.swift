@@ -12,10 +12,13 @@ import OBAKitCore
 
 // MARK: - HomeSheetViewModel
 
-// TODO: Will own nearby-stops snapshot, bookmark groupings, and recent-stops
-// state once the home sheet's content lands. Kept here so `HomeSheetView`'s
-// `@StateObject` + `@autoclosure` plumbing is already in place.
+// Owns the home sheet's reactive content state. Empty today beyond a stub
+// for the nearby-stops snapshot — kept here so `HomeSheetView`'s
+// `@StateObject` + `@autoclosure` plumbing is already in place and the
+// next reader sees the intended shape rather than an unexplained empty type.
 @MainActor
 final class HomeSheetViewModel: ObservableObject {
-
+    // TODO: Populate from `RESTAPIService` / `LocationService` once the
+    // home sheet renders nearby stops.
+    @Published private(set) var nearbyStops: [Stop] = []
 }

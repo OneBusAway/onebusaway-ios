@@ -31,18 +31,24 @@ struct HomeSheetView: View {
     // MARK: - Search Bar
 
     private var searchBarRow: some View {
+        // Disabled until the `.search` route has a real view with a back
+        // affordance — `expandSheet()` would otherwise animate to the largest
+        // detent and strand the user there (the route is base-layer with
+        // `isDismissDisabled: true`). Surfaced as "Coming soon" so the only
+        // interactive control on the home sheet doesn't read as a dead tap.
+        //
         // `Button` (rather than `.onTapGesture` on a container) so VoiceOver
         // and Switch Control see action semantics — the row is announced as a
         // button and reachable via accessibility actions. `.buttonStyle(.plain)`
         // keeps the search-pill appearance.
-        Button(action: expandSheet) {
+        Button(action: {}) {
             HStack(spacing: 12) {
                 Image(systemName: "magnifyingglass")
                     .foregroundStyle(.secondary)
                 Text(OBALoc(
-                    "home_sheet.search_bar.placeholder",
-                    value: "Search stops, routes…",
-                    comment: "Placeholder text inside the search bar on the home sheet."
+                    "home_sheet.search_bar.coming_soon",
+                    value: "Search coming soon",
+                    comment: "Placeholder text inside the disabled search bar on the home sheet, shown while search is unimplemented."
                 ))
                     .foregroundStyle(.secondary)
                 Spacer()
@@ -56,19 +62,8 @@ struct HomeSheetView: View {
             .contentShape(.rect(cornerRadius: 16))
         }
         .buttonStyle(.plain)
+        .disabled(true)
         .padding(.horizontal, 12)
-    }
-
-    /// Animates the home sheet to its largest detent.
-    ///
-    /// TODO: Push `.search` once `AppSheetViewFactory` has a real view for it
-    /// — the two-step expand-then-push flow lives in git history. Pushing
-    /// today would land on `unimplementedView(for:)` and trip the debug
-    /// assertion that guards stray routes.
-    private func expandSheet() {
-        withAnimation(.smooth(duration: 0.3)) {
-            coordinator.currentDetent = AppSheetRoute.largeDetent
-        }
     }
 
 }

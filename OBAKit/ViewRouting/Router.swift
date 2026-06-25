@@ -111,6 +111,14 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
             // call this don't silently degrade. (No `assertionFailure`: test
             // harnesses construct `Application` without a root controller,
             // and tripping there would crash unrelated tests.)
+            //
+            // TODO(mosliem): map-panel deep-link / page-navigation story.
+            // Today deep links and "open in tab" callers go to a log and
+            // nothing visible happens. Either route `.tab` cases through
+            // `SheetCoordinator.push(...)` analogues (e.g. `.recent` →
+            // `.recentStopsAll`, `.bookmarks` → `.bookmarksAll`) or define a
+            // dedicated deep-link surface on the coordinator before the
+            // map-panel experience leaves the experimental flag.
             Logger.error("rootNavigateTo(page: \(page)) dropped: no classic root controller (map-panel mode is active)")
             return
         }
