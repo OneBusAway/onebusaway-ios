@@ -58,7 +58,7 @@ private struct StackedSheetLayer<Route: SheetRouteable, SheetContent: View>: Vie
 
     private var routeBinding: Binding<Route?> {
         Binding(
-            get: { coordinator.stackedRoutes.indices.contains(depth) ? coordinator.stackedRoutes[depth] : nil },
+            get: { coordinator.stackedRoute(at: depth) },
             set: { newValue in
                 if newValue == nil {
                     coordinator.truncateStacked(toDepth: depth)
@@ -69,11 +69,7 @@ private struct StackedSheetLayer<Route: SheetRouteable, SheetContent: View>: Vie
 
     private func detentBinding(for route: Route) -> Binding<PresentationDetent> {
         Binding(
-            get: {
-                coordinator.stackedEntries.indices.contains(depth)
-                    ? coordinator.stackedEntries[depth].detent
-                    : route.detentConfiguration.initialDetent
-            },
+            get: { coordinator.stackedDetent(at: depth, fallback: route.detentConfiguration.initialDetent) },
             set: { newValue in
                 coordinator.setStackedDetent(newValue, at: depth)
             }

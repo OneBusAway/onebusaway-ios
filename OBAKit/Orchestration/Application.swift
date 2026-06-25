@@ -256,21 +256,23 @@ public class Application: CoreApplication, PushServiceDelegate {
             .eraseToAnyPublisher()
             .sink(receiveValue: { [weak self] result in
                 guard let self = self else { return }
-                // `.receive(on: DispatchQueue.main)` above guarantees main —
-                // bulletin presentation is `@MainActor` and needs that asserted.
+                // `.receive(on: DispatchQueue.main)` above is what makes
+                // `assumeIsolated` safe here — bulletin presentation is
+                // `@MainActor`. Don't remove the `.receive(on:)` upstream;
+                // doing so would silently turn this into a crash-on-mismatch.
                 MainActor.assumeIsolated {
                     if result.isConnected {
                         self.reachabilityBulletin?.dismiss()
+                        return
                     }
-                    else {
-                        guard let app = self.delegate?.uiApplication else { return }
 
-                        if self.reachabilityBulletin == nil {
-                            self.reachabilityBulletin = ReachabilityBulletin()
-                        }
+                    guard let app = self.delegate?.uiApplication else { return }
 
-                        self.reachabilityBulletin?.showStatus(result, in: app, isCellularDataRestricted: self.isCellularDataRestricted)
+                    if self.reachabilityBulletin == nil {
+                        self.reachabilityBulletin = ReachabilityBulletin()
                     }
+
+                    self.reachabilityBulletin?.showStatus(result, in: app, isCellularDataRestricted: self.isCellularDataRestricted)
                 }
             })
     }

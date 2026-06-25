@@ -35,6 +35,15 @@ struct SheetDetentConfiguration {
         backgroundInteraction: PresentationBackgroundInteraction = .enabled(upThrough: .medium),
         fullScreenDetent: PresentationDetent? = nil
     ) {
+        // `initialDetent` and `fullScreenDetent` must live inside `detents` —
+        // both are matched by `==` against the current selection, so a stray
+        // value would be silently dead config (initialDetent never seeded,
+        // fullScreenDetent never matched). Catch the slip where it happens.
+        precondition(detents.contains(initialDetent), "initialDetent must be a member of detents.")
+        if let fullScreenDetent {
+            precondition(detents.contains(fullScreenDetent), "fullScreenDetent must be a member of detents.")
+        }
+
         self.detents = detents
         self.initialDetent = initialDetent
         self.showDragIndicator = showDragIndicator

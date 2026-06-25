@@ -54,7 +54,9 @@ final class AppSheetViewFactory {
 
     /// Placeholder until each route gets its own real view. In debug builds we
     /// surface a visible label and fire an assertion so a stray `push(...)`
-    /// during development can't silently render a blank sheet.
+    /// during development can't silently render a blank sheet. In release we
+    /// log instead of crashing — the user gets a blank sheet, but at least the
+    /// gap leaves a breadcrumb if anyone wires up a push before its view exists.
     @ViewBuilder
     private func unimplementedView(for route: AppSheetRoute) -> some View {
         #if DEBUG
@@ -68,6 +70,8 @@ final class AppSheetViewFactory {
             .foregroundStyle(.secondary)
             .padding()
         #else
+        // swiftlint:disable:next redundant_discardable_let
+        let _ = Logger.error("AppSheetRoute.\(route.id) pushed but no view is registered — rendering EmptyView.")
         EmptyView()
         #endif
     }

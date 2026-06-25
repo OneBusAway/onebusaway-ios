@@ -41,7 +41,15 @@ extension BLTNItemManager {
     /// and we hook its `dismissalHandler` to retire the overlay window.
     @MainActor
     func show(in application: UIApplication, rootItem: BLTNItem) {
-        guard !isShowingBulletin, let scene = application.bulletinTargetScene else {
+        // Re-entrant call while a bulletin is already up: silent no-op is the
+        // intended behavior — callers (e.g. reachability flapping) lean on this.
+        guard !isShowingBulletin else { return }
+
+        // No usable scene means the bulletin disappears with no UI trace,
+        // including for the error path (`Application.displayError`). Log so
+        // there's at least a diagnostic breadcrumb instead of silent loss.
+        guard let scene = application.bulletinTargetScene else {
+            Logger.error("Bulletin dropped: no foreground-active window scene available to host it.")
             return
         }
 

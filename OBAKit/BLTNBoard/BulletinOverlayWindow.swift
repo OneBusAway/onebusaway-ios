@@ -35,12 +35,24 @@ final class BulletinOverlayWindow {
 
     private init() {}
 
-    /// Installs the overlay window (if not already up) and returns its host
-    /// controller for `showBulletin(above:)`. Hooks `rootItem.dismissalHandler`
-    /// to tear the window down once the bulletin dismisses, chaining any
-    /// handler the caller already set.
+    /// Installs the overlay window and returns its host controller for
+    /// `showBulletin(above:)`. Hooks `rootItem.dismissalHandler` to tear the
+    /// window down once the bulletin dismisses, chaining any handler the
+    /// caller already set.
+    ///
+    /// One bulletin at a time. Each `BLTNItemManager` already guards on
+    /// `isShowingBulletin`, but those guards are per-manager; this singleton is
+    /// shared across every OBA bulletin manager, so two managers can call
+    /// `install` while a third is mid-presentation. If that ever happens, the
+    /// second caller's `dismissalHandler` chain would never be installed (the
+    /// early-return path used to silently skip it) and teardown would fire on
+    /// the first dismissal, yanking the window out from under the second
+    /// bulletin. The DEBUG assert flags the violation at the point it occurs;
+    /// release builds still return the existing host so the second bulletin at
+    /// worst piggybacks on the first's window rather than crashing.
     func install(in scene: UIWindowScene, rootItem: BLTNItem) -> UIViewController {
         if let host = window?.rootViewController {
+            assertionFailure("BulletinOverlayWindow already in use — concurrent bulletin presentations aren't supported (shared singleton, single-bulletin-at-a-time).")
             return host
         }
 
