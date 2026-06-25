@@ -163,6 +163,34 @@ class SurveyOrchestratorTests: OBATestCase {
         expect(self.dataStore.nextSurveyReminderDate).toNot(beNil())
     }
 
+    /// A survey whose only question isn't at `position == 1` has `heroQuestion == nil`.
+    /// `submitHero` must throw `.missingHeroQuestion` rather than crash on the force-unwrap
+    /// of optional hero data. `Survey` is decoded from the network, so this shape is
+    /// defensible.
+    @MainActor
+    func test_submitHero_throwsMissingHeroQuestionWhenNoPositionOneQuestion() async {
+        let follow = Self.makeQuestion(id: 2, position: 2, type: .text)
+        let survey = Self.makeSurvey(questions: [follow])
+        // Sanity check the fixture: this survey genuinely has no hero.
+        expect(survey.heroQuestion).to(beNil())
+
+        do {
+            _ = try await orchestrator.submitHero(
+                survey: survey, answer: "yes", stopID: nil, stopLocation: nil
+            )
+            fail("Expected submitHero to throw .missingHeroQuestion")
+        } catch let SurveyOrchestrator.OrchestratorError.missingHeroQuestion(surveyID) {
+            expect(surveyID) == survey.id
+        } catch {
+            fail("Expected .missingHeroQuestion; got \(error)")
+        }
+
+        // No bookkeeping should advance when the guard fires.
+        let userID = dataStore.surveyUserIdentifier
+        expect(self.dataStore.isSurveyCompleted(surveyId: survey.id, userIdentifier: userID)).to(beFalse())
+        expect(self.dataStore.nextSurveyReminderDate).to(beNil())
+    }
+
     // MARK: - Live SurveyService builder (for happy-path network)
 
     /// Builds a real `SurveyService` whose `apiService` routes through a

@@ -17,10 +17,10 @@ import OBAKitCore
 /// gate, refresh, hero submission + outcome decision, mark-completed,
 /// dismiss-with-reminder, and the post-present reminder advance. Held by
 /// `MapViewModel` (prompt flow) and `StopViewModel` (inline hero card) so
-/// neither VM has to reimplement the bookkeeping. Carries no per-screen
-/// state of its own — but `submitHero`, `dismiss`, and
-/// `noteReminderAndAdvanceSession` do mutate persistent reminder state on
-/// `SurveyService`, so the façade is not side-effect free.
+/// neither VM has to reimplement the bookkeeping. The façade itself carries
+/// no per-screen instance state, but `submitHero`, `dismiss`, and
+/// `noteReminderAndAdvanceSession` mutate persistent reminder/completion
+/// state on `SurveyService` — it is not side-effect free.
 @MainActor
 final class SurveyOrchestrator {
 

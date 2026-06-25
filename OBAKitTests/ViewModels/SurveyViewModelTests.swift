@@ -475,6 +475,7 @@ class SurveyViewModelTests: OBATestCase {
     private final class HitCounter: @unchecked Sendable {
         nonisolated(unsafe) var posts = 0   // hero submit (POST /api/v1/survey_responses/)
         nonisolated(unsafe) var puts  = 0   // additional questions (PUT /api/v1/survey_responses/{id})
+        nonisolated(unsafe) var lastPutBody: Data?
     }
 
     /// Builds a real `SurveyService` whose `apiService` returns the canned
@@ -500,6 +501,20 @@ class SurveyViewModelTests: OBATestCase {
             guard request.httpMethod == "PUT" else { return false }
             guard request.url?.path.contains("/api/v1/survey_responses/") ?? false else { return false }
             counter.puts += 1
+            counter.lastPutBody = request.httpBody ?? request.httpBodyStream.flatMap { stream in
+                stream.open()
+                defer { stream.close() }
+                var buffer = Data()
+                let bufSize = 1024
+                let bytes = UnsafeMutablePointer<UInt8>.allocate(capacity: bufSize)
+                defer { bytes.deallocate() }
+                while stream.hasBytesAvailable {
+                    let read = stream.read(bytes, maxLength: bufSize)
+                    if read <= 0 { break }
+                    buffer.append(bytes, count: read)
+                }
+                return buffer
+            }
             return true
         }
 
@@ -607,6 +622,66 @@ class SurveyViewModelTests: OBATestCase {
         }
         expect(counter.posts) == 1
         expect(counter.puts) == 0
+    }
+
+    /// Retry path after a partial network failure: the fresh submit succeeded the hero POST
+    /// (so `heroResponseID` is set and the hero answer is still in `responses`) but the
+    /// additional-questions PUT failed. When the user retries, the PUT body must not
+    /// include the hero answer — otherwise the hero is duplicated server-side.
+    @MainActor
+    func test_submit_retryPath_filtersHeroFromAdditionalResponses() async throws {
+        let counter = HitCounter()
+        let liveService = buildLiveSurveyService(counter: counter)
+        let hero = Self.makeQuestion(id: 1, position: 1, type: .text)
+        let follow = Self.makeQuestion(id: 2, position: 2, type: .text)
+        let vm = SurveyViewModel(
+            survey: Self.makeSurvey(questions: [hero, follow]),
+            surveyService: liveService,
+            heroResponseID: "preset-hero"
+        )
+        // Simulate the residue of a failed fresh submit: both answers still in `responses`.
+        vm.updateAnswer(for: hero, answer: "yes")
+        vm.updateAnswer(for: follow, answer: "answered")
+
+        let result = await firstSubmissionResult(vm: vm)
+
+        guard case .success = result else {
+            fail("Expected .success; got \(result)"); return
+        }
+        expect(counter.posts) == 0
+        expect(counter.puts) == 1
+
+        // PUT body is `{"responses": "<stringified JSON array>"}`. Decode both layers.
+        let body = try XCTUnwrap(counter.lastPutBody)
+        let outer = try XCTUnwrap(try JSONSerialization.jsonObject(with: body) as? [String: Any])
+        let inner = try XCTUnwrap(outer["responses"] as? String)
+        let innerData = try XCTUnwrap(inner.data(using: .utf8))
+        let responses = try XCTUnwrap(try JSONSerialization.jsonObject(with: innerData) as? [[String: Any]])
+        let questionIDs = responses.compactMap { $0["question_id"] as? Int }
+        expect(questionIDs).toNot(contain(hero.id))
+        expect(questionIDs) == [follow.id]
+    }
+
+    /// `isSubmitting` toggles around a submit: false before, true while in-flight,
+    /// false again after. Snapshot the published values via a sink so we capture the
+    /// transient `true` rather than only observing the post-completion state.
+    @MainActor
+    func test_isSubmitting_togglesAroundSubmit() async {
+        let counter = HitCounter()
+        let liveService = buildLiveSurveyService(counter: counter)
+        let hero = Self.makeQuestion(id: 1, position: 1, type: .text)
+        let vm = SurveyViewModel(survey: Self.makeSurvey(questions: [hero]), surveyService: liveService)
+        vm.updateAnswer(for: hero, answer: "yes")
+
+        var observed: [Bool] = []
+        let cancellable = vm.$isSubmitting.sink { observed.append($0) }
+        defer { cancellable.cancel() }
+
+        await vm.submit()
+
+        // Initial false + true on enter + false on exit.
+        expect(observed) == [false, true, false]
+        expect(vm.isSubmitting).to(beFalse())
     }
 
     /// Concurrent `submit()` calls: the in-flight guard prevents the second from

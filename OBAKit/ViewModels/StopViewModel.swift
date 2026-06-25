@@ -26,18 +26,10 @@ class StopViewModel: ObservableObject {
     @Published private(set) var stop: Stop?
 
     /// The survey to render as an inline hero card on this stop, or `nil` for no card.
-    /// Recomputed on every stop refresh and after every survey-list refresh, so
-    /// the publisher fires per-cycle even when the resolved value is unchanged —
-    /// the VC's `$currentSurvey` sink is the sole driver of survey-row reloads.
+    /// Recomputed on every stop refresh and after every survey-list refresh — the
+    /// `@Published` re-fires per assignment (even nil→nil) so the VC's `$currentSurvey`
+    /// sink is the sole driver of survey-row reloads.
     @Published private(set) var currentSurvey: Survey?
-
-    /// Emits after a survey-list refresh completes successfully (regardless of whether
-    /// `currentSurvey` actually changed). Drives the VC's list re-render so a stop with
-    /// no inline hero still gets a chance to show a freshly fetched survey row.
-    var surveysDidRefresh: AnyPublisher<Void, Never> {
-        surveysDidRefreshSubject.eraseToAnyPublisher()
-    }
-    private let surveysDidRefreshSubject = PassthroughSubject<Void, Never>()
 
     /// Emits when the inline hero answer succeeds but the survey has remaining
     /// questions. Consumers present the full survey screen with the supplied
@@ -260,7 +252,6 @@ class StopViewModel: ObservableObject {
             await self.surveyOrchestrator.refreshSurveys()
             guard self.surveyOrchestrator.lastError == nil else { return }
             self.recomputeCurrentSurvey()
-            self.surveysDidRefreshSubject.send()
         }
     }
 

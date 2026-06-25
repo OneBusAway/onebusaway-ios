@@ -75,6 +75,27 @@ class SurveyViewController: FormViewController {
                 }
             }
             .store(in: &cancellables)
+
+        viewModel.$isSubmitting
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isSubmitting in
+                self?.updateSubmitRow(isSubmitting: isSubmitting)
+            }
+            .store(in: &cancellables)
+    }
+
+    /// Disables the submit row and swaps its title to a "submitting" affordance while a
+    /// submit is in flight, so a second tap can't silently be dropped by the VM's in-flight
+    /// guard. Cancel button is intentionally left enabled — letting the user back out of a
+    /// hung submit matches the rest of the app's modal sheets.
+    private func updateSubmitRow(isSubmitting: Bool) {
+        guard let row = form.rowBy(tag: "submit") as? ButtonRow else { return }
+        row.disabled = Condition(booleanLiteral: isSubmitting)
+        row.evaluateDisabled()
+        row.title = isSubmitting
+            ? OBALoc("survey_vc.submitting_button", value: "Submitting…", comment: "Submit button title while a survey submission is in flight")
+            : OBALoc("survey_vc.submit_button", value: "Submit Survey", comment: "Button to submit the survey")
+        row.updateCell()
     }
 
     private func setupForm() {

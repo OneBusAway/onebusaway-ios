@@ -53,6 +53,11 @@ final class SurveyViewModel: ObservableObject {
     }
     private let submissionResultSubject = PassthroughSubject<Result<Void, SubmissionError>, Never>()
 
+    /// `true` while a submit is in flight. Mirrors `submitInFlight` for VC binding so the
+    /// submit button can be disabled and a spinner shown — without it, the in-flight guard
+    /// silently drops a second tap on a slow network and the user sees nothing happen.
+    @Published private(set) var isSubmitting: Bool = false
+
     // MARK: - Private State
 
     private let surveyService: SurveyService
@@ -96,8 +101,10 @@ final class SurveyViewModel: ObservableObject {
     /// Updates checkbox selection state and stores the JSON-encoded array as the answer.
     ///
     /// `formatCheckboxAnswer` only encodes a `[String]` via `JSONEncoder`, which cannot
-    /// realistically fail. The `try!` ensures a silent encode failure can never leave the
-    /// UI showing a checked row whose answer never landed in `responses`.
+    /// realistically fail. The `try!` is a "we'd rather crash than silently desync" choice:
+    /// if encoding ever did fail, a `try?` would leave the UI showing a checked row whose
+    /// answer never landed in `responses`, and the user would submit a half-empty survey
+    /// without knowing.
     func toggleCheckbox(option: String, selected: Bool, for question: SurveyQuestion) {
         if selected {
             checkboxSelections[question.id, default: []].insert(option)
@@ -139,13 +146,18 @@ final class SurveyViewModel: ObservableObject {
         }
 
         submitInFlight = true
-        defer { submitInFlight = false }
+        isSubmitting = true
+        defer {
+            submitInFlight = false
+            isSubmitting = false
+        }
 
         do {
             if let heroResponseID = heroResponseID {
+                let additional = responses.filter { $0.questionId != survey.heroQuestion?.id }
                 _ = try await surveyService.submitAdditionalQuestions(
                     responseID: heroResponseID,
-                    additionalResponses: responses
+                    additionalResponses: additional
                 )
             } else {
                 guard let heroQuestion = survey.heroQuestion,

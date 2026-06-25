@@ -36,12 +36,20 @@ class StopViewModelTests: OBATestCase {
 
     /// Builds an `Application` whose REST API service routes through the supplied `MockDataLoader`.
     /// Locks the current region to Puget Sound so the API base URL is deterministic.
-    private func createApplication(dataLoader: MockDataLoader, analytics: AnalyticsMock) -> Application {
+    private func createApplication(
+        dataLoader: MockDataLoader,
+        analytics: AnalyticsMock,
+        surveyHitCounter: SurveyHitCounter? = nil
+    ) -> Application {
         stubRegions(dataLoader: dataLoader)
         stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
         Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
         stubArrivalsAndDepartures(dataLoader: dataLoader)
-        stubSurveys(dataLoader: dataLoader)
+        if let surveyHitCounter {
+            stubSurveys(dataLoader: dataLoader, counter: surveyHitCounter)
+        } else {
+            stubSurveys(dataLoader: dataLoader)
+        }
 
         let locManager = MockAuthorizedLocationManager(
             updateLocation: TestData.mockSeattleLocation,
@@ -82,6 +90,23 @@ class StopViewModelTests: OBATestCase {
         let emptySurveys = #"{"surveys":[],"region":{"id":1,"name":"Puget Sound"}}"#.data(using: .utf8)!
         dataLoader.mock(data: emptySurveys) { request in
             request.url?.path.contains("/surveys.json") ?? false
+        }
+    }
+
+    /// Counter for `/surveys.json` requests. `MockDataLoader` matchers are evaluated on the
+    /// data-loader's serial queue, so a non-isolated `var` is safe.
+    private final class SurveyHitCounter: @unchecked Sendable {
+        nonisolated(unsafe) var hits = 0
+    }
+
+    /// Same as `stubSurveys` but increments `counter.hits` on each matched request, so a
+    /// test can assert how many times `refreshSurveys()` reached the wire.
+    private func stubSurveys(dataLoader: MockDataLoader, counter: SurveyHitCounter) {
+        let emptySurveys = #"{"surveys":[],"region":{"id":1,"name":"Puget Sound"}}"#.data(using: .utf8)!
+        dataLoader.mock(data: emptySurveys) { request in
+            guard request.url?.path.contains("/surveys.json") ?? false else { return false }
+            counter.hits += 1
+            return true
         }
     }
 
@@ -160,28 +185,25 @@ class StopViewModelTests: OBATestCase {
     // MARK: - Surveys fetched once
 
     /// `refreshSurveys()` runs as part of the one-shot initial-fetch block, not on every
-    /// auto-refresh — so `surveysDidRefresh` should emit exactly once across multiple
-    /// refreshes. The emission happens from a detached `Task`, so assert eventually.
+    /// auto-refresh — so the `/surveys.json` endpoint must be hit exactly once across
+    /// multiple refreshes. The fetch happens from a detached `Task`, so assert eventually.
     @MainActor
     func test_surveys_refreshedExactlyOnceAcrossRefreshes() async {
         let dataLoader = MockDataLoader(testName: name)
         let analytics = AnalyticsMock()
-        let app = createApplication(dataLoader: dataLoader, analytics: analytics)
+        let counter = SurveyHitCounter()
+        let app = createApplication(dataLoader: dataLoader, analytics: analytics, surveyHitCounter: counter)
 
         let viewModel = StopViewModel(application: app, stopID: testStopID)
 
-        var emissions = 0
-        let cancellable = viewModel.surveysDidRefresh.sink { emissions += 1 }
-        defer { cancellable.cancel() }
-
         await viewModel.refresh()
         await viewModel.refresh()
         await viewModel.refresh()
 
-        await expect(emissions).toEventually(equal(1))
-        // Guard against regression to per-refresh fetching: emissions must not climb past 1.
+        await expect(counter.hits).toEventually(equal(1))
+        // Guard against regression to per-refresh fetching: hits must not climb past 1.
         // Without this, `toEventually` would latch onto the transient `1` on its way to 2/3.
-        await expect(emissions).toNever(beGreaterThan(1))
+        await expect(counter.hits).toNever(beGreaterThan(1))
     }
 
     // MARK: - Filter invariant on initial load (issue #2)

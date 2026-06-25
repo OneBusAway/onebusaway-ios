@@ -348,6 +348,30 @@ class MapViewModelTests: OBATestCase {
         dataLoader.mock(response: response)
     }
 
+    /// Concurrent `checkForSurveyPrompt()` calls must emit exactly once. The VM flips
+    /// `hasShownSurveyThisSession = true` synchronously before `send` (after the awaited
+    /// refresh) so a second call racing through the post-await re-check sees the flag set
+    /// and bails. This is the direct analogue of the StopViewModel re-entrancy test.
+    @MainActor
+    func test_checkForSurveyPrompt_concurrentCallsEmitOnce() async {
+        let dataLoader = MockDataLoader(testName: name)
+        stubMapSurvey(dataLoader: dataLoader)
+        let app = createApplication(dataLoader: dataLoader)
+        userDefaults.set(true, forKey: "UserDataStore.isSurveyEnabled")
+        userDefaults.set(true, forKey: "UserDataStore.alwaysShowSurveysOnStops")
+
+        let viewModel = MapViewModel(application: app)
+        var received: [Survey] = []
+        let cancellable = viewModel.surveyToPresent.sink { received.append($0) }
+        defer { cancellable.cancel() }
+
+        async let a: Void = viewModel.checkForSurveyPrompt()
+        async let b: Void = viewModel.checkForSurveyPrompt()
+        _ = await (a, b)
+
+        expect(received.count) == 1
+    }
+
     /// When the refresh fails, `surveyToPresent` must not emit even if the
     /// cached survey list would otherwise resolve `findSurveyForMap()`.
     /// Prevents prompting off a stale cached survey after a transient network

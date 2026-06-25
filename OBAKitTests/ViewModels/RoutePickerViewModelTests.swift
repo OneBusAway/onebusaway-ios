@@ -341,29 +341,47 @@ class RoutePickerViewModelTests: OBATestCase {
 
     // MARK: - loadError clear-on-retry
 
-    /// A successful retry after a failed `loadRoutes()` clears `loadError`. Without
-    /// this, the VC would short-circuit `items(for:)` to an empty list because of
-    /// stale error state.
+    /// A successful retry after a failed `loadRoutes()` clears `loadError` on the same VM.
+    /// Without the `loadError = nil` clear at the top of `loadRoutes()`, the VC would
+    /// short-circuit `items(for:)` to an empty list because of stale error state.
+    ///
+    /// Both runs operate on a single VM whose underlying `LocationService` starts with
+    /// no location (error path) and then receives one (success path). This is the
+    /// shape that actually exercises the clear-on-retry contract — a fresh VM would
+    /// pass regardless of whether the clear line existed.
     @MainActor
     func test_loadRoutes_retryClearsPriorLoadError() async {
         let dataLoader = MockDataLoader(testName: name)
         stubStopsForLocation(dataLoader: dataLoader)
-        // Run #1 fails: no location → loadError set.
-        let appNoLoc = createApplicationWithoutLocation(dataLoader: dataLoader)
-        let vm = RoutePickerViewModel(application: appNoLoc)
+        stubRegions(dataLoader: dataLoader)
+        stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
+        Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
+
+        // Authorized but not yet updating — `location` is nil so `LocationService.currentLocation`
+        // starts nil. The VM exits via the locationUnavailable branch on the first call.
+        let locManager = MockAuthorizedLocationManager(
+            updateLocation: TestData.mockSeattleLocation,
+            updateHeading: TestData.mockHeading
+        )
+        let locationService = LocationService(userDefaults: userDefaults, locationManager: locManager)
+
+        let app = makeApp(dataLoader: dataLoader, locationService: locationService)
+        let vm = RoutePickerViewModel(application: app)
+
+        // Run #1: no location → loadError set.
         await vm.loadRoutes()
         expect(vm.loadError).toNot(beNil())
+        expect(vm.didFinishLoading).to(beTrue())
 
-        // Now point the VM at an app that *does* have a location, simulating a
-        // retry after the user enables location services. (We rebuild the app
-        // because LocationService doesn't expose a clean "now I have a location"
-        // toggle in tests, but the VM contract — clear-on-retry — is the same
-        // regardless of which exit path the second call takes.)
-        let appWithLoc = createApplication(dataLoader: dataLoader)
-        let vm2 = RoutePickerViewModel(application: appWithLoc)
-        // Seed the second VM with a prior error to simulate the retry-clear path.
-        await vm2.loadRoutes()  // populates allRoutes
-        expect(vm2.loadError).to(beNil())
+        // Start updates: the mock manager publishes its canned location, which the
+        // LocationService delegate ingests as `currentLocation`.
+        locationService.startUpdates()
+        expect(locationService.currentLocation).toNot(beNil())
+
+        // Run #2 on the same VM: success path clears loadError.
+        await vm.loadRoutes()
+        expect(vm.loadError).to(beNil())
+        expect(vm.allRoutes).toNot(beEmpty())
     }
 
     // MARK: - Cache-first branch
