@@ -35,6 +35,14 @@ final class AppSheetViewFactory {
         switch route {
         case .home:
             homeView()
+        // Wiring a push for one of these routes before its view exists will
+        // trip the debug assertion in `unimplementedView(for:)` — register the
+        // view here before reaching for `SheetCoordinator.push(...)`.
+        //
+        // TODO: `.search` is base-layer and has `isDismissDisabled: true`
+        // — its real view needs to wire up an explicit back affordance
+        // (the home sheet only knows how to push, not pop), otherwise the
+        // route is unreachable once entered.
         case .search, .nearbyAll, .recentStopsAll, .bookmarksAll,
              .stopDetails, .tripPlanner, .tripDetails, .routePicker,
              .currentTrip, .transitAlert, .more, .settings:
@@ -50,17 +58,33 @@ final class AppSheetViewFactory {
 
     /// Placeholder until each route gets its own real view. In debug builds we
     /// surface a visible label and fire an assertion so a stray `push(...)`
-    /// during development can't silently render a blank sheet.
+    /// during development can't silently render a blank sheet. In release we
+    /// log and render a visible "coming soon" message — preferable to
+    /// `EmptyView()`, which would leave an experimental tester staring at a
+    /// blank sheet with no breadcrumb in the UI.
     @ViewBuilder
     private func unimplementedView(for route: AppSheetRoute) -> some View {
         #if DEBUG
+        // `let _` (not `_ =`) so SwiftUI's @ViewBuilder treats this as a
+        // declaration rather than an expression statement — the latter fails
+        // to build because `Void` doesn't conform to `View`.
+        // swiftlint:disable:next redundant_discardable_let
         let _ = assertionFailure("AppSheetRoute.\(route.id) has no view registered yet.")
         Text("Unimplemented route: \(route.id)")
             .font(.headline)
             .foregroundStyle(.secondary)
             .padding()
         #else
-        EmptyView()
+        // swiftlint:disable:next redundant_discardable_let
+        let _ = Logger.error("AppSheetRoute.\(route.id) pushed but no view is registered — rendering placeholder.")
+        Text(OBALoc(
+            "app_sheet.unimplemented_route.placeholder",
+            value: "This screen is coming soon.",
+            comment: "Placeholder shown in release builds when a sheet route is pushed but has no view registered."
+        ))
+            .font(.headline)
+            .foregroundStyle(.secondary)
+            .padding()
         #endif
     }
 }

@@ -31,45 +31,39 @@ struct HomeSheetView: View {
     // MARK: - Search Bar
 
     private var searchBarRow: some View {
-        HStack(spacing: 12) {
-            Image(systemName: "magnifyingglass")
-                .foregroundStyle(.secondary)
-            Text(OBALoc(
-                "home_sheet.search_bar.placeholder",
-                value: "Search stops, routes…",
-                comment: "Placeholder text inside the search bar on the home sheet."
-            ))
-                .foregroundStyle(.secondary)
-            Spacer()
+        // Disabled until the `.search` route has a real view with a back
+        // affordance — `expandSheet()` would otherwise animate to the largest
+        // detent and strand the user there (the route is base-layer with
+        // `isDismissDisabled: true`). Surfaced as "Coming soon" so the only
+        // interactive control on the home sheet doesn't read as a dead tap.
+        //
+        // `Button` (rather than `.onTapGesture` on a container) so VoiceOver
+        // and Switch Control see action semantics — the row is announced as a
+        // button and reachable via accessibility actions. `.buttonStyle(.plain)`
+        // keeps the search-pill appearance.
+        Button(action: {}) {
+            HStack(spacing: 12) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundStyle(.secondary)
+                Text(OBALoc(
+                    "home_sheet.search_bar.coming_soon",
+                    value: "Search coming soon",
+                    comment: "Placeholder text inside the disabled search bar on the home sheet, shown while search is unimplemented."
+                ))
+                    .foregroundStyle(.secondary)
+                Spacer()
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .background {
+                Capsule()
+                    .fill(Color(.tertiarySystemFill))
+            }
+            .contentShape(.rect(cornerRadius: 16))
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
-        .background {
-            Capsule()
-                .fill(.gray.opacity(0.3))
-        }
+        .buttonStyle(.plain)
+        .disabled(true)
         .padding(.horizontal, 12)
-        .contentShape(.rect(cornerRadius: 16))
-        .onTapGesture {
-            expandThenPushSearch()
-        }
-    }
-
-    /// Animates the home sheet to its largest detent, then swaps content to
-    /// `.search`. The two-step flow avoids the jarring small→large+swap in one
-    /// frame; the user sees the sheet expand, then the search UI replace home.
-    ///
-    /// If the user collapses the sheet (or the route changes) before the
-    /// expansion finishes, the swap is skipped.
-    private func expandThenPushSearch() {
-        withAnimation(.smooth(duration: 0.3)) {
-            coordinator.currentDetent = AppSheetRoute.largeDetent
-        } completion: {
-            guard coordinator.currentRoute == .home,
-                  coordinator.currentDetent == AppSheetRoute.largeDetent
-            else { return }
-            coordinator.push(.search)
-        }
     }
 
 }

@@ -148,6 +148,61 @@ final class SheetCoordinatorTests: XCTestCase {
         expect(coordinator.stackedRoutes) == [.tripPlanner]
     }
 
+    // MARK: - setStackedDetent
+
+    func test_setStackedDetent_persistsAtGivenDepth() {
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        coordinator.push(.tripPlanner)
+        coordinator.push(.stopDetails(stopID: "1"))
+
+        coordinator.setStackedDetent(.medium, at: 0)
+        coordinator.setStackedDetent(.large, at: 1)
+
+        expect(coordinator.stackedDetents) == [.medium, .large]
+    }
+
+    func test_setStackedDetent_ignoresOutOfRangeDepth() {
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        coordinator.push(.tripPlanner)
+        let original = coordinator.stackedDetents
+
+        coordinator.setStackedDetent(.medium, at: 5)
+
+        expect(coordinator.stackedDetents) == original
+    }
+
+    // MARK: - stackedRoute(at:) / stackedDetent(at:fallback:)
+
+    func test_stackedRoute_atDepth_returnsRouteWhenInRange() {
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        coordinator.push(.tripPlanner)
+        coordinator.push(.stopDetails(stopID: "1"))
+
+        expect(coordinator.stackedRoute(at: 0)) == .tripPlanner
+        expect(coordinator.stackedRoute(at: 1)) == .stopDetails(stopID: "1")
+    }
+
+    func test_stackedRoute_atDepth_returnsNilWhenOutOfRange() {
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        expect(coordinator.stackedRoute(at: 0)).to(beNil())
+
+        coordinator.push(.tripPlanner)
+        expect(coordinator.stackedRoute(at: 1)).to(beNil())
+    }
+
+    func test_stackedDetent_atDepth_returnsStoredDetent() {
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        coordinator.push(.tripPlanner)
+        coordinator.setStackedDetent(.medium, at: 0)
+
+        expect(coordinator.stackedDetent(at: 0, fallback: .large)) == .medium
+    }
+
+    func test_stackedDetent_atDepth_returnsFallbackWhenOutOfRange() {
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        expect(coordinator.stackedDetent(at: 0, fallback: .large)) == .large
+    }
+
     // MARK: - canPop / popToRoot / currentDetents
 
     func test_canPop_isTrueWhenOnlyStackedPresented() {

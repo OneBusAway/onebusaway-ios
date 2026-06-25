@@ -14,7 +14,7 @@ import SwiftUI
 /// Owns the route stacks for both the base (content-swap) sheet and the
 /// stacked layer (a stack of physical sheets, each peeking behind the next).
 @MainActor
-class SheetCoordinator<Route: SheetRouteable>: ObservableObject {
+final class SheetCoordinator<Route: SheetRouteable>: ObservableObject {
 
     // MARK: - Content-swap layer (base sheet)
 
@@ -59,8 +59,17 @@ class SheetCoordinator<Route: SheetRouteable>: ObservableObject {
     /// Pushes a route on whichever layer it prefers.
     /// Stacked routes append a new physical sheet over the previous one;
     /// content-swap routes append to the base content stack.
+    ///
+    /// Invariant: a stacked route must allow interactive dismissal. The OS
+    /// owns drag-down on the stacked layer, and `truncateStacked` is wired
+    /// to that gesture — locking dismissal would let `stackedEntries` point
+    /// at a sheet that's no longer on screen.
     func push(_ route: Route) {
         if route.prefersStacking {
+            precondition(
+                !route.detentConfiguration.isDismissDisabled,
+                "Stacked routes must have isDismissDisabled == false; \(route) does not."
+            )
             stackedEntries.append(StackedEntry(route: route, detent: route.detentConfiguration.initialDetent))
         } else {
             additionalRoutes.append(route)
@@ -92,6 +101,19 @@ class SheetCoordinator<Route: SheetRouteable>: ObservableObject {
     func setStackedDetent(_ detent: PresentationDetent, at depth: Int) {
         guard stackedEntries.indices.contains(depth) else { return }
         stackedEntries[depth].detent = detent
+    }
+
+    /// Bounds-checked accessor for the stacked route at `depth`.
+    /// Returns `nil` when `depth` is past the current pile.
+    func stackedRoute(at depth: Int) -> Route? {
+        stackedEntries.indices.contains(depth) ? stackedEntries[depth].route : nil
+    }
+
+    /// Bounds-checked accessor for the detent at `depth`. Returns `fallback`
+    /// when `depth` is past the current pile (used during the brief window
+    /// before SwiftUI installs the new layer).
+    func stackedDetent(at depth: Int, fallback: PresentationDetent) -> PresentationDetent {
+        stackedEntries.indices.contains(depth) ? stackedEntries[depth].detent : fallback
     }
 
     /// Clears the stacked layer and unwinds the content stack to its root.

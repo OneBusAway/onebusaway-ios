@@ -35,6 +35,15 @@ struct SheetDetentConfiguration {
         backgroundInteraction: PresentationBackgroundInteraction = .enabled(upThrough: .medium),
         fullScreenDetent: PresentationDetent? = nil
     ) {
+        // `initialDetent` and `fullScreenDetent` must live inside `detents` —
+        // both are matched by `==` against the current selection, so a stray
+        // value would be silently dead config (initialDetent never seeded,
+        // fullScreenDetent never matched). Catch the slip where it happens.
+        precondition(detents.contains(initialDetent), "initialDetent must be a member of detents.")
+        if let fullScreenDetent {
+            precondition(detents.contains(fullScreenDetent), "fullScreenDetent must be a member of detents.")
+        }
+
         self.detents = detents
         self.initialDetent = initialDetent
         self.showDragIndicator = showDragIndicator
@@ -129,7 +138,13 @@ extension AppSheetRoute {
 
 extension AppSheetRoute {
 
-    static var `largeDetent`: PresentationDetent {
+    /// "Almost-full" detent used as the largest stop for the home sheet and
+    /// other content-swap routes. `.fraction(0.99)` rather than `.large`
+    /// preserves the floating-card look (a sliver of map remains visible at
+    /// the top edge) and lets `fullScreenDetent` reliably match — `.large`
+    /// reports through a different detent identity that `==` comparison can't
+    /// catch.
+    static var largeDetent: PresentationDetent {
         return .fraction(0.99)
     }
 
