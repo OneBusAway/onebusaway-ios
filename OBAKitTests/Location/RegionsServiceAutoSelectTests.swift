@@ -61,7 +61,7 @@ class RegionsServiceAutoSelectTests: OBATestCase {
             apiPath: regionsAPIPath,
             fileStorage: mockFileStorage,
             fixedRegionName: "Nonexistent Region",
-            fixedRegionOBABaseURL: URL(string: "https://api.tampa.onebusaway.org/api/")
+            fixedRegionOBABaseURL: URL(string: "https://api.tampa.onebusawaycloud.com/")
         )
 
         let currentRegion = try XCTUnwrap(service.currentRegion)
@@ -196,7 +196,7 @@ class RegionsServiceAutoSelectTests: OBATestCase {
             apiPath: regionsAPIPath,
             fileStorage: mockFileStorage,
             fixedRegionName: "Tampa Bay (Renamed)",
-            fixedRegionOBABaseURL: URL(string: "https://api.tampa.onebusaway.org/api/")
+            fixedRegionOBABaseURL: URL(string: "https://api.tampa.onebusawaycloud.com/")
         )
 
         let currentRegion = try XCTUnwrap(service.currentRegion)
