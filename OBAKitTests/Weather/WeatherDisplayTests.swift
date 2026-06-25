@@ -146,4 +146,45 @@ final class WeatherDisplayTests: XCTestCase {
 
         expect(entries).to(beEmpty())
     }
+
+    // MARK: - Full WeatherDisplay (fixture-driven)
+
+    private func loadPugetSoundForecast() throws -> WeatherForecast {
+        let data = Fixtures.loadData(file: "pugetsound-weather.json")
+        return try JSONDecoder.obacoServiceDecoder.decode(WeatherForecast.self, from: data)
+    }
+
+    /// `WeatherDisplay` exists so the UIKit and SwiftUI surfaces can't drift —
+    /// both read the same pre-rendered strings. The `LegacyAlert` is the UIKit
+    /// surface; pinning its content from a fixture locks the contract so a
+    /// formatter tweak that only updates the SwiftUI card would fail here.
+    func test_init_populatesHeaderStatsAndLegacyAlertFromFixture() throws {
+        let forecast = try loadPugetSoundForecast()
+        let display = WeatherDisplay(forecast: forecast, locale: usLocale)
+
+        // Header — derived from `current_forecast` + `region_name` + the
+        // hourly window's hi/lo, not the calendar-day hi/lo.
+        expect(display.header.regionName) == "Puget Sound"
+        expect(display.header.iconName) == "clear-day"
+        expect(display.header.currentTemp) == "71°"
+        expect(display.header.chanceOfRainText) == "Chance of Rain: 0%"
+        expect(display.header.highLowText).toNot(beNil())
+
+        // Stats — current-hour wind / precip / feels-like.
+        expect(display.stats.feelsLikeText) == "71°"
+        expect(display.stats.precipText) == "0%"
+        expect(display.stats.windText).to(contain("mph"))
+
+        // Button pill mirrors the current temperature.
+        expect(display.buttonTitle) == "71°"
+
+        // LegacyAlert — the multi-line UIAlertController message that
+        // `MapViewController.showWeather()` renders. Reads from the same
+        // Header/Stats above, so this asserts the "two surfaces can't drift"
+        // contract end-to-end.
+        expect(display.legacyAlert.title) == "Partly cloudy starting tonight."
+        expect(display.legacyAlert.message).to(contain("Temp: 71° (Feels like 71°)"))
+        expect(display.legacyAlert.message).to(contain("Wind: \(display.stats.windText)"))
+        expect(display.legacyAlert.message).to(contain("Precipitation: 0% chance"))
+    }
 }

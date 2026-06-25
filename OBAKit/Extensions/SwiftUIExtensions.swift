@@ -52,6 +52,12 @@ public extension View {
     /// that should let more of the background through (large cards, sheets).
     /// Falls back to a solid themed fill pre-iOS 26 — no half-glass middle
     /// ground.
+    ///
+    /// Unlike `regularGlassEffectIfAvailable`, this variant does **not** form a
+    /// self-contained surface: on iOS 26 the clear glass needs a backing fill
+    /// to read against, so call sites should layer their own
+    /// `.ultraThinMaterial` (or similar) underneath. See
+    /// `WeatherDetailPopup.WeatherCard` for the expected stacking.
     @ViewBuilder
     func clearGlassEffectIfAvailable(in shape: some Shape = Capsule()) -> some View {
         if #available(iOS 26.0, *) {

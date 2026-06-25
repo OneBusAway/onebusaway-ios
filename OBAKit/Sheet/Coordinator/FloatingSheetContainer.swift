@@ -96,20 +96,32 @@ private struct StackedSheetLayer<Route: SheetRouteable, SheetContent: View>: Vie
 
 // MARK: - Detent configuration helper
 
+extension SheetDetentConfiguration {
+    /// `true` when the current detent matches `fullScreenDetent` and background
+    /// interaction must therefore be forced to `.disabled` — the sheet covers
+    /// the screen (common on iPhone landscape with the full-coverage detent),
+    /// so nothing remains behind to touch.
+    ///
+    /// Extracted from the view-modifier body so it's directly unit-testable;
+    /// `PresentationBackgroundInteraction` is opaque and not `Equatable`, so
+    /// the modifier itself can't be asserted against — this predicate is the
+    /// thing that actually decides the override.
+    func shouldDisableBackgroundForFullScreen(at currentDetent: PresentationDetent) -> Bool {
+        guard let fullScreen = fullScreenDetent else { return false }
+        return currentDetent == fullScreen
+    }
+}
+
 private extension View {
     func applyDetentConfig(
         _ config: SheetDetentConfiguration,
         selection: Binding<PresentationDetent>,
         interactiveDismissDisabled: Bool
     ) -> some View {
-        // When parked at `fullScreenDetent` (sheet covers the screen — common on iPhone landscape with the full-coverage detent),
-        // background interaction is forced off since nothing remains behind to touch.
-        let effectiveBackgroundInteraction: PresentationBackgroundInteraction = {
-            if let fullScreen = config.fullScreenDetent, selection.wrappedValue == fullScreen {
-                return .disabled
-            }
-            return config.backgroundInteraction
-        }()
+        let effectiveBackgroundInteraction: PresentationBackgroundInteraction =
+            config.shouldDisableBackgroundForFullScreen(at: selection.wrappedValue)
+                ? .disabled
+                : config.backgroundInteraction
 
         return self
             .presentationDetents(config.detents, selection: selection)

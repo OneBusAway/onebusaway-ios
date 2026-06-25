@@ -167,6 +167,32 @@ final class AppSheetRouteTests: XCTestCase {
         expect(config.fullScreenDetent).to(beNil())
     }
 
+    // MARK: - fullScreenDetent override
+
+    /// The home config flips background interaction to `.disabled` at
+    /// `largeDetent` — the regression guard for the previously-dead override.
+    /// The override predicate is the testable surface here;
+    /// `PresentationBackgroundInteraction` is opaque and can't be compared
+    /// directly, so the modifier itself stays out of the test.
+    func test_shouldDisableBackgroundForFullScreen_homeAtLargeDetentIsTrue() {
+        let config = AppSheetRoute.home.detentConfiguration
+        expect(config.shouldDisableBackgroundForFullScreen(at: AppSheetRoute.largeDetent)) == true
+    }
+
+    func test_shouldDisableBackgroundForFullScreen_homeBelowLargeDetentIsFalse() {
+        let config = AppSheetRoute.home.detentConfiguration
+        expect(config.shouldDisableBackgroundForFullScreen(at: .medium)) == false
+        expect(config.shouldDisableBackgroundForFullScreen(at: .height(AppSheetRoute.homeCollapsedHeight))) == false
+    }
+
+    func test_shouldDisableBackgroundForFullScreen_isFalseWhenFullScreenDetentNotConfigured() {
+        // `.search` does not set `fullScreenDetent`, so the predicate must
+        // return `false` regardless of the current detent.
+        let config = AppSheetRoute.search.detentConfiguration
+        expect(config.shouldDisableBackgroundForFullScreen(at: .large)) == false
+        expect(config.shouldDisableBackgroundForFullScreen(at: .medium)) == false
+    }
+
     // MARK: - Hashable / Equatable
 
     func test_equality_sameCaseSameAssociatedValueAreEqual() {
