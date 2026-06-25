@@ -23,7 +23,8 @@ struct WeatherDisplay: Equatable {
     let buttonTitle: String
 
     /// Top section of the card: icon, region, condition, chance of rain,
-    /// current temperature, today's hi/lo.
+    /// current temperature, and the rolling next-24-hour hi/lo (not the
+    /// calendar-day high/low — see `WeatherFormatter.highLow`).
     let header: Header
 
     /// Bottom strip: wind speed, precipitation %, feels-like temperature.
@@ -139,7 +140,11 @@ struct HourlyEntry: Equatable, Identifiable {
             comment: "First column label in the hourly weather strip, indicating the current hour."
         )
         let currentHourStart = calendar.dateInterval(of: .hour, for: now)?.start ?? now
-        let upcoming = hourlyForecasts.filter { $0.time >= currentHourStart }
+        // Sort ascending before slicing so the "Now" cell (= first upcoming
+        // entry) is robust against API responses that arrive out-of-order.
+        let upcoming = hourlyForecasts
+            .filter { $0.time >= currentHourStart }
+            .sorted { $0.time < $1.time }
         let nowTimestamp = upcoming.first?.time
 
         return upcoming.prefix(24).map { hour in

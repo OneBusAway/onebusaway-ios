@@ -62,29 +62,29 @@ final class AppSheetViewFactory {
     /// log and render a visible "coming soon" message — preferable to
     /// `EmptyView()`, which would leave an experimental tester staring at a
     /// blank sheet with no breadcrumb in the UI.
-    @ViewBuilder
     private func unimplementedView(for route: AppSheetRoute) -> some View {
         #if DEBUG
-        // `let _` (not `_ =`) so SwiftUI's @ViewBuilder treats this as a
-        // declaration rather than an expression statement — the latter fails
-        // to build because `Void` doesn't conform to `View`.
-        // swiftlint:disable:next redundant_discardable_let
-        let _ = assertionFailure("AppSheetRoute.\(route.id) has no view registered yet.")
-        Text("Unimplemented route: \(route.id)")
-            .font(.headline)
-            .foregroundStyle(.secondary)
-            .padding()
+        let label = "Unimplemented route: \(route.id)"
         #else
-        // swiftlint:disable:next redundant_discardable_let
-        let _ = Logger.error("AppSheetRoute.\(route.id) pushed but no view is registered — rendering placeholder.")
-        Text(OBALoc(
+        let label = OBALoc(
             "app_sheet.unimplemented_route.placeholder",
             value: "This screen is coming soon.",
             comment: "Placeholder shown in release builds when a sheet route is pushed but has no view registered."
-        ))
+        )
+        #endif
+
+        // Fire the dev assertion / release log on appear so the @ViewBuilder
+        // body stays purely declarative (no `let _ = sideEffect()` dance).
+        return Text(label)
             .font(.headline)
             .foregroundStyle(.secondary)
             .padding()
-        #endif
+            .onAppear {
+                #if DEBUG
+                assertionFailure("AppSheetRoute.\(route.id) has no view registered yet.")
+                #else
+                Logger.error("AppSheetRoute.\(route.id) pushed but no view is registered — rendering placeholder.")
+                #endif
+            }
     }
 }

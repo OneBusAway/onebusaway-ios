@@ -121,6 +121,22 @@ final class WeatherDisplayTests: XCTestCase {
         expect(entries).to(beEmpty())
     }
 
+    /// Even if the API delivers hourly entries out of chronological order, the
+    /// strip must still start at the current hour (sort before slicing).
+    func test_list_sortsOutOfOrderInput() {
+        let currentHour = utcCalendar.dateInterval(of: .hour, for: now)!.start
+        let inOrder = (0..<3).map { currentHour.addingTimeInterval(Double($0) * 3600).timeIntervalSince1970 }
+        let shuffled = [inOrder[2], inOrder[0], inOrder[1]]
+        let hourly = makeHourly(epochs: shuffled)
+
+        let entries = HourlyEntry.list(from: hourly, locale: usLocale, now: now, calendar: utcCalendar)
+
+        expect(entries.first?.id) == currentHour
+        expect(entries.first?.isNow) == true
+        let timestamps = entries.map(\.id)
+        expect(timestamps) == timestamps.sorted()
+    }
+
     /// If every entry is in the past, none survive the filter.
     func test_list_allPastEntriesReturnsEmpty() {
         let past = (1...3).map { now.addingTimeInterval(-Double($0) * 3600).timeIntervalSince1970 }

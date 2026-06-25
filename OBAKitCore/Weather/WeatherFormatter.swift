@@ -84,14 +84,16 @@ public enum WeatherFormatter {
 
     // MARK: - Time
 
-    /// Hour-only, localized: e.g. `9 AM` for `en_US`, `9` for many 24-hour
-    /// locales. Allocates a fresh `DateFormatter` per call so the helper stays
-    /// nonisolated and free of shared-state races; at ~24 hourly cells per
-    /// popup open the cost is negligible.
+    /// Hour-only, localized: e.g. `9 AM` for `en_US`, `09` for many 24-hour
+    /// locales. The `"j"` template asks the locale for its preferred hour
+    /// field (12- vs. 24-hour), and the missing minutes field keeps the
+    /// hourly-strip cells narrow. Allocates a fresh `DateFormatter` per call
+    /// so the helper stays nonisolated and free of shared-state races; at
+    /// ~24 hourly cells per popup open the cost is negligible.
     public static func formatTime(_ date: Date, locale: Locale) -> String {
         let formatter = DateFormatter()
         formatter.locale = locale
-        formatter.setLocalizedDateFormatFromTemplate("Hmm")
+        formatter.setLocalizedDateFormatFromTemplate("j")
         return formatter.string(from: date)
     }
 

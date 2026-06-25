@@ -14,7 +14,7 @@ import OBAKitCore
 
 /// The selected base map style. UIKit maps `.standard` → `MKMapType.mutedStandard`
 /// and `.hybrid` → `MKMapType.hybrid`; SwiftUI can map directly to `MapStyle`.
-/// Keeping this MapKit-free matches the `PanelDetent` pattern in `MapPanelViewModel`.
+/// Kept MapKit-free so this VM stays usable from both UIKit and SwiftUI hosts.
 enum MapBaseType {
     case standard
     case hybrid
@@ -23,7 +23,7 @@ enum MapBaseType {
 /// Shared ViewModel for the main map screen.
 ///
 /// Consumed by `MapViewController` (UIKit, via Combine `sink`) and by
-/// future `NewMapView` (SwiftUI, via `@StateObject`).
+/// `MapPanelRootView` (SwiftUI, via `@StateObject`).
 /// Contains no UIKit, MapKit, or SwiftUI imports.
 ///
 /// Subclasses NSObject so it can adopt `LocationServiceDelegate`, which is
@@ -89,7 +89,13 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
     }
 
     func loadWeather() async {
-        guard let apiService = application.obacoService else { return }
+        guard let apiService = application.obacoService else {
+            // Clear so an out-of-region transition doesn't leave a stale
+            // forecast on screen — matches the `catch` branch below so both
+            // unavailability paths agree.
+            weatherDisplay = nil
+            return
+        }
         do {
             let forecast = try await apiService.getWeather()
             weatherDisplay = WeatherDisplay(forecast: forecast, locale: application.locale)
