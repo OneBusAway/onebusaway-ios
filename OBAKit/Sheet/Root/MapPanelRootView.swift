@@ -35,10 +35,10 @@ struct MapPanelRootView: View {
 
     private let factory: AppSheetViewFactory
 
-    init(application: Application) {
+    init(application: Application, factory: AppSheetViewFactory) {
         _coordinator = StateObject(wrappedValue: SheetCoordinator<AppSheetRoute>(root: .home))
         _mapViewModel = StateObject(wrappedValue: MapViewModel(application: application))
-        factory = AppSheetViewFactory(application: application)
+        self.factory = factory
     }
 
     var body: some View {
@@ -53,19 +53,13 @@ struct MapPanelRootView: View {
         .overlay(alignment: .topLeading) {
             weatherButton
         }
-        .onAppear {
-            mapViewModel.start()
-        }
-        .onChange(of: scenePhase) { _, newPhase in
-            if newPhase == .active {
-                mapViewModel.onAppBecameActive()
+        .overlay(alignment: .bottomLeading) {
+            MyTripButton {
+                coordinator.push(.routePicker)
             }
+            .padding(.leading, ThemeMetrics.controllerMargin)
+            .padding(.bottom, AppSheetRoute.homeCollapsedHeight + ThemeMetrics.controllerMargin)
         }
-        // The popup cover is attached INSIDE the sheet content so it's
-        // presented from the floating sheet's `UISheetPresentationController` —
-        // a host-level `.fullScreenCover` ends up under the sheet because the
-        // sheet owns the topmost presentation context. `.presentationBackground(.clear)`
-        // keeps the map and sheet visible behind the dim+card.
         .floatingSheet(coordinator: coordinator) { route in
             factory.view(for: route)
                 .fullScreenCover(isPresented: $isWeatherPopupPresented) {
@@ -75,6 +69,14 @@ struct MapPanelRootView: View {
                     )
                     .presentationBackground(.clear)
                 }
+        }
+        .onAppear {
+            mapViewModel.start()
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .active {
+                mapViewModel.onAppBecameActive()
+            }
         }
     }
 
