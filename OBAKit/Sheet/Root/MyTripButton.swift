@@ -23,7 +23,7 @@ struct MyTripButton: View {
                 .padding(12)
                 .contentShape(Circle())
         }
-        .buttonStyle(.plain)
+        .liquidGlassButtonStyle(borderShape: .circle, fallbackShape: Circle())
         .accessibilityLabel(Text(OBALoc(
             "map_controller.my_trip_button",
             value: "My Trip",
