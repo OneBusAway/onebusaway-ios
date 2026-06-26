@@ -39,6 +39,8 @@ final class AppSheetViewFactory {
             homeView()
         case .routePicker:
             routePickerView()
+        case .currentTrip(let route):
+            currentTripView(route: route)
         // Wiring a push for one of these routes before its view exists will
         // trip the debug assertion in `unimplementedView(for:)` — register the
         // view here before reaching for `SheetCoordinator.push(...)`.
@@ -49,7 +51,7 @@ final class AppSheetViewFactory {
         // route is unreachable once entered.
         case .search, .nearbyAll, .recentStopsAll, .bookmarksAll,
              .stopDetails, .tripPlanner, .tripDetails,
-             .currentTrip, .transitAlert, .more, .settings:
+             .transitAlert, .more, .settings:
             unimplementedView(for: route)
         }
     }
@@ -62,6 +64,15 @@ final class AppSheetViewFactory {
 
     func routePickerView() -> RoutePickerView {
         RoutePickerView(viewModel: RoutePickerViewModel(application: self.application))
+    }
+
+    private func currentTripView(route: Route) -> CurrentTripView {
+        CurrentTripView(
+            viewModel: CurrentTripViewModel(application: self.application, route: route),
+            feedback: DataLoadFeedbackGenerator(application: self.application),
+            formatters: self.application.formatters,
+            onPresentTrip: onPresentTrip
+        )
     }
 
     /// Placeholder until each route gets its own real view. In debug builds we
