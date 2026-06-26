@@ -68,7 +68,36 @@ public final class MapPanelRootController: UIViewController {
         func present(_ arrival: ArrivalDeparture) {
             guard let host, let application else { return }
             let trip = TripViewController(application: application, arrivalDeparture: arrival)
-            application.viewRouter.navigate(to: trip, from: host)
+            // Wrap in our own UINavigationController and modally present from
+            // the topmost presented controller, not `host` directly:
+            //
+            // 1. `ViewRouter.navigate(to:from:)` asserts the source controller
+            //    has a `navigationController`. The SwiftUI host is the root of
+            //    the window's hierarchy — no nav stack wraps it — so the UIKit
+            //    "push" path can't be reused here.
+            // 2. The floating sheet system uses SwiftUI `.sheet(...)`, which
+            //    UIKit-bridges as modals on the host. By the time we're
+            //    invoked, `host.presentedViewController` chains up through the
+            //    base sheet (`.home`), the picker (`.routePicker`), and the
+            //    stacked CurrentTrip sheet. Presenting from `host` would land
+            //    underneath that chain (UIKit ignores presents on a controller
+            //    that already has a `presentedViewController`); we have to
+            //    walk up to the top and present from there so the trip view
+            //    lands above the sheet stack.
+            //
+            // Done button dismisses back to the (still-intact) sheet stack.
+            trip.navigationItem.leftBarButtonItem = UIBarButtonItem(
+                systemItem: .done,
+                primaryAction: UIAction { [weak trip] _ in
+                    trip?.dismiss(animated: true)
+                }
+            )
+            let navigation = application.viewRouter.buildNavigation(controller: trip)
+            var presenter: UIViewController = host
+            while let next = presenter.presentedViewController {
+                presenter = next
+            }
+            presenter.present(navigation, animated: true)
         }
     }
 }
