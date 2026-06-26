@@ -81,7 +81,7 @@ enum AppSheetRoute: SheetRouteable {
     case tripPlanner
     case tripDetails(tripID: TripIdentifier)
     case routePicker
-    case currentTrip(routeID: RouteID)
+    case currentTrip(route: Route)
     case transitAlert(alertID: String)
 
     case more
@@ -112,8 +112,8 @@ extension AppSheetRoute {
             return "tripDetails-\(tripID)"
         case .routePicker:
             return "routePicker"
-        case .currentTrip(let routeID):
-            return "currentTrip-\(routeID)"
+        case .currentTrip(let route):
+            return "currentTrip-\(route.id)"
         case .transitAlert(let alertID):
             return "transitAlert-\(alertID)"
         case .more:
