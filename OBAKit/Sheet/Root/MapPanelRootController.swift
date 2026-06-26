@@ -23,7 +23,13 @@ public final class MapPanelRootController: UIViewController {
     private let host: UIHostingController<MapPanelRootView>
 
     public init(application: Application) {
-        self.host = UIHostingController(rootView: MapPanelRootView(application: application))
+        // Task 6 swaps this for the live TripPresentationBridge.
+        let factory = AppSheetViewFactory(
+            application: application,
+            onPresentTrip: { _ in }
+        )
+        let rootView = MapPanelRootView(application: application, factory: factory)
+        self.host = UIHostingController(rootView: rootView)
         super.init(nibName: nil, bundle: nil)
     }
 

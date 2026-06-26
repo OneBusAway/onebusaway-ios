@@ -23,9 +23,11 @@ import OBAKitCore
 final class AppSheetViewFactory {
 
     let application: Application
+    let onPresentTrip: (ArrivalDeparture) -> Void
 
-    init(application: Application) {
+    init(application: Application, onPresentTrip: @escaping (ArrivalDeparture) -> Void) {
         self.application = application
+        self.onPresentTrip = onPresentTrip
     }
 
     // MARK: - Dispatcher
