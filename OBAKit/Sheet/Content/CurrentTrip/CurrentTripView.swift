@@ -41,12 +41,13 @@ struct CurrentTripView: View {
     var body: some View {
         NavigationStack {
             content
-                .navigationTitle(Text(OBALoc(
-                    "current_trip_controller.my_trip",
-                    value: "My Trip",
-                    comment: "Title for the current trip screen."
-                )))
+                .navigationTitle(Text(Strings.currentTripTitle))
                 .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button(Strings.close) { coordinator.pop() }
+                    }
+                }
         }
         .onAppear {
             viewModel.shouldSkipProgrammaticRefresh = { UIAccessibility.isVoiceOverRunning }
@@ -70,9 +71,14 @@ struct CurrentTripView: View {
             // Re-arm so a second single-match (e.g., user retries) can fire.
             viewModel.pendingNavigation = nil
         }
-        .onChange(of: stateKey) { _, newKey in
-            if newKey == .error || newKey == .noRealtime {
+        .onChange(of: viewModel.state) { _, newState in
+            // Pattern-match because `.error` carries an associated value —
+            // `newState == .error` would need a payload to compare against.
+            switch newState {
+            case .error, .noRealtime:
                 feedback.dataLoad(.failed)
+            default:
+                break
             }
         }
     }
@@ -91,61 +97,21 @@ struct CurrentTripView: View {
         wasIdleTimerDisabledByUs = false
     }
 
-    // MARK: - State observation key
-    //
-    // `CurrentTripViewModel.State` carries an associated `Error` so it isn't
-    // Equatable. Map to a small enum the `.onChange` modifier can compare.
-    private enum StateKey: Equatable {
-        case loading, noLocation, noResults, noRealtime, multipleResults, error
-    }
-
-    private var stateKey: StateKey {
-        switch viewModel.state {
-        case .loading:          return .loading
-        case .noLocation:       return .noLocation
-        case .noResults:        return .noResults
-        case .noRealtime:       return .noRealtime
-        case .multipleResults:  return .multipleResults
-        case .error:            return .error
-        }
-    }
-
     // MARK: - Content
 
     @ViewBuilder
     private var content: some View {
         switch viewModel.state {
         case .loading:
-            ContentUnavailableView(
-                OBALoc("current_trip_controller.detecting", value: "Finding your vehicle…", comment: "Loading message while searching for the user's vehicle."),
-                systemImage: "location.viewfinder"
-            )
-
+            EmptyStateView(title: Strings.currentTripFindingVehicle, systemImage: AppSymbol.locationFinding)
         case .noLocation:
-            ContentUnavailableView(
-                OBALoc("current_trip_controller.location_unavailable", value: "Location unavailable. Please enable location services.", comment: "Error message when the user's location is not available."),
-                systemImage: "location.slash"
-            )
-
+            EmptyStateView(title: Strings.currentTripLocationUnavailable, systemImage: AppSymbol.locationUnavailable)
         case .noResults:
-            ContentUnavailableView(label: {
-                Label(
-                    OBALoc("current_trip_controller.no_results", value: "No active vehicle found on this route near you", comment: "Message when no active vehicle is found near the user on the selected route."),
-                    systemImage: "bus"
-                )
-            }, actions: { retryButton })
-
+            EmptyStateView(title: Strings.currentTripNoActiveVehicle, systemImage: AppSymbol.bus) { retryButton }
         case .noRealtime:
-            ContentUnavailableView(
-                OBALoc("current_trip_controller.no_realtime", value: "No real-time tracking available for this route", comment: "Message when the route has no real-time tracking data."),
-                systemImage: "antenna.radiowaves.left.and.right.slash"
-            )
-
+            EmptyStateView(title: Strings.currentTripNoRealtime, systemImage: AppSymbol.noRealtime)
         case .error(let error):
-            ContentUnavailableView(label: {
-                Label(error.localizedDescription, systemImage: "exclamationmark.triangle")
-            }, actions: { retryButton })
-
+            EmptyStateView(title: error.localizedDescription, systemImage: AppSymbol.error) { retryButton }
         case .multipleResults:
             resultsList
         }
@@ -155,22 +121,13 @@ struct CurrentTripView: View {
         Button {
             viewModel.findVehicle()
         } label: {
-            Label(
-                OBALoc("current_trip_controller.retry", value: "Try Again", comment: "Button to retry finding the user's vehicle."),
-                systemImage: "arrow.clockwise"
-            )
+            Label(Strings.currentTripTryAgain, systemImage: AppSymbol.retry)
         }
     }
 
     private var resultsList: some View {
         List {
-            Section(
-                header: Text(OBALoc(
-                    "current_trip_controller.multiple_vehicles",
-                    value: "Multiple vehicles found",
-                    comment: "Section header when multiple vehicles are found on the selected route."
-                ))
-            ) {
+            Section(header: Text(Strings.currentTripMultipleVehicles)) {
                 ForEach(viewModel.matchResults, id: \.arrivalDeparture.tripID) { result in
                     Button {
                         onPresentTrip(result.arrivalDeparture)
@@ -180,33 +137,24 @@ struct CurrentTripView: View {
                 }
             }
         }
-        .listStyle(.plain)
+        .listStyle(.insetGrouped)
     }
 
     @ViewBuilder
     private func resultRow(_ result: NearbyTripMatcher.MatchResult) -> some View {
-        // Subtitle preserves the UIKit empty-vehicleID branch from
-        // CurrentTripViewController.swift:289-290.
         let arrival = result.arrivalDeparture
         let distance = formatters.distanceFormatter.string(fromDistance: result.distanceFromUser)
-        let distanceLabel = String(
-            format: OBALoc(
-                "current_trip_controller.distance_fmt",
-                value: "%@ away",
-                comment: "Distance from user to vehicle. e.g. '0.2 mi away'"
-            ),
-            distance
-        )
+        let distanceLabel = String(format: Strings.currentTripDistanceFormat, distance)
         let vehicleID = arrival.vehicleID ?? ""
         let subtitle = vehicleID.isEmpty ? distanceLabel : "\(vehicleID) · \(distanceLabel)"
 
         VStack(alignment: .leading, spacing: 2) {
             Text(arrival.routeAndHeadsign)
                 .font(.body)
-                .foregroundStyle(.primary)
+                .foregroundStyle(Color(ThemeColors.shared.label))
             Text(subtitle)
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color(ThemeColors.shared.secondaryLabel))
         }
         .accessibilityElement(children: .combine)
     }
