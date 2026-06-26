@@ -98,6 +98,11 @@ class CurrentTripViewModel: ObservableObject {
     /// Cancels any in-flight find, then starts a new search.
     func findVehicle() {
         findVehicleTask?.cancel()
+        // Reset to `.loading` so a retry from `.noResults` / `.error` /
+        // `.noRealtime` actually surfaces a state change — without this the
+        // View re-renders the same content while the network call is in
+        // flight, and the tap looks dead to the user.
+        state = .loading
 
         findVehicleTask = Task { [weak self] in
             guard let self else { return }
