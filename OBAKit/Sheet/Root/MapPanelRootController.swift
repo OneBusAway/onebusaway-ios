@@ -21,6 +21,7 @@ import OBAKitCore
 public final class MapPanelRootController: UIViewController {
 
     private let host: UIHostingController<MapPanelRootView>
+    private let bridge: TripPresentationBridge
 
     public init(application: Application) {
         let bridge = TripPresentationBridge()
@@ -30,9 +31,10 @@ public final class MapPanelRootController: UIViewController {
         )
         let rootView = MapPanelRootView(application: application, factory: factory)
         self.host = UIHostingController(rootView: rootView)
+        self.bridge = bridge
         super.init(nibName: nil, bundle: nil)
-        bridge.host = self
-        bridge.application = application
+        self.bridge.host = self
+        self.bridge.application = application
     }
 
     required init?(coder: NSCoder) {
