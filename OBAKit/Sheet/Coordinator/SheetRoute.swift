@@ -81,7 +81,7 @@ enum AppSheetRoute: SheetRouteable {
     case tripPlanner
     case tripDetails(tripID: TripIdentifier)
     case routePicker
-    case currentTrip(routeID: RouteID)
+    case currentTrip(route: Route)
     case transitAlert(alertID: String)
 
     case more
