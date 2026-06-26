@@ -23,14 +23,16 @@ public final class MapPanelRootController: UIViewController {
     private let host: UIHostingController<MapPanelRootView>
 
     public init(application: Application) {
-        // Task 6 swaps this for the live TripPresentationBridge.
+        let bridge = TripPresentationBridge()
         let factory = AppSheetViewFactory(
             application: application,
-            onPresentTrip: { _ in }
+            onPresentTrip: { [weak bridge] arrival in bridge?.present(arrival) }
         )
         let rootView = MapPanelRootView(application: application, factory: factory)
         self.host = UIHostingController(rootView: rootView)
         super.init(nibName: nil, bundle: nil)
+        bridge.host = self
+        bridge.application = application
     }
 
     required init?(coder: NSCoder) {
@@ -50,5 +52,21 @@ public final class MapPanelRootController: UIViewController {
             host.view.trailingAnchor.constraint(equalTo: view.trailingAnchor)
         ])
         host.didMove(toParent: self)
+    }
+
+    /// Bridges single-match navigation from `CurrentTripView` back to the UIKit
+    /// `TripViewController`. Exists as a separate type because `self` isn't
+    /// available before `super.init`, and the closure baked into the factory
+    /// needs to reach it.
+    @MainActor
+    private final class TripPresentationBridge {
+        weak var host: UIViewController?
+        weak var application: Application?
+
+        func present(_ arrival: ArrivalDeparture) {
+            guard let host, let application else { return }
+            let trip = TripViewController(application: application, arrivalDeparture: arrival)
+            application.viewRouter.navigate(to: trip, from: host)
+        }
     }
 }
