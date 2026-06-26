@@ -42,6 +42,19 @@ struct MapPanelRootView: View {
     }
 
     var body: some View {
+        // TODO: Wire this SwiftUI `Map` to `application.mapRegionManager`.
+        // The UIKit `MapViewController` flow populates
+        // `mapRegionManager.stops` via `MapRegionManager.requestStops`
+        // whenever its MKMapView's region changes; both `RoutePickerViewModel`
+        // and `CurrentTripViewModel` read from that cache before falling back
+        // to a coordinate-based API call. Because this SwiftUI `Map` never
+        // touches `MapRegionManager`, the cache stays empty here and the
+        // pickers always hit the coordinate-fallback path — producing a
+        // different (often larger) route list than the UIKit picker shows for
+        // the same on-screen viewport. Fix is to observe `cameraPosition`
+        // changes, convert to an `MKCoordinateRegion`, and feed it into
+        // `MapRegionManager` so both surfaces agree on the cached stop set
+        // (also unblocks rendering stop annotations on the SwiftUI map).
         Map(position: $cameraPosition) {
             UserAnnotation()
         }
