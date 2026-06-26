@@ -70,7 +70,6 @@ class MapViewController: UIViewController,
     // MARK: - Surveys
 
     private var surveyCardView: SurveyLauncherCardView?
-    private var hasShownMapSurveyThisSession = false
 
     // MARK: - Init
 
@@ -167,6 +166,14 @@ class MapViewController: UIViewController,
         bindWeather()
         bindMapStatus()
         bindMapType()
+        bindSurveyPrompt()
+    }
+
+    private func bindSurveyPrompt() {
+        viewModel.surveyToPresent
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] survey in self?.presentSurvey(survey) }
+            .store(in: &cancellables)
     }
 
     public override func viewWillAppear(_ animated: Bool) {
@@ -191,7 +198,7 @@ class MapViewController: UIViewController,
 
         viewModel.start()
         updateVoiceover()
-        checkForMapSurvey()
+        Task { @MainActor [weak viewModel] in await viewModel?.checkForSurveyPrompt() }
     }
 
     public override func viewWillDisappear(_ animated: Bool) {
@@ -202,26 +209,20 @@ class MapViewController: UIViewController,
 
     // MARK: - Surveys
 
-    private func checkForMapSurvey() {
-        guard !hasShownMapSurveyThisSession, surveyCardView == nil else { return }
-
-        let surveyService = application.surveyService
-        guard surveyService.shouldShowSurvey() else { return }
-
-        Task { @MainActor [weak self] in
-            guard let self else { return }
-            await surveyService.fetchSurveys()
-
-            // Re-check after the await: a second `checkForMapSurvey()` can pass
-            // the pre-await guard while this task is suspended, so without this
-            // both tasks would present a card and stack them.
-            guard !self.hasShownMapSurveyThisSession, self.surveyCardView == nil else { return }
-            guard let survey = surveyService.findSurveyForMap() else { return }
-
-            self.hasShownMapSurveyThisSession = true
-            self.presentMapSurveyCard(for: survey)
-            surveyService.setNextReminderDate()
+    /// Called from `bindViewModel()` when `MapViewModel.surveyToPresent` emits.
+    /// The VM owns "once per session" + reminder scheduling; the VC owns the UI.
+    private func presentSurvey(_ survey: Survey) {
+        // Guard against a stray double-emit from racing the floating card. If
+        // a card is already up, tell the VM we didn't present so it rolls back
+        // its session flag and a later check can re-emit.
+        guard surveyCardView == nil else {
+            viewModel.didPresentSurveyPrompt(survey, presented: false)
+            return
         }
+        presentMapSurveyCard(for: survey)
+        // Reminder advances on confirmed presentation; the VM rolls back its
+        // session flag if `presented` is false.
+        viewModel.didPresentSurveyPrompt(survey, presented: true)
     }
 
     /// Presents the floating survey launcher card above the search panel. The

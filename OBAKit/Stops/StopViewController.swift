@@ -14,7 +14,7 @@ import Combine
 import SwiftUI
 import SafariServices
 
-// swiftlint:disable file_length type_body_length
+// swiftlint:disable file_length
 
 /// This is the core view controller for displaying information about a transit stop.
 ///
@@ -634,12 +634,7 @@ public class StopViewController: UIViewController,
     // MARK: - Data/Surveys
 
     private var surveySection: OBAListViewSection? {
-        guard application.surveyService.shouldShowSurvey() else { return nil }
-        guard let stop = stop else { return nil }
-        let routeIDs = stop.routes.map { $0.id }
-        guard let survey = application.surveyService.findSurveyForStop(
-            stopID: stopID, routeIDs: routeIDs
-        ) else { return nil }
+        guard let survey = viewModel.currentSurvey else { return nil }
 
         // External surveys present as a compact launcher card:
         // a teaser that opens the survey on tap, with no "study name" header.
@@ -648,20 +643,24 @@ public class StopViewController: UIViewController,
                 survey: survey,
                 title: survey.heroQuestionTitle ?? OBALoc("survey_launcher.title", value: "Help improve transit", comment: "Title of the survey launcher card on the stop screen."),
                 onTakeSurvey: { [weak self] in self?.handleOpenExternalSurvey(survey: survey) },
-                onDismiss: { [weak self] in self?.handleSurveyDismiss(survey: survey) }
+                onDismiss: { [weak self] in self?.viewModel.dismissCurrentSurvey() }
             )
             return listViewSection(for: .survey, title: nil, items: [launcher])
         }
 
+        let stopLocation = stop?.coordinate
         let item = SurveyStopListItem(
             survey: survey,
             stopID: stopID,
             selectedOption: nil,
             onNext: { [weak self] answer in
-                self?.handleSurveyAnswer(survey: survey, answer: answer)
+                guard let self else { return }
+                Task { @MainActor in
+                    await self.viewModel.submitHeroAnswer(answer, stopLocation: stopLocation)
+                }
             },
             onDismiss: { [weak self] in
-                self?.handleSurveyDismiss(survey: survey)
+                self?.viewModel.dismissCurrentSurvey()
             },
             onSelectionChanged: { _ in },
             onOpenExternalSurvey: { [weak self] in
@@ -671,52 +670,10 @@ public class StopViewController: UIViewController,
         return listViewSection(for: .survey, title: survey.study.name, items: [item])
     }
 
-    private func handleSurveyAnswer(survey: Survey, answer: String) {
-        guard let heroQuestion = survey.heroQuestion else {
-            Logger.error("handleSurveyAnswer: survey \(survey.id) has no hero question")
-            return
-        }
-        let response = SurveyService.createQuestionResponse(
-            question: heroQuestion, answer: answer
-        )
-
-        Task { [weak self] in
-            guard let self else { return }
-            do {
-                let submission = try await application.surveyService.submitHeroQuestion(
-                    survey: survey,
-                    heroQuestionResponse: response,
-                    stopID: stopID,
-                    stopLocation: stop?.coordinate
-                )
-
-                if survey.remainingQuestions.isEmpty {
-                    application.surveyService.markSurveyCompleted(survey)
-                } else {
-                    showFullSurvey(survey, heroResponseID: submission.id)
-                }
-
-                application.surveyService.setNextReminderDate()
-                listView.applyData()
-            } catch {
-                Logger.error("Survey submission failed: \(error)")
-                await AlertPresenter.show(error: error, presentingController: self)
-            }
-        }
-    }
-
-    private func handleSurveyDismiss(survey: Survey) {
-        application.surveyService.dismissSurvey(survey)
-        application.surveyService.setNextReminderDate()
-        listView.applyData()
-    }
-
+    /// Thin UI wrapper: VM owns the launcher/state, VC owns the error alert.
     private func handleOpenExternalSurvey(survey: Survey) {
-        let launcher = ExternalSurveyLauncher(surveyService: application.surveyService)
-        launcher.launch(
-            survey: survey,
-            stop: stop,
-            onSuccess: { [weak self] in self?.listView.applyData() },
+        viewModel.launchExternalSurvey(
+            survey,
             onFailure: { [weak self] in self?.showExternalSurveyError() }
         )
     }
@@ -1309,23 +1266,18 @@ public class StopViewController: UIViewController,
 
 private extension StopViewController {
     func bindListData() {
+        bindArrivalsSink()
+        bindStopSink()
+        bindSurveysSink()
+        bindPreferencesSinks()
+    }
+
+    func bindArrivalsSink() {
         viewModel.$stopArrivals
             .sink { [weak self] arrivals in
                 guard let self, let arrivals else { return }
                 if firstLoad {
-                    if pastDeparturesCollapsed {
-                        if viewModel.stopPreferences.sortType == .time {
-                            collapsedSections.insert(ListSections.pastArrivalDepartures(suffix: "all").sectionID)
-                        } else {
-                            let groups = arrivals.arrivalsAndDepartures.group(
-                                preferences: viewModel.stopPreferences,
-                                filter: viewModel.isListFiltered
-                            )
-                            for group in groups {
-                                collapsedSections.insert(ListSections.pastArrivalDepartures(suffix: group.route.id).sectionID)
-                            }
-                        }
-                    }
+                    seedCollapsedPastDepartureSections(for: arrivals)
                     firstLoad = false
                     dataLoadFeedbackGenerator.dataLoad(.success)
                 }
@@ -1334,7 +1286,9 @@ private extension StopViewController {
                 beginUserActivity()
             }
             .store(in: &cancellables)
+    }
 
+    func bindStopSink() {
         viewModel.$stop
             .sink { [weak self] stop in
                 guard let self else { return }
@@ -1343,11 +1297,31 @@ private extension StopViewController {
                 configureTabBarButtons()
             }
             .store(in: &cancellables)
+    }
 
-        viewModel.surveysDidRefresh
+    func bindSurveysSink() {
+        viewModel.$currentSurvey
+            .dropFirst()
             .sink { [weak self] _ in self?.listView.applyData(animated: false) }
             .store(in: &cancellables)
 
+        viewModel.presentFullSurvey
+            .sink { [weak self] payload in
+                self?.showFullSurvey(payload.survey, heroResponseID: payload.heroResponseID)
+            }
+            .store(in: &cancellables)
+
+        viewModel.surveySubmissionError
+            .sink { [weak self] error in
+                guard let self else { return }
+                Task { @MainActor in
+                    await AlertPresenter.show(error: error, presentingController: self)
+                }
+            }
+            .store(in: &cancellables)
+    }
+
+    func bindPreferencesSinks() {
         viewModel.$stopPreferences
             .sink { [weak self] _ in
                 Task { @MainActor [weak self] in
@@ -1365,6 +1339,21 @@ private extension StopViewController {
                 }
             }
             .store(in: &cancellables)
+    }
+
+    func seedCollapsedPastDepartureSections(for arrivals: StopArrivals) {
+        guard pastDeparturesCollapsed else { return }
+        if viewModel.stopPreferences.sortType == .time {
+            collapsedSections.insert(ListSections.pastArrivalDepartures(suffix: "all").sectionID)
+        } else {
+            let groups = arrivals.arrivalsAndDepartures.group(
+                preferences: viewModel.stopPreferences,
+                filter: viewModel.isListFiltered
+            )
+            for group in groups {
+                collapsedSections.insert(ListSections.pastArrivalDepartures(suffix: group.route.id).sectionID)
+            }
+        }
     }
 
     func bindLoadingState() {

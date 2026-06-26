@@ -8,12 +8,12 @@
 //
 
 import UIKit
+import Combine
 import OBAKitCore
 import SafariServices
 
 /// Displays `AgencyAlert` objects loaded from a Protobuf feed.
 class AgencyAlertsViewController: UIViewController,
-    AgencyAlertsDelegate,
     AgencyAlertListViewConverters,
     AppContext,
     OBAListViewCollapsibleSectionsDelegate,
@@ -22,11 +22,17 @@ class AgencyAlertsViewController: UIViewController,
 
     // MARK: - Stores
     public let application: Application
-    private let alertsStore: AgencyAlertsStore
+    private let viewModel: AgencyAlertsViewModel
+    private var cancellables = Set<AnyCancellable>()
 
     // MARK: - UI state
     let selectionFeedbackGenerator: UISelectionFeedbackGenerator? = UISelectionFeedbackGenerator()
-    var collapsedSections: Set<String> = []
+
+    /// Forwards to the VM. Required by `OBAListViewCollapsibleSectionsDelegate`.
+    var collapsedSections: Set<String> {
+        get { viewModel.collapsedSections }
+        set { viewModel.collapsedSections = newValue }
+    }
 
     // MARK: - UI elements
     let listView = OBAListView()
@@ -35,11 +41,9 @@ class AgencyAlertsViewController: UIViewController,
     // MARK: - Init
     public init(application: Application) {
         self.application = application
-        self.alertsStore = application.alertsStore
+        self.viewModel = AgencyAlertsViewModel(application: application)
 
         super.init(nibName: nil, bundle: nil)
-
-        self.alertsStore.addDelegate(self)
 
         title = OBALoc("agency_alerts_controller.title", value: "Alerts", comment: "The title of the Agency Alerts controller.")
     }
@@ -63,23 +67,34 @@ class AgencyAlertsViewController: UIViewController,
 
         view.backgroundColor = ThemeColors.shared.systemBackground
 
+        viewModel.$alerts
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.listView.applyData(animated: false)
+            }
+            .store(in: &cancellables)
+
+        viewModel.$isLoading
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isLoading in
+                guard let self else { return }
+                if isLoading {
+                    self.navigationItem.rightBarButtonItem = UIActivityIndicatorView.asNavigationItem()
+                } else {
+                    self.refreshControl.endRefreshing()
+                    self.navigationItem.rightBarButtonItem = nil
+                }
+            }
+            .store(in: &cancellables)
+
         reloadServerData()
-    }
-
-    // MARK: - Agency Alerts Delegate
-
-    func agencyAlertsUpdated() {
-        listView.applyData(animated: false)
-        refreshControl.endRefreshing()
-        navigationItem.rightBarButtonItem = nil
     }
 
     // MARK: - Data Loading
 
     @objc private func reloadServerData() {
-        alertsStore.checkForUpdates()
+        viewModel.reloadServerData()
         refreshControl.beginRefreshing()
-        navigationItem.rightBarButtonItem = UIActivityIndicatorView.asNavigationItem()
     }
 
     func contextMenu(_ listView: OBAListView, for item: AnyOBAListViewItem) -> OBAListViewMenuActions? {
@@ -132,12 +147,7 @@ class AgencyAlertsViewController: UIViewController,
     /// Returns a UIAction that presents a `UIActivityViewController` for sharing the URL
     /// (or title and body, if no URL) of the provided alert.
     func shareAlertAction(_ alert: TransitAlertDataListViewModel) -> UIAction {
-        let activityItems: [Any]
-        if let url = alert.localizedURL {
-            activityItems = [url]
-        } else {
-            activityItems = [alert.title, alert.body]
-        }
+        let activityItems = viewModel.shareActivityItems(for: alert)
 
         return UIAction(title: Strings.share, image: Icons.share) { [weak self] _ in
             let vc = UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
@@ -148,11 +158,7 @@ class AgencyAlertsViewController: UIViewController,
     // MARK: - List data
 
     func items(for listView: OBAListView) -> [OBAListViewSection] {
-        var seenIDs = Set<String>()
-        let uniqueAlerts = alertsStore.agencyAlerts.filter { alert in
-            seenIDs.insert(alert.id).inserted
-        }
-        return listSections(agencyAlerts: uniqueAlerts)
+        return listSections(agencyAlerts: viewModel.alerts)
     }
 
     func emptyData(for listView: OBAListView) -> OBAListView.EmptyData? {
