@@ -27,20 +27,12 @@ struct RoutePickerView: View {
     var body: some View {
         NavigationStack {
             content
-                .navigationTitle(Text(OBALoc(
-                    "route_picker.title",
-                    value: "Select Your Route",
-                    comment: "Title for the route picker screen where the user selects their transit route."
-                )))
+                .navigationTitle(Text(Strings.routePickerTitle))
                 .navigationBarTitleDisplayMode(.inline)
                 .searchable(
                     text: $searchText,
                     placement: .navigationBarDrawer(displayMode: .always),
-                    prompt: Text(OBALoc(
-                        "route_picker.search_placeholder",
-                        value: "Search routes…",
-                        comment: "Placeholder text in the route search field."
-                    ))
+                    prompt: Text(Strings.routePickerSearchPlaceholder)
                 )
                 .onChange(of: searchText) { _, newValue in
                     viewModel.updateSearch(newValue)
@@ -68,37 +60,36 @@ struct RoutePickerView: View {
     @ViewBuilder
     private var content: some View {
         if !viewModel.didFinishLoading {
-            ContentUnavailableView(
-                OBALoc("route_picker.loading", value: "Loading routes…", comment: "Loading message while fetching nearby routes."),
-                systemImage: "arrow.clockwise"
-            )
+            EmptyStateView(title: Strings.routePickerLoading, systemImage: AppSymbol.loading)
         } else if let error = viewModel.loadError {
-            ContentUnavailableView(
-                error.localizedDescription,
-                systemImage: "exclamationmark.triangle"
-            )
+            EmptyStateView(title: error.localizedDescription, systemImage: AppSymbol.error)
         } else if viewModel.allRoutes.isEmpty {
-            ContentUnavailableView(
-                OBALoc("route_picker.no_routes", value: "No routes found nearby.", comment: "Message when no routes are found near the user's location."),
-                systemImage: "magnifyingglass"
-            )
+            EmptyStateView(title: Strings.routePickerNoRoutes, systemImage: AppSymbol.search)
         } else {
-            List(viewModel.filteredRoutes, id: \.id) { route in
-                Button {
-                    coordinator.push(.currentTrip(route: route))
-                } label: {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(route.shortName)
-                            .font(.body)
-                            .foregroundStyle(.primary)
-                        Text(route.longName ?? route.agency.name)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .accessibilityElement(children: .combine)
-            }
-            .listStyle(.plain)
+            routesList
         }
+    }
+
+    private var routesList: some View {
+        List(viewModel.filteredRoutes, id: \.id) { route in
+            routeRow(route)
+        }
+        .listStyle(.insetGrouped)
+    }
+
+    private func routeRow(_ route: Route) -> some View {
+        Button {
+            coordinator.push(.currentTrip(route: route))
+        } label: {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(route.shortName)
+                    .font(.body)
+                    .foregroundStyle(Color(ThemeColors.shared.label))
+                Text(route.longName ?? route.agency.name)
+                    .font(.subheadline)
+                    .foregroundStyle(Color(ThemeColors.shared.secondaryLabel))
+            }
+        }
+        .accessibilityElement(children: .combine)
     }
 }
