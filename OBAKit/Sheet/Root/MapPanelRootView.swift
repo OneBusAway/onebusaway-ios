@@ -27,9 +27,9 @@ struct MapPanelRootView: View {
 
     private let factory: AppSheetViewFactory
 
-    init(application: Application) {
+    init(application: Application, factory: AppSheetViewFactory) {
         _coordinator = StateObject(wrappedValue: SheetCoordinator<AppSheetRoute>(root: .home))
-        factory = AppSheetViewFactory(application: application)
+        self.factory = factory
     }
 
     var body: some View {
@@ -41,6 +41,13 @@ struct MapPanelRootView: View {
         // `largeDetent` lets the user-location annotation and any future map
         // overlays slip under the sheet.
         .safeAreaPadding(.bottom, AppSheetRoute.homeCollapsedHeight)
+        .overlay(alignment: .bottomLeading) {
+            MyTripButton {
+                coordinator.push(.routePicker)
+            }
+            .padding(.leading, ThemeMetrics.controllerMargin)
+            .padding(.bottom, AppSheetRoute.homeCollapsedHeight + ThemeMetrics.controllerMargin)
+        }
         .floatingSheet(coordinator: coordinator) { route in
             factory.view(for: route)
         }
