@@ -46,9 +46,12 @@ final class AppSheetViewFactory {
             // (the home sheet only knows how to push, not pop), otherwise the
             // route is unreachable once entered.
         case .search, .nearbyAll, .recentStopsAll, .bookmarksAll,
-                .stopDetails, .tripPlanner, .tripDetails, .routePicker,
+                .stopDetails, .tripPlanner, .tripDetails,
                 .currentTrip, .transitAlert, .more, .settings:
             unimplementedView(for: route)
+
+        case .routePicker:
+            routePickerView()
         }
     }
 
@@ -56,6 +59,10 @@ final class AppSheetViewFactory {
 
     func homeView() -> HomeSheetView {
         HomeSheetView(viewModel: HomeSheetViewModel())
+    }
+
+    func routePickerView() -> RoutePickerView {
+        RoutePickerView(viewModel: RoutePickerViewModel(application: self.application))
     }
 
     /// Placeholder until each route gets its own real view. In debug builds we
