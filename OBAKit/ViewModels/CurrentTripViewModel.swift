@@ -20,23 +20,6 @@ import OBAKitCore
 @MainActor
 class CurrentTripViewModel: ObservableObject {
 
-    /// Loading / error / result state for the screen.
-    enum State {
-        /// Initial state, and while a find is in flight.
-        case loading
-        /// No user location is available — the location service returned `nil`.
-        case noLocation
-        /// The matcher returned an empty array — no active vehicle is currently
-        /// on the selected route near the user.
-        case noResults
-        /// The selected route has no real-time tracking data.
-        case noRealtime
-        /// Two or more vehicles matched; the UI shows a disambiguation list.
-        case multipleResults
-        /// A network or service error surfaced from the matcher.
-        case error(Error)
-    }
-
     // MARK: - Published State
 
     @Published private(set) var state: State = .loading
@@ -203,5 +186,45 @@ class CurrentTripViewModel: ObservableObject {
                 comment: "Error when the API service is unavailable."
             )]
         )
+    }
+}
+
+// MARK: - State
+extension CurrentTripViewModel {
+    /// Loading / error / result state for the screen.
+    enum State: Equatable {
+        /// Initial state, and while a find is in flight.
+        case loading
+        /// No user location is available — the location service returned `nil`.
+        case noLocation
+        /// The matcher returned an empty array — no active vehicle is currently
+        /// on the selected route near the user.
+        case noResults
+        /// The selected route has no real-time tracking data.
+        case noRealtime
+        /// Two or more vehicles matched; the UI shows a disambiguation list.
+        case multipleResults
+        /// A network or service error surfaced from the matcher.
+        case error(Error)
+
+        // Manual `==` because `case error(Error)` blocks synthesis (Swift's
+        // `Error` existential isn't `Equatable`). Two `.error` cases compare
+        // equal when their `localizedDescription`s match — the only error
+        // surface SwiftUI consumers render, so this matches what the View's
+        // `.onChange(of: state)` actually cares about.
+        static func == (lhs: State, rhs: State) -> Bool {
+            switch (lhs, rhs) {
+            case (.loading, .loading),
+                 (.noLocation, .noLocation),
+                 (.noResults, .noResults),
+                 (.noRealtime, .noRealtime),
+                 (.multipleResults, .multipleResults):
+                return true
+            case let (.error(lhsErr), .error(rhsErr)):
+                return lhsErr.localizedDescription == rhsErr.localizedDescription
+            default:
+                return false
+            }
+        }
     }
 }
