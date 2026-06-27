@@ -25,6 +25,16 @@ struct MapPanelRootView: View {
     @StateObject private var coordinator: SheetCoordinator<AppSheetRoute>
     @State private var cameraPosition: MapCameraPosition = .userLocation(fallback: .automatic)
 
+    @State private var sheetHeight: CGFloat = 0
+    @State private var toolbarsAnimationDuration: CGFloat = 0
+    @State private var toolbarsOpacity: CGFloat = 1
+
+    @State private var halfScreenHeight: CGFloat = 350
+
+    /// Points of fade band immediately below the clamp ceiling. Toolbar
+    /// opacity ramps from 1 → 0 across this window as the sheet approaches `halfScreenHeight`.
+    private let toolbarFadeRange: CGFloat = 50
+
     private let factory: AppSheetViewFactory
 
     init(application: Application, factory: AppSheetViewFactory) {
@@ -49,20 +59,52 @@ struct MapPanelRootView: View {
         Map(position: $cameraPosition) {
             UserAnnotation()
         }
+        .safeAreaPadding(.bottom, 180)
+        .onGeometryChange(for: CGFloat.self) { proxy in
+            proxy.size.height / 2
+        } action: { _, newValue in
+            halfScreenHeight = newValue
+        }
         // TODO: Detent-aware bottom padding. Pinned to the collapsed sheet
         // height today, so dragging the sheet up to `.medium` or
         // `largeDetent` lets the user-location annotation and any future map
         // overlays slip under the sheet.
-        .safeAreaPadding(.bottom, AppSheetRoute.homeCollapsedHeight)
         .overlay(alignment: .bottomLeading) {
-            MyTripButton {
-                coordinator.push(.routePicker)
-            }
-            .padding(.leading, ThemeMetrics.controllerMargin)
-            .padding(.bottom, AppSheetRoute.homeCollapsedHeight + ThemeMetrics.controllerMargin)
+            bottomFloatingTripButton
         }
         .floatingSheet(coordinator: coordinator) { route in
             factory.view(for: route)
+                .onGeometryChange(for: CGFloat.self) { proxy in
+                    max(min(proxy.size.height, halfScreenHeight), 0)
+                } action: { oldValue, newValue in
+                    sheetHeight = newValue
+
+                    /// Opacity calculation — fade band sits immediately
+                    /// below `halfScreenHeight`.
+                    let fadeStart = halfScreenHeight - toolbarFadeRange
+                    let progress = max(min((newValue - fadeStart) / toolbarFadeRange, 1), 0)
+                    toolbarsOpacity = 1 - progress
+
+                    /// Animation duration
+                    let diff = abs(newValue - oldValue)
+                    let duration = max(min(diff / 100, 0.3), 0)
+                    toolbarsAnimationDuration = duration
+                }
+                .ignoresSafeArea()
         }
     }
+
+    private var bottomFloatingTripButton: some View {
+        MyTripButton {
+            coordinator.push(.routePicker)
+        }
+        .padding(.leading, ThemeMetrics.controllerMargin)
+        .offset(y: -sheetHeight)
+        .opacity(toolbarsOpacity)
+        .animation(
+            .interpolatingSpring(duration: toolbarsAnimationDuration, bounce: 0, initialVelocity: 0),
+            value: sheetHeight
+        )
+    }
+
 }
