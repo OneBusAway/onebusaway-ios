@@ -106,11 +106,20 @@ final class WeatherFormatterTests: XCTestCase {
         expect(WeatherFormatter.highLow(from: [], locale: Locale(identifier: "en_US"))).to(beNil())
     }
 
-    /// The hi/lo window is capped at the first 24 entries — anything past that
-    /// must not influence the returned high or low.
-    func test_highLow_cappedAt24Entries() {
-        // First 24 entries stay in the 50–60°F band; entry 25 is an outlier
-        // (200°F) that must be ignored if the cap holds.
+    /// `highLow` summarises whatever window it's handed — `upcomingHourly` is
+    /// the helper that caps at 24, drops past-hour entries, and de-dupes, so
+    /// the cap test belongs there. This test pins the cap end-to-end: feed
+    /// 25 raw entries with an outlier 25th, send them through `upcomingHourly`
+    /// → `highLow`, and confirm the outlier is dropped.
+    func test_highLow_throughUpcomingHourly_cappedAt24Entries() {
+        // Anchor "now" at epoch 0 (UTC) so the upcomingHourly past-hour filter
+        // sees the synthesised entries as upcoming.
+        let now = Date(timeIntervalSince1970: 0)
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "UTC")!
+
+        // First 24 entries stay in the 50–60°F band; entry 25 is a 200°F
+        // outlier that must be ignored if the 24-cap holds.
         var json: [[String: Any]] = (0..<24).map { i in
             [
                 "icon": "clear-day",
@@ -136,7 +145,9 @@ final class WeatherFormatterTests: XCTestCase {
         let data = try! JSONSerialization.data(withJSONObject: json)
         let hourly = try! JSONDecoder().decode([WeatherForecast.HourlyForecast].self, from: data)
 
-        let result = WeatherFormatter.highLow(from: hourly, locale: Locale(identifier: "en_US"))
+        let window = WeatherFormatter.upcomingHourly(from: hourly, now: now, calendar: calendar)
+        let result = WeatherFormatter.highLow(from: window, locale: Locale(identifier: "en_US"))
+
         expect(result).toNot(beNil())
         // 200°F would clearly show up if the cap weren't enforced.
         expect(result?.high).toNot(contain("200"))

@@ -44,14 +44,18 @@ final class WeatherDisplayTests: XCTestCase {
 
     /// Builds a fake hourly forecast from raw fixture JSON for the given epoch.
     /// Decoding through the real model exercises the same path production uses.
-    private func makeHourly(epochs: [TimeInterval]) -> [WeatherForecast.HourlyForecast] {
-        let json: [[String: Any]] = epochs.map { ts in
+    private func makeHourly(
+        epochs: [TimeInterval],
+        precipProbability: Double = 0.0,
+        temperatures: [Double]? = nil
+    ) -> [WeatherForecast.HourlyForecast] {
+        let json: [[String: Any]] = epochs.enumerated().map { idx, ts in
             [
                 "icon": "clear-day",
                 "precip_per_hour": 0.0,
-                "precip_probability": 0.0,
+                "precip_probability": precipProbability,
                 "summary": "Clear",
-                "temperature": 60.0,
+                "temperature": temperatures?[idx] ?? 60.0,
                 "temperature_feels_like": 58.0,
                 "time": ts,
                 "wind_speed": 5.0
@@ -61,12 +65,12 @@ final class WeatherDisplayTests: XCTestCase {
         return try! JSONDecoder().decode([WeatherForecast.HourlyForecast].self, from: data)
     }
 
-    // MARK: - HourlyEntry.list
+    // MARK: - WeatherFormatter.upcomingHourly
 
     /// The Obaco API sometimes ships the previous full hour at index 0.
-    /// `list` must drop it so the "Now" cell aligns with the actual current
-    /// hour, not an hour ago.
-    func test_list_dropsHoursBeforeCurrentHourBucket() {
+    /// `upcomingHourly` must drop it so the "Now" cell aligns with the actual
+    /// current hour, not an hour ago.
+    func test_upcomingHourly_dropsHoursBeforeCurrentHourBucket() {
         let oneHourAgo = now.addingTimeInterval(-3600)
         let currentHour = utcCalendar.dateInterval(of: .hour, for: now)!.start
         let nextHour = currentHour.addingTimeInterval(3600)
@@ -74,33 +78,75 @@ final class WeatherDisplayTests: XCTestCase {
                                          currentHour.timeIntervalSince1970,
                                          nextHour.timeIntervalSince1970])
 
-        let entries = HourlyEntry.list(from: hourly, locale: usLocale, now: now, calendar: utcCalendar)
+        let window = WeatherFormatter.upcomingHourly(from: hourly, now: now, calendar: utcCalendar)
 
-        expect(entries.count) == 2
-        expect(entries.first?.id) == currentHour
-        expect(entries.first?.isNow) == true
+        expect(window.count) == 2
+        expect(window.first?.time) == currentHour
     }
 
-    /// First surviving entry should be labelled "Now" and flagged `isNow`.
+    /// Even when the API ships 48 hours, the window is capped at 24.
+    func test_upcomingHourly_cappedAt24Entries() {
+        let currentHour = utcCalendar.dateInterval(of: .hour, for: now)!.start
+        let hourly = makeHourly(epochs: (0..<48).map { currentHour.addingTimeInterval(Double($0) * 3600).timeIntervalSince1970 })
+
+        let window = WeatherFormatter.upcomingHourly(from: hourly, now: now, calendar: utcCalendar)
+
+        expect(window.count) == 24
+    }
+
+    /// Even if the API delivers hourly entries out of chronological order, the
+    /// window must still start at the current hour (sort before slicing).
+    func test_upcomingHourly_sortsOutOfOrderInput() {
+        let currentHour = utcCalendar.dateInterval(of: .hour, for: now)!.start
+        let inOrder = (0..<3).map { currentHour.addingTimeInterval(Double($0) * 3600).timeIntervalSince1970 }
+        let shuffled = [inOrder[2], inOrder[0], inOrder[1]]
+        let hourly = makeHourly(epochs: shuffled)
+
+        let window = WeatherFormatter.upcomingHourly(from: hourly, now: now, calendar: utcCalendar)
+
+        expect(window.first?.time) == currentHour
+        let timestamps = window.map(\.time)
+        expect(timestamps) == timestamps.sorted()
+    }
+
+    /// If every entry is in the past, none survive the filter.
+    func test_upcomingHourly_allPastEntriesReturnsEmpty() {
+        let past = (1...3).map { now.addingTimeInterval(-Double($0) * 3600).timeIntervalSince1970 }
+        let hourly = makeHourly(epochs: past)
+
+        let window = WeatherFormatter.upcomingHourly(from: hourly, now: now, calendar: utcCalendar)
+
+        expect(window).to(beEmpty())
+    }
+
+    /// A glitch that ships the same hour twice would otherwise give `ForEach`
+    /// duplicate `id`s and mark both cells `isNow`. The window de-dupes.
+    func test_upcomingHourly_dedupesRepeatedTimestamps() {
+        let currentHour = utcCalendar.dateInterval(of: .hour, for: now)!.start
+        let nextHour = currentHour.addingTimeInterval(3600)
+        let hourly = makeHourly(epochs: [currentHour.timeIntervalSince1970,
+                                         currentHour.timeIntervalSince1970,
+                                         nextHour.timeIntervalSince1970])
+
+        let window = WeatherFormatter.upcomingHourly(from: hourly, now: now, calendar: utcCalendar)
+
+        expect(window.count) == 2
+        expect(window.map(\.time)) == [currentHour, nextHour]
+    }
+
+    // MARK: - HourlyEntry.list
+
+    /// First entry of a pre-windowed slice should be labelled "Now" and
+    /// flagged `isNow`.
     func test_list_firstEntryIsNow() {
         let currentHour = utcCalendar.dateInterval(of: .hour, for: now)!.start
-        let hourly = makeHourly(epochs: (0..<3).map { currentHour.addingTimeInterval(Double($0) * 3600).timeIntervalSince1970 })
+        let upcoming = makeHourly(epochs: (0..<3).map { currentHour.addingTimeInterval(Double($0) * 3600).timeIntervalSince1970 })
 
-        let entries = HourlyEntry.list(from: hourly, locale: usLocale, now: now, calendar: utcCalendar)
+        let entries = HourlyEntry.list(from: upcoming, locale: usLocale)
 
         expect(entries.first?.timeLabel) == "Now"
         expect(entries.first?.isNow) == true
         expect(entries.dropFirst().allSatisfy { !$0.isNow }) == true
-    }
-
-    /// Even when the API ships 48 hours, the strip is capped at 24.
-    func test_list_cappedAt24Entries() {
-        let currentHour = utcCalendar.dateInterval(of: .hour, for: now)!.start
-        let hourly = makeHourly(epochs: (0..<48).map { currentHour.addingTimeInterval(Double($0) * 3600).timeIntervalSince1970 })
-
-        let entries = HourlyEntry.list(from: hourly, locale: usLocale, now: now, calendar: utcCalendar)
-
-        expect(entries.count) == 24
     }
 
     /// Identity is the hour timestamp, not the array index. This is what keeps
@@ -108,43 +154,35 @@ final class WeatherDisplayTests: XCTestCase {
     /// hour across refreshes.
     func test_list_identityIsHourTimestamp() {
         let currentHour = utcCalendar.dateInterval(of: .hour, for: now)!.start
-        let hourly = makeHourly(epochs: (0..<3).map { currentHour.addingTimeInterval(Double($0) * 3600).timeIntervalSince1970 })
+        let upcoming = makeHourly(epochs: (0..<3).map { currentHour.addingTimeInterval(Double($0) * 3600).timeIntervalSince1970 })
 
-        let entries = HourlyEntry.list(from: hourly, locale: usLocale, now: now, calendar: utcCalendar)
+        let entries = HourlyEntry.list(from: upcoming, locale: usLocale)
 
         let expectedIds = (0..<3).map { currentHour.addingTimeInterval(Double($0) * 3600) }
         expect(entries.map(\.id)) == expectedIds
     }
 
-    func test_list_emptyHourlyForecastsReturnsEmpty() {
-        let entries = HourlyEntry.list(from: [], locale: usLocale, now: now, calendar: utcCalendar)
+    func test_list_emptyUpcomingReturnsEmpty() {
+        let entries = HourlyEntry.list(from: [], locale: usLocale)
         expect(entries).to(beEmpty())
     }
 
-    /// Even if the API delivers hourly entries out of chronological order, the
-    /// strip must still start at the current hour (sort before slicing).
-    func test_list_sortsOutOfOrderInput() {
-        let currentHour = utcCalendar.dateInterval(of: .hour, for: now)!.start
-        let inOrder = (0..<3).map { currentHour.addingTimeInterval(Double($0) * 3600).timeIntervalSince1970 }
-        let shuffled = [inOrder[2], inOrder[0], inOrder[1]]
-        let hourly = makeHourly(epochs: shuffled)
+    // MARK: - WeatherFormatter unit gaps
 
-        let entries = HourlyEntry.list(from: hourly, locale: usLocale, now: now, calendar: utcCalendar)
-
-        expect(entries.first?.id) == currentHour
-        expect(entries.first?.isNow) == true
-        let timestamps = entries.map(\.id)
-        expect(timestamps) == timestamps.sorted()
+    /// `conditionText` collapses day/night, but the test that asserted
+    /// `day == night` never pinned an actual mapping — a regression that
+    /// returned the unknown-key fallback for every key would still satisfy
+    /// it. Lock down at least one concrete mapping.
+    func test_conditionText_mapsKnownIconKeys() {
+        expect(WeatherFormatter.conditionText(for: "snow")) == "Snow"
+        expect(WeatherFormatter.conditionText(for: "clear-day")) == "Clear"
+        expect(WeatherFormatter.conditionText(for: "rain")) == "Rain"
     }
 
-    /// If every entry is in the past, none survive the filter.
-    func test_list_allPastEntriesReturnsEmpty() {
-        let past = (1...3).map { now.addingTimeInterval(-Double($0) * 3600).timeIntervalSince1970 }
-        let hourly = makeHourly(epochs: past)
-
-        let entries = HourlyEntry.list(from: hourly, locale: usLocale, now: now, calendar: utcCalendar)
-
-        expect(entries).to(beEmpty())
+    func test_isKnownIconKey_distinguishesMappedFromUnmapped() {
+        expect(WeatherFormatter.isKnownIconKey("clear-day")) == true
+        expect(WeatherFormatter.isKnownIconKey("partly-cloudy-night")) == true
+        expect(WeatherFormatter.isKnownIconKey("thunderstorm")) == false
     }
 
     // MARK: - Full WeatherDisplay (fixture-driven)
@@ -154,13 +192,19 @@ final class WeatherDisplayTests: XCTestCase {
         return try JSONDecoder.obacoServiceDecoder.decode(WeatherForecast.self, from: data)
     }
 
+    /// Aligned with the Puget Sound fixture's `hourly_forecast` window (first
+    /// entry is 2018-10-17 17:00 UTC) so that `WeatherFormatter.upcomingHourly`
+    /// doesn't filter every fixture entry out as "in the past" relative to
+    /// today's wall clock.
+    private let pugetSoundNow = Date(timeIntervalSince1970: 1539810000)
+
     /// `WeatherDisplay` exists so the UIKit and SwiftUI surfaces can't drift —
     /// both read the same pre-rendered strings. The `LegacyAlert` is the UIKit
     /// surface; pinning its content from a fixture locks the contract so a
     /// formatter tweak that only updates the SwiftUI card would fail here.
     func test_init_populatesHeaderStatsAndLegacyAlertFromFixture() throws {
         let forecast = try loadPugetSoundForecast()
-        let display = WeatherDisplay(forecast: forecast, locale: usLocale)
+        let display = WeatherDisplay(forecast: forecast, locale: usLocale, now: pugetSoundNow, calendar: utcCalendar)
 
         // Header — derived from `current_forecast` + `region_name` + the
         // hourly window's hi/lo, not the calendar-day hi/lo.
@@ -186,5 +230,44 @@ final class WeatherDisplayTests: XCTestCase {
         expect(display.legacyAlert.message).to(contain("Temp: 71° (Feels like 71°)"))
         expect(display.legacyAlert.message).to(contain("Wind: \(display.stats.windText)"))
         expect(display.legacyAlert.message).to(contain("Precipitation: 0% chance"))
+    }
+
+    // MARK: - Stats / Header derived strings
+
+    /// The Puget Sound fixture happens to have `precip_probability == 0`, so
+    /// truncation never bites in the fixture test. Cover the typical case so
+    /// a regression that flips truncation to rounding (or vice-versa) trips.
+    func test_stats_precipTextTruncatesToInteger() throws {
+        let json: [String: Any] = [
+            "icon": "rain",
+            "precip_per_hour": 1.2,
+            "precip_probability": 0.456,
+            "summary": "Rain",
+            "temperature": 60.0,
+            "temperature_feels_like": 58.0,
+            "time": 0,
+            "wind_speed": 5.0
+        ]
+        let data = try JSONSerialization.data(withJSONObject: json)
+        let hourly = try JSONDecoder().decode(WeatherForecast.HourlyForecast.self, from: data)
+
+        let stats = WeatherDisplay.Stats(forecast: hourly, locale: usLocale)
+
+        // `Int(0.456 * 100)` truncates to 45 rather than rounding to 46.
+        expect(stats.precipText) == "45%"
+    }
+
+    /// Header owns the `"H:%@  L:%@"` join (the only formatting it does on
+    /// hi/lo). The fixture test only asserts non-nil, so an upstream tweak
+    /// that swapped the order or dropped the prefix would slip through.
+    func test_header_highLowTextJoinsWithLocalisedFormat() throws {
+        let forecast = try loadPugetSoundForecast()
+        let display = WeatherDisplay(forecast: forecast, locale: usLocale, now: pugetSoundNow, calendar: utcCalendar)
+        let highLowText = try XCTUnwrap(display.header.highLowText)
+
+        expect(highLowText).to(beginWith("H:"))
+        expect(highLowText).to(contain("  L:"))
+        // Two spaces between the two halves — the format is deliberately wide.
+        expect(highLowText.components(separatedBy: "  ").count) == 2
     }
 }

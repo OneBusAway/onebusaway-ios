@@ -114,7 +114,7 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
             weatherDisplay = WeatherDisplay(forecast: forecast, locale: application.locale)
         } catch {
             weatherDisplay = nil
-            Logger.error("Failed to load weather: \(error.localizedDescription)")
+            Logger.error("Failed to load weather: \(error)")
         }
     }
 

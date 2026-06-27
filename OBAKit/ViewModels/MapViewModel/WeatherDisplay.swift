@@ -37,14 +37,21 @@ struct WeatherDisplay: Equatable {
     /// retire once the `OBAUseMapPanelExperience` flag is removed.
     let legacyAlert: LegacyAlert
 
-    init(forecast: WeatherForecast, locale: Locale) {
+    init(forecast: WeatherForecast, locale: Locale, now: Date = .now, calendar: Calendar = .current) {
+        // Compute the "next 24 hours" window once so the hourly strip and the
+        // header's hi/lo are guaranteed to be summarising the same hours —
+        // previously `highLow` saw the raw (unfiltered, unsorted) array while
+        // the hourly strip saw a filtered+sorted view, and the two could drift
+        // by a sample at the past-hour boundary.
+        let upcoming = WeatherFormatter.upcomingHourly(from: forecast.hourlyForecasts, now: now, calendar: calendar)
+
         self.buttonTitle = WeatherFormatter.formatTemp(
             forecast.currentForecast.temperature,
             locale: locale
         )
-        self.header = Header(forecast: forecast, locale: locale)
+        self.header = Header(forecast: forecast, upcoming: upcoming, locale: locale)
         self.stats = Stats(forecast: forecast.currentForecast, locale: locale)
-        self.hourly = HourlyEntry.list(from: forecast.hourlyForecasts, locale: locale)
+        self.hourly = HourlyEntry.list(from: upcoming, locale: locale)
         self.legacyAlert = LegacyAlert(forecast: forecast, header: header, stats: stats)
     }
 }
@@ -60,7 +67,7 @@ extension WeatherDisplay {
         let currentTemp: String
         let highLowText: String?
 
-        init(forecast: WeatherForecast, locale: Locale) {
+        init(forecast: WeatherForecast, upcoming: [WeatherForecast.HourlyForecast], locale: Locale) {
             let current = forecast.currentForecast
             let precipPercent = Int(current.precipProbability * 100)
 
@@ -68,6 +75,15 @@ extension WeatherDisplay {
             self.regionName = forecast.regionName
             self.conditionSummary = WeatherFormatter.conditionText(for: current.iconName)
             self.currentTemp = WeatherFormatter.formatTemp(current.temperature, locale: locale)
+
+            // The header is the once-per-popup-open entry point for icon
+            // rendering, so emit a single breadcrumb here when Obaco ships a
+            // condition we don't recognise. Putting this inside `WeatherFormatter`
+            // would fire ~24× per open (once per hourly cell) and drown the
+            // signal; the `cloud.fill` / "—" fallbacks keep the card usable.
+            if !WeatherFormatter.isKnownIconKey(current.iconName) {
+                Logger.warn("Unknown weather icon key: \(current.iconName)")
+            }
 
             self.chanceOfRainText = String(
                 format: OBALoc(
@@ -78,7 +94,7 @@ extension WeatherDisplay {
                 precipPercent
             )
 
-            self.highLowText = WeatherFormatter.highLow(from: forecast.hourlyForecasts, locale: locale)
+            self.highLowText = WeatherFormatter.highLow(from: upcoming, locale: locale)
                 .map { hilo in
                     String(
                         format: OBALoc(
@@ -103,7 +119,14 @@ extension WeatherDisplay {
 
         init(forecast current: WeatherForecast.HourlyForecast, locale: Locale) {
             self.windText = WeatherFormatter.formatWindSpeed(current.windSpeed, locale: locale)
-            self.precipText = "\(Int(current.precipProbability * 100))%"
+            self.precipText = String(
+                format: OBALoc(
+                    "weather.percent_format",
+                    value: "%d%%",
+                    comment: "Bare percentage shown in the precipitation stat on the weather card. %d is the integer percent."
+                ),
+                Int(current.precipProbability * 100)
+            )
             self.feelsLikeText = WeatherFormatter.formatTemp(current.temperatureFeelsLike, locale: locale)
         }
     }
@@ -121,33 +144,26 @@ struct HourlyEntry: Equatable, Identifiable {
     let temp: String
     let isNow: Bool
 
-    /// Builds the 24-hour strip from a forecast's hourly array, labelling the
-    /// first entry "Now" instead of its formatted time.
+    /// Builds the hourly strip from a pre-windowed forecast slice (typically
+    /// the output of `WeatherFormatter.upcomingHourly`), labelling the first
+    /// entry "Now" instead of its formatted time.
     ///
-    /// Drops entries that fall before the current hour bucket — the Obaco API
-    /// includes the previous full hour in `hourly_forecast` for context, which
-    /// would otherwise misalign the "Now" cell with the next entry (showing
-    /// the same hour twice, just with different labels).
+    /// Filtering, sorting, and de-duplication are the upstream window's job;
+    /// this helper only handles the "Now" label and the projection to a
+    /// SwiftUI-friendly shape so the hourly strip and the header's hi/lo can't
+    /// disagree on which hours they're describing.
     static func list(
-        from hourlyForecasts: [WeatherForecast.HourlyForecast],
-        locale: Locale,
-        now: Date = .now,
-        calendar: Calendar = .current
+        from upcoming: [WeatherForecast.HourlyForecast],
+        locale: Locale
     ) -> [HourlyEntry] {
         let nowLabel = OBALoc(
             "weather.now",
             value: "Now",
             comment: "First column label in the hourly weather strip, indicating the current hour."
         )
-        let currentHourStart = calendar.dateInterval(of: .hour, for: now)?.start ?? now
-        // Sort ascending before slicing so the "Now" cell (= first upcoming
-        // entry) is robust against API responses that arrive out-of-order.
-        let upcoming = hourlyForecasts
-            .filter { $0.time >= currentHourStart }
-            .sorted { $0.time < $1.time }
         let nowTimestamp = upcoming.first?.time
 
-        return upcoming.prefix(24).map { hour in
+        return upcoming.map { hour in
             let isNow = hour.time == nowTimestamp
             return HourlyEntry(
                 id: hour.time,

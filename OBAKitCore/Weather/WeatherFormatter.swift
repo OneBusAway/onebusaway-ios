@@ -22,6 +22,15 @@ public enum WeatherFormatter {
         iconToSymbol[iconKey] ?? "cloud.fill"
     }
 
+    /// Whether the given Obaco icon key has both a symbol and a condition-text
+    /// mapping. Callers (e.g. `WeatherDisplay.Header`) use this to log a single
+    /// warning when Obaco starts shipping a new condition we don't render —
+    /// the fallbacks keep the UI usable, but without this signal the drift is
+    /// silent.
+    public static func isKnownIconKey(_ iconKey: String) -> Bool {
+        iconToSymbol[iconKey] != nil
+    }
+
     private static let iconToSymbol: [String: String] = [
         "clear-day": "sun.max.fill",
         "clear-night": "moon.stars.fill",
@@ -97,15 +106,47 @@ public enum WeatherFormatter {
         return formatter.string(from: date)
     }
 
+    // MARK: - Hourly Window
+
+    /// The rolling "next 24 hours" slice of an Obaco hourly forecast, suitable
+    /// for both the hourly strip and the hi/lo computation so the two surfaces
+    /// can't disagree on which hours they're summarising.
+    ///
+    /// Obaco's `hourly_forecast` array includes the previous full hour for
+    /// context and is not guaranteed to be sorted, and in theory could repeat
+    /// an hour on a server-side glitch. This helper:
+    ///
+    ///   1. Drops anything before the current hour bucket.
+    ///   2. Sorts ascending so "first entry" really is the upcoming hour.
+    ///   3. De-duplicates by timestamp (keeps the first occurrence) so
+    ///      `HourlyEntry.id` stays unique even if Obaco repeats an hour.
+    ///   4. Caps at 24 entries.
+    public static func upcomingHourly(
+        from hourly: [WeatherForecast.HourlyForecast],
+        now: Date = .now,
+        calendar: Calendar = .current
+    ) -> [WeatherForecast.HourlyForecast] {
+        let currentHourStart = calendar.dateInterval(of: .hour, for: now)?.start ?? now
+        let sorted = hourly
+            .filter { $0.time >= currentHourStart }
+            .sorted { $0.time < $1.time }
+        var seen = Set<Date>()
+        let deduped = sorted.filter { seen.insert($0.time).inserted }
+        return Array(deduped.prefix(24))
+    }
+
     // MARK: - High/Low
 
-    /// Hi/Lo over the next 24 hourly entries (or fewer if the server returns less),
-    /// each returned as a locale-formatted temperature string. Joining (e.g.
-    /// `"H:%@  L:%@"`) is the caller's responsibility.
+    /// Hi/Lo over the supplied hourly window (typically the output of
+    /// `upcomingHourly`), each returned as a locale-formatted temperature
+    /// string. Joining (e.g. `"H:%@  L:%@"`) is the caller's responsibility.
+    ///
+    /// Callers are responsible for passing a pre-windowed array so the hourly
+    /// strip and the hi/lo summary stay in lockstep — this helper does not
+    /// re-filter or re-sort.
     public static func highLow(from hourly: [WeatherForecast.HourlyForecast], locale: Locale) -> (high: String, low: String)? {
-        let window = hourly.prefix(24)
-        guard let high = window.map(\.temperature).max(),
-              let low = window.map(\.temperature).min() else { return nil }
+        guard let high = hourly.map(\.temperature).max(),
+              let low = hourly.map(\.temperature).min() else { return nil }
         return (formatTemp(high, locale: locale), formatTemp(low, locale: locale))
     }
 }

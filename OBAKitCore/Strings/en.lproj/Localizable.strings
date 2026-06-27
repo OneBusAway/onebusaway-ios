@@ -1,11 +1,20 @@
 /* An error message that tells the user that they are connected to a captive portal WiFi network. */
 "api_error.captive_portal" = "It looks like you are connected to a WiFi network that won't let you access the Internet. Try disconnecting from WiFi or authenticating with the network to proceed.";
 
+/* An error that tells the user that cellular data access is disabled for this app in iOS Settings. Both substituted values are the app name. */
+"api_error.cellular_data_restricted_fmt" = "%1$@ is not currently allowed to access cellular data. To fix this, go to Settings > Cellular and enable cellular data for %2$@, or connect to a WiFi network.";
+
+/* An error shown when the server returns data the app can't understand, indicating a likely server-side issue. */
+"api_error.decoding_failure" = "The server returned unexpected data. This usually means the server is experiencing problems. Please try again shortly.";
+
 /* An error message that informs the user that the wrong kind of content was received from the server. */
 "api_error.invalid_content_type_fmt" = "Expected to receive %1$@ data from the server, but we received %2$@ instead.";
 
 /* An error that tells the user that the network connection isn't working. */
 "api_error.network_failure" = "Unable to connect to the Internet or the server. Please check your network connection and try again.";
+
+/* An error message that tells the user that no region has been selected. */
+"api_error.no_region_selected" = "No region has been selected. Please select a region to continue.";
 
 /* An error that tells the user that the server unexpectedly failed to return data. */
 "api_error.no_response_body" = "The server unexpectedly didn't return any data in response to your request.";
@@ -15,6 +24,15 @@
 
 /* An error that is produced in response to HTTP status code 404 */
 "api_error.request_not_found" = "404 Not found (%@)";
+
+/* An error shown when the server returns a 500 Internal Server Error. The substituted value is the region name, e.g. 'Puget Sound'. */
+"api_error.server_error_fmt" = "The server for %@ encountered an error while handling your request. Please try again.";
+
+/* An error shown when the regional transit server is unavailable. The first substituted value is the region name, the second is the app name. */
+"api_error.server_unavailable_fmt" = "The server for %1$@ appears to be down right now, so %2$@ isn't able to show transit information for this region. The app should start working again once the server is back up.";
+
+/* An error message that tells the user that surveys are not available. */
+"api_error.survey_service_not_configured" = "Survey service is not available in this region.";
 
 /* This will appear on a button or as a title, and indicates that this UI will create a new bookmark. */
 "common.add_alarm" = "Add Alarm";
@@ -88,11 +106,20 @@
 /* The title of a button that exports all of the user's data into a file. */
 "common.export_data" = "Export Data";
 
+/* Description of the privacy policy for sharing data with the external survey service. */
+"common.external_survey_privacy_info.description" = "This survey will share your stop, route, region, current location";
+
 /* The verb 'to filter'. */
 "common.filter" = "Filter";
 
+/* The verb 'to go' */
+"common.go" = "Go";
+
 /* This is button text that tells the user they can tap on it to learn more about the topic at hand. */
 "common.learn_more" = "Learn More";
+
+/* Fallback title for the stop arrivals screen when the stop name is not yet available. */
+"common.live_arrivals" = "Live Arrivals";
 
 /* Used to indicate that content is loading. */
 "common.loading" = "Loading…";
@@ -111,6 +138,9 @@
 
 /* As in 'see more' or 'learn more'. */
 "common.more" = "More";
+
+/* The verb 'to next', i.e. to get next survey question. */
+"common.next" = "Next";
 
 /* OK */
 "common.ok" = "OK";
@@ -163,6 +193,9 @@
 /* Noun. Plural form of a transit stop. */
 "common.stops" = "Stops";
 
+/* The verb 'to submit', i.e. to submit a survey answer. */
+"common.submit" = "Submit";
+
 /* A format string used to tell the user when the UI they are looking at was last updated. e.g. Updated: 9:41 AM. The time is calculated at runtime. */
 "common.updated_at_fmt" = "Updated: %@";
 
@@ -171,37 +204,6 @@
 
 /* The title of the Vehicles tab showing real-time vehicle positions on a map. */
 "common.vehicles" = "Vehicles";
-
-/* Description of the privacy policy for sharing data with the external survey service. */
-"common.external_survey_privacy_info.description" = "This survey will share your stop, route, region, current location.";
-
-"common.go" = "Go";
-
-"common.submit" = "Submit";
-
-"common.next" = "Next";
-
-"survey_alert.dismissal.title" = "Dismiss Survey";
-
-"survey_alert.dismissal.body" = "Your feedback helps improve transit services and app experiences.";
-
-"survey_alert.skip.survey" = "Skip This Survey";
-
-"survey_alert.remind.later" = "Remind Me Later";
-
-"survey_error.required_remaining_questions.error" = "Please answer all required questions";
-
-"survey_error.hero_question_answer.error" = "Please enter a valid answer";
-
-"survey_success.submitted" = "Survey answer submitted! Please answer rest of the questions for better feedback.";
-
-"survey_alert.do.not.show.again" = "Don't Show Again";
-
-"survey_service.not.available" = "Survey Service is unavailable.";
-
-"survey.external.url.missing" = "We couldn’t open the survey right now. Please try again later.";
-
-"survey_service.update.path.missing" = "Something went wrong when submitting your responses. Please try again later.";
 
 /* Use for vehicles that arrived X minutes ago. */
 "formatters.arrived_x_min_ago_fmt" = "Arrived %d min ago";
@@ -365,6 +367,18 @@
 /* Formatted time text for arrivals/departures. Used for accessibility labels, so be sure to spell out the word for 'minute'. Example: 7 minutes means that this event happens 7 minutes in the future. -7 minutes means 7 minutes in the past. */
 "formatters.time_fmt" = "%d minutes";
 
+/* Transfer arrival banner. First parameter is the arrival time, second is the route name and headsign. e.g. 'Arriving at 4:10 PM via 10 - Capitol Hill' */
+"formatters.transfer.arrival_banner_fmt" = "Arriving at %1$@ via %2$@";
+
+/* Short text shown when a departure occurs at the same time as the rider's transfer arrival. */
+"formatters.transfer.on_arrival" = "NOW";
+
+/* Error when a route has no real-time vehicle tracking data. */
+"nearby_trip_matcher.error.no_realtime" = "No real-time tracking data is available for this route.";
+
+/* Error when no transit stops are found near the user's location. */
+"nearby_trip_matcher.error.no_stops" = "No stops found nearby.";
+
 /* Bus. Used for short- and long-distance bus routes. */
 "route_type.bus" = "Bus";
 
@@ -390,7 +404,7 @@
 "route_type.subway" = "Subway";
 
 /* The body of the schedule/timetable feature tip */
-"schedule_tip.message" = "Tap here and then tap 'Schedules' to view the schedule or timetable for your buses and trains.";
+"schedule_tip.message" = "Tap here to view the schedule or timetable for your buses and trains.";
 
 /* Title for the schedule/timetable feature tip */
 "schedule_tip.title" = "View Your Route's Schedule";
@@ -409,6 +423,60 @@
 
 /* User-facing string that means our data is wrong about a route or a scheduled trip */
 "stop_problem_code.user_description.route_or_trip_missing" = "Route or scheduled trip is missing";
+
+/* Indicating missing external survey url */
+"survey.external.url.missing" = "We couldn’t open the survey right now. Please try again later.";
+
+/* Body for survey dismissal action alert. */
+"survey_alert.dismissal.body" = "Your feedback helps improve transit services and app experiences.";
+
+/* Title for survey dismissal action alert. */
+"survey_alert.dismissal.title" = "Dismiss Survey";
+
+/* The action of not showing the survey again. */
+"survey_alert.do.not.show.again" = "Don't Show Again";
+
+/* The action of reminding later. i.e, to remind me later on the survey. */
+"survey_alert.remind.later" = "Remind Me Later";
+
+/* The action of skipping the current survey. */
+"survey_alert.skip.survey" = "Skip This Survey";
+
+/* Error message to show when the user has not answered the hero survey question with a valid answer. */
+"survey_error.hero_question_answer.error" = "Please enter a valid answer";
+
+/* Error message to show when the user has not answered all required survey questions. */
+"survey_error.required_remaining_questions.error" = "Please answer all required questions";
+
+/* Indicating that survey service is not setup up right or has some other issue. */
+"survey_service.not.available" = "Survey Service is unavailable.";
+
+/* Indicating missing survey update id when submitting responses */
+"survey_service.update.path.missing" = "Something went wrong when submitting your responses. Please try again later.";
+
+/* Success message to show when the survey is successfully submitted. */
+"survey_success.submitted" = "Survey answer submitted! Please answer rest of the questions for better feedback.";
+
+/* Accessibility hint for an input field in a survey. */
+"surveys.accessibility.hint_answer.input" = "Enter your answer to the survey question";
+
+/* Accessibility label for an input field in a survey. */
+"surveys.accessibility_answer.input" = "Answer input";
+
+/* Accessibility label for a value that is not selected. */
+"surveys.accessibility_not_selected_value" = "Not Selected";
+
+/* Accessibility label for a selected value. */
+"surveys.accessibility_selected_value" = "Selected";
+
+/* Accessibility for survey label */
+"surveys.accessibility_survey_label" = "Survey Label";
+
+/* Accessibility label that allows selection of a survey option. */
+"surveys.accessibility_tap_to_select" = "Tap to select";
+
+/* Accessibility label  that toggles the selection state of a survey option. */
+"surveys.accessibility_tap_toggle_selection" = "Tap to toggle selection";
 
 /* Message for the trip planner tip */
 "trip_planner_tip.message" = "Tap here to search for places and plan your journey with transit directions.";
@@ -461,19 +529,30 @@
 /* VoiceOver text describing a route that is scheduled to depart. (no realtime data was available) */
 "voiceover.arrivaldeparture_scheduled_departs_in_x_minutes_fmt" = "scheduled to depart in %1$d minutes at %2$@.";
 
-/* Error when no transit stops are found near the user's location. */
-"nearby_trip_matcher.error.no_stops" = "No stops found nearby.";
+/* Weather condition label for clear skies. */
+"weather.condition.clear" = "Clear";
 
-/* Error when a route has no real-time vehicle tracking data. */
-"nearby_trip_matcher.error.no_realtime" = "No real-time tracking data is available for this route.";
+/* Weather condition label for cloudy skies. */
+"weather.condition.cloudy" = "Cloudy";
 
-"surveys.accessibility_selected_value" = "Selected";
-"surveys.accessibility_not_selected_value" = "Not Selected";
+/* Weather condition label for foggy conditions. */
+"weather.condition.fog" = "Fog";
 
-"surveys.accessibility_tap_toggle_selection" = "Tap to toggle selection";
-"surveys.accessibility_tap_to_select" = "Tap to select";
+/* Weather condition label for partly cloudy skies. */
+"weather.condition.partly_cloudy" = "Partly Cloudy";
 
-"surveys.accessibility_answer.input" = "Answer input";
-"surveys.accessibility.hint_answer.input" = "Enter your answer to the survey question";
+/* Weather condition label for rain. */
+"weather.condition.rain" = "Rain";
 
-"surveys.accessibility_survey_label" = "Survey Label";
+/* Weather condition label for sleet. */
+"weather.condition.sleet" = "Sleet";
+
+/* Weather condition label for snow. */
+"weather.condition.snow" = "Snow";
+
+/* Weather condition placeholder when the icon key is unknown. */
+"weather.condition.unknown" = "—";
+
+/* Weather condition label for windy conditions. */
+"weather.condition.wind" = "Windy";
+
