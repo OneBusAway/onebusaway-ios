@@ -256,10 +256,16 @@ public class Application: CoreApplication, PushServiceDelegate {
             .eraseToAnyPublisher()
             .sink(receiveValue: { [weak self] result in
                 guard let self = self else { return }
-                if result.isConnected {
-                    self.reachabilityBulletin?.dismiss()
-                }
-                else {
+                // `.receive(on: DispatchQueue.main)` above is what makes
+                // `assumeIsolated` safe here — bulletin presentation is
+                // `@MainActor`. Don't remove the `.receive(on:)` upstream;
+                // doing so would silently turn this into a crash-on-mismatch.
+                MainActor.assumeIsolated {
+                    if result.isConnected {
+                        self.reachabilityBulletin?.dismiss()
+                        return
+                    }
+
                     guard let app = self.delegate?.uiApplication else { return }
 
                     if self.reachabilityBulletin == nil {
@@ -336,6 +342,7 @@ public class Application: CoreApplication, PushServiceDelegate {
 
     private var alertBulletin: AgencyAlertBulletin?
 
+    @MainActor
     public func agencyAlertsUpdated() {
         #if DEBUG
         // UI tests run against the live network, so a real high-severity alert can

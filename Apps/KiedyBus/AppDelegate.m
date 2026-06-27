@@ -13,7 +13,7 @@
 
 @interface AppDelegate ()<OBAApplicationDelegate>
 @property(nonatomic,strong) NSUserDefaults *userDefaults;
-@property(nonatomic,strong) OBAClassicApplicationRootController *rootController;
+@property(nonatomic,strong) UIViewController *rootController;
 @end
 
 @implementation AppDelegate
@@ -73,7 +73,7 @@
 }
 
 - (void)applicationReloadRootInterface:(OBAApplication*)application {
-    self.rootController = [[OBAClassicApplicationRootController alloc] initWithApplication:application];
+    self.rootController = [OBAApplicationRootControllerFactory makeWithApplication:application];
     self.window.rootViewController = self.rootController;
 }
 

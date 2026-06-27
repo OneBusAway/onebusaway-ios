@@ -562,6 +562,7 @@ class ApplicationTests: OBATestCase {
         app.agencyAlertsStore(app.alertsStore, displayError: testError)
     }
 
+    @MainActor
     func test_agency_alerts_updated_without_alerts() {
         let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)

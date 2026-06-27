@@ -39,6 +39,7 @@ class ReachabilityBulletin: NSObject {
         bulletinManager.edgeSpacing = .compact
     }
 
+    @MainActor
     func showStatus(_ status: ConnectivityResult, in application: UIApplication, isCellularDataRestricted: Bool = false) {
         guard
             !status.isConnected,
@@ -82,7 +83,7 @@ class ReachabilityBulletin: NSObject {
 
         dismiss()
 
-        bulletinManager.show(in: application)
+        bulletinManager.show(in: application, rootItem: connectivityPage)
     }
 
     func dismiss() {

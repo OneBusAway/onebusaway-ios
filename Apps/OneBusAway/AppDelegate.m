@@ -15,7 +15,7 @@
 
 @interface AppDelegate ()<OBAApplicationDelegate>
 @property(nonatomic,strong) NSUserDefaults *userDefaults;
-@property(nonatomic,strong) OBAClassicApplicationRootController *rootController;
+@property(nonatomic,strong) UIViewController *rootController;
 @property(nonatomic,strong) OBAAnalyticsOrchestrator *analyticsClient;
 @property(nonatomic,strong) OBACloudPushService *pushService;
 @end
@@ -99,7 +99,7 @@
 
 - (void)applicationReloadRootInterface:(OBAApplication*)application {
     void(^showRootController)(void) = ^{
-        self.rootController = [[OBAClassicApplicationRootController alloc] initWithApplication:application];
+        self.rootController = [OBAApplicationRootControllerFactory makeWithApplication:application];
         self.window.rootViewController = self.rootController;
     };
 

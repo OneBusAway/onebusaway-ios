@@ -37,6 +37,7 @@ class SettingsViewController: FormViewController {
 
         form
             +++ mapSection
+            +++ experimentalSection
             +++ alertsSection
             +++ accessibilitySection
             +++ walkingSpeedSection
@@ -54,6 +55,7 @@ class SettingsViewController: FormViewController {
             mapSectionShowsScale: application.mapRegionManager.mapViewShowsScale,
             mapSectionShowsTraffic: application.mapRegionManager.mapViewShowsTraffic,
             mapSectionShowsHeading: application.mapRegionManager.mapViewShowsHeading,
+            FeatureFlags.useMapPanelExperienceKey: application.userDefaults.bool(forKey: FeatureFlags.useMapPanelExperienceKey),
             privacySectionReportingEnabled: application.analytics?.reportingEnabled() ?? false,
             DataLoadFeedbackGenerator.EnabledUserDefaultsKey: application.userDefaults.bool(forKey: DataLoadFeedbackGenerator.EnabledUserDefaultsKey),
             AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts: application.userDefaults.bool(forKey: AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts),
@@ -95,6 +97,10 @@ class SettingsViewController: FormViewController {
 
         if let mapViewShowsStopAnnotationLabels = values[MapRegionManager.mapViewShowsStopAnnotationLabelsDefaultsKey] as? Bool {
             application.userDefaults.set(mapViewShowsStopAnnotationLabels, forKey: MapRegionManager.mapViewShowsStopAnnotationLabelsDefaultsKey)
+        }
+
+        if let useMapPanel = values[FeatureFlags.useMapPanelExperienceKey] as? Bool {
+            application.userDefaults.set(useMapPanel, forKey: FeatureFlags.useMapPanelExperienceKey)
         }
 
         if let testAlerts = values[AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts] as? Bool {
@@ -156,6 +162,22 @@ class SettingsViewController: FormViewController {
         section <<< SwitchRow {
             $0.tag = mapSectionShowsHeading
             $0.title = OBALoc("settings_controller.map_section.shows_heading", value: "Show my current heading", comment: "Settings > Map section > Show my current heading")
+        }
+
+        return section
+    }()
+
+    // MARK: - Experimental Section
+
+    private lazy var experimentalSection: Section = {
+        let section = Section(
+            header: OBALoc("settings_controller.experimental_section.title", value: "Experimental", comment: "Settings > Experimental section title"),
+            footer: OBALoc("settings_controller.experimental_section.map_panel.footer", value: "Restart the app to apply.", comment: "Settings > Experimental section > Footer indicating changes apply on relaunch")
+        )
+
+        section <<< SwitchRow {
+            $0.tag = FeatureFlags.useMapPanelExperienceKey
+            $0.title = OBALoc("settings_controller.experimental_section.map_panel", value: "Use map panel experience", comment: "Settings > Experimental section > Map panel toggle")
         }
 
         return section
