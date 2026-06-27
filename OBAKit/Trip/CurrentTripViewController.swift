@@ -8,13 +8,13 @@
 //
 
 import UIKit
+import Combine
 import OBAKitCore
-import CoreLocation
 
 /// Finds and displays the user's current trip on a selected route.
 ///
 /// After the user picks a route in `RoutePickerViewController`, this controller:
-/// 1. Queries `NearbyTripMatcher` for nearby active vehicles on that route.
+/// 1. Asks `CurrentTripViewModel` to query nearby active vehicles on that route.
 /// 2. If one match → navigates directly to `TripViewController`.
 /// 3. If multiple → shows a disambiguation list.
 /// 4. If none → shows an appropriate error state.
@@ -25,35 +25,16 @@ class CurrentTripViewController: UIViewController,
 
     let application: Application
 
-    private let route: Route
+    private let viewModel: CurrentTripViewModel
     private let listView = OBAListView()
     private lazy var dataLoadFeedbackGenerator = DataLoadFeedbackGenerator(application: application)
-
-    /// Matching results found near the user.
-    private var matchResults = [NearbyTripMatcher.MatchResult]()
-
-    /// Current loading/error state.
-    private enum State {
-        case loading
-        case noLocation
-        case noResults
-        case noRealtime
-        case multipleResults
-        case error(Error)
-    }
-
-    private var state: State = .loading
-
-    // MARK: - Timer
-
-    private static let refreshInterval: TimeInterval = 20.0
-    private var refreshTimer: Timer?
+    private var cancellables = Set<AnyCancellable>()
 
     // MARK: - Init
 
     init(application: Application, route: Route) {
         self.application = application
-        self.route = route
+        self.viewModel = CurrentTripViewModel(application: application, route: route)
         super.init(nibName: nil, bundle: nil)
 
         title = OBALoc(
@@ -64,11 +45,6 @@ class CurrentTripViewController: UIViewController,
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
-
-    deinit {
-        refreshTimer?.invalidate()
-        findVehicleTask?.cancel()
-    }
 
     // MARK: - UIViewController Lifecycle
 
@@ -81,145 +57,70 @@ class CurrentTripViewController: UIViewController,
         view.addSubview(listView)
         listView.pinToSuperview(.edges)
 
-        findVehicle()
+        viewModel.shouldSkipProgrammaticRefresh = { UIAccessibility.isVoiceOverRunning }
+        bindViewModel()
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         disableIdleTimer()
-        startRefreshTimer()
+        viewModel.start()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         enableIdleTimer()
-        refreshTimer?.invalidate()
-        refreshTimer = nil
+        viewModel.deactivate()
     }
 
     // MARK: - Idle Timer
 
     public var idleTimerFailsafe: Timer?
 
-    // MARK: - Refresh Timer
+    // MARK: - View Model Binding
 
-    private func startRefreshTimer() {
-        refreshTimer?.invalidate()
-        refreshTimer = Timer.scheduledTimer(
-            withTimeInterval: Self.refreshInterval,
-            repeats: true
-        ) { [weak self] _ in
-            guard let self else { return }
-            // Skip refresh when VoiceOver is active to avoid disrupting screen reader users.
-            guard !UIAccessibility.isVoiceOverRunning else { return }
-            self.findVehicle()
-        }
-    }
-
-    // MARK: - Vehicle Finding
-
-    private var findVehicleTask: Task<Void, Never>?
-
-    private func findVehicle() {
-        findVehicleTask?.cancel()
-
-        findVehicleTask = Task { [weak self] in
-            guard let self else { return }
-
-            guard let userLocation = self.application.locationService.currentLocation else {
-                await MainActor.run {
-                    self.state = .noLocation
-                    self.listView.applyData()
-                }
-                return
-            }
-
-            guard let apiService = self.application.apiService else {
-                let error = NSError(
-                    domain: "CurrentTripViewController",
-                    code: 0,
-                    userInfo: [NSLocalizedDescriptionKey: OBALoc(
-                        "current_trip_controller.error_no_service",
-                        value: "Unable to connect to the transit service.",
-                        comment: "Error when the API service is unavailable."
-                    )]
-                )
-                await MainActor.run {
-                    self.state = .error(error)
-                    self.listView.applyData()
-                }
-                return
-            }
-
-            let cachedStops = self.application.mapRegionManager.stops
-
-            do {
-                let results = try await NearbyTripMatcher.findTrips(
-                    for: self.route,
-                    near: userLocation,
-                    using: apiService,
-                    stops: cachedStops
-                )
-
-                if Task.isCancelled { return }
-
-                await MainActor.run {
-                    self.handleMatchResults(results)
+    private func bindViewModel() {
+        viewModel.$state
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] state in
+                guard let self else { return }
+                self.listView.applyData()
+                switch state {
+                case .loading, .noLocation:
+                    break
+                case .noResults, .multipleResults:
+                    // Matcher returned (possibly empty) — treat as a successful fetch.
                     self.dataLoadFeedbackGenerator.dataLoad(.success)
-                }
-            } catch is CancellationError {
-                return
-            } catch let error as NearbyTripMatcher.MatchError where error == .noRealtimeData {
-                await MainActor.run {
-                    self.state = .noRealtime
-                    self.listView.applyData()
-                    self.dataLoadFeedbackGenerator.dataLoad(.failed)
-                }
-            } catch {
-                Logger.error("Failed to find trips: \(error)")
-                await MainActor.run {
-                    self.state = .error(error)
-                    self.listView.applyData()
+                case .noRealtime, .error:
                     self.dataLoadFeedbackGenerator.dataLoad(.failed)
                 }
             }
-        }
-    }
+            .store(in: &cancellables)
 
-    private func handleMatchResults(_ results: [NearbyTripMatcher.MatchResult]) {
-        matchResults = results
-
-        switch results.count {
-        case 0:
-            state = .noResults
-            listView.applyData()
-
-        case 1:
-            // Single match — navigate directly to TripViewController.
-            let arrival = results[0].arrivalDeparture
-            let tripController = TripViewController(application: application, arrivalDeparture: arrival)
-            // Replace self in the navigation stack so back goes to the map, not this loading screen.
-            if var viewControllers = navigationController?.viewControllers {
-                viewControllers[viewControllers.count - 1] = tripController
-                navigationController?.setViewControllers(viewControllers, animated: true)
-            } else {
-                // Fallback: show as disambiguation list so the user can still tap through.
-                state = .multipleResults
-                listView.applyData()
+        viewModel.$pendingNavigation
+            .compactMap { $0 }
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] arrival in
+                guard let self else { return }
+                guard let nav = self.navigationController else {
+                    self.viewModel.pendingNavigationUnavailable()
+                    return
+                }
+                self.dataLoadFeedbackGenerator.dataLoad(.success)
+                let tripController = TripViewController(application: self.application, arrivalDeparture: arrival)
+                var stack = nav.viewControllers
+                stack[stack.count - 1] = tripController
+                nav.setViewControllers(stack, animated: true)
+                self.viewModel.pendingNavigation = nil
             }
-
-        default:
-            state = .multipleResults
-            listView.applyData()
-        }
+            .store(in: &cancellables)
     }
 
     // MARK: - OBAListViewDataSource
 
     func items(for listView: OBAListView) -> [OBAListViewSection] {
-        switch state {
+        switch viewModel.state {
         case .loading, .noLocation, .noResults, .noRealtime, .error:
-            // Return empty — the empty state view is provided by emptyData(for:).
             return []
 
         case .multipleResults:
@@ -228,7 +129,7 @@ class CurrentTripViewController: UIViewController,
     }
 
     func emptyData(for listView: OBAListView) -> OBAListView.EmptyData? {
-        switch state {
+        switch viewModel.state {
         case .loading:
             return .standard(.init(
                 alignment: .center,
@@ -272,7 +173,7 @@ class CurrentTripViewController: UIViewController,
     }
 
     private func multipleResultsSections() -> [OBAListViewSection] {
-        let rows: [AnyOBAListViewItem] = matchResults.map { result in
+        let rows: [AnyOBAListViewItem] = viewModel.matchResults.map { result in
             let arrival = result.arrivalDeparture
             let formattedDistance = application.formatters.distanceFormatter.string(fromDistance: result.distanceFromUser)
             let headsign = arrival.routeAndHeadsign
@@ -323,7 +224,7 @@ class CurrentTripViewController: UIViewController,
         largeContentImage: Icons.refresh,
         showsActivityIndicatorOnTap: true
     ) { [weak self] in
-        self?.findVehicle()
+        self?.viewModel.findVehicle()
     }
 
     // MARK: - Localized Strings

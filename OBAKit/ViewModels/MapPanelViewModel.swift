@@ -11,9 +11,10 @@ import Foundation
 import Combine
 import OBAKitCore
 
-/// Describes the desired expansion state of the bottom panel / sheet (EC11).
-/// UIKit maps this to FloatingPanel states; SwiftUI maps to `presentationDetents`.
-enum PanelDetent {
+/// Describes the desired expansion state of the bottom panel (EC11).
+/// `MapFloatingPanelController` maps each case to a `FloatingPanelState`.
+/// - TODO: add a SwiftUI `PresentationDetent` mapping when the SwiftUI sheet lands.
+enum PanelDetent: Equatable {
     case tip
     case half
     case full
@@ -28,8 +29,9 @@ class MapPanelViewModel: ObservableObject {
 
     // MARK: - Published State
 
-    /// Desired panel/sheet expansion level. UIKit layer observes and calls `floatingPanel.move(to:)`;
-    /// SwiftUI layer binds this to `presentationDetent` (EC11).
+    /// Desired panel expansion level. `MapFloatingPanelController` observes this and calls
+    /// `floatingPanel.move(to:)` (EC11).
+    /// - TODO: bind to SwiftUI `presentationDetent` when the SwiftUI sheet lands.
     @Published var requestedPanelDetent: PanelDetent = .tip
 
     /// Nearby stops visible in the current map region.

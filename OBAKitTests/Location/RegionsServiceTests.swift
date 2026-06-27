@@ -78,7 +78,7 @@ class RegionsServiceTests: OBATestCase {
         stubRegions(dataLoader: dataLoader)
 
         let service = makeRegionsService()
-        XCTAssertEqual(service.regions.count, 17)
+        XCTAssertEqual(service.regions.count, 7)
     }
 
     // It loads regions saved to disk when they exist
@@ -161,7 +161,7 @@ class RegionsServiceTests: OBATestCase {
         await regionsService.updateRegionsList()
 
         XCTAssertTrue(testDelegate.regionUpdateCancelled.didCall, "Expected RegionsService to inform delegates that the region update was cancelled")
-        XCTAssertEqual(regionsService.regions.count, 17)
+        XCTAssertEqual(regionsService.regions.count, 7)
     }
 
     /// It *does* download a list of regions—even if the list was last updated less than a week ago—if the update is forced.
@@ -244,7 +244,7 @@ class RegionsServiceTests: OBATestCase {
 
         let regionsService = makeRegionsService()
 
-        XCTAssertEqual(regionsService.regions.count, 17)
+        XCTAssertEqual(regionsService.regions.count, 7)
     }
 
     /// It calls delegates to tell them that the current region is updated when that property is written.

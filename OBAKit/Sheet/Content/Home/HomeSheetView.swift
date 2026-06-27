@@ -31,39 +31,32 @@ struct HomeSheetView: View {
     // MARK: - Search Bar
 
     private var searchBarRow: some View {
-        // Disabled until the `.search` route has a real view with a back
-        // affordance — `expandSheet()` would otherwise animate to the largest
-        // detent and strand the user there (the route is base-layer with
-        // `isDismissDisabled: true`). Surfaced as "Coming soon" so the only
-        // interactive control on the home sheet doesn't read as a dead tap.
-        //
-        // `Button` (rather than `.onTapGesture` on a container) so VoiceOver
-        // and Switch Control see action semantics — the row is announced as a
-        // button and reachable via accessibility actions. `.buttonStyle(.plain)`
-        // keeps the search-pill appearance.
-        Button(action: {}) {
-            HStack(spacing: 12) {
-                Image(systemName: "magnifyingglass")
-                    .foregroundStyle(.secondary)
-                Text(OBALoc(
-                    "home_sheet.search_bar.coming_soon",
-                    value: "Search coming soon",
-                    comment: "Placeholder text inside the disabled search bar on the home sheet, shown while search is unimplemented."
-                ))
-                    .foregroundStyle(.secondary)
-                Spacer()
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
-            .background {
-                Capsule()
-                    .fill(Color(.tertiarySystemFill))
-            }
-            .contentShape(.rect(cornerRadius: 16))
+        // Non-interactive while the `.search` route lacks a real view with a
+        // back affordance — a tap would otherwise animate to the largest detent
+        // and strand the user there (the route is base-layer with
+        // `isDismissDisabled: true`). Rendered as an `HStack` (not a disabled
+        // `Button`) so the shape communicates "not actionable yet" honestly to
+        // both readers and assistive tech — VoiceOver announces it as static
+        // text rather than a disabled button.
+        HStack(spacing: 12) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(.secondary)
+            Text(OBALoc(
+                "home_sheet.search_bar.coming_soon",
+                value: "Search coming soon",
+                comment: "Placeholder text inside the disabled search bar on the home sheet, shown while search is unimplemented."
+            ))
+                .foregroundStyle(.secondary)
+            Spacer()
         }
-        .buttonStyle(.plain)
-        .disabled(true)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .background {
+            Capsule()
+                .fill(Color(.tertiarySystemFill))
+        }
         .padding(.horizontal, 12)
+        .accessibilityElement(children: .combine)
     }
 
 }

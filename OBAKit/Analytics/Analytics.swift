@@ -82,7 +82,7 @@ public class AnalyticsLabels: NSObject {
 /// implement it similarly in order to use your own custom analytics provider.
 @objc(OBAAnalytics)
 public protocol Analytics: NSObjectProtocol {
-    @objc optional func updateServer(defaultDomainURL: URL, analyticsServerURL: URL?)
+    @objc optional func updateServer(region: Region)
 
     @objc func reportEvent(pageURL: String, label: String, value: Any?)
 

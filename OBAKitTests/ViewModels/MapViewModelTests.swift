@@ -173,4 +173,230 @@ class MapViewModelTests: OBATestCase {
 
         expect(viewModel.locationAuthStatus) == .denied
     }
+
+    // MARK: - Survey Prompt
+
+    /// Stubs the survey list endpoint with an empty payload so `fetchSurveys()` succeeds
+    /// without surfacing an error.
+    private func stubEmptySurveys(dataLoader: MockDataLoader) {
+        let emptySurveys = #"{"surveys":[]}"#.data(using: .utf8)!
+        dataLoader.mock(data: emptySurveys) { request in
+            request.url?.path.contains("/surveys.json") ?? false
+        }
+    }
+
+    /// Stubs the survey list endpoint with a single always-visible map survey
+    /// (id 7100) so `findSurveyForMap()` resolves non-nil.
+    private func stubMapSurvey(dataLoader: MockDataLoader) {
+        let hero = SurveyQuestion(
+            id: 1, position: 1, required: false,
+            content: QuestionContent(labelText: "q", type: .text)
+        )
+        let survey = Survey(
+            id: 7100, name: "Map Test",
+            createdAt: Date(), updatedAt: Date(),
+            showOnMap: true, showOnStops: false,
+            startDate: nil, endDate: nil,
+            visibleStopsList: nil, visibleRoutesList: nil,
+            allowsMultipleResponses: false, alwaysVisible: true,
+            study: Study(id: 1, name: "S", description: nil),
+            questions: [hero]
+        )
+        let studyResponse = StudyResponse(
+            surveys: [survey],
+            region: SurveyRegion(id: 1, name: "Test")
+        )
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        // swiftlint:disable:next force_try
+        let data = try! encoder.encode(studyResponse)
+        dataLoader.mock(data: data) { request in
+            request.url?.path.contains("/surveys.json") ?? false
+        }
+    }
+
+    /// When the gate is closed, `checkForSurveyPrompt` neither fetches nor emits.
+    @MainActor
+    func test_checkForSurveyPrompt_doesNothingWhenIneligible() async {
+        let dataLoader = MockDataLoader(testName: name)
+        stubEmptySurveys(dataLoader: dataLoader)
+        let app = createApplication(dataLoader: dataLoader)
+        userDefaults.set(false, forKey: "UserDataStore.isSurveyEnabled")
+
+        let viewModel = MapViewModel(application: app)
+        var received: [Survey] = []
+        let cancellable = viewModel.surveyToPresent.sink { received.append($0) }
+        defer { cancellable.cancel() }
+
+        await viewModel.checkForSurveyPrompt()
+
+        expect(received).to(beEmpty())
+    }
+
+    /// When eligible but no survey matches the map, `surveyToPresent` does not emit
+    /// and the reminder is not advanced.
+    @MainActor
+    func test_checkForSurveyPrompt_doesNotEmitWhenNoMapSurvey() async {
+        let dataLoader = MockDataLoader(testName: name)
+        stubEmptySurveys(dataLoader: dataLoader)
+        let app = createApplication(dataLoader: dataLoader)
+        userDefaults.set(true, forKey: "UserDataStore.isSurveyEnabled")
+        userDefaults.set(true, forKey: "UserDataStore.alwaysShowSurveysOnStops")
+
+        let viewModel = MapViewModel(application: app)
+        var received: [Survey] = []
+        let cancellable = viewModel.surveyToPresent.sink { received.append($0) }
+        defer { cancellable.cancel() }
+
+        await viewModel.checkForSurveyPrompt()
+
+        expect(received).to(beEmpty())
+        expect(app.userDataStore.nextSurveyReminderDate).to(beNil())
+    }
+
+    /// `didPresentSurveyPrompt(_:presented:)` with `presented == true` advances the
+    /// reminder. Verifies the intent contract directly rather than going through the
+    /// `findSurveyForMap` integration path (orchestrator-level happy paths cover
+    /// the find + submit sequence).
+    @MainActor
+    func test_didPresentSurveyPrompt_advancesReminderOnPresented() async {
+        let dataLoader = MockDataLoader(testName: name)
+        stubEmptySurveys(dataLoader: dataLoader)
+        let app = createApplication(dataLoader: dataLoader)
+        let viewModel = MapViewModel(application: app)
+
+        let hero = SurveyQuestion(id: 1, position: 1, required: false, content: QuestionContent(labelText: "q", type: .text))
+        let survey = Survey(
+            id: 7100, name: "Test", createdAt: Date(), updatedAt: Date(),
+            showOnMap: true, showOnStops: false,
+            startDate: nil, endDate: nil,
+            visibleStopsList: nil, visibleRoutesList: nil,
+            allowsMultipleResponses: false, alwaysVisible: true,
+            study: Study(id: 1, name: "S", description: nil),
+            questions: [hero]
+        )
+
+        expect(app.userDataStore.nextSurveyReminderDate).to(beNil())
+        viewModel.didPresentSurveyPrompt(survey, presented: true)
+        expect(app.userDataStore.nextSurveyReminderDate).toNot(beNil())
+    }
+
+    /// After `presented == false`, the session flag rolls back so a second
+    /// `checkForSurveyPrompt()` can re-emit on `surveyToPresent`. Without the
+    /// rollback the prompt would be lost for the rest of the session.
+    @MainActor
+    func test_checkForSurveyPrompt_reEmitsAfterPresentedFalseRollback() async {
+        let dataLoader = MockDataLoader(testName: name)
+        stubMapSurvey(dataLoader: dataLoader)
+        let app = createApplication(dataLoader: dataLoader)
+        userDefaults.set(true, forKey: "UserDataStore.isSurveyEnabled")
+        userDefaults.set(true, forKey: "UserDataStore.alwaysShowSurveysOnStops")
+
+        let viewModel = MapViewModel(application: app)
+        var received: [Survey] = []
+        let cancellable = viewModel.surveyToPresent.sink { received.append($0) }
+        defer { cancellable.cancel() }
+
+        await viewModel.checkForSurveyPrompt()
+        expect(received.count) == 1
+
+        // Simulate the presenter dropping the survey.
+        viewModel.didPresentSurveyPrompt(received[0], presented: false)
+        // Reminder must NOT have advanced on the rollback path.
+        expect(app.userDataStore.nextSurveyReminderDate).to(beNil())
+
+        await viewModel.checkForSurveyPrompt()
+        expect(received.count) == 2
+    }
+
+    /// `didPresentSurveyPrompt(_:presented:)` with `presented == false` does not
+    /// advance the reminder — that path is the rollback for "presenter went away
+    /// between emission and present."
+    @MainActor
+    func test_didPresentSurveyPrompt_doesNotAdvanceReminderWhenNotPresented() async {
+        let dataLoader = MockDataLoader(testName: name)
+        stubEmptySurveys(dataLoader: dataLoader)
+        let app = createApplication(dataLoader: dataLoader)
+        let viewModel = MapViewModel(application: app)
+
+        let hero = SurveyQuestion(id: 1, position: 1, required: false, content: QuestionContent(labelText: "q", type: .text))
+        let survey = Survey(
+            id: 7100, name: "Test", createdAt: Date(), updatedAt: Date(),
+            showOnMap: true, showOnStops: false,
+            startDate: nil, endDate: nil,
+            visibleStopsList: nil, visibleRoutesList: nil,
+            allowsMultipleResponses: false, alwaysVisible: true,
+            study: Study(id: 1, name: "S", description: nil),
+            questions: [hero]
+        )
+
+        expect(app.userDataStore.nextSurveyReminderDate).to(beNil())
+        viewModel.didPresentSurveyPrompt(survey, presented: false)
+        expect(app.userDataStore.nextSurveyReminderDate).to(beNil())
+    }
+
+    /// Stubs the survey list endpoint to error so `fetchSurveys()` records
+    /// `surveyService.lastError` instead of clearing it.
+    private func stubSurveysError(dataLoader: MockDataLoader) {
+        let response = MockDataResponse(
+            data: nil,
+            urlResponse: nil,
+            error: URLError(.badServerResponse)
+        ) { request in
+            request.url?.path.contains("/surveys.json") ?? false
+        }
+        dataLoader.mock(response: response)
+    }
+
+    /// Concurrent `checkForSurveyPrompt()` calls must emit exactly once. The VM flips
+    /// `hasShownSurveyThisSession = true` synchronously before `send` (after the awaited
+    /// refresh) so a second call racing through the post-await re-check sees the flag set
+    /// and bails. This is the direct analogue of the StopViewModel re-entrancy test.
+    @MainActor
+    func test_checkForSurveyPrompt_concurrentCallsEmitOnce() async {
+        let dataLoader = MockDataLoader(testName: name)
+        stubMapSurvey(dataLoader: dataLoader)
+        let app = createApplication(dataLoader: dataLoader)
+        userDefaults.set(true, forKey: "UserDataStore.isSurveyEnabled")
+        userDefaults.set(true, forKey: "UserDataStore.alwaysShowSurveysOnStops")
+
+        let viewModel = MapViewModel(application: app)
+        var received: [Survey] = []
+        let cancellable = viewModel.surveyToPresent.sink { received.append($0) }
+        defer { cancellable.cancel() }
+
+        async let a: Void = viewModel.checkForSurveyPrompt()
+        async let b: Void = viewModel.checkForSurveyPrompt()
+        _ = await (a, b)
+
+        expect(received.count) == 1
+    }
+
+    /// When the refresh fails, `surveyToPresent` must not emit even if the
+    /// cached survey list would otherwise resolve `findSurveyForMap()`.
+    /// Prevents prompting off a stale cached survey after a transient network
+    /// failure.
+    @MainActor
+    func test_checkForSurveyPrompt_doesNotEmitWhenRefreshFailed() async {
+        let dataLoader = MockDataLoader(testName: name)
+        stubSurveysError(dataLoader: dataLoader)
+        let app = createApplication(dataLoader: dataLoader)
+        userDefaults.set(true, forKey: "UserDataStore.isSurveyEnabled")
+        userDefaults.set(true, forKey: "UserDataStore.alwaysShowSurveysOnStops")
+
+        let viewModel = MapViewModel(application: app)
+        var received: [Survey] = []
+        let cancellable = viewModel.surveyToPresent.sink { received.append($0) }
+        defer { cancellable.cancel() }
+
+        await viewModel.checkForSurveyPrompt()
+
+        // No emission, no reminder advance. Pairs with the orchestrator-level
+        // `test_lastError_reflectsUnderlyingService_afterFetchFailure` which
+        // verifies that the orchestrator's `lastError` accessor (the gate's
+        // input) actually surfaces on a failed refresh.
+        expect(received).to(beEmpty())
+        expect(app.userDataStore.nextSurveyReminderDate).to(beNil())
+    }
+
 }
