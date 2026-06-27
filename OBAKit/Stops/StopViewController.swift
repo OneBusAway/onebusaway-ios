@@ -29,7 +29,6 @@ public class StopViewController: UIViewController,
     BookmarkEditorDelegate,
     Idleable,
     OBAListViewDataSource,
-    OBAListViewDelegate,
     OBAListViewContextMenuDelegate,
     OBAListViewCollapsibleSectionsDelegate,
     ModalDelegate,
@@ -154,7 +153,6 @@ public class StopViewController: UIViewController,
 
         configureTabBarButtons()
 
-        listView.obaDelegate = self
         listView.obaDataSource = self
         listView.contextMenuDelegate = self
         listView.collapsibleSectionsDelegate = self
@@ -532,21 +530,6 @@ public class StopViewController: UIViewController,
         }
 
         return nil
-    }
-
-    public func didApplyData(_ listView: OBAListView) {
-        // Due to an OBAListView bug, applying data causes the entire list view
-        // to reload, scrolling the user back to the top of the page.
-        // If the user initiated the applyData call from the "LOAD MORE" button,
-        // manually scroll the user back to the bottom of the arrDeps section
-        // to maintain UX continuity.
-        // Related 1: #389 -- OBAListView still has identity problems, causing crashes
-        // Related 2: https://github.com/OneBusAway/OBAKit/issues/389#issuecomment-867014676
-
-        if self.shouldScrollToBottomOfArrivalsDeparuresOnDataLoad {
-            listView.scrollTo(section: dataAttributionSection, at: .bottom, animated: false)
-            shouldScrollToBottomOfArrivalsDeparuresOnDataLoad = false
-        }
     }
 
     // MARK: - Data/Stop Header
@@ -982,7 +965,7 @@ public class StopViewController: UIViewController,
     }
 
     // MARK: - Data/Load More
-    private var shouldScrollToBottomOfArrivalsDeparuresOnDataLoad = false
+    private var isLoadingMore = false
     private var loadMoreItems: [AnyOBAListViewItem] {
         var items: [AnyOBAListViewItem] = []
 
@@ -999,7 +982,7 @@ public class StopViewController: UIViewController,
         }
 
         let loadMoreButton = MessageButtonItem(asLoadMoreButtonWithID: UUID().uuidString, showActivityIndicatorOnSelect: true) { [weak self] _ in
-            self?.shouldScrollToBottomOfArrivalsDeparuresOnDataLoad = true
+            self?.isLoadingMore = true
             self?.loadMoreDepartures()
         }
         items.append(loadMoreButton.typeErased)

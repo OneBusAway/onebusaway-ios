@@ -43,9 +43,6 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate {
     /// The source of truth for this list view.
     weak public var obaDataSource: OBAListViewDataSource?
 
-    /// The delegate of this list view.
-    weak public var obaDelegate: OBAListViewDelegate?
-
     /// Optional. Implement `OBAListViewCollapsibleSectionsDelegate` to add support for collapsible sections for this list view.
     weak public var collapsibleSectionsDelegate: OBAListViewCollapsibleSectionsDelegate?
 
@@ -294,62 +291,27 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate {
     }
 
     // MARK: - Data source
-    public func applyData(animated: Bool = true) {
+    public func applyData(animated: Bool = false, scrollBehavior: ScrollBehavior = .preserve) {
         var sections = self.obaDataSource?.items(for: self) ?? []
-        self.emptyDataConfiguration(isEmpty: sections.isEmpty)
 
-        if let collapsibleDelegate = self.collapsibleSectionsDelegate {
-            // Add collapsed state to the section, if it is allowed to collapse.
-            sections = sections.map { section in
-                var newSection = section
-                if collapsibleDelegate.canCollapseSection(self, section: section) {
-                    newSection.collapseState = collapsibleDelegate.collapsedSections.contains(newSection.id) ? .collapsed : .expanded
-                } else {
-                    newSection.collapseState = nil
-                }
-                return newSection
-            }
+        if sections.isEmpty {
+            handleEmptyDataSource()
+            emptyDataConfiguration(isEmpty: true)
+            return
         }
 
-        self.lastDataSourceSnapshot = sections
+        sections = handleEmptySections(sections: sections)
 
-        var snapshot = NSDiffableDataSourceSnapshot<SectionType, ItemType>()
-        snapshot.appendSections(sections)
-        diffableDataSource.apply(snapshot, animatingDifferences: false)
-
-        for section in sections {
-            var sectionSnapshot = NSDiffableDataSourceSectionSnapshot<ItemType>()
-
-            if section.hasHeader {
-                let header = OBAListViewHeader(id: section.id, title: section.title, isCollapsible: section.collapseState != nil).typeErased
-
-                // If the section is collapsible, attach contents to the header item.
-                // Otherwise, treat both header item and contents as equals.
-                //
-                // This was an attempt to fix #421 -- OBAListView DiffableDataSource can't find item index of headers,
-                // it is a partial fix because only BookmarksViewController has this problem now.
-                // Related: https://stackoverflow.com/q/64089384
-                if let collapsedState = section.collapseState {
-                    sectionSnapshot.append([header])
-                    sectionSnapshot.append(section.contents, to: header)
-                    switch collapsedState {
-                    case .collapsed:
-                        sectionSnapshot.collapse([header])
-                    case .expanded:
-                        sectionSnapshot.expand([header])
-                    }
-                } else {
-                    sectionSnapshot.append([header])
-                    sectionSnapshot.append(section.contents)
-                }
-            } else {
-                sectionSnapshot.append(section.contents)
-            }
-
-            diffableDataSource.apply(sectionSnapshot, to: section, animatingDifferences: false)
+        // After filtering out headerless empty sections, the result may also be empty.
+        if sections.isEmpty {
+            handleEmptyDataSource()
+            emptyDataConfiguration(isEmpty: true)
+            return
         }
 
-        self.obaDelegate?.didApplyData(self)
+        guard validateSnapshot(sections) else { return }
+
+        applyDataSmartly(to: sections, animated: animated, scrollBehavior: scrollBehavior)
     }
 
     fileprivate func emptyDataConfiguration(isEmpty: Bool) {
@@ -404,6 +366,328 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate {
 
         self.scrollToItem(at: indexPath, at: position, animated: animated)
     }
+
+    /// Index path of the last item in the last section currently applied to the data source.
+    /// Queries the live snapshot rather than `lastDataSourceSnapshot` so the result reflects
+    /// any section-snapshot updates already applied during the same `applyData` pass.
+    private var lastItemIndexPath: IndexPath? {
+        let snapshot = diffableDataSource.snapshot()
+        guard let lastSection = snapshot.sectionIdentifiers.last else { return nil }
+        let items = snapshot.itemIdentifiers(inSection: lastSection)
+        guard let lastItem = items.last,
+              let indexPath = diffableDataSource.indexPath(for: lastItem) else { return nil }
+        return indexPath
+    }
+}
+
+// MARK: - Smart Apply / Reloading
+
+extension OBAListView {
+
+    enum UpdateStrategy {
+
+        case fullRebuild
+
+        case sectionReload
+
+        case noChange
+
+    }
+
+    private func applyDataSmartly(to newSections: [OBAListViewSection], animated: Bool = false, scrollBehavior: ScrollBehavior = .preserve) {
+        let scrollState = ScrollState(from: self, behavior: scrollBehavior)
+
+        var newSections = newSections
+        self.emptyDataConfiguration(isEmpty: newSections.isEmpty)
+
+        if let collapsibleDelegate = self.collapsibleSectionsDelegate {
+            newSections = applyCollapseState(to: newSections, with: collapsibleDelegate)
+        }
+
+        let strategy = getUpdateStrategy(oldSections: self.lastDataSourceSnapshot, newSections: newSections)
+
+        self.lastDataSourceSnapshot = newSections
+
+        // `diffableDataSource.apply` is asynchronous when the collection view is
+        // on screen, so the snapshot read by `lastItemIndexPath` is only accurate
+        // once the final section-snapshot apply completes. Restore scroll state
+        // in that completion so `.scrollToBottom` targets the new last item, not
+        // the pre-apply one.
+        applyUpdate(with: strategy, to: newSections, animated: animated) {
+            scrollState.restore(for: strategy)
+        }
+    }
+
+    private func applyCollapseState(
+        to sections: [OBAListViewSection],
+        with collapsibleDelegate: OBAListViewCollapsibleSectionsDelegate
+    ) -> [OBAListViewSection] {
+        return sections.map { section in
+            var updatedSection = section
+
+            if collapsibleDelegate.canCollapseSection(self, section: section) {
+                updatedSection.collapseState = collapsibleDelegate.collapsedSections.contains(section.id) ? .collapsed : .expanded
+            } else {
+                updatedSection.collapseState = nil
+            }
+
+            return updatedSection
+        }
+    }
+
+    func getUpdateStrategy(
+        oldSections: [OBAListViewSection],
+        newSections: [OBAListViewSection]
+    ) -> UpdateStrategy {
+
+        guard !oldSections.isEmpty, !newSections.isEmpty else {
+            return oldSections.isEmpty && newSections.isEmpty ? .noChange : .fullRebuild
+        }
+
+        guard oldSections.map(\.id) == newSections.map(\.id) else {
+            return .fullRebuild
+        }
+
+        for (oldSection, newSection) in zip(oldSections, newSections) {
+
+            if oldSection.hasHeader != newSection.hasHeader ||
+                oldSection.collapseState != newSection.collapseState ||
+                oldSection.contents != newSection.contents {
+                return .sectionReload
+            }
+        }
+
+        return .noChange
+    }
+
+    private func applyUpdate(
+        with strategy: UpdateStrategy,
+        to newSections: [OBAListViewSection],
+        animated: Bool,
+        completion: @escaping () -> Void
+    ) {
+        switch strategy {
+        case .noChange:
+            completion()
+
+        case .fullRebuild:
+            applyFullRebuild(newSections: newSections, animated: animated, completion: completion)
+
+        case .sectionReload:
+            applySectionReload(newSections: newSections, animated: animated, completion: completion)
+        }
+    }
+
+    private func applyFullRebuild(newSections: [OBAListViewSection], animated: Bool, completion: @escaping () -> Void) {
+        var snapshot = NSDiffableDataSourceSnapshot<SectionType, ItemType>()
+        snapshot.appendSections(newSections)
+
+        diffableDataSource.apply(snapshot, animatingDifferences: animated)
+
+        applySectionSnapshots(newSections.map { ($0, nil) }, completion: completion)
+    }
+
+    private func applySectionReload(newSections: [OBAListViewSection], animated: Bool, completion: @escaping () -> Void) {
+        var snapshot = diffableDataSource.snapshot()
+
+        // Map existing section identifiers by id so we can target the identifiers in the snapshot
+        let existingSections = snapshot.sectionIdentifiers
+        let existingById: [String: SectionType] = Dictionary(uniqueKeysWithValues: existingSections.map { ($0.id, $0) })
+
+        let pairs: [(existing: SectionType, new: OBAListViewSection)] = newSections.compactMap { newSection in
+            guard let existing = existingById[newSection.id] else { return nil }
+            return (existing, newSection)
+        }
+
+        if pairs.isEmpty {
+            // The live snapshot has diverged from `lastDataSourceSnapshot` — log so this desync is observable.
+            Logger.warn("applySectionReload: no section identifiers matched live snapshot; falling back to full rebuild.")
+            applyFullRebuild(newSections: newSections, animated: animated, completion: completion)
+            return
+        }
+
+        snapshot.reloadSections(pairs.map { $0.existing })
+
+        diffableDataSource.apply(snapshot, animatingDifferences: animated)
+
+        // Apply new content snapshots to the existing section identifiers
+        applySectionSnapshots(pairs.map { ($0.new, $0.existing) }, completion: completion)
+    }
+
+    /// Enqueues a section-snapshot apply for each entry and attaches `completion` to the
+    /// last one. `UICollectionViewDiffableDataSource` serializes apply calls on the same
+    /// data source, so the last apply's completion fires after all earlier ones have
+    /// flushed — which is the synchronization point we need for scroll restoration,
+    /// since `diffableDataSource.snapshot()` only reflects the newly-added items once
+    /// the queued applies have drained.
+    private func applySectionSnapshots(
+        _ sections: [(new: OBAListViewSection, applyingTo: OBAListViewSection?)],
+        completion: @escaping () -> Void
+    ) {
+        guard !sections.isEmpty else {
+            completion()
+            return
+        }
+
+        for (index, section) in sections.enumerated() {
+            let isLast = index == sections.count - 1
+            applySectionSnapshot(
+                for: section.new,
+                applyingTo: section.applyingTo,
+                animatingDifferences: false,
+                completion: isLast ? completion : nil
+            )
+        }
+    }
+
+    private func applySectionSnapshot(
+        for section: OBAListViewSection,
+        applyingTo targetSection: OBAListViewSection? = nil,
+        animatingDifferences: Bool,
+        completion: (() -> Void)? = nil
+    ) {
+        var sectionSnapshot = NSDiffableDataSourceSectionSnapshot<ItemType>()
+
+        if section.hasHeader {
+            let header = OBAListViewHeader(
+                id: section.id,
+                title: section.title,
+                isCollapsible: section.collapseState != nil
+            ).typeErased
+
+            if let collapseState = section.collapseState {
+                sectionSnapshot.append([header])
+                sectionSnapshot.append(section.contents, to: header)
+
+                switch collapseState {
+                case .collapsed:
+                    sectionSnapshot.collapse([header])
+                case .expanded:
+                    sectionSnapshot.expand([header])
+                }
+            } else {
+                sectionSnapshot.append([header])
+                sectionSnapshot.append(section.contents)
+            }
+        } else {
+            sectionSnapshot.append(section.contents)
+        }
+
+        let sectionToApply = targetSection ?? section
+        diffableDataSource.apply(sectionSnapshot, to: sectionToApply, animatingDifferences: animatingDifferences, completion: completion)
+    }
+
+}
+
+// MARK: - Edge Case Handling
+
+extension OBAListView {
+
+    /// Validates that the data source snapshot is consistent. Surfaces the offending IDs so the
+    /// upstream data defect can be diagnosed instead of silently dropping the update.
+    private func validateSnapshot(_ sections: [OBAListViewSection]) -> Bool {
+        let sectionIDs = sections.map { $0.id }
+        let duplicateSectionIDs = duplicates(in: sectionIDs)
+        guard duplicateSectionIDs.isEmpty else {
+            Logger.error("Invalid snapshot: duplicate section IDs \(duplicateSectionIDs); skipping update.")
+            return false
+        }
+
+        for section in sections {
+            let itemIDs = section.contents.map { $0.id }
+            let duplicateItemIDs = duplicates(in: itemIDs)
+            guard duplicateItemIDs.isEmpty else {
+                Logger.error("Invalid snapshot: duplicate item IDs \(duplicateItemIDs) in section '\(section.id)'; skipping update.")
+                return false
+            }
+        }
+
+        return true
+    }
+
+    private func duplicates<T: Hashable>(in values: [T]) -> [T] {
+        var seen: Set<T> = []
+        var dupes: [T] = []
+        for value in values where !seen.insert(value).inserted {
+            dupes.append(value)
+        }
+        return dupes
+    }
+
+    /// Handles edge case where data source returns nil or empty
+    private func handleEmptyDataSource() {
+        let snapshot = NSDiffableDataSourceSnapshot<SectionType, ItemType>()
+        diffableDataSource.apply(snapshot, animatingDifferences: false)
+        self.lastDataSourceSnapshot = []
+    }
+
+    /// Handles edge case where sections contain no items
+    private func handleEmptySections(sections: [OBAListViewSection]) -> [OBAListViewSection] {
+        return sections.filter { section in
+            return section.hasHeader || !section.contents.isEmpty
+        }
+    }
+}
+
+extension OBAListView {
+
+    public enum ScrollBehavior {
+        case preserve
+        case scrollToBottom
+    }
+
+    private struct ScrollState {
+        let offset: CGPoint
+        let isUserScrolling: Bool
+        let behavior: ScrollBehavior
+        weak var listView: OBAListView?
+
+        init(from listView: OBAListView, behavior: ScrollBehavior) {
+            self.offset = listView.contentOffset
+            self.isUserScrolling = listView.isTracking || listView.isDecelerating
+            self.behavior = behavior
+            self.listView = listView
+        }
+
+        func restore(for strategy: UpdateStrategy) {
+            switch behavior {
+            case .preserve:
+                // Don't fight a finger drag. `.scrollToBottom` is an explicit
+                // caller intent (e.g. Load More) and bypasses this guard below.
+                guard !isUserScrolling else { return }
+                guard strategy != .fullRebuild, strategy != .noChange else { return }
+                DispatchQueue.main.async { [weak listView, offset] in
+                    guard let listView else { return }
+                    // Force the post-apply layout pass so `contentSize` reflects
+                    // the new item heights before we clamp the restored offset.
+                    // Without this the clamp can run against the pre-apply size.
+                    listView.layoutIfNeeded()
+                    let maxY = max(0, listView.contentSize.height - listView.bounds.height + listView.contentInset.bottom)
+                    let safeOffset = CGPoint(x: offset.x, y: min(offset.y, maxY))
+                    listView.setContentOffset(safeOffset, animated: false)
+                }
+
+            case .scrollToBottom:
+                // Skip scrolling when nothing actually changed.
+                guard strategy != .noChange else { return }
+                DispatchQueue.main.async { [weak listView] in
+                    guard let listView, let indexPath = listView.lastItemIndexPath else { return }
+                    // Compositional layout sizes cells lazily, so a single
+                    // scrollToItem against a distant last item lands against
+                    // estimated heights and falls short of the real bottom.
+                    // First snap (no animation) to provoke the layout pass that
+                    // measures the cells we'd scroll past, then re-scroll
+                    // against the now-accurate heights to land exactly at the
+                    // last item.
+                    listView.layoutIfNeeded()
+                    listView.scrollToItem(at: indexPath, at: .bottom, animated: false)
+                    listView.layoutIfNeeded()
+                    listView.scrollToItem(at: indexPath, at: .bottom, animated: true)
+                }
+            }
+        }
+    }
+
 }
 
 // MARK: - Preview
