@@ -104,8 +104,8 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
     func loadWeather() async {
         guard let apiService = application.obacoService else {
             // Clear so an out-of-region transition doesn't leave a stale
-            // forecast on screen — matches the `catch` branch below so both
-            // unavailability paths agree.
+            // forecast on screen — this is configuration-shaped (no Obaco for
+            // this region), so the button SHOULD disappear.
             weatherDisplay = nil
             return
         }
@@ -113,7 +113,12 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
             let forecast = try await apiService.getWeather()
             weatherDisplay = WeatherDisplay(forecast: forecast, locale: application.locale)
         } catch {
-            weatherDisplay = nil
+            // Keep the last-known forecast on a transient failure (network
+            // blip, 5xx during scene reactivation) so the floating button
+            // doesn't flicker out and come back. The next successful refresh
+            // — `start()`, `onAppBecameActive`, or the next manual trigger —
+            // will overwrite this with fresh data; until then a slightly
+            // stale forecast is better than a missing UI element.
             Logger.error("Failed to load weather: \(error)")
         }
     }

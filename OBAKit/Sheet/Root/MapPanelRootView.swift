@@ -26,7 +26,10 @@ struct MapPanelRootView: View {
     @StateObject private var mapViewModel: MapViewModel
 
     @State private var cameraPosition: MapCameraPosition = .userLocation(fallback: .automatic)
-    @State private var presentedWeather: WeatherDisplay?
+    /// Presentation state only. The popup reads its data from
+    /// `mapViewModel.weatherDisplay` so a refresh that finishes while the card
+    /// is open updates the displayed forecast in place.
+    @State private var isWeatherPopupPresented = false
 
     @Environment(\.scenePhase) private var scenePhase
 
@@ -50,9 +53,6 @@ struct MapPanelRootView: View {
         .overlay(alignment: .topLeading) {
             weatherButton
         }
-        .overlay {
-            WeatherDetailPopup(display: $presentedWeather)
-        }
         .onAppear {
             mapViewModel.start()
         }
@@ -64,14 +64,23 @@ struct MapPanelRootView: View {
         .floatingSheet(coordinator: coordinator) { route in
             factory.view(for: route)
         }
+        // Layered AFTER `.floatingSheet` so the popup's dim backdrop covers
+        // the sheet too — otherwise the sheet stays bright and interactive
+        // behind the card. Keep this as the outermost overlay.
+        .overlay {
+            WeatherDetailPopup(
+                display: mapViewModel.weatherDisplay,
+                isPresented: $isWeatherPopupPresented
+            )
+        }
     }
 
     @ViewBuilder
     private var weatherButton: some View {
         if mapViewModel.isWeatherFeatureAvailable {
-            WeatherButton(display: mapViewModel.weatherDisplay) { display in
+            WeatherButton(display: mapViewModel.weatherDisplay) { _ in
                 withAnimation(.smooth(duration: 0.25)) {
-                    presentedWeather = display
+                    isWeatherPopupPresented = true
                 }
             }
             .padding(ThemeMetrics.controllerMargin)

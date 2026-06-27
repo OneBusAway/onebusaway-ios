@@ -101,17 +101,20 @@ class MapViewModelTests: OBATestCase {
         expect(viewModel.weatherDisplay?.header.regionName) == "Puget Sound"
     }
 
-    /// A weather fetch that errors must clear `weatherDisplay` (back to nil) and not crash.
-    /// First loads successfully so we can prove the error path actually clears the value.
+    /// A transient weather fetch failure must NOT clear `weatherDisplay` —
+    /// the floating button would otherwise vanish on every network blip even
+    /// when a perfectly good last-known forecast exists. First loads
+    /// successfully, then errors, then asserts the last forecast survives.
     @MainActor
-    func test_loadWeather_errorClearsDisplay() async {
+    func test_loadWeather_errorKeepsLastForecast() async {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         stubWeatherSuccess(dataLoader: dataLoader)
 
         let viewModel = MapViewModel(application: app)
         await viewModel.loadWeather()
-        expect(viewModel.weatherDisplay).toNot(beNil())
+        let firstDisplay = viewModel.weatherDisplay
+        expect(firstDisplay).toNot(beNil())
 
         // Swap the weather mock for an error. The swap must be atomic: the
         // Application's background tasks (regions refresh, agency alerts) may have
@@ -126,7 +129,8 @@ class MapViewModelTests: OBATestCase {
 
         await viewModel.loadWeather()
 
-        expect(viewModel.weatherDisplay).to(beNil())
+        // Same instance — error path didn't overwrite or clear.
+        expect(viewModel.weatherDisplay) == firstDisplay
     }
 
     // MARK: - Map Type

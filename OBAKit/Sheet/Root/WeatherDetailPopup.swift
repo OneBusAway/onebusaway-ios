@@ -14,8 +14,14 @@ import OBAKitCore
 /// any UIKit modal hierarchy so it can coexist with the persistent floating sheet.
 /// Dismisses via backdrop tap or the floating close button; card body is
 /// interactive (the hourly strip scrolls) and never dismisses on tap.
+///
+/// `display` is read straight from the view model rather than a captured
+/// snapshot, so a refresh that lands while the popup is open updates the card
+/// under the user instead of stranding them on a frozen forecast. `isPresented`
+/// is the dismissal channel — the popup never mutates the underlying data.
 struct WeatherDetailPopup: View {
-    @Binding var display: WeatherDisplay?
+    let display: WeatherDisplay?
+    @Binding var isPresented: Bool
     @Environment(\.verticalSizeClass) private var verticalSizeClass
 
     private let cardShape = RoundedRectangle(cornerRadius: 24, style: .continuous)
@@ -30,9 +36,14 @@ struct WeatherDetailPopup: View {
             : AnyLayout(VStackLayout(spacing: 16))
     }
 
+    /// True only when there's something to render. If the VM drops weather
+    /// data (e.g. region change) while the popup is open, this collapses to
+    /// false so the dismiss animation runs and `isPresented` is reset.
+    private var isShowing: Bool { isPresented && display != nil }
+
     var body: some View {
         ZStack {
-            if let current = display {
+            if let current = display, isPresented {
                 Color.black.opacity(0.25)
                     .ignoresSafeArea()
                     .transition(.opacity)
@@ -47,7 +58,14 @@ struct WeatherDetailPopup: View {
                 .transition(.scale(scale: 0.92).combined(with: .opacity))
             }
         }
-        .animation(.smooth(duration: 0.25), value: display != nil)
+        .animation(.smooth(duration: 0.25), value: isShowing)
+        .onChange(of: display == nil) { _, dataIsGone in
+            // Reset the presentation flag if the underlying data disappeared
+            // (e.g. user crossed a region boundary while the popup was open).
+            if dataIsGone && isPresented {
+                isPresented = false
+            }
+        }
     }
 
     private var closeButton: some View {
@@ -67,7 +85,7 @@ struct WeatherDetailPopup: View {
 
     private func dismiss() {
         withAnimation(.smooth(duration: 0.25)) {
-            display = nil
+            isPresented = false
         }
     }
 }
