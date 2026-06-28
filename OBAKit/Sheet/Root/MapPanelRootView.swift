@@ -61,17 +61,20 @@ struct MapPanelRootView: View {
                 mapViewModel.onAppBecameActive()
             }
         }
+        // The popup cover is attached INSIDE the sheet content so it's
+        // presented from the floating sheet's `UISheetPresentationController` —
+        // a host-level `.fullScreenCover` ends up under the sheet because the
+        // sheet owns the topmost presentation context. `.presentationBackground(.clear)`
+        // keeps the map and sheet visible behind the dim+card.
         .floatingSheet(coordinator: coordinator) { route in
             factory.view(for: route)
-        }
-        // Layered AFTER `.floatingSheet` so the popup's dim backdrop covers
-        // the sheet too — otherwise the sheet stays bright and interactive
-        // behind the card. Keep this as the outermost overlay.
-        .overlay {
-            WeatherDetailPopup(
-                display: mapViewModel.weatherDisplay,
-                isPresented: $isWeatherPopupPresented
-            )
+                .fullScreenCover(isPresented: $isWeatherPopupPresented) {
+                    WeatherDetailPopup(
+                        display: mapViewModel.weatherDisplay,
+                        isPresented: $isWeatherPopupPresented
+                    )
+                    .presentationBackground(.clear)
+                }
         }
     }
 
@@ -79,9 +82,7 @@ struct MapPanelRootView: View {
     private var weatherButton: some View {
         if mapViewModel.isWeatherFeatureAvailable {
             WeatherButton(display: mapViewModel.weatherDisplay) { _ in
-                withAnimation(.smooth(duration: 0.25)) {
-                    isWeatherPopupPresented = true
-                }
+                isWeatherPopupPresented = true
             }
             .padding(ThemeMetrics.controllerMargin)
         }

@@ -59,10 +59,10 @@ struct WeatherDetailPopup: View {
             }
         }
         .animation(.smooth(duration: 0.25), value: isShowing)
-        .onChange(of: display == nil) { _, dataIsGone in
+        .onChange(of: display) { _, newValue in
             // Reset the presentation flag if the underlying data disappeared
             // (e.g. user crossed a region boundary while the popup was open).
-            if dataIsGone && isPresented {
+            if newValue == nil && isPresented {
                 isPresented = false
             }
         }

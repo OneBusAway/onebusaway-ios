@@ -433,9 +433,11 @@ class MapViewController: UIViewController,
 
     @objc private func showWeather() {
         guard let display = weatherDisplay else { return }
+        // Resolve once so the formatter chain in `legacyAlert` doesn't run twice.
+        let legacyAlert = display.legacyAlert
         let alert = UIAlertController(
-            title: display.legacyAlert.title,
-            message: display.legacyAlert.message,
+            title: legacyAlert.title,
+            message: legacyAlert.message,
             preferredStyle: .alert
         )
         alert.addAction(.dismissAction)
