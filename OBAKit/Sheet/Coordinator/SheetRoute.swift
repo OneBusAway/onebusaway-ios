@@ -92,34 +92,36 @@ enum AppSheetRoute: SheetRouteable {
 extension AppSheetRoute {
     // MARK: Identifiable
 
+    /// Case-name prefix only — `String(describing:)` for a case-less enum value
+    /// renders the case name (e.g. `"home"`); for cases with associated values
+    /// it includes the payload, which we strip and reapply per-case below so
+    /// each suffix can be intentionally formatted.
+    private var caseName: String {
+        let mirror = Mirror(reflecting: self)
+        if let label = mirror.children.first?.label {
+            return label
+        }
+        // No associated value → `String(describing:)` is already just the case name.
+        return String(describing: self)
+    }
+
+    /// Stable identifier used by `Identifiable` and the sheet coordinator.
+    /// Prefix is derived mechanically from the case name (typo-proof against
+    /// hand-keyed strings); only the associated-value suffix is hand-written
+    /// per case so each can pick its own formatting.
     var id: String {
         switch self {
-        case .home:
-            return "home"
-        case .search:
-            return "search"
-        case .nearbyAll:
-            return "nearbyAll"
-        case .recentStopsAll:
-            return "recentStopsAll"
-        case .bookmarksAll:
-            return "bookmarksAll"
+        case .home, .search, .nearbyAll, .recentStopsAll, .bookmarksAll,
+             .tripPlanner, .routePicker, .more, .settings:
+            return caseName
         case .stopDetails(let stopID):
-            return "stopDetails-\(stopID)"
-        case .tripPlanner:
-            return "tripPlanner"
+            return "\(caseName)-\(stopID)"
         case .tripDetails(let tripID):
-            return "tripDetails-\(tripID)"
-        case .routePicker:
-            return "routePicker"
-        case .currentTrip(let route):
-            return "currentTrip-\(route.id)"
+            return "\(caseName)-\(tripID)"
+        case .currentTrip(let routeID):
+            return "\(caseName)-\(routeID)"
         case .transitAlert(let alertID):
-            return "transitAlert-\(alertID)"
-        case .more:
-            return "more"
-        case .settings:
-            return "settings"
+            return "\(caseName)-\(alertID)"
         }
     }
 }

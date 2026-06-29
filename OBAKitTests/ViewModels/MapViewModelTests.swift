@@ -34,7 +34,13 @@ class MapViewModelTests: OBATestCase {
 
     /// Builds an `Application` locked to Puget Sound so the region (and thus the obaco
     /// sidecar base URL the weather call resolves against) is deterministic.
-    private func createApplication(dataLoader: MockDataLoader) -> Application {
+    /// Pass `bundledRegionsFixture: "regions-puget-sound-no-sidecar.json"` to swap the
+    /// bundled regions file for one whose Puget Sound entry has no `sidecarBaseURL` —
+    /// keeps `application.obacoService` nil and `features.obaco == .off`.
+    private func createApplication(
+        dataLoader: MockDataLoader,
+        bundledRegionsFixture: String? = nil
+    ) -> Application {
         stubRegions(dataLoader: dataLoader)
         stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
         Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
@@ -54,7 +60,7 @@ class MapViewModelTests: OBATestCase {
             analytics: AnalyticsMock(),
             queue: queue,
             locationService: locationService,
-            bundledRegionsFilePath: bundledRegionsPath,
+            bundledRegionsFilePath: bundledRegionsFixture.map { Fixtures.path(to: $0) } ?? bundledRegionsPath,
             regionsAPIPath: regionsAPIPath,
             dataLoader: dataLoader,
             fixedRegionName: Fixtures.pugetSoundRegion.name
@@ -85,33 +91,36 @@ class MapViewModelTests: OBATestCase {
 
     // MARK: - Weather
 
-    /// A successful weather fetch publishes a non-nil forecast.
+    /// A successful weather fetch publishes a non-nil display.
     @MainActor
-    func test_loadWeather_successPublishesForecast() async {
+    func test_loadWeather_successPublishesDisplay() async {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         stubWeatherSuccess(dataLoader: dataLoader)
 
         let viewModel = MapViewModel(application: app)
-        expect(viewModel.weather).to(beNil())
+        expect(viewModel.weatherDisplay).to(beNil())
 
         await viewModel.loadWeather()
 
-        expect(viewModel.weather).toNot(beNil())
-        expect(viewModel.weather?.regionName) == "Puget Sound"
+        expect(viewModel.weatherDisplay).toNot(beNil())
+        expect(viewModel.weatherDisplay?.header.regionName) == "Puget Sound"
     }
 
-    /// A weather fetch that errors must clear `weather` (back to nil) and not crash.
-    /// First loads successfully so we can prove the error path actually clears the value.
+    /// A transient weather fetch failure must NOT clear `weatherDisplay` —
+    /// the floating button would otherwise vanish on every network blip even
+    /// when a perfectly good last-known forecast exists. First loads
+    /// successfully, then errors, then asserts the last forecast survives.
     @MainActor
-    func test_loadWeather_errorClearsForecast() async {
+    func test_loadWeather_errorKeepsLastForecast() async {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         stubWeatherSuccess(dataLoader: dataLoader)
 
         let viewModel = MapViewModel(application: app)
         await viewModel.loadWeather()
-        expect(viewModel.weather).toNot(beNil())
+        let firstDisplay = viewModel.weatherDisplay
+        expect(firstDisplay).toNot(beNil())
 
         // Swap the weather mock for an error. The swap must be atomic: the
         // Application's background tasks (regions refresh, agency alerts) may have
@@ -126,7 +135,54 @@ class MapViewModelTests: OBATestCase {
 
         await viewModel.loadWeather()
 
-        expect(viewModel.weather).to(beNil())
+        // Same instance — error path didn't overwrite or clear.
+        expect(viewModel.weatherDisplay) == firstDisplay
+    }
+
+    /// When `application.obacoService` is nil (region retired the sidecar, or it
+    /// never finished spinning up), the floating button hides
+    /// (`isWeatherFeatureAvailable == false`) and the guard branch of
+    /// `loadWeather()` leaves `weatherDisplay` nil. This is the configuration-shaped
+    /// inversion of `test_loadWeather_errorKeepsLastForecast` — out-of-region SHOULD
+    /// drop the button, transient failures SHOULD NOT.
+    @MainActor
+    func test_loadWeather_clearsDisplayWhenObacoUnavailable() async {
+        // `RegionsService` prefers disk-stored regions over the bundled file,
+        // and prior runs in the same simulator can leave a stored copy with a
+        // sidecar URL. Wipe the shared on-disk default-regions file so the
+        // no-sidecar bundled fixture is what feeds `currentRegion`.
+        let appSupport = try? FileManager.default.url(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask,
+            appropriateFor: nil,
+            create: false
+        )
+        if let appSupport {
+            try? FileManager.default.removeItem(
+                at: appSupport.appendingPathComponent("Regions/default-regions.json")
+            )
+        }
+
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(
+            dataLoader: dataLoader,
+            bundledRegionsFixture: "regions-puget-sound-no-sidecar.json"
+        )
+
+        // Precondition: the bundled fixture has no `sidecarBaseURL`, so the
+        // synchronous Obaco refresh during `Application` init leaves
+        // `obacoService` nil and the feature gate stays closed.
+        expect(app.obacoService).to(beNil())
+        expect(app.features.obaco).toNot(equal(.running))
+
+        let viewModel = MapViewModel(application: app)
+        expect(viewModel.isWeatherFeatureAvailable) == false
+        expect(viewModel.weatherDisplay).to(beNil())
+
+        await viewModel.loadWeather()
+
+        // Guard path took the early return; weatherDisplay stays nil.
+        expect(viewModel.weatherDisplay).to(beNil())
     }
 
     // MARK: - Map Type

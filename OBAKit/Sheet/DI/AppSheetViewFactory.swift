@@ -83,7 +83,7 @@ final class AppSheetViewFactory {
     /// blank sheet with no breadcrumb in the UI.
     @ViewBuilder
     private func unimplementedView(for route: AppSheetRoute) -> some View {
-        #if DEBUG
+#if DEBUG
         // `let _` (not `_ =`) so SwiftUI's @ViewBuilder treats this as a
         // declaration rather than an expression statement — the latter fails
         // to build because `Void` doesn't conform to `View`.
@@ -93,7 +93,7 @@ final class AppSheetViewFactory {
             .font(.headline)
             .foregroundStyle(.secondary)
             .padding()
-        #else
+#else
         // swiftlint:disable:next redundant_discardable_let
         let _ = Logger.error("AppSheetRoute.\(route.id) pushed but no view is registered — rendering placeholder.")
         // Embed `route.id` in the visible copy so an experimental-flag tester
@@ -105,13 +105,13 @@ final class AppSheetViewFactory {
                 value: "This screen is coming soon.",
                 comment: "Placeholder shown in release builds when a sheet route is pushed but has no view registered."
             ))
-                .font(.headline)
-                .foregroundStyle(.secondary)
+            .font(.headline)
+            .foregroundStyle(.secondary)
             Text(route.id)
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
         }
-            .padding()
-        #endif
+        .padding()
+#endif
     }
 }

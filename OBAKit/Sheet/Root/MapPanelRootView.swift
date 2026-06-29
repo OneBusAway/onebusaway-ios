@@ -23,7 +23,15 @@ import OBAKitCore
 struct MapPanelRootView: View {
 
     @StateObject private var coordinator: SheetCoordinator<AppSheetRoute>
+    @StateObject private var mapViewModel: MapViewModel
+
     @State private var cameraPosition: MapCameraPosition = .userLocation(fallback: .automatic)
+    /// Presentation state only. The popup reads its data from
+    /// `mapViewModel.weatherDisplay` so a refresh that finishes while the card
+    /// is open updates the displayed forecast in place.
+    @State private var isWeatherPopupPresented = false
+
+    @Environment(\.scenePhase) private var scenePhase
 
     @State private var sheetHeight: CGFloat = 0
     @State private var toolbarsAnimationDuration: CGFloat = 0
@@ -39,6 +47,7 @@ struct MapPanelRootView: View {
 
     init(application: Application, factory: AppSheetViewFactory) {
         _coordinator = StateObject(wrappedValue: SheetCoordinator<AppSheetRoute>(root: .home))
+        _mapViewModel = StateObject(wrappedValue: MapViewModel(application: application))
         self.factory = factory
     }
 
@@ -72,6 +81,22 @@ struct MapPanelRootView: View {
         .overlay(alignment: .bottomLeading) {
             bottomFloatingTripButton
         }
+        .overlay(alignment: .topLeading) {
+            weatherButton
+        }
+        .onAppear {
+            mapViewModel.start()
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .active {
+                mapViewModel.onAppBecameActive()
+            }
+        }
+        // The popup cover is attached INSIDE the sheet content so it's
+        // presented from the floating sheet's `UISheetPresentationController` —
+        // a host-level `.fullScreenCover` ends up under the sheet because the
+        // sheet owns the topmost presentation context. `.presentationBackground(.clear)`
+        // keeps the map and sheet visible behind the dim+card.
         .floatingSheet(coordinator: coordinator) { route in
             factory.view(for: route)
                 .onGeometryChange(for: CGFloat.self) { proxy in
@@ -91,6 +116,23 @@ struct MapPanelRootView: View {
                     toolbarsAnimationDuration = duration
                 }
                 .ignoresSafeArea()
+                .fullScreenCover(isPresented: $isWeatherPopupPresented) {
+                    WeatherDetailPopup(
+                        display: mapViewModel.weatherDisplay,
+                        isPresented: $isWeatherPopupPresented
+                    )
+                    .presentationBackground(.clear)
+                }
+        }
+    }
+
+    @ViewBuilder
+    private var weatherButton: some View {
+        if mapViewModel.isWeatherFeatureAvailable {
+            WeatherButton(display: mapViewModel.weatherDisplay) { _ in
+                isWeatherPopupPresented = true
+            }
+            .padding(ThemeMetrics.controllerMargin)
         }
     }
 
