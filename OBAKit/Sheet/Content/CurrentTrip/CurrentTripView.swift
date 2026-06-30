@@ -59,7 +59,14 @@ struct CurrentTripView: View {
             reEnableIdleTimer()
         }
         .onChange(of: scenePhase) { _, phase in
-            if phase != .active {
+            if phase == .active {
+                // Coming back from a backgrounding cycle: re-acquire the idle
+                // timer hold and re-arm the refresh loop. Without this branch
+                // the user returns to a frozen state with no live updates,
+                // and has to pop+re-push to recover.
+                disableIdleTimer()
+                viewModel.start()
+            } else {
                 viewModel.deactivate()
                 reEnableIdleTimer()
             }
