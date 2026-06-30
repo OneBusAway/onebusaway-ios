@@ -97,6 +97,16 @@ public final class MapPanelRootController: UIViewController {
             while let next = presenter.presentedViewController {
                 presenter = next
             }
+            // Skip if the topmost presented controller is already a
+            // `TripViewController` (or a nav rooted at one). `CurrentTripView`
+            // stays mounted under the modal trip and its 20-second refresh
+            // timer keeps firing — without this guard, repeat single-match
+            // hits would stack a fresh `TripViewController` on top of the
+            // existing one each tick.
+            if presenter is TripViewController { return }
+            if let nav = presenter as? UINavigationController, nav.viewControllers.first is TripViewController {
+                return
+            }
             presenter.present(navigation, animated: true)
         }
     }

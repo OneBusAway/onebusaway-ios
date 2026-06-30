@@ -19,7 +19,6 @@ struct MyTripButton: View {
         Button(action: onTap) {
             Image(uiImage: Icons.busButton)
                 .renderingMode(.template)
-                .font(.body.bold())
                 .padding(12)
                 .contentShape(Circle())
         }
