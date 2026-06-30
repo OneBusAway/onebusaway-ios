@@ -10,6 +10,22 @@
 import UIKit
 import OBAKitCore
 
+// MARK: - Temporal State
+
+/// Describes whether a trip stop is in the past, present, or future relative to the vehicle's current position.
+enum TripStopTemporalState: Hashable {
+    case past
+    case current
+    case future
+
+    static func classify(stopIndex: Int, closestStopIndex: Int?) -> TripStopTemporalState {
+        guard let closestStopIndex else { return .future }
+        if stopIndex < closestStopIndex { return .past }
+        if stopIndex == closestStopIndex { return .current }
+        return .future
+    }
+}
+
 fileprivate let tripStopCellMinimumHeight: CGFloat = 48.0
 
 struct TripStopListItemRowConfiguration: OBAContentConfiguration {
@@ -44,6 +60,9 @@ struct TripStopViewModel: OBAListViewItem {
     /// Is this the trip stop where the user is intending to go?
     let isUserDestination: Bool
 
+    /// Whether this stop is in the past, present, or future relative to the vehicle position.
+    let temporalState: TripStopTemporalState
+
     /// The title of this item. e.g., "15th Ave E & E Galer St"
     let title: String
 
@@ -58,24 +77,24 @@ struct TripStopViewModel: OBAListViewItem {
 
     let stopTime: TripStopTime
 
-    init(stopTime: TripStopTime, arrivalDeparture: ArrivalDeparture?, onSelectAction: OBAListViewAction<TripStopViewModel>?) {
+    init(
+        stopTime: TripStopTime,
+        arrivalDeparture: ArrivalDeparture?,
+        stopIndex: Int,
+        closestStopIndex: Int?,
+        onSelectAction: OBAListViewAction<TripStopViewModel>?
+    ) {
         self.stopTime = stopTime
 
         stop = stopTime.stop
 
-        if let arrivalDeparture = arrivalDeparture {
-            isUserDestination = stopTime.stopID == arrivalDeparture.stopID
-        }
-        else {
-            isUserDestination = false
-        }
+        isUserDestination = arrivalDeparture.map { stopTime.stopID == $0.stopID } ?? false
 
-        if let closestStopID = arrivalDeparture?.tripStatus?.closestStopID {
-            isCurrentVehicleLocation = stopTime.stopID == closestStopID
-        }
-        else {
-            isCurrentVehicleLocation = false
-        }
+        // Derive isCurrentVehicleLocation from the same closestStopIndex used for
+        // temporalState so both properties always agree on which stop is "current".
+        isCurrentVehicleLocation = closestStopIndex.map { stopIndex == $0 } ?? false
+
+        temporalState = TripStopTemporalState.classify(stopIndex: stopIndex, closestStopIndex: closestStopIndex)
 
         title = stopTime.stop.name
         date = stopTime.arrivalDate
@@ -88,6 +107,7 @@ struct TripStopViewModel: OBAListViewItem {
         hasher.combine(id)
         hasher.combine(isCurrentVehicleLocation)
         hasher.combine(isUserDestination)
+        hasher.combine(temporalState)
         hasher.combine(title)
         hasher.combine(date)
         hasher.combine(routeType)
@@ -96,6 +116,7 @@ struct TripStopViewModel: OBAListViewItem {
     static func == (lhs: TripStopViewModel, rhs: TripStopViewModel) -> Bool {
         return lhs.isCurrentVehicleLocation == rhs.isCurrentVehicleLocation &&
             lhs.isUserDestination == rhs.isUserDestination &&
+            lhs.temporalState == rhs.temporalState &&
             lhs.title == rhs.title &&
             lhs.date == rhs.date &&
             lhs.routeType == rhs.routeType
@@ -125,9 +146,13 @@ final class TripStopCell: OBAListViewCell {
     override func prepareForReuse() {
         super.prepareForReuse()
         titleLabel.text = nil
+        titleLabel.font = .preferredFont(forTextStyle: .body)
+        titleLabel.textColor = ThemeColors.shared.label
         timeLabel.text = nil
+        timeLabel.textColor = ThemeColors.shared.secondaryLabel
         tripSegmentView.image = nil
         tripSegmentView.adjacentTripOrder = nil
+        tripSegmentView.temporalState = .future
         accessibilityLabel = nil
         accessibilityValue = nil
     }
@@ -198,26 +223,61 @@ final class TripStopCell: OBAListViewCell {
     }
 
     private func apply(tripStopListItemConfiguration config: TripStopListItemRowConfiguration) {
-        titleLabel.text = config.viewModel.title
-        timeLabel.text = config.formatters?.timeFormatter.string(from: config.viewModel.date) ?? ""
-        tripSegmentView.routeType = config.viewModel.routeType
-        tripSegmentView.setDestinationStatus(user: config.viewModel.isUserDestination, vehicle: config.viewModel.isCurrentVehicleLocation)
+        let viewModel = config.viewModel
 
-        let labels = [config.viewModel.title, config.formatters?.timeFormatter.string(from: config.viewModel.date)]
+        titleLabel.text = viewModel.title
+        timeLabel.text = config.formatters?.timeFormatter.string(from: viewModel.date) ?? ""
+        tripSegmentView.routeType = viewModel.routeType
+        tripSegmentView.temporalState = viewModel.temporalState
+        tripSegmentView.setDestinationStatus(user: viewModel.isUserDestination, vehicle: viewModel.isCurrentVehicleLocation)
+
+        applyTemporalStateStyling(viewModel)
+
+        let labels = [viewModel.title, config.formatters?.timeFormatter.string(from: viewModel.date)]
         accessibilityLabel = labels.compactMap { $0 }.joined(separator: "; ")
 
         var accessibilityValueFlags: [String] = []
 
-        if config.viewModel.isUserDestination {
+        switch viewModel.temporalState {
+        case .past:
+            accessibilityValueFlags.append(OBALoc("trip_stop.passed_stop.accessibility_label", value: "Passed stop", comment: "Voiceover text explaining that the vehicle has already passed this stop"))
+        case .current:
+            break
+        case .future:
+            break
+        }
+
+        if viewModel.isUserDestination {
             accessibilityValueFlags.append(OBALoc("trip_stop.user_destination.accessibility_label", value: "Your destination", comment: "Voiceover text explaining that this stop is the user's destination"))
         }
 
-        if config.viewModel.isCurrentVehicleLocation {
+        if viewModel.isCurrentVehicleLocation {
             accessibilityValueFlags.append(OBALoc("trip_stop.vehicle_location.accessibility_label", value: "Vehicle is here", comment: "Voiceover text explaining that the vehicle is currently at this stop"))
         }
 
         let joined = accessibilityValueFlags.joined(separator: ", ")
         accessibilityValue = joined.isEmpty ? nil : joined
+    }
+
+    private func applyTemporalStateStyling(_ viewModel: TripStopViewModel) {
+        switch viewModel.temporalState {
+        case .past:
+            titleLabel.font = .preferredFont(forTextStyle: .body)
+            titleLabel.textColor = ThemeColors.shared.secondaryLabel
+            timeLabel.textColor = ThemeColors.shared.secondaryLabel
+
+        case .current:
+            titleLabel.font = .preferredFont(forTextStyle: .headline)
+            titleLabel.textColor = ThemeColors.shared.label
+            timeLabel.textColor = ThemeColors.shared.label
+
+        case .future:
+            titleLabel.font = viewModel.isUserDestination
+                ? .preferredFont(forTextStyle: .headline)
+                : .preferredFont(forTextStyle: .body)
+            titleLabel.textColor = ThemeColors.shared.label
+            timeLabel.textColor = ThemeColors.shared.secondaryLabel
+        }
     }
 
     private func apply(adjacentTripConfiguration config: AdjacentTripRowConfiguration) {
