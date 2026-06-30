@@ -232,11 +232,20 @@ class MapViewModelTests: OBATestCase {
 
     // MARK: - Survey Prompt
 
-    /// Stubs the survey list endpoint with an empty payload so `fetchSurveys()` succeeds
-    /// without surfacing an error.
+    /// Stubs the survey list endpoint with a schema-valid empty `StudyResponse`
+    /// so `fetchSurveys()` succeeds via "no matching survey" rather than decode
+    /// failure — the "doesNotEmit" assertions otherwise pass for the wrong
+    /// reason.
     private func stubEmptySurveys(dataLoader: MockDataLoader) {
-        let emptySurveys = #"{"surveys":[]}"#.data(using: .utf8)!
-        dataLoader.mock(data: emptySurveys) { request in
+        let studyResponse = StudyResponse(
+            surveys: [],
+            region: SurveyRegion(id: 1, name: "Test")
+        )
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        // swiftlint:disable:next force_try
+        let data = try! encoder.encode(studyResponse)
+        dataLoader.mock(data: data) { request in
             request.url?.path.contains("/surveys.json") ?? false
         }
     }

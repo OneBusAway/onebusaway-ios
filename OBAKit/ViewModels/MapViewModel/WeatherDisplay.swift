@@ -178,4 +178,3 @@ struct HourlyEntry: Equatable, Identifiable {
         }
     }
 }
-

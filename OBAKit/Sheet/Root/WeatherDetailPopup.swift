@@ -84,9 +84,7 @@ struct WeatherDetailPopup: View {
     }
 
     private func dismiss() {
-        withAnimation(.smooth(duration: 0.25)) {
-            isPresented = false
-        }
+        isPresented = false
     }
 }
 
