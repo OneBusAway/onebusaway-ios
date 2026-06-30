@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 // MARK: - onFirstAppear
 
@@ -28,6 +29,66 @@ private struct FirstAppear: ViewModifier {
             guard !hasAppeared else { return }
             hasAppeared = true
             action()
+        }
+    }
+}
+
+// MARK: - liquidGlassButtonStyle
+
+public extension View {
+    /// Apply to a `Button` to give it Apple's interactive Liquid Glass surface
+    /// on iOS 26+ (the press/morph "grab" response that comes with
+    /// `.buttonStyle(.glass)`), with a `.plain` + `.regularMaterial` fallback
+    /// on older systems so the button still reads as floating.
+    ///
+    /// Two shape parameters because the two surfaces use different APIs:
+    /// `borderShape` drives the iOS 26 glass morphing, `fallbackShape` fills
+    /// the pre-26 material background. Pass matching shapes (e.g. `.circle` +
+    /// `Circle()`) for a consistent look across versions.
+    @ViewBuilder
+    func liquidGlassButtonStyle(
+        borderShape: ButtonBorderShape = .capsule,
+        fallbackShape: some Shape = Capsule()
+    ) -> some View {
+        if #available(iOS 26.0, *) {
+            self.buttonStyle(.glass).buttonBorderShape(borderShape)
+        } else {
+            self.buttonStyle(.plain).background(.regularMaterial, in: fallbackShape)
+        }
+    }
+}
+
+// MARK: - glassEffectIfAvailable
+
+public extension View {
+    /// Applies the iOS 26+ Liquid Glass effect when available, falling back to
+    /// `.regularMaterial` on older systems. Handles the surface fill itself —
+    /// call sites do not need to add a background.
+    @ViewBuilder
+    func regularGlassEffectIfAvailable(in shape: some Shape = Capsule()) -> some View {
+        if #available(iOS 26.0, *) {
+            self.glassEffect(.regular, in: shape)
+        } else {
+            self.background(.regularMaterial, in: shape)
+        }
+    }
+
+    /// More transparent variant of `glassEffect` (iOS 26+). Use for surfaces
+    /// that should let more of the background through (large cards, sheets).
+    /// Falls back to a solid themed fill pre-iOS 26 — no half-glass middle
+    /// ground.
+    ///
+    /// Unlike `regularGlassEffectIfAvailable`, this variant does **not** form a
+    /// self-contained surface: on iOS 26 the clear glass needs a backing fill
+    /// to read against, so call sites should layer their own
+    /// `.ultraThinMaterial` (or similar) underneath. See
+    /// `WeatherDetailPopup.WeatherCard` for the expected stacking.
+    @ViewBuilder
+    func clearGlassEffectIfAvailable(in shape: some Shape = Capsule()) -> some View {
+        if #available(iOS 26.0, *) {
+            self.glassEffect(.clear, in: shape)
+        } else {
+            self.background(Color(uiColor: .secondarySystemBackground), in: shape)
         }
     }
 }

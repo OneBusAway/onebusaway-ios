@@ -30,10 +30,11 @@ final class AppSheetRouteTests: XCTestCase {
         expect(AppSheetRoute.settings.id) == "settings"
     }
 
-    func test_id_embedsAssociatedValues() {
+    func test_id_embedsAssociatedValues() throws {
         expect(AppSheetRoute.stopDetails(stopID: "1_75403").id) == "stopDetails-1_75403"
         expect(AppSheetRoute.tripDetails(tripID: "trip_42").id) == "tripDetails-trip_42"
-        expect(AppSheetRoute.currentTrip(routeID: "route_8").id) == "currentTrip-route_8"
+        let route = try Fixtures.createRoute(id: "route_8")
+        expect(AppSheetRoute.currentTrip(route: route).id) == "currentTrip-route_8"
         expect(AppSheetRoute.transitAlert(alertID: "alert_99").id) == "transitAlert-alert_99"
     }
 
@@ -51,11 +52,12 @@ final class AppSheetRouteTests: XCTestCase {
         expect(AppSheetRoute.routePicker.prefersStacking) == false
     }
 
-    func test_prefersStacking_stackedLayerRoutes() {
+    func test_prefersStacking_stackedLayerRoutes() throws {
         expect(AppSheetRoute.stopDetails(stopID: "1").prefersStacking) == true
         expect(AppSheetRoute.tripPlanner.prefersStacking) == true
         expect(AppSheetRoute.tripDetails(tripID: "t").prefersStacking) == true
-        expect(AppSheetRoute.currentTrip(routeID: "r").prefersStacking) == true
+        let route = try Fixtures.createRoute(id: "r")
+        expect(AppSheetRoute.currentTrip(route: route).prefersStacking) == true
         expect(AppSheetRoute.transitAlert(alertID: "a").prefersStacking) == true
         expect(AppSheetRoute.more.prefersStacking) == true
         expect(AppSheetRoute.nearbyAll.prefersStacking) == true
@@ -111,12 +113,13 @@ final class AppSheetRouteTests: XCTestCase {
         expect(config.fullScreenDetent).to(beNil())
     }
 
-    func test_stackedDetailRoutes_shareLargeStartAndAllowDismiss() {
+    func test_stackedDetailRoutes_shareLargeStartAndAllowDismiss() throws {
+        let currentTripRoute = try Fixtures.createRoute(id: "r")
         let routes: [AppSheetRoute] = [
             .tripPlanner,
             .tripDetails(tripID: "t"),
             .routePicker,
-            .currentTrip(routeID: "r"),
+            .currentTrip(route: currentTripRoute),
             .transitAlert(alertID: "a"),
             .more,
             .settings
@@ -131,13 +134,14 @@ final class AppSheetRouteTests: XCTestCase {
         }
     }
 
-    func test_allRoutes_showDragIndicator() {
+    func test_allRoutes_showDragIndicator() throws {
         // No route currently opts out of the drag indicator; this guards against
         // an accidental flip when adding a new case.
+        let currentTripRoute = try Fixtures.createRoute(id: "r")
         let routes: [AppSheetRoute] = [
             .home, .search, .nearbyAll, .recentStopsAll, .bookmarksAll,
             .stopDetails(stopID: "1"), .tripPlanner, .tripDetails(tripID: "t"),
-            .routePicker, .currentTrip(routeID: "r"), .transitAlert(alertID: "a"),
+            .routePicker, .currentTrip(route: currentTripRoute), .transitAlert(alertID: "a"),
             .more, .settings
         ]
         for route in routes {
@@ -167,6 +171,32 @@ final class AppSheetRouteTests: XCTestCase {
         expect(config.fullScreenDetent).to(beNil())
     }
 
+    // MARK: - fullScreenDetent override
+
+    /// The home config flips background interaction to `.disabled` at
+    /// `largeDetent` — the regression guard for the previously-dead override.
+    /// The override predicate is the testable surface here;
+    /// `PresentationBackgroundInteraction` is opaque and can't be compared
+    /// directly, so the modifier itself stays out of the test.
+    func test_shouldDisableBackgroundForFullScreen_homeAtLargeDetentIsTrue() {
+        let config = AppSheetRoute.home.detentConfiguration
+        expect(config.shouldDisableBackgroundForFullScreen(at: AppSheetRoute.largeDetent)) == true
+    }
+
+    func test_shouldDisableBackgroundForFullScreen_homeBelowLargeDetentIsFalse() {
+        let config = AppSheetRoute.home.detentConfiguration
+        expect(config.shouldDisableBackgroundForFullScreen(at: .medium)) == false
+        expect(config.shouldDisableBackgroundForFullScreen(at: .height(AppSheetRoute.homeCollapsedHeight))) == false
+    }
+
+    func test_shouldDisableBackgroundForFullScreen_isFalseWhenFullScreenDetentNotConfigured() {
+        // `.search` does not set `fullScreenDetent`, so the predicate must
+        // return `false` regardless of the current detent.
+        let config = AppSheetRoute.search.detentConfiguration
+        expect(config.shouldDisableBackgroundForFullScreen(at: .large)) == false
+        expect(config.shouldDisableBackgroundForFullScreen(at: .medium)) == false
+    }
+
     // MARK: - Hashable / Equatable
 
     func test_equality_sameCaseSameAssociatedValueAreEqual() {
@@ -174,9 +204,20 @@ final class AppSheetRouteTests: XCTestCase {
         expect(AppSheetRoute.tripDetails(tripID: "t")) == AppSheetRoute.tripDetails(tripID: "t")
     }
 
-    func test_equality_differentAssociatedValuesAreNotEqual() {
+    func test_equality_differentAssociatedValuesAreNotEqual() throws {
         expect(AppSheetRoute.stopDetails(stopID: "1_1")) != AppSheetRoute.stopDetails(stopID: "1_2")
-        expect(AppSheetRoute.currentTrip(routeID: "r1")) != AppSheetRoute.currentTrip(routeID: "r2")
+        let route1 = try Fixtures.createRoute(id: "r1")
+        let route2 = try Fixtures.createRoute(id: "r2")
+        expect(AppSheetRoute.currentTrip(route: route1)) != AppSheetRoute.currentTrip(route: route2)
+    }
+
+    func test_hash_consistency_forValueEqualRoutes() throws {
+        let route1 = try Fixtures.createRoute(id: "r1")
+        let route2 = try Fixtures.createRoute(id: "r1")
+        let sheetRoute1 = AppSheetRoute.currentTrip(route: route1)
+        let sheetRoute2 = AppSheetRoute.currentTrip(route: route2)
+        // Two routes with the same ID should hash to the same value
+        expect(sheetRoute1.hashValue) == sheetRoute2.hashValue
     }
 
     // MARK: - Exhaustiveness guard

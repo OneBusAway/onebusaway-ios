@@ -99,9 +99,7 @@ class SettingsViewController: FormViewController {
             application.userDefaults.set(mapViewShowsStopAnnotationLabels, forKey: MapRegionManager.mapViewShowsStopAnnotationLabelsDefaultsKey)
         }
 
-        if let useMapPanel = values[FeatureFlags.useMapPanelExperienceKey] as? Bool {
-            application.userDefaults.set(useMapPanel, forKey: FeatureFlags.useMapPanelExperienceKey)
-        }
+        saveExperimentalValues(values)
 
         if let testAlerts = values[AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts] as? Bool {
             application.userDefaults.set(testAlerts, forKey: AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts)
@@ -126,6 +124,12 @@ class SettingsViewController: FormViewController {
         }
 
         saveWalkingSpeedValues(values)
+    }
+
+    private func saveExperimentalValues(_ values: [String: Any?]) {
+        if let useMapPanel = values[FeatureFlags.useMapPanelExperienceKey] as? Bool {
+            application.userDefaults.set(useMapPanel, forKey: FeatureFlags.useMapPanelExperienceKey)
+        }
     }
 
     private func saveWalkingSpeedValues(_ values: [String: Any?]) {
