@@ -432,41 +432,24 @@ class MapViewController: UIViewController,
     }()
 
     @objc private func showWeather() {
-        guard let forecast = forecast else { return }
-        let formattedTemp = MeasurementFormatter.unitlessConversion(temperature: forecast.currentForecast.temperature, unit: .fahrenheit, to: application.locale)
-        let formattedFeelsLikeTemp = MeasurementFormatter.unitlessConversion(temperature: forecast.currentForecast.temperatureFeelsLike, unit: .fahrenheit, to: application.locale)
-
-        let measurementSystem = Locale.current.measurementSystem
-        let windSpeed: String
-        switch measurementSystem {
-        case .us, .uk:
-            let mph = forecast.currentForecast.windSpeed / 1.60934
-            windSpeed = "\(Int(mph)) mph"
-        default:
-            windSpeed = "\(Int(forecast.currentForecast.windSpeed)) km/h"
-        }
-
+        guard let display = weatherDisplay else { return }
+        // Resolve once so the formatter chain in `legacyAlert` doesn't run twice.
+        let legacyAlert = display.legacyAlert
         let alert = UIAlertController(
-            title: forecast.todaySummary,
-            message: """
-                Temp: \(formattedTemp) (Feels like \(formattedFeelsLikeTemp))
-                Wind: \(windSpeed)
-                Precipitation: \(Int(forecast.currentForecast.precipProbability * 100))% chance
-                """,
+            title: legacyAlert.title,
+            message: legacyAlert.message,
             preferredStyle: .alert
         )
         alert.addAction(.dismissAction)
         present(alert, animated: true)
     }
 
-    private var forecast: WeatherForecast? {
+    private var weatherDisplay: WeatherDisplay? {
         didSet {
-            if let forecast = forecast {
-                let formattedTemp = MeasurementFormatter.unitlessConversion(temperature: forecast.currentForecast.temperature, unit: .fahrenheit, to: application.locale)
-                weatherButton.setTitle(formattedTemp, for: .normal)
+            if let display = weatherDisplay {
+                weatherButton.setTitle(display.buttonTitle, for: .normal)
                 weatherButton.isHidden = false
-            }
-            else {
+            } else {
                 weatherButton.isHidden = true
             }
         }
@@ -1185,8 +1168,8 @@ class MapViewController: UIViewController,
 
 private extension MapViewController {
     func bindWeather() {
-        viewModel.$weather
-            .sink { [weak self] forecast in self?.forecast = forecast }
+        viewModel.$weatherDisplay
+            .sink { [weak self] display in self?.weatherDisplay = display }
             .store(in: &cancellables)
     }
 
