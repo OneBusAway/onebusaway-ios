@@ -118,8 +118,8 @@ extension AppSheetRoute {
             return "\(caseName)-\(stopID)"
         case .tripDetails(let tripID):
             return "\(caseName)-\(tripID)"
-        case .currentTrip(let routeID):
-            return "\(caseName)-\(routeID)"
+        case .currentTrip(let route):
+            return "\(caseName)-\(route.id)"
         case .transitAlert(let alertID):
             return "\(caseName)-\(alertID)"
         }
