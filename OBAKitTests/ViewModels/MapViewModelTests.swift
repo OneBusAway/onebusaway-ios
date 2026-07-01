@@ -488,4 +488,57 @@ class MapViewModelTests: OBATestCase {
         expect(viewModel.zoomLevelForCurrentLocation()) == 17
     }
 
+    // MARK: - TopPillState
+
+    /// Zoom warning wins over permission state so tapping the pill still routes
+    /// to the zoom-in action even if the user is also on reduced accuracy.
+    /// Mirrors `MapStatusView.configure(for:zoomInStatus:)` where `zoomInStatus`
+    /// overwrites the base state.
+    @MainActor
+    func test_topPillState_zoomWarningWinsOverPermission() {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader)
+        let viewModel = MapViewModel(application: app)
+
+        viewModel.updateZoomWarning(true)
+        expect(viewModel.topPillState) == .zoomInForStops
+    }
+
+    /// With no zoom warning and full permission, the pill is hidden.
+    @MainActor
+    func test_topPillState_hiddenWhenAuthorizedAndZoomed() {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader)
+        let viewModel = MapViewModel(application: app)
+
+        viewModel.updateZoomWarning(false)
+        expect(viewModel.topPillState) == .hidden
+    }
+
+    /// A `.denied` auth status maps to `.locationServicesOff` when no zoom warning is active.
+    @MainActor
+    func test_topPillState_deniedMapsToLocationServicesOff() async {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader)
+        let viewModel = MapViewModel(application: app)
+
+        viewModel.locationService(app.locationService, authorizationStatusChanged: .denied)
+        for _ in 0..<5 { await Task.yield() }
+
+        expect(viewModel.topPillState) == .locationServicesOff
+    }
+
+    /// A `.notDetermined` auth status maps to `.notDetermined` when no zoom warning is active.
+    @MainActor
+    func test_topPillState_notDeterminedMapsToPill() async {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader)
+        let viewModel = MapViewModel(application: app)
+
+        viewModel.locationService(app.locationService, authorizationStatusChanged: .notDetermined)
+        for _ in 0..<5 { await Task.yield() }
+
+        expect(viewModel.topPillState) == .notDetermined
+    }
+
 }

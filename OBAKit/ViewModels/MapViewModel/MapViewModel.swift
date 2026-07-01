@@ -145,6 +145,57 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
         return application.locationService.accuracyAuthorization == .reducedAccuracy ? 11 : 17
     }
 
+    // MARK: - Top Pill State
+
+    /// What the top-center map-status pill should currently show. Zoom warning
+    /// wins over permission state, mirroring `MapStatusView.configure(for:zoomInStatus:)`.
+    enum TopPillState: Equatable {
+        case hidden
+        case zoomInForStops
+        case notDetermined
+        case locationServicesOff
+        case impreciseLocation
+    }
+
+    var topPillState: TopPillState {
+        if showZoomWarning { return .zoomInForStops }
+        switch locationAuthStatus {
+        case .notDetermined:
+            return .notDetermined
+        case .denied, .restricted:
+            return .locationServicesOff
+        case .authorizedAlways, .authorizedWhenInUse:
+            return application.locationService.accuracyAuthorization == .reducedAccuracy ? .impreciseLocation : .hidden
+        @unknown default:
+            return .hidden
+        }
+    }
+
+    // MARK: - Location Permission Helpers
+
+    /// Prompts the user for when-in-use location authorization. Thin wrapper so
+    /// SwiftUI callers don't need to reach into `application.locationService`.
+    func requestLocationAuthorization() {
+        application.locationService.requestInUseAuthorization()
+    }
+
+    /// Requests a one-shot full-accuracy elevation. `purposeKey` must match a
+    /// `NSLocationTemporaryUsageDescriptionDictionary` entry in the host app's
+    /// Info.plist (existing key: `MapStatusView`).
+    func requestTemporaryFullAccuracy(purposeKey: String) {
+        application.locationService.requestTemporaryFullAccuracyAuthorization(withPurposeKey: purposeKey)
+    }
+
+    /// The system Settings URL. Exposed here so SwiftUI call sites don't need
+    /// to depend on `UIApplication.openSettingsURLString` directly. Force-unwrap
+    /// is safe: the string is an Apple-guaranteed constant URL.
+    var settingsURL: URL {
+        // `UIApplication.openSettingsURLString` lives in UIKit; but Foundation-only
+        // callers still need a URL. Hard-coded fallback is `app-settings:` — the
+        // same string UIKit's constant resolves to on all supported iOS versions.
+        return URL(string: "app-settings:")!
+    }
+
     // MARK: - Map Type
 
     /// Toggles between the standard and hybrid base map types.
