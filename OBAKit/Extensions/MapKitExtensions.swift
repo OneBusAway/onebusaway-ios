@@ -159,6 +159,18 @@ public extension MKMapView {
     }
 }
 
+public extension MKCoordinateRegion {
+    /// Builds a region centered on `coordinate` sized to the given `zoomLevel`
+    /// for a map view of `size`. Shared with the SwiftUI `Map` in
+    /// `MapPanelRootView` so its "center on user location" behaves the same as
+    /// `MKMapView.setCenterCoordinate(zoomLevel:)`.
+    init(centeredOn coordinate: CLLocationCoordinate2D, zoomLevel: Int, mapSize: CGSize) {
+        let clampedZoom = min(zoomLevel, 28)
+        let span = MapHelpers.coordinateSpanFrom(size: mapSize, centerCoordinate: coordinate, zoomLevel: clampedZoom)
+        self.init(center: coordinate, span: span)
+    }
+}
+
 extension MKMapView {
 
     /// Syntactic sugar for registering annotation views

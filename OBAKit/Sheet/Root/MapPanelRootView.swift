@@ -10,22 +10,18 @@
 import MapKit
 import SwiftUI
 import OBAKitCore
+import UIKit
 
 // MARK: - MapPanelRootView
 
 /// A pure-SwiftUI alternative to `MapViewController`: a full-screen SwiftUI
-/// `Map` with the persistent floating sheet system layered on top.
-///
-/// This is the SwiftUI-native composition root for the sheet system:
-/// `Application` enters the SwiftUI tree here. The coordinator is owned as a
-/// `@StateObject`; the factory is a stateless `let`. Sheet content is rendered
-/// over the SwiftUI `Map`.
+/// `Map` with the persistent floating sheet system layered on top plus the
+/// floating map-control overlays (bottom-leading cluster, top-center pill).
 struct MapPanelRootView: View {
 
     @StateObject private var coordinator: SheetCoordinator<AppSheetRoute>
     @StateObject private var mapViewModel: MapViewModel
 
-    @State private var cameraPosition: MapCameraPosition = .userLocation(fallback: .automatic)
     /// Presentation state only. The popup reads its data from
     /// `mapViewModel.weatherDisplay` so a refresh that finishes while the card
     /// is open updates the displayed forecast in place.
@@ -33,18 +29,26 @@ struct MapPanelRootView: View {
 
     @Environment(\.scenePhase) private var scenePhase
 
+    @State private var cameraPosition: MapCameraPosition = .userLocation(fallback: .automatic)
+    @State private var mapSize: CGSize = .zero
+    @State private var visibleRegion: MKCoordinateRegion?
+
+    private let application: Application
     private let factory: AppSheetViewFactory
 
     init(application: Application) {
         _coordinator = StateObject(wrappedValue: SheetCoordinator<AppSheetRoute>(root: .home))
-        _mapViewModel = StateObject(wrappedValue: MapViewModel(application: application))
-        factory = AppSheetViewFactory(application: application)
+        let initialMapType: MapBaseType = application.mapRegionManager.userSelectedMapType == .mutedStandard ? .standard : .hybrid
+        _mapViewModel = StateObject(wrappedValue: MapViewModel(application: application, initialMapType: initialMapType))
+        self.application = application
+        self.factory = AppSheetViewFactory(application: application)
     }
 
     var body: some View {
         Map(position: $cameraPosition) {
             UserAnnotation()
         }
+        .mapStyle(mapViewModel.mapType == .standard ? .standard : .hybrid)
         // TODO: Detent-aware bottom padding. Pinned to the collapsed sheet
         // height today, so dragging the sheet up to `.medium` or
         // `largeDetent` lets the user-location annotation and any future map
@@ -53,19 +57,34 @@ struct MapPanelRootView: View {
         .overlay(alignment: .topLeading) {
             weatherButton
         }
-        .onAppear {
-            mapViewModel.start()
+        .onGeometryChange(for: CGSize.self) { proxy in
+            proxy.size
+        } action: { _, newValue in
+            mapSize = newValue
         }
-        .onChange(of: scenePhase) { _, newPhase in
-            if newPhase == .active {
-                mapViewModel.onAppBecameActive()
-            }
+        .onMapCameraChange(frequency: .onEnd) { context in
+            visibleRegion = context.region
         }
-        // The popup cover is attached INSIDE the sheet content so it's
-        // presented from the floating sheet's `UISheetPresentationController` —
-        // a host-level `.fullScreenCover` ends up under the sheet because the
-        // sheet owns the topmost presentation context. `.presentationBackground(.clear)`
-        // keeps the map and sheet visible behind the dim+card.
+        .overlay(alignment: .top) {
+            MapStatusPill(
+                state: mapViewModel.topPillState,
+                onZoomInForStops: zoomInForStops,
+                onRequestAuthorization: mapViewModel.requestLocationAuthorization,
+                onOpenSettings: openSettings,
+                onRequestPreciseLocation: { mapViewModel.requestTemporaryFullAccuracy(purposeKey: "MapStatusView") }
+            )
+            .padding(.top, ThemeMetrics.padding)
+        }
+        .overlay(alignment: .bottomLeading) {
+            MapControlsCluster(
+                mapType: mapViewModel.mapType,
+                isLocationButtonVisible: application.locationService.isLocationUseAuthorized,
+                onToggleMapType: mapViewModel.toggleMapType,
+                onCenterOnUser: centerOnUser
+            )
+            .padding(.leading, ThemeMetrics.controllerMargin)
+            .padding(.bottom, AppSheetRoute.homeCollapsedHeight + ThemeMetrics.padding)
+        }
         .floatingSheet(coordinator: coordinator) { route in
             factory.view(for: route)
                 .fullScreenCover(isPresented: $isWeatherPopupPresented) {
@@ -75,6 +94,14 @@ struct MapPanelRootView: View {
                     )
                     .presentationBackground(.clear)
                 }
+        }
+        .onAppear {
+            mapViewModel.start()
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .active {
+                mapViewModel.onAppBecameActive()
+            }
         }
     }
 
@@ -86,5 +113,45 @@ struct MapPanelRootView: View {
             }
             .padding(ThemeMetrics.controllerMargin)
         }
+    }
+
+    // MARK: - Actions
+
+    private func centerOnUser() {
+        guard let location = application.locationService.currentLocation else { return }
+        let region = MKCoordinateRegion(
+            centeredOn: location.coordinate,
+            zoomLevel: mapViewModel.zoomLevelForCurrentLocation(),
+            mapSize: mapSize
+        )
+        withAnimation {
+            cameraPosition = .region(region)
+        }
+    }
+
+    private func zoomInForStops() {
+        // Reuse the currently-visible center by asking for the tracked visible
+        // region; if the camera hasn't emitted a region yet (edge case on first
+        // frame), fall back to the user location if known.
+        let currentCenter: CLLocationCoordinate2D
+        if let region = visibleRegion {
+            currentCenter = region.center
+        } else if let userLocation = application.locationService.currentLocation {
+            currentCenter = userLocation.coordinate
+        } else {
+            return
+        }
+        let span = MKCoordinateSpan(
+            latitudeDelta: MapViewModel.zoomInForStopsSpan,
+            longitudeDelta: MapViewModel.zoomInForStopsSpan
+        )
+        withAnimation {
+            cameraPosition = .region(MKCoordinateRegion(center: currentCenter, span: span))
+        }
+    }
+
+    private func openSettings() {
+        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+        UIApplication.shared.open(url)
     }
 }
