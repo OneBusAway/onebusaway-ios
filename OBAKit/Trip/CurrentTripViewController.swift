@@ -111,7 +111,7 @@ class CurrentTripViewController: UIViewController,
                 var stack = nav.viewControllers
                 stack[stack.count - 1] = tripController
                 nav.setViewControllers(stack, animated: true)
-                self.viewModel.pendingNavigation = nil
+                self.viewModel.clearPendingNavigation()
             }
             .store(in: &cancellables)
     }
