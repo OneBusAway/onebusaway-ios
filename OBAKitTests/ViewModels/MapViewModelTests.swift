@@ -464,4 +464,28 @@ class MapViewModelTests: OBATestCase {
         expect(app.userDataStore.nextSurveyReminderDate).to(beNil())
     }
 
+    // MARK: - Zoom Helpers
+
+    /// The zoom-in-for-stops span is a fixed constant shared with `MapStatusPill`
+    /// / `MapViewController.didTapZoomInForStops` so both surfaces zoom to the
+    /// same target when the user taps "Zoom in for stops."
+    @MainActor
+    func test_zoomInForStopsSpan_isSharedConstant() {
+        expect(MapViewModel.zoomInForStopsSpan) == 0.01
+    }
+
+    /// Full-accuracy authorization returns a tight zoom (17); reduced-accuracy
+    /// backs off to a coarser zoom (11) so the ~1km fuzz cell fits in view.
+    /// Mirrors the branch in `MapViewController.centerMapOnUserLocation`.
+    @MainActor
+    func test_zoomLevelForCurrentLocation_reflectsAccuracyAuthorization() {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader)
+        let viewModel = MapViewModel(application: app)
+
+        // MockAuthorizedLocationManager grants full accuracy by default.
+        expect(app.locationService.accuracyAuthorization) == .fullAccuracy
+        expect(viewModel.zoomLevelForCurrentLocation()) == 17
+    }
+
 }

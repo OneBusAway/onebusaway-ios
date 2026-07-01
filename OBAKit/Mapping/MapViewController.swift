@@ -316,13 +316,11 @@ class MapViewController: UIViewController,
         let userLocation = mapRegionManager.mapView.userLocation
         guard userLocation.isValid else { return }
 
-        var zoomLevel = 17
-
-        if application.locationService.accuracyAuthorization == .reducedAccuracy {
-            zoomLevel = 11
-        }
-
-        mapRegionManager.mapView.setCenterCoordinate(centerCoordinate: userLocation.coordinate, zoomLevel: zoomLevel, animated: true)
+        mapRegionManager.mapView.setCenterCoordinate(
+            centerCoordinate: userLocation.coordinate,
+            zoomLevel: viewModel.zoomLevelForCurrentLocation(),
+            animated: true
+        )
 
         // It is possible to activate the center map button via Voiceover. When the user
         // centers the map on their location, partially collapse the sheet to enable mapview interaction.
@@ -332,8 +330,6 @@ class MapViewController: UIViewController,
     }
 
     // MARK: - Status View Handlers
-
-    private static let zoomInForStopsSpan = 0.01
 
     @objc private func handleMapStatusTap(_ sender: UITapGestureRecognizer) {
         if viewModel.showZoomWarning {
@@ -347,8 +343,8 @@ class MapViewController: UIViewController,
         let currentCenter = mapRegionManager.mapView.region.center
 
         let targetSpan = MKCoordinateSpan(
-            latitudeDelta: MapViewController.zoomInForStopsSpan,
-            longitudeDelta: MapViewController.zoomInForStopsSpan
+            latitudeDelta: MapViewModel.zoomInForStopsSpan,
+            longitudeDelta: MapViewModel.zoomInForStopsSpan
         )
 
         let newRegion = MKCoordinateRegion(center: currentCenter, span: targetSpan)

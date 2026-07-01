@@ -131,6 +131,20 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
         showZoomWarning = show
     }
 
+    // MARK: - Zoom Constants
+
+    /// Latitude/longitude span used when the user taps the "Zoom in for stops"
+    /// affordance. Shared with `MapViewController.didTapZoomInForStops` and
+    /// `MapStatusPill` so both surfaces zoom to the same target.
+    static let zoomInForStopsSpan: Double = 0.01
+
+    /// Returns the zoom level to use when centering on the user's current
+    /// location. Full accuracy zooms tight (17); reduced accuracy zooms out
+    /// (11) so the ~1km approximation cell fits comfortably in view.
+    func zoomLevelForCurrentLocation() -> Int {
+        return application.locationService.accuracyAuthorization == .reducedAccuracy ? 11 : 17
+    }
+
     // MARK: - Map Type
 
     /// Toggles between the standard and hybrid base map types.
