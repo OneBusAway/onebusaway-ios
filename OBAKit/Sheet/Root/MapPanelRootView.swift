@@ -82,6 +82,9 @@ struct MapPanelRootView: View {
         .overlay(alignment: .topLeading) {
             weatherButton
         }
+        .overlay(alignment: .topTrailing) {
+            moreButton
+        }
         .overlay(alignment: .bottomLeading) {
             bottomFloatingTripButton
         }
@@ -145,4 +148,10 @@ struct MapPanelRootView: View {
         )
     }
 
+    private var moreButton: some View {
+        MoreButton {
+            coordinator.push(.more)
+        }
+        .padding(ThemeMetrics.controllerMargin)
+    }
 }
