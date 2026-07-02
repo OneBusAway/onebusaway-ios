@@ -33,6 +33,9 @@ struct MapPanelRootView: View {
     @State private var mapSize: CGSize = .zero
     @State private var visibleRegion: MKCoordinateRegion?
 
+    /// Location-permission dialog presentation state. Owned by the root
+    @State private var permissionDialogState: MapViewModel.TopPillState?
+
     private let application: Application
     private let factory: AppSheetViewFactory
 
@@ -69,20 +72,18 @@ struct MapPanelRootView: View {
             MapStatusPill(
                 state: mapViewModel.topPillState,
                 onZoomInForStops: zoomInForStops,
-                onRequestAuthorization: mapViewModel.requestLocationAuthorization,
-                onOpenSettings: openSettings,
-                onRequestPreciseLocation: { mapViewModel.requestTemporaryFullAccuracy(purposeKey: "MapStatusView") }
+                onPermissionTap: handlePermissionTap
             )
             .padding(.top, ThemeMetrics.padding)
         }
-        .overlay(alignment: .bottomLeading) {
+        .overlay(alignment: .bottomTrailing) {
             MapControlsCluster(
                 mapType: mapViewModel.mapType,
                 isLocationButtonVisible: application.locationService.isLocationUseAuthorized,
                 onToggleMapType: mapViewModel.toggleMapType,
                 onCenterOnUser: centerOnUser
             )
-            .padding(.leading, ThemeMetrics.controllerMargin)
+            .padding(.trailing, ThemeMetrics.controllerMargin)
             .padding(.bottom, AppSheetRoute.homeCollapsedHeight + ThemeMetrics.padding)
         }
         .floatingSheet(coordinator: coordinator) { route in
@@ -94,6 +95,12 @@ struct MapPanelRootView: View {
                     )
                     .presentationBackground(.clear)
                 }
+                .mapPermissionDialog(
+                    state: $permissionDialogState,
+                    onRequestAuthorization: mapViewModel.requestLocationAuthorization,
+                    onOpenSettings: openSettings,
+                    onRequestPreciseLocation: { mapViewModel.requestTemporaryFullAccuracy(purposeKey: "MapStatusView") }
+                )
         }
         .onAppear {
             mapViewModel.start()
@@ -112,6 +119,24 @@ struct MapPanelRootView: View {
                 isWeatherPopupPresented = true
             }
             .padding(ThemeMetrics.controllerMargin)
+        }
+    }
+
+    // MARK: - Permission Tap
+
+    /// Sets `permissionDialogState` so the `confirmationDialog` attached inside
+    /// the floating sheet presents. We DO NOT invoke the OS permission APIs
+    /// directly from the pill's tap: the confirmation dialog gives the user a
+    /// chance to opt out ("Keep Location Off") before the native system alert
+    /// fires, and — for `.locationServicesOff` and `.impreciseLocation` — the
+    /// action list itself is the meaningful choice (there is no re-prompt path
+    /// on iOS after the first denial).
+    private func handlePermissionTap(_ state: MapViewModel.TopPillState) {
+        switch state {
+        case .notDetermined, .locationServicesOff, .impreciseLocation:
+            permissionDialogState = state
+        case .hidden, .zoomInForStops:
+            break
         }
     }
 

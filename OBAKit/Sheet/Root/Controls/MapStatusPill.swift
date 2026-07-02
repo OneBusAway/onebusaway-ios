@@ -14,18 +14,21 @@ import OBAKitCore
 /// "Zoom in for stops" (when the region is too broad to load stops) or a
 /// location-permission prompt. Mirrors the UIKit `MapStatusView` but styled with
 /// Liquid Glass. Renders nothing when there's no status to show.
+///
+/// The pill is display + tap only: it forwards permission-state taps to the
+/// caller, which owns the `confirmationDialog` presentation. Presenting the
+/// dialog from inside the pill (which lives in the map's overlay layer)
+/// conflicts with `floatingSheet`'s always-presented `UISheetPresentationController`
+/// and causes the base sheet to be dismissed. See `MapPanelRootView` for the
+/// hosting side of the pattern.
 struct MapStatusPill: View {
     let state: MapViewModel.TopPillState
     let onZoomInForStops: () -> Void
-    let onRequestAuthorization: () -> Void
-    let onOpenSettings: () -> Void
-    let onRequestPreciseLocation: () -> Void
-
-    @State private var isPermissionDialogPresented = false
+    let onPermissionTap: (MapViewModel.TopPillState) -> Void
 
     var body: some View {
         if let display = Display(state: state) {
-            Button(action: { handleTap(display: display) }) {
+            Button(action: handleTap) {
                 HStack(spacing: 8) {
                     Image(systemName: display.symbolName)
                         .font(.headline)
@@ -39,91 +42,17 @@ struct MapStatusPill: View {
             .buttonStyle(.plain)
             .regularGlassEffectIfAvailable()
             .accessibilityLabel(Text(display.labelText))
-            .confirmationDialog(
-                permissionDialogTitle(for: state),
-                isPresented: $isPermissionDialogPresented,
-                titleVisibility: .visible
-            ) {
-                permissionDialogButtons(for: state)
-            }
         }
     }
 
-    private func handleTap(display: Display) {
+    private func handleTap() {
         switch state {
         case .hidden:
             return
         case .zoomInForStops:
             onZoomInForStops()
         case .notDetermined, .locationServicesOff, .impreciseLocation:
-            isPermissionDialogPresented = true
-        }
-    }
-
-    private func permissionDialogTitle(for state: MapViewModel.TopPillState) -> String {
-        switch state {
-        case .notDetermined:
-            return OBALoc(
-                "locationservices_alert_notdetermined.title",
-                value: "Enable Location Services",
-                comment: "Title of the alert asking the user to enable location services."
-            )
-        case .locationServicesOff:
-            return OBALoc(
-                "locationservices_alert_off.title",
-                value: "Location Services Off",
-                comment: "Title of the alert shown when location services are disabled for the app."
-            )
-        case .impreciseLocation:
-            return OBALoc(
-                "locationservices_alert_imprecise.title",
-                value: "Precise Location Off",
-                comment: "Title of the alert shown when the user has restricted the app to reduced-accuracy location."
-            )
-        case .hidden, .zoomInForStops:
-            return ""
-        }
-    }
-
-    @ViewBuilder
-    private func permissionDialogButtons(for state: MapViewModel.TopPillState) -> some View {
-        switch state {
-        case .notDetermined:
-            Button(Strings.continue) { onRequestAuthorization() }
-            Button(OBALoc(
-                "locationservices_alert_keepoff.button",
-                value: "Keep Location Off",
-                comment: ""
-            )) {}
-        case .locationServicesOff:
-            Button(OBALoc(
-                "locationservices_alert_gotosettings.button",
-                value: "Turn On in Settings",
-                comment: ""
-            )) { onOpenSettings() }
-            Button(OBALoc(
-                "locationservices_alert_keepoff.button",
-                value: "Keep Location Off",
-                comment: ""
-            ), role: .cancel) {}
-        case .impreciseLocation:
-            Button(OBALoc(
-                "locationservices_alert_gotosettings.button",
-                value: "Turn On in Settings",
-                comment: ""
-            )) { onOpenSettings() }
-            Button(OBALoc(
-                "locationservices_alert_request_precise_location_once.button",
-                value: "Allow Once",
-                comment: ""
-            )) { onRequestPreciseLocation() }
-            Button(OBALoc(
-                "locationservices_alert_keep_precise_location_off.button",
-                value: "Keep Precise Location Off",
-                comment: ""
-            ), role: .cancel) {}
-        case .hidden, .zoomInForStops:
-            EmptyView()
+            onPermissionTap(state)
         }
     }
 }
