@@ -31,3 +31,19 @@ private struct FirstAppear: ViewModifier {
         }
     }
 }
+
+// MARK: - glassEffectIfAvailable
+
+public extension View {
+    /// Applies the iOS 26+ Liquid Glass effect when available, falling back to
+    /// `.regularMaterial` on older systems. Handles the surface fill itself —
+    /// call sites do not need to add a background.
+    @ViewBuilder
+    func regularGlassEffectIfAvailable(in shape: some Shape = Capsule()) -> some View {
+        if #available(iOS 26.0, *) {
+            self.glassEffect(.regular, in: shape)
+        } else {
+            self.background(.regularMaterial, in: shape)
+        }
+    }
+}
