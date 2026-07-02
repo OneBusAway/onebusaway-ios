@@ -35,6 +35,8 @@ final class AppSheetViewFactory {
         switch route {
         case .home:
             homeView()
+        case .more:
+            moreView()
         // Wiring a push for one of these routes before its view exists will
         // trip the debug assertion in `unimplementedView(for:)` — register the
         // view here before reaching for `SheetCoordinator.push(...)`.
@@ -45,7 +47,7 @@ final class AppSheetViewFactory {
         // route is unreachable once entered.
         case .search, .nearbyAll, .recentStopsAll, .bookmarksAll,
              .stopDetails, .tripPlanner, .tripDetails, .routePicker,
-             .currentTrip, .transitAlert, .more, .settings:
+             .currentTrip, .transitAlert, .settings:
             unimplementedView(for: route)
         }
     }
@@ -54,6 +56,13 @@ final class AppSheetViewFactory {
 
     func homeView() -> HomeSheetView {
         HomeSheetView(viewModel: HomeSheetViewModel())
+    }
+
+    /// Bridges `AppSheetRoute.more` to the existing UIKit `MoreViewController`
+    /// via `MoreSheetHost`. Swap this branch's return type once the SwiftUI
+    /// `MoreView` lands.
+    func moreView() -> MoreSheetHost {
+        MoreSheetHost(application: application)
     }
 
     /// Placeholder until each route gets its own real view. In debug builds we
