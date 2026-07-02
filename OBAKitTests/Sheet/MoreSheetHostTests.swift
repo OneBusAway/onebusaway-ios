@@ -8,7 +8,6 @@
 //
 
 import XCTest
-import SwiftUI
 import Nimble
 @testable import OBAKit
 @testable import OBAKitCore
@@ -64,24 +63,13 @@ final class MoreSheetHostTests: OBATestCase {
     }
 
     @MainActor
-    func test_makeUIViewController_returnsNavigationControllerWrappingMoreViewController() {
+    func test_makeNavigationController_wrapsMoreViewControllerInNav() {
         let dataLoader = MockDataLoader(testName: name)
         let application = createApplication(dataLoader: dataLoader)
 
-        let host = MoreSheetHost(application: application)
-        expect(host).toNot(beNil())
+        let nav = MoreSheetHost.makeNavigationController(application: application)
 
-        // Verify that MoreViewController can be instantiated with the application
-        let moreVC = MoreViewController(application: application)
-        expect(moreVC).toNot(beNil())
-        expect(moreVC).to(beAKindOf(MoreViewController.self))
-
-        // Create the navigation controller as the host would
-        let nav = UINavigationController(rootViewController: moreVC)
-        expect(nav).toNot(beNil())
+        expect(nav.viewControllers.count) == 1
         expect(nav.topViewController).to(beAKindOf(MoreViewController.self))
-
-        // Verify the host conforms to the representable protocol
-        expect(host).to(beAKindOf(UIViewControllerRepresentable.self))
     }
 }
