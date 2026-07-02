@@ -41,8 +41,18 @@ struct MapPanelRootView: View {
         // `largeDetent` lets the user-location annotation and any future map
         // overlays slip under the sheet.
         .safeAreaPadding(.bottom, AppSheetRoute.homeCollapsedHeight)
+        .overlay(alignment: .topTrailing) {
+            moreButton
+        }
         .floatingSheet(coordinator: coordinator) { route in
             factory.view(for: route)
         }
+    }
+
+    private var moreButton: some View {
+        MoreButton {
+            coordinator.push(.more)
+        }
+        .padding(ThemeMetrics.controllerMargin)
     }
 }
