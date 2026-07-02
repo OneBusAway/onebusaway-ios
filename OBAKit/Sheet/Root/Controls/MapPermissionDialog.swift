@@ -25,10 +25,16 @@ import OBAKitCore
 /// no-ops and never trigger presentation.
 struct MapPermissionDialog: ViewModifier {
 
+    /// The set of actions the dialog can dispatch. The caller decides how each
+    /// maps to a concrete side effect (VM method, `UIApplication.open`, etc.).
+    enum Action {
+        case requestAuthorization
+        case openSettings
+        case requestPreciseLocation
+    }
+
     @Binding var state: MapViewModel.TopPillState?
-    let onRequestAuthorization: () -> Void
-    let onOpenSettings: () -> Void
-    let onRequestPreciseLocation: () -> Void
+    let onAction: (Action) -> Void
 
     func body(content: Content) -> some View {
         content.confirmationDialog(
@@ -87,14 +93,12 @@ struct MapPermissionDialog: ViewModifier {
     // MARK: - Buttons
 
     /// Actions rendered inside the `confirmationDialog` for a given state.
-    /// Button labels and cancel-role assignments mirror the UIKit
-    /// `MapViewController.didTapMapStatus` alert so the two surfaces present
-    /// the same choices.
+    /// Button labels mirror the UIKit `MapViewController.didTapMapStatus` alert.
     @ViewBuilder
     private func buttons(for state: MapViewModel.TopPillState) -> some View {
         switch state {
         case .notDetermined:
-            Button(Strings.continue) { onRequestAuthorization() }
+            Button(Strings.continue) { onAction(.requestAuthorization) }
             Button(OBALoc(
                 "locationservices_alert_keepoff.button",
                 value: "Keep Location Off",
@@ -105,28 +109,28 @@ struct MapPermissionDialog: ViewModifier {
                 "locationservices_alert_gotosettings.button",
                 value: "Turn On in Settings",
                 comment: ""
-            )) { onOpenSettings() }
+            )) { onAction(.openSettings) }
             Button(OBALoc(
                 "locationservices_alert_keepoff.button",
                 value: "Keep Location Off",
                 comment: ""
-            ), role: .cancel) {}
+            )) {}
         case .impreciseLocation:
             Button(OBALoc(
                 "locationservices_alert_gotosettings.button",
                 value: "Turn On in Settings",
                 comment: ""
-            )) { onOpenSettings() }
+            )) { onAction(.openSettings) }
             Button(OBALoc(
                 "locationservices_alert_request_precise_location_once.button",
                 value: "Allow Once",
                 comment: ""
-            )) { onRequestPreciseLocation() }
+            )) { onAction(.requestPreciseLocation) }
             Button(OBALoc(
                 "locationservices_alert_keep_precise_location_off.button",
                 value: "Keep Precise Location Off",
                 comment: ""
-            ), role: .cancel) {}
+            )) {}
         case .hidden, .zoomInForStops:
             EmptyView()
         }
@@ -141,15 +145,8 @@ extension View {
     /// `.impreciseLocation`) to present; dismissal clears the binding.
     func mapPermissionDialog(
         state: Binding<MapViewModel.TopPillState?>,
-        onRequestAuthorization: @escaping () -> Void,
-        onOpenSettings: @escaping () -> Void,
-        onRequestPreciseLocation: @escaping () -> Void
+        onAction: @escaping (MapPermissionDialog.Action) -> Void
     ) -> some View {
-        modifier(MapPermissionDialog(
-            state: state,
-            onRequestAuthorization: onRequestAuthorization,
-            onOpenSettings: onOpenSettings,
-            onRequestPreciseLocation: onRequestPreciseLocation
-        ))
+        modifier(MapPermissionDialog(state: state, onAction: onAction))
     }
 }

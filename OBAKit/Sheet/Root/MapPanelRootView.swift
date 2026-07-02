@@ -95,12 +95,7 @@ struct MapPanelRootView: View {
                     )
                     .presentationBackground(.clear)
                 }
-                .mapPermissionDialog(
-                    state: $permissionDialogState,
-                    onRequestAuthorization: mapViewModel.requestLocationAuthorization,
-                    onOpenSettings: openSettings,
-                    onRequestPreciseLocation: { mapViewModel.requestTemporaryFullAccuracy(purposeKey: "MapStatusView") }
-                )
+                .mapPermissionDialog(state: $permissionDialogState, onAction: handleDialogAction)
         }
         .onAppear {
             mapViewModel.start()
@@ -122,6 +117,10 @@ struct MapPanelRootView: View {
         }
     }
 
+}
+
+extension MapPanelRootView {
+
     // MARK: - Permission Tap
 
     /// Sets `permissionDialogState` so the `confirmationDialog` attached inside
@@ -135,10 +134,33 @@ struct MapPanelRootView: View {
         switch state {
         case .notDetermined, .locationServicesOff, .impreciseLocation:
             permissionDialogState = state
-        case .hidden, .zoomInForStops:
+        case .hidden:
+            assertionFailure("handlePermissionTap called with .hidden — pill should not be tappable in this state.")
+        case .zoomInForStops:
+            // `.zoomInForStops` taps are routed through `onZoomInForStops` on
+            // the pill, not this handler.
             break
         }
     }
+
+    /// Fans out a dialog action to the concrete side effect. Kept as its own
+    /// dispatcher so the caller-side switch stays exhaustive over
+    /// `MapPermissionDialog.Action` — adding a case surfaces as a compile
+    /// error rather than a silently-unhandled tap.
+    private func handleDialogAction(_ action: MapPermissionDialog.Action) {
+        switch action {
+        case .requestAuthorization:
+            mapViewModel.requestLocationAuthorization()
+        case .openSettings:
+            openSettings()
+        case .requestPreciseLocation:
+            mapViewModel.requestTemporaryFullAccuracy(purposeKey: "MapStatusView")
+        }
+    }
+
+}
+
+extension MapPanelRootView {
 
     // MARK: - Actions
 
@@ -179,4 +201,5 @@ struct MapPanelRootView: View {
         guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
         UIApplication.shared.open(url)
     }
+
 }
