@@ -43,6 +43,9 @@
 /* Title of the Alarm Time Picker page. */
 "alarm_time_picker.title" = "Add Reminder";
 
+/* Placeholder shown in release builds when a sheet route is pushed but has no view registered. */
+"app_sheet.unimplemented_route.placeholder" = "This screen is coming soon.";
+
 /* The title to display to confirm the user's action to delete a bookmark. */
 "bookmarks_controller.delete_bookmark.actionsheet.title" = "Delete Bookmark";
 
@@ -94,6 +97,9 @@
 /* Distance from user to vehicle. e.g. '0.2 mi away' */
 "current_trip_controller.distance_fmt" = "%@ away";
 
+/* Error when the API service is unavailable. */
+"current_trip_controller.error_no_service" = "Unable to connect to the transit service.";
+
 /* Error message when the user's location is not available. */
 "current_trip_controller.location_unavailable" = "Location unavailable. Please enable location services.";
 
@@ -108,9 +114,6 @@
 
 /* Message when no active vehicle is found near the user on the selected route. */
 "current_trip_controller.no_results" = "No active vehicle found on this route near you";
-
-/* Error when the API service is unavailable. */
-"current_trip_controller.error_no_service" = "Unable to connect to the transit service.";
 
 /* Button to retry finding the user's vehicle. */
 "current_trip_controller.retry" = "Try Again";
@@ -196,11 +199,11 @@
 /* Title of the alert that appears when the user chooses to dismiss the donations request UI on a stop page */
 "donations.donations_dismiss_alert.title" = "Please don't dismiss this request";
 
-/* Indicates that the user wants to create a duplicate bookmark. */
-"edit_bookmark_controller.duplicate_alert.affirmative_button" = "Create Duplicate";
-
 /* Title of the button that lets the user add a new Bookmark Group. */
 "edit_bookmark_controller.add_group_button_title" = "Add Bookmark Group";
+
+/* Indicates that the user wants to create a duplicate bookmark. */
+"edit_bookmark_controller.duplicate_alert.affirmative_button" = "Create Duplicate";
 
 /* Body of an alert telling the user they have already bookmarked this thing. */
 "edit_bookmark_controller.duplicate_alert.body" = "You already have this bookmarked. Did you mean to create a duplicate?";
@@ -255,6 +258,9 @@
 
 /* A voiceover title describing that the card's visibility taking up the minimum amount of screen. */
 "floating_panel.controller.position.minimized" = "Minimized";
+
+/* Placeholder text inside the disabled search bar on the home sheet, shown while search is unimplemented. */
+"home_sheet.search_bar.coming_soon" = "Search coming soon";
 
 /* Description of why we need location services */
 "location_permission_bulletin.description_text" = "Please allow the app to access your location to make it easier to find your transit stops.";
@@ -434,6 +440,9 @@
 /* Credits - like who should get credit for creating this. */
 "more_controller.credits_row_title" = "Credits";
 
+/* Header for the custom links section configured by the transit agency. */
+"more_controller.custom_links.header" = "Resources";
+
 /* Title for a button that will crash the app. */
 "more_controller.debug_section.crash_row" = "Crash the app";
 
@@ -449,8 +458,8 @@
 /* Header for the donate section. */
 "more_controller.donate" = "Be a Supporter";
 
-/* The call to action for the More controller's donate buton */
-"more_controller.donate_description" = "Donate to OneBusAway";
+/* Call to action for donations. %@ is the app name. */
+"more_controller.donate_description_fmt" = "Donate to %@";
 
 /* Header for the volunteer section. */
 "more_controller.help_out" = "Help make the app better";
@@ -491,17 +500,20 @@
 /* Body for the empty set indicator on the Nearby controller. */
 "nearby_controller.empty_set.body" = "Zoom out or pan around to find some stops.";
 
+/* Button to search wider area */
+"nearby_controller.empty_set.button" = "Search Wider Area";
+
 /* Title for the empty set indicator on the Nearby controller */
 "nearby_controller.empty_set.title" = "No Nearby Stops";
-
-/* Error shown on the Nearby Stops screen when no API service is configured (e.g. no region selected). */
-"nearby_stops_controller.no_api_service_error" = "No transit data service is available. Please choose a region in Settings.";
 
 /* Body for the empty set indicator on the Nearby Stops controller. */
 "nearby_stops_controller.empty_set.body" = "There are no other stops in the vicinity.";
 
 /* Title for the empty set indicator on the Nearby Stops controller. */
 "nearby_stops_controller.empty_set.title" = "No Nearby Stops";
+
+/* Error shown on the Nearby Stops screen when no API service is configured (e.g. no region selected). */
+"nearby_stops_controller.no_api_service_error" = "No transit data service is available. Please choose a region in Settings.";
 
 /* The title of the Nearby Stops controller. */
 "nearby_stops_controller.title" = "Nearby Stops";
@@ -532,6 +544,9 @@
 
 /* Vehicle occupancy status is unknown. */
 "occupancy_status.unknown" = "Unknown";
+
+/* Reachability bulletin shown when the user has disabled cellular data for this app in iOS Settings. Both substituted values are the app name. */
+"reachability_bulletin.description.cellular_data_restricted_fmt" = "%1$@ is not currently allowed to access cellular data. To fix this, go to Settings > Cellular and enable cellular data for %2$@, or connect to a WiFi network.";
 
 /* Reachability bulletin for a cellular connection that can't access the Internet. */
 "reachability_bulletin.description.cellular_no_internet" = "We can't access the Internet via your cellular connection.\r\n\r\nTry connecting to WiFi or moving to a new area.";
@@ -602,24 +617,6 @@
 /* Error message of Custom Region URL if it's invalid or does not point to a functional OBA server */
 "region_url.error_messsage" = "The provided region URL is invalid or does not point to a functional OBA server.";
 
-/* Placeholder text in the route search field. */
-"route_picker.search_placeholder" = "Search routes…";
-
-/* Title for the route picker screen where the user selects their transit route. */
-"route_picker.title" = "Select Your Route";
-
-/* Error when API service is unavailable in the route picker. */
-"route_picker.error_no_service" = "Unable to connect to the transit service.";
-
-/* Error when location is unavailable in the route picker. */
-"route_picker.error_no_location" = "Location unavailable. Please enable location services to find nearby routes.";
-
-/* Loading message while fetching nearby routes. */
-"route_picker.loading" = "Loading routes…";
-
-/* Message when no routes are found near the user's location. */
-"route_picker.no_routes" = "No routes found nearby.";
-
 /* Title of the Report Problem view controller. */
 "report_problem.title" = "Report a Problem";
 
@@ -632,8 +629,23 @@
 /* A table header in the 'Report Problem' view controller. */
 "report_problem_controller.vehicle_problem.header" = "Problem with a Vehicle at the Stop";
 
-/* Morning time period label */
-"schedule_view.am_period" = "AM";
+/* Error when location is unavailable in the route picker. */
+"route_picker.error_no_location" = "Location unavailable. Please enable location services to find nearby routes.";
+
+/* Error when the API service is unavailable in the route picker. */
+"route_picker.error_no_service" = "Unable to connect to the transit service.";
+
+/* Loading message while fetching nearby routes. */
+"route_picker.loading" = "Loading routes…";
+
+/* Message when no routes are found near the user's location. */
+"route_picker.no_routes" = "No routes found nearby.";
+
+/* Placeholder text in the route search field. */
+"route_picker.search_placeholder" = "Search routes…";
+
+/* Title for the route picker screen where the user selects their transit route. */
+"route_picker.title" = "Select Your Route";
 
 /* Label for date picker in schedule view */
 "schedule_view.date" = "Date";
@@ -644,6 +656,9 @@
 /* Default direction label when no headsign is available */
 "schedule_view.direction_number_fmt" = "Direction %d";
 
+/* Error message shown when the schedule-for-route API endpoint is not available on the server. */
+"schedule_view.feature_not_supported" = "The timetable feature is not available for this region. The transit agency's server does not support this feature.";
+
 /* Accessibility text when there is no departure time */
 "schedule_view.no_departure" = "No departure";
 
@@ -652,9 +667,6 @@
 
 /* Message when no stops are available for the selected direction */
 "schedule_view.no_stops_found" = "No stops found for this direction";
-
-/* Afternoon/evening time period label */
-"schedule_view.pm_period" = "PM";
 
 /* Headsign label showing destination */
 "schedule_view.to_headsign_fmt" = "To: %@";
@@ -671,6 +683,9 @@
 /* Title for the empty set indicator on the Search controller. */
 "search_controller.empty_set.title" = "Search";
 
+/* Subtitle on search error row prompting the user to retry. */
+"search_controller.placemarks.error_retry" = "Tap to retry";
+
 /* Placemark search header */
 "search_controller.placemarks.header" = "Results";
 
@@ -679,9 +694,6 @@
 
 /* No results message for placemark search */
 "search_controller.placemarks.no_results" = "No results found";
-
-/* Subtitle on search error row prompting the user to retry. */
-"search_controller.placemarks.error_retry" = "Tap to retry";
 
 /* Quick Search section header in search */
 "search_controller.quick_search.header" = "Quick Search";
@@ -764,6 +776,15 @@
 /* Settings > Debug section title */
 "settings_controller.debug_section.title" = "Debug";
 
+/* Settings > Experimental section > Map panel toggle */
+"settings_controller.experimental_section.map_panel" = "Use map panel experience";
+
+/* Settings > Experimental section > Footer indicating changes apply on relaunch */
+"settings_controller.experimental_section.map_panel.footer" = "Restart the app to apply.";
+
+/* Settings > Experimental section title */
+"settings_controller.experimental_section.title" = "Experimental";
+
 /* Settings > Map section > Show my current heading */
 "settings_controller.map_section.shows_heading" = "Show my current heading";
 
@@ -781,6 +802,12 @@
 
 /* Settings > Privacy section title */
 "settings_controller.privacy_section.title" = "Privacy";
+
+/* Settings > Surveys section > Always show surveys on stops */
+"settings_controller.survey_section.always_show_on_stops" = "Always show on stops";
+
+/* Settings > Surveys section title */
+"settings_controller.survey_section.title" = "Surveys";
 
 /* Settings > Walking Speed > Average preset label */
 "settings_controller.walking_speed.avg" = "Average (~3 mph)";
@@ -815,14 +842,32 @@
 /* A string listing the data providers (agencies) for this stop's data. It contains one or more providers separated by commas. e.g. Data provided by King County Metro, Sound Transit */
 "stop_controller.data_attribution_format" = "Data provided by %@";
 
+/* Message shown when an external survey link cannot be opened */
+"stop_controller.external_survey_error.message" = "This survey link couldn't be opened. Please try again later.";
+
+/* Title shown when an external survey link cannot be opened */
+"stop_controller.external_survey_error.title" = "Can't Open Survey";
+
 /* Load More button */
 "stop_controller.load_more_button" = "Load More";
+
+/* A header for the past arrivals and departures section of the stop controller. */
+"stop_controller.past_departures_header" = "Past Departures";
+
+/* Header for past departures of a specific route */
+"stop_controller.past_departures_route_header" = "Past Departures - %@";
 
 /* This is an instruction given to the user the first time they look at a stop view instructing them on how to access more options, including the ability to add alarms. */
 "stop_controller.swipe_spotlight_text.with_alarm" = "Swipe on a row to view more options, including adding alarms.";
 
 /* This is an instruction given to the user the first time they look at a stop view instructing them on how to access more options, EXCLUDING the ability to add alarms. */
 "stop_controller.swipe_spotlight_text.without_alarm" = "Swipe on a row to view more options.";
+
+/* Button to reveal a single departure that leaves before the rider's transfer arrival. */
+"stop_controller.transfer_show_earlier_departure_singular" = "Show 1 earlier departure";
+
+/* Button to reveal departures that leave before the rider's transfer arrival. Parameter is the count of hidden departures. */
+"stop_controller.transfer_show_earlier_departures_fmt" = "Show %d earlier departures";
 
 /* Title of the Sorting section */
 "stop_preferences_controller.sorting_section.header_title" = "Sort By";
@@ -860,17 +905,29 @@
 /* Title for the Report Stop Problem controller */
 "stop_problem_controller.title" = "Report a Problem";
 
+/* Accessibility label for schedule type picker */
+"stop_schedule_view.accessibility.choose_schedule_type" = "Choose between stop schedule and full route schedule";
+
 /* Label for date picker in schedule view */
 "stop_schedule_view.date" = "Date";
 
+/* Title for the full route schedule toggle */
+"stop_schedule_view.full_route_schedule" = "Full Route Schedule";
+
 /* Message when no departures are scheduled */
-"stop_schedule_view.no_departures" = "No departures scheduled for this date";
+"stop_schedule_view.no_departures" = "No departures";
 
 /* Message shown when schedule data is not available */
 "stop_schedule_view.no_schedule_data" = "No schedule data available";
 
 /* Label for route picker in schedule view */
 "stop_schedule_view.route" = "Route";
+
+/* Title for the stop schedule toggle */
+"stop_schedule_view.stop_schedule" = "Stop Schedule";
+
+/* Format string for destination. e.g. To: Downtown */
+"stop_schedule_view.to_destination_fmt" = "To: %@";
 
 /* Error message when schedule fails to load */
 "stop_schedule_view.unable_to_load" = "Unable to load schedule";
@@ -901,6 +958,72 @@
 
 /* Button that launches Google Maps with walking directions to this stop */
 "stops_controller.walking_directions_google" = "Walking Directions (Google Maps)";
+
+/* Default prompt when no hero question exists */
+"survey_cell.default_prompt" = "Take survey to help improve transit";
+
+/* Button to dismiss the survey */
+"survey_cell.dismiss_button" = "Dismiss";
+
+/* Button to proceed to next survey question */
+"survey_cell.next_button" = "Next";
+
+/* Button that opens an external survey in the browser */
+"survey_cell.open_external_survey_button" = "Open Survey";
+
+/* Message shown when an external survey link cannot be opened */
+"survey_launcher.external_survey_error.message" = "This survey link couldn't be opened. Please try again later.";
+
+/* Title shown when an external survey link cannot be opened */
+"survey_launcher.external_survey_error.title" = "Can't Open Survey";
+
+/* Secondary button on the survey launcher card; dismisses the prompt. */
+"survey_launcher.not_now_button" = "Not now";
+
+/* Primary button on the survey launcher card; opens the survey. */
+"survey_launcher.take_survey_button" = "Take survey";
+
+/* Title of the survey launcher card on the stop screen. */
+"survey_launcher.title" = "Help improve transit";
+
+/* Message shown when an external survey link cannot be opened */
+"survey_vc.external_survey_error.message" = "This survey link couldn't be opened. Please try again later.";
+
+/* Title shown when an external survey link cannot be opened */
+"survey_vc.external_survey_error.title" = "Can't Open Survey";
+
+/* Message when the survey data itself is malformed (no answerable hero question). */
+"survey_vc.malformed_error.message" = "This survey can't be submitted right now. Please try again later.";
+
+/* Title for malformed survey alert */
+"survey_vc.malformed_error.title" = "Survey Unavailable";
+
+/* OK button on survey alerts */
+"survey_vc.ok_button" = "OK";
+
+/* Button that opens an external survey in the browser */
+"survey_vc.open_external_survey_button" = "Open Survey";
+
+/* Section header for survey questions */
+"survey_vc.questions_section_title" = "Questions";
+
+/* Title for survey submission error alert */
+"survey_vc.submission_error.title" = "Submission Error";
+
+/* Button to submit the survey */
+"survey_vc.submit_button" = "Submit Survey";
+
+/* Submit button title while a survey submission is in flight */
+"survey_vc.submitting_button" = "Submitting…";
+
+/* Placeholder for text answer field */
+"survey_vc.text_placeholder" = "Enter your answer...";
+
+/* Message when required survey questions are unanswered */
+"survey_vc.validation_error.message" = "Please answer all required questions before submitting.";
+
+/* Title for incomplete survey alert */
+"survey_vc.validation_error.title" = "Incomplete Survey";
 
 /* A notice when a transit alert doesn't have body text. */
 "transit_alert.no_additional_details.body" = "No additional details available.";
@@ -1006,4 +1129,37 @@
 
 /* Format string with placeholders for distance from stop, walking time to stop, and predicted arrival time. e.g. 1.2 miles, 17m: arriving at 09:41 A.M. */
 "walk_time_view.distance_time_fmt" = "%1$@, %2$@: arriving at %3$@";
+
+/* Accessibility label for the transfer arrival banner shown when navigating to a connecting stop. */
+"walk_time_view.transfer_accessibility_label" = "Transfer arrival time";
+
+/* Legacy alert line. %@ is the chance-of-precipitation percentage. */
+"weather.alert.precip_line_format" = "Precipitation: %@ chance";
+
+/* Legacy alert line. First %@ is current temperature, second is feels-like temperature. */
+"weather.alert.temp_line_format" = "Temp: %1$@ (Feels like %2$@)";
+
+/* Legacy alert line. %@ is the formatted wind speed. */
+"weather.alert.wind_line_format" = "Wind: %@";
+
+/* Format for the chance-of-rain percentage on the weather card header. %d is the integer percent. */
+"weather.chance_of_rain_format" = "Chance of Rain: %d%%";
+
+/* Format for the high/low temperature line on the weather card. %@ placeholders are temperature strings. */
+"weather.high_low_format" = "H:%1$@  L:%2$@";
+
+/* First column label in the hourly weather strip, indicating the current hour. */
+"weather.now" = "Now";
+
+/* Bare percentage shown in the precipitation stat on the weather card. %d is the integer percent. */
+"weather.percent_format" = "%d%%";
+
+/* VoiceOver label for the feels-like temperature stat on the weather card. */
+"weather.stat.feels_like" = "Feels like";
+
+/* VoiceOver label for the precipitation chance stat on the weather card. */
+"weather.stat.precip" = "Chance of precipitation";
+
+/* VoiceOver label for the wind speed stat on the weather card. */
+"weather.stat.wind" = "Wind speed";
 

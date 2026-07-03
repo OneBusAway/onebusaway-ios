@@ -14,7 +14,7 @@ import OBAKitCore
 
 /// The selected base map style. UIKit maps `.standard` → `MKMapType.mutedStandard`
 /// and `.hybrid` → `MKMapType.hybrid`; SwiftUI can map directly to `MapStyle`.
-/// Keeping this MapKit-free matches the `PanelDetent` pattern in `MapPanelViewModel`.
+/// Kept MapKit-free so this VM stays usable from both UIKit and SwiftUI hosts.
 enum MapBaseType {
     case standard
     case hybrid
@@ -23,7 +23,7 @@ enum MapBaseType {
 /// Shared ViewModel for the main map screen.
 ///
 /// Consumed by `MapViewController` (UIKit, via Combine `sink`) and by
-/// future `NewMapView` (SwiftUI, via `@StateObject`).
+/// `MapPanelRootView` (SwiftUI, via `@StateObject`).
 /// Contains no UIKit, MapKit, or SwiftUI imports.
 ///
 /// Subclasses NSObject so it can adopt `LocationServiceDelegate`, which is
@@ -36,8 +36,11 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
 
     // MARK: - Published State
 
-    /// The current weather forecast, if loaded.
-    @Published private(set) var weather: WeatherForecast?
+    /// View-ready weather data, rebuilt only when `loadWeather()` finishes —
+    /// SwiftUI body re-reads don't pay the formatting cost. The raw
+    /// `WeatherForecast` model isn't surfaced; reintroduce it on demand if a
+    /// future consumer needs it.
+    @Published private(set) var weatherDisplay: WeatherDisplay?
 
     /// `true` when the map is zoomed out too far to load stops.
     /// Written only through `updateZoomWarning(_:)` so the VC's `MapRegionDelegate`
@@ -92,13 +95,31 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
 
     // MARK: - Weather
 
+    /// `true` when the host should render any weather UI. Mirrors the gate at
+    /// `MapViewController.toolbar` so UIKit and SwiftUI agree on availability.
+    var isWeatherFeatureAvailable: Bool {
+        application.features.obaco == .running
+    }
+
     func loadWeather() async {
-        guard let apiService = application.obacoService else { return }
+        guard let apiService = application.obacoService else {
+            // Clear so an out-of-region transition doesn't leave a stale
+            // forecast on screen — this is configuration-shaped (no Obaco for
+            // this region), so the button SHOULD disappear.
+            weatherDisplay = nil
+            return
+        }
         do {
-            weather = try await apiService.getWeather()
+            let forecast = try await apiService.getWeather()
+            weatherDisplay = WeatherDisplay(forecast: forecast, locale: application.locale)
         } catch {
-            weather = nil
-            Logger.error("Failed to load weather: \(error.localizedDescription)")
+            // Keep the last-known forecast on a transient failure (network
+            // blip, 5xx during scene reactivation) so the floating button
+            // doesn't flicker out and come back. The next successful refresh
+            // — `start()`, `onAppBecameActive`, or the next manual trigger —
+            // will overwrite this with fresh data; until then a slightly
+            // stale forecast is better than a missing UI element.
+            Logger.error("Failed to load weather: \(error)")
         }
     }
 

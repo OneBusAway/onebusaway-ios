@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 // MARK: - onFirstAppear
 
@@ -28,6 +29,41 @@ private struct FirstAppear: ViewModifier {
             guard !hasAppeared else { return }
             hasAppeared = true
             action()
+        }
+    }
+}
+
+// MARK: - glassEffectIfAvailable
+
+public extension View {
+    /// Applies the iOS 26+ Liquid Glass effect when available, falling back to
+    /// `.regularMaterial` on older systems. Handles the surface fill itself —
+    /// call sites do not need to add a background.
+    @ViewBuilder
+    func regularGlassEffectIfAvailable(in shape: some Shape = Capsule()) -> some View {
+        if #available(iOS 26.0, *) {
+            self.glassEffect(.regular, in: shape)
+        } else {
+            self.background(.regularMaterial, in: shape)
+        }
+    }
+
+    /// More transparent variant of `glassEffect` (iOS 26+). Use for surfaces
+    /// that should let more of the background through (large cards, sheets).
+    /// Falls back to a solid themed fill pre-iOS 26 — no half-glass middle
+    /// ground.
+    ///
+    /// Unlike `regularGlassEffectIfAvailable`, this variant does **not** form a
+    /// self-contained surface: on iOS 26 the clear glass needs a backing fill
+    /// to read against, so call sites should layer their own
+    /// `.ultraThinMaterial` (or similar) underneath. See
+    /// `WeatherDetailPopup.WeatherCard` for the expected stacking.
+    @ViewBuilder
+    func clearGlassEffectIfAvailable(in shape: some Shape = Capsule()) -> some View {
+        if #available(iOS 26.0, *) {
+            self.glassEffect(.clear, in: shape)
+        } else {
+            self.background(Color(uiColor: .secondarySystemBackground), in: shape)
         }
     }
 }
