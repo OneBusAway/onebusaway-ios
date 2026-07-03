@@ -23,11 +23,13 @@ struct WeatherDetailPopupHost: View {
 
     @ObservedObject var viewModel: MapViewModel
 
-    /// Starts `true` so `WeatherDetailPopup`'s enter transition runs on
-    /// appear. The card flips this to `false` on backdrop tap or close-button
-    /// press, which triggers the exit animation and, via `onChange`, the
-    /// UIKit dismissal below.
-    @State private var isPresented = true
+    /// Starts `false` and flips to `true` in `.onAppear` so SwiftUI sees a
+    /// real state change and runs `WeatherDetailPopup`'s enter transition;
+    /// initializing with `true` would skip the animation because SwiftUI
+    /// only animates changes, not initial values. The card flips this back
+    /// to `false` on backdrop tap or close-button press, which triggers the
+    /// exit animation and, via `onChange`, the UIKit dismissal below.
+    @State private var isPresented = false
 
     @Environment(\.dismiss) private var dismiss
 
@@ -35,6 +37,9 @@ struct WeatherDetailPopupHost: View {
         WeatherDetailPopup(display: viewModel.weatherDisplay, isPresented: $isPresented)
             .onChange(of: isPresented) { _, newValue in
                 if !newValue { dismiss() }
+            }
+            .onAppear {
+                isPresented = true
             }
     }
 }
