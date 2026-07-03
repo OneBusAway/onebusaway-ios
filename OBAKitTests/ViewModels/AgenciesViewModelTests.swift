@@ -30,16 +30,19 @@ final class AgenciesViewModelTests: OBATestCase {
         queue.cancelAllOperations()
     }
 
-    private func createApplication(dataLoader: MockDataLoader) -> Application {
+    private func createApplication(
+        dataLoader: MockDataLoader,
+        locationManager: LocationManager = MockAuthorizedLocationManager(
+            updateLocation: TestData.mockSeattleLocation,
+            updateHeading: TestData.mockHeading
+        ),
+        fixedRegionName: String? = Fixtures.pugetSoundRegion.name
+    ) -> Application {
         stubRegions(dataLoader: dataLoader)
         stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
         Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
 
-        let locManager = MockAuthorizedLocationManager(
-            updateLocation: TestData.mockSeattleLocation,
-            updateHeading: TestData.mockHeading
-        )
-        let locationService = LocationService(userDefaults: userDefaults, locationManager: locManager)
+        let locationService = LocationService(userDefaults: userDefaults, locationManager: locationManager)
 
         let config = AppConfig(
             regionsBaseURL: regionsURL,
@@ -52,7 +55,7 @@ final class AgenciesViewModelTests: OBATestCase {
             bundledRegionsFilePath: bundledRegionsPath,
             regionsAPIPath: regionsAPIPath,
             dataLoader: dataLoader,
-            fixedRegionName: Fixtures.pugetSoundRegion.name
+            fixedRegionName: fixedRegionName
         )
 
         return Application(config: config)
@@ -90,36 +93,20 @@ final class AgenciesViewModelTests: OBATestCase {
     @Test @MainActor
     func `Load data with nil API service throws`() async {
         let dataLoader = MockDataLoader(testName: name)
-        stubRegions(dataLoader: dataLoader)
-        stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
-        Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
-
         // LocationManagerMock is unauthorized and provides no location, so
         // regionsService.currentRegion stays nil and apiService is never set.
-        let locManager = LocationManagerMock()
-        let locationService = LocationService(userDefaults: userDefaults, locationManager: locManager)
-
-        let config = AppConfig(
-            regionsBaseURL: regionsURL,
-            apiKey: apiKey,
-            appVersion: appVersion,
-            userDefaults: userDefaults,
-            analytics: AnalyticsMock(),
-            queue: queue,
-            locationService: locationService,
-            bundledRegionsFilePath: bundledRegionsPath,
-            regionsAPIPath: regionsAPIPath,
-            dataLoader: dataLoader
-            // no fixedRegionName → currentRegion stays nil → apiService stays nil
+        let app = createApplication(
+            dataLoader: dataLoader,
+            locationManager: LocationManagerMock(),
+            fixedRegionName: nil
         )
-
-        let app = Application(config: config)
         #expect(app.apiService == nil)
 
         let viewModel = AgenciesViewModel(application: app)
 
-        await #expect(throws: (any Error).self) {
+        let thrown = await #expect(throws: UnstructuredError.self) {
             try await viewModel.loadData()
         }
+        #expect(thrown?.errorDescription == "No API Service")
     }
 }
