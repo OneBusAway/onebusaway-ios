@@ -36,8 +36,13 @@ class CurrentTripViewModelTests: OBATestCase {
     // MARK: - Application Builder
 
     /// Builds an `Application` whose REST API service routes through the supplied `MockDataLoader`.
-    /// When `withLocation` is false, the location service has no current location — useful for
-    /// driving the `.noLocation` branch.
+    /// - Parameters:
+    ///   - dataLoader: The mock data loader that stubs HTTP responses.
+    ///   - withLocation: When `false`, the location service has no current location — useful for
+    ///     driving the `.noLocation` branch.
+    ///   - withRegion: When `false`, places the user at Null Island (0, 0) so `RegionsService`
+    ///     cannot resolve a region and `apiService` stays `nil` — useful for driving the
+    ///     `.error` / no-service branch.
     private func createApplication(dataLoader: MockDataLoader, withLocation: Bool = true, withRegion: Bool = true) -> Application {
         stubRegions(dataLoader: dataLoader)
         stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)

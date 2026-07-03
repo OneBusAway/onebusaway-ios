@@ -168,7 +168,7 @@ class CurrentTripViewModel: ObservableObject {
     /// already holds the single result from `handle(results:)`.
     func pendingNavigationUnavailable() {
         state = .multipleResults
-        pendingNavigation = nil
+        clearPendingNavigation()
     }
 
     /// Called by a consumer after it has acted on `pendingNavigation` (e.g. pushed
