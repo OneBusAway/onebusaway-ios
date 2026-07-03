@@ -58,17 +58,23 @@ struct CurrentTripView: View {
             viewModel.deactivate()
             reEnableIdleTimer()
         }
-        .onChange(of: scenePhase) { _, phase in
-            if phase == .active {
-                // Coming back from a backgrounding cycle: re-acquire the idle
-                // timer hold and re-arm the refresh loop. Without this branch
-                // the user returns to a frozen state with no live updates,
-                // and has to pop+re-push to recover.
-                disableIdleTimer()
-                viewModel.start()
-            } else {
+        .onChange(of: scenePhase) { previous, phase in
+            switch phase {
+            case .active:
+                // Only re-arm on the .background → .active edge. `.inactive → .active`
+                // (returning from Control Center / a banner / a system alert) never
+                // stopped the timer, so re-arming would issue a redundant network call.
+                if previous == .background {
+                    disableIdleTimer()
+                    viewModel.start()
+                }
+            case .background:
                 viewModel.deactivate()
                 reEnableIdleTimer()
+            case .inactive:
+                break
+            @unknown default:
+                break
             }
         }
         .onChange(of: viewModel.pendingNavigation) { _, arrival in

@@ -124,6 +124,16 @@ extension AppSheetRoute {
             return "\(caseName)-\(alertID)"
         }
     }
+
+    // MARK: Hashable / Equatable
+
+    static func == (lhs: AppSheetRoute, rhs: AppSheetRoute) -> Bool {
+        return lhs.id == rhs.id
+    }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
 }
 
 extension AppSheetRoute {

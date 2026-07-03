@@ -66,7 +66,10 @@ public final class MapPanelRootController: UIViewController {
         weak var application: Application?
 
         func present(_ arrival: ArrivalDeparture) {
-            guard let host, let application else { return }
+            guard let host, let application else {
+                Logger.error("TripPresentationBridge: dropping present for trip \(arrival.tripID) — host or application is nil")
+                return
+            }
             let trip = TripViewController(application: application, arrivalDeparture: arrival)
             // Wrap in our own UINavigationController and modally present from
             // the topmost presented controller, not `host` directly:

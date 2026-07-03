@@ -44,16 +44,21 @@ struct RoutePickerView: View {
                 }
         }
         .onAppear {
-            // Re-entrant guard: SwiftUI re-attaches on scenePhase changes; only
-            // kick a load if no Task is already in flight.
-            guard loadTask == nil else { return }
-            loadTask = Task { [viewModel] in
-                await viewModel.loadRoutes()
-            }
+            startLoad()
         }
         .onDisappear {
             loadTask?.cancel()
             loadTask = nil
+        }
+    }
+
+    /// Kicks off a fresh `loadRoutes()` unless one is already in flight. Re-entrant
+    /// safe: SwiftUI can re-attach on scenePhase changes, and the retry button
+    /// funnels through the same entry point.
+    private func startLoad() {
+        guard loadTask == nil else { return }
+        loadTask = Task { [viewModel] in
+            await viewModel.loadRoutes()
         }
     }
 
@@ -62,12 +67,25 @@ struct RoutePickerView: View {
         if !viewModel.didFinishLoading {
             EmptyStateView(title: Strings.routePickerLoading, systemImage: AppSymbol.loading)
         } else if let error = viewModel.loadError {
-            EmptyStateView(title: error.localizedDescription, systemImage: AppSymbol.error)
+            EmptyStateView(title: error.localizedDescription, systemImage: AppSymbol.error) { retryButton }
         } else if viewModel.allRoutes.isEmpty {
             EmptyStateView(title: Strings.routePickerNoRoutes, systemImage: AppSymbol.search)
         } else {
             routesList
         }
+    }
+
+    private var retryButton: some View {
+        Button {
+            // A completed load leaves `loadTask` non-nil; drop it first so
+            // `startLoad()` doesn't guard-return.
+            loadTask?.cancel()
+            loadTask = nil
+            startLoad()
+        } label: {
+            Label(Strings.currentTripTryAgain, systemImage: AppSymbol.retry)
+        }
+        .padding(.top, 8)
     }
 
     private var routesList: some View {

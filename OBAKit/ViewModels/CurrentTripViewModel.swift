@@ -47,6 +47,10 @@ class CurrentTripViewModel: ObservableObject {
     private static let refreshInterval: TimeInterval = 20.0
     private var refreshTimer: Timer?
     private var findVehicleTask: Task<Void, Never>?
+    /// Trip ID we last handed to the consumer via `pendingNavigation`. Prevents
+    /// the 20-second background refresh from re-firing navigation for the trip
+    /// the user just dismissed. Cleared on user-initiated retry / `start()`.
+    private var lastFiredTripID: TripIdentifier?
 
     // MARK: - Init
 
@@ -79,13 +83,19 @@ class CurrentTripViewModel: ObservableObject {
     // MARK: - Intent
 
     /// Cancels any in-flight find, then starts a new search.
-    func findVehicle() {
+    ///
+    /// - Parameter resetState: When `true` (user-initiated retry or `start()`),
+    ///   force the UI back to `.loading` so the tap surfaces a state change and
+    ///   the "already presented" latch is cleared. When `false` (background
+    ///   auto-refresh from `startRefreshTimer`), keep the existing state so the
+    ///   user's screen isn't wiped every 20 seconds — updates happen in place.
+    func findVehicle(resetState: Bool = true) {
         findVehicleTask?.cancel()
-        // Reset to `.loading` so a retry from `.noResults` / `.error` /
-        // `.noRealtime` actually surfaces a state change — without this the
-        // View re-renders the same content while the network call is in
-        // flight, and the tap looks dead to the user.
-        state = .loading
+        if resetState {
+            state = .loading
+            // Fresh explicit retry: allow re-navigation for the same trip ID.
+            lastFiredTripID = nil
+        }
 
         findVehicleTask = Task { [weak self] in
             guard let self else { return }
@@ -94,11 +104,13 @@ class CurrentTripViewModel: ObservableObject {
             if Task.isCancelled { return }
 
             guard let userLocation = self.application.locationService.currentLocation else {
+                Logger.error("CurrentTripViewModel: no user location available for route \(self.route.id)")
                 self.state = .noLocation
                 return
             }
 
             guard let apiService = self.application.apiService else {
+                Logger.error("CurrentTripViewModel: no apiService available for route \(self.route.id)")
                 self.state = .error(Self.noServiceError())
                 return
             }
@@ -123,7 +135,9 @@ class CurrentTripViewModel: ObservableObject {
     }
 
     /// Routes a fresh set of matches into the appropriate state transition:
-    /// empty → `.noResults`, one → `pendingNavigation`, more → `.multipleResults`.
+    /// empty → `.noResults`, one → `pendingNavigation` (once per trip) plus a
+    /// `.multipleResults` fallback so the underlying view isn't a frozen
+    /// spinner, more → `.multipleResults`.
     func handle(results: [NearbyTripMatcher.MatchResult]) {
         matchResults = results
 
@@ -131,7 +145,17 @@ class CurrentTripViewModel: ObservableObject {
         case 0:
             state = .noResults
         case 1:
-            pendingNavigation = results[0].arrivalDeparture
+            let arrival = results[0].arrivalDeparture
+            // Only fire pendingNavigation once per trip. The consumer clears it
+            // after presenting; a background refresh that finds the same trip
+            // shouldn't re-fire the modal after a user-initiated dismiss.
+            if lastFiredTripID != arrival.tripID {
+                pendingNavigation = arrival
+                lastFiredTripID = arrival.tripID
+            }
+            // Move to a terminal, tappable state so the underlying view shows
+            // the match as a single-row list instead of a permanent spinner.
+            state = .multipleResults
         default:
             state = .multipleResults
         }
@@ -167,7 +191,10 @@ class CurrentTripViewModel: ObservableObject {
         ) { [weak self] _ in
             Task { @MainActor [weak self] in
                 guard let self, !(self.shouldSkipProgrammaticRefresh?() ?? false) else { return }
-                self.findVehicle()
+                // Background refresh: don't reset UI state, and preserve the
+                // "already presented" latch so we don't re-fire pendingNavigation
+                // for a trip the user just dismissed.
+                self.findVehicle(resetState: false)
             }
         }
     }
