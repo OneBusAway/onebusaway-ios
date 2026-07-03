@@ -74,7 +74,13 @@ final class UmamiAnalytics {
         self.websiteID = websiteID
         self.hostname = hostname
         self.dataLoader = dataLoader
+
+#if targetEnvironment(simulator)
+        // OneBusAway/26.1.2 (iOS 18.5; iPhone Simulator arm64)
+        self.userAgent = "OneBusAway/\(Bundle.main.appVersion) (iOS \(UIDevice.current.systemVersion); iPhone Simulator \(UIDevice.current.modelName))"
+#else
         self.userAgent = "OneBusAway/\(Bundle.main.appVersion) (iOS \(UIDevice.current.systemVersion); \(UIDevice.current.modelName))"
+#endif
     }
 
     /// A session with a tight end-to-end resource timeout. `URLSession.shared`
