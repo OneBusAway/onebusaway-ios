@@ -221,6 +221,17 @@ final class WeatherDisplayTests: XCTestCase {
 
         // Button pill mirrors the current temperature.
         expect(display.buttonTitle) == "71°"
+
+        // Hourly strip — non-empty, first cell labelled "Now" and flagged as
+        // the current hour, later cells fall through to formatted times.
+        expect(display.hourly).toNot(beEmpty())
+        let firstHour = try XCTUnwrap(display.hourly.first)
+        expect(firstHour.timeLabel) == "Now"
+        expect(firstHour.isNow) == true
+        if display.hourly.count > 1 {
+            expect(display.hourly[1].isNow) == false
+            expect(display.hourly[1].timeLabel) != "Now"
+        }
     }
 
     // MARK: - Stats / Header derived strings
