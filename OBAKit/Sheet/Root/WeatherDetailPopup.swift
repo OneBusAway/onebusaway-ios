@@ -232,21 +232,26 @@ private struct StatsRow: View {
 // MARK: - Weather Icon
 
 /// Pulls the SF Symbol name from `WeatherFormatter` (single source of truth) and
-/// pairs it with a SwiftUI-only color palette.
+/// pairs it with a SwiftUI-only color palette. The palette lives here rather
+/// than in OBAKitCore because `Color` isn't reachable from the extension-safe
+/// core; `WeatherIconPalette.colors` is `internal` so tests can assert every
+/// key in `WeatherFormatter.knownIconKeys` also has a palette entry.
 private struct WeatherIcon: View {
     let iconName: String
     let size: CGFloat
 
     var body: some View {
         let symbol = WeatherFormatter.systemImageName(for: iconName)
-        let palette = Self.colors[iconName] ?? (.gray, .clear)
+        let palette = WeatherIconPalette.colors[iconName] ?? (.gray, .clear)
         Image(systemName: symbol)
             .symbolRenderingMode(.palette)
             .foregroundStyle(palette.primary, palette.secondary)
             .font(.system(size: size))
     }
+}
 
-    private static let colors: [String: (primary: Color, secondary: Color)] = [
+enum WeatherIconPalette {
+    static let colors: [String: (primary: Color, secondary: Color)] = [
         "clear-day": (.yellow, .orange),
         "clear-night": (.gray, .yellow),
         "partly-cloudy-day": (.yellow, .gray),
