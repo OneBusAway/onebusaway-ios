@@ -114,6 +114,8 @@ struct MapPanelRootView: View {
                 isWeatherPopupPresented = true
             }
             .padding(ThemeMetrics.controllerMargin)
+            .padding(.top, mapViewModel.topPillState == .hidden ? 0 : 48)
+            .animation(.smooth(duration: 0.3), value: mapViewModel.topPillState)
         }
     }
 
