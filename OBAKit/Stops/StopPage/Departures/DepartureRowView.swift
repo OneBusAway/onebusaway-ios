@@ -81,8 +81,28 @@ struct DepartureRowView: View {
     }
 
     private var accessibilityText: String {
-        let fmt = OBALoc("stop_page.row.a11y_fmt", value: "Route %@ to %@, departs in %d minutes, %@", comment: "VoiceOver label for a departure row: route, headsign, minutes, status.")
-        return String(format: fmt, departure.routeShortName, departure.tripHeadsign ?? "", departure.arrivalDepartureMinutes, status.accessibilityStatusDescription)
+        var clauses = [baseAccessibilityText]
+
+        if style == .missed {
+            clauses.append(OBALoc("stop_page.row.a11y_missed", value: "likely missed — departs sooner than your walk to the stop", comment: "VoiceOver clause appended to a departure row that's upcoming but not reachable on foot before it leaves."))
+        }
+
+        if hasAlarm {
+            clauses.append(OBALoc("stop_page.row.a11y_alarm_set", value: "alarm set", comment: "VoiceOver suffix indicating a departure alarm is active"))
+        }
+
+        return clauses.joined(separator: ", ")
+    }
+
+    private var baseAccessibilityText: String {
+        switch style {
+        case .past:
+            let fmt = OBALoc("stop_page.row.a11y_past_fmt", value: "Route %@ to %@, departed %d minutes ago, %@", comment: "VoiceOver label for a departure row that has already departed: route, headsign, minutes ago, status.")
+            return String(format: fmt, departure.routeShortName, departure.tripHeadsign ?? "", abs(departure.arrivalDepartureMinutes), status.accessibilityStatusDescription)
+        case .normal, .missed:
+            let fmt = OBALoc("stop_page.row.a11y_fmt", value: "Route %@ to %@, departs in %d minutes, %@", comment: "VoiceOver label for a departure row: route, headsign, minutes, status.")
+            return String(format: fmt, departure.routeShortName, departure.tripHeadsign ?? "", departure.arrivalDepartureMinutes, status.accessibilityStatusDescription)
+        }
     }
 }
 
@@ -126,6 +146,11 @@ extension View {
                 if actions.canAlarm {
                     Button(action: actions.onAlarmToggle) {
                         Label(actions.hasAlarm ? removeAlarmTitle : Strings.addAlarm, systemImage: "bell")
+                    }
+                }
+                if actions.canSchedule {
+                    Button(action: actions.onSchedule) {
+                        Label(Strings.schedules, systemImage: "calendar")
                     }
                 }
                 Button(action: actions.onBookmark) {
