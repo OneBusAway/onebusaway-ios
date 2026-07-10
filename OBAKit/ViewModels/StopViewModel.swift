@@ -564,10 +564,13 @@ class StopViewModel: ObservableObject {
         }
     }
 
-    /// Obaco has no update endpoint: change = delete + re-post.
+    /// Obaco has no update endpoint: change = delete + re-post. Proceeds only
+    /// when the old alarm is actually gone (a failed delete rolls it back into
+    /// the index), so a stale `alarmError` from an earlier operation can't
+    /// block the change.
     func changeAlarm(for arrivalDeparture: ArrivalDeparture, leadTimeMinutes: Int) async {
         await cancelAlarm(for: arrivalDeparture)
-        guard alarmError == nil else { return }
+        guard alarm(for: arrivalDeparture) == nil else { return }
         await setAlarm(for: arrivalDeparture, leadTimeMinutes: leadTimeMinutes)
     }
 
