@@ -89,6 +89,17 @@ class StopViewModel: ObservableObject {
     /// so auto-extension is exhausted (capped at 12 h).
     @Published private(set) var isLoadMoreExhausted = false
 
+    /// Alarms owned by this stop's departures, keyed by `ArrivalDeparture.id`.
+    /// All four alarm entry points (swipe, pill, row icon, trip panel) read and
+    /// write through this single index (§4.7).
+    @Published private(set) var alarmsByDepartureID: [String: Alarm] = [:]
+
+    /// Non-nil after an alarm create/cancel fails; consumer shows a toast/alert.
+    @Published private(set) var alarmError: Error?
+
+    /// Cache for trip-panel approach timelines, invalidated on each refresh.
+    private var approachCache: [String: TripDetails] = [:]
+
     // MARK: - Init Context
 
     /// Optional bookmark that opened this stop view.
@@ -217,6 +228,8 @@ class StopViewModel: ObservableObject {
             self.stop = stop
         }
         stopArrivals = arrivals
+        approachCache.removeAll()
+        rebuildAlarmIndex()
         recomputeCurrentSurvey()
     }
 
@@ -481,5 +494,121 @@ class StopViewModel: ObservableObject {
             return
         }
         statusText = String(format: Strings.updatedAtFormat, application.formatters.timeAgoInWords(date: lastUpdated))
+    }
+
+    // MARK: - Stop Page: Walk Time
+
+    /// Walk time from the user's current location to this stop; the single
+    /// source for the header chip and the chronological walk line (§4.5).
+    var walkTime: WalkTimeInfo? {
+        WalkTimeInfo.compute(
+            from: application.locationService.currentLocation,
+            to: stop?.location,
+            speedMetersPerSecond: application.userDataStore.walkingSpeedMetersPerSecond
+        )
+    }
+
+    // MARK: - Stop Page: Alarms
+
+    var defaultAlarmLeadTime: Int {
+        application.userDataStore.defaultAlarmLeadTimeMinutes
+    }
+
+    func alarm(for arrivalDeparture: ArrivalDeparture) -> Alarm? {
+        alarmsByDepartureID[arrivalDeparture.id]
+    }
+
+    /// Minutes-before-departure for a persisted alarm, derived from its dates.
+    func alarmLeadTimeMinutes(_ alarm: Alarm) -> Int {
+        guard let tripDate = alarm.tripDate, let alarmDate = alarm.alarmDate else {
+            return AlarmLeadTime.defaultMinutes
+        }
+        return max(AlarmLeadTime.minimumMinutes, Int(round(tripDate.timeIntervalSince(alarmDate) / 60.0)))
+    }
+
+    func setAlarm(for arrivalDeparture: ArrivalDeparture, leadTimeMinutes: Int) async {
+        guard
+            canCreateAlarm(for: arrivalDeparture),
+            let obacoService = application.obacoService,
+            let pushService = application.pushService,
+            let region = application.currentRegion,
+            let minutes = AlarmLeadTime.clamped(leadTimeMinutes, minutesUntilDeparture: arrivalDeparture.arrivalDepartureMinutes)
+        else { return }
+
+        do {
+            let userPushID = await pushService.pushID()
+            let alarm = try await obacoService.postAlarm(minutesBefore: minutes, arrivalDeparture: arrivalDeparture, userPushID: userPushID)
+            alarm.deepLink = ArrivalDepartureDeepLink(arrivalDeparture: arrivalDeparture, regionID: region.regionIdentifier)
+            alarm.set(tripDate: arrivalDeparture.arrivalDepartureDate, alarmOffset: minutes)
+            application.userDataStore.add(alarm: alarm)
+            alarmsByDepartureID[arrivalDeparture.id] = alarm
+            alarmError = nil
+        } catch {
+            alarmError = error
+        }
+    }
+
+    func cancelAlarm(for arrivalDeparture: ArrivalDeparture) async {
+        guard let alarm = alarm(for: arrivalDeparture) else { return }
+        // Optimistic removal; restore on failure.
+        alarmsByDepartureID[arrivalDeparture.id] = nil
+        do {
+            if let obacoService = application.obacoService {
+                try await obacoService.deleteAlarm(url: alarm.url)
+            }
+            application.userDataStore.delete(alarm: alarm)
+            alarmError = nil
+        } catch {
+            alarmsByDepartureID[arrivalDeparture.id] = alarm
+            alarmError = error
+        }
+    }
+
+    /// Obaco has no update endpoint: change = delete + re-post.
+    func changeAlarm(for arrivalDeparture: ArrivalDeparture, leadTimeMinutes: Int) async {
+        await cancelAlarm(for: arrivalDeparture)
+        guard alarmError == nil else { return }
+        await setAlarm(for: arrivalDeparture, leadTimeMinutes: leadTimeMinutes)
+    }
+
+    /// Rebuilds the departure-id → alarm index by matching each persisted
+    /// alarm's deep link against the current departures. Called after each
+    /// successful fetch so expired/foreign alarms fall out naturally.
+    private func rebuildAlarmIndex() {
+        guard let region = application.currentRegion,
+              let departures = stopArrivals?.arrivalsAndDepartures
+        else {
+            alarmsByDepartureID = [:]
+            return
+        }
+        application.userDataStore.deleteExpiredAlarms()
+        var index: [String: Alarm] = [:]
+        for departure in departures {
+            let candidate = ArrivalDepartureDeepLink(arrivalDeparture: departure, regionID: region.regionIdentifier)
+            if let match = application.userDataStore.alarms.first(where: { $0.deepLink == candidate }) {
+                index[departure.id] = match
+            }
+        }
+        alarmsByDepartureID = index
+    }
+
+    // MARK: - Stop Page: Approach Timeline
+
+    /// Trip details backing the trip panel's approach timeline. Fetched on
+    /// panel open, cached until the next refresh, live trips only (§4.1).
+    func approachTripDetails(for arrivalDeparture: ArrivalDeparture) async -> TripDetails? {
+        guard arrivalDeparture.predicted, let apiService = application.apiService else { return nil }
+        if let cached = approachCache[arrivalDeparture.tripID] { return cached }
+        do {
+            let details = try await apiService.getTrip(
+                tripID: arrivalDeparture.tripID,
+                vehicleID: arrivalDeparture.vehicleID,
+                serviceDate: arrivalDeparture.serviceDate
+            ).entry
+            approachCache[arrivalDeparture.tripID] = details
+            return details
+        } catch {
+            return nil // panel silently omits the timeline on failure
+        }
     }
 }
