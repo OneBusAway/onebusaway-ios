@@ -10,6 +10,8 @@
 import Foundation
 import MapKit
 
+// swiftlint:disable file_length
+
 @objc(OBASelectedTab) public enum SelectedTab: Int {
     case map, recentStops, bookmarks, vehicles, settings
 }
@@ -297,6 +299,12 @@ public protocol UserDataStore: NSObjectProtocol {
     /// The source of the walking speed value (manual preset or HealthKit).
     var walkingSpeedSource: WalkingSpeedSource { get set }
 
+    // MARK: - Alarm Lead Time
+
+    /// The user's preferred alarm lead time in minutes for one-tap alarms on
+    /// the Stop page. Adjustable per-alarm afterward. Defaults to 5.
+    var defaultAlarmLeadTimeMinutes: Int { get set }
+
 }
 
 // MARK: - Survey Tracking Data Models
@@ -371,6 +379,7 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         static let alwaysShowSurveysOnStops = "UserDataStore.alwaysShowSurveysOnStops"
         static let walkingSpeedMetersPerSecond = "UserDataStore.walkingSpeedMetersPerSecond"
         static let walkingSpeedSource = "UserDataStore.walkingSpeedSource"
+        static let defaultAlarmLeadTimeMinutes = "UserDataStore.defaultAlarmLeadTimeMinutes"
     }
 
     public init(userDefaults: UserDefaults) {
@@ -379,7 +388,8 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         self.userDefaults.register(defaults: [
             UserDefaultsKeys.debugMode: false,
             UserDefaultsKeys.walkingSpeedMetersPerSecond: WalkingSpeed.defaultMetersPerSecond,
-            UserDefaultsKeys.walkingSpeedSource: WalkingSpeedSource.manual.rawValue
+            UserDefaultsKeys.walkingSpeedSource: WalkingSpeedSource.manual.rawValue,
+            UserDefaultsKeys.defaultAlarmLeadTimeMinutes: 5
         ])
     }
 
@@ -1054,6 +1064,17 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         }
         set {
             userDefaults.set(newValue.rawValue, forKey: UserDefaultsKeys.walkingSpeedSource)
+        }
+    }
+
+    // MARK: - Alarm Lead Time
+
+    public var defaultAlarmLeadTimeMinutes: Int {
+        get {
+            userDefaults.integer(forKey: UserDefaultsKeys.defaultAlarmLeadTimeMinutes)
+        }
+        set {
+            userDefaults.set(newValue, forKey: UserDefaultsKeys.defaultAlarmLeadTimeMinutes)
         }
     }
 
