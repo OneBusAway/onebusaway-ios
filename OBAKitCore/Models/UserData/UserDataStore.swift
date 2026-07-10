@@ -350,6 +350,16 @@ public protocol StopPreferencesStore: NSObjectProtocol {
     func preferences(stopID: StopID, region: Region) -> StopPreferences
 }
 
+// MARK: - UserDataStore Defaults
+
+/// Canonical defaults for `UserDefaultsStore` configuration. Shared with OBAKit's UI
+/// so registered defaults and UI defaults remain synchronized.
+public enum UserDataStoreDefaults {
+    /// Default lead time in minutes for one-tap alarms on the Stop page.
+    /// Referenced by OBAKit's `AlarmLeadTime.defaultMinutes`.
+    public static let alarmLeadTimeMinutes = 5
+}
+
 // MARK: - UserDefaultsStore
 
 @objc(OBAUserDefaultsStore)
@@ -389,7 +399,7 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
             UserDefaultsKeys.debugMode: false,
             UserDefaultsKeys.walkingSpeedMetersPerSecond: WalkingSpeed.defaultMetersPerSecond,
             UserDefaultsKeys.walkingSpeedSource: WalkingSpeedSource.manual.rawValue,
-            UserDefaultsKeys.defaultAlarmLeadTimeMinutes: 5
+            UserDefaultsKeys.defaultAlarmLeadTimeMinutes: UserDataStoreDefaults.alarmLeadTimeMinutes
         ])
     }
 

@@ -5,13 +5,14 @@
 //
 
 import Foundation
+import OBAKitCore
 
 /// Lead-time rules for departure alarms: user-adjustable within 1–15 minutes,
 /// but never scheduled at or past the departure itself.
 enum AlarmLeadTime {
     static let minimumMinutes = 1
     static let maximumMinutes = 15
-    static let defaultMinutes = 5
+    static let defaultMinutes = UserDataStoreDefaults.alarmLeadTimeMinutes
 
     /// Clamps a requested lead time into the valid range for a departure
     /// `minutesUntilDeparture` away, or nil when no valid lead time exists
