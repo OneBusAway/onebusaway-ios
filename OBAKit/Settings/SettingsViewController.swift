@@ -56,6 +56,7 @@ class SettingsViewController: FormViewController {
             mapSectionShowsTraffic: application.mapRegionManager.mapViewShowsTraffic,
             mapSectionShowsHeading: application.mapRegionManager.mapViewShowsHeading,
             FeatureFlags.useMapPanelExperienceKey: application.userDefaults.bool(forKey: FeatureFlags.useMapPanelExperienceKey),
+            FeatureFlags.useNewStopPageKey: FeatureFlags.isNewStopPageEnabled(userDefaults: application.userDefaults),
             privacySectionReportingEnabled: application.analytics?.reportingEnabled() ?? false,
             DataLoadFeedbackGenerator.EnabledUserDefaultsKey: application.userDefaults.bool(forKey: DataLoadFeedbackGenerator.EnabledUserDefaultsKey),
             AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts: application.userDefaults.bool(forKey: AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts),
@@ -130,6 +131,10 @@ class SettingsViewController: FormViewController {
         if let useMapPanel = values[FeatureFlags.useMapPanelExperienceKey] as? Bool {
             application.userDefaults.set(useMapPanel, forKey: FeatureFlags.useMapPanelExperienceKey)
         }
+
+        if let useNewStopPage = values[FeatureFlags.useNewStopPageKey] as? Bool {
+            application.userDefaults.set(useNewStopPage, forKey: FeatureFlags.useNewStopPageKey)
+        }
     }
 
     private func saveWalkingSpeedValues(_ values: [String: Any?]) {
@@ -182,6 +187,11 @@ class SettingsViewController: FormViewController {
         section <<< SwitchRow {
             $0.tag = FeatureFlags.useMapPanelExperienceKey
             $0.title = OBALoc("settings_controller.experimental_section.map_panel", value: "Use map panel experience", comment: "Settings > Experimental section > Map panel toggle")
+        }
+
+        section <<< SwitchRow {
+            $0.tag = FeatureFlags.useNewStopPageKey
+            $0.title = OBALoc("settings_controller.experimental_section.new_stop_page", value: "Use new stop page", comment: "Settings > Experimental section > New stop page toggle")
         }
 
         return section

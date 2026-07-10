@@ -86,16 +86,26 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
 
     public func navigateTo(stop: Stop, from fromController: UIViewController, bookmark: Bookmark? = nil, transferContext: TransferContext? = nil) {
         guard shouldNavigate(from: fromController, to: .stop(stop)) else { return }
-        let stopController = StopViewController(application: application, stop: stop)
-        stopController.bookmarkContext = bookmark
-        stopController.transferContext = transferContext
-        navigate(to: stopController, from: fromController)
+        if FeatureFlags.isNewStopPageEnabled(userDefaults: application.userDefaults) {
+            let stopController = StopPageViewController(application: application, stop: stop)
+            stopController.bookmarkContext = bookmark
+            stopController.transferContext = transferContext
+            navigate(to: stopController, from: fromController)
+        } else {
+            let stopController = StopViewController(application: application, stop: stop)
+            stopController.bookmarkContext = bookmark
+            stopController.transferContext = transferContext
+            navigate(to: stopController, from: fromController)
+        }
     }
 
     public func navigateTo(stopID: StopID, from fromController: UIViewController) {
         guard shouldNavigate(from: fromController, to: .stopID(stopID)) else { return }
-        let stopController = StopViewController(application: application, stopID: stopID)
-        navigate(to: stopController, from: fromController)
+        if FeatureFlags.isNewStopPageEnabled(userDefaults: application.userDefaults) {
+            navigate(to: StopPageViewController(application: application, stopID: stopID), from: fromController)
+        } else {
+            navigate(to: StopViewController(application: application, stopID: stopID), from: fromController)
+        }
     }
 
     public func navigateTo(arrivalDeparture: ArrivalDeparture, from fromController: UIViewController) {
