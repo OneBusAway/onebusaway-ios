@@ -44,7 +44,7 @@ public struct TripActivityPresenter {
             deviationText = formatters.formattedScheduleDeviation(
                 temporalState: temporalState(minutes: minutes),
                 arrivalDepartureStatus: arrival.isArrival ? .arriving : .departing,
-                scheduleDeviation: arrival.scheduleDeviation / 60
+                scheduleDeviation: Int((Double(arrival.scheduleDeviation) / 60.0).rounded())
             )
         }
 
