@@ -201,19 +201,20 @@ public struct TripBookmarkRow: View {
 
 extension TripBookmarkRow {
     public init(staticData: TripAttributes.StaticData, contentState: TripAttributes.ContentState) {
-        let statusColor = Color(contentState.statusColor.uiColor)
-        let minuteDisplays = contentState.minutes.enumerated().map { index, minuteInfo in
+        let presenter = TripActivityPresenter()
+        let statusText = contentState.arrivals.first.map { presenter.statusText(for: $0) } ?? ""
+        let statusColor = Color(presenter.primaryColor(for: contentState))
+        let minuteDisplays = contentState.arrivals.enumerated().map { index, arrival in
             MinuteDisplay(
-                text: minuteInfo.text,
-                color: Color(minuteInfo.color.uiColor),
-                isPrimary: index == 0,
-                shouldHighlight: contentState.shouldHighlight && index == 0
+                text: presenter.minuteText(for: arrival),
+                color: Color(presenter.color(for: arrival)),
+                isPrimary: index == 0
             )
         }
         self.init(
             routeShortName: staticData.routeShortName,
             routeHeadsign: staticData.routeHeadsign,
-            statusText: contentState.statusText,
+            statusText: statusText,
             statusColor: statusColor,
             minutes: minuteDisplays,
             isLiveActivity: true

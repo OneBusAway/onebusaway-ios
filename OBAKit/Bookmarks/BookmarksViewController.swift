@@ -432,23 +432,15 @@ public class BookmarksViewController: UIViewController,
               !arrivalDepartures.isEmpty else {
             return nil
         }
-        let formatters = application.formatters
-        let firstArrival = arrivalDepartures[0]
-        let statusText = TripBookmarkRow.buildStatusText(from: firstArrival, formatters: formatters)
-        let statusColor = formatters.colorForScheduleStatus(firstArrival.scheduleStatus)
-        let minutes = arrivalDepartures.prefix(3).map { arrivalDeparture -> TripAttributes.MinuteInfo in
-            let minuteText = formatters.shortFormattedTime(until: arrivalDeparture)
-            let color = formatters.colorForScheduleStatus(arrivalDeparture.scheduleStatus)
-            return TripAttributes.MinuteInfo(text: minuteText, color: color)
+        let arrivals = arrivalDepartures.prefix(3).map { arrDep in
+            TripAttributes.ContentState.ArrivalInfo(
+                departureTime: Int(arrDep.arrivalDepartureDate.timeIntervalSince1970),
+                scheduleStatus: .init(arrDep.scheduleStatus),
+                scheduleDeviation: arrDep.deviationFromScheduleInMinutes * 60,
+                isArrival: arrDep.arrivalDepartureStatus == .arriving
+            )
         }
-        let shouldHighlight = !viewModel.arrivalDeparturesPair.isEmpty &&
-                            viewModel.arrivalDeparturesPair[0].shouldHighlightOnDisplay
-        return TripAttributes.ContentState(
-            statusText: statusText,
-            statusColor: statusColor,
-            minutes: Array(minutes),
-            shouldHighlight: shouldHighlight
-        )
+        return TripAttributes.ContentState(arrivals: Array(arrivals))
     }
 
     private func showLiveActivityStartedAlert() {

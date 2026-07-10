@@ -26,6 +26,8 @@ import SwiftUI
 import OBAKitCore
 
 struct TripLiveActivity: Widget {
+    private let presenter = TripActivityPresenter()
+
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: TripAttributes.self) { context in
             TripBookmarkRow(
@@ -39,7 +41,7 @@ struct TripLiveActivity: Widget {
                     HStack(spacing: 8) {
                         Image(systemName: "bus.fill")
                             .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(Color(context.state.uiStatusColor))
+                            .foregroundColor(Color(presenter.primaryColor(for: context.state)))
                         Text(context.attributes.staticData.routeShortName)
                             .font(.system(.title3, design: .rounded))
                             .fontWeight(.heavy)
@@ -48,11 +50,12 @@ struct TripLiveActivity: Widget {
                     .padding(.leading, 6)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    if let primaryMinute = context.state.minutes.first {
-                        Text(primaryMinute.text)
+                    if let primary = context.state.arrivals.first {
+                        let primaryMinuteText = presenter.minuteText(for: primary)
+                        Text(primaryMinuteText)
                             .font(.system(size: 32, weight: .bold, design: .rounded))
-                            .foregroundColor(Color(primaryMinute.uiColor))
-                            .contentTransition(.numericText(value: Double(primaryMinute.text.filter("0123456789".contains)) ?? 0))
+                            .foregroundColor(Color(presenter.color(for: primary)))
+                            .contentTransition(.numericText(value: Double(primaryMinuteText.filter("0123456789".contains)) ?? 0))
                             .padding(.trailing, 6)
                     }
                 }
@@ -73,24 +76,24 @@ struct TripLiveActivity: Widget {
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                 HStack(spacing: 6) {
                                     Circle()
-                                        .fill(Color(context.state.uiStatusColor))
+                                        .fill(Color(presenter.primaryColor(for: context.state)))
                                         .frame(width: 6, height: 6)
-                                    Text(context.state.statusText)
+                                    Text(context.state.arrivals.first.map { presenter.statusText(for: $0) } ?? "")
                                         .font(.caption)
                                         .fontWeight(.medium)
-                                        .foregroundColor(Color(context.state.uiStatusColor))
+                                        .foregroundColor(Color(presenter.primaryColor(for: context.state)))
                                 }
                                 .padding(.top, 2)
                             }
                             .padding(.leading, 6)
                             Spacer(minLength: 12)
                             VStack(alignment: .trailing, spacing: 4) {
-                                let nextDepartures = context.state.minutes.dropFirst().prefix(2)
-                                ForEach(Array(nextDepartures.enumerated()), id: \.offset) { _, minute in
-                                    Text(minute.text)
+                                let nextDepartures = context.state.arrivals.dropFirst().prefix(2)
+                                ForEach(Array(nextDepartures.enumerated()), id: \.offset) { _, arrivalInfo in
+                                    Text(presenter.minuteText(for: arrivalInfo))
                                         .font(.system(.callout, design: .rounded))
                                         .fontWeight(.bold)
-                                        .foregroundColor(Color(minute.uiColor))
+                                        .foregroundColor(Color(presenter.color(for: arrivalInfo)))
                                 }
                             }
                             .padding(.trailing, 6)
@@ -102,22 +105,22 @@ struct TripLiveActivity: Widget {
                 Text(context.attributes.staticData.routeShortName)
                     .font(.system(.body, design: .rounded))
                     .fontWeight(.bold)
-                    .foregroundColor(Color(context.state.uiStatusColor))
+                    .foregroundColor(Color(presenter.primaryColor(for: context.state)))
                     .padding(.leading, 4)
             } compactTrailing: {
-                if let primaryMinute = context.state.minutes.first {
-                    Text(primaryMinute.text)
+                if let primary = context.state.arrivals.first {
+                    Text(presenter.minuteText(for: primary))
                         .font(.system(.body, design: .rounded))
                         .fontWeight(.bold)
-                        .foregroundColor(Color(primaryMinute.uiColor))
+                        .foregroundColor(Color(presenter.color(for: primary)))
                         .frame(minWidth: 20)
                 }
             } minimal: {
-                if let primaryMinute = context.state.minutes.first {
-                    Text(primaryMinute.text)
+                if let primary = context.state.arrivals.first {
+                    Text(presenter.minuteText(for: primary))
                         .font(.system(.callout, design: .rounded))
                         .fontWeight(.heavy)
-                        .foregroundColor(Color(primaryMinute.uiColor))
+                        .foregroundColor(Color(presenter.color(for: primary)))
                 }
             }
         }

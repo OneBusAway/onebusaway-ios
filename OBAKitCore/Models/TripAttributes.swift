@@ -9,9 +9,19 @@
 
 import Foundation
 import ActivityKit
-import UIKit
+
+// swiftlint:disable nesting
 
 /// Live Activities data contract for trip bookmark tracking.
+///
+/// `ContentState` is the semantic wire contract with OBACloud: the server
+/// pushes exactly this JSON shape (snake_case keys, epoch-second dates) via
+/// APNs `content-state`, and the app builds the identical shape locally for
+/// foreground refreshes. Apple decodes pushed content-state with a
+/// default-strategy JSONDecoder, so every struct declares explicit
+/// CodingKeys and dates travel as epoch-second integers, never `Date`.
+/// The canonical fixture is OBAKitTests/fixtures/live_activity_content_state.json,
+/// mirrored in the obacloud repo.
 public struct TripAttributes: ActivityAttributes {
     public struct StaticData: Codable, Hashable {
         public let routeShortName: String
@@ -25,27 +35,70 @@ public struct TripAttributes: ActivityAttributes {
         }
     }
 
-    public struct MinuteInfo: Codable, Hashable {
-        public let text: String
-        public let color: CodableColor
-
-        public init(text: String, color: UIColor) {
-            self.text = text
-            self.color = CodableColor(color)
-        }
-    }
-
     public struct ContentState: Codable, Hashable {
-        public let statusText: String
-        public let statusColor: CodableColor
-        public let minutes: [MinuteInfo]
-        public let shouldHighlight: Bool
+        public enum ScheduleStatusValue: String, Codable, Hashable {
+            case onTime = "on_time"
+            case early
+            case delayed
+            case unknown
 
-        public init(statusText: String, statusColor: UIColor, minutes: [MinuteInfo], shouldHighlight: Bool = false) {
-            self.statusText = statusText
-            self.statusColor = CodableColor(statusColor)
-            self.minutes = minutes
-            self.shouldHighlight = shouldHighlight
+            /// Bridges to the presentation enum used by Formatters.
+            public var scheduleStatus: ScheduleStatus {
+                switch self {
+                case .onTime: return .onTime
+                case .early: return .early
+                case .delayed: return .delayed
+                case .unknown: return .unknown
+                }
+            }
+
+            public init(_ status: ScheduleStatus) {
+                switch status {
+                case .onTime: self = .onTime
+                case .early: self = .early
+                case .delayed: self = .delayed
+                default: self = .unknown
+                }
+            }
+        }
+
+        public struct ArrivalInfo: Codable, Hashable {
+            /// Epoch seconds. An Int (not Date): the default JSONDecoder
+            /// would decode a Date as seconds-since-2001 and corrupt it.
+            public let departureTime: Int
+            public let scheduleStatus: ScheduleStatusValue
+            /// Seconds late (positive) or early (negative).
+            public let scheduleDeviation: Int
+            public let isArrival: Bool
+
+            enum CodingKeys: String, CodingKey {
+                case departureTime = "departure_time"
+                case scheduleStatus = "schedule_status"
+                case scheduleDeviation = "schedule_deviation"
+                case isArrival = "is_arrival"
+            }
+
+            public init(departureTime: Int, scheduleStatus: ScheduleStatusValue, scheduleDeviation: Int, isArrival: Bool) {
+                self.departureTime = departureTime
+                self.scheduleStatus = scheduleStatus
+                self.scheduleDeviation = scheduleDeviation
+                self.isArrival = isArrival
+            }
+
+            public var departureDate: Date {
+                Date(timeIntervalSince1970: TimeInterval(departureTime))
+            }
+        }
+
+        /// Up to 3 upcoming arrivals, soonest first.
+        public let arrivals: [ArrivalInfo]
+
+        enum CodingKeys: String, CodingKey {
+            case arrivals
+        }
+
+        public init(arrivals: [ArrivalInfo]) {
+            self.arrivals = arrivals
         }
     }
 
@@ -56,66 +109,4 @@ public struct TripAttributes: ActivityAttributes {
     }
 }
 
-// MARK: - CodableColor Wrapper
-
-/// Wraps `UIColor` to make it `Codable` for ActivityKit storage.
-///
-/// Colors are converted to the sRGB color space before extracting components,
-/// ensuring correct encoding even for colors in extended color spaces (e.g., Display P3).
-public struct CodableColor: Codable, Hashable {
-    private let red: CGFloat
-    private let green: CGFloat
-    private let blue: CGFloat
-    private let alpha: CGFloat
-
-    public init(_ color: UIColor) {
-        var r: CGFloat = 0
-        var g: CGFloat = 0
-        var b: CGFloat = 0
-        var a: CGFloat = 0
-
-        // false for colors not in a compatible color space (e.g., P3 system colors).
-        let sRGBColor: UIColor
-        if let converted = color.cgColor.converted(
-            to: CGColorSpace(name: CGColorSpace.sRGB)!,
-            intent: .defaultIntent,
-            options: nil
-        ) {
-            sRGBColor = UIColor(cgColor: converted)
-        } else {
-            sRGBColor = color
-        }
-
-        guard sRGBColor.getRed(&r, green: &g, blue: &b, alpha: &a) else {
-            // Fallback: opaque black if conversion still fails (should not happen).
-            self.red = 0
-            self.green = 0
-            self.blue = 0
-            self.alpha = 1
-            return
-        }
-
-        self.red = r
-        self.green = g
-        self.blue = b
-        self.alpha = a
-    }
-
-    public var uiColor: UIColor {
-        return UIColor(red: red, green: green, blue: blue, alpha: alpha)
-    }
-}
-
-// MARK: - Convenience Extensions
-
-extension TripAttributes.MinuteInfo {
-    public var uiColor: UIColor {
-        return color.uiColor
-    }
-}
-
-extension TripAttributes.ContentState {
-    public var uiStatusColor: UIColor {
-        return statusColor.uiColor
-    }
-}
+// swiftlint:enable nesting
