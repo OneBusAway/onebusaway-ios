@@ -2,6 +2,7 @@
 
 **Date:** 2026-07-10
 **Branch:** `new-stop`
+**Deployment target:** iOS 18.0 (`Apps/Shared/app_shared.yml`; CLAUDE.md's "17.0+" is stale). All API choices below assume 18.0 — `@Observable`, `@Entry`, `symbolEffect`, `contextMenu(preview:)`, `.swipeActions` are all available; `LazyVStack` swipe actions (iOS 26) are not.
 **Source of truth for visuals/behavior:** Claude Design project "OBA iOS" — `Stop Page Rethink - Implementation Brief.md` + `OBA Stop Page Rethink.html` (components `oba-dep-core.jsx`, `oba-dep-chrome.jsx`, `oba-dep-views.jsx`).
 
 ## Summary
@@ -39,6 +40,8 @@ Ships behind a **default-ON flag** with fallback to the existing `StopViewContro
 3. **`approach(for: ArrivalDeparture) async -> TripDetails?`** — `apiService.getTrip(tripID:vehicleID:serviceDate:)` on trip-panel open, live trips only, cached per trip and invalidated each refresh tick.
 4. **`lastUpdated` relative string** for the live status row (largely exists).
 
+**Observation discipline (validated risk).** `StopViewModel` is a Combine `ObservableObject`, whose invalidation is coarse: any `@Published` mutation invalidates every observing view, and this VM churns (`stopArrivals` every ~15 s, `isLoading` twice per refresh, `statusText` on its own 15 s timer). Mitigation for v1: **`StopPageView` is the only view that observes the VM**; every subview (header, status row, both mode lists, rows, panel) takes plain value inputs, so a timer tick re-evaluates one shallow root body and SwiftUI's value diffing stops the propagation. The live status row is its own child taking only the status string, so its churn is isolated. Migrating the VM to `@Observable` (per-property tracking) is the right end state but breaks `StopViewController`'s Combine sinks — deferred until the legacy screen retires.
+
 ### Presentation layer
 
 `DepartureStatus` — a value type wrapping `ArrivalDeparture`, the single home of the brief's visual rules:
@@ -65,6 +68,10 @@ OBAKit/Stops/StopPage/
   Shared/
     DepartureStatus.swift           status color/label/gate (unit-tested)
     RealtimeGlyph.swift             3-wave pulse / static clock
+                                    (one shared animation clock for all instances —
+                                    a single list-level TimelineView/phase driver, or
+                                    symbolEffect(.variableColor.iterative); never
+                                    ~15 independent repeatForever loops)
     CountdownView.swift             "{n}m" + glyph, monospaced digits
     RouteBadgeView.swift
     WalkLineDivider.swift           dashed "N MIN WALK — CATCH BELOW"
@@ -78,9 +85,16 @@ OBAKit/Stops/StopPage/
 
 ## Screen structure
 
-Root is a SwiftUI `List`, inset-grouped styling (rounded cards on `systemGroupedBackground`; native `.swipeActions`). Top to bottom:
+Root is a SwiftUI `List`, inset-grouped styling (rounded cards on `systemGroupedBackground`; native `.swipeActions` — the deciding constraint: on iOS 18 only `List` provides them). Structural rules from validation:
 
-1. **Header card** (`StopPageHeaderView`): `MapSnapshotter` image as card background (rounded, inset), top-down white scrim, stop name (bold ~22 pt), `Stop #### · {direction} bound` subhead, **walk chip** pinned bottom-left (`{n} min walk · {distance}`, brand green) — rendered only when `walkTime != nil`. Tapping the card toggles the routes-served line, matching today's header behavior.
+- **Section model differs per mode**: in inset-grouped `List` the rounded card *is* the `Section`. Chronological mode = a few `Section`s (past card, missed card, reachable card); grouped mode = **one `Section` per route card**. Don't hand-draw card backgrounds on composite rows.
+- **Row identity**: `ForEach` keyed on `ArrivalDeparture.id` (the composite string — verified stable across prediction refreshes, so diffs animate in place). Never `id: \.self` — `ArrivalDeparture` is an `NSObject` whose equality walks ~30 fields.
+- **Rows stay unary**: the predicted/scheduled branching lives *inside* each row's single root `HStack` — no `AnyView`, no top-level `if`/`switch` at the row root, preserving `List`'s templating fast path.
+- **Out-of-card rows** (walk-line divider, `— UPCOMING —` divider, live status row) escape the card chrome via `.listRowInsets(EdgeInsets())` + `.listRowBackground(Color.clear)` + `.listRowSeparator(.hidden)`.
+
+Top to bottom:
+
+1. **Header card** (`StopPageHeaderView`): `MapSnapshotter` image as card background (rounded, inset), top-down white scrim, stop name (bold ~22 pt), `Stop #### · {direction} bound` subhead, **walk chip** pinned bottom-left (`{n} min walk · {distance}`, brand green) — rendered only when `walkTime != nil`. Tapping the card toggles the routes-served line, matching today's header behavior. `MapSnapshotter` is callback-based and needs concrete dimensions: bridge via `.task` + continuation into `@State` image, and commit to a fixed card aspect ratio rather than a layout-derived size.
 2. **Live status row**: centered `● Updated {relative}` with pulsing dot (static under Reduce Motion), fed by the VM refresh clock.
 3. **Surveys / donations** cards — same relative positions as today.
 4. **Service alerts** card — icon + title rows, tap → existing alert detail via `ViewRouter`; collapses to a summary row beyond two alerts; honors `stopViewShowsServiceAlerts`.
@@ -116,7 +130,9 @@ Root is a SwiftUI `List`, inset-grouped styling (rounded cards on `systemGrouped
 
 ## Trip-detail panel
 
-`TripDetailPanelView` renders inline beneath the opening row (chrono row or grouped expanded row) on the grouped-background tint with an expand animation. One panel open per screen; mode switch or the departure dropping from the feed closes it. Input is `(ArrivalDeparture, DepartureStatus, alarm state)` + callbacks — entry-point-agnostic (§4.6).
+`TripDetailPanelView` renders inline beneath the opening row (chrono row or grouped expanded row) on the grouped-background tint. One panel open per screen; mode switch or the departure dropping from the feed closes it. Input is `(ArrivalDeparture, DepartureStatus, alarm state)` + callbacks — entry-point-agnostic (§4.6).
+
+**Accordion mechanics (validated risk):** the panel is a **separate row inserted into the `ForEach` after the opening row** (keyed off the selected departure id), not content growing inside the tapped row — `List` animates row insert/remove smoothly but handles self-sizing row-height growth poorly (clipping/cross-fade). Same mechanism for the grouped card's expanded departure rows. **This interaction gets prototyped first** (spike task in the plan) since it shapes the row structure.
 
 - **Live vehicle strip** (predicted): route-colored wave glyph + `Live · vehicle {id}` + occupancy.
 - **Scheduled-only notice** (unpredicted): static clock + *"Scheduled time only — no live signal from this bus yet; this is when it's supposed to arrive. It may run early, late, or not at all."* No vehicle, occupancy, or timeline.
@@ -138,8 +154,8 @@ Four entry points, one state (§4.7): chrono swipe, grouped header pill, grouped
 
 ## Chrome parity
 
-- **Nav bar**: standard `UINavigationBar`, stop name as small title. Menus carry over as bar items on the hosting VC: **Filter** (route filter → existing `StopPreferencesView` sheet) and **More** pulldown (Add Bookmark, Share, Report a Problem, Nearby Stops, All Service Alerts, Walking Directions) calling the same VM/router methods as today. The **Sort menu is removed** — the toggle supersedes it.
-- **Context menus**: rows get `.contextMenu` mirroring swipe actions + "Show Trip Details"; preview embeds `TripViewController` via `UIViewControllerRepresentable`.
+- **Nav bar**: standard `UINavigationBar`, stop name as small title (small title deliberately avoids large-title-collapse coordination with a hosted `List`; configure the scroll-edge appearance so the bar background behaves on scroll). Bar items live on the hosting VC (UIKit), sidestepping the deprecated SwiftUI `navigationBarItems` path. Menus carry over as bar items on the hosting VC: **Filter** (route filter → existing `StopPreferencesView` sheet) and **More** pulldown (Add Bookmark, Share, Report a Problem, Nearby Stops, All Service Alerts, Walking Directions) calling the same VM/router methods as today. The **Sort menu is removed** — the toggle supersedes it.
+- **Context menus**: rows get `.contextMenu(menuItems:preview:)` mirroring swipe actions + "Show Trip Details". The preview embeds `TripViewController` via `UIViewControllerRepresentable` **constructed lazily inside the preview closure** (SwiftUI builds it on long-press, not per row) with an explicit frame — a representable has no intrinsic size. If the live-map preview proves heavy, fall back to a static snapshot + trip-summary preview.
 - Prototype's floating nav pills and floating tab bar: **out of scope** (v1 uses standard chrome).
 
 ## Error & empty states
@@ -154,7 +170,7 @@ Four entry points, one state (§4.7): chrono swipe, grouped header pill, grouped
 - Each row is one VoiceOver element: "Route 132 to Downtown Seattle, departs in 5 minutes, 4 minutes late, live tracking" / "…scheduled time only, no live data." Glyph decorative/hidden. Swipe actions surface as custom actions via `List`.
 - Replaces the old screen's dedicated accessibility layout with combined elements + Dynamic Type (rows scale; destination line-limit relaxes at accessibility sizes; chips wrap).
 - Reduce Motion: wave glyph and status pulse render static; accordion uses opacity fade.
-- Color never the sole signal — every status color pairs with a text label; palette is `ThemeColors`' dynamic (dark-mode-aware) colors.
+- Color never the sole signal — every status color pairs with a text label; palette is `ThemeColors`' dynamic (dark-mode-aware) colors. `ThemeColors`/`Formatters` return `UIColor` — bridge with `Color(uiColor:)`, not the soft-deprecated `Color(_:)`. Reduce Motion is read from `@Environment(\.accessibilityReduceMotion)`.
 
 ## Testing
 
@@ -168,6 +184,10 @@ Unit tests in `OBAKitTests` against pure logic (no UI tests, per repo convention
 - Existing `StopViewModel` tests keep passing (extensions only add surface).
 
 Verification: `scripts/generate_project OneBusAway`, build-for-testing + `OBAKitTests` on the iPhone 17 simulator (TEST BUILD SUCCEEDED is the local bar; the runner crashes under Xcode 27's UIScene issue), plus a manual simulator walkthrough of both modes against a live region.
+
+## Validation
+
+An independent review (Opus agent, swiftui-specialist skill + Apple docs) confirmed the architecture with no blockers, and verified against the codebase: `ArrivalDeparture.id` is stable across prediction refreshes (animated diffs work), `canCreateAlarm` gating and `ArrivalDepartureDeepLink` matching exist exactly as this spec assumes, and `tripStatus.closestStopID` is the same vehicle-position field the Trip screen uses. Its should-fix findings are incorporated above (observation discipline, accordion-as-inserted-row + spike, per-mode section models, out-of-card row modifiers, lazy context-menu preview, shared glyph animation clock, `MapSnapshotter` bridging, `Color(uiColor:)` bridging, iOS 18.0 target). The two items to prototype before broad build-out: the inserted-row accordion animation, and root-only VM observation under the 15 s refresh churn.
 
 ## Out of scope
 
