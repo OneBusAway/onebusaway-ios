@@ -9,6 +9,7 @@
 
 import UIKit
 import SwiftUI
+import Combine
 import OBAKitCore
 
 /// Hosting shell for the redesigned SwiftUI Stop page. Owns UIKit-side chrome
@@ -17,6 +18,7 @@ import OBAKitCore
 class StopPageViewController: UIHostingController<StopPageView>, AppContext {
     let application: Application
     let viewModel: StopViewModel
+    private var cancellables = Set<AnyCancellable>()
 
     var bookmarkContext: Bookmark? {
         get { viewModel.bookmarkContext }
@@ -50,7 +52,12 @@ class StopPageViewController: UIHostingController<StopPageView>, AppContext {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = viewModel.stop.map(Formatters.formattedTitle(stop:)) ?? Strings.loading
+        viewModel.$stop
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] stop in
+                self?.title = stop.map(Formatters.formattedTitle(stop:)) ?? Strings.loading
+            }
+            .store(in: &cancellables)
         navigationItem.largeTitleDisplayMode = .never
     }
 }
