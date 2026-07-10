@@ -13,15 +13,17 @@ struct RouteBadgeView: View {
     let routeColor: Color
     var size: CGFloat = 44
 
+    @ScaledMetric(relativeTo: .body) private var scale: CGFloat = 1
+
     var body: some View {
         Text(routeShortName)
-            .font(.system(size: routeShortName.count <= 2 ? 18 : 13, weight: .heavy))
+            .font(.system(size: (routeShortName.count <= 2 ? 18 : 13) * scale, weight: .heavy))
             .monospacedDigit()
             .foregroundStyle(.white)
             .minimumScaleFactor(0.6)
             .lineLimit(1)
-            .frame(width: size, height: size)
-            .background(routeColor, in: RoundedRectangle(cornerRadius: size * 0.28, style: .continuous))
+            .frame(width: size * scale, height: size * scale)
+            .background(routeColor, in: RoundedRectangle(cornerRadius: size * scale * 0.28, style: .continuous))
             .accessibilityHidden(true) // route name is in the row's combined label
     }
 }

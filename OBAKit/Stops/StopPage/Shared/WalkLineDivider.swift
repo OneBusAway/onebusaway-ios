@@ -21,7 +21,7 @@ struct WalkLineDivider: View {
         HStack(spacing: 10) {
             dash
             Label(text, systemImage: "figure.walk")
-                .font(.system(size: 12, weight: .heavy))
+                .font(.caption.weight(.heavy))
                 .foregroundStyle(Color(uiColor: ThemeColors.shared.departureOnTime))
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)

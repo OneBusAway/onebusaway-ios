@@ -18,7 +18,7 @@ struct CountdownView: View {
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 4) {
             Text("\(minutes)m")
-                .font(.system(size: emphasized ? 27 : 17, weight: .heavy, design: .rounded))
+                .font(emphasized ? .system(.title, design: .rounded, weight: .heavy) : .system(.body, design: .rounded, weight: .heavy))
                 .monospacedDigit()
                 .foregroundStyle(color)
             RealtimeGlyph(isRealTime: isRealTime, color: color, size: emphasized ? 13 : 11)

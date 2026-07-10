@@ -16,11 +16,12 @@ struct RealtimeGlyph: View {
     var size: CGFloat = 14
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @ScaledMetric(relativeTo: .body) private var scale: CGFloat = 1
 
     var body: some View {
         // Unary root: one Image; the live/scheduled fork is symbol + modifier state.
         Image(systemName: isRealTime ? "dot.radiowaves.up.forward" : "clock")
-            .font(.system(size: size, weight: .semibold))
+            .font(.system(size: size * scale, weight: .semibold))
             .foregroundStyle(isRealTime ? color : Color(uiColor: .secondaryLabel))
             .symbolEffect(.variableColor.iterative, options: .repeating, isActive: isRealTime && !reduceMotion)
             .accessibilityHidden(true) // status is conveyed in the row's combined label
