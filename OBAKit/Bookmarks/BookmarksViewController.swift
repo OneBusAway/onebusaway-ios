@@ -416,12 +416,26 @@ public class BookmarksViewController: UIViewController,
             }),
                 let viewModel = buildListItem(bookmark),
                 let contentState = buildContentState(for: viewModel) {
+                // Re-arm the push token/lifecycle observers on relaunch. `startLiveActivity`
+                // only registers activities it creates in-session, so without this a Live
+                // Activity that's still running after a relaunch would never re-establish its
+                // observers and would never unregister when it later ends. Guarded so repeated
+                // calls to updateRunningLiveActivities() don't cancel/rebuild an already-armed
+                // task (and don't clobber one armed earlier in this same session).
+                if liveActivityTokenTasks[activity.id] == nil {
+                    registerForPushUpdates(activity: activity, viewModel: viewModel)
+                }
                 Task {
                     await activity.update(
                         .init(state: contentState, staleDate: nil)
                     )
                     Logger.info("Updated Live Activity for stop: \(staticData.stopID) route: \(staticData.routeShortName)")
                 }
+            } else if liveActivityTokenTasks[activity.id] == nil && liveActivityLifecycleTasks[activity.id] == nil {
+                // No bookmark/viewModel to register push updates with, but the activity is
+                // still running (and may have a delete URL persisted from a prior session).
+                // Arm just the lifecycle observer so dismiss/end still triggers `unregister`.
+                armLifecycleObserver(activity: activity)
             }
         }
     }
@@ -469,8 +483,13 @@ public class BookmarksViewController: UIViewController,
 
     private static let liveActivityURLDefaultsKey = "liveActivityDeleteURLs"
 
-    /// The server's DELETE URLs survive app relaunches so an activity that ends
-    /// after a relaunch still unregisters.
+    /// The server's DELETE URLs survive app relaunches so a running activity that's later
+    /// dismissed/ends can still unregister, as long as `updateRunningLiveActivities()` has had
+    /// a chance to re-arm its lifecycle observer since relaunch. This does *not* cover an
+    /// activity that already ended while the app wasn't running at all: it won't appear in
+    /// `Activity<TripAttributes>.activities` on next launch, so no observer is ever armed for
+    /// it and its persisted delete URL is orphaned server-side until something else cleans it
+    /// up.
     private func storeDeleteURL(_ url: URL, activityID: String) {
         var urls = application.userDefaults.dictionary(forKey: Self.liveActivityURLDefaultsKey) as? [String: String] ?? [:]
         urls[activityID] = url.absoluteString
@@ -503,6 +522,18 @@ public class BookmarksViewController: UIViewController,
             }
         }
 
+        armLifecycleObserver(activity: activity)
+    }
+
+    /// Observes `activity`'s dismiss/end state so `unregister` runs (deleting the server-side
+    /// registration via its persisted delete URL). Armed both as part of a full registration
+    /// (`registerForPushUpdates`, alongside the token-forwarding task) and, after a relaunch,
+    /// on its own for running activities whose bookmark can no longer be matched
+    /// (`updateRunningLiveActivities`) — there's no viewModel to register a push token with in
+    /// that case, but the delete URL persisted from a prior session still needs to be cleaned
+    /// up once the activity ends.
+    private func armLifecycleObserver(activity: Activity<TripAttributes>) {
+        let activityID = activity.id
         liveActivityLifecycleTasks[activityID]?.cancel()
         liveActivityLifecycleTasks[activityID] = Task { [weak self] in
             for await state in activity.activityStateUpdates where state == .dismissed || state == .ended {
@@ -527,6 +558,23 @@ public class BookmarksViewController: UIViewController,
                 vehicleID: vehicleID,
                 stopSequence: stopSequence
             )
+
+            // `unregister` is only cooperatively cancelled, so it can finish tearing down this
+            // activity's tasks while the POST above is still in flight. If that happened, the
+            // lifecycle task that would eventually DELETE this registration is already gone, so
+            // storing the delete URL now would orphan it forever. Guard immediately before the
+            // write (both this method and `unregister` run on the MainActor, so this check is
+            // race-free), and best-effort clean up the row the server just created for us.
+            guard liveActivityLifecycleTasks[activity.id] != nil, !Task.isCancelled else {
+                do {
+                    try await obacoService.deleteLiveActivity(url: deleteURL)
+                    Logger.info("Discarded Live Activity registration for \(activity.id): activity was unregistered mid-request")
+                } catch {
+                    Logger.error("Failed to clean up orphaned Live Activity registration for \(activity.id): \(error)")
+                }
+                return
+            }
+
             storeDeleteURL(deleteURL, activityID: activity.id)
             Logger.info("Registered Live Activity push token for activity \(activity.id)")
         } catch {
