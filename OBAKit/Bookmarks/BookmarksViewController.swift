@@ -71,6 +71,11 @@ public class BookmarksViewController: UIViewController,
         fatalError("init(coder:) has not been implemented")
     }
 
+    deinit {
+        liveActivityTokenTasks.values.forEach { $0.cancel() }
+        liveActivityLifecycleTasks.values.forEach { $0.cancel() }
+    }
+
     private var sortBookmarksByGroup: Bool {
         get { viewModel.sortByGroup }
         set { viewModel.updateSortType(byGroup: newValue) }
@@ -386,16 +391,12 @@ public class BookmarksViewController: UIViewController,
 
         let attributes = TripAttributes(staticData: staticData)
         do {
-            // Note: pushType is set to .token in preparation for future backend support.
-            // There is currently no server-side infrastructure to receive push tokens
-            // or send APNs updates to Live Activities. When a backend is implemented,
-            // add a Task to iterate over activity.pushTokenUpdates and send tokens
-            // to the server. That Task must be stored and cancelled in deinit.
             let activity = try Activity.request(
                 attributes: attributes,
                 content: .init(state: contentState, staleDate: nil),
                 pushType: .token
             )
+            registerForPushUpdates(activity: activity, viewModel: viewModel)
             Logger.info("Started Live Activity with ID: \(activity.id)")
             showLiveActivityStartedAlert()
         } catch {
@@ -457,6 +458,93 @@ public class BookmarksViewController: UIViewController,
         let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: Strings.ok, style: .default))
         present(alert, animated: true)
+    }
+
+    // MARK: - Live Activity Push Registration
+
+    /// One token-forwarding Task per activity id; cancelled in deinit.
+    private var liveActivityTokenTasks: [String: Task<Void, Never>] = [:]
+    /// One lifecycle-observation Task per activity id; cancelled in deinit.
+    private var liveActivityLifecycleTasks: [String: Task<Void, Never>] = [:]
+
+    private static let liveActivityURLDefaultsKey = "liveActivityDeleteURLs"
+
+    /// The server's DELETE URLs survive app relaunches so an activity that ends
+    /// after a relaunch still unregisters.
+    private func storeDeleteURL(_ url: URL, activityID: String) {
+        var urls = application.userDefaults.dictionary(forKey: Self.liveActivityURLDefaultsKey) as? [String: String] ?? [:]
+        urls[activityID] = url.absoluteString
+        application.userDefaults.set(urls, forKey: Self.liveActivityURLDefaultsKey)
+    }
+
+    private func removeDeleteURL(activityID: String) -> URL? {
+        var urls = application.userDefaults.dictionary(forKey: Self.liveActivityURLDefaultsKey) as? [String: String] ?? [:]
+        defer { application.userDefaults.set(urls, forKey: Self.liveActivityURLDefaultsKey) }
+        guard let raw = urls.removeValue(forKey: activityID) else { return nil }
+        return URL(string: raw)
+    }
+
+    private func registerForPushUpdates(activity: Activity<TripAttributes>, viewModel: BookmarkArrivalViewModel) {
+        let activityID = activity.id
+        let firstArrival = viewModel.arrivalDepartures?.first
+
+        liveActivityTokenTasks[activityID]?.cancel()
+        liveActivityTokenTasks[activityID] = Task { [weak self] in
+            for await tokenData in activity.pushTokenUpdates {
+                let token = tokenData.map { String(format: "%02x", $0) }.joined()
+                await self?.postRegistration(
+                    activity: activity,
+                    pushToken: token,
+                    tripID: firstArrival?.tripID,
+                    serviceDate: firstArrival?.serviceDate,
+                    vehicleID: firstArrival?.vehicleID,
+                    stopSequence: firstArrival?.stopSequence
+                )
+            }
+        }
+
+        liveActivityLifecycleTasks[activityID]?.cancel()
+        liveActivityLifecycleTasks[activityID] = Task { [weak self] in
+            for await state in activity.activityStateUpdates where state == .dismissed || state == .ended {
+                await self?.unregister(activityID: activityID)
+                break
+            }
+        }
+    }
+
+    private func postRegistration(activity: Activity<TripAttributes>, pushToken: String, tripID: String?, serviceDate: Date?, vehicleID: String?, stopSequence: Int?) async {
+        guard let obacoService = application.obacoService else { return }
+        let staticData = activity.attributes.staticData
+        do {
+            let deleteURL = try await obacoService.postLiveActivity(
+                activityID: activity.id,
+                pushToken: pushToken,
+                stopID: staticData.stopID,
+                routeShortName: staticData.routeShortName,
+                tripHeadsign: staticData.routeHeadsign,
+                tripID: tripID,
+                serviceDate: serviceDate,
+                vehicleID: vehicleID,
+                stopSequence: stopSequence
+            )
+            storeDeleteURL(deleteURL, activityID: activity.id)
+            Logger.info("Registered Live Activity push token for activity \(activity.id)")
+        } catch {
+            Logger.error("Failed to register Live Activity push token: \(error)")
+        }
+    }
+
+    private func unregister(activityID: String) async {
+        liveActivityTokenTasks.removeValue(forKey: activityID)?.cancel()
+        liveActivityLifecycleTasks.removeValue(forKey: activityID)?.cancel()
+        guard let obacoService = application.obacoService,
+              let deleteURL = removeDeleteURL(activityID: activityID) else { return }
+        do {
+            try await obacoService.deleteLiveActivity(url: deleteURL)
+            Logger.info("Unregistered Live Activity \(activityID)")
+        } catch {
+            Logger.error("Failed to unregister Live Activity \(activityID): \(error)")
+        }
     }
 
     // MARK: - Arrival departure highlight updates
