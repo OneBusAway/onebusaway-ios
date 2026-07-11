@@ -59,3 +59,7 @@ OBAKitTests.xcresult
 .DS_Store
 .claude/settings.local.json
 .env
+
+# Code-review artifacts written by tooling
+pr-*.md
+.code-reviews/

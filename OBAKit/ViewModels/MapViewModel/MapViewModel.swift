@@ -69,6 +69,7 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
     // MARK: - Private
 
     private let application: Application
+    private var cancellables = Set<AnyCancellable>()
 
     // MARK: - Init
 
@@ -79,10 +80,34 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
         self.surveyOrchestrator = SurveyOrchestrator(surveyService: application.surveyService)
         super.init()
         application.locationService.addDelegate(self)
+
+        // Keep `mapType` in step with `MapRegionManager.userSelectedMapType`,
+        // which UIKit surfaces (the toolbar toggle) and any future consumer
+        // may mutate. `UserDefaults.didChangeNotification` is coarse — it
+        // fires for any defaults change — but the cost is a single read of an
+        // integer-backed value and a comparison, and it avoids exposing the
+        // private storage key from `MapRegionManager`.
+        NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification, object: application.userDefaults)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.syncMapTypeFromRegionManager()
+            }
+            .store(in: &cancellables)
     }
 
     deinit {
         application.locationService.removeDelegate(self)
+    }
+
+    /// Re-reads the persisted map type and mirrors it onto `mapType` when it
+    /// differs. No-op when the persisted value already matches — this is the
+    /// hot path for `UserDefaults.didChangeNotification` fan-out, so avoid a
+    /// republish on every unrelated defaults write.
+    private func syncMapTypeFromRegionManager() {
+        let persisted: MapBaseType = application.mapRegionManager.userSelectedMapType == .mutedStandard ? .standard : .hybrid
+        if persisted != mapType {
+            mapType = persisted
+        }
     }
 
     // MARK: - Lifecycle
@@ -186,22 +211,16 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
         application.locationService.requestTemporaryFullAccuracyAuthorization(withPurposeKey: purposeKey)
     }
 
-    /// The system Settings URL. Exposed here so SwiftUI call sites don't need
-    /// to depend on `UIApplication.openSettingsURLString` directly. Force-unwrap
-    /// is safe: the string is an Apple-guaranteed constant URL.
-    var settingsURL: URL {
-        // `UIApplication.openSettingsURLString` lives in UIKit; but Foundation-only
-        // callers still need a URL. Hard-coded fallback is `app-settings:` — the
-        // same string UIKit's constant resolves to on all supported iOS versions.
-        return URL(string: "app-settings:")!
-    }
-
     // MARK: - Map Type
 
-    /// Toggles between the standard and hybrid base map types.
-    /// The consuming layer (UIKit: `MapViewController`'s `$mapType` sink) persists the selection.
+    /// Toggles between the standard and hybrid base map types and persists
+    /// the choice through `MapRegionManager`. The UIKit path used to persist
+    /// this in its `$mapType` Combine sink; owning it here means SwiftUI-only
+    /// sessions persist too, and both paths share one write.
     func toggleMapType() {
-        mapType = mapType == .standard ? .hybrid : .standard
+        let next: MapBaseType = mapType == .standard ? .hybrid : .standard
+        mapType = next
+        application.mapRegionManager.userSelectedMapType = next == .standard ? .mutedStandard : .hybrid
     }
 
     // MARK: - Bookmarks

@@ -33,8 +33,14 @@ struct MapPanelRootView: View {
     @State private var mapSize: CGSize = .zero
     @State private var visibleRegion: MKCoordinateRegion?
 
-    /// Location-permission dialog presentation state. Owned by the root
-    @State private var permissionDialogState: MapViewModel.TopPillState?
+    /// Measured height of the top-center status pill, used to offset the
+    /// weather button so the two don't overlap when the pill is visible.
+    /// Zero when the pill isn't rendered (`.hidden` state), which naturally
+    /// collapses the weather-button padding.
+    @State private var pillHeight: CGFloat = 0
+
+    /// Location-permission alert presentation state. Owned by the root
+    @State private var permissionAlertState: MapViewModel.TopPillState?
 
     private let application: Application
     private let factory: AppSheetViewFactory
@@ -51,7 +57,7 @@ struct MapPanelRootView: View {
         Map(position: $cameraPosition) {
             UserAnnotation()
         }
-        .mapStyle(mapViewModel.mapType == .standard ? .standard : .hybrid)
+        .mapStyle(mapViewModel.mapType == .standard ? .standard(emphasis: .muted) : .hybrid)
         // TODO: Detent-aware bottom padding. Pinned to the collapsed sheet
         // height today, so dragging the sheet up to `.medium` or
         // `largeDetent` lets the user-location annotation and any future map
@@ -75,6 +81,11 @@ struct MapPanelRootView: View {
                 onPermissionTap: handlePermissionTap
             )
             .padding(.top, ThemeMetrics.padding)
+            .onGeometryChange(for: CGFloat.self) { proxy in
+                proxy.size.height
+            } action: { _, newValue in
+                pillHeight = newValue
+            }
         }
         .overlay(alignment: .bottomTrailing) {
             MapControlsCluster(
@@ -95,7 +106,7 @@ struct MapPanelRootView: View {
                     )
                     .presentationBackground(.clear)
                 }
-                .mapPermissionDialog(state: $permissionDialogState, onAction: handleDialogAction)
+                .mapPermissionAlert(state: $permissionAlertState, onAction: handleAlertAction)
         }
         .onAppear {
             mapViewModel.start()
@@ -114,8 +125,8 @@ struct MapPanelRootView: View {
                 isWeatherPopupPresented = true
             }
             .padding(ThemeMetrics.controllerMargin)
-            .padding(.top, mapViewModel.topPillState == .hidden ? 0 : 48)
-            .animation(.smooth(duration: 0.3), value: mapViewModel.topPillState)
+            .padding(.top, pillHeight)
+            .animation(.smooth(duration: 0.3), value: pillHeight)
         }
     }
 
@@ -125,31 +136,28 @@ extension MapPanelRootView {
 
     // MARK: - Permission Tap
 
-    /// Sets `permissionDialogState` so the `confirmationDialog` attached inside
-    /// the floating sheet presents. We DO NOT invoke the OS permission APIs
-    /// directly from the pill's tap: the confirmation dialog gives the user a
-    /// chance to opt out ("Keep Location Off") before the native system alert
-    /// fires, and — for `.locationServicesOff` and `.impreciseLocation` — the
-    /// action list itself is the meaningful choice (there is no re-prompt path
-    /// on iOS after the first denial).
+    /// Sets `permissionAlertState` so the `.alert` attached inside the
+    /// floating sheet presents. We DO NOT invoke the OS permission APIs
+    /// directly from the pill's tap: the alert gives the user a chance to opt
+    /// out ("Keep Location Off") before the native system prompt fires, and —
+    /// for `.locationServicesOff` and `.impreciseLocation` — the action list
+    /// itself is the meaningful choice (there is no re-prompt path on iOS
+    /// after the first denial). `.hidden` and `.zoomInForStops` are routed
+    /// elsewhere by `MapStatusPill` and never reach this handler.
     private func handlePermissionTap(_ state: MapViewModel.TopPillState) {
         switch state {
         case .notDetermined, .locationServicesOff, .impreciseLocation:
-            permissionDialogState = state
-        case .hidden:
-            assertionFailure("handlePermissionTap called with .hidden — pill should not be tappable in this state.")
-        case .zoomInForStops:
-            // `.zoomInForStops` taps are routed through `onZoomInForStops` on
-            // the pill, not this handler.
+            permissionAlertState = state
+        case .hidden, .zoomInForStops:
             break
         }
     }
 
-    /// Fans out a dialog action to the concrete side effect. Kept as its own
+    /// Fans out an alert action to the concrete side effect. Kept as its own
     /// dispatcher so the caller-side switch stays exhaustive over
-    /// `MapPermissionDialog.Action` — adding a case surfaces as a compile
+    /// `MapPermissionAlert.Action` — adding a case surfaces as a compile
     /// error rather than a silently-unhandled tap.
-    private func handleDialogAction(_ action: MapPermissionDialog.Action) {
+    private func handleAlertAction(_ action: MapPermissionAlert.Action) {
         switch action {
         case .requestAuthorization:
             mapViewModel.requestLocationAuthorization()

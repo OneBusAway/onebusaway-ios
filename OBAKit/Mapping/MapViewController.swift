@@ -1190,8 +1190,12 @@ private extension MapViewController {
         viewModel.$mapType
             .sink { [weak self] mapType in
                 guard let self else { return }
-                let mkType: MKMapType = mapType == .standard ? .mutedStandard : .hybrid
-                application.mapRegionManager.userSelectedMapType = mkType
+                // Persistence is owned by `MapViewModel.toggleMapType()`; the
+                // sink here only mirrors the selection onto MapKit's mapView
+                // and refreshes the toolbar icon so both stay in step when
+                // the value changes through any path (VM toggle, external
+                // defaults edit, cross-view sync).
+                mapRegionManager.mapView.mapType = mapType == .standard ? .mutedStandard : .hybrid
                 setMapTypeButtonImage(toggleMapTypeButton, mapType: mapType)
             }
             .store(in: &cancellables)

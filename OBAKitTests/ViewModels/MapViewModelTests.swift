@@ -39,7 +39,8 @@ class MapViewModelTests: OBATestCase {
     /// keeps `application.obacoService` nil and `features.obaco == .off`.
     private func createApplication(
         dataLoader: MockDataLoader,
-        bundledRegionsFixture: String? = nil
+        bundledRegionsFixture: String? = nil,
+        accuracyAuthorization: CLAccuracyAuthorization = .fullAccuracy
     ) -> Application {
         stubRegions(dataLoader: dataLoader)
         stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
@@ -49,6 +50,7 @@ class MapViewModelTests: OBATestCase {
             updateLocation: TestData.mockSeattleLocation,
             updateHeading: TestData.mockHeading
         )
+        locManager.overrideAccuracyAuthorization = accuracyAuthorization
         let locationService = LocationService(userDefaults: userDefaults, locationManager: locManager)
         locationService.startUpdates()
 
@@ -187,10 +189,11 @@ class MapViewModelTests: OBATestCase {
 
     // MARK: - Map Type
 
-    /// `toggleMapType()` flips the published `mapType` between `.standard` and `.hybrid`.
-    /// Persistence to `MapRegionManager` is the VC's responsibility (via `$mapType` sink).
+    /// `toggleMapType()` flips the published `mapType` between `.standard` and `.hybrid`
+    /// and persists the selection through `MapRegionManager` so a later launch
+    /// (or the UIKit path) reads the same value.
     @MainActor
-    func test_toggleMapType_flipsAndPublishes() {
+    func test_toggleMapType_flipsAndPublishesAndPersists() {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
 
@@ -203,12 +206,37 @@ class MapViewModelTests: OBATestCase {
 
         viewModel.toggleMapType()
         expect(viewModel.mapType) == .hybrid
+        expect(app.mapRegionManager.userSelectedMapType) == .hybrid
 
         viewModel.toggleMapType()
         expect(viewModel.mapType) == .standard
+        expect(app.mapRegionManager.userSelectedMapType) == .mutedStandard
 
         // Initial value + two toggles.
         expect(observed) == [.standard, .hybrid, .standard]
+    }
+
+    /// An external mutation of `MapRegionManager.userSelectedMapType`
+    /// propagates back into `MapViewModel.mapType`. Covers the case where the
+    /// UIKit path (or a future consumer) changes the persisted value while
+    /// the SwiftUI root is mounted.
+    @MainActor
+    func test_mapType_syncsFromExternalMapRegionManagerChange() async {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader)
+
+        let viewModel = MapViewModel(application: app)
+        expect(viewModel.mapType) == .standard
+
+        // External mutation — bypasses `toggleMapType()` entirely, simulating
+        // the UIKit path or an out-of-VM defaults edit.
+        app.mapRegionManager.userSelectedMapType = .hybrid
+
+        // `UserDefaults.didChangeNotification` fan-out is `receive(on: main)`,
+        // so give the runloop a few hops to deliver.
+        for _ in 0..<5 { await Task.yield() }
+
+        expect(viewModel.mapType) == .hybrid
     }
 
     // MARK: - Location Authorization
@@ -478,14 +506,26 @@ class MapViewModelTests: OBATestCase {
     /// backs off to a coarser zoom (11) so the ~1km fuzz cell fits in view.
     /// Mirrors the branch in `MapViewController.centerMapOnUserLocation`.
     @MainActor
-    func test_zoomLevelForCurrentLocation_reflectsAccuracyAuthorization() {
+    func test_zoomLevelForCurrentLocation_fullAccuracyReturns17() {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = MapViewModel(application: app)
 
-        // MockAuthorizedLocationManager grants full accuracy by default.
         expect(app.locationService.accuracyAuthorization) == .fullAccuracy
         expect(viewModel.zoomLevelForCurrentLocation()) == 17
+    }
+
+    /// Reduced accuracy backs off to 11 so the ~1km fuzz cell fits comfortably
+    /// on screen. Companion to `_fullAccuracyReturns17` — both branches must
+    /// stay covered or a future refactor could silently change one.
+    @MainActor
+    func test_zoomLevelForCurrentLocation_reducedAccuracyReturns11() {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader, accuracyAuthorization: .reducedAccuracy)
+        let viewModel = MapViewModel(application: app)
+
+        expect(app.locationService.accuracyAuthorization) == .reducedAccuracy
+        expect(viewModel.zoomLevelForCurrentLocation()) == 11
     }
 
     // MARK: - TopPillState
@@ -539,6 +579,21 @@ class MapViewModelTests: OBATestCase {
         for _ in 0..<5 { await Task.yield() }
 
         expect(viewModel.topPillState) == .notDetermined
+    }
+
+    /// `.authorizedWhenInUse` + `.reducedAccuracy` surfaces the imprecise-location
+    /// pill so the user can raise accuracy without leaving the map. Mirrors the
+    /// branch in `MapStatusView.state(for:)`.
+    @MainActor
+    func test_topPillState_authorizedReducedAccuracyMapsToImpreciseLocation() async {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader, accuracyAuthorization: .reducedAccuracy)
+        let viewModel = MapViewModel(application: app)
+
+        viewModel.locationService(app.locationService, authorizationStatusChanged: .authorizedWhenInUse)
+        for _ in 0..<5 { await Task.yield() }
+
+        expect(viewModel.topPillState) == .impreciseLocation
     }
 
 }

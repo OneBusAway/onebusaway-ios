@@ -54,9 +54,15 @@ class MockAuthorizedLocationManager: NSObject, LocationManager {
     var authorizationStatus: CLAuthorizationStatus = .authorizedWhenInUse
     var isLocationServicesEnabled: Bool = true
 
+    /// Stored so tests can toggle reduced accuracy without needing a separate
+    /// mock class. Kept as `CLAccuracyAuthorization` even though it's only
+    /// touched under iOS 14+ — the availability gate lives on the protocol
+    /// requirement below, matching how `LocationManager` declares it.
+    var overrideAccuracyAuthorization: CLAccuracyAuthorization = .fullAccuracy
+
     @available(iOS 14, *)
     var accuracyAuthorization: CLAccuracyAuthorization {
-        return .fullAccuracy
+        return overrideAccuracyAuthorization
     }
 
     func startUpdatingLocation() {

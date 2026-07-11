@@ -1,5 +1,5 @@
 //
-//  MapPermissionDialog.swift
+//  MapPermissionAlert.swift
 //  OBAKit
 //
 //  Copyright © Open Transit Software Foundation
@@ -10,22 +10,27 @@
 import SwiftUI
 import OBAKitCore
 
-// MARK: - MapPermissionDialog
+// MARK: - MapPermissionAlert
 
-/// A `confirmationDialog` view modifier that surfaces the location-permission
-/// action list corresponding to a `MapViewModel.TopPillState`. Attach it to
-/// the view inside the presentation subtree that should host the dialog —
-/// typically the floating sheet's content builder in `MapPanelRootView`, so
-/// it presents on top of the base sheet's `UISheetPresentationController`
-/// rather than stealing the map layer's context.
+/// An `.alert(...)` view modifier that surfaces the location-permission action
+/// list corresponding to a `MapViewModel.TopPillState`. Attach it to the view
+/// inside the presentation subtree that should host the alert — typically the
+/// floating sheet's content builder in `MapPanelRootView`, so it presents on
+/// top of the base sheet's `UISheetPresentationController` rather than
+/// stealing the map layer's context.
 ///
-/// The dialog is driven by an optional `TopPillState` binding. Setting the
+/// `.alert` (rather than `.confirmationDialog`) is used deliberately: it does
+/// not auto-inject a system Cancel button, so the "Keep Location Off" opt-out
+/// stays the single, meaningful dismissal affordance. Confirmation dialogs
+/// added a redundant Cancel row alongside "Keep Location Off".
+///
+/// The alert is driven by an optional `TopPillState` binding. Setting the
 /// binding to a non-nil permission state presents; dismissal clears the
 /// binding back to `nil`. The `.hidden` and `.zoomInForStops` cases are
 /// no-ops and never trigger presentation.
-struct MapPermissionDialog: ViewModifier {
+struct MapPermissionAlert: ViewModifier {
 
-    /// The set of actions the dialog can dispatch. The caller decides how each
+    /// The set of actions the alert can dispatch. The caller decides how each
     /// maps to a concrete side effect (VM method, `UIApplication.open`, etc.).
     enum Action {
         case requestAuthorization
@@ -37,10 +42,9 @@ struct MapPermissionDialog: ViewModifier {
     let onAction: (Action) -> Void
 
     func body(content: Content) -> some View {
-        content.confirmationDialog(
+        content.alert(
             state.map(Self.title(for:)) ?? "",
             isPresented: isPresentedBinding,
-            titleVisibility: .visible,
             presenting: state
         ) { presented in
             buttons(for: presented)
@@ -49,9 +53,9 @@ struct MapPermissionDialog: ViewModifier {
 
     // MARK: - Bindings
 
-    /// Bridges the optional state to the `confirmationDialog`'s Bool binding.
-    /// Presentation is driven by the caller setting a non-nil value; dismissal
-    /// (system Cancel, tap outside) writes `false`, which clears the state.
+    /// Bridges the optional state to the alert's `Bool` binding. Presentation
+    /// is driven by the caller setting a non-nil value; dismissal writes
+    /// `false`, which clears the state.
     private var isPresentedBinding: Binding<Bool> {
         Binding(
             get: { state != nil },
@@ -92,8 +96,10 @@ struct MapPermissionDialog: ViewModifier {
 
     // MARK: - Buttons
 
-    /// Actions rendered inside the `confirmationDialog` for a given state.
-    /// Button labels mirror the UIKit `MapViewController.didTapMapStatus` alert.
+    /// Actions rendered inside the alert for a given state. Button labels
+    /// mirror the UIKit `MapViewController.didTapMapStatus` alert. The
+    /// "Keep …" buttons carry a `.cancel` role so they double as the alert's
+    /// explicit dismissal — no phantom Cancel row appears.
     @ViewBuilder
     private func buttons(for state: MapViewModel.TopPillState) -> some View {
         switch state {
@@ -103,7 +109,7 @@ struct MapPermissionDialog: ViewModifier {
                 "locationservices_alert_keepoff.button",
                 value: "Keep Location Off",
                 comment: ""
-            )) {}
+            ), role: .cancel) {}
         case .locationServicesOff:
             Button(OBALoc(
                 "locationservices_alert_gotosettings.button",
@@ -114,7 +120,7 @@ struct MapPermissionDialog: ViewModifier {
                 "locationservices_alert_keepoff.button",
                 value: "Keep Location Off",
                 comment: ""
-            )) {}
+            ), role: .cancel) {}
         case .impreciseLocation:
             Button(OBALoc(
                 "locationservices_alert_gotosettings.button",
@@ -130,7 +136,7 @@ struct MapPermissionDialog: ViewModifier {
                 "locationservices_alert_keep_precise_location_off.button",
                 value: "Keep Precise Location Off",
                 comment: ""
-            )) {}
+            ), role: .cancel) {}
         case .hidden, .zoomInForStops:
             EmptyView()
         }
@@ -140,13 +146,13 @@ struct MapPermissionDialog: ViewModifier {
 // MARK: - View extension
 
 extension View {
-    /// Attaches a `MapPermissionDialog` bound to `state`. Set the binding to a
+    /// Attaches a `MapPermissionAlert` bound to `state`. Set the binding to a
     /// non-nil permission state (`.notDetermined`, `.locationServicesOff`,
     /// `.impreciseLocation`) to present; dismissal clears the binding.
-    func mapPermissionDialog(
+    func mapPermissionAlert(
         state: Binding<MapViewModel.TopPillState?>,
-        onAction: @escaping (MapPermissionDialog.Action) -> Void
+        onAction: @escaping (MapPermissionAlert.Action) -> Void
     ) -> some View {
-        modifier(MapPermissionDialog(state: state, onAction: onAction))
+        modifier(MapPermissionAlert(state: state, onAction: onAction))
     }
 }
