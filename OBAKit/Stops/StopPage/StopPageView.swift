@@ -62,7 +62,7 @@ struct StopPageView: View {
                             expandedDepartureID = expandedDepartureID == departure.id ? nil : departure.id
                         }
                     },
-                    panelBuilder: { TripDetailPanelPlaceholder(departure: $0) }
+                    panelBuilder: makePanel(for:)
                 )
             } else {
                 GroupedListView(
@@ -93,7 +93,7 @@ struct StopPageView: View {
                             }
                         }
                     },
-                    panelBuilder: { TripDetailPanelPlaceholder(departure: $0) }
+                    panelBuilder: makePanel(for:)
                 )
             }
         }
@@ -115,6 +115,28 @@ struct StopPageView: View {
               let seeded = StopSort(rawValue: raw)
         else { return }
         viewModel.updateSortType(seeded)
+    }
+
+    /// Builds the shared trip-detail panel (§4.6) for an expanded departure.
+    /// `StopPageView` is the only view that touches the VM, so the panel receives
+    /// plain values plus closures — the `approachLoader` closure wraps the cached,
+    /// live-only VM fetch; the alarm closures route through the single alarm index.
+    private func makePanel(for departure: ArrivalDeparture) -> TripDetailPanelView {
+        let status = DepartureStatus(arrivalDeparture: departure)
+        let alarm = viewModel.alarm(for: departure)
+        return TripDetailPanelView(
+            departure: departure,
+            status: status,
+            alarm: alarm,
+            alarmLeadTimeMinutes: alarm.map { viewModel.alarmLeadTimeMinutes($0) } ?? viewModel.defaultAlarmLeadTime,
+            canAlarm: viewModel.canCreateAlarm(for: departure),
+            approachLoader: { await viewModel.approachTripDetails(for: departure) },
+            onSetAlarm: { Task { await viewModel.setAlarm(for: departure, leadTimeMinutes: viewModel.defaultAlarmLeadTime) } },
+            onCancelAlarm: { Task { await viewModel.cancelAlarm(for: departure) } },
+            onChangeAlarm: { minutes in Task { await viewModel.changeAlarm(for: departure, leadTimeMinutes: minutes) } },
+            onSchedule: {},      // Task 12
+            onViewFullTrip: {}   // Task 12
+        )
     }
 
     private func makeActions(for departure: ArrivalDeparture) -> DepartureRowActions {

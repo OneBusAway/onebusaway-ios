@@ -32,7 +32,7 @@ struct GroupedListView: View {
     let onToggleRoute: (RouteID) -> Void
     let onToggleTrip: (ArrivalDeparture) -> Void
     let onAlarmToggle: (ArrivalDeparture) -> Void
-    let panelBuilder: (ArrivalDeparture) -> TripDetailPanelPlaceholder
+    let panelBuilder: (ArrivalDeparture) -> TripDetailPanelView
 
     /// The compact alarm circle in an expanded row. `@ScaledMetric` so the badge
     /// grows with Dynamic Type (standing amendment) the same way the 48pt route
@@ -194,8 +194,7 @@ struct GroupedListView: View {
                             .foregroundStyle(Color(uiColor: status.color))
                     }
                     if status.showsOccupancy, let occupancy = departure.occupancyStatus, occupancy != .unknown {
-                        Text(String(describing: occupancy)) // Task 10 replaces with OccupancyStatusView reuse
-                            .font(.caption).foregroundStyle(.secondary)
+                        OccupancyBadge(occupancy: occupancy)
                     }
                 }
                 Spacer(minLength: 8)
@@ -207,6 +206,21 @@ struct GroupedListView: View {
             .contentShape(Rectangle())
             .onTapGesture { onToggleTrip(departure) }
             .listRowBackground(cardStripe(routeColor))
+            // Task 9 review: make the whole expanded row a single VoiceOver
+            // activation target that opens the trip panel, mirroring the card
+            // header (`children: .ignore` + explicit label + `.isButton`). The
+            // combined element swallows the inner alarm Button, so it's re-exposed
+            // as a custom action just like the header's alarm pill.
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(expandedRowAccessibilityLabel(departure, status: status))
+            .accessibilityAddTraits(.isButton)
+            .accessibilityActions {
+                if canAlarm(departure) || alarmLookup(departure) != nil {
+                    Button(alarmActionName(for: alarmLookup(departure))) {
+                        onAlarmToggle(departure)
+                    }
+                }
+            }
 
             // Accordion: the trip panel is an INSERTED SIBLING ROW keyed off the
             // open id — List animates the insert/remove (same pattern as Task 8).
@@ -231,6 +245,17 @@ struct GroupedListView: View {
             }
             .buttonStyle(.plain)
         }
+    }
+
+    /// Self-describing VoiceOver label for one expanded departure row: route,
+    /// headsign, minutes, live/scheduled status, and occupancy when present.
+    private func expandedRowAccessibilityLabel(_ departure: ArrivalDeparture, status: DepartureStatus) -> String {
+        let fmt = OBALoc("stop_page.grouped.expanded_row.a11y_fmt", value: "Route %@ to %@, departs in %d minutes, %@", comment: "VoiceOver label for one expanded departure row inside a grouped route card: route, headsign, minutes, status.")
+        var label = String(format: fmt, departure.routeShortName, departure.tripHeadsign ?? "", departure.arrivalDepartureMinutes, status.accessibilityStatusDescription)
+        if status.showsOccupancy, let occupancy = departure.occupancyStatus, occupancy != .unknown {
+            label += ", " + OccupancyBadge.localizedDescription(occupancy)
+        }
+        return label
     }
 
     private func groupAccessibilityLabel(_ group: StopPageListBuilder.RouteGroup<ArrivalDeparture>, status: DepartureStatus) -> String {

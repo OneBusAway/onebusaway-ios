@@ -10,19 +10,6 @@
 import SwiftUI
 import OBAKitCore
 
-/// Temporary stand-in for `TripDetailPanelView` (Task 10). Keeps the accordion
-/// mechanics testable in the simulator before the panel exists.
-struct TripDetailPanelPlaceholder: View {
-    let departure: ArrivalDeparture
-    var body: some View {
-        Text(departure.routeAndHeadsign)
-            .font(.footnote)
-            .foregroundStyle(.secondary)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.vertical, 8)
-    }
-}
-
 /// Chronological mode: past block, missed block, walk divider, reachable
 /// block. Rendered as Sections inside StopPageView's single List (each
 /// Section is one rounded card in inset-grouped style).
@@ -36,7 +23,7 @@ struct ChronologicalListView: View {
     let actionsProvider: (ArrivalDeparture) -> DepartureRowActions
     let onTogglePast: () -> Void
     let onToggleExpand: (ArrivalDeparture) -> Void
-    let panelBuilder: (ArrivalDeparture) -> TripDetailPanelPlaceholder
+    let panelBuilder: (ArrivalDeparture) -> TripDetailPanelView
 
     var body: some View {
         // Section header with the Past toggle
