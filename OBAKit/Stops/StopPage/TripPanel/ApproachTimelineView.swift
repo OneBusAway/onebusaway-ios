@@ -16,7 +16,7 @@ import OBAKitCore
 /// and user use the route color.
 ///
 /// Dot sizes scale with Dynamic Type via `@ScaledMetric`; labels use text
-/// styles (standing amendment 1).
+/// styles. Fixed dimensions scale with Dynamic Type via `@ScaledMetric`.
 struct ApproachTimelineView: View {
     struct Row: Identifiable {
         let id: String       // stopID

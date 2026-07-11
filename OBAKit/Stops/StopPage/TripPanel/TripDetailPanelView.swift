@@ -15,9 +15,8 @@ import OBAKitCore
 /// honesty notice), approach timeline, alarm control, and actions.
 ///
 /// The pure-value header sections (`TripPanelStatusStrip`, `ScheduledOnlyNotice`,
-/// `TripPanelActionsRow`) are factored into their own `View` types so the
-/// once-per-open `tripDetails` state change only re-renders the timeline
-/// section, not the whole panel.
+/// `TripPanelActionsRow`) are factored into their own `View` types so SwiftUI can
+/// skip re-diffing them when only `tripDetails` changes.
 struct TripDetailPanelView: View {
     let departure: ArrivalDeparture
     let status: DepartureStatus
@@ -169,7 +168,7 @@ private struct ScheduledOnlyNotice: View {
     }
 }
 
-/// Schedule + full-trip actions. No-op callbacks until Task 12 wires them.
+/// Schedule + full-trip actions, wired to ViewRouter navigation by the hosting page.
 private struct TripPanelActionsRow: View {
     let onSchedule: () -> Void
     let onViewFullTrip: () -> Void

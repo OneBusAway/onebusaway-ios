@@ -11,12 +11,12 @@ import SwiftUI
 import OBAKitCore
 
 /// Bridges the existing UIKit `SurveyCell` into the SwiftUI Stop page so the
-/// inline hero survey renders and behaves identically to the legacy screen.
-/// Task 11 reuses the cell rather than reimplementing survey interaction.
+/// inline hero survey renders and behaves identically to the legacy screen,
+/// reusing the cell rather than reimplementing survey interaction.
 ///
 /// Full-survey presentation (multi-question surveys) and submission-error alerts
-/// are driven by the view model's Combine publishers; wiring the hosting VC to
-/// present them is Task 12 (navigation out of the page).
+/// are driven by the view model's Combine publishers and presented by
+/// `StopPageViewController.bindSurveyPresentation()`.
 struct SurveyCardRepresentable: UIViewRepresentable {
     let survey: Survey
     let stopID: String

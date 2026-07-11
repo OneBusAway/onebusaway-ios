@@ -152,8 +152,11 @@ struct GroupedListView: View {
         }
     }
 
-    /// Route-color accent stripe on the card's left edge — the only other place
-    /// route color appears (§4.3).
+    /// Route-color accent stripe on the card's left edge — the other place
+    /// route color appears in the departure list rows besides the route badge;
+    /// the trip panel separately uses it for the vehicle glyph and approach
+    /// timeline. Spec §4.3 still holds: route color never tints countdowns or
+    /// adherence text.
     private func cardStripe(_ routeColor: Color) -> some View {
         HStack(spacing: 0) {
             routeColor.frame(width: 5)
@@ -215,8 +218,8 @@ struct GroupedListView: View {
             .contentShape(Rectangle())
             .onTapGesture { onToggleTrip(departure) }
             .listRowBackground(cardStripe(routeColor))
-            // Task 9 review: make the whole expanded row a single VoiceOver
-            // activation target that opens the trip panel, mirroring the card
+            // Make the whole expanded row a single VoiceOver activation target
+            // that opens the trip panel, mirroring the card
             // header (`children: .ignore` + explicit label + `.isButton`). The
             // combined element swallows the inner alarm Button, so it's re-exposed
             // as a custom action just like the header's alarm pill.
@@ -232,7 +235,7 @@ struct GroupedListView: View {
             }
 
             // Accordion: the trip panel is an INSERTED SIBLING ROW keyed off the
-            // open id — List animates the insert/remove (same pattern as Task 8).
+            // open id — List animates the insert/remove.
             if openTripDepartureID == departure.id {
                 panelBuilder(departure)
                     .listRowBackground(cardStripe(routeColor))

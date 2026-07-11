@@ -391,8 +391,9 @@ struct LiveStatusRow: View {
 /// Honors the legacy `stopViewShowsServiceAlerts` preference (same UserDefaults
 /// key, default collapsed): tapping the header toggles and persists it, matching
 /// the legacy screen's collapsible section. When collapsed it shows a single
-/// "N service alerts" summary row that expands for the visit; when expanded and
-/// there are more than two alerts, it shows the first two plus a "Show all N"
+/// "N service alerts" summary row that expands and persists the preference, same
+/// as the header toggle; when expanded and there are more than two alerts, it
+/// shows the first two plus a "Show all N"
 /// row.
 struct ServiceAlertsSection: View {
     let alerts: [ServiceAlert]

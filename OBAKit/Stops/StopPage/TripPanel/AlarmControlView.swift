@@ -14,7 +14,7 @@ import OBAKitCore
 /// once set, an info row with Change (inline stepper) and Cancel.
 ///
 /// Text uses Dynamic Type text styles; the fixed bell-circle dimension scales
-/// with `@ScaledMetric` (standing amendment 1).
+/// with Dynamic Type via `@ScaledMetric`.
 struct AlarmControlView: View {
     let alarmIsSet: Bool
     let leadTimeMinutes: Int
@@ -27,7 +27,7 @@ struct AlarmControlView: View {
     @State private var pendingMinutes: Int = AlarmLeadTime.defaultMinutes
 
     /// The bell circle grows with Dynamic Type the way the grouped alarm badge
-    /// does (standing amendment 1).
+    /// does: fixed dimensions scale with Dynamic Type via `@ScaledMetric`.
     @ScaledMetric(relativeTo: .body) private var bellCircleSize: CGFloat = 32
 
     private var onTimeColor: Color { Color(uiColor: ThemeColors.shared.departureOnTime) }

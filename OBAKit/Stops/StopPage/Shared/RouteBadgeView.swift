@@ -6,8 +6,10 @@
 
 import SwiftUI
 
-/// Rounded-square route identity badge. The ONLY place (besides the grouped
-/// card stripe) that renders the route's brand color (§4.3).
+/// Rounded-square route identity badge. One of only two places route color
+/// appears in the departure list rows (the other is the grouped card stripe);
+/// the trip panel separately uses it for the vehicle glyph and approach timeline.
+/// Spec §4.3 still holds: route color never tints countdowns or adherence text.
 struct RouteBadgeView: View {
     let routeShortName: String
     let routeColor: Color

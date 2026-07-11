@@ -677,4 +677,36 @@ class StopViewModelTests: OBATestCase {
         let plainController = app.viewRouter.makeStopController(stop: stop, transferContext: nil)
         expect(plainController).to(beAKindOf(StopPageViewController.self))
     }
+
+    // MARK: - Alarm Lead Time
+
+    /// `alarmLeadTimeMinutes` derives the displayed lead time from the alarm's
+    /// `tripDate`/`alarmDate` spread, not from any stored minutes field.
+    @MainActor
+    func test_alarmLeadTimeMinutes_derivesFromDates() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock())
+        let viewModel = StopViewModel(application: app, stopID: testStopID)
+
+        let alarm = try Fixtures.loadAlarm()
+        alarm.set(tripDate: Date(timeIntervalSinceNow: 600), alarmOffset: 8)
+
+        expect(viewModel.alarmLeadTimeMinutes(alarm)) == 8
+    }
+
+    /// With no `tripDate`/`alarmDate` to measure, the lead time falls back to the
+    /// default rather than surfacing a bogus value.
+    @MainActor
+    func test_alarmLeadTimeMinutes_fallsBackToDefaultOnNilDates() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock())
+        let viewModel = StopViewModel(application: app, stopID: testStopID)
+
+        // A freshly decoded alarm has nil `tripDate`/`alarmDate` until `set(...)`.
+        let alarm = try Fixtures.loadAlarm()
+        expect(alarm.tripDate).to(beNil())
+        expect(alarm.alarmDate).to(beNil())
+
+        expect(viewModel.alarmLeadTimeMinutes(alarm)) == AlarmLeadTime.defaultMinutes
+    }
 }

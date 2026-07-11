@@ -581,6 +581,7 @@ class StopViewModel: ObservableObject {
             alarmsByDepartureID[arrivalDeparture.id] = alarm
             alarmError = nil
         } catch {
+            Logger.error("Alarm create failed for \(arrivalDeparture.id): \(error)")
             alarmError = error
         }
     }
@@ -592,6 +593,8 @@ class StopViewModel: ObservableObject {
         do {
             if let obacoService = application.obacoService {
                 try await obacoService.deleteAlarm(url: alarm.url)
+            } else {
+                Logger.error("Cancelled alarm locally but obacoService is unavailable; server alarm \(alarm.url) may still fire")
             }
             application.userDataStore.delete(alarm: alarm)
             // A refresh that landed mid-await could have re-inserted this entry
@@ -600,6 +603,7 @@ class StopViewModel: ObservableObject {
             alarmsByDepartureID[arrivalDeparture.id] = nil
             alarmError = nil
         } catch {
+            Logger.error("Alarm cancel failed for \(arrivalDeparture.id): \(error)")
             alarmsByDepartureID[arrivalDeparture.id] = alarm
             alarmError = error
         }
