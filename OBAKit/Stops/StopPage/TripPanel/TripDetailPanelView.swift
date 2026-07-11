@@ -67,7 +67,7 @@ struct TripDetailPanelView: View {
                 AlarmControlView(
                     alarmIsSet: alarm != nil,
                     leadTimeMinutes: alarmLeadTimeMinutes,
-                    maxLeadTime: min(AlarmLeadTime.maximumMinutes, departure.arrivalDepartureMinutes - 1),
+                    maxLeadTime: AlarmLeadTime.ceiling(minutesUntilDeparture: departure.arrivalDepartureMinutes),
                     onSet: onSetAlarm,
                     onCancel: onCancelAlarm,
                     onChange: onChangeAlarm

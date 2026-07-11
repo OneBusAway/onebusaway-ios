@@ -300,12 +300,8 @@ class SettingsViewController: FormViewController {
             $0.title = OBALoc("settings_controller.alerts_section.default_alarm_lead_time", value: "Default alarm lead time", comment: "Settings > Alerts section > default minutes-before for one-tap departure alarms")
             $0.options = [2, 5, 10]
             $0.displayValueFor = { minutes in
-                switch minutes {
-                case 2: return OBALoc("settings_controller.alerts_section.lead_time_2min", value: "2 min", comment: "Settings > Alerts section > 2-minute alarm lead time option")
-                case 5: return OBALoc("settings_controller.alerts_section.lead_time_5min", value: "5 min", comment: "Settings > Alerts section > 5-minute alarm lead time option")
-                case 10: return OBALoc("settings_controller.alerts_section.lead_time_10min", value: "10 min", comment: "Settings > Alerts section > 10-minute alarm lead time option")
-                default: return nil
-                }
+                guard let minutes else { return nil }
+                return String(format: OBALoc("settings_controller.alerts_section.lead_time_fmt", value: "%d min", comment: "Lead-time segment label. %d is minutes."), minutes)
             }
         }
 

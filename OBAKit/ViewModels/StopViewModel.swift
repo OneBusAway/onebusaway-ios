@@ -577,7 +577,7 @@ class StopViewModel: ObservableObject {
             let alarm = try await obacoService.postAlarm(minutesBefore: minutes, arrivalDeparture: arrivalDeparture, userPushID: userPushID)
             alarm.deepLink = ArrivalDepartureDeepLink(arrivalDeparture: arrivalDeparture, regionID: region.regionIdentifier)
             alarm.set(tripDate: arrivalDeparture.arrivalDepartureDate, alarmOffset: minutes)
-            application.userDataStore.add(alarm: alarm)
+            recordAlarmCreated(alarm)
             alarmsByDepartureID[arrivalDeparture.id] = alarm
             alarmError = nil
         } catch {
@@ -602,6 +602,15 @@ class StopViewModel: ObservableObject {
         } catch {
             alarmsByDepartureID[arrivalDeparture.id] = alarm
             alarmError = error
+        }
+    }
+
+    /// Toggle entry point shared by all four alarm surfaces (§4.7).
+    func toggleAlarm(for arrivalDeparture: ArrivalDeparture) async {
+        if alarm(for: arrivalDeparture) != nil {
+            await cancelAlarm(for: arrivalDeparture)
+        } else {
+            await setAlarm(for: arrivalDeparture, leadTimeMinutes: defaultAlarmLeadTime)
         }
     }
 
@@ -632,9 +641,15 @@ class StopViewModel: ObservableObject {
             alarmsByDepartureID = [:]
             return
         }
+        // Fast path: `alarms` JSON-decodes the persisted store on every access.
+        // With nothing persisted there's no expiry to run and no match to make,
+        // so bail before touching `deleteExpiredAlarms()`.
+        guard !application.userDataStore.alarms.isEmpty else {
+            alarmsByDepartureID = [:]
+            return
+        }
         application.userDataStore.deleteExpiredAlarms()
-        // Hoisted out of the loop: `alarms` JSON-decodes the persisted store on
-        // every access, so reading it once per rebuild instead of per departure.
+        // Re-read the pruned set once, out of the loop (another decode per access).
         let alarms = application.userDataStore.alarms
         var index: [String: Alarm] = [:]
         for departure in departures {

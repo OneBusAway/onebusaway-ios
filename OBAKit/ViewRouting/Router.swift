@@ -99,22 +99,17 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
     /// these factories so the flag governs every path.
     public func makeStopController(stop: Stop, bookmark: Bookmark? = nil, transferContext: TransferContext? = nil) -> UIViewController {
         // TransferContext UX (arrival-relative filtering, transfer banner) is not yet built on the new stop page — route transfers to the legacy screen until it is.
+        let stopController: StopContextConfigurable
         if transferContext == nil, FeatureFlags.isNewStopPageEnabled(userDefaults: application.userDefaults) {
-            let stopController = StopPageViewController(application: application, stop: stop)
-            stopController.bookmarkContext = bookmark
-            stopController.transferContext = transferContext
-            return stopController
+            stopController = StopPageViewController(application: application, stop: stop)
         } else {
-            let stopController = StopViewController(application: application, stop: stop)
-            stopController.bookmarkContext = bookmark
-            stopController.transferContext = transferContext
-            return stopController
+            stopController = StopViewController(application: application, stop: stop)
         }
+        stopController.bookmarkContext = bookmark
+        stopController.transferContext = transferContext
+        return stopController
     }
 
-    /// Builds the Stop screen honoring the new-stop-page feature flag. All stop
-    /// navigation and long-press previews must construct the controller through
-    /// these factories so the flag governs every path.
     public func makeStopController(stopID: StopID) -> UIViewController {
         if FeatureFlags.isNewStopPageEnabled(userDefaults: application.userDefaults) {
             return StopPageViewController(application: application, stopID: stopID)
@@ -196,3 +191,15 @@ extension ViewRouter: RoutePickerDelegate {
         navigation.pushViewController(currentTripController, animated: true)
     }
 }
+
+// MARK: - Stop controller factory seam
+
+/// The shared context both Stop-screen controllers expose, so `makeStopController`
+/// can set it once regardless of which the feature flag selects.
+protocol StopContextConfigurable: UIViewController {
+    var bookmarkContext: Bookmark? { get set }
+    var transferContext: TransferContext? { get set }
+}
+
+extension StopViewController: StopContextConfigurable {}
+extension StopPageViewController: StopContextConfigurable {}

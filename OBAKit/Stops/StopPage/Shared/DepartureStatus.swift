@@ -42,9 +42,16 @@ struct DepartureStatus {
         }
     }
 
+    /// Adherence label shown when there's no real-time signal; deliberately
+    /// avoids claiming the bus is on time. Used by both the no-signal and the
+    /// unknown-status paths below.
+    private static var scheduleDataLabel: String {
+        OBALoc("stop_page.status.schedule_data", value: "schedule data", comment: "Adherence label for a departure with no real-time signal; deliberately avoids claiming the bus is on time.")
+    }
+
     var label: String {
         guard isRealTime else {
-            return OBALoc("stop_page.status.schedule_data", value: "schedule data", comment: "Adherence label for a departure with no real-time signal; deliberately avoids claiming the bus is on time.")
+            return Self.scheduleDataLabel
         }
         switch scheduleStatus {
         case .onTime:
@@ -56,7 +63,7 @@ struct DepartureStatus {
             let fmt = OBALoc("stop_page.status.early_fmt", value: "%d min early", comment: "Adherence label for an early departure. %d is minutes early.")
             return String(format: fmt, abs(deviationMinutes))
         default:
-            return OBALoc("stop_page.status.schedule_data", value: "schedule data", comment: "Adherence label for a departure with no real-time signal; deliberately avoids claiming the bus is on time.")
+            return Self.scheduleDataLabel
         }
     }
 

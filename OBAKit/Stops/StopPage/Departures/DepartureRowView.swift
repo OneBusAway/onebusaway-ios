@@ -31,11 +31,12 @@ struct DepartureRowView: View {
     let onTap: () -> Void
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.obaFormatters) private var formatters
 
     private var dimmed: Bool { style != .normal }
 
     private var scheduledTimeText: String {
-        DateFormatter.localizedString(from: departure.scheduledDate, dateStyle: .none, timeStyle: .short)
+        formatters.timeFormatter.string(from: departure.scheduledDate)
     }
 
     var body: some View {

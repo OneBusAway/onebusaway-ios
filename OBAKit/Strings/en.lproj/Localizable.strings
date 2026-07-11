@@ -767,14 +767,8 @@
 /* Settings > Alerts section > Display test alerts */
 "settings_controller.alerts_section.display_test_alerts" = "Display test alerts";
 
-/* Settings > Alerts section > 10-minute alarm lead time option */
-"settings_controller.alerts_section.lead_time_10min" = "10 min";
-
-/* Settings > Alerts section > 2-minute alarm lead time option */
-"settings_controller.alerts_section.lead_time_2min" = "2 min";
-
-/* Settings > Alerts section > 5-minute alarm lead time option */
-"settings_controller.alerts_section.lead_time_5min" = "5 min";
+/* Lead-time segment label. %d is minutes. */
+"settings_controller.alerts_section.lead_time_fmt" = "%d min";
 
 /* Settings > Alerts section title */
 "settings_controller.alerts_section.title" = "Agency Alerts";
@@ -982,6 +976,12 @@
 
 /* Fallback title for a service alert that has no summary text. */
 "stop_page.service_alert_fallback" = "Service alert";
+
+/* Collapsed summary row for the service alerts section. %d is the number of alerts. */
+"stop_page.service_alerts.summary_fmt" = "%d service alerts";
+
+/* Collapsed summary row for the service alerts section when exactly one alert applies. */
+"stop_page.service_alerts.summary_one" = "1 service alert";
 
 /* VoiceOver status suffix for a live departure. %@ is the adherence label. */
 "stop_page.status.a11y_live_fmt" = "live tracking, %@";

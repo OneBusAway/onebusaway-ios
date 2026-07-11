@@ -18,10 +18,13 @@ struct WalkTimeInfo: Equatable {
     /// Returns nil with no user location, an invalid speed, or when the user
     /// is effectively at the stop (<= 40 m, matching `WalkTimeView`).
     static func compute(from userLocation: CLLocation?, to stopLocation: CLLocation?, speedMetersPerSecond: Double) -> WalkTimeInfo? {
-        guard let userLocation, let stopLocation, speedMetersPerSecond > 0 else { return nil }
+        guard let userLocation, let stopLocation else { return nil }
         let distance = userLocation.distance(from: stopLocation)
-        guard distance > 40 else { return nil }
-        let seconds = distance / speedMetersPerSecond
+        // Suppress when effectively at the stop; the speed/velocity guard and the
+        // distance-over-velocity math both live in `WalkingDirections.travelTime`.
+        guard distance > 40,
+              let seconds = WalkingDirections.travelTime(from: userLocation, to: stopLocation, velocity: speedMetersPerSecond)
+        else { return nil }
         return WalkTimeInfo(walkMinutes: Int(ceil(seconds / 60.0)), distance: distance)
     }
 }

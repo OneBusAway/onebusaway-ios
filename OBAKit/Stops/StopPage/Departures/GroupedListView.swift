@@ -39,6 +39,15 @@ struct GroupedListView: View {
     /// badge does inside `RouteBadgeView`.
     @ScaledMetric(relativeTo: .body) private var alarmCircleSize: CGFloat = 34
 
+    @Environment(\.obaFormatters) private var formatters
+
+    /// Whether this departure should show an alarm affordance: it can take a new
+    /// alarm, or it already has one that can be cancelled. Shared by the header
+    /// pill, the expanded-row icon, and both VoiceOver custom actions.
+    private func showsAlarmAffordance(for departure: ArrivalDeparture) -> Bool {
+        canAlarm(departure) || alarmLookup(departure) != nil
+    }
+
     var body: some View {
         // One Section per route — the Section IS the card. Identity is the
         // stable RouteID; the accordion toggle lives INSIDE the Section so the
@@ -80,7 +89,7 @@ struct GroupedListView: View {
         // supports `if`, so the custom action itself only exists when the pill
         // would actually be visible — mirroring `alarmPill(for:)`'s own condition.
         .accessibilityActions {
-            if canAlarm(next) || alarm != nil {
+            if showsAlarmAffordance(for: next) {
                 Button(alarmActionName(for: alarm)) {
                     onAlarmToggle(next)
                 }
@@ -103,7 +112,7 @@ struct GroupedListView: View {
                     .font(.headline.weight(.heavy))
                     .lineLimit(2)
                 HStack(spacing: 6) {
-                    Text(DateFormatter.localizedString(from: next.scheduledDate, dateStyle: .none, timeStyle: .short))
+                    Text(formatters.timeFormatter.string(from: next.scheduledDate))
                         .font(.footnote).monospacedDigit().foregroundStyle(.secondary)
                     Text("·").foregroundStyle(.tertiary)
                     Text(status.label)
@@ -155,7 +164,7 @@ struct GroupedListView: View {
     @ViewBuilder
     private func alarmPill(for departure: ArrivalDeparture) -> some View {
         let alarm = alarmLookup(departure)
-        if canAlarm(departure) || alarm != nil {
+        if showsAlarmAffordance(for: departure) {
             Button {
                 onAlarmToggle(departure)
             } label: {
@@ -187,7 +196,7 @@ struct GroupedListView: View {
                 alarmIcon(for: departure)
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 4) {
-                        Text(DateFormatter.localizedString(from: departure.scheduledDate, dateStyle: .none, timeStyle: .short))
+                        Text(formatters.timeFormatter.string(from: departure.scheduledDate))
                             .font(.subheadline.weight(.semibold)).monospacedDigit()
                         Text("· \(status.label)")
                             .font(.subheadline)
@@ -215,7 +224,7 @@ struct GroupedListView: View {
             .accessibilityLabel(expandedRowAccessibilityLabel(departure, status: status))
             .accessibilityAddTraits(.isButton)
             .accessibilityActions {
-                if canAlarm(departure) || alarmLookup(departure) != nil {
+                if showsAlarmAffordance(for: departure) {
                     Button(alarmActionName(for: alarmLookup(departure))) {
                         onAlarmToggle(departure)
                     }
@@ -234,7 +243,7 @@ struct GroupedListView: View {
     @ViewBuilder
     private func alarmIcon(for departure: ArrivalDeparture) -> some View {
         let alarm = alarmLookup(departure)
-        if canAlarm(departure) || alarm != nil {
+        if showsAlarmAffordance(for: departure) {
             Button { onAlarmToggle(departure) } label: {
                 Image(systemName: alarm != nil ? "bell.fill" : "bell")
                     .font(.subheadline.weight(.semibold))

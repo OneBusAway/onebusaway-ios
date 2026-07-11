@@ -33,11 +33,18 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
     let viewModel: StopViewModel
     private var cancellables = Set<AnyCancellable>()
 
-    /// Right bar-button items, rebuilt whenever the stop, its preferences, its
-    /// arrivals, or the filter flag change (Combine sinks in `bindChrome()`).
-    private var moreMenuButton: UIBarButtonItem?
-    private var filterMenuButton: UIBarButtonItem?
-    private var schedulesButton: UIBarButtonItem?
+    #if !targetEnvironment(simulator)
+    /// `application.canOpenURL` is an XPC round-trip and Google Maps can't be
+    /// installed or removed within a screen's lifetime, so resolve availability
+    /// once instead of on every ~15s chrome rebuild. Evaluated lazily on the
+    /// first `locationMenu()` build, by which point `viewModel.stop` is set.
+    private lazy var googleMapsAvailable: Bool = {
+        guard let coordinate = viewModel.stop?.coordinate,
+              let url = AppInterop.googleMapsWalkingDirectionsURL(coordinate: coordinate)
+        else { return false }
+        return application.canOpenURL(url)
+    }()
+    #endif
 
     var bookmarkContext: Bookmark? {
         get { viewModel.bookmarkContext }
@@ -67,7 +74,8 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
             viewModel: viewModel,
             userDefaults: application.userDefaults,
             snapshotLoader: { _ in nil },
-            navigation: Self.placeholderNavigation
+            navigation: Self.placeholderNavigation,
+            formatters: application.formatters
         ))
 
         rootView = StopPageRootView(
@@ -77,7 +85,8 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
                 guard let self else { return nil }
                 return await self.loadSnapshot(size: size)
             },
-            navigation: makeNavigationHandler()
+            navigation: makeNavigationHandler(),
+            formatters: application.formatters
         )
 
         hidesBottomBarWhenPushed = false
@@ -161,7 +170,12 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
             .sink { [weak self] _ in self?.configureBarButtons() }
             .store(in: &cancellables)
 
+        // The only chrome that reads `stopArrivals` is the File menu's service-alerts
+        // action (enabled iff alerts exist). Collapse the ~15s refresh churn to that
+        // one bit so the menus aren't rebuilt on every otherwise-identical emission.
         viewModel.$stopArrivals
+            .map { ($0?.serviceAlerts ?? []).isEmpty }
+            .removeDuplicates()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in self?.configureBarButtons() }
             .store(in: &cancellables)
@@ -320,10 +334,6 @@ private extension StopPageViewController {
         schedulesBtn.accessibilityLabel = Strings.schedules
 
         navigationItem.rightBarButtonItems = [moreMenuButton, filterMenuButton, schedulesBtn]
-
-        self.moreMenuButton = moreMenuButton
-        self.filterMenuButton = filterMenuButton
-        self.schedulesButton = schedulesBtn
     }
 
     /// The "More" pulldown: File / Location / Help. No Sort submenu (the toggle
@@ -404,7 +414,7 @@ private extension StopPageViewController {
             #if !targetEnvironment(simulator)
             // Display Google Maps app link, only if Google Maps is installed.
             if let googleMapsURL = AppInterop.googleMapsWalkingDirectionsURL(coordinate: stop.coordinate),
-               self.application.canOpenURL(googleMapsURL) {
+               self.googleMapsAvailable {
                 let googleMaps = UIAction(title: OBALoc("stops_controller.walking_directions_google", value: "Walking Directions (Google Maps)", comment: "Button that launches Google Maps with walking directions to this stop")) { [unowned self] _ in
                     self.application.open(googleMapsURL, options: [:], completionHandler: nil)
                 }

@@ -51,6 +51,10 @@ struct StopPageRootView: View {
     let userDefaults: UserDefaults
     let snapshotLoader: (CGSize) async -> UIImage?
     let navigation: StopPageNavigationHandler
+    /// The app's shared `Formatters`, injected so the departure views format
+    /// times through the same instance as the rest of the app instead of
+    /// spinning up ad-hoc `DateFormatter`s.
+    let formatters: Formatters
 
     var body: some View {
         StopPageView(
@@ -60,6 +64,7 @@ struct StopPageRootView: View {
             navigation: navigation
         )
         .defaultAppStorage(userDefaults)
+        .environment(\.obaFormatters, formatters)
     }
 }
 
@@ -246,13 +251,7 @@ struct StopPageView: View {
                         }
                     },
                     onAlarmToggle: { departure in
-                        Task {
-                            if viewModel.alarm(for: departure) != nil {
-                                await viewModel.cancelAlarm(for: departure)
-                            } else {
-                                await viewModel.setAlarm(for: departure, leadTimeMinutes: viewModel.defaultAlarmLeadTime)
-                            }
-                        }
+                        Task { await viewModel.toggleAlarm(for: departure) }
                     },
                     panelBuilder: makePanel(for:)
                 )
@@ -325,13 +324,7 @@ struct StopPageView: View {
             canSchedule: navigation.canScheduleForRoute,
             hasAlarm: viewModel.alarm(for: departure) != nil,
             onAlarmToggle: {
-                Task {
-                    if viewModel.alarm(for: departure) != nil {
-                        await viewModel.cancelAlarm(for: departure)
-                    } else {
-                        await viewModel.setAlarm(for: departure, leadTimeMinutes: viewModel.defaultAlarmLeadTime)
-                    }
-                }
+                Task { await viewModel.toggleAlarm(for: departure) }
             },
             onSchedule: { navigation.showScheduleForRoute(departure) },
             onBookmark: { navigation.showBookmarkEditor(departure) },
@@ -441,7 +434,9 @@ struct ServiceAlertsSection: View {
                     HStack(spacing: 10) {
                         Image(systemName: "exclamationmark.triangle.fill")
                             .foregroundStyle(.orange)
-                        Text(String(format: OBALoc("stop_page.service_alerts.summary_fmt", value: "%d service alerts", comment: "Collapsed summary row for the service alerts section. %d is the number of alerts."), alerts.count))
+                        Text(alerts.count == 1
+                            ? OBALoc("stop_page.service_alerts.summary_one", value: "1 service alert", comment: "Collapsed summary row for the service alerts section when exactly one alert applies.")
+                            : String(format: OBALoc("stop_page.service_alerts.summary_fmt", value: "%d service alerts", comment: "Collapsed summary row for the service alerts section. %d is the number of alerts."), alerts.count))
                             .font(.subheadline)
                             .foregroundStyle(.primary)
                         Spacer(minLength: 0)
