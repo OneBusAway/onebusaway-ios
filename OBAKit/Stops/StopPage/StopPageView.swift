@@ -10,11 +10,46 @@
 import SwiftUI
 import OBAKitCore
 
+/// Thin hosting wrapper for `StopPageView`. Its only job is to apply
+/// `.defaultAppStorage` so the page's `@AppStorage` reads and writes the
+/// app-group suite (matching the legacy screen + view model) rather than
+/// `UserDefaults.standard`. It deliberately does NOT observe `StopViewModel` —
+/// `StopPageView` remains the sole observer.
+struct StopPageRootView: View {
+    let viewModel: StopViewModel
+    let userDefaults: UserDefaults
+    let snapshotLoader: (CGSize) async -> UIImage?
+    let onSelectAlert: (ServiceAlert) -> Void
+
+    var body: some View {
+        StopPageView(
+            viewModel: viewModel,
+            userDefaults: userDefaults,
+            snapshotLoader: snapshotLoader,
+            onSelectAlert: onSelectAlert
+        )
+        .defaultAppStorage(userDefaults)
+    }
+}
+
 /// Root view of the redesigned Stop page. This is the ONLY view that observes
 /// `StopViewModel`; every subview receives plain values so the VM's frequent
 /// `@Published` churn (refresh + status timers) re-evaluates one shallow body.
 struct StopPageView: View {
     @ObservedObject var viewModel: StopViewModel
+
+    /// The app-group suite (injected from the hosting VC). Used for the
+    /// "last used sort" seed/write so the SwiftUI page shares the same store as
+    /// the legacy screen; `@AppStorage` picks up the same suite via
+    /// `.defaultAppStorage` applied by `StopPageRootView`.
+    let userDefaults: UserDefaults
+
+    /// Produces the header map snapshot at a concrete size. Supplied by the
+    /// hosting VC so this view stays UIKit-free.
+    let snapshotLoader: (CGSize) async -> UIImage?
+
+    /// Pushes the alert-detail screen. Owned by the hosting VC (`viewRouter`).
+    let onSelectAlert: (ServiceAlert) -> Void
 
     @State private var expandedDepartureID: String?
     @State private var expandedRouteID: RouteID?
@@ -31,15 +66,73 @@ struct StopPageView: View {
         return viewModel.isListFiltered ? all.filter(preferences: viewModel.stopPreferences) : all
     }
 
+    private var attributionText: String {
+        guard let stop = viewModel.stop else { return "" }
+        let agencies = Formatters.formattedAgenciesForRoutes(stop.routes)
+        guard !agencies.isEmpty else { return "" }
+        let fmt = OBALoc(
+            "stop_controller.data_attribution_format",
+            value: "Data provided by %@",
+            comment: "A string listing the data providers (agencies) for this stop's data. It contains one or more providers separated by commas. e.g. Data provided by King County Metro, Sound Transit"
+        )
+        return String(format: fmt, agencies)
+    }
+
     var body: some View {
+        // Hoist the single computed walk value so the header chip, the
+        // chronological partition, and the divider all read one snapshot of it.
+        let walkTime = viewModel.walkTime
+        let departures = filteredDepartures
+        let departureIDs = Set(departures.map(\.id))
+        let routeIDs = Set(departures.map(\.routeID))
+
         List {
+            if let stop = viewModel.stop {
+                Section {
+                    StopPageHeaderView(stop: stop, walkTime: walkTime, snapshotLoader: snapshotLoader)
+                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                }
+            }
+
+            if !viewModel.statusText.isEmpty {
+                LiveStatusRow(statusText: viewModel.statusText)
+            }
+
+            if let survey = viewModel.currentSurvey {
+                Section {
+                    SurveyCardRepresentable(
+                        survey: survey,
+                        stopID: viewModel.stopID,
+                        onNext: { answer in
+                            Task { await viewModel.submitHeroAnswer(answer, stopLocation: viewModel.stop?.coordinate) }
+                        },
+                        onDismiss: { viewModel.dismissCurrentSurvey() },
+                        onOpenExternalSurvey: { viewModel.launchExternalSurvey(survey) }
+                    )
+                    .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                }
+            }
+
+            // Donations are deferred to the parity task (Task 12): the inline
+            // request is a UIKit `DonationListItem` gated on
+            // `application.donationsManager.shouldRequestDonations`, whose tap
+            // handlers present VC-owned modals. It is intentionally not dropped.
+
+            if let alerts = viewModel.stopArrivals?.serviceAlerts, !alerts.isEmpty {
+                ServiceAlertsSection(alerts: alerts, onSelect: onSelectAlert)
+            }
+
             Section {
                 StopPageModeToggle(mode: viewModel.stopPreferences.sortType) { newValue in
                     withAnimation {
                         // Switching modes collapses every open accordion (§4.6).
                         expandedDepartureID = nil
                         expandedRouteID = nil
-                        UserDefaults.standard.set(newValue.rawValue, forKey: Self.lastUsedStopSortKey)
+                        userDefaults.set(newValue.rawValue, forKey: Self.lastUsedStopSortKey)
                         viewModel.updateSortType(newValue)
                     }
                 }
@@ -47,10 +140,28 @@ struct StopPageView: View {
                 .listRowBackground(Color.clear)
             }
 
-            if viewModel.stopPreferences.sortType == .time {
+            if departures.isEmpty {
+                if viewModel.isLoading {
+                    Section {
+                        HStack { Spacer(); ProgressView(); Spacer() }
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
+                    }
+                } else {
+                    Section {
+                        StopPageEmptyStateRow(
+                            errorText: viewModel.operationError?.localizedDescription,
+                            isFilteredEmpty: viewModel.isListFiltered && !(viewModel.stopArrivals?.arrivalsAndDepartures.isEmpty ?? true),
+                            minutesAfter: viewModel.minutesAfter,
+                            onRetry: { Task { await viewModel.refresh() } },
+                            onShowAllRoutes: { viewModel.isListFiltered = false }
+                        )
+                    }
+                }
+            } else if viewModel.stopPreferences.sortType == .time {
                 ChronologicalListView(
-                    partition: StopPageListBuilder.chronologicalPartition(filteredDepartures, walkMinutes: viewModel.walkTime?.walkMinutes),
-                    walkMinutes: viewModel.walkTime?.walkMinutes,
+                    partition: StopPageListBuilder.chronologicalPartition(departures, walkMinutes: walkTime?.walkMinutes),
+                    walkMinutes: walkTime?.walkMinutes,
                     showPast: !pastCollapsed,
                     expandedDepartureID: expandedDepartureID,
                     statusProvider: { DepartureStatus(arrivalDeparture: $0) },
@@ -66,7 +177,7 @@ struct StopPageView: View {
                 )
             } else {
                 GroupedListView(
-                    groups: StopPageListBuilder.routeGroups(filteredDepartures),
+                    groups: StopPageListBuilder.routeGroups(departures),
                     expandedRouteID: expandedRouteID,
                     openTripDepartureID: expandedDepartureID,
                     statusProvider: { DepartureStatus(arrivalDeparture: $0) },
@@ -96,12 +207,27 @@ struct StopPageView: View {
                     panelBuilder: makePanel(for:)
                 )
             }
+
+            StopPageFooterSection(
+                showLoadMore: !viewModel.isLoadMoreExhausted,
+                attribution: attributionText,
+                onLoadMore: { Task { await viewModel.loadMoreDepartures() } }
+            )
         }
         .listStyle(.insetGrouped)
         .task { await viewModel.start() }
         .onAppear(perform: seedLastUsedModeIfNeeded)
         .onDisappear { viewModel.deactivate() }
         .refreshable { await viewModel.refresh() }
+        // Reconcile the open accordions against the live feed: when a refresh
+        // drops the expanded departure (or its whole route) from the list,
+        // clear the stale expansion so no orphaned panel lingers.
+        .onChange(of: departureIDs) { _, ids in
+            if let id = expandedDepartureID, !ids.contains(id) { expandedDepartureID = nil }
+        }
+        .onChange(of: routeIDs) { _, ids in
+            if let rid = expandedRouteID, !ids.contains(rid) { expandedRouteID = nil }
+        }
     }
 
     /// One-shot: an untouched stop (still on the default `.time` sort) opens in
@@ -111,7 +237,7 @@ struct StopPageView: View {
         guard !didSeedMode else { return }
         didSeedMode = true
         guard viewModel.stopPreferences.sortType == .time,
-              let raw = UserDefaults.standard.string(forKey: Self.lastUsedStopSortKey),
+              let raw = userDefaults.string(forKey: Self.lastUsedStopSortKey),
               let seeded = StopSort(rawValue: raw)
         else { return }
         viewModel.updateSortType(seeded)
@@ -175,5 +301,166 @@ struct StopPageModeToggle: View {
             Text(OBALoc("stop_page.mode.by_route", value: "By route", comment: "Stop page mode toggle: grouped by route")).tag(StopSort.route)
         }
         .pickerStyle(.segmented)
+    }
+}
+
+/// The out-of-card "Updated N min ago" line with a pulsing on-time dot. The dot
+/// pulse is gated on Reduce Motion (static when reduced), per the global
+/// constraints.
+struct LiveStatusRow: View {
+    let statusText: String
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var pulsing = false
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Circle()
+                .fill(Color(uiColor: ThemeColors.shared.departureOnTime))
+                .frame(width: 7, height: 7)
+                .opacity(reduceMotion ? 1 : (pulsing ? 1 : 0.35))
+            Text(statusText)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+            Spacer(minLength: 0)
+        }
+        .listRowInsets(EdgeInsets(top: 2, leading: 20, bottom: 2, trailing: 20))
+        .listRowBackground(Color.clear)
+        .listRowSeparator(.hidden)
+        .onAppear {
+            guard !reduceMotion else { return }
+            withAnimation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true)) {
+                pulsing = true
+            }
+        }
+        .accessibilityElement(children: .combine)
+    }
+}
+
+/// Service alerts affecting this stop. Each row pushes the existing alert-detail
+/// screen via the hosting VC's `onSelect` callback.
+struct ServiceAlertsSection: View {
+    let alerts: [ServiceAlert]
+    let onSelect: (ServiceAlert) -> Void
+
+    var body: some View {
+        Section {
+            ForEach(alerts) { alert in
+                Button {
+                    onSelect(alert)
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.orange)
+                        Text(alert.title(forLocale: .current) ?? OBALoc("stop_page.service_alert_fallback", value: "Service alert", comment: "Fallback title for a service alert that has no summary text."))
+                            .font(.subheadline)
+                            .foregroundStyle(.primary)
+                            .lineLimit(2)
+                        Spacer(minLength: 0)
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+                .buttonStyle(.plain)
+            }
+        } header: {
+            Text(Strings.serviceAlerts)
+        }
+    }
+}
+
+/// The footer: "Load more" (hidden once auto-extend hits the 12 h cap) and the
+/// data-attribution line.
+struct StopPageFooterSection: View {
+    let showLoadMore: Bool
+    let attribution: String
+    let onLoadMore: () -> Void
+
+    var body: some View {
+        Section {
+            if showLoadMore {
+                Button(action: onLoadMore) {
+                    Label(
+                        OBALoc("stop_page.load_more", value: "Load more", comment: "Extends the departure time window"),
+                        systemImage: "plus"
+                    )
+                    .font(.system(size: 14.5, weight: .bold))
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                }
+            }
+            if !attribution.isEmpty {
+                Text(attribution)
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                    .frame(maxWidth: .infinity)
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+            }
+        }
+    }
+}
+
+/// The single empty-state row shown when there are no departures to list.
+/// Precedence: a network error (Retry) → everything filtered out (Show all
+/// routes) → genuinely no service in the window. §4.4 wording is exact.
+struct StopPageEmptyStateRow: View {
+    let errorText: String?
+    let isFilteredEmpty: Bool
+    let minutesAfter: UInt
+    let onRetry: () -> Void
+    let onShowAllRoutes: () -> Void
+
+    var body: some View {
+        VStack(spacing: 12) {
+            Image(systemName: symbolName)
+                .font(.largeTitle)
+                .foregroundStyle(.secondary)
+            Text(message)
+                .font(.callout)
+                .multilineTextAlignment(.center)
+                .foregroundStyle(.secondary)
+            if let actionTitle {
+                Button(actionTitle, action: action)
+                    .buttonStyle(.bordered)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 28)
+        .listRowBackground(Color.clear)
+        .listRowSeparator(.hidden)
+    }
+
+    private var symbolName: String {
+        if errorText != nil { return "exclamationmark.icloud" }
+        if isFilteredEmpty { return "line.3.horizontal.decrease.circle" }
+        return "clock.badge.xmark"
+    }
+
+    private var message: String {
+        if let errorText { return errorText }
+        if isFilteredEmpty {
+            return OBALoc("stop_page.empty.all_filtered", value: "All routes at this stop are filtered", comment: "Empty state shown when every route at the stop is hidden by the user's filter.")
+        }
+        let fmt = OBALoc("stop_page.empty.no_departures_fmt", value: "No departures in the next %d minutes", comment: "Empty state shown when the stop has no upcoming departures within the loaded time window. %d is the number of minutes.")
+        return String(format: fmt, minutesAfter)
+    }
+
+    private var actionTitle: String? {
+        if errorText != nil {
+            return OBALoc("stop_page.empty.retry", value: "Retry", comment: "Button that retries loading departures after an error.")
+        }
+        if isFilteredEmpty {
+            return OBALoc("stop_page.empty.show_all_routes", value: "Show all routes", comment: "Button that clears the route filter so all routes are shown.")
+        }
+        return nil
+    }
+
+    private func action() {
+        if errorText != nil {
+            onRetry()
+        } else if isFilteredEmpty {
+            onShowAllRoutes()
+        }
     }
 }
