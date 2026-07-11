@@ -86,25 +86,39 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
 
     public func navigateTo(stop: Stop, from fromController: UIViewController, bookmark: Bookmark? = nil, transferContext: TransferContext? = nil) {
         guard shouldNavigate(from: fromController, to: .stop(stop)) else { return }
-        if FeatureFlags.isNewStopPageEnabled(userDefaults: application.userDefaults) {
-            let stopController = StopPageViewController(application: application, stop: stop)
-            stopController.bookmarkContext = bookmark
-            stopController.transferContext = transferContext
-            navigate(to: stopController, from: fromController)
-        } else {
-            let stopController = StopViewController(application: application, stop: stop)
-            stopController.bookmarkContext = bookmark
-            stopController.transferContext = transferContext
-            navigate(to: stopController, from: fromController)
-        }
+        navigate(to: makeStopController(stop: stop, bookmark: bookmark, transferContext: transferContext), from: fromController)
     }
 
     public func navigateTo(stopID: StopID, from fromController: UIViewController) {
         guard shouldNavigate(from: fromController, to: .stopID(stopID)) else { return }
+        navigate(to: makeStopController(stopID: stopID), from: fromController)
+    }
+
+    /// Builds the Stop screen honoring the new-stop-page feature flag. All stop
+    /// navigation and long-press previews must construct the controller through
+    /// these factories so the flag governs every path.
+    public func makeStopController(stop: Stop, bookmark: Bookmark? = nil, transferContext: TransferContext? = nil) -> UIViewController {
         if FeatureFlags.isNewStopPageEnabled(userDefaults: application.userDefaults) {
-            navigate(to: StopPageViewController(application: application, stopID: stopID), from: fromController)
+            let stopController = StopPageViewController(application: application, stop: stop)
+            stopController.bookmarkContext = bookmark
+            stopController.transferContext = transferContext
+            return stopController
         } else {
-            navigate(to: StopViewController(application: application, stopID: stopID), from: fromController)
+            let stopController = StopViewController(application: application, stop: stop)
+            stopController.bookmarkContext = bookmark
+            stopController.transferContext = transferContext
+            return stopController
+        }
+    }
+
+    /// Builds the Stop screen honoring the new-stop-page feature flag. All stop
+    /// navigation and long-press previews must construct the controller through
+    /// these factories so the flag governs every path.
+    public func makeStopController(stopID: StopID) -> UIViewController {
+        if FeatureFlags.isNewStopPageEnabled(userDefaults: application.userDefaults) {
+            return StopPageViewController(application: application, stopID: stopID)
+        } else {
+            return StopViewController(application: application, stopID: stopID)
         }
     }
 

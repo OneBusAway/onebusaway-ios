@@ -180,7 +180,7 @@ public class RecentStopsViewController: UIViewController,
         guard let stopViewModel = item.as(StopRowItem.self) else { return nil }
 
         let previewProvider: OBAListViewMenuActions.PreviewProvider = { [unowned self] () -> UIViewController? in
-            let stopVC = StopViewController(application: self.application, stopID: stopViewModel.stopID)
+            let stopVC = self.application.viewRouter.makeStopController(stopID: stopViewModel.stopID)
             self.currentPreviewingViewController = stopVC
             return stopVC
         }

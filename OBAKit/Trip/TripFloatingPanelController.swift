@@ -356,7 +356,7 @@ class TripFloatingPanelController: UIViewController,
         }
 
         let previewProvider: OBAListViewMenuActions.PreviewProvider = { [unowned self] () -> UIViewController? in
-            let stopVC = StopViewController(application: self.application, stopID: tripStop.stop.id)
+            let stopVC = self.application.viewRouter.makeStopController(stopID: tripStop.stop.id)
             self.currentPreviewingViewController = stopVC
             return stopVC
         }
