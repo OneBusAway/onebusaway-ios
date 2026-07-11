@@ -761,8 +761,20 @@
 /* Settings > Accessibility section title */
 "settings_controller.accessibility_section.title" = "Accessibility";
 
+/* Settings > Alerts section > default minutes-before for one-tap departure alarms */
+"settings_controller.alerts_section.default_alarm_lead_time" = "Default alarm lead time";
+
 /* Settings > Alerts section > Display test alerts */
 "settings_controller.alerts_section.display_test_alerts" = "Display test alerts";
+
+/* Settings > Alerts section > 10-minute alarm lead time option */
+"settings_controller.alerts_section.lead_time_10min" = "10 min";
+
+/* Settings > Alerts section > 2-minute alarm lead time option */
+"settings_controller.alerts_section.lead_time_2min" = "2 min";
+
+/* Settings > Alerts section > 5-minute alarm lead time option */
+"settings_controller.alerts_section.lead_time_5min" = "5 min";
 
 /* Settings > Alerts section title */
 "settings_controller.alerts_section.title" = "Agency Alerts";
