@@ -13,16 +13,31 @@ import Combine
 import OBAKitCore
 
 /// Hosting shell for the redesigned SwiftUI Stop page. Owns UIKit-side chrome
-/// (nav bar items, menus) and keeps parity entry points (`Previewable` etc.)
-/// working while `FeatureFlags.useNewStopPageKey` is enabled.
+/// (nav bar items, menus) and keeps parity entry points (`Previewable`,
+/// navigation-out modals) working while `FeatureFlags.useNewStopPageKey` is
+/// enabled.
 ///
 /// The root view is `StopPageRootView`, a thin wrapper that applies
 /// `.defaultAppStorage(application.userDefaults)` so the page's `@AppStorage`
-/// shares the app-group suite with the legacy screen.
-class StopPageViewController: UIHostingController<StopPageRootView>, AppContext {
+/// shares the app-group suite with the legacy screen. Everything that leaves the
+/// page — trip/schedule/alert/bookmark navigation, the donation and survey
+/// modals — is routed here through `StopPageNavigationHandler`, so the SwiftUI
+/// layer stays router-free and holds no `Application` reference.
+class StopPageViewController: UIHostingController<StopPageRootView>,
+    AppContext,
+    BookmarkEditorDelegate,
+    StopPreferencesViewDelegate,
+    Previewable {
+
     let application: Application
     let viewModel: StopViewModel
     private var cancellables = Set<AnyCancellable>()
+
+    /// Right bar-button items, rebuilt whenever the stop, its preferences, its
+    /// arrivals, or the filter flag change (Combine sinks in `bindChrome()`).
+    private var moreMenuButton: UIBarButtonItem?
+    private var filterMenuButton: UIBarButtonItem?
+    private var schedulesButton: UIBarButtonItem?
 
     var bookmarkContext: Bookmark? {
         get { viewModel.bookmarkContext }
@@ -47,12 +62,12 @@ class StopPageViewController: UIHostingController<StopPageRootView>, AppContext 
         self.viewModel = StopViewModel(application: application, stopID: stopID, stop: stop)
 
         // Seed with placeholder closures; `self` isn't available until super.init
-        // returns, so the real closures (which capture `self`) are installed below.
+        // returns, so the real handler (which captures `self`) is installed below.
         super.init(rootView: StopPageRootView(
             viewModel: viewModel,
             userDefaults: application.userDefaults,
             snapshotLoader: { _ in nil },
-            onSelectAlert: { _ in }
+            navigation: Self.placeholderNavigation
         ))
 
         rootView = StopPageRootView(
@@ -62,10 +77,7 @@ class StopPageViewController: UIHostingController<StopPageRootView>, AppContext 
                 guard let self else { return nil }
                 return await self.loadSnapshot(size: size)
             },
-            onSelectAlert: { [weak self] alert in
-                guard let self else { return }
-                self.application.viewRouter.navigateTo(alert: alert, from: self)
-            }
+            navigation: makeNavigationHandler()
         )
 
         hidesBottomBarWhenPushed = false
@@ -78,14 +90,110 @@ class StopPageViewController: UIHostingController<StopPageRootView>, AppContext 
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        navigationItem.largeTitleDisplayMode = .never
+        configureBarButtons()
+        bindChrome()
+        bindSurveyPresentation()
+    }
+
+    // MARK: - Navigation Handler
+
+    /// A fully no-op handler used only to satisfy the required `rootView` before
+    /// `self` is available; replaced immediately with `makeNavigationHandler()`.
+    private static let placeholderNavigation = StopPageNavigationHandler(
+        showTrip: { _ in },
+        showScheduleForStop: {},
+        showScheduleForRoute: { _ in },
+        canScheduleForRoute: false,
+        showAlertDetail: { _ in },
+        showBookmarkEditor: { _ in },
+        showExternalSurveyError: {},
+        showDonation: {},
+        dismissDonation: { _ in },
+        makeTripPreview: { _ in AnyView(EmptyView()) }
+    )
+
+    private func makeNavigationHandler() -> StopPageNavigationHandler {
+        StopPageNavigationHandler(
+            showTrip: { [weak self] departure in
+                guard let self else { return }
+                self.application.viewRouter.navigateTo(arrivalDeparture: departure, from: self)
+            },
+            showScheduleForStop: { [weak self] in self?.showScheduleForStop() },
+            showScheduleForRoute: { [weak self] departure in self?.showScheduleForRoute(for: departure) },
+            canScheduleForRoute: application.currentRegion?.supportsScheduleForRoute ?? true,
+            showAlertDetail: { [weak self] alert in
+                guard let self else { return }
+                self.application.viewRouter.navigateTo(alert: alert, from: self)
+            },
+            showBookmarkEditor: { [weak self] departure in self?.showBookmarkEditor(for: departure) },
+            showExternalSurveyError: { [weak self] in self?.showExternalSurveyError() },
+            showDonation: { [weak self] in self?.showDonationUI() },
+            dismissDonation: { [weak self] onHide in self?.showDonationDismissUI(onHide: onHide) },
+            makeTripPreview: { [weak self] departure in
+                guard let self else { return AnyView(EmptyView()) }
+                return AnyView(
+                    TripViewControllerPreview(departure: departure, application: self.application)
+                        .frame(width: 320, height: 400)
+                )
+            }
+        )
+    }
+
+    // MARK: - Combine Bindings
+
+    /// Rebuilds the nav-bar chrome (title + right bar items) whenever the state
+    /// the menus read changes. Mirrors `StopViewController.bindViewModel()`'s
+    /// `configureTabBarButtons()` calls.
+    private func bindChrome() {
         viewModel.$stop
             .receive(on: DispatchQueue.main)
             .sink { [weak self] stop in
-                self?.title = stop.map(Formatters.formattedTitle(stop:)) ?? Strings.loading
+                guard let self else { return }
+                self.title = stop.map(Formatters.formattedTitle(stop:)) ?? Strings.loading
+                self.configureBarButtons()
             }
             .store(in: &cancellables)
-        navigationItem.largeTitleDisplayMode = .never
+
+        viewModel.$stopPreferences
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.configureBarButtons() }
+            .store(in: &cancellables)
+
+        viewModel.$stopArrivals
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.configureBarButtons() }
+            .store(in: &cancellables)
+
+        viewModel.$isListFiltered
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.configureBarButtons() }
+            .store(in: &cancellables)
     }
+
+    /// Presents the multi-question survey screen and the hero-submission error
+    /// alert, driven by the view model's publishers (ported from
+    /// `StopViewController.bindSurveysSink()`).
+    private func bindSurveyPresentation() {
+        viewModel.presentFullSurvey
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] payload in
+                self?.showFullSurvey(payload.survey, heroResponseID: payload.heroResponseID)
+            }
+            .store(in: &cancellables)
+
+        viewModel.surveySubmissionError
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] error in
+                guard let self else { return }
+                Task { @MainActor in
+                    await AlertPresenter.show(error: error, presentingController: self)
+                }
+            }
+            .store(in: &cancellables)
+    }
+
+    // MARK: - Snapshot
 
     /// Bridges the callback-based `MapSnapshotter` into async/await for the
     /// SwiftUI header. Mirrors `StopHeaderView`'s configuration (stop
@@ -101,4 +209,343 @@ class StopPageViewController: UIHostingController<StopPageRootView>, AppContext 
             }
         }
     }
+
+    // MARK: - Previewable
+
+    private var inPreviewMode = false
+
+    func enterPreviewMode() {
+        inPreviewMode = true
+        configureBarButtons()
+    }
+
+    func exitPreviewMode() {
+        inPreviewMode = false
+        configureBarButtons()
+    }
+}
+
+// MARK: - Nav Bar Items & Menus
+
+private extension StopPageViewController {
+    /// Ported from `StopViewController.configureTabBarButtons()`, minus the Sort
+    /// menu — the SwiftUI mode toggle supersedes it (spec decision).
+    func configureBarButtons() {
+        // A peek preview shows a bare, non-interactive glance (no chrome).
+        guard !inPreviewMode else {
+            navigationItem.rightBarButtonItems = nil
+            return
+        }
+
+        let filterButtonImage: UIImage?
+        let filterButtonTitle: String
+
+        if viewModel.stopPreferences.hasHiddenRoutes && viewModel.isListFiltered {
+            filterButtonTitle = "FILTER (ON)"
+            filterButtonImage = UIImage(systemName: "line.3.horizontal.decrease.circle.fill")
+        } else {
+            filterButtonTitle = "FILTER (OFF)"
+            filterButtonImage = UIImage(systemName: "line.3.horizontal.decrease.circle")
+        }
+
+        let filterMenuButton = UIBarButtonItem(title: filterButtonTitle, image: filterButtonImage, menu: filterMenu())
+        let moreMenuButton = UIBarButtonItem(title: "MORE", image: UIImage(systemName: "ellipsis.circle"), menu: pulldownMenu())
+        let schedulesBtn = UIBarButtonItem(image: UIImage(systemName: "calendar"), style: .plain, target: self, action: #selector(showScheduleForStop))
+        schedulesBtn.accessibilityLabel = Strings.schedules
+
+        navigationItem.rightBarButtonItems = [moreMenuButton, filterMenuButton, schedulesBtn]
+
+        self.moreMenuButton = moreMenuButton
+        self.filterMenuButton = filterMenuButton
+        self.schedulesButton = schedulesBtn
+    }
+
+    /// The "More" pulldown: File / Location / Help. No Sort submenu (the toggle
+    /// supersedes it).
+    func pulldownMenu() -> UIMenu {
+        UIMenu(children: [fileMenu(), locationMenu(), helpMenu()])
+    }
+
+    func filterMenu() -> UIMenu {
+        let allRoutesTitle = OBALoc("stops_controller.filter.all_routes", value: "All Routes", comment: "A menu item on a Stop page that toggles the visible list of transit vehicles from a filtered list to all of the list items. e.g. a stop serves routes 1, 2, and 3. The user has filtered the stop to only show route 3. Chooosing this item will show 1, 2, and 3 again.")
+        let filteredRoutesTitle = OBALoc("stops_controller.filter.filtered_routes", value: "Filtered Routes", comment: "A menu item on a Stop page that toggles the visible list of transit vehicles from a list of all items to a filtered list. e.g. a stop serves routes 1, 2, and 3. The user wants to only view route 3. Choosing this item would show that subset of routes.")
+
+        let showAll = UIAction(title: allRoutesTitle) { [unowned self] _ in
+            if self.viewModel.isListFiltered {
+                self.viewModel.isListFiltered = false
+            }
+        }
+
+        let showFiltered = UIAction(title: filteredRoutesTitle) { [unowned self] _ in
+            self.viewModel.isListFiltered = true
+            self.filter()
+        }
+
+        guard let stop = viewModel.stop else {
+            return UIMenu(children: [showAll, showFiltered])
+        }
+
+        var children = [showAll]
+
+        if stop.routes.count > 1 {
+            if viewModel.isListFiltered && viewModel.stopPreferences.hasHiddenRoutes {
+                showFiltered.image = UIImage(systemName: "checkmark")
+            } else {
+                showAll.image = UIImage(systemName: "checkmark")
+            }
+
+            children.append(showFiltered)
+        }
+
+        return UIMenu(children: children)
+    }
+
+    func fileMenu() -> UIMenu {
+        let bookmarkAction = UIAction(title: Strings.addBookmark, image: UIImage(systemName: "bookmark")) { [unowned self] _ in
+            self.showBookmarkEditor(for: nil)
+        }
+
+        let alertsAction = UIAction(title: Strings.serviceAlerts, image: UIImage(systemName: "exclamationmark.circle")) { [unowned self] _ in
+            let controller = ServiceAlertListController(application: self.application, serviceAlerts: self.viewModel.stopArrivals?.serviceAlerts ?? [])
+            self.application.viewRouter.navigate(to: controller, from: self)
+        }
+
+        // Disable the alerts action if there are no service alerts.
+        if (viewModel.stopArrivals?.serviceAlerts ?? []).isEmpty {
+            alertsAction.attributes = .disabled
+        }
+
+        return UIMenu(title: "File", options: .displayInline, children: [bookmarkAction, alertsAction])
+    }
+
+    func locationMenu() -> UIMenu {
+        let nearbyAction = UIAction(title: OBALoc("stops_controller.nearby_stops", value: "Nearby Stops", comment: "Title of the row that will show stops that are near this one."), image: UIImage(systemName: "location")) { [unowned self] _ in
+            guard let coordinate = self.viewModel.stop?.coordinate else { return }
+            let nearbyController = NearbyStopsViewController(coordinate: coordinate, application: self.application)
+            self.application.viewRouter.navigate(to: nearbyController, from: self)
+        }
+
+        var walkingDirectionActions: [UIMenuElement] = []
+
+        if let stop = viewModel.stop {
+            if let appleMapsURL = AppInterop.appleMapsWalkingDirectionsURL(coordinate: stop.coordinate) {
+                let appleMaps = UIAction(title: OBALoc("stops_controller.walking_directions_apple", value: "Walking Directions (Apple Maps)", comment: "Button that launches Apple's maps.app with walking directions to this stop")) { [unowned self] _ in
+                    self.application.open(appleMapsURL, options: [:], completionHandler: nil)
+                }
+                walkingDirectionActions.append(appleMaps)
+            }
+
+            #if !targetEnvironment(simulator)
+            // Display Google Maps app link, only if Google Maps is installed.
+            if let googleMapsURL = AppInterop.googleMapsWalkingDirectionsURL(coordinate: stop.coordinate),
+               self.application.canOpenURL(googleMapsURL) {
+                let googleMaps = UIAction(title: OBALoc("stops_controller.walking_directions_google", value: "Walking Directions (Google Maps)", comment: "Button that launches Google Maps with walking directions to this stop")) { [unowned self] _ in
+                    self.application.open(googleMapsURL, options: [:], completionHandler: nil)
+                }
+                walkingDirectionActions.append(googleMaps)
+            }
+            #endif
+        }
+
+        let walkingDirectionsElement: UIMenuElement
+        let walkingDirectionsTitle = OBALoc("stops_controller.walking_directions", value: "Walking Directions", comment: "Button that launches a maps app with walking directions to this stop")
+        let walkingDirectionsImage = UIImage(systemName: "figure.walk")
+
+        // Show a disabled walking directions button if there are no Walking Directions apps available.
+        if walkingDirectionActions.isEmpty {
+            walkingDirectionsElement = UIAction(title: walkingDirectionsTitle, image: walkingDirectionsImage, attributes: .disabled) { _ in /* noop */ }
+        } else {
+            walkingDirectionsElement = UIMenu(title: walkingDirectionsTitle, image: walkingDirectionsImage, children: walkingDirectionActions)
+        }
+
+        return UIMenu(title: "Location", options: .displayInline, children: [nearbyAction, walkingDirectionsElement])
+    }
+
+    func helpMenu() -> UIMenu {
+        let reportButton = UIAction(title: OBALoc("stops_controller.report_problem", value: "Report a Problem", comment: "Button that launches the 'Report Problem' UI."), image: UIImage(systemName: "exclamationmark.bubble")) { [unowned self] _ in
+            self.showReportProblem()
+        }
+
+        return UIMenu(title: "Help", options: .displayInline, children: [reportButton])
+    }
+}
+
+// MARK: - Navigation Out (ported presentation flows)
+
+private extension StopPageViewController {
+    @objc func showScheduleForStop() {
+        let scheduleVC = ScheduleForStopViewController(stopID: viewModel.stopID, application: application)
+        present(scheduleVC, animated: true)
+    }
+
+    func showScheduleForRoute(for arrivalDeparture: ArrivalDeparture) {
+        let scheduleVC = ScheduleForRouteViewController(routeID: arrivalDeparture.routeID, application: application)
+        present(scheduleVC, animated: true)
+    }
+
+    /// Opens the bookmark editor. `nil` starts the stop-level "Add Bookmark"
+    /// workflow; a departure jumps straight into editing a trip bookmark. Ports
+    /// `StopViewController.addBookmark(sender:)` and `addBookmark(arrivalDeparture:)`.
+    func showBookmarkEditor(for arrivalDeparture: ArrivalDeparture?) {
+        if let arrivalDeparture {
+            let bookmarkController = EditBookmarkViewController(application: application, arrivalDeparture: arrivalDeparture, bookmark: nil, delegate: self)
+            let navigation = UINavigationController(rootViewController: bookmarkController)
+            application.viewRouter.present(navigation, from: self)
+        } else {
+            guard let stop = viewModel.stop else { return }
+            let bookmarkController = AddBookmarkViewController(application: application, stop: stop, preloadedArrivals: viewModel.stopArrivals?.arrivalsAndDepartures, delegate: self)
+            let navigation = application.viewRouter.buildNavigation(controller: bookmarkController)
+            application.viewRouter.present(navigation, from: self, isModal: true)
+        }
+    }
+
+    /// Route Filter workflow. Presents the SwiftUI `StopPreferencesWrappedView` in
+    /// a `UIHostingController` (ported from `StopViewController.filter()`).
+    func filter() {
+        guard let stop = viewModel.stop else { return }
+
+        let hiddenRoutes = Set(viewModel.stopPreferences.hiddenRoutes)
+        let stopPreferencesView = StopPreferencesWrappedView(stop, initialHiddenRoutes: hiddenRoutes, delegate: self)
+            .environment(\.coreApplication, application)
+        present(UIHostingController(rootView: stopPreferencesView), animated: true)
+    }
+
+    func showReportProblem() {
+        guard let stop = viewModel.stop else { return }
+
+        let reportProblemController = ReportProblemViewController(application: application, stop: stop)
+        let navigation = application.viewRouter.buildNavigation(controller: reportProblemController)
+        application.viewRouter.present(navigation, from: self, isModal: true)
+    }
+
+    // MARK: - Surveys
+
+    func showFullSurvey(_ survey: Survey, heroResponseID: String? = nil) {
+        let surveyVC = SurveyViewController(
+            survey: survey,
+            surveyService: application.surveyService,
+            stop: viewModel.stop,
+            stopID: viewModel.stopID,
+            stopLocation: viewModel.stop?.coordinate,
+            heroResponseID: heroResponseID
+        )
+        let nav = UINavigationController(rootViewController: surveyVC)
+        present(nav, animated: true)
+    }
+
+    func showExternalSurveyError() {
+        let alert = UIAlertController(
+            title: OBALoc("stop_controller.external_survey_error.title", value: "Can't Open Survey", comment: "Title shown when an external survey link cannot be opened"),
+            message: OBALoc("stop_controller.external_survey_error.message", value: "This survey link couldn't be opened. Please try again later.", comment: "Message shown when an external survey link cannot be opened"),
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: Strings.ok, style: .default))
+        present(alert, animated: true)
+    }
+
+    // MARK: - Donations
+
+    func showDonationUI() {
+        guard
+            application.donationsManager.donationsEnabled,
+            let donationModel = application.donationsManager.buildObservableDonationModel()
+        else {
+            return
+        }
+
+        let learnMoreView = DonationLearnMoreView()
+            .environmentObject(donationModel)
+            .environmentObject(AnalyticsModel(application.analytics))
+
+        present(UIHostingController(rootView: learnMoreView), animated: true)
+    }
+
+    /// Presents the "please don't dismiss" action sheet. `onHide` is invoked only
+    /// when the user actually hides the card (dismiss or remind-later), so the
+    /// SwiftUI page can drop the donation section immediately. Ports
+    /// `StopViewController.showDonationDismissUI()` (whose `refresh()` re-render is
+    /// replaced by the `onHide` callback).
+    func showDonationDismissUI(onHide: @escaping () -> Void) {
+        let alertController = UIAlertController(
+            title: OBALoc(
+                "donations.donations_dismiss_alert.title",
+                value: "Please don't dismiss this request",
+                comment: "Title of the alert that appears when the user chooses to dismiss the donations request UI on a stop page"
+            ),
+            message: OBALoc(
+                "donations.donations_dismiss_alert.message",
+                value: "OneBusAway is a volunteer-run organization with almost no funding. We need your help to keep this app running.",
+                comment: "Body of the alert that appears when the user chooses to dismiss the donations request UI on a stop page"
+            ),
+            preferredStyle: .actionSheet
+        )
+
+        alertController.addAction(
+            title: OBALoc(
+                "donations.donations_dismiss_alert.button_dismiss",
+                value: "I Don't Want to Help Right Now",
+                comment: "Dismiss button on the alert"
+            ),
+            style: .destructive
+        ) { [weak self] _ in
+            self?.application.donationsManager.dismissDonationsRequests()
+            onHide()
+        }
+
+        alertController.addAction(
+            title: OBALoc(
+                "donations.donations_dismiss_alert.button_remind_later",
+                value: "Remind Me Later",
+                comment: "A button that prompts the system to remind them to donate later."
+            ),
+            style: .default
+        ) { [weak self] _ in
+            self?.application.donationsManager.remindUserLater()
+            onHide()
+        }
+
+        alertController.addAction(title: Strings.cancel, style: .cancel, handler: nil)
+
+        present(alertController, animated: true)
+    }
+}
+
+// MARK: - BookmarkEditorDelegate
+
+extension StopPageViewController {
+    func bookmarkEditorCancelled(_ viewController: UIViewController) {
+        viewController.dismiss(animated: true, completion: nil)
+    }
+
+    func bookmarkEditor(_ viewController: UIViewController, editedBookmark bookmark: Bookmark, isNewBookmark: Bool) {
+        viewController.dismiss(animated: true) {
+            let msg = isNewBookmark
+                ? OBALoc("stops_controller.created_new_bookmark", value: "Added Bookmark", comment: "Message displayed when a new bookmark is created.")
+                : OBALoc("stops_controller.updated_bookmark", value: "Updated Bookmark", comment: "Message displayed an existing bookmark is updated.")
+            ProgressHUD.showSuccessAndDismiss(message: msg, dismissAfter: 1.0)
+        }
+    }
+}
+
+// MARK: - StopPreferencesViewDelegate
+
+extension StopPageViewController {
+    func stopPreferences(stopID: StopID, updated stopPreferences: StopPreferences) {
+        viewModel.updateStopPreferences(stopPreferences)
+    }
+}
+
+// MARK: - Trip Preview
+
+/// Lazily-built UIKit preview for row long-presses; the `TripViewController` is
+/// constructed only when SwiftUI actually presents the context-menu preview.
+struct TripViewControllerPreview: UIViewControllerRepresentable {
+    let departure: ArrivalDeparture
+    let application: Application
+
+    func makeUIViewController(context: Context) -> TripViewController {
+        TripViewController(application: application, arrivalDeparture: departure)
+    }
+
+    func updateUIViewController(_ uiViewController: TripViewController, context: Context) {}
 }

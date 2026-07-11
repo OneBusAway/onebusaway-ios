@@ -31,6 +31,15 @@ class StopViewModel: ObservableObject {
     /// sink is the sole driver of survey-row reloads.
     @Published private(set) var currentSurvey: Survey?
 
+    /// Whether the inline donation-request card should be offered on this stop.
+    /// Mirrors `DonationsManager.shouldRequestDonations`; read by the SwiftUI Stop
+    /// page, which has no `Application` reference of its own. Not `@Published` — the
+    /// page re-reads it on the view model's routine refresh churn, and the explicit
+    /// dismiss path hides the card immediately via local view state.
+    var shouldRequestDonations: Bool {
+        application.donationsManager.shouldRequestDonations
+    }
+
     /// Emits when the inline hero answer succeeds but the survey has remaining
     /// questions. Consumers present the full survey screen with the supplied
     /// `heroResponseID` so the hero isn't re-submitted on retry.

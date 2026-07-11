@@ -116,6 +116,11 @@ struct DepartureRowActions {
     let onSchedule: () -> Void
     let onBookmark: () -> Void
     let onShowTrip: () -> Void
+    /// Lazily builds the long-press preview (a `TripViewController` embedded via a
+    /// representable). Built by the hosting VC so `Application`/UIKit stay out of
+    /// the view layer; `AnyView` is acceptable here because it lives inside the
+    /// context menu's lazily-evaluated preview closure, not the row structure.
+    let makePreview: () -> AnyView
 }
 
 extension View {
@@ -139,7 +144,7 @@ extension View {
                 }
                 .tint(.orange)
             }
-            .contextMenu {
+            .contextMenu(menuItems: {
                 Button(action: actions.onShowTrip) {
                     Label(OBALoc("stop_page.row.show_trip", value: "Show Trip Details", comment: "Context menu action opening the full trip screen"), systemImage: "bus")
                 }
@@ -156,6 +161,8 @@ extension View {
                 Button(action: actions.onBookmark) {
                     Label(Strings.addBookmark, systemImage: "bookmark")
                 }
-            }
+            }, preview: {
+                actions.makePreview()
+            })
     }
 }

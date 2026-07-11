@@ -10,6 +10,37 @@
 import SwiftUI
 import OBAKitCore
 
+/// Everything that navigates away from — or presents a modal over — the Stop
+/// page, implemented by the hosting `StopPageViewController` so the SwiftUI layer
+/// stays router-free and holds no `Application` reference of its own.
+struct StopPageNavigationHandler {
+    /// Pushes the full trip screen for a departure (row context menu, trip panel).
+    let showTrip: (ArrivalDeparture) -> Void
+    /// Presents the whole-stop schedule (nav-bar Schedules button).
+    let showScheduleForStop: () -> Void
+    /// Presents the schedule for a specific departure's route (row swipe/menu and
+    /// trip panel). Mirrors the legacy row `Schedule` action, which is
+    /// route-scoped rather than stop-scoped.
+    let showScheduleForRoute: (ArrivalDeparture) -> Void
+    /// Region gate for the route-schedule affordances
+    /// (`Region.supportsScheduleForRoute`); hides them where unsupported.
+    let canScheduleForRoute: Bool
+    /// Pushes the alert-detail screen for a tapped service alert.
+    let showAlertDetail: (ServiceAlert) -> Void
+    /// Opens the bookmark editor: `nil` for a stop-level bookmark, an
+    /// `ArrivalDeparture` for a trip-level bookmark (row swipe/menu).
+    let showBookmarkEditor: (ArrivalDeparture?) -> Void
+    /// Shows the "couldn't open survey" alert when an external survey link fails.
+    let showExternalSurveyError: () -> Void
+    /// Presents the donation learn-more/donate modal.
+    let showDonation: () -> Void
+    /// Presents the donation dismiss action sheet; invokes the completion when the
+    /// user actually hides the card (dismiss or remind-later, not cancel).
+    let dismissDonation: (@escaping () -> Void) -> Void
+    /// Lazily builds the row long-press trip preview as an `AnyView`.
+    let makeTripPreview: (ArrivalDeparture) -> AnyView
+}
+
 /// Thin hosting wrapper for `StopPageView`. Its only job is to apply
 /// `.defaultAppStorage` so the page's `@AppStorage` reads and writes the
 /// app-group suite (matching the legacy screen + view model) rather than
@@ -19,14 +50,14 @@ struct StopPageRootView: View {
     let viewModel: StopViewModel
     let userDefaults: UserDefaults
     let snapshotLoader: (CGSize) async -> UIImage?
-    let onSelectAlert: (ServiceAlert) -> Void
+    let navigation: StopPageNavigationHandler
 
     var body: some View {
         StopPageView(
             viewModel: viewModel,
             userDefaults: userDefaults,
             snapshotLoader: snapshotLoader,
-            onSelectAlert: onSelectAlert
+            navigation: navigation
         )
         .defaultAppStorage(userDefaults)
     }
@@ -48,12 +79,17 @@ struct StopPageView: View {
     /// hosting VC so this view stays UIKit-free.
     let snapshotLoader: (CGSize) async -> UIImage?
 
-    /// Pushes the alert-detail screen. Owned by the hosting VC (`viewRouter`).
-    let onSelectAlert: (ServiceAlert) -> Void
+    /// Everything that leaves the page or presents a VC-owned modal. Supplied by
+    /// the hosting VC so this view stays router-free.
+    let navigation: StopPageNavigationHandler
 
     @State private var expandedDepartureID: String?
     @State private var expandedRouteID: RouteID?
     @State private var didSeedMode = false
+    /// Set when the user explicitly dismisses the donation card, so it disappears
+    /// immediately instead of waiting for the next view-model refresh to re-read
+    /// `shouldRequestDonations`.
+    @State private var donationHidden = false
     @AppStorage("StopViewController.pastDeparturesCollapsed") private var pastCollapsed = true
 
     /// Global (not per-stop) "last mode the user picked" seed. A stop the user
@@ -109,7 +145,9 @@ struct StopPageView: View {
                             Task { await viewModel.submitHeroAnswer(answer, stopLocation: viewModel.stop?.coordinate) }
                         },
                         onDismiss: { viewModel.dismissCurrentSurvey() },
-                        onOpenExternalSurvey: { viewModel.launchExternalSurvey(survey) }
+                        onOpenExternalSurvey: {
+                            viewModel.launchExternalSurvey(survey, onFailure: navigation.showExternalSurveyError)
+                        }
                     )
                     .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
                     .listRowBackground(Color.clear)
@@ -117,13 +155,25 @@ struct StopPageView: View {
                 }
             }
 
-            // Donations are deferred to the parity task (Task 12): the inline
-            // request is a UIKit `DonationListItem` gated on
-            // `application.donationsManager.shouldRequestDonations`, whose tap
-            // handlers present VC-owned modals. It is intentionally not dropped.
+            // Inline donation request (parity with the legacy UIKit `DonationListItem`).
+            // Gated on the view model's `shouldRequestDonations`; all three actions
+            // present VC-owned modals via the navigation handler. Sits after the
+            // survey and before service alerts, matching the legacy section order.
+            if viewModel.shouldRequestDonations && !donationHidden {
+                Section {
+                    DonationCardRepresentable(
+                        onDonate: navigation.showDonation,
+                        onLearnMore: navigation.showDonation,
+                        onClose: { navigation.dismissDonation { donationHidden = true } }
+                    )
+                    .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                }
+            }
 
             if let alerts = viewModel.stopArrivals?.serviceAlerts, !alerts.isEmpty {
-                ServiceAlertsSection(alerts: alerts, onSelect: onSelectAlert)
+                ServiceAlertsSection(alerts: alerts, onSelect: navigation.showAlertDetail)
             }
 
             Section {
@@ -260,15 +310,15 @@ struct StopPageView: View {
             onSetAlarm: { Task { await viewModel.setAlarm(for: departure, leadTimeMinutes: viewModel.defaultAlarmLeadTime) } },
             onCancelAlarm: { Task { await viewModel.cancelAlarm(for: departure) } },
             onChangeAlarm: { minutes in Task { await viewModel.changeAlarm(for: departure, leadTimeMinutes: minutes) } },
-            onSchedule: {},      // Task 12
-            onViewFullTrip: {}   // Task 12
+            onSchedule: { navigation.showScheduleForRoute(departure) },
+            onViewFullTrip: { navigation.showTrip(departure) }
         )
     }
 
     private func makeActions(for departure: ArrivalDeparture) -> DepartureRowActions {
         DepartureRowActions(
             canAlarm: viewModel.canCreateAlarm(for: departure),
-            canSchedule: false,        // wired in Task 12 (region-gated)
+            canSchedule: navigation.canScheduleForRoute,
             hasAlarm: viewModel.alarm(for: departure) != nil,
             onAlarmToggle: {
                 Task {
@@ -279,9 +329,10 @@ struct StopPageView: View {
                     }
                 }
             },
-            onSchedule: {},            // Task 12
-            onBookmark: {},            // Task 12
-            onShowTrip: {}             // Task 12
+            onSchedule: { navigation.showScheduleForRoute(departure) },
+            onBookmark: { navigation.showBookmarkEditor(departure) },
+            onShowTrip: { navigation.showTrip(departure) },
+            makePreview: { navigation.makeTripPreview(departure) }
         )
     }
 }
