@@ -24,6 +24,9 @@ struct TripDetailPanelView: View {
     let alarm: Alarm?
     let alarmLeadTimeMinutes: Int
     let canAlarm: Bool
+    /// Changes on each successful stop refresh so the open panel re-fetches its
+    /// approach timeline instead of freezing on the first load.
+    let refreshToken: Date?
     let approachLoader: () async -> TripDetails?
     let onSetAlarm: () -> Void
     let onCancelAlarm: () -> Void
@@ -33,6 +36,14 @@ struct TripDetailPanelView: View {
 
     @State private var tripDetails: TripDetails?
     @State private var timelineLoading = false
+
+    /// Identity for the timeline `.task`: a change in either the departure or the
+    /// refresh token re-runs the fetch. Keeping the token in the key is what lets
+    /// an open panel refresh (and lets a nil first fetch retry).
+    private struct FetchKey: Hashable {
+        let departureID: String
+        let refreshToken: Date?
+    }
 
     private var routeColor: Color {
         Color(uiColor: departure.route.color ?? ThemeColors.shared.brand)
@@ -66,11 +77,16 @@ struct TripDetailPanelView: View {
             TripPanelActionsRow(onSchedule: onSchedule, onViewFullTrip: onViewFullTrip)
         }
         .padding(.vertical, 6)
-        .task(id: departure.id) {
-            guard status.isRealTime, tripDetails == nil else { return }
-            timelineLoading = true
-            tripDetails = await approachLoader()
+        .task(id: FetchKey(departureID: departure.id, refreshToken: refreshToken)) {
+            guard status.isRealTime else { return }
+            // Show the spinner only on the first load; on a token-driven refetch
+            // keep the previous timeline on screen to avoid flicker.
+            if tripDetails == nil { timelineLoading = true }
+            let details = await approachLoader()
             timelineLoading = false
+            // Only swap when the refetch returns data; a nil result (fetch failed
+            // or no live timeline) leaves the previously shown timeline in place.
+            if let details { tripDetails = details }
         }
     }
 

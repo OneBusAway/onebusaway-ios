@@ -94,6 +94,7 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
         configureBarButtons()
         bindChrome()
         bindSurveyPresentation()
+        bindAlarmFeedback()
     }
 
     // MARK: - Navigation Handler
@@ -191,6 +192,62 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
                 }
             }
             .store(in: &cancellables)
+    }
+
+    /// Surfaces alarm-flow failures the SwiftUI page can't present itself: the
+    /// standard error alert for a failed create/cancel, and a Settings-guidance
+    /// alert when notification permission is already denied.
+    private func bindAlarmFeedback() {
+        viewModel.$alarmError
+            .compactMap { $0 }
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] error in
+                guard let self else { return }
+                Task { @MainActor in
+                    await AlertPresenter.show(error: error, presentingController: self)
+                }
+            }
+            .store(in: &cancellables)
+
+        viewModel.$alarmPermissionDenied
+            .dropFirst()
+            .filter { $0 }
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.presentAlarmPermissionDeniedAlert()
+            }
+            .store(in: &cancellables)
+    }
+
+    private func presentAlarmPermissionDeniedAlert() {
+        let alert = UIAlertController(
+            title: OBALoc(
+                "stop_page.alarm_permission_denied.title",
+                value: "Notifications Are Off",
+                comment: "Title of the alert shown when the user tries to set a departure alarm but notifications are denied in Settings."
+            ),
+            message: OBALoc(
+                "stop_page.alarm_permission_denied.message",
+                value: "To get departure alarms, allow notifications for OneBusAway in Settings.",
+                comment: "Body of the alert shown when the user tries to set a departure alarm but notifications are denied in Settings."
+            ),
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: Strings.cancel, style: .cancel))
+        alert.addAction(UIAlertAction(
+            title: OBALoc(
+                "stop_page.alarm_permission_denied.open_settings",
+                value: "Open Settings",
+                comment: "Button that opens the system Settings app so the user can enable notifications."
+            ),
+            style: .default
+        ) { [weak self] _ in
+            guard let self, let url = URL(string: UIApplication.openSettingsURLString) else { return }
+            self.application.open(url, options: [:], completionHandler: nil)
+        })
+        present(alert, animated: true)
+        // Reset so a later already-denied attempt re-fires the binding.
+        viewModel.clearAlarmPermissionDenied()
     }
 
     // MARK: - Snapshot

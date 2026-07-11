@@ -10,6 +10,7 @@
 import Foundation
 import Combine
 import CoreLocation
+import UserNotifications
 import OBAKitCore
 
 /// Shared ViewModel for the stop arrivals/departures screen.
@@ -105,6 +106,16 @@ class StopViewModel: ObservableObject {
 
     /// Non-nil after an alarm create/cancel fails; consumer shows a toast/alert.
     @Published private(set) var alarmError: Error?
+
+    /// Set `true` when the user attempts to create an alarm but notification
+    /// permission is already `.denied`; the consumer presents Settings guidance
+    /// and then calls `clearAlarmPermissionDenied()`.
+    @Published private(set) var alarmPermissionDenied = false
+
+    /// Departure ids with an in-flight `setAlarm`, so a double-tap can't create a
+    /// duplicate alarm while the first create is suspended (MainActor-serialized,
+    /// so a plain `Set` needs no further synchronization).
+    private var alarmSetsInFlight: Set<String> = []
 
     /// Cache for trip-panel approach timelines, invalidated on each refresh.
     private var approachCache: [String: TripDetails] = [:]
@@ -538,11 +549,28 @@ class StopViewModel: ObservableObject {
     func setAlarm(for arrivalDeparture: ArrivalDeparture, leadTimeMinutes: Int) async {
         guard
             canCreateAlarm(for: arrivalDeparture),
+            !alarmSetsInFlight.contains(arrivalDeparture.id),
             let obacoService = application.obacoService,
             let pushService = application.pushService,
             let region = application.currentRegion,
             let minutes = AlarmLeadTime.clamped(leadTimeMinutes, minutesUntilDeparture: arrivalDeparture.arrivalDepartureMinutes)
         else { return }
+
+        // Reserve this departure before the first `await` so a double-tap can't
+        // slip a second create through while the permission/network work is
+        // suspended. The check-then-insert is atomic on the MainActor.
+        alarmSetsInFlight.insert(arrivalDeparture.id)
+        defer { alarmSetsInFlight.remove(arrivalDeparture.id) }
+
+        // Already-denied notification permission is a dead end for departure
+        // alarms: pushID() can't yield a deliverable id. Surface Settings
+        // guidance instead. (.notDetermined falls through so pushID() triggers
+        // the first-time system prompt.)
+        let settings = await UNUserNotificationCenter.current().notificationSettings()
+        if settings.authorizationStatus == .denied {
+            alarmPermissionDenied = true
+            return
+        }
 
         do {
             let userPushID = await pushService.pushID()
@@ -566,11 +594,22 @@ class StopViewModel: ObservableObject {
                 try await obacoService.deleteAlarm(url: alarm.url)
             }
             application.userDataStore.delete(alarm: alarm)
+            // A refresh that landed mid-await could have re-inserted this entry
+            // (rebuildAlarmIndex ran while the persisted alarm was still present);
+            // re-assert the removal now that the alarm is actually deleted.
+            alarmsByDepartureID[arrivalDeparture.id] = nil
             alarmError = nil
         } catch {
             alarmsByDepartureID[arrivalDeparture.id] = alarm
             alarmError = error
         }
+    }
+
+    /// Resets the permission-denied flag after the consumer has presented its
+    /// Settings-guidance alert, so a later already-denied attempt re-fires the
+    /// binding.
+    func clearAlarmPermissionDenied() {
+        alarmPermissionDenied = false
     }
 
     /// Obaco has no update endpoint: change = delete + re-post. Proceeds only
@@ -594,10 +633,13 @@ class StopViewModel: ObservableObject {
             return
         }
         application.userDataStore.deleteExpiredAlarms()
+        // Hoisted out of the loop: `alarms` JSON-decodes the persisted store on
+        // every access, so reading it once per rebuild instead of per departure.
+        let alarms = application.userDataStore.alarms
         var index: [String: Alarm] = [:]
         for departure in departures {
             let candidate = ArrivalDepartureDeepLink(arrivalDeparture: departure, regionID: region.regionIdentifier)
-            if let match = application.userDataStore.alarms.first(where: { $0.deepLink == candidate }) {
+            if let match = alarms.first(where: { $0.deepLink == candidate }) {
                 index[departure.id] = match
             }
         }

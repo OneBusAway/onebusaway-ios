@@ -98,7 +98,8 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
     /// navigation and long-press previews must construct the controller through
     /// these factories so the flag governs every path.
     public func makeStopController(stop: Stop, bookmark: Bookmark? = nil, transferContext: TransferContext? = nil) -> UIViewController {
-        if FeatureFlags.isNewStopPageEnabled(userDefaults: application.userDefaults) {
+        // TransferContext UX (arrival-relative filtering, transfer banner) is not yet built on the new stop page — route transfers to the legacy screen until it is.
+        if transferContext == nil, FeatureFlags.isNewStopPageEnabled(userDefaults: application.userDefaults) {
             let stopController = StopPageViewController(application: application, stop: stop)
             stopController.bookmarkContext = bookmark
             stopController.transferContext = transferContext

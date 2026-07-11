@@ -306,6 +306,10 @@ struct StopPageView: View {
             alarm: alarm,
             alarmLeadTimeMinutes: alarm.map { viewModel.alarmLeadTimeMinutes($0) } ?? viewModel.defaultAlarmLeadTime,
             canAlarm: viewModel.canCreateAlarm(for: departure),
+            // Bumps on every successful refresh so the panel re-fetches its
+            // approach timeline while it stays open (scheduled→live flips and
+            // failed first fetches retry on the next refresh).
+            refreshToken: viewModel.lastUpdated,
             approachLoader: { await viewModel.approachTripDetails(for: departure) },
             onSetAlarm: { Task { await viewModel.setAlarm(for: departure, leadTimeMinutes: viewModel.defaultAlarmLeadTime) } },
             onCancelAlarm: { Task { await viewModel.cancelAlarm(for: departure) } },
@@ -390,25 +394,58 @@ struct LiveStatusRow: View {
 
 /// Service alerts affecting this stop. Each row pushes the existing alert-detail
 /// screen via the hosting VC's `onSelect` callback.
+///
+/// Honors the legacy `stopViewShowsServiceAlerts` preference (same UserDefaults
+/// key, default collapsed): tapping the header toggles and persists it, matching
+/// the legacy screen's collapsible section. When collapsed it shows a single
+/// "N service alerts" summary row that expands for the visit; when expanded and
+/// there are more than two alerts, it shows the first two plus a "Show all N"
+/// row.
 struct ServiceAlertsSection: View {
     let alerts: [ServiceAlert]
     let onSelect: (ServiceAlert) -> Void
 
+    /// Legacy persisted preference; read/written through the app-group suite that
+    /// `StopPageRootView` installs via `.defaultAppStorage`. Default `false`
+    /// (collapsed) mirrors `StopViewController`, which registers no default for
+    /// this key.
+    @AppStorage("stopViewShowsServiceAlerts") private var showsServiceAlerts = false
+
+    /// Per-visit "show all" expansion for the >2 case (not persisted).
+    @State private var showAllAlerts = false
+
+    private var visibleAlerts: [ServiceAlert] {
+        showAllAlerts ? alerts : Array(alerts.prefix(2))
+    }
+
     var body: some View {
         Section {
-            ForEach(alerts) { alert in
+            if showsServiceAlerts {
+                ForEach(visibleAlerts) { alert in
+                    alertRow(alert)
+                }
+                if alerts.count > 2 && !showAllAlerts {
+                    Button {
+                        withAnimation { showAllAlerts = true }
+                    } label: {
+                        Text(String(format: OBALoc("stop_page.service_alerts.show_all_fmt", value: "Show all %d alerts", comment: "Row that expands the service alerts section to show every alert. %d is the total number of alerts."), alerts.count))
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.primary)
+                    }
+                    .buttonStyle(.plain)
+                }
+            } else {
                 Button {
-                    onSelect(alert)
+                    withAnimation { showsServiceAlerts = true }
                 } label: {
                     HStack(spacing: 10) {
                         Image(systemName: "exclamationmark.triangle.fill")
                             .foregroundStyle(.orange)
-                        Text(alert.title(forLocale: .current) ?? OBALoc("stop_page.service_alert_fallback", value: "Service alert", comment: "Fallback title for a service alert that has no summary text."))
+                        Text(String(format: OBALoc("stop_page.service_alerts.summary_fmt", value: "%d service alerts", comment: "Collapsed summary row for the service alerts section. %d is the number of alerts."), alerts.count))
                             .font(.subheadline)
                             .foregroundStyle(.primary)
-                            .lineLimit(2)
                         Spacer(minLength: 0)
-                        Image(systemName: "chevron.right")
+                        Image(systemName: "chevron.down")
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(.tertiary)
                     }
@@ -416,8 +453,43 @@ struct ServiceAlertsSection: View {
                 .buttonStyle(.plain)
             }
         } header: {
-            Text(Strings.serviceAlerts)
+            Button {
+                withAnimation {
+                    showsServiceAlerts.toggle()
+                    if !showsServiceAlerts { showAllAlerts = false }
+                }
+            } label: {
+                HStack {
+                    Text(Strings.serviceAlerts)
+                    Spacer()
+                    Image(systemName: showsServiceAlerts ? "chevron.up" : "chevron.down")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
         }
+    }
+
+    private func alertRow(_ alert: ServiceAlert) -> some View {
+        Button {
+            onSelect(alert)
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundStyle(.orange)
+                Text(alert.title(forLocale: .current) ?? OBALoc("stop_page.service_alert_fallback", value: "Service alert", comment: "Fallback title for a service alert that has no summary text."))
+                    .font(.subheadline)
+                    .foregroundStyle(.primary)
+                    .lineLimit(2)
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+            }
+        }
+        .buttonStyle(.plain)
     }
 }
 

@@ -653,4 +653,28 @@ class StopViewModelTests: OBATestCase {
         // OR heroSubmitInFlight) prevents a duplicate emission.
         expect(presented.count) == 1
     }
+
+    // MARK: - Router transfer fallback (final-review FIX 1)
+
+    /// A transfer (non-nil `TransferContext`) must always resolve to the legacy
+    /// `StopViewController`, even with the new-stop-page flag ON (its default),
+    /// because the transfer UX isn't built on the new page yet. A plain open with
+    /// the flag ON resolves to the new `StopPageViewController`.
+    @MainActor
+    func test_makeStopController_transferContext_fallsBackToLegacyScreen() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock())
+
+        // The new-stop-page flag defaults to ON when unset.
+        expect(FeatureFlags.isNewStopPageEnabled(userDefaults: app.userDefaults)).to(beTrue())
+
+        let stop = try XCTUnwrap(try Fixtures.loadSomeStops().first)
+
+        let transfer = TransferContext(arrivalTime: Date(), fromRouteShortName: "1", fromTripHeadsign: "Downtown")
+        let transferController = app.viewRouter.makeStopController(stop: stop, transferContext: transfer)
+        expect(transferController).to(beAKindOf(StopViewController.self))
+
+        let plainController = app.viewRouter.makeStopController(stop: stop, transferContext: nil)
+        expect(plainController).to(beAKindOf(StopPageViewController.self))
+    }
 }
