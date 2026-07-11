@@ -35,8 +35,8 @@ struct GroupedListView: View {
     let panelBuilder: (ArrivalDeparture) -> TripDetailPanelView
 
     /// The compact alarm circle in an expanded row. `@ScaledMetric` so the badge
-    /// grows with Dynamic Type (standing amendment) the same way the 48pt route
-    /// badge does inside `RouteBadgeView`.
+    /// grows with Dynamic Type the same way the 48pt route badge does inside
+    /// `RouteBadgeView`.
     @ScaledMetric(relativeTo: .body) private var alarmCircleSize: CGFloat = 34
 
     @Environment(\.obaFormatters) private var formatters
