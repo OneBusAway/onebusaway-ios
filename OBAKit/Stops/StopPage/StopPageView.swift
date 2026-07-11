@@ -102,6 +102,10 @@ struct StopPageView: View {
     /// read in `seedLastUsedModeIfNeeded()`, written in the toggle's `onChange`.
     private static let lastUsedStopSortKey = "OBALastUsedStopSort"
 
+    /// Leading/trailing inset shared by the page's full-width card rows
+    /// (header, survey, donation), matching the inset-grouped card margin.
+    private static let horizontalRowInset: CGFloat = 0
+
     private var filteredDepartures: [ArrivalDeparture] {
         let all = viewModel.stopArrivals?.arrivalsAndDepartures ?? []
         return viewModel.isListFiltered ? all.filter(preferences: viewModel.stopPreferences) : all
@@ -131,7 +135,7 @@ struct StopPageView: View {
             if let stop = viewModel.stop {
                 Section {
                     StopPageHeaderView(stop: stop, walkTime: walkTime, snapshotLoader: snapshotLoader)
-                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
+                        .listRowInsets(EdgeInsets(top: 0, leading: Self.horizontalRowInset, bottom: 0, trailing: Self.horizontalRowInset))
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
                 }
@@ -154,7 +158,7 @@ struct StopPageView: View {
                             viewModel.launchExternalSurvey(survey, onFailure: navigation.showExternalSurveyError)
                         }
                     )
-                    .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+                    .listRowInsets(EdgeInsets(top: 4, leading: Self.horizontalRowInset, bottom: 4, trailing: Self.horizontalRowInset))
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
                 }
@@ -171,7 +175,7 @@ struct StopPageView: View {
                         onLearnMore: navigation.showDonation,
                         onClose: { navigation.dismissDonation { donationHidden = true } }
                     )
-                    .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+                    .listRowInsets(EdgeInsets(top: 4, leading: Self.horizontalRowInset, bottom: 4, trailing: Self.horizontalRowInset))
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
                 }
@@ -263,7 +267,13 @@ struct StopPageView: View {
                 onLoadMore: { Task { await viewModel.loadMoreDepartures() } }
             )
         }
-        .listStyle(.insetGrouped)
+        // `.plain` (rather than `.insetGrouped`) so sections have no horizontal
+        // card margin insetting them from the screen edges. That margin is
+        // separate from `listRowInsets` (which only pads inside a row's
+        // background), which is why zeroing the row insets alone left a gap.
+        // With `.plain`, rows whose `listRowInsets` leading/trailing are 0 sit
+        // flush with the screen edges.
+        .listStyle(.plain)
         .task { await viewModel.start() }
         .onAppear(perform: seedLastUsedModeIfNeeded)
         .onDisappear { viewModel.deactivate() }
