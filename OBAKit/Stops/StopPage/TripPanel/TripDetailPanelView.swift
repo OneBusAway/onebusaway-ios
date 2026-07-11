@@ -39,7 +39,10 @@ struct TripDetailPanelView: View {
     let onViewFullTrip: () -> Void
 
     @State private var tripDetails: TripDetails?
-    @State private var timelineLoading = false
+    /// Set when the fetch completes with nothing to show (failed, or the
+    /// vehicle is past the approach window) so the pre-allocated skeleton
+    /// collapses instead of pulsing forever.
+    @State private var timelineUnavailable = false
 
     /// What the timeline renders: the async fetch result once it lands, else
     /// the synchronous warm-cache seed.
@@ -87,28 +90,29 @@ struct TripDetailPanelView: View {
         .padding(.vertical, 6)
         .task(id: FetchKey(departureID: departure.id, refreshToken: refreshToken)) {
             guard status.isRealTime else { return }
-            // Show the spinner only when there's no timeline to show; with a
-            // warm-cache seed or on a token-driven refetch keep the current
-            // timeline on screen to avoid flicker.
-            if resolvedTripDetails == nil {
-                withAnimation(.snappy) { timelineLoading = true }
-            }
             let details = await approachLoader()
-            // The first content to arrive after the row is already on screen
-            // changes the row's height, so animate the growth; refetches swap
-            // data in place at the same height and stay non-animated. A nil
-            // result (fetch failed or no live timeline) leaves the previously
-            // shown timeline in place.
+            // The skeleton pre-allocates the timeline's slot, so the first
+            // result usually swaps in near the same height; animate the small
+            // residual adjustment. Refetches swap data in place at the same
+            // height and stay non-animated. A nil result while a timeline is
+            // showing leaves it in place; nil with only the skeleton showing
+            // collapses the slot (§4.1 silently omits the timeline).
             withAnimation(resolvedTripDetails == nil ? .snappy : nil) {
-                timelineLoading = false
-                if let details { tripDetails = details }
+                if let details {
+                    tripDetails = details
+                } else if resolvedTripDetails == nil {
+                    timelineUnavailable = true
+                }
             }
         }
     }
 
-    /// Timeline (or its loading spinner). Kept in the parent because it reads the
-    /// `tripDetails`/`timelineLoading` state; a fetch failure or a vehicle that's
-    /// already past the window renders nothing (silently omitted, §4.1).
+    /// Timeline (or its fixed-height skeleton). The skeleton renders from the
+    /// panel's very first frame so a real-time panel opens with the timeline's
+    /// space already allocated instead of popping taller when the async fetch
+    /// lands. Kept in the parent because it reads the panel's state; a fetch
+    /// failure or a vehicle that's already past the window collapses to
+    /// nothing (silently omitted, §4.1).
     @ViewBuilder
     private var liveApproachSection: some View {
         if let slice = approachSlice {
@@ -117,8 +121,8 @@ struct TripDetailPanelView: View {
                 minutesAway: departure.arrivalDepartureMinutes,
                 routeColor: routeColor
             )
-        } else if timelineLoading {
-            ProgressView().frame(maxWidth: .infinity)
+        } else if !timelineUnavailable {
+            ApproachTimelineSkeleton()
         }
     }
 
@@ -141,6 +145,44 @@ struct TripDetailPanelView: View {
                 isPassed: slice.vehicleIndex.map { index <= $0 } ?? false
             )
         }
+    }
+}
+
+/// Placeholder occupying the approach timeline's slot while the fetch is in
+/// flight. Fixed at 150pt so the accordion insert animation targets (roughly)
+/// the panel's final height instead of the row popping when the timeline
+/// lands. The pulse is gated on Reduce Motion, matching `LiveStatusRow`.
+private struct ApproachTimelineSkeleton: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var pulsing = false
+
+    /// Deterministic per-row bar widths, echoing the varied stop-name lengths
+    /// of the real timeline.
+    private static let barWidths: [CGFloat] = [150, 120, 165, 130, 180]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            ForEach(Array(Self.barWidths.enumerated()), id: \.offset) { _, width in
+                HStack(spacing: 12) {
+                    Circle()
+                        .fill(Color(uiColor: .tertiarySystemFill))
+                        .frame(width: 10, height: 10)
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(Color(uiColor: .tertiarySystemFill))
+                        .frame(width: width, height: 12)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(height: 150, alignment: .top)
+        .opacity(reduceMotion ? 1 : (pulsing ? 0.45 : 1))
+        .onAppear {
+            guard !reduceMotion else { return }
+            withAnimation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true)) {
+                pulsing = true
+            }
+        }
+        .accessibilityHidden(true)
     }
 }
 
