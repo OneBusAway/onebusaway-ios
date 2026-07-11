@@ -26,6 +26,11 @@ struct TripDetailPanelView: View {
     /// Changes on each successful stop refresh so the open panel re-fetches its
     /// approach timeline instead of freezing on the first load.
     let refreshToken: Date?
+    /// Warm-cache seed, read synchronously from the VM when the panel is built.
+    /// With it, the timeline is on screen at full size the frame the accordion
+    /// row is inserted, so the insert animation targets the correct final
+    /// height instead of the row popping when the async fetch lands.
+    let cachedTripDetails: TripDetails?
     let approachLoader: () async -> TripDetails?
     let onSetAlarm: () -> Void
     let onCancelAlarm: () -> Void
@@ -35,6 +40,10 @@ struct TripDetailPanelView: View {
 
     @State private var tripDetails: TripDetails?
     @State private var timelineLoading = false
+
+    /// What the timeline renders: the async fetch result once it lands, else
+    /// the synchronous warm-cache seed.
+    private var resolvedTripDetails: TripDetails? { tripDetails ?? cachedTripDetails }
 
     /// Identity for the timeline `.task`: a change in either the departure or the
     /// refresh token re-runs the fetch. Keeping the token in the key is what lets
@@ -78,14 +87,22 @@ struct TripDetailPanelView: View {
         .padding(.vertical, 6)
         .task(id: FetchKey(departureID: departure.id, refreshToken: refreshToken)) {
             guard status.isRealTime else { return }
-            // Show the spinner only on the first load; on a token-driven refetch
-            // keep the previous timeline on screen to avoid flicker.
-            if tripDetails == nil { timelineLoading = true }
+            // Show the spinner only when there's no timeline to show; with a
+            // warm-cache seed or on a token-driven refetch keep the current
+            // timeline on screen to avoid flicker.
+            if resolvedTripDetails == nil {
+                withAnimation(.snappy) { timelineLoading = true }
+            }
             let details = await approachLoader()
-            timelineLoading = false
-            // Only swap when the refetch returns data; a nil result (fetch failed
-            // or no live timeline) leaves the previously shown timeline in place.
-            if let details { tripDetails = details }
+            // The first content to arrive after the row is already on screen
+            // changes the row's height, so animate the growth; refetches swap
+            // data in place at the same height and stay non-animated. A nil
+            // result (fetch failed or no live timeline) leaves the previously
+            // shown timeline in place.
+            withAnimation(resolvedTripDetails == nil ? .snappy : nil) {
+                timelineLoading = false
+                if let details { tripDetails = details }
+            }
         }
     }
 
@@ -106,7 +123,7 @@ struct TripDetailPanelView: View {
     }
 
     private var approachSlice: ApproachSlice<TripStopTime>? {
-        guard let stopTimes = tripDetails?.stopTimes else { return nil }
+        guard let stopTimes = resolvedTripDetails?.stopTimes else { return nil }
         return ApproachSlice.make(
             stopTimes: stopTimes,
             userStopID: departure.stopID,

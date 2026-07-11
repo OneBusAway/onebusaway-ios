@@ -319,6 +319,7 @@ struct StopPageView: View {
             // approach timeline while it stays open (scheduled→live flips and
             // failed first fetches retry on the next refresh).
             refreshToken: viewModel.lastUpdated,
+            cachedTripDetails: viewModel.cachedApproachTripDetails(for: departure),
             approachLoader: { await viewModel.approachTripDetails(for: departure) },
             onSetAlarm: { Task { await viewModel.setAlarm(for: departure, leadTimeMinutes: viewModel.defaultAlarmLeadTime) } },
             onCancelAlarm: { Task { await viewModel.cancelAlarm(for: departure) } },

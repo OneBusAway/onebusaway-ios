@@ -667,11 +667,19 @@ class StopViewModel: ObservableObject {
 
     // MARK: - Stop Page: Approach Timeline
 
+    /// Synchronous read of the approach-details cache. The async
+    /// `approachTripDetails` path always resolves after the accordion row is
+    /// inserted, which resizes the panel without animation; this accessor lets
+    /// the panel seed a warm timeline at full size on the frame it's built.
+    func cachedApproachTripDetails(for arrivalDeparture: ArrivalDeparture) -> TripDetails? {
+        approachCache[arrivalDeparture.tripID]
+    }
+
     /// Trip details backing the trip panel's approach timeline. Fetched on
     /// panel open, cached until the next refresh, live trips only (§4.1).
     func approachTripDetails(for arrivalDeparture: ArrivalDeparture) async -> TripDetails? {
         guard arrivalDeparture.predicted, let apiService = application.apiService else { return nil }
-        if let cached = approachCache[arrivalDeparture.tripID] { return cached }
+        if let cached = cachedApproachTripDetails(for: arrivalDeparture) { return cached }
         do {
             let details = try await apiService.getTrip(
                 tripID: arrivalDeparture.tripID,

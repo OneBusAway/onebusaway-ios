@@ -39,12 +39,13 @@ class StopViewModelTests: OBATestCase {
     private func createApplication(
         dataLoader: MockDataLoader,
         analytics: AnalyticsMock,
-        surveyHitCounter: SurveyHitCounter? = nil
+        surveyHitCounter: SurveyHitCounter? = nil,
+        arrivalsFixture: String = "arrivals_and_departures_empty.json"
     ) -> Application {
         stubRegions(dataLoader: dataLoader)
         stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
         Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
-        stubArrivalsAndDepartures(dataLoader: dataLoader)
+        stubArrivalsAndDepartures(dataLoader: dataLoader, fixture: arrivalsFixture)
         if let surveyHitCounter {
             stubSurveys(dataLoader: dataLoader, counter: surveyHitCounter)
         } else {
@@ -75,10 +76,10 @@ class StopViewModelTests: OBATestCase {
         return Application(config: config)
     }
 
-    /// Stubs every `arrivals-and-departures-for-stop` call with an empty-arrivals payload.
+    /// Stubs every `arrivals-and-departures-for-stop` call with the given fixture.
     /// The matcher is path-based, so the same stub serves every minutesAfter value the VM walks through.
-    private func stubArrivalsAndDepartures(dataLoader: MockDataLoader) {
-        let data = Fixtures.loadData(file: "arrivals_and_departures_empty.json")
+    private func stubArrivalsAndDepartures(dataLoader: MockDataLoader, fixture: String = "arrivals_and_departures_empty.json") {
+        let data = Fixtures.loadData(file: fixture)
         dataLoader.mock(data: data) { request in
             request.url?.path.contains("/api/where/arrivals-and-departures-for-stop") ?? false
         }
@@ -708,5 +709,46 @@ class StopViewModelTests: OBATestCase {
         expect(alarm.alarmDate).to(beNil())
 
         expect(viewModel.alarmLeadTimeMinutes(alarm)) == AlarmLeadTime.defaultMinutes
+    }
+
+    // MARK: - Approach Cache (trip panel)
+
+    /// The synchronous cache accessor backs the trip panel's "render at full
+    /// size on insert" behavior: nil before the async fetch has populated the
+    /// cache, identical to the fetched details afterwards, and nil again after
+    /// a refresh invalidates the cache.
+    @MainActor
+    func test_cachedApproachTripDetails_warmAfterFetch_invalidatedByRefresh() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(
+            dataLoader: dataLoader,
+            analytics: AnalyticsMock(),
+            arrivalsFixture: "arrivals_and_departures_for_stop_1_10020.json"
+        )
+
+        // Stub the trip-details endpoint behind `approachTripDetails`.
+        let tripData = Fixtures.loadData(file: "trip_details_1_18196913.json")
+        dataLoader.mock(data: tripData) { request in
+            request.url?.path.contains("/api/where/trip-details/") ?? false
+        }
+
+        let viewModel = StopViewModel(application: app, stopID: testStopID)
+        await viewModel.refresh()
+
+        let departure = try XCTUnwrap(viewModel.stopArrivals?.arrivalsAndDepartures.first)
+        expect(departure.predicted).to(beTrue())
+
+        // Cold: nothing cached until the async path has run.
+        expect(viewModel.cachedApproachTripDetails(for: departure)).to(beNil())
+
+        let fetched = await viewModel.approachTripDetails(for: departure)
+        expect(fetched).toNot(beNil())
+
+        // Warm: the sync accessor returns the exact cached instance.
+        expect(viewModel.cachedApproachTripDetails(for: departure)).to(beIdenticalTo(fetched))
+
+        // Refresh clears the cache, so the accessor goes cold again.
+        await viewModel.refresh()
+        expect(viewModel.cachedApproachTripDetails(for: departure)).to(beNil())
     }
 }
