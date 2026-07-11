@@ -60,6 +60,7 @@ struct GroupedListView: View {
         let next = group.next
         let status = statusProvider(next)
         let routeColor = Color(uiColor: next.route.color ?? ThemeColors.shared.brand)
+        let alarm = alarmLookup(next)
 
         VStack(alignment: .leading, spacing: 10) {
             headerPrimaryRow(next: next, status: status, routeColor: routeColor)
@@ -72,6 +73,25 @@ struct GroupedListView: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(groupAccessibilityLabel(group, status: status))
         .accessibilityAddTraits(.isButton)
+        // The combined element above (`children: .ignore`) swallows the alarm
+        // pill Button inside `headerChipsRow`, so VoiceOver can never reach it.
+        // `.accessibilityActions` is applied unconditionally (keeping this a
+        // single, uninterrupted modifier chain) but its @ContentBuilder body
+        // supports `if`, so the custom action itself only exists when the pill
+        // would actually be visible — mirroring `alarmPill(for:)`'s own condition.
+        .accessibilityActions {
+            if canAlarm(next) || alarm != nil {
+                Button(alarmActionName(for: alarm)) {
+                    onAlarmToggle(next)
+                }
+            }
+        }
+    }
+
+    private func alarmActionName(for alarm: Alarm?) -> String {
+        alarm != nil
+            ? OBALoc("stop_page.grouped.a11y_remove_alarm", value: "Remove alarm", comment: "VoiceOver custom action on a grouped route card's header that cancels the alarm already set for the next departure.")
+            : OBALoc("stop_page.grouped.a11y_set_alarm", value: "Set alarm", comment: "VoiceOver custom action on a grouped route card's header that creates an alarm for the next departure.")
     }
 
     /// Badge, headsign, scheduled time + adherence, and the big countdown.
@@ -157,6 +177,10 @@ struct GroupedListView: View {
 
     @ViewBuilder
     private func expandedRows(_ group: StopPageListBuilder.RouteGroup<ArrivalDeparture>) -> some View {
+        // Same derivation as `cardHeader`'s routeColor, so the stripe painted
+        // on these rows via `listRowBackground` matches the header exactly and
+        // runs the full height of the expanded card (§4.3).
+        let routeColor = Color(uiColor: group.next.route.color ?? ThemeColors.shared.brand)
         ForEach(group.departures, id: \.id) { departure in
             let status = statusProvider(departure)
             HStack(spacing: 12) {
@@ -182,11 +206,13 @@ struct GroupedListView: View {
             }
             .contentShape(Rectangle())
             .onTapGesture { onToggleTrip(departure) }
+            .listRowBackground(cardStripe(routeColor))
 
             // Accordion: the trip panel is an INSERTED SIBLING ROW keyed off the
             // open id — List animates the insert/remove (same pattern as Task 8).
             if openTripDepartureID == departure.id {
                 panelBuilder(departure)
+                    .listRowBackground(cardStripe(routeColor))
             }
         }
     }
