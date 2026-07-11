@@ -262,7 +262,16 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
         return await withCheckedContinuation { continuation in
             let snapshotter = MapSnapshotter(size: size, stopIconFactory: factory)
             snapshotter.snapshot(stop: stop, traitCollection: traits) { image in
-                continuation.resume(returning: image)
+                // `MapSnapshotter`'s internal `MKMapSnapshotter.start` completion is
+                // `[weak self]`, so the wrapper must outlive the async render or the
+                // completion early-returns and this continuation never resumes —
+                // leaving the header permanently blank. The legacy `StopHeaderView`
+                // avoids this by retaining the snapshotter in a stored property; here
+                // there's no `self` to hold it, so extend its lifetime through the
+                // callback explicitly.
+                withExtendedLifetime(snapshotter) {
+                    continuation.resume(returning: image)
+                }
             }
         }
     }
