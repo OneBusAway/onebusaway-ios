@@ -14,8 +14,9 @@ import Nimble
 
 /// Smoke-tests for the UIKit wiring wrapper around `MoreViewController`.
 /// The wrapping is the entire product surface of `MoreSheetHost`, so these
-/// tests exercise the representable by embedding it in a `UIHostingController`
-/// and inspecting the resulting child controller.
+/// tests drive the representable through its `internal`
+/// `makeNavigationController(application:)` factory seam and inspect the
+/// resulting controller hierarchy — no `UIHostingController` needed.
 final class MoreSheetHostTests: OBATestCase {
 
     private var queue: OperationQueue!
@@ -31,41 +32,10 @@ final class MoreSheetHostTests: OBATestCase {
         queue.cancelAllOperations()
     }
 
-    /// `OBATestCase` doesn't own an `Application`; tests build one per-case,
-    /// mirroring the pattern in `MapPanelViewModelTests`. Only the pieces
-    /// `MoreViewController.init` actually reaches for (regions service,
-    /// analytics, user defaults) need to be real — everything else can rely
-    /// on the standard stubs.
-    private func createApplication(dataLoader: MockDataLoader) -> Application {
-        stubRegions(dataLoader: dataLoader)
-        stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
-
-        let locManager = MockAuthorizedLocationManager(
-            updateLocation: TestData.mockSeattleLocation,
-            updateHeading: TestData.mockHeading
-        )
-        let locationService = LocationService(userDefaults: userDefaults, locationManager: locManager)
-
-        let config = AppConfig(
-            regionsBaseURL: regionsURL,
-            apiKey: apiKey,
-            appVersion: appVersion,
-            userDefaults: userDefaults,
-            analytics: AnalyticsMock(),
-            queue: queue,
-            locationService: locationService,
-            bundledRegionsFilePath: bundledRegionsPath,
-            regionsAPIPath: regionsAPIPath,
-            dataLoader: dataLoader,
-            fixedRegionName: Fixtures.pugetSoundRegion.name
-        )
-        return Application(config: config)
-    }
-
     @MainActor
     func test_makeNavigationController_wrapsMoreViewControllerInNav() {
         let dataLoader = MockDataLoader(testName: name)
-        let application = createApplication(dataLoader: dataLoader)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
 
         let nav = MoreSheetHost.makeNavigationController(application: application)
 

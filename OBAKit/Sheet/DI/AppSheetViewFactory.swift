@@ -37,8 +37,10 @@ final class AppSheetViewFactory {
         switch route {
         case .home:
             homeView()
+
         case .more:
             moreView()
+
         // Wiring a push for one of these routes before its view exists will
         // trip the debug assertion in `unimplementedView(for:)` — register the
         // view here before reaching for `SheetCoordinator.push(...)`.

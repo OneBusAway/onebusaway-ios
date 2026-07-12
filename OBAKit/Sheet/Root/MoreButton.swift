@@ -19,11 +19,10 @@ struct MoreButton: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: "line.3.horizontal")
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(.primary)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
-                .contentShape(Capsule())
+                .font(.body)
+                .imageScale(.medium)
+                .frame(width: 32, height: 32)
+                .contentShape(Circle())
         }
         .buttonStyle(.plain)
         .regularGlassEffectIfAvailable(in: Capsule())

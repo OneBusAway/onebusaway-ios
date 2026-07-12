@@ -32,38 +32,12 @@ final class AppSheetViewFactoryTests: OBATestCase {
         queue.cancelAllOperations()
     }
 
-    private func createApplication(dataLoader: MockDataLoader) -> Application {
-        stubRegions(dataLoader: dataLoader)
-        stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
-
-        let locManager = MockAuthorizedLocationManager(
-            updateLocation: TestData.mockSeattleLocation,
-            updateHeading: TestData.mockHeading
-        )
-        let locationService = LocationService(userDefaults: userDefaults, locationManager: locManager)
-
-        let config = AppConfig(
-            regionsBaseURL: regionsURL,
-            apiKey: apiKey,
-            appVersion: appVersion,
-            userDefaults: userDefaults,
-            analytics: AnalyticsMock(),
-            queue: queue,
-            locationService: locationService,
-            bundledRegionsFilePath: bundledRegionsPath,
-            regionsAPIPath: regionsAPIPath,
-            dataLoader: dataLoader,
-            fixedRegionName: Fixtures.pugetSoundRegion.name
-        )
-        return Application(config: config)
-    }
-
     @MainActor
     func test_moreView_returnsMoreSheetHostForwardingApplication() {
         let dataLoader = MockDataLoader(testName: name)
-        let application = createApplication(dataLoader: dataLoader)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
 
-        let factory = AppSheetViewFactory(application: application)
+        let factory = AppSheetViewFactory(application: application, onPresentTrip: { _ in })
         let host = factory.moreView()
 
         // Reference identity: the factory must forward its own `Application`
