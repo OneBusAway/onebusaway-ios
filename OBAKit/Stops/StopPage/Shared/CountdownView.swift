@@ -19,7 +19,7 @@ struct CountdownView: View {
         // Top-aligned so the glyph floats at the number's top-right corner
         // like a superscript, per the comps — not baseline-aligned beside it.
         HStack(alignment: .top, spacing: 2) {
-            Text("\(minutes)m")
+            Text(minutes == 0 ? OBALoc("stop_page.countdown.now", value: "NOW", comment: "Shown in place of the minutes countdown when the vehicle is departing now") : "\(minutes)m")
                 .font(emphasized ? .system(.title2, design: .rounded, weight: .heavy) : .system(.callout, design: .rounded, weight: .heavy))
                 .monospacedDigit()
                 .foregroundStyle(color)
