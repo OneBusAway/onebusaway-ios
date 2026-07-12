@@ -20,6 +20,7 @@ class StopArrivalsModelOperationTests: OBATestCase {
     let campusParkwayStopID = "1_10914"
     let galerStopID = "1_11370"
     let rvtdStopID = "1739_d1e8e68e-83f8-487f-baf5-f465fe70fc84.json"
+    let duplicatesStopID = "1_10914_duplicates"
 
     private func makeUrlString(stopID: StopID) -> String {
         "https://www.example.com/api/where/arrivals-and-departures-for-stop/\(stopID).json"
@@ -43,6 +44,11 @@ class StopArrivalsModelOperationTests: OBATestCase {
         dataLoader.mock(
             URLString: makeUrlString(stopID: rvtdStopID),
             with: Fixtures.loadData(file: "arrivals-and-departures-for-stop-1739-rvtd.json")
+        )
+
+        dataLoader.mock(
+            URLString: makeUrlString(stopID: duplicatesStopID),
+            with: Fixtures.loadData(file: "arrivals-and-departures-for-stop-1_10914-duplicates.json")
         )
     }
 
@@ -121,6 +127,30 @@ class StopArrivalsModelOperationTests: OBATestCase {
         expect(tripStatus.activeTrip.id) == "1_40984840"
 
         expect(arrDep.vehicleID) == "1_4559"
+    }
+
+    /// Real-time feeds occasionally assign two vehicles to the same trip, which makes the
+    /// server emit two `arrivalAndDeparture` entries for one trip visit (identical stop,
+    /// trip, route, service date, and stop sequence — i.e. identical `ArrivalDeparture.id`).
+    /// Ingestion must collapse these to a single entry, keeping the most recent report.
+    func testLoading_duplicateTripVisits_collapsedToFreshestReport() async throws {
+        let arrivals = try await restService.getArrivalsAndDeparturesForStop(id: duplicatesStopID, minutesBefore: 5, minutesAfter: 30).entry
+
+        // The fixture contains three entries: trip 1_40984902 reported twice
+        // (stale vehicle 1_4559, then fresh vehicle 1_8109999) and trip 1_40984903 once.
+        expect(arrivals.arrivalsAndDepartures.count) == 2
+
+        let ids = arrivals.arrivalsAndDepartures.map(\.id)
+        expect(Set(ids).count) == ids.count
+
+        // The duplicated trip keeps its original (first-occurrence) position, but is
+        // represented by the report with the newer lastUpdateTime.
+        let deduped = try XCTUnwrap(arrivals.arrivalsAndDepartures.first)
+        expect(deduped.tripID) == "1_40984902"
+        expect(deduped.vehicleID) == "1_8109999"
+        expect(deduped.occupancyStatus) == .empty
+
+        expect(arrivals.arrivalsAndDepartures.last?.tripID) == "1_40984903"
     }
 
     func testLoading_rogueValley() async throws {
