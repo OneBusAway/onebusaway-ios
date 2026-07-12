@@ -295,6 +295,7 @@ struct StopPageView: View {
             if hasLoadedArrivals {
                 StopPageFooterSection(
                     showLoadMore: !viewModel.isLoadMoreExhausted,
+                    isLoading: viewModel.isLoading,
                     attribution: attributionText,
                     onLoadMore: { Task { await viewModel.loadMoreDepartures() } }
                 )
@@ -663,9 +664,12 @@ struct ServiceAlertsSection: View {
 }
 
 /// The footer: "Load more" (hidden once auto-extend hits the 12 h cap) and the
-/// data-attribution line.
+/// data-attribution line. The button is a centered glass capsule echoing the
+/// mode toggle's backdrop, and swaps its plus glyph for a spinner while a
+/// refresh is in flight.
 struct StopPageFooterSection: View {
     let showLoadMore: Bool
+    let isLoading: Bool
     let attribution: String
     let onLoadMore: () -> Void
 
@@ -673,13 +677,34 @@ struct StopPageFooterSection: View {
         Section {
             if showLoadMore {
                 Button(action: onLoadMore) {
-                    Label(
-                        OBALoc("stop_page.load_more", value: "Load more", comment: "Extends the departure time window"),
-                        systemImage: "plus"
-                    )
-                    .font(.system(size: 14.5, weight: .bold))
-                    .frame(maxWidth: .infinity, minHeight: 44)
+                    HStack(spacing: 8) {
+                        // Fixed-size slot so the glyph→spinner swap doesn't
+                        // shift the text.
+                        ZStack {
+                            if isLoading {
+                                ProgressView()
+                                    .controlSize(.small)
+                            } else {
+                                Image(systemName: "plus")
+                                    .font(.footnote.weight(.bold))
+                            }
+                        }
+                        .frame(width: 16, height: 16)
+                        Text(OBALoc("stop_page.load_more", value: "Load more", comment: "Extends the departure time window"))
+                            .font(.subheadline.weight(.semibold))
+                    }
+                    .foregroundStyle(isLoading ? AnyShapeStyle(.secondary) : AnyShapeStyle(Color.accentColor))
+                    .padding(.horizontal, 24)
+                    .frame(minHeight: 44)
+                    .modifier(GlassContainerBackground(usesCapsule: true))
+                    .contentShape(Capsule())
                 }
+                .buttonStyle(.plain)
+                .disabled(isLoading)
+                .frame(maxWidth: .infinity)
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+                .padding(.vertical, 6)
             }
             if !attribution.isEmpty {
                 Text(attribution)
