@@ -65,6 +65,9 @@ struct DepartureRowView: View {
                             .foregroundStyle(Color(uiColor: ThemeColors.shared.departureOnTime))
                     }
                 }
+                if status.showsOccupancy, let occupancy = departure.occupancyStatus, occupancy != .unknown {
+                    OccupancyBadge(occupancy: occupancy)
+                }
             }
             Spacer(minLength: 8)
             CountdownView(
@@ -83,6 +86,10 @@ struct DepartureRowView: View {
 
     private var accessibilityText: String {
         var clauses = [baseAccessibilityText]
+
+        if status.showsOccupancy, let occupancy = departure.occupancyStatus, occupancy != .unknown {
+            clauses.append(OccupancyBadge.localizedDescription(occupancy))
+        }
 
         if style == .missed {
             clauses.append(OBALoc("stop_page.row.a11y_missed", value: "likely missed — departs sooner than your walk to the stop", comment: "VoiceOver clause appended to a departure row that's upcoming but not reachable on foot before it leaves."))
