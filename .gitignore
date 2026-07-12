@@ -59,3 +59,6 @@ OBAKitTests.xcresult
 .DS_Store
 .claude/settings.local.json
 .env
+
+# Review artifacts (e.g. /aaron-pr-review)
+pr-*.md
