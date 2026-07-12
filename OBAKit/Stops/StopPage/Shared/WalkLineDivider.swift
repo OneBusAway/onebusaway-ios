@@ -22,7 +22,7 @@ struct WalkLineDivider: View {
             dash
             Label(text, systemImage: "figure.walk")
                 .font(.caption.weight(.heavy))
-                .foregroundStyle(Color(uiColor: ThemeColors.shared.departureOnTime))
+                .foregroundStyle(.orange)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
             dash
@@ -34,7 +34,7 @@ struct WalkLineDivider: View {
     private var dash: some View {
         Line()
             .stroke(style: StrokeStyle(lineWidth: 2, dash: [7, 6]))
-            .foregroundStyle(Color(uiColor: ThemeColors.shared.departureOnTime))
+            .foregroundStyle(.orange)
             .frame(height: 2)
             .frame(maxWidth: .infinity)
     }

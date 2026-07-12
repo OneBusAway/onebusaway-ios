@@ -16,12 +16,15 @@ struct CountdownView: View {
     var emphasized: Bool = true
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 4) {
+        // Top-aligned so the glyph floats at the number's top-right corner
+        // like a superscript, per the comps — not baseline-aligned beside it.
+        HStack(alignment: .top, spacing: 2) {
             Text("\(minutes)m")
-                .font(emphasized ? .system(.title, design: .rounded, weight: .heavy) : .system(.body, design: .rounded, weight: .heavy))
+                .font(emphasized ? .system(.title2, design: .rounded, weight: .heavy) : .system(.callout, design: .rounded, weight: .heavy))
                 .monospacedDigit()
                 .foregroundStyle(color)
-            RealtimeGlyph(isRealTime: isRealTime, color: color, size: emphasized ? 13 : 11)
+            RealtimeGlyph(isRealTime: isRealTime, color: color, size: emphasized ? 11 : 9)
+                .padding(.top, 1)
         }
         .accessibilityElement(children: .ignore)
     }
