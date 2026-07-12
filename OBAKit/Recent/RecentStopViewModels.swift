@@ -19,19 +19,78 @@ struct StopRowItem: OBAListViewItem {
     let stopID: Stop.ID
     let routeType: Route.RouteType
 
-    // Hide icon if there is only one type of route in the list
     var configuration: OBAListViewItemConfiguration {
-        let transportIcon = Icons.transportIcon(from: routeType)
         var config = OBAListRowConfiguration(
-            image: transportIcon,
-            text: .string(name),
-            secondaryText: .string(subtitle),
+            image: Self.squircleTransportIcon(for: routeType),
+            text: .attributed(styledTitle),
+            secondaryText: .attributed(styledSubtitle),
             appearance: .subtitle,
             accessoryType: .disclosureIndicator)
-        config.imageConfig.tintColor = .label
-        config.imageConfig.maximumSize = CGSize(width: 24, height: 24)
+        // The squircle icon is pre-rendered with its own colors; don't re-tint.
+        config.imageConfig.tintColor = nil
+        config.imageConfig.maximumSize = CGSize(width: Self.iconSize, height: Self.iconSize)
 
         return .custom(config)
+    }
+
+    private var styledTitle: NSAttributedString {
+        NSAttributedString(string: name, attributes: [
+            .font: UIFont.preferredFont(forTextStyle: .headline),
+            .foregroundColor: UIColor.label
+        ])
+    }
+
+    private var styledSubtitle: NSAttributedString? {
+        guard let subtitle else { return nil }
+        return NSAttributedString(string: subtitle, attributes: [
+            .font: UIFont.preferredFont(forTextStyle: .body),
+            .foregroundColor: UIColor.label
+        ])
+    }
+
+    // MARK: - Squircle icon
+
+    private static let iconSize: CGFloat = 40
+    private static var iconCache = [Route.RouteType: UIImage]()
+
+    /// The transport glyph in white over a brand-color gradient squircle,
+    /// echoing the stop page's `RouteBadgeView` treatment.
+    private static func squircleTransportIcon(for routeType: Route.RouteType) -> UIImage {
+        if let cached = iconCache[routeType] { return cached }
+
+        let rect = CGRect(x: 0, y: 0, width: iconSize, height: iconSize)
+        let image = UIGraphicsImageRenderer(bounds: rect).image { context in
+            let brand = ThemeColors.shared.brand
+            UIBezierPath(roundedRect: rect, cornerRadius: iconSize * 0.28).addClip()
+
+            let colors = [
+                brand.blended(with: .white, amount: 0.18).cgColor,
+                brand.blended(with: .black, amount: 0.12).cgColor
+            ]
+            if let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors as CFArray, locations: [0, 1]) {
+                context.cgContext.drawLinearGradient(
+                    gradient,
+                    start: CGPoint(x: rect.midX, y: rect.minY),
+                    end: CGPoint(x: rect.midX, y: rect.maxY),
+                    options: [])
+            } else {
+                brand.setFill()
+                context.fill(rect)
+            }
+
+            let glyph = Icons.transportIcon(from: routeType).withTintColor(.white, renderingMode: .alwaysOriginal)
+            let maxGlyphExtent = iconSize * 0.55
+            let scale = min(maxGlyphExtent / glyph.size.width, maxGlyphExtent / glyph.size.height)
+            let glyphSize = CGSize(width: glyph.size.width * scale, height: glyph.size.height * scale)
+            glyph.draw(in: CGRect(
+                x: rect.midX - glyphSize.width / 2.0,
+                y: rect.midY - glyphSize.height / 2.0,
+                width: glyphSize.width,
+                height: glyphSize.height))
+        }.withRenderingMode(.alwaysOriginal)
+
+        iconCache[routeType] = image
+        return image
     }
 
     let onSelectAction: OBAListViewAction<StopRowItem>?
@@ -63,6 +122,22 @@ struct StopRowItem: OBAListViewItem {
             lhs.stopID == rhs.stopID &&
             lhs.name == rhs.name &&
             lhs.routeType == rhs.routeType
+    }
+}
+
+private extension UIColor {
+    /// Linear blend toward `other` in RGB space; `amount` is clamped to 0...1.
+    func blended(with other: UIColor, amount: CGFloat) -> UIColor {
+        var r1: CGFloat = 0, g1: CGFloat = 0, b1: CGFloat = 0, a1: CGFloat = 0
+        var r2: CGFloat = 0, g2: CGFloat = 0, b2: CGFloat = 0, a2: CGFloat = 0
+        getRed(&r1, green: &g1, blue: &b1, alpha: &a1)
+        other.getRed(&r2, green: &g2, blue: &b2, alpha: &a2)
+        let t = max(0, min(1, amount))
+        return UIColor(
+            red: r1 + (r2 - r1) * t,
+            green: g1 + (g2 - g1) * t,
+            blue: b1 + (b2 - b1) * t,
+            alpha: a1)
     }
 }
 
