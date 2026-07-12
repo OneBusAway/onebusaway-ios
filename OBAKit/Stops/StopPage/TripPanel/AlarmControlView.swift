@@ -55,6 +55,7 @@ struct AlarmControlView: View {
                         .foregroundStyle(onTimeColor)
                         .frame(width: bellCircleSize, height: bellCircleSize)
                         .background(onTimeColor.opacity(0.14), in: Circle())
+                        .accessibilityHidden(true) // decorative; the "Alarm set" text carries the meaning
                     VStack(alignment: .leading, spacing: 1) {
                         Text(OBALoc("stop_page.alarm.set_title", value: "Alarm set", comment: "Title of the set-alarm info row"))
                             .font(.subheadline.weight(.bold))
@@ -114,6 +115,11 @@ struct AlarmControlView: View {
                 Text("\(pendingMinutes)m").font(.subheadline.weight(.heavy)).monospacedDigit()
             }
             .fixedSize()
+            // The visible "Minutes before" caption is a separate Text, so the
+            // stepper's own label would otherwise be just "5m" — restate the
+            // label and speak the value in full.
+            .accessibilityLabel(OBALoc("stop_page.alarm.minutes_before", value: "Minutes before", comment: "Stepper label"))
+            .accessibilityValue(String(format: OBALoc("stop_page.alarm.a11y_minutes_fmt", value: "%d minutes", comment: "VoiceOver value of the alarm lead-time stepper. %d is the number of minutes."), pendingMinutes))
             Button(OBALoc("stop_page.alarm.done", value: "Done", comment: "Commits the lead-time change")) {
                 editing = false
                 onChange(pendingMinutes)

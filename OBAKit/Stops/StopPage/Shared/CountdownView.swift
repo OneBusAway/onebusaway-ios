@@ -26,6 +26,10 @@ struct CountdownView: View {
             RealtimeGlyph(isRealTime: isRealTime, color: color, size: emphasized ? 11 : 9)
                 .padding(.top, 1)
         }
-        .accessibilityElement(children: .ignore)
+        // Hidden outright rather than an empty `children: .ignore` element:
+        // every consumer (departure rows, grouped cards) speaks the countdown
+        // in its own combined label, and a label-less element would otherwise
+        // be a silent VoiceOver stop wherever an ancestor doesn't swallow it.
+        .accessibilityHidden(true)
     }
 }

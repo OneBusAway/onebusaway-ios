@@ -88,6 +88,11 @@ struct GroupedListView: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(groupAccessibilityLabel(group, status: status))
         .accessibilityAddTraits(.isButton)
+        // Disclosure state: the card header's activation toggles the list of
+        // departures beneath it, so announce which way it will go.
+        .accessibilityValue(expandedRouteID == group.routeID
+            ? OBALoc("stop_page.grouped.a11y_expanded", value: "expanded", comment: "VoiceOver value of a grouped route card whose departure list is showing.")
+            : OBALoc("stop_page.grouped.a11y_collapsed", value: "collapsed", comment: "VoiceOver value of a grouped route card whose departure list is hidden."))
         // The combined element above (`children: .ignore`) swallows the alarm
         // pill Button inside `headerChipsRow`, so VoiceOver can never reach it.
         // `.accessibilityActions` is applied unconditionally (keeping this a

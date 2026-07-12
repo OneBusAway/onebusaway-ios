@@ -97,7 +97,10 @@ struct StopPageHeaderView: View {
         .background {
             ZStack {
                 if let snapshot {
-                    Image(uiImage: snapshot).resizable().scaledToFill()
+                    Image(uiImage: snapshot)
+                        .resizable()
+                        .scaledToFill()
+                        .accessibilityHidden(true) // decorative map backdrop
                 } else {
                     Color.black
                 }
@@ -125,6 +128,10 @@ struct StopPageHeaderView: View {
             snapshot = await snapshotLoader(CGSize(width: cardWidth, height: cardHeight))
         }
         .accessibilityElement(children: .combine)
+        // The card is tappable (toggles the routes-served line), so VoiceOver
+        // must announce it as a button and explain what activation does.
+        .accessibilityAddTraits(.isButton)
+        .accessibilityHint(OBALoc("stop_page.header.a11y_hint", value: "Shows the routes served by this stop.", comment: "VoiceOver hint on the stop header card; activating it toggles the routes-served line."))
     }
 
     private func routeChip(_ name: String) -> some View {

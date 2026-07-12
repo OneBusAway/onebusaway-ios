@@ -319,19 +319,18 @@ private extension StopPageViewController {
             return
         }
 
-        let filterButtonImage: UIImage?
-        let filterButtonTitle: String
+        // The titles double as the VoiceOver labels for these image-only bar
+        // buttons, so they must be localized, human-readable strings — the
+        // filter's on/off state rides in `accessibilityValue` rather than
+        // being baked into the label.
+        let filterIsOn = viewModel.stopPreferences.hasHiddenRoutes && viewModel.isListFiltered
+        let filterButtonImage = UIImage(systemName: filterIsOn ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
 
-        if viewModel.stopPreferences.hasHiddenRoutes && viewModel.isListFiltered {
-            filterButtonTitle = "FILTER (ON)"
-            filterButtonImage = UIImage(systemName: "line.3.horizontal.decrease.circle.fill")
-        } else {
-            filterButtonTitle = "FILTER (OFF)"
-            filterButtonImage = UIImage(systemName: "line.3.horizontal.decrease.circle")
-        }
-
-        let filterMenuButton = UIBarButtonItem(title: filterButtonTitle, image: filterButtonImage, menu: filterMenu())
-        let moreMenuButton = UIBarButtonItem(title: "MORE", image: UIImage(systemName: "ellipsis.circle"), menu: pulldownMenu())
+        let filterMenuButton = UIBarButtonItem(title: Strings.filter, image: filterButtonImage, menu: filterMenu())
+        filterMenuButton.accessibilityValue = filterIsOn
+            ? OBALoc("stop_page.filter.a11y_on", value: "on", comment: "VoiceOver value of the route-filter bar button when the filter is active.")
+            : OBALoc("stop_page.filter.a11y_off", value: "off", comment: "VoiceOver value of the route-filter bar button when the filter is inactive.")
+        let moreMenuButton = UIBarButtonItem(title: Strings.more, image: UIImage(systemName: "ellipsis.circle"), menu: pulldownMenu())
         let schedulesBtn = UIBarButtonItem(image: UIImage(systemName: "calendar"), style: .plain, target: self, action: #selector(showScheduleForStop))
         schedulesBtn.accessibilityLabel = Strings.schedules
 

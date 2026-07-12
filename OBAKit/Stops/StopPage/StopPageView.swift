@@ -526,6 +526,11 @@ struct ServiceAlertsSection: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(headerAccessibilityLabel)
+        // Disclosure state, so VoiceOver users know whether activating will
+        // reveal or hide the alert rows.
+        .accessibilityValue(showsServiceAlerts
+            ? OBALoc("stop_page.service_alerts.a11y_expanded", value: "expanded", comment: "VoiceOver value of the service-alerts card header when the alert list is showing.")
+            : OBALoc("stop_page.service_alerts.a11y_collapsed", value: "collapsed", comment: "VoiceOver value of the service-alerts card header when the alert list is hidden."))
     }
 
     private var showAllRow: some View {
@@ -563,6 +568,7 @@ struct ServiceAlertsSection: View {
                 Image(systemName: "chevron.right")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.tertiary)
+                    .accessibilityHidden(true) // decorative; the alert title labels the button
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 11)
@@ -635,6 +641,7 @@ struct StopPageEmptyStateRow: View {
             Image(systemName: symbolName)
                 .font(.largeTitle)
                 .foregroundStyle(.secondary)
+                .accessibilityHidden(true) // decorative; the message text carries the meaning
             Text(message)
                 .font(.callout)
                 .multilineTextAlignment(.center)

@@ -34,6 +34,7 @@ struct ChronologicalListView: View {
         } header: {
             HStack {
                 Text(OBALoc("stop_page.section.arrivals_departures", value: "Arrivals & Departures", comment: "Chronological list section header"))
+                    .accessibilityAddTraits(.isHeader)
                 Spacer()
                 if !partition.past.isEmpty {
                     Button(action: onTogglePast) {
@@ -41,6 +42,11 @@ struct ChronologicalListView: View {
                         Text(showPast ? OBALoc("stop_page.past_toggle_hide", value: "Hide past", comment: "Button hiding recently departed trips") : String(format: fmt, partition.past.count))
                             .font(.caption.weight(.bold))
                     }
+                    // The visible "Past · 3" is a glanceable token; spoken
+                    // aloud it needs to say what activating actually does.
+                    .accessibilityLabel(showPast
+                        ? OBALoc("stop_page.past_toggle_hide_a11y", value: "Hide past departures", comment: "VoiceOver label for the button hiding recently departed trips")
+                        : String(format: OBALoc("stop_page.past_toggle_show_a11y_fmt", value: "Show %d past departures", comment: "VoiceOver label for the button revealing recently departed trips. %d is the count."), partition.past.count))
                 }
             }
         }
