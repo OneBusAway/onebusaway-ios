@@ -154,6 +154,63 @@ struct StopPageHeaderView: View {
         return String(format: fmt, info.walkMinutes)
     }
 }
+/// Skeleton stand-in for the header card, shown while `Stop` is still unknown
+/// (a stop opened by bare ID — Recents, deep links — has no model until the
+/// first fetch returns). Mirrors the real card's dark backdrop, minimum
+/// height, and bottom-leading identity block so the page opens with its full
+/// shape instead of decapitated.
+struct StopPageHeaderPlaceholderView: View {
+    @ScaledMetric(relativeTo: .title2) private var cardHeight: CGFloat = 170
+    @ScaledMetric(relativeTo: .title2) private var nameLineHeight: CGFloat = 22
+    @ScaledMetric(relativeTo: .footnote) private var chipLineHeight: CGFloat = 18
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var pulsing = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            skeletonLine(width: 210, height: nameLineHeight)
+            HStack(spacing: 4) {
+                skeletonLine(width: 110, height: chipLineHeight)
+                ForEach(0..<3, id: \.self) { _ in
+                    skeletonLine(width: 30, height: chipLineHeight)
+                }
+            }
+        }
+        // Pulses the skeleton lines so the card reads as actively loading,
+        // not stalled. Static under Reduce Motion, per the global constraints.
+        .opacity(reduceMotion ? 1 : (pulsing ? 0.4 : 1))
+        .padding(16)
+        .frame(maxWidth: .infinity, minHeight: cardHeight, alignment: .bottomLeading)
+        // A fixed dark gray rather than the real card's pre-snapshot black:
+        // in dark mode the page background is black, and a black card there
+        // has no visible edges — the skeleton lines just float in space.
+        .background {
+            ZStack {
+                Color(white: 0.14)
+                LinearGradient(
+                    colors: [.black.opacity(0.35), .black.opacity(0.45), .black.opacity(0.7)],
+                    startPoint: .top, endPoint: .bottom
+                )
+            }
+        }
+        .clipped()
+        .accessibilityHidden(true) // decorative; the loading row below announces progress
+        .onAppear {
+            guard !reduceMotion else { return }
+            withAnimation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true)) {
+                pulsing = true
+            }
+        }
+    }
+
+    private func skeletonLine(width: CGFloat, height: CGFloat) -> some View {
+        RoundedRectangle(cornerRadius: 6, style: .continuous)
+            .fill(Color.white.opacity(0.22))
+            .frame(width: width, height: height)
+    }
+}
+
 /// The "Updated: …" line atop the header's identity block, with a pulsing
 /// on-time dot. The pulse is gated on Reduce Motion (static when reduced),
 /// per the global constraints.

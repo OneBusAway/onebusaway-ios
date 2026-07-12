@@ -106,6 +106,23 @@ struct StopPageView: View {
     /// (header, survey, donation), matching the inset-grouped card margin.
     private static let horizontalRowInset: CGFloat = 0
 
+    /// `true` once any fetch has succeeded (errors don't clear `stopArrivals`).
+    /// Gates the chrome that means nothing before data exists — the mode
+    /// toggle, the donation card, and the Load-more/attribution footer — so
+    /// the first load reads as one deliberate loading page rather than empty
+    /// controls scattered around a spinner.
+    private var hasLoadedArrivals: Bool {
+        viewModel.stopArrivals != nil
+    }
+
+    /// `true` when the empty departures area should show the loading treatment
+    /// rather than an empty state: any in-flight fetch, plus the pre-`.task`
+    /// first frame (nothing fetched, no error yet) so the page never flashes
+    /// "No departures" before the first request has even started.
+    private var showsLoadingState: Bool {
+        viewModel.isLoading || (!hasLoadedArrivals && viewModel.operationError == nil && !viewModel.isBrokenBookmark)
+    }
+
     private var filteredDepartures: [ArrivalDeparture] {
         let all = viewModel.stopArrivals?.arrivalsAndDepartures ?? []
         return viewModel.isListFiltered ? all.filter(preferences: viewModel.stopPreferences) : all
@@ -139,6 +156,17 @@ struct StopPageView: View {
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
                 }
+            } else if showsLoadingState {
+                // Loading only. A first fetch that fails leaves no header at
+                // all — a "loading" skeleton sitting above an error message
+                // reads as two contradictory states on one page; the centered
+                // error row below owns the screen instead.
+                Section {
+                    StopPageHeaderPlaceholderView()
+                        .listRowInsets(EdgeInsets(top: 0, leading: Self.horizontalRowInset, bottom: 0, trailing: Self.horizontalRowInset))
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                }
             }
 
             if let survey = viewModel.currentSurvey {
@@ -164,7 +192,7 @@ struct StopPageView: View {
             // Gated on the view model's `shouldRequestDonations`; all three actions
             // present VC-owned modals via the navigation handler. Sits after the
             // survey and before service alerts, matching the legacy section order.
-            if viewModel.shouldRequestDonations && !donationHidden {
+            if hasLoadedArrivals && viewModel.shouldRequestDonations && !donationHidden {
                 Section {
                     DonationCardRepresentable(
                         onDonate: navigation.showDonation,
@@ -181,27 +209,27 @@ struct StopPageView: View {
                 ServiceAlertsSection(alerts: alerts, onSelect: navigation.showAlertDetail)
             }
 
-            Section {
-                StopPageModeToggle(mode: viewModel.stopPreferences.sortType) { newValue in
-                    withAnimation {
-                        // Switching modes collapses every open accordion (§4.6).
-                        expandedDepartureID = nil
-                        expandedRouteID = nil
-                        userDefaults.set(newValue.rawValue, forKey: Self.lastUsedStopSortKey)
-                        viewModel.updateSortType(newValue)
+            if hasLoadedArrivals {
+                Section {
+                    StopPageModeToggle(mode: viewModel.stopPreferences.sortType) { newValue in
+                        withAnimation {
+                            // Switching modes collapses every open accordion (§4.6).
+                            expandedDepartureID = nil
+                            expandedRouteID = nil
+                            userDefaults.set(newValue.rawValue, forKey: Self.lastUsedStopSortKey)
+                            viewModel.updateSortType(newValue)
+                        }
                     }
+                    .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
                 }
-                .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
             }
 
             if departures.isEmpty {
-                if viewModel.isLoading {
+                if showsLoadingState {
                     Section {
-                        HStack { Spacer(); ProgressView(); Spacer() }
-                            .listRowBackground(Color.clear)
-                            .listRowSeparator(.hidden)
+                        StopPageLoadingRow()
                     }
                 } else {
                     Section {
@@ -209,6 +237,12 @@ struct StopPageView: View {
                             errorText: viewModel.operationError?.localizedDescription,
                             isFilteredEmpty: viewModel.isListFiltered && !(viewModel.stopArrivals?.arrivalsAndDepartures.isEmpty ?? true),
                             minutesAfter: viewModel.minutesAfter,
+                            // With no header card above it (first fetch failed
+                            // before the stop resolved), the row is the whole
+                            // page — center it vertically so it reads as a
+                            // designed full-screen state rather than content
+                            // stranded under the nav bar.
+                            fillsPage: viewModel.stop == nil,
                             onRetry: { Task { await viewModel.refresh() } },
                             onShowAllRoutes: { viewModel.isListFiltered = false }
                         )
@@ -258,11 +292,13 @@ struct StopPageView: View {
                 )
             }
 
-            StopPageFooterSection(
-                showLoadMore: !viewModel.isLoadMoreExhausted,
-                attribution: attributionText,
-                onLoadMore: { Task { await viewModel.loadMoreDepartures() } }
-            )
+            if hasLoadedArrivals {
+                StopPageFooterSection(
+                    showLoadMore: !viewModel.isLoadMoreExhausted,
+                    attribution: attributionText,
+                    onLoadMore: { Task { await viewModel.loadMoreDepartures() } }
+                )
+            }
         }
         // `.plain` (rather than `.insetGrouped`) so sections have no horizontal
         // card margin insetting them from the screen edges. That margin is
@@ -578,6 +614,37 @@ struct ServiceAlertsSection: View {
     }
 }
 
+#Preview("Initial loading") {
+    List {
+        Section {
+            StopPageHeaderPlaceholderView()
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+        }
+        Section {
+            StopPageLoadingRow()
+        }
+    }
+    .listStyle(.plain)
+}
+
+#Preview("First-load error") {
+    List {
+        Section {
+            StopPageEmptyStateRow(
+                errorText: "Expected to receive json data from the server, but we received nothing instead.",
+                isFilteredEmpty: false,
+                minutesAfter: 35,
+                fillsPage: true,
+                onRetry: {},
+                onShowAllRoutes: {}
+            )
+        }
+    }
+    .listStyle(.plain)
+}
+
 #Preview("AX5 adaptive controls") {
     ScrollView {
         VStack(spacing: 24) {
@@ -626,6 +693,26 @@ struct StopPageFooterSection: View {
     }
 }
 
+/// The loading treatment for an empty departures area — the first fetch and
+/// any empty-window refresh (auto-extension, Load more). A large spinner with
+/// a caption, so the in-progress state reads as deliberate rather than as a
+/// bare indicator floating in a blank page.
+struct StopPageLoadingRow: View {
+    var body: some View {
+        VStack(spacing: 12) {
+            ProgressView()
+                .controlSize(.large)
+            Text(OBALoc("stop_page.loading_departures", value: "Loading departures…", comment: "Caption under the spinner shown while the stop page's departure list loads."))
+                .font(.callout)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 48)
+        .listRowBackground(Color.clear)
+        .listRowSeparator(.hidden)
+    }
+}
+
 /// The single empty-state row shown when there are no departures to list.
 /// Precedence: a network error (Retry) → everything filtered out (Show all
 /// routes) → genuinely no service in the window. §4.4 wording is exact.
@@ -633,6 +720,10 @@ struct StopPageEmptyStateRow: View {
     let errorText: String?
     let isFilteredEmpty: Bool
     let minutesAfter: UInt
+    /// `true` when the row is the page's only content (no header card above
+    /// it): the row claims most of the list's height so its message sits
+    /// centered on screen instead of stranded under the nav bar.
+    var fillsPage: Bool = false
     let onRetry: () -> Void
     let onShowAllRoutes: () -> Void
 
@@ -651,8 +742,9 @@ struct StopPageEmptyStateRow: View {
                     .buttonStyle(.bordered)
             }
         }
-        .frame(maxWidth: .infinity)
         .padding(.vertical, 28)
+        .padding(.horizontal, 24)
+        .frame(maxWidth: .infinity, minHeight: fillsPage ? 420 : nil)
         .listRowBackground(Color.clear)
         .listRowSeparator(.hidden)
     }
