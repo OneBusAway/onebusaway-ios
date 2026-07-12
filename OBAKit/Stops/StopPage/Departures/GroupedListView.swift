@@ -76,7 +76,7 @@ struct GroupedListView: View {
             headerChipsRow(group)
         }
         .padding(.vertical, 4)
-        .listRowBackground(cardStripe(routeColor))
+        .listRowBackground(Color(uiColor: .secondarySystemGroupedBackground))
         .contentShape(Rectangle())
         .onTapGesture { onToggleRoute(group.routeID) }
         .accessibilityElement(children: .ignore)
@@ -152,18 +152,6 @@ struct GroupedListView: View {
         }
     }
 
-    /// Route-color accent stripe on the card's left edge — the other place
-    /// route color appears in the departure list rows besides the route badge;
-    /// the trip panel separately uses it for the vehicle glyph and approach
-    /// timeline. Spec §4.3 still holds: route color never tints countdowns or
-    /// adherence text.
-    private func cardStripe(_ routeColor: Color) -> some View {
-        HStack(spacing: 0) {
-            routeColor.frame(width: 5)
-            Color(uiColor: .secondarySystemGroupedBackground)
-        }
-    }
-
     @ViewBuilder
     private func alarmPill(for departure: ArrivalDeparture) -> some View {
         let alarm = alarmLookup(departure)
@@ -189,10 +177,6 @@ struct GroupedListView: View {
 
     @ViewBuilder
     private func expandedRows(_ group: StopPageListBuilder.RouteGroup<ArrivalDeparture>) -> some View {
-        // Same derivation as `cardHeader`'s routeColor, so the stripe painted
-        // on these rows via `listRowBackground` matches the header exactly and
-        // runs the full height of the expanded card (§4.3).
-        let routeColor = Color(uiColor: group.next.route.color ?? ThemeColors.shared.brand)
         ForEach(group.departures, id: \.id) { departure in
             let status = statusProvider(departure)
             HStack(spacing: 12) {
@@ -217,7 +201,7 @@ struct GroupedListView: View {
             }
             .contentShape(Rectangle())
             .onTapGesture { onToggleTrip(departure) }
-            .listRowBackground(cardStripe(routeColor))
+            .listRowBackground(Color(uiColor: .secondarySystemGroupedBackground))
             // Make the whole expanded row a single VoiceOver activation target
             // that opens the trip panel, mirroring the card
             // header (`children: .ignore` + explicit label + `.isButton`). The
@@ -238,7 +222,7 @@ struct GroupedListView: View {
             // open id — List animates the insert/remove.
             if openTripDepartureID == departure.id {
                 panelBuilder(departure)
-                    .listRowBackground(cardStripe(routeColor))
+                    .listRowBackground(Color(uiColor: .secondarySystemGroupedBackground))
             }
         }
     }

@@ -197,6 +197,7 @@ struct StopPageView: View {
                 }
                 .listRowInsets(EdgeInsets())
                 .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
             }
 
             if departures.isEmpty {
@@ -345,21 +346,69 @@ struct StopPageView: View {
     }
 }
 
-/// The segmented Chronological / By route switch shown above the departure list.
+/// The Chronological / By route switch shown above the departure list.
 /// Factored into its own `View` (per the SwiftUI structure guidance and the
 /// Task 9 interface) so `StopPageView` stays a thin composition — the mode
 /// change side effects (collapse accordions, persist) live in the caller's
 /// `onChange`.
+///
+/// A custom capsule control rather than a segmented `Picker`: taller segments,
+/// narrower footprint, and a Liquid Glass backdrop on iOS 26+ (an
+/// ultra-thin-material capsule stands in on earlier versions). The selected
+/// pill slides between segments via `matchedGeometryEffect`; the caller's
+/// `withAnimation` drives it.
 struct StopPageModeToggle: View {
     let mode: StopSort
     let onChange: (StopSort) -> Void
 
+    @Namespace private var selectionNamespace
+
     var body: some View {
-        Picker("", selection: Binding(get: { mode }, set: onChange)) {
-            Text(OBALoc("stop_page.mode.chronological", value: "Chronological", comment: "Stop page mode toggle: flat time-sorted list")).tag(StopSort.time)
-            Text(OBALoc("stop_page.mode.by_route", value: "By route", comment: "Stop page mode toggle: grouped by route")).tag(StopSort.route)
+        HStack(spacing: 2) {
+            segment(.time, title: OBALoc("stop_page.mode.chronological", value: "Chronological", comment: "Stop page mode toggle: flat time-sorted list"))
+            segment(.route, title: OBALoc("stop_page.mode.by_route", value: "By route", comment: "Stop page mode toggle: grouped by route"))
         }
-        .pickerStyle(.segmented)
+        .padding(3)
+        .modifier(GlassCapsuleBackground())
+        .frame(maxWidth: 300)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 4)
+    }
+
+    private func segment(_ value: StopSort, title: String) -> some View {
+        Button {
+            if mode != value { onChange(value) }
+        } label: {
+            Text(title)
+                .font(.subheadline.weight(mode == value ? .bold : .semibold))
+                .foregroundStyle(mode == value ? Color.primary : Color.secondary)
+                .frame(maxWidth: .infinity, minHeight: 38)
+                .background {
+                    if mode == value {
+                        Capsule()
+                            .fill(Color(uiColor: .systemBackground))
+                            .shadow(color: .black.opacity(0.12), radius: 4, y: 1)
+                            .matchedGeometryEffect(id: "selectedSegment", in: selectionNamespace)
+                    }
+                }
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(mode == value ? [.isButton, .isSelected] : [.isButton])
+    }
+}
+
+/// The toggle's backdrop: real Liquid Glass on iOS 26+, an ultra-thin-material
+/// capsule with a hairline rim on earlier versions.
+private struct GlassCapsuleBackground: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            content.glassEffect(.regular, in: Capsule())
+        } else {
+            content
+                .background(.ultraThinMaterial, in: Capsule())
+                .overlay(Capsule().strokeBorder(Color(uiColor: .separator).opacity(0.5), lineWidth: 0.5))
+        }
     }
 }
 
@@ -396,16 +445,16 @@ struct LiveStatusRow: View {
     }
 }
 
-/// Service alerts affecting this stop. Each row pushes the existing alert-detail
-/// screen via the hosting VC's `onSelect` callback.
+/// Service alerts affecting this stop, rendered as one self-contained,
+/// orange-tinted card: a header row (gradient warning badge, title, count pill,
+/// rotating chevron) that toggles expansion, with the alert rows inside the
+/// card when expanded. Each alert row pushes the existing alert-detail screen
+/// via the hosting VC's `onSelect` callback.
 ///
 /// Honors the legacy `stopViewShowsServiceAlerts` preference (same UserDefaults
 /// key, default collapsed): tapping the header toggles and persists it, matching
-/// the legacy screen's collapsible section. When collapsed it shows a single
-/// "N service alerts" summary row that expands and persists the preference, same
-/// as the header toggle; when expanded and there are more than two alerts, it
-/// shows the first two plus a "Show all N"
-/// row.
+/// the legacy screen's collapsible section. When expanded and there are more
+/// than two alerts, it shows the first two plus a "Show all N" row.
 struct ServiceAlertsSection: View {
     let alerts: [ServiceAlert]
     let onSelect: (ServiceAlert) -> Void
@@ -423,60 +472,91 @@ struct ServiceAlertsSection: View {
         showAllAlerts ? alerts : Array(alerts.prefix(2))
     }
 
+    private var cardShape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: 14, style: .continuous)
+    }
+
     var body: some View {
         Section {
-            if showsServiceAlerts {
-                ForEach(visibleAlerts) { alert in
-                    alertRow(alert)
-                }
-                if alerts.count > 2 && !showAllAlerts {
-                    Button {
-                        withAnimation { showAllAlerts = true }
-                    } label: {
-                        Text(String(format: OBALoc("stop_page.service_alerts.show_all_fmt", value: "Show all %d alerts", comment: "Row that expands the service alerts section to show every alert. %d is the total number of alerts."), alerts.count))
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.primary)
+            VStack(spacing: 0) {
+                headerRow
+                if showsServiceAlerts {
+                    ForEach(visibleAlerts) { alert in
+                        Divider().padding(.leading, 14)
+                        alertRow(alert)
                     }
-                    .buttonStyle(.plain)
-                }
-            } else {
-                Button {
-                    withAnimation { showsServiceAlerts = true }
-                } label: {
-                    HStack(spacing: 10) {
-                        Image(systemName: "exclamationmark.triangle.fill")
-                            .foregroundStyle(.orange)
-                        Text(alerts.count == 1
-                            ? OBALoc("stop_page.service_alerts.summary_one", value: "1 service alert", comment: "Collapsed summary row for the service alerts section when exactly one alert applies.")
-                            : String(format: OBALoc("stop_page.service_alerts.summary_fmt", value: "%d service alerts", comment: "Collapsed summary row for the service alerts section. %d is the number of alerts."), alerts.count))
-                            .font(.subheadline)
-                            .foregroundStyle(.primary)
-                        Spacer(minLength: 0)
-                        Image(systemName: "chevron.down")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.tertiary)
+                    if alerts.count > 2 && !showAllAlerts {
+                        Divider().padding(.leading, 14)
+                        showAllRow
                     }
                 }
-                .buttonStyle(.plain)
             }
-        } header: {
-            Button {
-                withAnimation {
-                    showsServiceAlerts.toggle()
-                    if !showsServiceAlerts { showAllAlerts = false }
-                }
-            } label: {
-                HStack {
-                    Text(Strings.serviceAlerts)
-                    Spacer()
-                    Image(systemName: showsServiceAlerts ? "chevron.up" : "chevron.down")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                }
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
+            .background(cardShape.fill(Color.orange.opacity(0.08)))
+            .overlay(cardShape.strokeBorder(Color.orange.opacity(0.22), lineWidth: 1))
+            .clipShape(cardShape)
+            .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
         }
+    }
+
+    /// Always-visible card header; tapping toggles (and persists) expansion.
+    private var headerRow: some View {
+        Button {
+            withAnimation(.snappy) {
+                showsServiceAlerts.toggle()
+                if !showsServiceAlerts { showAllAlerts = false }
+            }
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 30, height: 30)
+                    .background(Color.orange.gradient, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                Text(Strings.serviceAlerts)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                Text("\(alerts.count)")
+                    .font(.caption.weight(.heavy))
+                    .monospacedDigit()
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 7)
+                    .padding(.vertical, 2)
+                    .background(Color.orange, in: Capsule())
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.down")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .rotationEffect(.degrees(showsServiceAlerts ? 180 : 0))
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(headerAccessibilityLabel)
+    }
+
+    private var showAllRow: some View {
+        Button {
+            withAnimation { showAllAlerts = true }
+        } label: {
+            Text(String(format: OBALoc("stop_page.service_alerts.show_all_fmt", value: "Show all %d alerts", comment: "Row that expands the service alerts section to show every alert. %d is the total number of alerts."), alerts.count))
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.orange)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 11)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var headerAccessibilityLabel: String {
+        alerts.count == 1
+            ? OBALoc("stop_page.service_alerts.summary_one", value: "1 service alert", comment: "Collapsed summary row for the service alerts section when exactly one alert applies.")
+            : String(format: OBALoc("stop_page.service_alerts.summary_fmt", value: "%d service alerts", comment: "Collapsed summary row for the service alerts section. %d is the number of alerts."), alerts.count)
     }
 
     private func alertRow(_ alert: ServiceAlert) -> some View {
@@ -484,17 +564,19 @@ struct ServiceAlertsSection: View {
             onSelect(alert)
         } label: {
             HStack(spacing: 10) {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .foregroundStyle(.orange)
                 Text(alert.title(forLocale: .current) ?? OBALoc("stop_page.service_alert_fallback", value: "Service alert", comment: "Fallback title for a service alert that has no summary text."))
                     .font(.subheadline)
                     .foregroundStyle(.primary)
                     .lineLimit(2)
+                    .multilineTextAlignment(.leading)
                 Spacer(minLength: 0)
                 Image(systemName: "chevron.right")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.tertiary)
             }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 11)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
