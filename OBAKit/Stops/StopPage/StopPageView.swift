@@ -134,15 +134,11 @@ struct StopPageView: View {
         List {
             if let stop = viewModel.stop {
                 Section {
-                    StopPageHeaderView(stop: stop, walkTime: walkTime, snapshotLoader: snapshotLoader)
+                    StopPageHeaderView(stop: stop, walkTime: walkTime, statusText: viewModel.statusText, snapshotLoader: snapshotLoader)
                         .listRowInsets(EdgeInsets(top: 0, leading: Self.horizontalRowInset, bottom: 0, trailing: Self.horizontalRowInset))
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
                 }
-            }
-
-            if !viewModel.statusText.isEmpty {
-                LiveStatusRow(statusText: viewModel.statusText)
             }
 
             if let survey = viewModel.currentSurvey {
@@ -195,7 +191,7 @@ struct StopPageView: View {
                         viewModel.updateSortType(newValue)
                     }
                 }
-                .listRowInsets(EdgeInsets())
+                .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
                 .listRowBackground(Color.clear)
                 .listRowSeparator(.hidden)
             }
@@ -353,10 +349,10 @@ struct StopPageView: View {
 /// `onChange`.
 ///
 /// A custom capsule control rather than a segmented `Picker`: taller segments,
-/// narrower footprint, and a Liquid Glass backdrop on iOS 26+ (an
-/// ultra-thin-material capsule stands in on earlier versions). The selected
-/// pill slides between segments via `matchedGeometryEffect`; the caller's
-/// `withAnimation` drives it.
+/// full row width (the row carries the list's standard horizontal insets), and
+/// a Liquid Glass backdrop on iOS 26+ (an ultra-thin-material capsule stands
+/// in on earlier versions). The selected pill slides between segments via
+/// `matchedGeometryEffect`; the caller's `withAnimation` drives it.
 struct StopPageModeToggle: View {
     let mode: StopSort
     let onChange: (StopSort) -> Void
@@ -365,21 +361,21 @@ struct StopPageModeToggle: View {
 
     var body: some View {
         HStack(spacing: 2) {
-            segment(.time, title: OBALoc("stop_page.mode.chronological", value: "Chronological", comment: "Stop page mode toggle: flat time-sorted list"))
-            segment(.route, title: OBALoc("stop_page.mode.by_route", value: "By route", comment: "Stop page mode toggle: grouped by route"))
+            segment(.time, title: OBALoc("stop_page.mode.chronological", value: "Chronological", comment: "Stop page mode toggle: flat time-sorted list"), systemImage: "list.bullet")
+            segment(.route, title: OBALoc("stop_page.mode.by_route", value: "By route", comment: "Stop page mode toggle: grouped by route"), systemImage: "square.grid.2x2")
         }
         .padding(3)
         .modifier(GlassCapsuleBackground())
-        .frame(maxWidth: 300)
         .frame(maxWidth: .infinity)
         .padding(.vertical, 4)
     }
 
-    private func segment(_ value: StopSort, title: String) -> some View {
+    private func segment(_ value: StopSort, title: String, systemImage: String) -> some View {
         Button {
             if mode != value { onChange(value) }
         } label: {
-            Text(title)
+            Label(title, systemImage: systemImage)
+                .labelStyle(.titleAndIcon)
                 .font(.subheadline.weight(mode == value ? .bold : .semibold))
                 .foregroundStyle(mode == value ? Color.primary : Color.secondary)
                 .frame(maxWidth: .infinity, minHeight: 38)
@@ -409,39 +405,6 @@ private struct GlassCapsuleBackground: ViewModifier {
                 .background(.ultraThinMaterial, in: Capsule())
                 .overlay(Capsule().strokeBorder(Color(uiColor: .separator).opacity(0.5), lineWidth: 0.5))
         }
-    }
-}
-
-/// The out-of-card "Updated N min ago" line with a pulsing on-time dot. The dot
-/// pulse is gated on Reduce Motion (static when reduced), per the global
-/// constraints.
-struct LiveStatusRow: View {
-    let statusText: String
-
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var pulsing = false
-
-    var body: some View {
-        HStack(spacing: 8) {
-            Circle()
-                .fill(Color(uiColor: ThemeColors.shared.departureOnTime))
-                .frame(width: 7, height: 7)
-                .opacity(reduceMotion ? 1 : (pulsing ? 1 : 0.35))
-            Text(statusText)
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-            Spacer(minLength: 0)
-        }
-        .listRowInsets(EdgeInsets(top: 2, leading: 20, bottom: 2, trailing: 20))
-        .listRowBackground(Color.clear)
-        .listRowSeparator(.hidden)
-        .onAppear {
-            guard !reduceMotion else { return }
-            withAnimation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true)) {
-                pulsing = true
-            }
-        }
-        .accessibilityElement(children: .combine)
     }
 }
 

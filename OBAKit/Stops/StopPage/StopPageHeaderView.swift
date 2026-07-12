@@ -8,12 +8,14 @@
 //
 
 import SwiftUI
-import MapKit
 import OBAKitCore
 
-/// The inset map-card header: snapshot background, stop identity, and the
-/// walk chip — the single visual source of walk time (§4.5). Tap toggles the
-/// routes-served line (parity with the old header).
+/// The full-bleed dark map header: an always-dark snapshot background under a
+/// dark scrim, with the identity block bottom-left in white — the "last
+/// updated" status line, stop name, the code/direction subtitle with inline
+/// route chips (wrapping onto as many lines as needed, never truncated), and
+/// the walk pill (the single visual source of walk time, §4.5). Tap toggles
+/// the full routes-served line (parity with the old header).
 ///
 /// A plain-value view: it never touches `StopViewModel`. The map snapshot is
 /// produced by a `snapshotLoader` closure supplied by the hosting VC, so the
@@ -23,69 +25,87 @@ import OBAKitCore
 struct StopPageHeaderView: View {
     let stop: Stop
     let walkTime: WalkTimeInfo?
+    /// The "Updated: …" line; empty hides it.
+    let statusText: String
     let snapshotLoader: (CGSize) async -> UIImage?
 
     @State private var snapshot: UIImage?
     @State private var showsRoutes = false
     @State private var cardWidth: CGFloat = 0
 
-    /// Grows the card with Dynamic Type so the stop name has room at larger
-    /// text sizes (standing amendment).
-    @ScaledMetric(relativeTo: .title2) private var cardHeight: CGFloat = 150
-
-    /// A single shared formatter; distances are formatted for display only.
-    private static let distanceFormatter = MKDistanceFormatter()
+    /// Minimum card height; the card grows beyond it when the identity block
+    /// needs more room (wrapped chips, Dynamic Type). Scales with Dynamic Type
+    /// so the stop name has room at larger text sizes (standing amendment).
+    @ScaledMetric(relativeTo: .title2) private var cardHeight: CGFloat = 170
 
     private var subtitle: String {
         Formatters.formattedCodeAndDirection(stop: stop)
     }
 
+    /// Sorted, de-duplicated route short names for the chips row. Mirrors
+    /// `Formatters.formattedRoutes`' filtering (some agencies omit short names).
+    private var routeChipNames: [String] {
+        var seen = Set<String>()
+        return stop.routes
+            .map(\.shortName)
+            .filter { !$0.isEmpty && seen.insert($0).inserted }
+            .sorted { $0.localizedStandardCompare($1) == .orderedAscending }
+    }
+
     var body: some View {
-        ZStack(alignment: .topLeading) {
-            Group {
-                if let snapshot {
-                    Image(uiImage: snapshot).resizable().scaledToFill()
-                } else {
-                    Color(uiColor: .secondarySystemGroupedBackground)
-                }
+        VStack(alignment: .leading, spacing: 8) {
+            if !statusText.isEmpty {
+                HeaderStatusLine(statusText: statusText)
             }
-            LinearGradient(
-                colors: [
-                    Color(uiColor: .systemBackground).opacity(0.92),
-                    Color(uiColor: .systemBackground).opacity(0.4),
-                    .clear
-                ],
-                startPoint: .top, endPoint: .bottom
-            )
-            VStack(alignment: .leading, spacing: 4) {
-                Text(stop.name)
-                    .font(.title2.weight(.heavy))
-                    .lineLimit(2)
+            Text(stop.name)
+                .font(.title2.weight(.heavy))
+                .foregroundStyle(.white)
+                .lineLimit(2)
+            // Subtitle + chips flow together and wrap onto as many lines as
+            // the routes need — chips are never compressed or dropped.
+            FlowLayout(hSpacing: 4, vSpacing: 4) {
                 Text(subtitle)
                     .font(.footnote.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                if showsRoutes, let routes = Formatters.formattedRoutes(stop.routes) {
-                    Text(routes)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(2)
+                    .foregroundStyle(.white.opacity(0.75))
+                    .padding(.trailing, 4)
+                ForEach(routeChipNames, id: \.self) { name in
+                    routeChip(name)
                 }
             }
-            .padding(16)
-        }
-        .frame(height: cardHeight)
-        .frame(maxWidth: .infinity)
-        .overlay(alignment: .bottomLeading) {
+            if showsRoutes, let routes = Formatters.formattedRoutes(stop.routes) {
+                Text(routes)
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.75))
+                    .lineLimit(2)
+            }
             if let walkTime {
                 Label(walkChipText(walkTime), systemImage: "figure.walk")
                     .font(.footnote.weight(.heavy))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 12).padding(.vertical, 6)
                     .background(Color(uiColor: ThemeColors.shared.departureOnTime), in: Capsule())
-                    .padding(12)
             }
         }
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .padding(16)
+        .frame(maxWidth: .infinity, minHeight: cardHeight, alignment: .bottomLeading)
+        // The snapshot is a background so the identity block drives the card's
+        // height — it can grow past `cardHeight` instead of clipping content.
+        .background {
+            ZStack {
+                if let snapshot {
+                    Image(uiImage: snapshot).resizable().scaledToFill()
+                } else {
+                    Color.black
+                }
+                // Dark scrim so the white identity block reads over any map
+                // content, heaviest behind the text.
+                LinearGradient(
+                    colors: [.black.opacity(0.35), .black.opacity(0.45), .black.opacity(0.7)],
+                    startPoint: .top, endPoint: .bottom
+                )
+            }
+        }
+        .clipped()
         .contentShape(Rectangle())
         .onTapGesture { withAnimation { showsRoutes.toggle() } }
         .onGeometryChange(for: CGFloat.self) { proxy in
@@ -103,13 +123,91 @@ struct StopPageHeaderView: View {
         .accessibilityElement(children: .combine)
     }
 
+    private func routeChip(_ name: String) -> some View {
+        Text(name)
+            .font(.caption2.weight(.bold))
+            .monospacedDigit()
+            .foregroundStyle(.white)
+            .lineLimit(1)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 3)
+            .background(Color.white.opacity(0.18), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+    }
+
     private func walkChipText(_ info: WalkTimeInfo) -> String {
-        let distance = Self.distanceFormatter.string(fromDistance: info.distance)
         let fmt = OBALoc(
-            "stop_page.walk_chip_fmt",
-            value: "%d min walk · %@",
-            comment: "Walk chip on the header card. %d minutes, %@ formatted distance."
+            "stop_page.walk_chip_minutes_fmt",
+            value: "%d min walk",
+            comment: "Walk chip on the header card. %d is the walk time in minutes."
         )
-        return String(format: fmt, info.walkMinutes, distance)
+        return String(format: fmt, info.walkMinutes)
     }
 }
+/// The "Updated: …" line atop the header's identity block, with a pulsing
+/// on-time dot. The pulse is gated on Reduce Motion (static when reduced),
+/// per the global constraints.
+private struct HeaderStatusLine: View {
+    let statusText: String
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var pulsing = false
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Circle()
+                .fill(Color(uiColor: ThemeColors.shared.departureOnTime))
+                .frame(width: 7, height: 7)
+                .opacity(reduceMotion ? 1 : (pulsing ? 1 : 0.35))
+            Text(statusText)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.white.opacity(0.85))
+        }
+        .onAppear {
+            guard !reduceMotion else { return }
+            withAnimation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true)) {
+                pulsing = true
+            }
+        }
+    }
+}
+
+/// Minimal leading-aligned wrapping layout for the subtitle + route chips:
+/// subviews flow left-to-right at their ideal sizes and break onto new lines
+/// as needed, so chips wrap instead of compressing or truncating.
+private struct FlowLayout: Layout {
+    var hSpacing: CGFloat = 4
+    var vSpacing: CGFloat = 4
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let maxWidth = proposal.width ?? .infinity
+        var x: CGFloat = 0, y: CGFloat = 0, lineHeight: CGFloat = 0, widest: CGFloat = 0
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if x > 0 && x + size.width > maxWidth {
+                x = 0
+                y += lineHeight + vSpacing
+                lineHeight = 0
+            }
+            x += size.width + hSpacing
+            lineHeight = max(lineHeight, size.height)
+            widest = max(widest, x - hSpacing)
+        }
+        return CGSize(width: proposal.width ?? widest, height: y + lineHeight)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        var x = bounds.minX, y = bounds.minY, lineHeight: CGFloat = 0
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if x > bounds.minX && x + size.width > bounds.maxX {
+                x = bounds.minX
+                y += lineHeight + vSpacing
+                lineHeight = 0
+            }
+            subview.place(at: CGPoint(x: x, y: y), anchor: .topLeading, proposal: .unspecified)
+            x += size.width + hSpacing
+            lineHeight = max(lineHeight, size.height)
+        }
+    }
+}
+

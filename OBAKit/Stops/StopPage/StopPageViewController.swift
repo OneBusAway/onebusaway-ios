@@ -152,16 +152,15 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
 
     // MARK: - Combine Bindings
 
-    /// Rebuilds the nav-bar chrome (title + right bar items) whenever the state
-    /// the menus read changes. Mirrors `StopViewController.bindViewModel()`'s
-    /// `configureTabBarButtons()` calls.
+    /// Rebuilds the nav-bar chrome (right bar items) whenever the state the
+    /// menus read changes. Mirrors `StopViewController.bindViewModel()`'s
+    /// `configureTabBarButtons()` calls. No nav-bar title: the header card
+    /// carries the stop identity.
     private func bindChrome() {
         viewModel.$stop
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] stop in
-                guard let self else { return }
-                self.title = stop.map(Formatters.formattedTitle(stop:)) ?? Strings.loading
-                self.configureBarButtons()
+            .sink { [weak self] _ in
+                self?.configureBarButtons()
             }
             .store(in: &cancellables)
 
@@ -272,7 +271,10 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
     private func loadSnapshot(size: CGSize) async -> UIImage? {
         guard let stop = viewModel.stop, size.width > 0, size.height > 0 else { return nil }
         let factory = application.stopIconFactory
-        let traits = traitCollection
+        // The header design is always-dark (white identity text over a dark
+        // scrim), so render the map snapshot in dark style regardless of the
+        // system appearance.
+        let traits = traitCollection.modifyingTraits { $0.userInterfaceStyle = .dark }
         return await withCheckedContinuation { continuation in
             let snapshotter = MapSnapshotter(size: size, stopIconFactory: factory)
             snapshotter.snapshot(stop: stop, traitCollection: traits) { image in
