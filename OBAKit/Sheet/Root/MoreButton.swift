@@ -19,7 +19,8 @@ struct MoreButton: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: "line.3.horizontal")
-                .font(.system(size: 16, weight: .regular))
+                .font(.body)
+                .imageScale(.medium)
                 .frame(width: 32, height: 32)
                 .contentShape(Circle())
         }
