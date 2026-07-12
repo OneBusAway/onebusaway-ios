@@ -223,12 +223,19 @@ private struct ScheduledOnlyNotice: View {
 }
 
 /// Schedule + full-trip actions, wired to ViewRouter navigation by the hosting page.
+/// Half-width side-by-side by default; at accessibility sizes the buttons stack
+/// so each is a full-width tap target (the guide's committed layout).
 private struct TripPanelActionsRow: View {
     let onSchedule: () -> Void
     let onViewFullTrip: () -> Void
 
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
     var body: some View {
-        HStack(spacing: 10) {
+        let layout = dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(spacing: 10))
+            : AnyLayout(HStackLayout(spacing: 10))
+        layout {
             Button(action: onSchedule) {
                 Label(Strings.schedules, systemImage: "calendar")
                     .frame(maxWidth: .infinity, minHeight: 40)

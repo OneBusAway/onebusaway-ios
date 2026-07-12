@@ -40,6 +40,12 @@ struct GroupedListView: View {
     @ScaledMetric(relativeTo: .body) private var alarmCircleSize: CGFloat = 34
 
     @Environment(\.obaFormatters) private var formatters
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    /// At accessibility sizes the card layouts "stack" (the guide's committed
+    /// layout): badge + countdown become glance tokens on the first line and
+    /// everything else flows below at full width.
+    private var isAccessibilitySize: Bool { dynamicTypeSize.isAccessibilitySize }
 
     /// Whether this departure should show an alarm affordance: it can take a new
     /// alarm, or it already has one that can be cancelled. Shared by the header
@@ -104,48 +110,101 @@ struct GroupedListView: View {
     }
 
     /// Badge, headsign, scheduled time + adherence, and the big countdown.
+    /// At accessibility sizes the badge and countdown become glance tokens on
+    /// the first line, with the headsign and time/status stacked below.
     private func headerPrimaryRow(next: ArrivalDeparture, status: DepartureStatus, routeColor: Color) -> some View {
-        HStack(alignment: .center, spacing: 13) {
-            RouteBadgeView(routeShortName: next.routeShortName, routeColor: routeColor, size: 48)
-            VStack(alignment: .leading, spacing: 3) {
-                Text(next.tripHeadsign ?? next.routeShortName)
-                    .font(.headline.weight(.heavy))
-                    .lineLimit(2)
-                HStack(spacing: 6) {
-                    Text(formatters.timeFormatter.string(from: next.scheduledDate))
-                        .font(.footnote).monospacedDigit().foregroundStyle(.secondary)
-                    Text("·").foregroundStyle(.tertiary)
-                    Text(status.label)
-                        .font(.footnote.weight(.semibold))
-                        .foregroundStyle(Color(uiColor: status.color))
+        VStack(alignment: .leading, spacing: 3) {
+            if isAccessibilitySize {
+                HStack(alignment: .center) {
+                    RouteBadgeView(routeShortName: next.routeShortName, routeColor: routeColor, size: 48)
+                    Spacer(minLength: 8)
+                    CountdownView(minutes: next.arrivalDepartureMinutes, isRealTime: status.isRealTime, color: Color(uiColor: status.color))
+                }
+                headsignText(next)
+                Text(formatters.timeFormatter.string(from: next.scheduledDate))
+                    .font(.footnote).monospacedDigit().foregroundStyle(.secondary)
+                Text(status.label)
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(Color(uiColor: status.color))
+            } else {
+                HStack(alignment: .center, spacing: 13) {
+                    RouteBadgeView(routeShortName: next.routeShortName, routeColor: routeColor, size: 48)
+                    VStack(alignment: .leading, spacing: 3) {
+                        headsignText(next)
+                        HStack(spacing: 6) {
+                            Text(formatters.timeFormatter.string(from: next.scheduledDate))
+                                .font(.footnote).monospacedDigit().foregroundStyle(.secondary)
+                            Text("·").foregroundStyle(.tertiary)
+                            Text(status.label)
+                                .font(.footnote.weight(.semibold))
+                                .foregroundStyle(Color(uiColor: status.color))
+                        }
+                    }
+                    Spacer(minLength: 8)
+                    CountdownView(minutes: next.arrivalDepartureMinutes, isRealTime: status.isRealTime, color: Color(uiColor: status.color))
                 }
             }
-            Spacer(minLength: 8)
-            CountdownView(minutes: next.arrivalDepartureMinutes, isRealTime: status.isRealTime, color: Color(uiColor: status.color))
         }
     }
 
+    /// Clamped to two lines at every size (the guide's committed "clamp + tap"
+    /// choice); expanding the card reveals rows that lead to the full name.
+    private func headsignText(_ next: ArrivalDeparture) -> some View {
+        Text(next.tripHeadsign ?? next.routeShortName)
+            .font(.headline.weight(.heavy))
+            .lineLimit(2)
+    }
+
     /// Upcoming-trip chips (each tinted by its own departure's status), the
-    /// alarm pill, and the expand chevron. Empty chips render the §4.4 wording.
+    /// alarm pill, and the expand chevron. At accessibility sizes the chips
+    /// wrap in a flow under a "Next departures" caption (their meaning is no
+    /// longer inferable from proximity alone) and the alarm pill + chevron
+    /// drop to their own full-width line.
+    @ViewBuilder
     private func headerChipsRow(_ group: StopPageListBuilder.RouteGroup<ArrivalDeparture>) -> some View {
-        HStack(spacing: 8) {
-            if !group.chips.isEmpty {
-                ForEach(group.chips, id: \.id) { chip in
-                    let chipStatus = statusProvider(chip)
-                    Text("\(chip.arrivalDepartureMinutes)m")
-                        .font(.caption.weight(.heavy)).monospacedDigit()
-                        .foregroundStyle(Color(uiColor: chipStatus.color))
-                        .padding(.horizontal, 8).padding(.vertical, 3)
-                        .background(Color(uiColor: chipStatus.color).opacity(0.14), in: RoundedRectangle(cornerRadius: 8))
+        if isAccessibilitySize {
+            VStack(alignment: .leading, spacing: 8) {
+                if !group.chips.isEmpty {
+                    Text(OBALoc("stop_page.grouped.next_departures", value: "Next departures", comment: "Caption above the upcoming-departure minute chips on a grouped route card at accessibility text sizes."))
+                        .textCase(.uppercase)
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(.secondary)
+                    FlowLayout(hSpacing: 8, vSpacing: 8) {
+                        chips(group)
+                    }
+                }
+                HStack(spacing: 8) {
+                    alarmPill(for: group.next)
+                    Spacer()
+                    expandChevron(group)
                 }
             }
-            Spacer()
-            alarmPill(for: group.next)
-            Image(systemName: "chevron.down")
-                .font(.footnote.weight(.bold))
-                .foregroundStyle(.tertiary)
-                .rotationEffect(.degrees(expandedRouteID == group.routeID ? 180 : 0))
+        } else {
+            HStack(spacing: 8) {
+                chips(group)
+                Spacer()
+                alarmPill(for: group.next)
+                expandChevron(group)
+            }
         }
+    }
+
+    private func chips(_ group: StopPageListBuilder.RouteGroup<ArrivalDeparture>) -> some View {
+        ForEach(group.chips, id: \.id) { chip in
+            let chipStatus = statusProvider(chip)
+            Text("\(chip.arrivalDepartureMinutes)m")
+                .font(.caption.weight(.heavy)).monospacedDigit()
+                .foregroundStyle(Color(uiColor: chipStatus.color))
+                .padding(.horizontal, 8).padding(.vertical, 3)
+                .background(Color(uiColor: chipStatus.color).opacity(0.14), in: RoundedRectangle(cornerRadius: 8))
+        }
+    }
+
+    private func expandChevron(_ group: StopPageListBuilder.RouteGroup<ArrivalDeparture>) -> some View {
+        Image(systemName: "chevron.down")
+            .font(.footnote.weight(.bold))
+            .foregroundStyle(.tertiary)
+            .rotationEffect(.degrees(expandedRouteID == group.routeID ? 180 : 0))
     }
 
     @ViewBuilder
@@ -175,25 +234,45 @@ struct GroupedListView: View {
     private func expandedRows(_ group: StopPageListBuilder.RouteGroup<ArrivalDeparture>) -> some View {
         ForEach(group.departures, id: \.id) { departure in
             let status = statusProvider(departure)
-            HStack(spacing: 12) {
-                alarmIcon(for: departure)
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: 4) {
-                        Text(formatters.timeFormatter.string(from: departure.scheduledDate))
-                            .font(.subheadline.weight(.semibold)).monospacedDigit()
-                        Text("· \(status.label)")
-                            .font(.subheadline)
-                            .foregroundStyle(Color(uiColor: status.color))
+            // Unary root; the accessibility-size branch stacks the row the
+            // same way the departure rows do — glance tokens (alarm circle,
+            // countdown, chevron) on the first line, time + status below.
+            VStack(alignment: .leading, spacing: 4) {
+                if isAccessibilitySize {
+                    HStack(spacing: 12) {
+                        alarmIcon(for: departure)
+                        Spacer(minLength: 8)
+                        CountdownView(minutes: departure.arrivalDepartureMinutes, isRealTime: status.isRealTime, color: Color(uiColor: status.color), emphasized: false)
+                        tripChevron(departure)
                     }
+                    Text(formatters.timeFormatter.string(from: departure.scheduledDate))
+                        .font(.subheadline.weight(.semibold)).monospacedDigit()
+                    Text(status.label)
+                        .font(.subheadline)
+                        .foregroundStyle(Color(uiColor: status.color))
                     if status.showsOccupancy, let occupancy = departure.occupancyStatus, occupancy != .unknown {
                         OccupancyBadge(occupancy: occupancy)
                     }
+                } else {
+                    HStack(spacing: 12) {
+                        alarmIcon(for: departure)
+                        VStack(alignment: .leading, spacing: 2) {
+                            HStack(spacing: 4) {
+                                Text(formatters.timeFormatter.string(from: departure.scheduledDate))
+                                    .font(.subheadline.weight(.semibold)).monospacedDigit()
+                                Text("· \(status.label)")
+                                    .font(.subheadline)
+                                    .foregroundStyle(Color(uiColor: status.color))
+                            }
+                            if status.showsOccupancy, let occupancy = departure.occupancyStatus, occupancy != .unknown {
+                                OccupancyBadge(occupancy: occupancy)
+                            }
+                        }
+                        Spacer(minLength: 8)
+                        CountdownView(minutes: departure.arrivalDepartureMinutes, isRealTime: status.isRealTime, color: Color(uiColor: status.color), emphasized: false)
+                        tripChevron(departure)
+                    }
                 }
-                Spacer(minLength: 8)
-                CountdownView(minutes: departure.arrivalDepartureMinutes, isRealTime: status.isRealTime, color: Color(uiColor: status.color), emphasized: false)
-                Image(systemName: "chevron.down")
-                    .font(.caption.weight(.bold)).foregroundStyle(.tertiary)
-                    .rotationEffect(.degrees(openTripDepartureID == departure.id ? 180 : 0))
             }
             .contentShape(Rectangle())
             .onTapGesture { onToggleTrip(departure) }
@@ -221,6 +300,12 @@ struct GroupedListView: View {
                     .listRowBackground(Color(uiColor: .secondarySystemGroupedBackground))
             }
         }
+    }
+
+    private func tripChevron(_ departure: ArrivalDeparture) -> some View {
+        Image(systemName: "chevron.down")
+            .font(.caption.weight(.bold)).foregroundStyle(.tertiary)
+            .rotationEffect(.degrees(openTripDepartureID == departure.id ? 180 : 0))
     }
 
     @ViewBuilder

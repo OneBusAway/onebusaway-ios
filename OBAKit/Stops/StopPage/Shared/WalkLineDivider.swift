@@ -12,20 +12,39 @@ import OBAKitCore
 struct WalkLineDivider: View {
     let walkMinutes: Int
 
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
     private var text: String {
         let fmt = OBALoc("stop_page.walk_divider_fmt", value: "%d MIN WALK — CATCH BELOW", comment: "Divider between departures you'd miss on foot and ones you can still catch. %d is the walk time in minutes.")
         return String(format: fmt, walkMinutes)
     }
 
     var body: some View {
+        // At accessibility sizes the flanking dashes go away — they'd squeeze
+        // the label into a sliver — and the label becomes a full-width dashed
+        // banner box that wraps at full size (minimum-scale-factor is not a
+        // Dynamic Type strategy; the text must grow, not the row squeeze it).
         HStack(spacing: 10) {
-            dash
-            Label(text, systemImage: "figure.walk")
-                .font(.caption.weight(.heavy))
-                .foregroundStyle(.orange)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-            dash
+            if dynamicTypeSize.isAccessibilitySize {
+                Label(text, systemImage: "figure.walk")
+                    .font(.caption.weight(.heavy))
+                    .foregroundStyle(.orange)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(12)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .stroke(style: StrokeStyle(lineWidth: 2, dash: [7, 6]))
+                            .foregroundStyle(.orange)
+                    )
+            } else {
+                dash
+                Label(text, systemImage: "figure.walk")
+                    .font(.caption.weight(.heavy))
+                    .foregroundStyle(.orange)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                dash
+            }
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(String(format: OBALoc("stop_page.walk_divider_a11y_fmt", value: "Departures above this point leave sooner than your %d minute walk to the stop", comment: "VoiceOver description of the walk divider. %d is walk minutes."), walkMinutes))

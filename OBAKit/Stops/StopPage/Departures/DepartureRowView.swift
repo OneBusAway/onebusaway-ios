@@ -13,8 +13,8 @@ import OBAKitCore
 private let removeAlarmTitle = OBALoc("stop_page.row.remove_alarm", value: "Remove Alarm", comment: "Swipe/context menu action that cancels an existing arrival alarm.")
 
 /// One departure row, used by chronological mode and (compact) by grouped
-/// expansion. Unary root HStack; all conditional content is interior so the
-/// List fast path holds.
+/// expansion. Unary root VStack; all conditional content (including the
+/// accessibility-size layout branch) is interior so the List fast path holds.
 struct DepartureRowView: View {
     enum Style {
         case normal
@@ -40,41 +40,47 @@ struct DepartureRowView: View {
     }
 
     var body: some View {
-        HStack(alignment: .center, spacing: 13) {
-            RouteBadgeView(
-                routeShortName: departure.routeShortName,
-                routeColor: Color(uiColor: departure.route.color ?? ThemeColors.shared.brand)
-            )
-            VStack(alignment: .leading, spacing: 3) {
-                Text(departure.tripHeadsign ?? departure.routeShortName)
-                    .font(.system(.body, weight: .bold))
-                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 2)
-                    .strikethrough(style == .missed)
-                HStack(spacing: 6) {
-                    Text(scheduledTimeText)
-                        .font(.footnote)
-                        .monospacedDigit()
-                        .foregroundStyle(.secondary)
-                    Text("·").foregroundStyle(.tertiary)
-                    Text(status.label)
-                        .font(.footnote.weight(.semibold))
-                        .foregroundStyle(Color(uiColor: status.color))
-                    if hasAlarm {
-                        Image(systemName: "bell.fill")
-                            .font(.caption)
-                            .foregroundStyle(Color(uiColor: ThemeColors.shared.departureOnTime))
-                    }
+        // Unary root; the accessibility-size branch is interior so the List
+        // fast path holds. At accessibility sizes the row "stacks" (the guide's
+        // committed layout): badge + countdown share the first line as glance
+        // tokens, destination + status flow below — nothing is dropped.
+        VStack(alignment: .leading, spacing: 3) {
+            if dynamicTypeSize.isAccessibilitySize {
+                HStack(alignment: .center) {
+                    routeBadge
+                    Spacer(minLength: 8)
+                    countdown
                 }
-                if status.showsOccupancy, let occupancy = departure.occupancyStatus, occupancy != .unknown {
-                    OccupancyBadge(occupancy: occupancy)
+                headsignText
+                Text(scheduledTimeText)
+                    .font(.footnote)
+                    .monospacedDigit()
+                    .foregroundStyle(.secondary)
+                HStack(spacing: 6) {
+                    statusText
+                    alarmBell
+                }
+                occupancyBadge
+            } else {
+                HStack(alignment: .center, spacing: 13) {
+                    routeBadge
+                    VStack(alignment: .leading, spacing: 3) {
+                        headsignText
+                        HStack(spacing: 6) {
+                            Text(scheduledTimeText)
+                                .font(.footnote)
+                                .monospacedDigit()
+                                .foregroundStyle(.secondary)
+                            Text("·").foregroundStyle(.tertiary)
+                            statusText
+                            alarmBell
+                        }
+                        occupancyBadge
+                    }
+                    Spacer(minLength: 8)
+                    countdown
                 }
             }
-            Spacer(minLength: 8)
-            CountdownView(
-                minutes: departure.arrivalDepartureMinutes,
-                isRealTime: status.isRealTime,
-                color: dimmed ? Color(uiColor: .tertiaryLabel) : Color(uiColor: status.color)
-            )
         }
         .opacity(dimmed ? 0.55 : 1.0)
         .contentShape(Rectangle())
@@ -82,6 +88,55 @@ struct DepartureRowView: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityText)
         .accessibilityAddTraits(.isButton)
+    }
+
+    // MARK: - Shared pieces (both layouts)
+
+    private var routeBadge: some View {
+        RouteBadgeView(
+            routeShortName: departure.routeShortName,
+            routeColor: Color(uiColor: departure.route.color ?? ThemeColors.shared.brand)
+        )
+    }
+
+    /// Clamped to two lines at every size (the guide's committed "clamp + tap"
+    /// choice): capping row height keeps more departures visible, and tapping
+    /// the row opens the trip panel with the full name.
+    private var headsignText: some View {
+        Text(departure.tripHeadsign ?? departure.routeShortName)
+            .font(.system(.body, weight: .bold))
+            .lineLimit(2)
+            .strikethrough(style == .missed)
+    }
+
+    private var statusText: some View {
+        Text(status.label)
+            .font(.footnote.weight(.semibold))
+            .foregroundStyle(Color(uiColor: status.color))
+    }
+
+    @ViewBuilder
+    private var alarmBell: some View {
+        if hasAlarm {
+            Image(systemName: "bell.fill")
+                .font(.caption)
+                .foregroundStyle(Color(uiColor: ThemeColors.shared.departureOnTime))
+        }
+    }
+
+    @ViewBuilder
+    private var occupancyBadge: some View {
+        if status.showsOccupancy, let occupancy = departure.occupancyStatus, occupancy != .unknown {
+            OccupancyBadge(occupancy: occupancy)
+        }
+    }
+
+    private var countdown: some View {
+        CountdownView(
+            minutes: departure.arrivalDepartureMinutes,
+            isRealTime: status.isRealTime,
+            color: dimmed ? Color(uiColor: .tertiaryLabel) : Color(uiColor: status.color)
+        )
     }
 
     private var accessibilityText: String {

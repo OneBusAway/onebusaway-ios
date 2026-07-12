@@ -33,6 +33,8 @@ struct StopPageHeaderView: View {
     @State private var showsRoutes = false
     @State private var cardWidth: CGFloat = 0
 
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
     /// Minimum card height; the card grows beyond it when the identity block
     /// needs more room (wrapped chips, Dynamic Type). Scales with Dynamic Type
     /// so the stop name has room at larger text sizes (standing amendment).
@@ -60,7 +62,9 @@ struct StopPageHeaderView: View {
             Text(stop.name)
                 .font(.title2.weight(.heavy))
                 .foregroundStyle(.white)
-                .lineLimit(2)
+                // Accessibility sizes get more lines so the full name still
+                // reads instead of clipping at the larger glyph sizes.
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? 4 : 2)
             // Subtitle + chips flow together and wrap onto as many lines as
             // the routes need — chips are never compressed or dropped.
             FlowLayout(hSpacing: 4, vSpacing: 4) {
@@ -171,10 +175,11 @@ private struct HeaderStatusLine: View {
     }
 }
 
-/// Minimal leading-aligned wrapping layout for the subtitle + route chips:
-/// subviews flow left-to-right at their ideal sizes and break onto new lines
-/// as needed, so chips wrap instead of compressing or truncating.
-private struct FlowLayout: Layout {
+/// Minimal leading-aligned wrapping layout: subviews flow left-to-right at
+/// their ideal sizes and break onto new lines as needed, so chips wrap instead
+/// of compressing or truncating. Shared by the header's subtitle + route chips
+/// and the grouped card's upcoming-trip chips at accessibility sizes.
+struct FlowLayout: Layout {
     var hSpacing: CGFloat = 4
     var vSpacing: CGFloat = 4
 

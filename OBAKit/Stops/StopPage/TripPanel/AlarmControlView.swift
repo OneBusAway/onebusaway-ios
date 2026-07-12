@@ -30,7 +30,14 @@ struct AlarmControlView: View {
     /// does: fixed dimensions scale with Dynamic Type via `@ScaledMetric`.
     @ScaledMetric(relativeTo: .body) private var bellCircleSize: CGFloat = 32
 
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
     private var onTimeColor: Color { Color(uiColor: ThemeColors.shared.departureOnTime) }
+
+    /// At accessibility sizes the alarm block stacks (the guide's committed
+    /// layout): Change/Cancel drop below the label instead of competing with
+    /// it for one line's width.
+    private var isAccessibilitySize: Bool { dynamicTypeSize.isAccessibilitySize }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -56,36 +63,79 @@ struct AlarmControlView: View {
                             .foregroundStyle(.secondary)
                     }
                     Spacer()
-                    if !editing {
-                        Button(OBALoc("stop_page.alarm.change", value: "Change", comment: "Reveals the alarm lead-time stepper")) {
-                            pendingMinutes = leadTimeMinutes
-                            editing = true
-                        }
-                        .buttonStyle(.bordered)
-                        Button(Strings.cancel, role: .destructive, action: onCancel)
-                            .buttonStyle(.bordered)
+                    if !editing && !isAccessibilitySize {
+                        changeCancelButtons
                     }
                 }
-                if editing {
-                    HStack {
-                        Text(OBALoc("stop_page.alarm.minutes_before", value: "Minutes before", comment: "Stepper label"))
-                            .font(.footnote.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                        Spacer()
-                        Stepper(value: $pendingMinutes, in: AlarmLeadTime.minimumMinutes...max(AlarmLeadTime.minimumMinutes, maxLeadTime)) {
-                            Text("\(pendingMinutes)m").font(.subheadline.weight(.heavy)).monospacedDigit()
+                if !editing && isAccessibilitySize {
+                    // Side by side below the label when both fit; at the
+                    // largest sizes each becomes its own full-width row.
+                    ViewThatFits(in: .horizontal) {
+                        HStack(spacing: 10) {
+                            changeCancelButtons
                         }
-                        .fixedSize()
-                        Button(OBALoc("stop_page.alarm.done", value: "Done", comment: "Commits the lead-time change")) {
-                            editing = false
-                            onChange(pendingMinutes)
+                        VStack(spacing: 10) {
+                            changeCancelButtons
                         }
-                        .buttonStyle(.borderedProminent)
-                        .tint(onTimeColor)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.top, 10)
                 }
+                if editing {
+                    editingControls
+                }
             }
+        }
+    }
+
+    /// Change + Cancel, shared by the inline (default) and stacked
+    /// (accessibility-size) placements.
+    @ViewBuilder
+    private var changeCancelButtons: some View {
+        Button(OBALoc("stop_page.alarm.change", value: "Change", comment: "Reveals the alarm lead-time stepper")) {
+            pendingMinutes = leadTimeMinutes
+            editing = true
+        }
+        .buttonStyle(.bordered)
+        Button(Strings.cancel, role: .destructive, action: onCancel)
+            .buttonStyle(.bordered)
+    }
+
+    /// The lead-time stepper row. At accessibility sizes the label sits above
+    /// the stepper + Done controls instead of sharing their line.
+    @ViewBuilder
+    private var editingControls: some View {
+        let label = Text(OBALoc("stop_page.alarm.minutes_before", value: "Minutes before", comment: "Stepper label"))
+            .font(.footnote.weight(.semibold))
+            .foregroundStyle(.secondary)
+        let controls = HStack {
+            Stepper(value: $pendingMinutes, in: AlarmLeadTime.minimumMinutes...max(AlarmLeadTime.minimumMinutes, maxLeadTime)) {
+                Text("\(pendingMinutes)m").font(.subheadline.weight(.heavy)).monospacedDigit()
+            }
+            .fixedSize()
+            Button(OBALoc("stop_page.alarm.done", value: "Done", comment: "Commits the lead-time change")) {
+                editing = false
+                onChange(pendingMinutes)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(onTimeColor)
+        }
+
+        if isAccessibilitySize {
+            VStack(alignment: .leading, spacing: 8) {
+                label
+                controls
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.top, 10)
+        } else {
+            HStack {
+                label
+                Spacer()
+                controls
+            }
+            .padding(.top, 10)
         }
     }
 }

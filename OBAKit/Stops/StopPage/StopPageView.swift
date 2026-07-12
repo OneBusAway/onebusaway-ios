@@ -358,14 +358,23 @@ struct StopPageModeToggle: View {
     let onChange: (StopSort) -> Void
 
     @Namespace private var selectionNamespace
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    /// At accessibility sizes the two segments stack as full-width rows (the
+    /// guide's layout) instead of splitting one line — each label gets the
+    /// whole row's width, so neither truncates.
+    private var isAccessibilitySize: Bool { dynamicTypeSize.isAccessibilitySize }
 
     var body: some View {
-        HStack(spacing: 2) {
+        let layout = isAccessibilitySize
+            ? AnyLayout(VStackLayout(spacing: 2))
+            : AnyLayout(HStackLayout(spacing: 2))
+        layout {
             segment(.time, title: OBALoc("stop_page.mode.chronological", value: "Chronological", comment: "Stop page mode toggle: flat time-sorted list"), systemImage: "list.bullet")
             segment(.route, title: OBALoc("stop_page.mode.by_route", value: "By route", comment: "Stop page mode toggle: grouped by route"), systemImage: "square.grid.2x2")
         }
         .padding(3)
-        .modifier(GlassCapsuleBackground())
+        .modifier(GlassContainerBackground(usesCapsule: !isAccessibilitySize))
         .frame(maxWidth: .infinity)
         .padding(.vertical, 4)
     }
@@ -381,29 +390,44 @@ struct StopPageModeToggle: View {
                 .frame(maxWidth: .infinity, minHeight: 38)
                 .background {
                     if mode == value {
-                        Capsule()
+                        selectionShape
                             .fill(Color(uiColor: .systemBackground))
                             .shadow(color: .black.opacity(0.12), radius: 4, y: 1)
                             .matchedGeometryEffect(id: "selectedSegment", in: selectionNamespace)
                     }
                 }
-                .contentShape(Capsule())
+                .contentShape(selectionShape)
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(mode == value ? [.isButton, .isSelected] : [.isButton])
     }
+
+    /// Capsule segments inside the capsule container; rounded rectangles when
+    /// the segments stack (a capsule around a multi-line label reads poorly).
+    private var selectionShape: AnyShape {
+        isAccessibilitySize
+            ? AnyShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            : AnyShape(Capsule())
+    }
 }
 
 /// The toggle's backdrop: real Liquid Glass on iOS 26+, an ultra-thin-material
-/// capsule with a hairline rim on earlier versions.
-private struct GlassCapsuleBackground: ViewModifier {
+/// shape with a hairline rim on earlier versions. Capsule by default; a
+/// rounded rectangle when the segments stack at accessibility sizes.
+private struct GlassContainerBackground: ViewModifier {
+    let usesCapsule: Bool
+
+    private var shape: AnyShape {
+        usesCapsule ? AnyShape(Capsule()) : AnyShape(RoundedRectangle(cornerRadius: 17, style: .continuous))
+    }
+
     func body(content: Content) -> some View {
         if #available(iOS 26.0, *) {
-            content.glassEffect(.regular, in: Capsule())
+            content.glassEffect(.regular, in: shape)
         } else {
             content
-                .background(.ultraThinMaterial, in: Capsule())
-                .overlay(Capsule().strokeBorder(Color(uiColor: .separator).opacity(0.5), lineWidth: 0.5))
+                .background(.ultraThinMaterial, in: shape)
+                .overlay(shape.stroke(Color(uiColor: .separator).opacity(0.5), lineWidth: 0.5))
         }
     }
 }
@@ -430,6 +454,9 @@ struct ServiceAlertsSection: View {
 
     /// Per-visit "show all" expansion for the >2 case (not persisted).
     @State private var showAllAlerts = false
+
+    /// The warning badge scales with Dynamic Type so its glyph never clips.
+    @ScaledMetric(relativeTo: .subheadline) private var warningBadgeSize: CGFloat = 30
 
     private var visibleAlerts: [ServiceAlert] {
         showAllAlerts ? alerts : Array(alerts.prefix(2))
@@ -475,7 +502,7 @@ struct ServiceAlertsSection: View {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .font(.subheadline.weight(.bold))
                     .foregroundStyle(.white)
-                    .frame(width: 30, height: 30)
+                    .frame(width: warningBadgeSize, height: warningBadgeSize)
                     .background(Color.orange.gradient, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                 Text(Strings.serviceAlerts)
                     .font(.subheadline.weight(.semibold))
@@ -543,6 +570,23 @@ struct ServiceAlertsSection: View {
         }
         .buttonStyle(.plain)
     }
+}
+
+#Preview("AX5 adaptive controls") {
+    ScrollView {
+        VStack(spacing: 24) {
+            StopPageModeToggle(mode: .time) { _ in }
+            WalkLineDivider(walkMinutes: 4)
+            AlarmControlView(
+                alarmIsSet: true,
+                leadTimeMinutes: 5,
+                maxLeadTime: 10,
+                onSet: {}, onCancel: {}, onChange: { _ in }
+            )
+        }
+        .padding()
+    }
+    .environment(\.dynamicTypeSize, .accessibility5)
 }
 
 /// The footer: "Load more" (hidden once auto-extend hits the 12 h cap) and the
