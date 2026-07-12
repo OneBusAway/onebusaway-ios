@@ -62,11 +62,12 @@ struct TripDetailPanelView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            TripPanelStatusStrip(
-                isRealTime: status.isRealTime,
-                vehicleID: departure.vehicleID,
-                routeColor: routeColor
-            )
+            if status.isRealTime {
+                TripPanelStatusStrip(
+                    vehicleID: departure.vehicleID,
+                    routeColor: routeColor
+                )
+            }
 
             if status.isRealTime {
                 liveApproachSection
@@ -191,21 +192,14 @@ private struct ApproachTimelineSkeleton: View {
 /// position (§4.1). Pure values so it never re-renders on the panel's timeline
 /// fetch.
 private struct TripPanelStatusStrip: View {
-    let isRealTime: Bool
     let vehicleID: String?
     let routeColor: Color
 
     var body: some View {
         HStack(spacing: 8) {
-            RealtimeGlyph(isRealTime: isRealTime, color: routeColor, size: 15)
-            if isRealTime {
-                Text(String(format: OBALoc("stop_page.panel.live_vehicle_fmt", value: "Live · vehicle %@", comment: "Trip panel live strip. %@ is the vehicle id."), vehicleID ?? "—"))
-                    .font(.footnote.weight(.bold))
-            } else {
-                Text(OBALoc("stop_page.panel.scheduled_strip", value: "Scheduled · no live position yet", comment: "Trip panel strip for schedule-only trips"))
-                    .font(.footnote.weight(.bold))
-                    .foregroundStyle(.secondary)
-            }
+            RealtimeGlyph(isRealTime: true, color: routeColor, size: 15)
+            Text(String(format: OBALoc("stop_page.panel.live_vehicle_fmt", value: "Live · vehicle %@", comment: "Trip panel live strip. %@ is the vehicle id."), vehicleID ?? "—"))
+                .font(.footnote.weight(.bold))
         }
     }
 }
