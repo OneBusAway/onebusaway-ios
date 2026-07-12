@@ -33,6 +33,10 @@ struct StopPageNavigationHandler {
     /// Opens the bookmark editor: `nil` for a stop-level bookmark, an
     /// `ArrivalDeparture` for a trip-level bookmark (row swipe/menu).
     let showBookmarkEditor: (ArrivalDeparture?) -> Void
+    /// Presents the alarm lead-time picker bulletin for a departure (the trip
+    /// panel's Set-an-alarm button), reusing `AlarmBuilder` from the legacy
+    /// stop screen.
+    let showAlarmPicker: (ArrivalDeparture) -> Void
     /// Shows the "couldn't open survey" alert when an external survey link fails.
     let showExternalSurveyError: () -> Void
     /// Presents the donation learn-more/donate modal.
@@ -358,7 +362,7 @@ struct StopPageView: View {
             refreshToken: viewModel.lastUpdated,
             cachedTripDetails: viewModel.cachedApproachTripDetails(for: departure),
             approachLoader: { await viewModel.approachTripDetails(for: departure) },
-            onSetAlarm: { Task { await viewModel.setAlarm(for: departure, leadTimeMinutes: viewModel.defaultAlarmLeadTime) } },
+            onSetAlarm: { navigation.showAlarmPicker(departure) },
             onCancelAlarm: { Task { await viewModel.cancelAlarm(for: departure) } },
             onChangeAlarm: { minutes in Task { await viewModel.changeAlarm(for: departure, leadTimeMinutes: minutes) } },
             onSchedule: { navigation.showScheduleForRoute(departure) },

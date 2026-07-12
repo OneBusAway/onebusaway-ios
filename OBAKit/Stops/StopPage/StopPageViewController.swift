@@ -25,6 +25,7 @@ import OBAKitCore
 /// layer stays router-free and holds no `Application` reference.
 class StopPageViewController: UIHostingController<StopPageRootView>,
     AppContext,
+    AlarmBuilderDelegate,
     BookmarkEditorDelegate,
     StopPreferencesViewDelegate,
     Previewable {
@@ -118,6 +119,7 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
         showWalkingDirections: {},
         showAlertDetail: { _ in },
         showBookmarkEditor: { _ in },
+        showAlarmPicker: { _ in },
         showExternalSurveyError: {},
         showDonation: {},
         dismissDonation: { _ in },
@@ -139,6 +141,7 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
                 self.application.viewRouter.navigateTo(alert: alert, from: self)
             },
             showBookmarkEditor: { [weak self] departure in self?.showBookmarkEditor(for: departure) },
+            showAlarmPicker: { [weak self] departure in self?.showAlarmPicker(for: departure) },
             showExternalSurveyError: { [weak self] in self?.showExternalSurveyError() },
             showDonation: { [weak self] in self?.showDonationUI() },
             dismissDonation: { [weak self] onHide in self?.showDonationDismissUI(onHide: onHide) },
@@ -263,6 +266,44 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
         present(alert, animated: true)
         // Reset so a later already-denied attempt re-fires the binding.
         viewModel.clearAlarmPermissionDenied()
+    }
+
+    // MARK: - Alarm Picker
+
+    private var alarmBuilder: AlarmBuilder?
+    /// The departure the open bulletin is for, so `alarmCreated` can index the
+    /// alarm under it (the delegate callback doesn't carry the departure).
+    private var alarmBuilderDeparture: ArrivalDeparture?
+
+    /// Presents the same lead-time picker bulletin as
+    /// `StopViewController.addAlarm(arrivalDeparture:)`; `AlarmBuilder` owns the
+    /// picker UI and the create request.
+    private func showAlarmPicker(for arrivalDeparture: ArrivalDeparture) {
+        alarmBuilderDeparture = arrivalDeparture
+        alarmBuilder = AlarmBuilder(arrivalDeparture: arrivalDeparture, application: application, delegate: self)
+        alarmBuilder?.showBulletin(above: self)
+    }
+
+    func alarmBuilderStartedRequest(_ alarmBuilder: AlarmBuilder) {
+        ProgressHUD.show()
+    }
+
+    func alarmBuilder(_ alarmBuilder: AlarmBuilder, alarmCreated alarm: Alarm) {
+        if let departure = alarmBuilderDeparture {
+            viewModel.registerAlarm(alarm, for: departure)
+        } else {
+            viewModel.recordAlarmCreated(alarm)
+        }
+
+        let message = OBALoc("stop_controller.alarm_created_message", value: "Alarm created", comment: "A message that appears when a user's alarm is created.")
+        ProgressHUD.showSuccessAndDismiss(message: message)
+    }
+
+    func alarmBuilder(_ alarmBuilder: AlarmBuilder, error: Error) {
+        ProgressHUD.dismiss()
+        Task { @MainActor in
+            await AlertPresenter.show(error: error, presentingController: self)
+        }
     }
 
     // MARK: - Snapshot

@@ -400,6 +400,14 @@ class StopViewModel: ObservableObject {
         application.userDataStore.add(alarm: alarm)
     }
 
+    /// Records an alarm created outside the view model (the `AlarmBuilder`
+    /// bulletin flow) and indexes it under its departure so open trip panels
+    /// flip to "Alarm set" immediately instead of waiting for the next refresh.
+    func registerAlarm(_ alarm: Alarm, for arrivalDeparture: ArrivalDeparture) {
+        recordAlarmCreated(alarm)
+        alarmsByDepartureID[arrivalDeparture.id] = alarm
+    }
+
     /// Returns whether an alarm can be created for the given arrival/departure.
     func canCreateAlarm(for arrivalDeparture: ArrivalDeparture) -> Bool {
         guard
