@@ -239,12 +239,14 @@ private struct TripPanelActionsRow: View {
                 Label(Strings.schedules, systemImage: "calendar")
                     .frame(maxWidth: .infinity, minHeight: 40)
             }
-            .buttonStyle(.bordered)
             Button(action: onViewFullTrip) {
-                Label(OBALoc("stop_page.panel.full_trip", value: "View full trip", comment: "Opens the full trip screen"), systemImage: "bus")
+                Label(OBALoc("stop_page.panel.full_trip", value: "View full trip", comment: "Opens the full trip screen"), systemImage: "point.bottomleft.forward.to.point.topright.scurvepath")
                     .frame(maxWidth: .infinity, minHeight: 40)
             }
-            .buttonStyle(.bordered)
         }
+        .buttonStyle(.borderedProminent)
+        .tint(Color(uiColor: ThemeColors.shared.brand))
+        .foregroundStyle(.white)
+        .font(.body.weight(.semibold))
     }
 }
