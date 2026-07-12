@@ -44,11 +44,12 @@ struct AlarmControlView: View {
             if !alarmIsSet {
                 Button(action: onSet) {
                     Label(OBALoc("stop_page.alarm.set", value: "Set an alarm", comment: "Primary alarm button in the trip panel"), systemImage: "bell")
-                        .font(.subheadline.weight(.heavy))
                         .frame(maxWidth: .infinity, minHeight: 46)
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(onTimeColor)
+                .tint(Color(uiColor: ThemeColors.shared.brand))
+                .foregroundStyle(.white)
+                .font(.body.weight(.semibold))
             } else {
                 HStack(spacing: 10) {
                     Image(systemName: "bell.fill")
