@@ -36,6 +36,7 @@ struct TripDetailPanelView: View {
     let onCancelAlarm: () -> Void
     let onChangeAlarm: (Int) -> Void
     let onSchedule: () -> Void
+    let onBookmark: () -> Void
     let onViewFullTrip: () -> Void
 
     @State private var tripDetails: TripDetails?
@@ -86,7 +87,7 @@ struct TripDetailPanelView: View {
                 )
             }
 
-            TripPanelActionsRow(onSchedule: onSchedule, onViewFullTrip: onViewFullTrip)
+            TripPanelActionsRow(onSchedule: onSchedule, onBookmark: onBookmark, onViewFullTrip: onViewFullTrip)
         }
         .padding(.vertical, 6)
         .task(id: FetchKey(departureID: departure.id, refreshToken: refreshToken)) {
@@ -222,11 +223,13 @@ private struct ScheduledOnlyNotice: View {
     }
 }
 
-/// Schedule + full-trip actions, wired to ViewRouter navigation by the hosting page.
-/// Half-width side-by-side by default; at accessibility sizes the buttons stack
-/// so each is a full-width tap target (the guide's committed layout).
+/// More menu (Add Bookmark / Schedules) + full-trip action, wired to ViewRouter
+/// navigation by the hosting page. Half-width side-by-side by default; at
+/// accessibility sizes the buttons stack so each is a full-width tap target
+/// (the guide's committed layout).
 private struct TripPanelActionsRow: View {
     let onSchedule: () -> Void
+    let onBookmark: () -> Void
     let onViewFullTrip: () -> Void
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -236,8 +239,15 @@ private struct TripPanelActionsRow: View {
             ? AnyLayout(VStackLayout(spacing: 10))
             : AnyLayout(HStackLayout(spacing: 10))
         layout {
-            Button(action: onSchedule) {
-                Label(Strings.schedules, systemImage: "calendar")
+            Menu {
+                Button(action: onBookmark) {
+                    Label(Strings.addBookmark, systemImage: "bookmark")
+                }
+                Button(action: onSchedule) {
+                    Label(Strings.schedules, systemImage: "calendar")
+                }
+            } label: {
+                Label(Strings.more, systemImage: "ellipsis.circle")
                     .frame(maxWidth: .infinity, minHeight: 40)
             }
             Button(action: onViewFullTrip) {

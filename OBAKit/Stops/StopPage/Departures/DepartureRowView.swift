@@ -169,8 +169,8 @@ struct DepartureRowView: View {
     }
 }
 
-/// Swipe + context-menu parity with today's `ArrivalDepartureItem`
-/// trailing actions (Alarm / Schedule / Save) and long-press menu.
+/// Long-press context-menu parity with today's `ArrivalDepartureItem`
+/// menu actions (Alarm / Schedule / Save).
 struct DepartureRowActions {
     let canAlarm: Bool
     let canSchedule: Bool
@@ -189,24 +189,6 @@ struct DepartureRowActions {
 extension View {
     func departureRowActions(_ actions: DepartureRowActions) -> some View {
         self
-            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                if actions.canAlarm {
-                    Button(action: actions.onAlarmToggle) {
-                        Label(actions.hasAlarm ? removeAlarmTitle : Strings.addAlarm, systemImage: actions.hasAlarm ? "bell.slash" : "bell")
-                    }
-                    .tint(Color(uiColor: ThemeColors.shared.departureOnTime))
-                }
-                if actions.canSchedule {
-                    Button(action: actions.onSchedule) {
-                        Label(Strings.schedules, systemImage: "calendar")
-                    }
-                    .tint(.teal)
-                }
-                Button(action: actions.onBookmark) {
-                    Label(Strings.addBookmark, systemImage: "bookmark")
-                }
-                .tint(.orange)
-            }
             .contextMenu(menuItems: {
                 Button(action: actions.onShowTrip) {
                     Label(OBALoc("stop_page.row.show_trip", value: "Show Trip Details", comment: "Context menu action opening the full trip screen"), systemImage: "bus")

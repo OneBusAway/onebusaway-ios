@@ -362,6 +362,7 @@ struct StopPageView: View {
             onCancelAlarm: { Task { await viewModel.cancelAlarm(for: departure) } },
             onChangeAlarm: { minutes in Task { await viewModel.changeAlarm(for: departure, leadTimeMinutes: minutes) } },
             onSchedule: { navigation.showScheduleForRoute(departure) },
+            onBookmark: { navigation.showBookmarkEditor(departure) },
             onViewFullTrip: { navigation.showTrip(departure) }
         )
     }
