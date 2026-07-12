@@ -196,9 +196,12 @@ public class ArrivalDeparture: NSObject, Identifiable, Decodable, HasReferences 
 
     // MARK: - Helpers/Names
 
-    /// Provides an ID for this arrival departure consisting of its Stop, Trip, and Route IDs.
+    /// Provides an ID for this arrival departure consisting of its Stop, Trip, and Route IDs,
+    /// plus the service date and stop sequence. The latter two disambiguate the same trip
+    /// serving this stop more than once: loop routes visit a stop at multiple sequences, and
+    /// trips can repeat across consecutive service dates.
     public var id: String {
-        return "stop=\(stopID),trip=\(tripID),route=\(routeID),status=\(arrivalDepartureStatus)"
+        return "stop=\(stopID),trip=\(tripID),route=\(routeID),serviceDate=\(serviceDate.timeIntervalSince1970),sequence=\(stopSequence),status=\(arrivalDepartureStatus)"
     }
 
     /// Provides the best available trip headsign.
