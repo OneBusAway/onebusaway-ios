@@ -11,14 +11,15 @@ import SwiftUI
 import OBAKitCore
 
 /// Vertical line-and-dot approach timeline: upstream stops leading to the
-/// user's stop with a "bus here" marker at the vehicle's position. Live
+/// user's stop with a bus-glyph dot marking the vehicle's position. Live
 /// trips only (§4.1).
 ///
 /// Per the comp: a continuous connector line runs through the dots — gray
 /// above the bus's position, route-colored from the bus down to the user's
 /// stop. Stops strictly behind the bus are small filled gray dots with dimmed
-/// names; the bus's stop and everything between it and the user are outlined
-/// route-color dots; the user's stop is a larger filled route-color dot.
+/// names; the vehicle's stop is a filled route-color dot containing the bus
+/// glyph; stops between it and the user are outlined route-color dots; the
+/// user's stop is a larger filled route-color dot.
 ///
 /// Dot sizes and line width scale with Dynamic Type via `@ScaledMetric`;
 /// labels use text styles.
@@ -34,9 +35,12 @@ struct ApproachTimelineView: View {
     let rows: [Row]
     let minutesAway: Int
     let routeColor: Color
+    /// Drives the glyph inside the vehicle-position dot (bus, light rail, …).
+    let routeType: Route.RouteType
 
     @ScaledMetric(relativeTo: .body) private var userDotSize: CGFloat = 14
     @ScaledMetric(relativeTo: .body) private var stopDotSize: CGFloat = 10
+    @ScaledMetric(relativeTo: .body) private var busDotSize: CGFloat = 22
     @ScaledMetric(relativeTo: .body) private var lineWidth: CGFloat = 2.5
 
     var body: some View {
@@ -53,13 +57,6 @@ struct ApproachTimelineView: View {
                             .font(.caption.weight(.bold)).foregroundStyle(.secondary)
                     }
                     Spacer()
-                    if row.isVehicleHere {
-                        Label(String(format: OBALoc("stop_page.timeline.bus_here_fmt", value: "bus here · %dm away", comment: "Vehicle-position pill. %d is minutes to the user's stop."), minutesAway), systemImage: "bus.fill")
-                            .font(.caption2.weight(.heavy)).monospacedDigit()
-                            .foregroundStyle(routeColor)
-                            .padding(.horizontal, 8).padding(.vertical, 3)
-                            .background(routeColor.opacity(0.14), in: Capsule())
-                    }
                 }
                 .frame(minHeight: 32)
             }
@@ -95,12 +92,26 @@ struct ApproachTimelineView: View {
             }
             dot(for: row)
         }
-        .frame(width: userDotSize)
+        .frame(width: busDotSize)
     }
 
     @ViewBuilder
     private func dot(for row: Row) -> some View {
-        if row.isUserStop {
+        if row.isVehicleHere {
+            // The vehicle's position: the mode-appropriate transport glyph
+            // rides inside the dot itself rather than in a trailing pill.
+            Circle()
+                .fill(routeColor)
+                .frame(width: busDotSize, height: busDotSize)
+                .overlay {
+                    Image(uiImage: Icons.transportIcon(from: routeType))
+                        .resizable()
+                        .scaledToFit()
+                        .foregroundStyle(.white)
+                        .frame(width: busDotSize * 0.55, height: busDotSize * 0.55)
+                }
+                .accessibilityLabel(String(format: OBALoc("stop_page.timeline.vehicle_here_fmt", value: "vehicle here · %dm away", comment: "Vehicle-position marker. %d is minutes to the user's stop."), minutesAway))
+        } else if row.isUserStop {
             Circle()
                 .fill(routeColor)
                 .frame(width: userDotSize, height: userDotSize)

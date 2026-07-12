@@ -119,7 +119,8 @@ struct TripDetailPanelView: View {
             ApproachTimelineView(
                 rows: timelineRows(slice),
                 minutesAway: departure.arrivalDepartureMinutes,
-                routeColor: routeColor
+                routeColor: routeColor,
+                routeType: departure.route.routeType
             )
         } else if !timelineUnavailable {
             ApproachTimelineSkeleton()
