@@ -115,6 +115,7 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
         showScheduleForStop: {},
         showScheduleForRoute: { _ in },
         canScheduleForRoute: false,
+        showWalkingDirections: {},
         showAlertDetail: { _ in },
         showBookmarkEditor: { _ in },
         showExternalSurveyError: {},
@@ -132,6 +133,7 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
             showScheduleForStop: { [weak self] in self?.showScheduleForStop() },
             showScheduleForRoute: { [weak self] departure in self?.showScheduleForRoute(for: departure) },
             canScheduleForRoute: application.currentRegion?.supportsScheduleForRoute ?? true,
+            showWalkingDirections: { [weak self] in self?.showWalkingDirections() },
             showAlertDetail: { [weak self] alert in
                 guard let self else { return }
                 self.application.viewRouter.navigateTo(alert: alert, from: self)
@@ -485,6 +487,56 @@ private extension StopPageViewController {
         let stopPreferencesView = StopPreferencesWrappedView(stop, initialHiddenRoutes: hiddenRoutes, delegate: self)
             .environment(\.coreApplication, application)
         present(UIHostingController(rootView: stopPreferencesView), animated: true)
+    }
+
+    /// Opens walking directions to the stop from the header's walk pill. Reuses
+    /// the `locationMenu()` availability logic: Apple Maps always, Google Maps
+    /// only when installed. One available app opens directly; more than one
+    /// presents an action sheet to disambiguate.
+    func showWalkingDirections() {
+        guard let coordinate = viewModel.stop?.coordinate else { return }
+
+        var options: [(title: String, url: URL)] = []
+
+        if let appleMapsURL = AppInterop.appleMapsWalkingDirectionsURL(coordinate: coordinate) {
+            options.append((
+                OBALoc("stops_controller.walking_directions_apple", value: "Walking Directions (Apple Maps)", comment: "Button that launches Apple's maps.app with walking directions to this stop"),
+                appleMapsURL
+            ))
+        }
+
+        #if !targetEnvironment(simulator)
+        if let googleMapsURL = AppInterop.googleMapsWalkingDirectionsURL(coordinate: coordinate), googleMapsAvailable {
+            options.append((
+                OBALoc("stops_controller.walking_directions_google", value: "Walking Directions (Google Maps)", comment: "Button that launches Google Maps with walking directions to this stop"),
+                googleMapsURL
+            ))
+        }
+        #endif
+
+        guard let first = options.first else { return }
+
+        if options.count == 1 {
+            application.open(first.url, options: [:], completionHandler: nil)
+            return
+        }
+
+        let sheet = UIAlertController(
+            title: OBALoc("stops_controller.walking_directions", value: "Walking Directions", comment: "Button that launches a maps app with walking directions to this stop"),
+            message: nil,
+            preferredStyle: .actionSheet
+        )
+        for option in options {
+            sheet.addAction(UIAlertAction(title: option.title, style: .default) { [weak self] _ in
+                self?.application.open(option.url, options: [:], completionHandler: nil)
+            })
+        }
+        sheet.addAction(UIAlertAction(title: Strings.cancel, style: .cancel))
+        if let popover = sheet.popoverPresentationController {
+            popover.sourceView = view
+            popover.sourceRect = CGRect(origin: view.center, size: .zero)
+        }
+        present(sheet, animated: true)
     }
 
     func showReportProblem() {

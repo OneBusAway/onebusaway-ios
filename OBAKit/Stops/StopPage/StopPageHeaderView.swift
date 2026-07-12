@@ -14,8 +14,8 @@ import OBAKitCore
 /// dark scrim, with the identity block bottom-left in white — the "last
 /// updated" status line, stop name, the code/direction subtitle with inline
 /// route chips (wrapping onto as many lines as needed, never truncated), and
-/// the walk pill (the single visual source of walk time, §4.5). Tap toggles
-/// the full routes-served line (parity with the old header).
+/// the walk pill (the single visual source of walk time, §4.5). Tapping the
+/// walk pill opens walking directions in an external maps app.
 ///
 /// A plain-value view: it never touches `StopViewModel`. The map snapshot is
 /// produced by a `snapshotLoader` closure supplied by the hosting VC, so the
@@ -28,9 +28,11 @@ struct StopPageHeaderView: View {
     /// The "Updated: …" line; empty hides it.
     let statusText: String
     let snapshotLoader: (CGSize) async -> UIImage?
+    /// Opens walking directions to the stop (VC-owned; disambiguates between
+    /// maps apps when more than one is available).
+    let onWalkingDirections: () -> Void
 
     @State private var snapshot: UIImage?
-    @State private var showsRoutes = false
     @State private var cardWidth: CGFloat = 0
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -56,38 +58,43 @@ struct StopPageHeaderView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            if !statusText.isEmpty {
-                HeaderStatusLine(statusText: statusText)
-            }
-            Text(stop.name)
-                .font(.title2.weight(.heavy))
-                .foregroundStyle(.white)
-                // Accessibility sizes get more lines so the full name still
-                // reads instead of clipping at the larger glyph sizes.
-                .lineLimit(dynamicTypeSize.isAccessibilitySize ? 4 : 2)
-            // Subtitle + chips flow together and wrap onto as many lines as
-            // the routes need — chips are never compressed or dropped.
-            FlowLayout(hSpacing: 4, vSpacing: 4) {
-                Text(subtitle)
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(.white.opacity(0.75))
-                    .padding(.trailing, 4)
-                ForEach(routeChipNames, id: \.self) { name in
-                    routeChip(name)
+            VStack(alignment: .leading, spacing: 8) {
+                if !statusText.isEmpty {
+                    HeaderStatusLine(statusText: statusText)
+                }
+                Text(stop.name)
+                    .font(.title2.weight(.heavy))
+                    .foregroundStyle(.white)
+                    // Accessibility sizes get more lines so the full name still
+                    // reads instead of clipping at the larger glyph sizes.
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? 4 : 2)
+                // Subtitle + chips flow together and wrap onto as many lines as
+                // the routes need — chips are never compressed or dropped.
+                FlowLayout(hSpacing: 4, vSpacing: 4) {
+                    Text(subtitle)
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(.white.opacity(0.75))
+                        .padding(.trailing, 4)
+                    ForEach(routeChipNames, id: \.self) { name in
+                        routeChip(name)
+                    }
                 }
             }
-            if showsRoutes, let routes = Formatters.formattedRoutes(stop.routes) {
-                Text(routes)
-                    .font(.caption)
-                    .foregroundStyle(.white.opacity(0.75))
-                    .lineLimit(2)
-            }
+            // One combined VoiceOver element for the identity text; the walk
+            // button below stays separate so it remains individually
+            // focusable and activatable.
+            .accessibilityElement(children: .combine)
             if let walkTime {
-                Label(walkChipText(walkTime), systemImage: "figure.walk")
-                    .font(.footnote.weight(.heavy))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 12).padding(.vertical, 6)
-                    .background(Color(uiColor: ThemeColors.shared.departureOnTime), in: Capsule())
+                Button(action: onWalkingDirections) {
+                    Label(walkChipText(walkTime), systemImage: "figure.walk")
+                        .font(.footnote.weight(.heavy))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 12).padding(.vertical, 6)
+                        .background(Color(uiColor: ThemeColors.shared.departureOnTime), in: Capsule())
+                        .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityHint(OBALoc("stop_page.header.walk_a11y_hint", value: "Opens walking directions to this stop.", comment: "VoiceOver hint on the header card's walk-time button."))
             }
         }
         .padding(16)
@@ -113,8 +120,6 @@ struct StopPageHeaderView: View {
             }
         }
         .clipped()
-        .contentShape(Rectangle())
-        .onTapGesture { withAnimation { showsRoutes.toggle() } }
         .onGeometryChange(for: CGFloat.self) { proxy in
             proxy.size.width
         } action: { newWidth in
@@ -127,11 +132,6 @@ struct StopPageHeaderView: View {
             guard cardWidth > 0, snapshot == nil else { return }
             snapshot = await snapshotLoader(CGSize(width: cardWidth, height: cardHeight))
         }
-        .accessibilityElement(children: .combine)
-        // The card is tappable (toggles the routes-served line), so VoiceOver
-        // must announce it as a button and explain what activation does.
-        .accessibilityAddTraits(.isButton)
-        .accessibilityHint(OBALoc("stop_page.header.a11y_hint", value: "Shows the routes served by this stop.", comment: "VoiceOver hint on the stop header card; activating it toggles the routes-served line."))
     }
 
     private func routeChip(_ name: String) -> some View {

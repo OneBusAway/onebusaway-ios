@@ -25,6 +25,9 @@ struct StopPageNavigationHandler {
     /// Region gate for the route-schedule affordances
     /// (`Region.supportsScheduleForRoute`); hides them where unsupported.
     let canScheduleForRoute: Bool
+    /// Opens walking directions to the stop in an external maps app (header
+    /// walk pill). Presents a choice sheet when more than one app is available.
+    let showWalkingDirections: () -> Void
     /// Pushes the alert-detail screen for a tapped service alert.
     let showAlertDetail: (ServiceAlert) -> Void
     /// Opens the bookmark editor: `nil` for a stop-level bookmark, an
@@ -151,7 +154,7 @@ struct StopPageView: View {
         List {
             if let stop = viewModel.stop {
                 Section {
-                    StopPageHeaderView(stop: stop, walkTime: walkTime, statusText: viewModel.statusText, snapshotLoader: snapshotLoader)
+                    StopPageHeaderView(stop: stop, walkTime: walkTime, statusText: viewModel.statusText, snapshotLoader: snapshotLoader, onWalkingDirections: navigation.showWalkingDirections)
                         .listRowInsets(EdgeInsets(top: 0, leading: Self.horizontalRowInset, bottom: 0, trailing: Self.horizontalRowInset))
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
