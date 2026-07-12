@@ -14,6 +14,9 @@ struct WalkLineDivider: View {
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
+    /// Matches the walk pill on the header card (§4.5).
+    private let lineColor = Color(uiColor: ThemeColors.shared.departureOnTime)
+
     private var text: String {
         let fmt = OBALoc("stop_page.walk_divider_fmt", value: "%d MIN WALK — CATCH BELOW", comment: "Divider between departures you'd miss on foot and ones you can still catch. %d is the walk time in minutes.")
         return String(format: fmt, walkMinutes)
@@ -28,21 +31,25 @@ struct WalkLineDivider: View {
             if dynamicTypeSize.isAccessibilitySize {
                 Label(text, systemImage: "figure.walk")
                     .font(.caption.weight(.heavy))
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(lineColor)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(12)
                     .overlay(
                         RoundedRectangle(cornerRadius: 12, style: .continuous)
                             .stroke(style: StrokeStyle(lineWidth: 2, dash: [7, 6]))
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(lineColor)
                     )
             } else {
                 dash
                 Label(text, systemImage: "figure.walk")
                     .font(.caption.weight(.heavy))
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(lineColor)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
+                    // The dashes are greedy (maxWidth: .infinity); without a
+                    // higher priority the HStack squeezes the label instead of
+                    // shortening the dashes.
+                    .layoutPriority(1)
                 dash
             }
         }
@@ -53,7 +60,7 @@ struct WalkLineDivider: View {
     private var dash: some View {
         Line()
             .stroke(style: StrokeStyle(lineWidth: 2, dash: [7, 6]))
-            .foregroundStyle(.orange)
+            .foregroundStyle(lineColor)
             .frame(height: 2)
             .frame(maxWidth: .infinity)
     }
@@ -65,5 +72,12 @@ struct WalkLineDivider: View {
             path.addLine(to: CGPoint(x: rect.maxX, y: rect.midY))
             return path
         }
+    }
+}
+
+#Preview {
+    List {
+        WalkLineDivider(walkMinutes: 104)
+        WalkLineDivider(walkMinutes: 8)
     }
 }

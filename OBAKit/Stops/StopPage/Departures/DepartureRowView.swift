@@ -18,7 +18,8 @@ private let removeAlarmTitle = OBALoc("stop_page.row.remove_alarm", value: "Remo
 struct DepartureRowView: View {
     enum Style {
         case normal
-        /// Upcoming but unreachable on foot: dim + strikethrough (§4.2).
+        /// Upcoming but unreachable on foot: rendered like a normal row;
+        /// only the VoiceOver label calls it out (§4.2).
         case missed
         /// Already departed: dim only (§4.2).
         case past
@@ -33,7 +34,7 @@ struct DepartureRowView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.obaFormatters) private var formatters
 
-    private var dimmed: Bool { style != .normal }
+    private var dimmed: Bool { style == .past }
 
     private var scheduledTimeText: String {
         formatters.timeFormatter.string(from: departure.scheduledDate)
@@ -106,7 +107,6 @@ struct DepartureRowView: View {
         Text(departure.tripHeadsign ?? departure.routeShortName)
             .font(.system(.body, weight: .bold))
             .lineLimit(2)
-            .strikethrough(style == .missed)
     }
 
     private var statusText: some View {
