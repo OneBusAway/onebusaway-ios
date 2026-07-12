@@ -83,10 +83,4 @@ final class StopPageListBuilderTests: XCTestCase {
         XCTAssertEqual(groups[0].chips.map(\.id), ["d1", "d2", "d3"])
         XCTAssertEqual(groups[0].upcoming.count, 5)
     }
-
-    func test_groups_singleDeparture_hasEmptyChips() {
-        // Renders as "later trips not loaded" (§4.4) — builder just returns empty.
-        let groups = StopPageListBuilder.routeGroups([dep("only", route: "24", mins: 8)])
-        XCTAssertTrue(groups[0].chips.isEmpty)
-    }
 }

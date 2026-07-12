@@ -920,9 +920,6 @@
 /* VoiceOver label for one expanded departure row inside a grouped route card: route, headsign, minutes, status. */
 "stop_page.grouped.expanded_row.a11y_fmt" = "Route %1$@ to %2$@, departs in %3$d minutes, %4$@";
 
-/* Empty upcoming-chips state; must never imply no later trips exist (§4.4) */
-"stop_page.grouped.not_loaded" = "later trips not loaded";
-
 /* Extends the departure time window */
 "stop_page.load_more" = "Load more";
 

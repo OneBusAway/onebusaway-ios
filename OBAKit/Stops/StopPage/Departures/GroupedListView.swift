@@ -129,11 +129,7 @@ struct GroupedListView: View {
     /// alarm pill, and the expand chevron. Empty chips render the §4.4 wording.
     private func headerChipsRow(_ group: StopPageListBuilder.RouteGroup<ArrivalDeparture>) -> some View {
         HStack(spacing: 8) {
-            if group.chips.isEmpty {
-                Text(OBALoc("stop_page.grouped.not_loaded", value: "later trips not loaded", comment: "Empty upcoming-chips state; must never imply no later trips exist (§4.4)"))
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.tertiary)
-            } else {
+            if !group.chips.isEmpty {
                 ForEach(group.chips, id: \.id) { chip in
                     let chipStatus = statusProvider(chip)
                     Text("\(chip.arrivalDepartureMinutes)m")

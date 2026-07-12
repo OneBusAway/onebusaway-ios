@@ -62,7 +62,7 @@ enum StopPageListBuilder {
 
         var next: D { departures[0] }
         var upcoming: [D] { Array(departures.dropFirst()) }
-        /// The small status-tinted pills; empty renders "later trips not loaded" (§4.4).
+        /// The small status-tinted pills
         var chips: [D] { Array(departures.dropFirst().prefix(3)) }
     }
 
