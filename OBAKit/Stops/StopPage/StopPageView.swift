@@ -293,7 +293,11 @@ struct StopPageView: View {
                         }
                     },
                     onAlarmToggle: { departure in
-                        Task { await viewModel.toggleAlarm(for: departure) }
+                        if viewModel.alarm(for: departure) != nil {
+                            Task { await viewModel.cancelAlarm(for: departure) }
+                        } else {
+                            navigation.showAlarmPicker(departure)
+                        }
                     },
                     panelBuilder: makePanel(for:)
                 )
