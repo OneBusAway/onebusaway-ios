@@ -10,7 +10,7 @@
 import SwiftUI
 import OBAKitCore
 
-/// Floating map-type toggle rendered on the bottom-leading cluster of
+/// Floating map-type toggle rendered on the bottom-trailing cluster of
 /// `MapPanelRootView`. Mirrors the UIKit `toggleMapTypeButton` in
 /// `MapViewController` — same icons, same accessibility strings, same VM call.
 struct MapTypeButton: View {

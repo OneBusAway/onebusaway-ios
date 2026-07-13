@@ -10,7 +10,7 @@
 import SwiftUI
 import OBAKitCore
 
-/// Floating "center on my location" pill rendered on the bottom-leading cluster
+/// Floating "center on my location" pill rendered on the bottom-trailing cluster
 /// of `MapPanelRootView`. Hidden entirely when location isn't authorized,
 /// matching the UIKit `MapViewController.locationButton.isHidden` behavior.
 struct CurrentLocationButton: View {

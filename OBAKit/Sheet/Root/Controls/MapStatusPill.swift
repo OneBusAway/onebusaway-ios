@@ -16,10 +16,10 @@ import OBAKitCore
 /// Liquid Glass. Renders nothing when there's no status to show.
 ///
 /// The pill is display + tap only: it forwards permission-state taps to the
-/// caller, which owns the `confirmationDialog` presentation. Presenting the
-/// dialog from inside the pill (which lives in the map's overlay layer)
-/// conflicts with `floatingSheet`'s always-presented `UISheetPresentationController`
-/// and causes the base sheet to be dismissed. See `MapPanelRootView` for the
+/// caller, which owns the `.alert` presentation. Presenting the alert from
+/// inside the pill (which lives in the map's overlay layer) conflicts with
+/// `floatingSheet`'s always-presented `UISheetPresentationController` and
+/// causes the base sheet to be dismissed. See `MapPanelRootView` for the
 /// hosting side of the pattern.
 struct MapStatusPill: View {
     let state: MapViewModel.TopPillState

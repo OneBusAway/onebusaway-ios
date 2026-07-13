@@ -16,7 +16,7 @@ import UIKit
 
 /// A pure-SwiftUI alternative to `MapViewController`: a full-screen SwiftUI
 /// `Map` with the persistent floating sheet system layered on top plus the
-/// floating map-control overlays (bottom-leading cluster, top-center pill).
+/// floating map-control overlays (bottom-trailing cluster, top-center pill).
 struct MapPanelRootView: View {
 
     @StateObject private var coordinator: SheetCoordinator<AppSheetRoute>

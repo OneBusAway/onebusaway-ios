@@ -10,7 +10,7 @@
 import SwiftUI
 import OBAKitCore
 
-/// Bottom-leading vertical cluster grouping the map-type toggle above the
+/// Bottom-trailing vertical cluster grouping the map-type toggle above the
 /// current-location button. Sits above the floating sheet so it moves with the
 /// sheet's collapsed height (see `MapPanelRootView`).
 struct MapControlsCluster: View {
