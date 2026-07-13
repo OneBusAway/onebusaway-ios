@@ -1001,6 +1001,12 @@
 /* Vehicle-position pill. %d is minutes to the user's stop. */
 "stop_page.timeline.bus_here_fmt" = "bus here · %dm away";
 
+/* Gap marker in the approach timeline when a single stop is elided between the vehicle and the stops shown */
+"stop_page.timeline.skipped_stop_one" = "1 stop";
+
+/* Gap marker in the approach timeline. %d is the number of elided stops between the vehicle and the stops shown. */
+"stop_page.timeline.skipped_stops_fmt" = "%d stops";
+
 /* Marker on the user's stop in the approach timeline */
 "stop_page.timeline.your_stop" = "· your stop";
 

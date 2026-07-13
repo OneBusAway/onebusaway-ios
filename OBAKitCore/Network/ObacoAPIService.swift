@@ -141,7 +141,7 @@ public actor ObacoAPIService: @preconcurrency APIService {
         // just never arrives. Flagging the alarm at registration tells the server to route
         // this one push through the sandbox instead. (The alarm fires minutes later, from
         // a job, so the flag has to be persisted server-side rather than sent at push time.)
-        params["development"] = "1"
+        params["apns_sandbox"] = "1"
         #endif
 
         urlRequest.httpBody = NetworkHelpers.dictionary(toHTTPBodyData: params)

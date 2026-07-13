@@ -59,7 +59,7 @@ class AlarmModelOperationTests: OBATestCase {
         _ = try await obacoService.postAlarm(minutesBefore: 1, arrivalDeparture: arrivalDeparture, userPushID: "123")
 
         let body = try XCTUnwrap(capture.body, "Expected postAlarm to send a form-encoded body")
-        XCTAssertTrue(body.contains("development=1"), "Expected a debug build to flag the alarm for the APNs sandbox. Body: \(body)")
+        XCTAssertTrue(body.contains("apns_sandbox=1"), "Expected a debug build to flag the alarm for the APNs sandbox. Body: \(body)")
     }
 
     /// The sidecar answers a successful `DELETE` with an empty `204`.

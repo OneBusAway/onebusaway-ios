@@ -121,7 +121,8 @@ struct TripDetailPanelView: View {
                 rows: timelineRows(slice),
                 minutesAway: departure.arrivalDepartureMinutes,
                 routeColor: routeColor,
-                routeType: departure.route.routeType
+                routeType: departure.route.routeType,
+                skippedStopCount: slice.skippedStopCount
             )
         } else if !timelineUnavailable {
             ApproachTimelineSkeleton()

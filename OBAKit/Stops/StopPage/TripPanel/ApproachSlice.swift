@@ -20,25 +20,38 @@ protocol ApproachTimelineStop {
 /// The trip panel's approach window: the user's stop plus up to 4 upstream
 /// stops, with the vehicle's position resolved from `closestStopID` — the
 /// same field the Trip screen uses (`TripStopListItem`).
+///
+/// When the vehicle is further back than the window, its stop is pinned to
+/// the top of the slice and the stops between it and the final 3 upstream
+/// stops are elided; `skippedStopCount` says how many were dropped so the
+/// timeline can render a gap marker.
 struct ApproachSlice<S: ApproachTimelineStop> {
     let stops: [S]
     let vehicleIndex: Int?
+    /// Stops elided between `stops[0]` (the vehicle's stop) and `stops[1]`.
+    /// Zero when the window is contiguous.
+    let skippedStopCount: Int
 
     static func make(stopTimes: [S], userStopID: StopID, closestStopID: StopID?) -> ApproachSlice? {
         guard let userIndex = stopTimes.firstIndex(where: { $0.stopID == userStopID }) else { return nil }
 
-        if let closestStopID,
-           let vehicleAbsolute = stopTimes.firstIndex(where: { $0.stopID == closestStopID }),
-           vehicleAbsolute > userIndex {
+        let vehicleAbsolute = closestStopID.flatMap { closest in
+            stopTimes.firstIndex(where: { $0.stopID == closest })
+        }
+        if let vehicleAbsolute, vehicleAbsolute > userIndex {
             return nil // vehicle already past the user's stop
         }
 
         let start = max(0, userIndex - 4)
-        let window = Array(stopTimes[start...userIndex])
-        let vehicleIndex = closestStopID.flatMap { closest in
-            window.firstIndex(where: { $0.stopID == closest })
+        if let vehicleAbsolute, vehicleAbsolute < start {
+            // Vehicle is beyond the window: pin its stop on top, keep the 3
+            // stops nearest the user, and elide everything in between.
+            let window = [stopTimes[vehicleAbsolute]] + Array(stopTimes[(userIndex - 3)...userIndex])
+            return ApproachSlice(stops: window, vehicleIndex: 0, skippedStopCount: userIndex - 4 - vehicleAbsolute)
         }
-        return ApproachSlice(stops: window, vehicleIndex: vehicleIndex)
+
+        let window = Array(stopTimes[start...userIndex])
+        return ApproachSlice(stops: window, vehicleIndex: vehicleAbsolute.map { $0 - start }, skippedStopCount: 0)
     }
 }
 

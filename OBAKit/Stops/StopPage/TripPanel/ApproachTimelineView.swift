@@ -37,6 +37,10 @@ struct ApproachTimelineView: View {
     let routeColor: Color
     /// Drives the glyph inside the vehicle-position dot (bus, light rail, …).
     let routeType: Route.RouteType
+    /// Stops elided between the vehicle's row (`rows[0]`) and `rows[1]` when
+    /// the vehicle is further back than the window (§4.1). When > 0, a
+    /// zig-zag gap row labeled with the count renders between them.
+    let skippedStopCount: Int
 
     @ScaledMetric(relativeTo: .body) private var userDotSize: CGFloat = 14
     @ScaledMetric(relativeTo: .body) private var stopDotSize: CGFloat = 10
@@ -59,9 +63,36 @@ struct ApproachTimelineView: View {
                     Spacer()
                 }
                 .frame(minHeight: 32)
+
+                if index == 0 && skippedStopCount > 0 {
+                    gapRow
+                }
             }
         }
         .accessibilityElement(children: .combine)
+    }
+
+    /// The elision marker between the vehicle's stop and the stops nearest
+    /// the user: a zig-zag continuation of the connector line with the
+    /// skipped-stop count alongside.
+    private var gapRow: some View {
+        HStack(spacing: 12) {
+            ZigZagLine()
+                .stroke(routeColor, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round, lineJoin: .round))
+                .frame(width: busDotSize)
+            Text(skippedStopsLabel)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(.secondary)
+            Spacer()
+        }
+        .frame(minHeight: 32)
+    }
+
+    private var skippedStopsLabel: String {
+        if skippedStopCount == 1 {
+            return OBALoc("stop_page.timeline.skipped_stop_one", value: "1 stop", comment: "Gap marker in the approach timeline when a single stop is elided between the vehicle and the stops shown")
+        }
+        return String(format: OBALoc("stop_page.timeline.skipped_stops_fmt", value: "%d stops", comment: "Gap marker in the approach timeline. %d is the number of elided stops between the vehicle and the stops shown."), skippedStopCount)
     }
 
     /// "Behind the bus" for styling: `isPassed` marks at-or-behind, but the
@@ -127,5 +158,21 @@ struct ApproachTimelineView: View {
                 .background(Circle().fill(Color(uiColor: .secondarySystemGroupedBackground)))
                 .frame(width: stopDotSize, height: stopDotSize)
         }
+    }
+}
+
+/// Vertical zig-zag connector segment for the timeline's gap row: enters at
+/// the top center and exits at the bottom center so it lines up with the
+/// straight connector halves above and below.
+private struct ZigZagLine: Shape {
+    func path(in rect: CGRect) -> Path {
+        let amplitude = min(rect.width / 2, 5)
+        var path = Path()
+        path.move(to: CGPoint(x: rect.midX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.midX - amplitude, y: rect.minY + rect.height * 0.3))
+        path.addLine(to: CGPoint(x: rect.midX + amplitude, y: rect.minY + rect.height * 0.55))
+        path.addLine(to: CGPoint(x: rect.midX - amplitude, y: rect.minY + rect.height * 0.8))
+        path.addLine(to: CGPoint(x: rect.midX, y: rect.maxY))
+        return path
     }
 }
