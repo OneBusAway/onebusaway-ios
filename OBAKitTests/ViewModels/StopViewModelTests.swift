@@ -36,16 +36,28 @@ class StopViewModelTests: OBATestCase {
 
     /// Builds an `Application` whose REST API service routes through the supplied `MockDataLoader`.
     /// Locks the current region to Puget Sound so the API base URL is deterministic.
+    ///
+    /// Pass `bundledRegionsFixture: "regions-puget-sound-no-sidecar.json"` for a Puget
+    /// Sound with no `sidecarBaseURL`, which leaves `application.obacoService` nil —
+    /// the configuration the alarm paths have to survive.
     private func createApplication(
         dataLoader: MockDataLoader,
         analytics: AnalyticsMock,
         surveyHitCounter: SurveyHitCounter? = nil,
-        arrivalsFixture: String = "arrivals_and_departures_empty.json"
+        arrivalsFixture: String = "arrivals_and_departures_empty.json",
+        arrivalsData: Data? = nil,
+        bundledRegionsFixture: String? = nil
     ) -> Application {
         stubRegions(dataLoader: dataLoader)
         stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
         Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
-        stubArrivalsAndDepartures(dataLoader: dataLoader, fixture: arrivalsFixture)
+        if let arrivalsData {
+            dataLoader.mock(data: arrivalsData) { request in
+                request.url?.path.contains("/api/where/arrivals-and-departures-for-stop") ?? false
+            }
+        } else {
+            stubArrivalsAndDepartures(dataLoader: dataLoader, fixture: arrivalsFixture)
+        }
         if let surveyHitCounter {
             stubSurveys(dataLoader: dataLoader, counter: surveyHitCounter)
         } else {
@@ -67,13 +79,29 @@ class StopViewModelTests: OBATestCase {
             analytics: analytics,
             queue: queue,
             locationService: locationService,
-            bundledRegionsFilePath: bundledRegionsPath,
+            bundledRegionsFilePath: bundledRegionsFixture.map { Fixtures.path(to: $0) } ?? bundledRegionsPath,
             regionsAPIPath: regionsAPIPath,
             dataLoader: dataLoader,
             fixedRegionName: Fixtures.pugetSoundRegion.name
         )
 
         return Application(config: config)
+    }
+
+    /// `RegionsService` prefers the on-disk regions file over the bundled one, and a
+    /// prior run in the same simulator can leave a copy that *does* have a sidecar URL.
+    /// Wipe it so a no-sidecar bundled fixture actually reaches `currentRegion`.
+    private func removeStoredRegionsFile() {
+        guard let appSupport = try? FileManager.default.url(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask,
+            appropriateFor: nil,
+            create: false
+        ) else { return }
+
+        try? FileManager.default.removeItem(
+            at: appSupport.appendingPathComponent("Regions/default-regions.json")
+        )
     }
 
     /// Stubs every `arrivals-and-departures-for-stop` call with the given fixture.
@@ -750,5 +778,108 @@ class StopViewModelTests: OBATestCase {
         // Refresh clears the cache, so the accessor goes cold again.
         await viewModel.refresh()
         expect(viewModel.cachedApproachTripDetails(for: departure)).to(beNil())
+    }
+
+    /// The approach fetch varies by trip *instance* — `getTrip` takes tripID,
+    /// vehicleID and serviceDate — so the cache has to key on all three. Keyed on
+    /// tripID alone, the same trip running on two service days shares one entry and
+    /// the panel renders the other day's timeline.
+    @MainActor
+    func test_approachCache_sameTripDifferentServiceDate_doesNotCollide() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(
+            dataLoader: dataLoader,
+            analytics: AnalyticsMock(),
+            arrivalsData: try arrivalsWithSameTripOnTwoServiceDays()
+        )
+
+        let tripData = Fixtures.loadData(file: "trip_details_1_18196913.json")
+        dataLoader.mock(data: tripData) { request in
+            request.url?.path.contains("/api/where/trip-details/") ?? false
+        }
+
+        let viewModel = StopViewModel(application: app, stopID: testStopID)
+        await viewModel.refresh()
+
+        let departures = try XCTUnwrap(viewModel.stopArrivals?.arrivalsAndDepartures)
+        let today = try XCTUnwrap(departures.first { $0.vehicleID == "1_7028" })
+        let tomorrow = try XCTUnwrap(departures.first { $0.vehicleID == "1_9999" })
+
+        // Same trip, different instance: only the service date and vehicle differ.
+        expect(today.tripID) == tomorrow.tripID
+        expect(today.serviceDate).toNot(equal(tomorrow.serviceDate))
+
+        // Warm the cache for one instance.
+        let fetched = await viewModel.approachTripDetails(for: today)
+        expect(fetched).toNot(beNil())
+        expect(viewModel.cachedApproachTripDetails(for: today)).toNot(beNil())
+
+        // The other instance is a different request and must not read that entry.
+        expect(viewModel.cachedApproachTripDetails(for: tomorrow)).to(beNil())
+    }
+
+    /// The arrivals fixture with its first departure duplicated onto the next service
+    /// day (new vehicle, same trip), so the two entries differ only in the fields the
+    /// approach cache key has to account for.
+    private func arrivalsWithSameTripOnTwoServiceDays() throws -> Data {
+        let raw = Fixtures.loadData(file: "arrivals_and_departures_for_stop_1_10020.json")
+        var payload = try XCTUnwrap(try JSONSerialization.jsonObject(with: raw) as? [String: Any])
+        var data = try XCTUnwrap(payload["data"] as? [String: Any])
+        var entry = try XCTUnwrap(data["entry"] as? [String: Any])
+        var arrDeps = try XCTUnwrap(entry["arrivalsAndDepartures"] as? [[String: Any]])
+
+        var nextDay = try XCTUnwrap(arrDeps.first)
+        let serviceDate = try XCTUnwrap(nextDay["serviceDate"] as? Int)
+        nextDay["serviceDate"] = serviceDate + 86_400_000 // ms
+        nextDay["vehicleId"] = "1_9999"
+        arrDeps.append(nextDay)
+
+        entry["arrivalsAndDepartures"] = arrDeps
+        data["entry"] = entry
+        payload["data"] = data
+        return try JSONSerialization.data(withJSONObject: payload)
+    }
+
+    // MARK: - Alarm Cancellation
+
+    /// Cancelling with no Obaco service must not report success: the server alarm is
+    /// still armed and will still fire, so dropping the local copy would leave the
+    /// rider with a buzzing alarm they can no longer see or cancel.
+    @MainActor
+    func test_cancelAlarm_withoutObacoService_keepsAlarmAndSurfacesError() async throws {
+        removeStoredRegionsFile()
+
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(
+            dataLoader: dataLoader,
+            analytics: AnalyticsMock(),
+            arrivalsFixture: "arrivals_and_departures_for_stop_1_10020.json",
+            bundledRegionsFixture: "regions-puget-sound-no-sidecar.json"
+        )
+
+        // Precondition: no sidecar URL means no Obaco service to delete against.
+        expect(app.obacoService).to(beNil())
+
+        let viewModel = StopViewModel(application: app, stopID: testStopID)
+        await viewModel.refresh()
+
+        let departure = try XCTUnwrap(viewModel.stopArrivals?.arrivalsAndDepartures.first)
+        let region = try XCTUnwrap(app.currentRegion)
+
+        let alarm = try Fixtures.loadAlarm()
+        alarm.deepLink = ArrivalDepartureDeepLink(arrivalDeparture: departure, regionID: region.regionIdentifier)
+        // A trip in the future, so `deleteExpiredAlarms()` doesn't prune it out from under us.
+        alarm.set(tripDate: Date(timeIntervalSinceNow: 900), alarmOffset: 5)
+        app.userDataStore.add(alarm: alarm)
+
+        // The index is rebuilt from the persisted store on each successful fetch.
+        await viewModel.refresh()
+        expect(viewModel.alarm(for: departure)).toNot(beNil())
+
+        await viewModel.cancelAlarm(for: departure)
+
+        expect(viewModel.alarmError).toNot(beNil())
+        expect(viewModel.alarm(for: departure)).toNot(beNil())
+        expect(app.userDataStore.alarms).toNot(beEmpty())
     }
 }

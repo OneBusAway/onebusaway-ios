@@ -35,6 +35,9 @@ struct TripDetailPanelView: View {
     let onSetAlarm: () -> Void
     let onCancelAlarm: () -> Void
     let onChangeAlarm: () -> Void
+    /// Region gate (`Region.supportsScheduleForRoute`), matching the row actions:
+    /// where route schedules aren't supported, the panel must not offer the flow.
+    let canSchedule: Bool
     let onSchedule: () -> Void
     let onBookmark: () -> Void
     let onViewFullTrip: () -> Void
@@ -86,12 +89,17 @@ struct TripDetailPanelView: View {
                 )
             }
 
-            TripPanelActionsRow(onSchedule: onSchedule, onBookmark: onBookmark, onViewFullTrip: onViewFullTrip)
+            TripPanelActionsRow(canSchedule: canSchedule, onSchedule: onSchedule, onBookmark: onBookmark, onViewFullTrip: onViewFullTrip)
         }
         .padding(.vertical, 6)
         .task(id: FetchKey(departureID: departure.id, refreshToken: refreshToken)) {
             guard status.isRealTime else { return }
             let details = await approachLoader()
+            // A refresh (or a collapse) restarts this task, but the superseded fetch
+            // can still land afterwards. Its result belongs to a request nobody is
+            // waiting on any more — writing it would clobber the live one, or mark
+            // the timeline unavailable while the current fetch is still in flight.
+            guard !Task.isCancelled else { return }
             // The skeleton pre-allocates the timeline's slot, so the first
             // result usually swaps in near the same height; animate the small
             // residual adjustment. Refetches swap data in place at the same
@@ -229,6 +237,7 @@ private struct ScheduledOnlyNotice: View {
 /// accessibility sizes the buttons stack so each is a full-width tap target
 /// (the guide's committed layout).
 private struct TripPanelActionsRow: View {
+    let canSchedule: Bool
     let onSchedule: () -> Void
     let onBookmark: () -> Void
     let onViewFullTrip: () -> Void
@@ -244,8 +253,10 @@ private struct TripPanelActionsRow: View {
                 Button(action: onBookmark) {
                     Label(Strings.addBookmark, systemImage: "bookmark")
                 }
-                Button(action: onSchedule) {
-                    Label(Strings.schedules, systemImage: "calendar")
+                if canSchedule {
+                    Button(action: onSchedule) {
+                        Label(Strings.schedules, systemImage: "calendar")
+                    }
                 }
             } label: {
                 Label(Strings.more, systemImage: "ellipsis.circle")

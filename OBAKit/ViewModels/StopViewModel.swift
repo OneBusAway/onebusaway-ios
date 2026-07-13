@@ -629,11 +629,13 @@ class StopViewModel: ObservableObject {
         // Optimistic removal; restore on failure.
         alarmsByDepartureID[arrivalDeparture.id] = nil
         do {
-            if let obacoService = application.obacoService {
-                try await obacoService.deleteAlarm(url: alarm.url)
-            } else {
-                Logger.error("Cancelled alarm locally but obacoService is unavailable; server alarm \(alarm.url) may still fire")
+            guard let obacoService = application.obacoService else {
+                // The alarm lives on the server and will still fire. Deleting only
+                // the local copy would leave the rider with a notification they can
+                // no longer see or cancel, so fail loudly instead.
+                throw AlarmCancellationError.serviceUnavailable
             }
+            try await obacoService.deleteAlarm(url: alarm.url)
             application.userDataStore.delete(alarm: alarm)
             // A refresh that landed mid-await could have re-inserted this entry
             // (rebuildAlarmIndex ran while the persisted alarm was still present);
@@ -644,6 +646,21 @@ class StopViewModel: ObservableObject {
             Logger.error("Alarm cancel failed for \(arrivalDeparture.id): \(error)")
             alarmsByDepartureID[arrivalDeparture.id] = alarm
             alarmError = error
+        }
+    }
+
+    /// Why an alarm couldn't be cancelled. Surfaced through `alarmError`, which the
+    /// hosting controller presents.
+    enum AlarmCancellationError: LocalizedError {
+        /// No Obaco service for the current region, so the server alarm can't be deleted.
+        case serviceUnavailable
+
+        var errorDescription: String? {
+            OBALoc(
+                "stop_page.alarm_cancel_unavailable",
+                value: "This alarm couldn't be cancelled because the alarm service isn't available right now. Please try again later.",
+                comment: "Error shown when a departure alarm can't be cancelled because the region's alarm service is unreachable."
+            )
         }
     }
 
@@ -758,7 +775,7 @@ class StopViewModel: ObservableObject {
     /// inserted, which resizes the panel without animation; this accessor lets
     /// the panel seed a warm timeline at full size on the frame it's built.
     func cachedApproachTripDetails(for arrivalDeparture: ArrivalDeparture) -> TripDetails? {
-        approachCache[arrivalDeparture.tripID]
+        approachCache[approachCacheKey(for: arrivalDeparture)]
     }
 
     /// Trip details backing the trip panel's approach timeline. Fetched on
@@ -772,10 +789,17 @@ class StopViewModel: ObservableObject {
                 vehicleID: arrivalDeparture.vehicleID,
                 serviceDate: arrivalDeparture.serviceDate
             ).entry
-            approachCache[arrivalDeparture.tripID] = details
+            approachCache[approachCacheKey(for: arrivalDeparture)] = details
             return details
         } catch {
             return nil // panel silently omits the timeline on failure
         }
+    }
+
+    /// The full identity of the `getTrip` request, so two instances of the same trip
+    /// — a different vehicle, or the same run on the next service day — don't share
+    /// a cache entry and render each other's timeline.
+    private func approachCacheKey(for arrivalDeparture: ArrivalDeparture) -> String {
+        "\(arrivalDeparture.tripID)|\(arrivalDeparture.vehicleID ?? "")|\(arrivalDeparture.serviceDate.timeIntervalSince1970)"
     }
 }

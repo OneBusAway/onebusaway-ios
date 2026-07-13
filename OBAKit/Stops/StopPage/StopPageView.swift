@@ -391,6 +391,7 @@ struct StopPageView: View {
             // Change re-presents the same alarm picker bulletin as create; the
             // controller's alarmCreated callback replaces the existing alarm.
             onChangeAlarm: { navigation.showAlarmPicker(departure) },
+            canSchedule: navigation.canScheduleForRoute,
             onSchedule: { navigation.showScheduleForRoute(departure) },
             onBookmark: { navigation.showBookmarkEditor(departure) },
             onViewFullTrip: { navigation.showTrip(departure) }

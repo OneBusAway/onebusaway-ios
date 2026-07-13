@@ -752,6 +752,14 @@ private extension StopPageViewController {
 
         alertController.addAction(title: Strings.cancel, style: .cancel, handler: nil)
 
+        // An unanchored action sheet is a hard crash on iPad. The donation card has no
+        // stable UIKit source view (it lives inside the SwiftUI list), so anchor to the
+        // middle of the page, as `showWalkingDirections()` does.
+        if let popover = alertController.popoverPresentationController {
+            popover.sourceView = view
+            popover.sourceRect = CGRect(origin: view.center, size: .zero)
+        }
+
         present(alertController, animated: true)
     }
 }
