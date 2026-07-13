@@ -61,7 +61,7 @@ struct MapPanelRootView: View {
     /// is visible so the two feel like a stacked cluster instead of two loose
     /// pills. Zero-based so nothing shifts when the pill is hidden.
     private static let moreButtonPillOverlap: CGFloat = 10
-    
+
     private let factory: AppSheetViewFactory
 
     init(application: Application, factory: AppSheetViewFactory) {
