@@ -432,16 +432,15 @@ class MapViewController: UIViewController,
     }()
 
     @objc private func showWeather() {
-        guard let display = weatherDisplay else { return }
-        // Resolve once so the formatter chain in `legacyAlert` doesn't run twice.
-        let legacyAlert = display.legacyAlert
-        let alert = UIAlertController(
-            title: legacyAlert.title,
-            message: legacyAlert.message,
-            preferredStyle: .alert
+        guard weatherDisplay != nil else { return }
+
+        let host = UIHostingController(
+            rootView: WeatherDetailPopupHost(viewModel: viewModel)
         )
-        alert.addAction(.dismissAction)
-        present(alert, animated: true)
+        host.modalPresentationStyle = .overFullScreen
+        host.modalTransitionStyle = .crossDissolve
+        host.view.backgroundColor = .clear
+        present(host, animated: true)
     }
 
     private var weatherDisplay: WeatherDisplay? {
