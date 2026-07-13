@@ -193,6 +193,14 @@ public actor ObacoAPIService: @preconcurrency APIService {
         if let vehicleID { params["vehicle_id"] = vehicleID }
         if let stopSequence { params["stop_sequence"] = stopSequence }
 
+        #if DEBUG
+        // A debug build's ActivityKit push token is a sandbox token. The server
+        // persists this flag and uses it for every update and end push over the
+        // activity's lifetime. Without it, pushes bounce with BadDeviceToken and
+        // the server retires the subscription.
+        params["apns_sandbox"] = "1"
+        #endif
+
         urlRequest.httpBody = NetworkHelpers.dictionary(toHTTPBodyData: params)
 
         let (data, _) = try await data(for: urlRequest as URLRequest)

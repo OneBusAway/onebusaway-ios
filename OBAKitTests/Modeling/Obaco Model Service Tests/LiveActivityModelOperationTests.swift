@@ -60,6 +60,7 @@ class LiveActivityModelOperationTests: OBATestCase {
         XCTAssertNil(params["service_date"])
         XCTAssertNil(params["vehicle_id"])
         XCTAssertNil(params["stop_sequence"])
+        XCTAssertEqual(params["apns_sandbox"], "1", "Expected a debug build to flag the Live Activity for the APNs sandbox, as the ActivityKit token is a sandbox token. Without this flag, server routes pushes to production APNs and they bounce.")
     }
 
     func testSuccessfulLiveActivityDeletion() async throws {
