@@ -121,8 +121,8 @@ class MockDataLoader: NSObject, URLDataLoader {
         return nil
     }
 
-    func mock(data: Data, matcher: @escaping MockDataLoaderMatcher) {
-        let urlResponse = buildURLResponse(URL: URL(string: "https://mockdataloader.example.com")!, statusCode: 200)
+    func mock(data: Data, statusCode: Int = 200, matcher: @escaping MockDataLoaderMatcher) {
+        let urlResponse = buildURLResponse(URL: URL(string: "https://mockdataloader.example.com")!, statusCode: statusCode, contentLength: data.count)
         let mockResponse = MockDataResponse(data: data, urlResponse: urlResponse, error: nil, matcher: matcher)
         mock(response: mockResponse)
     }
@@ -132,7 +132,7 @@ class MockDataLoader: NSObject, URLDataLoader {
     }
 
     func mock(url: URL, with data: Data) {
-        let urlResponse = buildURLResponse(URL: url, statusCode: 200)
+        let urlResponse = buildURLResponse(URL: url, statusCode: 200, contentLength: data.count)
         let mockResponse = MockDataResponse(data: data, urlResponse: urlResponse, error: nil) {
             let requestURL = $0.url!
             return requestURL.host == url.host && requestURL.path == url.path
@@ -163,8 +163,19 @@ class MockDataLoader: NSObject, URLDataLoader {
 
     // MARK: - URL Response
 
-    func buildURLResponse(URL: URL, statusCode: Int) -> HTTPURLResponse {
-        return HTTPURLResponse(url: URL, statusCode: statusCode, httpVersion: "2", headerFields: ["Content-Type": "application/json"])!
+    /// - parameter contentLength: Populates `Content-Length`, and therefore
+    /// `HTTPURLResponse.expectedContentLength`. Omitting it leaves the header off and
+    /// `expectedContentLength` at `NSURLResponseUnknownLength`, which no real server does —
+    /// pass the mocked body's `count` so response-length checks in `APIService` see what
+    /// they'd see in production.
+    func buildURLResponse(URL: URL, statusCode: Int, contentLength: Int? = nil) -> HTTPURLResponse {
+        var headerFields = ["Content-Type": "application/json"]
+
+        if let contentLength {
+            headerFields["Content-Length"] = String(contentLength)
+        }
+
+        return HTTPURLResponse(url: URL, statusCode: statusCode, httpVersion: "2", headerFields: headerFields)!
     }
 
     // MARK: - Description
