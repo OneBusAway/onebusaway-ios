@@ -277,10 +277,17 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
 
     /// Presents the same lead-time picker bulletin as
     /// `StopViewController.addAlarm(arrivalDeparture:)`; `AlarmBuilder` owns the
-    /// picker UI and the create request.
+    /// picker UI and the create request. Also serves the Change flow: when the
+    /// departure already has an alarm, the picker opens pre-selected to its
+    /// current lead time and the created alarm replaces the old one.
     private func showAlarmPicker(for arrivalDeparture: ArrivalDeparture) {
         alarmBuilderDeparture = arrivalDeparture
-        alarmBuilder = AlarmBuilder(arrivalDeparture: arrivalDeparture, application: application, delegate: self)
+        let existingAlarm = viewModel.alarm(for: arrivalDeparture)
+        alarmBuilder = AlarmBuilder(
+            arrivalDeparture: arrivalDeparture,
+            application: application,
+            initialMinutes: existingAlarm.map { viewModel.alarmLeadTimeMinutes($0) },
+            delegate: self)
         alarmBuilder?.showBulletin(above: self)
     }
 
@@ -290,7 +297,10 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
 
     func alarmBuilder(_ alarmBuilder: AlarmBuilder, alarmCreated alarm: Alarm) {
         if let departure = alarmBuilderDeparture {
-            viewModel.registerAlarm(alarm, for: departure)
+            // `replaceAlarm` indexes the new alarm synchronously and no-ops the
+            // delete when the departure had no prior alarm, so it serves both
+            // the create and change flows.
+            Task { await viewModel.replaceAlarm(with: alarm, for: departure) }
         } else {
             viewModel.recordAlarmCreated(alarm)
         }

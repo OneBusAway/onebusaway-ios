@@ -11,20 +11,17 @@ import SwiftUI
 import OBAKitCore
 
 /// The trip panel's alarm block: a single "Set an alarm" button by default;
-/// once set, an info row with Change (inline stepper) and Cancel.
+/// once set, an info row with Change and Cancel. Change re-presents the same
+/// alarm-time-picker bulletin used to create the alarm.
 ///
 /// Text uses Dynamic Type text styles; the fixed bell-circle dimension scales
 /// with Dynamic Type via `@ScaledMetric`.
 struct AlarmControlView: View {
     let alarmIsSet: Bool
     let leadTimeMinutes: Int
-    let maxLeadTime: Int   // min(15, minutesUntilDeparture - 1)
     let onSet: () -> Void
     let onCancel: () -> Void
-    let onChange: (Int) -> Void
-
-    @State private var editing = false
-    @State private var pendingMinutes: Int = AlarmLeadTime.defaultMinutes
+    let onChange: () -> Void
 
     /// The bell circle grows with Dynamic Type the way the grouped alarm badge
     /// does: fixed dimensions scale with Dynamic Type via `@ScaledMetric`.
@@ -65,11 +62,11 @@ struct AlarmControlView: View {
                             .foregroundStyle(.secondary)
                     }
                     Spacer()
-                    if !editing && !isAccessibilitySize {
+                    if !isAccessibilitySize {
                         changeCancelButtons
                     }
                 }
-                if !editing && isAccessibilitySize {
+                if isAccessibilitySize {
                     // Side by side below the label when both fit; at the
                     // largest sizes each becomes its own full-width row.
                     ViewThatFits(in: .horizontal) {
@@ -84,9 +81,6 @@ struct AlarmControlView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.top, 10)
                 }
-                if editing {
-                    editingControls
-                }
             }
         }
     }
@@ -95,54 +89,9 @@ struct AlarmControlView: View {
     /// (accessibility-size) placements.
     @ViewBuilder
     private var changeCancelButtons: some View {
-        Button(OBALoc("stop_page.alarm.change", value: "Change", comment: "Reveals the alarm lead-time stepper")) {
-            pendingMinutes = leadTimeMinutes
-            editing = true
-        }
-        .buttonStyle(.bordered)
+        Button(OBALoc("stop_page.alarm.change", value: "Change", comment: "Re-presents the alarm time picker for an existing alarm"), action: onChange)
+            .buttonStyle(.bordered)
         Button(Strings.cancel, role: .destructive, action: onCancel)
             .buttonStyle(.bordered)
-    }
-
-    /// The lead-time stepper row. At accessibility sizes the label sits above
-    /// the stepper + Done controls instead of sharing their line.
-    @ViewBuilder
-    private var editingControls: some View {
-        let label = Text(OBALoc("stop_page.alarm.minutes_before", value: "Minutes before", comment: "Stepper label"))
-            .font(.footnote.weight(.semibold))
-            .foregroundStyle(.secondary)
-        let controls = HStack {
-            Stepper(value: $pendingMinutes, in: AlarmLeadTime.minimumMinutes...max(AlarmLeadTime.minimumMinutes, maxLeadTime)) {
-                Text("\(pendingMinutes)m").font(.subheadline.weight(.heavy)).monospacedDigit()
-            }
-            .fixedSize()
-            // The visible "Minutes before" caption is a separate Text, so the
-            // stepper's own label would otherwise be just "5m" — restate the
-            // label and speak the value in full.
-            .accessibilityLabel(OBALoc("stop_page.alarm.minutes_before", value: "Minutes before", comment: "Stepper label"))
-            .accessibilityValue(String(format: OBALoc("stop_page.alarm.a11y_minutes_fmt", value: "%d minutes", comment: "VoiceOver value of the alarm lead-time stepper. %d is the number of minutes."), pendingMinutes))
-            Button(OBALoc("stop_page.alarm.done", value: "Done", comment: "Commits the lead-time change")) {
-                editing = false
-                onChange(pendingMinutes)
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(onTimeColor)
-        }
-
-        if isAccessibilitySize {
-            VStack(alignment: .leading, spacing: 8) {
-                label
-                controls
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.top, 10)
-        } else {
-            HStack {
-                label
-                Spacer()
-                controls
-            }
-            .padding(.top, 10)
-        }
     }
 }

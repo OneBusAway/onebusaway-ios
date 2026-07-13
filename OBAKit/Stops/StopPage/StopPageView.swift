@@ -364,7 +364,9 @@ struct StopPageView: View {
             approachLoader: { await viewModel.approachTripDetails(for: departure) },
             onSetAlarm: { navigation.showAlarmPicker(departure) },
             onCancelAlarm: { Task { await viewModel.cancelAlarm(for: departure) } },
-            onChangeAlarm: { minutes in Task { await viewModel.changeAlarm(for: departure, leadTimeMinutes: minutes) } },
+            // Change re-presents the same alarm picker bulletin as create; the
+            // controller's alarmCreated callback replaces the existing alarm.
+            onChangeAlarm: { navigation.showAlarmPicker(departure) },
             onSchedule: { navigation.showScheduleForRoute(departure) },
             onBookmark: { navigation.showBookmarkEditor(departure) },
             onViewFullTrip: { navigation.showTrip(departure) }
@@ -662,8 +664,7 @@ struct ServiceAlertsSection: View {
             AlarmControlView(
                 alarmIsSet: true,
                 leadTimeMinutes: 5,
-                maxLeadTime: 10,
-                onSet: {}, onCancel: {}, onChange: { _ in }
+                onSet: {}, onCancel: {}, onChange: {}
             )
         }
         .padding()

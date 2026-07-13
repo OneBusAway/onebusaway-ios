@@ -50,11 +50,14 @@ class AlarmBuilder: NSObject {
 
     // MARK: - Init
 
-    init(arrivalDeparture: ArrivalDeparture, application: Application, delegate: AlarmBuilderDelegate?) {
+    /// - Parameter initialMinutes: Pre-selects this lead time in the picker.
+    ///   Pass the current alarm's lead time when re-presenting the bulletin to
+    ///   change an existing alarm; `nil` uses the default selection.
+    init(arrivalDeparture: ArrivalDeparture, application: Application, initialMinutes: Int? = nil, delegate: AlarmBuilderDelegate?) {
         self.arrivalDeparture = arrivalDeparture
         self.application = application
         self.delegate = delegate
-        self.timePickerPage = AlarmTimePickerItem(arrivalDeparture: arrivalDeparture)
+        self.timePickerPage = AlarmTimePickerItem(arrivalDeparture: arrivalDeparture, initialMinutes: initialMinutes)
 
         super.init()
 
@@ -131,9 +134,9 @@ class AlarmTimePickerItem: ThemedBulletinPage {
     private let arrivalDeparture: ArrivalDeparture
     let timePickerManager: AlarmTimePickerManager
 
-    init(arrivalDeparture: ArrivalDeparture) {
+    init(arrivalDeparture: ArrivalDeparture, initialMinutes: Int? = nil) {
         self.arrivalDeparture = arrivalDeparture
-        self.timePickerManager = AlarmTimePickerManager(arrivalDeparture: arrivalDeparture)
+        self.timePickerManager = AlarmTimePickerManager(arrivalDeparture: arrivalDeparture, initialMinutes: initialMinutes)
 
         let title = OBALoc("alarm_time_picker.title", value: "Add Reminder", comment: "Title of the Alarm Time Picker page.")
         super.init(title: title)
@@ -159,6 +162,10 @@ class AlarmTimePickerManager: NSObject, UIPickerViewDelegate, UIPickerViewDataSo
 
     private let arrivalDeparture: ArrivalDeparture
 
+    /// The lead time to pre-select when the picker is displayed. Defaults to
+    /// 10 minutes; the change-alarm flow passes the current alarm's lead time.
+    private let initialMinutes: Int
+
     lazy var pickerView: UIPickerView = {
         let picker = UIPickerView(frame: .zero)
         picker.translatesAutoresizingMaskIntoConstraints = false
@@ -167,14 +174,16 @@ class AlarmTimePickerManager: NSObject, UIPickerViewDelegate, UIPickerViewDataSo
         return picker
     }()
 
-    init(arrivalDeparture: ArrivalDeparture) {
+    init(arrivalDeparture: ArrivalDeparture, initialMinutes: Int? = nil) {
         self.arrivalDeparture = arrivalDeparture
+        self.initialMinutes = initialMinutes ?? 10
         self.pickerItems = AlarmTimePickerManager.incrementsForDeparture(arrivalDeparture.arrivalDepartureMinutes)
     }
 
-    /// Configures the picker view's default value
+    /// Configures the picker view's default value: the increment closest to
+    /// `initialMinutes` (exact match when the value came from an increment).
     func prepareForDisplay() {
-        let row = pickerItems.firstIndex(of: 10) ?? 0
+        let row = pickerItems.indices.min { abs(pickerItems[$0] - initialMinutes) < abs(pickerItems[$1] - initialMinutes) } ?? 0
         pickerView.selectRow(row, inComponent: 0, animated: false)
     }
 

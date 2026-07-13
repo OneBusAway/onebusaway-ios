@@ -34,7 +34,7 @@ struct TripDetailPanelView: View {
     let approachLoader: () async -> TripDetails?
     let onSetAlarm: () -> Void
     let onCancelAlarm: () -> Void
-    let onChangeAlarm: (Int) -> Void
+    let onChangeAlarm: () -> Void
     let onSchedule: () -> Void
     let onBookmark: () -> Void
     let onViewFullTrip: () -> Void
@@ -80,7 +80,6 @@ struct TripDetailPanelView: View {
                 AlarmControlView(
                     alarmIsSet: alarm != nil,
                     leadTimeMinutes: alarmLeadTimeMinutes,
-                    maxLeadTime: AlarmLeadTime.ceiling(minutesUntilDeparture: departure.arrivalDepartureMinutes),
                     onSet: onSetAlarm,
                     onCancel: onCancelAlarm,
                     onChange: onChangeAlarm

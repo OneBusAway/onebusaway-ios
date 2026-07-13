@@ -633,14 +633,34 @@ class StopViewModel: ObservableObject {
         alarmPermissionDenied = false
     }
 
-    /// Obaco has no update endpoint: change = delete + re-post. Proceeds only
-    /// when the old alarm is actually gone (a failed delete rolls it back into
-    /// the index), so a stale `alarmError` from an earlier operation can't
-    /// block the change.
-    func changeAlarm(for arrivalDeparture: ArrivalDeparture, leadTimeMinutes: Int) async {
-        await cancelAlarm(for: arrivalDeparture)
-        guard alarm(for: arrivalDeparture) == nil else { return }
-        await setAlarm(for: arrivalDeparture, leadTimeMinutes: leadTimeMinutes)
+    /// Replaces the departure's existing alarm with one created outside the
+    /// view model — the trip panel's Change flow re-presents the `AlarmBuilder`
+    /// bulletin, which posts a brand-new alarm (Obaco has no update endpoint).
+    /// The new alarm is indexed and persisted immediately so the panel never
+    /// flips back to "Set an alarm"; the old alarm is then deleted.
+    func replaceAlarm(with newAlarm: Alarm, for arrivalDeparture: ArrivalDeparture) async {
+        let oldAlarm = alarm(for: arrivalDeparture)
+        registerAlarm(newAlarm, for: arrivalDeparture)
+
+        guard let oldAlarm, oldAlarm.url != newAlarm.url else { return }
+
+        if let obacoService = application.obacoService {
+            do {
+                try await obacoService.deleteAlarm(url: oldAlarm.url)
+            } catch {
+                // The new alarm stands either way; the undeleted server alarm
+                // may buzz once more but expires with the trip.
+                Logger.error("Failed to delete replaced alarm \(oldAlarm.url) from the server: \(error)")
+            }
+        } else {
+            Logger.error("Replaced alarm locally but obacoService is unavailable; server alarm \(oldAlarm.url) may still fire")
+        }
+
+        // Drop the old alarm from the persisted store even if the server
+        // delete failed: it shares the new alarm's deep link, and a leftover
+        // copy would win the next `rebuildAlarmIndex()` and resurrect the old
+        // lead time in the UI.
+        application.userDataStore.delete(alarm: oldAlarm)
     }
 
     /// Rebuilds the departure-id → alarm index by matching each persisted
