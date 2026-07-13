@@ -10,6 +10,8 @@
 import Foundation
 import MapKit
 
+// swiftlint:disable file_length
+
 @objc(OBASelectedTab) public enum SelectedTab: Int {
     case map, recentStops, bookmarks, vehicles, settings
 }
@@ -297,6 +299,12 @@ public protocol UserDataStore: NSObjectProtocol {
     /// The source of the walking speed value (manual preset or HealthKit).
     var walkingSpeedSource: WalkingSpeedSource { get set }
 
+    // MARK: - Alarm Lead Time
+
+    /// The user's preferred alarm lead time in minutes for one-tap alarms on
+    /// the Stop page. Adjustable per-alarm afterward. Defaults to 5.
+    var defaultAlarmLeadTimeMinutes: Int { get set }
+
 }
 
 // MARK: - Survey Tracking Data Models
@@ -340,6 +348,26 @@ public protocol StopPreferencesStore: NSObjectProtocol {
     /// - Parameter stopID: The ID of the `Stop` for which `StopPreferences` will be retrieved.
     /// - Parameter region: The `Region` in which `stop` exists.
     func preferences(stopID: StopID, region: Region) -> StopPreferences
+
+    /// `true` when preferences have been explicitly saved for this `Stop`.
+    ///
+    /// `preferences(stopID:region:)` always returns a value, so its result can't
+    /// distinguish "the user chose the defaults" from "the user never chose
+    /// anything" — callers that need that distinction (e.g. seeding a stop with a
+    /// last-used sort mode only when it is untouched) ask here instead.
+    /// - Parameter stopID: The ID of the `Stop` to check.
+    /// - Parameter region: The `Region` in which `stop` exists.
+    func hasPreferences(stopID: StopID, region: Region) -> Bool
+}
+
+// MARK: - UserDataStore Defaults
+
+/// Canonical defaults for `UserDefaultsStore` configuration. Shared with OBAKit's UI
+/// so registered defaults and UI defaults remain synchronized.
+public enum UserDataStoreDefaults {
+    /// Default lead time in minutes for one-tap alarms on the Stop page.
+    /// Referenced by OBAKit's `AlarmLeadTime.defaultMinutes`.
+    public static let alarmLeadTimeMinutes = 5
 }
 
 // MARK: - UserDefaultsStore
@@ -371,6 +399,7 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         static let alwaysShowSurveysOnStops = "UserDataStore.alwaysShowSurveysOnStops"
         static let walkingSpeedMetersPerSecond = "UserDataStore.walkingSpeedMetersPerSecond"
         static let walkingSpeedSource = "UserDataStore.walkingSpeedSource"
+        static let defaultAlarmLeadTimeMinutes = "UserDataStore.defaultAlarmLeadTimeMinutes"
     }
 
     public init(userDefaults: UserDefaults) {
@@ -379,7 +408,8 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         self.userDefaults.register(defaults: [
             UserDefaultsKeys.debugMode: false,
             UserDefaultsKeys.walkingSpeedMetersPerSecond: WalkingSpeed.defaultMetersPerSecond,
-            UserDefaultsKeys.walkingSpeedSource: WalkingSpeedSource.manual.rawValue
+            UserDefaultsKeys.walkingSpeedSource: WalkingSpeedSource.manual.rawValue,
+            UserDefaultsKeys.defaultAlarmLeadTimeMinutes: UserDataStoreDefaults.alarmLeadTimeMinutes
         ])
     }
 
@@ -925,6 +955,10 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         return prefs[key] ?? StopPreferences()
     }
 
+    public func hasPreferences(stopID: StopID, region: Region) -> Bool {
+        stopPreferences[stopPreferencesKey(id: stopID, region: region)] != nil
+    }
+
     private func stopPreferencesKey(id: String, region: Region) -> String {
         "\(region.regionIdentifier)_\(id)"
     }
@@ -1054,6 +1088,17 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         }
         set {
             userDefaults.set(newValue.rawValue, forKey: UserDefaultsKeys.walkingSpeedSource)
+        }
+    }
+
+    // MARK: - Alarm Lead Time
+
+    public var defaultAlarmLeadTimeMinutes: Int {
+        get {
+            userDefaults.integer(forKey: UserDefaultsKeys.defaultAlarmLeadTimeMinutes)
+        }
+        set {
+            userDefaults.set(newValue, forKey: UserDefaultsKeys.defaultAlarmLeadTimeMinutes)
         }
     }
 

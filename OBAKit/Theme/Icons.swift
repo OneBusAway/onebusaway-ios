@@ -259,6 +259,51 @@ class Icons: NSObject {
         imageNamed("walkTransport")
     }
 
+    // MARK: - Squircle icon
+
+    private static var iconCache = [Route.RouteType: UIImage]()
+    public static var squircleIconSize: CGFloat = 40
+
+    /// The transport glyph in white over a brand-color gradient squircle,
+    /// echoing the stop page's `RouteBadgeView` treatment.
+    public static func squircleTransportIcon(for routeType: Route.RouteType) -> UIImage {
+        if let cached = iconCache[routeType] { return cached }
+
+        let rect = CGRect(x: 0, y: 0, width: squircleIconSize, height: squircleIconSize)
+        let image = UIGraphicsImageRenderer(bounds: rect).image { context in
+            let brand = ThemeColors.shared.brand
+            UIBezierPath(roundedRect: rect, cornerRadius: squircleIconSize * 0.28).addClip()
+
+            let colors = [
+                brand.blended(with: .white, amount: 0.18).cgColor,
+                brand.blended(with: .black, amount: 0.12).cgColor
+            ]
+            if let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors as CFArray, locations: [0, 1]) {
+                context.cgContext.drawLinearGradient(
+                    gradient,
+                    start: CGPoint(x: rect.midX, y: rect.minY),
+                    end: CGPoint(x: rect.midX, y: rect.maxY),
+                    options: [])
+            } else {
+                brand.setFill()
+                context.fill(rect)
+            }
+
+            let glyph = Icons.transportIcon(from: routeType).withTintColor(.white, renderingMode: .alwaysOriginal)
+            let maxGlyphExtent = squircleIconSize * 0.55
+            let scale = min(maxGlyphExtent / glyph.size.width, maxGlyphExtent / glyph.size.height)
+            let glyphSize = CGSize(width: glyph.size.width * scale, height: glyph.size.height * scale)
+            glyph.draw(in: CGRect(
+                x: rect.midX - glyphSize.width / 2.0,
+                y: rect.midY - glyphSize.height / 2.0,
+                width: glyphSize.width,
+                height: glyphSize.height))
+        }.withRenderingMode(.alwaysOriginal)
+
+        iconCache[routeType] = image
+        return image
+    }
+
     // MARK: - Private Helpers
 
     /// This applies the configuration used for generating tab bar icons.

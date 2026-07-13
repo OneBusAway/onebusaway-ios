@@ -1135,8 +1135,8 @@ class MapViewController: UIViewController,
         else { return nil }
 
         let previewController = { () -> UIViewController in
-            let stopController = StopViewController(application: self.application, stop: stop)
-            stopController.enterPreviewMode()
+            let stopController = self.application.viewRouter.makeStopController(stop: stop)
+            (stopController as? Previewable)?.enterPreviewMode()
             return stopController
         }
 

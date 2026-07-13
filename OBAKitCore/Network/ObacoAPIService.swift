@@ -133,6 +133,17 @@ public actor ObacoAPIService: @preconcurrency APIService {
         if let vehicleID = vehicleID {
             params["vehicle_id"] = vehicleID
         }
+
+        #if DEBUG
+        // A debug build is provisioned with the development APNs entitlement, so the
+        // token APNs issues us is only valid against the APNs sandbox host. The server
+        // pushes to production APNs by config, which rejects a sandbox token — the alarm
+        // just never arrives. Flagging the alarm at registration tells the server to route
+        // this one push through the sandbox instead. (The alarm fires minutes later, from
+        // a job, so the flag has to be persisted server-side rather than sent at push time.)
+        params["apns_sandbox"] = "1"
+        #endif
+
         urlRequest.httpBody = NetworkHelpers.dictionary(toHTTPBodyData: params)
 
         let (data, _) = try await data(for: urlRequest as URLRequest)

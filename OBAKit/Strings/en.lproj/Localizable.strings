@@ -761,8 +761,14 @@
 /* Settings > Accessibility section title */
 "settings_controller.accessibility_section.title" = "Accessibility";
 
+/* Settings > Alerts section > default minutes-before for one-tap departure alarms */
+"settings_controller.alerts_section.default_alarm_lead_time" = "Default alarm lead time";
+
 /* Settings > Alerts section > Display test alerts */
 "settings_controller.alerts_section.display_test_alerts" = "Display test alerts";
+
+/* Lead-time segment label. %d is minutes. */
+"settings_controller.alerts_section.lead_time_fmt" = "%d min";
 
 /* Settings > Alerts section title */
 "settings_controller.alerts_section.title" = "Agency Alerts";
@@ -781,6 +787,9 @@
 
 /* Settings > Experimental section > Footer indicating changes apply on relaunch */
 "settings_controller.experimental_section.map_panel.footer" = "Restart the app to apply.";
+
+/* Settings > Experimental section > New stop page toggle */
+"settings_controller.experimental_section.new_stop_page" = "Use new stop page";
 
 /* Settings > Experimental section title */
 "settings_controller.experimental_section.title" = "Experimental";
@@ -868,6 +877,147 @@
 
 /* Button to reveal departures that leave before the rider's transfer arrival. Parameter is the count of hidden departures. */
 "stop_controller.transfer_show_earlier_departures_fmt" = "Show %d earlier departures";
+
+/* Subtitle of the set-alarm info row. %d is lead-time minutes. */
+"stop_page.alarm.buzz_fmt" = "Buzz %d min before it arrives";
+
+/* Reveals the alarm lead-time stepper */
+"stop_page.alarm.change" = "Change";
+
+/* Commits the lead-time change */
+"stop_page.alarm.done" = "Done";
+
+/* Stepper label */
+"stop_page.alarm.minutes_before" = "Minutes before";
+
+/* Primary alarm button in the trip panel */
+"stop_page.alarm.set" = "Set an alarm";
+
+/* Title of the set-alarm info row */
+"stop_page.alarm.set_title" = "Alarm set";
+
+/* Empty state shown when every route at the stop is hidden by the user's filter. */
+"stop_page.empty.all_filtered" = "All routes at this stop are filtered";
+
+/* Empty state shown when the stop has no upcoming departures within the loaded time window. %d is the number of minutes. */
+"stop_page.empty.no_departures_fmt" = "No departures in the next %d minutes";
+
+/* Button that retries loading departures after an error. */
+"stop_page.empty.retry" = "Retry";
+
+/* Button that clears the route filter so all routes are shown. */
+"stop_page.empty.show_all_routes" = "Show all routes";
+
+/* VoiceOver label for a grouped route card */
+"stop_page.grouped.a11y_fmt" = "Route %1$@ to %2$@, next departure in %3$d minutes, %4$@. %5$d more departures loaded.";
+
+/* VoiceOver custom action on a grouped route card's header that cancels the alarm already set for the next departure. */
+"stop_page.grouped.a11y_remove_alarm" = "Remove alarm";
+
+/* VoiceOver custom action on a grouped route card's header that creates an alarm for the next departure. */
+"stop_page.grouped.a11y_set_alarm" = "Set alarm";
+
+/* VoiceOver label for one expanded departure row inside a grouped route card: route, headsign, minutes, status. */
+"stop_page.grouped.expanded_row.a11y_fmt" = "Route %1$@ to %2$@, departs in %3$d minutes, %4$@";
+
+/* Extends the departure time window */
+"stop_page.load_more" = "Load more";
+
+/* Stop page mode toggle: grouped by route */
+"stop_page.mode.by_route" = "By route";
+
+/* Stop page mode toggle: flat time-sorted list */
+"stop_page.mode.chronological" = "Chronological";
+
+/* Opens the full trip screen */
+"stop_page.panel.full_trip" = "View full trip";
+
+/* Trip panel live strip. %@ is the vehicle id. */
+"stop_page.panel.live_vehicle_fmt" = "Live · vehicle %@";
+
+/* Body of the schedule-only notice; must communicate uncertainty (§4.1/§4.4) */
+"stop_page.panel.scheduled_body" = "No live signal from this bus yet — this is when it's supposed to arrive. It may run early, late, or not at all.";
+
+/* Trip panel strip for schedule-only trips */
+"stop_page.panel.scheduled_strip" = "Scheduled · no live position yet";
+
+/* Title of the schedule-only notice */
+"stop_page.panel.scheduled_title" = "Scheduled time only";
+
+/* Button revealing recently departed trips. %d is the count. */
+"stop_page.past_toggle_fmt" = "Past · %d";
+
+/* Button hiding recently departed trips */
+"stop_page.past_toggle_hide" = "Hide past";
+
+/* VoiceOver suffix indicating a departure alarm is active */
+"stop_page.row.a11y_alarm_set" = "alarm set";
+
+/* VoiceOver label for a departure row: route, headsign, minutes, status. */
+"stop_page.row.a11y_fmt" = "Route %1$@ to %2$@, departs in %3$d minutes, %4$@";
+
+/* VoiceOver clause appended to a departure row that's upcoming but not reachable on foot before it leaves. */
+"stop_page.row.a11y_missed" = "likely missed — departs sooner than your walk to the stop";
+
+/* VoiceOver label for a departure row that has already departed: route, headsign, minutes ago, status. */
+"stop_page.row.a11y_past_fmt" = "Route %1$@ to %2$@, departed %3$d minutes ago, %4$@";
+
+/* Swipe/context menu action that cancels an existing arrival alarm. */
+"stop_page.row.remove_alarm" = "Remove Alarm";
+
+/* Context menu action opening the full trip screen */
+"stop_page.row.show_trip" = "Show Trip Details";
+
+/* Chronological list section header */
+"stop_page.section.arrivals_departures" = "Arrivals & Departures";
+
+/* Fallback title for a service alert that has no summary text. */
+"stop_page.service_alert_fallback" = "Service alert";
+
+/* Collapsed summary row for the service alerts section. %d is the number of alerts. */
+"stop_page.service_alerts.summary_fmt" = "%d service alerts";
+
+/* Collapsed summary row for the service alerts section when exactly one alert applies. */
+"stop_page.service_alerts.summary_one" = "1 service alert";
+
+/* VoiceOver status suffix for a live departure. %@ is the adherence label. */
+"stop_page.status.a11y_live_fmt" = "live tracking, %@";
+
+/* VoiceOver status suffix for a schedule-only departure */
+"stop_page.status.a11y_scheduled" = "scheduled time only, no live data";
+
+/* Adherence label for an early departure. %d is minutes early. */
+"stop_page.status.early_fmt" = "%d min early";
+
+/* Adherence label for a late departure. %d is minutes late. */
+"stop_page.status.late_fmt" = "%d min late";
+
+/* Adherence label for an on-time departure */
+"stop_page.status.on_time" = "on time";
+
+/* Adherence label for a departure with no real-time signal; deliberately avoids claiming the bus is on time. */
+"stop_page.status.schedule_data" = "schedule data";
+
+/* Vehicle-position pill. %d is minutes to the user's stop. */
+"stop_page.timeline.bus_here_fmt" = "bus here · %dm away";
+
+/* Gap marker in the approach timeline when a single stop is elided between the vehicle and the stops shown */
+"stop_page.timeline.skipped_stop_one" = "1 stop";
+
+/* Gap marker in the approach timeline. %d is the number of elided stops between the vehicle and the stops shown. */
+"stop_page.timeline.skipped_stops_fmt" = "%d stops";
+
+/* Marker on the user's stop in the approach timeline */
+"stop_page.timeline.your_stop" = "· your stop";
+
+/* Walk chip on the header card. %d minutes, %@ formatted distance. */
+"stop_page.walk_chip_fmt" = "%1$d min walk · %2$@";
+
+/* VoiceOver description of the walk divider. %d is walk minutes. */
+"stop_page.walk_divider_a11y_fmt" = "Departures above this point leave sooner than your %d minute walk to the stop";
+
+/* Divider between departures you'd miss on foot and ones you can still catch. %d is the walk time in minutes. */
+"stop_page.walk_divider_fmt" = "%d MIN WALK — CATCH BELOW";
 
 /* Title of the Sorting section */
 "stop_preferences_controller.sorting_section.header_title" = "Sort By";

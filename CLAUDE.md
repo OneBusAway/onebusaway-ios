@@ -20,13 +20,13 @@ scripts/generate_project                # Defaults to OneBusAway if no app speci
 ### Building & Testing
 ```bash
 # Build for testing
-xcodebuild clean build-for-testing -scheme 'App' -destination 'platform=iOS Simulator,name=iPhone 16'
+xcodebuild clean build-for-testing -scheme 'App' -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
 
 # Run unit tests
-xcodebuild test-without-building -only-testing:OBAKitTests -project 'OBAKit.xcodeproj' -scheme 'App' -destination 'platform=iOS Simulator,name=iPhone 16'
+xcodebuild test-without-building -only-testing:OBAKitTests -project 'OBAKit.xcodeproj' -scheme 'App' -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
 
 # Run specific test class
-xcodebuild test-without-building -only-testing:OBAKitTests/SpecificTestClass -project 'OBAKit.xcodeproj' -scheme 'App' -destination 'platform=iOS Simulator,name=iPhone 16'
+xcodebuild test-without-building -only-testing:OBAKitTests/SpecificTestClass -project 'OBAKit.xcodeproj' -scheme 'App' -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
 ```
 
 ### Code Quality
@@ -98,7 +98,7 @@ scripts/extract_strings               # Extract strings for localization
 
 ## Configuration & Deployment
 
-- **Target iOS Version**: 17.0+
+- **Target iOS Version**: 18.0+
 - **Swift Version**: 5.3+
 - **Package Manager**: Swift Package Manager
 - **Project Generation**: XcodeGen from YAML configurations

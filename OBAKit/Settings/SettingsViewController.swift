@@ -56,6 +56,7 @@ class SettingsViewController: FormViewController {
             mapSectionShowsTraffic: application.mapRegionManager.mapViewShowsTraffic,
             mapSectionShowsHeading: application.mapRegionManager.mapViewShowsHeading,
             FeatureFlags.useMapPanelExperienceKey: application.userDefaults.bool(forKey: FeatureFlags.useMapPanelExperienceKey),
+            FeatureFlags.useNewStopPageKey: FeatureFlags.isNewStopPageEnabled(userDefaults: application.userDefaults),
             privacySectionReportingEnabled: application.analytics?.reportingEnabled() ?? false,
             DataLoadFeedbackGenerator.EnabledUserDefaultsKey: application.userDefaults.bool(forKey: DataLoadFeedbackGenerator.EnabledUserDefaultsKey),
             AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts: application.userDefaults.bool(forKey: AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts),
@@ -64,7 +65,8 @@ class SettingsViewController: FormViewController {
             debugModeEnabled: application.userDataStore.debugMode,
             alwaysShowSurveysOnStops: application.userDataStore.alwaysShowSurveysOnStops,
             walkingSpeedMetersPerSecondKey: snapToPreset(application.userDataStore.walkingSpeedMetersPerSecond),
-            walkingSpeedUseHealthKitKey: application.userDataStore.walkingSpeedSource == .healthKit
+            walkingSpeedUseHealthKitKey: application.userDataStore.walkingSpeedSource == .healthKit,
+            defaultAlarmLeadTimeMinutesKey: application.userDataStore.defaultAlarmLeadTimeMinutes
         ])
     }
 
@@ -100,10 +102,7 @@ class SettingsViewController: FormViewController {
         }
 
         saveExperimentalValues(values)
-
-        if let testAlerts = values[AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts] as? Bool {
-            application.userDefaults.set(testAlerts, forKey: AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts)
-        }
+        saveAlertsValues(values)
 
         if let reportingEnabled = values[privacySectionReportingEnabled] as? Bool {
             application.analytics?.setReportingEnabled(reportingEnabled)
@@ -129,6 +128,20 @@ class SettingsViewController: FormViewController {
     private func saveExperimentalValues(_ values: [String: Any?]) {
         if let useMapPanel = values[FeatureFlags.useMapPanelExperienceKey] as? Bool {
             application.userDefaults.set(useMapPanel, forKey: FeatureFlags.useMapPanelExperienceKey)
+        }
+
+        if let useNewStopPage = values[FeatureFlags.useNewStopPageKey] as? Bool {
+            application.userDefaults.set(useNewStopPage, forKey: FeatureFlags.useNewStopPageKey)
+        }
+    }
+
+    private func saveAlertsValues(_ values: [String: Any?]) {
+        if let testAlerts = values[AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts] as? Bool {
+            application.userDefaults.set(testAlerts, forKey: AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts)
+        }
+
+        if let alarmLeadTime = values[defaultAlarmLeadTimeMinutesKey] as? Int {
+            application.userDataStore.defaultAlarmLeadTimeMinutes = alarmLeadTime
         }
     }
 
@@ -182,6 +195,11 @@ class SettingsViewController: FormViewController {
         section <<< SwitchRow {
             $0.tag = FeatureFlags.useMapPanelExperienceKey
             $0.title = OBALoc("settings_controller.experimental_section.map_panel", value: "Use map panel experience", comment: "Settings > Experimental section > Map panel toggle")
+        }
+
+        section <<< SwitchRow {
+            $0.tag = FeatureFlags.useNewStopPageKey
+            $0.title = OBALoc("settings_controller.experimental_section.new_stop_page", value: "Use new stop page", comment: "Settings > Experimental section > New stop page toggle")
         }
 
         return section
@@ -267,12 +285,24 @@ class SettingsViewController: FormViewController {
 
     // MARK: - Agency Alerts
 
+    private let defaultAlarmLeadTimeMinutesKey = "defaultAlarmLeadTimeMinutes"
+
     private lazy var alertsSection: Section = {
         let section = Section(OBALoc("settings_controller.alerts_section.title", value: "Agency Alerts", comment: "Settings > Alerts section title"))
 
         section <<< SwitchRow {
             $0.tag = AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts
             $0.title = OBALoc("settings_controller.alerts_section.display_test_alerts", value: "Display test alerts", comment: "Settings > Alerts section > Display test alerts")
+        }
+
+        section <<< SegmentedRow<Int> {
+            $0.tag = defaultAlarmLeadTimeMinutesKey
+            $0.title = OBALoc("settings_controller.alerts_section.default_alarm_lead_time", value: "Default alarm lead time", comment: "Settings > Alerts section > default minutes-before for one-tap departure alarms")
+            $0.options = [2, 5, 10]
+            $0.displayValueFor = { minutes in
+                guard let minutes else { return nil }
+                return String(format: OBALoc("settings_controller.alerts_section.lead_time_fmt", value: "%d min", comment: "Lead-time segment label. %d is minutes."), minutes)
+            }
         }
 
         return section

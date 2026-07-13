@@ -307,4 +307,16 @@ class UserDefaultsStoreTests: OBATestCase {
         expect(self.userDefaultsStore.walkingSpeedMetersPerSecond).to(beCloseTo(WalkingSpeed.validRange.upperBound))
     }
 
+    // MARK: - Default Alarm Lead Time
+
+    func test_defaultAlarmLeadTime_defaultValueAndRoundTrip() {
+        expect(self.userDefaultsStore.defaultAlarmLeadTimeMinutes) == 5
+
+        userDefaultsStore.defaultAlarmLeadTimeMinutes = 10
+        expect(self.userDefaultsStore.defaultAlarmLeadTimeMinutes) == 10
+
+        let newStore = UserDefaultsStore(userDefaults: userDefaults)
+        expect(newStore.defaultAlarmLeadTimeMinutes) == 10
+    }
+
 }

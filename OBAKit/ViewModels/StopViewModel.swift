@@ -10,6 +10,7 @@
 import Foundation
 import Combine
 import CoreLocation
+import UserNotifications
 import OBAKitCore
 
 /// Shared ViewModel for the stop arrivals/departures screen.
@@ -30,6 +31,15 @@ class StopViewModel: ObservableObject {
     /// `@Published` re-fires per assignment (even nil→nil) so the VC's `$currentSurvey`
     /// sink is the sole driver of survey-row reloads.
     @Published private(set) var currentSurvey: Survey?
+
+    /// Whether the inline donation-request card should be offered on this stop.
+    /// Mirrors `DonationsManager.shouldRequestDonations`; read by the SwiftUI Stop
+    /// page, which has no `Application` reference of its own. Not `@Published` — the
+    /// page re-reads it on the view model's routine refresh churn, and the explicit
+    /// dismiss path hides the card immediately via local view state.
+    var shouldRequestDonations: Bool {
+        application.donationsManager.shouldRequestDonations
+    }
 
     /// Emits when the inline hero answer succeeds but the survey has remaining
     /// questions. Consumers present the full survey screen with the supplied
@@ -70,6 +80,19 @@ class StopViewModel: ObservableObject {
     /// Non-nil when a network error occurred.
     @Published private(set) var operationError: Error?
 
+    /// User-facing copy for `operationError`. Run through `ErrorClassifier` so a
+    /// raw decoding/URL error becomes region-named, actionable text instead of a
+    /// developer-facing Foundation string — the same pass `StopViewController`
+    /// applies at display time. `operationError` stays raw for logging.
+    var operationErrorMessage: String? {
+        guard let operationError else { return nil }
+        return ErrorClassifier.classify(
+            operationError,
+            regionName: application.currentRegionName,
+            isCellularDataRestricted: application.isCellularDataRestricted
+        ).localizedDescription
+    }
+
     /// `true` when a bookmark's stop ID no longer resolves.
     @Published private(set) var isBrokenBookmark = false
 
@@ -88,6 +111,27 @@ class StopViewModel: ObservableObject {
     /// The time window has been extended at least once and there are still no arrivals,
     /// so auto-extension is exhausted (capped at 12 h).
     @Published private(set) var isLoadMoreExhausted = false
+
+    /// Alarms owned by this stop's departures, keyed by `ArrivalDeparture.id`.
+    /// All four alarm entry points (swipe, pill, row icon, trip panel) read and
+    /// write through this single index (§4.7).
+    @Published private(set) var alarmsByDepartureID: [String: Alarm] = [:]
+
+    /// Non-nil after an alarm create/cancel fails; consumer shows a toast/alert.
+    @Published private(set) var alarmError: Error?
+
+    /// Set `true` when the user attempts to create an alarm but notification
+    /// permission is already `.denied`; the consumer presents Settings guidance
+    /// and then calls `clearAlarmPermissionDenied()`.
+    @Published private(set) var alarmPermissionDenied = false
+
+    /// Departure ids with an in-flight `setAlarm`, so a double-tap can't create a
+    /// duplicate alarm while the first create is suspended (MainActor-serialized,
+    /// so a plain `Set` needs no further synchronization).
+    private var alarmSetsInFlight: Set<String> = []
+
+    /// Cache for trip-panel approach timelines, invalidated on each refresh.
+    private var approachCache: [String: TripDetails] = [:]
 
     // MARK: - Init Context
 
@@ -217,6 +261,8 @@ class StopViewModel: ObservableObject {
             self.stop = stop
         }
         stopArrivals = arrivals
+        approachCache.removeAll()
+        rebuildAlarmIndex()
         recomputeCurrentSurvey()
     }
 
@@ -362,9 +408,34 @@ class StopViewModel: ObservableObject {
         updateStopPreferences(prefs)
     }
 
+    /// `true` when the user has never saved preferences for this stop, so the
+    /// page may seed its sort mode from the app-wide last-used mode. A stop whose
+    /// preferences were saved — including one deliberately set back to
+    /// Chronological — owns its sort type and must not be re-seeded.
+    var hasCustomizedPreferences: Bool {
+        guard let region = application.currentRegion else { return false }
+        return application.stopPreferencesDataStore.hasPreferences(stopID: stopID, region: region)
+    }
+
+    /// Applies a sort type for display only. Unlike `updateSortType`, this does
+    /// not persist, so an untouched stop keeps tracking the app-wide last-used
+    /// mode instead of freezing at whatever it happened to be on first view.
+    func seedSortType(_ sortType: StopSort) {
+        guard stopPreferences.sortType != sortType else { return }
+        stopPreferences.sortType = sortType
+    }
+
     /// Saves alarm creation to the user data store.
     func recordAlarmCreated(_ alarm: Alarm) {
         application.userDataStore.add(alarm: alarm)
+    }
+
+    /// Records an alarm created outside the view model (the `AlarmBuilder`
+    /// bulletin flow) and indexes it under its departure so open trip panels
+    /// flip to "Alarm set" immediately instead of waiting for the next refresh.
+    func registerAlarm(_ alarm: Alarm, for arrivalDeparture: ArrivalDeparture) {
+        recordAlarmCreated(alarm)
+        alarmsByDepartureID[arrivalDeparture.id] = alarm
     }
 
     /// Returns whether an alarm can be created for the given arrival/departure.
@@ -481,5 +552,254 @@ class StopViewModel: ObservableObject {
             return
         }
         statusText = String(format: Strings.updatedAtFormat, application.formatters.timeAgoInWords(date: lastUpdated))
+    }
+
+    // MARK: - Stop Page: Walk Time
+
+    /// Walk time from the user's current location to this stop; the single
+    /// source for the header chip and the chronological walk line (§4.5).
+    var walkTime: WalkTimeInfo? {
+        WalkTimeInfo.compute(
+            from: application.locationService.currentLocation,
+            to: stop?.location,
+            speedMetersPerSecond: application.userDataStore.walkingSpeedMetersPerSecond
+        )
+    }
+
+    // MARK: - Stop Page: Alarms
+
+    var defaultAlarmLeadTime: Int {
+        application.userDataStore.defaultAlarmLeadTimeMinutes
+    }
+
+    func alarm(for arrivalDeparture: ArrivalDeparture) -> Alarm? {
+        alarmsByDepartureID[arrivalDeparture.id]
+    }
+
+    /// Minutes-before-departure for a persisted alarm, derived from its dates.
+    func alarmLeadTimeMinutes(_ alarm: Alarm) -> Int {
+        guard let tripDate = alarm.tripDate, let alarmDate = alarm.alarmDate else {
+            return AlarmLeadTime.defaultMinutes
+        }
+        return max(AlarmLeadTime.minimumMinutes, Int(round(tripDate.timeIntervalSince(alarmDate) / 60.0)))
+    }
+
+    func setAlarm(for arrivalDeparture: ArrivalDeparture, leadTimeMinutes: Int) async {
+        guard
+            canCreateAlarm(for: arrivalDeparture),
+            !alarmSetsInFlight.contains(arrivalDeparture.id),
+            let obacoService = application.obacoService,
+            let pushService = application.pushService,
+            let region = application.currentRegion,
+            let minutes = AlarmLeadTime.clamped(leadTimeMinutes, minutesUntilDeparture: arrivalDeparture.arrivalDepartureMinutes)
+        else { return }
+
+        // Reserve this departure before the first `await` so a double-tap can't
+        // slip a second create through while the permission/network work is
+        // suspended. The check-then-insert is atomic on the MainActor.
+        alarmSetsInFlight.insert(arrivalDeparture.id)
+        defer { alarmSetsInFlight.remove(arrivalDeparture.id) }
+
+        // Already-denied notification permission is a dead end for departure
+        // alarms: pushID() can't yield a deliverable id. Surface Settings
+        // guidance instead. (.notDetermined falls through so pushID() triggers
+        // the first-time system prompt.)
+        let settings = await UNUserNotificationCenter.current().notificationSettings()
+        if settings.authorizationStatus == .denied {
+            alarmPermissionDenied = true
+            return
+        }
+
+        do {
+            let userPushID = await pushService.pushID()
+            let alarm = try await obacoService.postAlarm(minutesBefore: minutes, arrivalDeparture: arrivalDeparture, userPushID: userPushID)
+            alarm.deepLink = ArrivalDepartureDeepLink(arrivalDeparture: arrivalDeparture, regionID: region.regionIdentifier)
+            alarm.set(tripDate: arrivalDeparture.arrivalDepartureDate, alarmOffset: minutes)
+            recordAlarmCreated(alarm)
+            alarmsByDepartureID[arrivalDeparture.id] = alarm
+            alarmError = nil
+        } catch {
+            Logger.error("Alarm create failed for \(arrivalDeparture.id): \(error)")
+            alarmError = error
+        }
+    }
+
+    func cancelAlarm(for arrivalDeparture: ArrivalDeparture) async {
+        guard let alarm = alarm(for: arrivalDeparture) else { return }
+        // Optimistic removal; restore on failure.
+        alarmsByDepartureID[arrivalDeparture.id] = nil
+        do {
+            guard let obacoService = application.obacoService else {
+                // The alarm lives on the server and will still fire. Deleting only
+                // the local copy would leave the rider with a notification they can
+                // no longer see or cancel, so fail loudly instead.
+                throw AlarmCancellationError.serviceUnavailable
+            }
+            try await obacoService.deleteAlarm(url: alarm.url)
+            application.userDataStore.delete(alarm: alarm)
+            // A refresh that landed mid-await could have re-inserted this entry
+            // (rebuildAlarmIndex ran while the persisted alarm was still present);
+            // re-assert the removal now that the alarm is actually deleted.
+            alarmsByDepartureID[arrivalDeparture.id] = nil
+            alarmError = nil
+        } catch {
+            Logger.error("Alarm cancel failed for \(arrivalDeparture.id): \(error)")
+            alarmsByDepartureID[arrivalDeparture.id] = alarm
+            alarmError = error
+        }
+    }
+
+    /// Why an alarm couldn't be cancelled. Surfaced through `alarmError`, which the
+    /// hosting controller presents.
+    enum AlarmCancellationError: LocalizedError {
+        /// No Obaco service for the current region, so the server alarm can't be deleted.
+        case serviceUnavailable
+
+        var errorDescription: String? {
+            OBALoc(
+                "stop_page.alarm_cancel_unavailable",
+                value: "This alarm couldn't be cancelled because the alarm service isn't available right now. Please try again later.",
+                comment: "Error shown when a departure alarm can't be cancelled because the region's alarm service is unreachable."
+            )
+        }
+    }
+
+    /// Toggle entry point shared by all four alarm surfaces (§4.7).
+    func toggleAlarm(for arrivalDeparture: ArrivalDeparture) async {
+        if alarm(for: arrivalDeparture) != nil {
+            await cancelAlarm(for: arrivalDeparture)
+        } else {
+            await setAlarm(for: arrivalDeparture, leadTimeMinutes: defaultAlarmLeadTime)
+        }
+    }
+
+    /// Resets the permission-denied flag after the consumer has presented its
+    /// Settings-guidance alert, so a later already-denied attempt re-fires the
+    /// binding.
+    func clearAlarmPermissionDenied() {
+        alarmPermissionDenied = false
+    }
+
+    /// Replaces the departure's existing alarm with one created outside the
+    /// view model — the trip panel's Change flow re-presents the `AlarmBuilder`
+    /// bulletin, which posts a brand-new alarm (Obaco has no update endpoint).
+    /// The new alarm is indexed and persisted immediately so the panel never
+    /// flips back to "Set an alarm"; the old alarm is then deleted.
+    func replaceAlarm(with newAlarm: Alarm, for arrivalDeparture: ArrivalDeparture) async {
+        let oldAlarm = alarm(for: arrivalDeparture)
+        registerAlarm(newAlarm, for: arrivalDeparture)
+
+        guard let oldAlarm, oldAlarm.url != newAlarm.url else { return }
+
+        if let obacoService = application.obacoService {
+            do {
+                try await obacoService.deleteAlarm(url: oldAlarm.url)
+            } catch {
+                // The new alarm stands either way; the undeleted server alarm
+                // may buzz once more but expires with the trip.
+                Logger.error("Failed to delete replaced alarm \(oldAlarm.url) from the server: \(error)")
+            }
+        } else {
+            Logger.error("Replaced alarm locally but obacoService is unavailable; server alarm \(oldAlarm.url) may still fire")
+        }
+
+        // Drop the old alarm from the persisted store even if the server
+        // delete failed: it shares the new alarm's deep link, and a leftover
+        // copy would win the next `rebuildAlarmIndex()` and resurrect the old
+        // lead time in the UI.
+        application.userDataStore.delete(alarm: oldAlarm)
+    }
+
+    /// Rebuilds the departure-id → alarm index by matching each persisted
+    /// alarm's deep link against the current departures. Called after each
+    /// successful fetch so expired/foreign alarms fall out naturally.
+    private func rebuildAlarmIndex() {
+        guard let region = application.currentRegion,
+              let departures = stopArrivals?.arrivalsAndDepartures
+        else {
+            alarmsByDepartureID = [:]
+            return
+        }
+        // Fast path: `alarms` JSON-decodes the persisted store on every access.
+        // With nothing persisted there's no expiry to run and no match to make,
+        // so bail before touching `deleteExpiredAlarms()`.
+        guard !application.userDataStore.alarms.isEmpty else {
+            alarmsByDepartureID = [:]
+            return
+        }
+        application.userDataStore.deleteExpiredAlarms()
+        // Re-read the pruned set once, out of the loop (another decode per access).
+        let alarms = application.userDataStore.alarms
+        var alarmsByVisit: [AlarmVisitIdentity: Alarm] = [:]
+        for alarm in alarms {
+            guard let deepLink = alarm.deepLink else { continue }
+            alarmsByVisit[AlarmVisitIdentity(deepLink)] = alarm
+        }
+
+        var index: [String: Alarm] = [:]
+        for departure in departures {
+            let candidate = ArrivalDepartureDeepLink(arrivalDeparture: departure, regionID: region.regionIdentifier)
+            if let match = alarmsByVisit[AlarmVisitIdentity(candidate)] {
+                index[departure.id] = match
+            }
+        }
+        alarmsByDepartureID = index
+    }
+
+    /// The trip visit an alarm was armed on. Deliberately narrower than
+    /// `ArrivalDepartureDeepLink`'s own equality, which also compares `vehicleID`
+    /// and `title`: both change the moment a scheduled trip goes real-time and the
+    /// feed assigns it a coach, which would drop a live alarm out of the index —
+    /// flipping the row back to "Set an alarm" and letting the rider arm a second,
+    /// uncancellable alarm on the same departure.
+    private struct AlarmVisitIdentity: Hashable {
+        let regionID: Int
+        let stopID: StopID
+        let tripID: TripIdentifier
+        let serviceDate: Date
+        let stopSequence: Int
+
+        init(_ deepLink: ArrivalDepartureDeepLink) {
+            self.regionID = deepLink.regionID
+            self.stopID = deepLink.stopID
+            self.tripID = deepLink.tripID
+            self.serviceDate = deepLink.serviceDate
+            self.stopSequence = deepLink.stopSequence
+        }
+    }
+
+    // MARK: - Stop Page: Approach Timeline
+
+    /// Synchronous read of the approach-details cache. The async
+    /// `approachTripDetails` path always resolves after the accordion row is
+    /// inserted, which resizes the panel without animation; this accessor lets
+    /// the panel seed a warm timeline at full size on the frame it's built.
+    func cachedApproachTripDetails(for arrivalDeparture: ArrivalDeparture) -> TripDetails? {
+        approachCache[approachCacheKey(for: arrivalDeparture)]
+    }
+
+    /// Trip details backing the trip panel's approach timeline. Fetched on
+    /// panel open, cached until the next refresh, live trips only (§4.1).
+    func approachTripDetails(for arrivalDeparture: ArrivalDeparture) async -> TripDetails? {
+        guard arrivalDeparture.predicted, let apiService = application.apiService else { return nil }
+        if let cached = cachedApproachTripDetails(for: arrivalDeparture) { return cached }
+        do {
+            let details = try await apiService.getTrip(
+                tripID: arrivalDeparture.tripID,
+                vehicleID: arrivalDeparture.vehicleID,
+                serviceDate: arrivalDeparture.serviceDate
+            ).entry
+            approachCache[approachCacheKey(for: arrivalDeparture)] = details
+            return details
+        } catch {
+            return nil // panel silently omits the timeline on failure
+        }
+    }
+
+    /// The full identity of the `getTrip` request, so two instances of the same trip
+    /// — a different vehicle, or the same run on the next service day — don't share
+    /// a cache entry and render each other's timeline.
+    private func approachCacheKey(for arrivalDeparture: ArrivalDeparture) -> String {
+        "\(arrivalDeparture.tripID)|\(arrivalDeparture.vehicleID ?? "")|\(arrivalDeparture.serviceDate.timeIntervalSince1970)"
     }
 }
