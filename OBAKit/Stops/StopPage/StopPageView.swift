@@ -130,9 +130,14 @@ struct StopPageView: View {
         viewModel.isLoading || (!hasLoadedArrivals && viewModel.operationError == nil && !viewModel.isBrokenBookmark)
     }
 
+    /// The departures both modes project. `filteringTerminalDuplicates()` collapses
+    /// the arrival/departure pair the API emits for a single vehicle visit at a
+    /// terminal or loop stop — without it the rider sees the same bus twice, with
+    /// two different countdowns (parity with `StopViewController`).
     private var filteredDepartures: [ArrivalDeparture] {
         let all = viewModel.stopArrivals?.arrivalsAndDepartures ?? []
-        return viewModel.isListFiltered ? all.filter(preferences: viewModel.stopPreferences) : all
+        let visible = viewModel.isListFiltered ? all.filter(preferences: viewModel.stopPreferences) : all
+        return visible.filteringTerminalDuplicates()
     }
 
     private var attributionText: String {
@@ -154,6 +159,13 @@ struct StopPageView: View {
         let departures = filteredDepartures
         let departureIDs = Set(departures.map(\.id))
         let routeIDs = Set(departures.map(\.routeID))
+        // Grouped mode drops past departures, so it can have nothing to render
+        // while `departures` is non-empty (the last bus of the evening has left).
+        // Deciding emptiness from the groups themselves — rather than from
+        // `departures` — keeps that case on the empty state instead of a void.
+        let isGrouped = viewModel.stopPreferences.sortType == .route
+        let routeGroups = isGrouped ? StopPageListBuilder.routeGroups(departures) : []
+        let listIsEmpty = isGrouped ? routeGroups.isEmpty : departures.isEmpty
 
         List {
             if let stop = viewModel.stop {
@@ -233,7 +245,7 @@ struct StopPageView: View {
                 }
             }
 
-            if departures.isEmpty {
+            if listIsEmpty {
                 if showsLoadingState {
                     Section {
                         StopPageLoadingRow()
@@ -241,8 +253,15 @@ struct StopPageView: View {
                 } else {
                     Section {
                         StopPageEmptyStateRow(
-                            errorText: viewModel.operationError?.localizedDescription,
-                            isFilteredEmpty: viewModel.isListFiltered && !(viewModel.stopArrivals?.arrivalsAndDepartures.isEmpty ?? true),
+                            isBrokenBookmark: viewModel.isBrokenBookmark,
+                            errorText: viewModel.operationErrorMessage,
+                            // Only when the route filter is what emptied the list.
+                            // Grouped mode can be empty while `departures` isn't
+                            // (every departure is in the past); that's a no-service
+                            // state, not a filtered-out one.
+                            isFilteredEmpty: viewModel.isListFiltered
+                                && departures.isEmpty
+                                && !(viewModel.stopArrivals?.arrivalsAndDepartures.isEmpty ?? true),
                             minutesAfter: viewModel.minutesAfter,
                             // With no header card above it (first fetch failed
                             // before the stop resolved), the row is the whole
@@ -255,7 +274,7 @@ struct StopPageView: View {
                         )
                     }
                 }
-            } else if viewModel.stopPreferences.sortType == .time {
+            } else if !isGrouped {
                 ChronologicalListView(
                     partition: StopPageListBuilder.chronologicalPartition(departures, walkMinutes: walkTime?.walkMinutes),
                     walkMinutes: walkTime?.walkMinutes,
@@ -274,7 +293,7 @@ struct StopPageView: View {
                 )
             } else {
                 GroupedListView(
-                    groups: StopPageListBuilder.routeGroups(departures),
+                    groups: routeGroups,
                     expandedRouteID: expandedRouteID,
                     openTripDepartureID: expandedDepartureID,
                     statusProvider: { DepartureStatus(arrivalDeparture: $0) },
@@ -334,17 +353,18 @@ struct StopPageView: View {
         }
     }
 
-    /// One-shot: an untouched stop (still on the default `.time` sort) opens in
-    /// the last mode the user picked anywhere in the app. A stop with a
-    /// persisted `.route` preference is left alone.
+    /// One-shot: a stop the user has never customized opens in the last mode they
+    /// picked anywhere in the app. A stop with saved preferences owns its sort
+    /// type and is left alone — including one deliberately set to Chronological,
+    /// which `stopPreferences.sortType` alone can't tell apart from the default.
     private func seedLastUsedModeIfNeeded() {
         guard !didSeedMode else { return }
         didSeedMode = true
-        guard viewModel.stopPreferences.sortType == .time,
+        guard !viewModel.hasCustomizedPreferences,
               let raw = userDefaults.string(forKey: Self.lastUsedStopSortKey),
               let seeded = StopSort(rawValue: raw)
         else { return }
-        viewModel.updateSortType(seeded)
+        viewModel.seedSortType(seeded)
     }
 
     /// Builds the shared trip-detail panel (§4.6) for an expanded departure.
@@ -752,9 +772,15 @@ struct StopPageLoadingRow: View {
 }
 
 /// The single empty-state row shown when there are no departures to list.
-/// Precedence: a network error (Retry) → everything filtered out (Show all
-/// routes) → genuinely no service in the window. §4.4 wording is exact.
+/// Precedence: a bookmark pointing at a stop that no longer exists → a network
+/// error (Retry) → everything filtered out (Show all routes) → genuinely no
+/// service in the window. §4.4 wording is exact.
 struct StopPageEmptyStateRow: View {
+    /// The stop behind a bookmark no longer resolves — almost always an agency
+    /// stop-ID realignment. Tells the user to recreate the bookmark rather than
+    /// leaving them to conclude the bus simply isn't running (parity with
+    /// `StopViewController.emptyData(for:)`).
+    var isBrokenBookmark: Bool = false
     let errorText: String?
     let isFilteredEmpty: Bool
     let minutesAfter: UInt
@@ -788,12 +814,16 @@ struct StopPageEmptyStateRow: View {
     }
 
     private var symbolName: String {
+        if isBrokenBookmark { return "bookmark.slash.fill" }
         if errorText != nil { return "exclamationmark.icloud" }
         if isFilteredEmpty { return "line.3.horizontal.decrease.circle" }
         return "clock.badge.xmark"
     }
 
     private var message: String {
+        if isBrokenBookmark {
+            return OBALoc("stop_controller.bad_bookmark_error_message", value: "This bookmark may not work anymore. Did your transit agency change something? Please delete and recreate the bookmark.", comment: "An error message displayed when a stop is shown by tapping on a bookmark—and the bookmark doesn't seem to point to a valid stop any longer. This problem will occur when a transit agency changes its stop IDs, perhaps as part of an annual transit system realignment.")
+        }
         if let errorText { return errorText }
         if isFilteredEmpty {
             return OBALoc("stop_page.empty.all_filtered", value: "All routes at this stop are filtered", comment: "Empty state shown when every route at the stop is hidden by the user's filter.")
@@ -803,6 +833,9 @@ struct StopPageEmptyStateRow: View {
     }
 
     private var actionTitle: String? {
+        // A broken bookmark has no retry: the stop ID itself is gone, so refetching
+        // it just fails again. The message tells the user to recreate the bookmark.
+        if isBrokenBookmark { return nil }
         if errorText != nil {
             return OBALoc("stop_page.empty.retry", value: "Retry", comment: "Button that retries loading departures after an error.")
         }

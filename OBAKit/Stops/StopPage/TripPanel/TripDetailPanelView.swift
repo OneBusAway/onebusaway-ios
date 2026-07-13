@@ -134,6 +134,7 @@ struct TripDetailPanelView: View {
         return ApproachSlice.make(
             stopTimes: stopTimes,
             userStopID: departure.stopID,
+            userStopSequence: departure.stopSequence,
             closestStopID: departure.tripStatus?.closestStopID
         )
     }
@@ -141,7 +142,7 @@ struct TripDetailPanelView: View {
     private func timelineRows(_ slice: ApproachSlice<TripStopTime>) -> [ApproachTimelineView.Row] {
         slice.stops.enumerated().map { index, stopTime in
             ApproachTimelineView.Row(
-                id: stopTime.stopID,
+                id: "\(index)-\(stopTime.stopID)",
                 name: stopTime.stopName,
                 isUserStop: index == slice.stops.count - 1,
                 isVehicleHere: slice.vehicleIndex == index,

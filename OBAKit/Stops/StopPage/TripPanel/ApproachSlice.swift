@@ -32,14 +32,22 @@ struct ApproachSlice<S: ApproachTimelineStop> {
     /// Zero when the window is contiguous.
     let skippedStopCount: Int
 
-    static func make(stopTimes: [S], userStopID: StopID, closestStopID: StopID?) -> ApproachSlice? {
-        guard let userIndex = stopTimes.firstIndex(where: { $0.stopID == userStopID }) else { return nil }
+    /// - Parameter userStopSequence: The departure's position in the trip's stop
+    ///   times. A loop route visits the same stop at more than one sequence, so
+    ///   the stop ID alone can't say which visit this departure is for.
+    static func make(stopTimes: [S], userStopID: StopID, userStopSequence: Int? = nil, closestStopID: StopID?) -> ApproachSlice? {
+        guard let userIndex = userIndex(in: stopTimes, stopID: userStopID, stopSequence: userStopSequence) else { return nil }
 
-        let vehicleAbsolute = closestStopID.flatMap { closest in
-            stopTimes.firstIndex(where: { $0.stopID == closest })
-        }
-        if let vehicleAbsolute, vehicleAbsolute > userIndex {
-            return nil // vehicle already past the user's stop
+        var vehicleAbsolute: Int?
+        if let closest = closestStopID, stopTimes.contains(where: { $0.stopID == closest }) {
+            // The vehicle's closest stop can also appear more than once on a loop.
+            // The occurrence that matters is the last one at or before the user's
+            // stop — the leg the vehicle is on now. If every occurrence is
+            // downstream of the user's stop, the vehicle has already been through.
+            guard let index = stopTimes[...userIndex].lastIndex(where: { $0.stopID == closest }) else {
+                return nil // vehicle already past the user's stop
+            }
+            vehicleAbsolute = index
         }
 
         let start = max(0, userIndex - 4)
@@ -52,6 +60,17 @@ struct ApproachSlice<S: ApproachTimelineStop> {
 
         let window = Array(stopTimes[start...userIndex])
         return ApproachSlice(stops: window, vehicleIndex: vehicleAbsolute.map { $0 - start }, skippedStopCount: 0)
+    }
+
+    /// Resolves the departure's own visit to the user's stop. `stopSequence`
+    /// indexes the trip's stop times, so it picks out the right occurrence when a
+    /// loop route calls at the stop more than once; the stop-ID search is the
+    /// fallback for callers (and feeds) that don't supply one.
+    private static func userIndex(in stopTimes: [S], stopID: StopID, stopSequence: Int?) -> Int? {
+        if let stopSequence, stopTimes.indices.contains(stopSequence), stopTimes[stopSequence].stopID == stopID {
+            return stopSequence
+        }
+        return stopTimes.firstIndex(where: { $0.stopID == stopID })
     }
 }
 

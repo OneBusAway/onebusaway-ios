@@ -80,6 +80,19 @@ class StopViewModel: ObservableObject {
     /// Non-nil when a network error occurred.
     @Published private(set) var operationError: Error?
 
+    /// User-facing copy for `operationError`. Run through `ErrorClassifier` so a
+    /// raw decoding/URL error becomes region-named, actionable text instead of a
+    /// developer-facing Foundation string — the same pass `StopViewController`
+    /// applies at display time. `operationError` stays raw for logging.
+    var operationErrorMessage: String? {
+        guard let operationError else { return nil }
+        return ErrorClassifier.classify(
+            operationError,
+            regionName: application.currentRegionName,
+            isCellularDataRestricted: application.isCellularDataRestricted
+        ).localizedDescription
+    }
+
     /// `true` when a bookmark's stop ID no longer resolves.
     @Published private(set) var isBrokenBookmark = false
 
@@ -395,6 +408,23 @@ class StopViewModel: ObservableObject {
         updateStopPreferences(prefs)
     }
 
+    /// `true` when the user has never saved preferences for this stop, so the
+    /// page may seed its sort mode from the app-wide last-used mode. A stop whose
+    /// preferences were saved — including one deliberately set back to
+    /// Chronological — owns its sort type and must not be re-seeded.
+    var hasCustomizedPreferences: Bool {
+        guard let region = application.currentRegion else { return false }
+        return application.stopPreferencesDataStore.hasPreferences(stopID: stopID, region: region)
+    }
+
+    /// Applies a sort type for display only. Unlike `updateSortType`, this does
+    /// not persist, so an untouched stop keeps tracking the app-wide last-used
+    /// mode instead of freezing at whatever it happened to be on first view.
+    func seedSortType(_ sortType: StopSort) {
+        guard stopPreferences.sortType != sortType else { return }
+        stopPreferences.sortType = sortType
+    }
+
     /// Saves alarm creation to the user data store.
     func recordAlarmCreated(_ alarm: Alarm) {
         application.userDataStore.add(alarm: alarm)
@@ -683,14 +713,42 @@ class StopViewModel: ObservableObject {
         application.userDataStore.deleteExpiredAlarms()
         // Re-read the pruned set once, out of the loop (another decode per access).
         let alarms = application.userDataStore.alarms
+        var alarmsByVisit: [AlarmVisitIdentity: Alarm] = [:]
+        for alarm in alarms {
+            guard let deepLink = alarm.deepLink else { continue }
+            alarmsByVisit[AlarmVisitIdentity(deepLink)] = alarm
+        }
+
         var index: [String: Alarm] = [:]
         for departure in departures {
             let candidate = ArrivalDepartureDeepLink(arrivalDeparture: departure, regionID: region.regionIdentifier)
-            if let match = alarms.first(where: { $0.deepLink == candidate }) {
+            if let match = alarmsByVisit[AlarmVisitIdentity(candidate)] {
                 index[departure.id] = match
             }
         }
         alarmsByDepartureID = index
+    }
+
+    /// The trip visit an alarm was armed on. Deliberately narrower than
+    /// `ArrivalDepartureDeepLink`'s own equality, which also compares `vehicleID`
+    /// and `title`: both change the moment a scheduled trip goes real-time and the
+    /// feed assigns it a coach, which would drop a live alarm out of the index —
+    /// flipping the row back to "Set an alarm" and letting the rider arm a second,
+    /// uncancellable alarm on the same departure.
+    private struct AlarmVisitIdentity: Hashable {
+        let regionID: Int
+        let stopID: StopID
+        let tripID: TripIdentifier
+        let serviceDate: Date
+        let stopSequence: Int
+
+        init(_ deepLink: ArrivalDepartureDeepLink) {
+            self.regionID = deepLink.regionID
+            self.stopID = deepLink.stopID
+            self.tripID = deepLink.tripID
+            self.serviceDate = deepLink.serviceDate
+            self.stopSequence = deepLink.stopSequence
+        }
     }
 
     // MARK: - Stop Page: Approach Timeline

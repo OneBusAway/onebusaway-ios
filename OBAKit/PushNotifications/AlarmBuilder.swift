@@ -52,22 +52,32 @@ class AlarmBuilder: NSObject {
 
     /// - Parameter initialMinutes: Pre-selects this lead time in the picker.
     ///   Pass the current alarm's lead time when re-presenting the bulletin to
-    ///   change an existing alarm; `nil` uses the default selection.
+    ///   change an existing alarm; `nil` falls back to the user's default alarm
+    ///   lead time preference.
     init(arrivalDeparture: ArrivalDeparture, application: Application, initialMinutes: Int? = nil, delegate: AlarmBuilderDelegate?) {
         self.arrivalDeparture = arrivalDeparture
         self.application = application
         self.delegate = delegate
-        self.timePickerPage = AlarmTimePickerItem(arrivalDeparture: arrivalDeparture, initialMinutes: initialMinutes)
+        self.timePickerPage = AlarmTimePickerItem(
+            arrivalDeparture: arrivalDeparture,
+            initialMinutes: initialMinutes ?? application.userDataStore.defaultAlarmLeadTimeMinutes
+        )
 
         super.init()
 
         self.timePickerPage.actionHandler = { [weak self] item in
             guard
                 let self = self,
-                let item = item as? AlarmTimePickerItem
-            else { return }
+                let item = item as? AlarmTimePickerItem,
+                // No selectable lead time: the departure slipped inside a minute
+                // between the row rendering its alarm affordance and the user
+                // confirming the bulletin. Nothing to arm, so just close.
+                let minutes = item.timePickerManager.selectedMinutes
+            else {
+                self?.bulletinManager.dismissBulletin(animated: true)
+                return
+            }
 
-            let minutes = item.timePickerManager.selectedMinutes
             Task {
                 await self.createAlarm(minutes: minutes)
             }
@@ -134,7 +144,7 @@ class AlarmTimePickerItem: ThemedBulletinPage {
     private let arrivalDeparture: ArrivalDeparture
     let timePickerManager: AlarmTimePickerManager
 
-    init(arrivalDeparture: ArrivalDeparture, initialMinutes: Int? = nil) {
+    init(arrivalDeparture: ArrivalDeparture, initialMinutes: Int) {
         self.arrivalDeparture = arrivalDeparture
         self.timePickerManager = AlarmTimePickerManager(arrivalDeparture: arrivalDeparture, initialMinutes: initialMinutes)
 
@@ -162,8 +172,9 @@ class AlarmTimePickerManager: NSObject, UIPickerViewDelegate, UIPickerViewDataSo
 
     private let arrivalDeparture: ArrivalDeparture
 
-    /// The lead time to pre-select when the picker is displayed. Defaults to
-    /// 10 minutes; the change-alarm flow passes the current alarm's lead time.
+    /// The lead time to pre-select when the picker is displayed: the user's
+    /// default alarm lead time, or the current alarm's lead time in the
+    /// change-alarm flow.
     private let initialMinutes: Int
 
     lazy var pickerView: UIPickerView = {
@@ -174,9 +185,9 @@ class AlarmTimePickerManager: NSObject, UIPickerViewDelegate, UIPickerViewDataSo
         return picker
     }()
 
-    init(arrivalDeparture: ArrivalDeparture, initialMinutes: Int? = nil) {
+    init(arrivalDeparture: ArrivalDeparture, initialMinutes: Int) {
         self.arrivalDeparture = arrivalDeparture
-        self.initialMinutes = initialMinutes ?? 10
+        self.initialMinutes = initialMinutes
         self.pickerItems = AlarmTimePickerManager.incrementsForDeparture(arrivalDeparture.arrivalDepartureMinutes)
     }
 
@@ -187,8 +198,12 @@ class AlarmTimePickerManager: NSObject, UIPickerViewDelegate, UIPickerViewDataSo
         pickerView.selectRow(row, inComponent: 0, animated: false)
     }
 
-    var selectedMinutes: Int {
-        pickerItems[pickerView.selectedRow(inComponent: 0)]
+    /// `nil` when the picker has no rows to select — a departure less than two
+    /// minutes out has no valid lead time, and `UIPickerView` reports row -1.
+    var selectedMinutes: Int? {
+        let row = pickerView.selectedRow(inComponent: 0)
+        guard pickerItems.indices.contains(row) else { return nil }
+        return pickerItems[row]
     }
 
     /// Creates an array of `Int`s representing the countdown of minutes that will be displayed in this controller's picker.

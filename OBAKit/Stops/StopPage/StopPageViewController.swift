@@ -27,12 +27,21 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
     AppContext,
     AlarmBuilderDelegate,
     BookmarkEditorDelegate,
+    Idleable,
     StopPreferencesViewDelegate,
     Previewable {
 
     let application: Application
     let viewModel: StopViewModel
     private var cancellables = Set<AnyCancellable>()
+
+    public var idleTimerFailsafe: Timer?
+
+    private lazy var dataLoadFeedbackGenerator = DataLoadFeedbackGenerator(application: application)
+
+    /// Gates the one-shot success haptic to the first arrivals load, matching
+    /// `StopViewController.bindArrivalsSink()`; later refreshes are silent.
+    private var firstLoad = true
 
     #if !targetEnvironment(simulator)
     /// `application.canOpenURL` is an XPC round-trip and Google Maps can't be
@@ -103,8 +112,34 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
         navigationItem.largeTitleDisplayMode = .never
         configureBarButtons()
         bindChrome()
+        bindArrivalsFeedback()
         bindSurveyPresentation()
         bindAlarmFeedback()
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        disableIdleTimer()
+        beginUserActivity()
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        enableIdleTimer()
+    }
+
+    // MARK: - NSUserActivity
+
+    /// Publishes this stop's `NSUserActivity` for Handoff, Siri and Spotlight.
+    /// Ports `StopViewController.beginUserActivity()`; called on appearance and
+    /// whenever the stop resolves.
+    private func beginUserActivity() {
+        guard let stop = viewModel.stop,
+              let region = application.regionsService.currentRegion,
+              let userActivityBuilder = application.userActivityBuilder
+        else { return }
+
+        self.userActivity = userActivityBuilder.userActivity(for: stop, region: region)
     }
 
     // MARK: - Navigation Handler
@@ -166,6 +201,7 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.configureBarButtons()
+                self?.beginUserActivity()
             }
             .store(in: &cancellables)
 
@@ -187,6 +223,29 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
         viewModel.$isListFiltered
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in self?.configureBarButtons() }
+            .store(in: &cancellables)
+    }
+
+    /// Haptic feedback for data loads, ported from `StopViewController`: a
+    /// success tap on the first arrivals load and an error buzz whenever a fetch
+    /// fails. The SwiftUI layer owns no `Application`, so this stays here.
+    private func bindArrivalsFeedback() {
+        viewModel.$stopArrivals
+            .compactMap { $0 }
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self, firstLoad else { return }
+                firstLoad = false
+                dataLoadFeedbackGenerator.dataLoad(.success)
+            }
+            .store(in: &cancellables)
+
+        viewModel.$operationError
+            .compactMap { $0 }
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.dataLoadFeedbackGenerator.dataLoad(.failed)
+            }
             .store(in: &cancellables)
     }
 
@@ -281,6 +340,13 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
     /// departure already has an alarm, the picker opens pre-selected to its
     /// current lead time and the created alarm replaces the old one.
     private func showAlarmPicker(for arrivalDeparture: ArrivalDeparture) {
+        // The SwiftUI alarm affordances are gated on `canCreateAlarm`, but that
+        // gate is only re-evaluated on the ~15s refresh — a departure can slip
+        // inside the one-minute floor while the row (or an open trip panel) still
+        // offers the button. Re-check here so the picker never opens with no
+        // selectable lead time.
+        guard viewModel.canCreateAlarm(for: arrivalDeparture) else { return }
+
         alarmBuilderDeparture = arrivalDeparture
         let existingAlarm = viewModel.alarm(for: arrivalDeparture)
         alarmBuilder = AlarmBuilder(

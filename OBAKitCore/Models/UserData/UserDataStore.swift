@@ -348,6 +348,16 @@ public protocol StopPreferencesStore: NSObjectProtocol {
     /// - Parameter stopID: The ID of the `Stop` for which `StopPreferences` will be retrieved.
     /// - Parameter region: The `Region` in which `stop` exists.
     func preferences(stopID: StopID, region: Region) -> StopPreferences
+
+    /// `true` when preferences have been explicitly saved for this `Stop`.
+    ///
+    /// `preferences(stopID:region:)` always returns a value, so its result can't
+    /// distinguish "the user chose the defaults" from "the user never chose
+    /// anything" — callers that need that distinction (e.g. seeding a stop with a
+    /// last-used sort mode only when it is untouched) ask here instead.
+    /// - Parameter stopID: The ID of the `Stop` to check.
+    /// - Parameter region: The `Region` in which `stop` exists.
+    func hasPreferences(stopID: StopID, region: Region) -> Bool
 }
 
 // MARK: - UserDataStore Defaults
@@ -943,6 +953,10 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         let prefs = stopPreferences
         let key = stopPreferencesKey(id: stopID, region: region)
         return prefs[key] ?? StopPreferences()
+    }
+
+    public func hasPreferences(stopID: StopID, region: Region) -> Bool {
+        stopPreferences[stopPreferencesKey(id: stopID, region: region)] != nil
     }
 
     private func stopPreferencesKey(id: String, region: Region) -> String {

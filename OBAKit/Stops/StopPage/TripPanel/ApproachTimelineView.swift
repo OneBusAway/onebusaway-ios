@@ -25,7 +25,10 @@ import OBAKitCore
 /// labels use text styles.
 struct ApproachTimelineView: View {
     struct Row: Identifiable {
-        let id: String       // stopID
+        /// Position-qualified, not the bare stop ID: a loop route can put the same
+        /// stop in the window twice, and duplicate `ForEach` identities collapse
+        /// the rows.
+        let id: String
         let name: String
         let isUserStop: Bool
         let isVehicleHere: Bool
