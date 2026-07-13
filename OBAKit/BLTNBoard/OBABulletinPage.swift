@@ -53,7 +53,17 @@ extension BLTNItemManager {
         // intended behavior — callers (e.g. reachability flapping) lean on this.
         guard !isShowingBulletin else { return }
 
-        if UserDefaults.standard.bool(forKey: FeatureFlags.useMapPanelExperienceKey) {
+        // Settings writes this flag to `application.userDefaults`, which the
+        // OBA app initializes as an app-group suite (see `AppDelegate.m` and
+        // `CoreApplicationKey.defaultValue`). `UserDefaults.standard` reads a
+        // different suite and would always see the flag as OFF. Resolve the
+        // same suite here; if it can't be resolved (unlikely outside tests),
+        // treat the flag as OFF — the classic path is the safe production
+        // default anyway.
+        let appGroupDefaults = Bundle.main.appGroup.flatMap { UserDefaults(suiteName: $0) }
+        let useMapPanelExperience = appGroupDefaults?.bool(forKey: FeatureFlags.useMapPanelExperienceKey) ?? false
+
+        if useMapPanelExperience {
             // No usable scene means the bulletin disappears with no UI trace,
             // including for the error path (`Application.displayError`). Log so
             // there's at least a diagnostic breadcrumb instead of silent loss.
