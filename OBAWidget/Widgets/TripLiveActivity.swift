@@ -30,13 +30,15 @@ struct TripLiveActivity: Widget {
 
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: TripAttributes.self) { context in
-            TripBookmarkRow(
+            TripLiveActivityCardView(
                 staticData: context.attributes.staticData,
                 contentState: context.state
             )
             .activityBackgroundTint(Color(UIColor.systemBackground))
         } dynamicIsland: { context in
-            DynamicIsland {
+            let upcoming = context.state.upcomingArrivals()
+            let primary = upcoming.first
+            return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
                     HStack(spacing: 8) {
                         Image(systemName: "bus.fill")
@@ -50,7 +52,7 @@ struct TripLiveActivity: Widget {
                     .padding(.leading, 6)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    if let primary = context.state.arrivals.first {
+                    if let primary {
                         let primaryMinuteText = presenter.minuteText(for: primary)
                         Text(primaryMinuteText)
                             .font(.system(size: 32, weight: .bold, design: .rounded))
@@ -78,7 +80,7 @@ struct TripLiveActivity: Widget {
                                     Circle()
                                         .fill(Color(presenter.primaryColor(for: context.state)))
                                         .frame(width: 6, height: 6)
-                                    Text(context.state.arrivals.first.map { presenter.statusText(for: $0) } ?? "")
+                                    Text(primary.map { presenter.statusText(for: $0) } ?? "")
                                         .font(.caption)
                                         .fontWeight(.medium)
                                         .foregroundColor(Color(presenter.primaryColor(for: context.state)))
@@ -88,7 +90,7 @@ struct TripLiveActivity: Widget {
                             .padding(.leading, 6)
                             Spacer(minLength: 12)
                             VStack(alignment: .trailing, spacing: 4) {
-                                let nextDepartures = context.state.arrivals.dropFirst().prefix(2)
+                                let nextDepartures = upcoming.dropFirst().prefix(2)
                                 ForEach(Array(nextDepartures.enumerated()), id: \.offset) { _, arrivalInfo in
                                     Text(presenter.minuteText(for: arrivalInfo))
                                         .font(.system(.callout, design: .rounded))
@@ -108,7 +110,7 @@ struct TripLiveActivity: Widget {
                     .foregroundColor(Color(presenter.primaryColor(for: context.state)))
                     .padding(.leading, 4)
             } compactTrailing: {
-                if let primary = context.state.arrivals.first {
+                if let primary {
                     Text(presenter.minuteText(for: primary))
                         .font(.system(.body, design: .rounded))
                         .fontWeight(.bold)
@@ -116,7 +118,7 @@ struct TripLiveActivity: Widget {
                         .frame(minWidth: 20)
                 }
             } minimal: {
-                if let primary = context.state.arrivals.first {
+                if let primary {
                     Text(presenter.minuteText(for: primary))
                         .font(.system(.callout, design: .rounded))
                         .fontWeight(.heavy)

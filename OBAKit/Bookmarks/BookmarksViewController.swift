@@ -378,10 +378,12 @@ public class BookmarksViewController: UIViewController,
         let routeShortName = viewModel.bookmark.routeShortName ?? viewModel.name
         let routeHeadsign = viewModel.bookmark.tripHeadsign ?? ""
 
+        let routeColorHex = viewModel.arrivalDepartures?.first?.route.color?.toHex()
         let staticData = TripAttributes.StaticData(
             routeShortName: routeShortName,
             routeHeadsign: routeHeadsign,
-            stopID: viewModel.stopID
+            stopID: viewModel.stopID,
+            routeColorHex: routeColorHex
         )
 
         guard let contentState = buildContentState(for: viewModel) else {

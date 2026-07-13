@@ -8,6 +8,7 @@
 //
 
 import SwiftUI
+import ActivityKit
 import OBAKitCore
 
 /// Everything that navigates away from — or presents a modal over — the Stop
@@ -37,6 +38,8 @@ struct StopPageNavigationHandler {
     /// panel's Set-an-alarm button), reusing `AlarmBuilder` from the legacy
     /// stop screen.
     let showAlarmPicker: (ArrivalDeparture) -> Void
+    /// Starts a Live Activity for a departure (the trip panel's Track button).
+    let startLiveActivity: (ArrivalDeparture) -> Void
     /// Shows the "couldn't open survey" alert when an external survey link fails.
     let showExternalSurveyError: () -> Void
     /// Presents the donation learn-more/donate modal.
@@ -373,24 +376,21 @@ struct StopPageView: View {
     /// live-only VM fetch; the alarm closures route through the single alarm index.
     private func makePanel(for departure: ArrivalDeparture) -> TripDetailPanelView {
         let status = DepartureStatus(arrivalDeparture: departure)
-        let alarm = viewModel.alarm(for: departure)
         return TripDetailPanelView(
             departure: departure,
             status: status,
-            alarm: alarm,
-            alarmLeadTimeMinutes: alarm.map { viewModel.alarmLeadTimeMinutes($0) } ?? viewModel.defaultAlarmLeadTime,
-            canAlarm: viewModel.canCreateAlarm(for: departure),
+            alarm: nil,
+            alarmLeadTimeMinutes: 0,
+            canAlarm: ActivityAuthorizationInfo().areActivitiesEnabled,
             // Bumps on every successful refresh so the panel re-fetches its
             // approach timeline while it stays open (scheduled→live flips and
             // failed first fetches retry on the next refresh).
             refreshToken: viewModel.lastUpdated,
             cachedTripDetails: viewModel.cachedApproachTripDetails(for: departure),
             approachLoader: { await viewModel.approachTripDetails(for: departure) },
-            onSetAlarm: { navigation.showAlarmPicker(departure) },
-            onCancelAlarm: { Task { await viewModel.cancelAlarm(for: departure) } },
-            // Change re-presents the same alarm picker bulletin as create; the
-            // controller's alarmCreated callback replaces the existing alarm.
-            onChangeAlarm: { navigation.showAlarmPicker(departure) },
+            onSetAlarm: { navigation.startLiveActivity(departure) },
+            onCancelAlarm: {},
+            onChangeAlarm: {},
             canSchedule: navigation.canScheduleForRoute,
             onSchedule: { navigation.showScheduleForRoute(departure) },
             onBookmark: { navigation.showBookmarkEditor(departure) },

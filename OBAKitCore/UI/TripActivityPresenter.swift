@@ -51,9 +51,23 @@ public struct TripActivityPresenter {
         return "\(timeString) - \(deviationText)"
     }
 
-    /// Color for the first (primary) arrival; gray-ish unknown when empty.
-    public func primaryColor(for state: TripAttributes.ContentState) -> UIColor {
-        guard let first = state.arrivals.first else {
+    /// Just the adherence deviation text, e.g. "arrives on time" or "2 min late".
+    /// Used by card-header layouts that display the scheduled time separately.
+    public func deviationLabel(for arrival: TripAttributes.ContentState.ArrivalInfo, now: Date = Date()) -> String {
+        if arrival.scheduleStatus == .unknown {
+            return Strings.scheduledNotRealTime
+        }
+        let minutes = Int(arrival.departureDate.timeIntervalSince(now) / 60.0)
+        return formatters.formattedScheduleDeviation(
+            temporalState: temporalState(minutes: minutes),
+            arrivalDepartureStatus: arrival.isArrival ? .arriving : .departing,
+            scheduleDeviation: Int((Double(arrival.scheduleDeviation) / 60.0).rounded())
+        )
+    }
+
+    /// Color for the first upcoming arrival; gray when all have departed or empty.
+    public func primaryColor(for state: TripAttributes.ContentState, now: Date = Date()) -> UIColor {
+        guard let first = state.upcomingArrivals(now: now).first else {
             return formatters.colorForScheduleStatus(.unknown)
         }
         return color(for: first)

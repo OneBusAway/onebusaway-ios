@@ -202,11 +202,13 @@ public struct TripBookmarkRow: View {
 extension TripBookmarkRow {
     public init(staticData: TripAttributes.StaticData, contentState: TripAttributes.ContentState) {
         let presenter = TripActivityPresenter()
-        let statusText = contentState.arrivals.first.map { presenter.statusText(for: $0) } ?? ""
-        let statusColor = Color(presenter.primaryColor(for: contentState))
-        let minuteDisplays = contentState.arrivals.enumerated().map { index, arrival in
+        let now = Date()
+        let upcoming = contentState.upcomingArrivals(now: now)
+        let statusText = upcoming.first.map { presenter.statusText(for: $0, now: now) } ?? ""
+        let statusColor = Color(presenter.primaryColor(for: contentState, now: now))
+        let minuteDisplays = upcoming.enumerated().map { index, arrival in
             MinuteDisplay(
-                text: presenter.minuteText(for: arrival),
+                text: presenter.minuteText(for: arrival, now: now),
                 color: Color(presenter.color(for: arrival)),
                 isPrimary: index == 0
             )

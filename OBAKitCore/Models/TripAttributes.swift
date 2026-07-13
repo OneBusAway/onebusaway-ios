@@ -27,11 +27,13 @@ public struct TripAttributes: ActivityAttributes {
         public let routeShortName: String
         public let routeHeadsign: String
         public let stopID: String
+        public let routeColorHex: String?
 
-        public init(routeShortName: String, routeHeadsign: String, stopID: String) {
+        public init(routeShortName: String, routeHeadsign: String, stopID: String, routeColorHex: String? = nil) {
             self.routeShortName = routeShortName
             self.routeHeadsign = routeHeadsign
             self.stopID = stopID
+            self.routeColorHex = routeColorHex
         }
     }
 
@@ -92,6 +94,13 @@ public struct TripAttributes: ActivityAttributes {
 
         /// Up to 3 upcoming arrivals, soonest first.
         public let arrivals: [ArrivalInfo]
+
+        /// Arrivals whose departure time is at or after `now`, soonest first.
+        /// Push updates and stale content states may include already-departed
+        /// trips; use this for display rather than `arrivals` directly.
+        public func upcomingArrivals(now: Date = Date()) -> [ArrivalInfo] {
+            arrivals.filter { $0.departureDate >= now }
+        }
 
         enum CodingKeys: String, CodingKey {
             case arrivals

@@ -10,6 +10,7 @@
 import UIKit
 import SwiftUI
 import Combine
+import ActivityKit
 import OBAKitCore
 
 /// Hosting shell for the redesigned SwiftUI Stop page. Owns UIKit-side chrome
@@ -42,6 +43,15 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
     /// Gates the one-shot success haptic to the first arrivals load, matching
     /// `StopViewController.bindArrivalsSink()`; later refreshes are silent.
     private var firstLoad = true
+
+    // MARK: - Live Activity storage
+
+    /// One token-forwarding Task per activity id; cancelled in deinit.
+    private var liveActivityTokenTasks: [String: Task<Void, Never>] = [:]
+    /// One lifecycle-observation Task per activity id; cancelled in deinit.
+    private var liveActivityLifecycleTasks: [String: Task<Void, Never>] = [:]
+
+    private static let liveActivityURLDefaultsKey = "liveActivityDeleteURLs"
 
     #if !targetEnvironment(simulator)
     /// `application.canOpenURL` is an XPC round-trip and Google Maps can't be
@@ -107,6 +117,11 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
         fatalError("init(coder:) has not been implemented")
     }
 
+    deinit {
+        liveActivityTokenTasks.values.forEach { $0.cancel() }
+        liveActivityLifecycleTasks.values.forEach { $0.cancel() }
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
         navigationItem.largeTitleDisplayMode = .never
@@ -155,6 +170,7 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
         showAlertDetail: { _ in },
         showBookmarkEditor: { _ in },
         showAlarmPicker: { _ in },
+        startLiveActivity: { _ in },
         showExternalSurveyError: {},
         showDonation: {},
         dismissDonation: { _ in },
@@ -177,6 +193,7 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
             },
             showBookmarkEditor: { [weak self] departure in self?.showBookmarkEditor(for: departure) },
             showAlarmPicker: { [weak self] departure in self?.showAlarmPicker(for: departure) },
+            startLiveActivity: { [weak self] departure in self?.startLiveActivity(for: departure) },
             showExternalSurveyError: { [weak self] in self?.showExternalSurveyError() },
             showDonation: { [weak self] in self?.showDonationUI() },
             dismissDonation: { [weak self] onHide in self?.showDonationDismissUI(onHide: onHide) },
@@ -380,6 +397,164 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
         Task { @MainActor in
             await AlertPresenter.show(error: error, presentingController: self)
         }
+    }
+
+    // MARK: - Live Activity
+
+    func startLiveActivity(for departure: ArrivalDeparture) {
+        guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
+
+        let routeColorHex = departure.route.color?.toHex()
+        let staticData = TripAttributes.StaticData(
+            routeShortName: departure.routeShortName,
+            routeHeadsign: departure.tripHeadsign ?? "",
+            stopID: departure.stopID,
+            routeColorHex: routeColorHex
+        )
+
+        guard let contentState = buildLiveActivityContentState(for: departure) else {
+            Logger.error("Failed to build content state for Live Activity")
+            return
+        }
+
+        let attributes = TripAttributes(staticData: staticData)
+        do {
+            let activity = try Activity.request(
+                attributes: attributes,
+                content: .init(state: contentState, staleDate: nil),
+                pushType: .token
+            )
+            registerForLiveActivityPushUpdates(activity: activity, departure: departure)
+            Logger.info("Started Live Activity with ID: \(activity.id)")
+            showLiveActivityStartedAlert()
+        } catch {
+            Logger.error("Failed to start Live Activity: \(error)")
+            showLiveActivityErrorAlert()
+        }
+    }
+
+    private func buildLiveActivityContentState(for departure: ArrivalDeparture) -> TripAttributes.ContentState? {
+        let allArrivals = viewModel.stopArrivals?.arrivalsAndDepartures ?? [departure]
+        let sameRoute = allArrivals.filter { $0.routeID == departure.routeID }
+        let upcoming = sameRoute.isEmpty ? [departure] : Array(sameRoute.prefix(3))
+        let arrivals = upcoming.map { arrDep in
+            TripAttributes.ContentState.ArrivalInfo(
+                departureTime: Int(arrDep.arrivalDepartureDate.timeIntervalSince1970),
+                scheduleStatus: .init(arrDep.scheduleStatus),
+                scheduleDeviation: arrDep.deviationFromScheduleInMinutes * 60,
+                isArrival: arrDep.arrivalDepartureStatus == .arriving
+            )
+        }
+        return TripAttributes.ContentState(arrivals: arrivals)
+    }
+
+    private func showLiveActivityStartedAlert() {
+        let title = OBALoc("live_activity.started.title", value: "Tracking on Lock Screen", comment: "Alert title when a Live Activity starts")
+        let message = OBALoc("live_activity.started.message", value: "You'll see live arrival updates on your Lock Screen and Dynamic Island.", comment: "Alert message explaining where to find the Live Activity")
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: Strings.ok, style: .default))
+        present(alert, animated: true)
+    }
+
+    private func showLiveActivityErrorAlert() {
+        let title = OBALoc("live_activity.error.title", value: "Unable to Start Tracking", comment: "Alert title when Live Activity fails to start")
+        let message = OBALoc("live_activity.error.message", value: "Please check your Live Activities settings in System Preferences.", comment: "Alert message for Live Activity error")
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: Strings.ok, style: .default))
+        present(alert, animated: true)
+    }
+
+    private func registerForLiveActivityPushUpdates(activity: Activity<TripAttributes>, departure: ArrivalDeparture) {
+        let activityID = activity.id
+
+        liveActivityTokenTasks[activityID]?.cancel()
+        liveActivityTokenTasks[activityID] = Task { [weak self] in
+            for await tokenData in activity.pushTokenUpdates {
+                let token = tokenData.map { String(format: "%02x", $0) }.joined()
+                await self?.postLiveActivityRegistration(
+                    activity: activity,
+                    pushToken: token,
+                    tripID: departure.tripID,
+                    serviceDate: departure.serviceDate,
+                    vehicleID: departure.vehicleID,
+                    stopSequence: departure.stopSequence
+                )
+            }
+        }
+
+        armLiveActivityLifecycleObserver(activity: activity)
+    }
+
+    private func armLiveActivityLifecycleObserver(activity: Activity<TripAttributes>) {
+        let activityID = activity.id
+        liveActivityLifecycleTasks[activityID]?.cancel()
+        liveActivityLifecycleTasks[activityID] = Task { [weak self] in
+            for await state in activity.activityStateUpdates where state == .dismissed || state == .ended {
+                await self?.unregisterLiveActivity(activityID: activityID)
+                break
+            }
+        }
+    }
+
+    private func postLiveActivityRegistration(activity: Activity<TripAttributes>, pushToken: String, tripID: String?, serviceDate: Date?, vehicleID: String?, stopSequence: Int?) async {
+        guard let obacoService = application.obacoService else { return }
+        let staticData = activity.attributes.staticData
+        do {
+            let deleteURL = try await obacoService.postLiveActivity(
+                activityID: activity.id,
+                pushToken: pushToken,
+                stopID: staticData.stopID,
+                routeShortName: staticData.routeShortName,
+                tripHeadsign: staticData.routeHeadsign,
+                tripID: tripID,
+                serviceDate: serviceDate,
+                vehicleID: vehicleID,
+                stopSequence: stopSequence
+            )
+
+            // Guard against the lifecycle task having been cancelled before
+            // this async POST completed, to avoid orphaning the server-side record.
+            guard liveActivityLifecycleTasks[activity.id] != nil, !Task.isCancelled else {
+                do {
+                    try await obacoService.deleteLiveActivity(url: deleteURL)
+                    Logger.info("Discarded Live Activity registration for \(activity.id): activity was unregistered mid-request")
+                } catch {
+                    Logger.error("Failed to clean up orphaned Live Activity registration for \(activity.id): \(error)")
+                }
+                return
+            }
+
+            storeLiveActivityDeleteURL(deleteURL, activityID: activity.id)
+            Logger.info("Registered Live Activity push token for activity \(activity.id)")
+        } catch {
+            Logger.error("Failed to register Live Activity push token: \(error)")
+        }
+    }
+
+    private func unregisterLiveActivity(activityID: String) async {
+        liveActivityTokenTasks.removeValue(forKey: activityID)?.cancel()
+        liveActivityLifecycleTasks.removeValue(forKey: activityID)?.cancel()
+        guard let obacoService = application.obacoService,
+              let deleteURL = removeLiveActivityDeleteURL(activityID: activityID) else { return }
+        do {
+            try await obacoService.deleteLiveActivity(url: deleteURL)
+            Logger.info("Unregistered Live Activity \(activityID)")
+        } catch {
+            Logger.error("Failed to unregister Live Activity \(activityID): \(error)")
+        }
+    }
+
+    private func storeLiveActivityDeleteURL(_ url: URL, activityID: String) {
+        var urls = application.userDefaults.dictionary(forKey: Self.liveActivityURLDefaultsKey) as? [String: String] ?? [:]
+        urls[activityID] = url.absoluteString
+        application.userDefaults.set(urls, forKey: Self.liveActivityURLDefaultsKey)
+    }
+
+    private func removeLiveActivityDeleteURL(activityID: String) -> URL? {
+        var urls = application.userDefaults.dictionary(forKey: Self.liveActivityURLDefaultsKey) as? [String: String] ?? [:]
+        defer { application.userDefaults.set(urls, forKey: Self.liveActivityURLDefaultsKey) }
+        guard let raw = urls.removeValue(forKey: activityID) else { return nil }
+        return URL(string: raw)
     }
 
     // MARK: - Snapshot
