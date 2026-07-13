@@ -30,6 +30,7 @@ targets:
       path: Apps/OneBusAway/Info.plist
       properties:
         NSSupportsLiveActivities: true
+        NSSupportsLiveActivitiesFrequentUpdates: true
         CFBundleDisplayName: OneBusAway
         CFBundleURLTypes: [{CFBundleTypeRole: "Editor", CFBundleURLIconFile: "", CFBundleURLName: "onebusaway", CFBundleURLSchemes: ["onebusaway"]}]
         LSApplicationQueriesSchemes:
