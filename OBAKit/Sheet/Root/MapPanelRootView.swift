@@ -57,11 +57,16 @@ struct MapPanelRootView: View {
     /// opacity ramps from 1 → 0 across this window as the sheet approaches `halfScreenHeight`.
     private let toolbarFadeRange: CGFloat = 50
 
+    /// Tuck the `MoreButton` up under the pill by a fixed amount when the pill
+    /// is visible so the two feel like a stacked cluster instead of two loose
+    /// pills. Zero-based so nothing shifts when the pill is hidden.
+    private static let moreButtonPillOverlap: CGFloat = 10
+    
     private let factory: AppSheetViewFactory
 
     init(application: Application, factory: AppSheetViewFactory) {
         _coordinator = StateObject(wrappedValue: SheetCoordinator<AppSheetRoute>(root: .home))
-        let initialMapType: MapBaseType = application.mapRegionManager.userSelectedMapType == .mutedStandard ? .standard : .hybrid
+        let initialMapType = MapBaseType(application.mapRegionManager.userSelectedMapType)
         _mapViewModel = StateObject(wrappedValue: MapViewModel(application: application, initialMapType: initialMapType))
         self.application = application
         self.factory = factory
@@ -116,7 +121,11 @@ struct MapPanelRootView: View {
             .onGeometryChange(for: CGFloat.self) { proxy in
                 proxy.size.height
             } action: { _, newValue in
-                pillHeight = newValue
+                // The pill collapses to `EmptyView` for `.hidden`, but the
+                // enclosing padding modifier can still report a non-zero
+                // height — force to zero here so overlays that offset off
+                // `pillHeight` don't get a phantom top gap.
+                pillHeight = mapViewModel.topPillState == .hidden ? 0 : newValue
             }
         }
         .overlay(alignment: .bottomTrailing) {
@@ -267,7 +276,7 @@ extension MapPanelRootView {
             coordinator.push(.more)
         }
         .padding(ThemeMetrics.controllerMargin)
-        .padding(.top, pillHeight - 10)
+        .padding(.top, max(0, pillHeight - Self.moreButtonPillOverlap))
         .animation(.smooth(duration: 0.3), value: pillHeight)
     }
 

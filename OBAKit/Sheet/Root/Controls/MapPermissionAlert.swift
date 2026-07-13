@@ -105,41 +105,44 @@ struct MapPermissionAlert: ViewModifier {
         switch state {
         case .notDetermined:
             Button(Strings.continue) { onAction(.requestAuthorization) }
-            Button(OBALoc(
-                "locationservices_alert_keepoff.button",
-                value: "Keep Location Off",
-                comment: ""
-            ), role: .cancel) {}
+            keepLocationOffButton
         case .locationServicesOff:
             Button(OBALoc(
                 "locationservices_alert_gotosettings.button",
                 value: "Turn On in Settings",
-                comment: ""
+                comment: "Button that opens iOS Settings so the user can enable location services for the app."
             )) { onAction(.openSettings) }
-            Button(OBALoc(
-                "locationservices_alert_keepoff.button",
-                value: "Keep Location Off",
-                comment: ""
-            ), role: .cancel) {}
+            keepLocationOffButton
         case .impreciseLocation:
             Button(OBALoc(
                 "locationservices_alert_gotosettings.button",
                 value: "Turn On in Settings",
-                comment: ""
+                comment: "Button that opens iOS Settings so the user can enable location services for the app."
             )) { onAction(.openSettings) }
             Button(OBALoc(
                 "locationservices_alert_request_precise_location_once.button",
                 value: "Allow Once",
-                comment: ""
+                comment: "Button that grants one-time full-accuracy location for the current map session while keeping the default reduced-accuracy setting."
             )) { onAction(.requestPreciseLocation) }
             Button(OBALoc(
                 "locationservices_alert_keep_precise_location_off.button",
                 value: "Keep Precise Location Off",
-                comment: ""
+                comment: "Cancel button in the precise-location alert; dismisses without raising accuracy from reduced to full."
             ), role: .cancel) {}
         case .hidden, .zoomInForStops:
             EmptyView()
         }
+    }
+
+    /// Shared cancel button used by both `.notDetermined` and
+    /// `.locationServicesOff`. Extracted so the localized string and role live
+    /// in one place — translators only need context for it once.
+    private var keepLocationOffButton: some View {
+        Button(OBALoc(
+            "locationservices_alert_keepoff.button",
+            value: "Keep Location Off",
+            comment: "Cancel button in the location-permission alert; dismisses without granting authorization or opening Settings."
+        ), role: .cancel) {}
     }
 }
 

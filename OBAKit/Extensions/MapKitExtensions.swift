@@ -171,6 +171,28 @@ public extension MKCoordinateRegion {
     }
 }
 
+// MARK: - MapBaseType ↔ MKMapType
+
+extension MapBaseType {
+    /// The MapKit type this base type renders as. Lives on the MapKit
+    /// extension file rather than on the enum so `MapViewModel` doesn't take
+    /// on an explicit MapKit dependency; call sites that need MKMapType
+    /// already import MapKit.
+    var mkMapType: MKMapType {
+        switch self {
+        case .standard: return .mutedStandard
+        case .hybrid: return .hybrid
+        }
+    }
+
+    /// Inverse of `mkMapType`. Any MapKit value other than `.hybrid` collapses
+    /// to `.standard` so a stray persisted `.satellite` (or future addition)
+    /// never boots the app into an unhandled render mode.
+    init(_ mkMapType: MKMapType) {
+        self = mkMapType == .hybrid ? .hybrid : .standard
+    }
+}
+
 extension MKMapView {
 
     /// Syntactic sugar for registering annotation views

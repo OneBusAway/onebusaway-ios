@@ -1194,7 +1194,7 @@ private extension MapViewController {
                 // and refreshes the toolbar icon so both stay in step when
                 // the value changes through any path (VM toggle, external
                 // defaults edit, cross-view sync).
-                mapRegionManager.mapView.mapType = mapType == .standard ? .mutedStandard : .hybrid
+                mapRegionManager.mapView.mapType = mapType.mkMapType
                 setMapTypeButtonImage(toggleMapTypeButton, mapType: mapType)
             }
             .store(in: &cancellables)

@@ -104,7 +104,7 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
     /// hot path for `UserDefaults.didChangeNotification` fan-out, so avoid a
     /// republish on every unrelated defaults write.
     private func syncMapTypeFromRegionManager() {
-        let persisted: MapBaseType = application.mapRegionManager.userSelectedMapType == .mutedStandard ? .standard : .hybrid
+        let persisted = MapBaseType(application.mapRegionManager.userSelectedMapType)
         if persisted != mapType {
             mapType = persisted
         }
@@ -220,7 +220,7 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
     func toggleMapType() {
         let next: MapBaseType = mapType == .standard ? .hybrid : .standard
         mapType = next
-        application.mapRegionManager.userSelectedMapType = next == .standard ? .mutedStandard : .hybrid
+        application.mapRegionManager.userSelectedMapType = next.mkMapType
     }
 
     // MARK: - Bookmarks
