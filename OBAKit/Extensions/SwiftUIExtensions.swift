@@ -7,6 +7,7 @@
 
 import SwiftUI
 import UIKit
+import OBAKitCore
 
 // MARK: - onFirstAppear
 
@@ -91,4 +92,20 @@ public extension View {
             self.background(Color(uiColor: .secondarySystemBackground), in: shape)
         }
     }
+}
+
+extension View {
+   /// Lifts an overlay above the floating sheet and syncs its opacity /
+   /// animation with the sheet's live drag height, so the bottom-leading
+   /// (trip) and bottom-trailing (map controls) toolbars move together as
+   /// the user drags. Callers still apply their own leading/trailing padding.
+   func floatingOverSheet(height: CGFloat, opacity: CGFloat, duration: CGFloat) -> some View {
+       self
+           .padding(.bottom, height + ThemeMetrics.padding)
+           .opacity(opacity)
+           .animation(
+               .interpolatingSpring(duration: duration, bounce: 0, initialVelocity: 0),
+               value: height
+           )
+   }
 }

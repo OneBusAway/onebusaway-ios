@@ -24,6 +24,40 @@ private struct VisitIdentity: Hashable {
 
 extension Sequence where Element == ArrivalDeparture {
 
+    /// Collapses entries that describe the same arrival/departure — identical `id`
+    /// (stop, trip, route, service date, stop sequence, and arrival/departure status) —
+    /// into a single entry, keeping the most recently updated report.
+    ///
+    /// Real-time feeds occasionally assign two vehicles to one trip (e.g. an AVL ghost
+    /// alongside the actual coach), and the server then emits one entry per vehicle for
+    /// the same trip visit. Riders should only ever see one row per visit, and duplicate
+    /// `id`s also break identity-keyed UI downstream (SwiftUI `ForEach`, alarm indexes),
+    /// so this runs at ingestion when `StopArrivals` is decoded.
+    ///
+    /// Unlike `filteringTerminalDuplicates()`, entries that differ in stop sequence or
+    /// arrival/departure status are never merged, so loop-route double visits and
+    /// terminal arrival/departure pairs pass through untouched.
+    ///
+    /// - Returns: A filtered array preserving the original order, with each duplicate's
+    ///   first-occurrence position retained.
+    public func filteringDuplicateVehicleReports() -> [ArrivalDeparture] {
+        var seen = [String: Int]()
+        var result: [ArrivalDeparture] = []
+
+        for arrDep in self {
+            if let existingIndex = seen[arrDep.id] {
+                if arrDep.lastUpdated > result[existingIndex].lastUpdated {
+                    result[existingIndex] = arrDep
+                }
+            } else {
+                seen[arrDep.id] = result.count
+                result.append(arrDep)
+            }
+        }
+
+        return result
+    }
+
     /// Filters out visually duplicate arrival/departure entries that occur at terminal or loop stops.
     ///
     /// At terminal stops, the OBA API returns two separate `ArrivalDeparture` objects for the

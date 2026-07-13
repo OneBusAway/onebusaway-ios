@@ -19,19 +19,33 @@ struct StopRowItem: OBAListViewItem {
     let stopID: Stop.ID
     let routeType: Route.RouteType
 
-    // Hide icon if there is only one type of route in the list
     var configuration: OBAListViewItemConfiguration {
-        let transportIcon = Icons.transportIcon(from: routeType)
         var config = OBAListRowConfiguration(
-            image: transportIcon,
-            text: .string(name),
-            secondaryText: .string(subtitle),
+            image: Icons.squircleTransportIcon(for: routeType),
+            text: .attributed(styledTitle),
+            secondaryText: .attributed(styledSubtitle),
             appearance: .subtitle,
             accessoryType: .disclosureIndicator)
-        config.imageConfig.tintColor = .label
-        config.imageConfig.maximumSize = CGSize(width: 24, height: 24)
+        // The squircle icon is pre-rendered with its own colors; don't re-tint.
+        config.imageConfig.tintColor = nil
+        config.imageConfig.maximumSize = CGSize(width: Icons.squircleIconSize, height: Icons.squircleIconSize)
 
         return .custom(config)
+    }
+
+    private var styledTitle: NSAttributedString {
+        NSAttributedString(string: name, attributes: [
+            .font: UIFont.preferredFont(forTextStyle: .title3).bold,
+            .foregroundColor: UIColor.label
+        ])
+    }
+
+    private var styledSubtitle: NSAttributedString? {
+        guard let subtitle else { return nil }
+        return NSAttributedString(string: subtitle, attributes: [
+            .font: UIFont.preferredFont(forTextStyle: .body),
+            .foregroundColor: UIColor.label
+        ])
     }
 
     let onSelectAction: OBAListViewAction<StopRowItem>?

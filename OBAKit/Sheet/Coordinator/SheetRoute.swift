@@ -81,7 +81,7 @@ enum AppSheetRoute: SheetRouteable {
     case tripPlanner
     case tripDetails(tripID: TripIdentifier)
     case routePicker
-    case currentTrip(routeID: RouteID)
+    case currentTrip(route: Route)
     case transitAlert(alertID: String)
 
     case more
@@ -118,11 +118,21 @@ extension AppSheetRoute {
             return "\(caseName)-\(stopID)"
         case .tripDetails(let tripID):
             return "\(caseName)-\(tripID)"
-        case .currentTrip(let routeID):
-            return "\(caseName)-\(routeID)"
+        case .currentTrip(let route):
+            return "\(caseName)-\(route.id)"
         case .transitAlert(let alertID):
             return "\(caseName)-\(alertID)"
         }
+    }
+
+    // MARK: Hashable / Equatable
+
+    static func == (lhs: AppSheetRoute, rhs: AppSheetRoute) -> Bool {
+        return lhs.id == rhs.id
+    }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
     }
 }
 

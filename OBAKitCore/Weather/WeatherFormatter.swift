@@ -16,59 +16,86 @@ public enum WeatherFormatter {
 
     // MARK: - Icon Mapping
 
+    /// A single icon "condition family" — day/night variants share one case
+    /// because the SF Symbol already conveys time-of-day and the localized
+    /// word is the same either way.
+    private enum ConditionKey {
+        case clear, partlyCloudy, cloudy, rain, sleet, snow, wind, fog
+
+        var localizedText: String {
+            switch self {
+            case .clear:
+                return OBALoc("weather.condition.clear", value: "Clear", comment: "Weather condition label for clear skies.")
+            case .partlyCloudy:
+                return OBALoc("weather.condition.partly_cloudy", value: "Partly Cloudy", comment: "Weather condition label for partly cloudy skies.")
+            case .cloudy:
+                return OBALoc("weather.condition.cloudy", value: "Cloudy", comment: "Weather condition label for cloudy skies.")
+            case .rain:
+                return OBALoc("weather.condition.rain", value: "Rain", comment: "Weather condition label for rain.")
+            case .sleet:
+                return OBALoc("weather.condition.sleet", value: "Sleet", comment: "Weather condition label for sleet.")
+            case .snow:
+                return OBALoc("weather.condition.snow", value: "Snow", comment: "Weather condition label for snow.")
+            case .wind:
+                return OBALoc("weather.condition.wind", value: "Windy", comment: "Weather condition label for windy conditions.")
+            case .fog:
+                return OBALoc("weather.condition.fog", value: "Fog", comment: "Weather condition label for foggy conditions.")
+            }
+        }
+    }
+
+    /// Metadata for a single Obaco icon key. Bundling the SF Symbol and the
+    /// condition-text key here means adding a new condition is a single edit
+    /// (one new entry in `iconMetadata`) and the drift-warning gate
+    /// (`isKnownIconKey`) automatically covers both fallbacks.
+    private struct IconMetadata {
+        let symbol: String
+        let conditionKey: ConditionKey
+    }
+
+    /// Single source of truth for Obaco icon keys the app renders. Every
+    /// public helper below reads from this table — no parallel lookup tables.
+    private static let iconMetadata: [String: IconMetadata] = [
+        "clear-day": IconMetadata(symbol: "sun.max.fill", conditionKey: .clear),
+        "clear-night": IconMetadata(symbol: "moon.stars.fill", conditionKey: .clear),
+        "partly-cloudy-day": IconMetadata(symbol: "cloud.sun.fill", conditionKey: .partlyCloudy),
+        "partly-cloudy-night": IconMetadata(symbol: "cloud.moon.fill", conditionKey: .partlyCloudy),
+        "cloudy": IconMetadata(symbol: "cloud.fill", conditionKey: .cloudy),
+        "rain": IconMetadata(symbol: "cloud.rain.fill", conditionKey: .rain),
+        "sleet": IconMetadata(symbol: "cloud.sleet.fill", conditionKey: .sleet),
+        "snow": IconMetadata(symbol: "cloud.snow.fill", conditionKey: .snow),
+        "wind": IconMetadata(symbol: "wind", conditionKey: .wind),
+        "fog": IconMetadata(symbol: "cloud.fog.fill", conditionKey: .fog)
+    ]
+
     /// Maps an Obaco icon key (Dark Sky-style) to an SF Symbol name.
     /// Returns a generic cloud symbol for unknown keys so the UI never goes blank.
     public static func systemImageName(for iconKey: String) -> String {
-        iconToSymbol[iconKey] ?? "cloud.fill"
+        iconMetadata[iconKey]?.symbol ?? "cloud.fill"
     }
 
-    /// Whether the given Obaco icon key has both a symbol and a condition-text
-    /// mapping. Callers (e.g. `WeatherDisplay.Header`) use this to log a single
-    /// warning when Obaco starts shipping a new condition we don't render —
-    /// the fallbacks keep the UI usable, but without this signal the drift is
-    /// silent.
+    /// Whether the given Obaco icon key is modeled by the app. Callers
+    /// (e.g. `WeatherDisplay.Header`) use this to log a single warning when
+    /// Obaco starts shipping a new condition we don't render — the fallbacks
+    /// keep the UI usable, but without this signal the drift is silent.
     public static func isKnownIconKey(_ iconKey: String) -> Bool {
-        iconToSymbol[iconKey] != nil
+        iconMetadata[iconKey] != nil
     }
 
-    private static let iconToSymbol: [String: String] = [
-        "clear-day": "sun.max.fill",
-        "clear-night": "moon.stars.fill",
-        "partly-cloudy-day": "cloud.sun.fill",
-        "partly-cloudy-night": "cloud.moon.fill",
-        "cloudy": "cloud.fill",
-        "rain": "cloud.rain.fill",
-        "sleet": "cloud.sleet.fill",
-        "snow": "cloud.snow.fill",
-        "wind": "wind",
-        "fog": "cloud.fog.fill"
-    ]
+    /// Snapshot of every Obaco icon key the app currently models. Exposed so
+    /// downstream tables (e.g. the SwiftUI color palette in `WeatherIcon`)
+    /// can be asserted complete against this source of truth in tests.
+    public static var knownIconKeys: Set<String> {
+        Set(iconMetadata.keys)
+    }
 
     // MARK: - Condition Text
 
     /// Localized human-readable condition (e.g. "Clear", "Cloudy"). Day/night
     /// variants collapse to the same word since the icon already conveys time-of-day.
     public static func conditionText(for iconKey: String) -> String {
-        switch iconKey {
-        case "clear-day", "clear-night":
-            return OBALoc("weather.condition.clear", value: "Clear", comment: "Weather condition label for clear skies.")
-        case "partly-cloudy-day", "partly-cloudy-night":
-            return OBALoc("weather.condition.partly_cloudy", value: "Partly Cloudy", comment: "Weather condition label for partly cloudy skies.")
-        case "cloudy":
-            return OBALoc("weather.condition.cloudy", value: "Cloudy", comment: "Weather condition label for cloudy skies.")
-        case "rain":
-            return OBALoc("weather.condition.rain", value: "Rain", comment: "Weather condition label for rain.")
-        case "sleet":
-            return OBALoc("weather.condition.sleet", value: "Sleet", comment: "Weather condition label for sleet.")
-        case "snow":
-            return OBALoc("weather.condition.snow", value: "Snow", comment: "Weather condition label for snow.")
-        case "wind":
-            return OBALoc("weather.condition.wind", value: "Windy", comment: "Weather condition label for windy conditions.")
-        case "fog":
-            return OBALoc("weather.condition.fog", value: "Fog", comment: "Weather condition label for foggy conditions.")
-        default:
-            return OBALoc("weather.condition.unknown", value: "—", comment: "Weather condition placeholder when the icon key is unknown.")
-        }
+        iconMetadata[iconKey]?.conditionKey.localizedText
+            ?? OBALoc("weather.condition.unknown", value: "—", comment: "Weather condition placeholder when the icon key is unknown.")
     }
 
     // MARK: - Temperature

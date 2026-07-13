@@ -33,13 +33,6 @@ struct WeatherDisplay: Equatable {
     /// Horizontally scrolling 24-hour strip.
     let hourly: [HourlyEntry]
 
-    /// One-sentence outlook from the Obaco `today_summary` field, used as the
-    /// legacy `UIAlertController` title. Stored on the primary struct so the
-    /// transitional `legacyAlert` computed accessor (see
-    /// `WeatherDisplay+LegacyAlert.swift`) doesn't need to keep the heavyweight
-    /// `WeatherForecast` alive.
-    let todaySummary: String
-
     init(forecast: WeatherForecast, locale: Locale, now: Date = .now, calendar: Calendar = .current) {
         // Compute the "next 24 hours" window once so the hourly strip and the
         // header's hi/lo are guaranteed to be summarising the same hours —
@@ -55,7 +48,6 @@ struct WeatherDisplay: Equatable {
         self.header = Header(forecast: forecast, upcoming: upcoming, locale: locale)
         self.stats = Stats(forecast: forecast.currentForecast, locale: locale)
         self.hourly = HourlyEntry.list(from: upcoming, locale: locale)
-        self.todaySummary = forecast.todaySummary
     }
 }
 

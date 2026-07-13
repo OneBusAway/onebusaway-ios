@@ -46,7 +46,12 @@ extension APIService {
         // If you request a valid endpoint, but provide it with a bogus piece of
         // data (e.g. a non-existent Stop ID), it should return a 404 error to you.
         // Instead, it gives a 200 and a blank body.
-        if httpResponse.expectedContentLength == 0 && httpResponse.statusCode == 200 {
+        //
+        // Only GETs are covered by this: for a DELETE, an empty body is the expected
+        // shape of *success* (the sidecar's alarm and live activity endpoints answer
+        // with a bare 204, and older deployments with a bare 200), so applying the
+        // heuristic there reported every successful delete as a missing resource.
+        if request.httpMethod == "GET" && httpResponse.expectedContentLength == 0 && httpResponse.statusCode == 200 {
             logger.error("Failed network request for \(request.description, privacy: .public): 404 not found.")
             throw APIError.requestNotFound(httpResponse)
         }

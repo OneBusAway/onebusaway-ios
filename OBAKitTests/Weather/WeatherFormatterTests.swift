@@ -51,6 +51,24 @@ final class WeatherFormatterTests: XCTestCase {
         expect(WeatherFormatter.conditionText(for: "tornado")) == "—"
     }
 
+    // MARK: - Metadata single-source-of-truth
+
+    /// Guards against the drift the fix for #1174 removes: every icon key the
+    /// warning gate accepts must also produce a real condition string, not
+    /// the "—" fallback. If a future key is added to the metadata table
+    /// without a matching `ConditionKey` case, this fails.
+    func test_isKnownIconKey_impliesConditionText() {
+        let placeholder = OBALoc(
+            "weather.condition.unknown",
+            value: "—",
+            comment: "Weather condition placeholder when the icon key is unknown."
+        )
+        for key in WeatherFormatter.knownIconKeys {
+            expect(WeatherFormatter.isKnownIconKey(key)) == true
+            expect(WeatherFormatter.conditionText(for: key)) != placeholder
+        }
+    }
+
     // MARK: - formatTemp (locale-dependent)
 
     func test_formatTemp_usLocaleKeepsFahrenheit() {

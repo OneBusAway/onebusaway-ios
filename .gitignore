@@ -60,6 +60,5 @@ OBAKitTests.xcresult
 .claude/settings.local.json
 .env
 
-# Code-review artifacts written by tooling
+# Review artifacts (e.g. /aaron-pr-review)
 pr-*.md
-.code-reviews/

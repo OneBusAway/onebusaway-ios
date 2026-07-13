@@ -33,36 +33,68 @@ struct MapPanelRootView: View {
     @State private var mapSize: CGSize = .zero
     @State private var visibleRegion: MKCoordinateRegion?
 
-    /// Measured height of the top-center status pill, used to offset the
-    /// weather button so the two don't overlap when the pill is visible.
-    /// Zero when the pill isn't rendered (`.hidden` state), which naturally
-    /// collapses the weather-button padding.
+    // Measured height of the top-center status pill, used to offset the
+    // weather button so the two don't overlap when the pill is visible.
+    // Zero when the pill isn't rendered (`.hidden` state), which naturally
+    // collapses the weather-button padding.
     @State private var pillHeight: CGFloat = 0
 
-    /// Location-permission alert presentation state. Owned by the root
+    // Location-permission alert presentation state. Owned by the root.
     @State private var permissionAlertState: MapViewModel.TopPillState?
 
     private let application: Application
+
+    // Live sheet height, clamped to `[0, halfScreenHeight]`. Seeded to the
+    // collapsed detent so overlays render at their resting position on the
+    // first frame — before `.onGeometryChange` reports a value.
+    @State private var sheetHeight: CGFloat = AppSheetRoute.homeCollapsedHeight
+    @State private var toolbarsAnimationDuration: CGFloat = 0
+    @State private var toolbarsOpacity: CGFloat = 1
+
+    @State private var halfScreenHeight: CGFloat = 350
+
+    /// Points of fade band immediately below the clamp ceiling. Toolbar
+    /// opacity ramps from 1 → 0 across this window as the sheet approaches `halfScreenHeight`.
+    private let toolbarFadeRange: CGFloat = 50
+
     private let factory: AppSheetViewFactory
 
-    init(application: Application) {
+    init(application: Application, factory: AppSheetViewFactory) {
         _coordinator = StateObject(wrappedValue: SheetCoordinator<AppSheetRoute>(root: .home))
         let initialMapType: MapBaseType = application.mapRegionManager.userSelectedMapType == .mutedStandard ? .standard : .hybrid
         _mapViewModel = StateObject(wrappedValue: MapViewModel(application: application, initialMapType: initialMapType))
         self.application = application
-        self.factory = AppSheetViewFactory(application: application)
+        self.factory = factory
     }
 
     var body: some View {
+        // TODO: Wire this SwiftUI `Map` to `application.mapRegionManager`.
+        // The UIKit `MapViewController` flow populates
+        // `mapRegionManager.stops` via `MapRegionManager.requestStops`
+        // whenever its MKMapView's region changes; both `RoutePickerViewModel`
+        // and `CurrentTripViewModel` read from that cache before falling back
+        // to a coordinate-based API call. Because this SwiftUI `Map` never
+        // touches `MapRegionManager`, the cache stays empty here and the
+        // pickers always hit the coordinate-fallback path — producing a
+        // different (often larger) route list than the UIKit picker shows for
+        // the same on-screen viewport. Fix is to observe `cameraPosition`
+        // changes, convert to an `MKCoordinateRegion`, and feed it into
+        // `MapRegionManager` so both surfaces agree on the cached stop set
+        // (also unblocks rendering stop annotations on the SwiftUI map).
         Map(position: $cameraPosition) {
             UserAnnotation()
         }
         .mapStyle(mapViewModel.mapType == .standard ? .standard(emphasis: .muted) : .hybrid)
+        .safeAreaPadding(.bottom, 180)
+        .onGeometryChange(for: CGFloat.self) { proxy in
+            proxy.size.height / 2
+        } action: { _, newValue in
+            halfScreenHeight = newValue
+        }
         // TODO: Detent-aware bottom padding. Pinned to the collapsed sheet
         // height today, so dragging the sheet up to `.medium` or
         // `largeDetent` lets the user-location annotation and any future map
         // overlays slip under the sheet.
-        .safeAreaPadding(.bottom, AppSheetRoute.homeCollapsedHeight)
         .overlay(alignment: .topLeading) {
             weatherButton
         }
@@ -88,14 +120,13 @@ struct MapPanelRootView: View {
             }
         }
         .overlay(alignment: .bottomTrailing) {
-            MapControlsCluster(
-                mapType: mapViewModel.mapType,
-                isLocationButtonVisible: application.locationService.isLocationUseAuthorized,
-                onToggleMapType: mapViewModel.toggleMapType,
-                onCenterOnUser: centerOnUser
-            )
-            .padding(.trailing, ThemeMetrics.controllerMargin)
-            .padding(.bottom, AppSheetRoute.homeCollapsedHeight + ThemeMetrics.padding)
+            mapControlsCluster
+        }
+        .overlay(alignment: .topTrailing) {
+            moreButton
+        }
+        .overlay(alignment: .bottomLeading) {
+            myTripButton
         }
         .floatingSheet(coordinator: coordinator) { route in
             factory.view(for: route)
@@ -107,6 +138,25 @@ struct MapPanelRootView: View {
                     .presentationBackground(.clear)
                 }
                 .mapPermissionAlert(state: $permissionAlertState, onAction: handleAlertAction)
+                .onGeometryChange(for: CGFloat.self) { proxy in
+                    max(min(proxy.size.height, halfScreenHeight), 0)
+                } action: { oldValue, newValue in
+                    guard !route.prefersStacking else { return }
+
+                    sheetHeight = newValue
+
+                    /// Opacity calculation — fade band sits immediately
+                    /// below `halfScreenHeight`.
+                    let fadeStart = halfScreenHeight - toolbarFadeRange
+                    let progress = max(min((newValue - fadeStart) / toolbarFadeRange, 1), 0)
+                    toolbarsOpacity = 1 - progress
+
+                    /// Animation duration
+                    let diff = abs(newValue - oldValue)
+                    let duration = max(min(diff / 100, 0.3), 0)
+                    toolbarsAnimationDuration = duration
+                }
+                .ignoresSafeArea()
         }
         .onAppear {
             mapViewModel.start()
@@ -210,6 +260,34 @@ extension MapPanelRootView {
     private func openSettings() {
         guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
         UIApplication.shared.open(url)
+    }
+
+    private var moreButton: some View {
+        MoreButton {
+            coordinator.push(.more)
+        }
+        .padding(ThemeMetrics.controllerMargin)
+        .padding(.top, pillHeight - 10)
+        .animation(.smooth(duration: 0.3), value: pillHeight)
+    }
+
+    private var myTripButton: some View {
+        MyTripButton {
+            coordinator.push(.routePicker)
+        }
+        .padding(.leading, ThemeMetrics.controllerMargin)
+        .floatingOverSheet(height: sheetHeight, opacity: toolbarsOpacity, duration: toolbarsAnimationDuration)
+    }
+
+    private var mapControlsCluster: some View {
+        MapControlsCluster(
+            mapType: mapViewModel.mapType,
+            isLocationButtonVisible: application.locationService.isLocationUseAuthorized,
+            onToggleMapType: mapViewModel.toggleMapType,
+            onCenterOnUser: centerOnUser
+        )
+        .padding(.trailing, ThemeMetrics.controllerMargin)
+        .floatingOverSheet(height: sheetHeight, opacity: toolbarsOpacity, duration: toolbarsAnimationDuration)
     }
 
 }

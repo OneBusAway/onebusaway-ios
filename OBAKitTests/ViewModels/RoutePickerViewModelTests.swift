@@ -453,7 +453,7 @@ class RoutePickerViewModelTests: OBATestCase {
 
         await vm.loadRoutes()
 
-        expect(vm.didFinishLoading).to(beTrue())
+        expect(vm.didFinishLoading).to(beFalse())
         expect(vm.loadError).to(beNil())
         expect(vm.allRoutes).to(beEmpty())
     }

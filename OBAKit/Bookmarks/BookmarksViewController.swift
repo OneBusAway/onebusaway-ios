@@ -315,7 +315,7 @@ public class BookmarksViewController: UIViewController,
         }
 
         let previewProvider: OBAListViewMenuActions.PreviewProvider = { () -> UIViewController? in
-            let stopVC = StopViewController(application: self.application, stopID: item.stopID)
+            let stopVC = self.application.viewRouter.makeStopController(stopID: item.stopID)
             self.currentPreviewingViewController = stopVC
             return stopVC
         }

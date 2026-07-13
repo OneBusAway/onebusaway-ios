@@ -252,7 +252,7 @@ class MapFloatingPanelController: VisualEffectViewController,
     }
 
     func previewViewController(for stopID: Stop.ID) -> UIViewController? {
-        return StopViewController(application: application, stopID: stopID)
+        return application.viewRouter.makeStopController(stopID: stopID)
     }
 
     func commitPreviewViewController(_ viewController: UIViewController) {
@@ -347,7 +347,7 @@ class MapFloatingPanelController: VisualEffectViewController,
         guard let stopViewModel = item.as(StopRowItem.self) else { return nil }
 
         let previewProvider: OBAListViewMenuActions.PreviewProvider = { [unowned self] () -> UIViewController? in
-            let stopVC = StopViewController(application: self.application, stopID: stopViewModel.stopID)
+            let stopVC = self.application.viewRouter.makeStopController(stopID: stopViewModel.stopID)
             self.currentPreviewingViewController = stopVC
             return stopVC
         }

@@ -20,8 +20,8 @@ struct MapTypeButton: View {
     var body: some View {
         Button(action: onTap) {
             Image(systemName: symbolName)
-                .font(.system(size: 18, weight: .regular))
-                .frame(width: 44, height: 44)
+                .font(.system(size: 16, weight: .regular))
+                .frame(width: 40, height: 40)
                 .contentShape(Circle())
         }
         .liquidGlassButtonStyle(borderShape: .circle, fallbackShape: Circle())

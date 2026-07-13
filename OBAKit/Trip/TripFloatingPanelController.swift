@@ -356,7 +356,13 @@ class TripFloatingPanelController: UIViewController,
         }
 
         let previewProvider: OBAListViewMenuActions.PreviewProvider = { [unowned self] () -> UIViewController? in
-            let stopVC = StopViewController(application: self.application, stopID: tripStop.stop.id)
+            // Committing the preview pushes this exact controller, so it has to be
+            // built the same way `onSelectTripStop` builds it — with the transfer
+            // context, which also decides whether the stop opens on the legacy screen.
+            let stopVC = self.application.viewRouter.makeStopController(
+                stop: tripStop.stop,
+                transferContext: self.buildTransferContext(for: tripStop)
+            )
             self.currentPreviewingViewController = stopVC
             return stopVC
         }

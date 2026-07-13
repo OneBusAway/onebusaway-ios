@@ -86,16 +86,36 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
 
     public func navigateTo(stop: Stop, from fromController: UIViewController, bookmark: Bookmark? = nil, transferContext: TransferContext? = nil) {
         guard shouldNavigate(from: fromController, to: .stop(stop)) else { return }
-        let stopController = StopViewController(application: application, stop: stop)
-        stopController.bookmarkContext = bookmark
-        stopController.transferContext = transferContext
-        navigate(to: stopController, from: fromController)
+        navigate(to: makeStopController(stop: stop, bookmark: bookmark, transferContext: transferContext), from: fromController)
     }
 
     public func navigateTo(stopID: StopID, from fromController: UIViewController) {
         guard shouldNavigate(from: fromController, to: .stopID(stopID)) else { return }
-        let stopController = StopViewController(application: application, stopID: stopID)
-        navigate(to: stopController, from: fromController)
+        navigate(to: makeStopController(stopID: stopID), from: fromController)
+    }
+
+    /// Builds the Stop screen honoring the new-stop-page feature flag. All stop
+    /// navigation and long-press previews must construct the controller through
+    /// these factories so the flag governs every path.
+    public func makeStopController(stop: Stop, bookmark: Bookmark? = nil, transferContext: TransferContext? = nil) -> UIViewController {
+        // TransferContext UX (arrival-relative filtering, transfer banner) is not yet built on the new stop page — route transfers to the legacy screen until it is.
+        let stopController: StopContextConfigurable
+        if transferContext == nil, FeatureFlags.isNewStopPageEnabled(userDefaults: application.userDefaults) {
+            stopController = StopPageViewController(application: application, stop: stop)
+        } else {
+            stopController = StopViewController(application: application, stop: stop)
+        }
+        stopController.bookmarkContext = bookmark
+        stopController.transferContext = transferContext
+        return stopController
+    }
+
+    public func makeStopController(stopID: StopID) -> UIViewController {
+        if FeatureFlags.isNewStopPageEnabled(userDefaults: application.userDefaults) {
+            return StopPageViewController(application: application, stopID: stopID)
+        } else {
+            return StopViewController(application: application, stopID: stopID)
+        }
     }
 
     public func navigateTo(arrivalDeparture: ArrivalDeparture, from fromController: UIViewController) {
@@ -171,3 +191,15 @@ extension ViewRouter: RoutePickerDelegate {
         navigation.pushViewController(currentTripController, animated: true)
     }
 }
+
+// MARK: - Stop controller factory seam
+
+/// The shared context both Stop-screen controllers expose, so `makeStopController`
+/// can set it once regardless of which the feature flag selects.
+protocol StopContextConfigurable: UIViewController {
+    var bookmarkContext: Bookmark? { get set }
+    var transferContext: TransferContext? { get set }
+}
+
+extension StopViewController: StopContextConfigurable {}
+extension StopPageViewController: StopContextConfigurable {}

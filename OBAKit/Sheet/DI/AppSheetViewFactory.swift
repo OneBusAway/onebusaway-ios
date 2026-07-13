@@ -23,9 +23,11 @@ import OBAKitCore
 final class AppSheetViewFactory {
 
     let application: Application
+    let onPresentTrip: (ArrivalDeparture) -> Void
 
-    init(application: Application) {
+    init(application: Application, onPresentTrip: @escaping (ArrivalDeparture) -> Void) {
         self.application = application
+        self.onPresentTrip = onPresentTrip
     }
 
     // MARK: - Dispatcher
@@ -35,18 +37,27 @@ final class AppSheetViewFactory {
         switch route {
         case .home:
             homeView()
-            // Wiring a push for one of these routes before its view exists will
-            // trip the debug assertion in `unimplementedView(for:)` — register the
-            // view here before reaching for `SheetCoordinator.push(...)`.
-            //
-            // TODO: `.search` is base-layer and has `isDismissDisabled: true`
-            // — its real view needs to wire up an explicit back affordance
-            // (the home sheet only knows how to push, not pop), otherwise the
-            // route is unreachable once entered.
+
+        case .more:
+            moreView()
+
+        // Wiring a push for one of these routes before its view exists will
+        // trip the debug assertion in `unimplementedView(for:)` — register the
+        // view here before reaching for `SheetCoordinator.push(...)`.
+        //
+        // TODO: `.search` is base-layer and has `isDismissDisabled: true`
+        // — its real view needs to wire up an explicit back affordance
+        // (the home sheet only knows how to push, not pop), otherwise the
+        // route is unreachable once entered.
         case .search, .nearbyAll, .recentStopsAll, .bookmarksAll,
-                .stopDetails, .tripPlanner, .tripDetails, .routePicker,
-                .currentTrip, .transitAlert, .more, .settings:
+             .stopDetails, .tripPlanner, .tripDetails, .transitAlert, .settings:
             unimplementedView(for: route)
+
+        case .routePicker:
+            routePickerView()
+
+        case .currentTrip(let route):
+            currentTripView(route: route)
         }
     }
 
@@ -54,6 +65,26 @@ final class AppSheetViewFactory {
 
     func homeView() -> HomeSheetView {
         HomeSheetView(viewModel: HomeSheetViewModel())
+    }
+
+    /// Bridges `AppSheetRoute.more` to the existing UIKit `MoreViewController`
+    /// via `MoreSheetHost`. Swap this branch's return type once the SwiftUI
+    /// `MoreView` lands.
+    func moreView() -> MoreSheetHost {
+        MoreSheetHost(application: application)
+    }
+
+    func routePickerView() -> RoutePickerView {
+        RoutePickerView(viewModel: RoutePickerViewModel(application: self.application))
+    }
+
+    private func currentTripView(route: Route) -> CurrentTripView {
+        CurrentTripView(
+            viewModel: CurrentTripViewModel(application: self.application, route: route),
+            feedback: DataLoadFeedbackGenerator(application: self.application),
+            formatters: self.application.formatters,
+            onPresentTrip: onPresentTrip
+        )
     }
 
     /// Placeholder until each route gets its own real view. In debug builds we

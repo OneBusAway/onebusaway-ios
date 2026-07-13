@@ -22,8 +22,7 @@ struct CurrentLocationButton: View {
             Button(action: onTap) {
                 Image(uiImage: Icons.nearMe)
                     .renderingMode(.template)
-                    .font(.system(size: 18, weight: .regular))
-                    .frame(width: 44, height: 44)
+                    .frame(width: 40, height: 40)
                     .contentShape(Circle())
             }
             .liquidGlassButtonStyle(borderShape: .circle, fallbackShape: Circle())
