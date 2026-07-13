@@ -159,6 +159,42 @@ open class OBATestCase: XCTestCase {
         "/regions-v3.json"
     }
 
+    // MARK: - Application
+
+    /// Builds a fully-wired `Application` against stubbed regions +
+    /// agencies-with-coverage for tests that need the real object graph
+    /// (e.g. anything that constructs a view controller which reads
+    /// `application.regionsService` / stores at init time).
+    ///
+    /// Test classes still own their own `queue` because a per-test queue
+    /// keeps `cancelAllOperations()` scoped to each `tearDown`.
+    func buildApplication(queue: OperationQueue, dataLoader: MockDataLoader) -> Application {
+        stubRegions(dataLoader: dataLoader)
+        stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
+
+        let locManager = MockAuthorizedLocationManager(
+            updateLocation: TestData.mockSeattleLocation,
+            updateHeading: TestData.mockHeading
+        )
+        let locationService = LocationService(userDefaults: userDefaults, locationManager: locManager)
+
+        let config = AppConfig(
+            regionsBaseURL: regionsURL,
+            apiKey: apiKey,
+            appVersion: appVersion,
+            userDefaults: userDefaults,
+            analytics: AnalyticsMock(),
+            queue: queue,
+            locationService: locationService,
+            bundledRegionsFilePath: bundledRegionsPath,
+            regionsAPIPath: regionsAPIPath,
+            dataLoader: dataLoader,
+            fixedRegionName: Fixtures.pugetSoundRegion.name
+        )
+
+        return Application(config: config)
+    }
+
     // MARK: - Surveys
 
     @MainActor

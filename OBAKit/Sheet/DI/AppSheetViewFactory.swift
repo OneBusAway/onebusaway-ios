@@ -37,16 +37,20 @@ final class AppSheetViewFactory {
         switch route {
         case .home:
             homeView()
-            // Wiring a push for one of these routes before its view exists will
-            // trip the debug assertion in `unimplementedView(for:)` — register the
-            // view here before reaching for `SheetCoordinator.push(...)`.
-            //
-            // TODO: `.search` is base-layer and has `isDismissDisabled: true`
-            // — its real view needs to wire up an explicit back affordance
-            // (the home sheet only knows how to push, not pop), otherwise the
-            // route is unreachable once entered.
+
+        case .more:
+            moreView()
+
+        // Wiring a push for one of these routes before its view exists will
+        // trip the debug assertion in `unimplementedView(for:)` — register the
+        // view here before reaching for `SheetCoordinator.push(...)`.
+        //
+        // TODO: `.search` is base-layer and has `isDismissDisabled: true`
+        // — its real view needs to wire up an explicit back affordance
+        // (the home sheet only knows how to push, not pop), otherwise the
+        // route is unreachable once entered.
         case .search, .nearbyAll, .recentStopsAll, .bookmarksAll,
-                .stopDetails, .tripPlanner, .tripDetails, .transitAlert, .more, .settings:
+             .stopDetails, .tripPlanner, .tripDetails, .transitAlert, .settings:
             unimplementedView(for: route)
 
         case .routePicker:
@@ -61,6 +65,13 @@ final class AppSheetViewFactory {
 
     func homeView() -> HomeSheetView {
         HomeSheetView(viewModel: HomeSheetViewModel())
+    }
+
+    /// Bridges `AppSheetRoute.more` to the existing UIKit `MoreViewController`
+    /// via `MoreSheetHost`. Swap this branch's return type once the SwiftUI
+    /// `MoreView` lands.
+    func moreView() -> MoreSheetHost {
+        MoreSheetHost(application: application)
     }
 
     func routePickerView() -> RoutePickerView {
