@@ -412,6 +412,13 @@ public class Application: CoreApplication, PushServiceDelegate {
 
         configureConnectivity()
 
+        // Clean up Live Activity subscriptions whose activities are gone. This has to run on an
+        // app-lifecycle hook rather than in a view controller: an activity the user dismissed
+        // while the app wasn't running has no observer to notice it, and the server will keep
+        // pushing to it until the subscription is deleted. (The scene delegate calls this on
+        // launch as well as on every foreground.)
+        Task { await liveActivityRegistry.reconcile() }
+
         #if DEBUG
         // Lets UI tests exercise the modal alert bulletin deterministically,
         // without depending on a high-severity alert being live in the region.

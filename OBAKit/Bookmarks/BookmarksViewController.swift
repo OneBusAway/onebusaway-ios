@@ -483,26 +483,12 @@ public class BookmarksViewController: UIViewController,
     /// One lifecycle-observation Task per activity id; cancelled in deinit.
     private var liveActivityLifecycleTasks: [String: Task<Void, Never>] = [:]
 
-    private static let liveActivityURLDefaultsKey = "liveActivityDeleteURLs"
-
-    /// The server's DELETE URLs survive app relaunches so a running activity that's later
-    /// dismissed/ends can still unregister, as long as `updateRunningLiveActivities()` has had
-    /// a chance to re-arm its lifecycle observer since relaunch. This does *not* cover an
-    /// activity that already ended while the app wasn't running at all: it won't appear in
-    /// `Activity<TripAttributes>.activities` on next launch, so no observer is ever armed for
-    /// it and its persisted delete URL is orphaned server-side until something else cleans it
-    /// up.
-    private func storeDeleteURL(_ url: URL, activityID: String) {
-        var urls = application.userDefaults.dictionary(forKey: Self.liveActivityURLDefaultsKey) as? [String: String] ?? [:]
-        urls[activityID] = url.absoluteString
-        application.userDefaults.set(urls, forKey: Self.liveActivityURLDefaultsKey)
-    }
-
-    private func removeDeleteURL(activityID: String) -> URL? {
-        var urls = application.userDefaults.dictionary(forKey: Self.liveActivityURLDefaultsKey) as? [String: String] ?? [:]
-        defer { application.userDefaults.set(urls, forKey: Self.liveActivityURLDefaultsKey) }
-        guard let raw = urls.removeValue(forKey: activityID) else { return nil }
-        return URL(string: raw)
+    /// Persistence of delete URLs, registration, and unregistration all live in the registry;
+    /// this controller only owns the observers that feed it. An activity that ended while the
+    /// app wasn't running is never observed here at all — `LiveActivityRegistry.reconcile()`,
+    /// run from `Application.applicationDidBecomeActive`, is what cleans that case up.
+    private var liveActivityRegistry: LiveActivityRegistry {
+        application.liveActivityRegistry
     }
 
     private func registerForPushUpdates(activity: Activity<TripAttributes>, viewModel: BookmarkArrivalViewModel) {
@@ -546,55 +532,31 @@ public class BookmarksViewController: UIViewController,
     }
 
     private func postRegistration(activity: Activity<TripAttributes>, pushToken: String, tripID: String?, serviceDate: Date?, vehicleID: String?, stopSequence: Int?) async {
-        guard let obacoService = application.obacoService else { return }
-        let staticData = activity.attributes.staticData
-        do {
-            let deleteURL = try await obacoService.postLiveActivity(
-                activityID: activity.id,
-                pushToken: pushToken,
-                stopID: staticData.stopID,
-                routeShortName: staticData.routeShortName,
-                tripHeadsign: staticData.routeHeadsign,
-                tripID: tripID,
-                serviceDate: serviceDate,
-                vehicleID: vehicleID,
-                stopSequence: stopSequence
-            )
-
-            // `unregister` is only cooperatively cancelled, so it can finish tearing down this
-            // activity's tasks while the POST above is still in flight. If that happened, the
-            // lifecycle task that would eventually DELETE this registration is already gone, so
-            // storing the delete URL now would orphan it forever. Guard immediately before the
-            // write (both this method and `unregister` run on the MainActor, so this check is
-            // race-free), and best-effort clean up the row the server just created for us.
-            guard liveActivityLifecycleTasks[activity.id] != nil, !Task.isCancelled else {
-                do {
-                    try await obacoService.deleteLiveActivity(url: deleteURL)
-                    Logger.info("Discarded Live Activity registration for \(activity.id): activity was unregistered mid-request")
-                } catch {
-                    Logger.error("Failed to clean up orphaned Live Activity registration for \(activity.id): \(error)")
-                }
-                return
+        await liveActivityRegistry.register(
+            activity: activity,
+            pushToken: pushToken,
+            tripID: tripID,
+            serviceDate: serviceDate,
+            vehicleID: vehicleID,
+            stopSequence: stopSequence,
+            confirm: { [weak self] in
+                // `unregister` is only cooperatively cancelled, so it can finish tearing down
+                // this activity's tasks while the POST is still in flight. If that happened, the
+                // lifecycle task that would eventually DELETE this registration is already gone,
+                // so persisting the delete URL now would orphan it forever. The registry
+                // evaluates this immediately before the write (both this method and `unregister`
+                // run on the MainActor, so the check is race-free) and cleans up the row the
+                // server just created for us when it returns false.
+                guard let self else { return false }
+                return self.liveActivityLifecycleTasks[activity.id] != nil && !Task.isCancelled
             }
-
-            storeDeleteURL(deleteURL, activityID: activity.id)
-            Logger.info("Registered Live Activity push token for activity \(activity.id)")
-        } catch {
-            Logger.error("Failed to register Live Activity push token: \(error)")
-        }
+        )
     }
 
     private func unregister(activityID: String) async {
         liveActivityTokenTasks.removeValue(forKey: activityID)?.cancel()
         liveActivityLifecycleTasks.removeValue(forKey: activityID)?.cancel()
-        guard let obacoService = application.obacoService,
-              let deleteURL = removeDeleteURL(activityID: activityID) else { return }
-        do {
-            try await obacoService.deleteLiveActivity(url: deleteURL)
-            Logger.info("Unregistered Live Activity \(activityID)")
-        } catch {
-            Logger.error("Failed to unregister Live Activity \(activityID): \(error)")
-        }
+        await liveActivityRegistry.unregister(activityID: activityID)
     }
 
     // MARK: - Arrival departure highlight updates

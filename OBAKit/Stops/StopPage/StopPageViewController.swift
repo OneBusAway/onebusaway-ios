@@ -51,7 +51,11 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
     /// One lifecycle-observation Task per activity id; cancelled in deinit.
     private var liveActivityLifecycleTasks: [String: Task<Void, Never>] = [:]
 
-    private static let liveActivityURLDefaultsKey = "liveActivityDeleteURLs"
+    /// Persistence of delete URLs, registration, and unregistration all live in the registry;
+    /// this controller only owns the observers that feed it.
+    private var liveActivityRegistry: LiveActivityRegistry {
+        application.liveActivityRegistry
+    }
 
     #if !targetEnvironment(simulator)
     /// `application.canOpenURL` is an XPC round-trip and Google Maps can't be
@@ -497,64 +501,27 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
     }
 
     private func postLiveActivityRegistration(activity: Activity<TripAttributes>, pushToken: String, tripID: String?, serviceDate: Date?, vehicleID: String?, stopSequence: Int?) async {
-        guard let obacoService = application.obacoService else { return }
-        let staticData = activity.attributes.staticData
-        do {
-            let deleteURL = try await obacoService.postLiveActivity(
-                activityID: activity.id,
-                pushToken: pushToken,
-                stopID: staticData.stopID,
-                routeShortName: staticData.routeShortName,
-                tripHeadsign: staticData.routeHeadsign,
-                tripID: tripID,
-                serviceDate: serviceDate,
-                vehicleID: vehicleID,
-                stopSequence: stopSequence
-            )
-
-            // Guard against the lifecycle task having been cancelled before
-            // this async POST completed, to avoid orphaning the server-side record.
-            guard liveActivityLifecycleTasks[activity.id] != nil, !Task.isCancelled else {
-                do {
-                    try await obacoService.deleteLiveActivity(url: deleteURL)
-                    Logger.info("Discarded Live Activity registration for \(activity.id): activity was unregistered mid-request")
-                } catch {
-                    Logger.error("Failed to clean up orphaned Live Activity registration for \(activity.id): \(error)")
-                }
-                return
+        await liveActivityRegistry.register(
+            activity: activity,
+            pushToken: pushToken,
+            tripID: tripID,
+            serviceDate: serviceDate,
+            vehicleID: vehicleID,
+            stopSequence: stopSequence,
+            confirm: { [weak self] in
+                // Guard against the lifecycle task having been cancelled before this async POST
+                // completed, to avoid orphaning the server-side record. Returning false makes the
+                // registry delete the row it just created instead of persisting its delete URL.
+                guard let self else { return false }
+                return self.liveActivityLifecycleTasks[activity.id] != nil && !Task.isCancelled
             }
-
-            storeLiveActivityDeleteURL(deleteURL, activityID: activity.id)
-            Logger.info("Registered Live Activity push token for activity \(activity.id)")
-        } catch {
-            Logger.error("Failed to register Live Activity push token: \(error)")
-        }
+        )
     }
 
     private func unregisterLiveActivity(activityID: String) async {
         liveActivityTokenTasks.removeValue(forKey: activityID)?.cancel()
         liveActivityLifecycleTasks.removeValue(forKey: activityID)?.cancel()
-        guard let obacoService = application.obacoService,
-              let deleteURL = removeLiveActivityDeleteURL(activityID: activityID) else { return }
-        do {
-            try await obacoService.deleteLiveActivity(url: deleteURL)
-            Logger.info("Unregistered Live Activity \(activityID)")
-        } catch {
-            Logger.error("Failed to unregister Live Activity \(activityID): \(error)")
-        }
-    }
-
-    private func storeLiveActivityDeleteURL(_ url: URL, activityID: String) {
-        var urls = application.userDefaults.dictionary(forKey: Self.liveActivityURLDefaultsKey) as? [String: String] ?? [:]
-        urls[activityID] = url.absoluteString
-        application.userDefaults.set(urls, forKey: Self.liveActivityURLDefaultsKey)
-    }
-
-    private func removeLiveActivityDeleteURL(activityID: String) -> URL? {
-        var urls = application.userDefaults.dictionary(forKey: Self.liveActivityURLDefaultsKey) as? [String: String] ?? [:]
-        defer { application.userDefaults.set(urls, forKey: Self.liveActivityURLDefaultsKey) }
-        guard let raw = urls.removeValue(forKey: activityID) else { return nil }
-        return URL(string: raw)
+        await liveActivityRegistry.unregister(activityID: activityID)
     }
 
     // MARK: - Snapshot
