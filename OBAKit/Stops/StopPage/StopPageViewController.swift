@@ -502,7 +502,8 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
 
     private func postLiveActivityRegistration(activity: Activity<TripAttributes>, pushToken: String, tripID: String?, serviceDate: Date?, vehicleID: String?, stopSequence: Int?) async {
         await liveActivityRegistry.register(
-            activity: activity,
+            activityID: activity.id,
+            staticData: activity.attributes.staticData,
             pushToken: pushToken,
             tripID: tripID,
             serviceDate: serviceDate,
@@ -518,10 +519,32 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
         )
     }
 
+    /// Tears down the observers for `activityID` and deletes its server-side push subscription.
+    ///
+    /// The ordering below is load-bearing, and the tempting tidy-up — cancelling both tasks
+    /// together, up front — is a bug. This method's usual caller is the lifecycle task itself
+    /// (`armLiveActivityLifecycleObserver`), so cancelling that task here cancels *the task we
+    /// are currently running inside*. `URLSession` honors task cancellation, so the DELETE that
+    /// follows would fail instantly with `URLError.cancelled` (-999) without a byte leaving the
+    /// device — silently, since unregistration has no UI. That shipped: every dismissal leaked
+    /// its subscription and the server kept pushing to a Live Activity the user had cleared.
+    ///
+    /// So: drop the lifecycle task from the dictionary (which is what `confirm` in
+    /// `postLiveActivityRegistration` reads, and what stops a second unregister), but cancel it
+    /// only *after* the network call. When we're running inside it, it's about to `break` out of
+    /// its loop anyway; when called from anywhere else, it still gets torn down properly.
+    ///
+    /// The token task is a different task and is safe to cancel up front.
+    ///
+    /// `LiveActivityRegistry` independently refuses to let its DELETEs inherit cancellation, so
+    /// this is belt-and-braces — but the belt is here, where the reasoning is visible.
     private func unregisterLiveActivity(activityID: String) async {
         liveActivityTokenTasks.removeValue(forKey: activityID)?.cancel()
-        liveActivityLifecycleTasks.removeValue(forKey: activityID)?.cancel()
+        let lifecycleTask = liveActivityLifecycleTasks.removeValue(forKey: activityID)
+
         await liveActivityRegistry.unregister(activityID: activityID)
+
+        lifecycleTask?.cancel()
     }
 
     // MARK: - Snapshot

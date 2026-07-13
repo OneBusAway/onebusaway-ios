@@ -88,6 +88,25 @@ class MockDataLoader: NSObject, URLDataLoader {
     }
 
     func data(for request: URLRequest) async throws -> (Data, URLResponse) {
+        // `URLSession.data(for:)` checks task cancellation before it sends anything: called from
+        // an already-cancelled Task it throws `URLError.cancelled` (-999) and the request never
+        // leaves the device. A mock that answers happily regardless is not a faster network, it's
+        // a *different* one — and the difference hides an entire class of bug, in which cleanup
+        // work is issued from a task that the cleanup itself just cancelled. Exactly that bug
+        // shipped in the Live Activity unregister path (see `LiveActivityRegistry`) and the suite
+        // was green throughout, because this line wasn't here.
+        //
+        // Deliberately ahead of `recordRequest`: a cancelled request is one the server never saw,
+        // so a test asserting "the DELETE went out" must not be able to see it either.
+        //
+        // `URLError.cancelled`, not `CancellationError`: -999 is what production code actually
+        // catches and branches on (`LiveActivityRegistry.serverConfirmedSubscriptionIsGone`
+        // classifies it as transient), so throwing the tidier Swift error would let a test
+        // disagree with the device about what happens next.
+        if Task.isCancelled {
+            throw URLError(.cancelled)
+        }
+
         recordRequest(request.url)
         guard let response = matchResponse(to: request) else {
             fatalError("\(testName): Missing response to URL: \(request.url!)")

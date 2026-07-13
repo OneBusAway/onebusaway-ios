@@ -20,11 +20,23 @@ import ActivityKit
 /// activity until its subscription is deleted (or it hits an 8-hour expiry). Observing
 /// `Activity.activityStateUpdates` covers a dismissal that happens while the app is running,
 /// but if the user clears the Live Activity while the app *isn't* running, nothing observes
-/// it. On the next launch the activity is simply absent from
-/// `Activity<TripAttributes>.activities`, so no lifecycle observer is ever armed for it and
-/// its delete URL is orphaned. `reconcile()` is the sweep that closes that gap: any persisted
-/// delete URL whose activity is no longer known to ActivityKit belongs to a dead activity, so
-/// the subscription is deleted server-side.
+/// it: no lifecycle observer is ever armed for it and its delete URL is orphaned.
+/// `reconcile()` is the sweep that closes that gap.
+///
+/// ## What "dead" means (this was gotten wrong once)
+///
+/// A dismissed activity does **not** vanish from `Activity<TripAttributes>.activities`.
+/// ActivityKit keeps it in the array and reports its state as `.dismissed` (or `.ended`) —
+/// that's exactly what `.dismissed`/`.ended` exist to express, and it's the same signal the
+/// view controllers' `activityStateUpdates` observers act on. A sweep that treats mere
+/// *presence* in `activities` as proof of life therefore skips the dismissed activity it was
+/// written to clean up, and the server keeps pushing to it forever.
+///
+/// So an activity is alive only if it is present in `activities` **and** its `activityState`
+/// is not `.dismissed`/`.ended` (`.active`, `.stale` and `.pending` are all alive). An
+/// activityID that is absent from the array entirely is dead too — the system does eventually
+/// purge dismissed activities. `reconcile()` deletes the server-side subscription for every
+/// persisted delete URL whose activityID is not in that live set.
 ///
 /// ## Why a delete URL is only forgotten on confirmation
 ///
@@ -34,6 +46,17 @@ import ActivityKit
 /// entry is forgotten only when the server has confirmed the removal (2xx) or confirmed the
 /// row is already gone (404/410). Every other failure leaves the entry in place to be retried
 /// by a later `reconcile()`.
+///
+/// ## Why the DELETEs ignore task cancellation
+///
+/// Every DELETE this type issues is *teardown* for an activity that is already dead on-device,
+/// and it is reached from tasks whose whole job is to observe that death — which means the
+/// caller is frequently being torn down in the same breath. Swift's `URLSession` honors task
+/// cancellation, so a DELETE started in an already-cancelled task fails instantly with
+/// `URLError.cancelled` (-999) and never leaves the device; the subscription then leaks until
+/// its server-side expiry and the user keeps getting pushes for a Live Activity they dismissed.
+/// That shipped. See `withoutInheritingCancellation(_:)`: cancelling a cleanup request only
+/// ever loses the cleanup, so these deletes deliberately outlive their caller.
 public final class LiveActivityRegistry {
 
     /// Field-persisted UserDefaults key: `[activityID: deleteURLString]`. Do not rename —
@@ -43,21 +66,36 @@ public final class LiveActivityRegistry {
 
     private let userDefaults: UserDefaults
     private let obacoServiceProvider: () -> ObacoAPIService?
-    private let runningActivityIDs: () -> Set<String>
+    private let liveActivityIDs: () -> Set<String>
+
+    /// Whether an activity in `Activity<TripAttributes>.activities` is still alive.
+    ///
+    /// `.dismissed` and `.ended` activities remain in the array — being listed there is not
+    /// evidence of life. Written as a pair of `!=` checks rather than an allow-list of live
+    /// states so that a state case added by a future OS defaults to "alive": a false negative
+    /// here would delete the subscription of an activity the user is still looking at, which is
+    /// worse than a bounded leak.
+    public static func isLive(_ state: ActivityState) -> Bool {
+        state != .dismissed && state != .ended
+    }
 
     /// - parameter userDefaults: The store for persisted delete URLs.
     /// - parameter obacoServiceProvider: Resolved per call, because `obacoService` is recreated
     ///   on region change (and is nil until a region is available).
-    /// - parameter runningActivityIDs: The IDs of the Live Activities ActivityKit still knows
-    ///   about. Injectable for testing; production callers should use the default.
+    /// - parameter liveActivityIDs: The IDs of the Live Activities that are both known to
+    ///   ActivityKit *and* in a live state — see `isLive(_:)` and the type's documentation; an
+    ///   ID missing from this set is treated as dead and its subscription is swept. Injectable
+    ///   for testing; production callers should use the default.
     public init(
         userDefaults: UserDefaults,
         obacoServiceProvider: @escaping () -> ObacoAPIService?,
-        runningActivityIDs: @escaping () -> Set<String> = { Set(Activity<TripAttributes>.activities.map { $0.id }) }
+        liveActivityIDs: @escaping () -> Set<String> = {
+            Set(Activity<TripAttributes>.activities.lazy.filter { isLive($0.activityState) }.map { $0.id })
+        }
     ) {
         self.userDefaults = userDefaults
         self.obacoServiceProvider = obacoServiceProvider
-        self.runningActivityIDs = runningActivityIDs
+        self.liveActivityIDs = liveActivityIDs
     }
 
     // MARK: - Persistence
@@ -87,8 +125,13 @@ public final class LiveActivityRegistry {
 
     // MARK: - Register
 
-    /// Registers (or re-registers, on token rotation) `activity`'s push token with OBACloud and
+    /// Registers (or re-registers, on token rotation) an activity's push token with OBACloud and
     /// persists the delete URL the server hands back.
+    ///
+    /// Takes the activity's `id` and `attributes.staticData` rather than the `Activity` itself:
+    /// `Activity` can't be constructed outside a Live-Activity-capable process, so a method that
+    /// demanded one would drag the whole registration path — including the orphan cleanup below,
+    /// which is exactly the sort of code that rots unobserved — out of reach of the test suite.
     ///
     /// - parameter confirm: Evaluated immediately before the delete URL is persisted. Callers
     ///   that may have torn the activity down while the POST was in flight return `false` here;
@@ -96,7 +139,8 @@ public final class LiveActivityRegistry {
     ///   nothing will ever act on. Both this method and `unregister(activityID:)` run on the
     ///   caller's actor (the view controllers' MainActor), so the check is race-free there.
     public func register(
-        activity: Activity<TripAttributes>,
+        activityID: String,
+        staticData: TripAttributes.StaticData,
         pushToken: String,
         tripID: String?,
         serviceDate: Date?,
@@ -105,9 +149,6 @@ public final class LiveActivityRegistry {
         confirm: () -> Bool = { true }
     ) async {
         guard let obacoService = obacoServiceProvider() else { return }
-
-        let activityID = activity.id
-        let staticData = activity.attributes.staticData
 
         do {
             let deleteURL = try await obacoService.postLiveActivity(
@@ -124,7 +165,12 @@ public final class LiveActivityRegistry {
 
             guard confirm() else {
                 do {
-                    try await obacoService.deleteLiveActivity(url: deleteURL)
+                    // `confirm()` returns false precisely because the caller's task was torn down
+                    // mid-POST — so this cleanup runs inside an already-cancelled task, and must
+                    // opt out of that cancellation or it would never be sent. See the type docs.
+                    try await withoutInheritingCancellation {
+                        _ = try await obacoService.deleteLiveActivity(url: deleteURL)
+                    }
                     Logger.info("Discarded Live Activity registration for \(activityID): activity was unregistered mid-request")
                 } catch {
                     // Nothing to persist and nothing to retry against: the activity is already
@@ -152,21 +198,32 @@ public final class LiveActivityRegistry {
 
     // MARK: - Reconcile
 
-    /// Deletes every persisted subscription whose Live Activity no longer exists on-device.
+    /// Deletes every persisted subscription whose Live Activity is dead on-device — dismissed,
+    /// ended, or gone from `Activity<TripAttributes>.activities` altogether. See the type's
+    /// documentation: a dismissed activity is still *listed* by ActivityKit, so presence in that
+    /// array is not what makes an activity alive.
     ///
     /// Call this from an app-lifecycle hook (launch/foreground), not from a view controller:
     /// the orphaned registration this cleans up belongs to an activity nothing else observes
     /// anymore, so the sweep has to run regardless of which screen the user opens.
     ///
-    /// Entries whose activity is still running are left alone — they're either being observed
-    /// by a live lifecycle observer or will be re-armed by one.
+    /// Entries whose activity is still alive are left alone — they're either being observed by
+    /// a live lifecycle observer or will be re-armed by one.
     public func reconcile() async {
         let persisted = persistedDeleteURLs
-        guard !persisted.isEmpty else { return }
+        guard !persisted.isEmpty else {
+            Logger.info("Live Activity reconcile: no persisted subscriptions; nothing to sweep")
+            return
+        }
 
-        let liveActivityIDs = runningActivityIDs()
+        let liveIDs = liveActivityIDs()
+        let dead = persisted.filter { !liveIDs.contains($0.key) }
 
-        for (activityID, urlString) in persisted where !liveActivityIDs.contains(activityID) {
+        // Logged unconditionally, including the do-nothing case: a sweep that wrongly decides
+        // every subscription is alive is precisely the bug that shipped, and it was silent.
+        Logger.info("Live Activity reconcile: \(persisted.count) persisted subscription(s), \(liveIDs.count) live on-device, sweeping \(dead.count) dead")
+
+        for (activityID, urlString) in dead {
             guard let deleteURL = URL(string: urlString) else {
                 // Unusable handle: there's no request we could ever make with it, so keeping it
                 // would just fail this check on every launch forever.
@@ -192,7 +249,9 @@ public final class LiveActivityRegistry {
         }
 
         do {
-            try await obacoService.deleteLiveActivity(url: deleteURL)
+            try await withoutInheritingCancellation {
+                _ = try await obacoService.deleteLiveActivity(url: deleteURL)
+            }
             forget(activityID: activityID)
             Logger.info("Unregistered Live Activity \(activityID)")
         } catch {
@@ -204,6 +263,20 @@ public final class LiveActivityRegistry {
             forget(activityID: activityID)
             Logger.info("Live Activity subscription \(activityID) was already gone server-side; dropped its delete URL")
         }
+    }
+
+    /// Runs `work` in a task that does not inherit the caller's cancellation.
+    ///
+    /// Every caller of this is a *cleanup* request: a DELETE for a Live Activity that is already
+    /// dead on-device. Such a request is reached from a task that is being torn down at that very
+    /// moment (a lifecycle observer that just saw `.dismissed`, a push-token task cancelled
+    /// mid-registration), and `URLSession` refuses to send a request from a cancelled task —
+    /// `URLError.cancelled`, -999, before a single byte goes out. Honoring cancellation here can
+    /// therefore only ever *lose* the cleanup and leak the subscription; there is no caller for
+    /// whom "abandon the DELETE" is the desired outcome. `Task.detached` is what buys the
+    /// immunity: unlike `Task {}`, it has no parent to inherit a cancelled state from.
+    private func withoutInheritingCancellation(_ work: @escaping @Sendable () async throws -> Void) async throws {
+        try await Task.detached(operation: work).value
     }
 
     /// Whether `error` means the server *told us* the subscription no longer exists, as opposed
