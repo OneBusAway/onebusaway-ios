@@ -35,7 +35,7 @@ The bug that motivated the window path — `UISheetPresentationController` clamp
 
 The `isShowingBulletin` re-entrancy guard and the "no foreground scene" `Logger.error` drop diagnostic run before the branch — they are shared prerequisites.
 
-**Why `UserDefaults.standard` here:** matches how `ApplicationRootControllerFactory` and `SettingsViewController` read the same flag today — no plumbing through `Application` needed. The flag is also read once at app construction time in production, so a mid-session change requires a relaunch to take effect (documented in `FeatureFlags`).
+**Which `UserDefaults` here:** the OBA app persists this flag to an app-group suite (`AppDelegate.m` initializes `NSUserDefaults` via `initWithSuiteName:` using `Bundle.main.appGroup`), and `SettingsViewController` + `ApplicationRootControllerFactory` both read/write it through `application.userDefaults`. Because this extension only receives `UIApplication` (not the OBA-specific `Application`) and we can't change the four call sites, we resolve the same suite ourselves via `Bundle.main.appGroup` — matching the pattern `CoreApplicationKey.defaultValue` uses. If the suite can't be resolved (unlikely outside test hosts without an app group entitlement), the code treats the flag as OFF and falls through to the classic path, which is the safe production default.
 
 ### Change 2 — Stop chaining `dismissalHandler` on reused items
 
