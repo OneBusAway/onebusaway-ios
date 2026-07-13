@@ -185,6 +185,17 @@ final class WeatherDisplayTests: XCTestCase {
         expect(WeatherFormatter.isKnownIconKey("thunderstorm")) == false
     }
 
+    /// The SwiftUI color palette in `WeatherIcon` is layered on top of
+    /// `WeatherFormatter`'s icon table. This asserts the palette covers every
+    /// key the formatter models, so adding a new condition to the metadata
+    /// without a matching palette entry fails here instead of silently
+    /// rendering as gray.
+    func test_weatherIconPalette_coversAllKnownIconKeys() {
+        let paletteKeys = Set(WeatherIconPalette.colors.keys)
+        let missing = WeatherFormatter.knownIconKeys.subtracting(paletteKeys)
+        expect(missing) == []
+    }
+
     // MARK: - Full WeatherDisplay (fixture-driven)
 
     private func loadPugetSoundForecast() throws -> WeatherForecast {
