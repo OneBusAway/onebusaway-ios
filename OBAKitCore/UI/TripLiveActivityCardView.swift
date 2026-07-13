@@ -91,7 +91,15 @@ public struct TripLiveActivityCardView: View {
     @ViewBuilder
     private func chipsRow(chips: [TripAttributes.ContentState.ArrivalInfo], now: Date) -> some View {
         HStack(spacing: 8) {
-            ForEach(chips, id: \.departureTime) { arrival in
+            // departureTime is NOT a safe identity here: the server can (and,
+            // due to an upstream OBA bug, briefly did) emit duplicate
+            // departure times, and even with that fixed server-side, two
+            // genuinely distinct trips can legitimately share a departure
+            // time. Duplicate ForEach IDs are undefined behavior in SwiftUI.
+            // `chips` is a small, ordered, server-supplied list that's fully
+            // replaced on every content update, so positional identity is
+            // safe and can't collide.
+            ForEach(Array(chips.enumerated()), id: \.offset) { _, arrival in
                 departurePill(for: arrival, now: now)
             }
             Spacer()
