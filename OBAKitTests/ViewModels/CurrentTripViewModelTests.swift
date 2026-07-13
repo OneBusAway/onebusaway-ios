@@ -143,11 +143,120 @@ class CurrentTripViewModelTests: OBATestCase {
         expect(viewModel.pendingNavigation).toNot(beNil())
         expect(viewModel.pendingNavigation?.tripID) == result.arrivalDeparture.tripID
         expect(viewModel.matchResults.count) == 1
-        // State remains `.loading` — the consumer is expected to navigate away.
-        guard case .loading = viewModel.state else {
-            XCTFail("State should stay .loading for single match, got \(viewModel.state)")
+        // State moves to `.multipleResults` so the underlying view shows the
+        // single match as a tappable row instead of a permanent spinner. The
+        // consumer navigates away via `pendingNavigation`; if they dismiss the
+        // modal, the list is what greets them, not a frozen loading indicator.
+        guard case .multipleResults = viewModel.state else {
+            XCTFail("State should move to .multipleResults for single match, got \(viewModel.state)")
             return
         }
+    }
+
+    /// After the consumer handles the initial single match and clears
+    /// `pendingNavigation`, a background refresh (or any re-entry into
+    /// `handle(results:)`) that finds the SAME trip must not re-fire
+    /// `pendingNavigation` — otherwise the user is snapped back to the modal
+    /// they just dismissed every 20 seconds.
+    @MainActor
+    func test_handleResults_repeatSingleMatch_doesNotRefirePendingNavigation() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader)
+        let viewModel = CurrentTripViewModel(application: app, route: route30())
+
+        let result = makeMatchResult()
+        viewModel.handle(results: [result])
+        expect(viewModel.pendingNavigation).toNot(beNil())
+
+        // Consumer acknowledges by clearing pendingNavigation (mirrors what the
+        // SwiftUI `.onChange(of: pendingNavigation)` handler does).
+        viewModel.pendingNavigation = nil
+
+        // Same trip surfaces again on the next timer tick.
+        viewModel.handle(results: [result])
+
+        expect(viewModel.pendingNavigation).to(beNil())
+        expect(viewModel.matchResults.count) == 1
+    }
+
+    /// A user-initiated retry (`findVehicle()` with `resetState: true`, the
+    /// default) must clear the "already presented" latch — otherwise tapping
+    /// Try Again after dismissing a single-match modal would silently no-op.
+    @MainActor
+    func test_findVehicle_userInitiatedRetry_clearsPresentedLatch() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader, withLocation: false)
+        let viewModel = CurrentTripViewModel(application: app, route: route30())
+
+        let result = makeMatchResult()
+        viewModel.handle(results: [result])
+        expect(viewModel.pendingNavigation).toNot(beNil())
+        viewModel.pendingNavigation = nil
+
+        // User taps Try Again. resetState:true (default) resets to .loading
+        // and clears the latch; because there's no location, the task terminates
+        // in .noLocation before ever calling handle(results:).
+        viewModel.findVehicle()
+        guard case .loading = viewModel.state else {
+            XCTFail("findVehicle() should reset to .loading, got \(viewModel.state)")
+            return
+        }
+
+        // Simulate the next find returning the same trip — pendingNavigation
+        // must fire again because the latch was cleared.
+        viewModel.handle(results: [result])
+        expect(viewModel.pendingNavigation).toNot(beNil())
+        expect(viewModel.pendingNavigation?.tripID) == result.arrivalDeparture.tripID
+    }
+
+    /// A background refresh (`findVehicle(resetState: false)`) must NOT reset
+    /// the UI to `.loading` — the whole point of splitting the two entry points
+    /// is to keep the user's screen intact between the 20-second ticks.
+    @MainActor
+    func test_findVehicle_backgroundRefresh_preservesState() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader, withLocation: false)
+        let viewModel = CurrentTripViewModel(application: app, route: route30())
+
+        // Park the VM in `.multipleResults` — a state a real user could be
+        // looking at when the background refresh fires.
+        let first = makeMatchResult()
+        let second = makeMatchResult()
+        viewModel.handle(results: [first, second])
+        guard case .multipleResults = viewModel.state else {
+            XCTFail("Precondition: expected .multipleResults, got \(viewModel.state)")
+            return
+        }
+
+        // Simulate a timer tick. `resetState: false` skips the `.loading` reset;
+        // the task will still resolve to `.noLocation` async (no location
+        // configured), but the crucial assertion is *synchronous*: the state
+        // must NOT have flipped to `.loading` before the task runs.
+        viewModel.findVehicle(resetState: false)
+        guard case .multipleResults = viewModel.state else {
+            XCTFail("Background refresh must preserve .multipleResults, got \(viewModel.state)")
+            return
+        }
+
+        viewModel.deactivate()
+    }
+
+    // MARK: - State.==
+
+    /// Two `.error` cases compare equal iff their `localizedDescription`s match
+    /// — SwiftUI's `.onChange(of: state)` depends on this to decide when to
+    /// fire failure haptics, so a typo here would silently break the trigger.
+    @MainActor
+    func test_stateEquality_error_comparesByLocalizedDescription() throws {
+        let errorA1 = NSError(domain: "A", code: 1, userInfo: [NSLocalizedDescriptionKey: "boom"])
+        let errorA2 = NSError(domain: "B", code: 2, userInfo: [NSLocalizedDescriptionKey: "boom"])
+        let errorB = NSError(domain: "C", code: 3, userInfo: [NSLocalizedDescriptionKey: "different"])
+
+        expect(CurrentTripViewModel.State.error(errorA1)) == CurrentTripViewModel.State.error(errorA2)
+        expect(CurrentTripViewModel.State.error(errorA1)) != CurrentTripViewModel.State.error(errorB)
+        // Cross-case: `.error` never equals a non-error case.
+        expect(CurrentTripViewModel.State.error(errorA1)) != CurrentTripViewModel.State.loading
+        expect(CurrentTripViewModel.State.error(errorA1)) != CurrentTripViewModel.State.multipleResults
     }
 
     @MainActor

@@ -23,9 +23,11 @@ import OBAKitCore
 final class AppSheetViewFactory {
 
     let application: Application
+    let onPresentTrip: (ArrivalDeparture) -> Void
 
-    init(application: Application) {
+    init(application: Application, onPresentTrip: @escaping (ArrivalDeparture) -> Void) {
         self.application = application
+        self.onPresentTrip = onPresentTrip
     }
 
     // MARK: - Dispatcher
@@ -44,9 +46,14 @@ final class AppSheetViewFactory {
             // (the home sheet only knows how to push, not pop), otherwise the
             // route is unreachable once entered.
         case .search, .nearbyAll, .recentStopsAll, .bookmarksAll,
-                .stopDetails, .tripPlanner, .tripDetails, .routePicker,
-                .currentTrip, .transitAlert, .more, .settings:
+                .stopDetails, .tripPlanner, .tripDetails, .transitAlert, .more, .settings:
             unimplementedView(for: route)
+
+        case .routePicker:
+            routePickerView()
+
+        case .currentTrip(let route):
+            currentTripView(route: route)
         }
     }
 
@@ -54,6 +61,19 @@ final class AppSheetViewFactory {
 
     func homeView() -> HomeSheetView {
         HomeSheetView(viewModel: HomeSheetViewModel())
+    }
+
+    func routePickerView() -> RoutePickerView {
+        RoutePickerView(viewModel: RoutePickerViewModel(application: self.application))
+    }
+
+    private func currentTripView(route: Route) -> CurrentTripView {
+        CurrentTripView(
+            viewModel: CurrentTripViewModel(application: self.application, route: route),
+            feedback: DataLoadFeedbackGenerator(application: self.application),
+            formatters: self.application.formatters,
+            onPresentTrip: onPresentTrip
+        )
     }
 
     /// Placeholder until each route gets its own real view. In debug builds we

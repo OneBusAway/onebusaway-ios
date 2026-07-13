@@ -91,4 +91,14 @@ class Fixtures {
             || request.url!.absoluteString.contains("alerts.pb")
         }
     }
+
+    class func createRoute(id: String) throws -> Route {
+        let dictionary: [String: Any] = [
+            "agencyId": "test_agency",
+            "id": id,
+            "shortName": "1",
+            "type": 3
+        ]
+        return try dictionaryToModel(type: Route.self, dictionary: dictionary)
+    }
 }

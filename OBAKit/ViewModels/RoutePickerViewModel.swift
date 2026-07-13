@@ -77,8 +77,8 @@ final class RoutePickerViewModel: ObservableObject {
     // MARK: - Load
 
     func loadRoutes() async {
-        // Clear any error from a prior attempt so a retry doesn't leave the VC
-        // short-circuiting on stale state.
+
+        didFinishLoading = false
         loadError = nil
 
         // Primary: extract routes from stops already loaded by MapRegionManager.
@@ -118,8 +118,8 @@ final class RoutePickerViewModel: ObservableObject {
             let isCancelled = Task.isCancelled
                 || error is CancellationError
                 || (nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorCancelled)
+
             if isCancelled {
-                didFinishLoading = true
                 return
             }
             Logger.error("Failed to load routes for picker: \(error)")
