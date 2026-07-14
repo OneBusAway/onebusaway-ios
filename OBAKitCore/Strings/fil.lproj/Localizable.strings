@@ -1,11 +1,20 @@
 /* An error message that tells the user that they are connected to a captive portal WiFi network. */
 "api_error.captive_portal" = "Mukhang nakakonekta ka sa isang WiFi network na hindi ka pinapayagang ma-access ang Internet. Subukang dumiskonekta sa WiFi o mag-authenticate sa network para magpatuloy.";
 
+/* An error that tells the user that cellular data access is disabled for this app in iOS Settings. Both substituted values are the app name. */
+"api_error.cellular_data_restricted_fmt" = "Kasalukuyang hindi pinapayagan ang %1$@ app na ma-access ang cellular data. Para ayusin ito, pumunta sa Settings > Cellular at i-enable ang cellular data para sa %2$@ app, o kumonekta sa isang WiFi network.";
+
+/* An error shown when the server returns data the app can't understand, indicating a likely server-side issue. */
+"api_error.decoding_failure" = "Hindi inaasahang data ang ibinalik ng server. Kadalasan ay nangangahulugan itong may problema ang server. Pakisubukang muli sa ilang sandali.";
+
 /* An error message that informs the user that the wrong kind of content was received from the server. */
 "api_error.invalid_content_type_fmt" = "Inaasahan naming makatanggap ng %1$@ na data mula sa server, pero %2$@ ang natanggap namin.";
 
 /* An error that tells the user that the network connection isn't working. */
 "api_error.network_failure" = "Hindi makakonekta sa Internet o sa server. Pakisuri ang iyong koneksyon sa network at subukang muli.";
+
+/* An error message that tells the user that no region has been selected. */
+"api_error.no_region_selected" = "Walang napiling rehiyon. Pumili ng rehiyon para magpatuloy.";
 
 /* An error that tells the user that the server unexpectedly failed to return data. */
 "api_error.no_response_body" = "Hindi inaasahang walang ibinalik na data ang server bilang tugon sa iyong kahilingan.";
@@ -15,6 +24,15 @@
 
 /* An error that is produced in response to HTTP status code 404 */
 "api_error.request_not_found" = "404 Hindi nahanap (%@)";
+
+/* An error shown when the server returns a 500 Internal Server Error. The substituted value is the region name, e.g. 'Puget Sound'. */
+"api_error.server_error_fmt" = "Nagkaroon ng error ang server para sa %@ habang pinoproseso ang iyong kahilingan. Pakisubukang muli.";
+
+/* An error shown when the regional transit server is unavailable. The first substituted value is the region name, the second is the app name. */
+"api_error.server_unavailable_fmt" = "Mukhang down ngayon ang server para sa %1$@, kaya hindi maipakita ng %2$@ app ang impormasyon ng transit para sa rehiyong ito. Gagana muli ang app kapag bumalik na ang server.";
+
+/* An error message that tells the user that surveys are not available. */
+"api_error.survey_service_not_configured" = "Hindi available ang serbisyo ng survey sa rehiyong ito.";
 
 /* This will appear on a button or as a title, and indicates that this UI will create a new bookmark. */
 "common.add_alarm" = "Magdagdag ng Paalala";
@@ -58,8 +76,8 @@
 /* The verb 'to donate', as in to give money to a charitable cause. */
 "common.donate" = "Mag-donate";
 
-/* The body of the message to display to the user after they donate to OTSF */
-"common.donation_thank_you.body" = "Makakatulong ang iyong suporta para patuloy naming mapahusay ang OneBusAway.";
+/* The body of the message to display to the user after they donate to OTSF. %@ is the app name. */
+"common.donation_thank_you.body" = "Makakatulong ang iyong suporta para patuloy naming mapahusay ang %@ app.";
 
 /* Title of an alert to display to the user after they donate to OTSF */
 "common.donation_thank_you.title" = "Salamat sa iyong suporta!";
@@ -88,11 +106,20 @@
 /* The title of a button that exports all of the user's data into a file. */
 "common.export_data" = "I-export ang Data";
 
+/* Description of the privacy policy for sharing data with the external survey service. */
+"common.external_survey_privacy_info.description" = "Ibabahagi ng survey na ito ang iyong hintuan, ruta, rehiyon, at kasalukuyang lokasyon.";
+
 /* The verb 'to filter'. */
 "common.filter" = "I-filter";
 
+/* The verb 'to go' */
+"common.go" = "Sige";
+
 /* This is button text that tells the user they can tap on it to learn more about the topic at hand. */
 "common.learn_more" = "Alamin Pa";
+
+/* Fallback title for the stop arrivals screen when the stop name is not yet available. */
+"common.live_arrivals" = "Mga Live na Pagdating";
 
 /* Used to indicate that content is loading. */
 "common.loading" = "Naglo-load…";
@@ -111,6 +138,9 @@
 
 /* As in 'see more' or 'learn more'. */
 "common.more" = "Higit Pa";
+
+/* The verb 'to next', i.e. to get next survey question. */
+"common.next" = "Susunod";
 
 /* OK */
 "common.ok" = "OK";
@@ -163,6 +193,9 @@
 /* Noun. Plural form of a transit stop. */
 "common.stops" = "Mga Hintuan";
 
+/* The verb 'to submit', i.e. to submit a survey answer. */
+"common.submit" = "Isumite";
+
 /* A format string used to tell the user when the UI they are looking at was last updated. e.g. Updated: 9:41 AM. The time is calculated at runtime. */
 "common.updated_at_fmt" = "Na-update: %@";
 
@@ -171,37 +204,6 @@
 
 /* The title of the Vehicles tab showing real-time vehicle positions on a map. */
 "common.vehicles" = "Mga Sasakyan";
-
-/* Description of the privacy policy for sharing data with the external survey service. */
-"common.external_survey_privacy_info.description" = "Ibabahagi ng survey na ito ang iyong hintuan, ruta, rehiyon, at kasalukuyang lokasyon.";
-
-"common.go" = "Sige";
-
-"common.submit" = "Isumite";
-
-"common.next" = "Susunod";
-
-"survey_alert.dismissal.title" = "I-dismiss ang Survey";
-
-"survey_alert.dismissal.body" = "Nakakatulong ang iyong feedback para mapahusay ang mga serbisyo ng transit at ang karanasan sa app.";
-
-"survey_alert.skip.survey" = "Laktawan ang Survey na Ito";
-
-"survey_alert.remind.later" = "Paalalahanan Ako Mamaya";
-
-"survey_error.required_remaining_questions.error" = "Pakisagutan ang lahat ng kinakailangang tanong";
-
-"survey_error.hero_question_answer.error" = "Maglagay ng valid na sagot";
-
-"survey_success.submitted" = "Naisumite ang sagot sa survey! Pakisagutan ang natitirang mga tanong para sa mas mahusay na feedback.";
-
-"survey_alert.do.not.show.again" = "Huwag Nang Ipakita Muli";
-
-"survey_service.not.available" = "Hindi available ang Serbisyo ng Survey.";
-
-"survey.external.url.missing" = "Hindi namin mabuksan ang survey sa ngayon. Pakisubukang muli mamaya.";
-
-"survey_service.update.path.missing" = "May nangyaring mali sa pagsusumite ng iyong mga sagot. Pakisubukang muli mamaya.";
 
 /* Use for vehicles that arrived X minutes ago. */
 "formatters.arrived_x_min_ago_fmt" = "Dumating %d min ang nakalipas";
@@ -365,6 +367,18 @@
 /* Formatted time text for arrivals/departures. Used for accessibility labels, so be sure to spell out the word for 'minute'. Example: 7 minutes means that this event happens 7 minutes in the future. -7 minutes means 7 minutes in the past. */
 "formatters.time_fmt" = "%d minuto";
 
+/* Transfer arrival banner. First parameter is the arrival time, second is the route name and headsign. e.g. 'Arriving at 4:10 PM via 10 - Capitol Hill' */
+"formatters.transfer.arrival_banner_fmt" = "Darating sa %1$@ sakay ng %2$@";
+
+/* Short text shown when a departure occurs at the same time as the rider's transfer arrival. */
+"formatters.transfer.on_arrival" = "NGAYON";
+
+/* Error when a route has no real-time vehicle tracking data. */
+"nearby_trip_matcher.error.no_realtime" = "Walang available na real-time na data ng pagsubaybay para sa rutang ito.";
+
+/* Error when no transit stops are found near the user's location. */
+"nearby_trip_matcher.error.no_stops" = "Walang nahanap na hintuan sa malapit.";
+
 /* Bus. Used for short- and long-distance bus routes. */
 "route_type.bus" = "Bus";
 
@@ -395,6 +409,9 @@
 /* Title for the schedule/timetable feature tip */
 "schedule_tip.title" = "Tingnan ang Iskedyul ng Iyong Ruta";
 
+/* Shown in place of the minutes countdown when the vehicle is departing now */
+"stop_page.countdown.now" = "NGAYON";
+
 /* User-facing string that means the location of the stop on the map is wrong. */
 "stop_problem_code.user_description.location_wrong" = "Mali ang lokasyon";
 
@@ -409,6 +426,60 @@
 
 /* User-facing string that means our data is wrong about a route or a scheduled trip */
 "stop_problem_code.user_description.route_or_trip_missing" = "Nawawala ang ruta o nakaiskedyul na biyahe";
+
+/* Indicating missing external survey url */
+"survey.external.url.missing" = "Hindi namin mabuksan ang survey sa ngayon. Pakisubukang muli mamaya.";
+
+/* Body for survey dismissal action alert. */
+"survey_alert.dismissal.body" = "Nakakatulong ang iyong feedback para mapahusay ang mga serbisyo ng transit at ang karanasan sa app.";
+
+/* Title for survey dismissal action alert. */
+"survey_alert.dismissal.title" = "I-dismiss ang Survey";
+
+/* The action of not showing the survey again. */
+"survey_alert.do.not.show.again" = "Huwag Nang Ipakita Muli";
+
+/* The action of reminding later. i.e, to remind me later on the survey. */
+"survey_alert.remind.later" = "Paalalahanan Ako Mamaya";
+
+/* The action of skipping the current survey. */
+"survey_alert.skip.survey" = "Laktawan ang Survey na Ito";
+
+/* Error message to show when the user has not answered the hero survey question with a valid answer. */
+"survey_error.hero_question_answer.error" = "Maglagay ng valid na sagot";
+
+/* Error message to show when the user has not answered all required survey questions. */
+"survey_error.required_remaining_questions.error" = "Pakisagutan ang lahat ng kinakailangang tanong";
+
+/* Indicating that survey service is not setup up right or has some other issue. */
+"survey_service.not.available" = "Hindi available ang Serbisyo ng Survey.";
+
+/* Indicating missing survey update id when submitting responses */
+"survey_service.update.path.missing" = "May nangyaring mali sa pagsusumite ng iyong mga sagot. Pakisubukang muli mamaya.";
+
+/* Success message to show when the survey is successfully submitted. */
+"survey_success.submitted" = "Naisumite ang sagot sa survey! Pakisagutan ang natitirang mga tanong para sa mas mahusay na feedback.";
+
+/* Accessibility hint for an input field in a survey. */
+"surveys.accessibility.hint_answer.input" = "Ilagay ang iyong sagot sa tanong ng survey";
+
+/* Accessibility label for an input field in a survey. */
+"surveys.accessibility_answer.input" = "Input ng sagot";
+
+/* Accessibility label for a value that is not selected. */
+"surveys.accessibility_not_selected_value" = "Hindi Napili";
+
+/* Accessibility label for a selected value. */
+"surveys.accessibility_selected_value" = "Napili";
+
+/* Accessibility for survey label */
+"surveys.accessibility_survey_label" = "Label ng Survey";
+
+/* Accessibility label that allows selection of a survey option. */
+"surveys.accessibility_tap_to_select" = "I-tap para pumili";
+
+/* Accessibility label  that toggles the selection state of a survey option. */
+"surveys.accessibility_tap_toggle_selection" = "I-tap para i-toggle ang pagpili";
 
 /* Message for the trip planner tip */
 "trip_planner_tip.message" = "I-tap dito para maghanap ng mga lugar at planuhin ang iyong biyahe gamit ang mga direksyon sa transit.";
@@ -461,22 +532,29 @@
 /* VoiceOver text describing a route that is scheduled to depart. (no realtime data was available) */
 "voiceover.arrivaldeparture_scheduled_departs_in_x_minutes_fmt" = "nakaiskedyul na umalis sa loob ng %1$d minuto, sa %2$@.";
 
-/* Error when no transit stops are found near the user's location. */
-"nearby_trip_matcher.error.no_stops" = "Walang nahanap na hintuan sa malapit.";
+/* Weather condition label for clear skies. */
+"weather.condition.clear" = "Maaliwalas";
 
-/* Error when a route has no real-time vehicle tracking data. */
-"nearby_trip_matcher.error.no_realtime" = "Walang available na real-time na data ng pagsubaybay para sa rutang ito.";
+/* Weather condition label for cloudy skies. */
+"weather.condition.cloudy" = "Maulap";
 
-"surveys.accessibility_selected_value" = "Napili";
+/* Weather condition label for foggy conditions. */
+"weather.condition.fog" = "Mahamog";
 
-"surveys.accessibility_not_selected_value" = "Hindi Napili";
+/* Weather condition label for partly cloudy skies. */
+"weather.condition.partly_cloudy" = "Bahagyang Maulap";
 
-"surveys.accessibility_tap_toggle_selection" = "I-tap para i-toggle ang pagpili";
+/* Weather condition label for rain. */
+"weather.condition.rain" = "Ulan";
 
-"surveys.accessibility_tap_to_select" = "I-tap para pumili";
+/* Weather condition label for sleet. */
+"weather.condition.sleet" = "Sleet";
 
-"surveys.accessibility_answer.input" = "Input ng sagot";
+/* Weather condition label for snow. */
+"weather.condition.snow" = "Niyebe";
 
-"surveys.accessibility.hint_answer.input" = "Ilagay ang iyong sagot sa tanong ng survey";
+/* Weather condition placeholder when the icon key is unknown. */
+"weather.condition.unknown" = "—";
 
-"surveys.accessibility_survey_label" = "Label ng Survey";
+/* Weather condition label for windy conditions. */
+"weather.condition.wind" = "Mahangin";

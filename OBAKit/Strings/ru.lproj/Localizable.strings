@@ -43,6 +43,15 @@
 /* Title of the Alarm Time Picker page. */
 "alarm_time_picker.title" = "Добавить напоминание";
 
+/* Toggle label that starts a Live Activity widget on the Lock Screen when an alarm is set. */
+"alarm_time_picker.track_on_lock_screen" = "Отслеживать на экране блокировки";
+
+/* Placeholder shown in release builds when a sheet route is pushed but has no view registered. */
+"app_sheet.unimplemented_route.placeholder" = "Этот экран скоро появится.";
+
+/* Action to start a Live Activity for a specific bookmark */
+"bookmarks_controller.context_menu.track_live_activity" = "Отслеживать";
+
 /* The title to display to confirm the user's action to delete a bookmark. */
 "bookmarks_controller.delete_bookmark.actionsheet.title" = "Удалить закладку";
 
@@ -79,8 +88,8 @@
 /* Title of the alert that appears when the user's device isn't configured to send email. */
 "contact_us_helper.cant_send_email.title" = "Не удаётся отправить письмо через Mail.app";
 
-/* Feedback email template subject for the app developers */
-"contact_use_helper.feedback_subject.app" = "Отзыв о OneBusAway";
+/* Feedback email template subject for the app developers. %@ is the app name. */
+"contact_use_helper.feedback_subject.app" = "Отзыв о приложении %@";
 
 /* Feedback email template subject for the transit agency */
 "contact_use_helper.feedback_subject.transit_agency" = "Отзыв пассажира";
@@ -93,6 +102,9 @@
 
 /* Distance from user to vehicle. e.g. '0.2 mi away' */
 "current_trip_controller.distance_fmt" = "%@ от вас";
+
+/* Error when the API service is unavailable. */
+"current_trip_controller.error_no_service" = "Не удаётся подключиться к транспортному сервису.";
 
 /* Error message when the user's location is not available. */
 "current_trip_controller.location_unavailable" = "Геопозиция недоступна. Включите службы геолокации.";
@@ -108,9 +120,6 @@
 
 /* Message when no active vehicle is found near the user on the selected route. */
 "current_trip_controller.no_results" = "Рядом с вами не найден активный транспорт на этом маршруте";
-
-/* Error when the API service is unavailable. */
-"current_trip_controller.error_no_service" = "Не удаётся подключиться к транспортному сервису.";
 
 /* Button to retry finding the user's vehicle. */
 "current_trip_controller.retry" = "Повторить";
@@ -160,10 +169,10 @@
 /* This comment is displayed after the user's data is upgraded in the DataMigrationBulletinPage. */
 "data_migration_bulletin.finished_loading" = "Обновление данных завершено!";
 
-/* Data migration report label for showing the number of failed migration tasks. */
+/* Data migration report label for showing the number of failed migration tasks. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
 "data_migration_bulletin.report_summary_number_of_failures" = "Сбоев: %d";
 
-/* Data migration report label for showing the number of successful migration tasks. */
+/* Data migration report label for showing the number of successful migration tasks. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
 "data_migration_bulletin.report_summary_number_of_successes" = "Успешно: %d";
 
 /* Title for the Summary section of a data migration report */
@@ -181,26 +190,26 @@
 /* Title of the button that shows the donation explanation UI. */
 "donation_cell.learn_more_button_title" = "Подробнее";
 
-/* Title of the donation widget that appears on the stop view controller. */
-"donation_cell.title" = "🚨 OneBusAway нужна ваша помощь";
+/* Title of the donation widget that appears on the stop view controller. %@ is the app name. */
+"donation_cell.title" = "🚨 Приложению %@ нужна ваша помощь";
 
-/* Dismiss button on the alert */
+/* Button on the donation-dismiss alert that permanently stops donation requests. */
 "donations.donations_dismiss_alert.button_dismiss" = "Я не хочу помогать сейчас";
 
-/* A button that prompts the system to remind them to donate later. */
+/* Button on the donation-dismiss alert that defers donation requests rather than stopping them. */
 "donations.donations_dismiss_alert.button_remind_later" = "Напомнить позже";
 
-/* Body of the alert that appears when the user chooses to dismiss the donations request UI on a stop page */
-"donations.donations_dismiss_alert.message" = "OneBusAway — волонтёрская организация почти без финансирования. Нам нужна ваша помощь, чтобы приложение продолжало работать.";
+/* Body of the alert that appears when the user chooses to dismiss the donations request UI on a stop page. %@ is the app name. */
+"donations.donations_dismiss_alert.message" = "%@ — волонтёрская организация почти без финансирования. Нам нужна ваша помощь, чтобы это приложение продолжало работать.";
 
 /* Title of the alert that appears when the user chooses to dismiss the donations request UI on a stop page */
 "donations.donations_dismiss_alert.title" = "Пожалуйста, не отклоняйте эту просьбу";
 
-/* Indicates that the user wants to create a duplicate bookmark. */
-"edit_bookmark_controller.duplicate_alert.affirmative_button" = "Создать дубликат";
-
 /* Title of the button that lets the user add a new Bookmark Group. */
 "edit_bookmark_controller.add_group_button_title" = "Добавить группу закладок";
+
+/* Indicates that the user wants to create a duplicate bookmark. */
+"edit_bookmark_controller.duplicate_alert.affirmative_button" = "Создать дубликат";
 
 /* Body of an alert telling the user they have already bookmarked this thing. */
 "edit_bookmark_controller.duplicate_alert.body" = "У вас уже есть такая закладка. Вы хотите создать дубликат?";
@@ -256,20 +265,44 @@
 /* A voiceover title describing that the card's visibility taking up the minimum amount of screen. */
 "floating_panel.controller.position.minimized" = "Свёрнуто";
 
+/* Placeholder text inside the disabled search bar on the home sheet, shown while search is unimplemented. */
+"home_sheet.search_bar.coming_soon" = "Поиск скоро появится";
+
+/* Alert message for Live Activity error. \"Settings\" is the iOS Settings app. */
+"live_activity.error.message" = "Проверьте настройки Live-активностей в приложении «Настройки».";
+
+/* Alert title when Live Activity fails to start */
+"live_activity.error.title" = "Не удалось начать отслеживание";
+
+/* Alert message explaining where to find the Live Activity */
+"live_activity.started.message" = "Данные о прибытии в реальном времени будут показаны на экране блокировки и в Динамическом острове.";
+
+/* Alert title when a Live Activity starts */
+"live_activity.started.title" = "Отслеживание на экране блокировки";
+
+/* Loading state text */
+"loading" = "Загрузка…";
+
 /* Description of why we need location services */
 "location_permission_bulletin.description_text" = "Разрешите приложению доступ к вашей геопозиции, чтобы было проще находить остановки рядом с вами.";
+
+/* Button the user can tap on to decline access to their location. */
+"location_permission_bulletin.do_not_use_location_button_text" = "Не сейчас";
 
 /* Title of the alert that appears to request your location. */
 "location_permission_bulletin.title" = "Добро пожаловать!";
 
+/* Button the user taps to grant access to their location. */
+"location_permission_bulletin.use_location_button_text" = "Использовать мою геопозицию";
+
 /* No comment provided by engineer. */
 "locationservices_alert_gotosettings.button" = "Включить в Настройках";
 
-/* No comment provided by engineer. */
+/* Body of the alert prompting the user to grant precise location. */
 "locationservices_alert_imprecise.message" = "Вы будете видеть себя на карте и ближайшие остановки — так проще добраться туда, куда нужно.";
 
-/* No comment provided by engineer. */
-"locationservices_alert_imprecise.title" = "OneBusAway работает лучше всего с вашей точной геопозицией";
+/* Title of the alert prompting the user to upgrade from approximate to precise location. %@ is the app name. */
+"locationservices_alert_imprecise.title" = "Приложение %@ работает лучше всего с вашей точной геопозицией";
 
 /* No comment provided by engineer. */
 "locationservices_alert_keep_precise_location_off.button" = "Оставить точную геопозицию выключенной";
@@ -277,11 +310,11 @@
 /* No comment provided by engineer. */
 "locationservices_alert_keepoff.button" = "Оставить геопозицию выключенной";
 
-/* No comment provided by engineer. */
+/* Body of the alert prompting the user to turn on location services. */
 "locationservices_alert_off.message" = "Вы будете видеть себя на карте и ближайшие остановки — так проще добраться туда, куда нужно.";
 
-/* No comment provided by engineer. */
-"locationservices_alert_off.title" = "OneBusAway работает лучше всего с вашей геопозицией.";
+/* Title of the alert prompting the user to turn on location services. %@ is the app name. */
+"locationservices_alert_off.title" = "Приложение %@ работает лучше всего с вашей геопозицией.";
 
 /* No comment provided by engineer. */
 "locationservices_alert_request_precise_location_once.button" = "Разрешить один раз";
@@ -428,6 +461,9 @@
 /* Credits - like who should get credit for creating this. */
 "more_controller.credits_row_title" = "Благодарности";
 
+/* Header for the custom links section configured by the transit agency. */
+"more_controller.custom_links.header" = "Ресурсы";
+
 /* Title for a button that will crash the app. */
 "more_controller.debug_section.crash_row" = "Аварийно завершить приложение";
 
@@ -443,8 +479,8 @@
 /* Header for the donate section. */
 "more_controller.donate" = "Поддержите нас";
 
-/* The call to action for the More controller's donate buton */
-"more_controller.donate_description" = "Пожертвовать OneBusAway";
+/* Call to action for donations. %@ is the app name. */
+"more_controller.donate_description_fmt" = "Пожертвовать приложению %@";
 
 /* Header for the volunteer section. */
 "more_controller.help_out" = "Помогите сделать приложение лучше";
@@ -467,10 +503,11 @@
 /* A link to the app's Privacy Policy */
 "more_controller.privacy_row_title" = "Политика конфиденциальности";
 
-/* Title of the More tab */
+/* Title of the More tab
+   Title of the More tab / accessibility label for the map-panel more button. */
 "more_controller.title" = "Ещё";
 
-/* Request to help localize OneBusAway */
+/* Request to help localize the app */
 "more_controller.translate_the_app" = "Помогите перевести приложение";
 
 /* Updates and Alerts header text */
@@ -485,17 +522,20 @@
 /* Body for the empty set indicator on the Nearby controller. */
 "nearby_controller.empty_set.body" = "Отдалите или переместите карту, чтобы найти остановки.";
 
+/* Button to search wider area */
+"nearby_controller.empty_set.button" = "Расширить область поиска";
+
 /* Title for the empty set indicator on the Nearby controller */
 "nearby_controller.empty_set.title" = "Нет остановок поблизости";
-
-/* Error shown on the Nearby Stops screen when no API service is configured (e.g. no region selected). */
-"nearby_stops_controller.no_api_service_error" = "Сервис транспортных данных недоступен. Выберите регион в Настройках.";
 
 /* Body for the empty set indicator on the Nearby Stops controller. */
 "nearby_stops_controller.empty_set.body" = "Поблизости нет других остановок.";
 
 /* Title for the empty set indicator on the Nearby Stops controller. */
 "nearby_stops_controller.empty_set.title" = "Нет остановок поблизости";
+
+/* Error shown on the Nearby Stops screen when no API service is configured (e.g. no region selected). */
+"nearby_stops_controller.no_api_service_error" = "Сервис транспортных данных недоступен. Выберите регион в Настройках.";
 
 /* The title of the Nearby Stops controller. */
 "nearby_stops_controller.title" = "Остановки рядом";
@@ -521,11 +561,38 @@
 /* Vehicle is not accepting any passengers */
 "occupancy_status.not_accepting_passengers" = "Не принимает пассажиров";
 
+/* Short occupancy label: crushed standing room only */
+"occupancy_status.short.crowded" = "Переполнен";
+
+/* Short occupancy label: vehicle is empty */
+"occupancy_status.short.empty" = "Пусто";
+
+/* Short occupancy label: vehicle is full */
+"occupancy_status.short.full" = "Заполнен";
+
+/* Short occupancy label: many seats available */
+"occupancy_status.short.many_seats" = "Много мест";
+
+/* Short occupancy label: vehicle is not accepting passengers */
+"occupancy_status.short.not_boarding" = "Без посадки";
+
+/* Short occupancy label: few seats available */
+"occupancy_status.short.some_seats" = "Мало мест";
+
+/* Short occupancy label: standing room only */
+"occupancy_status.short.standing_room" = "Стоячие места";
+
+/* Short occupancy label: occupancy is unknown */
+"occupancy_status.short.unknown" = "Неизвестно";
+
 /* Vehicle occupancy is high */
 "occupancy_status.standing_room_only" = "Только стоячие места";
 
 /* Vehicle occupancy status is unknown. */
 "occupancy_status.unknown" = "Неизвестно";
+
+/* Reachability bulletin shown when the user has disabled cellular data for this app in iOS Settings. Both substituted values are the app name. */
+"reachability_bulletin.description.cellular_data_restricted_fmt" = "Приложению %1$@ сейчас запрещён доступ к сотовым данным. Чтобы исправить это, откройте «Настройки» > «Сотовая связь» и включите сотовые данные для приложения %2$@ или подключитесь к сети Wi-Fi.";
 
 /* Reachability bulletin for a cellular connection that can't access the Internet. */
 "reachability_bulletin.description.cellular_no_internet" = "Не удаётся выйти в интернет через мобильную сеть.\r\n\r\nПопробуйте подключиться к Wi-Fi или переместиться в другое место.";
@@ -596,24 +663,6 @@
 /* Error message of Custom Region URL if it's invalid or does not point to a functional OBA server */
 "region_url.error_messsage" = "Указанный URL региона недействителен или не указывает на работающий сервер OBA.";
 
-/* Placeholder text in the route search field. */
-"route_picker.search_placeholder" = "Поиск маршрутов…";
-
-/* Title for the route picker screen where the user selects their transit route. */
-"route_picker.title" = "Выберите маршрут";
-
-/* Error when API service is unavailable in the route picker. */
-"route_picker.error_no_service" = "Не удаётся подключиться к транспортному сервису.";
-
-/* Error when location is unavailable in the route picker. */
-"route_picker.error_no_location" = "Геопозиция недоступна. Включите службы геолокации, чтобы найти маршруты поблизости.";
-
-/* Loading message while fetching nearby routes. */
-"route_picker.loading" = "Загрузка маршрутов…";
-
-/* Message when no routes are found near the user's location. */
-"route_picker.no_routes" = "Маршруты поблизости не найдены.";
-
 /* Title of the Report Problem view controller. */
 "report_problem.title" = "Сообщить о проблеме";
 
@@ -626,8 +675,23 @@
 /* A table header in the 'Report Problem' view controller. */
 "report_problem_controller.vehicle_problem.header" = "Проблема с транспортом на остановке";
 
-/* Morning time period label */
-"schedule_view.am_period" = "ДП";
+/* Error when location is unavailable in the route picker. */
+"route_picker.error_no_location" = "Геопозиция недоступна. Включите службы геолокации, чтобы найти маршруты поблизости.";
+
+/* Error when the API service is unavailable in the route picker. */
+"route_picker.error_no_service" = "Не удаётся подключиться к транспортному сервису.";
+
+/* Loading message while fetching nearby routes. */
+"route_picker.loading" = "Загрузка маршрутов…";
+
+/* Message when no routes are found near the user's location. */
+"route_picker.no_routes" = "Маршруты поблизости не найдены.";
+
+/* Placeholder text in the route search field. */
+"route_picker.search_placeholder" = "Поиск маршрутов…";
+
+/* Title for the route picker screen where the user selects their transit route. */
+"route_picker.title" = "Выберите маршрут";
 
 /* Label for date picker in schedule view */
 "schedule_view.date" = "Дата";
@@ -638,6 +702,9 @@
 /* Default direction label when no headsign is available */
 "schedule_view.direction_number_fmt" = "Направление %d";
 
+/* Error message shown when the schedule-for-route API endpoint is not available on the server. */
+"schedule_view.feature_not_supported" = "Функция расписания недоступна в этом регионе. Сервер транспортного агентства её не поддерживает.";
+
 /* Accessibility text when there is no departure time */
 "schedule_view.no_departure" = "Нет отправления";
 
@@ -646,9 +713,6 @@
 
 /* Message when no stops are available for the selected direction */
 "schedule_view.no_stops_found" = "Для этого направления остановки не найдены";
-
-/* Afternoon/evening time period label */
-"schedule_view.pm_period" = "ПП";
 
 /* Headsign label showing destination */
 "schedule_view.to_headsign_fmt" = "До: %@";
@@ -665,6 +729,9 @@
 /* Title for the empty set indicator on the Search controller. */
 "search_controller.empty_set.title" = "Поиск";
 
+/* Subtitle on search error row prompting the user to retry. */
+"search_controller.placemarks.error_retry" = "Нажмите, чтобы повторить";
+
 /* Placemark search header */
 "search_controller.placemarks.header" = "Результаты";
 
@@ -673,9 +740,6 @@
 
 /* No results message for placemark search */
 "search_controller.placemarks.no_results" = "Ничего не найдено";
-
-/* Subtitle on search error row prompting the user to retry. */
-"search_controller.placemarks.error_retry" = "Нажмите, чтобы повторить";
 
 /* Quick Search section header in search */
 "search_controller.quick_search.header" = "Быстрый поиск";
@@ -743,8 +807,14 @@
 /* Settings > Accessibility section title */
 "settings_controller.accessibility_section.title" = "Универсальный доступ";
 
+/* Settings > Alerts section > default minutes-before for one-tap departure alarms */
+"settings_controller.alerts_section.default_alarm_lead_time" = "Время напоминания по умолчанию";
+
 /* Settings > Alerts section > Display test alerts */
 "settings_controller.alerts_section.display_test_alerts" = "Показывать тестовые оповещения";
+
+/* Lead-time segment label. %d is minutes. */
+"settings_controller.alerts_section.lead_time_fmt" = "%d мин";
 
 /* Settings > Alerts section title */
 "settings_controller.alerts_section.title" = "Оповещения агентств";
@@ -757,6 +827,18 @@
 
 /* Settings > Debug section title */
 "settings_controller.debug_section.title" = "Отладка";
+
+/* Settings > Experimental section > Map panel toggle */
+"settings_controller.experimental_section.map_panel" = "Использовать панель карты";
+
+/* Settings > Experimental section > Footer indicating changes apply on relaunch */
+"settings_controller.experimental_section.map_panel.footer" = "Перезапустите приложение, чтобы применить.";
+
+/* Settings > Experimental section > New stop page toggle */
+"settings_controller.experimental_section.new_stop_page" = "Использовать новую страницу остановки";
+
+/* Settings > Experimental section title */
+"settings_controller.experimental_section.title" = "Экспериментальные функции";
 
 /* Settings > Map section > Show my current heading */
 "settings_controller.map_section.shows_heading" = "Показывать моё текущее направление";
@@ -775,6 +857,12 @@
 
 /* Settings > Privacy section title */
 "settings_controller.privacy_section.title" = "Конфиденциальность";
+
+/* Settings > Surveys section > Always show surveys on stops */
+"settings_controller.survey_section.always_show_on_stops" = "Всегда показывать на остановках";
+
+/* Settings > Surveys section title */
+"settings_controller.survey_section.title" = "Опросы";
 
 /* Settings > Walking Speed > Average preset label */
 "settings_controller.walking_speed.avg" = "Средняя (~5 км/ч)";
@@ -809,14 +897,197 @@
 /* A string listing the data providers (agencies) for this stop's data. It contains one or more providers separated by commas. e.g. Data provided by King County Metro, Sound Transit */
 "stop_controller.data_attribution_format" = "Данные предоставлены %@";
 
+/* Message shown when an external survey link cannot be opened */
+"stop_controller.external_survey_error.message" = "Не удалось открыть ссылку на опрос. Повторите попытку позже.";
+
+/* Title shown when an external survey link cannot be opened */
+"stop_controller.external_survey_error.title" = "Не удалось открыть опрос";
+
 /* Load More button */
 "stop_controller.load_more_button" = "Загрузить ещё";
+
+/* A header for the past arrivals and departures section of the stop controller. */
+"stop_controller.past_departures_header" = "Прошедшие отправления";
+
+/* Header for past departures of a specific route */
+"stop_controller.past_departures_route_header" = "Прошедшие отправления — %@";
 
 /* This is an instruction given to the user the first time they look at a stop view instructing them on how to access more options, including the ability to add alarms. */
 "stop_controller.swipe_spotlight_text.with_alarm" = "Смахните по строке, чтобы увидеть больше опций, включая добавление напоминаний.";
 
 /* This is an instruction given to the user the first time they look at a stop view instructing them on how to access more options, EXCLUDING the ability to add alarms. */
 "stop_controller.swipe_spotlight_text.without_alarm" = "Смахните по строке, чтобы увидеть больше опций.";
+
+/* Button to reveal departures that leave before the rider's transfer arrival. Parameter is the count of hidden departures. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
+"stop_controller.transfer_show_earlier_departures_fmt" = "Показать более ранние отправления (%d)";
+
+/* Error shown when a departure alarm can't be cancelled because the region's alarm service is unreachable. */
+"stop_page.alarm_cancel_unavailable" = "Не удалось отменить напоминание: сервис напоминаний сейчас недоступен. Повторите попытку позже.";
+
+/* Body of the alert shown when the user tries to set a departure alarm but notifications are denied in Settings. %@ is the app name. */
+"stop_page.alarm_permission_denied.message" = "Чтобы получать напоминания об отправлении, разрешите уведомления для приложения %@ в Настройках.";
+
+/* Button that opens the system Settings app so the user can enable notifications. */
+"stop_page.alarm_permission_denied.open_settings" = "Открыть Настройки";
+
+/* Title of the alert shown when the user tries to set a departure alarm but notifications are denied in Settings. */
+"stop_page.alarm_permission_denied.title" = "Уведомления отключены";
+
+/* Shown in place of the minutes countdown when the vehicle is departing now */
+"stop_page.countdown.now" = "СЕЙЧАС";
+
+/* Empty state shown when every route at the stop is hidden by the user's filter. */
+"stop_page.empty.all_filtered" = "Все маршруты этой остановки скрыты фильтром";
+
+/* Empty state shown when the stop has no upcoming departures within the loaded time window. %d is the number of minutes. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
+"stop_page.empty.no_departures_fmt" = "Нет отправлений в ближайшие %d мин.";
+
+/* Button that retries loading departures after an error. */
+"stop_page.empty.retry" = "Повторить";
+
+/* Button that clears the route filter so all routes are shown. */
+"stop_page.empty.show_all_routes" = "Показать все маршруты";
+
+/* VoiceOver value of the route-filter bar button when the filter is inactive. */
+"stop_page.filter.a11y_off" = "выключен";
+
+/* VoiceOver value of the route-filter bar button when the filter is active. */
+"stop_page.filter.a11y_on" = "включён";
+
+/* VoiceOver value of a grouped route card whose departure list is hidden. */
+"stop_page.grouped.a11y_collapsed" = "свёрнуто";
+
+/* VoiceOver value of a grouped route card whose departure list is showing. */
+"stop_page.grouped.a11y_expanded" = "развёрнуто";
+
+/* VoiceOver label for a grouped route card */
+"stop_page.grouped.a11y_fmt" = "Маршрут %1$@ до %2$@, следующее отправление через %3$d мин., %4$@. Загружено ещё отправлений: %5$d.";
+
+/* VoiceOver custom action on a grouped route card's header that cancels the alarm already set for the next departure. */
+"stop_page.grouped.a11y_remove_alarm" = "Удалить напоминание";
+
+/* VoiceOver custom action on a grouped route card's header that creates an alarm for the next departure. */
+"stop_page.grouped.a11y_set_alarm" = "Добавить напоминание";
+
+/* VoiceOver label for one expanded departure row inside a grouped route card: route, headsign, minutes, status. */
+"stop_page.grouped.expanded_row.a11y_fmt" = "Маршрут %1$@ до %2$@, отправление через %3$d мин., %4$@";
+
+/* Caption above the upcoming-departure minute chips on a grouped route card at accessibility text sizes. */
+"stop_page.grouped.next_departures" = "Следующие отправления";
+
+/* VoiceOver hint on the header card's walk-time button. */
+"stop_page.header.walk_a11y_hint" = "Открывает пешеходный маршрут до этой остановки.";
+
+/* Button in the trip panel to start a Live Activity for this departure on the Lock Screen and Dynamic Island */
+"stop_page.live_activity.track" = "Отслеживать";
+
+/* Extends the departure time window */
+"stop_page.load_more" = "Загрузить ещё";
+
+/* Caption under the spinner shown while the stop page's departure list loads. */
+"stop_page.loading_departures" = "Загрузка отправлений…";
+
+/* Stop page mode toggle: grouped by route */
+"stop_page.mode.by_route" = "По маршрутам";
+
+/* Stop page mode toggle: flat time-sorted list */
+"stop_page.mode.chronological" = "По времени";
+
+/* Opens the full trip screen */
+"stop_page.panel.full_trip" = "Показать весь рейс";
+
+/* Trip panel live strip. %@ is the vehicle id. */
+"stop_page.panel.live_vehicle_fmt" = "В реальном времени · транспорт %@";
+
+/* Body of the schedule-only notice; must communicate uncertainty (§4.1/§4.4) */
+"stop_page.panel.scheduled_body" = "От этого автобуса пока нет сигнала в реальном времени — это лишь время по расписанию. Он может прийти раньше, позже или не прийти вовсе.";
+
+/* Title of the schedule-only notice */
+"stop_page.panel.scheduled_title" = "Только время по расписанию";
+
+/* Button revealing recently departed trips. %d is the count. */
+"stop_page.past_toggle_fmt" = "Прошедшие · %d";
+
+/* Button hiding recently departed trips */
+"stop_page.past_toggle_hide" = "Скрыть прошедшие";
+
+/* VoiceOver label for the button hiding recently departed trips */
+"stop_page.past_toggle_hide_a11y" = "Скрыть прошедшие отправления";
+
+/* VoiceOver label for the button revealing recently departed trips. %d is the count. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
+"stop_page.past_toggle_show_a11y_fmt" = "Показать прошедшие отправления: %d";
+
+/* VoiceOver suffix indicating a departure alarm is active */
+"stop_page.row.a11y_alarm_set" = "напоминание установлено";
+
+/* VoiceOver label for a departure row: route, headsign, minutes, status. */
+"stop_page.row.a11y_fmt" = "Маршрут %1$@ до %2$@, отправление через %3$d мин., %4$@";
+
+/* VoiceOver clause appended to a departure row that's upcoming but not reachable on foot before it leaves. */
+"stop_page.row.a11y_missed" = "скорее всего, не успеете — отправляется раньше, чем вы дойдёте до остановки";
+
+/* VoiceOver label for a departure row that has already departed: route, headsign, minutes ago, status. */
+"stop_page.row.a11y_past_fmt" = "Маршрут %1$@ до %2$@, отправился %3$d мин. назад, %4$@";
+
+/* Swipe/context menu action that cancels an existing arrival alarm. */
+"stop_page.row.remove_alarm" = "Удалить напоминание";
+
+/* Context menu action opening the full trip screen */
+"stop_page.row.show_trip" = "Показать детали рейса";
+
+/* Chronological list section header */
+"stop_page.section.arrivals_departures" = "Прибытия и отправления";
+
+/* Fallback title for a service alert that has no summary text. */
+"stop_page.service_alert_fallback" = "Сервисное оповещение";
+
+/* VoiceOver value of the service-alerts card header when the alert list is hidden. */
+"stop_page.service_alerts.a11y_collapsed" = "свёрнуто";
+
+/* VoiceOver value of the service-alerts card header when the alert list is showing. */
+"stop_page.service_alerts.a11y_expanded" = "развёрнуто";
+
+/* Row that expands the service alerts section to show every alert. %d is the total number of alerts. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
+"stop_page.service_alerts.show_all_fmt" = "Показать все оповещения (%d)";
+
+/* Collapsed summary row for the service alerts section. %d is the number of alerts. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
+"stop_page.service_alerts.summary_fmt" = "Сервисных оповещений: %d";
+
+/* VoiceOver status suffix for a live departure. %@ is the adherence label. */
+"stop_page.status.a11y_live_fmt" = "отслеживание в реальном времени, %@";
+
+/* VoiceOver status suffix for a schedule-only departure */
+"stop_page.status.a11y_scheduled" = "только время по расписанию, без данных в реальном времени";
+
+/* Adherence label for an early departure. %d is minutes early. */
+"stop_page.status.early_fmt" = "на %d мин. раньше";
+
+/* Adherence label for a late departure. %d is minutes late. */
+"stop_page.status.late_fmt" = "на %d мин. позже";
+
+/* Adherence label for an on-time departure */
+"stop_page.status.on_time" = "вовремя";
+
+/* Adherence label for a departure with no real-time signal; deliberately avoids claiming the bus is on time. */
+"stop_page.status.schedule_data" = "по расписанию";
+
+/* Gap marker in the approach timeline. %d is the number of elided stops between the vehicle and the stops shown. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
+"stop_page.timeline.skipped_stops_fmt" = "%d ост.";
+
+/* Vehicle-position marker. %d is minutes to the user's stop. */
+"stop_page.timeline.vehicle_here_fmt" = "транспорт здесь · %d мин.";
+
+/* Marker on the user's stop in the approach timeline */
+"stop_page.timeline.your_stop" = "· ваша остановка";
+
+/* Walk chip on the header card. %d is the walk time in minutes. */
+"stop_page.walk_chip_minutes_fmt" = "%d мин. пешком";
+
+/* VoiceOver description of the walk divider. %d is walk minutes. */
+"stop_page.walk_divider_a11y_fmt" = "Отправления выше этой линии произойдут раньше, чем вы дойдёте до остановки за %d мин.";
+
+/* Divider between departures you'd miss on foot and ones you can still catch. %d is the walk time in minutes. */
+"stop_page.walk_divider_fmt" = "%d МИН. ПЕШКОМ — НИЖЕ УСПЕЕТЕ";
 
 /* Title of the Sorting section */
 "stop_preferences_controller.sorting_section.header_title" = "Сортировка";
@@ -854,8 +1125,14 @@
 /* Title for the Report Stop Problem controller */
 "stop_problem_controller.title" = "Сообщить о проблеме";
 
+/* Accessibility label for schedule type picker */
+"stop_schedule_view.accessibility.choose_schedule_type" = "Выбор между расписанием остановки и полным расписанием маршрута";
+
 /* Label for date picker in schedule view */
 "stop_schedule_view.date" = "Дата";
+
+/* Title for the full route schedule toggle */
+"stop_schedule_view.full_route_schedule" = "Полное расписание маршрута";
 
 /* Message when no departures are scheduled */
 "stop_schedule_view.no_departures" = "На эту дату отправлений не запланировано";
@@ -865,6 +1142,12 @@
 
 /* Label for route picker in schedule view */
 "stop_schedule_view.route" = "Маршрут";
+
+/* Title for the stop schedule toggle */
+"stop_schedule_view.stop_schedule" = "Расписание остановки";
+
+/* Format string for destination. e.g. To: Downtown */
+"stop_schedule_view.to_destination_fmt" = "До: %@";
 
 /* Error message when schedule fails to load */
 "stop_schedule_view.unable_to_load" = "Не удалось загрузить расписание";
@@ -895,6 +1178,72 @@
 
 /* Button that launches Google Maps with walking directions to this stop */
 "stops_controller.walking_directions_google" = "Пешеходный маршрут (Google Maps)";
+
+/* Default prompt when no hero question exists */
+"survey_cell.default_prompt" = "Пройдите опрос, чтобы улучшить транспорт";
+
+/* Button to dismiss the survey */
+"survey_cell.dismiss_button" = "Скрыть";
+
+/* Button to proceed to next survey question */
+"survey_cell.next_button" = "Далее";
+
+/* Button that opens an external survey in the browser */
+"survey_cell.open_external_survey_button" = "Открыть опрос";
+
+/* Message shown when an external survey link cannot be opened */
+"survey_launcher.external_survey_error.message" = "Не удалось открыть ссылку на опрос. Повторите попытку позже.";
+
+/* Title shown when an external survey link cannot be opened */
+"survey_launcher.external_survey_error.title" = "Не удалось открыть опрос";
+
+/* Secondary button on the survey launcher card; dismisses the prompt. */
+"survey_launcher.not_now_button" = "Не сейчас";
+
+/* Primary button on the survey launcher card; opens the survey. */
+"survey_launcher.take_survey_button" = "Пройти опрос";
+
+/* Title of the survey launcher card on the stop screen. */
+"survey_launcher.title" = "Помогите улучшить транспорт";
+
+/* Message shown when an external survey link cannot be opened */
+"survey_vc.external_survey_error.message" = "Не удалось открыть ссылку на опрос. Повторите попытку позже.";
+
+/* Title shown when an external survey link cannot be opened */
+"survey_vc.external_survey_error.title" = "Не удалось открыть опрос";
+
+/* Message when the survey data itself is malformed (no answerable hero question). */
+"survey_vc.malformed_error.message" = "Сейчас этот опрос нельзя отправить. Повторите попытку позже.";
+
+/* Title for malformed survey alert */
+"survey_vc.malformed_error.title" = "Опрос недоступен";
+
+/* OK button on survey alerts */
+"survey_vc.ok_button" = "ОК";
+
+/* Button that opens an external survey in the browser */
+"survey_vc.open_external_survey_button" = "Открыть опрос";
+
+/* Section header for survey questions */
+"survey_vc.questions_section_title" = "Вопросы";
+
+/* Title for survey submission error alert */
+"survey_vc.submission_error.title" = "Ошибка отправки";
+
+/* Button to submit the survey */
+"survey_vc.submit_button" = "Отправить ответы";
+
+/* Submit button title while a survey submission is in flight */
+"survey_vc.submitting_button" = "Отправка…";
+
+/* Placeholder for text answer field */
+"survey_vc.text_placeholder" = "Введите ответ…";
+
+/* Message when required survey questions are unanswered */
+"survey_vc.validation_error.message" = "Перед отправкой ответьте на все обязательные вопросы.";
+
+/* Title for incomplete survey alert */
+"survey_vc.validation_error.title" = "Опрос не завершён";
 
 /* A notice when a transit alert doesn't have body text. */
 "transit_alert.no_additional_details.body" = "Дополнительные сведения отсутствуют.";
@@ -1001,8 +1350,26 @@
 /* Format string with placeholders for distance from stop, walking time to stop, and predicted arrival time. e.g. 1.2 miles, 17m: arriving at 09:41 A.M. */
 "walk_time_view.distance_time_fmt" = "%1$@, %2$@: прибытие в %3$@";
 
-/* Button the user can tap on to decline access to their location. */
-"location_permission_bulletin.do_not_use_location_button_text" = "Не сейчас";
+/* Accessibility label for the transfer arrival banner shown when navigating to a connecting stop. */
+"walk_time_view.transfer_accessibility_label" = "Время прибытия на пересадку";
 
-/* Button the user taps to grant access to their location. */
-"location_permission_bulletin.use_location_button_text" = "Использовать мою геопозицию";
+/* Format for the chance-of-rain percentage on the weather card header. %d is the integer percent. */
+"weather.chance_of_rain_format" = "Вероятность дождя: %d%%";
+
+/* Format for the high/low temperature line on the weather card. %@ placeholders are temperature strings. */
+"weather.high_low_format" = "Макс.:%1$@  Мин.:%2$@";
+
+/* First column label in the hourly weather strip, indicating the current hour. */
+"weather.now" = "Сейчас";
+
+/* Bare percentage shown in the precipitation stat on the weather card. %d is the integer percent. */
+"weather.percent_format" = "%d%%";
+
+/* VoiceOver label for the feels-like temperature stat on the weather card. */
+"weather.stat.feels_like" = "Ощущается как";
+
+/* VoiceOver label for the precipitation chance stat on the weather card. */
+"weather.stat.precip" = "Вероятность осадков";
+
+/* VoiceOver label for the wind speed stat on the weather card. */
+"weather.stat.wind" = "Скорость ветра";

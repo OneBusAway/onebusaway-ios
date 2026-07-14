@@ -1,11 +1,20 @@
 /* An error message that tells the user that they are connected to a captive portal WiFi network. */
 "api_error.captive_portal" = "يبدو أنك متصل بشبكة WiFi لا تسمح لك بالوصول إلى الإنترنت. جرّب قطع الاتصال بشبكة WiFi أو تسجيل الدخول إلى الشبكة للمتابعة.";
 
+/* An error that tells the user that cellular data access is disabled for this app in iOS Settings. Both substituted values are the app name. */
+"api_error.cellular_data_restricted_fmt" = "لا يُسمح لـ %1$@ حاليًا بالوصول إلى البيانات الخلوية. لإصلاح ذلك، انتقل إلى الإعدادات > خلوي وفعّل البيانات الخلوية لـ %2$@، أو اتصل بشبكة WiFi.";
+
+/* An error shown when the server returns data the app can't understand, indicating a likely server-side issue. */
+"api_error.decoding_failure" = "أرجع الخادم بيانات غير متوقعة. يعني هذا عادةً أن الخادم يواجه مشكلات. يُرجى المحاولة مرة أخرى بعد قليل.";
+
 /* An error message that informs the user that the wrong kind of content was received from the server. */
 "api_error.invalid_content_type_fmt" = "كان من المتوقع استلام بيانات %1$@ من الخادم، ولكننا استلمنا %2$@ بدلًا من ذلك.";
 
 /* An error that tells the user that the network connection isn't working. */
 "api_error.network_failure" = "تعذّر الاتصال بالإنترنت أو بالخادم. يُرجى التحقق من اتصالك بالشبكة والمحاولة مرة أخرى.";
+
+/* An error message that tells the user that no region has been selected. */
+"api_error.no_region_selected" = "لم يتم اختيار أي منطقة. يُرجى اختيار منطقة للمتابعة.";
 
 /* An error that tells the user that the server unexpectedly failed to return data. */
 "api_error.no_response_body" = "لم يُرجِع الخادم أي بيانات استجابةً لطلبك على نحو غير متوقع.";
@@ -15,6 +24,15 @@
 
 /* An error that is produced in response to HTTP status code 404 */
 "api_error.request_not_found" = "404 غير موجود (%@)";
+
+/* An error shown when the server returns a 500 Internal Server Error. The substituted value is the region name, e.g. 'Puget Sound'. */
+"api_error.server_error_fmt" = "واجه خادم %@ خطأً أثناء معالجة طلبك. يُرجى المحاولة مرة أخرى.";
+
+/* An error shown when the regional transit server is unavailable. The first substituted value is the region name, the second is the app name. */
+"api_error.server_unavailable_fmt" = "يبدو أن خادم %1$@ متوقف حاليًا، لذا لا يستطيع تطبيق %2$@ عرض معلومات النقل لهذه المنطقة. من المفترض أن يعود التطبيق إلى العمل بمجرد عودة الخادم.";
+
+/* An error message that tells the user that surveys are not available. */
+"api_error.survey_service_not_configured" = "خدمة الاستطلاعات غير متاحة في هذه المنطقة.";
 
 /* This will appear on a button or as a title, and indicates that this UI will create a new bookmark. */
 "common.add_alarm" = "إضافة تذكير";
@@ -58,8 +76,8 @@
 /* The verb 'to donate', as in to give money to a charitable cause. */
 "common.donate" = "تبرّع";
 
-/* The body of the message to display to the user after they donate to OTSF */
-"common.donation_thank_you.body" = "سيساعدنا دعمك على مواصلة تحسين OneBusAway.";
+/* The body of the message to display to the user after they donate to OTSF. %@ is the app name. */
+"common.donation_thank_you.body" = "سيساعدنا دعمك على مواصلة تحسين تطبيق %@.";
 
 /* Title of an alert to display to the user after they donate to OTSF */
 "common.donation_thank_you.title" = "شكرًا لك على دعمك!";
@@ -88,11 +106,20 @@
 /* The title of a button that exports all of the user's data into a file. */
 "common.export_data" = "تصدير البيانات";
 
+/* Description of the privacy policy for sharing data with the external survey service. */
+"common.external_survey_privacy_info.description" = "سيشارك هذا الاستطلاع موقفك وخطك ومنطقتك وموقعك الحالي.";
+
 /* The verb 'to filter'. */
 "common.filter" = "تصفية";
 
+/* The verb 'to go' */
+"common.go" = "انطلق";
+
 /* This is button text that tells the user they can tap on it to learn more about the topic at hand. */
 "common.learn_more" = "معرفة المزيد";
+
+/* Fallback title for the stop arrivals screen when the stop name is not yet available. */
+"common.live_arrivals" = "مواعيد الوصول المباشرة";
 
 /* Used to indicate that content is loading. */
 "common.loading" = "جارٍ التحميل…";
@@ -111,6 +138,9 @@
 
 /* As in 'see more' or 'learn more'. */
 "common.more" = "المزيد";
+
+/* The verb 'to next', i.e. to get next survey question. */
+"common.next" = "التالي";
 
 /* OK */
 "common.ok" = "حسنًا";
@@ -163,6 +193,9 @@
 /* Noun. Plural form of a transit stop. */
 "common.stops" = "المواقف";
 
+/* The verb 'to submit', i.e. to submit a survey answer. */
+"common.submit" = "إرسال";
+
 /* A format string used to tell the user when the UI they are looking at was last updated. e.g. Updated: 9:41 AM. The time is calculated at runtime. */
 "common.updated_at_fmt" = "آخر تحديث: %@";
 
@@ -171,37 +204,6 @@
 
 /* The title of the Vehicles tab showing real-time vehicle positions on a map. */
 "common.vehicles" = "المركبات";
-
-/* Description of the privacy policy for sharing data with the external survey service. */
-"common.external_survey_privacy_info.description" = "سيشارك هذا الاستطلاع موقفك وخطك ومنطقتك وموقعك الحالي.";
-
-"common.go" = "انطلق";
-
-"common.submit" = "إرسال";
-
-"common.next" = "التالي";
-
-"survey_alert.dismissal.title" = "تجاهل الاستطلاع";
-
-"survey_alert.dismissal.body" = "تساعد ملاحظاتك في تحسين خدمات النقل وتجارب التطبيق.";
-
-"survey_alert.skip.survey" = "تخطي هذا الاستطلاع";
-
-"survey_alert.remind.later" = "ذكّرني لاحقًا";
-
-"survey_error.required_remaining_questions.error" = "يُرجى الإجابة عن جميع الأسئلة المطلوبة";
-
-"survey_error.hero_question_answer.error" = "يُرجى إدخال إجابة صالحة";
-
-"survey_success.submitted" = "تم إرسال إجابة الاستطلاع! يُرجى الإجابة عن بقية الأسئلة للحصول على ملاحظات أفضل.";
-
-"survey_alert.do.not.show.again" = "عدم الإظهار مرة أخرى";
-
-"survey_service.not.available" = "خدمة الاستطلاعات غير متاحة.";
-
-"survey.external.url.missing" = "تعذّر فتح الاستطلاع الآن. يُرجى المحاولة مرة أخرى لاحقًا.";
-
-"survey_service.update.path.missing" = "حدث خطأ ما أثناء إرسال إجاباتك. يُرجى المحاولة مرة أخرى لاحقًا.";
 
 /* Use for vehicles that arrived X minutes ago. */
 "formatters.arrived_x_min_ago_fmt" = "وصلت قبل %d د";
@@ -365,6 +367,18 @@
 /* Formatted time text for arrivals/departures. Used for accessibility labels, so be sure to spell out the word for 'minute'. Example: 7 minutes means that this event happens 7 minutes in the future. -7 minutes means 7 minutes in the past. */
 "formatters.time_fmt" = "%d دقائق";
 
+/* Transfer arrival banner. First parameter is the arrival time, second is the route name and headsign. e.g. 'Arriving at 4:10 PM via 10 - Capitol Hill' */
+"formatters.transfer.arrival_banner_fmt" = "الوصول عند %1$@ عبر %2$@";
+
+/* Short text shown when a departure occurs at the same time as the rider's transfer arrival. */
+"formatters.transfer.on_arrival" = "الآن";
+
+/* Error when a route has no real-time vehicle tracking data. */
+"nearby_trip_matcher.error.no_realtime" = "لا تتوفر بيانات تتبّع في الوقت الفعلي لهذا الخط.";
+
+/* Error when no transit stops are found near the user's location. */
+"nearby_trip_matcher.error.no_stops" = "لم يتم العثور على مواقف قريبة.";
+
 /* Bus. Used for short- and long-distance bus routes. */
 "route_type.bus" = "حافلة";
 
@@ -395,6 +409,9 @@
 /* Title for the schedule/timetable feature tip */
 "schedule_tip.title" = "اعرض جدول مواعيد خطك";
 
+/* Shown in place of the minutes countdown when the vehicle is departing now */
+"stop_page.countdown.now" = "الآن";
+
 /* User-facing string that means the location of the stop on the map is wrong. */
 "stop_problem_code.user_description.location_wrong" = "الموقع خاطئ";
 
@@ -409,6 +426,60 @@
 
 /* User-facing string that means our data is wrong about a route or a scheduled trip */
 "stop_problem_code.user_description.route_or_trip_missing" = "الخط أو الرحلة المجدولة مفقودة";
+
+/* Indicating missing external survey url */
+"survey.external.url.missing" = "تعذّر فتح الاستطلاع الآن. يُرجى المحاولة مرة أخرى لاحقًا.";
+
+/* Body for survey dismissal action alert. */
+"survey_alert.dismissal.body" = "تساعد ملاحظاتك في تحسين خدمات النقل وتجارب التطبيق.";
+
+/* Title for survey dismissal action alert. */
+"survey_alert.dismissal.title" = "تجاهل الاستطلاع";
+
+/* The action of not showing the survey again. */
+"survey_alert.do.not.show.again" = "عدم الإظهار مرة أخرى";
+
+/* The action of reminding later. i.e, to remind me later on the survey. */
+"survey_alert.remind.later" = "ذكّرني لاحقًا";
+
+/* The action of skipping the current survey. */
+"survey_alert.skip.survey" = "تخطي هذا الاستطلاع";
+
+/* Error message to show when the user has not answered the hero survey question with a valid answer. */
+"survey_error.hero_question_answer.error" = "يُرجى إدخال إجابة صالحة";
+
+/* Error message to show when the user has not answered all required survey questions. */
+"survey_error.required_remaining_questions.error" = "يُرجى الإجابة عن جميع الأسئلة المطلوبة";
+
+/* Indicating that survey service is not setup up right or has some other issue. */
+"survey_service.not.available" = "خدمة الاستطلاعات غير متاحة.";
+
+/* Indicating missing survey update id when submitting responses */
+"survey_service.update.path.missing" = "حدث خطأ ما أثناء إرسال إجاباتك. يُرجى المحاولة مرة أخرى لاحقًا.";
+
+/* Success message to show when the survey is successfully submitted. */
+"survey_success.submitted" = "تم إرسال إجابة الاستطلاع! يُرجى الإجابة عن بقية الأسئلة للحصول على ملاحظات أفضل.";
+
+/* Accessibility hint for an input field in a survey. */
+"surveys.accessibility.hint_answer.input" = "أدخل إجابتك عن سؤال الاستطلاع";
+
+/* Accessibility label for an input field in a survey. */
+"surveys.accessibility_answer.input" = "حقل الإجابة";
+
+/* Accessibility label for a value that is not selected. */
+"surveys.accessibility_not_selected_value" = "غير محدد";
+
+/* Accessibility label for a selected value. */
+"surveys.accessibility_selected_value" = "محدد";
+
+/* Accessibility for survey label */
+"surveys.accessibility_survey_label" = "تسمية الاستطلاع";
+
+/* Accessibility label that allows selection of a survey option. */
+"surveys.accessibility_tap_to_select" = "اضغط للتحديد";
+
+/* Accessibility label  that toggles the selection state of a survey option. */
+"surveys.accessibility_tap_toggle_selection" = "اضغط لتبديل التحديد";
 
 /* Message for the trip planner tip */
 "trip_planner_tip.message" = "اضغط هنا للبحث عن الأماكن وتخطيط رحلتك باستخدام اتجاهات النقل.";
@@ -461,22 +532,29 @@
 /* VoiceOver text describing a route that is scheduled to depart. (no realtime data was available) */
 "voiceover.arrivaldeparture_scheduled_departs_in_x_minutes_fmt" = "من المقرر أن تغادر خلال %1$d دقائق عند الساعة %2$@.";
 
-/* Error when no transit stops are found near the user's location. */
-"nearby_trip_matcher.error.no_stops" = "لم يتم العثور على مواقف قريبة.";
+/* Weather condition label for clear skies. */
+"weather.condition.clear" = "صافٍ";
 
-/* Error when a route has no real-time vehicle tracking data. */
-"nearby_trip_matcher.error.no_realtime" = "لا تتوفر بيانات تتبّع في الوقت الفعلي لهذا الخط.";
+/* Weather condition label for cloudy skies. */
+"weather.condition.cloudy" = "غائم";
 
-"surveys.accessibility_selected_value" = "محدد";
+/* Weather condition label for foggy conditions. */
+"weather.condition.fog" = "ضباب";
 
-"surveys.accessibility_not_selected_value" = "غير محدد";
+/* Weather condition label for partly cloudy skies. */
+"weather.condition.partly_cloudy" = "غائم جزئيًا";
 
-"surveys.accessibility_tap_toggle_selection" = "اضغط لتبديل التحديد";
+/* Weather condition label for rain. */
+"weather.condition.rain" = "مطر";
 
-"surveys.accessibility_tap_to_select" = "اضغط للتحديد";
+/* Weather condition label for sleet. */
+"weather.condition.sleet" = "مطر متجمد";
 
-"surveys.accessibility_answer.input" = "حقل الإجابة";
+/* Weather condition label for snow. */
+"weather.condition.snow" = "ثلج";
 
-"surveys.accessibility.hint_answer.input" = "أدخل إجابتك عن سؤال الاستطلاع";
+/* Weather condition placeholder when the icon key is unknown. */
+"weather.condition.unknown" = "—";
 
-"surveys.accessibility_survey_label" = "تسمية الاستطلاع";
+/* Weather condition label for windy conditions. */
+"weather.condition.wind" = "عاصف";

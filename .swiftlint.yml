@@ -27,3 +27,22 @@ file_length:
 type_body_length:
   warning: 900
   error: 1000
+
+custom_rules:
+  hardcoded_app_name:
+    name: "Hardcoded app name"
+    # OBAKit/OBAKitCore/OBAWidget are the white-label frameworks — the same code ships
+    # as KiedyBus. A brand name baked into a string literal renders the wrong app name.
+    # `included:` above already scopes linting to the frameworks, so the app targets
+    # under Apps/ remain free to name themselves.
+    #
+    # `match_kinds: string` covers EVERY string literal, including OBALoc's `value:` and
+    # `comment:` arguments — a translator note naming the app trips this too. Naming the
+    # *organization* (Open Transit Software Foundation) is legitimate; if you genuinely
+    # need the literal, use `// swiftlint:disable:next hardcoded_app_name`.
+    # Note the regex is case-sensitive and unanchored: "onebusaway.org" URLs pass.
+    regex: "OneBusAway"
+    match_kinds:
+      - string
+    message: "Don't hardcode 'OneBusAway' in a string in a shared framework — use %@ with Bundle.main.appName. This code also ships as KiedyBus."
+    severity: error

@@ -77,10 +77,10 @@ struct DataMigrationReportView: View {
         List {
             Section(OBALoc("data_migration_bulletin.report_summary_title", value: "Summary", comment: "Title for the Summary section of a data migration report")) {
                 Text(
-                    String(format: OBALoc("data_migration_bulletin.report_summary_number_of_successes", value: "%d successful", comment: "Data migration report label for showing the number of successful migration tasks."), numberOfSuccessItems)
+                    String(format: OBALoc("data_migration_bulletin.report_summary_number_of_successes", value: "%d successful", comment: "Data migration report label for showing the number of successful migration tasks. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback."), numberOfSuccessItems)
                 )
                 Text(
-                    String(format: OBALoc("data_migration_bulletin.report_summary_number_of_failures", value: "%d failures", comment: "Data migration report label for showing the number of failed migration tasks."), numberOfErrorItems)
+                    String(format: OBALoc("data_migration_bulletin.report_summary_number_of_failures", value: "%d failures", comment: "Data migration report label for showing the number of failed migration tasks. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback."), numberOfErrorItems)
                 )
             }
 

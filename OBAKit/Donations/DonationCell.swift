@@ -28,7 +28,10 @@ class DonationCell: OBAListViewCell {
         label.numberOfLines = 0
         label.font = .preferredFont(forTextStyle: .title3).bold
 
-        label.text = OBALoc("donation_cell.title", value: "🚨 OneBusAway needs your help", comment: "Title of the donation widget that appears on the stop view controller.")
+        label.text = String(
+            format: OBALoc("donation_cell.title", value: "🚨 %@ needs your help", comment: "Title of the donation widget that appears on the stop view controller. %@ is the app name."),
+            Bundle.main.appName
+        )
         return label
     }()
 

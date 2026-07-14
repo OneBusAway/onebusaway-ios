@@ -1,17 +1,38 @@
 /* An error message that tells the user that they are connected to a captive portal WiFi network. */
 "api_error.captive_portal" = "Sembra che il tuo dispositivo sia connesso a una rete WiFi che non dispone di accesso ad internet. Prova a disconnetterti dal WiFi o ad effettuare l'autenticazione con la rete per procedere.";
 
+/* An error that tells the user that cellular data access is disabled for this app in iOS Settings. Both substituted values are the app name. */
+"api_error.cellular_data_restricted_fmt" = "L'app %1$@ non è attualmente autorizzata ad accedere ai dati cellulari. Per risolvere il problema, vai su Impostazioni > Cellulare e attiva i dati cellulari per %2$@, oppure connettiti a una rete WiFi.";
+
+/* An error shown when the server returns data the app can't understand, indicating a likely server-side issue. */
+"api_error.decoding_failure" = "Il server ha restituito dati imprevisti. Di solito questo significa che il server sta riscontrando dei problemi. Riprova tra poco.";
+
 /* An error message that informs the user that the wrong kind of content was received from the server. */
 "api_error.invalid_content_type_fmt" = "Si sarebbero dovuti ricevere %1$@ dati dal server, invece ne sono stati ricevuti %2$@.";
 
 /* An error that tells the user that the network connection isn't working. */
 "api_error.network_failure" = "Impossibile connettersi a Internet o al server. Controlla la connessione e riprova.";
 
+/* An error message that tells the user that no region has been selected. */
+"api_error.no_region_selected" = "Nessuna regione selezionata. Seleziona una regione per continuare.";
+
 /* An error that tells the user that the server unexpectedly failed to return data. */
 "api_error.no_response_body" = "Per motivi inaspettati il server non è riuscito a restituire dati utili alla tua richiesta.";
 
 /* An error that is produced in response to HTTP status codes outside of 200-299. */
 "api_error.request_failure_fmt" = "Si è verificato un errore nel server durante l'elaborazione della tua richiesta. Codice di stato %1$d. (URL: %2$@)";
+
+/* An error that is produced in response to HTTP status code 404 */
+"api_error.request_not_found" = "404 Non trovato (%@)";
+
+/* An error shown when the server returns a 500 Internal Server Error. The substituted value is the region name, e.g. 'Puget Sound'. */
+"api_error.server_error_fmt" = "Il server di %@ ha riscontrato un errore durante l'elaborazione della tua richiesta. Riprova.";
+
+/* An error shown when the regional transit server is unavailable. The first substituted value is the region name, the second is the app name. */
+"api_error.server_unavailable_fmt" = "Il server di %1$@ sembra non essere raggiungibile al momento, quindi %2$@ non può mostrare le informazioni di trasporto per questa regione. L'app tornerà a funzionare non appena il server sarà di nuovo attivo.";
+
+/* An error message that tells the user that surveys are not available. */
+"api_error.survey_service_not_configured" = "Il servizio sondaggi non è disponibile in questa regione.";
 
 /* This will appear on a button or as a title, and indicates that this UI will create a new bookmark. */
 "common.add_alarm" = "Aggiungi sveglia";
@@ -31,6 +52,12 @@
 /* The verb 'to cancel', i.e. to stop an action. */
 "common.cancel" = "Annulla";
 
+/* Button to clear recent search results */
+"common.clear_recent_searches" = "Cancella ricerche recenti";
+
+/* Confirmation message before clearing recent search results */
+"common.clear_recent_searches.confirmation" = "Vuoi davvero cancellare le tue ricerche recenti?";
+
 /* The verb 'to close'. */
 "common.close" = "Chiudi";
 
@@ -45,6 +72,15 @@
 
 /* The verb 'to dismiss', as in to hide or get rid of something. Used as a button title on alerts. */
 "common.dismiss" = "Ignora";
+
+/* The verb 'to donate', as in to give money to a charitable cause. */
+"common.donate" = "Dona";
+
+/* The body of the message to display to the user after they donate to OTSF. %@ is the app name. */
+"common.donation_thank_you.body" = "Il tuo sostegno ci aiuterà a continuare a migliorare %@.";
+
+/* Title of an alert to display to the user after they donate to OTSF */
+"common.donation_thank_you.title" = "Grazie per il tuo sostegno!";
 
 /* Past participle of 'do'. As in 'I am done' or 'I am finished.' */
 "common.done" = "Fatto";
@@ -70,11 +106,20 @@
 /* The title of a button that exports all of the user's data into a file. */
 "common.export_data" = "Esporta dati";
 
+/* Description of the privacy policy for sharing data with the external survey service. */
+"common.external_survey_privacy_info.description" = "Questo sondaggio condividerà la tua fermata, linea, regione e posizione attuale.";
+
 /* The verb 'to filter'. */
 "common.filter" = "Filtra";
 
+/* The verb 'to go' */
+"common.go" = "Vai";
+
 /* This is button text that tells the user they can tap on it to learn more about the topic at hand. */
 "common.learn_more" = "Scopri di più";
+
+/* Fallback title for the stop arrivals screen when the stop name is not yet available. */
+"common.live_arrivals" = "Arrivi in tempo reale";
 
 /* Used to indicate that content is loading. */
 "common.loading" = "Caricamento...";
@@ -94,8 +139,14 @@
 /* As in 'see more' or 'learn more'. */
 "common.more" = "Altro";
 
+/* The verb 'to next', i.e. to get next survey question. */
+"common.next" = "Avanti";
+
 /* OK */
 "common.ok" = "OK";
+
+/* i.e. recently selected search results for map locations from the trip planner. */
+"common.recent_searches" = "Ricerche recenti";
 
 /* i.e. recently viewed or visited stops for transit vehicles, like a bus stop, ferry terminal, or train station. */
 "common.recent_stops" = "Fermate recenti";
@@ -103,11 +154,20 @@
 /* The verb 'refresh', as in 'reload'. */
 "common.refresh" = "Aggiorna";
 
+/* The verb 'retry'. */
+"common.retry" = "Riprova";
+
 /* The verb 'save', as in 'save data'. */
 "common.save" = "Salva";
 
+/* A noun referring to a bus/train schedule or timetable. */
+"common.schedule" = "Orario";
+
 /* Explains that this is departure comes from schedule data, not from a real-time vehicle location. */
 "common.scheduled_not_real_time" = "Orario previsto/non in tempo reale";
+
+/* Plural form of schedule, referring to bus/train schedules or timetables. */
+"common.schedules" = "Orari";
 
 /* A noun referring to an alert about service interruptions, reroutes, or other disruptions or changes. */
 "common.service_alert" = "Avviso di servizio";
@@ -133,11 +193,17 @@
 /* Noun. Plural form of a transit stop. */
 "common.stops" = "Fermate";
 
+/* The verb 'to submit', i.e. to submit a survey answer. */
+"common.submit" = "Invia";
+
 /* A format string used to tell the user when the UI they are looking at was last updated. e.g. Updated: 9:41 AM. The time is calculated at runtime. */
 "common.updated_at_fmt" = "Ultimo aggiornamento: %@";
 
 /* Used to tell the user that the UI they are looking at is actively being updated with new data from the server. */
 "common.updating" = "Aggiornamento in corso...";
+
+/* The title of the Vehicles tab showing real-time vehicle positions on a map. */
+"common.vehicles" = "Veicoli";
 
 /* Use for vehicles that arrived X minutes ago. */
 "formatters.arrived_x_min_ago_fmt" = "Arrivato %d min fa";
@@ -301,6 +367,18 @@
 /* Formatted time text for arrivals/departures. Used for accessibility labels, so be sure to spell out the word for 'minute'. Example: 7 minutes means that this event happens 7 minutes in the future. -7 minutes means 7 minutes in the past. */
 "formatters.time_fmt" = "%d minuti";
 
+/* Transfer arrival banner. First parameter is the arrival time, second is the route name and headsign. e.g. 'Arriving at 4:10 PM via 10 - Capitol Hill' */
+"formatters.transfer.arrival_banner_fmt" = "Arrivo alle %1$@ con %2$@";
+
+/* Short text shown when a departure occurs at the same time as the rider's transfer arrival. */
+"formatters.transfer.on_arrival" = "ADESSO";
+
+/* Error when a route has no real-time vehicle tracking data. */
+"nearby_trip_matcher.error.no_realtime" = "Nessun dato di tracciamento in tempo reale disponibile per questa linea.";
+
+/* Error when no transit stops are found near the user's location. */
+"nearby_trip_matcher.error.no_stops" = "Nessuna fermata trovata nelle vicinanze.";
+
 /* Bus. Used for short- and long-distance bus routes. */
 "route_type.bus" = "Autobus";
 
@@ -325,6 +403,15 @@
 /* Subway, Metro. Any underground rail system within a metropolitan area. */
 "route_type.subway" = "Metropolitana";
 
+/* The body of the schedule/timetable feature tip */
+"schedule_tip.message" = "Tocca qui e poi tocca \"Orari\" per visualizzare l'orario dei tuoi autobus e treni.";
+
+/* Title for the schedule/timetable feature tip */
+"schedule_tip.title" = "Visualizza l'orario della tua linea";
+
+/* Shown in place of the minutes countdown when the vehicle is departing now */
+"stop_page.countdown.now" = "ADESSO";
+
 /* User-facing string that means the location of the stop on the map is wrong. */
 "stop_problem_code.user_description.location_wrong" = "La posizione è errata";
 
@@ -339,6 +426,66 @@
 
 /* User-facing string that means our data is wrong about a route or a scheduled trip */
 "stop_problem_code.user_description.route_or_trip_missing" = "Linea o itinerario mancante";
+
+/* Indicating missing external survey url */
+"survey.external.url.missing" = "Non è stato possibile aprire il sondaggio in questo momento. Riprova più tardi.";
+
+/* Body for survey dismissal action alert. */
+"survey_alert.dismissal.body" = "Il tuo feedback aiuta a migliorare i servizi di trasporto e l'esperienza dell'app.";
+
+/* Title for survey dismissal action alert. */
+"survey_alert.dismissal.title" = "Ignora sondaggio";
+
+/* The action of not showing the survey again. */
+"survey_alert.do.not.show.again" = "Non mostrare più";
+
+/* The action of reminding later. i.e, to remind me later on the survey. */
+"survey_alert.remind.later" = "Ricordamelo più tardi";
+
+/* The action of skipping the current survey. */
+"survey_alert.skip.survey" = "Salta questo sondaggio";
+
+/* Error message to show when the user has not answered the hero survey question with a valid answer. */
+"survey_error.hero_question_answer.error" = "Inserisci una risposta valida";
+
+/* Error message to show when the user has not answered all required survey questions. */
+"survey_error.required_remaining_questions.error" = "Rispondi a tutte le domande obbligatorie";
+
+/* Indicating that survey service is not setup up right or has some other issue. */
+"survey_service.not.available" = "Il servizio sondaggi non è disponibile.";
+
+/* Indicating missing survey update id when submitting responses */
+"survey_service.update.path.missing" = "Si è verificato un errore durante l'invio delle tue risposte. Riprova più tardi.";
+
+/* Success message to show when the survey is successfully submitted. */
+"survey_success.submitted" = "Risposta al sondaggio inviata! Rispondi alle restanti domande per un feedback migliore.";
+
+/* Accessibility hint for an input field in a survey. */
+"surveys.accessibility.hint_answer.input" = "Inserisci la tua risposta alla domanda del sondaggio";
+
+/* Accessibility label for an input field in a survey. */
+"surveys.accessibility_answer.input" = "Campo risposta";
+
+/* Accessibility label for a value that is not selected. */
+"surveys.accessibility_not_selected_value" = "Non selezionato";
+
+/* Accessibility label for a selected value. */
+"surveys.accessibility_selected_value" = "Selezionato";
+
+/* Accessibility for survey label */
+"surveys.accessibility_survey_label" = "Etichetta sondaggio";
+
+/* Accessibility label that allows selection of a survey option. */
+"surveys.accessibility_tap_to_select" = "Tocca per selezionare";
+
+/* Accessibility label  that toggles the selection state of a survey option. */
+"surveys.accessibility_tap_toggle_selection" = "Tocca per attivare/disattivare la selezione";
+
+/* Message for the trip planner tip */
+"trip_planner_tip.message" = "Tocca qui per cercare luoghi e pianificare il tuo viaggio con le indicazioni del trasporto pubblico.";
+
+/* Title for the trip planner tip */
+"trip_planner_tip.title" = "Pianifica il tuo viaggio";
 
 /* User-facing string that means the vehicle came early. */
 "trip_problem_code.user_description.came_early" = "Arrivato in anticipo";
@@ -385,100 +532,29 @@
 /* VoiceOver text describing a route that is scheduled to depart. (no realtime data was available) */
 "voiceover.arrivaldeparture_scheduled_departs_in_x_minutes_fmt" = "partenza prevista tra %1$d minuti alle %2$@.";
 
+/* Weather condition label for clear skies. */
+"weather.condition.clear" = "Sereno";
 
-/* The verb 'retry'. */
-"common.retry" = "Riprova";
+/* Weather condition label for cloudy skies. */
+"weather.condition.cloudy" = "Nuvoloso";
 
-/* A noun referring to a bus/train schedule or timetable. */
-"common.schedule" = "Orario";
+/* Weather condition label for foggy conditions. */
+"weather.condition.fog" = "Nebbia";
 
-/* Plural form of schedule, referring to bus/train schedules or timetables. */
-"common.schedules" = "Orari";
+/* Weather condition label for partly cloudy skies. */
+"weather.condition.partly_cloudy" = "Parzialmente nuvoloso";
 
+/* Weather condition label for rain. */
+"weather.condition.rain" = "Pioggia";
 
-/* An error that is produced in response to HTTP status code 404 */
-"api_error.request_not_found" = "404 Non trovato (%@)";
+/* Weather condition label for sleet. */
+"weather.condition.sleet" = "Nevischio";
 
-/* Button to clear recent search results */
-"common.clear_recent_searches" = "Cancella ricerche recenti";
+/* Weather condition label for snow. */
+"weather.condition.snow" = "Neve";
 
-/* Confirmation message before clearing recent search results */
-"common.clear_recent_searches.confirmation" = "Vuoi davvero cancellare le tue ricerche recenti?";
+/* Weather condition placeholder when the icon key is unknown. */
+"weather.condition.unknown" = "—";
 
-/* The verb 'to donate', as in to give money to a charitable cause. */
-"common.donate" = "Dona";
-
-/* The body of the message to display to the user after they donate to OTSF */
-"common.donation_thank_you.body" = "Il tuo sostegno ci aiuterà a continuare a migliorare OneBusAway.";
-
-/* Title of an alert to display to the user after they donate to OTSF */
-"common.donation_thank_you.title" = "Grazie per il tuo sostegno!";
-
-/* Description of the privacy policy for sharing data with the external survey service. */
-"common.external_survey_privacy_info.description" = "Questo sondaggio condividerà la tua fermata, linea, regione e posizione attuale.";
-
-"common.go" = "Vai";
-
-"common.next" = "Avanti";
-
-/* i.e. recently selected search results for map locations from the trip planner. */
-"common.recent_searches" = "Ricerche recenti";
-
-"common.submit" = "Invia";
-
-/* The title of the Vehicles tab showing real-time vehicle positions on a map. */
-"common.vehicles" = "Veicoli";
-
-/* Error when a route has no real-time vehicle tracking data. */
-"nearby_trip_matcher.error.no_realtime" = "Nessun dato di tracciamento in tempo reale disponibile per questa linea.";
-
-/* Error when no transit stops are found near the user's location. */
-"nearby_trip_matcher.error.no_stops" = "Nessuna fermata trovata nelle vicinanze.";
-
-/* The body of the schedule/timetable feature tip */
-"schedule_tip.message" = "Tocca qui e poi tocca \"Orari\" per visualizzare l'orario dei tuoi autobus e treni.";
-
-/* Title for the schedule/timetable feature tip */
-"schedule_tip.title" = "Visualizza l'orario della tua linea";
-
-"survey.external.url.missing" = "Non è stato possibile aprire il sondaggio in questo momento. Riprova più tardi.";
-
-"survey_alert.dismissal.body" = "Il tuo feedback aiuta a migliorare i servizi di trasporto e l'esperienza dell'app.";
-
-"survey_alert.dismissal.title" = "Ignora sondaggio";
-
-"survey_alert.do.not.show.again" = "Non mostrare più";
-
-"survey_alert.remind.later" = "Ricordamelo più tardi";
-
-"survey_alert.skip.survey" = "Salta questo sondaggio";
-
-"survey_error.hero_question_answer.error" = "Inserisci una risposta valida";
-
-"survey_error.required_remaining_questions.error" = "Rispondi a tutte le domande obbligatorie";
-
-"survey_service.not.available" = "Il servizio sondaggi non è disponibile.";
-
-"survey_service.update.path.missing" = "Si è verificato un errore durante l'invio delle tue risposte. Riprova più tardi.";
-
-"survey_success.submitted" = "Risposta al sondaggio inviata! Rispondi alle restanti domande per un feedback migliore.";
-
-"surveys.accessibility.hint_answer.input" = "Inserisci la tua risposta alla domanda del sondaggio";
-
-"surveys.accessibility_answer.input" = "Campo risposta";
-
-"surveys.accessibility_not_selected_value" = "Non selezionato";
-
-"surveys.accessibility_selected_value" = "Selezionato";
-
-"surveys.accessibility_survey_label" = "Etichetta sondaggio";
-
-"surveys.accessibility_tap_to_select" = "Tocca per selezionare";
-
-"surveys.accessibility_tap_toggle_selection" = "Tocca per attivare/disattivare la selezione";
-
-/* Message for the trip planner tip */
-"trip_planner_tip.message" = "Tocca qui per cercare luoghi e pianificare il tuo viaggio con le indicazioni del trasporto pubblico.";
-
-/* Title for the trip planner tip */
-"trip_planner_tip.title" = "Pianifica il tuo viaggio";
+/* Weather condition label for windy conditions. */
+"weather.condition.wind" = "Ventoso";
