@@ -13,6 +13,10 @@ import CoreLocation
 import UserNotifications
 import OBAKitCore
 
+extension Notification.Name {
+    static let alarmFired = Notification.Name("OBA.AlarmFired")
+}
+
 /// Shared ViewModel for the stop arrivals/departures screen.
 ///
 /// Consumed by `StopViewController` (UIKit, via Combine `sink`) and by
@@ -133,6 +137,8 @@ class StopViewModel: ObservableObject {
     /// Cache for trip-panel approach timelines, invalidated on each refresh.
     private var approachCache: [String: TripDetails] = [:]
 
+    private var alarmFiredCancellable: AnyCancellable?
+
     // MARK: - Init Context
 
     /// Optional bookmark that opened this stop view.
@@ -182,6 +188,11 @@ class StopViewModel: ObservableObject {
         } else {
             self.stopPreferences = StopPreferences()
         }
+
+        alarmFiredCancellable = NotificationCenter.default
+            .publisher(for: .alarmFired)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.rebuildAlarmIndex() }
     }
 
     deinit {
