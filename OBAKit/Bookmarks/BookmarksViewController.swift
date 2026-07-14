@@ -71,11 +71,6 @@ public class BookmarksViewController: UIViewController,
         fatalError("init(coder:) has not been implemented")
     }
 
-    deinit {
-        liveActivityTokenTasks.values.forEach { $0.cancel() }
-        liveActivityLifecycleTasks.values.forEach { $0.cancel() }
-    }
-
     private var sortBookmarksByGroup: Bool {
         get { viewModel.sortByGroup }
         set { viewModel.updateSortType(byGroup: newValue) }
@@ -398,7 +393,7 @@ public class BookmarksViewController: UIViewController,
                 content: .init(state: contentState, staleDate: nil),
                 pushType: .token
             )
-            registerForPushUpdates(activity: activity, viewModel: viewModel)
+            trackLiveActivity(activity, for: viewModel)
             Logger.info("Started Live Activity with ID: \(activity.id)")
             showLiveActivityStartedAlert()
         } catch {
@@ -419,13 +414,18 @@ public class BookmarksViewController: UIViewController,
                 let viewModel = buildListItem(bookmark),
                 let contentState = buildContentState(for: viewModel) {
                 // Re-arm the push token/lifecycle observers on relaunch. `startLiveActivity`
-                // only registers activities it creates in-session, so without this a Live
-                // Activity that's still running after a relaunch would never re-establish its
-                // observers and would never unregister when it later ends. Guarded so repeated
-                // calls to updateRunningLiveActivities() don't cancel/rebuild an already-armed
-                // task (and don't clobber one armed earlier in this same session).
-                if liveActivityTokenTasks[activity.id] == nil {
-                    registerForPushUpdates(activity: activity, viewModel: viewModel)
+                // only tracks activities it creates in-session, so without this a Live Activity
+                // that's still running after a relaunch would never re-establish its observers
+                // and would never unregister when it later ends. Guarded so repeated calls to
+                // updateRunningLiveActivities() don't cancel/rebuild an already-armed task — and
+                // because the tracker is app-scoped, the guard also covers an activity started
+                // from the stop page, which we must not steal the observers out from under.
+                //
+                // Deliberately keyed on the token task and not on `isTracking`: an activity that
+                // the sweep below could only lifecycle-observe (no matching bookmark at the time)
+                // must still be upgradable to a full registration once its bookmark reappears.
+                if !application.liveActivityTracker.isForwardingPushToken(activityID: activity.id) {
+                    trackLiveActivity(activity, for: viewModel)
                 }
                 Task {
                     await activity.update(
@@ -433,11 +433,11 @@ public class BookmarksViewController: UIViewController,
                     )
                     Logger.info("Updated Live Activity for stop: \(staticData.stopID) route: \(staticData.routeShortName)")
                 }
-            } else if liveActivityTokenTasks[activity.id] == nil && liveActivityLifecycleTasks[activity.id] == nil {
+            } else if !application.liveActivityTracker.isTracking(activityID: activity.id) {
                 // No bookmark/viewModel to register push updates with, but the activity is
                 // still running (and may have a delete URL persisted from a prior session).
                 // Arm just the lifecycle observer so dismiss/end still triggers `unregister`.
-                armLifecycleObserver(activity: activity)
+                application.liveActivityTracker.observeLifecycle(of: activity)
             }
         }
     }
@@ -460,126 +460,17 @@ public class BookmarksViewController: UIViewController,
         return TripAttributes.ContentState(arrivals: Array(arrivals))
     }
 
-    private func showLiveActivityStartedAlert() {
-        let title = OBALoc("live_activity.started.title", value: "Tracking on Lock Screen", comment: "Alert title when a Live Activity starts")
-        let message = OBALoc("live_activity.started.message", value: "You'll see live arrival updates on your Lock Screen and Dynamic Island.", comment: "Alert message explaining where to find the Live Activity")
-        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: Strings.ok, style: .default))
-        present(alert, animated: true)
-    }
-
-    private func showLiveActivityErrorAlert() {
-        let title = OBALoc("live_activity.error.title", value: "Unable to Start Tracking", comment: "Alert title when Live Activity fails to start")
-        let message = OBALoc("live_activity.error.message", value: "Please check your Live Activities settings in System Preferences.", comment: "Alert message for Live Activity error")
-        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: Strings.ok, style: .default))
-        present(alert, animated: true)
-    }
-
     // MARK: - Live Activity Push Registration
 
-    /// One token-forwarding Task per activity id; cancelled in deinit.
-    private var liveActivityTokenTasks: [String: Task<Void, Never>] = [:]
-    /// One lifecycle-observation Task per activity id; cancelled in deinit.
-    private var liveActivityLifecycleTasks: [String: Task<Void, Never>] = [:]
-
-    /// Persistence of delete URLs, registration, and unregistration all live in the registry;
-    /// this controller only owns the observers that feed it. An activity that ended while the
-    /// app wasn't running is never observed here at all — `LiveActivityRegistry.reconcile()`,
-    /// run from `Application.applicationDidBecomeActive`, is what cleans that case up.
-    private var liveActivityRegistry: LiveActivityRegistry {
-        application.liveActivityRegistry
-    }
-
-    private func registerForPushUpdates(activity: Activity<TripAttributes>, viewModel: BookmarkArrivalViewModel) {
-        let activityID = activity.id
-        let firstArrival = viewModel.arrivalDepartures?.first
-
-        liveActivityTokenTasks[activityID]?.cancel()
-        liveActivityTokenTasks[activityID] = Task { [weak self] in
-            for await tokenData in activity.pushTokenUpdates {
-                let token = tokenData.map { String(format: "%02x", $0) }.joined()
-                await self?.postRegistration(
-                    activity: activity,
-                    pushToken: token,
-                    tripID: firstArrival?.tripID,
-                    serviceDate: firstArrival?.serviceDate,
-                    vehicleID: firstArrival?.vehicleID,
-                    stopSequence: firstArrival?.stopSequence
-                )
-            }
-        }
-
-        armLifecycleObserver(activity: activity)
-    }
-
-    /// Observes `activity`'s dismiss/end state so `unregister` runs (deleting the server-side
-    /// registration via its persisted delete URL). Armed both as part of a full registration
-    /// (`registerForPushUpdates`, alongside the token-forwarding task) and, after a relaunch,
-    /// on its own for running activities whose bookmark can no longer be matched
-    /// (`updateRunningLiveActivities`) — there's no viewModel to register a push token with in
-    /// that case, but the delete URL persisted from a prior session still needs to be cleaned
-    /// up once the activity ends.
-    private func armLifecycleObserver(activity: Activity<TripAttributes>) {
-        let activityID = activity.id
-        liveActivityLifecycleTasks[activityID]?.cancel()
-        liveActivityLifecycleTasks[activityID] = Task { [weak self] in
-            for await state in activity.activityStateUpdates where state == .dismissed || state == .ended {
-                await self?.unregister(activityID: activityID)
-                break
-            }
-        }
-    }
-
-    private func postRegistration(activity: Activity<TripAttributes>, pushToken: String, tripID: String?, serviceDate: Date?, vehicleID: String?, stopSequence: Int?) async {
-        await liveActivityRegistry.register(
-            activityID: activity.id,
-            staticData: activity.attributes.staticData,
-            pushToken: pushToken,
-            tripID: tripID,
-            serviceDate: serviceDate,
-            vehicleID: vehicleID,
-            stopSequence: stopSequence,
-            confirm: { [weak self] in
-                // `unregister` is only cooperatively cancelled, so it can finish tearing down
-                // this activity's tasks while the POST is still in flight. If that happened, the
-                // lifecycle task that would eventually DELETE this registration is already gone,
-                // so persisting the delete URL now would orphan it forever. The registry
-                // evaluates this immediately before the write (both this method and `unregister`
-                // run on the MainActor, so the check is race-free) and cleans up the row the
-                // server just created for us when it returns false.
-                guard let self else { return false }
-                return self.liveActivityLifecycleTasks[activity.id] != nil && !Task.isCancelled
-            }
+    /// Hands `activity` to the app-scoped tracker, which owns the push-token and lifecycle
+    /// observers. They deliberately outlive this controller — and every other screen — so that an
+    /// activity is unregistered when it actually ends rather than when a view controller happens
+    /// to be deallocated. See `LiveActivityTracker`.
+    private func trackLiveActivity(_ activity: Activity<TripAttributes>, for viewModel: BookmarkArrivalViewModel) {
+        application.liveActivityTracker.track(
+            activity: activity,
+            metadata: .init(viewModel.arrivalDepartures?.first)
         )
-    }
-
-    /// Tears down the observers for `activityID` and deletes its server-side push subscription.
-    ///
-    /// The ordering below is load-bearing, and the tempting tidy-up — cancelling both tasks
-    /// together, up front — is a bug. This method's usual caller is the lifecycle task itself
-    /// (`armLifecycleObserver`), so cancelling that task here cancels *the task we are currently
-    /// running inside*. `URLSession` honors task cancellation, so the DELETE that follows would
-    /// fail instantly with `URLError.cancelled` (-999) without a byte leaving the device —
-    /// silently, since unregistration has no UI. That shipped: every dismissal leaked its
-    /// subscription and the server kept pushing to a Live Activity the user had cleared.
-    ///
-    /// So: drop the lifecycle task from the dictionary (which is what `confirm` in
-    /// `postRegistration` reads, and what stops a second unregister), but cancel it only *after*
-    /// the network call. When we're running inside it, it's about to `break` out of its loop
-    /// anyway; when called from anywhere else, it still gets torn down properly.
-    ///
-    /// The token task is a different task and is safe to cancel up front.
-    ///
-    /// `LiveActivityRegistry` independently refuses to let its DELETEs inherit cancellation, so
-    /// this is belt-and-braces — but the belt is here, where the reasoning is visible.
-    private func unregister(activityID: String) async {
-        liveActivityTokenTasks.removeValue(forKey: activityID)?.cancel()
-        let lifecycleTask = liveActivityLifecycleTasks.removeValue(forKey: activityID)
-
-        await liveActivityRegistry.unregister(activityID: activityID)
-
-        lifecycleTask?.cancel()
     }
 
     // MARK: - Arrival departure highlight updates

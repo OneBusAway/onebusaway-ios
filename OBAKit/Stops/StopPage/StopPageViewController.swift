@@ -44,19 +44,6 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
     /// `StopViewController.bindArrivalsSink()`; later refreshes are silent.
     private var firstLoad = true
 
-    // MARK: - Live Activity storage
-
-    /// One token-forwarding Task per activity id; cancelled in deinit.
-    private var liveActivityTokenTasks: [String: Task<Void, Never>] = [:]
-    /// One lifecycle-observation Task per activity id; cancelled in deinit.
-    private var liveActivityLifecycleTasks: [String: Task<Void, Never>] = [:]
-
-    /// Persistence of delete URLs, registration, and unregistration all live in the registry;
-    /// this controller only owns the observers that feed it.
-    private var liveActivityRegistry: LiveActivityRegistry {
-        application.liveActivityRegistry
-    }
-
     #if !targetEnvironment(simulator)
     /// `application.canOpenURL` is an XPC round-trip and Google Maps can't be
     /// installed or removed within a screen's lifetime, so resolve availability
@@ -119,11 +106,6 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
     @available(*, unavailable)
     @MainActor required dynamic init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
-    }
-
-    deinit {
-        liveActivityTokenTasks.values.forEach { $0.cancel() }
-        liveActivityLifecycleTasks.values.forEach { $0.cancel() }
     }
 
     override func viewDidLoad() {
@@ -432,7 +414,7 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
                 content: .init(state: contentState, staleDate: nil),
                 pushType: .token
             )
-            registerForLiveActivityPushUpdates(activity: activity, departure: departure)
+            application.liveActivityTracker.track(activity: activity, metadata: .init(departure))
             Logger.info("Started Live Activity with ID: \(activity.id)")
             showLiveActivityStartedAlert()
         } catch {
@@ -454,101 +436,6 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
             )
         }
         return TripAttributes.ContentState(arrivals: arrivals)
-    }
-
-    private func showLiveActivityStartedAlert() {
-        let title = OBALoc("live_activity.started.title", value: "Tracking on Lock Screen", comment: "Alert title when a Live Activity starts")
-        let message = OBALoc("live_activity.started.message", value: "You'll see live arrival updates on your Lock Screen and Dynamic Island.", comment: "Alert message explaining where to find the Live Activity")
-        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: Strings.ok, style: .default))
-        present(alert, animated: true)
-    }
-
-    private func showLiveActivityErrorAlert() {
-        let title = OBALoc("live_activity.error.title", value: "Unable to Start Tracking", comment: "Alert title when Live Activity fails to start")
-        let message = OBALoc("live_activity.error.message", value: "Please check your Live Activities settings in System Preferences.", comment: "Alert message for Live Activity error")
-        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: Strings.ok, style: .default))
-        present(alert, animated: true)
-    }
-
-    private func registerForLiveActivityPushUpdates(activity: Activity<TripAttributes>, departure: ArrivalDeparture) {
-        let activityID = activity.id
-
-        liveActivityTokenTasks[activityID]?.cancel()
-        liveActivityTokenTasks[activityID] = Task { [weak self] in
-            for await tokenData in activity.pushTokenUpdates {
-                let token = tokenData.map { String(format: "%02x", $0) }.joined()
-                await self?.postLiveActivityRegistration(
-                    activity: activity,
-                    pushToken: token,
-                    tripID: departure.tripID,
-                    serviceDate: departure.serviceDate,
-                    vehicleID: departure.vehicleID,
-                    stopSequence: departure.stopSequence
-                )
-            }
-        }
-
-        armLiveActivityLifecycleObserver(activity: activity)
-    }
-
-    private func armLiveActivityLifecycleObserver(activity: Activity<TripAttributes>) {
-        let activityID = activity.id
-        liveActivityLifecycleTasks[activityID]?.cancel()
-        liveActivityLifecycleTasks[activityID] = Task { [weak self] in
-            for await state in activity.activityStateUpdates where state == .dismissed || state == .ended {
-                await self?.unregisterLiveActivity(activityID: activityID)
-                break
-            }
-        }
-    }
-
-    private func postLiveActivityRegistration(activity: Activity<TripAttributes>, pushToken: String, tripID: String?, serviceDate: Date?, vehicleID: String?, stopSequence: Int?) async {
-        await liveActivityRegistry.register(
-            activityID: activity.id,
-            staticData: activity.attributes.staticData,
-            pushToken: pushToken,
-            tripID: tripID,
-            serviceDate: serviceDate,
-            vehicleID: vehicleID,
-            stopSequence: stopSequence,
-            confirm: { [weak self] in
-                // Guard against the lifecycle task having been cancelled before this async POST
-                // completed, to avoid orphaning the server-side record. Returning false makes the
-                // registry delete the row it just created instead of persisting its delete URL.
-                guard let self else { return false }
-                return self.liveActivityLifecycleTasks[activity.id] != nil && !Task.isCancelled
-            }
-        )
-    }
-
-    /// Tears down the observers for `activityID` and deletes its server-side push subscription.
-    ///
-    /// The ordering below is load-bearing, and the tempting tidy-up — cancelling both tasks
-    /// together, up front — is a bug. This method's usual caller is the lifecycle task itself
-    /// (`armLiveActivityLifecycleObserver`), so cancelling that task here cancels *the task we
-    /// are currently running inside*. `URLSession` honors task cancellation, so the DELETE that
-    /// follows would fail instantly with `URLError.cancelled` (-999) without a byte leaving the
-    /// device — silently, since unregistration has no UI. That shipped: every dismissal leaked
-    /// its subscription and the server kept pushing to a Live Activity the user had cleared.
-    ///
-    /// So: drop the lifecycle task from the dictionary (which is what `confirm` in
-    /// `postLiveActivityRegistration` reads, and what stops a second unregister), but cancel it
-    /// only *after* the network call. When we're running inside it, it's about to `break` out of
-    /// its loop anyway; when called from anywhere else, it still gets torn down properly.
-    ///
-    /// The token task is a different task and is safe to cancel up front.
-    ///
-    /// `LiveActivityRegistry` independently refuses to let its DELETEs inherit cancellation, so
-    /// this is belt-and-braces — but the belt is here, where the reasoning is visible.
-    private func unregisterLiveActivity(activityID: String) async {
-        liveActivityTokenTasks.removeValue(forKey: activityID)?.cancel()
-        let lifecycleTask = liveActivityLifecycleTasks.removeValue(forKey: activityID)
-
-        await liveActivityRegistry.unregister(activityID: activityID)
-
-        lifecycleTask?.cancel()
     }
 
     // MARK: - Snapshot
