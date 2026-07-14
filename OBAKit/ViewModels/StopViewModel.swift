@@ -556,14 +556,33 @@ class StopViewModel: ObservableObject {
 
     // MARK: - Stop Page: Walk Time
 
-    /// Walk time from the user's current location to this stop; the single
-    /// source for the header chip and the chronological walk line (§4.5).
-    var walkTime: WalkTimeInfo? {
+    /// Travel time to this stop at an arbitrary speed. Shared by the header's
+    /// walk/bike chips and the mode-aware chronological split.
+    private func travelTime(atSpeed speed: Double) -> WalkTimeInfo? {
         WalkTimeInfo.compute(
             from: application.locationService.currentLocation,
             to: stop?.location,
-            speedMetersPerSecond: application.userDataStore.effectiveTravelVelocityMetersPerSecond
+            speedMetersPerSecond: speed
         )
+    }
+
+    /// Travel time using the mode the user has selected — Bike Mode swaps in the
+    /// cycling speed. Drives the chronological reachable/missed split and the
+    /// walk-line divider (§4.5).
+    var walkTime: WalkTimeInfo? {
+        travelTime(atSpeed: application.userDataStore.effectiveTravelVelocityMetersPerSecond)
+    }
+
+    /// Walk time at the user's walking speed — always shown on the header's walk
+    /// chip, independent of whether Bike Mode is enabled.
+    var headerWalkTime: WalkTimeInfo? {
+        travelTime(atSpeed: application.userDataStore.walkingSpeedMetersPerSecond)
+    }
+
+    /// Bike time at the user's cycling speed — always shown on the header's bike
+    /// chip, independent of whether Bike Mode is enabled.
+    var headerBikeTime: WalkTimeInfo? {
+        travelTime(atSpeed: application.userDataStore.bikeSpeedMetersPerSecond)
     }
 
     // MARK: - Stop Page: Alarms

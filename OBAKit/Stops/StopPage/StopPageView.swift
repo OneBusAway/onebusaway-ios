@@ -153,8 +153,9 @@ struct StopPageView: View {
     }
 
     var body: some View {
-        // Hoist the single computed walk value so the header chip, the
-        // chronological partition, and the divider all read one snapshot of it.
+        // Hoist the mode-aware walk value so the chronological partition and the
+        // divider read one snapshot of it. The header shows its own always-on
+        // walk and bike estimates, independent of Bike Mode.
         let walkTime = viewModel.walkTime
         let departures = filteredDepartures
         let departureIDs = Set(departures.map(\.id))
@@ -170,7 +171,7 @@ struct StopPageView: View {
         List {
             if let stop = viewModel.stop {
                 Section {
-                    StopPageHeaderView(stop: stop, walkTime: walkTime, statusText: viewModel.statusText, snapshotLoader: snapshotLoader, onWalkingDirections: navigation.showWalkingDirections)
+                    StopPageHeaderView(stop: stop, walkTime: viewModel.headerWalkTime, bikeTime: viewModel.headerBikeTime, statusText: viewModel.statusText, snapshotLoader: snapshotLoader, onWalkingDirections: navigation.showWalkingDirections)
                         .listRowInsets(EdgeInsets(top: 0, leading: Self.horizontalRowInset, bottom: 0, trailing: Self.horizontalRowInset))
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
