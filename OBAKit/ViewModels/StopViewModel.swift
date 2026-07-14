@@ -562,7 +562,7 @@ class StopViewModel: ObservableObject {
         WalkTimeInfo.compute(
             from: application.locationService.currentLocation,
             to: stop?.location,
-            speedMetersPerSecond: application.userDataStore.walkingSpeedMetersPerSecond
+            speedMetersPerSecond: application.userDataStore.effectiveTravelVelocityMetersPerSecond
         )
     }
 

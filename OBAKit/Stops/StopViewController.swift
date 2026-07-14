@@ -964,7 +964,7 @@ public class StopViewController: UIViewController,
         guard items.count > 0,
               let currentLocation = application.locationService.currentLocation,
               let stopLocation = stop?.location,
-              let walkingTime = WalkingDirections.travelTime(from: currentLocation, to: stopLocation, velocity: application.userDataStore.walkingSpeedMetersPerSecond)
+              let walkingTime = WalkingDirections.travelTime(from: currentLocation, to: stopLocation, velocity: application.userDataStore.effectiveTravelVelocityMetersPerSecond)
         else { return }
 
         if let insertionIndex = findInsertionIndexForWalkTime(walkingTime, items: items) {

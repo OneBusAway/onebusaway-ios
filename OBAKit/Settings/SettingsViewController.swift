@@ -41,6 +41,7 @@ class SettingsViewController: FormViewController {
             +++ alertsSection
             +++ accessibilitySection
             +++ walkingSpeedSection
+            +++ bikeModeSection
             +++ surveySection
             +++ debugSection
 
@@ -66,6 +67,7 @@ class SettingsViewController: FormViewController {
             alwaysShowSurveysOnStops: application.userDataStore.alwaysShowSurveysOnStops,
             walkingSpeedMetersPerSecondKey: snapToPreset(application.userDataStore.walkingSpeedMetersPerSecond),
             walkingSpeedUseHealthKitKey: application.userDataStore.walkingSpeedSource == .healthKit,
+            bikeModeEnabledKey: application.userDataStore.bikeModeEnabled,
             defaultAlarmLeadTimeMinutesKey: application.userDataStore.defaultAlarmLeadTimeMinutes
         ])
     }
@@ -123,6 +125,10 @@ class SettingsViewController: FormViewController {
         }
 
         saveWalkingSpeedValues(values)
+
+        if let bikeModeEnabled = values[bikeModeEnabledKey] as? Bool {
+            application.userDataStore.bikeModeEnabled = bikeModeEnabled
+        }
     }
 
     private func saveExperimentalValues(_ values: [String: Any?]) {
@@ -275,6 +281,40 @@ class SettingsViewController: FormViewController {
                                 using: self.application.toastManager
                             )
                         }
+                    }
+                }
+            }
+        }
+
+        return section
+    }()
+
+    // MARK: - Bike Mode
+
+    private let bikeModeEnabledKey = "bikeModeEnabled"
+
+    private lazy var bikeModeSection: Section = {
+        let section = Section(
+            header: OBALoc("settings_controller.bike_mode_section.title", value: "Bike Mode", comment: "Settings > Bike Mode section title"),
+            footer: OBALoc("settings_controller.bike_mode_section.footer", value: "Uses a faster travel speed for walk-time estimates, arrival ETAs, and the Stop page.", comment: "Settings > Bike Mode section footer")
+        )
+
+        section <<< SwitchRow {
+            $0.tag = bikeModeEnabledKey
+            $0.title = OBALoc("settings_controller.bike_mode.title", value: "Bike Mode", comment: "Settings > Bike Mode > on/off toggle")
+            $0.onChange { [weak self] row in
+                guard let self, row.value == true, HKHealthStore.isHealthDataAvailable() else { return }
+                Task {
+                    let granted = await self.application.bikeModeManager.requestHealthKitAuthorizationAndSync()
+                    if !granted {
+                        self.showErrorToast(
+                            OBALoc(
+                                "settings_controller.bike_mode.healthkit_unavailable",
+                                value: "Couldn't sync cycling speed from Health. Using a standard biking speed instead.",
+                                comment: "Settings > Bike Mode > HealthKit denial or no-data toast"
+                            ),
+                            using: self.application.toastManager
+                        )
                     }
                 }
             }

@@ -299,12 +299,35 @@ public protocol UserDataStore: NSObjectProtocol {
     /// The source of the walking speed value (manual preset or HealthKit).
     var walkingSpeedSource: WalkingSpeedSource { get set }
 
+    // MARK: - Bike Mode
+
+    /// Whether Bike Mode is enabled. When `true`, walk-time-to-stop calculations
+    /// app-wide should use `bikeSpeedMetersPerSecond` instead of `walkingSpeedMetersPerSecond`.
+    var bikeModeEnabled: Bool { get set }
+
+    /// The user's effective cycling speed in meters per second (HealthKit-synced value,
+    /// or `BikeSpeed.defaultMetersPerSecond` when no sync has ever succeeded).
+    var bikeSpeedMetersPerSecond: Double { get set }
+
+    /// The source of the bike speed value (fixed fallback constant or HealthKit).
+    var bikeSpeedSource: BikeSpeedSource { get set }
+
     // MARK: - Alarm Lead Time
 
     /// The user's preferred alarm lead time in minutes for one-tap alarms on
     /// the Stop page. Adjustable per-alarm afterward. Defaults to 5.
     var defaultAlarmLeadTimeMinutes: Int { get set }
 
+}
+
+public extension UserDataStore {
+    /// The velocity (m/s) that all walk-time-to-stop calculations should use.
+    /// Bike Mode, when enabled, takes priority over the walking speed. This is the
+    /// single place call sites should read from instead of branching on
+    /// `bikeModeEnabled` themselves.
+    var effectiveTravelVelocityMetersPerSecond: Double {
+        bikeModeEnabled ? bikeSpeedMetersPerSecond : walkingSpeedMetersPerSecond
+    }
 }
 
 // MARK: - Survey Tracking Data Models
@@ -399,6 +422,9 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         static let alwaysShowSurveysOnStops = "UserDataStore.alwaysShowSurveysOnStops"
         static let walkingSpeedMetersPerSecond = "UserDataStore.walkingSpeedMetersPerSecond"
         static let walkingSpeedSource = "UserDataStore.walkingSpeedSource"
+        static let bikeModeEnabled = "UserDataStore.bikeModeEnabled"
+        static let bikeSpeedMetersPerSecond = "UserDataStore.bikeSpeedMetersPerSecond"
+        static let bikeSpeedSource = "UserDataStore.bikeSpeedSource"
         static let defaultAlarmLeadTimeMinutes = "UserDataStore.defaultAlarmLeadTimeMinutes"
     }
 
@@ -409,6 +435,9 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
             UserDefaultsKeys.debugMode: false,
             UserDefaultsKeys.walkingSpeedMetersPerSecond: WalkingSpeed.defaultMetersPerSecond,
             UserDefaultsKeys.walkingSpeedSource: WalkingSpeedSource.manual.rawValue,
+            UserDefaultsKeys.bikeModeEnabled: false,
+            UserDefaultsKeys.bikeSpeedMetersPerSecond: BikeSpeed.defaultMetersPerSecond,
+            UserDefaultsKeys.bikeSpeedSource: BikeSpeedSource.manual.rawValue,
             UserDefaultsKeys.defaultAlarmLeadTimeMinutes: UserDataStoreDefaults.alarmLeadTimeMinutes
         ])
     }
@@ -1088,6 +1117,33 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         }
         set {
             userDefaults.set(newValue.rawValue, forKey: UserDefaultsKeys.walkingSpeedSource)
+        }
+    }
+
+    // MARK: - Bike Mode
+
+    public var bikeModeEnabled: Bool {
+        get { userDefaults.bool(forKey: UserDefaultsKeys.bikeModeEnabled) }
+        set { userDefaults.set(newValue, forKey: UserDefaultsKeys.bikeModeEnabled) }
+    }
+
+    public var bikeSpeedMetersPerSecond: Double {
+        get {
+            let stored = userDefaults.double(forKey: UserDefaultsKeys.bikeSpeedMetersPerSecond)
+            return min(max(stored, BikeSpeed.validRange.lowerBound), BikeSpeed.validRange.upperBound)
+        }
+        set {
+            let clamped = min(max(newValue, BikeSpeed.validRange.lowerBound), BikeSpeed.validRange.upperBound)
+            userDefaults.set(clamped, forKey: UserDefaultsKeys.bikeSpeedMetersPerSecond)
+        }
+    }
+
+    public var bikeSpeedSource: BikeSpeedSource {
+        get {
+            BikeSpeedSource(rawValue: userDefaults.integer(forKey: UserDefaultsKeys.bikeSpeedSource)) ?? .manual
+        }
+        set {
+            userDefaults.set(newValue.rawValue, forKey: UserDefaultsKeys.bikeSpeedSource)
         }
     }
 

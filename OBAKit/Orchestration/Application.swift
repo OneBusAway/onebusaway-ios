@@ -93,6 +93,9 @@ public class Application: CoreApplication, PushServiceDelegate {
     @MainActor
     lazy var walkingSpeedManager = WalkingSpeedManager(userDataStore: userDataStore)
 
+    @MainActor
+    lazy var bikeModeManager = BikeModeManager(userDataStore: userDataStore)
+
     @objc lazy var userActivityBuilder = UserActivityBuilder(application: self)
 
     /// Handles all deep-linking into the app.
@@ -402,6 +405,10 @@ public class Application: CoreApplication, PushServiceDelegate {
 
         if userDataStore.walkingSpeedSource == .healthKit {
             Task { await walkingSpeedManager.refreshFromHealthKitIfPossible() }
+        }
+
+        if userDataStore.bikeModeEnabled && userDataStore.bikeSpeedSource == .healthKit {
+            Task { await bikeModeManager.refreshFromHealthKitIfPossible() }
         }
     }
 
