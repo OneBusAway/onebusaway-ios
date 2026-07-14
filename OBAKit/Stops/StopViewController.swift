@@ -589,25 +589,13 @@ public class StopViewController: UIViewController,
 
     private func showDonationDismissUI() {
         let alertController = UIAlertController(
-            title: OBALoc(
-                "donations.donations_dismiss_alert.title",
-                value: "Please don't dismiss this request",
-                comment: "Title of the alert that appears when the user chooses to dismiss the donations request UI on a stop page"
-            ),
-            message: OBALoc(
-                "donations.donations_dismiss_alert.message",
-                value: "OneBusAway is a volunteer-run organization with almost no funding. We need your help to keep this app running.",
-                comment: "Body of the alert that appears when the user chooses to dismiss the donations request UI on a stop page"
-            ),
+            title: Strings.donationsDismissAlertTitle,
+            message: Strings.donationsDismissAlertMessage,
             preferredStyle: .actionSheet
         )
 
         alertController.addAction(
-            title: OBALoc(
-                "donations.donations_dismiss_alert.button_dismiss",
-                value: "I Don't Want to Help Right Now",
-                comment: "Dismiss button on the alert"
-            ),
+            title: Strings.donationsDismissAlertButtonDismiss,
             style: .destructive
         ) { _ in
             self.application.donationsManager.dismissDonationsRequests()
@@ -615,11 +603,7 @@ public class StopViewController: UIViewController,
         }
 
         alertController.addAction(
-            title: OBALoc(
-                "donations.donations_dismiss_alert.button_remind_later",
-                value: "Remind Me Later",
-                comment: "A button that prompts the system to remind them to donate later."
-            ),
+            title: Strings.donationsDismissAlertButtonRemindLater,
             style: .default
         ) { _ in
             self.application.donationsManager.remindUserLater()
@@ -1402,21 +1386,12 @@ private extension StopViewController {
     }
 
     func showEarlierDeparturesItem(hiddenCount: Int) -> MessageButtonItem {
-        let buttonText: String
-        if hiddenCount == 1 {
-            buttonText = OBALoc(
-                "stop_controller.transfer_show_earlier_departure_singular",
-                value: "Show 1 earlier departure",
-                comment: "Button to reveal a single departure that leaves before the rider's transfer arrival."
-            )
-        } else {
-            let fmt = OBALoc(
-                "stop_controller.transfer_show_earlier_departures_fmt",
-                value: "Show %d earlier departures",
-                comment: "Button to reveal departures that leave before the rider's transfer arrival. Parameter is the count of hidden departures."
-            )
-            buttonText = String(format: fmt, hiddenCount)
-        }
+        let fmt = OBALoc(
+            "stop_controller.transfer_show_earlier_departures_fmt",
+            value: "Show %d earlier departures",
+            comment: "Button to reveal departures that leave before the rider's transfer arrival. Parameter is the count of hidden departures. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback."
+        )
+        let buttonText = String(format: fmt, hiddenCount)
         return MessageButtonItem(
             id: "transfer_show_earlier",
             buttonText: buttonText,

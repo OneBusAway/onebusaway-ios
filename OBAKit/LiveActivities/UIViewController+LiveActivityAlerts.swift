@@ -23,7 +23,7 @@ extension UIViewController {
 
     func showLiveActivityErrorAlert() {
         let title = OBALoc("live_activity.error.title", value: "Unable to Start Tracking", comment: "Alert title when Live Activity fails to start")
-        let message = OBALoc("live_activity.error.message", value: "Please check your Live Activities settings in System Preferences.", comment: "Alert message for Live Activity error")
+        let message = OBALoc("live_activity.error.message", value: "Please check your Live Activities settings in Settings.", comment: "Alert message for Live Activity error. \"Settings\" is the iOS Settings app.")
         showLiveActivityAlert(title: title, message: message)
     }
 

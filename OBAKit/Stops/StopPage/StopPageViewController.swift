@@ -306,10 +306,13 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
                 value: "Notifications Are Off",
                 comment: "Title of the alert shown when the user tries to set a departure alarm but notifications are denied in Settings."
             ),
-            message: OBALoc(
-                "stop_page.alarm_permission_denied.message",
-                value: "To get departure alarms, allow notifications for OneBusAway in Settings.",
-                comment: "Body of the alert shown when the user tries to set a departure alarm but notifications are denied in Settings."
+            message: String(
+                format: OBALoc(
+                    "stop_page.alarm_permission_denied.message",
+                    value: "To get departure alarms, allow notifications for %@ in Settings.",
+                    comment: "Body of the alert shown when the user tries to set a departure alarm but notifications are denied in Settings. %@ is the app name."
+                ),
+                Bundle.main.appName
             ),
             preferredStyle: .alert
         )
@@ -769,25 +772,13 @@ private extension StopPageViewController {
     /// replaced by the `onHide` callback).
     func showDonationDismissUI(onHide: @escaping () -> Void) {
         let alertController = UIAlertController(
-            title: OBALoc(
-                "donations.donations_dismiss_alert.title",
-                value: "Please don't dismiss this request",
-                comment: "Title of the alert that appears when the user chooses to dismiss the donations request UI on a stop page"
-            ),
-            message: OBALoc(
-                "donations.donations_dismiss_alert.message",
-                value: "OneBusAway is a volunteer-run organization with almost no funding. We need your help to keep this app running.",
-                comment: "Body of the alert that appears when the user chooses to dismiss the donations request UI on a stop page"
-            ),
+            title: Strings.donationsDismissAlertTitle,
+            message: Strings.donationsDismissAlertMessage,
             preferredStyle: .actionSheet
         )
 
         alertController.addAction(
-            title: OBALoc(
-                "donations.donations_dismiss_alert.button_dismiss",
-                value: "I Don't Want to Help Right Now",
-                comment: "Dismiss button on the alert"
-            ),
+            title: Strings.donationsDismissAlertButtonDismiss,
             style: .destructive
         ) { [weak self] _ in
             self?.application.donationsManager.dismissDonationsRequests()
@@ -795,11 +786,7 @@ private extension StopPageViewController {
         }
 
         alertController.addAction(
-            title: OBALoc(
-                "donations.donations_dismiss_alert.button_remind_later",
-                value: "Remind Me Later",
-                comment: "A button that prompts the system to remind them to donate later."
-            ),
+            title: Strings.donationsDismissAlertButtonRemindLater,
             style: .default
         ) { [weak self] _ in
             self?.application.donationsManager.remindUserLater()

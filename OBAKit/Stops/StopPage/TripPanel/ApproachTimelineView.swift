@@ -92,10 +92,7 @@ struct ApproachTimelineView: View {
     }
 
     private var skippedStopsLabel: String {
-        if skippedStopCount == 1 {
-            return OBALoc("stop_page.timeline.skipped_stop_one", value: "1 stop", comment: "Gap marker in the approach timeline when a single stop is elided between the vehicle and the stops shown")
-        }
-        return String(format: OBALoc("stop_page.timeline.skipped_stops_fmt", value: "%d stops", comment: "Gap marker in the approach timeline. %d is the number of elided stops between the vehicle and the stops shown."), skippedStopCount)
+        String(format: OBALoc("stop_page.timeline.skipped_stops_fmt", value: "%d stops", comment: "Gap marker in the approach timeline. %d is the number of elided stops between the vehicle and the stops shown. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback."), skippedStopCount)
     }
 
     /// "Behind the bus" for styling: `isPassed` marks at-or-behind, but the

@@ -40,7 +40,10 @@ class ContactUsHelper: NSObject {
 
         if target == .appDevelopers {
             mailComposer.setToRecipients([appDevelopersEmail])
-            mailComposer.setSubject(OBALoc("contact_use_helper.feedback_subject.app", value: "OneBusAway Feedback", comment: "Feedback email template subject for the app developers"))
+            mailComposer.setSubject(String(
+                format: OBALoc("contact_use_helper.feedback_subject.app", value: "%@ Feedback", comment: "Feedback email template subject for the app developers. %@ is the app name."),
+                Bundle.main.appName
+            ))
             mailComposer.setMessageBody(appDevelopersMessageTemplate, isHTML: true)
         }
         else {

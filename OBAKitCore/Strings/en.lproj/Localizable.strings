@@ -76,8 +76,8 @@
 /* The verb 'to donate', as in to give money to a charitable cause. */
 "common.donate" = "Donate";
 
-/* The body of the message to display to the user after they donate to OTSF */
-"common.donation_thank_you.body" = "Your support will help us continue to improve OneBusAway.";
+/* The body of the message to display to the user after they donate to OTSF. %@ is the app name. */
+"common.donation_thank_you.body" = "Your support will help us continue to improve %@.";
 
 /* Title of an alert to display to the user after they donate to OTSF */
 "common.donation_thank_you.title" = "Thank you for your support!";
@@ -408,6 +408,9 @@
 
 /* Title for the schedule/timetable feature tip */
 "schedule_tip.title" = "View Your Route's Schedule";
+
+/* Shown in place of the minutes countdown when the vehicle is departing now */
+"stop_page.countdown.now" = "NOW";
 
 /* User-facing string that means the location of the stop on the map is wrong. */
 "stop_problem_code.user_description.location_wrong" = "Location is wrong";

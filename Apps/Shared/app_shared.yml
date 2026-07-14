@@ -50,8 +50,10 @@ targets:
           - twitter
           - comgooglemaps
         NSLocationWhenInUseUsageDescription: See where you are in relation to transit, and help you navigate more easily.
-        NSHealthShareUsageDescription: OneBusAway uses your walking speed from the Health app to give you more accurate arrival time estimates.
-        NSHealthUpdateUsageDescription: OneBusAway uses your walking speed from the Health app to give you more accurate arrival time estimates.
+        # NSHealthShareUsageDescription / NSHealthUpdateUsageDescription name the app, so each
+        # white-label target must declare its OWN pair in Apps/<App>/project.yml — a new app that
+        # forgets them gets no HealthKit prompt. Info.plist usage strings take no %@ placeholder;
+        # localize them via Apps/<App>/<locale>.lproj/InfoPlist.strings.
         NSLocationTemporaryUsageDescriptionDictionary:
           MapStatusView: See where you are in relation to transit, and help you navigate more easily.
         UILaunchStoryboardName: LaunchScreen

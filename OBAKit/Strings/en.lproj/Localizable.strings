@@ -43,8 +43,14 @@
 /* Title of the Alarm Time Picker page. */
 "alarm_time_picker.title" = "Add Reminder";
 
+/* Toggle label that starts a Live Activity widget on the Lock Screen when an alarm is set. */
+"alarm_time_picker.track_on_lock_screen" = "Track on Lock Screen";
+
 /* Placeholder shown in release builds when a sheet route is pushed but has no view registered. */
 "app_sheet.unimplemented_route.placeholder" = "This screen is coming soon.";
+
+/* Action to start a Live Activity for a specific bookmark */
+"bookmarks_controller.context_menu.track_live_activity" = "Track";
 
 /* The title to display to confirm the user's action to delete a bookmark. */
 "bookmarks_controller.delete_bookmark.actionsheet.title" = "Delete Bookmark";
@@ -82,8 +88,8 @@
 /* Title of the alert that appears when the user's device isn't configured to send email. */
 "contact_us_helper.cant_send_email.title" = "Can't Send Email via Mail.app";
 
-/* Feedback email template subject for the app developers */
-"contact_use_helper.feedback_subject.app" = "OneBusAway Feedback";
+/* Feedback email template subject for the app developers. %@ is the app name. */
+"contact_use_helper.feedback_subject.app" = "%@ Feedback";
 
 /* Feedback email template subject for the transit agency */
 "contact_use_helper.feedback_subject.transit_agency" = "Transit Rider Feedback";
@@ -163,10 +169,10 @@
 /* This comment is displayed after the user's data is upgraded in the DataMigrationBulletinPage. */
 "data_migration_bulletin.finished_loading" = "Data Upgrade Complete!";
 
-/* Data migration report label for showing the number of failed migration tasks. */
+/* Data migration report label for showing the number of failed migration tasks. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
 "data_migration_bulletin.report_summary_number_of_failures" = "%d failures";
 
-/* Data migration report label for showing the number of successful migration tasks. */
+/* Data migration report label for showing the number of successful migration tasks. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
 "data_migration_bulletin.report_summary_number_of_successes" = "%d successful";
 
 /* Title for the Summary section of a data migration report */
@@ -184,17 +190,17 @@
 /* Title of the button that shows the donation explanation UI. */
 "donation_cell.learn_more_button_title" = "Learn More";
 
-/* Title of the donation widget that appears on the stop view controller. */
-"donation_cell.title" = "🚨 OneBusAway needs your help";
+/* Title of the donation widget that appears on the stop view controller. %@ is the app name. */
+"donation_cell.title" = "🚨 %@ needs your help";
 
-/* Dismiss button on the alert */
+/* Button on the donation-dismiss alert that permanently stops donation requests. */
 "donations.donations_dismiss_alert.button_dismiss" = "I Don't Want to Help Right Now";
 
-/* A button that prompts the system to remind them to donate later. */
+/* Button on the donation-dismiss alert that defers donation requests rather than stopping them. */
 "donations.donations_dismiss_alert.button_remind_later" = "Remind Me Later";
 
-/* Body of the alert that appears when the user chooses to dismiss the donations request UI on a stop page */
-"donations.donations_dismiss_alert.message" = "OneBusAway is a volunteer-run organization with almost no funding. We need your help to keep this app running.";
+/* Body of the alert that appears when the user chooses to dismiss the donations request UI on a stop page. %@ is the app name. */
+"donations.donations_dismiss_alert.message" = "%@ is a volunteer-run organization with almost no funding. We need your help to keep this app running.";
 
 /* Title of the alert that appears when the user chooses to dismiss the donations request UI on a stop page */
 "donations.donations_dismiss_alert.title" = "Please don't dismiss this request";
@@ -262,6 +268,21 @@
 /* Placeholder text inside the disabled search bar on the home sheet, shown while search is unimplemented. */
 "home_sheet.search_bar.coming_soon" = "Search coming soon";
 
+/* Alert message for Live Activity error. \"Settings\" is the iOS Settings app. */
+"live_activity.error.message" = "Please check your Live Activities settings in Settings.";
+
+/* Alert title when Live Activity fails to start */
+"live_activity.error.title" = "Unable to Start Tracking";
+
+/* Alert message explaining where to find the Live Activity */
+"live_activity.started.message" = "You'll see live arrival updates on your Lock Screen and Dynamic Island.";
+
+/* Alert title when a Live Activity starts */
+"live_activity.started.title" = "Tracking on Lock Screen";
+
+/* Loading state text */
+"loading" = "Loading...";
+
 /* Description of why we need location services */
 "location_permission_bulletin.description_text" = "Please allow the app to access your location to make it easier to find your transit stops.";
 
@@ -277,11 +298,11 @@
 /* No comment provided by engineer. */
 "locationservices_alert_gotosettings.button" = "Turn On in Settings";
 
-/* No comment provided by engineer. */
+/* Body of the alert prompting the user to grant precise location. */
 "locationservices_alert_imprecise.message" = "You'll get to see where you are on the map and see nearby stops, making it easier to get where you need to go.";
 
-/* No comment provided by engineer. */
-"locationservices_alert_imprecise.title" = "OneBusAway works best with your precise location";
+/* Title of the alert prompting the user to upgrade from approximate to precise location. %@ is the app name. */
+"locationservices_alert_imprecise.title" = "%@ works best with your precise location";
 
 /* No comment provided by engineer. */
 "locationservices_alert_keep_precise_location_off.button" = "Keep Precise Location Off";
@@ -289,11 +310,11 @@
 /* No comment provided by engineer. */
 "locationservices_alert_keepoff.button" = "Keep Location Off";
 
-/* No comment provided by engineer. */
+/* Body of the alert prompting the user to turn on location services. */
 "locationservices_alert_off.message" = "You'll get to see where you are on the map and see nearby stops, making it easier to get where you need to go.";
 
-/* No comment provided by engineer. */
-"locationservices_alert_off.title" = "OneBusAway works best with your location.";
+/* Title of the alert prompting the user to turn on location services. %@ is the app name. */
+"locationservices_alert_off.title" = "%@ works best with your location.";
 
 /* No comment provided by engineer. */
 "locationservices_alert_request_precise_location_once.button" = "Allow Once";
@@ -482,10 +503,11 @@
 /* A link to the app's Privacy Policy */
 "more_controller.privacy_row_title" = "Privacy Policy";
 
-/* Title of the More tab */
+/* Title of the More tab
+   Title of the More tab / accessibility label for the map-panel more button. */
 "more_controller.title" = "More";
 
-/* Request to help localize OneBusAway */
+/* Request to help localize the app */
 "more_controller.translate_the_app" = "Help Translate the App";
 
 /* Updates and Alerts header text */
@@ -538,6 +560,30 @@
 
 /* Vehicle is not accepting any passengers */
 "occupancy_status.not_accepting_passengers" = "Not accepting passengers";
+
+/* Short occupancy label: crushed standing room only */
+"occupancy_status.short.crowded" = "Crowded";
+
+/* Short occupancy label: vehicle is empty */
+"occupancy_status.short.empty" = "Empty";
+
+/* Short occupancy label: vehicle is full */
+"occupancy_status.short.full" = "Full";
+
+/* Short occupancy label: many seats available */
+"occupancy_status.short.many_seats" = "Many seats";
+
+/* Short occupancy label: vehicle is not accepting passengers */
+"occupancy_status.short.not_boarding" = "Not boarding";
+
+/* Short occupancy label: few seats available */
+"occupancy_status.short.some_seats" = "Some seats";
+
+/* Short occupancy label: standing room only */
+"occupancy_status.short.standing_room" = "Standing room";
+
+/* Short occupancy label: occupancy is unknown */
+"occupancy_status.short.unknown" = "Unknown";
 
 /* Vehicle occupancy is high */
 "occupancy_status.standing_room_only" = "Standing room only";
@@ -872,34 +918,28 @@
 /* This is an instruction given to the user the first time they look at a stop view instructing them on how to access more options, EXCLUDING the ability to add alarms. */
 "stop_controller.swipe_spotlight_text.without_alarm" = "Swipe on a row to view more options.";
 
-/* Button to reveal a single departure that leaves before the rider's transfer arrival. */
-"stop_controller.transfer_show_earlier_departure_singular" = "Show 1 earlier departure";
-
-/* Button to reveal departures that leave before the rider's transfer arrival. Parameter is the count of hidden departures. */
+/* Button to reveal departures that leave before the rider's transfer arrival. Parameter is the count of hidden departures. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
 "stop_controller.transfer_show_earlier_departures_fmt" = "Show %d earlier departures";
 
-/* Subtitle of the set-alarm info row. %d is lead-time minutes. */
-"stop_page.alarm.buzz_fmt" = "Buzz %d min before it arrives";
+/* Error shown when a departure alarm can't be cancelled because the region's alarm service is unreachable. */
+"stop_page.alarm_cancel_unavailable" = "This alarm couldn't be cancelled because the alarm service isn't available right now. Please try again later.";
 
-/* Reveals the alarm lead-time stepper */
-"stop_page.alarm.change" = "Change";
+/* Body of the alert shown when the user tries to set a departure alarm but notifications are denied in Settings. %@ is the app name. */
+"stop_page.alarm_permission_denied.message" = "To get departure alarms, allow notifications for %@ in Settings.";
 
-/* Commits the lead-time change */
-"stop_page.alarm.done" = "Done";
+/* Button that opens the system Settings app so the user can enable notifications. */
+"stop_page.alarm_permission_denied.open_settings" = "Open Settings";
 
-/* Stepper label */
-"stop_page.alarm.minutes_before" = "Minutes before";
+/* Title of the alert shown when the user tries to set a departure alarm but notifications are denied in Settings. */
+"stop_page.alarm_permission_denied.title" = "Notifications Are Off";
 
-/* Primary alarm button in the trip panel */
-"stop_page.alarm.set" = "Set an alarm";
-
-/* Title of the set-alarm info row */
-"stop_page.alarm.set_title" = "Alarm set";
+/* Shown in place of the minutes countdown when the vehicle is departing now */
+"stop_page.countdown.now" = "NOW";
 
 /* Empty state shown when every route at the stop is hidden by the user's filter. */
 "stop_page.empty.all_filtered" = "All routes at this stop are filtered";
 
-/* Empty state shown when the stop has no upcoming departures within the loaded time window. %d is the number of minutes. */
+/* Empty state shown when the stop has no upcoming departures within the loaded time window. %d is the number of minutes. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
 "stop_page.empty.no_departures_fmt" = "No departures in the next %d minutes";
 
 /* Button that retries loading departures after an error. */
@@ -907,6 +947,18 @@
 
 /* Button that clears the route filter so all routes are shown. */
 "stop_page.empty.show_all_routes" = "Show all routes";
+
+/* VoiceOver value of the route-filter bar button when the filter is inactive. */
+"stop_page.filter.a11y_off" = "off";
+
+/* VoiceOver value of the route-filter bar button when the filter is active. */
+"stop_page.filter.a11y_on" = "on";
+
+/* VoiceOver value of a grouped route card whose departure list is hidden. */
+"stop_page.grouped.a11y_collapsed" = "collapsed";
+
+/* VoiceOver value of a grouped route card whose departure list is showing. */
+"stop_page.grouped.a11y_expanded" = "expanded";
 
 /* VoiceOver label for a grouped route card */
 "stop_page.grouped.a11y_fmt" = "Route %1$@ to %2$@, next departure in %3$d minutes, %4$@. %5$d more departures loaded.";
@@ -920,8 +972,20 @@
 /* VoiceOver label for one expanded departure row inside a grouped route card: route, headsign, minutes, status. */
 "stop_page.grouped.expanded_row.a11y_fmt" = "Route %1$@ to %2$@, departs in %3$d minutes, %4$@";
 
+/* Caption above the upcoming-departure minute chips on a grouped route card at accessibility text sizes. */
+"stop_page.grouped.next_departures" = "Next departures";
+
+/* VoiceOver hint on the header card's walk-time button. */
+"stop_page.header.walk_a11y_hint" = "Opens walking directions to this stop.";
+
+/* Button in the trip panel to start a Live Activity for this departure on the Lock Screen and Dynamic Island */
+"stop_page.live_activity.track" = "Track";
+
 /* Extends the departure time window */
 "stop_page.load_more" = "Load more";
+
+/* Caption under the spinner shown while the stop page's departure list loads. */
+"stop_page.loading_departures" = "Loading departures…";
 
 /* Stop page mode toggle: grouped by route */
 "stop_page.mode.by_route" = "By route";
@@ -938,9 +1002,6 @@
 /* Body of the schedule-only notice; must communicate uncertainty (§4.1/§4.4) */
 "stop_page.panel.scheduled_body" = "No live signal from this bus yet — this is when it's supposed to arrive. It may run early, late, or not at all.";
 
-/* Trip panel strip for schedule-only trips */
-"stop_page.panel.scheduled_strip" = "Scheduled · no live position yet";
-
 /* Title of the schedule-only notice */
 "stop_page.panel.scheduled_title" = "Scheduled time only";
 
@@ -949,6 +1010,12 @@
 
 /* Button hiding recently departed trips */
 "stop_page.past_toggle_hide" = "Hide past";
+
+/* VoiceOver label for the button hiding recently departed trips */
+"stop_page.past_toggle_hide_a11y" = "Hide past departures";
+
+/* VoiceOver label for the button revealing recently departed trips. %d is the count. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
+"stop_page.past_toggle_show_a11y_fmt" = "Show %d past departures";
 
 /* VoiceOver suffix indicating a departure alarm is active */
 "stop_page.row.a11y_alarm_set" = "alarm set";
@@ -974,11 +1041,17 @@
 /* Fallback title for a service alert that has no summary text. */
 "stop_page.service_alert_fallback" = "Service alert";
 
-/* Collapsed summary row for the service alerts section. %d is the number of alerts. */
-"stop_page.service_alerts.summary_fmt" = "%d service alerts";
+/* VoiceOver value of the service-alerts card header when the alert list is hidden. */
+"stop_page.service_alerts.a11y_collapsed" = "collapsed";
 
-/* Collapsed summary row for the service alerts section when exactly one alert applies. */
-"stop_page.service_alerts.summary_one" = "1 service alert";
+/* VoiceOver value of the service-alerts card header when the alert list is showing. */
+"stop_page.service_alerts.a11y_expanded" = "expanded";
+
+/* Row that expands the service alerts section to show every alert. %d is the total number of alerts. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
+"stop_page.service_alerts.show_all_fmt" = "Show all %d alerts";
+
+/* Collapsed summary row for the service alerts section. %d is the number of alerts. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
+"stop_page.service_alerts.summary_fmt" = "%d service alerts";
 
 /* VoiceOver status suffix for a live departure. %@ is the adherence label. */
 "stop_page.status.a11y_live_fmt" = "live tracking, %@";
@@ -998,20 +1071,17 @@
 /* Adherence label for a departure with no real-time signal; deliberately avoids claiming the bus is on time. */
 "stop_page.status.schedule_data" = "schedule data";
 
-/* Vehicle-position pill. %d is minutes to the user's stop. */
-"stop_page.timeline.bus_here_fmt" = "bus here · %dm away";
-
-/* Gap marker in the approach timeline when a single stop is elided between the vehicle and the stops shown */
-"stop_page.timeline.skipped_stop_one" = "1 stop";
-
-/* Gap marker in the approach timeline. %d is the number of elided stops between the vehicle and the stops shown. */
+/* Gap marker in the approach timeline. %d is the number of elided stops between the vehicle and the stops shown. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
 "stop_page.timeline.skipped_stops_fmt" = "%d stops";
+
+/* Vehicle-position marker. %d is minutes to the user's stop. */
+"stop_page.timeline.vehicle_here_fmt" = "vehicle here · %dm away";
 
 /* Marker on the user's stop in the approach timeline */
 "stop_page.timeline.your_stop" = "· your stop";
 
-/* Walk chip on the header card. %d minutes, %@ formatted distance. */
-"stop_page.walk_chip_fmt" = "%1$d min walk · %2$@";
+/* Walk chip on the header card. %d is the walk time in minutes. */
+"stop_page.walk_chip_minutes_fmt" = "%d min walk";
 
 /* VoiceOver description of the walk divider. %d is walk minutes. */
 "stop_page.walk_divider_a11y_fmt" = "Departures above this point leave sooner than your %d minute walk to the stop";
@@ -1282,15 +1352,6 @@
 
 /* Accessibility label for the transfer arrival banner shown when navigating to a connecting stop. */
 "walk_time_view.transfer_accessibility_label" = "Transfer arrival time";
-
-/* Legacy alert line. %@ is the chance-of-precipitation percentage. */
-"weather.alert.precip_line_format" = "Precipitation: %@ chance";
-
-/* Legacy alert line. First %@ is current temperature, second is feels-like temperature. */
-"weather.alert.temp_line_format" = "Temp: %1$@ (Feels like %2$@)";
-
-/* Legacy alert line. %@ is the formatted wind speed. */
-"weather.alert.wind_line_format" = "Wind: %@";
 
 /* Format for the chance-of-rain percentage on the weather card header. %d is the integer percent. */
 "weather.chance_of_rain_format" = "Chance of Rain: %d%%";

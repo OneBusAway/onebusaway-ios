@@ -43,6 +43,15 @@
 /* Title of the Alarm Time Picker page. */
 "alarm_time_picker.title" = "Magdagdag ng Paalala";
 
+/* Toggle label that starts a Live Activity widget on the Lock Screen when an alarm is set. */
+"alarm_time_picker.track_on_lock_screen" = "I-track sa Lock Screen";
+
+/* Placeholder shown in release builds when a sheet route is pushed but has no view registered. */
+"app_sheet.unimplemented_route.placeholder" = "Paparating na ang screen na ito.";
+
+/* Action to start a Live Activity for a specific bookmark */
+"bookmarks_controller.context_menu.track_live_activity" = "I-track";
+
 /* The title to display to confirm the user's action to delete a bookmark. */
 "bookmarks_controller.delete_bookmark.actionsheet.title" = "I-delete ang Bookmark";
 
@@ -79,8 +88,8 @@
 /* Title of the alert that appears when the user's device isn't configured to send email. */
 "contact_us_helper.cant_send_email.title" = "Hindi Makapagpadala ng Email gamit ang Mail.app";
 
-/* Feedback email template subject for the app developers */
-"contact_use_helper.feedback_subject.app" = "Feedback para sa OneBusAway";
+/* Feedback email template subject for the app developers. %@ is the app name. */
+"contact_use_helper.feedback_subject.app" = "Feedback para sa %@ app";
 
 /* Feedback email template subject for the transit agency */
 "contact_use_helper.feedback_subject.transit_agency" = "Feedback mula sa Pasahero ng Transit";
@@ -93,6 +102,9 @@
 
 /* Distance from user to vehicle. e.g. '0.2 mi away' */
 "current_trip_controller.distance_fmt" = "%@ ang layo";
+
+/* Error when the API service is unavailable. */
+"current_trip_controller.error_no_service" = "Hindi makakonekta sa serbisyo ng transit.";
 
 /* Error message when the user's location is not available. */
 "current_trip_controller.location_unavailable" = "Hindi available ang lokasyon. Paki-enable ang mga serbisyo ng lokasyon.";
@@ -108,9 +120,6 @@
 
 /* Message when no active vehicle is found near the user on the selected route. */
 "current_trip_controller.no_results" = "Walang aktibong sasakyan na natagpuan sa rutang ito malapit sa iyo";
-
-/* Error when the API service is unavailable. */
-"current_trip_controller.error_no_service" = "Hindi makakonekta sa serbisyo ng transit.";
 
 /* Button to retry finding the user's vehicle. */
 "current_trip_controller.retry" = "Subukang Muli";
@@ -160,10 +169,10 @@
 /* This comment is displayed after the user's data is upgraded in the DataMigrationBulletinPage. */
 "data_migration_bulletin.finished_loading" = "Tapos Na ang Pag-upgrade ng Data!";
 
-/* Data migration report label for showing the number of failed migration tasks. */
+/* Data migration report label for showing the number of failed migration tasks. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
 "data_migration_bulletin.report_summary_number_of_failures" = "%d ang nabigo";
 
-/* Data migration report label for showing the number of successful migration tasks. */
+/* Data migration report label for showing the number of successful migration tasks. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
 "data_migration_bulletin.report_summary_number_of_successes" = "%d ang matagumpay";
 
 /* Title for the Summary section of a data migration report */
@@ -181,26 +190,26 @@
 /* Title of the button that shows the donation explanation UI. */
 "donation_cell.learn_more_button_title" = "Alamin Pa";
 
-/* Title of the donation widget that appears on the stop view controller. */
-"donation_cell.title" = "🚨 Kailangan ng OneBusAway ang tulong mo";
+/* Title of the donation widget that appears on the stop view controller. %@ is the app name. */
+"donation_cell.title" = "🚨 Kailangan ng %@ app ang tulong mo";
 
-/* Dismiss button on the alert */
+/* Button on the donation-dismiss alert that permanently stops donation requests. */
 "donations.donations_dismiss_alert.button_dismiss" = "Ayoko Munang Tumulong Ngayon";
 
-/* A button that prompts the system to remind them to donate later. */
+/* Button on the donation-dismiss alert that defers donation requests rather than stopping them. */
 "donations.donations_dismiss_alert.button_remind_later" = "Paalalahanan Ako Mamaya";
 
-/* Body of the alert that appears when the user chooses to dismiss the donations request UI on a stop page */
-"donations.donations_dismiss_alert.message" = "Ang OneBusAway ay isang organisasyong pinapatakbo ng mga boluntaryo na halos walang pondo. Kailangan namin ang tulong mo para mapanatiling tumatakbo ang app na ito.";
+/* Body of the alert that appears when the user chooses to dismiss the donations request UI on a stop page. %@ is the app name. */
+"donations.donations_dismiss_alert.message" = "Ang %@ app ay pinapatakbo ng mga boluntaryo at halos walang pondo. Kailangan namin ang tulong mo para mapanatiling tumatakbo ang app na ito.";
 
 /* Title of the alert that appears when the user chooses to dismiss the donations request UI on a stop page */
 "donations.donations_dismiss_alert.title" = "Huwag sanang balewalain ang kahilingang ito";
 
-/* Indicates that the user wants to create a duplicate bookmark. */
-"edit_bookmark_controller.duplicate_alert.affirmative_button" = "Gumawa ng Duplicate";
-
 /* Title of the button that lets the user add a new Bookmark Group. */
 "edit_bookmark_controller.add_group_button_title" = "Magdagdag ng Grupo ng Bookmark";
+
+/* Indicates that the user wants to create a duplicate bookmark. */
+"edit_bookmark_controller.duplicate_alert.affirmative_button" = "Gumawa ng Duplicate";
 
 /* Body of an alert telling the user they have already bookmarked this thing. */
 "edit_bookmark_controller.duplicate_alert.body" = "Na-bookmark mo na ito. Sinadya mo bang gumawa ng duplicate?";
@@ -256,20 +265,44 @@
 /* A voiceover title describing that the card's visibility taking up the minimum amount of screen. */
 "floating_panel.controller.position.minimized" = "Naka-minimize";
 
+/* Placeholder text inside the disabled search bar on the home sheet, shown while search is unimplemented. */
+"home_sheet.search_bar.coming_soon" = "Paparating na ang paghahanap";
+
+/* Alert message for Live Activity error. \"Settings\" is the iOS Settings app. */
+"live_activity.error.message" = "Pakisuri ang iyong mga setting ng Live Activities sa Mga Setting.";
+
+/* Alert title when Live Activity fails to start */
+"live_activity.error.title" = "Hindi Masimulan ang Pagsubaybay";
+
+/* Alert message explaining where to find the Live Activity */
+"live_activity.started.message" = "Makikita mo ang mga live na update ng pagdating sa iyong Lock Screen at Dynamic Island.";
+
+/* Alert title when a Live Activity starts */
+"live_activity.started.title" = "Sinusubaybayan sa Lock Screen";
+
+/* Loading state text */
+"loading" = "Naglo-load…";
+
 /* Description of why we need location services */
 "location_permission_bulletin.description_text" = "Pakipayagan ang app na ma-access ang iyong lokasyon para mas madaling mahanap ang mga hintuan ng transit.";
+
+/* Button the user can tap on to decline access to their location. */
+"location_permission_bulletin.do_not_use_location_button_text" = "Hindi Ngayon";
 
 /* Title of the alert that appears to request your location. */
 "location_permission_bulletin.title" = "Maligayang Pagdating!";
 
+/* Button the user taps to grant access to their location. */
+"location_permission_bulletin.use_location_button_text" = "Gamitin ang Aking Lokasyon";
+
 /* No comment provided by engineer. */
 "locationservices_alert_gotosettings.button" = "I-on sa Mga Setting";
 
-/* No comment provided by engineer. */
+/* Body of the alert prompting the user to grant precise location. */
 "locationservices_alert_imprecise.message" = "Makikita mo kung nasaan ka sa mapa at ang mga kalapit na hintuan, para mas madali kang makarating sa pupuntahan mo.";
 
-/* No comment provided by engineer. */
-"locationservices_alert_imprecise.title" = "Pinakamahusay gumagana ang OneBusAway gamit ang iyong tumpak na lokasyon";
+/* Title of the alert prompting the user to upgrade from approximate to precise location. %@ is the app name. */
+"locationservices_alert_imprecise.title" = "Pinakamahusay gumagana ang %@ app gamit ang iyong tumpak na lokasyon";
 
 /* No comment provided by engineer. */
 "locationservices_alert_keep_precise_location_off.button" = "Panatilihing Naka-off ang Tumpak na Lokasyon";
@@ -277,11 +310,11 @@
 /* No comment provided by engineer. */
 "locationservices_alert_keepoff.button" = "Panatilihing Naka-off ang Lokasyon";
 
-/* No comment provided by engineer. */
+/* Body of the alert prompting the user to turn on location services. */
 "locationservices_alert_off.message" = "Makikita mo kung nasaan ka sa mapa at ang mga kalapit na hintuan, para mas madali kang makarating sa pupuntahan mo.";
 
-/* No comment provided by engineer. */
-"locationservices_alert_off.title" = "Pinakamahusay gumagana ang OneBusAway gamit ang iyong lokasyon.";
+/* Title of the alert prompting the user to turn on location services. %@ is the app name. */
+"locationservices_alert_off.title" = "Pinakamahusay gumagana ang %@ app gamit ang iyong lokasyon.";
 
 /* No comment provided by engineer. */
 "locationservices_alert_request_precise_location_once.button" = "Payagan Nang Isang Beses";
@@ -428,6 +461,9 @@
 /* Credits - like who should get credit for creating this. */
 "more_controller.credits_row_title" = "Mga Credit";
 
+/* Header for the custom links section configured by the transit agency. */
+"more_controller.custom_links.header" = "Mga Resource";
+
 /* Title for a button that will crash the app. */
 "more_controller.debug_section.crash_row" = "I-crash ang app";
 
@@ -443,8 +479,8 @@
 /* Header for the donate section. */
 "more_controller.donate" = "Maging Supporter";
 
-/* The call to action for the More controller's donate buton */
-"more_controller.donate_description" = "Mag-donate sa OneBusAway";
+/* Call to action for donations. %@ is the app name. */
+"more_controller.donate_description_fmt" = "Mag-donate sa %@";
 
 /* Header for the volunteer section. */
 "more_controller.help_out" = "Tumulong na pagandahin ang app";
@@ -467,10 +503,11 @@
 /* A link to the app's Privacy Policy */
 "more_controller.privacy_row_title" = "Patakaran sa Privacy";
 
-/* Title of the More tab */
+/* Title of the More tab
+   Title of the More tab / accessibility label for the map-panel more button. */
 "more_controller.title" = "Higit Pa";
 
-/* Request to help localize OneBusAway */
+/* Request to help localize the app */
 "more_controller.translate_the_app" = "Tumulong sa Pagsasalin ng App";
 
 /* Updates and Alerts header text */
@@ -485,17 +522,20 @@
 /* Body for the empty set indicator on the Nearby controller. */
 "nearby_controller.empty_set.body" = "Mag-zoom out o mag-ikot sa mapa para makahanap ng mga hintuan.";
 
+/* Button to search wider area */
+"nearby_controller.empty_set.button" = "Maghanap sa Mas Malawak na Lugar";
+
 /* Title for the empty set indicator on the Nearby controller */
 "nearby_controller.empty_set.title" = "Walang Kalapit na Hintuan";
-
-/* Error shown on the Nearby Stops screen when no API service is configured (e.g. no region selected). */
-"nearby_stops_controller.no_api_service_error" = "Walang available na serbisyo ng data ng transit. Pakipili ng rehiyon sa Mga Setting.";
 
 /* Body for the empty set indicator on the Nearby Stops controller. */
 "nearby_stops_controller.empty_set.body" = "Walang ibang hintuan sa paligid.";
 
 /* Title for the empty set indicator on the Nearby Stops controller. */
 "nearby_stops_controller.empty_set.title" = "Walang Kalapit na Hintuan";
+
+/* Error shown on the Nearby Stops screen when no API service is configured (e.g. no region selected). */
+"nearby_stops_controller.no_api_service_error" = "Walang available na serbisyo ng data ng transit. Pakipili ng rehiyon sa Mga Setting.";
 
 /* The title of the Nearby Stops controller. */
 "nearby_stops_controller.title" = "Mga Kalapit na Hintuan";
@@ -521,11 +561,38 @@
 /* Vehicle is not accepting any passengers */
 "occupancy_status.not_accepting_passengers" = "Hindi tumatanggap ng pasahero";
 
+/* Short occupancy label: crushed standing room only */
+"occupancy_status.short.crowded" = "Siksikan";
+
+/* Short occupancy label: vehicle is empty */
+"occupancy_status.short.empty" = "Walang sakay";
+
+/* Short occupancy label: vehicle is full */
+"occupancy_status.short.full" = "Puno";
+
+/* Short occupancy label: many seats available */
+"occupancy_status.short.many_seats" = "Maraming upuan";
+
+/* Short occupancy label: vehicle is not accepting passengers */
+"occupancy_status.short.not_boarding" = "Di tumatanggap";
+
+/* Short occupancy label: few seats available */
+"occupancy_status.short.some_seats" = "Kaunting upuan";
+
+/* Short occupancy label: standing room only */
+"occupancy_status.short.standing_room" = "Tayuan";
+
+/* Short occupancy label: occupancy is unknown */
+"occupancy_status.short.unknown" = "Hindi alam";
+
 /* Vehicle occupancy is high */
 "occupancy_status.standing_room_only" = "Tayuan na lang";
 
 /* Vehicle occupancy status is unknown. */
 "occupancy_status.unknown" = "Hindi alam";
+
+/* Reachability bulletin shown when the user has disabled cellular data for this app in iOS Settings. Both substituted values are the app name. */
+"reachability_bulletin.description.cellular_data_restricted_fmt" = "Kasalukuyang hindi pinapayagan ang %1$@ app na ma-access ang cellular data. Para ayusin ito, pumunta sa Settings > Cellular at i-enable ang cellular data para sa %2$@ app, o kumonekta sa isang WiFi network.";
 
 /* Reachability bulletin for a cellular connection that can't access the Internet. */
 "reachability_bulletin.description.cellular_no_internet" = "Hindi kami maka-access sa Internet gamit ang iyong cellular na koneksyon.\r\n\r\nSubukang kumonekta sa WiFi o lumipat sa ibang lugar.";
@@ -596,24 +663,6 @@
 /* Error message of Custom Region URL if it's invalid or does not point to a functional OBA server */
 "region_url.error_messsage" = "Ang ibinigay na URL ng rehiyon ay hindi valid o hindi tumuturo sa gumaganang OBA server.";
 
-/* Placeholder text in the route search field. */
-"route_picker.search_placeholder" = "Maghanap ng ruta…";
-
-/* Title for the route picker screen where the user selects their transit route. */
-"route_picker.title" = "Piliin ang Iyong Ruta";
-
-/* Error when API service is unavailable in the route picker. */
-"route_picker.error_no_service" = "Hindi makakonekta sa serbisyo ng transit.";
-
-/* Error when location is unavailable in the route picker. */
-"route_picker.error_no_location" = "Hindi available ang lokasyon. Paki-enable ang mga serbisyo ng lokasyon para makahanap ng mga kalapit na ruta.";
-
-/* Loading message while fetching nearby routes. */
-"route_picker.loading" = "Naglo-load ng mga ruta…";
-
-/* Message when no routes are found near the user's location. */
-"route_picker.no_routes" = "Walang nahanap na ruta sa malapit.";
-
 /* Title of the Report Problem view controller. */
 "report_problem.title" = "Mag-ulat ng Problema";
 
@@ -626,8 +675,23 @@
 /* A table header in the 'Report Problem' view controller. */
 "report_problem_controller.vehicle_problem.header" = "Problema sa Sasakyan sa Hintuan";
 
-/* Morning time period label */
-"schedule_view.am_period" = "AM";
+/* Error when location is unavailable in the route picker. */
+"route_picker.error_no_location" = "Hindi available ang lokasyon. Paki-enable ang mga serbisyo ng lokasyon para makahanap ng mga kalapit na ruta.";
+
+/* Error when the API service is unavailable in the route picker. */
+"route_picker.error_no_service" = "Hindi makakonekta sa serbisyo ng transit.";
+
+/* Loading message while fetching nearby routes. */
+"route_picker.loading" = "Naglo-load ng mga ruta…";
+
+/* Message when no routes are found near the user's location. */
+"route_picker.no_routes" = "Walang nahanap na ruta sa malapit.";
+
+/* Placeholder text in the route search field. */
+"route_picker.search_placeholder" = "Maghanap ng ruta…";
+
+/* Title for the route picker screen where the user selects their transit route. */
+"route_picker.title" = "Piliin ang Iyong Ruta";
 
 /* Label for date picker in schedule view */
 "schedule_view.date" = "Petsa";
@@ -638,6 +702,9 @@
 /* Default direction label when no headsign is available */
 "schedule_view.direction_number_fmt" = "Direksyon %d";
 
+/* Error message shown when the schedule-for-route API endpoint is not available on the server. */
+"schedule_view.feature_not_supported" = "Hindi available ang timetable para sa rehiyong ito. Hindi sinusuportahan ng server ng ahensya ng transit ang feature na ito.";
+
 /* Accessibility text when there is no departure time */
 "schedule_view.no_departure" = "Walang pag-alis";
 
@@ -646,9 +713,6 @@
 
 /* Message when no stops are available for the selected direction */
 "schedule_view.no_stops_found" = "Walang nahanap na hintuan para sa direksyong ito";
-
-/* Afternoon/evening time period label */
-"schedule_view.pm_period" = "PM";
 
 /* Headsign label showing destination */
 "schedule_view.to_headsign_fmt" = "Papunta sa: %@";
@@ -665,6 +729,9 @@
 /* Title for the empty set indicator on the Search controller. */
 "search_controller.empty_set.title" = "Maghanap";
 
+/* Subtitle on search error row prompting the user to retry. */
+"search_controller.placemarks.error_retry" = "I-tap para subukang muli";
+
 /* Placemark search header */
 "search_controller.placemarks.header" = "Mga Resulta";
 
@@ -673,9 +740,6 @@
 
 /* No results message for placemark search */
 "search_controller.placemarks.no_results" = "Walang nahanap na resulta";
-
-/* Subtitle on search error row prompting the user to retry. */
-"search_controller.placemarks.error_retry" = "I-tap para subukang muli";
 
 /* Quick Search section header in search */
 "search_controller.quick_search.header" = "Mabilisang Paghahanap";
@@ -743,8 +807,14 @@
 /* Settings > Accessibility section title */
 "settings_controller.accessibility_section.title" = "Accessibility";
 
+/* Settings > Alerts section > default minutes-before for one-tap departure alarms */
+"settings_controller.alerts_section.default_alarm_lead_time" = "Default na lead time ng paalala";
+
 /* Settings > Alerts section > Display test alerts */
 "settings_controller.alerts_section.display_test_alerts" = "Ipakita ang mga test alert";
+
+/* Lead-time segment label. %d is minutes. */
+"settings_controller.alerts_section.lead_time_fmt" = "%d min";
 
 /* Settings > Alerts section title */
 "settings_controller.alerts_section.title" = "Mga Alerto ng Ahensya";
@@ -757,6 +827,18 @@
 
 /* Settings > Debug section title */
 "settings_controller.debug_section.title" = "Debug";
+
+/* Settings > Experimental section > Map panel toggle */
+"settings_controller.experimental_section.map_panel" = "Gamitin ang map panel";
+
+/* Settings > Experimental section > Footer indicating changes apply on relaunch */
+"settings_controller.experimental_section.map_panel.footer" = "I-restart ang app para maipatupad.";
+
+/* Settings > Experimental section > New stop page toggle */
+"settings_controller.experimental_section.new_stop_page" = "Gamitin ang bagong pahina ng hintuan";
+
+/* Settings > Experimental section title */
+"settings_controller.experimental_section.title" = "Eksperimental";
 
 /* Settings > Map section > Show my current heading */
 "settings_controller.map_section.shows_heading" = "Ipakita ang kasalukuyan kong direksyon";
@@ -775,6 +857,12 @@
 
 /* Settings > Privacy section title */
 "settings_controller.privacy_section.title" = "Privacy";
+
+/* Settings > Surveys section > Always show surveys on stops */
+"settings_controller.survey_section.always_show_on_stops" = "Laging ipakita sa mga hintuan";
+
+/* Settings > Surveys section title */
+"settings_controller.survey_section.title" = "Mga Survey";
 
 /* Settings > Walking Speed > Average preset label */
 "settings_controller.walking_speed.avg" = "Katamtaman (~5 km/h)";
@@ -809,14 +897,197 @@
 /* A string listing the data providers (agencies) for this stop's data. It contains one or more providers separated by commas. e.g. Data provided by King County Metro, Sound Transit */
 "stop_controller.data_attribution_format" = "Data mula sa %@";
 
+/* Message shown when an external survey link cannot be opened */
+"stop_controller.external_survey_error.message" = "Hindi mabuksan ang link ng survey na ito. Pakisubukang muli mamaya.";
+
+/* Title shown when an external survey link cannot be opened */
+"stop_controller.external_survey_error.title" = "Hindi Mabuksan ang Survey";
+
 /* Load More button */
 "stop_controller.load_more_button" = "Mag-load Pa";
+
+/* A header for the past arrivals and departures section of the stop controller. */
+"stop_controller.past_departures_header" = "Mga Nakaraang Pag-alis";
+
+/* Header for past departures of a specific route */
+"stop_controller.past_departures_route_header" = "Mga Nakaraang Pag-alis - %@";
 
 /* This is an instruction given to the user the first time they look at a stop view instructing them on how to access more options, including the ability to add alarms. */
 "stop_controller.swipe_spotlight_text.with_alarm" = "Mag-swipe sa isang row para makita ang higit pang opsyon, kasama ang pagdaragdag ng mga paalala.";
 
 /* This is an instruction given to the user the first time they look at a stop view instructing them on how to access more options, EXCLUDING the ability to add alarms. */
 "stop_controller.swipe_spotlight_text.without_alarm" = "Mag-swipe sa isang row para makita ang higit pang opsyon.";
+
+/* Button to reveal departures that leave before the rider's transfer arrival. Parameter is the count of hidden departures. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
+"stop_controller.transfer_show_earlier_departures_fmt" = "Ipakita ang %d mas maagang pag-alis";
+
+/* Error shown when a departure alarm can't be cancelled because the region's alarm service is unreachable. */
+"stop_page.alarm_cancel_unavailable" = "Hindi makansela ang paalalang ito dahil hindi available ngayon ang serbisyo ng paalala. Pakisubukang muli mamaya.";
+
+/* Body of the alert shown when the user tries to set a departure alarm but notifications are denied in Settings. %@ is the app name. */
+"stop_page.alarm_permission_denied.message" = "Para makatanggap ng mga paalala sa pag-alis, pumunta sa Mga Setting at payagan ang mga notification para sa %@ app.";
+
+/* Button that opens the system Settings app so the user can enable notifications. */
+"stop_page.alarm_permission_denied.open_settings" = "Buksan ang Mga Setting";
+
+/* Title of the alert shown when the user tries to set a departure alarm but notifications are denied in Settings. */
+"stop_page.alarm_permission_denied.title" = "Naka-off ang Mga Notification";
+
+/* Shown in place of the minutes countdown when the vehicle is departing now */
+"stop_page.countdown.now" = "NGAYON";
+
+/* Empty state shown when every route at the stop is hidden by the user's filter. */
+"stop_page.empty.all_filtered" = "Na-filter ang lahat ng ruta sa hintuang ito";
+
+/* Empty state shown when the stop has no upcoming departures within the loaded time window. %d is the number of minutes. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
+"stop_page.empty.no_departures_fmt" = "Walang pag-alis sa susunod na %d minuto";
+
+/* Button that retries loading departures after an error. */
+"stop_page.empty.retry" = "Subukang Muli";
+
+/* Button that clears the route filter so all routes are shown. */
+"stop_page.empty.show_all_routes" = "Ipakita ang lahat ng ruta";
+
+/* VoiceOver value of the route-filter bar button when the filter is inactive. */
+"stop_page.filter.a11y_off" = "naka-off";
+
+/* VoiceOver value of the route-filter bar button when the filter is active. */
+"stop_page.filter.a11y_on" = "naka-on";
+
+/* VoiceOver value of a grouped route card whose departure list is hidden. */
+"stop_page.grouped.a11y_collapsed" = "naka-collapse";
+
+/* VoiceOver value of a grouped route card whose departure list is showing. */
+"stop_page.grouped.a11y_expanded" = "naka-expand";
+
+/* VoiceOver label for a grouped route card */
+"stop_page.grouped.a11y_fmt" = "Ruta %1$@ papuntang %2$@, susunod na pag-alis sa loob ng %3$d minuto, %4$@. %5$d pang pag-alis ang na-load.";
+
+/* VoiceOver custom action on a grouped route card's header that cancels the alarm already set for the next departure. */
+"stop_page.grouped.a11y_remove_alarm" = "Alisin ang paalala";
+
+/* VoiceOver custom action on a grouped route card's header that creates an alarm for the next departure. */
+"stop_page.grouped.a11y_set_alarm" = "Magtakda ng paalala";
+
+/* VoiceOver label for one expanded departure row inside a grouped route card: route, headsign, minutes, status. */
+"stop_page.grouped.expanded_row.a11y_fmt" = "Ruta %1$@ papuntang %2$@, aalis sa loob ng %3$d minuto, %4$@";
+
+/* Caption above the upcoming-departure minute chips on a grouped route card at accessibility text sizes. */
+"stop_page.grouped.next_departures" = "Mga susunod na pag-alis";
+
+/* VoiceOver hint on the header card's walk-time button. */
+"stop_page.header.walk_a11y_hint" = "Bubuksan ang mga direksyon sa paglalakad papunta sa hintuang ito.";
+
+/* Button in the trip panel to start a Live Activity for this departure on the Lock Screen and Dynamic Island */
+"stop_page.live_activity.track" = "I-track";
+
+/* Extends the departure time window */
+"stop_page.load_more" = "Mag-load pa";
+
+/* Caption under the spinner shown while the stop page's departure list loads. */
+"stop_page.loading_departures" = "Naglo-load ng mga pag-alis…";
+
+/* Stop page mode toggle: grouped by route */
+"stop_page.mode.by_route" = "Ayon sa ruta";
+
+/* Stop page mode toggle: flat time-sorted list */
+"stop_page.mode.chronological" = "Ayon sa oras";
+
+/* Opens the full trip screen */
+"stop_page.panel.full_trip" = "Tingnan ang buong biyahe";
+
+/* Trip panel live strip. %@ is the vehicle id. */
+"stop_page.panel.live_vehicle_fmt" = "Live · sasakyan %@";
+
+/* Body of the schedule-only notice; must communicate uncertainty (§4.1/§4.4) */
+"stop_page.panel.scheduled_body" = "Wala pang live na signal mula sa bus na ito — ito ang oras kung kailan ito nakatakdang dumating. Maaaring maaga, huli, o hindi na ito dumating.";
+
+/* Title of the schedule-only notice */
+"stop_page.panel.scheduled_title" = "Nakaiskedyul na oras lang";
+
+/* Button revealing recently departed trips. %d is the count. */
+"stop_page.past_toggle_fmt" = "Nakaraan · %d";
+
+/* Button hiding recently departed trips */
+"stop_page.past_toggle_hide" = "Itago ang nakaraan";
+
+/* VoiceOver label for the button hiding recently departed trips */
+"stop_page.past_toggle_hide_a11y" = "Itago ang mga nakaraang pag-alis";
+
+/* VoiceOver label for the button revealing recently departed trips. %d is the count. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
+"stop_page.past_toggle_show_a11y_fmt" = "Ipakita ang %d nakaraang pag-alis";
+
+/* VoiceOver suffix indicating a departure alarm is active */
+"stop_page.row.a11y_alarm_set" = "may nakatakdang paalala";
+
+/* VoiceOver label for a departure row: route, headsign, minutes, status. */
+"stop_page.row.a11y_fmt" = "Ruta %1$@ papuntang %2$@, aalis sa loob ng %3$d minuto, %4$@";
+
+/* VoiceOver clause appended to a departure row that's upcoming but not reachable on foot before it leaves. */
+"stop_page.row.a11y_missed" = "malamang na hindi maaabutan — mas maaga itong aalis kaysa sa lakad mo papunta sa hintuan";
+
+/* VoiceOver label for a departure row that has already departed: route, headsign, minutes ago, status. */
+"stop_page.row.a11y_past_fmt" = "Ruta %1$@ papuntang %2$@, umalis %3$d minuto ang nakalipas, %4$@";
+
+/* Swipe/context menu action that cancels an existing arrival alarm. */
+"stop_page.row.remove_alarm" = "Alisin ang Paalala";
+
+/* Context menu action opening the full trip screen */
+"stop_page.row.show_trip" = "Ipakita ang Detalye ng Biyahe";
+
+/* Chronological list section header */
+"stop_page.section.arrivals_departures" = "Mga Pagdating at Pag-alis";
+
+/* Fallback title for a service alert that has no summary text. */
+"stop_page.service_alert_fallback" = "Alerto sa Serbisyo";
+
+/* VoiceOver value of the service-alerts card header when the alert list is hidden. */
+"stop_page.service_alerts.a11y_collapsed" = "naka-collapse";
+
+/* VoiceOver value of the service-alerts card header when the alert list is showing. */
+"stop_page.service_alerts.a11y_expanded" = "naka-expand";
+
+/* Row that expands the service alerts section to show every alert. %d is the total number of alerts. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
+"stop_page.service_alerts.show_all_fmt" = "Ipakita ang lahat ng %d alerto";
+
+/* Collapsed summary row for the service alerts section. %d is the number of alerts. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
+"stop_page.service_alerts.summary_fmt" = "%d alerto sa serbisyo";
+
+/* VoiceOver status suffix for a live departure. %@ is the adherence label. */
+"stop_page.status.a11y_live_fmt" = "live na pagsubaybay, %@";
+
+/* VoiceOver status suffix for a schedule-only departure */
+"stop_page.status.a11y_scheduled" = "nakaiskedyul na oras lang, walang live na data";
+
+/* Adherence label for an early departure. %d is minutes early. */
+"stop_page.status.early_fmt" = "%d min na maaga";
+
+/* Adherence label for a late departure. %d is minutes late. */
+"stop_page.status.late_fmt" = "%d min na huli";
+
+/* Adherence label for an on-time departure */
+"stop_page.status.on_time" = "nasa oras";
+
+/* Adherence label for a departure with no real-time signal; deliberately avoids claiming the bus is on time. */
+"stop_page.status.schedule_data" = "data ng iskedyul";
+
+/* Gap marker in the approach timeline. %d is the number of elided stops between the vehicle and the stops shown. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
+"stop_page.timeline.skipped_stops_fmt" = "%d hintuan";
+
+/* Vehicle-position marker. %d is minutes to the user's stop. */
+"stop_page.timeline.vehicle_here_fmt" = "nandito ang sasakyan · %dm ang layo";
+
+/* Marker on the user's stop in the approach timeline */
+"stop_page.timeline.your_stop" = "· ang hintuan mo";
+
+/* Walk chip on the header card. %d is the walk time in minutes. */
+"stop_page.walk_chip_minutes_fmt" = "%d min lakad";
+
+/* VoiceOver description of the walk divider. %d is walk minutes. */
+"stop_page.walk_divider_a11y_fmt" = "Ang mga pag-alis sa itaas ng puntong ito ay aalis nang mas maaga kaysa sa %d minutong lakad mo papunta sa hintuan";
+
+/* Divider between departures you'd miss on foot and ones you can still catch. %d is the walk time in minutes. */
+"stop_page.walk_divider_fmt" = "%d MIN LAKAD — ABUTAN SA IBABA";
 
 /* Title of the Sorting section */
 "stop_preferences_controller.sorting_section.header_title" = "I-sort Ayon Sa";
@@ -854,8 +1125,14 @@
 /* Title for the Report Stop Problem controller */
 "stop_problem_controller.title" = "Mag-ulat ng Problema";
 
+/* Accessibility label for schedule type picker */
+"stop_schedule_view.accessibility.choose_schedule_type" = "Pumili sa pagitan ng iskedyul ng hintuan at buong iskedyul ng ruta";
+
 /* Label for date picker in schedule view */
 "stop_schedule_view.date" = "Petsa";
+
+/* Title for the full route schedule toggle */
+"stop_schedule_view.full_route_schedule" = "Buong Iskedyul ng Ruta";
 
 /* Message when no departures are scheduled */
 "stop_schedule_view.no_departures" = "Walang nakaiskedyul na pag-alis para sa petsang ito";
@@ -865,6 +1142,12 @@
 
 /* Label for route picker in schedule view */
 "stop_schedule_view.route" = "Ruta";
+
+/* Title for the stop schedule toggle */
+"stop_schedule_view.stop_schedule" = "Iskedyul ng Hintuan";
+
+/* Format string for destination. e.g. To: Downtown */
+"stop_schedule_view.to_destination_fmt" = "Papunta sa: %@";
 
 /* Error message when schedule fails to load */
 "stop_schedule_view.unable_to_load" = "Hindi ma-load ang iskedyul";
@@ -895,6 +1178,72 @@
 
 /* Button that launches Google Maps with walking directions to this stop */
 "stops_controller.walking_directions_google" = "Direksyon sa Paglalakad (Google Maps)";
+
+/* Default prompt when no hero question exists */
+"survey_cell.default_prompt" = "Sagutan ang survey para mapahusay ang transit";
+
+/* Button to dismiss the survey */
+"survey_cell.dismiss_button" = "I-dismiss";
+
+/* Button to proceed to next survey question */
+"survey_cell.next_button" = "Susunod";
+
+/* Button that opens an external survey in the browser */
+"survey_cell.open_external_survey_button" = "Buksan ang Survey";
+
+/* Message shown when an external survey link cannot be opened */
+"survey_launcher.external_survey_error.message" = "Hindi mabuksan ang link ng survey na ito. Pakisubukang muli mamaya.";
+
+/* Title shown when an external survey link cannot be opened */
+"survey_launcher.external_survey_error.title" = "Hindi Mabuksan ang Survey";
+
+/* Secondary button on the survey launcher card; dismisses the prompt. */
+"survey_launcher.not_now_button" = "Hindi ngayon";
+
+/* Primary button on the survey launcher card; opens the survey. */
+"survey_launcher.take_survey_button" = "Sagutan ang survey";
+
+/* Title of the survey launcher card on the stop screen. */
+"survey_launcher.title" = "Tumulong na mapahusay ang transit";
+
+/* Message shown when an external survey link cannot be opened */
+"survey_vc.external_survey_error.message" = "Hindi mabuksan ang link ng survey na ito. Pakisubukang muli mamaya.";
+
+/* Title shown when an external survey link cannot be opened */
+"survey_vc.external_survey_error.title" = "Hindi Mabuksan ang Survey";
+
+/* Message when the survey data itself is malformed (no answerable hero question). */
+"survey_vc.malformed_error.message" = "Hindi maisumite ang survey na ito ngayon. Pakisubukang muli mamaya.";
+
+/* Title for malformed survey alert */
+"survey_vc.malformed_error.title" = "Hindi Available ang Survey";
+
+/* OK button on survey alerts */
+"survey_vc.ok_button" = "OK";
+
+/* Button that opens an external survey in the browser */
+"survey_vc.open_external_survey_button" = "Buksan ang Survey";
+
+/* Section header for survey questions */
+"survey_vc.questions_section_title" = "Mga Tanong";
+
+/* Title for survey submission error alert */
+"survey_vc.submission_error.title" = "Error sa Pagsusumite";
+
+/* Button to submit the survey */
+"survey_vc.submit_button" = "Isumite ang Survey";
+
+/* Submit button title while a survey submission is in flight */
+"survey_vc.submitting_button" = "Isinusumite…";
+
+/* Placeholder for text answer field */
+"survey_vc.text_placeholder" = "Ilagay ang iyong sagot...";
+
+/* Message when required survey questions are unanswered */
+"survey_vc.validation_error.message" = "Pakisagutan ang lahat ng kinakailangang tanong bago isumite.";
+
+/* Title for incomplete survey alert */
+"survey_vc.validation_error.title" = "Hindi Kumpletong Survey";
 
 /* A notice when a transit alert doesn't have body text. */
 "transit_alert.no_additional_details.body" = "Walang karagdagang detalyeng available.";
@@ -1001,8 +1350,26 @@
 /* Format string with placeholders for distance from stop, walking time to stop, and predicted arrival time. e.g. 1.2 miles, 17m: arriving at 09:41 A.M. */
 "walk_time_view.distance_time_fmt" = "%1$@, %2$@: darating sa %3$@";
 
-/* Button the user can tap on to decline access to their location. */
-"location_permission_bulletin.do_not_use_location_button_text" = "Hindi Ngayon";
+/* Accessibility label for the transfer arrival banner shown when navigating to a connecting stop. */
+"walk_time_view.transfer_accessibility_label" = "Oras ng pagdating ng transfer";
 
-/* Button the user taps to grant access to their location. */
-"location_permission_bulletin.use_location_button_text" = "Gamitin ang Aking Lokasyon";
+/* Format for the chance-of-rain percentage on the weather card header. %d is the integer percent. */
+"weather.chance_of_rain_format" = "Tsansa ng Ulan: %d%%";
+
+/* Format for the high/low temperature line on the weather card. %@ placeholders are temperature strings. */
+"weather.high_low_format" = "H:%1$@  L:%2$@";
+
+/* First column label in the hourly weather strip, indicating the current hour. */
+"weather.now" = "Ngayon";
+
+/* Bare percentage shown in the precipitation stat on the weather card. %d is the integer percent. */
+"weather.percent_format" = "%d%%";
+
+/* VoiceOver label for the feels-like temperature stat on the weather card. */
+"weather.stat.feels_like" = "Pakiramdam";
+
+/* VoiceOver label for the precipitation chance stat on the weather card. */
+"weather.stat.precip" = "Tsansa ng pag-ulan";
+
+/* VoiceOver label for the wind speed stat on the weather card. */
+"weather.stat.wind" = "Bilis ng hangin";

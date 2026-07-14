@@ -613,7 +613,7 @@ struct ServiceAlertsSection: View {
         Button {
             withAnimation { showAllAlerts = true }
         } label: {
-            Text(String(format: OBALoc("stop_page.service_alerts.show_all_fmt", value: "Show all %d alerts", comment: "Row that expands the service alerts section to show every alert. %d is the total number of alerts."), alerts.count))
+            Text(String(format: OBALoc("stop_page.service_alerts.show_all_fmt", value: "Show all %d alerts", comment: "Row that expands the service alerts section to show every alert. %d is the total number of alerts. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback."), alerts.count))
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.orange)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -625,9 +625,7 @@ struct ServiceAlertsSection: View {
     }
 
     private var headerAccessibilityLabel: String {
-        alerts.count == 1
-            ? OBALoc("stop_page.service_alerts.summary_one", value: "1 service alert", comment: "Collapsed summary row for the service alerts section when exactly one alert applies.")
-            : String(format: OBALoc("stop_page.service_alerts.summary_fmt", value: "%d service alerts", comment: "Collapsed summary row for the service alerts section. %d is the number of alerts."), alerts.count)
+        String(format: OBALoc("stop_page.service_alerts.summary_fmt", value: "%d service alerts", comment: "Collapsed summary row for the service alerts section. %d is the number of alerts. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback."), alerts.count)
     }
 
     private func alertRow(_ alert: ServiceAlert) -> some View {
@@ -833,7 +831,7 @@ struct StopPageEmptyStateRow: View {
         if isFilteredEmpty {
             return OBALoc("stop_page.empty.all_filtered", value: "All routes at this stop are filtered", comment: "Empty state shown when every route at the stop is hidden by the user's filter.")
         }
-        let fmt = OBALoc("stop_page.empty.no_departures_fmt", value: "No departures in the next %d minutes", comment: "Empty state shown when the stop has no upcoming departures within the loaded time window. %d is the number of minutes.")
+        let fmt = OBALoc("stop_page.empty.no_departures_fmt", value: "No departures in the next %d minutes", comment: "Empty state shown when the stop has no upcoming departures within the loaded time window. %d is the number of minutes. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback.")
         return String(format: fmt, minutesAfter)
     }
 

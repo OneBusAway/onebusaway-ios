@@ -248,11 +248,17 @@ class MapStatusView: UIView {
         case .locationServicesUnavailable, .locationServicesOn:
             return nil
         case .locationServicesOff, .notDetermined:
-            title = OBALoc("locationservices_alert_off.title", value: "OneBusAway works best with your location.", comment: "")
-            message = OBALoc("locationservices_alert_off.message", value: "You'll get to see where you are on the map and see nearby stops, making it easier to get where you need to go.", comment: "")
+            title = String(
+                format: OBALoc("locationservices_alert_off.title", value: "%@ works best with your location.", comment: "Title of the alert prompting the user to turn on location services. %@ is the app name."),
+                Bundle.main.appName
+            )
+            message = OBALoc("locationservices_alert_off.message", value: "You'll get to see where you are on the map and see nearby stops, making it easier to get where you need to go.", comment: "Body of the alert prompting the user to turn on location services.")
         case .impreciseLocation:
-            title = OBALoc("locationservices_alert_imprecise.title", value: "OneBusAway works best with your precise location", comment: "")
-            message = OBALoc("locationservices_alert_imprecise.message", value: "You'll get to see where you are on the map and see nearby stops, making it easier to get where you need to go.", comment: "")
+            title = String(
+                format: OBALoc("locationservices_alert_imprecise.title", value: "%@ works best with your precise location", comment: "Title of the alert prompting the user to upgrade from approximate to precise location. %@ is the app name."),
+                Bundle.main.appName
+            )
+            message = OBALoc("locationservices_alert_imprecise.message", value: "You'll get to see where you are on the map and see nearby stops, making it easier to get where you need to go.", comment: "Body of the alert prompting the user to grant precise location.")
         }
 
         return UIAlertController(title: title, message: message, preferredStyle: .alert)

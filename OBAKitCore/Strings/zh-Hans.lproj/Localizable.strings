@@ -1,17 +1,38 @@
 /* An error message that tells the user that they are connected to a captive portal WiFi network. */
 "api_error.captive_portal" = "您所使用的无线网络WiFi未能连接到互联网。请尝试关闭WiFi或者在当前的网络上登录验证。";
 
+/* An error that tells the user that cellular data access is disabled for this app in iOS Settings. Both substituted values are the app name. */
+"api_error.cellular_data_restricted_fmt" = "%1$@当前无法访问蜂窝移动数据。请前往“设置”>“蜂窝网络”，为%2$@开启蜂窝移动数据，或连接到Wi-Fi网络。";
+
+/* An error shown when the server returns data the app can't understand, indicating a likely server-side issue. */
+"api_error.decoding_failure" = "服务器返回了意外的数据。这通常表示服务器出现了问题。请稍后重试。";
+
 /* An error message that informs the user that the wrong kind of content was received from the server. */
 "api_error.invalid_content_type_fmt" = "预计从服务器收到%1$@数据，但收到了%2$@。";
 
 /* An error that tells the user that the network connection isn't working. */
 "api_error.network_failure" = "无法连接到互联网或者服务器。请检查网络连接后重试。";
 
+/* An error message that tells the user that no region has been selected. */
+"api_error.no_region_selected" = "尚未选择地区。请先选择一个地区以继续。";
+
 /* An error that tells the user that the server unexpectedly failed to return data. */
 "api_error.no_response_body" = "服务器意外地没有返回任何数据。";
 
 /* An error that is produced in response to HTTP status codes outside of 200-299. */
 "api_error.request_failure_fmt" = "服务器在处理您的请求时遇到错误，代码%1$d。（URL：%2$@）";
+
+/* An error that is produced in response to HTTP status code 404 */
+"api_error.request_not_found" = "404 未找到（%@）";
+
+/* An error shown when the server returns a 500 Internal Server Error. The substituted value is the region name, e.g. 'Puget Sound'. */
+"api_error.server_error_fmt" = "%@的服务器在处理您的请求时遇到错误。请重试。";
+
+/* An error shown when the regional transit server is unavailable. The first substituted value is the region name, the second is the app name. */
+"api_error.server_unavailable_fmt" = "%1$@的服务器目前似乎已停止服务，因此%2$@无法显示该地区的公交信息。服务器恢复后，App将重新正常运行。";
+
+/* An error message that tells the user that surveys are not available. */
+"api_error.survey_service_not_configured" = "此地区不提供问卷服务。";
 
 /* This will appear on a button or as a title, and indicates that this UI will create a new bookmark. */
 "common.add_alarm" = "添加闹钟";
@@ -31,6 +52,12 @@
 /* The verb 'to cancel', i.e. to stop an action. */
 "common.cancel" = "取消";
 
+/* Button to clear recent search results */
+"common.clear_recent_searches" = "清除最近搜索";
+
+/* Confirmation message before clearing recent search results */
+"common.clear_recent_searches.confirmation" = "您确定要清除最近的搜索记录吗？";
+
 /* The verb 'to close'. */
 "common.close" = "关闭";
 
@@ -45,6 +72,15 @@
 
 /* The verb 'to dismiss', as in to hide or get rid of something. Used as a button title on alerts. */
 "common.dismiss" = "关闭";
+
+/* The verb 'to donate', as in to give money to a charitable cause. */
+"common.donate" = "捐款";
+
+/* The body of the message to display to the user after they donate to OTSF. %@ is the app name. */
+"common.donation_thank_you.body" = "您的支持将帮助我们继续改进%@。";
+
+/* Title of an alert to display to the user after they donate to OTSF */
+"common.donation_thank_you.title" = "感谢您的支持！";
 
 /* Past participle of 'do'. As in 'I am done' or 'I am finished.' */
 "common.done" = "完成";
@@ -70,11 +106,20 @@
 /* The title of a button that exports all of the user's data into a file. */
 "common.export_data" = "导出数据";
 
+/* Description of the privacy policy for sharing data with the external survey service. */
+"common.external_survey_privacy_info.description" = "此问卷将分享您的车站、线路、地区和当前位置。";
+
 /* The verb 'to filter'. */
 "common.filter" = "筛选";
 
+/* The verb 'to go' */
+"common.go" = "出发";
+
 /* This is button text that tells the user they can tap on it to learn more about the topic at hand. */
 "common.learn_more" = "了解更多";
+
+/* Fallback title for the stop arrivals screen when the stop name is not yet available. */
+"common.live_arrivals" = "实时到站";
 
 /* Used to indicate that content is loading. */
 "common.loading" = "加载中……";
@@ -94,8 +139,14 @@
 /* As in 'see more' or 'learn more'. */
 "common.more" = "更多";
 
+/* The verb 'to next', i.e. to get next survey question. */
+"common.next" = "下一步";
+
 /* OK */
 "common.ok" = "OK";
+
+/* i.e. recently selected search results for map locations from the trip planner. */
+"common.recent_searches" = "最近搜索";
 
 /* i.e. recently viewed or visited stops for transit vehicles, like a bus stop, ferry terminal, or train station. */
 "common.recent_stops" = "最近浏览过的车站";
@@ -103,11 +154,20 @@
 /* The verb 'refresh', as in 'reload'. */
 "common.refresh" = "刷新";
 
+/* The verb 'retry'. */
+"common.retry" = "重试";
+
 /* The verb 'save', as in 'save data'. */
 "common.save" = "保存";
 
+/* A noun referring to a bus/train schedule or timetable. */
+"common.schedule" = "时刻表";
+
 /* Explains that this is departure comes from schedule data, not from a real-time vehicle location. */
 "common.scheduled_not_real_time" = "按时刻表推算/非实时数据";
+
+/* Plural form of schedule, referring to bus/train schedules or timetables. */
+"common.schedules" = "时刻表";
 
 /* A noun referring to an alert about service interruptions, reroutes, or other disruptions or changes. */
 "common.service_alert" = "服务通知";
@@ -133,11 +193,17 @@
 /* Noun. Plural form of a transit stop. */
 "common.stops" = "公交车站";
 
+/* The verb 'to submit', i.e. to submit a survey answer. */
+"common.submit" = "提交";
+
 /* A format string used to tell the user when the UI they are looking at was last updated. e.g. Updated: 9:41 AM. The time is calculated at runtime. */
 "common.updated_at_fmt" = "上次更新：%@";
 
 /* Used to tell the user that the UI they are looking at is actively being updated with new data from the server. */
 "common.updating" = "正在更新……";
+
+/* The title of the Vehicles tab showing real-time vehicle positions on a map. */
+"common.vehicles" = "车辆";
 
 /* Use for vehicles that arrived X minutes ago. */
 "formatters.arrived_x_min_ago_fmt" = "%d分钟前已到站";
@@ -301,6 +367,18 @@
 /* Formatted time text for arrivals/departures. Used for accessibility labels, so be sure to spell out the word for 'minute'. Example: 7 minutes means that this event happens 7 minutes in the future. -7 minutes means 7 minutes in the past. */
 "formatters.time_fmt" = "%d分钟";
 
+/* Transfer arrival banner. First parameter is the arrival time, second is the route name and headsign. e.g. 'Arriving at 4:10 PM via 10 - Capitol Hill' */
+"formatters.transfer.arrival_banner_fmt" = "乘坐%2$@，将于%1$@到达";
+
+/* Short text shown when a departure occurs at the same time as the rider's transfer arrival. */
+"formatters.transfer.on_arrival" = "现在";
+
+/* Error when a route has no real-time vehicle tracking data. */
+"nearby_trip_matcher.error.no_realtime" = "此线路暂无实时追踪数据。";
+
+/* Error when no transit stops are found near the user's location. */
+"nearby_trip_matcher.error.no_stops" = "附近未找到车站。";
+
 /* Bus. Used for short- and long-distance bus routes. */
 "route_type.bus" = "公交车";
 
@@ -325,6 +403,15 @@
 /* Subway, Metro. Any underground rail system within a metropolitan area. */
 "route_type.subway" = "地铁";
 
+/* The body of the schedule/timetable feature tip */
+"schedule_tip.message" = "轻点这里，然后轻点“时刻表”，即可查看您乘坐的公交车和列车的时刻表。";
+
+/* Title for the schedule/timetable feature tip */
+"schedule_tip.title" = "查看您所乘线路的时刻表";
+
+/* Shown in place of the minutes countdown when the vehicle is departing now */
+"stop_page.countdown.now" = "现在";
+
 /* User-facing string that means the location of the stop on the map is wrong. */
 "stop_problem_code.user_description.location_wrong" = "地址错误";
 
@@ -339,6 +426,66 @@
 
 /* User-facing string that means our data is wrong about a route or a scheduled trip */
 "stop_problem_code.user_description.route_or_trip_missing" = "无法找到公交线路或计划中的车程";
+
+/* Indicating missing external survey url */
+"survey.external.url.missing" = "目前无法打开问卷。请稍后重试。";
+
+/* Body for survey dismissal action alert. */
+"survey_alert.dismissal.body" = "您的反馈有助于改进公交服务和App体验。";
+
+/* Title for survey dismissal action alert. */
+"survey_alert.dismissal.title" = "关闭问卷";
+
+/* The action of not showing the survey again. */
+"survey_alert.do.not.show.again" = "不再显示";
+
+/* The action of reminding later. i.e, to remind me later on the survey. */
+"survey_alert.remind.later" = "稍后提醒我";
+
+/* The action of skipping the current survey. */
+"survey_alert.skip.survey" = "跳过此问卷";
+
+/* Error message to show when the user has not answered the hero survey question with a valid answer. */
+"survey_error.hero_question_answer.error" = "请输入有效的回答";
+
+/* Error message to show when the user has not answered all required survey questions. */
+"survey_error.required_remaining_questions.error" = "请回答所有必答问题";
+
+/* Indicating that survey service is not setup up right or has some other issue. */
+"survey_service.not.available" = "问卷服务不可用。";
+
+/* Indicating missing survey update id when submitting responses */
+"survey_service.update.path.missing" = "提交您的回答时出现问题。请稍后重试。";
+
+/* Success message to show when the survey is successfully submitted. */
+"survey_success.submitted" = "问卷回答已提交！请回答其余问题，以便提供更完整的反馈。";
+
+/* Accessibility hint for an input field in a survey. */
+"surveys.accessibility.hint_answer.input" = "输入您对问卷问题的回答";
+
+/* Accessibility label for an input field in a survey. */
+"surveys.accessibility_answer.input" = "回答输入框";
+
+/* Accessibility label for a value that is not selected. */
+"surveys.accessibility_not_selected_value" = "未选择";
+
+/* Accessibility label for a selected value. */
+"surveys.accessibility_selected_value" = "已选择";
+
+/* Accessibility for survey label */
+"surveys.accessibility_survey_label" = "问卷标签";
+
+/* Accessibility label that allows selection of a survey option. */
+"surveys.accessibility_tap_to_select" = "轻点以选择";
+
+/* Accessibility label  that toggles the selection state of a survey option. */
+"surveys.accessibility_tap_toggle_selection" = "轻点以切换选择";
+
+/* Message for the trip planner tip */
+"trip_planner_tip.message" = "轻点这里即可搜索地点，并通过公交导航规划您的行程。";
+
+/* Title for the trip planner tip */
+"trip_planner_tip.title" = "规划您的行程";
 
 /* User-facing string that means the vehicle came early. */
 "trip_problem_code.user_description.came_early" = "提前到达";
@@ -385,99 +532,29 @@
 /* VoiceOver text describing a route that is scheduled to depart. (no realtime data was available) */
 "voiceover.arrivaldeparture_scheduled_departs_in_x_minutes_fmt" = "计划在%1$d分钟后的%2$@离站";
 
+/* Weather condition label for clear skies. */
+"weather.condition.clear" = "晴";
 
-/* The verb 'retry'. */
-"common.retry" = "重试";
+/* Weather condition label for cloudy skies. */
+"weather.condition.cloudy" = "多云";
 
-/* A noun referring to a bus/train schedule or timetable. */
-"common.schedule" = "时刻表";
+/* Weather condition label for foggy conditions. */
+"weather.condition.fog" = "雾";
 
-/* Plural form of schedule, referring to bus/train schedules or timetables. */
-"common.schedules" = "时刻表";
+/* Weather condition label for partly cloudy skies. */
+"weather.condition.partly_cloudy" = "局部多云";
 
-/* An error that is produced in response to HTTP status code 404 */
-"api_error.request_not_found" = "404 未找到（%@）";
+/* Weather condition label for rain. */
+"weather.condition.rain" = "雨";
 
-/* Button to clear recent search results */
-"common.clear_recent_searches" = "清除最近搜索";
+/* Weather condition label for sleet. */
+"weather.condition.sleet" = "雨夹雪";
 
-/* Confirmation message before clearing recent search results */
-"common.clear_recent_searches.confirmation" = "您确定要清除最近的搜索记录吗？";
+/* Weather condition label for snow. */
+"weather.condition.snow" = "雪";
 
-/* The verb 'to donate', as in to give money to a charitable cause. */
-"common.donate" = "捐款";
+/* Weather condition placeholder when the icon key is unknown. */
+"weather.condition.unknown" = "—";
 
-/* The body of the message to display to the user after they donate to OTSF */
-"common.donation_thank_you.body" = "您的支持将帮助我们继续改进OneBusAway。";
-
-/* Title of an alert to display to the user after they donate to OTSF */
-"common.donation_thank_you.title" = "感谢您的支持！";
-
-/* i.e. recently selected search results for map locations from the trip planner. */
-"common.recent_searches" = "最近搜索";
-
-/* The title of the Vehicles tab showing real-time vehicle positions on a map. */
-"common.vehicles" = "车辆";
-
-/* Description of the privacy policy for sharing data with the external survey service. */
-"common.external_survey_privacy_info.description" = "此问卷将分享您的车站、线路、地区和当前位置。";
-
-"common.go" = "出发";
-
-"common.submit" = "提交";
-
-"common.next" = "下一步";
-
-"survey_alert.dismissal.title" = "关闭问卷";
-
-"survey_alert.dismissal.body" = "您的反馈有助于改进公交服务和App体验。";
-
-"survey_alert.skip.survey" = "跳过此问卷";
-
-"survey_alert.remind.later" = "稍后提醒我";
-
-"survey_error.required_remaining_questions.error" = "请回答所有必答问题";
-
-"survey_error.hero_question_answer.error" = "请输入有效的回答";
-
-"survey_success.submitted" = "问卷回答已提交！请回答其余问题，以便提供更完整的反馈。";
-
-"survey_alert.do.not.show.again" = "不再显示";
-
-"survey_service.not.available" = "问卷服务不可用。";
-
-"survey.external.url.missing" = "目前无法打开问卷。请稍后重试。";
-
-"survey_service.update.path.missing" = "提交您的回答时出现问题。请稍后重试。";
-
-/* The body of the schedule/timetable feature tip */
-"schedule_tip.message" = "轻点这里，然后轻点“时刻表”，即可查看您乘坐的公交车和列车的时刻表。";
-
-/* Title for the schedule/timetable feature tip */
-"schedule_tip.title" = "查看您所乘线路的时刻表";
-
-/* Message for the trip planner tip */
-"trip_planner_tip.message" = "轻点这里即可搜索地点，并通过公交导航规划您的行程。";
-
-/* Title for the trip planner tip */
-"trip_planner_tip.title" = "规划您的行程";
-
-/* Error when no transit stops are found near the user's location. */
-"nearby_trip_matcher.error.no_stops" = "附近未找到车站。";
-
-/* Error when a route has no real-time vehicle tracking data. */
-"nearby_trip_matcher.error.no_realtime" = "此线路暂无实时追踪数据。";
-
-"surveys.accessibility_selected_value" = "已选择";
-
-"surveys.accessibility_not_selected_value" = "未选择";
-
-"surveys.accessibility_tap_toggle_selection" = "轻点以切换选择";
-
-"surveys.accessibility_tap_to_select" = "轻点以选择";
-
-"surveys.accessibility_answer.input" = "回答输入框";
-
-"surveys.accessibility.hint_answer.input" = "输入您对问卷问题的回答";
-
-"surveys.accessibility_survey_label" = "问卷标签";
+/* Weather condition label for windy conditions. */
+"weather.condition.wind" = "大风";
