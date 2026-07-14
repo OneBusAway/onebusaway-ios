@@ -14,8 +14,9 @@ import OBAKitCore
 /// dark scrim, with the identity block bottom-left in white — the "last
 /// updated" status line, stop name, the code/direction subtitle with inline
 /// route chips (wrapping onto as many lines as needed, never truncated), and
-/// the walk pill (the single visual source of walk time, §4.5). Tapping the
-/// walk pill opens walking directions in an external maps app.
+/// the travel pills — a walk estimate and a bike estimate, each at the user's
+/// respective speed and always shown regardless of Bike Mode (§4.5). Tapping
+/// the walk pill opens walking directions in an external maps app.
 ///
 /// A plain-value view: it never touches `StopViewModel`. The map snapshot is
 /// produced by a `snapshotLoader` closure supplied by the hosting VC, so the
@@ -24,7 +25,10 @@ import OBAKitCore
 /// `UIScreen.main`.
 struct StopPageHeaderView: View {
     let stop: Stop
+    /// Walk time at the user's walking speed — always shown, independent of Bike Mode.
     let walkTime: WalkTimeInfo?
+    /// Bike time at the user's cycling speed — always shown, independent of Bike Mode.
+    let bikeTime: WalkTimeInfo?
     /// The "Updated: …" line; empty hides it.
     let statusText: String
     let snapshotLoader: (CGSize) async -> UIImage?
@@ -84,17 +88,22 @@ struct StopPageHeaderView: View {
             // button below stays separate so it remains individually
             // focusable and activatable.
             .accessibilityElement(children: .combine)
-            if let walkTime {
-                Button(action: onWalkingDirections) {
-                    Label(walkChipText(walkTime), systemImage: "figure.walk")
-                        .font(.footnote.weight(.heavy))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 12).padding(.vertical, 6)
-                        .background(Color(uiColor: ThemeColors.shared.departureOnTime), in: Capsule())
-                        .contentShape(Capsule())
+            // Two independent estimates: the walk chip (tappable, opens walking
+            // directions) and the bike chip. Both are always shown when
+            // available — Bike Mode only affects the arrival split, not these.
+            if walkTime != nil || bikeTime != nil {
+                HStack(spacing: 8) {
+                    if let walkTime {
+                        Button(action: onWalkingDirections) {
+                            travelChip(walkChipText(walkTime), systemImage: "figure.walk")
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityHint(OBALoc("stop_page.header.walk_a11y_hint", value: "Opens walking directions to this stop.", comment: "VoiceOver hint on the header card's walk-time button."))
+                    }
+                    if let bikeTime {
+                        travelChip(bikeChipText(bikeTime), systemImage: "bicycle")
+                    }
                 }
-                .buttonStyle(.plain)
-                .accessibilityHint(OBALoc("stop_page.header.walk_a11y_hint", value: "Opens walking directions to this stop.", comment: "VoiceOver hint on the header card's walk-time button."))
             }
         }
         .padding(16)
@@ -145,11 +154,31 @@ struct StopPageHeaderView: View {
             .background(Color.white.opacity(0.18), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
     }
 
+    /// Shared capsule styling for the walk and bike chips. The icon is a
+    /// placeholder for now; distinct iconography can come later.
+    private func travelChip(_ text: String, systemImage: String) -> some View {
+        Label(text, systemImage: systemImage)
+            .font(.footnote.weight(.heavy))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 12).padding(.vertical, 6)
+            .background(Color(uiColor: ThemeColors.shared.departureOnTime), in: Capsule())
+            .contentShape(Capsule())
+    }
+
     private func walkChipText(_ info: WalkTimeInfo) -> String {
         let fmt = OBALoc(
             "stop_page.walk_chip_minutes_fmt",
             value: "%d min walk",
             comment: "Walk chip on the header card. %d is the walk time in minutes."
+        )
+        return String(format: fmt, info.walkMinutes)
+    }
+
+    private func bikeChipText(_ info: WalkTimeInfo) -> String {
+        let fmt = OBALoc(
+            "stop_page.bike_chip_minutes_fmt",
+            value: "%d min bike",
+            comment: "Bike chip on the header card. %d is the bike time in minutes."
         )
         return String(format: fmt, info.walkMinutes)
     }
@@ -268,6 +297,7 @@ private struct HeaderStatusLine: View {
         StopPageHeaderView(
             stop: stop,
             walkTime: WalkTimeInfo(walkMinutes: 7, distance: 520),
+            bikeTime: WalkTimeInfo(walkMinutes: 3, distance: 520),
             statusText: "Updated: 2 min ago",
             snapshotLoader: { _ in nil },
             onWalkingDirections: {}
@@ -275,6 +305,7 @@ private struct HeaderStatusLine: View {
         StopPageHeaderView(
             stop: stop,
             walkTime: nil,
+            bikeTime: nil,
             statusText: "",
             snapshotLoader: { _ in nil },
             onWalkingDirections: {}
