@@ -129,6 +129,10 @@ class StopViewModel: ObservableObject {
     /// and then calls `clearAlarmPermissionDenied()`.
     @Published private(set) var alarmPermissionDenied = false
 
+    /// Briefly `true` after a Live Activity is successfully started, consumed by the
+    /// SwiftUI stop page to show a non-blocking toast. Auto-resets after 2 seconds.
+    @Published private(set) var liveActivityStarted = false
+
     /// Departure ids with an in-flight `setAlarm`, so a double-tap can't create a
     /// duplicate alarm while the first create is suspended (MainActor-serialized,
     /// so a plain `Set` needs no further synchronization).
@@ -695,6 +699,17 @@ class StopViewModel: ObservableObject {
     /// binding.
     func clearAlarmPermissionDenied() {
         alarmPermissionDenied = false
+    }
+
+    /// Briefly raises `liveActivityStarted` so the SwiftUI stop page can show a
+    /// non-blocking toast. Called by `StopPageViewController` after a successful
+    /// `Activity.request()`.
+    func signalLiveActivityStarted() {
+        liveActivityStarted = true
+        Task {
+            try? await Task.sleep(for: .seconds(2))
+            liveActivityStarted = false
+        }
     }
 
     /// Replaces the departure's existing alarm with one created outside the

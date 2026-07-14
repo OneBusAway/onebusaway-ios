@@ -378,7 +378,8 @@ public class BookmarksViewController: UIViewController,
             routeShortName: routeShortName,
             routeHeadsign: routeHeadsign,
             stopID: viewModel.stopID,
-            routeColorHex: routeColorHex
+            routeColorHex: routeColorHex,
+            regionID: application.currentRegion?.regionIdentifier ?? 0
         )
 
         guard let contentState = buildContentState(for: viewModel) else {
@@ -395,7 +396,8 @@ public class BookmarksViewController: UIViewController,
             )
             trackLiveActivity(activity, for: viewModel)
             Logger.info("Started Live Activity with ID: \(activity.id)")
-            showLiveActivityStartedAlert()
+            let message = OBALoc("live_activity.started.title", value: "Tracking on Lock Screen", comment: "Toast shown when a Live Activity starts on the Lock Screen")
+            ProgressHUD.showSuccessAndDismiss(message: message)
         } catch {
             Logger.error("Failed to start Live Activity: \(error)")
             showLiveActivityErrorAlert()

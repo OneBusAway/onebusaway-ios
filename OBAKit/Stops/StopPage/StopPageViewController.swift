@@ -402,7 +402,8 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
             routeShortName: departure.routeShortName,
             routeHeadsign: departure.tripHeadsign ?? "",
             stopID: departure.stopID,
-            routeColorHex: routeColorHex
+            routeColorHex: routeColorHex,
+            regionID: application.currentRegion?.regionIdentifier ?? 0
         )
 
         guard let contentState = buildLiveActivityContentState(for: departure) else {
@@ -419,7 +420,7 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
             )
             application.liveActivityTracker.track(activity: activity, metadata: .init(departure))
             Logger.info("Started Live Activity with ID: \(activity.id)")
-            showLiveActivityStartedAlert()
+            viewModel.signalLiveActivityStarted()
         } catch {
             Logger.error("Failed to start Live Activity: \(error)")
             showLiveActivityErrorAlert()

@@ -354,6 +354,20 @@ struct StopPageView: View {
         .onChange(of: routeIDs) { _, ids in
             if let rid = expandedRouteID, !ids.contains(rid) { expandedRouteID = nil }
         }
+        .overlay(alignment: .bottom) {
+            if viewModel.liveActivityStarted {
+                Text(OBALoc("live_activity.started.title", value: "Tracking on Lock Screen", comment: "Toast shown when a Live Activity starts on the Lock Screen"))
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(.tint, in: Capsule())
+                    .padding(.bottom, 16)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .animation(.spring(duration: 0.3), value: viewModel.liveActivityStarted)
     }
 
     /// One-shot: a stop the user has never customized opens in the last mode they

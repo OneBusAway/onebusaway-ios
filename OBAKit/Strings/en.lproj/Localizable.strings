@@ -979,7 +979,7 @@
 "stop_page.header.walk_a11y_hint" = "Opens walking directions to this stop.";
 
 /* Button in the trip panel to start a Live Activity for this departure on the Lock Screen and Dynamic Island */
-"stop_page.live_activity.track" = "Track";
+"stop_page.live_activity.track" = "Track on Lock Screen";
 
 /* Extends the departure time window */
 "stop_page.load_more" = "Load more";
