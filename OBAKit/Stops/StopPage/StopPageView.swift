@@ -404,7 +404,11 @@ struct StopPageView: View {
             canSchedule: navigation.canScheduleForRoute,
             hasAlarm: viewModel.alarm(for: departure) != nil,
             onAlarmToggle: {
-                Task { await viewModel.toggleAlarm(for: departure) }
+                if viewModel.alarm(for: departure) != nil {
+                    Task { await viewModel.cancelAlarm(for: departure) }
+                } else {
+                    navigation.showAlarmPicker(departure)
+                }
             },
             onSchedule: { navigation.showScheduleForRoute(departure) },
             onBookmark: { navigation.showBookmarkEditor(departure) },

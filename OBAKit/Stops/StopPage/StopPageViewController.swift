@@ -388,6 +388,10 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
             // delete when the departure had no prior alarm, so it serves both
             // the create and change flows.
             Task { await viewModel.replaceAlarm(with: alarm, for: departure) }
+
+            if alarmBuilder.trackOnLockScreen {
+                startLiveActivity(for: departure)
+            }
         } else {
             viewModel.recordAlarmCreated(alarm)
         }
