@@ -50,10 +50,7 @@ targets:
           - twitter
           - comgooglemaps
         NSLocationWhenInUseUsageDescription: See where you are in relation to transit, and help you navigate more easily.
-        # NSHealthShareUsageDescription / NSHealthUpdateUsageDescription name the app, so each
-        # white-label target must declare its OWN pair in Apps/<App>/project.yml — a new app that
-        # forgets them gets no HealthKit prompt. Info.plist usage strings take no %@ placeholder;
-        # localize them via Apps/<App>/<locale>.lproj/InfoPlist.strings.
+        # HealthKit purpose strings live in Apps/Shared/info_plist.yml (shared by every app).
         NSLocationTemporaryUsageDescriptionDictionary:
           MapStatusView: See where you are in relation to transit, and help you navigate more easily.
         UILaunchStoryboardName: LaunchScreen

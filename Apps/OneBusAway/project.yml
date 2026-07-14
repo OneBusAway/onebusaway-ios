@@ -32,8 +32,6 @@ targets:
         NSSupportsLiveActivities: true
         NSSupportsLiveActivitiesFrequentUpdates: true
         CFBundleDisplayName: OneBusAway
-        NSHealthShareUsageDescription: OneBusAway uses your walking speed from the Health app to give you more accurate arrival time estimates.
-        NSHealthUpdateUsageDescription: OneBusAway uses your walking speed from the Health app to give you more accurate arrival time estimates.
         CFBundleURLTypes: [{CFBundleTypeRole: "Editor", CFBundleURLIconFile: "", CFBundleURLName: "onebusaway", CFBundleURLSchemes: ["onebusaway"]}]
         LSApplicationQueriesSchemes:
           - fb
@@ -102,6 +100,7 @@ targets:
 include:
   - path: OBAKitUITests/project.yml
   - path: Apps/Shared/app_shared.yml
+  - path: Apps/Shared/info_plist.yml
   - path: Apps/Shared/analytics_fx_config.yml
   - path: Apps/Shared/push_config.yml
   - path: OBAKitCore/project.yml
