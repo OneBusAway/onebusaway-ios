@@ -1075,7 +1075,7 @@
 "stop_page.timeline.skipped_stops_fmt" = "%d hintuan";
 
 /* Vehicle-position marker. %d is minutes to the user's stop. */
-"stop_page.timeline.vehicle_here_fmt" = "nandito ang sasakyan · %dm ang layo";
+"stop_page.timeline.vehicle_here_fmt" = "nandito ang sasakyan · %d min ang layo";
 
 /* Marker on the user's stop in the approach timeline */
 "stop_page.timeline.your_stop" = "· ang hintuan mo";

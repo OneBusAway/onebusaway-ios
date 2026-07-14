@@ -31,6 +31,7 @@ class LocalizationTests: XCTestCase {
     ]
 
     /// `%@`, `%d`, `%1$@`, `%2$d`, … and the escaped `%%`.
+    // swiftlint:disable:next force_try
     private static let specifier = try! NSRegularExpression(pattern: #"%(?:\d+\$)?[@dfs]|%%"#)
 
     private var frameworks: [(name: String, bundle: Bundle)] {

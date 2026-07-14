@@ -299,7 +299,7 @@
 "locationservices_alert_gotosettings.button" = "Seleccionar en Opciones";
 
 /* Body of the alert prompting the user to grant precise location. */
-"locationservices_alert_imprecise.message" = "Podrá ver dónde tu localization en el mapa y ver las paradas cercanas, lo que le facilitará llegar a donde necesita ir.";
+"locationservices_alert_imprecise.message" = "Podrá ver su ubicación en el mapa y ver las paradas cercanas, lo que le facilitará llegar a donde necesita ir.";
 
 /* Title of the alert prompting the user to upgrade from approximate to precise location. %@ is the app name. */
 "locationservices_alert_imprecise.title" = "%@ funciona mejor con su ubicación precisa";
@@ -311,7 +311,7 @@
 "locationservices_alert_keepoff.button" = "Mantenga la ubicación desactivada";
 
 /* Body of the alert prompting the user to turn on location services. */
-"locationservices_alert_off.message" = "Podrá ver dónde tu localization en el mapa y ver las paradas cercanas, lo que le facilitará llegar a donde necesita ir.";
+"locationservices_alert_off.message" = "Podrá ver su ubicación en el mapa y ver las paradas cercanas, lo que le facilitará llegar a donde necesita ir.";
 
 /* Title of the alert prompting the user to turn on location services. %@ is the app name. */
 "locationservices_alert_off.title" = "%@ funciona mejor con su ubicación.";

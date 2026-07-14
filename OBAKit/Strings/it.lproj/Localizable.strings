@@ -811,7 +811,7 @@
 "settings_controller.alerts_section.default_alarm_lead_time" = "Anticipo predefinito della sveglia";
 
 /* Settings > Alerts section > Display test alerts */
-"settings_controller.alerts_section.display_test_alerts" = "Mostra testo avvisi";
+"settings_controller.alerts_section.display_test_alerts" = "Mostra avvisi di test";
 
 /* Lead-time segment label. %d is minutes. */
 "settings_controller.alerts_section.lead_time_fmt" = "%d min";

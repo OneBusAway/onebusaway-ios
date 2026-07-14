@@ -1345,10 +1345,10 @@
 "walk_time_view.accessibility_label" = "步行到车站的时间";
 
 /* Accessibility string with placeholders for distance from stop, walking time to stop, and predicted arrival time. e.g. 1.2 miles. Takes 17 minutes to walk, arriving at 9:41 am */
-"walk_time_view.accessibility_value" = "距离车站%1$@英里。需要步行%2$@分钟，可以在%3$@抵达车站。";
+"walk_time_view.accessibility_value" = "距离车站%1$@。需要步行%2$@，可以在%3$@抵达车站。";
 
 /* Format string with placeholders for distance from stop, walking time to stop, and predicted arrival time. e.g. 1.2 miles, 17m: arriving at 09:41 A.M. */
-"walk_time_view.distance_time_fmt" = "距离车站%1$@英里，需要步行%2$@分钟：预计在%3$@抵达车站。";
+"walk_time_view.distance_time_fmt" = "距离车站%1$@，需要步行%2$@：预计在%3$@抵达车站。";
 
 /* Accessibility label for the transfer arrival banner shown when navigating to a connecting stop. */
 "walk_time_view.transfer_accessibility_label" = "换乘到站时间";
