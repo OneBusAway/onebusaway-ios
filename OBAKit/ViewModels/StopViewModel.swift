@@ -642,6 +642,12 @@ class StopViewModel: ObservableObject {
             // re-assert the removal now that the alarm is actually deleted.
             alarmsByDepartureID[arrivalDeparture.id] = nil
             alarmError = nil
+        } catch APIError.requestNotFound {
+            // The alarm already fired and was deleted server-side. The optimistic
+            // removal already cleared the UI — just clean up the local store and
+            // stay silent (no error banner).
+            application.userDataStore.delete(alarm: alarm)
+            alarmError = nil
         } catch {
             Logger.error("Alarm cancel failed for \(arrivalDeparture.id): \(error)")
             alarmsByDepartureID[arrivalDeparture.id] = alarm
