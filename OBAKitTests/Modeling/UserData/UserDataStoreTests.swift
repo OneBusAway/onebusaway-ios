@@ -345,6 +345,70 @@ final class UserDefaultsStoreTests: OBATestCase {
         expectClose(self.userDefaultsStore.walkingSpeedMetersPerSecond, WalkingSpeed.validRange.upperBound)
     }
 
+    // MARK: - Bike Mode
+
+    func test_bikeModeEnabled_defaultValue() {
+        expect(self.userDefaultsStore.bikeModeEnabled) == false
+    }
+
+    func test_bikeModeEnabled_roundTrip() {
+        userDefaultsStore.bikeModeEnabled = true
+        expect(self.userDefaultsStore.bikeModeEnabled) == true
+
+        userDefaultsStore.bikeModeEnabled = false
+        expect(self.userDefaultsStore.bikeModeEnabled) == false
+    }
+
+    func test_bikeSpeed_defaultValue() {
+        expect(self.userDefaultsStore.bikeSpeedMetersPerSecond).to(beCloseTo(4.2))
+    }
+
+    func test_bikeSpeed_roundTrip() {
+        userDefaultsStore.bikeSpeedMetersPerSecond = 5.0
+        expect(self.userDefaultsStore.bikeSpeedMetersPerSecond).to(beCloseTo(5.0))
+
+        let newStore = UserDefaultsStore(userDefaults: userDefaults)
+        expect(newStore.bikeSpeedMetersPerSecond).to(beCloseTo(5.0))
+    }
+
+    func test_bikeSpeedSource_defaultValue() {
+        expect(self.userDefaultsStore.bikeSpeedSource) == .manual
+    }
+
+    func test_bikeSpeedSource_roundTrip() {
+        userDefaultsStore.bikeSpeedSource = .healthKit
+        expect(self.userDefaultsStore.bikeSpeedSource) == .healthKit
+
+        userDefaultsStore.bikeSpeedSource = .manual
+        expect(self.userDefaultsStore.bikeSpeedSource) == .manual
+    }
+
+    func test_bikeSpeedMetersPerSecond_clampsBelowRange() {
+        userDefaultsStore.bikeSpeedMetersPerSecond = 0.1
+        expect(self.userDefaultsStore.bikeSpeedMetersPerSecond).to(beCloseTo(BikeSpeed.validRange.lowerBound))
+    }
+
+    func test_bikeSpeedMetersPerSecond_clampsAboveRange() {
+        userDefaultsStore.bikeSpeedMetersPerSecond = 30.0
+        expect(self.userDefaultsStore.bikeSpeedMetersPerSecond).to(beCloseTo(BikeSpeed.validRange.upperBound))
+    }
+
+    func test_effectiveTravelVelocity_whenBikeModeDisabled_returnsWalkingSpeed() {
+        userDefaultsStore.bikeModeEnabled = false
+        userDefaultsStore.walkingSpeedMetersPerSecond = 1.6
+        userDefaultsStore.bikeSpeedMetersPerSecond = 5.0
+
+        expect(self.userDefaultsStore.effectiveTravelVelocityMetersPerSecond).to(beCloseTo(1.6))
+    }
+
+    func test_effectiveTravelVelocity_whenBikeModeEnabled_returnsBikeSpeed() {
+        userDefaultsStore.bikeModeEnabled = true
+        userDefaultsStore.walkingSpeedMetersPerSecond = 1.6
+        userDefaultsStore.bikeSpeedMetersPerSecond = 5.0
+
+        expect(self.userDefaultsStore.effectiveTravelVelocityMetersPerSecond).to(beCloseTo(5.0))
+    }
+
     // MARK: - Default Alarm Lead Time
 
     @Test func `Default alarm lead time is 10 minutes`() {

@@ -35,6 +35,12 @@ protocol StopViewModelEnvironment: AnyObject {
     func recordRecentStop(_ stop: Stop, region: Region)
     var defaultAlarmLeadTimeMinutes: Int { get }
     var walkingSpeedMetersPerSecond: CLLocationSpeed { get }
+    /// The user's cycling speed, independent of whether Bike Mode is enabled —
+    /// the header's bike chip is always shown regardless of mode.
+    var bikeSpeedMetersPerSecond: CLLocationSpeed { get }
+    /// `userDataStore.effectiveTravelVelocityMetersPerSecond` — walking speed, or
+    /// cycling speed when Bike Mode is enabled. Drives the mode-aware split.
+    var effectiveTravelVelocityMetersPerSecond: CLLocationSpeed { get }
 
     // MARK: - Stop preferences (individual operations, not the full StopPreferencesStore)
 
@@ -95,6 +101,8 @@ extension Application: StopViewModelEnvironment {
     func recordRecentStop(_ stop: Stop, region: Region) { userDataStore.addRecentStop(stop, region: region) }
     var defaultAlarmLeadTimeMinutes: Int { userDataStore.defaultAlarmLeadTimeMinutes }
     var walkingSpeedMetersPerSecond: CLLocationSpeed { userDataStore.walkingSpeedMetersPerSecond }
+    var bikeSpeedMetersPerSecond: CLLocationSpeed { userDataStore.bikeSpeedMetersPerSecond }
+    var effectiveTravelVelocityMetersPerSecond: CLLocationSpeed { userDataStore.effectiveTravelVelocityMetersPerSecond }
 
     func stopPreferences(stopID: StopID, region: Region) -> StopPreferences {
         stopPreferencesDataStore.preferences(stopID: stopID, region: region)
@@ -147,6 +155,8 @@ final class PreviewStopViewModelEnvironment: StopViewModelEnvironment {
     func recordRecentStop(_ stop: Stop, region: Region) {}
     var defaultAlarmLeadTimeMinutes: Int { 2 }
     var walkingSpeedMetersPerSecond: CLLocationSpeed { 1.4 }
+    var bikeSpeedMetersPerSecond: CLLocationSpeed { 4.2 }
+    var effectiveTravelVelocityMetersPerSecond: CLLocationSpeed { 1.4 }
 
     func stopPreferences(stopID: StopID, region: Region) -> StopPreferences { .init() }
     func setStopPreferences(_ prefs: StopPreferences, stop: Stop, region: Region) {}
