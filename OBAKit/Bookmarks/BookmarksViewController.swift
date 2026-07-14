@@ -12,6 +12,7 @@ import Combine
 import CoreLocation
 import OBAKitCore
 import WidgetKit
+import ActivityKit
 
 /// The view controller that powers the Bookmarks tab of the app.
 @objc(OBABookmarksViewController)
@@ -187,26 +188,41 @@ public class BookmarksViewController: UIViewController,
     ///   - id: The unique ID of the section. Used for diffing.
     ///   - title: The section header title.
     private func buildListSection(bookmarks: [Bookmark], id: String, title: String) -> OBAListViewSection? {
-        let arrivalData = bookmarks
-            .filter { $0.regionIdentifier == application.regionsService.currentRegion?.id }
-            .compactMap { bookmark -> BookmarkArrivalViewModel? in
-                let deps = viewModel.arrivalDepartures(for: bookmark)
-                let arrDeps = deps.map { arrDep -> BookmarkArrivalViewModel.ArrivalDepartureShouldHighlightPair in
-                    return (arrDep, shouldHighlight(arrivalDeparture: arrDep))
-                }
-                return BookmarkArrivalViewModel(bookmark: bookmark, arrivalDepartures: arrDeps, onSelect: onSelectBookmark)
-            }
+        let currentRegionID = application.regionsService.currentRegion?.id
+        let activeBookmarks = bookmarks.filter { $0.regionIdentifier == currentRegionID }
 
-        guard arrivalData.count > 0 else { return nil }
+        guard !activeBookmarks.isEmpty else { return nil }
 
-        var section = OBAListViewSection(id: id, title: title, contents: arrivalData)
+        let items = activeBookmarks.compactMap { buildListItem($0) }
+        var section = OBAListViewSection(id: id, title: title, contents: items)
         section.configuration = .appearance(.plain)
         return section
     }
 
+    /// Builds a `BookmarkArrivalViewModel` for a single bookmark, loading arrival data if available.
+    private func buildListItem(_ bookmark: Bookmark) -> BookmarkArrivalViewModel? {
+        // Build arrival/departure pairs if this is a trip bookmark with data.
+        var arrDeps: [BookmarkArrivalViewModel.ArrivalDepartureShouldHighlightPair] = []
+
+        if bookmark.isTripBookmark {
+            let data = viewModel.arrivalDepartures(for: bookmark)
+            arrDeps = data.map { arrDep in
+                (arrDep, shouldHighlight(arrivalDeparture: arrDep))
+            }
+        }
+
+        return BookmarkArrivalViewModel(
+            bookmark: bookmark,
+            arrivalDepartures: arrDeps,
+            onSelect: { [weak self] viewModel in
+                self?.onSelectBookmark(viewModel)
+            }
+        )
+    }
+
     public func emptyData(for listView: OBAListView) -> OBAListView.EmptyData? {
-        let title: String
-        let body: String
+        var title: String
+        var body: String
 
         if application.hasDataToMigrate {
             title = Strings.emptyBookmarkTitle
@@ -217,10 +233,8 @@ public class BookmarksViewController: UIViewController,
             body = Strings.emptyBookmarkBody
         }
         else {
-            // Don't show empty state if we have bookmarks
             return nil
         }
-
         return .standard(.init(title: title, body: body))
     }
 
@@ -305,12 +319,31 @@ public class BookmarksViewController: UIViewController,
         }
     }
 
+    // MARK: - Context Menu with Live Activity Support
+
     var currentPreviewingViewController: UIViewController?
+
+    // MARK: - Context Menu
     public func contextMenu(_ listView: OBAListView, for item: AnyOBAListViewItem) -> OBAListViewMenuActions? {
         guard let item = item.as(BookmarkArrivalViewModel.self) else { return nil }
 
-        let menu: OBAListViewMenuActions.MenuProvider = { _ -> UIMenu? in
-            let children: [UIMenuElement] = [self.editAction(for: item), self.deleteAction(for: item)]
+        let menu: OBAListViewMenuActions.MenuProvider = { [weak self] _ -> UIMenu? in
+            guard let self else { return nil }
+
+            var children: [UIMenuElement] = []
+            // Check if Live Activities are enabled
+            if ActivityAuthorizationInfo().areActivitiesEnabled {
+                let title = OBALoc("bookmarks_controller.context_menu.track_live_activity", value: "Track", comment: "Action to start a Live Activity for a specific bookmark")
+                let liveActivityAction = UIAction(
+                    title: title,
+                    image: Icons.liveActivity
+                ) { [weak self] _ in
+                    self?.startLiveActivity(for: item)
+                }
+                children.append(liveActivityAction)
+            }
+            children.append(self.editAction(for: item))
+            children.append(self.deleteAction(for: item))
             return UIMenu(title: item.name, children: children)
         }
 
@@ -325,9 +358,119 @@ public class BookmarksViewController: UIViewController,
             self.application.viewRouter.navigate(to: vc, from: self)
         }
 
-        return OBAListViewMenuActions(previewProvider: previewProvider,
-                                      performPreviewAction: commitPreviewAction,
-                                      contextMenuProvider: menu)
+        return OBAListViewMenuActions(
+            previewProvider: previewProvider,
+            performPreviewAction: commitPreviewAction,
+            contextMenuProvider: menu
+        )
+    }
+
+    // MARK: - Live Activity Management
+
+    func startLiveActivity(for viewModel: BookmarkArrivalViewModel) {
+        // Use structured properties directly from the Bookmark model instead of parsing
+        // the display name, which would break on hyphenated route names like "A-Line".
+        let routeShortName = viewModel.bookmark.routeShortName ?? viewModel.name
+        let routeHeadsign = viewModel.bookmark.tripHeadsign ?? ""
+
+        let routeColorHex = viewModel.arrivalDepartures?.first?.route.color?.toHex()
+        let staticData = TripAttributes.StaticData(
+            routeShortName: routeShortName,
+            routeHeadsign: routeHeadsign,
+            stopID: viewModel.stopID,
+            routeColorHex: routeColorHex
+        )
+
+        guard let contentState = buildContentState(for: viewModel) else {
+            Logger.error("Failed to build content state for Live Activity")
+            return
+        }
+
+        let attributes = TripAttributes(staticData: staticData)
+        do {
+            let activity = try Activity.request(
+                attributes: attributes,
+                content: .init(state: contentState, staleDate: nil),
+                pushType: .token
+            )
+            trackLiveActivity(activity, for: viewModel)
+            Logger.info("Started Live Activity with ID: \(activity.id)")
+            showLiveActivityStartedAlert()
+        } catch {
+            Logger.error("Failed to start Live Activity: \(error)")
+            showLiveActivityErrorAlert()
+        }
+    }
+
+    func updateRunningLiveActivities() {
+        let activities = Activity<TripAttributes>.activities
+        for activity in activities {
+            let staticData = activity.attributes.staticData
+            if let bookmark = application.userDataStore.bookmarks.first(where: { bookmark in
+                return bookmark.stopID == staticData.stopID &&
+                       bookmark.routeShortName == staticData.routeShortName &&
+                       bookmark.tripHeadsign == staticData.routeHeadsign
+            }),
+                let viewModel = buildListItem(bookmark),
+                let contentState = buildContentState(for: viewModel) {
+                // Re-arm the push token/lifecycle observers on relaunch. `startLiveActivity`
+                // only tracks activities it creates in-session, so without this a Live Activity
+                // that's still running after a relaunch would never re-establish its observers
+                // and would never unregister when it later ends. Guarded so repeated calls to
+                // updateRunningLiveActivities() don't cancel/rebuild an already-armed task — and
+                // because the tracker is app-scoped, the guard also covers an activity started
+                // from the stop page, which we must not steal the observers out from under.
+                //
+                // Deliberately keyed on the token task and not on `isTracking`: an activity that
+                // the sweep below could only lifecycle-observe (no matching bookmark at the time)
+                // must still be upgradable to a full registration once its bookmark reappears.
+                if !application.liveActivityTracker.isForwardingPushToken(activityID: activity.id) {
+                    trackLiveActivity(activity, for: viewModel)
+                }
+                Task {
+                    await activity.update(
+                        .init(state: contentState, staleDate: nil)
+                    )
+                    Logger.info("Updated Live Activity for stop: \(staticData.stopID) route: \(staticData.routeShortName)")
+                }
+            } else if !application.liveActivityTracker.isTracking(activityID: activity.id) {
+                // No bookmark/viewModel to register push updates with, but the activity is
+                // still running (and may have a delete URL persisted from a prior session).
+                // Arm just the lifecycle observer so dismiss/end still triggers `unregister`.
+                application.liveActivityTracker.observeLifecycle(of: activity)
+            }
+        }
+    }
+
+    // MARK: - Live Activity Helper Methods
+
+    private func buildContentState(for viewModel: BookmarkArrivalViewModel) -> TripAttributes.ContentState? {
+        guard let arrivalDepartures = viewModel.arrivalDepartures,
+              !arrivalDepartures.isEmpty else {
+            return nil
+        }
+        let arrivals = arrivalDepartures.prefix(3).map { arrDep in
+            TripAttributes.ContentState.ArrivalInfo(
+                departureTime: Int(arrDep.arrivalDepartureDate.timeIntervalSince1970),
+                scheduleStatus: .init(arrDep.scheduleStatus),
+                scheduleDeviation: arrDep.deviationFromScheduleInMinutes * 60,
+                isArrival: arrDep.arrivalDepartureStatus == .arriving
+            )
+        }
+        return TripAttributes.ContentState(arrivals: Array(arrivals))
+    }
+
+    // MARK: - Live Activity Push Registration
+
+    /// Hands `activity` to the app-scoped tracker, which owns the push-token and lifecycle
+    /// observers. They deliberately outlive this controller — and every other screen — so that an
+    /// activity is unregistered when it actually ends rather than when a view controller happens
+    /// to be deallocated. See `LiveActivityTracker`.
+    private func trackLiveActivity(_ activity: Activity<TripAttributes>, for viewModel: BookmarkArrivalViewModel) {
+        application.liveActivityTracker.track(
+            activity: activity,
+            metadata: .init(viewModel.arrivalDepartures?.first)
+        )
     }
 
     // MARK: - Arrival departure highlight updates
@@ -406,7 +549,9 @@ private extension BookmarksViewController {
         // times update as soon as that bookmark's data lands.
         viewModel.didUpdate
             .sink { [weak self] _ in
-                self?.listView.applyData(animated: false)
+                guard let self else { return }
+                listView.applyData(animated: false)
+                updateRunningLiveActivities()
             }
             .store(in: &cancellables)
     }

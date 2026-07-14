@@ -73,14 +73,17 @@ struct ChronologicalListView: View {
     private func rows(_ departures: [ArrivalDeparture], style: DepartureRowView.Style) -> some View {
         // Identity: ArrivalDeparture.id (stable across prediction refreshes).
         ForEach(departures, id: \.id) { departure in
+            let actions = actionsProvider(departure)
             DepartureRowView(
                 departure: departure,
                 status: statusProvider(departure),
                 hasAlarm: alarmLookup(departure) != nil,
+                canAlarm: actions.canAlarm,
+                onAlarmToggle: actions.onAlarmToggle,
                 style: style,
                 onTap: { onToggleExpand(departure) }
             )
-            .departureRowActions(actionsProvider(departure))
+            .departureRowActions(actions)
 
             // Accordion: the panel is an INSERTED SIBLING ROW, keyed off the
             // expanded id — List animates insert/remove smoothly.

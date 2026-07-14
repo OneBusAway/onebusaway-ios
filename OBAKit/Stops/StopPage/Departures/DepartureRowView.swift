@@ -28,13 +28,18 @@ struct DepartureRowView: View {
     let departure: ArrivalDeparture
     let status: DepartureStatus
     let hasAlarm: Bool
+    let canAlarm: Bool
+    let onAlarmToggle: () -> Void
     var style: Style = .normal
     let onTap: () -> Void
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.obaFormatters) private var formatters
+    @ScaledMetric(relativeTo: .body) private var alarmCircleSize: CGFloat = 34
 
     private var dimmed: Bool { style == .past }
+
+    private var showsAlarmAffordance: Bool { canAlarm || hasAlarm }
 
     private var scheduledTimeText: String {
         formatters.timeFormatter.string(from: departure.scheduledDate)
@@ -50,6 +55,7 @@ struct DepartureRowView: View {
                 HStack(alignment: .center) {
                     routeBadge
                     Spacer(minLength: 8)
+                    alarmCircleButton
                     countdown
                 }
                 headsignText
@@ -57,10 +63,7 @@ struct DepartureRowView: View {
                     .font(.footnote)
                     .monospacedDigit()
                     .foregroundStyle(.secondary)
-                HStack(spacing: 6) {
-                    statusText
-                    alarmBell
-                }
+                statusText
                 occupancyBadge
             } else {
                 HStack(alignment: .center, spacing: 13) {
@@ -74,12 +77,14 @@ struct DepartureRowView: View {
                                 .foregroundStyle(.secondary)
                             Text("·").foregroundStyle(.tertiary)
                             statusText
-                            alarmBell
                         }
                         occupancyBadge
                     }
                     Spacer(minLength: 8)
-                    countdown
+                    VStack(alignment: .center, spacing: 4) {
+                        countdown
+                        alarmCircleButton
+                    }
                 }
             }
         }
@@ -89,6 +94,13 @@ struct DepartureRowView: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityText)
         .accessibilityAddTraits(.isButton)
+        .accessibilityActions {
+            if showsAlarmAffordance {
+                Button(hasAlarm ? removeAlarmTitle : Strings.addAlarm) {
+                    onAlarmToggle()
+                }
+            }
+        }
     }
 
     // MARK: - Shared pieces (both layouts)
@@ -116,11 +128,20 @@ struct DepartureRowView: View {
     }
 
     @ViewBuilder
-    private var alarmBell: some View {
-        if hasAlarm {
-            Image(systemName: "bell.fill")
-                .font(.caption)
-                .foregroundStyle(Color(uiColor: ThemeColors.shared.departureOnTime))
+    private var alarmCircleButton: some View {
+        if showsAlarmAffordance {
+            Image(systemName: hasAlarm ? "bell.fill" : "bell")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(hasAlarm ? Color.white : Color.secondary)
+                .frame(width: alarmCircleSize, height: alarmCircleSize)
+                .background(hasAlarm ? Color(uiColor: ThemeColors.shared.departureOnTime) : Color.clear, in: Circle())
+                .overlay(Circle().strokeBorder(Color(uiColor: .separator), lineWidth: hasAlarm ? 0 : 1.5))
+                // Use onTapGesture, not Button: inner gestures beat the outer
+                // .onTapGesture(perform: onTap) on the row VStack, so tapping the
+                // bell fires only the alarm action and never also expands the row.
+                // A Button here creates two competing UIGestureRecognizers that enter
+                // an infinite resolution loop, pegging the CPU at 100%.
+                .onTapGesture { onAlarmToggle() }
         }
     }
 

@@ -157,6 +157,64 @@ public actor ObacoAPIService: @preconcurrency APIService {
         return try await data(for: request as URLRequest)
     }
 
+    // MARK: - Live Activities
+
+    private struct LiveActivityRegistrationResponse: Codable {
+        let url: URL
+    }
+
+    /// Registers (or re-registers, on ActivityKit token rotation) a Live
+    /// Activity push token with OBACloud. Returns the URL to DELETE when the
+    /// activity ends locally. POST is an upsert keyed by `activityID`.
+    public nonisolated func postLiveActivity(
+        activityID: String,
+        pushToken: String,
+        stopID: StopID,
+        routeShortName: String,
+        tripHeadsign: String,
+        tripID: String?,
+        serviceDate: Date?,
+        vehicleID: String?,
+        stopSequence: Int?
+    ) async throws -> URL {
+        let url = await buildURL(path: String(format: "/api/v2/regions/%d/live_activities", regionID))
+        let urlRequest = NSMutableURLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10)
+        urlRequest.httpMethod = "POST"
+
+        var params: [String: Any] = [
+            "activity_id": activityID,
+            "push_token": pushToken,
+            "stop_id": stopID,
+            "route_short_name": routeShortName,
+            "trip_headsign": tripHeadsign
+        ]
+        if let tripID { params["trip_id"] = tripID }
+        if let serviceDate { params["service_date"] = Int64(serviceDate.timeIntervalSince1970 * 1000) }
+        if let vehicleID { params["vehicle_id"] = vehicleID }
+        if let stopSequence { params["stop_sequence"] = stopSequence }
+
+        #if DEBUG
+        // A debug build's ActivityKit push token is a sandbox token. The server
+        // persists this flag and uses it for every update and end push over the
+        // activity's lifetime. Without it, pushes bounce with BadDeviceToken and
+        // the server retires the subscription.
+        params["apns_sandbox"] = "1"
+        #endif
+
+        urlRequest.httpBody = NetworkHelpers.dictionary(toHTTPBodyData: params)
+
+        let (data, _) = try await data(for: urlRequest as URLRequest)
+        return try JSONDecoder.obacoServiceDecoder.decode(LiveActivityRegistrationResponse.self, from: data).url
+    }
+
+    /// Unregisters a Live Activity subscription (the server sends no push; the
+    /// activity already ended on-device).
+    @discardableResult public nonisolated func deleteLiveActivity(url: URL) async throws -> (Data, URLResponse) {
+        let request = NSMutableURLRequest(url: url)
+        request.httpMethod = "DELETE"
+        return try await data(for: request as URLRequest)
+    }
+
     // MARK: - Vehicles
     public nonisolated func getVehicles(matching query: String) async throws -> [AgencyVehicle] {
         let apiPath = String(format: "/api/v1/regions/%d/vehicles", regionID)

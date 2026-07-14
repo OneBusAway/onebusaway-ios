@@ -10,6 +10,7 @@
 import UIKit
 import SwiftUI
 import Combine
+import ActivityKit
 import OBAKitCore
 
 /// Hosting shell for the redesigned SwiftUI Stop page. Owns UIKit-side chrome
@@ -155,6 +156,7 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
         showAlertDetail: { _ in },
         showBookmarkEditor: { _ in },
         showAlarmPicker: { _ in },
+        startLiveActivity: { _ in },
         showExternalSurveyError: {},
         showDonation: {},
         dismissDonation: { _ in },
@@ -177,6 +179,7 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
             },
             showBookmarkEditor: { [weak self] departure in self?.showBookmarkEditor(for: departure) },
             showAlarmPicker: { [weak self] departure in self?.showAlarmPicker(for: departure) },
+            startLiveActivity: { [weak self] departure in self?.startLiveActivity(for: departure) },
             showExternalSurveyError: { [weak self] in self?.showExternalSurveyError() },
             showDonation: { [weak self] in self?.showDonationUI() },
             dismissDonation: { [weak self] onHide in self?.showDonationDismissUI(onHide: onHide) },
@@ -367,6 +370,10 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
             // delete when the departure had no prior alarm, so it serves both
             // the create and change flows.
             Task { await viewModel.replaceAlarm(with: alarm, for: departure) }
+
+            if alarmBuilder.trackOnLockScreen {
+                startLiveActivity(for: departure)
+            }
         } else {
             viewModel.recordAlarmCreated(alarm)
         }
@@ -380,6 +387,55 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
         Task { @MainActor in
             await AlertPresenter.show(error: error, presentingController: self)
         }
+    }
+
+    // MARK: - Live Activity
+
+    func startLiveActivity(for departure: ArrivalDeparture) {
+        guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
+
+        let routeColorHex = departure.route.color?.toHex()
+        let staticData = TripAttributes.StaticData(
+            routeShortName: departure.routeShortName,
+            routeHeadsign: departure.tripHeadsign ?? "",
+            stopID: departure.stopID,
+            routeColorHex: routeColorHex
+        )
+
+        guard let contentState = buildLiveActivityContentState(for: departure) else {
+            Logger.error("Failed to build content state for Live Activity")
+            return
+        }
+
+        let attributes = TripAttributes(staticData: staticData)
+        do {
+            let activity = try Activity.request(
+                attributes: attributes,
+                content: .init(state: contentState, staleDate: nil),
+                pushType: .token
+            )
+            application.liveActivityTracker.track(activity: activity, metadata: .init(departure))
+            Logger.info("Started Live Activity with ID: \(activity.id)")
+            showLiveActivityStartedAlert()
+        } catch {
+            Logger.error("Failed to start Live Activity: \(error)")
+            showLiveActivityErrorAlert()
+        }
+    }
+
+    private func buildLiveActivityContentState(for departure: ArrivalDeparture) -> TripAttributes.ContentState? {
+        let allArrivals = viewModel.stopArrivals?.arrivalsAndDepartures ?? [departure]
+        let sameRoute = allArrivals.filter { $0.routeID == departure.routeID }
+        let upcoming = sameRoute.isEmpty ? [departure] : Array(sameRoute.prefix(3))
+        let arrivals = upcoming.map { arrDep in
+            TripAttributes.ContentState.ArrivalInfo(
+                departureTime: Int(arrDep.arrivalDepartureDate.timeIntervalSince1970),
+                scheduleStatus: .init(arrDep.scheduleStatus),
+                scheduleDeviation: arrDep.deviationFromScheduleInMinutes * 60,
+                isArrival: arrDep.arrivalDepartureStatus == .arriving
+            )
+        }
+        return TripAttributes.ContentState(arrivals: arrivals)
     }
 
     // MARK: - Snapshot

@@ -48,6 +48,9 @@ class AlarmBuilder: NSObject {
 
     private let timePickerPage: AlarmTimePickerItem
 
+    /// Whether the "Track on Lock Screen" toggle was on when the user tapped Add Alarm.
+    var trackOnLockScreen: Bool { timePickerPage.trackOnLockScreen }
+
     // MARK: - Init
 
     /// - Parameter initialMinutes: Pre-selects this lead time in the picker.
@@ -60,7 +63,8 @@ class AlarmBuilder: NSObject {
         self.delegate = delegate
         self.timePickerPage = AlarmTimePickerItem(
             arrivalDeparture: arrivalDeparture,
-            initialMinutes: initialMinutes ?? application.userDataStore.defaultAlarmLeadTimeMinutes
+            initialMinutes: initialMinutes ?? application.userDataStore.defaultAlarmLeadTimeMinutes,
+            userDefaults: application.userDefaults
         )
 
         super.init()
@@ -143,13 +147,23 @@ class AlarmBuilder: NSObject {
 class AlarmTimePickerItem: ThemedBulletinPage {
     private let arrivalDeparture: ArrivalDeparture
     let timePickerManager: AlarmTimePickerManager
+    private let userDefaults: UserDefaults
+    private weak var trackSwitch: UISwitch?
 
-    init(arrivalDeparture: ArrivalDeparture, initialMinutes: Int) {
+    private static let trackOnLockScreenKey = "AlarmTimePickerItem.trackOnLockScreen"
+
+    /// The current value of the "Track on Lock Screen" toggle.
+    var trackOnLockScreen: Bool { userDefaults.bool(forKey: Self.trackOnLockScreenKey) }
+
+    init(arrivalDeparture: ArrivalDeparture, initialMinutes: Int, userDefaults: UserDefaults) {
         self.arrivalDeparture = arrivalDeparture
+        self.userDefaults = userDefaults
         self.timePickerManager = AlarmTimePickerManager(arrivalDeparture: arrivalDeparture, initialMinutes: initialMinutes)
 
         let title = OBALoc("alarm_time_picker.title", value: "Add Reminder", comment: "Title of the Alarm Time Picker page.")
         super.init(title: title)
+
+        userDefaults.register(defaults: [Self.trackOnLockScreenKey: true])
 
         descriptionText = OBALoc("alarm_time_picker.description", value: "Remind me when this vehicle will depart in:", comment: "Explains what the Alarm Time Picker page does.")
         isDismissable = true
@@ -158,7 +172,48 @@ class AlarmTimePickerItem: ThemedBulletinPage {
 
     override func makeViewsUnderDescription(with interfaceBuilder: BLTNInterfaceBuilder) -> [UIView]? {
         timePickerManager.prepareForDisplay()
-        return [timePickerManager.pickerView]
+        return [timePickerManager.pickerView, makeTrackOnLockScreenRow()]
+    }
+
+    private func makeTrackOnLockScreenRow() -> UIView {
+        let label = UILabel()
+        label.text = OBALoc(
+            "alarm_time_picker.track_on_lock_screen",
+            value: "Track on Lock Screen",
+            comment: "Toggle label that starts a Live Activity widget on the Lock Screen when an alarm is set."
+        )
+        label.font = .preferredFont(forTextStyle: .body)
+        label.adjustsFontForContentSizeCategory = true
+        label.numberOfLines = 0
+
+        let toggle = UISwitch()
+        toggle.isOn = trackOnLockScreen
+        toggle.addTarget(self, action: #selector(trackSwitchChanged(_:)), for: .valueChanged)
+        trackSwitch = toggle
+
+        toggle.setContentHuggingPriority(.required, for: .horizontal)
+        toggle.setContentCompressionResistancePriority(.required, for: .horizontal)
+
+        let row = UIStackView(arrangedSubviews: [label, toggle])
+        row.axis = .horizontal
+        row.alignment = .center
+        row.spacing = 16
+
+        let container = UIView()
+        container.addSubview(row)
+        row.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            row.topAnchor.constraint(equalTo: container.topAnchor, constant: 8),
+            row.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            row.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            row.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -8)
+        ])
+
+        return container
+    }
+
+    @objc private func trackSwitchChanged(_ sender: UISwitch) {
+        userDefaults.set(sender.isOn, forKey: Self.trackOnLockScreenKey)
     }
 }
 
