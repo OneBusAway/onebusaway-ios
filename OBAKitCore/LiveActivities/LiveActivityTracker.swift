@@ -35,7 +35,7 @@ import ActivityKit
 @MainActor
 public final class LiveActivityTracker {
 
-    private let registry: LiveActivityRegistry
+    nonisolated(unsafe) private let registry: LiveActivityRegistry
 
     /// One token-forwarding task per activity id.
     private var tokenTasks: [String: Task<Void, Never>] = [:]
