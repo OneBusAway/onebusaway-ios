@@ -180,6 +180,9 @@ public struct AnyOBAListViewItem: OBAListViewItem {
         return _trailingContextualActions()
     }
 
+    // `_type` is an `AnyHashable` wrapping the full underlying model, so combining it
+    // produces a full-value hash (not type-only). Don't narrow to `id` only — full-value
+    // identity is what lets `UICollectionViewDiffableDataSource` see value changes as diffs.
     public func hash(into hasher: inout Hasher) {
         hasher.combine(_type)
     }
