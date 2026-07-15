@@ -19,7 +19,7 @@ struct MockDataResponse {
     let matcher: MockDataLoaderMatcher
 }
 
-class MockTask: URLSessionDataTask {
+class MockTask: URLSessionDataTask, @unchecked Sendable {
     override var progress: Progress {
         return Progress()
     }
