@@ -232,8 +232,6 @@ class VehiclesViewModel: ObservableObject {
                 return ([], status)
             }
 
-            let totalEntities = message.entity.count
-            let vehicleEntities = message.entity.filter { $0.hasVehicle }
             let withPosition = message.entity.filter { $0.hasVehicle && $0.vehicle.hasPosition }
 
             let vehicles = withPosition.map { RealtimeVehicle(from: $0, agency: agency) }

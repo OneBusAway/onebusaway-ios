@@ -39,11 +39,9 @@ public class StopArrivals: NSObject, Identifiable, Decodable, HasReferences {
             var uniqueAlerts: [ServiceAlert] = []
             var seenIDs = Set<String>()
 
-            for alert in allAlerts {
-                if !seenIDs.contains(alert.id) {
-                    uniqueAlerts.append(alert)
-                    seenIDs.insert(alert.id)
-                }
+            for alert in allAlerts where !seenIDs.contains(alert.id) {
+                uniqueAlerts.append(alert)
+                seenIDs.insert(alert.id)
             }
             return uniqueAlerts
         }

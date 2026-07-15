@@ -163,13 +163,11 @@ class SurveyViewController: FormViewController {
                         guard let self = self else { return }
 
                         if row.value == true {
-                            for (otherIndex, _) in options.enumerated() {
-                                if otherIndex != index {
-                                    let otherTag = "\(questionTag)_option_\(otherIndex)"
-                                    if let otherRow = self.form.rowBy(tag: otherTag) as? CheckRow {
-                                        otherRow.value = false
-                                        otherRow.updateCell()
-                                    }
+                            for otherIndex in options.indices where otherIndex != index {
+                                let otherTag = "\(questionTag)_option_\(otherIndex)"
+                                if let otherRow = self.form.rowBy(tag: otherTag) as? CheckRow {
+                                    otherRow.value = false
+                                    otherRow.updateCell()
                                 }
                             }
                             self.viewModel.updateAnswer(for: question, answer: option)
