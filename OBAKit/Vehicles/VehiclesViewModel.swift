@@ -67,8 +67,9 @@ class VehiclesViewModel: ObservableObject {
 
     // MARK: - Public Methods
 
+    // swiftlint:disable function_body_length
+
     /// Fetches vehicle positions for all agencies in the current region
-    // swiftlint:disable:next function_body_length
     func fetchVehicles() async {
         guard
             let apiService = application.apiService,
@@ -135,6 +136,8 @@ class VehiclesViewModel: ObservableObject {
 
         isLoading = false
     }
+
+    // swiftlint:enable function_body_length
 
     /// Starts automatic refresh of vehicle positions
     func startAutoRefresh() {

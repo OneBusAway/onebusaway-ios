@@ -142,7 +142,6 @@ class SurveyViewController: FormViewController {
         }
     }
 
-    // swiftlint:disable:next function_body_length
     private func addRadioQuestionRows(_ question: SurveyQuestion, to section: Section, tag: String) {
         let options = question.content.options ?? []
         section <<< LabelRow("\(tag)_label") { row in

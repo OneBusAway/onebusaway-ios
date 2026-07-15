@@ -420,7 +420,7 @@ public class Application: CoreApplication, PushServiceDelegate {
         }
     }
 
-    @objc public func applicationDidBecomeActive(_ application: UIApplication) {
+    @MainActor @objc public func applicationDidBecomeActive(_ application: UIApplication) {
         if locationService.isLocationUseAuthorized {
             locationService.startUpdates()
         }
