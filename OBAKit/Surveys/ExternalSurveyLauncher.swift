@@ -20,7 +20,7 @@ struct ExternalSurveyLauncher {
     let surveyService: SurveyService
 
     /// Opens `url`, calling back on the main actor with whether the system handled it.
-    var urlOpener: (URL, @escaping @MainActor (Bool) -> Void) -> Void = { url, completion in
+    var urlOpener: (URL, @escaping @MainActor @Sendable (Bool) -> Void) -> Void = { url, completion in
         UIApplication.shared.open(url, options: [:], completionHandler: completion)
     }
 
