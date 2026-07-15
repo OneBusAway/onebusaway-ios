@@ -15,10 +15,10 @@
 
 /// Set by the `SceneDelegate` once its window is created. The root view
 /// controller is attached to this window in -applicationReloadRootInterface:.
-@property (weak, nonatomic) UIWindow *window;
+@property (strong, nonatomic, nullable) UIWindow *window;
 
 /// The application stack. Created in -init and consumed by the `SceneDelegate`.
-@property (strong, nonatomic) OBAApplication *app;
+@property (strong, nonatomic, nonnull) OBAApplication *app;
 
 /// Launch options captured in -application:didFinishLaunchingWithOptions:, so the
 /// `SceneDelegate` can forward them when it finishes launching the app.
