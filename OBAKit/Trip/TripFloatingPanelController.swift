@@ -32,6 +32,7 @@ class TripFloatingPanelController: UIViewController,
         didSet {
             if isLoadedAndOnScreen, let arrivalDeparture = tripConvertible?.arrivalDeparture {
                 stopArrivalView.arrivalDeparture = arrivalDeparture
+                updateETAInfoPanel(with: arrivalDeparture)
             }
         }
     }
@@ -146,6 +147,23 @@ class TripFloatingPanelController: UIViewController,
     var collapsedSections: Set<OBAListViewSection.ID> = []
     var selectionFeedbackGenerator: UISelectionFeedbackGenerator? = UISelectionFeedbackGenerator()
 
+    private lazy var etaDistanceLabel: UILabel = {
+            let label = UILabel.autolayoutNew()
+            label.font = .preferredFont(forTextStyle: .footnote)
+            label.textColor = ThemeColors.shared.label
+            label.textAlignment = .natural
+            return label
+        }()
+
+    private lazy var etaStopsLabel: UILabel = {
+            let label = UILabel.autolayoutNew()
+            label.font = .preferredFont(forTextStyle: .footnote)
+            label.textColor = ThemeColors.shared.label
+            label.textAlignment = .natural
+            label.isAccessibilityElement = false
+            return label
+        }()
+
     private lazy var stopArrivalView: StopArrivalView = {
         let view = StopArrivalView.autolayoutNew()
         view.formatters = application.formatters
@@ -161,7 +179,7 @@ class TripFloatingPanelController: UIViewController,
             stopArrivalView.topAnchor.constraint(equalTo: wrapper.topAnchor, constant: ThemeMetrics.padding),
             stopArrivalView.leadingAnchor.constraint(equalTo: wrapper.readableContentGuide.leadingAnchor),
             stopArrivalView.trailingAnchor.constraint(equalTo: wrapper.readableContentGuide.trailingAnchor),
-            stopArrivalView.bottomAnchor.constraint(equalTo: wrapper.bottomAnchor, constant: -ThemeMetrics.compactPadding)
+            stopArrivalView.bottomAnchor.constraint(equalTo: wrapper.bottomAnchor)
         ])
         return wrapper
     }()
@@ -183,7 +201,47 @@ class TripFloatingPanelController: UIViewController,
         return view
     }()
 
-    private lazy var outerStack = UIStackView.verticalStack(arrangedSubviews: [topPaddingView, stopArrivalWrapper, separatorView, listView])
+    // MARK: - ETA Info Panel
+    // Displays distance from stop and number of stops away for the arriving vehicle.
+    private func updateETAInfoPanel(with arrDep: ArrivalDeparture) {
+            let distance = application.formatters.distanceFormatter.string(fromDistance: arrDep.distanceFromStop)
+            etaDistanceLabel.text = distance
+
+            let stopCount = arrDep.numberOfStopsAway
+            let stopsText: String
+            if stopCount <= 0 {
+                stopsText = OBALoc("trip_floating_panel.at_stop", value: "At stop", comment: "The vehicle is at or has passed the selected stop")
+            } else {
+                let stopsFormat = stopCount == 1
+                    ? OBALoc("trip_floating_panel.one_stop_away", value: "%d stop away", comment: "One stop away from the vehicle")
+                    : OBALoc("trip_floating_panel.multiple_stops_away", value: "%d stops away", comment: "Multiple stops away from the vehicle")
+                stopsText = String(format: stopsFormat, stopCount)
+            }
+            etaStopsLabel.text = stopsText
+
+        etaDistanceLabel.accessibilityLabel = "\(distance), \(stopsText)"
+        }
+
+    private lazy var etaInfoPanel: UIView = {
+            if let arrDep = tripConvertible?.arrivalDeparture {
+                updateETAInfoPanel(with: arrDep)
+            }
+
+        let stack = UIStackView.horizontalStack(arrangedSubviews: [etaDistanceLabel, etaStopsLabel])
+        stack.distribution = .fillEqually
+        stack.spacing = ThemeMetrics.compactPadding
+
+        let wrapper = stack.embedInWrapperView(setConstraints: false)
+        NSLayoutConstraint.activate([
+            stack.topAnchor.constraint(equalTo: wrapper.topAnchor),
+            stack.bottomAnchor.constraint(equalTo: wrapper.bottomAnchor),
+            stack.leadingAnchor.constraint(equalTo: wrapper.readableContentGuide.leadingAnchor),
+            stack.trailingAnchor.constraint(equalTo: wrapper.readableContentGuide.trailingAnchor)
+        ])
+        return wrapper
+    }()
+
+    private lazy var outerStack = UIStackView.verticalStack(arrangedSubviews: [topPaddingView, stopArrivalWrapper, etaInfoPanel, separatorView, listView])
 
     // MARK: - ListAdapterDataSource (Data Loading)
     func canCollapseSection(_ listView: OBAListView, section: OBAListViewSection) -> Bool {
