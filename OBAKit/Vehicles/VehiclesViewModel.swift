@@ -68,6 +68,7 @@ class VehiclesViewModel: ObservableObject {
     // MARK: - Public Methods
 
     /// Fetches vehicle positions for all agencies in the current region
+    // swiftlint:disable:next function_body_length
     func fetchVehicles() async {
         guard
             let apiService = application.apiService,

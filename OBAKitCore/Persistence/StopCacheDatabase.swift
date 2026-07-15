@@ -59,6 +59,7 @@ public final class StopCacheDatabase: @unchecked Sendable {
 
     // MARK: - Migrations
 
+    // swiftlint:disable:next function_body_length
     private func runMigrations() throws {
         var migrator = DatabaseMigrator()
 
