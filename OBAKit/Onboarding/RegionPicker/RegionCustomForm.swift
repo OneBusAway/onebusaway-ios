@@ -22,6 +22,7 @@ struct RegionCustomForm: View {
     @State private var baseURLString: String = ""
     @State private var contactEmail: String = ""
     @State private var serviceArea: MKMapRect = MKMapRect(MKCoordinateRegion(center: CLLocationCoordinate2D(latitude: 27.9654987, longitude: -82.5101761), latitudinalMeters: 2000, longitudinalMeters: 2000))
+    @State private var cameraPosition: MapCameraPosition = .automatic
 
     var validateForm: Bool {
         return
@@ -52,7 +53,10 @@ struct RegionCustomForm: View {
 
             Section {
                 ZStack {
-                    Map(mapRect: $serviceArea)
+                    Map(position: $cameraPosition)
+                        .onMapCameraChange(frequency: .onEnd) { context in
+                            serviceArea = context.rect
+                        }
 
                     // Add a outlined border to indicate to the user that they
                     // are picking a service "rectangle" on the map.
@@ -103,14 +107,13 @@ struct RegionCustomForm: View {
     }
 
     func setInitialValues() {
-        guard let editingRegion else {
-            return
+        if let editingRegion {
+            regionName = editingRegion.name
+            baseURLString = editingRegion.OBABaseURL.path
+            contactEmail = editingRegion.contactEmail
+            serviceArea = editingRegion.serviceRect
         }
-
-        regionName = editingRegion.name
-        baseURLString = editingRegion.OBABaseURL.path
-        contactEmail = editingRegion.contactEmail
-        serviceArea = editingRegion.serviceRect
+        cameraPosition = .rect(serviceArea)
     }
 
     func doDelete() {
