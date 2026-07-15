@@ -9,7 +9,7 @@
 
 import Foundation
 import Combine
-import OBAKitCore
+@preconcurrency import OBAKitCore
 
 /// Shared ViewModel for `ServiceAlertViewController`.
 ///
@@ -78,7 +78,7 @@ final class ServiceAlertViewModel: ObservableObject {
     }
 
     // swiftlint:disable:next function_body_length
-    private static func buildDocument(
+    private nonisolated static func buildDocument(
         alert: ServiceAlert,
         dateTimeFormatter: DateFormatter,
         formatters: Formatters

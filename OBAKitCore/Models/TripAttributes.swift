@@ -28,12 +28,29 @@ public struct TripAttributes: ActivityAttributes {
         public let routeHeadsign: String
         public let stopID: String
         public let routeColorHex: String?
+        /// The region that hosts this stop, encoded in the widget URL so tapping
+        /// the Live Activity opens the correct stop page.
+        public let regionID: Int
 
-        public init(routeShortName: String, routeHeadsign: String, stopID: String, routeColorHex: String? = nil) {
+        enum CodingKeys: String, CodingKey {
+            case routeShortName, routeHeadsign, stopID, routeColorHex, regionID
+        }
+
+        public init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            routeShortName = try c.decode(String.self, forKey: .routeShortName)
+            routeHeadsign = try c.decode(String.self, forKey: .routeHeadsign)
+            stopID = try c.decode(String.self, forKey: .stopID)
+            routeColorHex = try c.decodeIfPresent(String.self, forKey: .routeColorHex)
+            regionID = (try? c.decode(Int.self, forKey: .regionID)) ?? 0
+        }
+
+        public init(routeShortName: String, routeHeadsign: String, stopID: String, routeColorHex: String? = nil, regionID: Int = 0) {
             self.routeShortName = routeShortName
             self.routeHeadsign = routeHeadsign
             self.stopID = stopID
             self.routeColorHex = routeColorHex
+            self.regionID = regionID
         }
     }
 

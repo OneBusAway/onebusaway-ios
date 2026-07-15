@@ -74,7 +74,7 @@ class ApplicationTests: OBATestCase {
         return (locManager, locationService, config)
     }
 
-    func test_appCreation_locationAlreadyAuthorized_updatesLocation() {
+    @MainActor func test_appCreation_locationAlreadyAuthorized_updatesLocation() {
         let (locManager, _, config) = configureAuthorizedObjects()
 
         let dataLoader = (config.dataLoader as! MockDataLoader)
@@ -353,7 +353,7 @@ class ApplicationTests: OBATestCase {
         expect(delegate.called_applicationReloadRootInterface).to(beTrue())
     }
 
-    func test_application_will_resign_active() {
+    @MainActor func test_application_will_resign_active() {
         let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)
         stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)

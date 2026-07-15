@@ -53,11 +53,11 @@
 
     // Handle any URLs or user activities the app was launched to handle.
     for (UIOpenURLContext *context in connectionOptions.URLContexts) {
-        [app application:UIApplication.sharedApplication open:context.URL options:@{}];
+        (void)[app application:UIApplication.sharedApplication open:context.URL options:@{}];
     }
 
     for (NSUserActivity *activity in connectionOptions.userActivities) {
-        [app application:UIApplication.sharedApplication continue:activity restorationHandler:^(NSArray<id<UIUserActivityRestoring>> * _Nullable restorableObjects) {}];
+        (void)[app application:UIApplication.sharedApplication continue:activity restorationHandler:^(NSArray<id<UIUserActivityRestoring>> * _Nullable restorableObjects) {}];
     }
 }
 
@@ -72,12 +72,12 @@
 - (void)scene:(UIScene *)scene openURLContexts:(NSSet<UIOpenURLContext *> *)URLContexts {
     OBAApplication *app = [self obaApplication];
     for (UIOpenURLContext *context in URLContexts) {
-        [app application:UIApplication.sharedApplication open:context.URL options:@{}];
+        (void)[app application:UIApplication.sharedApplication open:context.URL options:@{}];
     }
 }
 
 - (void)scene:(UIScene *)scene continueUserActivity:(NSUserActivity *)userActivity {
-    [[self obaApplication] application:UIApplication.sharedApplication continue:userActivity restorationHandler:^(NSArray<id<UIUserActivityRestoring>> * _Nullable restorableObjects) {}];
+    (void)[[self obaApplication] application:UIApplication.sharedApplication continue:userActivity restorationHandler:^(NSArray<id<UIUserActivityRestoring>> * _Nullable restorableObjects) {}];
 }
 
 @end

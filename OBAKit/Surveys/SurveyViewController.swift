@@ -126,107 +126,104 @@ class SurveyViewController: FormViewController {
 
     private func addQuestionRow(_ question: SurveyQuestion, to section: Section) {
         let questionTag = "question_\(question.id)"
-
         switch question.content.type {
-        case .label:
-            section <<< LabelRow(questionTag) { row in
-                row.title = question.content.labelText
-                row.cell.textLabel?.numberOfLines = 0
-            }
+        case .label:         addLabelQuestionRow(question, to: section, tag: questionTag)
+        case .radio:         addRadioQuestionRows(question, to: section, tag: questionTag)
+        case .checkbox:      addCheckboxQuestionRows(question, to: section, tag: questionTag)
+        case .text:          addTextQuestionRows(question, to: section, tag: questionTag)
+        case .externalSurvey: addExternalSurveyQuestionRows(question, to: section, tag: questionTag)
+        }
+    }
 
-        case .radio:
-            let options = question.content.options ?? []
-            // Add question label
-            section <<< LabelRow("\(questionTag)_label") { row in
-                row.title = question.content.labelText
-                row.cell.textLabel?.numberOfLines = 0
-                row.cell.textLabel?.font = .boldSystemFont(ofSize: 16)
-            }
+    private func addLabelQuestionRow(_ question: SurveyQuestion, to section: Section, tag: String) {
+        section <<< LabelRow(tag) { row in
+            row.title = question.content.labelText
+            row.cell.textLabel?.numberOfLines = 0
+        }
+    }
 
-            // Use SegmentedRow for inline options instead of ActionSheetRow
-            if options.count <= 3 {
-                section <<< SegmentedRow<String>(questionTag) { row in
-                    row.options = options
-                    row.value = nil
-                }.onChange { [weak self] row in
-                    if let value = row.value {
-                        self?.viewModel.updateAnswer(for: question, answer: value)
-                    }
-                }
-            } else {
-                for (index, option) in options.enumerated() {
-                    let optionTag = "\(questionTag)_option_\(index)"
-                    section <<< CheckRow(optionTag) { row in
-                        row.title = option
-                        row.value = false
-                    }.onChange { [weak self] row in
-                        guard let self = self else { return }
-
-                        if row.value == true {
-                            for (otherIndex, _) in options.enumerated() {
-                                if otherIndex != index {
-                                    let otherTag = "\(questionTag)_option_\(otherIndex)"
-                                    if let otherRow = self.form.rowBy(tag: otherTag) as? CheckRow {
-                                        otherRow.value = false
-                                        otherRow.updateCell()
-                                    }
-                                }
-                            }
-                            self.viewModel.updateAnswer(for: question, answer: option)
-                        }
-                    }
-                }
-            }
-
-        case .checkbox:
-            let options = question.content.options ?? []
-            // Add question label
-            section <<< LabelRow("\(questionTag)_label") { row in
-                row.title = question.content.labelText
-                row.cell.textLabel?.numberOfLines = 0
-                row.cell.textLabel?.font = .boldSystemFont(ofSize: 16)
-            }
-
-            // Add individual checkbox options
-            for (index, option) in options.enumerated() {
-                let optionTag = "\(questionTag)_checkbox_\(index)"
-                section <<< CheckRow(optionTag) { row in
-                    row.title = option
-                    row.value = false
-                }.onChange { [weak self] row in
-                    self?.viewModel.toggleCheckbox(option: option, selected: row.value == true, for: question)
-                }
-            }
-
-        case .text:
-            // Add question label first
-            section <<< LabelRow("\(questionTag)_label") { row in
-                row.title = question.content.labelText
-                row.cell.textLabel?.numberOfLines = 0
-                row.cell.textLabel?.font = .boldSystemFont(ofSize: 16)
-            }
-
-            // Then add the text input
-            section <<< TextAreaRow(questionTag) { row in
-                row.placeholder = OBALoc("survey_vc.text_placeholder", value: "Enter your answer...", comment: "Placeholder for text answer field")
-                row.textAreaHeight = .dynamic(initialTextViewHeight: 60)
+    private func addRadioQuestionRows(_ question: SurveyQuestion, to section: Section, tag: String) {
+        let options = question.content.options ?? []
+        section <<< LabelRow("\(tag)_label") { row in
+            row.title = question.content.labelText
+            row.cell.textLabel?.numberOfLines = 0
+            row.cell.textLabel?.font = .boldSystemFont(ofSize: 16)
+        }
+        if options.count <= 3 {
+            section <<< SegmentedRow<String>(tag) { row in
+                row.options = options
+                row.value = nil
             }.onChange { [weak self] row in
                 if let value = row.value {
                     self?.viewModel.updateAnswer(for: question, answer: value)
                 }
             }
-
-        case .externalSurvey:
-            section <<< LabelRow("\(questionTag)_label") { row in
-                row.title = question.content.labelText
-                row.cell.textLabel?.numberOfLines = 0
-            }
-
-            section <<< ButtonRow(questionTag) { row in
-                row.title = OBALoc("survey_vc.open_external_survey_button", value: "Open Survey", comment: "Button that opens an external survey in the browser")
-                row.onCellSelection { [weak self] _, _ in
-                    self?.openExternalSurvey()
+        } else {
+            for (index, option) in options.enumerated() {
+                let optionTag = "\(tag)_option_\(index)"
+                section <<< CheckRow(optionTag) { row in
+                    row.title = option
+                    row.value = false
+                }.onChange { [weak self] row in
+                    guard let self else { return }
+                    if row.value == true {
+                        for otherIndex in options.indices where otherIndex != index {
+                            let otherTag = "\(tag)_option_\(otherIndex)"
+                            if let otherRow = self.form.rowBy(tag: otherTag) as? CheckRow {
+                                otherRow.value = false
+                                otherRow.updateCell()
+                            }
+                        }
+                        self.viewModel.updateAnswer(for: question, answer: option)
+                    }
                 }
+            }
+        }
+    }
+
+    private func addCheckboxQuestionRows(_ question: SurveyQuestion, to section: Section, tag: String) {
+        let options = question.content.options ?? []
+        section <<< LabelRow("\(tag)_label") { row in
+            row.title = question.content.labelText
+            row.cell.textLabel?.numberOfLines = 0
+            row.cell.textLabel?.font = .boldSystemFont(ofSize: 16)
+        }
+        for (index, option) in options.enumerated() {
+            let optionTag = "\(tag)_checkbox_\(index)"
+            section <<< CheckRow(optionTag) { row in
+                row.title = option
+                row.value = false
+            }.onChange { [weak self] row in
+                self?.viewModel.toggleCheckbox(option: option, selected: row.value == true, for: question)
+            }
+        }
+    }
+
+    private func addTextQuestionRows(_ question: SurveyQuestion, to section: Section, tag: String) {
+        section <<< LabelRow("\(tag)_label") { row in
+            row.title = question.content.labelText
+            row.cell.textLabel?.numberOfLines = 0
+            row.cell.textLabel?.font = .boldSystemFont(ofSize: 16)
+        }
+        section <<< TextAreaRow(tag) { row in
+            row.placeholder = OBALoc("survey_vc.text_placeholder", value: "Enter your answer...", comment: "Placeholder for text answer field")
+            row.textAreaHeight = .dynamic(initialTextViewHeight: 60)
+        }.onChange { [weak self] row in
+            if let value = row.value {
+                self?.viewModel.updateAnswer(for: question, answer: value)
+            }
+        }
+    }
+
+    private func addExternalSurveyQuestionRows(_ question: SurveyQuestion, to section: Section, tag: String) {
+        section <<< LabelRow("\(tag)_label") { row in
+            row.title = question.content.labelText
+            row.cell.textLabel?.numberOfLines = 0
+        }
+        section <<< ButtonRow(tag) { row in
+            row.title = OBALoc("survey_vc.open_external_survey_button", value: "Open Survey", comment: "Button that opens an external survey in the browser")
+            row.onCellSelection { [weak self] _, _ in
+                self?.openExternalSurvey()
             }
         }
     }

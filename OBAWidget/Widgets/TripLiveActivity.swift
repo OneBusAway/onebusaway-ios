@@ -35,6 +35,10 @@ struct TripLiveActivity: Widget {
                 contentState: context.state
             )
             .activityBackgroundTint(Color(UIColor.systemBackground))
+            .widgetURL(
+                URLSchemeRouter(scheme: Bundle.main.extensionURLScheme!)
+                    .encodeViewStop(stopID: context.attributes.staticData.stopID, regionID: context.attributes.staticData.regionID)
+            )
         } dynamicIsland: { context in
             let upcoming = context.state.upcomingArrivals()
             let primary = upcoming.first

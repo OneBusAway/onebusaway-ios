@@ -236,6 +236,7 @@ struct GroupedListView: View {
     // MARK: - Expanded rows
 
     @ViewBuilder
+    // swiftlint:disable:next function_body_length
     private func expandedRows(_ group: StopPageListBuilder.RouteGroup<ArrivalDeparture>) -> some View {
         ForEach(group.departures, id: \.id) { departure in
             let status = statusProvider(departure)

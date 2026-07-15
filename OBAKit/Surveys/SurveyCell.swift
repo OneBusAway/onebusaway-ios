@@ -150,6 +150,14 @@ class SurveyCell: OBAListViewCell {
         // Add content stack with padding
         addSubview(contentStack)
         contentStack.pinToSuperview(.edges, insets: NSDirectionalEdgeInsets(top: 12, leading: 12, bottom: -12, trailing: -12))
+
+        registerForTraitChanges([UITraitUserInterfaceStyle.self, UITraitAccessibilityContrast.self]) { (self: SurveyCell, _: UITraitCollection) in
+            self.layer.borderColor = UIColor.systemGray4.cgColor
+            self.dismissButton.layer.borderColor = UIColor.systemGray4.cgColor
+            for button in self.optionButtons {
+                button.layer.borderColor = button.isSelected ? UIColor.systemGreen.cgColor : UIColor.systemGray4.cgColor
+            }
+        }
     }
 
     // MARK: - UI Updates
@@ -336,18 +344,4 @@ class SurveyCell: OBAListViewCell {
         }
     }
 
-    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        super.traitCollectionDidChange(previousTraitCollection)
-        if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
-            layer.borderColor = UIColor.systemGray4.cgColor
-            dismissButton.layer.borderColor = UIColor.systemGray4.cgColor
-            for button in optionButtons {
-                if button.isSelected {
-                    button.layer.borderColor = UIColor.systemGreen.cgColor
-                } else {
-                    button.layer.borderColor = UIColor.systemGray4.cgColor
-                }
-            }
-        }
-    }
 }

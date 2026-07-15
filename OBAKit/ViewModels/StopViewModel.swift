@@ -13,6 +13,10 @@ import CoreLocation
 import UserNotifications
 import OBAKitCore
 
+extension Notification.Name {
+    static let alarmFired = Notification.Name("OBA.AlarmFired")
+}
+
 /// Shared ViewModel for the stop arrivals/departures screen.
 ///
 /// Consumed by `StopViewController` (UIKit, via Combine `sink`) and by
@@ -125,6 +129,10 @@ class StopViewModel: ObservableObject {
     /// and then calls `clearAlarmPermissionDenied()`.
     @Published private(set) var alarmPermissionDenied = false
 
+    /// Briefly `true` after a Live Activity is successfully started, consumed by the
+    /// SwiftUI stop page to show a non-blocking toast. Auto-resets after 2 seconds.
+    @Published private(set) var liveActivityStarted = false
+
     /// Departure ids with an in-flight `setAlarm`, so a double-tap can't create a
     /// duplicate alarm while the first create is suspended (MainActor-serialized,
     /// so a plain `Set` needs no further synchronization).
@@ -132,6 +140,8 @@ class StopViewModel: ObservableObject {
 
     /// Cache for trip-panel approach timelines, invalidated on each refresh.
     private var approachCache: [String: TripDetails] = [:]
+
+    private var alarmFiredCancellable: AnyCancellable?
 
     // MARK: - Init Context
 
@@ -182,6 +192,11 @@ class StopViewModel: ObservableObject {
         } else {
             self.stopPreferences = StopPreferences()
         }
+
+        alarmFiredCancellable = NotificationCenter.default
+            .publisher(for: .alarmFired)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.rebuildAlarmIndex() }
     }
 
     deinit {
@@ -642,6 +657,12 @@ class StopViewModel: ObservableObject {
             // re-assert the removal now that the alarm is actually deleted.
             alarmsByDepartureID[arrivalDeparture.id] = nil
             alarmError = nil
+        } catch APIError.requestNotFound {
+            // The alarm already fired and was deleted server-side. The optimistic
+            // removal already cleared the UI — just clean up the local store and
+            // stay silent (no error banner).
+            application.userDataStore.delete(alarm: alarm)
+            alarmError = nil
         } catch {
             Logger.error("Alarm cancel failed for \(arrivalDeparture.id): \(error)")
             alarmsByDepartureID[arrivalDeparture.id] = alarm
@@ -678,6 +699,17 @@ class StopViewModel: ObservableObject {
     /// binding.
     func clearAlarmPermissionDenied() {
         alarmPermissionDenied = false
+    }
+
+    /// Briefly raises `liveActivityStarted` so the SwiftUI stop page can show a
+    /// non-blocking toast. Called by `StopPageViewController` after a successful
+    /// `Activity.request()`.
+    func signalLiveActivityStarted() {
+        liveActivityStarted = true
+        Task {
+            try? await Task.sleep(for: .seconds(2))
+            liveActivityStarted = false
+        }
     }
 
     /// Replaces the departure's existing alarm with one created outside the

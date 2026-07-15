@@ -163,6 +163,7 @@ class SearchInteractor: NSObject {
 
     // MARK: - Placemarks Section
 
+    // swiftlint:disable:next cyclomatic_complexity function_body_length
     private func placemarkSearch(searchText: String, mapRect: MKMapRect) {
         guard
             searchText != lastSearchText,

@@ -22,7 +22,7 @@ class RegionalAlertsModelOperationTests: OBATestCase {
         Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
 
         let agencies = try! Fixtures.loadRESTAPIPayload(type: [AgencyWithCoverage].self, fileName: "agencies_with_coverage.json")
-        let alerts = try await restService.getAlerts(agencies: agencies)
+        let alerts = await restService.getAlerts(agencies: agencies)
         expect(alerts.count) == 20
     }
 }
