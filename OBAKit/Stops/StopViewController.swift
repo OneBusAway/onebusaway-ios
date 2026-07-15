@@ -877,6 +877,11 @@ public class StopViewController: UIViewController,
                 actions.append(schedule)
             }
 
+            let shareTrip = UIAction(title: OBALoc("stop_controller.share_trip", value: "Share Trip", comment: "Context menu button that allows the user to share their trip status."), image: Icons.share) { [weak self] _ in
+                self?.shareTripStatus(viewModel: viewModel)
+            }
+            actions.append(shareTrip)
+
             // Create and return a UIMenu with all of the actions as children
             return UIMenu(title: viewModel.name, children: actions)
         }
@@ -1142,26 +1147,33 @@ public class StopViewController: UIViewController,
     }
 
     // MARK: - Share Trip Status
-    func shareTripStatus(viewModel: ArrivalDepartureItem) {
-        guard let arrivalDeparture = arrivalDeparture(forViewModel: viewModel) else { return }
+    private func shareTripStatus(viewModel: ArrivalDepartureItem) {
+        guard let arrivalDeparture = arrivalDeparture(forViewModel: viewModel) else {
+            Logger.error("No arrivalDeparture found for share trip status view model.")
+            presentShareError()
+            return
+        }
         shareTripStatus(arrivalDeparture: arrivalDeparture)
     }
 
-    func shareTripStatus(arrivalDeparture: ArrivalDeparture) {
-        guard
-            let region = application.currentRegion,
-            let appLinksRouter = application.appLinksRouter
-        else {
-            return
-        }
+    private func shareTripStatus(arrivalDeparture: ArrivalDeparture) {
+        let picker = DestinationStopPickerController(
+            application: application,
+            arrivalDeparture: arrivalDeparture
+        )
+        picker.delegate = self
+        let nav = application.viewRouter.buildNavigation(controller: picker)
+        self.present(nav, animated: true)
+    }
 
-        let url = appLinksRouter.encode(arrivalDeparture: arrivalDeparture, region: region) as Any
-
-        let activityController = UIActivityViewController(activityItems: [self, url], applicationActivities: nil)
-
-        // Use self.presnt because when using application.viewRouter.present(:_),
-        // it disables UIActivityViewController's "tap anywhere to dismiss".
-        self.present(activityController, animated: true)
+    private func presentShareError() {
+        let alert = UIAlertController(
+            title: OBALoc("stop_controller.share_error.title", value: "Unable to Share", comment: "Alert title when trip sharing fails."),
+            message: OBALoc("stop_controller.share_error.message", value: "Something went wrong while preparing the trip link. Please try again.", comment: "Alert message when trip sharing fails."),
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: Strings.dismiss, style: .default))
+        present(alert, animated: true)
     }
 
     // MARK: - Schedules
@@ -1401,6 +1413,50 @@ private extension StopViewController {
             self.showAllTransferDepartures = true
             self.listView.applyData()
         }
+    }
+}
+
+// MARK: - DestinationStopPickerDelegate
+
+extension StopViewController: DestinationStopPickerDelegate {
+    func destinationStopPicker(
+        _ controller: DestinationStopPickerController,
+        didSelectStop stopTime: TripStopTime
+    ) {
+        let arrivalDeparture = controller.arrivalDeparture
+        dismiss(animated: true) { [weak self] in
+            guard let self else { return }
+            guard
+                let region = self.application.currentRegion,
+                let appLinksRouter = self.application.appLinksRouter
+            else {
+                Logger.error("Missing region or appLinksRouter for trip sharing.")
+                self.presentShareError()
+                return
+            }
+
+            guard let url = appLinksRouter.encode(
+                arrivalDeparture: arrivalDeparture,
+                region: region,
+                destinationStopID: stopTime.stopID
+            ) else {
+                Logger.error("Failed to encode trip sharing URL.")
+                self.presentShareError()
+                return
+            }
+
+            let activityController = UIActivityViewController(
+                activityItems: [self, url],
+                applicationActivities: nil
+            )
+            // Use self.present because when using application.viewRouter.present(:_),
+            // it disables UIActivityViewController's "tap anywhere to dismiss".
+            self.present(activityController, animated: true)
+        }
+    }
+
+    func destinationStopPickerDidCancel(_ controller: DestinationStopPickerController) {
+        dismiss(animated: true)
     }
 }
 
