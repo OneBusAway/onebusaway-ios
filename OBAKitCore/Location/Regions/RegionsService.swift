@@ -291,6 +291,28 @@ public class RegionsService: NSObject, LocationServiceDelegate {
         return regions + customRegions
     }
 
+    /// The user's most recent location, if available.
+    public var currentLocation: CLLocation? {
+        locationService.currentLocation
+    }
+
+    /// Contacts the OneBusAway server at `baseURL` and returns the agencies it serves.
+    ///
+    /// Use this to verify that `baseURL` points at a working OneBusAway server before
+    /// saving a custom region for it.
+    public func fetchAgenciesWithCoverage(baseURL: URL) async throws -> [AgencyWithCoverage] {
+        let configuration: APIServiceConfiguration
+        if let existing = apiService?.configuration {
+            configuration = APIServiceConfiguration(baseURL: baseURL, apiKey: existing.apiKey, uuid: existing.uuid, appVersion: existing.appVersion, regionIdentifier: nil)
+        }
+        else {
+            configuration = APIServiceConfiguration(baseURL: baseURL, uuid: UUID().uuidString, regionIdentifier: nil)
+        }
+
+        let service = RESTAPIService(configuration, dataLoader: apiService?.dataLoader ?? URLSession.shared)
+        return try await service.getAgenciesWithCoverage().list
+    }
+
     // MARK: - Region Data Storage — UserDefaults Keys
 
     public static let alwaysRefreshRegionsOnLaunchUserDefaultsKey = "OBAAlwaysRefreshRegionsOnLaunchUserDefaultsKey"

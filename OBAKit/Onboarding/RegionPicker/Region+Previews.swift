@@ -86,6 +86,15 @@ final class Previews_SampleRegionProvider: RegionProvider {
         allRegions.remove(at: index)
     }
 
+    var currentLocation: CLLocation? {
+        nil
+    }
+
+    func fetchAgenciesWithCoverage(baseURL: URL) async throws -> [AgencyWithCoverage] {
+        try await Task.sleep(nanoseconds: 1_000_000_000)
+        return []
+    }
+
     func isTripPlanningEnabled(for region: Region) -> Bool {
         // For previews, return true for regions that support OTP
         return region.supportsOTP
