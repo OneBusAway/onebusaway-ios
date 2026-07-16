@@ -272,7 +272,7 @@ nonisolated class Icons: NSObject {
 
     /// nonisolated(unsafe): NSCache is documented thread-safe (it just lacks a
     /// Sendable annotation), so the nonisolated `Icons` can touch it from any
-    /// isolation (same pattern as `StopIconFactory.iconCache`).
+    /// isolation.
     nonisolated(unsafe) private static let iconCache = NSCache<NSNumber, UIImage>()
     public static let squircleIconSize: CGFloat = 40
 

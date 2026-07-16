@@ -28,6 +28,7 @@ public extension DispatchQueue {
      Executes a closure and ensures no other executions will be made during the interval.
      */
     @MainActor func debounce(interval: Double, context: AnyHashable? = nil, action: @escaping @MainActor () -> Void) {
+        assert(self === DispatchQueue.main, "debounce is main-queue-only; the dispatched block enters the main actor.")
         if let last = lastDebounceCallTimes[context ?? nilContext], last + interval > .now() {
             return
         }
@@ -49,6 +50,7 @@ public extension DispatchQueue {
      Delays a closure execution and ensures no other executions are made during deadline
      */
     @MainActor func throttle(deadline: DispatchTime, context: AnyHashable? = nil, action: @escaping @MainActor () -> Void) {
+        assert(self === DispatchQueue.main, "throttle is main-queue-only; the dispatched block enters the main actor.")
         let worker = DispatchWorkItem {
             MainActor.assumeIsolated {
                 defer { throttleWorkItems.removeValue(forKey: context ?? nilContext) }

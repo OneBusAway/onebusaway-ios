@@ -21,8 +21,21 @@ class PlausibleAnalytics: NSObject {
 
     func reportEvent(pageURL: String, label: String, value: Any?) async {
         // The Analytics protocol is @objc, so `value` arrives as Any?; Plausible's
-        // client requires Sendable props. Values are strings/numbers in practice.
-        await postEvent(pageURL: pageURL, props: [label: value.map { String(describing: $0) }])
+        // client requires Sendable props. Pass the known scalar types through
+        // typed (numbers must stay numbers for server-side prop filtering) and
+        // stringify only as a last resort.
+        let sendableValue: (any Sendable)?
+        switch value {
+        case nil:
+            sendableValue = nil
+        case let string as String:
+            sendableValue = string
+        case let number as NSNumber:
+            sendableValue = number
+        default:
+            sendableValue = value.map { String(describing: $0) }
+        }
+        await postEvent(pageURL: pageURL, props: [label: sendableValue])
     }
 
     func reportSearchQuery(_ query: String) async {

@@ -277,7 +277,13 @@ class BookmarksViewController: UIHostingController<BookmarksRootView>,
                 // never crosses an isolation boundary.
                 let activityID = activity.id
                 Task.detached {
-                    guard let activity = Activity<TripAttributes>.activities.first(where: { $0.id == activityID }) else { return }
+                    guard let activity = Activity<TripAttributes>.activities.first(where: { $0.id == activityID }) else {
+                        // The activity ended between the loop and this task; dropping
+                        // the update is correct, but log it so a stale Lock Screen is
+                        // diagnosable.
+                        Logger.info("Live Activity \(activityID) is no longer running; skipping update.")
+                        return
+                    }
                     await activity.update(
                         .init(state: contentState, staleDate: nil)
                     )

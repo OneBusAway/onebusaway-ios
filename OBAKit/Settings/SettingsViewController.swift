@@ -270,6 +270,11 @@ class SettingsViewController: FormViewController {
                             if let row: SwitchRow = self.form.rowBy(tag: self.walkingSpeedUseHealthKitKey) {
                                 row.value = false
                                 row.reload()
+                            } else {
+                                // Should be unreachable (the row is created with this tag
+                                // above); if it ever fires, the toggle stays on and the
+                                // HealthKit source would be persisted despite the denial.
+                                Logger.error("HealthKit toggle row not found by tag; cannot revert after authorization failure.")
                             }
                             self.showErrorToast(
                                 OBALoc(

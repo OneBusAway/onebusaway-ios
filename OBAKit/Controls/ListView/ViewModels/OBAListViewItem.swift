@@ -24,8 +24,8 @@ nonisolated public enum OBAListViewItemConfiguration {
 ///     It is currently not in use, reserved for future item identification functionality. This value is the "stable identity" (e.g. `stopID`) of the model.
 /// nonisolated: conforming types are value-type view models whose `Hashable`/`Equatable`
 /// witnesses are exercised by the diffable data source (see `OBAListViewSection`), so the
-/// whole view-model layer must stay off the main actor. Conforming types should also be
-/// declared `nonisolated`.
+/// view-model layer must not be main-actor-*isolated* — though in practice everything
+/// still runs on the main actor. Conforming types should also be declared `nonisolated`.
 nonisolated public protocol OBAListViewItem: Hashable, Identifiable {
     var configuration: OBAListViewItemConfiguration { get }
 

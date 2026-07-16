@@ -23,6 +23,8 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
 
 // @preconcurrency: CLLocationManager delivers callbacks on the run loop it was
 // created on, which for this service is always the main run loop.
+// Callers of the designated initializer must construct the injected manager
+// on the main thread for the same reason.
 @objc(OBALocationService) @MainActor public class LocationService: NSObject, @preconcurrency CLLocationManagerDelegate {
     private var locationManager: LocationManager
 

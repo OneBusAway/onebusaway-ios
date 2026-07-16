@@ -11,7 +11,7 @@ import Foundation
 import CoreLocation
 import MapKit
 
-// @unchecked Sendable per the HasReferences concurrency contract: `agency` and
+// @unchecked Sendable per the HasReferences concurrency contract (see References.swift): `agency` and
 // `regionIdentifier` are written exactly once, in loadReferences, before the
 // instance crosses an isolation boundary; everything else is immutable.
 public final class AgencyWithCoverage: NSObject, Identifiable, Decodable, HasReferences, @unchecked Sendable {

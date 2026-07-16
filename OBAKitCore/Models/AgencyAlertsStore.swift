@@ -18,8 +18,8 @@ import os.log
 
 // @unchecked Sendable: all mutable state (`agencies`, `alerts`, `readAlertIDs`,
 // the service references, and the test-only fetch-suppression flag) is guarded by
-// `stateLock`; delegates live in a thread-safe NSHashTable and are always notified
-// on the main actor.
+// `stateLock`; the delegate table is confined to the main actor (registration is
+// @MainActor and notification reads it from a main-actor task).
 public class AgencyAlertsStore: NSObject, @unchecked Sendable {
     public var apiService: RESTAPIService? {
         get { stateLock.withLock { _apiService } }
@@ -302,27 +302,25 @@ public class AgencyAlertsStore: NSObject, @unchecked Sendable {
 
     private let delegates = NSHashTable<AgencyAlertsDelegate>.weakObjects()
 
-    public func addDelegate(_ delegate: AgencyAlertsDelegate) {
+    @MainActor public func addDelegate(_ delegate: AgencyAlertsDelegate) {
         delegates.add(delegate)
     }
 
-    public func removeDelegate(_ delegate: AgencyAlertsDelegate) {
+    @MainActor public func removeDelegate(_ delegate: AgencyAlertsDelegate) {
         delegates.remove(delegate)
     }
 
     private func notifyDelegatesAlertsUpdated() {
-        let delegates = self.delegates.allObjects
         Task { @MainActor in
-            for d in delegates {
+            for d in self.delegates.allObjects {
                 d.agencyAlertsUpdated?()
             }
         }
     }
 
     private func notifyDelegates(error: Error) {
-        let delegates = self.delegates.allObjects
         Task { @MainActor in
-            for d in delegates {
+            for d in self.delegates.allObjects {
                 d.agencyAlertsStore?(self, displayError: error)
             }
         }

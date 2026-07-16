@@ -12,7 +12,9 @@ import OBAKit
 @testable import OBAKitCore
 
 // Main-actor-isolated (inherited by every test class): the frameworks under test
-// are largely @MainActor, and XCTest runs test methods and async setUp on main.
+// are largely @MainActor. XCTest runs sync test methods on the main thread; it is
+// this @MainActor annotation that makes async setUp/tearDown and async test
+// methods hop to main as well.
 @MainActor
 open class OBATestCase: XCTestCase {
 

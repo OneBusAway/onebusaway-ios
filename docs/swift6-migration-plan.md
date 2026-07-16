@@ -5,7 +5,7 @@ Measurements taken on `main` @ `0ae45cb3` with Xcode 27.0 beta 3 (Swift 6.4
 toolchain). CI (Xcode 26.2) supports every setting used here, but once Phase 0
 lands, contributors need Xcode 26 or newer.*
 
-## Where we are
+## Where we started (2026-07-16; see the Sequencing summary for current status)
 
 Every target builds in the Swift 5 language mode (`SWIFT_VERSION = 5.0`) with
 `SWIFT_STRICT_CONCURRENCY = minimal` — the Xcode defaults. Nothing in the
@@ -262,8 +262,8 @@ than 128 point fixes:
   poisoning four conformances. Every extension of a nonisolated type needs its
   own `nonisolated`.
 - **`OBALoc` and `Icons` became nonisolated** — pure bundle/UIImage lookups;
-  this alone cleared ~20 diagnostics. `Icons.iconCache` then needed an
-  `NSLock` (it really is cross-isolation shared state now).
+  this alone cleared ~20 diagnostics. `Icons.iconCache` became a
+  thread-safe `NSCache` (it really is cross-isolation shared state now).
 - **Main-thread callbacks got `MainActor.assumeIsolated`**: CLGeocoder
   completion, main-run-loop `Timer`s (MapViewController, SearchInteractor,
   ProgressHUD), FloatingPanel layout callbacks. Background-queue callbacks got
@@ -337,7 +337,7 @@ anyway, but don't couple the two efforts.
 
 ### Phase 4 status: blocked on the toolchain (2026-07-16)
 
-Every test class is `@MainActor` and the warning count is down to 43, but the
+Every test class is `@MainActor` and the warning count is down to 39, but the
 Swift 6 flip itself is **blocked on Xcode 27 beta 3**: its XCTest declares
 `XCTestCase`'s designated initializers nonisolated, and in the Swift 6
 language mode every `@MainActor` test class fails with "main actor-isolated
@@ -355,6 +355,12 @@ subclasses are the standard pattern everywhere else.
 `SWIFT_VERSION: "5.0"` with `SWIFT_DEFAULT_ACTOR_ISOLATION: nonisolated` and
 `SWIFT_APPROACHABLE_CONCURRENCY: NO` (its measured, ratcheted status quo).
 Re-try the flip on the next Xcode release; if it still errors, file feedback.
+
+Consequence of the pin worth remembering: the test target compiles with only
+`complete`-checking warnings, not Swift 6 enforcement — concurrency
+regressions in test-only helpers and mocks (e.g. the `@unchecked Sendable`
+mocks in `OBAKitTests/Helpers/Mocks/`) won't be compiler errors until the pin
+is lifted. The ratchet still counts their warnings.
 
 ## Dependency notes
 
