@@ -13,6 +13,7 @@ import Nimble
 import UIKit
 @testable import OBAKit
 
+@MainActor
 class BarButtonActivityIndicatorTests: XCTestCase {
     
     func test_UIActivityIndicatorView_asNavigationItem() {

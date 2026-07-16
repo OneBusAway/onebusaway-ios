@@ -31,6 +31,7 @@ targets:
         # the Swift 6 language mode).
         SWIFT_APPROACHABLE_CONCURRENCY: YES
         SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
+        SWIFT_VERSION: "6.0"
       configs:
           Debug:
             LD_RUNPATH_SEARCH_PATHS:

@@ -11,7 +11,7 @@ import OBAKitCore
 ///
 /// This model uses a default content configuration, there is no need to register this
 /// item with OBAListView before use.
-struct StopRowItem: OBAListViewItem {
+nonisolated struct StopRowItem: OBAListViewItem {
     let name: String
     let subtitle: String?
 
@@ -81,7 +81,7 @@ struct StopRowItem: OBAListViewItem {
 }
 
 extension RecentStopsViewController {
-    struct AlarmViewModel: OBAListViewItem {
+    nonisolated struct AlarmViewModel: OBAListViewItem {
         let alarm: Alarm
         let deepLink: ArrivalDepartureDeepLink
 

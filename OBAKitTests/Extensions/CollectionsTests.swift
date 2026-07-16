@@ -13,6 +13,7 @@ import XCTest
 @testable import OBAKit
 @testable import OBAKitCore
 
+@MainActor
 class CollectionsTests: XCTestCase {
 
     func test_set_allObjects() {

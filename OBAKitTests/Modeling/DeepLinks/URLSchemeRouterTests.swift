@@ -12,6 +12,7 @@ import XCTest
 import Nimble
 @testable import OBAKitCore
 
+@MainActor
 class URLSchemeRouterTests: XCTestCase {
     
     var router: URLSchemeRouter!

@@ -2,6 +2,7 @@ import XCTest
 import OBAKitCore
 @testable import OBAKit
 
+@MainActor
 final class DepartureStatusTests: XCTestCase {
 
     func test_scheduledOnly_isGrayWithScheduleDataLabel() {

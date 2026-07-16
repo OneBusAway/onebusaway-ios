@@ -8,7 +8,7 @@
 import OBAKitCore
 import UIKit
 
-struct DonationListItem: OBAListViewItem {
+nonisolated struct DonationListItem: OBAListViewItem {
     var configuration: OBAListViewItemConfiguration {
         return .custom(DonationContentConfiguration(self))
     }
@@ -39,7 +39,7 @@ struct DonationListItem: OBAListViewItem {
     }
 }
 
-struct DonationContentConfiguration: OBAContentConfiguration {
+nonisolated struct DonationContentConfiguration: OBAContentConfiguration {
     var formatters: OBAKitCore.Formatters?
 
     var viewModel: DonationListItem

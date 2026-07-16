@@ -9,9 +9,11 @@
 
 import Foundation
 
+// @unchecked Sendable: the wrapped model properties are assigned once during init and
+// never mutated afterwards; the wrapped types are themselves Sendable.
 /// Wraps `ArrivalDeparture`, `VehicleStatus`, and `TripDetails` to provide a uniform way to populate
 /// user interfaces that display trip information, like the `TripViewController` in `OBAKit`.
-public class TripConvertible: NSObject {
+public final class TripConvertible: NSObject, @unchecked Sendable {
     public var arrivalDeparture: ArrivalDeparture?
     public var vehicleStatus: VehicleStatus?
     public var tripDetails: TripDetails?

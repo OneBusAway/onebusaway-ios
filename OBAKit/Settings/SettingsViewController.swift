@@ -262,12 +262,15 @@ class SettingsViewController: FormViewController {
                 $0.onChange { [weak self] row in
                     guard let self, row.value == true else { return }
                     // Eureka's onChange closure is nonisolated (pre-concurrency
-                    // library), but fires on main; isolate the task explicitly.
+                    // library), so `row` can't cross into the main-actor task;
+                    // re-fetch it by tag inside instead.
                     Task { @MainActor in
                         let granted = await self.application.walkingSpeedManager.requestHealthKitAuthorizationAndSync()
                         if !granted {
-                            row.value = false
-                            row.reload()
+                            if let row: SwitchRow = self.form.rowBy(tag: self.walkingSpeedUseHealthKitKey) {
+                                row.value = false
+                                row.reload()
+                            }
                             self.showErrorToast(
                                 OBALoc(
                                     "settings_controller.walking_speed.healthkit_unavailable",

@@ -11,6 +11,7 @@ import Foundation
 import XCTest
 @testable import OBAKitCore
 
+@MainActor
 class RegionsFileStorageTests: XCTestCase {
 
     private var temporaryDirectory: URL!

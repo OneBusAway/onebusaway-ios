@@ -5,7 +5,7 @@
 //  Created by Alan Chu on 10/4/20.
 //
 
-public enum OBAListViewItemConfiguration {
+nonisolated public enum OBAListViewItemConfiguration {
     case custom(OBAContentConfiguration)
     case list(UIListContentConfiguration, [UICellAccessory?])
 }
@@ -22,7 +22,11 @@ public enum OBAListViewItemConfiguration {
 ///     similar to hashable, comparing *all values, including the identifier*.
 /// - The `Identifiable` protocol requires an `id` property.
 ///     It is currently not in use, reserved for future item identification functionality. This value is the "stable identity" (e.g. `stopID`) of the model.
-public protocol OBAListViewItem: Hashable, Identifiable {
+/// nonisolated: conforming types are value-type view models whose `Hashable`/`Equatable`
+/// witnesses are exercised by the diffable data source (see `OBAListViewSection`), so the
+/// whole view-model layer must stay off the main actor. Conforming types should also be
+/// declared `nonisolated`.
+nonisolated public protocol OBAListViewItem: Hashable, Identifiable {
     var configuration: OBAListViewItemConfiguration { get }
 
     var separatorConfiguration: OBAListRowSeparatorConfiguration { get }
@@ -48,7 +52,7 @@ public protocol OBAListViewItem: Hashable, Identifiable {
 }
 
 // MARK: Default implementations
-extension OBAListViewItem {
+nonisolated extension OBAListViewItem {
     public static var customCellType: OBAListViewCell.Type? {
         return nil
     }

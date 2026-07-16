@@ -14,6 +14,7 @@ import UIKit
 @testable import OBAKit
 @testable import OBAKitCore
 
+@MainActor
 class AlertPresenterTests: XCTestCase {
     
     var viewController: MockPresentingViewController!

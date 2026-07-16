@@ -16,7 +16,7 @@ import UIKit
 /// An icon tile, a title, and a two-action footer
 /// (`Take survey` / `Not now`). It is a teaser — tapping `Take survey`
 /// opens the survey; the card itself shows no questions.
-struct SurveyLauncherListItem: OBAListViewItem {
+nonisolated struct SurveyLauncherListItem: OBAListViewItem {
     var configuration: OBAListViewItemConfiguration {
         return .custom(SurveyLauncherContentConfiguration(self))
     }
@@ -65,7 +65,7 @@ extension SurveyLauncherListItem: Hashable {
 }
 
 // MARK: - Content Configuration
-struct SurveyLauncherContentConfiguration: OBAContentConfiguration {
+nonisolated struct SurveyLauncherContentConfiguration: OBAContentConfiguration {
     var formatters: OBAKitCore.Formatters?
 
     var viewModel: SurveyLauncherListItem

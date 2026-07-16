@@ -108,7 +108,7 @@ class AlarmBuilder: NSObject {
 
         let arrivalDeparture = self.arrivalDeparture
 
-        await ProgressHUD.show()
+        ProgressHUD.show()
 
         defer {
             Task { @MainActor in

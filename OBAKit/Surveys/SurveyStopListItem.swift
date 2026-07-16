@@ -13,7 +13,7 @@ import OBAKitCore
 import UIKit
 
 /// List item that displays a survey in the stop view with interactive hero question
-struct SurveyStopListItem: OBAListViewItem {
+nonisolated struct SurveyStopListItem: OBAListViewItem {
     var configuration: OBAListViewItemConfiguration {
         return .custom(SurveyContentConfiguration(self))
     }
@@ -71,7 +71,7 @@ extension SurveyStopListItem: Hashable {
 }
 
 // MARK: - Content Configuration
-struct SurveyContentConfiguration: OBAContentConfiguration {
+nonisolated struct SurveyContentConfiguration: OBAContentConfiguration {
     var formatters: OBAKitCore.Formatters?
 
     var viewModel: SurveyStopListItem

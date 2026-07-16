@@ -10,6 +10,7 @@
 import XCTest
 @testable import OBAKitCore
 
+@MainActor
 class TripActivityPresenterTests: XCTestCase {
     private let presenter = TripActivityPresenter(
         formatters: Formatters(locale: Locale(identifier: "en_US"), calendar: Calendar(identifier: .gregorian), themeColors: ThemeColors.shared)

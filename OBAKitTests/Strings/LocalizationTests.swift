@@ -15,6 +15,7 @@ import XCTest
 /// time and therefore drifts in ways no other test would notice: a missing key silently
 /// falls back to English, and a mismatched format specifier makes `String(format:)` read
 /// past its argument list.
+@MainActor
 class LocalizationTests: XCTestCase {
 
     /// Keys whose plural forms come from `Localizable.stringsdict` rather than

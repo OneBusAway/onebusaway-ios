@@ -12,6 +12,7 @@ import XCTest
 import Nimble
 @testable import OBAKit
 
+@MainActor
 class DispatchExtensionsTests: XCTestCase {
     
     func test_debounce_executesAction() {

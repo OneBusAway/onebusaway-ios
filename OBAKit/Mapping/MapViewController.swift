@@ -1055,11 +1055,14 @@ class MapViewController: UIViewController,
     public func mapRegionManagerDataLoadingStarted(_ manager: MapRegionManager) {
         // If loading takes more than a second, show the activity indicator.
         loadingIndicatorTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: false) { [weak self] _ in
-            guard let self = self else { return }
-            UIView.transition(with: self.toolbar.stackView, duration: 0.25, options: .allowAnimatedContent, animations: {
-                self.toolbar.stackView.addArrangedSubview(self.loadingIndicator)
-                self.loadingIndicator.startAnimating()
-            })
+            // Timers scheduled on the main run loop fire on the main thread.
+            MainActor.assumeIsolated {
+                guard let self = self else { return }
+                UIView.transition(with: self.toolbar.stackView, duration: 0.25, options: .allowAnimatedContent, animations: {
+                    self.toolbar.stackView.addArrangedSubview(self.loadingIndicator)
+                    self.loadingIndicator.startAnimating()
+                })
+            }
         }
     }
 

@@ -13,6 +13,7 @@ import Nimble
 import UIKit
 @testable import OBAKit
 
+@MainActor
 class StackedTitleViewTests: XCTestCase {
     
     var stackedTitleView: StackedTitleView!

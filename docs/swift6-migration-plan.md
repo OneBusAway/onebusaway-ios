@@ -239,6 +239,55 @@ sites rather than sprinkling `@unchecked Sendable` wrappers.
 
 Exit criterion: `SWIFT_VERSION: "6.0"` on the OBAKit target.
 
+### Phase 2 implementation notes (done 2026-07-16)
+
+The 128-warning burn-down resolved into a handful of structural moves rather
+than 128 point fixes:
+
+- **The `OBAListView` view-model layer went `nonisolated` wholesale** — the
+  `OBAListViewItem` protocol, its default-implementation extension, all 23
+  conforming item structs, all 14 `OBAContentConfiguration` conformers, and
+  the support types (`OBAListViewItemConfiguration`,
+  `OBAListViewContextualAction`, `OBAListRowSeparatorConfiguration`,
+  `OBAListSectionConfiguration`, `OBALabelConfiguration`,
+  `OBAImageViewConfiguration`, the `UIListContentConfiguration` helper
+  extension). These are value-type view models whose `Hashable` witnesses the
+  diffable data source exercises; isolating them was never meaningful. Where a
+  member genuinely needs UIKit (`OBAListViewContextualAction.contextualAction`)
+  or reads `Application` state (`StopHeaderItem.init`), that one member is
+  `@MainActor`.
+- **Watch for extensions**: `nonisolated` on a type does NOT flow to its
+  extensions under MainActor-default — `AppSheetRoute` was nonisolated while
+  its `id`/`detentConfiguration` extensions silently stayed MainActor,
+  poisoning four conformances. Every extension of a nonisolated type needs its
+  own `nonisolated`.
+- **`OBALoc` and `Icons` became nonisolated** — pure bundle/UIImage lookups;
+  this alone cleared ~20 diagnostics. `Icons.iconCache` then needed an
+  `NSLock` (it really is cross-isolation shared state now).
+- **Main-thread callbacks got `MainActor.assumeIsolated`**: CLGeocoder
+  completion, main-run-loop `Timer`s (MapViewController, SearchInteractor,
+  ProgressHUD), FloatingPanel layout callbacks. Background-queue callbacks got
+  `Task { @MainActor in }` instead: `UNUserNotificationCenter`
+  authorization, `NSItemProvider.loadFileRepresentation` (which was a real
+  pre-existing race — it mutated SwiftUI `@State` off-main).
+- **REST-model Sendable audit extended** per the HasReferences contract:
+  `ServiceAlert`, `TripDetails`, `ArrivalDeparture`, `VehicleStatus`,
+  `Agency`, plus `TripConvertible` and `TripAttributes`/`ContentState`
+  (needed by ActivityKit sends).
+- **Region-isolation errors after the flip** (they were warnings under
+  Swift 5) needed value re-fetching rather than actor-entering:
+  a task-isolated Eureka `row` can't be captured by any main-actor closure
+  even inside `MainActor.assumeIsolated` — re-fetch via `form.rowBy(tag:)`
+  inside the task; a non-Sendable `Activity` fetched on the main actor can't
+  be sent to ActivityKit's `@concurrent update` — re-fetch by ID inside
+  `Task.detached`.
+- **`@MainActor` can't be spelled on a typealias'd function type**
+  (`@escaping @MainActor VoidBlock` → "unknown attribute"); write the function
+  type out. `DispatchQueue.debounce/throttle` became main-actor-only APIs with
+  main-actor global bookkeeping (they were only ever used from main).
+- Annotating OBAKit types pushed 48 more test classes to `@MainActor`
+  (every remaining plain-`XCTestCase` class in OBAKitTests is annotated now).
+
 ## Phase 3 — App targets, widget, ObjC shims (~22 diagnostics)
 
 - OBAWidget: 10 warnings; already extension-safe and mostly SwiftUI. MainActor
@@ -297,14 +346,15 @@ anyway, but don't couple the two efforts.
 |---|---|---|---|---|
 | 0 | Build settings + CI ratchet + Package.resolved fix | 0 fixed | warnings visible, count frozen | ✅ done |
 | 1 | OBAKitCore (+ approachable concurrency) | 119 → 0 | Core in Swift 6 mode | ✅ done |
-| 2 | OBAKit (+ MainActor default) | 467 → 128 warnings, 0 errors | OBAKit in Swift 6 mode | ⏳ settings on, errors fixed, warnings remain |
-| 3 | App, OBAWidget, KiedyBus | ~17 | whole project `SWIFT_VERSION = 6.0` | not started |
-| 4 | OBAKitTests | 596* | tests in Swift 6 mode | not started |
+| 2 | OBAKit (+ MainActor default) | 467 → 0 | OBAKit in Swift 6 mode | ✅ done |
+| 3 | App, OBAWidget, KiedyBus | 14 remain | whole project `SWIFT_VERSION = 6.0` | not started |
+| 4 | OBAKitTests | 43 remain* | tests in Swift 6 mode | not started |
 
-*\* The test count rose from the measured 394 because `OBATestCase` is now
-`@MainActor` (required for tests to compile against the annotated frameworks),
-which surfaces additional autoclosure warnings. Ratchet baseline after
-Phase 1: 733 (from 999).*
+*\* The test count spiked to 596 after Phase 1 (`OBATestCase` going
+`@MainActor` surfaced autoclosure warnings), then collapsed to 43 in Phase 2
+once every remaining plain-`XCTestCase` class was annotated `@MainActor`.
+Ratchet baseline: 999 → 733 (Phase 1) → 57 (Phase 2: Apps 11, OBAKitTests 43,
+OBAWidget 3).*
 
 ### Phase 1 implementation notes (2026-07-16)
 

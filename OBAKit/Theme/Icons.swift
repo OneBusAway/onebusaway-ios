@@ -11,7 +11,9 @@ import UIKit
 import OBAKitCore
 
 /// Static accessors for icons available in the framework.
-class Icons: NSObject {
+/// nonisolated: only constructs `UIImage`/`UIColor` values, which is thread-safe;
+/// nonisolated list-item view models need these accessors off the main actor.
+nonisolated class Icons: NSObject {
 
     // MARK: - Tab Icons
     /// The Map tab icon, for apps using a tab bar UI metaphor.
@@ -268,13 +270,16 @@ class Icons: NSObject {
 
     // MARK: - Squircle icon
 
-    private static var iconCache = [Route.RouteType: UIImage]()
-    public static var squircleIconSize: CGFloat = 40
+    /// Guarded by `iconCacheLock`: `Icons` is nonisolated, so the squircle cache
+    /// can be touched from any isolation.
+    nonisolated(unsafe) private static var iconCache = [Route.RouteType: UIImage]()
+    private static let iconCacheLock = NSLock()
+    public static let squircleIconSize: CGFloat = 40
 
     /// The transport glyph in white over a brand-color gradient squircle,
     /// echoing the stop page's `RouteBadgeView` treatment.
     public static func squircleTransportIcon(for routeType: Route.RouteType) -> UIImage {
-        if let cached = iconCache[routeType] { return cached }
+        if let cached = iconCacheLock.withLock({ iconCache[routeType] }) { return cached }
 
         let rect = CGRect(x: 0, y: 0, width: squircleIconSize, height: squircleIconSize)
         let image = UIGraphicsImageRenderer(bounds: rect).image { context in
@@ -307,7 +312,7 @@ class Icons: NSObject {
                 height: glyphSize.height))
         }.withRenderingMode(.alwaysOriginal)
 
-        iconCache[routeType] = image
+        iconCacheLock.withLock { iconCache[routeType] = image }
         return image
     }
 

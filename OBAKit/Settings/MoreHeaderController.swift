@@ -10,7 +10,7 @@
 import UIKit
 import OBAKitCore
 
-struct MoreHeaderItem: OBAListViewItem {
+nonisolated struct MoreHeaderItem: OBAListViewItem {
     let id: UUID = UUID()
     let supportText: String?
 
@@ -37,7 +37,7 @@ struct MoreHeaderItem: OBAListViewItem {
     }
 }
 
-struct MoreHeaderItemContentConfiguration: OBAContentConfiguration {
+nonisolated struct MoreHeaderItemContentConfiguration: OBAContentConfiguration {
     public var formatters: Formatters?
     let supportText: String?
 

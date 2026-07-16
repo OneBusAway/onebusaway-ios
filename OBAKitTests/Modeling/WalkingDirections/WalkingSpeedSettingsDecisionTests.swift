@@ -12,6 +12,7 @@ import Nimble
 @testable import OBAKit
 @testable import OBAKitCore
 
+@MainActor
 final class WalkingSpeedSettingsDecisionTests: XCTestCase {
 
     // MARK: - Toggle absent (form row not shown)

@@ -9,6 +9,7 @@
 import XCTest
 @testable import OBAKitCore
 
+@MainActor
 final class FeatureFlagsTests: XCTestCase {
     private var defaults: UserDefaults!
 

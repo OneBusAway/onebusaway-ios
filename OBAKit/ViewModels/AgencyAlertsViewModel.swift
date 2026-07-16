@@ -17,7 +17,7 @@ import OBAKitCore
 /// collapsed-section set. Adopts `AgencyAlertsDelegate` directly so the VC
 /// no longer needs to bridge store updates.
 @MainActor
-final class AgencyAlertsViewModel: NSObject, ObservableObject, @preconcurrency AgencyAlertsDelegate {
+final class AgencyAlertsViewModel: NSObject, ObservableObject, AgencyAlertsDelegate {
 
     // MARK: - Published State
 

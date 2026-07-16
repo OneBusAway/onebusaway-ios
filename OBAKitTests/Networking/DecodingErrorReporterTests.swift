@@ -7,6 +7,7 @@
 import XCTest
 @testable import OBAKitCore
 
+@MainActor
 final class DecodingErrorReporterTests: XCTestCase {
 
     // MARK: - Test Models

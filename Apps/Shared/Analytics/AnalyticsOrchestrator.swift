@@ -118,7 +118,9 @@ import FirebaseCrashlytics
         }
     }
 
-    @objc public func reportingEnabled() -> Bool {
+    // nonisolated: called from the nonisolated DecodingErrorReporter handler;
+    // only touches UserDefaults, which is thread-safe.
+    @objc nonisolated public func reportingEnabled() -> Bool {
         return userDefaults.bool(forKey: AnalyticsKeys.reportingEnabledUserDefaultsKey)
     }
 

@@ -12,7 +12,7 @@ import OBAKitCore
 
 fileprivate let tripStopCellMinimumHeight: CGFloat = 48.0
 
-struct TripStopListItemRowConfiguration: OBAContentConfiguration {
+nonisolated struct TripStopListItemRowConfiguration: OBAContentConfiguration {
     var viewModel: TripStopViewModel
     var formatters: Formatters?
 
@@ -21,7 +21,7 @@ struct TripStopListItemRowConfiguration: OBAContentConfiguration {
     }
 }
 
-struct TripStopViewModel: OBAListViewItem {
+nonisolated struct TripStopViewModel: OBAListViewItem {
     var id: String { stop.id }
 
     var configuration: OBAListViewItemConfiguration {
@@ -120,7 +120,7 @@ struct TripStopViewModel: OBAListViewItem {
 /// [ |                            ]
 /// ```
 final class TripStopCell: OBAListViewCell {
-    static let tripSegmentImageWidth: CGFloat = 40.0
+    nonisolated static let tripSegmentImageWidth: CGFloat = 40.0
 
     override func prepareForReuse() {
         super.prepareForReuse()

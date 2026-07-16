@@ -13,6 +13,7 @@ import CoreLocation
 
 // swiftlint:disable force_try
 
+@MainActor
 class StopCacheRepositoryTests: XCTestCase {
 
     var database: StopCacheDatabase!

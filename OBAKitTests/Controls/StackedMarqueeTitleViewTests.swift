@@ -15,6 +15,7 @@ import MarqueeLabel
 @testable import OBAKit
 @testable import OBAKitCore
 
+@MainActor
 class StackedMarqueeTitleViewTests: XCTestCase {
     
     var titleView: StackedMarqueeTitleView!

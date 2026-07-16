@@ -9,7 +9,7 @@
 
 import OBAKitCore
 
-struct EmptyDataSetItem: OBAListViewItem {
+nonisolated struct EmptyDataSetItem: OBAListViewItem {
     var configuration: OBAListViewItemConfiguration {
         return .custom(EmptyDataSetContentConfiguration(viewModel: self))
     }
@@ -91,7 +91,7 @@ struct EmptyDataSetItem: OBAListViewItem {
     }
 }
 
-struct EmptyDataSetContentConfiguration: OBAContentConfiguration {
+nonisolated struct EmptyDataSetContentConfiguration: OBAContentConfiguration {
     var formatters: Formatters?
     var viewModel: EmptyDataSetItem
     var obaContentView: (OBAContentView & ReuseIdentifierProviding).Type {

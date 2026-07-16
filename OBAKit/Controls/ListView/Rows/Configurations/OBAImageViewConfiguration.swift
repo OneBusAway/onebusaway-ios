@@ -10,7 +10,7 @@ import OBAKitCore
 /// A view model defining `UIListContentConfiguration.ImageProperties` properties.
 ///
 /// Technical Note: This may be expanded in the future, as needed.
-public struct OBAImageViewConfiguration: Equatable {
+nonisolated public struct OBAImageViewConfiguration: Equatable {
     public var tintColor: UIColor?
     public var maximumSize: CGSize
 

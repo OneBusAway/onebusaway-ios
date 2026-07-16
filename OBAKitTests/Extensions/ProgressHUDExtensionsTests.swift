@@ -13,6 +13,7 @@ import Nimble
 import UIKit
 @testable import OBAKit
 
+@MainActor
 class ProgressHUDExtensionsTests: XCTestCase {
     
     func test_showSuccessAndDismiss_withMessage() {

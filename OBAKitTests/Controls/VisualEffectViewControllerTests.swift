@@ -13,6 +13,7 @@ import Nimble
 import UIKit
 @testable import OBAKit
 
+@MainActor
 class VisualEffectViewControllerTests: XCTestCase {
     
     var viewController: VisualEffectViewController!
