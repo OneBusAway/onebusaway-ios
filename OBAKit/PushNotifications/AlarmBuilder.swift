@@ -155,8 +155,7 @@ class AlarmTimePickerItem: ThemedBulletinPage {
     /// The current value of the "Track on Lock Screen" toggle.
     var trackOnLockScreen: Bool { userDefaults.bool(forKey: Self.trackOnLockScreenKey) }
 
-    // The inherited init(title:) would otherwise be synthesized with main-actor
-    // isolation, mismatching ThemedBulletinPage's nonisolated declaration.
+    // Required by ThemedBulletinPage's initializer contract (see its init(title:)).
     @available(*, unavailable)
     nonisolated override init(title: String) {
         fatalError("Use init(arrivalDeparture:initialMinutes:userDefaults:)")

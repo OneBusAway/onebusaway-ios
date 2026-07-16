@@ -9,7 +9,6 @@ import XCTest
 import Nimble
 @testable import OBAKitCore
 
-@MainActor
 final class SurveyServiceStateTests: OBATestCase {
 
     nonisolated(unsafe) private var surveyService: SurveyService!

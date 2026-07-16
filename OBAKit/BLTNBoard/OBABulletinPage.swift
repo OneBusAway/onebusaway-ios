@@ -14,6 +14,11 @@ class ThemedBulletinPage: BLTNPageItem {
 
     // nonisolated to match BLTNPageItem's nonisolated designated initializer; only
     // touches BLTNBoard state and the Sendable ThemeColors.
+    //
+    // Subclasses that declare their own designated initializer must also
+    // re-declare this one as `@available(*, unavailable) nonisolated override`:
+    // the implicitly-synthesized override would otherwise get main-actor
+    // isolation and mismatch this nonisolated declaration.
     nonisolated override init(title: String) {
         super.init(title: title)
         customizeAppearance()

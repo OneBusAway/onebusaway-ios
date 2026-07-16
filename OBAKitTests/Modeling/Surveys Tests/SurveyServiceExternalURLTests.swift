@@ -7,7 +7,6 @@ import XCTest
 import Nimble
 @testable import OBAKitCore
 
-@MainActor
 final class SurveyServiceExternalURLTests: OBATestCase {
 
     nonisolated(unsafe) private var testUserDefaults: UserDefaults!

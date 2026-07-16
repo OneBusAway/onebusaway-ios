@@ -16,7 +16,6 @@ import Combine
 /// Tests for `AgencyAlertsViewModel`. Verifies the share-activity helper,
 /// `collapsedSections` round-trip, and the loading flag transitions on
 /// `agencyAlertsUpdated()`.
-@MainActor
 final class AgencyAlertsViewModelTests: OBATestCase {
     var queue: OperationQueue!
 

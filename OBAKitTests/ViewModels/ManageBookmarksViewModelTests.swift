@@ -14,7 +14,6 @@ import Nimble
 
 /// Tests for `ManageBookmarksViewModel`. Covers data access delegation, bookmark deletion
 /// (with analytics), name persistence, transit-name restoration, and reorder logic.
-@MainActor
 class ManageBookmarksViewModelTests: OBATestCase {
     var queue: OperationQueue!
 

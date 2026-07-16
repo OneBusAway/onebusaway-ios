@@ -177,69 +177,66 @@ class SearchInteractor: NSObject {
         debounceTimer?.invalidate()
         debounceTimer = nil
 
-        debounceTimer = Timer.scheduledTimer(
+        debounceTimer = Timer.scheduledMainActorTimer(
             withTimeInterval: debounceInterval,
             repeats: false
-        ) { [weak self] _ in
-            // Timers scheduled on the main run loop fire on the main thread.
-            MainActor.assumeIsolated {
-                guard let self = self else { return }
+        ) { [weak self] in
+            guard let self = self else { return }
 
-                if let localSearch = self.localSearch {
-                    localSearch.cancel()
-                }
+            if let localSearch = self.localSearch {
+                localSearch.cancel()
+            }
 
-                // Set loading state when search starts
-                self.placemarkSearchState = .loading
+            // Set loading state when search starts
+            self.placemarkSearchState = .loading
 
-                let searchRequest = MKLocalSearch.Request()
-                searchRequest.naturalLanguageQuery = searchText
-                // Use the current OBA region's service bounds instead of the visible map area
-                // to constrain search results to the transit agency's coverage area
-                let searchRegion: MKCoordinateRegion
-                if let currentRegion = self.application.currentRegion {
-                    searchRegion = MKCoordinateRegion(currentRegion.serviceRect)
-                } else {
-                    // Fallback to visible map area if no region is set
-                    searchRegion = MKCoordinateRegion(mapRect)
-                }
-                searchRequest.region = searchRegion
-                let search = MKLocalSearch(request: searchRequest)
-                self.localSearch = search
-                search.start { [weak self] response, error in
-                    DispatchQueue.main.async {
-                        guard let self else { return }
-                        if let error {
-                            if (error as? URLError)?.code == .cancelled {
-                                return
-                            }
-                            self.placemarkSearchState = .error(error)
+            let searchRequest = MKLocalSearch.Request()
+            searchRequest.naturalLanguageQuery = searchText
+            // Use the current OBA region's service bounds instead of the visible map area
+            // to constrain search results to the transit agency's coverage area
+            let searchRegion: MKCoordinateRegion
+            if let currentRegion = self.application.currentRegion {
+                searchRegion = MKCoordinateRegion(currentRegion.serviceRect)
+            } else {
+                // Fallback to visible map area if no region is set
+                searchRegion = MKCoordinateRegion(mapRect)
+            }
+            searchRequest.region = searchRegion
+            let search = MKLocalSearch(request: searchRequest)
+            self.localSearch = search
+            search.start { [weak self] response, error in
+                DispatchQueue.main.async {
+                    guard let self else { return }
+                    if let error {
+                        if (error as? URLError)?.code == .cancelled {
                             return
                         }
-
-                        guard let response else {
-                            let unknownError = NSError(domain: "SearchInteractor", code: -1, userInfo: [NSLocalizedDescriptionKey: "Local search response is nil"])
-                            self.placemarkSearchState = .error(unknownError)
-                            return
-                        }
-
-                        // Filter results to only include items within the current region's bounds
-                        var filteredItems = response.mapItems
-                        if let currentRegion = self.application.currentRegion {
-                            filteredItems = response.mapItems.filter { mapItem in
-                                guard let location = mapItem.placemark.location else { return false }
-                                return currentRegion.contains(location: location)
-                            }
-                        }
-
-                        if filteredItems.isEmpty {
-                            self.placemarkSearchState = .noResults
-                        } else {
-                            self.cachedPlacemarks = filteredItems
-                            self.placemarkSearchState = .success
-                        }
-
+                        self.placemarkSearchState = .error(error)
+                        return
                     }
+
+                    guard let response else {
+                        let unknownError = NSError(domain: "SearchInteractor", code: -1, userInfo: [NSLocalizedDescriptionKey: "Local search response is nil"])
+                        self.placemarkSearchState = .error(unknownError)
+                        return
+                    }
+
+                    // Filter results to only include items within the current region's bounds
+                    var filteredItems = response.mapItems
+                    if let currentRegion = self.application.currentRegion {
+                        filteredItems = response.mapItems.filter { mapItem in
+                            guard let location = mapItem.placemark.location else { return false }
+                            return currentRegion.contains(location: location)
+                        }
+                    }
+
+                    if filteredItems.isEmpty {
+                        self.placemarkSearchState = .noResults
+                    } else {
+                        self.cachedPlacemarks = filteredItems
+                        self.placemarkSearchState = .success
+                    }
+
                 }
             }
         }

@@ -8,7 +8,6 @@ import Nimble
 @testable import OBAKit
 @testable import OBAKitCore
 
-@MainActor
 final class ExternalSurveyLauncherTests: OBATestCase {
 
     nonisolated(unsafe) private var testUserDefaults: UserDefaults!

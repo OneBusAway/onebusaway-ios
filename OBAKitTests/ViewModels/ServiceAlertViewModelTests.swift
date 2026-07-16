@@ -17,7 +17,6 @@ import Combine
 
 /// Tests for `ServiceAlertViewModel`. Verifies HTML build, idempotent
 /// `viewDidAppear()`, and mark-as-read side effect.
-@MainActor
 final class ServiceAlertViewModelTests: OBATestCase {
     var queue: OperationQueue!
 

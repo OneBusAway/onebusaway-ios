@@ -16,7 +16,6 @@ import CoreLocation
 // MARK: - Auto Region Selection Tests
 // See: https://github.com/OneBusAway/onebusaway-ios/issues/608
 
-@MainActor
 class RegionsServiceAutoSelectTests: OBATestCase {
     var locationManagerMock: LocationManagerMock!
     var locationService: LocationService!

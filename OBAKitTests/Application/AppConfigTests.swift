@@ -16,7 +16,6 @@ import XCTest
 import CoreLocation
 import Nimble
 
-@MainActor
 class AppConfigTests: OBATestCase {
     let regionsBaseURL = URL(string: "http://www.example.com")!
 

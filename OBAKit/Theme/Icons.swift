@@ -270,16 +270,17 @@ nonisolated class Icons: NSObject {
 
     // MARK: - Squircle icon
 
-    /// Guarded by `iconCacheLock`: `Icons` is nonisolated, so the squircle cache
-    /// can be touched from any isolation.
-    nonisolated(unsafe) private static var iconCache = [Route.RouteType: UIImage]()
-    private static let iconCacheLock = NSLock()
+    /// nonisolated(unsafe): NSCache is documented thread-safe (it just lacks a
+    /// Sendable annotation), so the nonisolated `Icons` can touch it from any
+    /// isolation (same pattern as `StopIconFactory.iconCache`).
+    nonisolated(unsafe) private static let iconCache = NSCache<NSNumber, UIImage>()
     public static let squircleIconSize: CGFloat = 40
 
     /// The transport glyph in white over a brand-color gradient squircle,
     /// echoing the stop page's `RouteBadgeView` treatment.
     public static func squircleTransportIcon(for routeType: Route.RouteType) -> UIImage {
-        if let cached = iconCacheLock.withLock({ iconCache[routeType] }) { return cached }
+        let cacheKey = NSNumber(value: routeType.rawValue)
+        if let cached = iconCache.object(forKey: cacheKey) { return cached }
 
         let rect = CGRect(x: 0, y: 0, width: squircleIconSize, height: squircleIconSize)
         let image = UIGraphicsImageRenderer(bounds: rect).image { context in
@@ -312,7 +313,7 @@ nonisolated class Icons: NSObject {
                 height: glyphSize.height))
         }.withRenderingMode(.alwaysOriginal)
 
-        iconCacheLock.withLock { iconCache[routeType] = image }
+        iconCache.setObject(image, forKey: cacheKey)
         return image
     }
 

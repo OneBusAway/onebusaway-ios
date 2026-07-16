@@ -15,10 +15,8 @@ targets:
     settings:
       base:
         APPLICATION_EXTENSION_API_ONLY: true
-        # Swift 6 migration Phase 1 (docs/swift6-migration-plan.md). Stays on
-        # permanently: two of its features are not part of the Swift 6 mode.
-        SWIFT_APPROACHABLE_CONCURRENCY: YES
-        SWIFT_VERSION: "6.0"
-        # Pin against the project-wide MainActor default (Phase 3): Core owns
-        # actors, networking, and background decode.
+        # Swift language mode and checking level come from the project-wide
+        # base in Apps/Shared/app_shared.yml. This one setting is a real
+        # override: Core owns actors, networking, and background decode, so it
+        # pins against the project-wide MainActor default.
         SWIFT_DEFAULT_ACTOR_ISOLATION: nonisolated

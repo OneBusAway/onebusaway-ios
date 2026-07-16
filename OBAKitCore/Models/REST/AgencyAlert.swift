@@ -63,20 +63,6 @@ public final class AgencyAlert: NSObject, Identifiable, @unchecked Sendable {
 
     private let defaultLanguageCode = "en"
 
-    // MARK: - Translation Properties
-
-    // Computed eagerly in init: `lazy var` would be unsynchronized mutable
-    // state, which Sendable (even unchecked) cannot tolerate.
-    private let urlTranslations: [String: String]
-    private let titleTranslations: [String: String]
-    private let bodyTranslations: [String: String]
-
-    private static func translationMap(_ translations: [TransitRealtime_TranslatedString.Translation]) -> [String: String] {
-        translations.reduce(into: [:]) { (acc, translation) in
-            acc[translation.language] = translation.text
-        }
-    }
-
     // MARK: - Initialization
 
     public convenience init(feedEntity: TransitRealtime_FeedEntity, agencies: [AgencyWithCoverage]) throws {
@@ -114,9 +100,6 @@ public final class AgencyAlert: NSObject, Identifiable, @unchecked Sendable {
         id = feedEntity.id
         agencyID = gtfsAgency.agencyID
         self.agency = agency
-        urlTranslations = AgencyAlert.translationMap(feedEntity.alert.url.translation)
-        titleTranslations = AgencyAlert.translationMap(feedEntity.alert.headerText.translation)
-        bodyTranslations = AgencyAlert.translationMap(feedEntity.alert.descriptionText.translation)
     }
 
     // MARK: - Equality and Hashing
@@ -185,7 +168,7 @@ extension AgencyAlert {
     fileprivate func url(language: String) -> URL? {
         guard
             alert.hasURL,
-            let urlString = translation(key: language, from: urlTranslations)
+            let urlString = translation(key: language, from: alert.url.translation)
             else {
                 return nil
         }
@@ -198,7 +181,7 @@ extension AgencyAlert {
             return nil
         }
 
-        return translation(key: language, from: titleTranslations)
+        return translation(key: language, from: alert.headerText.translation)
     }
 
     fileprivate func body(language: String) -> String? {
@@ -206,30 +189,28 @@ extension AgencyAlert {
             return nil
         }
 
-        return translation(key: language, from: bodyTranslations)
+        return translation(key: language, from: alert.descriptionText.translation)
     }
 
-    private func translation(key: String, from map: [String: String]) -> String? {
-        if let translation = map[key] {
-            return translation
+    // A linear scan over the stored protobuf (translation lists hold a handful
+    // of entries at most): pure reads of immutable `let` state, so there is
+    // nothing to cache or synchronize.
+    private func translation(key: String, from translations: [TransitRealtime_TranslatedString.Translation]) -> String? {
+        if let translation = translations.first(where: { $0.language == key }) {
+            return translation.text
         }
 
         // If we don't have the desired translation, first check
         // to see if we have a default translation language value
         // present. For now this is English.
-        if let translation = map[defaultLanguageCode] {
-            return translation
+        if let translation = translations.first(where: { $0.language == defaultLanguageCode }) {
+            return translation.text
         }
 
         // If that doesn't work out and we don't have our
         // desired language or default language, then just
         // return whatever we can get our hands on.
-        if let key = map.keys.first {
-            return map[key]
-        }
-        else {
-            return nil
-        }
+        return translations.first?.text
     }
 }
 

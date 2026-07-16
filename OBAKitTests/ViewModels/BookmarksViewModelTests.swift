@@ -17,7 +17,6 @@ import Combine
 
 /// Tests for `BookmarksViewModel`. Verifies that the `sortByGroup` preference is read
 /// from and written to UserDefaults under the documented key.
-@MainActor
 class BookmarksViewModelTests: OBATestCase {
     private let sortByGroupKey = "OBABookmarksController_SortBookmarksByGroup"
     var queue: OperationQueue!

@@ -16,7 +16,6 @@ import XCTest
 /// Every user upgrading from a pre-disk-storage release runs this migration exactly once
 /// at launch, so these tests guard against losing the user's selected region, the
 /// downloaded region list, or their custom regions during an app update.
-@MainActor
 class RegionsServiceMigrationTests: OBATestCase {
 
     private var fileStorage: MockRegionsFileStorage!

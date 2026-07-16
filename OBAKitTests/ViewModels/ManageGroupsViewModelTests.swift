@@ -13,7 +13,6 @@ import Nimble
 @testable import OBAKitCore
 
 /// Tests for `ManageGroupsViewModel`. Covers group list access and the replace-all mutation.
-@MainActor
 class ManageGroupsViewModelTests: OBATestCase {
     var queue: OperationQueue!
 

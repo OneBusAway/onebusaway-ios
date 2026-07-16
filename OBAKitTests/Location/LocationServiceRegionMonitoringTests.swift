@@ -16,7 +16,6 @@ import Nimble
 
 // swiftlint:disable force_try
 
-@MainActor
 class LocationServiceRegionMonitoringTests: OBATestCase {
 
     var locationManagerMock: AuthorizableLocationManagerMock!

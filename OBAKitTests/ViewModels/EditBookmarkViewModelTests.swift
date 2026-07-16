@@ -14,7 +14,6 @@ import Nimble
 
 /// Tests for `EditBookmarkViewModel`. Covers initial state derivation, save outcome
 /// routing (add vs edit, duplicate detection), persistence, and analytics emission.
-@MainActor
 class EditBookmarkViewModelTests: OBATestCase {
     var queue: OperationQueue!
 

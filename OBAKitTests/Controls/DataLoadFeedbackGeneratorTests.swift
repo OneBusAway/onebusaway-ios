@@ -13,7 +13,6 @@ import Nimble
 import UIKit
 @testable import OBAKit
 
-@MainActor
 class DataLoadFeedbackGeneratorTests: OBATestCase {
     
     var feedbackGenerator: DataLoadFeedbackGenerator!

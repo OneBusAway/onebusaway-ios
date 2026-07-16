@@ -21,7 +21,6 @@ import CoreLocation
 /// the fixture. That exercises the full pipeline — stubbed agencies-with-coverage
 /// request, task group, skipped-status generation, published state transitions —
 /// without any live network traffic.
-@MainActor
 class VehiclesViewModelTests: OBATestCase {
     var queue: OperationQueue!
 

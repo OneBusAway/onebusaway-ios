@@ -40,7 +40,6 @@ private class RegionsServiceTestDelegate: NSObject, RegionsServiceDelegate {
 
 // MARK: - Test Case
 
-@MainActor
 class RegionsServiceTests: OBATestCase {
     private var testDelegate: RegionsServiceTestDelegate!
     var locationManagerMock: LocationManagerMock!

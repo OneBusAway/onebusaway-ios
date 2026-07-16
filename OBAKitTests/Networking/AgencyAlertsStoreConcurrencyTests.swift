@@ -21,7 +21,6 @@ import Nimble
 /// hoisting a mutation out of its critical section should surface here under Thread
 /// Sanitizer (preferred CI run) — and without TSan, an unhandled race typically
 /// still manifests as a crash or a count mismatch when the fanout is wide enough.
-@MainActor
 class AgencyAlertsStoreConcurrencyTests: OBATestCase {
     var queue: OperationQueue!
 

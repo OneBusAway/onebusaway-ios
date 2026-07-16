@@ -15,7 +15,6 @@ import Nimble
 /// Locks down the `preloadedArrivals` short-circuit on `AddBookmarkViewController.loadData()`:
 /// when the parent screen already has arrivals in hand, the controller must reuse them and
 /// skip the `arrivals-and-departures-for-stop` REST call.
-@MainActor
 class AddBookmarkViewControllerTests: OBATestCase {
     var queue: OperationQueue!
 

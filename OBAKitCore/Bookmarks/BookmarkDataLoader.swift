@@ -71,12 +71,8 @@ public class BookmarkDataLoader: NSObject {
     public func startRefreshTimer() {
         timer?.invalidate()
 
-        timer = Timer.scheduledTimer(withTimeInterval: refreshInterval, repeats: true) { [weak self] _ in
-            // Timers scheduled from the main actor fire on the main run loop.
-            MainActor.assumeIsolated {
-                guard let self = self else { return }
-                self.loadData()
-            }
+        timer = Timer.scheduledMainActorTimer(withTimeInterval: refreshInterval, repeats: true) { [weak self] in
+            self?.loadData()
         }
     }
 

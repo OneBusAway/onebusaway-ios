@@ -16,7 +16,6 @@ import CoreLocation
 // swiftlint:disable force_cast force_try
 
 /// Tests for `CurrentTripViewModel`.
-@MainActor
 class CurrentTripViewModelTests: OBATestCase {
     /// Near stop 1_10020 in the fixture (NE 55th & 37th Ave NE).
     private let userLocation = CLLocation(latitude: 47.6685, longitude: -122.2883)

@@ -15,7 +15,6 @@ import Combine
 
 /// Tests for `AgenciesViewModel`. Verifies the success path sorts by name,
 /// and that loading state resets to `false` after completion.
-@MainActor
 final class AgenciesViewModelTests: OBATestCase {
     var queue: OperationQueue!
 

@@ -10,7 +10,6 @@ import Foundation
 @testable import OBAKit
 @testable import OBAKitCore
 
-@MainActor
 class DataMigrator_Tests: OBATestCase {
 
     var dataLoader: MockDataLoader!

@@ -50,7 +50,6 @@ class TestRegionsServiceDelegate: NSObject, RegionsServiceDelegate {
     }
 }
 
-@MainActor
 class ApplicationTests: OBATestCase {
     var queue: OperationQueue!
 

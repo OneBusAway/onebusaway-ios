@@ -18,7 +18,6 @@ import Combine
 /// Tests for `RoutePickerViewModel`. Covers initial state, the API-fallback load
 /// path, missing-location error path, API failure surfacing, search filtering
 /// (case-insensitivity, short vs long name match, empty-query reset), and sort order.
-@MainActor
 class RoutePickerViewModelTests: OBATestCase {
 
     var queue: OperationQueue!
