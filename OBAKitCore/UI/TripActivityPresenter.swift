@@ -32,7 +32,6 @@ public struct TripActivityPresenter {
     }
 
     /// e.g. "3:26 PM - arrives on time" / "3:26 PM - Scheduled/not real-time".
-    /// Mirrors TripBookmarkRow.buildStatusText's phrasing.
     public func statusText(for arrival: TripAttributes.ContentState.ArrivalInfo, now: Date = Date()) -> String {
         let timeString = formatters.timeFormatter.string(from: arrival.departureDate)
 

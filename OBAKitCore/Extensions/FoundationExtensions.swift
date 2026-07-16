@@ -254,9 +254,27 @@ public extension Sequence where Element == String {
     }
 }
 
-// MARK: - String
+// MARK: - Error
 
-// From https://stackoverflow.com/a/55619708/136839
+public extension Error {
+    /// `true` when this error represents a cancelled operation that should be
+    /// swallowed rather than surfaced to the user. Matches the two shapes a
+    /// cancelled request can arrive as:
+    ///   1. Swift Concurrency's `CancellationError`.
+    ///   2. URLSession's `URLError(.cancelled)`, matched via its `NSError`
+    ///      bridge (domain `NSURLErrorDomain`, code `NSURLErrorCancelled`),
+    ///      which covers both Swift `URLError` values and Objective-C
+    ///      `NSError`s.
+    ///
+    /// Callers should also check `Task.isCancelled` for the case where the
+    /// enclosing Task was cancelled before the error was thrown.
+    var isCancellation: Bool {
+        if self is CancellationError { return true }
+        let nsError = self as NSError
+        return nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorCancelled
+    }
+}
+
 public extension String {
 
     /// true if the string consists of the characters 0-9 exclusively, and false otherwise.

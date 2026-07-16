@@ -127,9 +127,6 @@
 /* Title of the Base URL header. */
 "custom_region_builder_controller.base_url_section.header_title" = "URL Base";
 
-/* Title of the Contact Email header. */
-"custom_region_builder_controller.contact_email_section.header_title" = "E-mail de Contato";
-
 /* Example custom region name */
 "custom_region_builder_controller.example_data.region_name" = "Minha Região Personalizada";
 

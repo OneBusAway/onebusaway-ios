@@ -132,11 +132,13 @@ public struct RegionPickerView<Provider: RegionProvider>: View, OnboardingView {
             }
             .safeAreaInset(edge: .bottom) {
                 VStack(spacing: 14) {
+                    // Start collapsed so the region list — not the map — gets the vertical space.
                     RegionPickerMap(
                         mapRect: Binding(
                             get: {
                                 selectedRegion?.serviceRect
-                            }, set: { _ in }), mapHeight: 200
+                            }, set: { _ in }), mapHeight: 200,
+                        isMapExpanded: false
                     )
                     .zIndex(-1)  // Make the Map moving transition occur below the [Continue] button.
 
