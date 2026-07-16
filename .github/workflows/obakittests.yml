@@ -110,14 +110,27 @@ jobs:
     - name: Generate xcodeproj for OneBusAway
       run: scripts/generate_project OneBusAway
 
-    # Build
+    # Build. Output is teed to a log so the concurrency ratchet step can count
+    # strict-concurrency warnings (`-quiet` still prints warnings and errors).
     - name: Build OneBusAway
       timeout-minutes: 20
-      run: xcodebuild build-for-testing
-        -scheme 'App'
-        -destination "platform=iOS Simulator,id=${SIMULATOR_UDID}"
-        -derivedDataPath DerivedData
-        -quiet
+      run: |
+        set -o pipefail
+        xcodebuild build-for-testing \
+          -scheme 'App' \
+          -destination "platform=iOS Simulator,id=${SIMULATOR_UDID}" \
+          -derivedDataPath DerivedData \
+          -quiet \
+          | tee xcodebuild-build.log
+
+    # Swift 6 migration ratchet (docs/swift6-migration-plan.md): the number of
+    # strict-concurrency warnings may only go down. Non-enforcing until the
+    # baseline is confirmed against a CI (Xcode 26.2) log — the checked-in
+    # number was measured locally on a different toolchain; remove
+    # continue-on-error once a green run confirms the count matches.
+    - name: Concurrency warning ratchet
+      continue-on-error: true
+      run: scripts/concurrency_ratchet xcodebuild-build.log
 
     # Unit Test. Output is teed to a log so the "Report slowest tests" step can
     # surface per-test timing. `set -o pipefail` keeps xcodebuild's exit code

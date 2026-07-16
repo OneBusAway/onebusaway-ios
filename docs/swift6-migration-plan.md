@@ -1,0 +1,305 @@
+# Swift 6 Language Mode Migration Plan
+
+*Written 2026-07-16, revised same day after an adversarial documentation review.
+Measurements taken on `main` @ `0ae45cb3` with Xcode 27.0 beta 3 (Swift 6.4
+toolchain). CI (Xcode 26.2) supports every setting used here, but once Phase 0
+lands, contributors need Xcode 26 or newer.*
+
+## Where we are
+
+Every target builds in the Swift 5 language mode (`SWIFT_VERSION = 5.0`) with
+`SWIFT_STRICT_CONCURRENCY = minimal` — the Xcode defaults. Nothing in the
+XcodeGen YAML files sets a language mode or checking level today.
+
+The codebase is already partway there in spirit: `RESTAPIService` and
+`ObacoAPIService` are actors, there are ~134 `@MainActor` annotations and ~153
+`async` functions, and scattered `@preconcurrency` / `nonisolated(unsafe)`
+markers show earlier prep work. The remaining gap is the parts of the code the
+compiler has never checked.
+
+## What the compiler says (measured, not guessed)
+
+Three configurations of the `App` scheme were built to scope the work. All
+counts are **unique diagnostics in our code** (deduplicated; SPM dependencies
+excluded).
+
+| Configuration | OBAKitCore | OBAKit | OBAWidget | Apps | Total |
+|---|---|---|---|---|---|
+| A. `complete` checking only (today's isolation defaults) | 119 | 467 | 10 | 12 | **608** |
+| B. A + MainActor-by-default **everywhere** | 200 + 2 errors | did not compile | — | — | worse |
+| C. A + MainActor-by-default **in OBAKit only** | 119 | 80 + 22 errors | 10 | n/a* | **~231** |
+| D. A, `build-for-testing` (adds OBAKitTests) | — | — | — | +394 | **~1,002** |
+
+*\* App target didn't compile in run C because OBAKit failed; its baseline is 12.*
+
+Run D fills the test-target gap: OBAKitTests contributes 394 diagnostics, but
+they're highly mechanical — 132 are "main actor-isolated property … in a
+nonisolated autoclosure" (i.e. `XCTAssert` expressions touching UIView
+properties), concentrated in the `Controls/` view tests. `@MainActor` on those
+test classes clears them wholesale. The OBAKit count reproduced exactly (467)
+across two independent builds, so the baseline is stable.
+
+Run B's two hard errors (`LiveActivityRegistry.swift:279`, a
+`nonisolated(nonsending)` closure passed where `@isolated(any)` is expected)
+come from approachable concurrency's `NonisolatedNonsendingByDefault`, not
+from MainActor defaulting — meaning **enabling approachable concurrency on
+OBAKitCore breaks its build until that call site is fixed**. Phase 0 therefore
+enables checking only; approachable concurrency turns on per-module as each
+phase starts.
+
+Two conclusions fall out of this:
+
+1. **Default MainActor isolation is the right call for the UI layer and the
+   wrong call for OBAKitCore.** It eliminates ~78% of OBAKit's diagnostics
+   (467 → ~102), because most of them were "main actor-isolated X referenced
+   from nonisolated context" noise in code that only ever runs on the main
+   thread. Applied to OBAKitCore it *adds* diagnostics (119 → 200 + 2 hard
+   errors), because Core's actor-based networking, `Operation` subclasses, and
+   background decoding genuinely aren't main-actor code.
+2. **The hard problems are countable and specific.** The 22 errors in run C
+   and the 119 Core warnings cluster into a handful of patterns listed below —
+   this is a few weeks of focused work, not an open-ended rewrite.
+
+## Target architecture
+
+| Target | Default isolation | Rationale |
+|---|---|---|
+| OBAKit | `MainActor` | UIKit/SwiftUI framework; everything is main-thread anyway |
+| App, OBAWidget | `MainActor` | App/extension entry points; Apple's recommended default |
+| OBAKitCore | `nonisolated` (today's default) | Owns actors, networking, background decode; must stay extension-safe |
+
+All targets get `SWIFT_STRICT_CONCURRENCY = complete` first (warnings in
+Swift 5 mode). Each module then enables `SWIFT_APPROACHABLE_CONCURRENCY = YES`
+(plus `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor` for the UI layer) when its
+phase starts, and flips to `SWIFT_VERSION = 6.0` when it reaches zero
+concurrency warnings. Module-by-module adoption per Apple's
+[Adopting strict concurrency in Swift 6 apps](https://developer.apple.com/documentation/swift/adoptingswift6)
+and the [swift.org migration guide](https://www.swift.org/migration/documentation/migrationguide/).
+
+Two rules that come straight from the review of those sources:
+
+- **`SWIFT_APPROACHABLE_CONCURRENCY` stays on permanently, including after
+  the Swift 6 flip.** Two of its five upcoming features
+  (`InferIsolatedConformances`, `NonisolatedNonsendingByDefault`) are *not*
+  part of the Swift 6 language mode — dropping the setting after migrating
+  would silently revert isolation semantics the Phase 2 fixes depend on.
+- **Ordering is a deliberate deviation.** Apple's article and the migration
+  guide both suggest starting from the outermost module (the app) because
+  annotations flow downward more easily. We invert that (Core first) on
+  measured evidence: most of OBAKit's hard errors are overrides of
+  *unannotated OBAKitCore declarations*, so annotating Core's base classes
+  and delegate protocols is the bottleneck either way. The guide's wording is
+  soft ("It can be easier to start with the outer-most root module"), and it
+  explicitly allows any order. Note also the guide does not require zero
+  warnings before flipping a module ("You don't have to eliminate all
+  warnings to move on") — our zero-warnings exit criterion is stricter by
+  choice; the CI ratchet is what makes it workable.
+
+## Phase 0 — Turn the lights on (1 PR, no code changes required to land)
+
+1. In `Apps/Shared/app_shared.yml` (applies project-wide):
+   ```yaml
+   settings:
+     base:
+       SWIFT_STRICT_CONCURRENCY: complete
+   ```
+   Approachable concurrency and MainActor defaulting are deliberately *not*
+   enabled here — `NonisolatedNonsendingByDefault` produces hard errors in
+   `LiveActivityRegistry.swift:279` (measured, run B), and MainActor-default
+   produces 22 hard errors in OBAKit (run C). Each module's phase enables
+   them together with the fixes.
+2. Add a CI ratchet so the warning count only goes down: grep
+   `xcodebuild` output for concurrency diagnostic tags
+   (`#ActorIsolatedCall`, `#SendableClosureCaptures`, `#RegionIsolation`,
+   `#ConformanceIsolation`, `#MutableGlobalVariable`, "Swift 6 language
+   mode") and fail if the count exceeds a checked-in baseline number.
+   Once a module hits zero, set `SWIFT_WARNINGS_AS_ERRORS_GROUPS` for the
+   concurrency groups on that target so it can't regress (all five tags are
+   real diagnostic groups in `swiftlang/swift`'s `DiagnosticGroups.def`, and
+   the setting passes them via `-Werror <group>`).
+3. Fix the committed `Package.resolved` staleness: `Apps/OneBusAway/Package.resolved`
+   and `Apps/KiedyBus/Package.resolved` are missing entries (GRDB among them)
+   relative to the dependencies declared in `app_shared.yml`
+   (`minorVersion: 6.29.0`, resolving to 6.29.3 locally). Run
+   `scripts/update_package_resolved` so the Phase 1 GRDB upgrade is
+   reproducible in CI.
+
+Do **not** set these via `xcodebuild` command-line overrides or a global
+xcconfig — they leak into SPM package compilation (measured: `swift-http-types`
+fails to compile under forced MainActor isolation). Target-level settings in
+the generated project are safe.
+
+## Phase 1 — OBAKitCore to zero warnings, then Swift 6 mode (119 diagnostics)
+
+Core goes first: it's the dependency root, and several of OBAKit's hard errors
+exist only because Core's types aren't annotated yet.
+
+Start the phase by enabling `SWIFT_APPROACHABLE_CONCURRENCY: YES` on the
+OBAKitCore target and fixing the known `LiveActivityRegistry.swift:279`
+error, then run the compiler's **migration mode** for automated fix-its
+before hand-fixing: each upcoming feature accepts a `:migrate` variant
+(`-enable-upcoming-feature InferIsolatedConformances:migrate`, likewise
+`NonisolatedNonsendingByDefault:migrate`) documented in the swift.org guide's
+feature-migration article.
+
+Hot spots, largest first:
+
+| File | Count | Pattern |
+|---|---|---|
+| `DataMigration/DataMigrator.swift` | 35 | non-Sendable models crossing task boundaries |
+| `Models/AgencyAlertsStore.swift` | 19 | NSLock + DispatchQueue + mutable shared state → convert to actor or @MainActor |
+| `Network/RESTAPIService/RESTAPIService+Get.swift` | 16 | `RESTAPIURLBuilder` (NSObject class) exiting the actor → make it a Sendable struct |
+| `Network/Operations/NetworkOperation.swift` | ~14 | `Operation` subclass isolation |
+| `Utilities/DecodingErrorReporter.swift` | ~7 | mutable statics → `OSAllocatedUnfairLock`/actor, or main-actor confine |
+| `Utilities/Logger.swift`, `Theme/Theme.swift` | few | `static let shared` NSObject singletons → make Sendable (immutable) or actor-confine |
+
+The structural decision that drives most of the count: **REST model
+Sendability.** The models (`ArrivalDeparture`, `StopArrivals`, `TripStatus`, …)
+are mutable `NSObject` subclasses (`class X: NSObject, Decodable,
+HasReferences`) that are decoded inside the `RESTAPIService` actor and then
+handed to the main actor — the exact hop strict checking flags. Options:
+
+- **(a) Effectively-immutable + `@unchecked Sendable`** *(recommended)*:
+  models are only mutated during decode + `loadReferences(_:regionIdentifier:)`
+  wiring, then treated as read-only. Audit that invariant, convert stored
+  `var`s to `private(set)` where possible, document it, and conform the model
+  base types to `@unchecked Sendable`. Low-risk, preserves ObjC compat and
+  reference identity. Two caveats the migration guide insists on: the
+  conformance is **inherited by subclasses**, and the compiler can only
+  validate immutability for `final` classes — so make each model `final`
+  before marking it, or a future subclass silently inherits the unchecked
+  promise. And "immutable" here really means "immutable after
+  `loadReferences` completes" — that handoff ordering (mutation finishes
+  before the object crosses an isolation boundary) is the actual invariant;
+  enforce it with an assertion or at minimum a doc comment on
+  `HasReferences`, not just a one-time audit.
+- **(b) Struct conversion**: the honest fix, but touches every consumer of 21
+  model classes plus `HasReferences`' post-decode mutation design. Do this
+  opportunistically per-type later, not as a migration blocker.
+- **(c) Main-actor confinement**: decode on main. Simple but regresses
+  scrolling/refresh performance; rejected.
+
+Also in this phase: annotate `CoreApplication`, `CoreAppConfig`, and the
+delegate protocols that are UI-facing (`RegionsServiceDelegate`,
+`AgencyAlertsDelegate`, … — note `PushServiceDelegate` lives in OBAKit, so it
+belongs to Phase 2, where MainActor-default covers it anyway) as
+`@MainActor`. They are
+implemented by view controllers and `Application` today; annotating them in
+Core removes most of OBAKit's "different actor isolation from nonisolated
+overridden declaration" errors at the source. `SurveyService`'s
+`nonisolated(unsafe)` properties and `LiveActivityTracker`'s
+`nonisolated(unsafe) let registry` get revisited here too.
+
+Exit criterion: `SWIFT_VERSION: "6.0"` on the OBAKitCore target, zero errors.
+
+## Phase 2 — OBAKit with MainActor default, then Swift 6 mode (~102 diagnostics)
+
+Enable `SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor` (if not already on from
+Phase 0) and fix the 22 hard errors first — they're three patterns:
+
+One SE-0470 caveat before touching conformances: on OS releases older than
+the 2025 (v26) generation, the runtime doesn't know about isolated
+conformances, so **dynamic casts through an isolated conformance succeed even
+off the conformance's actor** — with an iOS 18 deployment target this is a
+real (if narrow) soundness hole. Prefer making the conformances genuinely
+`nonisolated` (as below) over leaning on isolated conformances for anything
+that flows through `as?`/`is` checks.
+
+1. **Diffable data source identifiers (11 errors)**:
+   `UICollectionViewDiffableDataSource` requires `Sendable` +
+   nonisolated-`Hashable` identifier types. `OBAListViewSection`,
+   `AnyOBAListViewItem`, and `NearbyStopsListViewController`'s `Item`/`Section`
+   become MainActor-isolated under the new default, so their `Hashable`
+   conformances no longer satisfy it. Fix: mark these value types (or just
+   their `Hashable`/`Equatable` conformances) `nonisolated`, and where the
+   payload is genuinely main-actor-bound, hash/compare by stable identifier
+   fields only. Files: `Controls/ListView/OBAListView.swift`,
+   `Mapping/NearbyStopsListViewController.swift`.
+2. **Overrides of nonisolated Core/third-party declarations (9 errors)**:
+   `Application: CoreApplication` (init, `apiServicesRefreshed`,
+   `regionsService(_:updatedRegion:)`), `AppConfig: CoreAppConfig.init`,
+   BLTNBoard's `ThemedBulletinPage.init(title:)`
+   (in `OBAKit/BLTNBoard/OBABulletinPage.swift`), FloatingPanel's
+   `Layouts.initialState`, `MapFloatingPanelController.deinit`,
+   `AlarmBuilder.makeViewsUnderDescription(with:)`. Most disappear once Core's
+   base classes are `@MainActor` (Phase 1); the third-party ones take
+   `nonisolated` on the override plus an internal `MainActor.assumeIsolated`
+   where needed.
+3. **One-offs (2 errors)**: a default argument that's both main-actor-isolated
+   and `@concurrent` (`Application.swift:99`), and an inference break in
+   `NearbyStopsListViewController.swift:124`.
+
+Then burn down the remaining ~80 warnings (biggest files under the new
+default: `AlarmBuilder`, `SearchRequest`, `ContactUsHelper`,
+`MapRegionManager`, `RegionPickerCoordinator`). Third-party UIKit libraries
+(Eureka, BLTNBoard, FloatingPanel, MarqueeLabel, Hyperconnectivity) are all
+pre-Swift-6 packages — they don't block us (each compiles in its own language
+mode) but their APIs are unannotated; use `@preconcurrency import` at the use
+sites rather than sprinkling `@unchecked Sendable` wrappers.
+
+Exit criterion: `SWIFT_VERSION: "6.0"` on the OBAKit target.
+
+## Phase 3 — App targets, widget, ObjC shims (~22 diagnostics)
+
+- OBAWidget: 10 warnings; already extension-safe and mostly SwiftUI. MainActor
+  default + fixes, flip to 6.
+- Apps (OneBusAway + KiedyBus + CommonClient): 12 warnings, plus the small
+  ObjC layer (`AppDelegate.m`, `SceneDelegate.m`, `main.m`) which is untouched
+  by Swift language mode. ObjC imports are automatically treated as
+  `@preconcurrency`, and the headers can carry concurrency attributes with no
+  ABI impact — annotate the `OBAApplicationDelegate`-facing ObjC surface with
+  `NS_SWIFT_UI_ACTOR` where it's main-thread-bound rather than merely
+  verifying the bridging still compiles.
+- Flip the remaining targets and make `SWIFT_VERSION: "6.0"` the project-wide
+  base setting in `app_shared.yml`. Verify the KiedyBus flavor with
+  `scripts/generate_project KiedyBus` — it shares all of this via
+  `app_shared.yml`.
+
+## Phase 4 — Tests (394 diagnostics, measured)
+
+OBAKitTests (168 files, all XCTest) contributes 394 diagnostics under
+complete checking (run D). The bulk is mechanical: 132 "main actor-isolated
+property in a nonisolated autoclosure" (i.e. `XCTAssert(view.someProperty…)`)
+concentrated in `Controls/` view tests — `@MainActor` on those test classes
+clears them in batches. The rest: mocks like `MockDataLoader` need Sendable
+treatment, and 26 diagnostics just ask for `@preconcurrency import`. Fix
+alongside each phase (the ratchet counts tests too, via
+`build-for-testing`), flip the target last. The in-repo `modernize-tests`
+tooling can piggyback Swift Testing migration on files that get touched
+anyway, but don't couple the two efforts.
+
+## Dependency notes
+
+| Package | Pinned | Swift 6 posture |
+|---|---|---|
+| GRDB.swift | `minorVersion: 6.29.0` range (resolves to 6.29.3) | GRDB 7 is the Sendable-annotated major (requires Xcode 16+); upgrade early in Phase 1 (its `6.x` works with `@preconcurrency` but 7 removes a whole class of warnings in `StopCacheDatabase`/`StopCacheRepository`, which are already `@unchecked Sendable` workarounds). Fix the stale committed `Package.resolved` files first (Phase 0 step 3) |
+| Eureka, BLTNBoard, FloatingPanel, MarqueeLabel, Hyperconnectivity | 5.x-era | Unmaintained or slow-moving; plan on `@preconcurrency import` indefinitely. BLTNBoard is archived upstream — the existing `OBAKit/BLTNBoard` wrapper layer is the eventual replacement seam |
+| SwiftProtobuf | 1.32 | Generated `gtfs-realtime.pb.swift` is already `@unchecked Sendable`-annotated; regenerate with a current plugin if warnings appear |
+| firebase-ios-sdk, OTPKit, swift-openapi-* | current | Already tools-6.x; no action |
+
+## Measurement gotchas (for whoever re-runs the numbers)
+
+- Reproduce the baseline with:
+  `xcodebuild build -project OBAKit.xcodeproj -scheme App -destination 'platform=iOS Simulator,name=iPhone 17 Pro' SWIFT_STRICT_CONCURRENCY=complete`
+  then count `sort -u`'d `warning:` lines under the repo path. Don't pass
+  `SWIFT_DEFAULT_ACTOR_ISOLATION` on the command line — it breaks SPM package
+  compilation (see Phase 0).
+- If Xcode has the project open, CLI builds race the IDE over
+  `SourcePackages/artifacts` after a `scripts/generate_project` run and fail
+  with "There is no XCFramework found…". Use `-derivedDataPath` for CLI
+  measurement builds, or close Xcode.
+- Xcode 27 beta 3's issue navigator (and MCP `GetBuildLog`) under-reports
+  compiler diagnostics; trust the raw `xcodebuild` log.
+
+## Sequencing summary
+
+| Phase | Scope | Diagnostics | Exit |
+|---|---|---|---|
+| 0 | Build settings + CI ratchet + Package.resolved fix | 0 fixed | warnings visible, count frozen |
+| 1 | OBAKitCore (+ approachable concurrency) | 119 | Core in Swift 6 mode |
+| 2 | OBAKit (+ MainActor default) | 22 errors + 80 warnings | OBAKit in Swift 6 mode |
+| 3 | App, OBAWidget, KiedyBus | ~22 | whole project `SWIFT_VERSION = 6.0` |
+| 4 | OBAKitTests | 394 | tests in Swift 6 mode |
+
+Each phase is independently landable and independently revertible (drop the
+target back to Swift 5 mode without losing fixes, per Apple's guidance).

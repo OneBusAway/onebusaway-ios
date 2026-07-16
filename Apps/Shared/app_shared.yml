@@ -7,6 +7,10 @@ name: OBAKit
 settings:
   base:
     MARKETING_VERSION: 26.2.2
+    # Swift 6 migration Phase 0 (docs/swift6-migration-plan.md): surface all
+    # data-race diagnostics as warnings while remaining in the Swift 5
+    # language mode. scripts/concurrency_ratchet keeps the count from growing.
+    SWIFT_STRICT_CONCURRENCY: complete
 
 options:
   minimumXcodeGenVersion: 2.42
