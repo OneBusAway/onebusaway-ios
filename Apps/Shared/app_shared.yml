@@ -7,10 +7,16 @@ name: OBAKit
 settings:
   base:
     MARKETING_VERSION: 26.2.2
-    # Swift 6 migration Phase 0 (docs/swift6-migration-plan.md): surface all
-    # data-race diagnostics as warnings while remaining in the Swift 5
-    # language mode. scripts/concurrency_ratchet keeps the count from growing.
+    # Swift 6 migration Phases 3–4 (docs/swift6-migration-plan.md): the whole
+    # project builds in the Swift 6 language mode with main-actor default
+    # isolation. OBAKitCore pins SWIFT_DEFAULT_ACTOR_ISOLATION back to
+    # nonisolated in its own project.yml — it owns actors and background
+    # decode. Approachable concurrency stays on permanently (two of its five
+    # features are not part of the Swift 6 language mode).
     SWIFT_STRICT_CONCURRENCY: complete
+    SWIFT_APPROACHABLE_CONCURRENCY: YES
+    SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
+    SWIFT_VERSION: "6.0"
 
 options:
   minimumXcodeGenVersion: 2.42

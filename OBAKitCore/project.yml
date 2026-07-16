@@ -19,3 +19,6 @@ targets:
         # permanently: two of its features are not part of the Swift 6 mode.
         SWIFT_APPROACHABLE_CONCURRENCY: YES
         SWIFT_VERSION: "6.0"
+        # Pin against the project-wide MainActor default (Phase 3): Core owns
+        # actors, networking, and background decode.
+        SWIFT_DEFAULT_ACTOR_ISOLATION: nonisolated

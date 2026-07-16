@@ -3,6 +3,19 @@ targets:
     type: bundle.unit-test
     platform: iOS
     sources: ["."]
+    settings:
+      base:
+        # Swift 6 migration Phase 4 (docs/swift6-migration-plan.md): pinned to
+        # the Swift 5 language mode because Xcode 27 beta 3's XCTest declares
+        # XCTestCase's designated initializers nonisolated, and Swift 6 mode
+        # rejects the synthesized initializer overrides of every @MainActor
+        # test class ("has different actor isolation from nonisolated
+        # overridden declaration"). init(invocation:) takes NSInvocation,
+        # which is unavailable in Swift, so the mismatch cannot be fixed with
+        # explicit nonisolated overrides. Re-evaluate on the next Xcode.
+        SWIFT_VERSION: "5.0"
+        SWIFT_DEFAULT_ACTOR_ISOLATION: nonisolated
+        SWIFT_APPROACHABLE_CONCURRENCY: NO
     dependencies:
       - target: App
       - package: Nimble

@@ -12,7 +12,9 @@ import OBAKit
 import FirebaseCrashlytics
 
 @objc(OBAAnalyticsOrchestrator) public class AnalyticsOrchestrator: NSObject, OBAKit.Analytics {
-    private let userDefaults: UserDefaults
+    /// nonisolated(unsafe): read by the nonisolated `reportingEnabled()`;
+    /// UserDefaults is documented thread-safe.
+    nonisolated(unsafe) private let userDefaults: UserDefaults
     private var firebaseAnalytics: FirebaseAnalytics?
     private var plausibleAnalytics: PlausibleAnalytics?
     private var umami: UmamiAnalytics?

@@ -304,6 +304,24 @@ than 128 point fixes:
   `scripts/generate_project KiedyBus` — it shares all of this via
   `app_shared.yml`.
 
+### Phase 3 implementation notes (done 2026-07-16)
+
+`app_shared.yml` now sets `SWIFT_VERSION: "6.0"`,
+`SWIFT_APPROACHABLE_CONCURRENCY: YES`, and
+`SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor` project-wide;
+`OBAKitCore/project.yml` pins `SWIFT_DEFAULT_ACTOR_ISOLATION: nonisolated`
+against the new base (a project-wide MainActor default would otherwise leak
+into Core). Actual code fixes were tiny: the widget's AppIntent `static var
+title`/`description` metadata became `let`; `PlausibleAnalytics` prop
+plumbing went `[String: Any?]` → `[String: (any Sendable)?]` (AviaryInsights'
+`Event` requires it — the `Any?` arriving through the @objc `Analytics`
+protocol is stringified at the boundary); `AnalyticsOrchestrator.userDefaults`
+is `nonisolated(unsafe)` for the nonisolated `reportingEnabled()` path;
+`AnalyticsKeys` is a nonisolated constants namespace. The `sending`
+warnings in `AnalyticsOrchestrator`'s fire-and-forget `Task`s disappeared
+with `NonisolatedNonsendingByDefault` on the App target, as predicted.
+The ObjC `AppDelegate`/`SceneDelegate` headers carry `NS_SWIFT_UI_ACTOR`.
+
 ## Phase 4 — Tests (394 diagnostics, measured)
 
 OBAKitTests (168 files, all XCTest) contributes 394 diagnostics under
@@ -316,6 +334,27 @@ alongside each phase (the ratchet counts tests too, via
 `build-for-testing`), flip the target last. The in-repo `modernize-tests`
 tooling can piggyback Swift Testing migration on files that get touched
 anyway, but don't couple the two efforts.
+
+### Phase 4 status: blocked on the toolchain (2026-07-16)
+
+Every test class is `@MainActor` and the warning count is down to 43, but the
+Swift 6 flip itself is **blocked on Xcode 27 beta 3**: its XCTest declares
+`XCTestCase`'s designated initializers nonisolated, and in the Swift 6
+language mode every `@MainActor` test class fails with "main actor-isolated
+initializer 'init(invocation:)' has different actor isolation from
+nonisolated overridden declaration" on its *synthesized* initializer
+overrides. There is no source-level fix: `init(invocation:)` takes
+`NSInvocation`, which is unavailable in Swift, so an explicit `nonisolated
+override` cannot be written, and the mismatch re-materializes in every
+subclass (verified with a standalone `swiftc -typecheck` probe). The
+`nonisolated class` + `@MainActor`-per-member shape does compile, but that's
+a ~70-file rewrite fighting a beta toolchain — `@MainActor XCTestCase`
+subclasses are the standard pattern everywhere else.
+
+`OBAKitTests/project.yml` therefore pins the test target to
+`SWIFT_VERSION: "5.0"` with `SWIFT_DEFAULT_ACTOR_ISOLATION: nonisolated` and
+`SWIFT_APPROACHABLE_CONCURRENCY: NO` (its measured, ratcheted status quo).
+Re-try the flip on the next Xcode release; if it still errors, file feedback.
 
 ## Dependency notes
 
@@ -347,14 +386,14 @@ anyway, but don't couple the two efforts.
 | 0 | Build settings + CI ratchet + Package.resolved fix | 0 fixed | warnings visible, count frozen | ✅ done |
 | 1 | OBAKitCore (+ approachable concurrency) | 119 → 0 | Core in Swift 6 mode | ✅ done |
 | 2 | OBAKit (+ MainActor default) | 467 → 0 | OBAKit in Swift 6 mode | ✅ done |
-| 3 | App, OBAWidget, KiedyBus | 14 remain | whole project `SWIFT_VERSION = 6.0` | not started |
-| 4 | OBAKitTests | 43 remain* | tests in Swift 6 mode | not started |
+| 3 | App, OBAWidget, KiedyBus | 14 → 0 | whole project `SWIFT_VERSION = 6.0` | ✅ done |
+| 4 | OBAKitTests | 39 remain* | tests in Swift 6 mode | ⛔ blocked on Xcode 27 b3 XCTest (see Phase 4 status) |
 
 *\* The test count spiked to 596 after Phase 1 (`OBATestCase` going
-`@MainActor` surfaced autoclosure warnings), then collapsed to 43 in Phase 2
-once every remaining plain-`XCTestCase` class was annotated `@MainActor`.
-Ratchet baseline: 999 → 733 (Phase 1) → 57 (Phase 2: Apps 11, OBAKitTests 43,
-OBAWidget 3).*
+`@MainActor` surfaced autoclosure warnings), then collapsed once every
+remaining plain-`XCTestCase` class was annotated `@MainActor`.
+Ratchet baseline: 999 → 733 (Phase 1) → 57 (Phase 2) → 39 (Phase 3; all 39
+are in the pinned OBAKitTests target).*
 
 ### Phase 1 implementation notes (2026-07-16)
 
