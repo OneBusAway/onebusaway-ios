@@ -17,8 +17,8 @@ class RegionsFileStorageTests: XCTestCase {
     private var fileManager: FileManager!
     private var storage: RegionsFileStorage!
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
 
         fileManager = .default
         temporaryDirectory = fileManager.temporaryDirectory.appendingPathComponent(UUID().uuidString)
@@ -28,9 +28,9 @@ class RegionsFileStorageTests: XCTestCase {
         storage = RegionsFileStorage(fileManager: TemporaryDirectoryFileManager(temporaryDirectory: temporaryDirectory))
     }
 
-    override func tearDown() {
+    override func tearDown() async throws {
         try? fileManager.removeItem(at: temporaryDirectory)
-        super.tearDown()
+        try await super.tearDown()
     }
 
     // MARK: - Default Regions

@@ -14,17 +14,18 @@ import Nimble
 
 /// Tests for `EditBookmarkViewModel`. Covers initial state derivation, save outcome
 /// routing (add vs edit, duplicate detection), persistence, and analytics emission.
+@MainActor
 class EditBookmarkViewModelTests: OBATestCase {
     var queue: OperationQueue!
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         queue = OperationQueue()
         queue.maxConcurrentOperationCount = 1
     }
 
-    override func tearDown() {
-        super.tearDown()
+    override func tearDown() async throws {
+        try await super.tearDown()
         queue.cancelAllOperations()
     }
 

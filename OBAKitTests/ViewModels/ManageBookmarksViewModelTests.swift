@@ -14,17 +14,18 @@ import Nimble
 
 /// Tests for `ManageBookmarksViewModel`. Covers data access delegation, bookmark deletion
 /// (with analytics), name persistence, transit-name restoration, and reorder logic.
+@MainActor
 class ManageBookmarksViewModelTests: OBATestCase {
     var queue: OperationQueue!
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         queue = OperationQueue()
         queue.maxConcurrentOperationCount = 1
     }
 
-    override func tearDown() {
-        super.tearDown()
+    override func tearDown() async throws {
+        try await super.tearDown()
         queue.cancelAllOperations()
     }
 

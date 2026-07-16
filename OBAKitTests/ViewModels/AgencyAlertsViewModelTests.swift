@@ -16,17 +16,18 @@ import Combine
 /// Tests for `AgencyAlertsViewModel`. Verifies the share-activity helper,
 /// `collapsedSections` round-trip, and the loading flag transitions on
 /// `agencyAlertsUpdated()`.
+@MainActor
 final class AgencyAlertsViewModelTests: OBATestCase {
     var queue: OperationQueue!
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         queue = OperationQueue()
         queue.maxConcurrentOperationCount = 1
     }
 
-    override func tearDown() {
-        super.tearDown()
+    override func tearDown() async throws {
+        try await super.tearDown()
         queue.cancelAllOperations()
     }
 

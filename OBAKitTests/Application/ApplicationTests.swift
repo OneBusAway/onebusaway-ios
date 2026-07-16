@@ -17,6 +17,7 @@ import Nimble
 
 // swiftlint:disable large_tuple force_cast
 
+@MainActor
 class TestAppDelegate: ApplicationDelegate {
     var uiApplication: UIApplication?
 
@@ -38,6 +39,7 @@ class TestAppDelegate: ApplicationDelegate {
     var isIdleTimerDisabled = false
 }
 
+@MainActor
 class TestRegionsServiceDelegate: NSObject, RegionsServiceDelegate {
     func regionsServiceUnableToSelectRegion(_ service: RegionsService) {
         //
@@ -48,18 +50,19 @@ class TestRegionsServiceDelegate: NSObject, RegionsServiceDelegate {
     }
 }
 
+@MainActor
 class ApplicationTests: OBATestCase {
     var queue: OperationQueue!
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
 
         queue = OperationQueue()
         queue.maxConcurrentOperationCount = 1
     }
 
-    override func tearDown() {
-        super.tearDown()
+    override func tearDown() async throws {
+        try await super.tearDown()
 
         queue.cancelAllOperations()
     }
@@ -628,6 +631,7 @@ class ApplicationTests: OBATestCase {
 
 // MARK: - Mock Classes for Push Service Testing
 
+@MainActor
 class MockPushServiceProvider: NSObject, PushServiceProvider {
     var isRegisteredForRemoteNotifications: Bool = false
     var notificationReceivedHandler: PushServiceNotificationReceivedHandler!

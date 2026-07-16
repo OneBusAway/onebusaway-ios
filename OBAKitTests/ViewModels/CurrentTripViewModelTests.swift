@@ -16,20 +16,21 @@ import CoreLocation
 // swiftlint:disable force_cast force_try
 
 /// Tests for `CurrentTripViewModel`.
+@MainActor
 class CurrentTripViewModelTests: OBATestCase {
     /// Near stop 1_10020 in the fixture (NE 55th & 37th Ave NE).
     private let userLocation = CLLocation(latitude: 47.6685, longitude: -122.2883)
 
     private var queue: OperationQueue!
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         queue = OperationQueue()
         queue.maxConcurrentOperationCount = 1
     }
 
-    override func tearDown() {
-        super.tearDown()
+    override func tearDown() async throws {
+        try await super.tearDown()
         queue.cancelAllOperations()
     }
 

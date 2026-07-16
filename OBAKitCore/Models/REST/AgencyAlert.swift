@@ -11,7 +11,10 @@ import Foundation
 
 /// A wrapper around a Protocol Buffer alert object. ProtoBuf is somewhat unpleasant to use directly,
 /// and so this class offers some Swifty niceties on top of its jank.
-public class AgencyAlert: NSObject, Identifiable {
+///
+/// Every stored property is set in `init` and never mutated, which is what makes the
+/// `@unchecked Sendable` conformance sound (`@unchecked` only because NSObject is not Sendable).
+public final class AgencyAlert: NSObject, Identifiable, @unchecked Sendable {
     private let alert: TransitRealtime_Alert
     public let id: String
 
@@ -62,23 +65,17 @@ public class AgencyAlert: NSObject, Identifiable {
 
     // MARK: - Translation Properties
 
-    private lazy var urlTranslations: [String: String] = {
-        return alert.url.translation.reduce(into: [:]) { (acc, translation) in
-            acc[translation.language] = translation.text
-        }
-    }()
+    // Computed eagerly in init: `lazy var` would be unsynchronized mutable
+    // state, which Sendable (even unchecked) cannot tolerate.
+    private let urlTranslations: [String: String]
+    private let titleTranslations: [String: String]
+    private let bodyTranslations: [String: String]
 
-    private lazy var titleTranslations: [String: String] = {
-        return alert.headerText.translation.reduce(into: [:]) { (acc, translation) in
+    private static func translationMap(_ translations: [TransitRealtime_TranslatedString.Translation]) -> [String: String] {
+        translations.reduce(into: [:]) { (acc, translation) in
             acc[translation.language] = translation.text
         }
-    }()
-
-    private lazy var bodyTranslations: [String: String] = {
-        return alert.descriptionText.translation.reduce(into: [:]) { (acc, translation) in
-            acc[translation.language] = translation.text
-        }
-    }()
+    }
 
     // MARK: - Initialization
 
@@ -117,6 +114,9 @@ public class AgencyAlert: NSObject, Identifiable {
         id = feedEntity.id
         agencyID = gtfsAgency.agencyID
         self.agency = agency
+        urlTranslations = AgencyAlert.translationMap(feedEntity.alert.url.translation)
+        titleTranslations = AgencyAlert.translationMap(feedEntity.alert.headerText.translation)
+        bodyTranslations = AgencyAlert.translationMap(feedEntity.alert.descriptionText.translation)
     }
 
     // MARK: - Equality and Hashing

@@ -39,7 +39,7 @@ class TaskController<DataType>: UIViewController, AppContext {
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
-    deinit {
+    isolated deinit {
         task?.cancel()
     }
 

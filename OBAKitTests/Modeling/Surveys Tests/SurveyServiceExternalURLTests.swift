@@ -15,8 +15,8 @@ final class SurveyServiceExternalURLTests: OBATestCase {
     nonisolated(unsafe) private var context: MockSurveyURLApplicationContext!
     nonisolated(unsafe) private var service: SurveyService!
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         testUserDefaults = buildUserDefaults(suiteName: "\(userDefaultsSuiteName).exturl")
         testUserDefaults.removePersistentDomain(forName: "\(userDefaultsSuiteName).exturl")
         store = UserDefaultsStore(userDefaults: testUserDefaults)
@@ -25,9 +25,9 @@ final class SurveyServiceExternalURLTests: OBATestCase {
         service = SurveyService(apiService: nil, userDataStore: store, application: context)
     }
 
-    override func tearDown() {
+    override func tearDown() async throws {
         testUserDefaults.removePersistentDomain(forName: "\(userDefaultsSuiteName).exturl")
-        super.tearDown()
+        try await super.tearDown()
     }
 
     func test_externalSurveyURL_wiresBuilder_appendingUserIDAndRegion() {

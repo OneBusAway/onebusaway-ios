@@ -293,13 +293,49 @@ anyway, but don't couple the two efforts.
 
 ## Sequencing summary
 
-| Phase | Scope | Diagnostics | Exit |
-|---|---|---|---|
-| 0 | Build settings + CI ratchet + Package.resolved fix | 0 fixed | warnings visible, count frozen |
-| 1 | OBAKitCore (+ approachable concurrency) | 119 | Core in Swift 6 mode |
-| 2 | OBAKit (+ MainActor default) | 22 errors + 80 warnings | OBAKit in Swift 6 mode |
-| 3 | App, OBAWidget, KiedyBus | ~22 | whole project `SWIFT_VERSION = 6.0` |
-| 4 | OBAKitTests | 394 | tests in Swift 6 mode |
+| Phase | Scope | Diagnostics | Exit | Status |
+|---|---|---|---|---|
+| 0 | Build settings + CI ratchet + Package.resolved fix | 0 fixed | warnings visible, count frozen | ✅ done |
+| 1 | OBAKitCore (+ approachable concurrency) | 119 → 0 | Core in Swift 6 mode | ✅ done |
+| 2 | OBAKit (+ MainActor default) | 467 → 128 warnings, 0 errors | OBAKit in Swift 6 mode | ⏳ settings on, errors fixed, warnings remain |
+| 3 | App, OBAWidget, KiedyBus | ~17 | whole project `SWIFT_VERSION = 6.0` | not started |
+| 4 | OBAKitTests | 596* | tests in Swift 6 mode | not started |
+
+*\* The test count rose from the measured 394 because `OBATestCase` is now
+`@MainActor` (required for tests to compile against the annotated frameworks),
+which surfaces additional autoclosure warnings. Ratchet baseline after
+Phase 1: 733 (from 999).*
+
+### Phase 1 implementation notes (2026-07-16)
+
+Phase 1 could not land without starting Phase 2: making `CoreApplication`
+`@MainActor` turns OBAKit's synchronous references to it into hard errors even
+in Swift 5 mode, so OBAKit's MainActor-default settings and its 22 hard-error
+fixes shipped in the same change. Notable patterns used:
+
+- Delegate protocols (`RegionsServiceDelegate`, `LocationServiceDelegate`,
+  `ObacoServiceDelegate`, `AgencyAlertsDelegate`, `DataMigrationDelegate`,
+  `BookmarkDataDelegate`) are `@MainActor` (+ `Sendable` where existentials
+  cross tasks). `RegionsService` and `LocationService` are `@MainActor`
+  classes; `LocationService` uses `@preconcurrency CLLocationManagerDelegate`.
+- A `@MainActor` protocol conformance declared on the class *declaration*
+  infers isolation for the whole class; declare it in an extension to isolate
+  only the witness (see `AgencyAlertsStore`).
+- Diffable data source identifier types (`OBAListViewSection`,
+  `AnyOBAListViewItem`, NearbyStops `Section`/`Item`) are `nonisolated` +
+  `@unchecked Sendable` — only ever touched on main.
+- Subclasses of nonisolated third-party classes (BLTNBoard, FloatingPanel):
+  `nonisolated` members/overrides, `MainActor.assumeIsolated` where the body
+  builds UI, and explicit unavailable `nonisolated override init(title:)` to
+  suppress isolated synthesized initializers.
+- `deinit` bodies touching main-actor state use `isolated deinit`.
+- XCTest: `OBATestCase` is `@MainActor`; every sync `setUp`/`tearDown`
+  override became `async throws` (async overrides may legally change
+  isolation; the sync overrides stay nonisolated and can't touch isolated
+  state).
+- The `lazy var x = { … }()` pattern trips a "default argument cannot be both
+  main actor-isolated and @concurrent" diagnostic under approachable
+  concurrency; hoist the closure into a method.
 
 Each phase is independently landable and independently revertible (drop the
 target back to Swift 5 mode without losing fixes, per Apple's guidance).

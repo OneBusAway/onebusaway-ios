@@ -72,7 +72,9 @@ class MapFloatingPanelController: VisualEffectViewController,
         self.application.alertsStore.addDelegate(self)
     }
 
-    deinit {
+    // Explicitly isolated to match the superclass's main-actor-isolated deinit;
+    // the body touches main-actor state (delegate lists).
+    isolated deinit {
         resetFudgeFactorWorkItem?.cancel()
         mapRegionManager.removeDelegate(self)
         application.regionsService.removeDelegate(self)

@@ -95,7 +95,7 @@ class MapViewController: UIViewController,
 
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
-    deinit {
+    isolated deinit {
         application.mapRegionManager.removeDelegate(self)
         application.locationService.removeDelegate(self)
         application.notificationCenter.removeObserver(self)

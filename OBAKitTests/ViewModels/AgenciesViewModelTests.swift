@@ -15,17 +15,18 @@ import Combine
 
 /// Tests for `AgenciesViewModel`. Verifies the success path sorts by name,
 /// and that loading state resets to `false` after completion.
+@MainActor
 final class AgenciesViewModelTests: OBATestCase {
     var queue: OperationQueue!
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         queue = OperationQueue()
         queue.maxConcurrentOperationCount = 1
     }
 
-    override func tearDown() {
-        super.tearDown()
+    override func tearDown() async throws {
+        try await super.tearDown()
         queue.cancelAllOperations()
     }
 

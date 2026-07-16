@@ -17,16 +17,16 @@ final class SurveyServiceAppearanceTests: OBATestCase {
     nonisolated(unsafe) private var testUserDefaults: UserDefaults!
     nonisolated(unsafe) private var store: UserDefaultsStore!
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         testUserDefaults = buildUserDefaults(suiteName: "\(userDefaultsSuiteName).appearance")
         testUserDefaults.removePersistentDomain(forName: "\(userDefaultsSuiteName).appearance")
         store = UserDefaultsStore(userDefaults: testUserDefaults)
     }
 
-    override func tearDown() {
+    override func tearDown() async throws {
         testUserDefaults.removePersistentDomain(forName: "\(userDefaultsSuiteName).appearance")
-        super.tearDown()
+        try await super.tearDown()
     }
 
     // MARK: - visibleSurveys filtering (date activity) ----------------------

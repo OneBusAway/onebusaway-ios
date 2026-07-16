@@ -20,8 +20,8 @@ class BookmarkTests: OBATestCase {
     var region: Region!
     var stops: [Stop]!
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
 
         region = try! Fixtures.loadSomeRegions()[1]
         stops = try! Fixtures.loadSomeStops()

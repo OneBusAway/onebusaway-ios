@@ -22,8 +22,8 @@ class OBACloudPushServiceTests: OBATestCase {
 
     private var service: OBACloudPushService!
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         service = OBACloudPushService()
         // The real handlers are installed by PushService during init. Install benign
         // defaults so an async authorization denial can never crash a test.

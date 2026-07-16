@@ -57,7 +57,7 @@ class TripViewModel: ObservableObject {
         self.tripConvertible = tripConvertible
     }
 
-    deinit {
+    isolated deinit {
         refreshTimer?.invalidate()
         loadDataTask?.cancel()
     }

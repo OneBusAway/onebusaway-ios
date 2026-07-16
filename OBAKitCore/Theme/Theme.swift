@@ -38,7 +38,8 @@ public class ThemeMetrics: NSObject {
     public static let stopAnnotationCornerRadius: CGFloat = 4.0
 }
 
-public class ThemeColors: NSObject {
+// Every stored property is an immutable UIColor (Sendable); @unchecked only because NSObject is not Sendable.
+public final class ThemeColors: NSObject, @unchecked Sendable {
 
     /// Primary theme color/brand color.
     public let brand: UIColor

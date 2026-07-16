@@ -15,6 +15,7 @@ import Nimble
 
 // swiftlint:disable force_try
 
+@MainActor
 class SearchViewModelTests: OBATestCase {
 
     // MARK: - Helpers

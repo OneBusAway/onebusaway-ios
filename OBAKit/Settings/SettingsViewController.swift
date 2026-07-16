@@ -261,7 +261,9 @@ class SettingsViewController: FormViewController {
                                   comment: "Settings > Walking Speed section > HealthKit toggle")
                 $0.onChange { [weak self] row in
                     guard let self, row.value == true else { return }
-                    Task {
+                    // Eureka's onChange closure is nonisolated (pre-concurrency
+                    // library), but fires on main; isolate the task explicitly.
+                    Task { @MainActor in
                         let granted = await self.application.walkingSpeedManager.requestHealthKitAuthorizationAndSync()
                         if !granted {
                             row.value = false
@@ -344,7 +346,10 @@ class SettingsViewController: FormViewController {
     private let crashAppKey = "crashAppKey"
     private let pushIDKey = "pushIDKey"
 
-    private lazy var debugSection: Section = {
+    private lazy var debugSection: Section = makeDebugSection()
+
+    // swiftlint:disable:next function_body_length
+    private func makeDebugSection() -> Section {
         let section = Section(OBALoc("settings_controller.debug_section.title", value: "Debug", comment: "Settings > Debug section title"))
 
         section <<< SwitchRow {
@@ -397,7 +402,7 @@ class SettingsViewController: FormViewController {
                 row.value = OBALoc("clipboard.copied_text_confirmation", value: "Copied to clipboard", comment: "This is displayed to confirm that something has been copied to clipboard.")
                 row.reload()
 
-                Task {
+                Task { @MainActor in
                     try? await Task.sleep(for: .seconds(2))
                     row.value = self.application.pushService?.pushUserID ?? OBALoc("more_controller.debug_section.push_id.not_available", value: "Not available", comment: "This is displayed instead of the user's push ID if the value is not available.")
                     row.reload()
@@ -409,7 +414,7 @@ class SettingsViewController: FormViewController {
         }
 
         return section
-    }()
+    }
 
     // MARK: - Migrate Data Section
 

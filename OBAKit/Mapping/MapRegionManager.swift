@@ -216,7 +216,7 @@ public class MapRegionManager: NSObject,
         }
     }
 
-    deinit {
+    isolated deinit {
         mapView.delegate = nil
         mapView.removeAllAnnotations()
         delegates.removeAllObjects()

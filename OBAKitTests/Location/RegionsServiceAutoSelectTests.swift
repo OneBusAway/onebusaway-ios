@@ -16,14 +16,15 @@ import CoreLocation
 // MARK: - Auto Region Selection Tests
 // See: https://github.com/OneBusAway/onebusaway-ios/issues/608
 
+@MainActor
 class RegionsServiceAutoSelectTests: OBATestCase {
     var locationManagerMock: LocationManagerMock!
     var locationService: LocationService!
     var dataLoader: MockDataLoader!
     var mockFileStorage: MockRegionsFileStorage!
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
 
         locationManagerMock = LocationManagerMock()
         locationService = LocationService(userDefaults: userDefaults, locationManager: locationManagerMock)

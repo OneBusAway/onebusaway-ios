@@ -9,6 +9,7 @@
 
 import Foundation
 
+@MainActor
 public protocol BookmarkDataDelegate: NSObjectProtocol {
     func dataLoaderDidUpdate(_ dataLoader: BookmarkDataLoader)
     func dataLoader(_ dataLoader: BookmarkDataLoader, isLoadingChanged isLoading: Bool)
@@ -19,6 +20,7 @@ public extension BookmarkDataDelegate {
 }
 
 /// Loads `[ArrivalDeparture]`s every 30 seconds for the list of provided `Bookmark`s.
+@MainActor
 public class BookmarkDataLoader: NSObject {
     private let refreshInterval = 30.0
 
@@ -70,8 +72,11 @@ public class BookmarkDataLoader: NSObject {
         timer?.invalidate()
 
         timer = Timer.scheduledTimer(withTimeInterval: refreshInterval, repeats: true) { [weak self] _ in
-            guard let self = self else { return }
-            self.loadData()
+            // Timers scheduled from the main actor fire on the main run loop.
+            MainActor.assumeIsolated {
+                guard let self = self else { return }
+                self.loadData()
+            }
         }
     }
 

@@ -11,6 +11,7 @@ import Foundation
 import CoreLocation
 
 @objc(OBARegionsServiceDelegate)
+@MainActor
 public protocol RegionsServiceDelegate {
     @objc optional func regionsServiceUnableToSelectRegion(_ service: RegionsService)
     @objc optional func regionsService(_ service: RegionsService, updatedRegionsList regions: [Region])
@@ -28,6 +29,7 @@ public protocol RegionsServiceDelegate {
 }
 
 /// Manages the app's list of `Region`s, including list updates, and which `Region` the user is currently located in.
+@MainActor
 public class RegionsService: NSObject, LocationServiceDelegate {
     private let apiService: RegionsAPIService?
     private let locationService: LocationService

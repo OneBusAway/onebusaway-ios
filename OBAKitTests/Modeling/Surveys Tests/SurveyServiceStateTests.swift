@@ -16,17 +16,17 @@ final class SurveyServiceStateTests: OBATestCase {
     nonisolated(unsafe) private var testUserDefaults: UserDefaults!
     nonisolated(unsafe) private var testUserDataStore: UserDefaultsStore!
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         testUserDefaults = buildUserDefaults(suiteName: "\(userDefaultsSuiteName).state")
         testUserDefaults.removePersistentDomain(forName: "\(userDefaultsSuiteName).state")
         testUserDataStore = UserDefaultsStore(userDefaults: testUserDefaults)
         surveyService = SurveyService(apiService: nil, userDataStore: testUserDataStore)
     }
 
-    override func tearDown() {
+    override func tearDown() async throws {
         testUserDefaults.removePersistentDomain(forName: "\(userDefaultsSuiteName).state")
-        super.tearDown()
+        try await super.tearDown()
     }
 
     // MARK: - shouldShowSurvey

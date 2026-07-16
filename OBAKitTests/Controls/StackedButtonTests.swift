@@ -18,8 +18,8 @@ class StackedButtonTests: XCTestCase {
     
     var stackedButton: StackedButton!
     
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         stackedButton = StackedButton(frame: .zero)
     }
     

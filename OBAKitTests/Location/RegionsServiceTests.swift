@@ -40,6 +40,7 @@ private class RegionsServiceTestDelegate: NSObject, RegionsServiceDelegate {
 
 // MARK: - Test Case
 
+@MainActor
 class RegionsServiceTests: OBATestCase {
     private var testDelegate: RegionsServiceTestDelegate!
     var locationManagerMock: LocationManagerMock!
@@ -47,8 +48,8 @@ class RegionsServiceTests: OBATestCase {
     var dataLoader: MockDataLoader!
     var mockFileStorage: MockRegionsFileStorage!
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
 
         testDelegate = RegionsServiceTestDelegate()
         locationManagerMock = LocationManagerMock()

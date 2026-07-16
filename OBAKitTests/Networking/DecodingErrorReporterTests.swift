@@ -22,9 +22,9 @@ final class DecodingErrorReporterTests: XCTestCase {
         let count: Int
     }
 
-    override func tearDown() {
+    override func tearDown() async throws {
         DecodingErrorReporter.reportHandler = nil
-        super.tearDown()
+        try await super.tearDown()
     }
 
     // MARK: - keyNotFound Tests

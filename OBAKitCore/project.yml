@@ -15,3 +15,7 @@ targets:
     settings:
       base:
         APPLICATION_EXTENSION_API_ONLY: true
+        # Swift 6 migration Phase 1 (docs/swift6-migration-plan.md). Stays on
+        # permanently: two of its features are not part of the Swift 6 mode.
+        SWIFT_APPROACHABLE_CONCURRENCY: YES
+        SWIFT_VERSION: "6.0"

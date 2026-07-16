@@ -18,6 +18,13 @@ class LocationPermissionItem: ThemedBulletinPage, LocationServiceDelegate {
     private let locationService: LocationService
     private let completion: VoidBlock
 
+    // The inherited init(title:) would otherwise be synthesized with main-actor
+    // isolation, mismatching ThemedBulletinPage's nonisolated declaration.
+    @available(*, unavailable)
+    nonisolated override init(title: String) {
+        fatalError("Use init(locationService:completion:)")
+    }
+
     init(locationService: LocationService, completion: @escaping VoidBlock) {
         self.locationService = locationService
         self.completion = completion

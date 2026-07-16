@@ -199,7 +199,7 @@ class StopViewModel: ObservableObject {
             .sink { [weak self] _ in self?.rebuildAlarmIndex() }
     }
 
-    deinit {
+    isolated deinit {
         refreshTimer?.invalidate()
         statusTimer?.invalidate()
     }

@@ -73,7 +73,7 @@ class SearchInteractor: NSObject {
     }
 
     // MARK: - Deinit
-    deinit {
+    isolated deinit {
         debounceTimer?.invalidate()
         localSearch?.cancel()
     }

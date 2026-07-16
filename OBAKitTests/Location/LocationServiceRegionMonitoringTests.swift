@@ -16,6 +16,7 @@ import Nimble
 
 // swiftlint:disable force_try
 
+@MainActor
 class LocationServiceRegionMonitoringTests: OBATestCase {
 
     var locationManagerMock: AuthorizableLocationManagerMock!
@@ -23,8 +24,8 @@ class LocationServiceRegionMonitoringTests: OBATestCase {
     var delegate: LocDelegate!
     var stop: Stop!
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         let location = CLLocation(latitude: 47.0, longitude: -122.0)
         locationManagerMock = AuthorizableLocationManagerMock(updateLocation: location, updateHeading: OBAMockHeading(heading: 0.0))
         locationManagerMock._authorizationStatus = .authorizedWhenInUse

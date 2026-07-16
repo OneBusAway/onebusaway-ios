@@ -11,6 +11,7 @@ import Foundation
 import CoreLocation
 
 @objc(OBALocationServiceDelegate)
+@MainActor
 public protocol LocationServiceDelegate: NSObjectProtocol {
     @objc optional func locationService(_ service: LocationService, authorizationStatusChanged status: CLAuthorizationStatus)
     @objc optional func locationService(_ service: LocationService, locationChanged location: CLLocation)
@@ -20,7 +21,9 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
     @objc optional func locationService(_ service: LocationService, monitoringDidFailFor identifier: String?, error: Error)
 }
 
-@objc(OBALocationService) public class LocationService: NSObject, CLLocationManagerDelegate {
+// @preconcurrency: CLLocationManager delivers callbacks on the run loop it was
+// created on, which for this service is always the main run loop.
+@objc(OBALocationService) @MainActor public class LocationService: NSObject, @preconcurrency CLLocationManagerDelegate {
     private var locationManager: LocationManager
 
     public convenience override init() {

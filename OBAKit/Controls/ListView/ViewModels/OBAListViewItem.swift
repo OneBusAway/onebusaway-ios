@@ -79,13 +79,15 @@ extension OBAListViewItem {
 }
 
 // MARK: - Type erase OBAListViewItem
+// nonisolated + @unchecked Sendable: diffable data source identifier type; see
+// OBAListViewSection for the reasoning.
 /// A type-erased OBAListViewItem.
 ///
 /// To attempt to cast into an `OBAListViewItem`, call `as(:_)`. For example:
 /// ```swift
 /// let person: Person? = AnyOBAListViewItem.as(Person.self)
 /// ```
-public struct AnyOBAListViewItem: OBAListViewItem {
+nonisolated public struct AnyOBAListViewItem: OBAListViewItem, @unchecked Sendable {
     private let _anyEquatable: AnyEquatable
     private let _id: () -> AnyHashable
     private let _configuration: () -> OBAListViewItemConfiguration
@@ -200,7 +202,7 @@ public struct AnyOBAListViewItem: OBAListViewItem {
 private extension Equatable { typealias EqualSelf = Self }
 
 /// Existential wrapper around Equatable.
-private struct AnyEquatable: Equatable {
+nonisolated private struct AnyEquatable: Equatable, @unchecked Sendable {
     let value: Any
     let isEqual: (AnyEquatable) -> Bool
     init<T: Equatable>(_ value: T) {

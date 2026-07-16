@@ -15,7 +15,7 @@ extension RESTAPIService {
 
     /// Fetches all available surveys for a region and user.
     public nonisolated func getSurveys(userID: String) async throws -> StudyResponse {
-        guard let regionID = await configuration.regionIdentifier else {
+        guard let regionID = configuration.regionIdentifier else {
             throw APIError.noRegionSelected
         }
 

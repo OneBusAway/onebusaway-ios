@@ -21,8 +21,8 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
 
     // MARK: - Setup
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         userDefaultsStore = UserDefaultsStore(userDefaults: userDefaults)
         applicationContext = MockSurveyURLApplicationContext()
 
@@ -33,11 +33,11 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
         )
     }
 
-    override func tearDown() {
+    override func tearDown() async throws {
         builder = nil
         applicationContext = nil
         userDefaultsStore = nil
-        super.tearDown()
+        try await super.tearDown()
     }
 
     // MARK: - buildURL

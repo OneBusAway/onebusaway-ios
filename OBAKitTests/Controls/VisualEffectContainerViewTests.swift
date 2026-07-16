@@ -17,8 +17,8 @@ class VisualEffectContainerViewTests: XCTestCase {
     
     var containerView: VisualEffectContainerView!
     
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         let blurEffect = UIBlurEffect(style: .regular)
         containerView = VisualEffectContainerView(blurEffect: blurEffect)
     }

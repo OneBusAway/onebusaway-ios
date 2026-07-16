@@ -17,8 +17,8 @@ class VisualEffectViewControllerTests: XCTestCase {
     
     var viewController: VisualEffectViewController!
     
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         viewController = VisualEffectViewController()
     }
     

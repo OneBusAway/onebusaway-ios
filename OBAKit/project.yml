@@ -25,6 +25,12 @@ targets:
     settings:
       base:
         APPLICATION_EXTENSION_API_ONLY: false
+        # Swift 6 migration Phase 2 (docs/swift6-migration-plan.md): UIKit-heavy
+        # framework, so unannotated code defaults to the main actor. Approachable
+        # concurrency stays on permanently (two of its features are not part of
+        # the Swift 6 language mode).
+        SWIFT_APPROACHABLE_CONCURRENCY: YES
+        SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
       configs:
           Debug:
             LD_RUNPATH_SEARCH_PATHS:

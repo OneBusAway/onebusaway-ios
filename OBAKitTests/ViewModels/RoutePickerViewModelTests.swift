@@ -18,18 +18,19 @@ import Combine
 /// Tests for `RoutePickerViewModel`. Covers initial state, the API-fallback load
 /// path, missing-location error path, API failure surfacing, search filtering
 /// (case-insensitivity, short vs long name match, empty-query reset), and sort order.
+@MainActor
 class RoutePickerViewModelTests: OBATestCase {
 
     var queue: OperationQueue!
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         queue = OperationQueue()
         queue.maxConcurrentOperationCount = 1
     }
 
-    override func tearDown() {
-        super.tearDown()
+    override func tearDown() async throws {
+        try await super.tearDown()
         queue.cancelAllOperations()
     }
 

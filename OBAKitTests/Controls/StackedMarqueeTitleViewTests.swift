@@ -20,8 +20,8 @@ class StackedMarqueeTitleViewTests: XCTestCase {
     var titleView: StackedMarqueeTitleView!
     let testWidth: CGFloat = 200.0
     
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         titleView = StackedMarqueeTitleView(width: testWidth)
     }
     

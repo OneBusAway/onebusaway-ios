@@ -65,6 +65,13 @@ public class References: NSObject, Decodable {
 
 // MARK: - HasReferences
 
+/// A model whose object graph is wired up in a second pass after `Decodable` decoding.
+///
+/// **Concurrency contract**: `loadReferences(_:regionIdentifier:)` is the only mutation a
+/// conforming model may perform after `init`, and it must complete before the instance is
+/// shared across an isolation boundary (decode + wiring both happen inside the API service
+/// actor that produced the response). Conforming classes rely on this invariant for their
+/// `@unchecked Sendable` conformances: after the handoff, instances are read-only.
 public protocol HasReferences {
     func loadReferences(_ references: References, regionIdentifier: Int?)
     var regionIdentifier: Int? { get }
