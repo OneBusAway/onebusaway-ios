@@ -29,13 +29,29 @@ struct RegionCustomForm: View {
 
     /// The Base URL field, normalized into an URL. `https://` is assumed if the user didn't type a scheme.
     var normalizedBaseURL: URL? {
-        var urlString = baseURLString.trimmingCharacters(in: .whitespacesAndNewlines)
+        Self.normalizeBaseURL(baseURLString)
+    }
+
+    /// Normalizes user input into a base URL: trims whitespace, assumes
+    /// `https://` when no scheme was typed, and strips a trailing `/api/where`
+    /// (the field's help text promises that part is added automatically, so
+    /// pasting a full API URL must not double it). Static and pure for
+    /// testability.
+    static func normalizeBaseURL(_ string: String) -> URL? {
+        var urlString = string.strip()
         guard !urlString.isEmpty else {
             return nil
         }
 
         if !urlString.contains("://") {
             urlString = "https://" + urlString
+        }
+
+        while urlString.hasSuffix("/") {
+            urlString = String(urlString.dropLast())
+        }
+        if urlString.lowercased().hasSuffix("/api/where") {
+            urlString = String(urlString.dropLast("/api/where".count))
         }
 
         guard
@@ -164,6 +180,9 @@ struct RegionCustomForm: View {
         return urlString
     }
 
+    // @MainActor because these mutate @State (`disableForm`, `error`);
+    // publishing SwiftUI state off the main actor is undefined behavior.
+    @MainActor
     func doDelete() {
         Task {
             guard !disableForm, let editingRegion else {
@@ -177,17 +196,14 @@ struct RegionCustomForm: View {
 
             do {
                 try await regionProvider.delete(customRegion: editingRegion)
-
-                await MainActor.run {
-                    self.dismiss()
-                }
+                self.dismiss()
             } catch {
                 self.error = error
             }
         }
     }
 
-    @Sendable
+    @MainActor
     func doSave() async {
         guard !disableForm, let baseURL = normalizedBaseURL else {
             return
@@ -208,7 +224,7 @@ struct RegionCustomForm: View {
             return
         }
 
-        var name = regionName.trimmingCharacters(in: .whitespacesAndNewlines)
+        var name = regionName.strip()
         if name.isEmpty {
             name = agencies.first?.agency?.name ?? Self.defaultRegionName
         }
@@ -223,9 +239,7 @@ struct RegionCustomForm: View {
 
         do {
             try await regionProvider.add(customRegion: region)
-            await MainActor.run {
-                self.dismiss()
-            }
+            self.dismiss()
         } catch {
             self.error = error
         }

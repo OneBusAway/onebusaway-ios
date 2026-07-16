@@ -127,9 +127,6 @@
 /* Title of the Base URL header. */
 "custom_region_builder_controller.base_url_section.header_title" = "根路径";
 
-/* Title of the Contact Email header. */
-"custom_region_builder_controller.contact_email_section.header_title" = "联系邮箱";
-
 /* Example custom region name */
 "custom_region_builder_controller.example_data.region_name" = "我的自定义地区";
 
