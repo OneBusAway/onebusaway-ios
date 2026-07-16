@@ -46,6 +46,21 @@ public class BookmarkDataLoader: NSObject {
     /// transitions to `false` to decide success vs. failure feedback (e.g. haptics).
     @MainActor public private(set) var lastBatchHadError: Bool = false
 
+    /// Callers suspended in `loadDataAndWait()`, keyed by the batch they started.
+    /// Resumed when that batch drains (`taskFinished`) or is retired (`cancelUpdates`).
+    @MainActor private var batchContinuations: [UInt64: [CheckedContinuation<Void, Never>]] = [:]
+
+    /// Stops whose arrival fetch has completed successfully at least once this
+    /// session. Lets consumers distinguish "still loading" from "loaded, but no
+    /// upcoming departures".
+    @MainActor private var fetchedStopIDs = Set<StopID>()
+
+    /// `true` once at least one arrival fetch for `stopID` has completed
+    /// successfully this session.
+    @MainActor public func hasFetchedData(forStopID stopID: StopID) -> Bool {
+        fetchedStopIDs.contains(stopID)
+    }
+
     public init(application: CoreApplication, delegate: BookmarkDataDelegate) {
         self.application = application
         self.delegate = delegate
@@ -64,6 +79,8 @@ public class BookmarkDataLoader: NSObject {
         timer?.invalidate()
         // Retire the current batch so any in-flight per-bookmark Task completions
         // (success or failure) see the mismatch and no-op. Used by deactivate/deinit paths.
+        // Deliberately captures self strongly: the cleanup below must run even if the
+        // owner released us, or suspended loadDataAndWait() callers would leak.
         Task { @MainActor in
             self.currentBatchID &+= 1
             // Retired fetches will never call taskFinished, so close out the
@@ -74,25 +91,57 @@ public class BookmarkDataLoader: NSObject {
                 self.isLoading = false
                 self.delegate?.dataLoader(self, isLoadingChanged: false)
             }
+            let continuations = self.batchContinuations.values.flatMap { $0 }
+            self.batchContinuations.removeAll()
+            continuations.forEach { $0.resume() }
         }
     }
 
     public func loadData() {
         timer?.invalidate()  // retire the timer inline; no separate main-actor hop needed
-        let bookmarks = application.userDataStore.bookmarks.filter {
-            $0.regionIdentifier == application.regionsService.currentRegion?.id
-        }
+        let bookmarks = eligibleBookmarks()
         // Retiring the old batch (ID advance) and starting the new one happen in a single
         // main-actor Task, so there's no FIFO dependency between two independent Tasks.
         Task { @MainActor in
-            self.currentBatchID &+= 1
-            let batchID = self.currentBatchID
-            self.beginBatch(count: bookmarks.count)
-            for bookmark in bookmarks {
-                self.loadData(bookmark: bookmark, batchID: batchID)
+            self.startBatch(bookmarks: bookmarks, continuation: nil)
+        }
+        startRefreshTimer()
+    }
+
+    /// Starts a refresh batch and suspends until *that specific batch* drains
+    /// (or is retired by `cancelUpdates()`). Unlike observing `isLoading`, this
+    /// cannot be satisfied by the completion of a previously in-flight batch.
+    public func loadDataAndWait() async {
+        timer?.invalidate()
+        let bookmarks = eligibleBookmarks()
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            Task { @MainActor in
+                self.startBatch(bookmarks: bookmarks, continuation: continuation)
             }
         }
         startRefreshTimer()
+    }
+
+    private func eligibleBookmarks() -> [Bookmark] {
+        application.userDataStore.bookmarks.filter {
+            $0.regionIdentifier == application.regionsService.currentRegion?.id
+        }
+    }
+
+    @MainActor private func startBatch(bookmarks: [Bookmark], continuation: CheckedContinuation<Void, Never>?) {
+        currentBatchID &+= 1
+        let batchID = currentBatchID
+        beginBatch(count: bookmarks.count)
+        if let continuation {
+            if bookmarks.isEmpty {
+                continuation.resume()
+            } else {
+                batchContinuations[batchID, default: []].append(continuation)
+            }
+        }
+        for bookmark in bookmarks {
+            loadData(bookmark: bookmark, batchID: batchID)
+        }
     }
 
     @MainActor
@@ -118,6 +167,8 @@ public class BookmarkDataLoader: NSObject {
                     // writing this fetch's data would overwrite fresher results and
                     // fire dataLoaderDidUpdate with stale state for the consumer.
                     guard batchID == self.currentBatchID else { return }
+
+                    self.fetchedStopIDs.insert(bookmark.stopID)
 
                     let keysAndDeps = stopArrivals.arrivalsAndDepartures.tripKeyGroupedElements
                     for (key, deps) in keysAndDeps {
@@ -161,9 +212,16 @@ public class BookmarkDataLoader: NSObject {
         // Stale completion from a prior batch — current batch's count is authoritative.
         guard batchID == currentBatchID, pendingFetchCount > 0 else { return }
         pendingFetchCount -= 1
-        if pendingFetchCount == 0 && isLoading {
-            isLoading = false
-            delegate?.dataLoader(self, isLoadingChanged: false)
+        if pendingFetchCount == 0 {
+            // Flip isLoading (and notify) before resuming awaiters, so anything
+            // they read post-await (e.g. lastBatchHadError) is already current.
+            if isLoading {
+                isLoading = false
+                delegate?.dataLoader(self, isLoadingChanged: false)
+            }
+            if let continuations = batchContinuations.removeValue(forKey: batchID) {
+                continuations.forEach { $0.resume() }
+            }
         }
     }
 

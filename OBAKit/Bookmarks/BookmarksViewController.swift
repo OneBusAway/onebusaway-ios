@@ -195,11 +195,18 @@ class BookmarksViewController: UIHostingController<BookmarksRootView>,
 
     // MARK: - Live Activity Management
 
-    func startLiveActivity(for bookmark: Bookmark) {
+    /// The route name/headsign pair stored in a Live Activity's `StaticData`.
+    /// Creation and reconciliation must apply the same fallbacks — comparing
+    /// raw optionals against these stored values would never match a bookmark
+    /// whose route name or headsign is missing.
+    private static func liveActivityKeys(for bookmark: Bookmark) -> (routeShortName: String, routeHeadsign: String) {
         // Use structured properties directly from the Bookmark model instead of parsing
         // the display name, which would break on hyphenated route names like "A-Line".
-        let routeShortName = bookmark.routeShortName ?? bookmark.name
-        let routeHeadsign = bookmark.tripHeadsign ?? ""
+        (bookmark.routeShortName ?? bookmark.name, bookmark.tripHeadsign ?? "")
+    }
+
+    func startLiveActivity(for bookmark: Bookmark) {
+        let (routeShortName, routeHeadsign) = Self.liveActivityKeys(for: bookmark)
 
         let arrivalDepartures = viewModel.arrivalDepartures(for: bookmark)
         let routeColorHex = arrivalDepartures.first?.route.color?.toHex()
@@ -242,9 +249,10 @@ class BookmarksViewController: UIHostingController<BookmarksRootView>,
         for activity in activities {
             let staticData = activity.attributes.staticData
             let matchingBookmark = application.userDataStore.bookmarks.first(where: { bookmark in
+                let keys = Self.liveActivityKeys(for: bookmark)
                 return bookmark.stopID == staticData.stopID &&
-                       bookmark.routeShortName == staticData.routeShortName &&
-                       bookmark.tripHeadsign == staticData.routeHeadsign
+                       keys.routeShortName == staticData.routeShortName &&
+                       keys.routeHeadsign == staticData.routeHeadsign
             })
             let arrivalDepartures = matchingBookmark.map { viewModel.arrivalDepartures(for: $0) } ?? []
 

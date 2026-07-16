@@ -27,8 +27,7 @@ struct BookmarkListSection: Identifiable, Equatable {
 struct BookmarkRowViewModel: Identifiable, Equatable {
     /// The backing bookmark, kept for the navigation/edit/delete/track
     /// callbacks. Reference type — equality is never defined over this object,
-    /// only over the fields that can change for a given bookmark `id`: name,
-    /// favorite status, arrival data, highlights, and the routes subtitle.
+    /// only over all of the copied value fields below.
     let bookmark: Bookmark
 
     let id: UUID
@@ -42,6 +41,11 @@ struct BookmarkRowViewModel: Identifiable, Equatable {
     /// and always empty for whole-stop bookmarks.
     let arrivalDepartures: [ArrivalDeparture]
 
+    /// `true` once an arrival fetch for this bookmark's stop has completed, so
+    /// the card can distinguish "Loading…" from "loaded, but no upcoming
+    /// departures". Always `false` for whole-stop bookmarks (nothing fetches).
+    let hasLoadedArrivalData: Bool
+
     /// Trip IDs whose displayed minutes changed in the latest refresh; the card
     /// flashes those badges when displayed.
     let highlightedTripIDs: Set<TripIdentifier>
@@ -50,7 +54,7 @@ struct BookmarkRowViewModel: Identifiable, Equatable {
     /// `nil` for trip bookmarks.
     let routesSubtitle: String?
 
-    init(bookmark: Bookmark, arrivalDepartures: [ArrivalDeparture], highlightedTripIDs: Set<TripIdentifier>) {
+    init(bookmark: Bookmark, arrivalDepartures: [ArrivalDeparture], highlightedTripIDs: Set<TripIdentifier>, hasLoadedArrivalData: Bool = false) {
         self.bookmark = bookmark
         self.id = bookmark.id
         self.name = bookmark.name
@@ -61,6 +65,7 @@ struct BookmarkRowViewModel: Identifiable, Equatable {
         // Self-enforce "always empty for whole-stop bookmarks" rather than
         // trusting the caller.
         self.arrivalDepartures = bookmark.isTripBookmark ? arrivalDepartures : []
+        self.hasLoadedArrivalData = bookmark.isTripBookmark && hasLoadedArrivalData
         self.highlightedTripIDs = highlightedTripIDs
         self.routesSubtitle = bookmark.isTripBookmark ? nil : Formatters.formattedRoutes(bookmark.stop.routes)
     }
@@ -71,7 +76,9 @@ struct BookmarkRowViewModel: Identifiable, Equatable {
         lhs.stopID == rhs.stopID &&
         lhs.isTripBookmark == rhs.isTripBookmark &&
         lhs.isFavorite == rhs.isFavorite &&
+        lhs.routeShortName == rhs.routeShortName &&
         lhs.arrivalDepartures == rhs.arrivalDepartures &&
+        lhs.hasLoadedArrivalData == rhs.hasLoadedArrivalData &&
         lhs.highlightedTripIDs == rhs.highlightedTripIDs &&
         lhs.routesSubtitle == rhs.routesSubtitle
     }

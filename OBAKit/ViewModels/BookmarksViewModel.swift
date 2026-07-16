@@ -43,16 +43,16 @@ class BookmarksViewModel: NSObject, ObservableObject, BookmarkDataDelegate {
     /// used, so existing users' collapse state survives the rewrite.
     @Published private(set) var collapsedSectionIDs: Set<String>
 
-    /// Empty-state content for when `sections` is empty, or `nil` when
-    /// bookmarks exist. The migration variant takes priority so users of the
-    /// old app generation know where their bookmarks went.
-    var emptyState: (title: String, body: String)? {
+    /// Empty-state content, consulted by the view only when `sections` is
+    /// empty — which is why there's no bookmark-count check here: bookmarks
+    /// that exist only in *other* regions still deserve the empty state, not a
+    /// blank list. The migration variant takes priority so users of the old
+    /// app generation know where their bookmarks went.
+    var emptyState: (title: String, body: String) {
         if application.hasDataToMigrate {
             return (Strings.emptyBookmarkTitle, Strings.emptyBookmarkBodyWithPendingMigration)
-        } else if application.userDataStore.bookmarks.isEmpty {
-            return (Strings.emptyBookmarkTitle, Strings.emptyBookmarkBody)
         }
-        return nil
+        return (Strings.emptyBookmarkTitle, Strings.emptyBookmarkBody)
     }
 
     /// `true` while the data loader has any per-bookmark fetch in flight.
@@ -92,9 +92,15 @@ class BookmarksViewModel: NSObject, ObservableObject, BookmarkDataDelegate {
         self.collapsedSectionIDs = decodedCollapsedSections ?? []
         super.init()
         self.dataLoader = BookmarkDataLoader(application: application, delegate: self)
+        // Distance sorting needs the user's location, which often arrives after
+        // `start()` — especially on cold launch. Stop-only bookmark sets never
+        // fire `dataLoaderDidUpdate`, so without this the group-sort fallback
+        // would persist until the next manual refresh.
+        application.locationService.addDelegate(self)
     }
 
     deinit {
+        application.locationService.removeDelegate(self)
         dataLoader?.cancelUpdates()
     }
 
@@ -120,27 +126,12 @@ class BookmarksViewModel: NSObject, ObservableObject, BookmarkDataDelegate {
         dataLoader.loadData()
     }
 
-    /// Drives `.refreshable`: kicks off a refresh batch and suspends until the
-    /// next batch-complete (`isLoading == false`) signal. The `$isLoading`
-    /// subscription is established *before* `refresh()` runs so a batch that
-    /// completes immediately (e.g. zero trip bookmarks) can't slip past the
-    /// await. Note the signal may come from a previously in-flight
-    /// auto-refresh batch that finishes first.
+    /// Drives `.refreshable`: kicks off a refresh batch and suspends until
+    /// *that batch* drains (or is retired by `deactivate()`). The loader scopes
+    /// the await to the batch this call started, so a previously in-flight
+    /// auto-refresh batch completing first can't end the pull early.
     func refreshAndWait() async {
-        var subscription: AnyCancellable?
-        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-            subscription = $isLoading
-                // Skip the @Published replay of the current value. Safe because
-                // beginBatch() notifies isLoadingChanged for every loadData()
-                // call — even a zero-bookmark batch re-emits false — so an
-                // event always arrives after this point.
-                .dropFirst()
-                .filter { !$0 }
-                .first()
-                .sink { _ in continuation.resume() }
-            refresh()
-        }
-        subscription?.cancel()
+        await dataLoader.loadDataAndWait()
     }
 
     // MARK: - Sort
@@ -259,7 +250,12 @@ class BookmarksViewModel: NSObject, ObservableObject, BookmarkDataDelegate {
             }
         }
 
-        return BookmarkRowViewModel(bookmark: bookmark, arrivalDepartures: arrDeps, highlightedTripIDs: highlighted)
+        return BookmarkRowViewModel(
+            bookmark: bookmark,
+            arrivalDepartures: arrDeps,
+            highlightedTripIDs: highlighted,
+            hasLoadedArrivalData: dataLoader.hasFetchedData(forStopID: bookmark.stopID)
+        )
     }
 
     // MARK: - Arrival departure highlight updates
@@ -305,6 +301,20 @@ class BookmarksViewModel: NSObject, ObservableObject, BookmarkDataDelegate {
                 self.lastRefreshHadError = dataLoader.lastBatchHadError
             }
             self.isLoading = isLoading
+        }
+    }
+}
+
+// MARK: - LocationServiceDelegate
+
+extension BookmarksViewModel: LocationServiceDelegate {
+    /// Re-sorts when the user's location arrives or changes; the rebuild is
+    /// equality-gated, so group-sorted users pay nothing for this.
+    nonisolated func locationService(_ service: LocationService, locationChanged location: CLLocation) {
+        // CLLocationManager delivers delegate callbacks on the thread its
+        // manager was created on — the main thread here (see LocationService).
+        MainActor.assumeIsolated {
+            rebuildSections()
         }
     }
 }

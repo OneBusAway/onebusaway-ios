@@ -175,7 +175,8 @@ class BookmarksViewModelTests: OBATestCase {
     }
 
     /// Bookmarks from other regions must not appear, and a section whose
-    /// bookmarks are all filtered out is omitted entirely.
+    /// bookmarks are all filtered out is omitted entirely — with the standard
+    /// empty state shown rather than a blank list.
     @MainActor
     func test_rebuildSections_filtersBookmarksFromOtherRegions() throws {
         let dataLoader = MockDataLoader(testName: name)
@@ -196,6 +197,52 @@ class BookmarksViewModelTests: OBATestCase {
         viewModel.rebuildSections()
 
         expect(viewModel.sections).to(beEmpty())
+        expect(viewModel.emptyState.title) == Strings.emptyBookmarkTitle
+        expect(viewModel.emptyState.body) == Strings.emptyBookmarkBody
+    }
+
+    // MARK: - refreshAndWait
+
+    /// A pull-to-refresh with zero eligible bookmarks must return promptly
+    /// rather than suspending forever (the spinner would never dismiss).
+    @MainActor
+    func test_refreshAndWait_returnsForEmptyBatch() async {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader)
+
+        let viewModel = BookmarksViewModel(application: app)
+        await viewModel.refreshAndWait()
+
+        expect(viewModel.isLoading).to(beFalse())
+    }
+
+    /// `refreshAndWait` resumes only after its own batch completes, with the
+    /// fetched arrival data already applied to `sections`.
+    @MainActor
+    func test_refreshAndWait_waitsForItsBatchAndAppliesData() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader)
+
+        let stopArrivals = try Fixtures.loadRESTAPIPayload(
+            type: StopArrivals.self,
+            fileName: "arrivals-and-departures-for-stop-1_10914.json"
+        )
+        let arrivalDep = try XCTUnwrap(stopArrivals.arrivalsAndDepartures.first)
+        app.userDataStore.add(
+            Bookmark(name: "Route 49", regionIdentifier: pugetSoundRegionIdentifier, arrivalDeparture: arrivalDep),
+            to: nil
+        )
+        dataLoader.mock(
+            data: Fixtures.loadData(file: "arrivals-and-departures-for-stop-1_10914.json")
+        ) { $0.url?.path.contains("/api/where/arrivals-and-departures-for-stop") ?? false }
+
+        let viewModel = BookmarksViewModel(application: app)
+        await viewModel.refreshAndWait()
+
+        expect(viewModel.isLoading).to(beFalse())
+        let row = try XCTUnwrap(viewModel.sections.first?.rows.first)
+        expect(row.hasLoadedArrivalData).to(beTrue())
+        expect(row.arrivalDepartures).toNot(beEmpty())
     }
 
     // MARK: - Collapse State

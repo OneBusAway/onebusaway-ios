@@ -136,8 +136,14 @@ struct BookmarkCardView: View {
             .foregroundStyle(Color(uiColor: status.color))
     }
 
+    /// Placeholder for the status line while there's no primary departure:
+    /// "Loading..." until the stop's fetch completes, then an explicit
+    /// no-departures message — a fetched-but-empty result must not look like
+    /// it's loading forever.
     private var loadingText: some View {
-        Text(OBALoc("loading", value: "Loading...", comment: "Loading state text"))
+        Text(row.hasLoadedArrivalData
+            ? OBALoc("bookmarks_controller.no_upcoming_departures", value: "No upcoming departures", comment: "Shown on a bookmark card when arrival data has loaded but there are no departures in the near future")
+            : OBALoc("loading", value: "Loading...", comment: "Loading state text"))
             .font(.footnote)
             .foregroundStyle(.secondary)
     }

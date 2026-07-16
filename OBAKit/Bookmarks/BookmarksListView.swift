@@ -57,7 +57,8 @@ struct BookmarksListView: View {
     let navigation: BookmarksNavigationHandler
 
     var body: some View {
-        if viewModel.sections.isEmpty, let empty = viewModel.emptyState {
+        if viewModel.sections.isEmpty {
+            let empty = viewModel.emptyState
             EmptyStateView(title: empty.title, description: empty.body, systemImage: "bookmark")
         } else {
             list
