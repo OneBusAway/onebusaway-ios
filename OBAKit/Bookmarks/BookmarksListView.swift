@@ -33,12 +33,14 @@ struct BookmarksNavigationHandler {
 }
 
 /// Thin hosting wrapper for `BookmarksListView`, mirroring `StopPageRootView`:
-/// applies `.defaultAppStorage` so `@AppStorage` uses the app-group suite and
-/// injects the app's shared `Formatters`.
+/// applies `.defaultAppStorage` for parity with the Stop page (no `@AppStorage`
+/// consumers here yet) and injects the app's shared `Formatters`.
 struct BookmarksRootView: View {
     let viewModel: BookmarksViewModel
     let userDefaults: UserDefaults
-    let navigation: BookmarksNavigationHandler
+    /// Mutable so the hosting controller can install the real handler after
+    /// `super.init` (closures capturing the controller can't exist before it).
+    var navigation: BookmarksNavigationHandler
     let formatters: Formatters
 
     var body: some View {
@@ -134,10 +136,11 @@ struct BookmarksListView: View {
 
     @ViewBuilder
     private func contextMenuItems(for row: BookmarkRowViewModel) -> some View {
-        // Track is gated on isTripBookmark in addition to the system setting —
-        // the legacy menu offered it on stop bookmarks too, where starting an
-        // activity always failed for lack of a trip's arrival data.
-        if row.isTripBookmark && navigation.liveActivitiesEnabled() {
+        // Track is gated on isTripBookmark and loaded arrival data in addition
+        // to the system setting — the legacy menu offered it on stop bookmarks
+        // and still-loading rows too, where starting an activity always failed
+        // for lack of a trip's arrival data.
+        if row.isTripBookmark && !row.arrivalDepartures.isEmpty && navigation.liveActivitiesEnabled() {
             Button {
                 navigation.trackBookmark(row.bookmark)
             } label: {

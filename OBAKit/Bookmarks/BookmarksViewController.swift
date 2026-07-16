@@ -20,7 +20,7 @@ import ActivityKit
 /// that leaves the list — row taps, edit/delete/track actions, pull-to-refresh
 /// completion feedback — routes here through `BookmarksNavigationHandler`, so
 /// the SwiftUI layer stays router-free and holds no `Application` reference.
-public class BookmarksViewController: UIHostingController<BookmarksRootView>,
+class BookmarksViewController: UIHostingController<BookmarksRootView>,
     AppContext,
     BookmarkEditorDelegate,
     ManageBookmarksDelegate,
@@ -32,7 +32,7 @@ public class BookmarksViewController: UIHostingController<BookmarksRootView>,
 
     private lazy var dataLoadFeedbackGenerator = DataLoadFeedbackGenerator(application: application)
 
-    public init(application: Application) {
+    init(application: Application) {
         self.application = application
         self.viewModel = BookmarksViewModel(application: application)
 
@@ -45,12 +45,7 @@ public class BookmarksViewController: UIHostingController<BookmarksRootView>,
             formatters: application.formatters
         ))
 
-        rootView = BookmarksRootView(
-            viewModel: viewModel,
-            userDefaults: application.userDefaults,
-            navigation: makeNavigationHandler(),
-            formatters: application.formatters
-        )
+        rootView.navigation = makeNavigationHandler()
 
         title = OBALoc("bookmarks_controller.title", value: "Bookmarks", comment: "Title of the Bookmarks tab")
         tabBarItem.image = Icons.bookmarksTabIcon
@@ -66,13 +61,13 @@ public class BookmarksViewController: UIHostingController<BookmarksRootView>,
 
     // MARK: - UIViewController
 
-    public override func viewDidLoad() {
+    override func viewDidLoad() {
         super.viewDidLoad()
         rebuildSortMenu()
         bindViewModel()
     }
 
-    public override func viewWillAppear(_ animated: Bool) {
+    override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         viewModel.start()
 
@@ -80,7 +75,7 @@ public class BookmarksViewController: UIHostingController<BookmarksRootView>,
         application.notificationCenter.addObserver(self, selector: #selector(applicationWillEnterForeground), name: UIApplication.willEnterForegroundNotification, object: nil)
     }
 
-    public override func viewWillDisappear(_ animated: Bool) {
+    override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
 
         application.notificationCenter.removeObserver(self, name: UIApplication.didEnterBackgroundNotification, object: nil)
@@ -91,16 +86,25 @@ public class BookmarksViewController: UIHostingController<BookmarksRootView>,
 
     // MARK: - Navigation Handler
 
-    /// A fully no-op handler used only to satisfy the required `rootView` before
+    /// A no-op handler used only to satisfy the required `rootView` before
     /// `self` is available; replaced immediately with `makeNavigationHandler()`.
+    /// The assertions turn a future regression that ships the placeholder
+    /// (e.g. an init reorder) into a loud debug-time trap instead of a
+    /// Bookmarks tab where taps silently do nothing.
     private static let placeholderNavigation = BookmarksNavigationHandler(
-        selectBookmark: { _ in },
-        editBookmark: { _ in },
-        deleteBookmark: { _ in },
-        trackBookmark: { _ in },
-        liveActivitiesEnabled: { false },
-        refresh: {},
-        makeStopPreview: { _ in AnyView(EmptyView()) }
+        selectBookmark: { _ in assertionFailure("placeholder navigation handler invoked") },
+        editBookmark: { _ in assertionFailure("placeholder navigation handler invoked") },
+        deleteBookmark: { _ in assertionFailure("placeholder navigation handler invoked") },
+        trackBookmark: { _ in assertionFailure("placeholder navigation handler invoked") },
+        liveActivitiesEnabled: {
+            assertionFailure("placeholder navigation handler invoked")
+            return false
+        },
+        refresh: { assertionFailure("placeholder navigation handler invoked") },
+        makeStopPreview: { _ in
+            assertionFailure("placeholder navigation handler invoked")
+            return AnyView(EmptyView())
+        }
     )
 
     private func makeNavigationHandler() -> BookmarksNavigationHandler {
@@ -118,8 +122,9 @@ public class BookmarksViewController: UIHostingController<BookmarksRootView>,
                 await self.viewModel.refreshAndWait()
                 // Haptic confirms the user-pull completed; the 30 s auto-refresh
                 // never routes through here, so the device doesn't buzz unprompted.
-                // Reflect whether any bookmark fetch in the batch failed so a
-                // partial/total failure doesn't masquerade as a success buzz.
+                // Reflect whether the just-completed batch reported any fetch
+                // failure (superseded batches don't count) so a failed pull
+                // doesn't buzz success.
                 self.dataLoadFeedbackGenerator.dataLoad(self.viewModel.lastRefreshHadError ? .failed : .success)
             },
             makeStopPreview: { [weak self] stopID in
@@ -207,7 +212,11 @@ public class BookmarksViewController: UIHostingController<BookmarksRootView>,
         )
 
         guard let contentState = buildContentState(from: arrivalDepartures) else {
+            // Shouldn't happen — the context menu only offers Track once arrival
+            // data has loaded — but if data was cleared between the menu render
+            // and the tap, tell the user rather than silently doing nothing.
             Logger.error("Failed to build content state for Live Activity")
+            showLiveActivityErrorAlert()
             return
         }
 
@@ -330,7 +339,7 @@ public class BookmarksViewController: UIHostingController<BookmarksRootView>,
 
     // MARK: - ModalDelegate
 
-    public func dismissModalController(_ controller: UIViewController) {
+    func dismissModalController(_ controller: UIViewController) {
         controller.dismiss(animated: true, completion: nil)
     }
 

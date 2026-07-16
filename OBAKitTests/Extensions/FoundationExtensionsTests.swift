@@ -13,6 +13,22 @@ import Nimble
 @testable import OBAKitCore
 
 class FoundationExtensionsTests: XCTestCase {
+
+    // MARK: - Error.isCancellation
+
+    /// `isCancellation` decides whether an error is *swallowed* rather than
+    /// surfaced (e.g. `TripViewModel`), so misclassification in either
+    /// direction is user-visible: swallow a real error, or alert on every
+    /// dismissed context-menu preview.
+    func test_error_isCancellation() {
+        expect(CancellationError().isCancellation).to(beTrue())
+        expect(URLError(.cancelled).isCancellation).to(beTrue())
+        expect(NSError(domain: NSURLErrorDomain, code: NSURLErrorCancelled).isCancellation).to(beTrue())
+
+        expect(URLError(.badServerResponse).isCancellation).to(beFalse())
+        expect(URLError(.timedOut).isCancellation).to(beFalse())
+        expect(NSError(domain: NSCocoaErrorDomain, code: NSURLErrorCancelled).isCancellation).to(beFalse())
+    }
     
     func test_Bundle_appName() {
         let bundle = Bundle.main

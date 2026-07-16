@@ -21,6 +21,11 @@ struct BookmarkCardView: View {
     @Environment(\.dynamicTypeSize) private var typeSize
     @State private var flashing = false
     @State private var flashDismissal: Task<Void, Never>?
+    /// Snapshot of the trip IDs that triggered the current flash. The row is
+    /// rebuilt once per bookmark fetch, and rebuilds triggered by *other*
+    /// bookmarks reset `row.highlightedTripIDs` to empty — without this
+    /// snapshot, those unrelated rebuilds would cut the 2-second flash short.
+    @State private var flashedTripIDs: Set<TripIdentifier> = []
 
     private var isAccessibilitySize: Bool { typeSize.isAccessibilitySize }
 
@@ -88,14 +93,8 @@ struct BookmarkCardView: View {
             }
             nameText
             if let primary {
-                let status = DepartureStatus(arrivalDeparture: primary)
-                Text(formatters.timeFormatter.string(from: primary.arrivalDepartureDate))
-                    .font(.footnote)
-                    .monospacedDigit()
-                    .foregroundStyle(.secondary)
-                Text(status.label)
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(Color(uiColor: status.color))
+                timeText(for: primary)
+                statusText(for: DepartureStatus(arrivalDeparture: primary))
             } else {
                 loadingText
             }
@@ -112,22 +111,29 @@ struct BookmarkCardView: View {
     @ViewBuilder
     private var statusLine: some View {
         if let primary {
-            let status = DepartureStatus(arrivalDeparture: primary)
             HStack(spacing: 6) {
-                Text(formatters.timeFormatter.string(from: primary.arrivalDepartureDate))
-                    .font(.footnote)
-                    .monospacedDigit()
-                    .foregroundStyle(.secondary)
+                timeText(for: primary)
                 Text("·")
                     .font(.footnote)
                     .foregroundStyle(.tertiary)
-                Text(status.label)
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(Color(uiColor: status.color))
+                statusText(for: DepartureStatus(arrivalDeparture: primary))
             }
         } else {
             loadingText
         }
+    }
+
+    private func timeText(for departure: ArrivalDeparture) -> some View {
+        Text(formatters.timeFormatter.string(from: departure.arrivalDepartureDate))
+            .font(.footnote)
+            .monospacedDigit()
+            .foregroundStyle(.secondary)
+    }
+
+    private func statusText(for status: DepartureStatus) -> some View {
+        Text(status.label)
+            .font(.footnote.weight(.semibold))
+            .foregroundStyle(Color(uiColor: status.color))
     }
 
     private var loadingText: some View {
@@ -198,9 +204,9 @@ struct BookmarkCardView: View {
     // MARK: - Highlight Flash
 
     /// Badge background while a changed departure time is flashing; `base`
-    /// otherwise. Mirrors the legacy `TripBookmarkRow` highlight mechanic.
+    /// otherwise. Mirrors the legacy bookmark cell's highlight mechanic.
     private func flashColor(for departure: ArrivalDeparture, base: Color) -> Color {
-        if flashing && row.highlightedTripIDs.contains(departure.tripID) {
+        if flashing && flashedTripIDs.contains(departure.tripID) {
             return Color(uiColor: ThemeColors.shared.propertyChanged)
         }
         return base
@@ -209,6 +215,7 @@ struct BookmarkCardView: View {
     private func flashIfNeeded() {
         guard !row.highlightedTripIDs.isEmpty else { return }
 
+        flashedTripIDs = row.highlightedTripIDs
         flashDismissal?.cancel()
         withAnimation(.easeInOut(duration: 0.3)) {
             flashing = true

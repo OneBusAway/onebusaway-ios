@@ -106,9 +106,21 @@ class TripViewModel: ObservableObject {
                 if let newDetails { tripDetails = newDetails }
                 if let newPolyline { routePolylineCoordinates = newPolyline }
                 operationError = nil
-            } catch is CancellationError {
-                return
             } catch {
+                // A cancelled load (e.g. dismissing a context menu preview)
+                // should never surface an error to the user. The view is being
+                // torn down, so leaving `isLoading` as-is is fine.
+                if Task.isCancelled {
+                    return
+                }
+                // URLSession can also report NSURLErrorCancelled without the
+                // enclosing Task being cancelled (e.g. a lower layer cancelled
+                // the request). Swallow the error, but clear the spinner — the
+                // view is still alive and waiting.
+                if error.isCancellation {
+                    isLoading = false
+                    return
+                }
                 operationError = error
             }
             isLoading = false

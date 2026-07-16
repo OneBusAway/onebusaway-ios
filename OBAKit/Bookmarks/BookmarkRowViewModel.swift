@@ -26,8 +26,9 @@ struct BookmarkListSection: Identifiable, Equatable {
 /// loader's current arrival/departures. Views receive plain values only.
 struct BookmarkRowViewModel: Identifiable, Equatable {
     /// The backing bookmark, kept for the navigation/edit/delete/track
-    /// callbacks. Reference type — equality is defined over the copied value
-    /// fields below, never this object.
+    /// callbacks. Reference type — equality is never defined over this object,
+    /// only over the fields that can change for a given bookmark `id`: name,
+    /// favorite status, arrival data, highlights, and the routes subtitle.
     let bookmark: Bookmark
 
     let id: UUID
@@ -36,7 +37,6 @@ struct BookmarkRowViewModel: Identifiable, Equatable {
     let isTripBookmark: Bool
     let isFavorite: Bool
     let routeShortName: String?
-    let tripHeadsign: String?
 
     /// Upcoming arrival/departures for a trip bookmark. Empty until data lands,
     /// and always empty for whole-stop bookmarks.
@@ -58,8 +58,9 @@ struct BookmarkRowViewModel: Identifiable, Equatable {
         self.isTripBookmark = bookmark.isTripBookmark
         self.isFavorite = bookmark.isFavorite
         self.routeShortName = bookmark.routeShortName
-        self.tripHeadsign = bookmark.tripHeadsign
-        self.arrivalDepartures = arrivalDepartures
+        // Self-enforce "always empty for whole-stop bookmarks" rather than
+        // trusting the caller.
+        self.arrivalDepartures = bookmark.isTripBookmark ? arrivalDepartures : []
         self.highlightedTripIDs = highlightedTripIDs
         self.routesSubtitle = bookmark.isTripBookmark ? nil : Formatters.formattedRoutes(bookmark.stop.routes)
     }
@@ -67,9 +68,9 @@ struct BookmarkRowViewModel: Identifiable, Equatable {
     static func == (lhs: BookmarkRowViewModel, rhs: BookmarkRowViewModel) -> Bool {
         lhs.id == rhs.id &&
         lhs.name == rhs.name &&
+        lhs.stopID == rhs.stopID &&
+        lhs.isTripBookmark == rhs.isTripBookmark &&
         lhs.isFavorite == rhs.isFavorite &&
-        lhs.routeShortName == rhs.routeShortName &&
-        lhs.tripHeadsign == rhs.tripHeadsign &&
         lhs.arrivalDepartures == rhs.arrivalDepartures &&
         lhs.highlightedTripIDs == rhs.highlightedTripIDs &&
         lhs.routesSubtitle == rhs.routesSubtitle

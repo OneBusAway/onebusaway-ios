@@ -66,6 +66,14 @@ public class BookmarkDataLoader: NSObject {
         // (success or failure) see the mismatch and no-op. Used by deactivate/deinit paths.
         Task { @MainActor in
             self.currentBatchID &+= 1
+            // Retired fetches will never call taskFinished, so close out the
+            // batch here — otherwise `isLoading` stays true forever and anyone
+            // awaiting the batch boundary (e.g. pull-to-refresh) hangs.
+            self.pendingFetchCount = 0
+            if self.isLoading {
+                self.isLoading = false
+                self.delegate?.dataLoader(self, isLoadingChanged: false)
+            }
         }
     }
 

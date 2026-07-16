@@ -135,6 +135,144 @@ class BookmarksViewModelTests: OBATestCase {
         expect(viewModel.isLoading).to(beFalse())
     }
 
+    // MARK: - Section Building
+
+    /// Pins the section ID vocabulary: group sections use the group's UUID
+    /// string, ungrouped bookmarks land in `"unknown_group"`, and distance
+    /// sorting uses `"distance_sorted_group"`. These IDs key users' persisted
+    /// collapse state — renaming any of them silently orphans that state.
+    @MainActor
+    func test_rebuildSections_sectionIDsMatchLegacyVocabulary() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader)
+
+        let stopArrivals = try Fixtures.loadRESTAPIPayload(
+            type: StopArrivals.self,
+            fileName: "arrivals-and-departures-for-stop-1_10914.json"
+        )
+        let arrivalDep = try XCTUnwrap(stopArrivals.arrivalsAndDepartures.first)
+
+        let group = BookmarkGroup(name: "Work", sortOrder: 0)
+        app.userDataStore.upsert(bookmarkGroup: group)
+        app.userDataStore.add(
+            Bookmark(name: "Grouped", regionIdentifier: pugetSoundRegionIdentifier, arrivalDeparture: arrivalDep),
+            to: group
+        )
+        app.userDataStore.add(
+            Bookmark(name: "Ungrouped", regionIdentifier: pugetSoundRegionIdentifier, arrivalDeparture: arrivalDep),
+            to: nil
+        )
+
+        let viewModel = BookmarksViewModel(application: app)
+        viewModel.rebuildSections()
+
+        expect(viewModel.sections.map(\.id)) == [group.id.uuidString, "unknown_group"]
+        expect(viewModel.sections.map { $0.rows.map(\.name) }) == [["Grouped"], ["Ungrouped"]]
+
+        viewModel.updateSortType(byGroup: false)
+        expect(viewModel.sections.map(\.id)) == ["distance_sorted_group"]
+        expect(viewModel.sections.first?.rows.count) == 2
+    }
+
+    /// Bookmarks from other regions must not appear, and a section whose
+    /// bookmarks are all filtered out is omitted entirely.
+    @MainActor
+    func test_rebuildSections_filtersBookmarksFromOtherRegions() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader)
+
+        let stopArrivals = try Fixtures.loadRESTAPIPayload(
+            type: StopArrivals.self,
+            fileName: "arrivals-and-departures-for-stop-1_10914.json"
+        )
+        let arrivalDep = try XCTUnwrap(stopArrivals.arrivalsAndDepartures.first)
+
+        app.userDataStore.add(
+            Bookmark(name: "Elsewhere", regionIdentifier: pugetSoundRegionIdentifier + 1, arrivalDeparture: arrivalDep),
+            to: nil
+        )
+
+        let viewModel = BookmarksViewModel(application: app)
+        viewModel.rebuildSections()
+
+        expect(viewModel.sections).to(beEmpty())
+    }
+
+    // MARK: - Collapse State
+
+    /// Collapse state persisted by the legacy `BookmarksViewController` (same
+    /// key, same `Set<String>` encoding) must survive into the rewrite, and
+    /// toggling must round-trip back to UserDefaults.
+    @MainActor
+    func test_collapsedSections_persistenceRoundTrip() throws {
+        let key = "collapsedBookmarkSections"
+        try userDefaults.encodeUserDefaultsObjects(Set(["unknown_group"]), key: key)
+
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader)
+        let viewModel = BookmarksViewModel(application: app)
+
+        expect(viewModel.collapsedSectionIDs) == ["unknown_group"]
+
+        viewModel.toggleSectionCollapsed("distance_sorted_group")
+        expect(viewModel.collapsedSectionIDs) == ["unknown_group", "distance_sorted_group"]
+
+        viewModel.toggleSectionCollapsed("unknown_group")
+        expect(viewModel.collapsedSectionIDs) == ["distance_sorted_group"]
+
+        let persisted = try userDefaults.decodeUserDefaultsObjects(type: Set<String>.self, key: key)
+        expect(persisted) == ["distance_sorted_group"]
+    }
+
+    // MARK: - BookmarkRowViewModel Equality
+
+    /// `BookmarkRowViewModel.==` gates the `sections` publish in
+    /// `rebuildSections()` — any display-relevant field omitted from `==`
+    /// means a permanently stale row on screen.
+    @MainActor
+    func test_bookmarkRowViewModel_equalityCoversDisplayFields() throws {
+        let stopArrivals = try Fixtures.loadRESTAPIPayload(
+            type: StopArrivals.self,
+            fileName: "arrivals-and-departures-for-stop-1_10914.json"
+        )
+        let arrivalDep = try XCTUnwrap(stopArrivals.arrivalsAndDepartures.first)
+        let bookmark = Bookmark(name: "Route 49", regionIdentifier: pugetSoundRegionIdentifier, arrivalDeparture: arrivalDep)
+
+        let base = BookmarkRowViewModel(bookmark: bookmark, arrivalDepartures: [], highlightedTripIDs: [])
+
+        // Same inputs → equal, even though `bookmark` is a reference type.
+        expect(base) == BookmarkRowViewModel(bookmark: bookmark, arrivalDepartures: [], highlightedTripIDs: [])
+
+        // Arrival data and highlights are display state → unequal.
+        expect(base) != BookmarkRowViewModel(bookmark: bookmark, arrivalDepartures: [arrivalDep], highlightedTripIDs: [])
+        expect(base) != BookmarkRowViewModel(bookmark: bookmark, arrivalDepartures: [], highlightedTripIDs: [arrivalDep.tripID])
+
+        // Mutable Bookmark fields (name, favorite) are display state → unequal.
+        bookmark.name = "Renamed"
+        expect(base) != BookmarkRowViewModel(bookmark: bookmark, arrivalDepartures: [], highlightedTripIDs: [])
+        bookmark.name = "Route 49"
+        bookmark.isFavorite = true
+        expect(base) != BookmarkRowViewModel(bookmark: bookmark, arrivalDepartures: [], highlightedTripIDs: [])
+    }
+
+    /// The init clamp: whole-stop bookmarks never carry arrival data, even if
+    /// a caller passes some.
+    @MainActor
+    func test_bookmarkRowViewModel_clampsArrivalsForStopBookmarks() throws {
+        let stopArrivals = try Fixtures.loadRESTAPIPayload(
+            type: StopArrivals.self,
+            fileName: "arrivals-and-departures-for-stop-1_10914.json"
+        )
+        let arrivalDep = try XCTUnwrap(stopArrivals.arrivalsAndDepartures.first)
+        let stopBookmark = Bookmark(name: "Stop", regionIdentifier: pugetSoundRegionIdentifier, stop: arrivalDep.stop)
+
+        let row = BookmarkRowViewModel(bookmark: stopBookmark, arrivalDepartures: [arrivalDep], highlightedTripIDs: [])
+
+        expect(row.isTripBookmark).to(beFalse())
+        expect(row.arrivalDepartures).to(beEmpty())
+        expect(row.routesSubtitle).toNot(beNil())
+    }
+
     // MARK: - lastRefreshHadError
 
     /// A failed batch sets `lastRefreshHadError` to `true`; a subsequent clean batch resets it.

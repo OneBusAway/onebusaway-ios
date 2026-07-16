@@ -19,12 +19,17 @@ import OBAKitCore
 /// "no results", info).
 struct EmptyStateView<Actions: View>: View {
     let title: String
+    var description: String?
     let systemImage: String
     @ViewBuilder let actions: () -> Actions
 
     var body: some View {
         ContentUnavailableView {
             Label(title, systemImage: systemImage)
+        } description: {
+            if let description {
+                Text(description)
+            }
         } actions: {
             actions()
         }
@@ -34,8 +39,8 @@ struct EmptyStateView<Actions: View>: View {
 // MARK: - No-actions convenience
 
 extension EmptyStateView where Actions == EmptyView {
-    init(title: String, systemImage: String) {
-        self.init(title: title, systemImage: systemImage, actions: { EmptyView() })
+    init(title: String, description: String? = nil, systemImage: String) {
+        self.init(title: title, description: description, systemImage: systemImage, actions: { EmptyView() })
     }
 }
 
