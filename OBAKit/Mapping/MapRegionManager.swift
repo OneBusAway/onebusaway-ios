@@ -1125,11 +1125,4 @@ extension MapRegionManager: LocationServiceDelegate {
     }
 }
 
-/// Transfers a non-Sendable value across an isolation boundary when the sender
-/// provably relinquishes ownership (see `handleMapFeatureSelection`). The box
-/// itself provides no synchronization — correctness rests on the handoff.
-nonisolated private struct UncheckedSendableBox<Value>: @unchecked Sendable {
-    let value: Value
-}
-
 // swiftlint:enable file_length
