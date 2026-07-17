@@ -25,6 +25,8 @@ struct StopDetailSheetHost: UIViewControllerRepresentable {
         Self.makeNavigationController(application: application, stopID: stopID)
     }
 
+    // `StopViewController` reads `application`, `stopID`, and stores directly, so
+    // nothing SwiftUI-side changes over the sheet's lifetime.
     func updateUIViewController(_ uiViewController: UINavigationController, context: Context) { }
 
     /// Internal factory seam mirroring `MoreSheetHost`: builds the same
