@@ -14,6 +14,9 @@ targets:
         SWIFT_VERSION: "5.0"
         SWIFT_DEFAULT_ACTOR_ISOLATION: nonisolated
         SWIFT_APPROACHABLE_CONCURRENCY: NO
+        # Opt out of the project-wide zero-warning lock: this target still has
+        # ratcheted concurrency warnings (scripts/concurrency-warning-baseline.txt).
+        SWIFT_WARNINGS_AS_ERRORS_GROUPS: ""
     dependencies:
       - target: App
       - package: Nimble

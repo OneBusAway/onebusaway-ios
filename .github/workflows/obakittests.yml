@@ -145,12 +145,14 @@ jobs:
           | tee xcodebuild-build.log
 
     # Swift 6 migration ratchet (docs/swift6-migration-plan.md): the number of
-    # strict-concurrency warnings may only go down. Non-enforcing until the
-    # baseline is confirmed against a CI (Xcode 26.2) log — the checked-in
-    # number was measured locally on a different toolchain; remove
-    # continue-on-error once a green run confirms the count matches.
+    # strict-concurrency warnings may only go down. Enforcing since 2026-07-16.
+    # The checked-in baseline (39) was measured on Xcode 27 beta 3; CI's Xcode
+    # 26.6 counts 37 for the same code, so the baseline is the max across the
+    # supported toolchains — don't "lower it to match CI" or local builds fail.
+    # All remaining warnings are in OBAKitTests (pinned to Swift 5, see its
+    # project.yml); every Swift 6 target is at zero and additionally locked by
+    # SWIFT_WARNINGS_AS_ERRORS_GROUPS in Apps/Shared/app_shared.yml.
     - name: Concurrency warning ratchet
-      continue-on-error: true
       run: scripts/concurrency_ratchet xcodebuild-build.log
 
     # Unit Test. Output is teed to a log so the "Report slowest tests" step can
