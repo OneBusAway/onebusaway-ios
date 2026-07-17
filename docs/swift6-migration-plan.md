@@ -356,6 +356,18 @@ subclasses are the standard pattern everywhere else.
 `SWIFT_APPROACHABLE_CONCURRENCY: NO` (its measured, ratcheted status quo).
 Re-try the flip on the next Xcode release; if it still errors, file feedback.
 
+**Toolchain/runtime pairing caveat (2026-07-16, cost a CI cycle to find):**
+running the Swift 6 build's tests on an **iOS 18.x simulator with Xcode 26.2**
+crashes in the isolated-deinit back-deployment shim
+(`swift_task_deinitOnExecutorMainActorBackDeploy` →
+`BUG_IN_CLIENT_OF_LIBMALLOC_POINTER_BEING_FREED_WAS_NOT_ALLOCATED` during
+`TaskLocal` teardown). Under Xcode 26.2's compiler, MainActor-default classes
+get implicitly isolated deinits, so the shim runs for essentially every OBAKit
+class on runtimes without native support. Use an iOS 26+ simulator (the CI
+workflow now insists on one). Release builds use Xcode 27+, whose compiler
+does not emit implicit isolated deinits — only the 11 explicit `isolated
+deinit` sites go through the (newer, presumed-fixed) shim on iOS 18 devices.
+
 Consequence of the pin worth remembering: the test target compiles with only
 `complete`-checking warnings, not Swift 6 enforcement — concurrency
 regressions in test-only helpers and mocks (e.g. the `@unchecked Sendable`
