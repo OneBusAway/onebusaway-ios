@@ -44,8 +44,7 @@ class MapRegionManagerTests: OBATestCase {
             locationService: locationService,
             bundledRegionsFilePath: bundledRegionsPath,
             regionsAPIPath: regionsPath,
-            dataLoader: dataLoader,
-            fixedRegionName: Fixtures.pugetSoundRegion.name
+            dataLoader: dataLoader
         )
     }
 
@@ -138,7 +137,20 @@ class MapRegionManagerTests: OBATestCase {
         let locationService = LocationService(userDefaults: userDefaults, locationManager: locManager)
         locationService.startUpdates()
 
-        let config = makeConfig(locationService: locationService, bundledRegionsPath: regionsFilePath, dataLoader: dataLoader)
+        // Inline config with fixedRegionName since this test needs a specific region
+        let config = AppConfig(
+            regionsBaseURL: regionsURL,
+            apiKey: apiKey,
+            appVersion: appVersion,
+            userDefaults: userDefaults,
+            analytics: AnalyticsMock(),
+            queue: queue,
+            locationService: locationService,
+            bundledRegionsFilePath: regionsFilePath,
+            regionsAPIPath: regionsPath,
+            dataLoader: dataLoader,
+            fixedRegionName: Fixtures.pugetSoundRegion.name
+        )
 
         let application = Application(config: config)
         let mgr = MapRegionManager(application: application)
@@ -170,7 +182,20 @@ class MapRegionManagerTests: OBATestCase {
         )
         let locationService = LocationService(userDefaults: userDefaults, locationManager: locManager)
 
-        let config = makeConfig(locationService: locationService, bundledRegionsPath: regionsFilePath, dataLoader: dataLoader)
+        // Inline config with fixedRegionName since this test needs a specific region
+        let config = AppConfig(
+            regionsBaseURL: regionsURL,
+            apiKey: apiKey,
+            appVersion: appVersion,
+            userDefaults: userDefaults,
+            analytics: AnalyticsMock(),
+            queue: queue,
+            locationService: locationService,
+            bundledRegionsFilePath: regionsFilePath,
+            regionsAPIPath: regionsPath,
+            dataLoader: dataLoader,
+            fixedRegionName: Fixtures.pugetSoundRegion.name
+        )
 
         let application = Application(config: config)
         let mgr = MapRegionManager(application: application)
