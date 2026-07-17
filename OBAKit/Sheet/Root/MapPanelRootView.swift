@@ -63,8 +63,14 @@ struct MapPanelRootView: View {
         Map(position: $cameraPosition, selection: $selectedStopID) {
             UserAnnotation()
             ForEach(stopsObserver.stops) { stop in
+                // Empty title on the Annotation suppresses the visual label
+                // (this project's SwiftUI SDK does not expose
+                // `.annotationTitles(.hidden)` on `Map`, so we route
+                // accessibility through the icon's own `accessibilityLabel`
+                // instead of a hidden title string).
                 Annotation("", coordinate: stop.coordinate) {
                     Image(uiImage: application.stopIconFactory.buildSquircleIcon(for: stop))
+                        .accessibilityLabel(stop.name)
                 }
                 .tag(stop.id)
             }
