@@ -31,6 +31,10 @@ final class MapStopsObserver: NSObject, ObservableObject, MapRegionDelegate {
 
     // MARK: - MapRegionDelegate
 
+    // `MapRegionDelegate` is `@objc optional`; annotate the implementation so
+    // Obj-C runtime discovery is explicit rather than relying on Swift's
+    // inferred bridging.
+    @objc
     func mapRegionManager(_ manager: MapRegionManager, stopsUpdated stops: [Stop]) {
         self.stops = stops
     }
