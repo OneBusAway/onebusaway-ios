@@ -25,7 +25,7 @@ on:
 
 jobs:
   build:
-    runs-on: macos-15
+    runs-on: macos-26
     permissions:
       checks: write
       contents: read
@@ -53,10 +53,16 @@ jobs:
 
     # Pin Xcode deterministically so the set of bundled simulator runtimes is
     # known, instead of relying on `xcode-select` against whatever the image ships.
+    # 26.6, not 26.2: the Swift 6 migration needs a compiler from the same
+    # generation as local development (Xcode 27 beta / Swift 6.4). Xcode 26.2's
+    # compiler emits implicitly-isolated deinits for MainActor-default classes
+    # whose runtime path double-frees in TaskLocal teardown, crashing the test
+    # suite regardless of simulator runtime (see docs/swift6-migration-plan.md,
+    # "Toolchain/runtime pairing caveat").
     - name: Setup Xcode
       uses: maxim-lobanov/setup-xcode@v1
       with:
-        xcode-version: '26.2'
+        xcode-version: '26.6'
 
     - name: Install xcodegen
       env:

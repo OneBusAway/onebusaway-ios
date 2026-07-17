@@ -2,8 +2,9 @@
 
 *Written 2026-07-16, revised same day after an adversarial documentation review.
 Measurements taken on `main` @ `0ae45cb3` with Xcode 27.0 beta 3 (Swift 6.4
-toolchain). CI (Xcode 26.2) supports every setting used here, but once Phase 0
-lands, contributors need Xcode 26 or newer.*
+toolchain). CI runs Xcode 26.6 — see the toolchain caveat in the Phase 4
+status section: Xcode 26.2's compiler crashes the Swift 6 test suite at
+runtime. Contributors need a recent Xcode 26.4+ / 27 toolchain.*
 
 ## Where we started (2026-07-16; see the Sequencing summary for current status)
 
@@ -356,17 +357,21 @@ subclasses are the standard pattern everywhere else.
 `SWIFT_APPROACHABLE_CONCURRENCY: NO` (its measured, ratcheted status quo).
 Re-try the flip on the next Xcode release; if it still errors, file feedback.
 
-**Toolchain/runtime pairing caveat (2026-07-16, cost a CI cycle to find):**
-running the Swift 6 build's tests on an **iOS 18.x simulator with Xcode 26.2**
-crashes in the isolated-deinit back-deployment shim
+**Toolchain caveat (2026-07-16, cost two CI cycles to isolate):** building
+with **Xcode 26.2** crashes the Swift 6 test suite at runtime — a
+deterministic malloc abort in the isolated-deinit machinery
 (`swift_task_deinitOnExecutorMainActorBackDeploy` →
-`BUG_IN_CLIENT_OF_LIBMALLOC_POINTER_BEING_FREED_WAS_NOT_ALLOCATED` during
-`TaskLocal` teardown). Under Xcode 26.2's compiler, MainActor-default classes
-get implicitly isolated deinits, so the shim runs for essentially every OBAKit
-class on runtimes without native support. Use an iOS 26+ simulator (the CI
-workflow now insists on one). Release builds use Xcode 27+, whose compiler
-does not emit implicit isolated deinits — only the 11 explicit `isolated
-deinit` sites go through the (newer, presumed-fixed) shim on iOS 18 devices.
+`TaskLocal::StopLookupScope` →
+`BUG_IN_CLIENT_OF_LIBMALLOC_POINTER_BEING_FREED_WAS_NOT_ALLOCATED`). Xcode
+26.2's compiler emits implicitly-isolated deinits for MainActor-default
+classes, and that path double-frees when objects deallocate inside tasks
+carrying task-locals (XCTest's async lifecycle guarantees exactly that). It
+reproduces on both iOS 18.5 and iOS 26.2 simulators, so it's codegen, not
+the runtime. Xcode 27 beta 3 (Swift 6.4) does not emit implicit isolated
+deinits and is unaffected — CI is pinned to Xcode 26.6, the newest
+same-generation compiler on GitHub's runner images. Watch the 11 explicit
+`isolated deinit` sites on iOS 18 devices regardless: they use the
+back-deploy shim compiled by whatever Xcode builds the release.
 
 Consequence of the pin worth remembering: the test target compiles with only
 `complete`-checking warnings, not Swift 6 enforcement — concurrency
