@@ -136,4 +136,39 @@ class MapRegionManagerTests: OBATestCase {
 
         expect(mgr.stops).toNot(beEmpty())
     }
+
+    @MainActor
+    func test_scheduleStopsRequest_debouncedLoadPopulatesStops() async {
+        let dataLoader = MockDataLoader(testName: name)
+        stubRegions(dataLoader: dataLoader)
+        stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
+        Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
+
+        dataLoader.mock(data: Fixtures.loadData(file: "stops_for_location_seattle.json")) { request in
+            request.url?.path.contains("/api/where/stops-for-location.json") ?? false
+        }
+
+        let locManager = MockAuthorizedLocationManager(
+            updateLocation: TestData.mockSeattleLocation,
+            updateHeading: TestData.mockHeading
+        )
+        let locationService = LocationService(userDefaults: userDefaults, locationManager: locManager)
+
+        let config = makeConfig(locationService: locationService, bundledRegionsPath: regionsFilePath, dataLoader: dataLoader)
+
+        let application = Application(config: config)
+        let mgr = MapRegionManager(application: application)
+        let region = MKCoordinateRegion(
+            center: TestData.mockSeattleLocation.coordinate,
+            latitudinalMeters: 5000,
+            longitudinalMeters: 5000
+        )
+
+        // Rapid succession: only the last should survive the debounce.
+        mgr.scheduleStopsRequest(in: region)
+        mgr.scheduleStopsRequest(in: region)
+
+        // Debounce is 250ms; poll up to Nimble's default timeout for the load.
+        await expect(mgr.stops).toEventuallyNot(beEmpty())
+    }
 }

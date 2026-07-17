@@ -71,6 +71,9 @@ public class MapRegionManager: NSObject,
 
     private var regionChangeRequestTimer: Timer?
 
+    /// Debounced request task for SwiftUI hosts driving `scheduleStopsRequest(in:)`.
+    private var pendingStopsRequestTask: Task<Void, Never>?
+
     private var userLocationAnnotationView: PulsingAnnotationView? {
         didSet {
             updateUserHeadingDisplay()
@@ -223,6 +226,7 @@ public class MapRegionManager: NSObject,
         application.locationService.removeDelegate(self)
         application.regionsService.removeDelegate(self)
         regionChangeRequestTimer?.invalidate()
+        pendingStopsRequestTask?.cancel()
 
         // Cancel all ongoing geocoding operations
         for geocoder in activeGeocoders.values {
@@ -325,6 +329,18 @@ public class MapRegionManager: NSObject,
     @objc func requestDataForMapRegion(_ timer: Timer) {
         Task(priority: .utility) {
             await requestDataForMapRegion()
+        }
+    }
+
+    /// Debounced, fire-and-forget entrypoint for SwiftUI hosts. Coalesces rapid
+    /// camera settles (matching the UIKit 0.25s timer) and cancels any in-flight
+    /// request before loading stops for `region`.
+    func scheduleStopsRequest(in region: MKCoordinateRegion) {
+        pendingStopsRequestTask?.cancel()
+        pendingStopsRequestTask = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(250))
+            guard !Task.isCancelled else { return }
+            await self?.requestStops(in: region)
         }
     }
 
