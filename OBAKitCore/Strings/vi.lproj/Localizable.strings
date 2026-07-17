@@ -1,11 +1,20 @@
 /* An error message that tells the user that they are connected to a captive portal WiFi network. */
 "api_error.captive_portal" = "Có vẻ bạn đang kết nối với một mạng WiFi không cho phép truy cập Internet. Hãy thử ngắt kết nối WiFi hoặc xác thực với mạng để tiếp tục.";
 
+/* An error that tells the user that cellular data access is disabled for this app in iOS Settings. Both substituted values are the app name. */
+"api_error.cellular_data_restricted_fmt" = "%1$@ hiện không được phép truy cập dữ liệu di động. Để khắc phục, hãy vào Cài đặt > Di động và bật dữ liệu di động cho %2$@, hoặc kết nối với mạng WiFi.";
+
+/* An error shown when the server returns data the app can't understand, indicating a likely server-side issue. */
+"api_error.decoding_failure" = "Máy chủ trả về dữ liệu không hợp lệ. Điều này thường có nghĩa là máy chủ đang gặp sự cố. Vui lòng thử lại sau ít phút.";
+
 /* An error message that informs the user that the wrong kind of content was received from the server. */
 "api_error.invalid_content_type_fmt" = "Dự kiến nhận dữ liệu %1$@ từ máy chủ, nhưng chúng tôi lại nhận được %2$@.";
 
 /* An error that tells the user that the network connection isn't working. */
 "api_error.network_failure" = "Không thể kết nối với Internet hoặc máy chủ. Vui lòng kiểm tra kết nối mạng của bạn và thử lại.";
+
+/* An error message that tells the user that no region has been selected. */
+"api_error.no_region_selected" = "Chưa có khu vực nào được chọn. Vui lòng chọn một khu vực để tiếp tục.";
 
 /* An error that tells the user that the server unexpectedly failed to return data. */
 "api_error.no_response_body" = "Máy chủ bất ngờ không trả về dữ liệu nào cho yêu cầu của bạn.";
@@ -15,6 +24,15 @@
 
 /* An error that is produced in response to HTTP status code 404 */
 "api_error.request_not_found" = "404 Không tìm thấy (%@)";
+
+/* An error shown when the server returns a 500 Internal Server Error. The substituted value is the region name, e.g. 'Puget Sound'. */
+"api_error.server_error_fmt" = "Máy chủ của %@ gặp lỗi khi xử lý yêu cầu của bạn. Vui lòng thử lại.";
+
+/* An error shown when the regional transit server is unavailable. The first substituted value is the region name, the second is the app name. */
+"api_error.server_unavailable_fmt" = "Máy chủ của %1$@ hiện có vẻ đang ngừng hoạt động, nên %2$@ không thể hiển thị thông tin vận tải cho khu vực này. Ứng dụng sẽ hoạt động trở lại khi máy chủ được khôi phục.";
+
+/* An error message that tells the user that surveys are not available. */
+"api_error.survey_service_not_configured" = "Dịch vụ khảo sát không khả dụng ở khu vực này.";
 
 /* This will appear on a button or as a title, and indicates that this UI will create a new bookmark. */
 "common.add_alarm" = "Thêm lời nhắc";
@@ -58,8 +76,8 @@
 /* The verb 'to donate', as in to give money to a charitable cause. */
 "common.donate" = "Quyên góp";
 
-/* The body of the message to display to the user after they donate to OTSF */
-"common.donation_thank_you.body" = "Sự ủng hộ của bạn sẽ giúp chúng tôi tiếp tục cải thiện OneBusAway.";
+/* The body of the message to display to the user after they donate to OTSF. %@ is the app name. */
+"common.donation_thank_you.body" = "Sự ủng hộ của bạn sẽ giúp chúng tôi tiếp tục cải thiện ứng dụng %@.";
 
 /* Title of an alert to display to the user after they donate to OTSF */
 "common.donation_thank_you.title" = "Cảm ơn bạn đã ủng hộ!";
@@ -88,11 +106,20 @@
 /* The title of a button that exports all of the user's data into a file. */
 "common.export_data" = "Xuất dữ liệu";
 
+/* Description of the privacy policy for sharing data with the external survey service. */
+"common.external_survey_privacy_info.description" = "Khảo sát này sẽ chia sẻ điểm dừng, tuyến, khu vực và vị trí hiện tại của bạn.";
+
 /* The verb 'to filter'. */
 "common.filter" = "Lọc";
 
+/* The verb 'to go' */
+"common.go" = "Đi";
+
 /* This is button text that tells the user they can tap on it to learn more about the topic at hand. */
 "common.learn_more" = "Tìm hiểu thêm";
+
+/* Fallback title for the stop arrivals screen when the stop name is not yet available. */
+"common.live_arrivals" = "Chuyến đến trực tiếp";
 
 /* Used to indicate that content is loading. */
 "common.loading" = "Đang tải…";
@@ -111,6 +138,9 @@
 
 /* As in 'see more' or 'learn more'. */
 "common.more" = "Thêm";
+
+/* The verb 'to next', i.e. to get next survey question. */
+"common.next" = "Tiếp theo";
 
 /* OK */
 "common.ok" = "OK";
@@ -163,6 +193,9 @@
 /* Noun. Plural form of a transit stop. */
 "common.stops" = "Điểm dừng";
 
+/* The verb 'to submit', i.e. to submit a survey answer. */
+"common.submit" = "Gửi";
+
 /* A format string used to tell the user when the UI they are looking at was last updated. e.g. Updated: 9:41 AM. The time is calculated at runtime. */
 "common.updated_at_fmt" = "Đã cập nhật: %@";
 
@@ -171,37 +204,6 @@
 
 /* The title of the Vehicles tab showing real-time vehicle positions on a map. */
 "common.vehicles" = "Phương tiện";
-
-/* Description of the privacy policy for sharing data with the external survey service. */
-"common.external_survey_privacy_info.description" = "Khảo sát này sẽ chia sẻ điểm dừng, tuyến, khu vực và vị trí hiện tại của bạn.";
-
-"common.go" = "Đi";
-
-"common.submit" = "Gửi";
-
-"common.next" = "Tiếp theo";
-
-"survey_alert.dismissal.title" = "Bỏ qua khảo sát";
-
-"survey_alert.dismissal.body" = "Phản hồi của bạn giúp cải thiện dịch vụ vận tải và trải nghiệm ứng dụng.";
-
-"survey_alert.skip.survey" = "Bỏ qua khảo sát này";
-
-"survey_alert.remind.later" = "Nhắc tôi sau";
-
-"survey_error.required_remaining_questions.error" = "Vui lòng trả lời tất cả các câu hỏi bắt buộc";
-
-"survey_error.hero_question_answer.error" = "Vui lòng nhập câu trả lời hợp lệ";
-
-"survey_success.submitted" = "Đã gửi câu trả lời khảo sát! Vui lòng trả lời các câu hỏi còn lại để phản hồi tốt hơn.";
-
-"survey_alert.do.not.show.again" = "Không hiển thị lại";
-
-"survey_service.not.available" = "Dịch vụ khảo sát không khả dụng.";
-
-"survey.external.url.missing" = "Hiện không thể mở khảo sát. Vui lòng thử lại sau.";
-
-"survey_service.update.path.missing" = "Đã xảy ra lỗi khi gửi câu trả lời của bạn. Vui lòng thử lại sau.";
 
 /* Use for vehicles that arrived X minutes ago. */
 "formatters.arrived_x_min_ago_fmt" = "Đã đến %d phút trước";
@@ -365,6 +367,18 @@
 /* Formatted time text for arrivals/departures. Used for accessibility labels, so be sure to spell out the word for 'minute'. Example: 7 minutes means that this event happens 7 minutes in the future. -7 minutes means 7 minutes in the past. */
 "formatters.time_fmt" = "%d phút";
 
+/* Transfer arrival banner. First parameter is the arrival time, second is the route name and headsign. e.g. 'Arriving at 4:10 PM via 10 - Capitol Hill' */
+"formatters.transfer.arrival_banner_fmt" = "Đến lúc %1$@ bằng %2$@";
+
+/* Short text shown when a departure occurs at the same time as the rider's transfer arrival. */
+"formatters.transfer.on_arrival" = "NGAY";
+
+/* Error when a route has no real-time vehicle tracking data. */
+"nearby_trip_matcher.error.no_realtime" = "Không có dữ liệu theo dõi thời gian thực cho tuyến này.";
+
+/* Error when no transit stops are found near the user's location. */
+"nearby_trip_matcher.error.no_stops" = "Không tìm thấy điểm dừng nào ở gần.";
+
 /* Bus. Used for short- and long-distance bus routes. */
 "route_type.bus" = "Xe buýt";
 
@@ -395,6 +409,9 @@
 /* Title for the schedule/timetable feature tip */
 "schedule_tip.title" = "Xem lịch trình tuyến của bạn";
 
+/* Shown in place of the minutes countdown when the vehicle is departing now */
+"stop_page.countdown.now" = "NGAY";
+
 /* User-facing string that means the location of the stop on the map is wrong. */
 "stop_problem_code.user_description.location_wrong" = "Vị trí sai";
 
@@ -409,6 +426,60 @@
 
 /* User-facing string that means our data is wrong about a route or a scheduled trip */
 "stop_problem_code.user_description.route_or_trip_missing" = "Thiếu tuyến hoặc chuyến theo lịch trình";
+
+/* Indicating missing external survey url */
+"survey.external.url.missing" = "Hiện không thể mở khảo sát. Vui lòng thử lại sau.";
+
+/* Body for survey dismissal action alert. */
+"survey_alert.dismissal.body" = "Phản hồi của bạn giúp cải thiện dịch vụ vận tải và trải nghiệm ứng dụng.";
+
+/* Title for survey dismissal action alert. */
+"survey_alert.dismissal.title" = "Bỏ qua khảo sát";
+
+/* The action of not showing the survey again. */
+"survey_alert.do.not.show.again" = "Không hiển thị lại";
+
+/* The action of reminding later. i.e, to remind me later on the survey. */
+"survey_alert.remind.later" = "Nhắc tôi sau";
+
+/* The action of skipping the current survey. */
+"survey_alert.skip.survey" = "Bỏ qua khảo sát này";
+
+/* Error message to show when the user has not answered the hero survey question with a valid answer. */
+"survey_error.hero_question_answer.error" = "Vui lòng nhập câu trả lời hợp lệ";
+
+/* Error message to show when the user has not answered all required survey questions. */
+"survey_error.required_remaining_questions.error" = "Vui lòng trả lời tất cả các câu hỏi bắt buộc";
+
+/* Indicating that survey service is not setup up right or has some other issue. */
+"survey_service.not.available" = "Dịch vụ khảo sát không khả dụng.";
+
+/* Indicating missing survey update id when submitting responses */
+"survey_service.update.path.missing" = "Đã xảy ra lỗi khi gửi câu trả lời của bạn. Vui lòng thử lại sau.";
+
+/* Success message to show when the survey is successfully submitted. */
+"survey_success.submitted" = "Đã gửi câu trả lời khảo sát! Vui lòng trả lời các câu hỏi còn lại để phản hồi tốt hơn.";
+
+/* Accessibility hint for an input field in a survey. */
+"surveys.accessibility.hint_answer.input" = "Nhập câu trả lời của bạn cho câu hỏi khảo sát";
+
+/* Accessibility label for an input field in a survey. */
+"surveys.accessibility_answer.input" = "Ô nhập câu trả lời";
+
+/* Accessibility label for a value that is not selected. */
+"surveys.accessibility_not_selected_value" = "Chưa chọn";
+
+/* Accessibility label for a selected value. */
+"surveys.accessibility_selected_value" = "Đã chọn";
+
+/* Accessibility for survey label */
+"surveys.accessibility_survey_label" = "Nhãn khảo sát";
+
+/* Accessibility label that allows selection of a survey option. */
+"surveys.accessibility_tap_to_select" = "Nhấn để chọn";
+
+/* Accessibility label  that toggles the selection state of a survey option. */
+"surveys.accessibility_tap_toggle_selection" = "Nhấn để chuyển đổi lựa chọn";
 
 /* Message for the trip planner tip */
 "trip_planner_tip.message" = "Nhấn vào đây để tìm kiếm địa điểm và lên kế hoạch hành trình với chỉ đường phương tiện công cộng.";
@@ -461,22 +532,29 @@
 /* VoiceOver text describing a route that is scheduled to depart. (no realtime data was available) */
 "voiceover.arrivaldeparture_scheduled_departs_in_x_minutes_fmt" = "theo lịch sẽ khởi hành sau %1$d phút, lúc %2$@.";
 
-/* Error when no transit stops are found near the user's location. */
-"nearby_trip_matcher.error.no_stops" = "Không tìm thấy điểm dừng nào ở gần.";
+/* Weather condition label for clear skies. */
+"weather.condition.clear" = "Trời quang";
 
-/* Error when a route has no real-time vehicle tracking data. */
-"nearby_trip_matcher.error.no_realtime" = "Không có dữ liệu theo dõi thời gian thực cho tuyến này.";
+/* Weather condition label for cloudy skies. */
+"weather.condition.cloudy" = "Nhiều mây";
 
-"surveys.accessibility_selected_value" = "Đã chọn";
+/* Weather condition label for foggy conditions. */
+"weather.condition.fog" = "Sương mù";
 
-"surveys.accessibility_not_selected_value" = "Chưa chọn";
+/* Weather condition label for partly cloudy skies. */
+"weather.condition.partly_cloudy" = "Mây rải rác";
 
-"surveys.accessibility_tap_toggle_selection" = "Nhấn để chuyển đổi lựa chọn";
+/* Weather condition label for rain. */
+"weather.condition.rain" = "Mưa";
 
-"surveys.accessibility_tap_to_select" = "Nhấn để chọn";
+/* Weather condition label for sleet. */
+"weather.condition.sleet" = "Mưa tuyết";
 
-"surveys.accessibility_answer.input" = "Ô nhập câu trả lời";
+/* Weather condition label for snow. */
+"weather.condition.snow" = "Tuyết";
 
-"surveys.accessibility.hint_answer.input" = "Nhập câu trả lời của bạn cho câu hỏi khảo sát";
+/* Weather condition placeholder when the icon key is unknown. */
+"weather.condition.unknown" = "—";
 
-"surveys.accessibility_survey_label" = "Nhãn khảo sát";
+/* Weather condition label for windy conditions. */
+"weather.condition.wind" = "Nhiều gió";

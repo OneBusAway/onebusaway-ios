@@ -59,6 +59,6 @@ class DocumentWebView: WKWebView {
     private var pageBody: String {
         let frameworkBundle = Bundle(for: type(of: self))
         let htmlPath = frameworkBundle.path(forResource: "document_web_view_content", ofType: "html")!
-        return try! String(contentsOfFile: htmlPath) // swiftlint:disable:this force_try
+        return try! String(contentsOfFile: htmlPath, encoding: .utf8) // swiftlint:disable:this force_try
     }
 }

@@ -46,7 +46,7 @@ struct ChronologicalListView: View {
                     // aloud it needs to say what activating actually does.
                     .accessibilityLabel(showPast
                         ? OBALoc("stop_page.past_toggle_hide_a11y", value: "Hide past departures", comment: "VoiceOver label for the button hiding recently departed trips")
-                        : String(format: OBALoc("stop_page.past_toggle_show_a11y_fmt", value: "Show %d past departures", comment: "VoiceOver label for the button revealing recently departed trips. %d is the count."), partition.past.count))
+                        : String(format: OBALoc("stop_page.past_toggle_show_a11y_fmt", value: "Show %d past departures", comment: "VoiceOver label for the button revealing recently departed trips. %d is the count. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback."), partition.past.count))
                 }
             }
         }
@@ -73,14 +73,17 @@ struct ChronologicalListView: View {
     private func rows(_ departures: [ArrivalDeparture], style: DepartureRowView.Style) -> some View {
         // Identity: ArrivalDeparture.id (stable across prediction refreshes).
         ForEach(departures, id: \.id) { departure in
+            let actions = actionsProvider(departure)
             DepartureRowView(
                 departure: departure,
                 status: statusProvider(departure),
                 hasAlarm: alarmLookup(departure) != nil,
+                canAlarm: actions.canAlarm,
+                onAlarmToggle: actions.onAlarmToggle,
                 style: style,
                 onTap: { onToggleExpand(departure) }
             )
-            .departureRowActions(actionsProvider(departure))
+            .departureRowActions(actions)
 
             // Accordion: the panel is an INSERTED SIBLING ROW, keyed off the
             // expanded id — List animates insert/remove smoothly.

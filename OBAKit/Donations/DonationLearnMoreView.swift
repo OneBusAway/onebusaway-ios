@@ -62,21 +62,34 @@ struct DonationLearnMoreView: View {
             .listRowSeparator(.hidden)
     }
 
+    /// Built as a `String` so the app name can be interpolated — this framework also
+    /// ships as KiedyBus.
+    ///
+    /// NOTE: this screen is not localized. Every string here is a bare SwiftUI literal,
+    /// and `Text(LocalizedStringKey)` resolves against `Bundle.main`, whereas OBAKit's
+    /// strings live in the framework bundle — so these never resolve and ship in English
+    /// in all 13 locales. Localizing it means routing through `OBALoc` (or a
+    /// `Text(_:bundle:)` shim); adding keys to `OBAKit/Strings/*.lproj` alone will not work.
+    private var explanationText: String {
+        let appName = Bundle.main.appName
+        return """
+        We have big plans to improve \(appName), but we can't do it without your help. This app is currently built with 100% volunteer labor, and we need you to help us fund future development.
+
+        As a key project of the Open Transit Software Foundation, a 501(c)(3) non-profit, we rely on the goodwill of users like you to keep running and making this software better.
+
+        Every year, only a small fraction of our users donate, but every contribution, big or small, helps ensure that \(appName) remains free, updated, and accessible to everyone. A small donation, even just the cost of one week of commuting, $27.50, can make all the difference.
+
+        Your tax-deductible contribution ensures that \(appName) remains free and accessible for everyone. Let's shape the future of transit together!
+
+        Thank you,
+        The \(appName) Team
+        """
+    }
+
     func buildExplanationSection() -> some View {
         Group {
             Text("Here's why we need your help").font(.title2).bold()
-            Text("""
-            We have big plans to improve OneBusAway, but we can't do it without your help. This app is currently built with 100% volunteer labor, and we need you to help us fund future development.
-
-            As a key project of the Open Transit Software Foundation, a 501(c)(3) non-profit, we rely on the goodwill of users like you to keep running and making this software better.
-
-            Every year, only a small fraction of our users donate, but every contribution, big or small, helps ensure that OneBusAway remains free, updated, and accessible to everyone. A small donation, even just the cost of one week of commuting, $27.50, can make all the difference.
-
-            Your tax-deductible contribution ensures that OneBusAway remains free and accessible for everyone. Let's shape the future of transit together!
-
-            Thank you,
-            The OneBusAway Team
-            """)
+            Text(explanationText)
             .lineLimit(showFullExplanation ? nil : 3)
 
             if !showFullExplanation {

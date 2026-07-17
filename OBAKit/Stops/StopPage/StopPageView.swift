@@ -8,6 +8,7 @@
 //
 
 import SwiftUI
+import ActivityKit
 import OBAKitCore
 
 /// Everything that navigates away from — or presents a modal over — the Stop
@@ -37,6 +38,8 @@ struct StopPageNavigationHandler {
     /// panel's Set-an-alarm button), reusing `AlarmBuilder` from the legacy
     /// stop screen.
     let showAlarmPicker: (ArrivalDeparture) -> Void
+    /// Starts a Live Activity for a departure (the trip panel's Track button).
+    let startLiveActivity: (ArrivalDeparture) -> Void
     /// Shows the "couldn't open survey" alert when an external survey link fails.
     let showExternalSurveyError: () -> Void
     /// Presents the donation learn-more/donate modal.
@@ -351,6 +354,20 @@ struct StopPageView: View {
         .onChange(of: routeIDs) { _, ids in
             if let rid = expandedRouteID, !ids.contains(rid) { expandedRouteID = nil }
         }
+        .overlay(alignment: .bottom) {
+            if viewModel.liveActivityStarted {
+                Text(OBALoc("live_activity.started.title", value: "Tracking on Lock Screen", comment: "Toast shown when a Live Activity starts on the Lock Screen"))
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(.tint, in: Capsule())
+                    .padding(.bottom, 16)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .animation(.spring(duration: 0.3), value: viewModel.liveActivityStarted)
     }
 
     /// One-shot: a stop the user has never customized opens in the last mode they
@@ -373,24 +390,21 @@ struct StopPageView: View {
     /// live-only VM fetch; the alarm closures route through the single alarm index.
     private func makePanel(for departure: ArrivalDeparture) -> TripDetailPanelView {
         let status = DepartureStatus(arrivalDeparture: departure)
-        let alarm = viewModel.alarm(for: departure)
         return TripDetailPanelView(
             departure: departure,
             status: status,
-            alarm: alarm,
-            alarmLeadTimeMinutes: alarm.map { viewModel.alarmLeadTimeMinutes($0) } ?? viewModel.defaultAlarmLeadTime,
-            canAlarm: viewModel.canCreateAlarm(for: departure),
+            alarm: nil,
+            alarmLeadTimeMinutes: 0,
+            canAlarm: ActivityAuthorizationInfo().areActivitiesEnabled,
             // Bumps on every successful refresh so the panel re-fetches its
             // approach timeline while it stays open (scheduled→live flips and
             // failed first fetches retry on the next refresh).
             refreshToken: viewModel.lastUpdated,
             cachedTripDetails: viewModel.cachedApproachTripDetails(for: departure),
             approachLoader: { await viewModel.approachTripDetails(for: departure) },
-            onSetAlarm: { navigation.showAlarmPicker(departure) },
-            onCancelAlarm: { Task { await viewModel.cancelAlarm(for: departure) } },
-            // Change re-presents the same alarm picker bulletin as create; the
-            // controller's alarmCreated callback replaces the existing alarm.
-            onChangeAlarm: { navigation.showAlarmPicker(departure) },
+            onSetAlarm: { navigation.startLiveActivity(departure) },
+            onCancelAlarm: {},
+            onChangeAlarm: {},
             canSchedule: navigation.canScheduleForRoute,
             onSchedule: { navigation.showScheduleForRoute(departure) },
             onBookmark: { navigation.showBookmarkEditor(departure) },
@@ -404,7 +418,11 @@ struct StopPageView: View {
             canSchedule: navigation.canScheduleForRoute,
             hasAlarm: viewModel.alarm(for: departure) != nil,
             onAlarmToggle: {
-                Task { await viewModel.toggleAlarm(for: departure) }
+                if viewModel.alarm(for: departure) != nil {
+                    Task { await viewModel.cancelAlarm(for: departure) }
+                } else {
+                    navigation.showAlarmPicker(departure)
+                }
             },
             onSchedule: { navigation.showScheduleForRoute(departure) },
             onBookmark: { navigation.showBookmarkEditor(departure) },
@@ -609,7 +627,7 @@ struct ServiceAlertsSection: View {
         Button {
             withAnimation { showAllAlerts = true }
         } label: {
-            Text(String(format: OBALoc("stop_page.service_alerts.show_all_fmt", value: "Show all %d alerts", comment: "Row that expands the service alerts section to show every alert. %d is the total number of alerts."), alerts.count))
+            Text(String(format: OBALoc("stop_page.service_alerts.show_all_fmt", value: "Show all %d alerts", comment: "Row that expands the service alerts section to show every alert. %d is the total number of alerts. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback."), alerts.count))
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.orange)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -621,9 +639,7 @@ struct ServiceAlertsSection: View {
     }
 
     private var headerAccessibilityLabel: String {
-        alerts.count == 1
-            ? OBALoc("stop_page.service_alerts.summary_one", value: "1 service alert", comment: "Collapsed summary row for the service alerts section when exactly one alert applies.")
-            : String(format: OBALoc("stop_page.service_alerts.summary_fmt", value: "%d service alerts", comment: "Collapsed summary row for the service alerts section. %d is the number of alerts."), alerts.count)
+        String(format: OBALoc("stop_page.service_alerts.summary_fmt", value: "%d service alerts", comment: "Collapsed summary row for the service alerts section. %d is the number of alerts. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback."), alerts.count)
     }
 
     private func alertRow(_ alert: ServiceAlert) -> some View {
@@ -829,7 +845,7 @@ struct StopPageEmptyStateRow: View {
         if isFilteredEmpty {
             return OBALoc("stop_page.empty.all_filtered", value: "All routes at this stop are filtered", comment: "Empty state shown when every route at the stop is hidden by the user's filter.")
         }
-        let fmt = OBALoc("stop_page.empty.no_departures_fmt", value: "No departures in the next %d minutes", comment: "Empty state shown when the stop has no upcoming departures within the loaded time window. %d is the number of minutes.")
+        let fmt = OBALoc("stop_page.empty.no_departures_fmt", value: "No departures in the next %d minutes", comment: "Empty state shown when the stop has no upcoming departures within the loaded time window. %d is the number of minutes. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback.")
         return String(format: fmt, minutesAfter)
     }
 

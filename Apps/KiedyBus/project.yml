@@ -84,6 +84,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: pl.kiedybus.iphone.OBAWidget
 include:
   - path: Apps/Shared/app_shared.yml
+  - path: Apps/Shared/info_plist.yml
   - path: OBAKitCore/project.yml
   - path: OBAKit/project.yml
   - path: OBAKitTests/project.yml

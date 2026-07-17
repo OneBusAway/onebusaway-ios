@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>data_migration_bulletin.report_summary_number_of_failures</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>لا توجد حالات فشل</string>
+			<key>one</key>
+			<string>حالة فشل واحدة</string>
+			<key>two</key>
+			<string>حالتا فشل</string>
+			<key>few</key>
+			<string>%d حالات فشل</string>
+			<key>many</key>
+			<string>%d حالة فشل</string>
+			<key>other</key>
+			<string>%d حالة فشل</string>
+		</dict>
+	</dict>
+	<key>data_migration_bulletin.report_summary_number_of_successes</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>لا توجد حالات ناجحة</string>
+			<key>one</key>
+			<string>حالة ناجحة واحدة</string>
+			<key>two</key>
+			<string>حالتان ناجحتان</string>
+			<key>few</key>
+			<string>%d حالات ناجحة</string>
+			<key>many</key>
+			<string>%d حالة ناجحة</string>
+			<key>other</key>
+			<string>%d حالة ناجحة</string>
+		</dict>
+	</dict>
+	<key>stop_controller.transfer_show_earlier_departures_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>لا توجد مغادرات أبكر</string>
+			<key>one</key>
+			<string>إظهار مغادرة واحدة أبكر</string>
+			<key>two</key>
+			<string>إظهار مغادرتين أبكر</string>
+			<key>few</key>
+			<string>إظهار %d مغادرات أبكر</string>
+			<key>many</key>
+			<string>إظهار %d مغادرة أبكر</string>
+			<key>other</key>
+			<string>إظهار %d مغادرة أبكر</string>
+		</dict>
+	</dict>
+	<key>stop_page.empty.no_departures_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>لا توجد مغادرات قادمة</string>
+			<key>one</key>
+			<string>لا توجد مغادرات خلال الدقيقة القادمة</string>
+			<key>two</key>
+			<string>لا توجد مغادرات خلال الدقيقتين القادمتين</string>
+			<key>few</key>
+			<string>لا توجد مغادرات خلال الـ%d دقائق القادمة</string>
+			<key>many</key>
+			<string>لا توجد مغادرات خلال الـ%d دقيقة القادمة</string>
+			<key>other</key>
+			<string>لا توجد مغادرات خلال الـ%d دقيقة القادمة</string>
+		</dict>
+	</dict>
+	<key>stop_page.past_toggle_show_a11y_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>لا توجد مغادرات سابقة</string>
+			<key>one</key>
+			<string>إظهار مغادرة سابقة واحدة</string>
+			<key>two</key>
+			<string>إظهار مغادرتين سابقتين</string>
+			<key>few</key>
+			<string>إظهار %d مغادرات سابقة</string>
+			<key>many</key>
+			<string>إظهار %d مغادرة سابقة</string>
+			<key>other</key>
+			<string>إظهار %d مغادرة سابقة</string>
+		</dict>
+	</dict>
+	<key>stop_page.service_alerts.show_all_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>لا توجد تنبيهات لإظهارها</string>
+			<key>one</key>
+			<string>إظهار تنبيه واحد</string>
+			<key>two</key>
+			<string>إظهار تنبيهين</string>
+			<key>few</key>
+			<string>إظهار %d تنبيهات</string>
+			<key>many</key>
+			<string>إظهار %d تنبيهًا</string>
+			<key>other</key>
+			<string>إظهار %d تنبيه</string>
+		</dict>
+	</dict>
+	<key>stop_page.service_alerts.summary_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>لا توجد تنبيهات خدمة</string>
+			<key>one</key>
+			<string>تنبيه خدمة واحد</string>
+			<key>two</key>
+			<string>تنبيها خدمة</string>
+			<key>few</key>
+			<string>%d تنبيهات خدمة</string>
+			<key>many</key>
+			<string>%d تنبيهًا للخدمة</string>
+			<key>other</key>
+			<string>%d تنبيه خدمة</string>
+		</dict>
+	</dict>
+	<key>stop_page.timeline.skipped_stops_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>لا توجد مواقف</string>
+			<key>one</key>
+			<string>موقف واحد</string>
+			<key>two</key>
+			<string>موقفان</string>
+			<key>few</key>
+			<string>%d مواقف</string>
+			<key>many</key>
+			<string>%d موقفًا</string>
+			<key>other</key>
+			<string>%d موقف</string>
+		</dict>
+	</dict>
+</dict>
+</plist>

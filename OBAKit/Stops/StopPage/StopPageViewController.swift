@@ -10,6 +10,7 @@
 import UIKit
 import SwiftUI
 import Combine
+import ActivityKit
 import OBAKitCore
 
 /// Hosting shell for the redesigned SwiftUI Stop page. Owns UIKit-side chrome
@@ -155,6 +156,7 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
         showAlertDetail: { _ in },
         showBookmarkEditor: { _ in },
         showAlarmPicker: { _ in },
+        startLiveActivity: { _ in },
         showExternalSurveyError: {},
         showDonation: {},
         dismissDonation: { _ in },
@@ -177,6 +179,7 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
             },
             showBookmarkEditor: { [weak self] departure in self?.showBookmarkEditor(for: departure) },
             showAlarmPicker: { [weak self] departure in self?.showAlarmPicker(for: departure) },
+            startLiveActivity: { [weak self] departure in self?.startLiveActivity(for: departure) },
             showExternalSurveyError: { [weak self] in self?.showExternalSurveyError() },
             showDonation: { [weak self] in self?.showDonationUI() },
             dismissDonation: { [weak self] onHide in self?.showDonationDismissUI(onHide: onHide) },
@@ -303,10 +306,13 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
                 value: "Notifications Are Off",
                 comment: "Title of the alert shown when the user tries to set a departure alarm but notifications are denied in Settings."
             ),
-            message: OBALoc(
-                "stop_page.alarm_permission_denied.message",
-                value: "To get departure alarms, allow notifications for OneBusAway in Settings.",
-                comment: "Body of the alert shown when the user tries to set a departure alarm but notifications are denied in Settings."
+            message: String(
+                format: OBALoc(
+                    "stop_page.alarm_permission_denied.message",
+                    value: "To get departure alarms, allow notifications for %@ in Settings.",
+                    comment: "Body of the alert shown when the user tries to set a departure alarm but notifications are denied in Settings. %@ is the app name."
+                ),
+                Bundle.main.appName
             ),
             preferredStyle: .alert
         )
@@ -367,6 +373,10 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
             // delete when the departure had no prior alarm, so it serves both
             // the create and change flows.
             Task { await viewModel.replaceAlarm(with: alarm, for: departure) }
+
+            if alarmBuilder.trackOnLockScreen {
+                startLiveActivity(for: departure)
+            }
         } else {
             viewModel.recordAlarmCreated(alarm)
         }
@@ -380,6 +390,56 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
         Task { @MainActor in
             await AlertPresenter.show(error: error, presentingController: self)
         }
+    }
+
+    // MARK: - Live Activity
+
+    func startLiveActivity(for departure: ArrivalDeparture) {
+        guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
+
+        let routeColorHex = departure.route.color?.toHex()
+        let staticData = TripAttributes.StaticData(
+            routeShortName: departure.routeShortName,
+            routeHeadsign: departure.tripHeadsign ?? "",
+            stopID: departure.stopID,
+            routeColorHex: routeColorHex,
+            regionID: application.currentRegion?.regionIdentifier ?? 0
+        )
+
+        guard let contentState = buildLiveActivityContentState(for: departure) else {
+            Logger.error("Failed to build content state for Live Activity")
+            return
+        }
+
+        let attributes = TripAttributes(staticData: staticData)
+        do {
+            let activity = try Activity.request(
+                attributes: attributes,
+                content: .init(state: contentState, staleDate: nil),
+                pushType: .token
+            )
+            application.liveActivityTracker.track(activity: activity, metadata: .init(departure))
+            Logger.info("Started Live Activity with ID: \(activity.id)")
+            viewModel.signalLiveActivityStarted()
+        } catch {
+            Logger.error("Failed to start Live Activity: \(error)")
+            showLiveActivityErrorAlert()
+        }
+    }
+
+    private func buildLiveActivityContentState(for departure: ArrivalDeparture) -> TripAttributes.ContentState? {
+        let allArrivals = viewModel.stopArrivals?.arrivalsAndDepartures ?? [departure]
+        let sameRoute = allArrivals.filter { $0.routeID == departure.routeID }
+        let upcoming = sameRoute.isEmpty ? [departure] : Array(sameRoute.prefix(3))
+        let arrivals = upcoming.map { arrDep in
+            TripAttributes.ContentState.ArrivalInfo(
+                departureTime: Int(arrDep.arrivalDepartureDate.timeIntervalSince1970),
+                scheduleStatus: .init(arrDep.scheduleStatus),
+                scheduleDeviation: arrDep.deviationFromScheduleInMinutes * 60,
+                isArrival: arrDep.arrivalDepartureStatus == .arriving
+            )
+        }
+        return TripAttributes.ContentState(arrivals: arrivals)
     }
 
     // MARK: - Snapshot
@@ -713,25 +773,13 @@ private extension StopPageViewController {
     /// replaced by the `onHide` callback).
     func showDonationDismissUI(onHide: @escaping () -> Void) {
         let alertController = UIAlertController(
-            title: OBALoc(
-                "donations.donations_dismiss_alert.title",
-                value: "Please don't dismiss this request",
-                comment: "Title of the alert that appears when the user chooses to dismiss the donations request UI on a stop page"
-            ),
-            message: OBALoc(
-                "donations.donations_dismiss_alert.message",
-                value: "OneBusAway is a volunteer-run organization with almost no funding. We need your help to keep this app running.",
-                comment: "Body of the alert that appears when the user chooses to dismiss the donations request UI on a stop page"
-            ),
+            title: Strings.donationsDismissAlertTitle,
+            message: Strings.donationsDismissAlertMessage,
             preferredStyle: .actionSheet
         )
 
         alertController.addAction(
-            title: OBALoc(
-                "donations.donations_dismiss_alert.button_dismiss",
-                value: "I Don't Want to Help Right Now",
-                comment: "Dismiss button on the alert"
-            ),
+            title: Strings.donationsDismissAlertButtonDismiss,
             style: .destructive
         ) { [weak self] _ in
             self?.application.donationsManager.dismissDonationsRequests()
@@ -739,11 +787,7 @@ private extension StopPageViewController {
         }
 
         alertController.addAction(
-            title: OBALoc(
-                "donations.donations_dismiss_alert.button_remind_later",
-                value: "Remind Me Later",
-                comment: "A button that prompts the system to remind them to donate later."
-            ),
+            title: Strings.donationsDismissAlertButtonRemindLater,
             style: .default
         ) { [weak self] _ in
             self?.application.donationsManager.remindUserLater()

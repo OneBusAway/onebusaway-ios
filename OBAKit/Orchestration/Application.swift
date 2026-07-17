@@ -299,24 +299,39 @@ public class Application: CoreApplication, PushServiceDelegate {
     }
 
     public func pushService(_ pushService: PushService, received pushBody: AlarmPushBody) {
-        guard let apiService = apiService else { return }
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            // Remove the fired alarm from the local store and let open stop pages
+            // update their alarm index via the notification.
+            self.deleteMatchingAlarm(for: pushBody)
+            NotificationCenter.default.post(name: .alarmFired, object: nil)
 
-        Task(priority: .userInitiated) { [weak self] in
-            do {
-                let arrivalDeparture = try await apiService.getTripArrivalDepartureAtStop(stopID: pushBody.stopID, tripID: pushBody.tripID, serviceDate: pushBody.serviceDate, vehicleID: pushBody.vehicleID, stopSequence: pushBody.stopSequence).entry
-
-                if let self, let topViewController = self.topViewController {
-                    await MainActor.run {
-                        let tripController = TripViewController(application: self, arrivalDeparture: arrivalDeparture)
-                        self.viewRouter.navigate(to: tripController, from: topViewController)
-                    }
-                }
-            } catch {
-                await self?.displayError(error)
+            guard let topViewController = self.topViewController else {
+                // UI not ready yet (cold launch). Navigate once the scene activates.
+                self.pendingAlarmStopID = pushBody.stopID
+                return
             }
+            self.viewRouter.navigateTo(stopID: pushBody.stopID, from: topViewController)
         }
     }
 
+    /// Deletes the stored alarm whose deep-link identity matches `pushBody`, so the stop
+    /// page reflects the fired state without waiting for the next full refresh.
+    @MainActor
+    private func deleteMatchingAlarm(for pushBody: AlarmPushBody) {
+        for alarm in userDataStore.alarms {
+            guard let deepLink = alarm.deepLink else { continue }
+            guard deepLink.stopID == pushBody.stopID,
+                  deepLink.tripID == pushBody.tripID,
+                  deepLink.stopSequence == pushBody.stopSequence,
+                  abs(deepLink.serviceDate.timeIntervalSince(pushBody.serviceDate)) < 60
+            else { continue }
+            userDataStore.delete(alarm: alarm)
+            return
+        }
+    }
+
+    private var pendingAlarmStopID: StopID?
     private var presentDonationUIOnActive = false
     private var presentAddRegionAlertOnActive = false
     private var donationPromptID: String?
@@ -405,12 +420,19 @@ public class Application: CoreApplication, PushServiceDelegate {
         }
     }
 
-    @objc public func applicationDidBecomeActive(_ application: UIApplication) {
+    @MainActor @objc public func applicationDidBecomeActive(_ application: UIApplication) {
         if locationService.isLocationUseAuthorized {
             locationService.startUpdates()
         }
 
         configureConnectivity()
+
+        // Clean up Live Activity subscriptions whose activities are gone. This has to run on an
+        // app-lifecycle hook rather than in a view controller: an activity the user dismissed
+        // while the app wasn't running has no observer to notice it, and the server will keep
+        // pushing to it until the subscription is deleted. (The scene delegate calls this on
+        // launch as well as on every foreground.)
+        Task { await liveActivityRegistry.reconcile() }
 
         #if DEBUG
         // Lets UI tests exercise the modal alert bulletin deterministically,
@@ -421,6 +443,11 @@ public class Application: CoreApplication, PushServiceDelegate {
         #endif
 
         alertsStore.checkForUpdates()
+
+        if let stopID = pendingAlarmStopID, let topViewController {
+            viewRouter.navigateTo(stopID: stopID, from: topViewController)
+            pendingAlarmStopID = nil
+        }
 
         if presentDonationUIOnActive, let topViewController {
             presentDonationUI(topViewController, id: donationPromptID)

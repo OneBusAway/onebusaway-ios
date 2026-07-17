@@ -398,7 +398,7 @@ class SettingsViewController: FormViewController {
                 row.reload()
 
                 Task {
-                    try await Task.sleep(for: .seconds(2))
+                    try? await Task.sleep(for: .seconds(2))
                     row.value = self.application.pushService?.pushUserID ?? OBALoc("more_controller.debug_section.push_id.not_available", value: "Not available", comment: "This is displayed instead of the user's push ID if the value is not available.")
                     row.reload()
                 }

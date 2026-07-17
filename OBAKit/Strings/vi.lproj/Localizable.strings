@@ -43,6 +43,15 @@
 /* Title of the Alarm Time Picker page. */
 "alarm_time_picker.title" = "Thêm lời nhắc";
 
+/* Toggle label that starts a Live Activity widget on the Lock Screen when an alarm is set. */
+"alarm_time_picker.track_on_lock_screen" = "Theo dõi trên Màn hình khóa";
+
+/* Placeholder shown in release builds when a sheet route is pushed but has no view registered. */
+"app_sheet.unimplemented_route.placeholder" = "Màn hình này sắp ra mắt.";
+
+/* Action to start a Live Activity for a specific bookmark */
+"bookmarks_controller.context_menu.track_live_activity" = "Theo dõi";
+
 /* The title to display to confirm the user's action to delete a bookmark. */
 "bookmarks_controller.delete_bookmark.actionsheet.title" = "Xóa dấu trang";
 
@@ -79,8 +88,8 @@
 /* Title of the alert that appears when the user's device isn't configured to send email. */
 "contact_us_helper.cant_send_email.title" = "Không thể gửi email qua Mail.app";
 
-/* Feedback email template subject for the app developers */
-"contact_use_helper.feedback_subject.app" = "Phản hồi về OneBusAway";
+/* Feedback email template subject for the app developers. %@ is the app name. */
+"contact_use_helper.feedback_subject.app" = "Phản hồi về ứng dụng %@";
 
 /* Feedback email template subject for the transit agency */
 "contact_use_helper.feedback_subject.transit_agency" = "Phản hồi của hành khách";
@@ -93,6 +102,9 @@
 
 /* Distance from user to vehicle. e.g. '0.2 mi away' */
 "current_trip_controller.distance_fmt" = "Cách %@";
+
+/* Error when the API service is unavailable. */
+"current_trip_controller.error_no_service" = "Không thể kết nối với dịch vụ vận tải.";
 
 /* Error message when the user's location is not available. */
 "current_trip_controller.location_unavailable" = "Không có thông tin vị trí. Vui lòng bật dịch vụ định vị.";
@@ -109,17 +121,11 @@
 /* Message when no active vehicle is found near the user on the selected route. */
 "current_trip_controller.no_results" = "Không tìm thấy phương tiện đang hoạt động trên tuyến này gần bạn";
 
-/* Error when the API service is unavailable. */
-"current_trip_controller.error_no_service" = "Không thể kết nối với dịch vụ vận tải.";
-
 /* Button to retry finding the user's vehicle. */
 "current_trip_controller.retry" = "Thử lại";
 
 /* Title of the Base URL header. */
 "custom_region_builder_controller.base_url_section.header_title" = "URL cơ sở";
-
-/* Title of the Contact Email header. */
-"custom_region_builder_controller.contact_email_section.header_title" = "Email liên hệ";
 
 /* Example custom region name */
 "custom_region_builder_controller.example_data.region_name" = "Khu vực tùy chỉnh của tôi";
@@ -160,10 +166,10 @@
 /* This comment is displayed after the user's data is upgraded in the DataMigrationBulletinPage. */
 "data_migration_bulletin.finished_loading" = "Nâng cấp dữ liệu hoàn tất!";
 
-/* Data migration report label for showing the number of failed migration tasks. */
+/* Data migration report label for showing the number of failed migration tasks. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
 "data_migration_bulletin.report_summary_number_of_failures" = "%d thất bại";
 
-/* Data migration report label for showing the number of successful migration tasks. */
+/* Data migration report label for showing the number of successful migration tasks. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
 "data_migration_bulletin.report_summary_number_of_successes" = "%d thành công";
 
 /* Title for the Summary section of a data migration report */
@@ -181,26 +187,26 @@
 /* Title of the button that shows the donation explanation UI. */
 "donation_cell.learn_more_button_title" = "Tìm hiểu thêm";
 
-/* Title of the donation widget that appears on the stop view controller. */
-"donation_cell.title" = "🚨 OneBusAway cần sự giúp đỡ của bạn";
+/* Title of the donation widget that appears on the stop view controller. %@ is the app name. */
+"donation_cell.title" = "🚨 Ứng dụng %@ cần sự giúp đỡ của bạn";
 
-/* Dismiss button on the alert */
+/* Button on the donation-dismiss alert that permanently stops donation requests. */
 "donations.donations_dismiss_alert.button_dismiss" = "Tôi không muốn giúp lúc này";
 
-/* A button that prompts the system to remind them to donate later. */
+/* Button on the donation-dismiss alert that defers donation requests rather than stopping them. */
 "donations.donations_dismiss_alert.button_remind_later" = "Nhắc tôi sau";
 
-/* Body of the alert that appears when the user chooses to dismiss the donations request UI on a stop page */
-"donations.donations_dismiss_alert.message" = "OneBusAway là một tổ chức do tình nguyện viên điều hành với nguồn kinh phí gần như bằng không. Chúng tôi cần sự giúp đỡ của bạn để duy trì ứng dụng này.";
+/* Body of the alert that appears when the user chooses to dismiss the donations request UI on a stop page. %@ is the app name. */
+"donations.donations_dismiss_alert.message" = "%@ là một tổ chức do tình nguyện viên điều hành với nguồn kinh phí gần như bằng không. Chúng tôi cần sự giúp đỡ của bạn để duy trì ứng dụng này.";
 
 /* Title of the alert that appears when the user chooses to dismiss the donations request UI on a stop page */
 "donations.donations_dismiss_alert.title" = "Vui lòng đừng bỏ qua lời đề nghị này";
 
-/* Indicates that the user wants to create a duplicate bookmark. */
-"edit_bookmark_controller.duplicate_alert.affirmative_button" = "Tạo bản sao";
-
 /* Title of the button that lets the user add a new Bookmark Group. */
 "edit_bookmark_controller.add_group_button_title" = "Thêm nhóm dấu trang";
+
+/* Indicates that the user wants to create a duplicate bookmark. */
+"edit_bookmark_controller.duplicate_alert.affirmative_button" = "Tạo bản sao";
 
 /* Body of an alert telling the user they have already bookmarked this thing. */
 "edit_bookmark_controller.duplicate_alert.body" = "Bạn đã đánh dấu mục này rồi. Bạn có muốn tạo một bản sao không?";
@@ -256,20 +262,44 @@
 /* A voiceover title describing that the card's visibility taking up the minimum amount of screen. */
 "floating_panel.controller.position.minimized" = "Thu nhỏ";
 
+/* Placeholder text inside the disabled search bar on the home sheet, shown while search is unimplemented. */
+"home_sheet.search_bar.coming_soon" = "Tìm kiếm sắp ra mắt";
+
+/* Alert message for Live Activity error. \"Settings\" is the iOS Settings app. */
+"live_activity.error.message" = "Vui lòng kiểm tra cài đặt Hoạt động Trực tiếp trong Cài đặt.";
+
+/* Alert title when Live Activity fails to start */
+"live_activity.error.title" = "Không thể bắt đầu theo dõi";
+
+/* Alert message explaining where to find the Live Activity */
+"live_activity.started.message" = "Bạn sẽ thấy cập nhật trực tiếp về giờ đến trên Màn hình khóa và Dynamic Island.";
+
+/* Alert title when a Live Activity starts */
+"live_activity.started.title" = "Đang theo dõi trên Màn hình khóa";
+
+/* Loading state text */
+"loading" = "Đang tải…";
+
 /* Description of why we need location services */
 "location_permission_bulletin.description_text" = "Vui lòng cho phép ứng dụng truy cập vị trí của bạn để việc tìm các điểm dừng phương tiện công cộng dễ dàng hơn.";
+
+/* Button the user can tap on to decline access to their location. */
+"location_permission_bulletin.do_not_use_location_button_text" = "Để sau";
 
 /* Title of the alert that appears to request your location. */
 "location_permission_bulletin.title" = "Chào mừng!";
 
+/* Button the user taps to grant access to their location. */
+"location_permission_bulletin.use_location_button_text" = "Dùng vị trí của tôi";
+
 /* No comment provided by engineer. */
 "locationservices_alert_gotosettings.button" = "Bật trong Cài đặt";
 
-/* No comment provided by engineer. */
+/* Body of the alert prompting the user to grant precise location. */
 "locationservices_alert_imprecise.message" = "Bạn sẽ thấy vị trí của mình trên bản đồ và các điểm dừng gần đó, giúp bạn dễ dàng đến nơi cần đến hơn.";
 
-/* No comment provided by engineer. */
-"locationservices_alert_imprecise.title" = "OneBusAway hoạt động tốt nhất với vị trí chính xác của bạn";
+/* Title of the alert prompting the user to upgrade from approximate to precise location. %@ is the app name. */
+"locationservices_alert_imprecise.title" = "Ứng dụng %@ hoạt động tốt nhất với vị trí chính xác của bạn";
 
 /* No comment provided by engineer. */
 "locationservices_alert_keep_precise_location_off.button" = "Giữ tắt Vị trí chính xác";
@@ -277,11 +307,11 @@
 /* No comment provided by engineer. */
 "locationservices_alert_keepoff.button" = "Giữ tắt Vị trí";
 
-/* No comment provided by engineer. */
+/* Body of the alert prompting the user to turn on location services. */
 "locationservices_alert_off.message" = "Bạn sẽ thấy vị trí của mình trên bản đồ và các điểm dừng gần đó, giúp bạn dễ dàng đến nơi cần đến hơn.";
 
-/* No comment provided by engineer. */
-"locationservices_alert_off.title" = "OneBusAway hoạt động tốt nhất với vị trí của bạn.";
+/* Title of the alert prompting the user to turn on location services. %@ is the app name. */
+"locationservices_alert_off.title" = "Ứng dụng %@ hoạt động tốt nhất với vị trí của bạn.";
 
 /* No comment provided by engineer. */
 "locationservices_alert_request_precise_location_once.button" = "Cho phép một lần";
@@ -428,6 +458,9 @@
 /* Credits - like who should get credit for creating this. */
 "more_controller.credits_row_title" = "Ghi công";
 
+/* Header for the custom links section configured by the transit agency. */
+"more_controller.custom_links.header" = "Tài nguyên";
+
 /* Title for a button that will crash the app. */
 "more_controller.debug_section.crash_row" = "Làm sập ứng dụng";
 
@@ -443,8 +476,8 @@
 /* Header for the donate section. */
 "more_controller.donate" = "Trở thành người ủng hộ";
 
-/* The call to action for the More controller's donate buton */
-"more_controller.donate_description" = "Quyên góp cho OneBusAway";
+/* Call to action for donations. %@ is the app name. */
+"more_controller.donate_description_fmt" = "Quyên góp cho %@";
 
 /* Header for the volunteer section. */
 "more_controller.help_out" = "Giúp ứng dụng tốt hơn";
@@ -467,10 +500,11 @@
 /* A link to the app's Privacy Policy */
 "more_controller.privacy_row_title" = "Chính sách quyền riêng tư";
 
-/* Title of the More tab */
+/* Title of the More tab
+   Title of the More tab / accessibility label for the map-panel more button. */
 "more_controller.title" = "Thêm";
 
-/* Request to help localize OneBusAway */
+/* Request to help localize the app */
 "more_controller.translate_the_app" = "Giúp dịch ứng dụng";
 
 /* Updates and Alerts header text */
@@ -485,17 +519,20 @@
 /* Body for the empty set indicator on the Nearby controller. */
 "nearby_controller.empty_set.body" = "Thu nhỏ hoặc di chuyển bản đồ để tìm điểm dừng.";
 
+/* Button to search wider area */
+"nearby_controller.empty_set.button" = "Tìm ở khu vực rộng hơn";
+
 /* Title for the empty set indicator on the Nearby controller */
 "nearby_controller.empty_set.title" = "Không có điểm dừng lân cận";
-
-/* Error shown on the Nearby Stops screen when no API service is configured (e.g. no region selected). */
-"nearby_stops_controller.no_api_service_error" = "Không có dịch vụ dữ liệu vận tải nào khả dụng. Vui lòng chọn khu vực trong Cài đặt.";
 
 /* Body for the empty set indicator on the Nearby Stops controller. */
 "nearby_stops_controller.empty_set.body" = "Không có điểm dừng nào khác ở khu vực lân cận.";
 
 /* Title for the empty set indicator on the Nearby Stops controller. */
 "nearby_stops_controller.empty_set.title" = "Không có điểm dừng lân cận";
+
+/* Error shown on the Nearby Stops screen when no API service is configured (e.g. no region selected). */
+"nearby_stops_controller.no_api_service_error" = "Không có dịch vụ dữ liệu vận tải nào khả dụng. Vui lòng chọn khu vực trong Cài đặt.";
 
 /* The title of the Nearby Stops controller. */
 "nearby_stops_controller.title" = "Điểm dừng lân cận";
@@ -521,11 +558,38 @@
 /* Vehicle is not accepting any passengers */
 "occupancy_status.not_accepting_passengers" = "Không nhận khách";
 
+/* Short occupancy label: crushed standing room only */
+"occupancy_status.short.crowded" = "Chen chúc";
+
+/* Short occupancy label: vehicle is empty */
+"occupancy_status.short.empty" = "Trống";
+
+/* Short occupancy label: vehicle is full */
+"occupancy_status.short.full" = "Đầy";
+
+/* Short occupancy label: many seats available */
+"occupancy_status.short.many_seats" = "Nhiều chỗ";
+
+/* Short occupancy label: vehicle is not accepting passengers */
+"occupancy_status.short.not_boarding" = "Không nhận khách";
+
+/* Short occupancy label: few seats available */
+"occupancy_status.short.some_seats" = "Ít chỗ";
+
+/* Short occupancy label: standing room only */
+"occupancy_status.short.standing_room" = "Chỗ đứng";
+
+/* Short occupancy label: occupancy is unknown */
+"occupancy_status.short.unknown" = "Không rõ";
+
 /* Vehicle occupancy is high */
 "occupancy_status.standing_room_only" = "Chỉ còn chỗ đứng";
 
 /* Vehicle occupancy status is unknown. */
 "occupancy_status.unknown" = "Không rõ";
+
+/* Reachability bulletin shown when the user has disabled cellular data for this app in iOS Settings. Both substituted values are the app name. */
+"reachability_bulletin.description.cellular_data_restricted_fmt" = "%1$@ hiện không được phép truy cập dữ liệu di động. Để khắc phục, hãy vào Cài đặt > Di động và bật dữ liệu di động cho %2$@, hoặc kết nối với mạng WiFi.";
 
 /* Reachability bulletin for a cellular connection that can't access the Internet. */
 "reachability_bulletin.description.cellular_no_internet" = "Chúng tôi không thể truy cập Internet qua kết nối di động của bạn.\r\n\r\nHãy thử kết nối WiFi hoặc di chuyển đến khu vực khác.";
@@ -596,24 +660,6 @@
 /* Error message of Custom Region URL if it's invalid or does not point to a functional OBA server */
 "region_url.error_messsage" = "URL khu vực được cung cấp không hợp lệ hoặc không trỏ đến một máy chủ OBA đang hoạt động.";
 
-/* Placeholder text in the route search field. */
-"route_picker.search_placeholder" = "Tìm kiếm tuyến…";
-
-/* Title for the route picker screen where the user selects their transit route. */
-"route_picker.title" = "Chọn tuyến của bạn";
-
-/* Error when API service is unavailable in the route picker. */
-"route_picker.error_no_service" = "Không thể kết nối với dịch vụ vận tải.";
-
-/* Error when location is unavailable in the route picker. */
-"route_picker.error_no_location" = "Không có thông tin vị trí. Vui lòng bật dịch vụ định vị để tìm các tuyến lân cận.";
-
-/* Loading message while fetching nearby routes. */
-"route_picker.loading" = "Đang tải tuyến…";
-
-/* Message when no routes are found near the user's location. */
-"route_picker.no_routes" = "Không tìm thấy tuyến nào ở gần.";
-
 /* Title of the Report Problem view controller. */
 "report_problem.title" = "Báo cáo sự cố";
 
@@ -626,8 +672,23 @@
 /* A table header in the 'Report Problem' view controller. */
 "report_problem_controller.vehicle_problem.header" = "Sự cố với phương tiện tại điểm dừng";
 
-/* Morning time period label */
-"schedule_view.am_period" = "SA";
+/* Error when location is unavailable in the route picker. */
+"route_picker.error_no_location" = "Không có thông tin vị trí. Vui lòng bật dịch vụ định vị để tìm các tuyến lân cận.";
+
+/* Error when the API service is unavailable in the route picker. */
+"route_picker.error_no_service" = "Không thể kết nối với dịch vụ vận tải.";
+
+/* Loading message while fetching nearby routes. */
+"route_picker.loading" = "Đang tải tuyến…";
+
+/* Message when no routes are found near the user's location. */
+"route_picker.no_routes" = "Không tìm thấy tuyến nào ở gần.";
+
+/* Placeholder text in the route search field. */
+"route_picker.search_placeholder" = "Tìm kiếm tuyến…";
+
+/* Title for the route picker screen where the user selects their transit route. */
+"route_picker.title" = "Chọn tuyến của bạn";
 
 /* Label for date picker in schedule view */
 "schedule_view.date" = "Ngày";
@@ -638,6 +699,9 @@
 /* Default direction label when no headsign is available */
 "schedule_view.direction_number_fmt" = "Hướng %d";
 
+/* Error message shown when the schedule-for-route API endpoint is not available on the server. */
+"schedule_view.feature_not_supported" = "Tính năng thời gian biểu không khả dụng cho khu vực này. Máy chủ của đơn vị vận tải không hỗ trợ tính năng này.";
+
 /* Accessibility text when there is no departure time */
 "schedule_view.no_departure" = "Không có chuyến khởi hành";
 
@@ -646,9 +710,6 @@
 
 /* Message when no stops are available for the selected direction */
 "schedule_view.no_stops_found" = "Không tìm thấy điểm dừng cho hướng này";
-
-/* Afternoon/evening time period label */
-"schedule_view.pm_period" = "CH";
 
 /* Headsign label showing destination */
 "schedule_view.to_headsign_fmt" = "Đến: %@";
@@ -665,6 +726,9 @@
 /* Title for the empty set indicator on the Search controller. */
 "search_controller.empty_set.title" = "Tìm kiếm";
 
+/* Subtitle on search error row prompting the user to retry. */
+"search_controller.placemarks.error_retry" = "Nhấn để thử lại";
+
 /* Placemark search header */
 "search_controller.placemarks.header" = "Kết quả";
 
@@ -673,9 +737,6 @@
 
 /* No results message for placemark search */
 "search_controller.placemarks.no_results" = "Không tìm thấy kết quả";
-
-/* Subtitle on search error row prompting the user to retry. */
-"search_controller.placemarks.error_retry" = "Nhấn để thử lại";
 
 /* Quick Search section header in search */
 "search_controller.quick_search.header" = "Tìm kiếm nhanh";
@@ -743,8 +804,14 @@
 /* Settings > Accessibility section title */
 "settings_controller.accessibility_section.title" = "Trợ năng";
 
+/* Settings > Alerts section > default minutes-before for one-tap departure alarms */
+"settings_controller.alerts_section.default_alarm_lead_time" = "Thời gian nhắc trước mặc định";
+
 /* Settings > Alerts section > Display test alerts */
 "settings_controller.alerts_section.display_test_alerts" = "Hiển thị cảnh báo thử nghiệm";
+
+/* Lead-time segment label. %d is minutes. */
+"settings_controller.alerts_section.lead_time_fmt" = "%d phút";
 
 /* Settings > Alerts section title */
 "settings_controller.alerts_section.title" = "Cảnh báo từ đơn vị vận tải";
@@ -757,6 +824,18 @@
 
 /* Settings > Debug section title */
 "settings_controller.debug_section.title" = "Gỡ lỗi";
+
+/* Settings > Experimental section > Map panel toggle */
+"settings_controller.experimental_section.map_panel" = "Dùng giao diện bảng bản đồ";
+
+/* Settings > Experimental section > Footer indicating changes apply on relaunch */
+"settings_controller.experimental_section.map_panel.footer" = "Khởi động lại ứng dụng để áp dụng.";
+
+/* Settings > Experimental section > New stop page toggle */
+"settings_controller.experimental_section.new_stop_page" = "Dùng trang điểm dừng mới";
+
+/* Settings > Experimental section title */
+"settings_controller.experimental_section.title" = "Thử nghiệm";
 
 /* Settings > Map section > Show my current heading */
 "settings_controller.map_section.shows_heading" = "Hiển thị hướng hiện tại của tôi";
@@ -775,6 +854,12 @@
 
 /* Settings > Privacy section title */
 "settings_controller.privacy_section.title" = "Quyền riêng tư";
+
+/* Settings > Surveys section > Always show surveys on stops */
+"settings_controller.survey_section.always_show_on_stops" = "Luôn hiển thị tại điểm dừng";
+
+/* Settings > Surveys section title */
+"settings_controller.survey_section.title" = "Khảo sát";
 
 /* Settings > Walking Speed > Average preset label */
 "settings_controller.walking_speed.avg" = "Trung bình (~5 km/h)";
@@ -809,14 +894,197 @@
 /* A string listing the data providers (agencies) for this stop's data. It contains one or more providers separated by commas. e.g. Data provided by King County Metro, Sound Transit */
 "stop_controller.data_attribution_format" = "Dữ liệu được cung cấp bởi %@";
 
+/* Message shown when an external survey link cannot be opened */
+"stop_controller.external_survey_error.message" = "Không thể mở liên kết khảo sát này. Vui lòng thử lại sau.";
+
+/* Title shown when an external survey link cannot be opened */
+"stop_controller.external_survey_error.title" = "Không thể mở khảo sát";
+
 /* Load More button */
 "stop_controller.load_more_button" = "Tải thêm";
+
+/* A header for the past arrivals and departures section of the stop controller. */
+"stop_controller.past_departures_header" = "Chuyến đã khởi hành";
+
+/* Header for past departures of a specific route */
+"stop_controller.past_departures_route_header" = "Chuyến đã khởi hành - %@";
 
 /* This is an instruction given to the user the first time they look at a stop view instructing them on how to access more options, including the ability to add alarms. */
 "stop_controller.swipe_spotlight_text.with_alarm" = "Vuốt trên một hàng để xem thêm tùy chọn, bao gồm thêm lời nhắc.";
 
 /* This is an instruction given to the user the first time they look at a stop view instructing them on how to access more options, EXCLUDING the ability to add alarms. */
 "stop_controller.swipe_spotlight_text.without_alarm" = "Vuốt trên một hàng để xem thêm tùy chọn.";
+
+/* Button to reveal departures that leave before the rider's transfer arrival. Parameter is the count of hidden departures. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
+"stop_controller.transfer_show_earlier_departures_fmt" = "Hiện %d chuyến khởi hành sớm hơn";
+
+/* Error shown when a departure alarm can't be cancelled because the region's alarm service is unreachable. */
+"stop_page.alarm_cancel_unavailable" = "Không thể hủy lời nhắc này vì dịch vụ lời nhắc hiện không khả dụng. Vui lòng thử lại sau.";
+
+/* Body of the alert shown when the user tries to set a departure alarm but notifications are denied in Settings. %@ is the app name. */
+"stop_page.alarm_permission_denied.message" = "Để nhận lời nhắc khởi hành, hãy cho phép thông báo cho ứng dụng %@ trong Cài đặt.";
+
+/* Button that opens the system Settings app so the user can enable notifications. */
+"stop_page.alarm_permission_denied.open_settings" = "Mở Cài đặt";
+
+/* Title of the alert shown when the user tries to set a departure alarm but notifications are denied in Settings. */
+"stop_page.alarm_permission_denied.title" = "Thông báo đang tắt";
+
+/* Shown in place of the minutes countdown when the vehicle is departing now */
+"stop_page.countdown.now" = "NGAY";
+
+/* Empty state shown when every route at the stop is hidden by the user's filter. */
+"stop_page.empty.all_filtered" = "Tất cả tuyến tại điểm dừng này đã bị lọc";
+
+/* Empty state shown when the stop has no upcoming departures within the loaded time window. %d is the number of minutes. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
+"stop_page.empty.no_departures_fmt" = "Không có chuyến khởi hành trong %d phút tới";
+
+/* Button that retries loading departures after an error. */
+"stop_page.empty.retry" = "Thử lại";
+
+/* Button that clears the route filter so all routes are shown. */
+"stop_page.empty.show_all_routes" = "Hiện tất cả tuyến";
+
+/* VoiceOver value of the route-filter bar button when the filter is inactive. */
+"stop_page.filter.a11y_off" = "tắt";
+
+/* VoiceOver value of the route-filter bar button when the filter is active. */
+"stop_page.filter.a11y_on" = "bật";
+
+/* VoiceOver value of a grouped route card whose departure list is hidden. */
+"stop_page.grouped.a11y_collapsed" = "đã thu gọn";
+
+/* VoiceOver value of a grouped route card whose departure list is showing. */
+"stop_page.grouped.a11y_expanded" = "đã mở rộng";
+
+/* VoiceOver label for a grouped route card */
+"stop_page.grouped.a11y_fmt" = "Tuyến %1$@ đi %2$@, chuyến khởi hành tiếp theo sau %3$d phút, %4$@. Đã tải thêm %5$d chuyến khởi hành.";
+
+/* VoiceOver custom action on a grouped route card's header that cancels the alarm already set for the next departure. */
+"stop_page.grouped.a11y_remove_alarm" = "Xóa lời nhắc";
+
+/* VoiceOver custom action on a grouped route card's header that creates an alarm for the next departure. */
+"stop_page.grouped.a11y_set_alarm" = "Đặt lời nhắc";
+
+/* VoiceOver label for one expanded departure row inside a grouped route card: route, headsign, minutes, status. */
+"stop_page.grouped.expanded_row.a11y_fmt" = "Tuyến %1$@ đi %2$@, khởi hành sau %3$d phút, %4$@";
+
+/* Caption above the upcoming-departure minute chips on a grouped route card at accessibility text sizes. */
+"stop_page.grouped.next_departures" = "Chuyến khởi hành tiếp theo";
+
+/* VoiceOver hint on the header card's walk-time button. */
+"stop_page.header.walk_a11y_hint" = "Mở chỉ đường đi bộ đến điểm dừng này.";
+
+/* Button in the trip panel to start a Live Activity for this departure on the Lock Screen and Dynamic Island */
+"stop_page.live_activity.track" = "Theo dõi";
+
+/* Extends the departure time window */
+"stop_page.load_more" = "Tải thêm";
+
+/* Caption under the spinner shown while the stop page's departure list loads. */
+"stop_page.loading_departures" = "Đang tải chuyến khởi hành…";
+
+/* Stop page mode toggle: grouped by route */
+"stop_page.mode.by_route" = "Theo tuyến";
+
+/* Stop page mode toggle: flat time-sorted list */
+"stop_page.mode.chronological" = "Theo thời gian";
+
+/* Opens the full trip screen */
+"stop_page.panel.full_trip" = "Xem toàn bộ chuyến đi";
+
+/* Trip panel live strip. %@ is the vehicle id. */
+"stop_page.panel.live_vehicle_fmt" = "Trực tiếp · phương tiện %@";
+
+/* Body of the schedule-only notice; must communicate uncertainty (§4.1/§4.4) */
+"stop_page.panel.scheduled_body" = "Chưa có tín hiệu trực tiếp từ xe buýt này — đây là giờ đến theo lịch trình. Xe có thể đến sớm, đến trễ hoặc không đến.";
+
+/* Title of the schedule-only notice */
+"stop_page.panel.scheduled_title" = "Chỉ có giờ theo lịch trình";
+
+/* Button revealing recently departed trips. %d is the count. */
+"stop_page.past_toggle_fmt" = "Đã qua · %d";
+
+/* Button hiding recently departed trips */
+"stop_page.past_toggle_hide" = "Ẩn chuyến đã qua";
+
+/* VoiceOver label for the button hiding recently departed trips */
+"stop_page.past_toggle_hide_a11y" = "Ẩn các chuyến đã khởi hành";
+
+/* VoiceOver label for the button revealing recently departed trips. %d is the count. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
+"stop_page.past_toggle_show_a11y_fmt" = "Hiện %d chuyến đã khởi hành";
+
+/* VoiceOver suffix indicating a departure alarm is active */
+"stop_page.row.a11y_alarm_set" = "đã đặt lời nhắc";
+
+/* VoiceOver label for a departure row: route, headsign, minutes, status. */
+"stop_page.row.a11y_fmt" = "Tuyến %1$@ đi %2$@, khởi hành sau %3$d phút, %4$@";
+
+/* VoiceOver clause appended to a departure row that's upcoming but not reachable on foot before it leaves. */
+"stop_page.row.a11y_missed" = "có thể lỡ — xe khởi hành trước khi bạn kịp đi bộ đến điểm dừng";
+
+/* VoiceOver label for a departure row that has already departed: route, headsign, minutes ago, status. */
+"stop_page.row.a11y_past_fmt" = "Tuyến %1$@ đi %2$@, đã khởi hành %3$d phút trước, %4$@";
+
+/* Swipe/context menu action that cancels an existing arrival alarm. */
+"stop_page.row.remove_alarm" = "Xóa lời nhắc";
+
+/* Context menu action opening the full trip screen */
+"stop_page.row.show_trip" = "Xem chi tiết chuyến đi";
+
+/* Chronological list section header */
+"stop_page.section.arrivals_departures" = "Chuyến đến và khởi hành";
+
+/* Fallback title for a service alert that has no summary text. */
+"stop_page.service_alert_fallback" = "Cảnh báo dịch vụ";
+
+/* VoiceOver value of the service-alerts card header when the alert list is hidden. */
+"stop_page.service_alerts.a11y_collapsed" = "đã thu gọn";
+
+/* VoiceOver value of the service-alerts card header when the alert list is showing. */
+"stop_page.service_alerts.a11y_expanded" = "đã mở rộng";
+
+/* Row that expands the service alerts section to show every alert. %d is the total number of alerts. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
+"stop_page.service_alerts.show_all_fmt" = "Hiện tất cả %d cảnh báo";
+
+/* Collapsed summary row for the service alerts section. %d is the number of alerts. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
+"stop_page.service_alerts.summary_fmt" = "%d cảnh báo dịch vụ";
+
+/* VoiceOver status suffix for a live departure. %@ is the adherence label. */
+"stop_page.status.a11y_live_fmt" = "theo dõi trực tiếp, %@";
+
+/* VoiceOver status suffix for a schedule-only departure */
+"stop_page.status.a11y_scheduled" = "chỉ có giờ theo lịch trình, không có dữ liệu trực tiếp";
+
+/* Adherence label for an early departure. %d is minutes early. */
+"stop_page.status.early_fmt" = "sớm %d phút";
+
+/* Adherence label for a late departure. %d is minutes late. */
+"stop_page.status.late_fmt" = "trễ %d phút";
+
+/* Adherence label for an on-time departure */
+"stop_page.status.on_time" = "đúng giờ";
+
+/* Adherence label for a departure with no real-time signal; deliberately avoids claiming the bus is on time. */
+"stop_page.status.schedule_data" = "dữ liệu lịch trình";
+
+/* Gap marker in the approach timeline. %d is the number of elided stops between the vehicle and the stops shown. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
+"stop_page.timeline.skipped_stops_fmt" = "%d điểm dừng";
+
+/* Vehicle-position marker. %d is minutes to the user's stop. */
+"stop_page.timeline.vehicle_here_fmt" = "phương tiện ở đây · còn %d phút";
+
+/* Marker on the user's stop in the approach timeline */
+"stop_page.timeline.your_stop" = "· điểm dừng của bạn";
+
+/* Walk chip on the header card. %d is the walk time in minutes. */
+"stop_page.walk_chip_minutes_fmt" = "Đi bộ %d phút";
+
+/* VoiceOver description of the walk divider. %d is walk minutes. */
+"stop_page.walk_divider_a11y_fmt" = "Các chuyến phía trên vạch này khởi hành trước khi bạn kịp đi bộ %d phút đến điểm dừng";
+
+/* Divider between departures you'd miss on foot and ones you can still catch. %d is the walk time in minutes. */
+"stop_page.walk_divider_fmt" = "ĐI BỘ %d PHÚT — BẮT XE BÊN DƯỚI";
 
 /* Title of the Sorting section */
 "stop_preferences_controller.sorting_section.header_title" = "Sắp xếp theo";
@@ -854,8 +1122,14 @@
 /* Title for the Report Stop Problem controller */
 "stop_problem_controller.title" = "Báo cáo sự cố";
 
+/* Accessibility label for schedule type picker */
+"stop_schedule_view.accessibility.choose_schedule_type" = "Chọn giữa lịch trình điểm dừng và lịch trình toàn tuyến";
+
 /* Label for date picker in schedule view */
 "stop_schedule_view.date" = "Ngày";
+
+/* Title for the full route schedule toggle */
+"stop_schedule_view.full_route_schedule" = "Lịch trình toàn tuyến";
 
 /* Message when no departures are scheduled */
 "stop_schedule_view.no_departures" = "Không có chuyến khởi hành nào được lên lịch cho ngày này";
@@ -865,6 +1139,12 @@
 
 /* Label for route picker in schedule view */
 "stop_schedule_view.route" = "Tuyến";
+
+/* Title for the stop schedule toggle */
+"stop_schedule_view.stop_schedule" = "Lịch trình điểm dừng";
+
+/* Format string for destination. e.g. To: Downtown */
+"stop_schedule_view.to_destination_fmt" = "Đến: %@";
 
 /* Error message when schedule fails to load */
 "stop_schedule_view.unable_to_load" = "Không thể tải lịch trình";
@@ -895,6 +1175,72 @@
 
 /* Button that launches Google Maps with walking directions to this stop */
 "stops_controller.walking_directions_google" = "Chỉ đường đi bộ (Google Maps)";
+
+/* Default prompt when no hero question exists */
+"survey_cell.default_prompt" = "Làm khảo sát để giúp cải thiện dịch vụ vận tải";
+
+/* Button to dismiss the survey */
+"survey_cell.dismiss_button" = "Bỏ qua";
+
+/* Button to proceed to next survey question */
+"survey_cell.next_button" = "Tiếp theo";
+
+/* Button that opens an external survey in the browser */
+"survey_cell.open_external_survey_button" = "Mở khảo sát";
+
+/* Message shown when an external survey link cannot be opened */
+"survey_launcher.external_survey_error.message" = "Không thể mở liên kết khảo sát này. Vui lòng thử lại sau.";
+
+/* Title shown when an external survey link cannot be opened */
+"survey_launcher.external_survey_error.title" = "Không thể mở khảo sát";
+
+/* Secondary button on the survey launcher card; dismisses the prompt. */
+"survey_launcher.not_now_button" = "Để sau";
+
+/* Primary button on the survey launcher card; opens the survey. */
+"survey_launcher.take_survey_button" = "Làm khảo sát";
+
+/* Title of the survey launcher card on the stop screen. */
+"survey_launcher.title" = "Giúp cải thiện dịch vụ vận tải";
+
+/* Message shown when an external survey link cannot be opened */
+"survey_vc.external_survey_error.message" = "Không thể mở liên kết khảo sát này. Vui lòng thử lại sau.";
+
+/* Title shown when an external survey link cannot be opened */
+"survey_vc.external_survey_error.title" = "Không thể mở khảo sát";
+
+/* Message when the survey data itself is malformed (no answerable hero question). */
+"survey_vc.malformed_error.message" = "Hiện không thể gửi khảo sát này. Vui lòng thử lại sau.";
+
+/* Title for malformed survey alert */
+"survey_vc.malformed_error.title" = "Khảo sát không khả dụng";
+
+/* OK button on survey alerts */
+"survey_vc.ok_button" = "OK";
+
+/* Button that opens an external survey in the browser */
+"survey_vc.open_external_survey_button" = "Mở khảo sát";
+
+/* Section header for survey questions */
+"survey_vc.questions_section_title" = "Câu hỏi";
+
+/* Title for survey submission error alert */
+"survey_vc.submission_error.title" = "Lỗi gửi khảo sát";
+
+/* Button to submit the survey */
+"survey_vc.submit_button" = "Gửi khảo sát";
+
+/* Submit button title while a survey submission is in flight */
+"survey_vc.submitting_button" = "Đang gửi…";
+
+/* Placeholder for text answer field */
+"survey_vc.text_placeholder" = "Nhập câu trả lời của bạn...";
+
+/* Message when required survey questions are unanswered */
+"survey_vc.validation_error.message" = "Vui lòng trả lời tất cả các câu hỏi bắt buộc trước khi gửi.";
+
+/* Title for incomplete survey alert */
+"survey_vc.validation_error.title" = "Khảo sát chưa hoàn tất";
 
 /* A notice when a transit alert doesn't have body text. */
 "transit_alert.no_additional_details.body" = "Không có thông tin chi tiết bổ sung.";
@@ -1001,8 +1347,26 @@
 /* Format string with placeholders for distance from stop, walking time to stop, and predicted arrival time. e.g. 1.2 miles, 17m: arriving at 09:41 A.M. */
 "walk_time_view.distance_time_fmt" = "%1$@, %2$@: đến nơi lúc %3$@";
 
-/* Button the user can tap on to decline access to their location. */
-"location_permission_bulletin.do_not_use_location_button_text" = "Để sau";
+/* Accessibility label for the transfer arrival banner shown when navigating to a connecting stop. */
+"walk_time_view.transfer_accessibility_label" = "Giờ đến khi chuyển tuyến";
 
-/* Button the user taps to grant access to their location. */
-"location_permission_bulletin.use_location_button_text" = "Dùng vị trí của tôi";
+/* Format for the chance-of-rain percentage on the weather card header. %d is the integer percent. */
+"weather.chance_of_rain_format" = "Khả năng có mưa: %d%%";
+
+/* Format for the high/low temperature line on the weather card. %@ placeholders are temperature strings. */
+"weather.high_low_format" = "Cao: %1$@  Thấp: %2$@";
+
+/* First column label in the hourly weather strip, indicating the current hour. */
+"weather.now" = "Bây giờ";
+
+/* Bare percentage shown in the precipitation stat on the weather card. %d is the integer percent. */
+"weather.percent_format" = "%d%%";
+
+/* VoiceOver label for the feels-like temperature stat on the weather card. */
+"weather.stat.feels_like" = "Cảm giác như";
+
+/* VoiceOver label for the precipitation chance stat on the weather card. */
+"weather.stat.precip" = "Khả năng có mưa";
+
+/* VoiceOver label for the wind speed stat on the weather card. */
+"weather.stat.wind" = "Tốc độ gió";

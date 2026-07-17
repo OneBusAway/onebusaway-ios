@@ -252,7 +252,7 @@ public class MoreViewController: UIViewController,
                 title: OBALoc(
                     "more_controller.translate_the_app",
                     value: "Help Translate the App",
-                    comment: "Request to help localize OneBusAway"),
+                    comment: "Request to help localize the app"),
                 onSelectAction: { [weak self] _ in
                     self?.application.open(translateURL, options: [:], completionHandler: nil)
                 }

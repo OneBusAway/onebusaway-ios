@@ -31,12 +31,12 @@ public final class SurveyService: ObservableObject {
     // MARK: - Dependencies
 
     private let apiService: RESTAPIService?
-    private let userDataStore: UserDataStore
+    nonisolated(unsafe) private let userDataStore: UserDataStore
 
     /// Context used to build external-survey URLs. Held weakly: the owning
     /// application is the long-lived object and must not be retained here
     /// (see spec §5). Read only on the main actor.
-    public weak var application: SurveyURLApplicationContext?
+    nonisolated(unsafe) public weak var application: SurveyURLApplicationContext?
 
     // MARK: - Constants
 

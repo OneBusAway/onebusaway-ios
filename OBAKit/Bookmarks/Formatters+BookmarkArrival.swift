@@ -8,34 +8,33 @@
 import OBAKitCore
 
 extension Formatters {
-    /// Generates a localized label ideal for Voiceover describing the provided `BookmarkArrivalViewModel`.
+    /// Generates a localized label ideal for Voiceover describing the provided `BookmarkRowViewModel`.
     /// As the method name suggests, this value is best used for the `UIAccessibility.accessibilityLabel` property.
-    /// - parameter bookmarkArrivalData: The `BookmarkArrivalViewModel` to describe.
-    /// - returns: A localized Voiceover label describing the provided `BookmarkArrivalViewModel`.
-    func accessibilityLabel(for bookmarkArrivalData: BookmarkArrivalViewModel) -> String {
-        let bookmark = bookmarkArrivalData.bookmark
+    /// - parameter bookmarkArrivalData: The `BookmarkRowViewModel` to describe.
+    /// - returns: A localized Voiceover label describing the provided `BookmarkRowViewModel`.
+    func accessibilityLabel(for bookmarkArrivalData: BookmarkRowViewModel) -> String {
         let stringFormat: String
-        if bookmark.isTripBookmark {
-            stringFormat = bookmark.isFavorite
+        if bookmarkArrivalData.isTripBookmark {
+            stringFormat = bookmarkArrivalData.isFavorite
                 ? OBALoc("voiceover.bookmarkarrivaldata.label.favoriteroutebookmark_fmt", value: "Favorite Route Bookmark, %@", comment: "Format string describing a favorite route (or trip) bookmark with a placeholder for the bookmark's name.")
                 : OBALoc("voiceover.bookmarkarrivaldata.label.routebookmark_fmt", value: "Route Bookmark, %@", comment: "Format string describing a normal route (or trip) bookmark with a placeholder for the bookmark's name.")
         } else {
             stringFormat = OBALoc("voiceover.bookmarkarrivaldata.label.stopbookmark_fmt", value: "Stop Bookmark, %@", comment: "Format string describing a stop bookmark with a placeholder for the bookmark's name.")
         }
 
-        return String(format: stringFormat, bookmark.name)
+        return String(format: stringFormat, bookmarkArrivalData.name)
     }
 
-    /// Generates a localized string value ideal for Voiceover describing the provided `BookmarkArrivalViewModel`.
+    /// Generates a localized string value ideal for Voiceover describing the provided `BookmarkRowViewModel`.
     /// As the method name suggests, this value is best used for the `UIAccessibility.accessibilityValue` property.
-    /// - parameter bookmarkArrivalData: The `BookmarkArrivalViewModel` to describe.
-    /// - returns: A localized Voiceover value describing the provided `BookmarkArrivalViewModel`.
-    func accessibilityValue(for bookmarkArrivalData: BookmarkArrivalViewModel) -> String? {
-        guard bookmarkArrivalData.bookmark.isTripBookmark else { return nil }
+    /// - parameter bookmarkArrivalData: The `BookmarkRowViewModel` to describe.
+    /// - returns: A localized Voiceover value describing the provided `BookmarkRowViewModel`.
+    func accessibilityValue(for bookmarkArrivalData: BookmarkRowViewModel) -> String? {
+        guard bookmarkArrivalData.isTripBookmark else { return nil }
 
-        guard let arrivalDepartures = bookmarkArrivalData.arrivalDepartures,
-            let firstArrivalDeparture = arrivalDepartures.first else {
-                return OBALoc("voiceover.bookmarkarrivaldata.value.noupcomingdepartures_fmt", value: "No upcoming departures", comment: "Voiceover text describing no departures in the near-future.")
+        let arrivalDepartures = bookmarkArrivalData.arrivalDepartures
+        guard let firstArrivalDeparture = arrivalDepartures.first else {
+            return OBALoc("voiceover.bookmarkarrivaldata.value.noupcomingdepartures_fmt", value: "No upcoming departures", comment: "Voiceover text describing no departures in the near-future.")
         }
 
         var value = self.accessibilityValue(for: firstArrivalDeparture)

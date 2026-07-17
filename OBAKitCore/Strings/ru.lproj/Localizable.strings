@@ -1,11 +1,20 @@
 /* An error message that tells the user that they are connected to a captive portal WiFi network. */
 "api_error.captive_portal" = "Похоже, вы подключены к сети Wi-Fi, которая не даёт доступа к интернету. Чтобы продолжить, попробуйте отключиться от Wi-Fi или авторизоваться в сети.";
 
+/* An error that tells the user that cellular data access is disabled for this app in iOS Settings. Both substituted values are the app name. */
+"api_error.cellular_data_restricted_fmt" = "Приложению %1$@ сейчас запрещён доступ к сотовым данным. Чтобы исправить это, откройте «Настройки» > «Сотовая связь» и включите сотовые данные для приложения %2$@ или подключитесь к сети Wi-Fi.";
+
+/* An error shown when the server returns data the app can't understand, indicating a likely server-side issue. */
+"api_error.decoding_failure" = "Сервер вернул неожиданные данные. Обычно это означает неполадки на сервере. Повторите попытку чуть позже.";
+
 /* An error message that informs the user that the wrong kind of content was received from the server. */
 "api_error.invalid_content_type_fmt" = "От сервера ожидались данные типа %1$@, но вместо этого получены %2$@.";
 
 /* An error that tells the user that the network connection isn't working. */
 "api_error.network_failure" = "Не удаётся подключиться к интернету или серверу. Проверьте сетевое подключение и повторите попытку.";
+
+/* An error message that tells the user that no region has been selected. */
+"api_error.no_region_selected" = "Регион не выбран. Выберите регион, чтобы продолжить.";
 
 /* An error that tells the user that the server unexpectedly failed to return data. */
 "api_error.no_response_body" = "Сервер неожиданно не вернул данных в ответ на ваш запрос.";
@@ -15,6 +24,15 @@
 
 /* An error that is produced in response to HTTP status code 404 */
 "api_error.request_not_found" = "404 Не найдено (%@)";
+
+/* An error shown when the server returns a 500 Internal Server Error. The substituted value is the region name, e.g. 'Puget Sound'. */
+"api_error.server_error_fmt" = "На сервере региона %@ произошла ошибка при обработке вашего запроса. Повторите попытку.";
+
+/* An error shown when the regional transit server is unavailable. The first substituted value is the region name, the second is the app name. */
+"api_error.server_unavailable_fmt" = "Похоже, сервер региона %1$@ сейчас недоступен, поэтому приложение %2$@ не может показать транспортную информацию для этого региона. Приложение снова заработает, когда сервер восстановится.";
+
+/* An error message that tells the user that surveys are not available. */
+"api_error.survey_service_not_configured" = "Сервис опросов недоступен в этом регионе.";
 
 /* This will appear on a button or as a title, and indicates that this UI will create a new bookmark. */
 "common.add_alarm" = "Добавить напоминание";
@@ -58,8 +76,8 @@
 /* The verb 'to donate', as in to give money to a charitable cause. */
 "common.donate" = "Пожертвовать";
 
-/* The body of the message to display to the user after they donate to OTSF */
-"common.donation_thank_you.body" = "Ваша поддержка поможет нам и дальше улучшать OneBusAway.";
+/* The body of the message to display to the user after they donate to OTSF. %@ is the app name. */
+"common.donation_thank_you.body" = "Ваша поддержка поможет нам и дальше улучшать приложение %@.";
 
 /* Title of an alert to display to the user after they donate to OTSF */
 "common.donation_thank_you.title" = "Спасибо за вашу поддержку!";
@@ -88,11 +106,20 @@
 /* The title of a button that exports all of the user's data into a file. */
 "common.export_data" = "Экспорт данных";
 
+/* Description of the privacy policy for sharing data with the external survey service. */
+"common.external_survey_privacy_info.description" = "Этот опрос передаст данные о вашей остановке, маршруте, регионе и текущей геопозиции.";
+
 /* The verb 'to filter'. */
 "common.filter" = "Фильтр";
 
+/* The verb 'to go' */
+"common.go" = "Перейти";
+
 /* This is button text that tells the user they can tap on it to learn more about the topic at hand. */
 "common.learn_more" = "Подробнее";
+
+/* Fallback title for the stop arrivals screen when the stop name is not yet available. */
+"common.live_arrivals" = "Прибытия в реальном времени";
 
 /* Used to indicate that content is loading. */
 "common.loading" = "Загрузка…";
@@ -111,6 +138,9 @@
 
 /* As in 'see more' or 'learn more'. */
 "common.more" = "Ещё";
+
+/* The verb 'to next', i.e. to get next survey question. */
+"common.next" = "Далее";
 
 /* OK */
 "common.ok" = "ОК";
@@ -163,6 +193,9 @@
 /* Noun. Plural form of a transit stop. */
 "common.stops" = "Остановки";
 
+/* The verb 'to submit', i.e. to submit a survey answer. */
+"common.submit" = "Отправить";
+
 /* A format string used to tell the user when the UI they are looking at was last updated. e.g. Updated: 9:41 AM. The time is calculated at runtime. */
 "common.updated_at_fmt" = "Обновлено: %@";
 
@@ -171,37 +204,6 @@
 
 /* The title of the Vehicles tab showing real-time vehicle positions on a map. */
 "common.vehicles" = "Транспорт";
-
-/* Description of the privacy policy for sharing data with the external survey service. */
-"common.external_survey_privacy_info.description" = "Этот опрос передаст данные о вашей остановке, маршруте, регионе и текущей геопозиции.";
-
-"common.go" = "Перейти";
-
-"common.submit" = "Отправить";
-
-"common.next" = "Далее";
-
-"survey_alert.dismissal.title" = "Скрыть опрос";
-
-"survey_alert.dismissal.body" = "Ваши отзывы помогают улучшать транспортные услуги и приложение.";
-
-"survey_alert.skip.survey" = "Пропустить этот опрос";
-
-"survey_alert.remind.later" = "Напомнить позже";
-
-"survey_error.required_remaining_questions.error" = "Ответьте на все обязательные вопросы";
-
-"survey_error.hero_question_answer.error" = "Введите корректный ответ";
-
-"survey_success.submitted" = "Ответ на опрос отправлен! Ответьте на остальные вопросы, чтобы отзыв был полнее.";
-
-"survey_alert.do.not.show.again" = "Больше не показывать";
-
-"survey_service.not.available" = "Сервис опросов недоступен.";
-
-"survey.external.url.missing" = "Не удалось открыть опрос. Повторите попытку позже.";
-
-"survey_service.update.path.missing" = "При отправке ваших ответов произошла ошибка. Повторите попытку позже.";
 
 /* Use for vehicles that arrived X minutes ago. */
 "formatters.arrived_x_min_ago_fmt" = "Прибыл %d мин. назад";
@@ -365,6 +367,18 @@
 /* Formatted time text for arrivals/departures. Used for accessibility labels, so be sure to spell out the word for 'minute'. Example: 7 minutes means that this event happens 7 minutes in the future. -7 minutes means 7 minutes in the past. */
 "formatters.time_fmt" = "%d мин.";
 
+/* Transfer arrival banner. First parameter is the arrival time, second is the route name and headsign. e.g. 'Arriving at 4:10 PM via 10 - Capitol Hill' */
+"formatters.transfer.arrival_banner_fmt" = "Прибытие в %1$@ на маршруте %2$@";
+
+/* Short text shown when a departure occurs at the same time as the rider's transfer arrival. */
+"formatters.transfer.on_arrival" = "СЕЙЧАС";
+
+/* Error when a route has no real-time vehicle tracking data. */
+"nearby_trip_matcher.error.no_realtime" = "Для этого маршрута нет данных отслеживания в реальном времени.";
+
+/* Error when no transit stops are found near the user's location. */
+"nearby_trip_matcher.error.no_stops" = "Поблизости не найдено остановок.";
+
 /* Bus. Used for short- and long-distance bus routes. */
 "route_type.bus" = "Автобус";
 
@@ -395,6 +409,9 @@
 /* Title for the schedule/timetable feature tip */
 "schedule_tip.title" = "Смотрите расписание маршрута";
 
+/* Shown in place of the minutes countdown when the vehicle is departing now */
+"stop_page.countdown.now" = "СЕЙЧАС";
+
 /* User-facing string that means the location of the stop on the map is wrong. */
 "stop_problem_code.user_description.location_wrong" = "Неверное местоположение";
 
@@ -409,6 +426,60 @@
 
 /* User-facing string that means our data is wrong about a route or a scheduled trip */
 "stop_problem_code.user_description.route_or_trip_missing" = "Отсутствует маршрут или рейс по расписанию";
+
+/* Indicating missing external survey url */
+"survey.external.url.missing" = "Не удалось открыть опрос. Повторите попытку позже.";
+
+/* Body for survey dismissal action alert. */
+"survey_alert.dismissal.body" = "Ваши отзывы помогают улучшать транспортные услуги и приложение.";
+
+/* Title for survey dismissal action alert. */
+"survey_alert.dismissal.title" = "Скрыть опрос";
+
+/* The action of not showing the survey again. */
+"survey_alert.do.not.show.again" = "Больше не показывать";
+
+/* The action of reminding later. i.e, to remind me later on the survey. */
+"survey_alert.remind.later" = "Напомнить позже";
+
+/* The action of skipping the current survey. */
+"survey_alert.skip.survey" = "Пропустить этот опрос";
+
+/* Error message to show when the user has not answered the hero survey question with a valid answer. */
+"survey_error.hero_question_answer.error" = "Введите корректный ответ";
+
+/* Error message to show when the user has not answered all required survey questions. */
+"survey_error.required_remaining_questions.error" = "Ответьте на все обязательные вопросы";
+
+/* Indicating that survey service is not setup up right or has some other issue. */
+"survey_service.not.available" = "Сервис опросов недоступен.";
+
+/* Indicating missing survey update id when submitting responses */
+"survey_service.update.path.missing" = "При отправке ваших ответов произошла ошибка. Повторите попытку позже.";
+
+/* Success message to show when the survey is successfully submitted. */
+"survey_success.submitted" = "Ответ на опрос отправлен! Ответьте на остальные вопросы, чтобы отзыв был полнее.";
+
+/* Accessibility hint for an input field in a survey. */
+"surveys.accessibility.hint_answer.input" = "Введите ответ на вопрос опроса";
+
+/* Accessibility label for an input field in a survey. */
+"surveys.accessibility_answer.input" = "Поле ответа";
+
+/* Accessibility label for a value that is not selected. */
+"surveys.accessibility_not_selected_value" = "Не выбрано";
+
+/* Accessibility label for a selected value. */
+"surveys.accessibility_selected_value" = "Выбрано";
+
+/* Accessibility for survey label */
+"surveys.accessibility_survey_label" = "Метка опроса";
+
+/* Accessibility label that allows selection of a survey option. */
+"surveys.accessibility_tap_to_select" = "Нажмите, чтобы выбрать";
+
+/* Accessibility label  that toggles the selection state of a survey option. */
+"surveys.accessibility_tap_toggle_selection" = "Нажмите, чтобы изменить выбор";
 
 /* Message for the trip planner tip */
 "trip_planner_tip.message" = "Нажмите здесь, чтобы искать места и планировать поездку на общественном транспорте.";
@@ -461,22 +532,29 @@
 /* VoiceOver text describing a route that is scheduled to depart. (no realtime data was available) */
 "voiceover.arrivaldeparture_scheduled_departs_in_x_minutes_fmt" = "по расписанию отправится через %1$d мин. в %2$@.";
 
-/* Error when no transit stops are found near the user's location. */
-"nearby_trip_matcher.error.no_stops" = "Поблизости не найдено остановок.";
+/* Weather condition label for clear skies. */
+"weather.condition.clear" = "Ясно";
 
-/* Error when a route has no real-time vehicle tracking data. */
-"nearby_trip_matcher.error.no_realtime" = "Для этого маршрута нет данных отслеживания в реальном времени.";
+/* Weather condition label for cloudy skies. */
+"weather.condition.cloudy" = "Облачно";
 
-"surveys.accessibility_selected_value" = "Выбрано";
+/* Weather condition label for foggy conditions. */
+"weather.condition.fog" = "Туман";
 
-"surveys.accessibility_not_selected_value" = "Не выбрано";
+/* Weather condition label for partly cloudy skies. */
+"weather.condition.partly_cloudy" = "Переменная облачность";
 
-"surveys.accessibility_tap_toggle_selection" = "Нажмите, чтобы изменить выбор";
+/* Weather condition label for rain. */
+"weather.condition.rain" = "Дождь";
 
-"surveys.accessibility_tap_to_select" = "Нажмите, чтобы выбрать";
+/* Weather condition label for sleet. */
+"weather.condition.sleet" = "Мокрый снег";
 
-"surveys.accessibility_answer.input" = "Поле ответа";
+/* Weather condition label for snow. */
+"weather.condition.snow" = "Снег";
 
-"surveys.accessibility.hint_answer.input" = "Введите ответ на вопрос опроса";
+/* Weather condition placeholder when the icon key is unknown. */
+"weather.condition.unknown" = "—";
 
-"surveys.accessibility_survey_label" = "Метка опроса";
+/* Weather condition label for windy conditions. */
+"weather.condition.wind" = "Ветрено";

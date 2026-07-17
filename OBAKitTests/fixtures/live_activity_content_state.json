@@ -1,0 +1,22 @@
+{
+  "arrivals": [
+    {
+      "departure_time": 1767980460,
+      "schedule_status": "on_time",
+      "schedule_deviation": 60,
+      "is_arrival": false
+    },
+    {
+      "departure_time": 1767981000,
+      "schedule_status": "delayed",
+      "schedule_deviation": 240,
+      "is_arrival": false
+    },
+    {
+      "departure_time": 1767981600,
+      "schedule_status": "unknown",
+      "schedule_deviation": 0,
+      "is_arrival": false
+    }
+  ]
+}

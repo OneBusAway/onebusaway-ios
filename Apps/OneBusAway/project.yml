@@ -29,6 +29,8 @@ targets:
     info:
       path: Apps/OneBusAway/Info.plist
       properties:
+        NSSupportsLiveActivities: true
+        NSSupportsLiveActivitiesFrequentUpdates: true
         CFBundleDisplayName: OneBusAway
         CFBundleURLTypes: [{CFBundleTypeRole: "Editor", CFBundleURLIconFile: "", CFBundleURLName: "onebusaway", CFBundleURLSchemes: ["onebusaway"]}]
         LSApplicationQueriesSchemes:
@@ -98,6 +100,7 @@ targets:
 include:
   - path: OBAKitUITests/project.yml
   - path: Apps/Shared/app_shared.yml
+  - path: Apps/Shared/info_plist.yml
   - path: Apps/Shared/analytics_fx_config.yml
   - path: Apps/Shared/push_config.yml
   - path: OBAKitCore/project.yml

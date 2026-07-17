@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>data_migration_bulletin.report_summary_number_of_failures</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d сбой</string>
+			<key>few</key>
+			<string>%d сбоя</string>
+			<key>many</key>
+			<string>%d сбоев</string>
+			<key>other</key>
+			<string>%d сбоя</string>
+		</dict>
+	</dict>
+	<key>data_migration_bulletin.report_summary_number_of_successes</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d успешный перенос</string>
+			<key>few</key>
+			<string>%d успешных переноса</string>
+			<key>many</key>
+			<string>%d успешных переносов</string>
+			<key>other</key>
+			<string>%d успешного переноса</string>
+		</dict>
+	</dict>
+	<key>stop_controller.transfer_show_earlier_departures_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Показать %d более раннее отправление</string>
+			<key>few</key>
+			<string>Показать %d более ранних отправления</string>
+			<key>many</key>
+			<string>Показать %d более ранних отправлений</string>
+			<key>other</key>
+			<string>Показать %d более раннего отправления</string>
+		</dict>
+	</dict>
+	<key>stop_page.empty.no_departures_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Нет отправлений в ближайшую %d минуту</string>
+			<key>few</key>
+			<string>Нет отправлений в ближайшие %d минуты</string>
+			<key>many</key>
+			<string>Нет отправлений в ближайшие %d минут</string>
+			<key>other</key>
+			<string>Нет отправлений в ближайшие %d минуты</string>
+		</dict>
+	</dict>
+	<key>stop_page.past_toggle_show_a11y_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Показать %d прошедшее отправление</string>
+			<key>few</key>
+			<string>Показать %d прошедших отправления</string>
+			<key>many</key>
+			<string>Показать %d прошедших отправлений</string>
+			<key>other</key>
+			<string>Показать %d прошедшего отправления</string>
+		</dict>
+	</dict>
+	<key>stop_page.service_alerts.show_all_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Показать %d оповещение</string>
+			<key>few</key>
+			<string>Показать все %d оповещения</string>
+			<key>many</key>
+			<string>Показать все %d оповещений</string>
+			<key>other</key>
+			<string>Показать все %d оповещения</string>
+		</dict>
+	</dict>
+	<key>stop_page.service_alerts.summary_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d сервисное оповещение</string>
+			<key>few</key>
+			<string>%d сервисных оповещения</string>
+			<key>many</key>
+			<string>%d сервисных оповещений</string>
+			<key>other</key>
+			<string>%d сервисного оповещения</string>
+		</dict>
+	</dict>
+	<key>stop_page.timeline.skipped_stops_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d остановка</string>
+			<key>few</key>
+			<string>%d остановки</string>
+			<key>many</key>
+			<string>%d остановок</string>
+			<key>other</key>
+			<string>%d остановки</string>
+		</dict>
+	</dict>
+</dict>
+</plist>

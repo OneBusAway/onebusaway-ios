@@ -189,6 +189,24 @@ open class CoreApplication: NSObject,
 
     public let obacoServiceUpdatedNotification = NSNotification.Name("ObacoServiceUpdatedNotification")
 
+    // MARK: - Live Activities
+
+    /// Owns the Live Activity push subscriptions registered with OBACloud: registration,
+    /// unregistration, and the launch-time reconciliation sweep that cleans up activities the
+    /// user dismissed while the app wasn't running.
+    ///
+    /// `obacoService` is resolved lazily on each call because it's recreated when the region
+    /// changes and is nil until a region is available.
+    public private(set) lazy var liveActivityRegistry = LiveActivityRegistry(
+        userDefaults: userDefaults,
+        obacoServiceProvider: { [weak self] in self?.obacoService }
+    )
+
+    /// Owns the ActivityKit observers that feed `liveActivityRegistry`. App-scoped rather than
+    /// per-screen on purpose: a Live Activity outlives the view controller that started it, and
+    /// so must the observer that unregisters it. See `LiveActivityTracker`.
+    public private(set) lazy var liveActivityTracker = LiveActivityTracker(registry: liveActivityRegistry)
+
     /// Reloads the Obaco Service stack, including the network queue, api service manager, and model service manager.
     /// This must be called when the region changes.
     private func refreshObacoService() {

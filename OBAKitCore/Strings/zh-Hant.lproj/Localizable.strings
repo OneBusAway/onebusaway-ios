@@ -1,11 +1,20 @@
 /* An error message that tells the user that they are connected to a captive portal WiFi network. */
 "api_error.captive_portal" = "您目前連接的 Wi-Fi 網路似乎無法存取網際網路。請嘗試中斷 Wi-Fi 連線，或完成網路登入驗證後再繼續。";
 
+/* An error that tells the user that cellular data access is disabled for this app in iOS Settings. Both substituted values are the app name. */
+"api_error.cellular_data_restricted_fmt" = "%1$@ 目前無法取用行動數據。若要修正此問題，請前往「設定」>「行動服務」，為 %2$@ 開啟行動數據，或連接 Wi-Fi 網路。";
+
+/* An error shown when the server returns data the app can't understand, indicating a likely server-side issue. */
+"api_error.decoding_failure" = "伺服器回傳了非預期的資料，這通常表示伺服器發生問題。請稍後再試。";
+
 /* An error message that informs the user that the wrong kind of content was received from the server. */
 "api_error.invalid_content_type_fmt" = "預期從伺服器收到 %1$@ 資料，但實際收到的是 %2$@。";
 
 /* An error that tells the user that the network connection isn't working. */
 "api_error.network_failure" = "無法連線至網際網路或伺服器。請檢查您的網路連線後再試一次。";
+
+/* An error message that tells the user that no region has been selected. */
+"api_error.no_region_selected" = "尚未選擇區域。請選擇區域以繼續。";
 
 /* An error that tells the user that the server unexpectedly failed to return data. */
 "api_error.no_response_body" = "伺服器未如預期回傳任何資料。";
@@ -15,6 +24,15 @@
 
 /* An error that is produced in response to HTTP status code 404 */
 "api_error.request_not_found" = "404 找不到（%@）";
+
+/* An error shown when the server returns a 500 Internal Server Error. The substituted value is the region name, e.g. 'Puget Sound'. */
+"api_error.server_error_fmt" = "%@ 的伺服器在處理您的要求時發生錯誤。請再試一次。";
+
+/* An error shown when the regional transit server is unavailable. The first substituted value is the region name, the second is the app name. */
+"api_error.server_unavailable_fmt" = "%1$@ 的伺服器目前似乎已離線，因此 %2$@ 無法顯示此區域的大眾運輸資訊。伺服器恢復後，App 應該就會恢復正常運作。";
+
+/* An error message that tells the user that surveys are not available. */
+"api_error.survey_service_not_configured" = "此區域無法使用問卷服務。";
 
 /* This will appear on a button or as a title, and indicates that this UI will create a new bookmark. */
 "common.add_alarm" = "加入提醒";
@@ -58,8 +76,8 @@
 /* The verb 'to donate', as in to give money to a charitable cause. */
 "common.donate" = "捐款";
 
-/* The body of the message to display to the user after they donate to OTSF */
-"common.donation_thank_you.body" = "您的支持將協助我們持續改善 OneBusAway。";
+/* The body of the message to display to the user after they donate to OTSF. %@ is the app name. */
+"common.donation_thank_you.body" = "您的支持將協助我們持續改善 %@。";
 
 /* Title of an alert to display to the user after they donate to OTSF */
 "common.donation_thank_you.title" = "感謝您的支持！";
@@ -88,11 +106,20 @@
 /* The title of a button that exports all of the user's data into a file. */
 "common.export_data" = "輸出資料";
 
+/* Description of the privacy policy for sharing data with the external survey service. */
+"common.external_survey_privacy_info.description" = "此問卷將分享您的站牌、路線、區域和目前位置。";
+
 /* The verb 'to filter'. */
 "common.filter" = "篩選";
 
+/* The verb 'to go' */
+"common.go" = "前往";
+
 /* This is button text that tells the user they can tap on it to learn more about the topic at hand. */
 "common.learn_more" = "進一步瞭解";
+
+/* Fallback title for the stop arrivals screen when the stop name is not yet available. */
+"common.live_arrivals" = "即時到站資訊";
 
 /* Used to indicate that content is loading. */
 "common.loading" = "載入中…";
@@ -111,6 +138,9 @@
 
 /* As in 'see more' or 'learn more'. */
 "common.more" = "更多";
+
+/* The verb 'to next', i.e. to get next survey question. */
+"common.next" = "下一步";
 
 /* OK */
 "common.ok" = "好";
@@ -163,6 +193,9 @@
 /* Noun. Plural form of a transit stop. */
 "common.stops" = "站牌";
 
+/* The verb 'to submit', i.e. to submit a survey answer. */
+"common.submit" = "送出";
+
 /* A format string used to tell the user when the UI they are looking at was last updated. e.g. Updated: 9:41 AM. The time is calculated at runtime. */
 "common.updated_at_fmt" = "更新時間：%@";
 
@@ -171,37 +204,6 @@
 
 /* The title of the Vehicles tab showing real-time vehicle positions on a map. */
 "common.vehicles" = "車輛";
-
-/* Description of the privacy policy for sharing data with the external survey service. */
-"common.external_survey_privacy_info.description" = "此問卷將分享您的站牌、路線、區域和目前位置。";
-
-"common.go" = "前往";
-
-"common.submit" = "送出";
-
-"common.next" = "下一步";
-
-"survey_alert.dismissal.title" = "關閉問卷";
-
-"survey_alert.dismissal.body" = "您的意見回饋有助於改善大眾運輸服務與 App 體驗。";
-
-"survey_alert.skip.survey" = "略過此問卷";
-
-"survey_alert.remind.later" = "稍後提醒我";
-
-"survey_error.required_remaining_questions.error" = "請回答所有必答問題";
-
-"survey_error.hero_question_answer.error" = "請輸入有效的答案";
-
-"survey_success.submitted" = "問卷答案已送出！請繼續回答其餘問題，以提供更完整的意見回饋。";
-
-"survey_alert.do.not.show.again" = "不再顯示";
-
-"survey_service.not.available" = "問卷服務目前無法使用。";
-
-"survey.external.url.missing" = "目前無法開啟問卷。請稍後再試。";
-
-"survey_service.update.path.missing" = "送出您的回覆時發生問題。請稍後再試。";
 
 /* Use for vehicles that arrived X minutes ago. */
 "formatters.arrived_x_min_ago_fmt" = "%d 分鐘前到站";
@@ -365,6 +367,18 @@
 /* Formatted time text for arrivals/departures. Used for accessibility labels, so be sure to spell out the word for 'minute'. Example: 7 minutes means that this event happens 7 minutes in the future. -7 minutes means 7 minutes in the past. */
 "formatters.time_fmt" = "%d 分鐘";
 
+/* Transfer arrival banner. First parameter is the arrival time, second is the route name and headsign. e.g. 'Arriving at 4:10 PM via 10 - Capitol Hill' */
+"formatters.transfer.arrival_banner_fmt" = "搭乘 %2$@ 於 %1$@ 抵達";
+
+/* Short text shown when a departure occurs at the same time as the rider's transfer arrival. */
+"formatters.transfer.on_arrival" = "現在";
+
+/* Error when a route has no real-time vehicle tracking data. */
+"nearby_trip_matcher.error.no_realtime" = "此路線沒有可用的即時追蹤資料。";
+
+/* Error when no transit stops are found near the user's location. */
+"nearby_trip_matcher.error.no_stops" = "附近找不到站牌。";
+
 /* Bus. Used for short- and long-distance bus routes. */
 "route_type.bus" = "公車";
 
@@ -395,6 +409,9 @@
 /* Title for the schedule/timetable feature tip */
 "schedule_tip.title" = "檢視您路線的時刻表";
 
+/* Shown in place of the minutes countdown when the vehicle is departing now */
+"stop_page.countdown.now" = "現在";
+
 /* User-facing string that means the location of the stop on the map is wrong. */
 "stop_problem_code.user_description.location_wrong" = "位置有誤";
 
@@ -409,6 +426,60 @@
 
 /* User-facing string that means our data is wrong about a route or a scheduled trip */
 "stop_problem_code.user_description.route_or_trip_missing" = "缺少路線或排定的班次";
+
+/* Indicating missing external survey url */
+"survey.external.url.missing" = "目前無法開啟問卷。請稍後再試。";
+
+/* Body for survey dismissal action alert. */
+"survey_alert.dismissal.body" = "您的意見回饋有助於改善大眾運輸服務與 App 體驗。";
+
+/* Title for survey dismissal action alert. */
+"survey_alert.dismissal.title" = "關閉問卷";
+
+/* The action of not showing the survey again. */
+"survey_alert.do.not.show.again" = "不再顯示";
+
+/* The action of reminding later. i.e, to remind me later on the survey. */
+"survey_alert.remind.later" = "稍後提醒我";
+
+/* The action of skipping the current survey. */
+"survey_alert.skip.survey" = "略過此問卷";
+
+/* Error message to show when the user has not answered the hero survey question with a valid answer. */
+"survey_error.hero_question_answer.error" = "請輸入有效的答案";
+
+/* Error message to show when the user has not answered all required survey questions. */
+"survey_error.required_remaining_questions.error" = "請回答所有必答問題";
+
+/* Indicating that survey service is not setup up right or has some other issue. */
+"survey_service.not.available" = "問卷服務目前無法使用。";
+
+/* Indicating missing survey update id when submitting responses */
+"survey_service.update.path.missing" = "送出您的回覆時發生問題。請稍後再試。";
+
+/* Success message to show when the survey is successfully submitted. */
+"survey_success.submitted" = "問卷答案已送出！請繼續回答其餘問題，以提供更完整的意見回饋。";
+
+/* Accessibility hint for an input field in a survey. */
+"surveys.accessibility.hint_answer.input" = "輸入您對問卷問題的答案";
+
+/* Accessibility label for an input field in a survey. */
+"surveys.accessibility_answer.input" = "答案輸入欄";
+
+/* Accessibility label for a value that is not selected. */
+"surveys.accessibility_not_selected_value" = "未選取";
+
+/* Accessibility label for a selected value. */
+"surveys.accessibility_selected_value" = "已選取";
+
+/* Accessibility for survey label */
+"surveys.accessibility_survey_label" = "問卷標籤";
+
+/* Accessibility label that allows selection of a survey option. */
+"surveys.accessibility_tap_to_select" = "點一下以選取";
+
+/* Accessibility label  that toggles the selection state of a survey option. */
+"surveys.accessibility_tap_toggle_selection" = "點一下以切換選取狀態";
 
 /* Message for the trip planner tip */
 "trip_planner_tip.message" = "點一下這裡即可搜尋地點，並透過大眾運輸路線規劃您的行程。";
@@ -461,22 +532,29 @@
 /* VoiceOver text describing a route that is scheduled to depart. (no realtime data was available) */
 "voiceover.arrivaldeparture_scheduled_departs_in_x_minutes_fmt" = "依時刻表將於 %1$d 分鐘後（%2$@）離站。";
 
-/* Error when no transit stops are found near the user's location. */
-"nearby_trip_matcher.error.no_stops" = "附近找不到站牌。";
+/* Weather condition label for clear skies. */
+"weather.condition.clear" = "晴朗";
 
-/* Error when a route has no real-time vehicle tracking data. */
-"nearby_trip_matcher.error.no_realtime" = "此路線沒有可用的即時追蹤資料。";
+/* Weather condition label for cloudy skies. */
+"weather.condition.cloudy" = "多雲";
 
-"surveys.accessibility_selected_value" = "已選取";
+/* Weather condition label for foggy conditions. */
+"weather.condition.fog" = "有霧";
 
-"surveys.accessibility_not_selected_value" = "未選取";
+/* Weather condition label for partly cloudy skies. */
+"weather.condition.partly_cloudy" = "局部多雲";
 
-"surveys.accessibility_tap_toggle_selection" = "點一下以切換選取狀態";
+/* Weather condition label for rain. */
+"weather.condition.rain" = "下雨";
 
-"surveys.accessibility_tap_to_select" = "點一下以選取";
+/* Weather condition label for sleet. */
+"weather.condition.sleet" = "雨夾雪";
 
-"surveys.accessibility_answer.input" = "答案輸入欄";
+/* Weather condition label for snow. */
+"weather.condition.snow" = "下雪";
 
-"surveys.accessibility.hint_answer.input" = "輸入您對問卷問題的答案";
+/* Weather condition placeholder when the icon key is unknown. */
+"weather.condition.unknown" = "—";
 
-"surveys.accessibility_survey_label" = "問卷標籤";
+/* Weather condition label for windy conditions. */
+"weather.condition.wind" = "有風";
