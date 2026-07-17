@@ -17,6 +17,7 @@ class StopIconFactory: NSObject {
     private let iconSize: CGFloat
 
     private let iconCache = NSCache<NSString, UIImage>()
+    private let squircleIconCache = NSCache<NSString, UIImage>()
 
     /// Initializes a `StopIconFactory`.
     /// - Parameter iconSize: The width and height of the icons that will be generated.
@@ -128,6 +129,66 @@ class StopIconFactory: NSObject {
             self.drawBorder(color: strokeColor, rect: rect, context: ctx)
 
             self.drawArrowImage(direction: direction, strokeColor: strokeColor, rect: imageBounds, context: ctx)
+        }
+    }
+
+    // MARK: - Squircle map annotation icon
+
+    /// Map annotation icon: the recent-stops squircle treatment (brand-gradient
+    /// squircle + white transport glyph) with the stop's directional arrow drawn
+    /// in the outer track. Cached by `(routeType, direction)`.
+    func buildSquircleIcon(for stop: Stop) -> UIImage {
+        renderSquircleIcon(routeType: stop.prioritizedRouteTypeForDisplay, direction: stop.direction)
+    }
+
+    /// Draws a squircle stop icon with the specified route type and direction.
+    func renderSquircleIcon(routeType: Route.RouteType, direction: Direction) -> UIImage {
+        let key = "squircle:\(routeType.rawValue):\(direction.rawValue):\(iconSize)" as NSString
+        if let cached = squircleIconCache.object(forKey: key) {
+            return cached
+        }
+
+        let imageBounds = CGRect(x: 0, y: 0, width: iconSize, height: iconSize)
+        let rect = imageBounds.insetBy(dx: arrowTrackSize, dy: arrowTrackSize)
+
+        let renderer = UIGraphicsImageRenderer(size: CGSize(width: iconSize, height: iconSize))
+        let image = renderer.image { [weak self] rendererContext in
+            guard let self = self else { return }
+            let ctx = rendererContext.cgContext
+
+            self.drawSquircleBackground(rect: rect, context: ctx)
+            self.drawIcon(routeType: routeType, rect: rect, context: ctx, color: .white)
+            self.drawArrowImage(direction: direction, strokeColor: self.strokeColor, rect: imageBounds, context: ctx)
+        }
+
+        squircleIconCache.setObject(image, forKey: key)
+        return image
+    }
+
+    /// Draws the brand-color gradient squircle background, echoing
+    /// `Icons.squircleTransportIcon`.
+    private func drawSquircleBackground(rect: CGRect, context: CGContext) {
+        context.pushPop {
+            let brand = themeColors.brand
+            UIBezierPath(roundedRect: rect, cornerRadius: iconSize * 0.28).addClip()
+
+            let colors = [
+                brand.blended(with: .white, amount: 0.18).cgColor,
+                brand.blended(with: .black, amount: 0.12).cgColor
+            ]
+            let colorSpace = CGColorSpaceCreateDeviceRGB()
+            guard let gradient = CGGradient(colorsSpace: colorSpace, colors: colors as CFArray, locations: [0, 1]) else {
+                brand.setFill()
+                context.fill(rect)
+                return
+            }
+
+            context.drawLinearGradient(
+                gradient,
+                start: CGPoint(x: rect.midX, y: rect.minY),
+                end: CGPoint(x: rect.midX, y: rect.maxY),
+                options: []
+            )
         }
     }
 
