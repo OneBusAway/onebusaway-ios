@@ -11,7 +11,10 @@ import Foundation
 
 /// Represents a collection of `Bookmark`s. For instance, the user might have groups named "To Work" and "To Home".
 @objc(OBABookmarkGroup)
-public class BookmarkGroup: NSObject, Identifiable, Codable {
+// @unchecked Sendable: user-data model whose mutable properties are only written on the
+// main actor (user edits via UserDataStore); background consumers treat instances as
+// read-only snapshots.
+public final class BookmarkGroup: NSObject, Identifiable, Codable, @unchecked Sendable {
 
     /// The user-facing name of the group.
     public var name: String

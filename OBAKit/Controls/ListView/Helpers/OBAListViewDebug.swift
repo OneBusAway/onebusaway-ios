@@ -18,7 +18,7 @@ import UIKit
 // MARK: - Default cell contents implementation
 
 /// Sample view model, using the default `OBAListRowConfiguration` to display cell contents.
-struct DEBUG_Person: OBAListViewItem {
+nonisolated struct DEBUG_Person: OBAListViewItem {
     var id: UUID = UUID()
     var name: String
     var address: String
@@ -42,7 +42,7 @@ struct DEBUG_Person: OBAListViewItem {
 // MARK: - Custom cell contents implementation
 
 /// Sample view model, using a custom cell for its content.
-struct DEBUG_CustomContent: OBAListViewItem {
+nonisolated struct DEBUG_CustomContent: OBAListViewItem {
     var id: UUID = UUID()
     var text: String
     var onSelectAction: OBAListViewAction<DEBUG_CustomContent>?
@@ -78,7 +78,7 @@ struct DEBUG_CustomContent: OBAListViewItem {
 }
 
 /// Sample custom content configuration.
-struct DEBUG_CustomContentConfiguration: OBAContentConfiguration {
+nonisolated struct DEBUG_CustomContentConfiguration: OBAContentConfiguration {
     var formatters: Formatters?
     var text: String
 

@@ -11,7 +11,8 @@ import Foundation
 
 // MARK: - MigrationBookmark
 
-@objc public class MigrationBookmark: NSObject, NSCoding {
+// Fully immutable; @unchecked only because NSObject is not Sendable.
+@objc public final class MigrationBookmark: NSObject, NSCoding, @unchecked Sendable {
     public let name: String
     public let stopID: String
     public let regionID: Int?
@@ -65,7 +66,8 @@ import Foundation
 
 // MARK: - MigrationBookmarkGroup
 
-@objc public class MigrationBookmarkGroup: NSObject, NSCoding {
+// Fully immutable; @unchecked only because NSObject is not Sendable.
+@objc public final class MigrationBookmarkGroup: NSObject, NSCoding, @unchecked Sendable {
     public let todayScreenVisible: Bool
     public let name: String?
     public let open: Bool

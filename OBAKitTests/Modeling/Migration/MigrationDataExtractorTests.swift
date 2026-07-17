@@ -18,8 +18,8 @@ class MigrationDataExtractorTests: OBATestCase {
 
     var extractor: MigrationDataExtractor!
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
 
         let testValues = try! Dictionary<String, Any>(plistPath: Fixtures.path(to: "migration_test_preferences.plist"))!
         for (k, v) in testValues {

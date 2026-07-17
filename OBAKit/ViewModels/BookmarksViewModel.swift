@@ -99,7 +99,7 @@ class BookmarksViewModel: NSObject, ObservableObject, BookmarkDataDelegate {
         application.locationService.addDelegate(self)
     }
 
-    deinit {
+    isolated deinit {
         application.locationService.removeDelegate(self)
         dataLoader?.cancelUpdates()
     }

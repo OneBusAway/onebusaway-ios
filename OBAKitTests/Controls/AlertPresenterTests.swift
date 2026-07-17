@@ -14,12 +14,13 @@ import UIKit
 @testable import OBAKit
 @testable import OBAKitCore
 
+@MainActor
 class AlertPresenterTests: XCTestCase {
     
     var viewController: MockPresentingViewController!
     
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         viewController = MockPresentingViewController()
     }
     

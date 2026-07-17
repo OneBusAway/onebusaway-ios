@@ -20,8 +20,8 @@ class RegionsServiceMigrationTests: OBATestCase {
 
     private var fileStorage: MockRegionsFileStorage!
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         fileStorage = MockRegionsFileStorage()
     }
 

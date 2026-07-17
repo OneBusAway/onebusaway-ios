@@ -17,8 +17,8 @@ import Nimble
 class ScheduleForStopTests: OBATestCase {
     let stopID = "1_75403"
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
 
         let dataLoader = (restService.dataLoader as! MockDataLoader)
         dataLoader.mock(

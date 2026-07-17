@@ -33,7 +33,7 @@ public class RegionPickerCoordinator: ObservableObject, RegionProvider, RegionsS
         self.init(regionsService: regionsService, userDataStore: userDataStore)
     }
 
-    deinit {
+    isolated deinit {
         regionsService.removeDelegate(self)
     }
 

@@ -19,14 +19,14 @@ class UserDefaultsStoreTests: OBATestCase {
     var userDefaultsStore: UserDefaultsStore!
     var region: Region!
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         userDefaultsStore = UserDefaultsStore(userDefaults: userDefaults)
         region = try! Fixtures.loadSomeRegions()[1]
     }
 
-    override func tearDown() {
-        super.tearDown()
+    override func tearDown() async throws {
+        try await super.tearDown()
     }
 
     // MARK: - Core

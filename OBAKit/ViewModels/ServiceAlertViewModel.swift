@@ -9,7 +9,7 @@
 
 import Foundation
 import Combine
-@preconcurrency import OBAKitCore
+import OBAKitCore
 
 /// Shared ViewModel for `ServiceAlertViewController`.
 ///
@@ -61,13 +61,20 @@ final class ServiceAlertViewModel: ObservableObject {
         isBuilding = true
         let alert = serviceAlert
         let formatter = application.formatters.shortDateTimeFormatter
+
+        // Formatters is not Sendable (lazy formatter caches), so resolve the
+        // formatter-dependent strings here on the main actor instead of sending it.
         let formatters = application.formatters
+        let activeWindows: [String] = alert.activeWindows
+            .map { $0.interval }
+            .sorted()
+            .compactMap { formatters.formattedDateRange($0) }
 
         buildQueue.async { [weak self] in
             let html = Self.buildDocument(
                 alert: alert,
                 dateTimeFormatter: formatter,
-                formatters: formatters
+                activeWindows: activeWindows
             )
             DispatchQueue.main.async {
                 guard let self else { return }
@@ -81,7 +88,7 @@ final class ServiceAlertViewModel: ObservableObject {
     private nonisolated static func buildDocument(
         alert: ServiceAlert,
         dateTimeFormatter: DateFormatter,
-        formatters: Formatters
+        activeWindows: [String]
     ) -> String {
         var builder = HTMLBuilder()
         builder.append(.h1, value: alert.summary?.value ?? Strings.serviceAlert)
@@ -101,11 +108,6 @@ final class ServiceAlertViewModel: ObservableObject {
             )
             builder.append(.p, value: String(format: fmt, urlString))
         }
-
-        let activeWindows: [String] = alert.activeWindows
-            .map { $0.interval }
-            .sorted()
-            .compactMap { formatters.formattedDateRange($0) }
 
         if !activeWindows.isEmpty {
             builder.append(.h2, value: OBALoc("service_alert_controller.in_effect", value: "In Effect", comment: "As in 'this is in effect/occurring' from/to"))
@@ -171,7 +173,7 @@ final class ServiceAlertViewModel: ObservableObject {
     }
 }
 
-fileprivate struct HTMLBuilder {
+nonisolated fileprivate struct HTMLBuilder {
     private(set) var HTML = String()
 
     enum Tag: String {

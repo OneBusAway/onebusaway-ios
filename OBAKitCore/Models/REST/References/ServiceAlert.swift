@@ -11,11 +11,13 @@ import Foundation
 
 // swiftlint:disable nesting
 
+// @unchecked Sendable per the HasReferences concurrency contract (see References.swift):
+// mutation is confined to decode + loadReferences, before the instance is shared.
 /// An alert about transit service that affects one or more of the following:  `Agency`,  `Route`, `Stop`, or `Trip`.
 ///
 /// - Note: The JSON data structure from which a `ServiceAlert` is created is called a "Situation". However, the feature
 ///         is referred to as a "Service Alert" pretty much everywhere else, and that is why it is referred to as such here.
-public class ServiceAlert: NSObject, Identifiable, Decodable, HasReferences {
+public final class ServiceAlert: NSObject, Identifiable, Decodable, HasReferences, @unchecked Sendable {
     public let activeWindows: Set<TimeWindow>
 
     public let affectedEntities: [AffectedEntity]

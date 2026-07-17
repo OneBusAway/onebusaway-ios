@@ -15,6 +15,7 @@ import Nimble
 /// Tests the deep link URL format for trip sharing, specifically the `destination_stop_id` parameter.
 /// These tests verify URL construction and parsing without requiring a full `Application` object.
 /// See: https://github.com/OneBusAway/onebusaway-ios/issues/449
+@MainActor
 class AppLinksRouterDeepLinkFormatTests: XCTestCase {
 
     // MARK: - URL Construction with destination_stop_id

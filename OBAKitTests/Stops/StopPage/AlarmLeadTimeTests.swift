@@ -1,6 +1,7 @@
 import XCTest
 @testable import OBAKit
 
+@MainActor
 final class AlarmLeadTimeTests: XCTestCase {
     func test_requestWithinRange_passesThrough() {
         XCTAssertEqual(AlarmLeadTime.clamped(5, minutesUntilDeparture: 20), 5)

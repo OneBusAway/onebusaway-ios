@@ -8,7 +8,7 @@
 import OBAKitCore
 import Foundation
 
-struct TransitAlertDataListViewModel: OBAListViewItem {
+nonisolated struct TransitAlertDataListViewModel: OBAListViewItem {
     let transitAlert: TransitAlertViewModel
 
     let id: UUID = UUID()

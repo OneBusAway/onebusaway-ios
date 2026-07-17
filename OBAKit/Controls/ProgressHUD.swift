@@ -316,7 +316,7 @@ public class ProgressHUD: UIView {
 		if (hide) {
 			let text = labelStatus?.text ?? ""
 			let delay = Double(text.count) * 0.03 + 1.25
-			timer = Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { _ in
+			timer = Timer.scheduledMainActorTimer(withTimeInterval: delay, repeats: false) {
 				self.hudHide()
 			}
 		}

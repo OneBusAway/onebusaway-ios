@@ -11,7 +11,7 @@ import UIKit
 import OBAKitCore
 
 // MARK: - StopHeaderSection
-struct StopHeaderItem: OBAListViewItem {
+nonisolated struct StopHeaderItem: OBAListViewItem {
     var configuration: OBAListViewItemConfiguration {
         return .custom(StopHeaderContentConfiguration(self))
     }
@@ -31,7 +31,8 @@ struct StopHeaderItem: OBAListViewItem {
 
     let stopIconFactory: StopIconFactory
 
-    init(stop: Stop, application: Application) {
+    // @MainActor: reads Application state; items are only built from view-controller code.
+    @MainActor init(stop: Stop, application: Application) {
         self.id = stop.id
         self.stop = stop
         self.stopName = stop.name
@@ -61,7 +62,7 @@ struct StopHeaderItem: OBAListViewItem {
     }
 }
 
-struct StopHeaderContentConfiguration: OBAContentConfiguration {
+nonisolated struct StopHeaderContentConfiguration: OBAContentConfiguration {
     var viewModel: StopHeaderItem
     var formatters: Formatters?
 

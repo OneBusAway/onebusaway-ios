@@ -9,6 +9,8 @@
 
 #import <UIKit/UIKit.h>
 
+/// NS_SWIFT_UI_ACTOR: scene delegates are main-thread-bound by UIKit contract.
+NS_SWIFT_UI_ACTOR
 @interface SceneDelegate : UIResponder <UIWindowSceneDelegate>
 
 @property (strong, nonatomic) UIWindow *window;

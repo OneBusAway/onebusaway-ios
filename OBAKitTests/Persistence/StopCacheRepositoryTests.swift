@@ -13,21 +13,22 @@ import CoreLocation
 
 // swiftlint:disable force_try
 
+@MainActor
 class StopCacheRepositoryTests: XCTestCase {
 
     var database: StopCacheDatabase!
     var repository: StopCacheRepository!
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         database = try! StopCacheDatabase(inMemory: true)
         repository = StopCacheRepository(database: database)
     }
 
-    override func tearDown() {
+    override func tearDown() async throws {
         repository = nil
         database = nil
-        super.tearDown()
+        try await super.tearDown()
     }
 
     // MARK: - Helpers

@@ -63,8 +63,8 @@ class PushServiceTests: OBATestCase {
     private var delegate: PushServiceDelegateRecorder!
     private var pushService: PushService!
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         provider = RecordingPushServiceProvider()
         delegate = PushServiceDelegateRecorder()
         pushService = PushService(serviceProvider: provider, delegate: delegate)

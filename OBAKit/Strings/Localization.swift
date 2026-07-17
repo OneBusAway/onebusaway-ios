@@ -11,6 +11,6 @@ import Foundation
 
 fileprivate class Localization: NSObject {}
 
-internal func OBALoc(_ key: String, value: String, comment: String) -> String {
+internal nonisolated func OBALoc(_ key: String, value: String, comment: String) -> String {
     return NSLocalizedString(key, tableName: nil, bundle: Bundle(for: Localization.self), value: value, comment: comment)
 }

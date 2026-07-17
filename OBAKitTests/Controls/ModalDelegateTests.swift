@@ -13,6 +13,7 @@ import Nimble
 import UIKit
 @testable import OBAKit
 
+@MainActor
 class ModalDelegateTests: XCTestCase {
     
     func test_ModalDelegate_protocol() {

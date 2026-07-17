@@ -11,7 +11,7 @@ import OBAKitCore
 extension OBAListRowView {
     /// For convenience, if you are tracking data separately from the view model or you are displaying UI with no data,
     /// you can use this view model to define a `value` appearance list row.
-    public struct ValueViewModel: OBAListViewItem {
+    nonisolated public struct ValueViewModel: OBAListViewItem {
         public let id: UUID = UUID()
         public var image: UIImage?
         public var title: OBAListRowConfiguration.LabelText

@@ -25,7 +25,7 @@ on:
 
 jobs:
   build:
-    runs-on: macos-15
+    runs-on: macos-26
     permissions:
       checks: write
       contents: read
@@ -53,10 +53,16 @@ jobs:
 
     # Pin Xcode deterministically so the set of bundled simulator runtimes is
     # known, instead of relying on `xcode-select` against whatever the image ships.
+    # 26.6, not 26.2: the Swift 6 migration needs a compiler from the same
+    # generation as local development (Xcode 27 beta / Swift 6.4). Xcode 26.2's
+    # compiler emits implicitly-isolated deinits for MainActor-default classes
+    # whose runtime path double-frees in TaskLocal teardown, crashing the test
+    # suite regardless of simulator runtime (see docs/swift6-migration-plan.md,
+    # "Toolchain/runtime pairing caveat").
     - name: Setup Xcode
       uses: maxim-lobanov/setup-xcode@v1
       with:
-        xcode-version: '26.2'
+        xcode-version: '26.6'
 
     - name: Install xcodegen
       env:
@@ -64,22 +70,22 @@ jobs:
         HOMEBREW_NO_INSTALL_CLEANUP: 1
       run: brew install xcodegen
 
-    # Make iOS runtime acquisition explicit and time-boxed. The macOS runner image
-    # ships several iOS simulator runtimes preinstalled, so this is normally a skip.
-    # Only download when none is present: `xcodebuild -downloadPlatform iOS` insists
-    # on fetching the *newest* runtime (e.g. 26.3.1) even when an older one Xcode can
-    # use is already installed — which wastes ~2-3 min and is flaky on CI ("Unable to
-    # connect to simulator", exit 70, which failed an earlier run here). If a download
-    # genuinely IS needed it stays visible and time-boxed rather than stalling
-    # silently inside the test step.
+    # Make iOS runtime acquisition explicit and time-boxed. An iOS 26+ runtime is
+    # REQUIRED, not merely preferred: the runner image also ships older runtimes
+    # (e.g. iOS 18.5), and running the Swift 6 build's tests on those routes every
+    # MainActor class deinit through the isolated-deinit back-deployment shim,
+    # which double-frees in TaskLocal teardown under Xcode 26.2's compiler
+    # (crash: swift_task_deinitOnExecutorMainActorBackDeploy →
+    # BUG_IN_CLIENT_OF_LIBMALLOC, seen 2026-07-16). On an SDK-matched iOS 26
+    # runtime the native runtime entry point is used and the shim never runs.
     - name: Download iOS platform (if needed)
       timeout-minutes: 30
       run: |
-        if xcrun simctl runtime list 2>/dev/null | grep -qE "iOS [0-9].*\(Ready\)"; then
-          echo "An iOS simulator runtime is already installed; skipping download:"
+        if xcrun simctl runtime list 2>/dev/null | grep -qE "iOS (2[6-9]|[3-9][0-9])[0-9.]*.*\(Ready\)"; then
+          echo "An iOS 26+ simulator runtime is already installed; skipping download:"
           xcrun simctl runtime list | grep -E "iOS [0-9]" || true
         else
-          echo "No iOS simulator runtime found; downloading…"
+          echo "No iOS 26+ simulator runtime found; downloading…"
           xcodebuild -downloadPlatform iOS
         fi
 
@@ -93,14 +99,29 @@ jobs:
         echo "=== Available SDKs ==="
         xcodebuild -showsdks || true
 
-    # Pick an available iPhone simulator and capture its UDID. Using `id=` in the
-    # destination (rather than `name=iPhone 16`) avoids the "multiple matching
-    # destinations" ambiguity and guarantees we target a device on an installed
-    # runtime. Booting it here isolates first-boot cost from the test step.
+    # Pick an iPhone simulator on the NEWEST installed iOS runtime and capture its
+    # UDID. Using `id=` in the destination (rather than `name=iPhone 16`) avoids the
+    # "multiple matching destinations" ambiguity. Newest-runtime matters: older
+    # runtimes on the image (iOS 18.x) crash the Swift 6 test suite in the
+    # isolated-deinit back-deploy shim (see the download step's note). Booting it
+    # here isolates first-boot cost from the test step.
     - name: Prepare iOS Simulator
       run: |
         set -euo pipefail
-        UDID=$(xcrun simctl list devices available -j | python3 -c "import sys, json; devices = [d for runtime in json.load(sys.stdin)['devices'].values() for d in runtime if d['name'].startswith('iPhone')]; print(devices[0]['udid'])")
+        xcrun simctl list devices available -j > /tmp/devices.json
+        UDID=$(python3 <<'PY'
+        import json, re
+        data = json.load(open('/tmp/devices.json'))['devices']
+        def version(key):
+            m = re.search(r'iOS-(\d+)-(\d+)', key)
+            return (int(m.group(1)), int(m.group(2))) if m else (0, 0)
+        for key in sorted(data, key=version, reverse=True):
+            phones = [d for d in data[key] if d['name'].startswith('iPhone')]
+            if phones:
+                print(phones[0]['udid'])
+                break
+        PY
+        )
         [ -n "$UDID" ] || { echo "::error::No available iPhone simulator found"; exit 1; }
         echo "SIMULATOR_UDID=$UDID" >> "$GITHUB_ENV"
         echo "Using simulator UDID: $UDID"
@@ -110,14 +131,29 @@ jobs:
     - name: Generate xcodeproj for OneBusAway
       run: scripts/generate_project OneBusAway
 
-    # Build
+    # Build. Output is teed to a log so the concurrency ratchet step can count
+    # strict-concurrency warnings (`-quiet` still prints warnings and errors).
     - name: Build OneBusAway
       timeout-minutes: 20
-      run: xcodebuild build-for-testing
-        -scheme 'App'
-        -destination "platform=iOS Simulator,id=${SIMULATOR_UDID}"
-        -derivedDataPath DerivedData
-        -quiet
+      run: |
+        set -o pipefail
+        xcodebuild build-for-testing \
+          -scheme 'App' \
+          -destination "platform=iOS Simulator,id=${SIMULATOR_UDID}" \
+          -derivedDataPath DerivedData \
+          -quiet \
+          | tee xcodebuild-build.log
+
+    # Swift 6 migration ratchet (docs/swift6-migration-plan.md): the number of
+    # strict-concurrency warnings may only go down. Enforcing since 2026-07-16.
+    # The checked-in baseline (39) was measured on Xcode 27 beta 3; CI's Xcode
+    # 26.6 counts 37 for the same code, so the baseline is the max across the
+    # supported toolchains — don't "lower it to match CI" or local builds fail.
+    # All remaining warnings are in OBAKitTests (pinned to Swift 5, see its
+    # project.yml); every Swift 6 target is at zero and additionally locked by
+    # SWIFT_WARNINGS_AS_ERRORS_GROUPS in Apps/Shared/app_shared.yml.
+    - name: Concurrency warning ratchet
+      run: scripts/concurrency_ratchet xcodebuild-build.log
 
     # Unit Test. Output is teed to a log so the "Report slowest tests" step can
     # surface per-test timing. `set -o pipefail` keeps xcodebuild's exit code

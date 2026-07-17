@@ -147,7 +147,9 @@ struct MapPanelRootView: View {
                     .presentationBackground(.clear)
                 }
                 .mapPermissionAlert(state: $permissionAlertState, onAction: handleAlertAction)
-                .onGeometryChange(for: CGFloat.self) { proxy in
+                .onGeometryChange(for: CGFloat.self) { [halfScreenHeight] proxy in
+                    // The transform closure is @Sendable; snapshot the @State value
+                    // instead of reading main-actor view state inside it.
                     max(min(proxy.size.height, halfScreenHeight), 0)
                 } action: { oldValue, newValue in
                     guard !route.prefersStacking else { return }

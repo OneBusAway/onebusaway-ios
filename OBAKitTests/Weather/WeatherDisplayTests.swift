@@ -16,6 +16,7 @@ import Foundation
 /// Tests for `WeatherDisplay` and `HourlyEntry.list`. Covers the rules the
 /// review pinned down: past-hour filtering, "Now" labelling, the 24-entry cap,
 /// Date-based identity, and the empty-input edge case.
+@MainActor
 final class WeatherDisplayTests: XCTestCase {
 
     // MARK: - Fixtures

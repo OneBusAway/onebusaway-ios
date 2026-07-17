@@ -18,8 +18,8 @@ class DataMigrator_Tests: OBATestCase {
     private var dataStore: DataStore!
     private var migrationParameters: DataMigrator.MigrationParameters!
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
 
         // Load user defaults from the plist fixture.
         let userDefaults = buildUserDefaults()

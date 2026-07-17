@@ -95,7 +95,7 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
             .store(in: &cancellables)
     }
 
-    deinit {
+    isolated deinit {
         application.locationService.removeDelegate(self)
     }
 

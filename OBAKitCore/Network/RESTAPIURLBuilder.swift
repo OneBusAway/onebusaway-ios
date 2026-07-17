@@ -13,10 +13,11 @@ import MapKit
 
 // MARK: - URL Builder Class
 
+// All stored properties are immutable; @unchecked only because NSObject itself is not Sendable.
 /// Creates `URL`s for the `RESTAPIService`.
 ///
 /// This class is designed to handle the oddities of different OBA regions' URL schemes without over- or under-escaping paths.
-class RESTAPIURLBuilder: NSObject {
+final class RESTAPIURLBuilder: NSObject, @unchecked Sendable {
     private let baseURL: URL
     private let defaultQueryItems: [URLQueryItem]
     private let surveyBaseURL: URL?

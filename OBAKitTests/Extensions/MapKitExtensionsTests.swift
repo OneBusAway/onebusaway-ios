@@ -14,6 +14,7 @@ import MapKit
 import CoreLocation
 @testable import OBAKit
 
+@MainActor
 class MapKitExtensionsTests: XCTestCase {
     
     func test_MKDirections_walkingDirections() {

@@ -22,8 +22,8 @@ import ActivityKit
 /// CodingKeys and dates travel as epoch-second integers, never `Date`.
 /// The canonical fixture is OBAKitTests/fixtures/live_activity_content_state.json,
 /// mirrored in the obacloud repo.
-public struct TripAttributes: ActivityAttributes {
-    public struct StaticData: Codable, Hashable {
+public struct TripAttributes: ActivityAttributes, Sendable {
+    public struct StaticData: Codable, Hashable, Sendable {
         public let routeShortName: String
         public let routeHeadsign: String
         public let stopID: String
@@ -54,8 +54,8 @@ public struct TripAttributes: ActivityAttributes {
         }
     }
 
-    public struct ContentState: Codable, Hashable {
-        public enum ScheduleStatusValue: String, Codable, Hashable {
+    public struct ContentState: Codable, Hashable, Sendable {
+        public enum ScheduleStatusValue: String, Codable, Hashable, Sendable {
             case onTime = "on_time"
             case early
             case delayed
@@ -81,7 +81,7 @@ public struct TripAttributes: ActivityAttributes {
             }
         }
 
-        public struct ArrivalInfo: Codable, Hashable {
+        public struct ArrivalInfo: Codable, Hashable, Sendable {
             /// Epoch seconds. An Int (not Date): the default JSONDecoder
             /// would decode a Date as seconds-since-2001 and corrupt it.
             public let departureTime: Int

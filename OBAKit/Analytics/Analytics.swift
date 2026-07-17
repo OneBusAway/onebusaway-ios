@@ -11,8 +11,9 @@ import Foundation
 import OBAKitCore
 
 /// User Defaults keys for configuring analytics behavior in OBAKit.
+/// nonisolated: a constants namespace; read from nonisolated analytics paths.
 @objc(OBAAnalyticsKeys)
-public class AnalyticsKeys: NSObject {
+nonisolated public class AnalyticsKeys: NSObject {
     @objc public static let reportingEnabledUserDefaultsKey = "reportingEnabledUserDefaultsKey"
 }
 

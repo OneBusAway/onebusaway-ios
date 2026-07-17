@@ -9,8 +9,9 @@
 
 import Foundation
 
+// Immutable (a single UserDefaults reference, which is itself thread-safe).
 /// Extracts data from the user defaults of 'classic' versions of OneBusAway for transition to the new application architecture.
-public class MigrationDataExtractor: NSObject {
+public final class MigrationDataExtractor: NSObject, @unchecked Sendable {
     /// Creates a new MigrationDataExtractor.
     /// - Parameter defaults: The UserDefaults object from which data will be migrated, if available.
     init(defaults: UserDefaults) {

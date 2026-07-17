@@ -15,3 +15,8 @@ targets:
     settings:
       base:
         APPLICATION_EXTENSION_API_ONLY: true
+        # Swift language mode and checking level come from the project-wide
+        # base in Apps/Shared/app_shared.yml. This one setting is a real
+        # override: Core owns actors, networking, and background decode, so it
+        # pins against the project-wide MainActor default.
+        SWIFT_DEFAULT_ACTOR_ISOLATION: nonisolated
