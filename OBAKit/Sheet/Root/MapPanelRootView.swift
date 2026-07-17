@@ -24,12 +24,17 @@ struct MapPanelRootView: View {
 
     @StateObject private var coordinator: SheetCoordinator<AppSheetRoute>
     @StateObject private var mapViewModel: MapViewModel
+    @StateObject private var stopsObserver: MapStopsObserver
 
     @State private var cameraPosition: MapCameraPosition = .userLocation(fallback: .automatic)
     /// Presentation state only. The popup reads its data from
     /// `mapViewModel.weatherDisplay` so a refresh that finishes while the card
     /// is open updates the displayed forecast in place.
     @State private var isWeatherPopupPresented = false
+
+    /// The stop the user tapped, if any. Bound to the `Map`'s `selection`; cleared
+    /// after pushing so re-tapping the same stop pushes again.
+    @State private var selectedStopID: Stop.ID?
 
     @Environment(\.scenePhase) private var scenePhase
 
@@ -43,30 +48,34 @@ struct MapPanelRootView: View {
     /// opacity ramps from 1 → 0 across this window as the sheet approaches `halfScreenHeight`.
     private let toolbarFadeRange: CGFloat = 50
 
+    private let application: Application
     private let factory: AppSheetViewFactory
 
     init(application: Application, factory: AppSheetViewFactory) {
         _coordinator = StateObject(wrappedValue: SheetCoordinator<AppSheetRoute>(root: .home))
         _mapViewModel = StateObject(wrappedValue: MapViewModel(application: application))
+        _stopsObserver = StateObject(wrappedValue: MapStopsObserver(mapRegionManager: application.mapRegionManager))
+        self.application = application
         self.factory = factory
     }
 
     var body: some View {
-        // TODO: Wire this SwiftUI `Map` to `application.mapRegionManager`.
-        // The UIKit `MapViewController` flow populates
-        // `mapRegionManager.stops` via `MapRegionManager.requestStops`
-        // whenever its MKMapView's region changes; both `RoutePickerViewModel`
-        // and `CurrentTripViewModel` read from that cache before falling back
-        // to a coordinate-based API call. Because this SwiftUI `Map` never
-        // touches `MapRegionManager`, the cache stays empty here and the
-        // pickers always hit the coordinate-fallback path — producing a
-        // different (often larger) route list than the UIKit picker shows for
-        // the same on-screen viewport. Fix is to observe `cameraPosition`
-        // changes, convert to an `MKCoordinateRegion`, and feed it into
-        // `MapRegionManager` so both surfaces agree on the cached stop set
-        // (also unblocks rendering stop annotations on the SwiftUI map).
-        Map(position: $cameraPosition) {
+        Map(position: $cameraPosition, selection: $selectedStopID) {
             UserAnnotation()
+            ForEach(stopsObserver.stops) { stop in
+                Annotation("", coordinate: stop.coordinate) {
+                    Image(uiImage: application.stopIconFactory.buildSquircleIcon(for: stop))
+                }
+                .tag(stop.id)
+            }
+        }
+        .onMapCameraChange(frequency: .onEnd) { context in
+            application.mapRegionManager.scheduleStopsRequest(in: context.region)
+        }
+        .onChange(of: selectedStopID) { _, id in
+            guard let id else { return }
+            coordinator.push(.stopDetails(stopID: id))
+            selectedStopID = nil
         }
         .safeAreaPadding(.bottom, 180)
         .onGeometryChange(for: CGFloat.self) { proxy in
@@ -89,31 +98,7 @@ struct MapPanelRootView: View {
             bottomFloatingTripButton
         }
         .floatingSheet(coordinator: coordinator) { route in
-            factory.view(for: route)
-                .fullScreenCover(isPresented: $isWeatherPopupPresented) {
-                    WeatherDetailPopup(
-                        display: mapViewModel.weatherDisplay,
-                        isPresented: $isWeatherPopupPresented
-                    )
-                    .presentationBackground(.clear)
-                }
-                .onGeometryChange(for: CGFloat.self) { proxy in
-                    max(min(proxy.size.height, halfScreenHeight), 0)
-                } action: { oldValue, newValue in
-                    sheetHeight = newValue
-
-                    /// Opacity calculation — fade band sits immediately
-                    /// below `halfScreenHeight`.
-                    let fadeStart = halfScreenHeight - toolbarFadeRange
-                    let progress = max(min((newValue - fadeStart) / toolbarFadeRange, 1), 0)
-                    toolbarsOpacity = 1 - progress
-
-                    /// Animation duration
-                    let diff = abs(newValue - oldValue)
-                    let duration = max(min(diff / 100, 0.3), 0)
-                    toolbarsAnimationDuration = duration
-                }
-                .ignoresSafeArea()
+            buildSheetContent(for: route)
         }
         .onAppear {
             mapViewModel.start()
@@ -123,6 +108,35 @@ struct MapPanelRootView: View {
                 mapViewModel.onAppBecameActive()
             }
         }
+    }
+
+    @ViewBuilder
+    private func buildSheetContent(for route: AppSheetRoute) -> some View {
+        factory.view(for: route)
+            .fullScreenCover(isPresented: $isWeatherPopupPresented) {
+                WeatherDetailPopup(
+                    display: mapViewModel.weatherDisplay,
+                    isPresented: $isWeatherPopupPresented
+                )
+                .presentationBackground(.clear)
+            }
+            .onGeometryChange(for: CGFloat.self) { proxy in
+                max(min(proxy.size.height, halfScreenHeight), 0)
+            } action: { oldValue, newValue in
+                sheetHeight = newValue
+
+                /// Opacity calculation — fade band sits immediately
+                /// below `halfScreenHeight`.
+                let fadeStart = halfScreenHeight - toolbarFadeRange
+                let progress = max(min((newValue - fadeStart) / toolbarFadeRange, 1), 0)
+                toolbarsOpacity = 1 - progress
+
+                /// Animation duration
+                let diff = abs(newValue - oldValue)
+                let duration = max(min(diff / 100, 0.3), 0)
+                toolbarsAnimationDuration = duration
+            }
+            .ignoresSafeArea()
     }
 
     @ViewBuilder
