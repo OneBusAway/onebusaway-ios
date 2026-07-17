@@ -110,6 +110,10 @@ struct MapPanelRootView: View {
         }
     }
 
+    /// Extracted from the `.floatingSheet` closure to keep `body` under Swift's
+    /// type-check budget — inlining causes a "compiler unable to type-check this
+    /// expression in reasonable time" error after `.onMapCameraChange` and
+    /// `.onChange(of: selectedStopID)` were added.
     @ViewBuilder
     private func buildSheetContent(for route: AppSheetRoute) -> some View {
         factory.view(for: route)
