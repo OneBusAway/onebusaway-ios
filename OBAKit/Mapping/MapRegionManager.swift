@@ -248,7 +248,12 @@ public class MapRegionManager: NSObject,
 
     // MARK: - Data Loading
 
-    func requestDataForMapRegion() async {
+    /// Loads stops for an explicitly provided region and stores them in `stops`.
+    ///
+    /// Used by SwiftUI hosts whose map view is not this manager's `mapView`.
+    /// Applies the same fudge factor, cache-save, and cache-fallback behavior as
+    /// the UIKit region-change path.
+    func requestStops(in region: MKCoordinateRegion) async {
         guard let apiService = application.apiService else {
             return
         }
@@ -263,7 +268,7 @@ public class MapRegionManager: NSObject,
             }
         }
 
-        var mapRegion = mapView.region
+        var mapRegion = region
         mapRegion.span.latitudeDelta *= preferredLoadDataRegionFudgeFactor
         mapRegion.span.longitudeDelta *= preferredLoadDataRegionFudgeFactor
 
@@ -310,6 +315,11 @@ public class MapRegionManager: NSObject,
             }
             await self.application.displayError(error)
         }
+    }
+
+    /// UIKit entrypoint: loads stops for the manager's own `mapView` region.
+    func requestDataForMapRegion() async {
+        await requestStops(in: mapView.region)
     }
 
     @objc func requestDataForMapRegion(_ timer: Timer) {

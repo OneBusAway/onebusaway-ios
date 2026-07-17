@@ -9,6 +9,8 @@
 
 import Foundation
 import XCTest
+import MapKit
+import CoreLocation
 @testable import OBAKit
 @testable import OBAKitCore
 import Nimble
@@ -16,6 +18,19 @@ import Nimble
 // swiftlintXdisable force_try
 
 class MapRegionManagerTests: OBATestCase {
+    var queue: OperationQueue!
+
+    override func setUp() {
+        super.setUp()
+        queue = OperationQueue()
+        queue.maxConcurrentOperationCount = 1
+    }
+
+    override func tearDown() {
+        super.tearDown()
+        queue.cancelAllOperations()
+    }
+
     private var regionsFilePath: String { Bundle.main.path(forResource: "regions", ofType: "json")! }
 
     private func makeConfig(locationService: LocationService, bundledRegionsPath: String, dataLoader: MockDataLoader) -> AppConfig {
@@ -25,11 +40,12 @@ class MapRegionManagerTests: OBATestCase {
             appVersion: appVersion,
             userDefaults: userDefaults,
             analytics: AnalyticsMock(),
-            queue: OperationQueue(),
+            queue: queue,
             locationService: locationService,
             bundledRegionsFilePath: bundledRegionsPath,
             regionsAPIPath: regionsPath,
-            dataLoader: dataLoader
+            dataLoader: dataLoader,
+            fixedRegionName: Fixtures.pugetSoundRegion.name
         )
     }
 
@@ -85,5 +101,39 @@ class MapRegionManagerTests: OBATestCase {
         let mgr = MapRegionManager(application: application)
         expect(application.currentRegion).to(beNil())
         expect(mgr.lastVisibleMapRect).to(beNil())
+    }
+
+    @MainActor
+    func test_requestStops_inRegion_populatesStops() async {
+        let dataLoader = MockDataLoader(testName: name)
+        stubRegions(dataLoader: dataLoader)
+        stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
+        Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
+
+        // Any stops-for-location request returns the Seattle fixture.
+        dataLoader.mock(data: Fixtures.loadData(file: "stops_for_location_seattle.json")) { request in
+            request.url?.path.contains("/api/where/stops-for-location.json") ?? false
+        }
+
+        let locManager = MockAuthorizedLocationManager(
+            updateLocation: TestData.mockSeattleLocation,
+            updateHeading: TestData.mockHeading
+        )
+        let locationService = LocationService(userDefaults: userDefaults, locationManager: locManager)
+        locationService.startUpdates()
+
+        let config = makeConfig(locationService: locationService, bundledRegionsPath: regionsFilePath, dataLoader: dataLoader)
+
+        let application = Application(config: config)
+        let mgr = MapRegionManager(application: application)
+        let region = MKCoordinateRegion(
+            center: TestData.mockSeattleLocation.coordinate,
+            latitudinalMeters: 5000,
+            longitudinalMeters: 5000
+        )
+
+        await mgr.requestStops(in: region)
+
+        expect(mgr.stops).toNot(beEmpty())
     }
 }
