@@ -50,14 +50,14 @@ nonisolated struct SurveyLauncherListItem: OBAListViewItem {
 }
 
 // MARK: - Protocol Conformances
-extension SurveyLauncherListItem: Equatable {
+nonisolated extension SurveyLauncherListItem: Equatable {
     static func == (lhs: SurveyLauncherListItem, rhs: SurveyLauncherListItem) -> Bool {
         return lhs.survey.id == rhs.survey.id &&
                lhs.title == rhs.title
     }
 }
 
-extension SurveyLauncherListItem: Hashable {
+nonisolated extension SurveyLauncherListItem: Hashable {
     func hash(into hasher: inout Hasher) {
         hasher.combine(survey.id)
         hasher.combine(title)

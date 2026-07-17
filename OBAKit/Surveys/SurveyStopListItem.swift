@@ -56,14 +56,14 @@ nonisolated struct SurveyStopListItem: OBAListViewItem {
 }
 
 // MARK: - Protocol Conformances
-extension SurveyStopListItem: Equatable {
+nonisolated extension SurveyStopListItem: Equatable {
     static func == (lhs: SurveyStopListItem, rhs: SurveyStopListItem) -> Bool {
         return lhs.survey.id == rhs.survey.id &&
                lhs.selectedOption == rhs.selectedOption
     }
 }
 
-extension SurveyStopListItem: Hashable {
+nonisolated extension SurveyStopListItem: Hashable {
     func hash(into hasher: inout Hasher) {
         hasher.combine(survey.id)
         hasher.combine(selectedOption)
