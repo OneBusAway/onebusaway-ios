@@ -36,7 +36,13 @@ struct MapPanelRootView: View {
     /// after pushing so re-tapping the same stop pushes again.
     @State private var selectedStopID: Stop.ID?
 
+    /// Whether the map is zoomed in far enough to load and show stops. Mirrors the
+    /// UIKit path's `requiredHeightToShowStops` gate so both surfaces suppress
+    /// stops (and skip the stops request) at region-level zoom.
+    @State private var isZoomedInForStops = false
+
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.colorScheme) private var colorScheme
 
     @State private var sheetHeight: CGFloat = 0
     @State private var toolbarsAnimationDuration: CGFloat = 0
@@ -62,20 +68,38 @@ struct MapPanelRootView: View {
     var body: some View {
         Map(position: $cameraPosition, selection: $selectedStopID) {
             UserAnnotation()
-            ForEach(stopsObserver.stops) { stop in
-                // Empty title on the Annotation suppresses the visual label
-                // (this project's SwiftUI SDK does not expose
-                // `.annotationTitles(.hidden)` on `Map`, so we route
-                // accessibility through the icon's own `accessibilityLabel`
-                // instead of a hidden title string).
-                Annotation("", coordinate: stop.coordinate) {
-                    Image(uiImage: application.stopIconFactory.buildSquircleIcon(for: stop))
+            // Suppressed at region-level zoom to match the UIKit path, which
+            // removes stop annotations above `requiredHeightToShowStops`.
+            if isZoomedInForStops {
+                ForEach(stopsObserver.stops) { stop in
+                    // Empty title on the Annotation suppresses the visual label
+                    // (this project's SwiftUI SDK does not expose
+                    // `.annotationTitles(.hidden)` on `Map`, so we route
+                    // accessibility through the icon's own `accessibilityLabel`
+                    // instead of a hidden title string).
+                    Annotation("", coordinate: stop.coordinate) {
+                        Image(uiImage: application.stopIconFactory.buildSquircleIcon(
+                            for: stop,
+                            isBookmarked: application.userDataStore.findBookmark(stopID: stop.id) != nil,
+                            traits: UITraitCollection(userInterfaceStyle: colorScheme == .dark ? .dark : .light)
+                        ))
                         .accessibilityLabel(stop.name)
+                    }
+                    .tag(stop.id)
                 }
-                .tag(stop.id)
             }
         }
         .onMapCameraChange(frequency: .onEnd) { context in
+            // Gate on the same threshold as the UIKit region-change path so both
+            // surfaces agree on when stops load, and so region-level zoom doesn't
+            // fire wasteful (server-throttled) full-region stop requests.
+            isZoomedInForStops = context.rect.height <= MapRegionManager.requiredHeightToShowStops
+            guard isZoomedInForStops else {
+                // Zoomed out: clear accumulated stops, matching the UIKit path
+                // which removes all stop annotations above the threshold.
+                stopsObserver.reset()
+                return
+            }
             application.mapRegionManager.scheduleStopsRequest(in: context.region)
         }
         .onChange(of: selectedStopID) { _, id in

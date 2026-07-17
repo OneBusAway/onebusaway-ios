@@ -536,7 +536,11 @@ public class MapRegionManager: NSObject,
     }
     // MARK: - Zoom In Warning
 
-    private static let requiredHeightToShowStops = 40000.0
+    /// Above this visible-map-rect height (in map points), the map is considered
+    /// too zoomed-out to load or display stops. Both the UIKit region-change path
+    /// and SwiftUI hosts (via `MapPanelRootView`) gate stop loading on this value
+    /// so the two surfaces agree on when stops appear.
+    static let requiredHeightToShowStops = 40000.0
 
     public var zoomInStatus: Bool {
         mapView.visibleMapRect.height > MapRegionManager.requiredHeightToShowStops

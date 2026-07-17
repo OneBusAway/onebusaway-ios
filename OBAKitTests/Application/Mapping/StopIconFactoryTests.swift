@@ -18,14 +18,17 @@ final class StopIconFactoryTests: OBATestCase {
         StopIconFactory(iconSize: 44, themeColors: ThemeColors.shared)
     }
 
+    private let lightTraits = UITraitCollection(userInterfaceStyle: .light)
+    private let darkTraits = UITraitCollection(userInterfaceStyle: .dark)
+
     func test_buildSquircleIcon_returnsCachedInstanceForSameStop() throws {
         let factory = makeFactory()
         let stop = try XCTUnwrap(Fixtures.loadSomeStops().first)
 
-        let first = factory.buildSquircleIcon(for: stop)
-        let second = factory.buildSquircleIcon(for: stop)
+        let first = factory.buildSquircleIcon(for: stop, isBookmarked: false, traits: lightTraits)
+        let second = factory.buildSquircleIcon(for: stop, isBookmarked: false, traits: lightTraits)
 
-        // Same (routeType, direction) key → cache hit → identical instance.
+        // Same (routeType, direction, bookmarked, appearance) key → cache hit → identical instance.
         expect(first) === second
     }
 
@@ -33,9 +36,33 @@ final class StopIconFactoryTests: OBATestCase {
         let factory = makeFactory()
         let stop = try XCTUnwrap(Fixtures.loadSomeStops().first)
 
-        let icon = factory.buildSquircleIcon(for: stop)
+        let icon = factory.buildSquircleIcon(for: stop, isBookmarked: false, traits: lightTraits)
 
         expect(icon.size.width) == 44
         expect(icon.size.height) == 44
+    }
+
+    func test_buildSquircleIcon_rendersSeparatelyPerAppearance() throws {
+        let factory = makeFactory()
+        let stop = try XCTUnwrap(Fixtures.loadSomeStops().first)
+
+        let light = factory.buildSquircleIcon(for: stop, isBookmarked: false, traits: lightTraits)
+        let dark = factory.buildSquircleIcon(for: stop, isBookmarked: false, traits: darkTraits)
+
+        // Different appearance keys → distinct cached instances, so a light-mode
+        // render is never served after the user switches to dark.
+        expect(light) !== dark
+    }
+
+    func test_buildSquircleIcon_rendersSeparatelyForBookmarkedStops() throws {
+        let factory = makeFactory()
+        let stop = try XCTUnwrap(Fixtures.loadSomeStops().first)
+
+        let plain = factory.buildSquircleIcon(for: stop, isBookmarked: false, traits: lightTraits)
+        let bookmarked = factory.buildSquircleIcon(for: stop, isBookmarked: true, traits: lightTraits)
+
+        // Bookmarked stops use the brand fill and regular stops a neutral fill, so
+        // they must render (and cache) as distinct instances.
+        expect(plain) !== bookmarked
     }
 }

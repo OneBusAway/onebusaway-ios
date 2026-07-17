@@ -29,6 +29,14 @@ final class MapStopsObserver: NSObject, ObservableObject, MapRegionDelegate {
         mapRegionManager.addDelegate(self)
     }
 
+    /// Clears the accumulated stops. Call when the map zooms out past the
+    /// stop-display threshold, mirroring the UIKit path, which removes all stop
+    /// annotations when zoomed out (`reloadStopAnnotations`).
+    func reset() {
+        guard !stops.isEmpty else { return }
+        stops = []
+    }
+
     // MARK: - MapRegionDelegate
 
     // `MapRegionDelegate` is `@objc optional`; annotate the implementation so
@@ -36,6 +44,20 @@ final class MapStopsObserver: NSObject, ObservableObject, MapRegionDelegate {
     // inferred bridging.
     @objc
     func mapRegionManager(_ manager: MapRegionManager, stopsUpdated stops: [Stop]) {
-        self.stops = stops
+        // Accumulate (union) rather than replace, matching the UIKit path:
+        // `displayUniqueStopAnnotations` only *adds* stops not already on the map
+        // and never removes one just because it left the latest region's result.
+        // A settled camera re-issues the stops request on every pan, so replacing
+        // the array would make the SwiftUI `Map` tear down and re-add annotations
+        // each time — panning away and back would re-render the same pins (the
+        // reported flicker). By only appending genuinely new stops (and keeping
+        // existing instances), returning to a visited area is a no-op: nothing is
+        // republished, so the pins already on screen stay put. The accumulated set
+        // is bounded by `reset()` on zoom-out.
+        let existingIDs = Set(self.stops.map(\.id))
+        let newStops = stops.filter { !existingIDs.contains($0.id) }
+        guard !newStops.isEmpty else { return }
+
+        self.stops += newStops
     }
 }

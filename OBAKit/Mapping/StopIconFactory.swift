@@ -134,16 +134,38 @@ class StopIconFactory: NSObject {
 
     // MARK: - Squircle map annotation icon
 
-    /// Map annotation icon: the recent-stops squircle treatment (brand-gradient
-    /// squircle + white transport glyph) with the stop's directional arrow drawn
-    /// in the outer track. Cached by `(routeType, direction)`.
-    func buildSquircleIcon(for stop: Stop) -> UIImage {
-        renderSquircleIcon(routeType: stop.prioritizedRouteTypeForDisplay, direction: stop.direction)
+    /// Corner-radius ratio for the squircle background, relative to the drawn
+    /// rect (not the full icon bounds). Matches `Icons.squircleTransportIcon`'s
+    /// `0.28` so the map icon reads as a rounded square rather than a circle.
+    private let squircleCornerRadiusRatio: CGFloat = 0.28
+
+    /// Map annotation icon: the recent-stops squircle treatment (rounded-square
+    /// gradient + transport glyph) with the stop's directional arrow drawn in the
+    /// outer track.
+    ///
+    /// Bookmarked stops get the brand-color treatment (matching the UIKit map,
+    /// where `buildIcon(isBookmarked:)` colors bookmarks with the brand); regular
+    /// stops get a neutral treatment so bookmarks stand out. Cached by
+    /// `(routeType, direction, bookmarked, appearance)`.
+    func buildSquircleIcon(for stop: Stop, isBookmarked: Bool, traits: UITraitCollection) -> UIImage {
+        renderSquircleIcon(
+            routeType: stop.prioritizedRouteTypeForDisplay,
+            direction: stop.direction,
+            isBookmarked: isBookmarked,
+            isDarkMode: traits.userInterfaceStyle == .dark
+        )
     }
 
-    /// Draws a squircle stop icon with the specified route type and direction.
-    func renderSquircleIcon(routeType: Route.RouteType, direction: Direction) -> UIImage {
-        let key = "squircle:\(routeType.rawValue):\(direction.rawValue):\(iconSize)" as NSString
+    /// Draws a squircle stop icon with the specified route type, direction, and
+    /// bookmarked state.
+    func renderSquircleIcon(routeType: Route.RouteType, direction: Direction, isBookmarked: Bool, isDarkMode: Bool) -> UIImage {
+        // Appearance is part of the key because the gradient and arrow colors
+        // resolve differently in dark mode; without it a light-mode render would
+        // be served after the user switches appearance. `isBookmarked` is keyed
+        // because bookmarked and regular stops use different fills.
+        let appearanceStyle = isDarkMode ? "dark" : "light"
+        let bookmarkStyle = isBookmarked ? "bookmarked" : "plain"
+        let key = "squircle:\(routeType.rawValue):\(direction.rawValue):\(iconSize):\(bookmarkStyle):\(appearanceStyle)" as NSString
         if let cached = squircleIconCache.object(forKey: key) {
             return cached
         }
@@ -156,8 +178,14 @@ class StopIconFactory: NSObject {
             guard let self = self else { return }
             let ctx = rendererContext.cgContext
 
-            self.drawSquircleBackground(rect: rect, context: ctx)
-            self.drawIcon(routeType: routeType, rect: rect, context: ctx, color: .white)
+            self.drawSquircleBackground(rect: rect, isBookmarked: isBookmarked, context: ctx)
+            let glyphColor: UIColor = isBookmarked ? .white : self.transportIconColor
+            self.drawIcon(routeType: routeType, rect: rect, context: ctx, color: glyphColor)
+            // A border keeps the neutral (non-bookmarked) squircle legible over
+            // the muted map; the brand fill of a bookmark already stands on its own.
+            if !isBookmarked {
+                self.drawSquircleBorder(rect: rect, context: ctx)
+            }
             self.drawArrowImage(direction: direction, strokeColor: self.strokeColor, rect: imageBounds, context: ctx)
         }
 
@@ -165,20 +193,22 @@ class StopIconFactory: NSObject {
         return image
     }
 
-    /// Draws the brand-color gradient squircle background, echoing
-    /// `Icons.squircleTransportIcon`.
-    private func drawSquircleBackground(rect: CGRect, context: CGContext) {
+    /// Draws the gradient squircle background. Bookmarked stops use the brand
+    /// gradient (echoing `Icons.squircleTransportIcon`); regular stops use a
+    /// neutral fill so bookmarks read as distinct.
+    private func drawSquircleBackground(rect: CGRect, isBookmarked: Bool, context: CGContext) {
         context.pushPop {
-            let brand = themeColors.brand
-            UIBezierPath(roundedRect: rect, cornerRadius: iconSize * 0.28).addClip()
+            let cornerRadius = rect.width * squircleCornerRadiusRatio
+            UIBezierPath(roundedRect: rect, cornerRadius: cornerRadius).addClip()
 
+            let baseColor = isBookmarked ? themeColors.brand : fillColor
             let colors = [
-                brand.blended(with: .white, amount: 0.18).cgColor,
-                brand.blended(with: .black, amount: 0.12).cgColor
+                baseColor.blended(with: .white, amount: 0.18).cgColor,
+                baseColor.blended(with: .black, amount: 0.12).cgColor
             ]
             let colorSpace = CGColorSpaceCreateDeviceRGB()
             guard let gradient = CGGradient(colorsSpace: colorSpace, colors: colors as CFArray, locations: [0, 1]) else {
-                brand.setFill()
+                baseColor.setFill()
                 context.fill(rect)
                 return
             }
@@ -189,6 +219,18 @@ class StopIconFactory: NSObject {
                 end: CGPoint(x: rect.midX, y: rect.maxY),
                 options: []
             )
+        }
+    }
+
+    /// Strokes the rounded-square border used by the neutral squircle treatment.
+    private func drawSquircleBorder(rect: CGRect, context: CGContext) {
+        context.pushPop {
+            let inset = borderWidth / 2.0
+            let cornerRadius = rect.width * squircleCornerRadiusRatio
+            let bezierPath = UIBezierPath(roundedRect: rect.insetBy(dx: inset, dy: inset), cornerRadius: cornerRadius)
+            bezierPath.lineWidth = borderWidth
+            context.setStrokeColor(strokeColor.cgColor)
+            bezierPath.stroke()
         }
     }
 
