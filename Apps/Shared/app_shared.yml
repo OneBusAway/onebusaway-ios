@@ -7,6 +7,23 @@ name: OBAKit
 settings:
   base:
     MARKETING_VERSION: 26.2.2
+    # Swift 6 migration Phases 3–4 (docs/swift6-migration-plan.md): every
+    # framework and app target builds in the Swift 6 language mode with
+    # main-actor default isolation. Two targets override this base:
+    # OBAKitCore pins SWIFT_DEFAULT_ACTOR_ISOLATION back to nonisolated (it
+    # owns actors and background decode), and OBAKitTests is temporarily
+    # pinned to Swift 5 (see OBAKitTests/project.yml). Approachable
+    # concurrency stays on permanently for Swift 6 targets (two of its five
+    # features are not part of the Swift 6 language mode).
+    SWIFT_STRICT_CONCURRENCY: complete
+    SWIFT_APPROACHABLE_CONCURRENCY: YES
+    SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
+    SWIFT_VERSION: "6.0"
+    # Zero-warning lock (plan Phase 0, step 2): every Swift 6 target is at zero
+    # data-race diagnostics; escalate the concurrency diagnostic groups to
+    # errors so they can't creep back in as warnings. OBAKitTests (Swift 5
+    # pin, 39 ratcheted warnings) opts out in its own project.yml.
+    SWIFT_WARNINGS_AS_ERRORS_GROUPS: "ActorIsolatedCall SendableClosureCaptures RegionIsolation ConformanceIsolation MutableGlobalVariable"
 
 options:
   minimumXcodeGenVersion: 2.42

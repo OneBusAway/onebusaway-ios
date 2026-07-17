@@ -10,7 +10,8 @@
 import Foundation
 import CoreLocation
 
-@objc public class MigrationRecentStop: NSObject, NSCoding {
+// Fully immutable; @unchecked only because NSObject is not Sendable.
+@objc public final class MigrationRecentStop: NSObject, NSCoding, @unchecked Sendable {
     public let title: String
     public let subtitle: String
     public let stopID: StopID

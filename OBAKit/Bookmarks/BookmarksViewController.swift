@@ -271,7 +271,19 @@ class BookmarksViewController: UIHostingController<BookmarksRootView>,
                 if !application.liveActivityTracker.isForwardingPushToken(activityID: activity.id) {
                     trackLiveActivity(activity, arrivalDepartures: arrivalDepartures)
                 }
-                Task {
+                // `Activity` is not Sendable and this loop's instance lives in the
+                // main-actor region, so it can't be sent to ActivityKit's @concurrent
+                // `update`. Re-fetch by ID inside a detached task instead — that copy
+                // never crosses an isolation boundary.
+                let activityID = activity.id
+                Task.detached {
+                    guard let activity = Activity<TripAttributes>.activities.first(where: { $0.id == activityID }) else {
+                        // The activity ended between the loop and this task; dropping
+                        // the update is correct, but log it so a stale Lock Screen is
+                        // diagnosable.
+                        Logger.info("Live Activity \(activityID) is no longer running; skipping update.")
+                        return
+                    }
                     await activity.update(
                         .init(state: contentState, staleDate: nil)
                     )

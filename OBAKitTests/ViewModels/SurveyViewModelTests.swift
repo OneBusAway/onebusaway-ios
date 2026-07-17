@@ -30,18 +30,18 @@ class SurveyViewModelTests: OBATestCase {
     private var dataStore: UserDefaultsStore!
     private var cancellables: Set<AnyCancellable>!
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         dataStore = UserDefaultsStore(userDefaults: userDefaults)
         surveyService = SurveyService(apiService: nil, userDataStore: dataStore)
         cancellables = []
     }
 
-    override func tearDown() {
+    override func tearDown() async throws {
         cancellables = nil
         surveyService = nil
         dataStore = nil
-        super.tearDown()
+        try await super.tearDown()
     }
 
     // MARK: - Fixtures

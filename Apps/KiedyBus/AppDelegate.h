@@ -11,6 +11,10 @@
 
 @class OBAApplication;
 
+/// NS_SWIFT_UI_ACTOR: the app delegate is main-thread-bound by UIKit contract;
+/// this lets Swift (in the Swift 6 language mode) call its properties without
+/// isolation errors.
+NS_SWIFT_UI_ACTOR
 @interface AppDelegate : UIResponder <UIApplicationDelegate>
 
 /// Set by the `SceneDelegate` once its window is created. The root view

@@ -15,6 +15,7 @@ import UIKit
 @testable import OBAKit
 @testable import OBAKitCore
 
+@MainActor
 class CoreGraphicsExtensionsTests: XCTestCase {
     
     func test_CGContext_pushPop() {

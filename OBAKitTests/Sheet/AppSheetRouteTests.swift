@@ -14,6 +14,7 @@ import Nimble
 
 /// Pure-enum tests for `AppSheetRoute`: stable identifiers,
 /// stacking preference, and per-detent configuration.
+@MainActor
 final class AppSheetRouteTests: XCTestCase {
 
     // MARK: - Identifiers

@@ -73,20 +73,22 @@ public class OBACloudPushService: NSObject, PushServiceProvider {
 
         pendingCallbacks.append(callback)
 
+        // The completion handler runs on a background queue; hop to the main actor
+        // before touching state or UIApplication.
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { [weak self] granted, error in
-            guard let self else { return }
+            Task { @MainActor in
+                guard let self else { return }
 
-            if let error {
-                self.errorHandler?(error)
-                return
-            }
+                if let error {
+                    self.errorHandler?(error)
+                    return
+                }
 
-            guard granted else {
-                self.errorHandler?(PushErrors.authorizationDenied)
-                return
-            }
+                guard granted else {
+                    self.errorHandler?(PushErrors.authorizationDenied)
+                    return
+                }
 
-            DispatchQueue.main.async {
                 UIApplication.shared.registerForRemoteNotifications()
             }
         }

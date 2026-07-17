@@ -11,7 +11,9 @@ import Foundation
 
 public typealias TripIdentifier = String
 
-public class ArrivalDeparture: NSObject, Identifiable, Decodable, HasReferences {
+// @unchecked Sendable per the HasReferences concurrency contract (see References.swift):
+// mutation is confined to decode + loadReferences, before the instance is shared.
+public final class ArrivalDeparture: NSObject, Identifiable, Decodable, HasReferences, @unchecked Sendable {
 
     /// true if this transit vehicle is one that riders could arrive on
     public let arrivalEnabled: Bool

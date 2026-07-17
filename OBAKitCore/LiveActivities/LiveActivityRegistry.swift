@@ -276,7 +276,7 @@ public final class LiveActivityRegistry {
     /// whom "abandon the DELETE" is the desired outcome. `Task.detached` is what buys the
     /// immunity: unlike `Task {}`, it has no parent to inherit a cancelled state from.
     private func withoutInheritingCancellation(_ work: @escaping @Sendable () async throws -> Void) async throws {
-        try await Task.detached(operation: work).value
+        try await Task.detached { try await work() }.value
     }
 
     /// Whether `error` means the server *told us* the subscription no longer exists, as opposed

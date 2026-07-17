@@ -5,7 +5,7 @@
 //  Created by Alan Chu on 6/20/21.
 //
 
-public struct OBAListSectionConfiguration: Equatable {
+nonisolated public struct OBAListSectionConfiguration: Equatable {
     public enum ListAppearance: Equatable {
         case plain
         case insetGrouped

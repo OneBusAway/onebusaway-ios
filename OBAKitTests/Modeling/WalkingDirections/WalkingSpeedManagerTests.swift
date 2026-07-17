@@ -12,7 +12,6 @@ import Nimble
 @testable import OBAKit
 @testable import OBAKitCore
 
-@MainActor
 final class WalkingSpeedManagerTests: OBATestCase {
 
     private struct FakeProvider: WalkingSpeedHealthKitProviding {

@@ -39,6 +39,9 @@ class TaskController<DataType>: UIViewController, AppContext {
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
+    // Not `isolated deinit`: Swift 6.2 (CI's toolchain) rejects isolated deinits
+    // on generic classes. A plain deinit may still read the Sendable `task`
+    // stored property.
     deinit {
         task?.cancel()
     }

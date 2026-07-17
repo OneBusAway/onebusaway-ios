@@ -12,7 +12,7 @@ import OBAKitCore
 
 // MARK: - List Item
 
-struct TransferArrivalItem: OBAListViewItem {
+nonisolated struct TransferArrivalItem: OBAListViewItem {
     var configuration: OBAListViewItemConfiguration {
         return .custom(TransferArrivalContentConfiguration(arrivalTime: arrivalTime, routeDisplay: routeDisplay))
     }
@@ -46,7 +46,7 @@ struct TransferArrivalItem: OBAListViewItem {
 
 // MARK: - Content Configuration
 
-struct TransferArrivalContentConfiguration: OBAContentConfiguration {
+nonisolated struct TransferArrivalContentConfiguration: OBAContentConfiguration {
     var arrivalTime: Date
     var routeDisplay: String
     var formatters: Formatters?

@@ -96,7 +96,9 @@ public class Application: CoreApplication, PushServiceDelegate {
     @objc lazy var userActivityBuilder = UserActivityBuilder(application: self)
 
     /// Handles all deep-linking into the app.
-    @objc public private(set) lazy var appLinksRouter: AppLinksRouter? = {
+    @objc public private(set) lazy var appLinksRouter: AppLinksRouter? = makeAppLinksRouter()
+
+    private func makeAppLinksRouter() -> AppLinksRouter? {
         let router = AppLinksRouter(application: self)
 
         router?.showStopHandler = { [weak self] stop in
@@ -135,7 +137,7 @@ public class Application: CoreApplication, PushServiceDelegate {
         }
 
         return router
-    }()
+    }
 
     /// The application delegate object.
     @objc public weak var delegate: ApplicationDelegate?

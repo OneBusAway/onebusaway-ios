@@ -14,6 +14,7 @@ import SwiftUI
 @testable import OBAKit
 
 @available(iOS 14.0, *)
+@MainActor
 class TaskButtonTests: XCTestCase {
     
     func test_ActionOption_allCases() {

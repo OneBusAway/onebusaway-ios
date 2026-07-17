@@ -43,7 +43,8 @@ class MockTask: URLSessionDataTask, @unchecked Sendable {
     }
 }
 
-class MockDataLoader: NSObject, URLDataLoader {
+// @unchecked Sendable: all mutable state is guarded by the locks below.
+class MockDataLoader: NSObject, URLDataLoader, @unchecked Sendable {
     /// Guarded by `mockResponsesLock`: tests mutate the response table from the main
     /// thread while `Application` background tasks (regions refresh, agency alerts)
     /// concurrently match requests against it.

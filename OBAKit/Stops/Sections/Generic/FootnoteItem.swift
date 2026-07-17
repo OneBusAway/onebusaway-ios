@@ -7,7 +7,7 @@
 
 import UIKit
 
-struct FootnoteItem: OBAListViewItem {
+nonisolated struct FootnoteItem: OBAListViewItem {
     var configuration: OBAListViewItemConfiguration {
         var config = UIListContentConfiguration.cell()
         config.textProperties.font = .preferredFont(forTextStyle: .footnote)

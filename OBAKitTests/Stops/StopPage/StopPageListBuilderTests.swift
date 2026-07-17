@@ -15,6 +15,7 @@ private func dep(_ id: String, route: String, mins: Int) -> StubDeparture {
     StubDeparture(id: id, routeID: route, arrivalDepartureMinutes: mins)
 }
 
+@MainActor
 final class StopPageListBuilderTests: XCTestCase {
 
     // MARK: - Chronological partition

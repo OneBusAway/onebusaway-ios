@@ -14,6 +14,7 @@ import XCTest
 import CoreLocation
 import Nimble
 
+@MainActor
 class LocationServiceTests: XCTestCase {
     // MARK: - Authorization
 

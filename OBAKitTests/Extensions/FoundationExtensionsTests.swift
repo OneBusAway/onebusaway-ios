@@ -12,6 +12,7 @@ import XCTest
 import Nimble
 @testable import OBAKitCore
 
+@MainActor
 class FoundationExtensionsTests: XCTestCase {
 
     // MARK: - Error.isCancellation

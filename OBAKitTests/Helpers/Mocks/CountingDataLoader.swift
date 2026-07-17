@@ -15,9 +15,12 @@ import OBAKitCore
 ///
 /// Used by ViewModel tests to assert that an in-flight-load guard collapses concurrent calls
 /// into a single network request.
-class CountingDataLoader: NSObject, URLDataLoader {
+// @unchecked Sendable: `callCount` is guarded by `callCountLock`.
+class CountingDataLoader: NSObject, URLDataLoader, @unchecked Sendable {
     let inner: MockDataLoader
-    private(set) var callCount = 0
+    private var _callCount = 0
+    private let callCountLock = NSLock()
+    var callCount: Int { callCountLock.withLock { _callCount } }
 
     init(_ inner: MockDataLoader) { self.inner = inner }
 
@@ -26,7 +29,7 @@ class CountingDataLoader: NSObject, URLDataLoader {
     }
 
     func data(for request: URLRequest) async throws -> (Data, URLResponse) {
-        callCount += 1
+        callCountLock.withLock { _callCount += 1 }
         await Task.yield()
         return try await inner.data(for: request)
     }

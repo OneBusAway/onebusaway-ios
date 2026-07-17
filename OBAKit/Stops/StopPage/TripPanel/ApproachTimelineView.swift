@@ -164,7 +164,7 @@ struct ApproachTimelineView: View {
 /// Vertical zig-zag connector segment for the timeline's gap row: enters at
 /// the top center and exits at the bottom center so it lines up with the
 /// straight connector halves above and below.
-private struct ZigZagLine: Shape {
+nonisolated private struct ZigZagLine: Shape {
     func path(in rect: CGRect) -> Path {
         let amplitude = min(rect.width / 2, 5)
         var path = Path()

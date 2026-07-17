@@ -15,6 +15,7 @@ import MapKit
 import CoreGraphics
 @testable import OBAKitCore
 
+@MainActor
 class CoreLocationExtensionsTests: XCTestCase {
     
     func test_CLAuthorizationStatus_description() {

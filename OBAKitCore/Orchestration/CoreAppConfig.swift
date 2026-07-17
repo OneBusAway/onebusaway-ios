@@ -18,6 +18,7 @@ import CoreLocation
 ///         `OBAKit.AppConfig` instead. It offers additional features you'll
 ///         likely want to use in your app.
 @objc(OBACoreAppConfig)
+@MainActor
 open class CoreAppConfig: NSObject {
     public let regionsBaseURL: URL?
     public let regionsAPIPath: String?

@@ -10,7 +10,7 @@
 import Foundation
 
 /// Represents a customizable link item in the More tab.
-public struct MoreTabLinkItem {
+public struct MoreTabLinkItem: Sendable {
     public let title: String
     public let url: URL
 
@@ -29,7 +29,7 @@ public struct MoreTabLinkItem {
 }
 
 /// Configuration for the More tab, read from OBAKitConfig.MoreTab in Info.plist.
-public struct MoreTabConfiguration {
+public struct MoreTabConfiguration: Sendable {
 
     /// Custom support text shown in header. nil = use default localized string.
     public let headerSupportText: String?

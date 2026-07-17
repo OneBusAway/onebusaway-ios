@@ -96,7 +96,7 @@ public class SearchManager: NSObject {
     private func searchAddress(request: SearchRequest) async {
         guard
             let apiService = application.apiService,
-            let mapRect = await application.mapRegionManager.lastVisibleMapRect
+            let mapRect = application.mapRegionManager.lastVisibleMapRect
         else {
             return
         }
@@ -117,7 +117,7 @@ public class SearchManager: NSObject {
     private func searchRoute(request: SearchRequest) async {
         guard
             let apiService = application.apiService,
-            let mapRect = await application.mapRegionManager.lastVisibleMapRect
+            let mapRect = application.mapRegionManager.lastVisibleMapRect
         else {
             return
         }
@@ -157,7 +157,7 @@ public class SearchManager: NSObject {
     private func searchVehicleID(request: SearchRequest) async {
         guard let obacoService = application.obacoService else { return }
 
-        await ProgressHUD.show()
+        ProgressHUD.show()
 
         do {
             let vehicles = try await obacoService.getVehicles(matching: request.query)
@@ -166,7 +166,7 @@ public class SearchManager: NSObject {
             await self.application.displayError(error)
         }
 
-        await ProgressHUD.dismiss()
+        ProgressHUD.dismiss()
     }
 
     private func processSearchResults(request: SearchRequest, matchingVehicles: [AgencyVehicle]) {

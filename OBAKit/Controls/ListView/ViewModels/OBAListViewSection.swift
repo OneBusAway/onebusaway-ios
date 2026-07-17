@@ -8,6 +8,10 @@
 import UIKit
 import OBAKitCore
 
+// nonisolated + @unchecked Sendable: diffable data source identifier type. Only ever
+// created, hashed, and compared on the main actor (OBAListView applies snapshots on
+// main); nonisolated so its Hashable conformance satisfies the data source's
+// Sendable identifier requirement.
 /// A section view model for `OBAListView`. `OBAListView` uses `OBAListViewSection` to
 /// define list sections and to "normalize" item data. It also provides a number of other convenience properties.
 ///
@@ -17,7 +21,7 @@ import OBAKitCore
 /// ## Collapsible sections
 /// Set `collapseState` to a non-`nil` value. Note, `OBAListView` will also need to have collapsible
 /// section implementation to properly function.
-public struct OBAListViewSection: Hashable, Identifiable {
+nonisolated public struct OBAListViewSection: Hashable, Identifiable, @unchecked Sendable {
     public typealias ID = String
     public enum CollapseState {
         case collapsed

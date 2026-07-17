@@ -12,10 +12,13 @@
 import Dispatch
 import OBAKitCore
 
-private var throttleWorkItems = [AnyHashable: DispatchWorkItem]()
-private var lastDebounceCallTimes = [AnyHashable: DispatchTime]()
+@MainActor private var throttleWorkItems = [AnyHashable: DispatchWorkItem]()
+@MainActor private var lastDebounceCallTimes = [AnyHashable: DispatchTime]()
 private let nilContext: AnyHashable = UInt32.random(in: UInt32.min...UInt32.max)
 
+// These helpers are main-actor-only: they have only ever been used on
+// `DispatchQueue.main` from UI code, and their debounce/throttle bookkeeping
+// is main-actor state. Calling them on any other queue is unsupported.
 public extension DispatchQueue {
     /**
      - parameters:
@@ -24,13 +27,14 @@ public extension DispatchQueue {
      - action: The closure to be executed
      Executes a closure and ensures no other executions will be made during the interval.
      */
-    func debounce(interval: Double, context: AnyHashable? = nil, action: @escaping VoidBlock) {
+    @MainActor func debounce(interval: Double, context: AnyHashable? = nil, action: @escaping @MainActor () -> Void) {
+        assert(self === DispatchQueue.main, "debounce is main-queue-only; the dispatched block enters the main actor.")
         if let last = lastDebounceCallTimes[context ?? nilContext], last + interval > .now() {
             return
         }
 
         lastDebounceCallTimes[context ?? nilContext] = .now()
-        async(execute: action)
+        async { MainActor.assumeIsolated(action) }
 
         // Cleanup & release context
         throttle(deadline: .now() + interval) {
@@ -45,10 +49,13 @@ public extension DispatchQueue {
      - action: The closure to be executed
      Delays a closure execution and ensures no other executions are made during deadline
      */
-    func throttle(deadline: DispatchTime, context: AnyHashable? = nil, action: @escaping VoidBlock) {
+    @MainActor func throttle(deadline: DispatchTime, context: AnyHashable? = nil, action: @escaping @MainActor () -> Void) {
+        assert(self === DispatchQueue.main, "throttle is main-queue-only; the dispatched block enters the main actor.")
         let worker = DispatchWorkItem {
-            defer { throttleWorkItems.removeValue(forKey: context ?? nilContext) }
-            action()
+            MainActor.assumeIsolated {
+                defer { throttleWorkItems.removeValue(forKey: context ?? nilContext) }
+                action()
+            }
         }
 
         asyncAfter(deadline: deadline, execute: worker)

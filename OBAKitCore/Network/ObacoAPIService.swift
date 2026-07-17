@@ -10,7 +10,8 @@
 import Foundation
 import os.log
 
-public protocol ObacoServiceDelegate: NSObjectProtocol {
+@MainActor
+public protocol ObacoServiceDelegate: NSObjectProtocol, Sendable {
     var shouldDisplayRegionalTestAlerts: Bool { get }
 }
 
@@ -26,12 +27,12 @@ public actor ObacoAPIService: @preconcurrency APIService {
     private let regionID: RegionIdentifier
     private weak var delegate: ObacoServiceDelegate?
 
-    private var shouldDisplayRegionTestAlerts: Bool {
+    private func shouldDisplayRegionTestAlerts() async -> Bool {
         guard let delegate else {
             return false
         }
 
-        return delegate.shouldDisplayRegionalTestAlerts
+        return await delegate.shouldDisplayRegionalTestAlerts
     }
 
     public init(regionID: RegionIdentifier, delegate: ObacoServiceDelegate?, configuration: APIServiceConfiguration, dataLoader: URLDataLoader) {
@@ -54,10 +55,10 @@ public actor ObacoAPIService: @preconcurrency APIService {
     }
 
     private nonisolated func buildURL(path: String, queryItems: [URLQueryItem] = []) async -> URL {
-        let baseURL = await configuration.baseURL
+        let baseURL = configuration.baseURL
         var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)!
         components.appendPath(path)
-        components.queryItems = await configuration.defaultQueryItems + queryItems
+        components.queryItems = configuration.defaultQueryItems + queryItems
 
         return components.url!
     }
@@ -225,7 +226,7 @@ public actor ObacoAPIService: @preconcurrency APIService {
 
     // MARK: - Alerts
     public func getAlerts(agencies: [AgencyWithCoverage]) async throws -> [AgencyAlert] {
-        let queryItems = self.shouldDisplayRegionTestAlerts ? [URLQueryItem(name: "test", value: "1")] : []
+        let queryItems = await self.shouldDisplayRegionTestAlerts() ? [URLQueryItem(name: "test", value: "1")] : []
         let apiPath = String(format: "/api/v1/regions/%d/alerts.pb", regionID)
         let url = await buildURL(path: apiPath, queryItems: queryItems)
 

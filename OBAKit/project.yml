@@ -25,6 +25,8 @@ targets:
     settings:
       base:
         APPLICATION_EXTENSION_API_ONLY: false
+        # Swift language mode, checking level, and MainActor default isolation
+        # come from the project-wide base in Apps/Shared/app_shared.yml.
       configs:
           Debug:
             LD_RUNPATH_SEARCH_PATHS:

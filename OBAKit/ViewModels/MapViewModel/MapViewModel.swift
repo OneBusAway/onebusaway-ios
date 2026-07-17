@@ -81,7 +81,7 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
         application.locationService.addDelegate(self)
     }
 
-    deinit {
+    isolated deinit {
         application.locationService.removeDelegate(self)
     }
 

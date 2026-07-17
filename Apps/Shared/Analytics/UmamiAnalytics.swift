@@ -66,7 +66,9 @@ final class UmamiAnalytics {
     private var defaultData: [String: UmamiJSONValue] = [:]
     private let defaultDataLock = NSLock()
 
-    init(serverURL: URL,
+    // @MainActor: reads UIDevice.current for the user agent; constructed only by
+    // AnalyticsOrchestrator, which is main-actor-isolated.
+    @MainActor init(serverURL: URL,
          websiteID: String,
          hostname: String,
          dataLoader: URLDataLoader = UmamiAnalytics.makeDefaultSession()) {

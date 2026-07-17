@@ -13,6 +13,7 @@ import Nimble
 
 /// Tests for `WeatherFormatter`: pure-function helpers feeding both the UIKit
 /// weather button and the SwiftUI weather card.
+@MainActor
 final class WeatherFormatterTests: XCTestCase {
 
     // MARK: - systemImageName

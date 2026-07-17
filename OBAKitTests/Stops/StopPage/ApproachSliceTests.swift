@@ -20,6 +20,7 @@ private func stops(_ ids: [String]) -> [StubStop] {
     ids.map { StubStop(stopID: $0, stopName: "Stop \($0)") }
 }
 
+@MainActor
 final class ApproachSliceTests: XCTestCase {
 
     func test_takesFourUpstreamStopsPlusUserStop() {

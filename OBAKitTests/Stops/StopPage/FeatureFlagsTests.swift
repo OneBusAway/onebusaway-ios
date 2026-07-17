@@ -9,11 +9,12 @@
 import XCTest
 @testable import OBAKitCore
 
+@MainActor
 final class FeatureFlagsTests: XCTestCase {
     private var defaults: UserDefaults!
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         defaults = UserDefaults(suiteName: "FeatureFlagsTests")!
         defaults.removePersistentDomain(forName: "FeatureFlagsTests")
     }

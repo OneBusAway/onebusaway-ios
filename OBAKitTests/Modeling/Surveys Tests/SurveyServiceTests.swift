@@ -16,8 +16,8 @@ final class SurveyServiceTests: OBATestCase {
     private var mockDataLoader: MockDataLoader!
     private var testRESTService: RESTAPIService!
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         mockDataLoader = MockDataLoader(testName: name)
         let config = APIServiceConfiguration(
             baseURL: baseURL,

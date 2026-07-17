@@ -10,6 +10,7 @@
 import XCTest
 @testable import OBAKitCore
 
+@MainActor
 class MoreTabConfigurationTests: XCTestCase {
 
     // MARK: - Default Configuration

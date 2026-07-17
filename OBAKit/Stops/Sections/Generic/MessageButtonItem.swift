@@ -9,7 +9,7 @@ import UIKit
 import OBAKitCore
 
 /// Displays a button with optional support for showing activity indicator on selection (see `showActivityIndicatorOnSelect` property).
-struct MessageButtonItem: OBAListViewItem {
+nonisolated struct MessageButtonItem: OBAListViewItem {
     var configuration: OBAListViewItemConfiguration {
         return .custom(MessageButtonContentConfiguration(buttonText: buttonText, showActivityIndicatorOnSelect: showActivityIndicatorOnSelect, onTapAction: {
             onSelectAction?(self)
@@ -60,7 +60,7 @@ struct MessageButtonItem: OBAListViewItem {
     }
 }
 
-struct MessageButtonContentConfiguration: OBAContentConfiguration {
+nonisolated struct MessageButtonContentConfiguration: OBAContentConfiguration {
     var formatters: Formatters?
     var obaContentView: (OBAContentView & ReuseIdentifierProviding).Type {
         return MessageButtonCell.self
