@@ -596,4 +596,24 @@ class MapViewModelTests: OBATestCase {
         expect(viewModel.topPillState) == .impreciseLocation
     }
 
+    /// Granting full accuracy while the coarse status stays `.authorizedWhenInUse`
+    /// (the "Allow Once" path) clears the imprecise-location pill. Guards the
+    /// regression where `topPillState` read accuracy live from `locationService`
+    /// and never re-evaluated on an accuracy-only change, leaving the pill stuck.
+    @MainActor
+    func test_topPillState_accuracyElevationClearsImprecisePill() async {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader, accuracyAuthorization: .reducedAccuracy)
+        let viewModel = MapViewModel(application: app)
+
+        viewModel.locationService(app.locationService, authorizationStatusChanged: .authorizedWhenInUse)
+        for _ in 0..<5 { await Task.yield() }
+        expect(viewModel.topPillState) == .impreciseLocation
+
+        // Accuracy elevates to full without the coarse status changing.
+        viewModel.locationService(app.locationService, accuracyAuthorizationChanged: .fullAccuracy)
+        for _ in 0..<5 { await Task.yield() }
+        expect(viewModel.topPillState) == .hidden
+    }
+
 }

@@ -57,11 +57,6 @@ struct MapPanelRootView: View {
     /// opacity ramps from 1 → 0 across this window as the sheet approaches `halfScreenHeight`.
     private let toolbarFadeRange: CGFloat = 50
 
-    /// Tuck the `MoreButton` up under the pill by a fixed amount when the pill
-    /// is visible so the two feel like a stacked cluster instead of two loose
-    /// pills. Zero-based so nothing shifts when the pill is hidden.
-    private static let moreButtonPillOverlap: CGFloat = 10
-
     private let factory: AppSheetViewFactory
 
     init(application: Application, factory: AppSheetViewFactory) {
@@ -278,7 +273,7 @@ extension MapPanelRootView {
             coordinator.push(.more)
         }
         .padding(ThemeMetrics.controllerMargin)
-        .padding(.top, max(0, pillHeight - Self.moreButtonPillOverlap))
+        .padding(.top, pillHeight)
         .animation(.smooth(duration: 0.3), value: pillHeight)
     }
 

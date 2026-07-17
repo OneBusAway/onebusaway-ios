@@ -48,11 +48,19 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
     @Published private(set) var showZoomWarning = false
 
     /// The currently selected base map type (standard vs. hybrid).
-    /// Persistence is handled by the consuming layer (UIKit: `MapViewController`'s `$mapType` sink).
+    /// Persistence is owned by `toggleMapType()`, which writes through
+    /// `MapRegionManager`; the UIKit `$mapType` sink only mirrors the value
+    /// onto MapKit and refreshes its toolbar icon.
     @Published private(set) var mapType: MapBaseType
 
     /// The current location authorization status. Used by the UI to show/hide location controls.
     @Published private(set) var locationAuthStatus: CLAuthorizationStatus
+
+    /// The current location accuracy authorization (full vs. reduced). Tracked
+    /// as published state — rather than read live from `locationService` — so
+    /// the top status pill re-evaluates when accuracy changes without the
+    /// coarse `locationAuthStatus` changing (e.g. after "Allow Once").
+    @Published private(set) var accuracyAuthorization: CLAccuracyAuthorization
 
     // MARK: - Survey Prompt
 
@@ -77,6 +85,7 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
         self.application = application
         self.mapType = initialMapType
         self.locationAuthStatus = application.locationService.authorizationStatus
+        self.accuracyAuthorization = application.locationService.accuracyAuthorization
         self.surveyOrchestrator = SurveyOrchestrator(surveyService: application.surveyService)
         super.init()
         application.locationService.addDelegate(self)
@@ -167,7 +176,7 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
     /// location. Full accuracy zooms tight (17); reduced accuracy zooms out
     /// (11) so the ~1km approximation cell fits comfortably in view.
     func zoomLevelForCurrentLocation() -> Int {
-        return application.locationService.accuracyAuthorization == .reducedAccuracy ? 11 : 17
+        return accuracyAuthorization == .reducedAccuracy ? 11 : 17
     }
 
     // MARK: - Top Pill State
@@ -190,7 +199,7 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
         case .denied, .restricted:
             return .locationServicesOff
         case .authorizedAlways, .authorizedWhenInUse:
-            return application.locationService.accuracyAuthorization == .reducedAccuracy ? .impreciseLocation : .hidden
+            return accuracyAuthorization == .reducedAccuracy ? .impreciseLocation : .hidden
         @unknown default:
             return .hidden
         }
@@ -289,6 +298,12 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
     nonisolated func locationService(_ service: LocationService, authorizationStatusChanged status: CLAuthorizationStatus) {
         Task { @MainActor in
             self.locationAuthStatus = status
+        }
+    }
+
+    nonisolated func locationService(_ service: LocationService, accuracyAuthorizationChanged accuracyAuthorization: CLAccuracyAuthorization) {
+        Task { @MainActor in
+            self.accuracyAuthorization = accuracyAuthorization
         }
     }
 }
