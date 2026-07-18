@@ -48,7 +48,7 @@ struct OnboardingStep {
 
 **Flow computation (per launch):**
 
-```
+```swift
 flow = steps
     .filter { $0.isEligible(app) && store.seenVersion($0.id) < $0.version }
     .sorted { $0.weight < $1.weight }

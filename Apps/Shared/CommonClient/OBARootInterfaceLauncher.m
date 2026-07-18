@@ -21,12 +21,18 @@
     [OBAOnboardingFlowController evaluateWithApplication:application completion:^(OBAOnboardingFlowController * _Nullable onboarding) {
         if (onboarding) {
             onboarding.onFinished = ^{
-                showRootController();
-                [UIView transitionWithView:window duration:0.5 options:UIViewAnimationOptionTransitionFlipFromLeft animations:nil completion:nil];
+                // The hierarchy change belongs inside the animations block so the
+                // transition captures the correct before/after snapshots.
+                [UIView transitionWithView:window duration:0.5 options:UIViewAnimationOptionTransitionFlipFromLeft animations:^{
+                    showRootController();
+                } completion:^(BOOL finished) {
+                    [application rootUserInterfaceDidLoad];
+                }];
             };
             window.rootViewController = onboarding;
         } else {
             showRootController();
+            [application rootUserInterfaceDidLoad];
         }
     }];
 }

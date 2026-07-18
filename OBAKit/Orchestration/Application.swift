@@ -449,6 +449,39 @@ public class Application: CoreApplication, PushServiceDelegate {
 
         alertsStore.checkForUpdates()
 
+        drainPendingUIPresentations()
+
+        if let region = regionsService.currentRegion, let analytics {
+            analytics.updateServer?(region: region)
+        }
+    }
+
+    /// Called by the app delegates after the real root view controller is installed.
+    ///
+    /// The root now installs asynchronously (onboarding evaluation awaits notification
+    /// settings), so on a cold launch `applicationDidBecomeActive` can fire while
+    /// `topViewController` is still nil — anything stashed for later presentation would
+    /// otherwise wait for the next foreground cycle. This is the deterministic drain point.
+    @MainActor @objc public func rootUserInterfaceDidLoad() {
+        drainPendingUIPresentations()
+    }
+
+    /// True while the onboarding flow is installed as the window's root — deferred
+    /// presentations should not navigate out from under it.
+    @MainActor
+    private var isOnboardingRoot: Bool {
+        delegate?.uiApplication?.keyWindowFromScene?.rootViewController is OnboardingFlowController
+    }
+
+    /// Presents any UI that arrived before a root view controller existed (cold-launch
+    /// stop navigations, donation prompts, add-region errors). Idempotent: each stash is
+    /// cleared on successful presentation. Runs from both `rootUserInterfaceDidLoad()`
+    /// (the deterministic post-root drain) and `applicationDidBecomeActive` (later
+    /// foregrounds), and never fires while onboarding is the root.
+    @MainActor
+    private func drainPendingUIPresentations() {
+        guard !isOnboardingRoot else { return }
+
         if let stopID = pendingStopID, let topViewController {
             viewRouter.navigateTo(stopID: stopID, from: topViewController)
             pendingStopID = nil
@@ -470,10 +503,6 @@ public class Application: CoreApplication, PushServiceDelegate {
             alertController.addAction(UIAlertAction(title: Strings.ok, style: .default))
             topViewController.present(alertController, animated: true)
             presentAddRegionAlertOnActive = false
-        }
-
-        if let region = regionsService.currentRegion, let analytics {
-            analytics.updateServer?(region: region)
         }
     }
 
