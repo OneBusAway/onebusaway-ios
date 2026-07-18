@@ -65,5 +65,6 @@ struct OnboardingDoneView: View {
         }
         .padding(.horizontal, 18)
         .frame(height: 52)
+        .accessibilityElement(children: .combine)
     }
 }

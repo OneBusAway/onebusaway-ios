@@ -127,8 +127,11 @@ struct OnboardingRegionView<Provider: RegionProvider>: View {
             Image(systemName: "checkmark.circle.fill")
                 .font(.title2)
                 .foregroundStyle(Color.accentColor)
+                .accessibilityHidden(true)
         }
         .padding(16)
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isSelected)
     }
 
     private func confirmSelection() {

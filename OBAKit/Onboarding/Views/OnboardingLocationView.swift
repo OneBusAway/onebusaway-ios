@@ -60,10 +60,12 @@ struct OnboardingLocationView<Provider: RegionProvider>: View {
                 .fill(Color.accentColor.opacity(0.12))
                 .frame(width: 30, height: 30)
                 .overlay(Circle().fill(Color.accentColor).frame(width: 8, height: 8))
+                .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
                 Text(heading).font(.callout.weight(.semibold))
                 Text(detail).font(.subheadline).foregroundStyle(.secondary)
             }
         }
+        .accessibilityElement(children: .combine)
     }
 }
