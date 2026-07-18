@@ -103,14 +103,17 @@
         self.window.rootViewController = self.rootController;
     };
 
-    if ([OBAOnboardingNavigationController needsToOnboardWithApplication:application]) {
-        self.window.rootViewController = [[OBAOnboardingNavigationController alloc] initWithApplication:application completion:^{
+    [OBAOnboardingFlowController evaluateWithApplication:application completion:^(OBAOnboardingFlowController * _Nullable onboarding) {
+        if (onboarding) {
+            onboarding.onFinished = ^{
+                showRootController();
+                [UIView transitionWithView:self.window duration:0.5 options:UIViewAnimationOptionTransitionFlipFromLeft animations:nil completion:nil];
+            };
+            self.window.rootViewController = onboarding;
+        } else {
             showRootController();
-            [UIView transitionWithView:self.window duration:0.5 options:UIViewAnimationOptionTransitionFlipFromLeft animations:nil completion:nil];
-        }];
-    } else {
-        showRootController();
-    }
+        }
+    }];
 }
 
 - (BOOL)canOpenURL:(NSURL*)url {
