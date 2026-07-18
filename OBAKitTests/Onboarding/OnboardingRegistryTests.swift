@@ -15,15 +15,19 @@ final class OnboardingRegistryTests: XCTestCase {
     private var store: OnboardingStepStore!
     private var suiteName: String!
 
-    override func setUp() {
-        super.setUp()
-        suiteName = "OnboardingRegistryTests-\(UUID().uuidString)"
-        store = OnboardingStepStore(userDefaults: UserDefaults(suiteName: suiteName)!)
+    override func setUp() async throws {
+        try await super.setUp()
+        let name = "OnboardingRegistryTests-\(UUID().uuidString)"
+        await MainActor.run {
+            suiteName = name
+            store = OnboardingStepStore(userDefaults: UserDefaults(suiteName: name)!)
+        }
     }
 
-    override func tearDown() {
-        UserDefaults().removePersistentDomain(forName: suiteName)
-        super.tearDown()
+    override func tearDown() async throws {
+        let name = await MainActor.run { suiteName }
+        UserDefaults().removePersistentDomain(forName: name!)
+        try await super.tearDown()
     }
 
     /// Environment helper: a brand-new install with everything available.
