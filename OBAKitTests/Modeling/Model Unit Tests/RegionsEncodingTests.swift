@@ -157,4 +157,21 @@ class RegionsEncodingTests: OBATestCase {
         expect(UmamiAnalyticsConfig(url: URL(string: "https://analytics.example.com"), id: "   ")).to(beNil())
         expect(UmamiAnalyticsConfig(url: nil, id: nil)).to(beNil())
     }
+
+    func testCustomRegions_creation_withSidecarAndUmami() {
+        let region = Fixtures.customRegionWithSidecarAndUmami
+        expect(region.sidecarBaseURL?.absoluteString) == "https://obaco.example.com"
+        expect(region.umamiAnalytics?.url.absoluteString) == "https://analytics.example.com"
+        expect(region.umamiAnalytics?.id) == "site-uuid-123"
+    }
+
+    func testCustomRegions_roundtripping_withSidecarAndUmami() {
+        let plistData = try! PropertyListEncoder().encode([Fixtures.customRegionWithSidecarAndUmami])
+        let rt = try! PropertyListDecoder().decode([Region].self, from: plistData)[0]
+
+        expect(rt.sidecarBaseURL?.absoluteString) == "https://obaco.example.com"
+        expect(rt.umamiAnalytics?.url.absoluteString) == "https://analytics.example.com"
+        expect(rt.umamiAnalytics?.id) == "site-uuid-123"
+        expect(rt.isCustom) == true
+    }
 }

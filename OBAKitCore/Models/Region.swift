@@ -207,7 +207,9 @@ public class Region: NSObject, Identifiable, Codable {
     /// - Parameter contactEmail: The contact email address for this region.
     /// - Parameter regionIdentifier: The identifier for this region. If unassigned, it will be given a random value.
     /// - Parameter regionIdentifier: The identifier for this region. If unassigned, it will be given a random value.
-    public required init(name: String, OBABaseURL: URL, coordinateRegion: MKCoordinateRegion, contactEmail: String, regionIdentifier: Int? = nil, openTripPlannerURL: URL? = nil) {
+    /// - Parameter sidecarBaseURL: Optional base URL for the Obaco sidecar server.
+    /// - Parameter umamiAnalytics: Optional Umami analytics configuration.
+    public required init(name: String, OBABaseURL: URL, coordinateRegion: MKCoordinateRegion, contactEmail: String, regionIdentifier: Int? = nil, openTripPlannerURL: URL? = nil, sidecarBaseURL: URL? = nil, umamiAnalytics: UmamiAnalyticsConfig? = nil) {
         self.name = name
         self.regionIdentifier = regionIdentifier ?? 1000 + Int.random(in: 0...999)
         isActive = true
@@ -215,7 +217,7 @@ public class Region: NSObject, Identifiable, Codable {
         isCustom = true
 
         self.OBABaseURL = OBABaseURL
-        self.sidecarBaseURL = nil
+        self.sidecarBaseURL = sidecarBaseURL
 
         let bound = RegionBound(lat: coordinateRegion.center.latitude, lon: coordinateRegion.center.longitude, latSpan: coordinateRegion.span.latitudeDelta, lonSpan: coordinateRegion.span.longitudeDelta)
         regionBounds = [bound]
@@ -235,7 +237,7 @@ public class Region: NSObject, Identifiable, Codable {
         paymentiOSAppStoreIdentifier = nil
         paymentiOSAppURLScheme = nil
         plausibleAnalyticsServerURL = nil
-        umamiAnalytics = nil
+        self.umamiAnalytics = umamiAnalytics
         siriBaseURL = nil
         stopInfoURL = nil
         supportsEmbeddedSocial = false

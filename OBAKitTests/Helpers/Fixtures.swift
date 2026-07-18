@@ -74,6 +74,18 @@ class Fixtures {
         return Region(name: "Custom Region", OBABaseURL: URL(string: "http://www.example.com")!, coordinateRegion: coordinateRegion, contactEmail: "contact@example.com")
     }
 
+    class var customRegionWithSidecarAndUmami: Region {
+        let coordinateRegion = MKCoordinateRegion(center: CLLocationCoordinate2D(latitude: 44.9778, longitude: -93.2650), latitudinalMeters: 1000.0, longitudinalMeters: 1000.0)
+
+        return Region(
+            name: "Custom Region",
+            OBABaseURL: URL(string: "http://www.example.com")!,
+            coordinateRegion: coordinateRegion,
+            contactEmail: "contact@example.com",
+            sidecarBaseURL: URL(string: "https://obaco.example.com")!,
+            umamiAnalytics: UmamiAnalyticsConfig(url: URL(string: "https://analytics.example.com")!, id: "site-uuid-123"))
+    }
+
     class var pugetSoundRegion: Region {
         let regions = try! loadSomeRegions()
         return regions[1]
