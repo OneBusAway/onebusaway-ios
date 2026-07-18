@@ -699,9 +699,6 @@
 /* Header above the alternate-regions list */
 "onboarding.region.other_header" = "或選擇其他地區";
 
-/* Primary button on the region onboarding screen */
-"onboarding.region.primary_button" = "繼續";
-
 /* Link to the full region picker */
 "onboarding.region.see_all_button" = "查看所有地區";
 

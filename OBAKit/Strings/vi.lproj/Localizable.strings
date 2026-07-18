@@ -699,9 +699,6 @@
 /* Header above the alternate-regions list */
 "onboarding.region.other_header" = "Hoặc chọn khu vực khác";
 
-/* Primary button on the region onboarding screen */
-"onboarding.region.primary_button" = "Tiếp tục";
-
 /* Link to the full region picker */
 "onboarding.region.see_all_button" = "Xem tất cả khu vực";
 

@@ -19,8 +19,11 @@ import OBAKitCore
 /// the resulting device token still flows through the existing AppDelegate → PushService wiring.
 struct OnboardingNotificationsView: View {
     var progress: (index: Int, total: Int)?
-    var isSingleStep: Bool
     var advance: () -> Void
+
+    /// The flow container passes `progress: nil` exactly when this step appears alone
+    /// (returning-user mode), so single-step presentation is derived, not a second flag.
+    private var isSingleStep: Bool { progress == nil }
 
     @State private var isRequesting = false
 
@@ -40,7 +43,7 @@ struct OnboardingNotificationsView: View {
 
     var body: some View {
         OnboardingScaffold(
-            progress: isSingleStep ? nil : progress,
+            progress: progress,
             badge: isSingleStep ? OBALoc("onboarding.notifications.new_badge", value: "NEW", comment: "Badge shown when the notifications step appears alone for existing users") : nil,
             title: OBALoc("onboarding.notifications.title", value: "Stay ahead of disruptions", comment: "Title of the notifications onboarding screen"),
             bodyText: OBALoc("onboarding.notifications.body", value: "Get notified about region-wide service alerts — ice storms, flooding, and major events that change how transit runs.", comment: "Body of the notifications onboarding screen"),

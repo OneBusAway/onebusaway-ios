@@ -310,7 +310,7 @@ public class Application: CoreApplication, PushServiceDelegate {
 
             guard let topViewController = self.topViewController else {
                 // UI not ready yet (cold launch). Navigate once the scene activates.
-                self.pendingAlarmStopID = pushBody.stopID
+                self.pendingStopID = pushBody.stopID
                 return
             }
             self.viewRouter.navigateTo(stopID: pushBody.stopID, from: topViewController)
@@ -333,10 +333,8 @@ public class Application: CoreApplication, PushServiceDelegate {
         }
     }
 
-    private var pendingAlarmStopID: StopID?
-
-    /// A `viewStop` deep link received before the root view controller was
-    /// installed (cold launch). Drained once the app becomes active.
+    /// A stop navigation (fired alarm push or `viewStop` deep link) received before the
+    /// root view controller was installed (cold launch). Drained once the app becomes active.
     private var pendingStopID: StopID?
     private var presentDonationUIOnActive = false
     private var presentAddRegionAlertOnActive = false
@@ -449,11 +447,6 @@ public class Application: CoreApplication, PushServiceDelegate {
         #endif
 
         alertsStore.checkForUpdates()
-
-        if let stopID = pendingAlarmStopID, let topViewController {
-            viewRouter.navigateTo(stopID: stopID, from: topViewController)
-            pendingAlarmStopID = nil
-        }
 
         if let stopID = pendingStopID, let topViewController {
             viewRouter.navigateTo(stopID: stopID, from: topViewController)

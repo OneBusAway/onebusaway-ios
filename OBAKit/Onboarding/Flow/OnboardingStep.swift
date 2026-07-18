@@ -39,14 +39,25 @@ public struct OnboardingEnvironment: Sendable {
 
     @MainActor
     public static func current(application: Application) async -> OnboardingEnvironment {
-        let settings = await UNUserNotificationCenter.current().notificationSettings()
+        // The notification-settings fetch is an XPC round trip on the launch path;
+        // skip it when no push provider exists — the notifications predicate is
+        // false regardless, so the answer can't matter.
+        let isPushServiceConfigured = application.pushService != nil
+        let notificationAuthorizationDetermined: Bool
+        if isPushServiceConfigured {
+            let settings = await UNUserNotificationCenter.current().notificationSettings()
+            notificationAuthorizationDetermined = settings.authorizationStatus != .notDetermined
+        } else {
+            notificationAuthorizationDetermined = false
+        }
+
         return OnboardingEnvironment(
             hasDataToMigrate: application.hasDataToMigrate,
             shouldPerformMigration: application.shouldPerformMigration,
             hasCurrentRegion: application.regionsService.currentRegion != nil,
-            locationAuthorizationDetermined: application.locationService.authorizationStatus != .notDetermined,
-            notificationAuthorizationDetermined: settings.authorizationStatus != .notDetermined,
-            isPushServiceConfigured: application.pushService != nil)
+            locationAuthorizationDetermined: !application.locationService.canRequestAuthorization,
+            notificationAuthorizationDetermined: notificationAuthorizationDetermined,
+            isPushServiceConfigured: isPushServiceConfigured)
     }
 }
 

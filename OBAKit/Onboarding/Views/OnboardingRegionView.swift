@@ -30,25 +30,31 @@ struct OnboardingRegionView<Provider: RegionProvider>: View {
         }
     }
 
-    private var shortList: [Region] {
+    private func shortList(excluding resolved: Region?) -> [Region] {
         regionProvider.allRegions
-            .filter { $0.id != (selectedRegion ?? detectedRegion)?.id }
+            .filter { $0.id != resolved?.id }
             .prefix(3)
             .map { $0 }
     }
 
     var body: some View {
+        // Hoisted once per render: `detectedRegion` is an O(n) distance scan and
+        // `shortList` re-filters allRegions; the body references them repeatedly.
+        let detected = detectedRegion
+        let resolved = selectedRegion ?? detected
+        let shortList = shortList(excluding: resolved)
+
         OnboardingScaffold(
             progress: progress,
             title: OBALoc("onboarding.region.title", value: "Your region", comment: "Title of the region onboarding screen"),
-            bodyText: detectedRegion == nil
+            bodyText: detected == nil
                 ? OBALoc("onboarding.region.body_no_location", value: "Choose the transit network you ride.", comment: "Body of the region onboarding screen when no location is available")
                 : OBALoc("onboarding.region.body", value: "We found the transit network closest to you.", comment: "Body of the region onboarding screen"),
-            primaryTitle: OBALoc("onboarding.region.primary_button", value: "Continue", comment: "Primary button on the region onboarding screen"),
+            primaryTitle: Strings.continue,
             primaryAction: confirmSelection
         ) {
             VStack(spacing: 0) {
-                if let region = selectedRegion ?? detectedRegion {
+                if let region = resolved {
                     selectedCard(for: region)
                         .padding(.top, 22)
                 }
@@ -63,7 +69,7 @@ struct OnboardingRegionView<Provider: RegionProvider>: View {
                         .padding(.bottom, 8)
 
                     VStack(spacing: 0) {
-                        ForEach(shortList, id: \.id) { region in
+                        ForEach(Array(shortList.enumerated()), id: \.element.id) { index, region in
                             Button {
                                 selectedRegion = region
                             } label: {
@@ -73,7 +79,7 @@ struct OnboardingRegionView<Provider: RegionProvider>: View {
                                     .frame(height: 48)
                             }
                             .buttonStyle(.plain)
-                            if region.id != shortList.last?.id { Divider() }
+                            if index != shortList.count - 1 { Divider() }
                         }
                     }
                     .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 16))

@@ -699,9 +699,6 @@
 /* Header above the alternate-regions list */
 "onboarding.region.other_header" = "O elige otra";
 
-/* Primary button on the region onboarding screen */
-"onboarding.region.primary_button" = "Continuar";
-
 /* Link to the full region picker */
 "onboarding.region.see_all_button" = "Ver todas las regiones";
 

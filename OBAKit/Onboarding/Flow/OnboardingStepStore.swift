@@ -62,9 +62,11 @@ public final class OnboardingStepStore {
     @discardableResult
     public func backfillIfNeeded(hasCurrentRegion: Bool) -> Bool {
         guard isEmpty, hasCurrentRegion else { return false }
+        var versions = seenVersions
         for id in Self.backfilledStepIDs {
-            markSeen(id, version: 1)
+            versions[id.rawValue] = 1
         }
+        seenVersions = versions
         return true
     }
 }

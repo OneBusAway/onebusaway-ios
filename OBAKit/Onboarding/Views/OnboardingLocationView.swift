@@ -10,8 +10,8 @@
 import SwiftUI
 import OBAKitCore
 
-/// Primes the user before the OS location prompt. Replaces `RegionPickerLocationAuthorizationView`
-/// in the onboarding flow (spec decision: two-button layout kept deliberately despite the HIG
+/// Primes the user before the OS location prompt. Replaces the legacy location-authorization
+/// step (spec decision: two-button layout kept deliberately despite the HIG
 /// one-button guidance for pre-alert screens; declining marks the step seen forever).
 struct OnboardingLocationView<Provider: RegionProvider>: View {
     var progress: (index: Int, total: Int)?

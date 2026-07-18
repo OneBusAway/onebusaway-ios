@@ -699,9 +699,6 @@
 /* Header above the alternate-regions list */
 "onboarding.region.other_header" = "또는 다른 지역 선택";
 
-/* Primary button on the region onboarding screen */
-"onboarding.region.primary_button" = "계속";
-
 /* Link to the full region picker */
 "onboarding.region.see_all_button" = "모든 지역 보기";
 

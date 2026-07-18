@@ -8,6 +8,7 @@
 //
 
 #import "AppDelegate.h"
+#import "OBARootInterfaceLauncher.h"
 @import OBAKitCore;
 @import OBAKit;
 #import <FirebaseCrashlytics/FirebaseCrashlytics.h>
@@ -98,21 +99,9 @@
 }
 
 - (void)applicationReloadRootInterface:(OBAApplication*)application {
-    void(^showRootController)(void) = ^{
+    [OBARootInterfaceLauncher reloadRootInterfaceWithApplication:application window:self.window showRootController:^{
         self.rootController = [OBAApplicationRootControllerFactory makeWithApplication:application];
         self.window.rootViewController = self.rootController;
-    };
-
-    [OBAOnboardingFlowController evaluateWithApplication:application completion:^(OBAOnboardingFlowController * _Nullable onboarding) {
-        if (onboarding) {
-            onboarding.onFinished = ^{
-                showRootController();
-                [UIView transitionWithView:self.window duration:0.5 options:UIViewAnimationOptionTransitionFlipFromLeft animations:nil completion:nil];
-            };
-            self.window.rootViewController = onboarding;
-        } else {
-            showRootController();
-        }
     }];
 }
 

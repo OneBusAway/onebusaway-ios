@@ -59,7 +59,7 @@ struct OnboardingFlowView: View {
         case .region:
             OnboardingRegionView(progress: progress, regionProvider: regionPickerCoordinator, advance: { advance() })
         case .notifications:
-            OnboardingNotificationsView(progress: progress, isSingleStep: isSingleStep, advance: { advance() })
+            OnboardingNotificationsView(progress: progress, advance: { advance() })
         case .done:
             OnboardingDoneView(
                 progress: progress,
