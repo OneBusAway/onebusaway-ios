@@ -58,6 +58,9 @@
 /* Groups button title in Bookmarks controller */
 "bookmarks_controller.groups_button_title" = "编辑";
 
+/* Shown on a bookmark card when arrival data has loaded but there are no departures in the near future */
+"bookmarks_controller.no_upcoming_departures" = "暂无即将发车的班次";
+
 /* A menu item that allows the user to sort their bookmarks by distance from the user. */
 "bookmarks_controller.sort_menu.sort_by_distance" = "按距离排序";
 
@@ -124,11 +127,29 @@
 /* Button to retry finding the user's vehicle. */
 "current_trip_controller.retry" = "重试";
 
+/* An explanation of what the Base URL field of a custom region requires. */
+"custom_region_builder_controller.base_url_section.explanation" = "该地区 API 服务器的根地址,无需包含会自动添加的\"/api/where\"部分。默认为\"https://\"。";
+
 /* Title of the Base URL header. */
 "custom_region_builder_controller.base_url_section.header_title" = "根路径";
 
+/* Navigation bar title when editing an existing custom region. */
+"custom_region_builder_controller.edit_title" = "编辑自定义地区";
+
 /* Example custom region name */
 "custom_region_builder_controller.example_data.region_name" = "我的自定义地区";
+
+/* An explanation of the optional custom region name field. */
+"custom_region_builder_controller.name_section.explanation" = "可选。如果留空,该地区将以其第一个交通机构命名。";
+
+/* Title of the Name header. */
+"custom_region_builder_controller.name_section.header_title" = "名称";
+
+/* Navigation bar title when creating a new custom region. */
+"custom_region_builder_controller.new_title" = "新建自定义地区";
+
+/* An error message displayed when a custom region's server cannot be validated. First parameter is the server URL, second is the underlying error message. */
+"custom_region_builder_controller.server_validation_error_fmt" = "无法连接到 %1$@ 上兼容的交通 API 服务器。请检查基础 URL 并重试。\n\n%2$@";
 
 /* An explanation of dragging the map to highlight the service area of a custom region. */
 "custom_region_builder_controller.service_area_section.explanation" = "Drag the map to the approximate service area of this region.";
@@ -270,9 +291,6 @@
 
 /* Alert title when Live Activity fails to start */
 "live_activity.error.title" = "无法开始追踪";
-
-/* Alert message explaining where to find the Live Activity */
-"live_activity.started.message" = "您将在锁定屏幕和灵动岛上看到实时到站信息。";
 
 /* Alert title when a Live Activity starts */
 "live_activity.started.title" = "正在锁定屏幕上追踪";
@@ -587,6 +605,120 @@
 
 /* Vehicle occupancy status is unknown. */
 "occupancy_status.unknown" = "未知";
+
+/* Recap row label for notification permission */
+"onboarding.done.alerts_row" = "提醒";
+
+/* Body of the final onboarding screen; the argument is a region name */
+"onboarding.done.body_fmt" = "%@ 已准备就绪。来找找你的公交车吧。";
+
+/* Recap row label for location permission */
+"onboarding.done.location_row" = "位置";
+
+/* Primary button on the final onboarding screen */
+"onboarding.done.primary_button" = "开始探索";
+
+/* Recap row label for the chosen region */
+"onboarding.done.region_row" = "地区";
+
+/* Title of the final onboarding screen */
+"onboarding.done.title" = "一切就绪";
+
+/* Recap value for a disabled setting */
+"onboarding.done.value_off" = "关闭";
+
+/* Recap value for an enabled setting */
+"onboarding.done.value_on" = "开启";
+
+/* Detail for the map-centering benefit */
+"onboarding.location.benefit_map_body" = "直接打开显示你周围的环境 — 无需搜索。";
+
+/* Heading for a benefit of granting location access */
+"onboarding.location.benefit_map_title" = "将地图居中显示你的位置";
+
+/* Detail for the nearby-stops benefit */
+"onboarding.location.benefit_nearby_body" = "按距离排序显示你附近的公交和地铁。";
+
+/* Heading for a benefit of granting location access */
+"onboarding.location.benefit_nearby_title" = "查看附近站点";
+
+/* Footnote of the location onboarding screen; the argument is the app name */
+"onboarding.location.footnote_fmt" = "%@ 仅在应用打开时使用你的位置信息。你可以随时在设置中更改此设置。";
+
+/* Button the user taps to grant access to their location. */
+"onboarding.location.primary_button" = "使用我的位置";
+
+/* Button the user can tap on to decline access to their location. */
+"onboarding.location.secondary_button" = "暂不";
+
+/* Title of the location onboarding screen */
+"onboarding.location.title" = "查看你周围的交通";
+
+/* Body of the notifications onboarding screen */
+"onboarding.notifications.body" = "接收关于全区域服务提醒的通知 — 冰暴、洪水以及改变交通运行方式的重大事件。";
+
+/* Example service alert shown on the notifications onboarding screen */
+"onboarding.notifications.example_event" = "今日大赛:加开开往体育场的列车";
+
+/* Example service alert shown on the notifications onboarding screen */
+"onboarding.notifications.example_ferry" = "轮渡延误:等待时间最长可达 40 分钟";
+
+/* Example service alert shown on the notifications onboarding screen */
+"onboarding.notifications.example_storm" = "冬季风暴 — 12 条线路服务缩减";
+
+/* Footnote of the notifications onboarding screen */
+"onboarding.notifications.footnote" = "仅限重要的全区域提醒。没有垃圾信息 — 其余内容由你在设置中自行控制。";
+
+/* Decline button when the notifications step appears alone */
+"onboarding.notifications.maybe_later_button" = "以后再说";
+
+/* Badge shown when the notifications step appears alone for existing users */
+"onboarding.notifications.new_badge" = "新";
+
+/* Decline button on the notifications onboarding screen */
+"onboarding.notifications.not_now_button" = "暂不";
+
+/* Primary button on the notifications onboarding screen */
+"onboarding.notifications.primary_button" = "开启通知";
+
+/* Title of the notifications onboarding screen */
+"onboarding.notifications.title" = "提前了解服务中断情况";
+
+/* Accessibility label for the onboarding progress bar */
+"onboarding.progress.accessibility_label" = "引导进度";
+
+/* Body of the region onboarding screen */
+"onboarding.region.body" = "我们找到了离你最近的交通网络。";
+
+/* Body of the region onboarding screen when no location is available */
+"onboarding.region.body_no_location" = "选择你乘坐的交通网络。";
+
+/* Label on the detected-region card */
+"onboarding.region.detected_label" = "在你附近检测到";
+
+/* Header above the alternate-regions list */
+"onboarding.region.other_header" = "或选择其他地区";
+
+/* Primary button on the region onboarding screen */
+"onboarding.region.primary_button" = "继续";
+
+/* Link to the full region picker */
+"onboarding.region.see_all_button" = "查看所有地区";
+
+/* Title of the region onboarding screen */
+"onboarding.region.title" = "你的地区";
+
+/* Body of the first onboarding screen */
+"onboarding.welcome.body" = "你乘坐的公交、地铁和轮渡的实时到站信息 — 由公共交通乘客打造,免费且开源。";
+
+/* Footnote of the first onboarding screen */
+"onboarding.welcome.footnote" = "可在全球数十个交通地区使用";
+
+/* Primary button on the first onboarding screen */
+"onboarding.welcome.primary_button" = "开始使用";
+
+/* Title of the first onboarding screen; the argument is the app name */
+"onboarding.welcome.title_fmt" = "欢迎使用%@";
 
 /* Reachability bulletin shown when the user has disabled cellular data for this app in iOS Settings. Both substituted values are the app name. */
 "reachability_bulletin.description.cellular_data_restricted_fmt" = "%1$@当前无法访问蜂窝移动数据。请前往“设置”>“蜂窝网络”，为%2$@开启蜂窝移动数据，或连接到Wi-Fi网络。";
