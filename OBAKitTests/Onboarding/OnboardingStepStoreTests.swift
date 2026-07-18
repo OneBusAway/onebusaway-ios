@@ -14,11 +14,18 @@ import XCTest
 final class OnboardingStepStoreTests: XCTestCase {
     private var userDefaults: UserDefaults!
     private var store: OnboardingStepStore!
+    private var suiteName: String!
 
     override func setUp() {
         super.setUp()
-        userDefaults = UserDefaults(suiteName: "OnboardingStepStoreTests-\(UUID().uuidString)")
+        suiteName = "OnboardingStepStoreTests-\(UUID().uuidString)"
+        userDefaults = UserDefaults(suiteName: suiteName)
         store = OnboardingStepStore(userDefaults: userDefaults)
+    }
+
+    override func tearDown() {
+        UserDefaults().removePersistentDomain(forName: suiteName)
+        super.tearDown()
     }
 
     func test_unseenStep_hasVersionZero() {

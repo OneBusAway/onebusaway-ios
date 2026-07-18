@@ -16,6 +16,8 @@
 + (void)reloadRootInterfaceWithApplication:(OBAApplication *)application
                                     window:(UIWindow *)window
                         showRootController:(void(^)(void))showRootController {
+    // Assumes one invocation per launch (the only caller is applicationReloadRootInterface:).
+    // A second in-flight call would race on window.rootViewController.
     [OBAOnboardingFlowController evaluateWithApplication:application completion:^(OBAOnboardingFlowController * _Nullable onboarding) {
         if (onboarding) {
             onboarding.onFinished = ^{

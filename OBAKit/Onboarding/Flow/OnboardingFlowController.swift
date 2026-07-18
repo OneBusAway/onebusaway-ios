@@ -13,11 +13,12 @@ import OBAKitCore
 
 /// UIKit entry point for the onboarding flow. A plain `UIViewController` embedding a
 /// `UIHostingController` child, because `UIHostingController` subclasses can't be exposed
-/// to Objective-C. Replaces `OnboardingNavigationController`.
+/// to Objective-C.
 ///
-/// Usage (from the app delegate's `applicationReloadRootInterface:`):
-/// call ``evaluate(application:completion:)``; if the completion hands you a controller,
-/// set its ``onFinished`` block and install it as the window's root view controller.
+/// Usage (see `OBARootInterfaceLauncher`, called from each app delegate's
+/// `applicationReloadRootInterface:`): call ``evaluate(application:completion:)``;
+/// if the completion hands you a controller, set its ``onFinished`` block and install
+/// it as the window's root view controller.
 @objc(OBAOnboardingFlowController)
 public class OnboardingFlowController: UIViewController {
     /// Called on the main queue when the user completes the last step. Guaranteed to fire
@@ -45,7 +46,8 @@ public class OnboardingFlowController: UIViewController {
     ///
     /// Also performs the one-time existing-user backfill: users with a selected region but
     /// no seen-step record are marked as having seen the pre-registry steps, so the only
-    /// steps they can match are ones added after the registry shipped (e.g. notifications).
+    /// seen-tracked steps they can match are ones added after the registry shipped
+    /// (e.g. notifications). Migration ignores the seen store and re-prompts until it succeeds.
     @objc public static func evaluate(application: Application, completion: @escaping (OnboardingFlowController?) -> Void) {
         Task { @MainActor in
             let store = OnboardingStepStore(userDefaults: application.userDefaults)
@@ -58,6 +60,9 @@ public class OnboardingFlowController: UIViewController {
                 flow = OnboardingRegistry.steps
             }
 
+            // Field-diagnosable breadcrumb: the window has no root VC until this completes.
+            Logger.info("Onboarding flow computed: \(flow.map(\.id.rawValue))")
+
             guard !flow.isEmpty else {
                 completion(nil)
                 return
@@ -69,6 +74,7 @@ public class OnboardingFlowController: UIViewController {
 
     @MainActor
     init(application: Application, steps: [OnboardingStep], store: OnboardingStepStore) {
+        precondition(!steps.isEmpty, "OnboardingFlowController requires a non-empty flow")
         self.application = application
         self.steps = steps
         self.store = store
@@ -99,9 +105,6 @@ public class OnboardingFlowController: UIViewController {
         host.didMove(toParent: self)
     }
 
-    /// Ensures `onFinished` fires at most once, guarding against a double-tap on the final
-    /// screen's button firing `OnboardingFlowView`'s completion more than once before the
-    /// controller is dismissed/replaced.
     private func fireOnFinishedOnce() {
         guard !didFireFinished else { return }
         didFireFinished = true

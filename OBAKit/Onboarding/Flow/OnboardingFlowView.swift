@@ -11,8 +11,8 @@ import SwiftUI
 import OBAKitCore
 
 /// Renders a computed onboarding flow. Advancing past a step marks it seen (unless the
-/// step opted out, or the caller passes `markSeen: false`); finishing the last step
-/// calls `onFinished`, which hands control back to the app's root UI.
+/// step opted out via `tracksSeen`); finishing the last step calls `onFinished`, which
+/// hands control back to the app's root UI.
 struct OnboardingFlowView: View {
     let application: Application
     let steps: [OnboardingStep]
@@ -30,7 +30,8 @@ struct OnboardingFlowView: View {
         self._regionPickerCoordinator = StateObject(wrappedValue: RegionPickerCoordinator(regionsService: application.regionsService))
     }
 
-    /// Single-step mode: no progress bar, NEW badge, "Maybe Later" copy.
+    /// Single-step mode: no progress bar; step views may adapt further
+    /// (see `OnboardingNotificationsView`'s NEW badge and "Maybe Later" copy).
     private var isSingleStep: Bool { steps.count == 1 }
 
     private var progress: (index: Int, total: Int)? {
@@ -51,7 +52,7 @@ struct OnboardingFlowView: View {
     private func stepView(for step: OnboardingStep) -> some View {
         switch step.id {
         case .migration:
-            DataMigrationView(dismissBlock: { advance(markSeen: false) })
+            DataMigrationView(dismissBlock: { advance() })
         case .welcome:
             OnboardingWelcomeView(progress: progress, advance: { advance() })
         case .location:
@@ -69,9 +70,9 @@ struct OnboardingFlowView: View {
         }
     }
 
-    private func advance(markSeen: Bool = true) {
+    private func advance() {
         let step = steps[index]
-        if markSeen && step.tracksSeen {
+        if step.tracksSeen {
             store.markSeen(step.id, version: step.version)
         }
 

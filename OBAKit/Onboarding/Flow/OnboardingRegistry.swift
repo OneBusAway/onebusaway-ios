@@ -12,10 +12,11 @@ import Foundation
 /// The ordered registry of onboarding steps. The flow shown to a user is this list
 /// filtered by eligibility and what they haven't seen yet, sorted by weight.
 ///
-/// To add a step: append an entry here and add a matching case to `OnboardingFlowView`'s
-/// step switch. Existing users will see the new step by itself on their next launch.
-public enum OnboardingRegistry {
-    public static let steps: [OnboardingStep] = [
+/// To add a step: add a case to `OnboardingStepID` (its raw value is the persistence
+/// key), append an entry here, and add a matching case to `OnboardingFlowView`'s step
+/// switch. Existing users will see the new step by itself on their next launch.
+enum OnboardingRegistry {
+    static let steps: [OnboardingStep] = [
         OnboardingStep(id: .migration, weight: 5, version: 1, tracksSeen: false) {
             $0.hasDataToMigrate && $0.shouldPerformMigration
         },
@@ -31,7 +32,7 @@ public enum OnboardingRegistry {
     ]
 
     @MainActor
-    public static func flow(
+    static func flow(
         steps: [OnboardingStep] = Self.steps,
         environment: OnboardingEnvironment,
         store: OnboardingStepStore

@@ -334,7 +334,8 @@ public class Application: CoreApplication, PushServiceDelegate {
     }
 
     /// A stop navigation (fired alarm push or `viewStop` deep link) received before the
-    /// root view controller was installed (cold launch). Drained once the app becomes active.
+    /// root view controller was installed (cold launch). Drained on activation once a
+    /// root view controller exists.
     private var pendingStopID: StopID?
     private var presentDonationUIOnActive = false
     private var presentAddRegionAlertOnActive = false

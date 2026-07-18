@@ -21,7 +21,7 @@ struct OnboardingRegionView<Provider: RegionProvider>: View {
     @State private var error: Error?
     @State private var isSettingRegion = false
 
-    /// Nearest region to the user, or their already-auto-selected region.
+    /// The already-selected region if one exists, else the nearest region to the user's location.
     private var detectedRegion: Region? {
         if let current = regionProvider.currentRegion { return current }
         guard let location = regionProvider.currentLocation else { return nil }
@@ -31,10 +31,11 @@ struct OnboardingRegionView<Provider: RegionProvider>: View {
     }
 
     private func shortList(excluding resolved: Region?) -> [Region] {
-        regionProvider.allRegions
-            .filter { $0.id != resolved?.id }
-            .prefix(3)
-            .map { $0 }
+        var candidates = regionProvider.allRegions.filter { $0.id != resolved?.id }
+        if let location = regionProvider.currentLocation {
+            candidates.sort { $0.distanceFrom(location: location) < $1.distanceFrom(location: location) }
+        }
+        return Array(candidates.prefix(3))
     }
 
     var body: some View {
@@ -51,6 +52,7 @@ struct OnboardingRegionView<Provider: RegionProvider>: View {
                 ? OBALoc("onboarding.region.body_no_location", value: "Choose the transit network you ride.", comment: "Body of the region onboarding screen when no location is available")
                 : OBALoc("onboarding.region.body", value: "We found the transit network closest to you.", comment: "Body of the region onboarding screen"),
             primaryTitle: Strings.continue,
+            primaryDisabled: resolved == nil,
             primaryAction: confirmSelection
         ) {
             VStack(spacing: 0) {
@@ -98,6 +100,7 @@ struct OnboardingRegionView<Provider: RegionProvider>: View {
             do {
                 try await regionProvider.refreshRegions()
             } catch {
+                Logger.error("Onboarding region refresh failed: \(error)")
                 self.error = error
             }
         }
@@ -107,8 +110,8 @@ struct OnboardingRegionView<Provider: RegionProvider>: View {
 
     private func selectedCard(for region: Region) -> some View {
         VStack(spacing: 0) {
-            // Live map preview (spec: preferred over MKMapSnapshotter — adapts to dark
-            // mode automatically and can draw the service-area overlay).
+            // Live map preview, preferred over MKMapSnapshotter because snapshots
+            // don't adapt to dark mode.
             RegionPickerMap(mapRect: .constant(region.serviceRect), mapHeight: 108)
                 .allowsHitTesting(false)
                 .frame(height: 108)
@@ -149,6 +152,7 @@ struct OnboardingRegionView<Provider: RegionProvider>: View {
                 try await regionProvider.setCurrentRegion(to: region)
                 advance()
             } catch {
+                Logger.error("Onboarding region selection failed: \(error)")
                 self.error = error
             }
         }

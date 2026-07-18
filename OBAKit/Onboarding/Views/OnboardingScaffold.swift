@@ -26,7 +26,7 @@ struct OnboardingHeroCircle: View {
     }
 }
 
-/// Shared chrome for every onboarding step: segmented progress bar, centered
+/// Shared chrome for onboarding steps: segmented progress bar, centered
 /// title/body, optional badge and footnote, and a fixed bottom button dock.
 struct OnboardingScaffold<Content: View>: View {
     /// `nil` hides the progress bar (single-step mode for returning users).
@@ -36,6 +36,7 @@ struct OnboardingScaffold<Content: View>: View {
     var bodyText: String?
     var footnote: String?
     var primaryTitle: String
+    var primaryDisabled: Bool
     var primaryAction: () -> Void
     var secondaryTitle: String?
     var secondaryAction: (() -> Void)?
@@ -48,6 +49,7 @@ struct OnboardingScaffold<Content: View>: View {
         bodyText: String? = nil,
         footnote: String? = nil,
         primaryTitle: String,
+        primaryDisabled: Bool = false,
         primaryAction: @escaping () -> Void,
         secondaryTitle: String? = nil,
         secondaryAction: (() -> Void)? = nil,
@@ -59,6 +61,7 @@ struct OnboardingScaffold<Content: View>: View {
         self.bodyText = bodyText
         self.footnote = footnote
         self.primaryTitle = primaryTitle
+        self.primaryDisabled = primaryDisabled
         self.primaryAction = primaryAction
         self.secondaryTitle = secondaryTitle
         self.secondaryAction = secondaryAction
@@ -129,6 +132,7 @@ struct OnboardingScaffold<Content: View>: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
+                .disabled(primaryDisabled)
 
                 if let secondaryTitle, let secondaryAction {
                     Button(action: secondaryAction) {

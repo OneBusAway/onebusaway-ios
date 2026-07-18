@@ -451,10 +451,69 @@ class ApplicationTests: OBATestCase {
             let result = app.application(UIApplication.shared, open: viewStopURL, options: [:])
 
             // The URL is still recognized and accepted: the stop ID is stashed in
-            // `pendingStopID` and drained once the app becomes active and a root
-            // view controller exists (mirrors `pendingAlarmStopID`).
+            // `pendingStopID` (the same stash the alarm-push path uses) and drained
+            // once the app becomes active and a root view controller exists.
             expect(result).to(beTrue())
         }
+    }
+
+    // MARK: - Onboarding Evaluate Tests
+
+    /// The headline behavior of the onboarding registry: an existing user (region set,
+    /// empty seen-store) gets backfilled and — with no push provider configured, as in
+    /// this test harness — matches no steps, so `evaluate` hands back nil and the app
+    /// goes straight to its root UI.
+    func test_onboarding_evaluate_existingUser_returnsNil() async {
+        let dataLoader = MockDataLoader(testName: name)
+        stubRegions(dataLoader: dataLoader)
+
+        // Seed the persisted region selection BEFORE constructing Application, so
+        // RegionsService loads the current region from storage. (Assigning
+        // `regionsService.currentRegion` after construction fires the region-change
+        // cascade — agencies + per-agency alert fetches — which is out of scope here.)
+        userDefaults.set(Fixtures.pugetSoundRegion.regionIdentifier, forKey: "OBACurrentRegionIdentifierUserDefaultsKey")
+
+        let locManager = LocationManagerMock()
+        let locationService = LocationService(userDefaults: userDefaults, locationManager: locManager)
+        let config = AppConfig(regionsBaseURL: regionsURL, apiKey: apiKey, appVersion: appVersion, userDefaults: userDefaults, analytics: AnalyticsMock(), queue: queue, locationService: locationService, bundledRegionsFilePath: bundledRegionsPath, regionsAPIPath: regionsAPIPath, dataLoader: dataLoader)
+        let app = Application(config: config)
+
+        let hasRegion = await MainActor.run { app.regionsService.currentRegion != nil }
+        expect(hasRegion).to(beTrue())
+
+        let controller = await withCheckedContinuation { continuation in
+            OnboardingFlowController.evaluate(application: app) { controller in
+                continuation.resume(returning: controller)
+            }
+        }
+
+        expect(controller).to(beNil())
+
+        // The backfill ran: legacy steps are seen, notifications deliberately is not.
+        await MainActor.run {
+            let store = OnboardingStepStore(userDefaults: app.userDefaults)
+            expect(store.seenVersion(of: .welcome)) == 1
+            expect(store.seenVersion(of: .region)) == 1
+            expect(store.seenVersion(of: .notifications)) == 0
+        }
+    }
+
+    /// A new user (no region) gets a flow — evaluate returns a controller.
+    func test_onboarding_evaluate_newUser_returnsController() async {
+        let dataLoader = MockDataLoader(testName: name)
+        stubRegions(dataLoader: dataLoader)
+        let locManager = LocationManagerMock()
+        let locationService = LocationService(userDefaults: userDefaults, locationManager: locManager)
+        let config = AppConfig(regionsBaseURL: regionsURL, apiKey: apiKey, appVersion: appVersion, userDefaults: userDefaults, analytics: AnalyticsMock(), queue: queue, locationService: locationService, bundledRegionsFilePath: bundledRegionsPath, regionsAPIPath: regionsAPIPath, dataLoader: dataLoader)
+        let app = Application(config: config)
+
+        let controller = await withCheckedContinuation { continuation in
+            OnboardingFlowController.evaluate(application: app) { controller in
+                continuation.resume(returning: controller)
+            }
+        }
+
+        expect(controller).toNot(beNil())
     }
 
     func test_application_url_scheme_invalid_url_returns_false() async {

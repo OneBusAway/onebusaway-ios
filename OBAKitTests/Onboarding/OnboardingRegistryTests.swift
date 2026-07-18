@@ -13,10 +13,17 @@ import XCTest
 @MainActor
 final class OnboardingRegistryTests: XCTestCase {
     private var store: OnboardingStepStore!
+    private var suiteName: String!
 
     override func setUp() {
         super.setUp()
-        store = OnboardingStepStore(userDefaults: UserDefaults(suiteName: "OnboardingRegistryTests-\(UUID().uuidString)")!)
+        suiteName = "OnboardingRegistryTests-\(UUID().uuidString)"
+        store = OnboardingStepStore(userDefaults: UserDefaults(suiteName: suiteName)!)
+    }
+
+    override func tearDown() {
+        UserDefaults().removePersistentDomain(forName: suiteName)
+        super.tearDown()
     }
 
     /// Environment helper: a brand-new install with everything available.
@@ -24,7 +31,6 @@ final class OnboardingRegistryTests: XCTestCase {
         OnboardingEnvironment(
             hasDataToMigrate: false,
             shouldPerformMigration: false,
-            hasCurrentRegion: false,
             locationAuthorizationDetermined: false,
             notificationAuthorizationDetermined: false,
             isPushServiceConfigured: true)
@@ -46,10 +52,8 @@ final class OnboardingRegistryTests: XCTestCase {
     }
 
     func test_backfilledExistingUser_getsExactlyNotifications() {
-        var env = newUserEnvironment()
-        env.hasCurrentRegion = true
         store.backfillIfNeeded(hasCurrentRegion: true)
-        XCTAssertEqual(flowIDs(env), [.notifications])
+        XCTAssertEqual(flowIDs(newUserEnvironment()), [.notifications])
     }
 
     func test_noPushProvider_hidesNotificationsStep() {
@@ -73,8 +77,7 @@ final class OnboardingRegistryTests: XCTestCase {
     func test_versionBump_reshowsOnlyThatStep() {
         store.backfillIfNeeded(hasCurrentRegion: true)
         store.markSeen(.notifications, version: 1)
-        var env = newUserEnvironment()
-        env.hasCurrentRegion = true
+        let env = newUserEnvironment()
 
         XCTAssertEqual(flowIDs(env), [])
 
@@ -102,5 +105,16 @@ final class OnboardingRegistryTests: XCTestCase {
         env.locationAuthorizationDetermined = false
         store.markSeen(.location, version: 1)
         XCTAssertFalse(flowIDs(env).contains(.location))
+    }
+
+    func test_registry_stepIDsAndWeightsAreUnique() {
+        XCTAssertEqual(Set(OnboardingRegistry.steps.map(\.id)).count, OnboardingRegistry.steps.count)
+        XCTAssertEqual(Set(OnboardingRegistry.steps.map(\.weight)).count, OnboardingRegistry.steps.count)
+    }
+
+    func test_flow_sortsByWeightNotDeclarationOrder() {
+        let reversed = Array(OnboardingRegistry.steps.reversed())
+        let flow = OnboardingRegistry.flow(steps: reversed, environment: newUserEnvironment(), store: store)
+        XCTAssertEqual(flow.map(\.id), [.welcome, .location, .region, .notifications, .done])
     }
 }
