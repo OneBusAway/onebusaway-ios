@@ -58,6 +58,9 @@
 /* Groups button title in Bookmarks controller */
 "bookmarks_controller.groups_button_title" = "Edit";
 
+/* Shown on a bookmark card when arrival data has loaded but there are no departures in the near future */
+"bookmarks_controller.no_upcoming_departures" = "No upcoming departures";
+
 /* A menu item that allows the user to sort their bookmarks by distance from the user. */
 "bookmarks_controller.sort_menu.sort_by_distance" = "Sort by Distance";
 
@@ -124,11 +127,29 @@
 /* Button to retry finding the user's vehicle. */
 "current_trip_controller.retry" = "Try Again";
 
+/* An explanation of what the Base URL field of a custom region requires. */
+"custom_region_builder_controller.base_url_section.explanation" = "The root address of the region's API server, without the \"/api/where\" part—that gets added automatically. \"https://\" is assumed.";
+
 /* Title of the Base URL header. */
 "custom_region_builder_controller.base_url_section.header_title" = "Base URL";
 
+/* Navigation bar title when editing an existing custom region. */
+"custom_region_builder_controller.edit_title" = "Edit Custom Region";
+
 /* Example custom region name */
 "custom_region_builder_controller.example_data.region_name" = "My Custom Region";
+
+/* An explanation of the optional custom region name field. */
+"custom_region_builder_controller.name_section.explanation" = "Optional. If you leave this blank, the region will be named after its first transit agency.";
+
+/* Title of the Name header. */
+"custom_region_builder_controller.name_section.header_title" = "Name";
+
+/* Navigation bar title when creating a new custom region. */
+"custom_region_builder_controller.new_title" = "New Custom Region";
+
+/* An error message displayed when a custom region's server cannot be validated. First parameter is the server URL, second is the underlying error message. */
+"custom_region_builder_controller.server_validation_error_fmt" = "Unable to reach a compatible transit API server at %1$@. Check the Base URL and try again.\n\n%2$@";
 
 /* An explanation of dragging the map to highlight the service area of a custom region. */
 "custom_region_builder_controller.service_area_section.explanation" = "Drag the map to the approximate service area of this region.";
@@ -271,10 +292,7 @@
 /* Alert title when Live Activity fails to start */
 "live_activity.error.title" = "Unable to Start Tracking";
 
-/* Alert message explaining where to find the Live Activity */
-"live_activity.started.message" = "You'll see live arrival updates on your Lock Screen and Dynamic Island.";
-
-/* Alert title when a Live Activity starts */
+/* Toast shown when a Live Activity starts on the Lock Screen */
 "live_activity.started.title" = "Tracking on Lock Screen";
 
 /* Loading state text */
@@ -593,6 +611,117 @@
 
 /* Vehicle occupancy status is unknown. */
 "occupancy_status.unknown" = "Unknown";
+
+/* Recap row label for notification permission */
+"onboarding.done.alerts_row" = "Alerts";
+
+/* Body of the final onboarding screen; the argument is a region name */
+"onboarding.done.body_fmt" = "%@ is ready. Let's find your bus.";
+
+/* Recap row label for location permission */
+"onboarding.done.location_row" = "Location";
+
+/* Primary button on the final onboarding screen */
+"onboarding.done.primary_button" = "Start Exploring";
+
+/* Recap row label for the chosen region */
+"onboarding.done.region_row" = "Region";
+
+/* Title of the final onboarding screen */
+"onboarding.done.title" = "You're all set";
+
+/* Recap value for a disabled setting */
+"onboarding.done.value_off" = "Off";
+
+/* Recap value for an enabled setting */
+"onboarding.done.value_on" = "On";
+
+/* Detail for the map-centering benefit */
+"onboarding.location.benefit_map_body" = "Open straight to your surroundings — no searching.";
+
+/* Heading for a benefit of granting location access */
+"onboarding.location.benefit_map_title" = "Center the map on you";
+
+/* Detail for the nearby-stops benefit */
+"onboarding.location.benefit_nearby_body" = "Buses and trains around you, ranked by distance.";
+
+/* Heading for a benefit of granting location access */
+"onboarding.location.benefit_nearby_title" = "See nearby stops";
+
+/* Footnote of the location onboarding screen; the argument is the app name */
+"onboarding.location.footnote_fmt" = "%@ only uses your location while the app is open. Change this anytime in Settings.";
+
+/* Button the user taps to grant access to their location. */
+"onboarding.location.primary_button" = "Use My Location";
+
+/* Button the user can tap on to decline access to their location. */
+"onboarding.location.secondary_button" = "Not Now";
+
+/* Title of the location onboarding screen */
+"onboarding.location.title" = "See transit around you";
+
+/* Body of the notifications onboarding screen */
+"onboarding.notifications.body" = "Get notified about region-wide service alerts — ice storms, flooding, and major events that change how transit runs.";
+
+/* Example service alert shown on the notifications onboarding screen */
+"onboarding.notifications.example_event" = "Big game today: extra trains to the stadium";
+
+/* Example service alert shown on the notifications onboarding screen */
+"onboarding.notifications.example_ferry" = "Ferry delays: up to 40 minute waits";
+
+/* Example service alert shown on the notifications onboarding screen */
+"onboarding.notifications.example_storm" = "Winter storm — reduced service on 12 routes";
+
+/* Footnote of the notifications onboarding screen */
+"onboarding.notifications.footnote" = "Only major, region-wide alerts. No spam — you control the rest in Settings.";
+
+/* Decline button when the notifications step appears alone */
+"onboarding.notifications.maybe_later_button" = "Maybe Later";
+
+/* Badge shown when the notifications step appears alone for existing users */
+"onboarding.notifications.new_badge" = "NEW";
+
+/* Decline button on the notifications onboarding screen */
+"onboarding.notifications.not_now_button" = "Not Now";
+
+/* Primary button on the notifications onboarding screen */
+"onboarding.notifications.primary_button" = "Turn On Notifications";
+
+/* Title of the notifications onboarding screen */
+"onboarding.notifications.title" = "Stay ahead of disruptions";
+
+/* Accessibility label for the onboarding progress bar */
+"onboarding.progress.accessibility_label" = "Onboarding progress";
+
+/* Body of the region onboarding screen */
+"onboarding.region.body" = "We found the transit network closest to you.";
+
+/* Body of the region onboarding screen when no location is available */
+"onboarding.region.body_no_location" = "Choose the transit network you ride.";
+
+/* Label on the detected-region card */
+"onboarding.region.detected_label" = "Detected near you";
+
+/* Header above the alternate-regions list */
+"onboarding.region.other_header" = "Or choose another";
+
+/* Link to the full region picker */
+"onboarding.region.see_all_button" = "See all regions";
+
+/* Title of the region onboarding screen */
+"onboarding.region.title" = "Your region";
+
+/* Body of the first onboarding screen */
+"onboarding.welcome.body" = "Real-time arrivals for the buses, trains, and ferries you ride — built by transit riders, free and open source.";
+
+/* Footnote of the first onboarding screen */
+"onboarding.welcome.footnote" = "Available in dozens of transit regions worldwide";
+
+/* Primary button on the first onboarding screen */
+"onboarding.welcome.primary_button" = "Get Started";
+
+/* Title of the first onboarding screen; the argument is the app name */
+"onboarding.welcome.title_fmt" = "Welcome to %@";
 
 /* Reachability bulletin shown when the user has disabled cellular data for this app in iOS Settings. Both substituted values are the app name. */
 "reachability_bulletin.description.cellular_data_restricted_fmt" = "%1$@ is not currently allowed to access cellular data. To fix this, go to Settings > Cellular and enable cellular data for %2$@, or connect to a WiFi network.";
@@ -957,10 +1086,12 @@
 /* VoiceOver value of the route-filter bar button when the filter is active. */
 "stop_page.filter.a11y_on" = "on";
 
-/* VoiceOver value of a grouped route card whose departure list is hidden. */
+/* VoiceOver value of a collapsible section header when its contents are hidden.
+   VoiceOver value of a grouped route card whose departure list is hidden. */
 "stop_page.grouped.a11y_collapsed" = "collapsed";
 
-/* VoiceOver value of a grouped route card whose departure list is showing. */
+/* VoiceOver value of a collapsible section header when its contents are visible.
+   VoiceOver value of a grouped route card whose departure list is showing. */
 "stop_page.grouped.a11y_expanded" = "expanded";
 
 /* VoiceOver label for a grouped route card */

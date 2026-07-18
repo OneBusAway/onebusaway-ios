@@ -58,6 +58,9 @@
 /* Groups button title in Bookmarks controller */
 "bookmarks_controller.groups_button_title" = "Modifica";
 
+/* Shown on a bookmark card when arrival data has loaded but there are no departures in the near future */
+"bookmarks_controller.no_upcoming_departures" = "Nessuna partenza in arrivo";
+
 /* A menu item that allows the user to sort their bookmarks by distance from the user. */
 "bookmarks_controller.sort_menu.sort_by_distance" = "Ordina per distanza";
 
@@ -124,11 +127,29 @@
 /* Button to retry finding the user's vehicle. */
 "current_trip_controller.retry" = "Riprova";
 
+/* An explanation of what the Base URL field of a custom region requires. */
+"custom_region_builder_controller.base_url_section.explanation" = "L'indirizzo radice del server API della regione, senza la parte \"/api/where\", che viene aggiunta automaticamente. Si presume \"https://\".";
+
 /* Title of the Base URL header. */
 "custom_region_builder_controller.base_url_section.header_title" = "URL di base";
 
+/* Navigation bar title when editing an existing custom region. */
+"custom_region_builder_controller.edit_title" = "Modifica regione personalizzata";
+
 /* Example custom region name */
 "custom_region_builder_controller.example_data.region_name" = "Area personalizzata";
+
+/* An explanation of the optional custom region name field. */
+"custom_region_builder_controller.name_section.explanation" = "Facoltativo. Se lo lasci vuoto, la regione prenderà il nome dalla sua prima agenzia di trasporto.";
+
+/* Title of the Name header. */
+"custom_region_builder_controller.name_section.header_title" = "Nome";
+
+/* Navigation bar title when creating a new custom region. */
+"custom_region_builder_controller.new_title" = "Nuova regione personalizzata";
+
+/* An error message displayed when a custom region's server cannot be validated. First parameter is the server URL, second is the underlying error message. */
+"custom_region_builder_controller.server_validation_error_fmt" = "Impossibile raggiungere un server API di trasporto compatibile su %1$@. Controlla l'URL di base e riprova.\n\n%2$@";
 
 /* An explanation of dragging the map to highlight the service area of a custom region. */
 "custom_region_builder_controller.service_area_section.explanation" = "Drag the map to the approximate service area of this region.";
@@ -270,9 +291,6 @@
 
 /* Alert title when Live Activity fails to start */
 "live_activity.error.title" = "Impossibile avviare il tracciamento";
-
-/* Alert message explaining where to find the Live Activity */
-"live_activity.started.message" = "Vedrai gli aggiornamenti degli arrivi in tempo reale sulla schermata di blocco e nella Dynamic Island.";
 
 /* Alert title when a Live Activity starts */
 "live_activity.started.title" = "Tracciamento sulla schermata di blocco";
@@ -593,6 +611,117 @@
 
 /* Vehicle occupancy status is unknown. */
 "occupancy_status.unknown" = "Sconosciuta";
+
+/* Recap row label for notification permission */
+"onboarding.done.alerts_row" = "Avvisi";
+
+/* Body of the final onboarding screen; the argument is a region name */
+"onboarding.done.body_fmt" = "%@ è pronta. Troviamo il tuo autobus.";
+
+/* Recap row label for location permission */
+"onboarding.done.location_row" = "Posizione";
+
+/* Primary button on the final onboarding screen */
+"onboarding.done.primary_button" = "Inizia a esplorare";
+
+/* Recap row label for the chosen region */
+"onboarding.done.region_row" = "Regione";
+
+/* Title of the final onboarding screen */
+"onboarding.done.title" = "Tutto pronto";
+
+/* Recap value for a disabled setting */
+"onboarding.done.value_off" = "Disattivato";
+
+/* Recap value for an enabled setting */
+"onboarding.done.value_on" = "Attivato";
+
+/* Detail for the map-centering benefit */
+"onboarding.location.benefit_map_body" = "Apriti direttamente sui dintorni, senza dover cercare.";
+
+/* Heading for a benefit of granting location access */
+"onboarding.location.benefit_map_title" = "Centra la mappa su di te";
+
+/* Detail for the nearby-stops benefit */
+"onboarding.location.benefit_nearby_body" = "Autobus e treni intorno a te, ordinati per distanza.";
+
+/* Heading for a benefit of granting location access */
+"onboarding.location.benefit_nearby_title" = "Vedi le fermate vicine";
+
+/* Footnote of the location onboarding screen; the argument is the app name */
+"onboarding.location.footnote_fmt" = "%@ utilizza la tua posizione solo mentre l'app è aperta. Puoi modificarlo in qualsiasi momento in Impostazioni.";
+
+/* Button the user taps to grant access to their location. */
+"onboarding.location.primary_button" = "Usa la mia posizione";
+
+/* Button the user can tap on to decline access to their location. */
+"onboarding.location.secondary_button" = "Non ora";
+
+/* Title of the location onboarding screen */
+"onboarding.location.title" = "Scopri i trasporti intorno a te";
+
+/* Body of the notifications onboarding screen */
+"onboarding.notifications.body" = "Ricevi notifiche sugli avvisi di servizio a livello regionale: tempeste di ghiaccio, allagamenti ed eventi importanti che cambiano il funzionamento dei trasporti.";
+
+/* Example service alert shown on the notifications onboarding screen */
+"onboarding.notifications.example_event" = "Grande partita oggi: treni extra per lo stadio";
+
+/* Example service alert shown on the notifications onboarding screen */
+"onboarding.notifications.example_ferry" = "Ritardi dei traghetti: attese fino a 40 minuti";
+
+/* Example service alert shown on the notifications onboarding screen */
+"onboarding.notifications.example_storm" = "Tempesta invernale: servizio ridotto su 12 linee";
+
+/* Footnote of the notifications onboarding screen */
+"onboarding.notifications.footnote" = "Solo avvisi importanti a livello regionale. Niente spam: controlli tu il resto nelle Impostazioni.";
+
+/* Decline button when the notifications step appears alone */
+"onboarding.notifications.maybe_later_button" = "Forse più tardi";
+
+/* Badge shown when the notifications step appears alone for existing users */
+"onboarding.notifications.new_badge" = "NUOVO";
+
+/* Decline button on the notifications onboarding screen */
+"onboarding.notifications.not_now_button" = "Non ora";
+
+/* Primary button on the notifications onboarding screen */
+"onboarding.notifications.primary_button" = "Attiva le notifiche";
+
+/* Title of the notifications onboarding screen */
+"onboarding.notifications.title" = "Resta al passo con le interruzioni";
+
+/* Accessibility label for the onboarding progress bar */
+"onboarding.progress.accessibility_label" = "Avanzamento dell'introduzione";
+
+/* Body of the region onboarding screen */
+"onboarding.region.body" = "Abbiamo trovato la rete di trasporto più vicina a te.";
+
+/* Body of the region onboarding screen when no location is available */
+"onboarding.region.body_no_location" = "Scegli la rete di trasporto che usi.";
+
+/* Label on the detected-region card */
+"onboarding.region.detected_label" = "Rilevata vicino a te";
+
+/* Header above the alternate-regions list */
+"onboarding.region.other_header" = "Oppure scegline un'altra";
+
+/* Link to the full region picker */
+"onboarding.region.see_all_button" = "Vedi tutte le regioni";
+
+/* Title of the region onboarding screen */
+"onboarding.region.title" = "La tua regione";
+
+/* Body of the first onboarding screen */
+"onboarding.welcome.body" = "Arrivi in tempo reale per autobus, treni e traghetti che usi — creato da persone che utilizzano i mezzi pubblici, gratuito e open source.";
+
+/* Footnote of the first onboarding screen */
+"onboarding.welcome.footnote" = "Disponibile in decine di regioni di trasporto in tutto il mondo";
+
+/* Primary button on the first onboarding screen */
+"onboarding.welcome.primary_button" = "Inizia";
+
+/* Title of the first onboarding screen; the argument is the app name */
+"onboarding.welcome.title_fmt" = "Benvenuto in %@";
 
 /* Reachability bulletin shown when the user has disabled cellular data for this app in iOS Settings. Both substituted values are the app name. */
 "reachability_bulletin.description.cellular_data_restricted_fmt" = "L'app %1$@ non è attualmente autorizzata ad accedere ai dati cellulari. Per risolvere il problema, vai su Impostazioni > Cellulare e attiva i dati cellulari per %2$@, oppure connettiti a una rete WiFi.";

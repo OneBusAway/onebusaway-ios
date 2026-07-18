@@ -58,6 +58,9 @@
 /* Groups button title in Bookmarks controller */
 "bookmarks_controller.groups_button_title" = "I-edit";
 
+/* Shown on a bookmark card when arrival data has loaded but there are no departures in the near future */
+"bookmarks_controller.no_upcoming_departures" = "Walang paparating na byahe";
+
 /* A menu item that allows the user to sort their bookmarks by distance from the user. */
 "bookmarks_controller.sort_menu.sort_by_distance" = "I-sort ayon sa Distansya";
 
@@ -124,11 +127,29 @@
 /* Button to retry finding the user's vehicle. */
 "current_trip_controller.retry" = "Subukang Muli";
 
+/* An explanation of what the Base URL field of a custom region requires. */
+"custom_region_builder_controller.base_url_section.explanation" = "Ang root address ng API server ng rehiyon, nang walang \"/api/where\" na bahagi — awtomatiko itong idadagdag. Ipinapalagay na \"https://\".";
+
 /* Title of the Base URL header. */
 "custom_region_builder_controller.base_url_section.header_title" = "Base URL";
 
+/* Navigation bar title when editing an existing custom region. */
+"custom_region_builder_controller.edit_title" = "I-edit ang Custom na Rehiyon";
+
 /* Example custom region name */
 "custom_region_builder_controller.example_data.region_name" = "Aking Custom na Rehiyon";
+
+/* An explanation of the optional custom region name field. */
+"custom_region_builder_controller.name_section.explanation" = "Opsyonal. Kung iiwan mong blangko ito, ang rehiyon ay papangalanan batay sa unang ahensya ng transportasyon nito.";
+
+/* Title of the Name header. */
+"custom_region_builder_controller.name_section.header_title" = "Pangalan";
+
+/* Navigation bar title when creating a new custom region. */
+"custom_region_builder_controller.new_title" = "Bagong Custom na Rehiyon";
+
+/* An error message displayed when a custom region's server cannot be validated. First parameter is the server URL, second is the underlying error message. */
+"custom_region_builder_controller.server_validation_error_fmt" = "Hindi maabot ang katugmang transit API server sa %1$@. Suriin ang Base URL at subukang muli.\n\n%2$@";
 
 /* An explanation of dragging the map to highlight the service area of a custom region. */
 "custom_region_builder_controller.service_area_section.explanation" = "I-drag ang mapa sa tinatayang sakop ng serbisyo ng rehiyong ito.";
@@ -270,9 +291,6 @@
 
 /* Alert title when Live Activity fails to start */
 "live_activity.error.title" = "Hindi Masimulan ang Pagsubaybay";
-
-/* Alert message explaining where to find the Live Activity */
-"live_activity.started.message" = "Makikita mo ang mga live na update ng pagdating sa iyong Lock Screen at Dynamic Island.";
 
 /* Alert title when a Live Activity starts */
 "live_activity.started.title" = "Sinusubaybayan sa Lock Screen";
@@ -593,6 +611,117 @@
 
 /* Vehicle occupancy status is unknown. */
 "occupancy_status.unknown" = "Hindi alam";
+
+/* Recap row label for notification permission */
+"onboarding.done.alerts_row" = "Mga Alerto";
+
+/* Body of the final onboarding screen; the argument is a region name */
+"onboarding.done.body_fmt" = "Handa na ang %@. Hanapin natin ang iyong bus.";
+
+/* Recap row label for location permission */
+"onboarding.done.location_row" = "Lokasyon";
+
+/* Primary button on the final onboarding screen */
+"onboarding.done.primary_button" = "Simulan ang Paggalugad";
+
+/* Recap row label for the chosen region */
+"onboarding.done.region_row" = "Rehiyon";
+
+/* Title of the final onboarding screen */
+"onboarding.done.title" = "Handa ka na";
+
+/* Recap value for a disabled setting */
+"onboarding.done.value_off" = "Naka-off";
+
+/* Recap value for an enabled setting */
+"onboarding.done.value_on" = "Naka-on";
+
+/* Detail for the map-centering benefit */
+"onboarding.location.benefit_map_body" = "Direktang magbukas sa iyong paligid — walang paghahanap.";
+
+/* Heading for a benefit of granting location access */
+"onboarding.location.benefit_map_title" = "I-center ang mapa sa iyo";
+
+/* Detail for the nearby-stops benefit */
+"onboarding.location.benefit_nearby_body" = "Mga bus at tren sa paligid mo, nakaayos ayon sa distansya.";
+
+/* Heading for a benefit of granting location access */
+"onboarding.location.benefit_nearby_title" = "Tingnan ang malapit na mga hintuan";
+
+/* Footnote of the location onboarding screen; the argument is the app name */
+"onboarding.location.footnote_fmt" = "Ginagamit lang ng %@ ang iyong lokasyon habang bukas ang app. Puwede mong baguhin ito anumang oras sa Settings.";
+
+/* Button the user taps to grant access to their location. */
+"onboarding.location.primary_button" = "Gamitin ang Aking Lokasyon";
+
+/* Button the user can tap on to decline access to their location. */
+"onboarding.location.secondary_button" = "Hindi Ngayon";
+
+/* Title of the location onboarding screen */
+"onboarding.location.title" = "Tingnan ang transportasyon sa paligid mo";
+
+/* Body of the notifications onboarding screen */
+"onboarding.notifications.body" = "Makatanggap ng abiso tungkol sa mga alerto ng serbisyo sa buong rehiyon — mga bagyong yelo, pagbaha, at mga malalaking pangyayaring nagbabago sa takbo ng transportasyon.";
+
+/* Example service alert shown on the notifications onboarding screen */
+"onboarding.notifications.example_event" = "Malaking laro ngayon: dagdag na tren papuntang istadyum";
+
+/* Example service alert shown on the notifications onboarding screen */
+"onboarding.notifications.example_ferry" = "Pagkaantala ng ferry: hanggang 40 minutong paghihintay";
+
+/* Example service alert shown on the notifications onboarding screen */
+"onboarding.notifications.example_storm" = "Bagyo sa taglamig — pinaikling serbisyo sa 12 ruta";
+
+/* Footnote of the notifications onboarding screen */
+"onboarding.notifications.footnote" = "Mahahalagang alerto lang sa buong rehiyon. Walang spam — ikaw ang kumokontrol sa iba pa sa Settings.";
+
+/* Decline button when the notifications step appears alone */
+"onboarding.notifications.maybe_later_button" = "Sa Ibang Pagkakataon";
+
+/* Badge shown when the notifications step appears alone for existing users */
+"onboarding.notifications.new_badge" = "BAGO";
+
+/* Decline button on the notifications onboarding screen */
+"onboarding.notifications.not_now_button" = "Hindi Ngayon";
+
+/* Primary button on the notifications onboarding screen */
+"onboarding.notifications.primary_button" = "I-on ang mga Notification";
+
+/* Title of the notifications onboarding screen */
+"onboarding.notifications.title" = "Manatiling nangunguna sa mga abala";
+
+/* Accessibility label for the onboarding progress bar */
+"onboarding.progress.accessibility_label" = "Progreso ng onboarding";
+
+/* Body of the region onboarding screen */
+"onboarding.region.body" = "Nahanap namin ang pinakamalapit na transit network sa iyo.";
+
+/* Body of the region onboarding screen when no location is available */
+"onboarding.region.body_no_location" = "Piliin ang transit network na ginagamit mo.";
+
+/* Label on the detected-region card */
+"onboarding.region.detected_label" = "Napansin malapit sa iyo";
+
+/* Header above the alternate-regions list */
+"onboarding.region.other_header" = "O pumili ng iba";
+
+/* Link to the full region picker */
+"onboarding.region.see_all_button" = "Tingnan ang lahat ng rehiyon";
+
+/* Title of the region onboarding screen */
+"onboarding.region.title" = "Ang Iyong Rehiyon";
+
+/* Body of the first onboarding screen */
+"onboarding.welcome.body" = "Real-time na pagdating para sa mga bus, tren, at ferry na sinasakyan mo — ginawa ng mga sumasakay sa transit, libre at open source.";
+
+/* Footnote of the first onboarding screen */
+"onboarding.welcome.footnote" = "Available sa dose-dosenang transit region sa buong mundo";
+
+/* Primary button on the first onboarding screen */
+"onboarding.welcome.primary_button" = "Simulan";
+
+/* Title of the first onboarding screen; the argument is the app name */
+"onboarding.welcome.title_fmt" = "Maligayang Pagdating sa %@";
 
 /* Reachability bulletin shown when the user has disabled cellular data for this app in iOS Settings. Both substituted values are the app name. */
 "reachability_bulletin.description.cellular_data_restricted_fmt" = "Kasalukuyang hindi pinapayagan ang %1$@ app na ma-access ang cellular data. Para ayusin ito, pumunta sa Settings > Cellular at i-enable ang cellular data para sa %2$@ app, o kumonekta sa isang WiFi network.";

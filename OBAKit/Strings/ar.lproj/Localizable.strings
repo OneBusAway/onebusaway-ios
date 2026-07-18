@@ -58,6 +58,9 @@
 /* Groups button title in Bookmarks controller */
 "bookmarks_controller.groups_button_title" = "تحرير";
 
+/* Shown on a bookmark card when arrival data has loaded but there are no departures in the near future */
+"bookmarks_controller.no_upcoming_departures" = "لا توجد رحلات مغادرة قادمة";
+
 /* A menu item that allows the user to sort their bookmarks by distance from the user. */
 "bookmarks_controller.sort_menu.sort_by_distance" = "ترتيب حسب المسافة";
 
@@ -124,11 +127,29 @@
 /* Button to retry finding the user's vehicle. */
 "current_trip_controller.retry" = "إعادة المحاولة";
 
+/* An explanation of what the Base URL field of a custom region requires. */
+"custom_region_builder_controller.base_url_section.explanation" = "العنوان الجذري لخادم API الخاص بالمنطقة، بدون جزء \"/api/where\" الذي تتم إضافته تلقائيًا. من المفترض استخدام \"https://\".";
+
 /* Title of the Base URL header. */
 "custom_region_builder_controller.base_url_section.header_title" = "عنوان URL الأساسي";
 
+/* Navigation bar title when editing an existing custom region. */
+"custom_region_builder_controller.edit_title" = "تعديل منطقة مخصصة";
+
 /* Example custom region name */
 "custom_region_builder_controller.example_data.region_name" = "منطقتي المخصصة";
+
+/* An explanation of the optional custom region name field. */
+"custom_region_builder_controller.name_section.explanation" = "اختياري. إذا تركت هذا الحقل فارغًا، سيتم تسمية المنطقة باسم أول وكالة نقل فيها.";
+
+/* Title of the Name header. */
+"custom_region_builder_controller.name_section.header_title" = "الاسم";
+
+/* Navigation bar title when creating a new custom region. */
+"custom_region_builder_controller.new_title" = "منطقة مخصصة جديدة";
+
+/* An error message displayed when a custom region's server cannot be validated. First parameter is the server URL, second is the underlying error message. */
+"custom_region_builder_controller.server_validation_error_fmt" = "تعذّر الوصول إلى خادم API نقل متوافق على %1$@. تحقّق من عنوان URL الأساسي وحاول مرة أخرى.\n\n%2$@";
 
 /* An explanation of dragging the map to highlight the service area of a custom region. */
 "custom_region_builder_controller.service_area_section.explanation" = "اسحب الخريطة إلى منطقة الخدمة التقريبية لهذه المنطقة.";
@@ -270,9 +291,6 @@
 
 /* Alert title when Live Activity fails to start */
 "live_activity.error.title" = "تعذّر بدء التتبّع";
-
-/* Alert message explaining where to find the Live Activity */
-"live_activity.started.message" = "ستظهر لك تحديثات الوصول المباشرة على شاشة القفل وفي «الجزيرة الديناميكية».";
 
 /* Alert title when a Live Activity starts */
 "live_activity.started.title" = "التتبّع على شاشة القفل";
@@ -593,6 +611,117 @@
 
 /* Vehicle occupancy status is unknown. */
 "occupancy_status.unknown" = "غير معروف";
+
+/* Recap row label for notification permission */
+"onboarding.done.alerts_row" = "التنبيهات";
+
+/* Body of the final onboarding screen; the argument is a region name */
+"onboarding.done.body_fmt" = "%@ جاهز. لنجد حافلتك.";
+
+/* Recap row label for location permission */
+"onboarding.done.location_row" = "الموقع";
+
+/* Primary button on the final onboarding screen */
+"onboarding.done.primary_button" = "ابدأ الاستكشاف";
+
+/* Recap row label for the chosen region */
+"onboarding.done.region_row" = "المنطقة";
+
+/* Title of the final onboarding screen */
+"onboarding.done.title" = "كل شيء جاهز";
+
+/* Recap value for a disabled setting */
+"onboarding.done.value_off" = "إيقاف";
+
+/* Recap value for an enabled setting */
+"onboarding.done.value_on" = "تشغيل";
+
+/* Detail for the map-centering benefit */
+"onboarding.location.benefit_map_body" = "افتح مباشرةً على محيطك — بلا حاجة للبحث.";
+
+/* Heading for a benefit of granting location access */
+"onboarding.location.benefit_map_title" = "توسيط الخريطة عليك";
+
+/* Detail for the nearby-stops benefit */
+"onboarding.location.benefit_nearby_body" = "الحافلات والقطارات من حولك، مرتّبة حسب المسافة.";
+
+/* Heading for a benefit of granting location access */
+"onboarding.location.benefit_nearby_title" = "عرض المحطات القريبة";
+
+/* Footnote of the location onboarding screen; the argument is the app name */
+"onboarding.location.footnote_fmt" = "يستخدم %@ موقعك فقط أثناء فتح التطبيق. يمكنك تغيير ذلك في أي وقت من الإعدادات.";
+
+/* Button the user taps to grant access to their location. */
+"onboarding.location.primary_button" = "استخدام موقعي";
+
+/* Button the user can tap on to decline access to their location. */
+"onboarding.location.secondary_button" = "ليس الآن";
+
+/* Title of the location onboarding screen */
+"onboarding.location.title" = "شاهد وسائل النقل من حولك";
+
+/* Body of the notifications onboarding screen */
+"onboarding.notifications.body" = "احصل على إشعارات حول تنبيهات الخدمة على مستوى المنطقة — العواصف الجليدية، الفيضانات، والأحداث الكبرى التي تغيّر سير حركة النقل.";
+
+/* Example service alert shown on the notifications onboarding screen */
+"onboarding.notifications.example_event" = "مباراة كبيرة اليوم: قطارات إضافية إلى الملعب";
+
+/* Example service alert shown on the notifications onboarding screen */
+"onboarding.notifications.example_ferry" = "تأخيرات العبّارة: انتظار يصل إلى 40 دقيقة";
+
+/* Example service alert shown on the notifications onboarding screen */
+"onboarding.notifications.example_storm" = "عاصفة شتوية — خدمة مخفّضة على 12 خطًا";
+
+/* Footnote of the notifications onboarding screen */
+"onboarding.notifications.footnote" = "تنبيهات مهمة على مستوى المنطقة فقط. بلا رسائل مزعجة — أنت من يتحكم بالباقي من الإعدادات.";
+
+/* Decline button when the notifications step appears alone */
+"onboarding.notifications.maybe_later_button" = "ربما لاحقًا";
+
+/* Badge shown when the notifications step appears alone for existing users */
+"onboarding.notifications.new_badge" = "جديد";
+
+/* Decline button on the notifications onboarding screen */
+"onboarding.notifications.not_now_button" = "ليس الآن";
+
+/* Primary button on the notifications onboarding screen */
+"onboarding.notifications.primary_button" = "تشغيل الإشعارات";
+
+/* Title of the notifications onboarding screen */
+"onboarding.notifications.title" = "ابقَ على اطّلاع بالانقطاعات";
+
+/* Accessibility label for the onboarding progress bar */
+"onboarding.progress.accessibility_label" = "تقدّم التهيئة";
+
+/* Body of the region onboarding screen */
+"onboarding.region.body" = "وجدنا شبكة النقل الأقرب إليك.";
+
+/* Body of the region onboarding screen when no location is available */
+"onboarding.region.body_no_location" = "اختر شبكة النقل التي تستقلّها.";
+
+/* Label on the detected-region card */
+"onboarding.region.detected_label" = "تم اكتشافها بالقرب منك";
+
+/* Header above the alternate-regions list */
+"onboarding.region.other_header" = "أو اختر منطقة أخرى";
+
+/* Link to the full region picker */
+"onboarding.region.see_all_button" = "عرض كل المناطق";
+
+/* Title of the region onboarding screen */
+"onboarding.region.title" = "منطقتك";
+
+/* Body of the first onboarding screen */
+"onboarding.welcome.body" = "مواعيد وصول فورية للحافلات والقطارات والعبّارات التي تستقلّها — بناه راكبو وسائل النقل العام، مجانًا ومفتوح المصدر.";
+
+/* Footnote of the first onboarding screen */
+"onboarding.welcome.footnote" = "متوفر في عشرات مناطق النقل حول العالم";
+
+/* Primary button on the first onboarding screen */
+"onboarding.welcome.primary_button" = "ابدأ";
+
+/* Title of the first onboarding screen; the argument is the app name */
+"onboarding.welcome.title_fmt" = "مرحبًا بك في %@";
 
 /* Reachability bulletin shown when the user has disabled cellular data for this app in iOS Settings. Both substituted values are the app name. */
 "reachability_bulletin.description.cellular_data_restricted_fmt" = "لا يُسمح لـ %1$@ حاليًا بالوصول إلى البيانات الخلوية. لإصلاح ذلك، انتقل إلى الإعدادات > خلوي وفعّل البيانات الخلوية لـ %2$@، أو اتصل بشبكة WiFi.";
