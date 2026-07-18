@@ -54,9 +54,10 @@ struct OnboardingRegionView<Provider: RegionProvider>: View {
                 }
 
                 if !shortList.isEmpty {
-                    Text(OBALoc("onboarding.region.other_header", value: "Or choose another", comment: "Header above the alternate-regions list").uppercased())
+                    Text(OBALoc("onboarding.region.other_header", value: "Or choose another", comment: "Header above the alternate-regions list"))
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.tertiary)
+                        .textCase(.uppercase)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.top, 24)
                         .padding(.bottom, 8)
@@ -88,7 +89,11 @@ struct OnboardingRegionView<Provider: RegionProvider>: View {
             }
         }
         .task {
-            try? await regionProvider.refreshRegions()
+            do {
+                try await regionProvider.refreshRegions()
+            } catch {
+                self.error = error
+            }
         }
         .disabled(isSettingRegion)
         .errorAlert(error: $error)
@@ -99,6 +104,7 @@ struct OnboardingRegionView<Provider: RegionProvider>: View {
             // Live map preview (spec: preferred over MKMapSnapshotter — adapts to dark
             // mode automatically and can draw the service-area overlay).
             RegionPickerMap(mapRect: .constant(region.serviceRect), mapHeight: 108)
+                .allowsHitTesting(false)
                 .frame(height: 108)
                 .clipped()
             cardFooter(for: region)
@@ -110,9 +116,10 @@ struct OnboardingRegionView<Provider: RegionProvider>: View {
     private func cardFooter(for region: Region) -> some View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 3) {
-                Text(OBALoc("onboarding.region.detected_label", value: "Detected near you", comment: "Label on the detected-region card").uppercased())
+                Text(OBALoc("onboarding.region.detected_label", value: "Detected near you", comment: "Label on the detected-region card"))
                     .font(.caption.weight(.bold))
                     .foregroundStyle(Color.accentColor)
+                    .textCase(.uppercase)
                 Text(region.name)
                     .font(.title3.weight(.bold))
             }
