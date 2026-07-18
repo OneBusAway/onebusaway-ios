@@ -541,6 +541,21 @@ public struct UmamiAnalyticsConfig: Codable, Equatable, Hashable {
 
     /// The Umami website UUID that events are keyed/routed by.
     public let id: String
+
+    public init(url: URL, id: String) {
+        self.url = url
+        self.id = id
+    }
+
+    /// The single source of truth for the both-or-nothing rule: a config exists
+    /// only when both a URL and a non-blank website ID are present. Partial
+    /// pairs collapse to `nil`, which means "analytics disabled."
+    public init?(url: URL?, id: String?) {
+        guard let url, let id = id?.strip(), !id.isEmpty else {
+            return nil
+        }
+        self.init(url: url, id: id)
+    }
 }
 
 // MARK: - Open311Server

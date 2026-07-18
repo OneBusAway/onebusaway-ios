@@ -131,4 +131,30 @@ class RegionsEncodingTests: OBATestCase {
         expect(customRegionRT.serviceRect.height).to(beCloseTo(9485.2270, within: 0.1))
         expect(customRegionRT.serviceRect.width).to(beCloseTo(9453.3477, within: 0.1))
     }
+
+    // MARK: - UmamiAnalyticsConfig inits
+
+    func testUmamiConfig_memberwiseInit() {
+        let config = UmamiAnalyticsConfig(url: URL(string: "https://analytics.example.com")!, id: "site-123")
+        expect(config.url.absoluteString) == "https://analytics.example.com"
+        expect(config.id) == "site-123"
+    }
+
+    func testUmamiConfig_failableInit_bothPresent() {
+        let config = UmamiAnalyticsConfig(url: URL(string: "https://analytics.example.com"), id: "site-123")
+        expect(config?.id) == "site-123"
+    }
+
+    func testUmamiConfig_failableInit_trimsID() {
+        let config = UmamiAnalyticsConfig(url: URL(string: "https://analytics.example.com"), id: "  site-123 \n")
+        expect(config?.id) == "site-123"
+    }
+
+    func testUmamiConfig_failableInit_partialPairsCollapseToNil() {
+        expect(UmamiAnalyticsConfig(url: nil, id: "site-123")).to(beNil())
+        expect(UmamiAnalyticsConfig(url: URL(string: "https://analytics.example.com"), id: nil)).to(beNil())
+        expect(UmamiAnalyticsConfig(url: URL(string: "https://analytics.example.com"), id: "")).to(beNil())
+        expect(UmamiAnalyticsConfig(url: URL(string: "https://analytics.example.com"), id: "   ")).to(beNil())
+        expect(UmamiAnalyticsConfig(url: nil, id: nil)).to(beNil())
+    }
 }
