@@ -23,12 +23,8 @@ public class OnboardingFlowController: UIViewController {
     /// Called on the main queue when the user completes the last step. Guaranteed to fire
     /// at most once, even if the underlying flow view invokes its completion more than once
     /// (e.g. a double-tap on the final screen's button before dismissal).
-    @objc public var onFinished: (() -> Void)? {
-        get { onFinishedStorage }
-        set { onFinishedStorage = newValue }
-    }
+    @objc public var onFinished: (() -> Void)?
 
-    private var onFinishedStorage: (() -> Void)?
     private var didFireFinished = false
 
     private let application: Application
@@ -109,6 +105,6 @@ public class OnboardingFlowController: UIViewController {
     private func fireOnFinishedOnce() {
         guard !didFireFinished else { return }
         didFireFinished = true
-        onFinishedStorage?()
+        onFinished?()
     }
 }
