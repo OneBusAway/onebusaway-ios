@@ -58,6 +58,9 @@
 /* Groups button title in Bookmarks controller */
 "bookmarks_controller.groups_button_title" = "Изменить";
 
+/* Shown on a bookmark card when arrival data has loaded but there are no departures in the near future */
+"bookmarks_controller.no_upcoming_departures" = "Нет ближайших рейсов";
+
 /* A menu item that allows the user to sort their bookmarks by distance from the user. */
 "bookmarks_controller.sort_menu.sort_by_distance" = "Сортировать по расстоянию";
 
@@ -124,11 +127,29 @@
 /* Button to retry finding the user's vehicle. */
 "current_trip_controller.retry" = "Повторить";
 
+/* An explanation of what the Base URL field of a custom region requires. */
+"custom_region_builder_controller.base_url_section.explanation" = "Корневой адрес API-сервера региона, без части \"/api/where\" — она добавляется автоматически. Предполагается \"https://\".";
+
 /* Title of the Base URL header. */
 "custom_region_builder_controller.base_url_section.header_title" = "Базовый URL";
 
+/* Navigation bar title when editing an existing custom region. */
+"custom_region_builder_controller.edit_title" = "Изменить пользовательский регион";
+
 /* Example custom region name */
 "custom_region_builder_controller.example_data.region_name" = "Мой пользовательский регион";
+
+/* An explanation of the optional custom region name field. */
+"custom_region_builder_controller.name_section.explanation" = "Необязательно. Если оставить это поле пустым, регион будет назван в честь первого перевозчика.";
+
+/* Title of the Name header. */
+"custom_region_builder_controller.name_section.header_title" = "Название";
+
+/* Navigation bar title when creating a new custom region. */
+"custom_region_builder_controller.new_title" = "Новый пользовательский регион";
+
+/* An error message displayed when a custom region's server cannot be validated. First parameter is the server URL, second is the underlying error message. */
+"custom_region_builder_controller.server_validation_error_fmt" = "Не удалось подключиться к совместимому API-серверу транспорта по адресу %1$@. Проверьте базовый URL и повторите попытку.\n\n%2$@";
 
 /* An explanation of dragging the map to highlight the service area of a custom region. */
 "custom_region_builder_controller.service_area_section.explanation" = "Перетащите карту к примерной зоне обслуживания этого региона.";
@@ -270,9 +291,6 @@
 
 /* Alert title when Live Activity fails to start */
 "live_activity.error.title" = "Не удалось начать отслеживание";
-
-/* Alert message explaining where to find the Live Activity */
-"live_activity.started.message" = "Данные о прибытии в реальном времени будут показаны на экране блокировки и в Динамическом острове.";
 
 /* Alert title when a Live Activity starts */
 "live_activity.started.title" = "Отслеживание на экране блокировки";
@@ -437,6 +455,12 @@
 /* Displayed in the map status view at the top of the map when the user must zoom in to see stops on the map */
 "map_status_view.zoom_in_for_stops" = "Приблизьте, чтобы увидеть остановки";
 
+/* Title of the alert shown when location services are disabled for the app. */
+"map_status_alert.location_services_off.title" = "Location Services Off";
+
+/* Title of the alert shown when the user has restricted the app to reduced-accuracy location. */
+"map_status_alert.precise_location_off.title" = "Precise Location Off";
+
 /* Header for a section that shows the user information about this app. */
 "more_controller.about_app" = "О приложении";
 
@@ -587,6 +611,117 @@
 
 /* Vehicle occupancy status is unknown. */
 "occupancy_status.unknown" = "Неизвестно";
+
+/* Recap row label for notification permission */
+"onboarding.done.alerts_row" = "Оповещения";
+
+/* Body of the final onboarding screen; the argument is a region name */
+"onboarding.done.body_fmt" = "%@ готово. Найдём ваш автобус.";
+
+/* Recap row label for location permission */
+"onboarding.done.location_row" = "Геолокация";
+
+/* Primary button on the final onboarding screen */
+"onboarding.done.primary_button" = "Начать изучение";
+
+/* Recap row label for the chosen region */
+"onboarding.done.region_row" = "Регион";
+
+/* Title of the final onboarding screen */
+"onboarding.done.title" = "Всё готово";
+
+/* Recap value for a disabled setting */
+"onboarding.done.value_off" = "Выкл";
+
+/* Recap value for an enabled setting */
+"onboarding.done.value_on" = "Вкл";
+
+/* Detail for the map-centering benefit */
+"onboarding.location.benefit_map_body" = "Открывайтесь сразу на своём районе — без поиска.";
+
+/* Heading for a benefit of granting location access */
+"onboarding.location.benefit_map_title" = "Центрировать карту на вас";
+
+/* Detail for the nearby-stops benefit */
+"onboarding.location.benefit_nearby_body" = "Автобусы и поезда рядом с вами, отсортированные по расстоянию.";
+
+/* Heading for a benefit of granting location access */
+"onboarding.location.benefit_nearby_title" = "Смотреть ближайшие остановки";
+
+/* Footnote of the location onboarding screen; the argument is the app name */
+"onboarding.location.footnote_fmt" = "%@ использует вашу геолокацию только пока приложение открыто. Вы можете изменить это в любой момент в Настройках.";
+
+/* Button the user taps to grant access to their location. */
+"onboarding.location.primary_button" = "Использовать мою геолокацию";
+
+/* Button the user can tap on to decline access to their location. */
+"onboarding.location.secondary_button" = "Не сейчас";
+
+/* Title of the location onboarding screen */
+"onboarding.location.title" = "Смотрите транспорт вокруг себя";
+
+/* Body of the notifications onboarding screen */
+"onboarding.notifications.body" = "Получайте уведомления о региональных предупреждениях о работе транспорта — ледяные бури, наводнения и крупные события, влияющие на движение.";
+
+/* Example service alert shown on the notifications onboarding screen */
+"onboarding.notifications.example_event" = "Сегодня большой матч: дополнительные поезда к стадиону";
+
+/* Example service alert shown on the notifications onboarding screen */
+"onboarding.notifications.example_ferry" = "Задержки парома: ожидание до 40 минут";
+
+/* Example service alert shown on the notifications onboarding screen */
+"onboarding.notifications.example_storm" = "Зимняя буря — сокращённое обслуживание на 12 маршрутах";
+
+/* Footnote of the notifications onboarding screen */
+"onboarding.notifications.footnote" = "Только важные региональные оповещения. Никакого спама — остальным вы управляете в Настройках.";
+
+/* Decline button when the notifications step appears alone */
+"onboarding.notifications.maybe_later_button" = "Может быть позже";
+
+/* Badge shown when the notifications step appears alone for existing users */
+"onboarding.notifications.new_badge" = "НОВОЕ";
+
+/* Decline button on the notifications onboarding screen */
+"onboarding.notifications.not_now_button" = "Не сейчас";
+
+/* Primary button on the notifications onboarding screen */
+"onboarding.notifications.primary_button" = "Включить уведомления";
+
+/* Title of the notifications onboarding screen */
+"onboarding.notifications.title" = "Будьте в курсе сбоев";
+
+/* Accessibility label for the onboarding progress bar */
+"onboarding.progress.accessibility_label" = "Прогресс знакомства с приложением";
+
+/* Body of the region onboarding screen */
+"onboarding.region.body" = "Мы нашли транспортную сеть ближе всего к вам.";
+
+/* Body of the region onboarding screen when no location is available */
+"onboarding.region.body_no_location" = "Выберите транспортную сеть, которой вы пользуетесь.";
+
+/* Label on the detected-region card */
+"onboarding.region.detected_label" = "Обнаружено рядом с вами";
+
+/* Header above the alternate-regions list */
+"onboarding.region.other_header" = "Или выберите другой";
+
+/* Link to the full region picker */
+"onboarding.region.see_all_button" = "Смотреть все регионы";
+
+/* Title of the region onboarding screen */
+"onboarding.region.title" = "Ваш регион";
+
+/* Body of the first onboarding screen */
+"onboarding.welcome.body" = "Прибытие транспорта в реальном времени для автобусов, поездов и паромов, которыми вы пользуетесь — создано пассажирами общественного транспорта, бесплатно и с открытым исходным кодом.";
+
+/* Footnote of the first onboarding screen */
+"onboarding.welcome.footnote" = "Доступно в десятках транспортных регионов по всему миру";
+
+/* Primary button on the first onboarding screen */
+"onboarding.welcome.primary_button" = "Начать";
+
+/* Title of the first onboarding screen; the argument is the app name */
+"onboarding.welcome.title_fmt" = "Добро пожаловать в %@";
 
 /* Reachability bulletin shown when the user has disabled cellular data for this app in iOS Settings. Both substituted values are the app name. */
 "reachability_bulletin.description.cellular_data_restricted_fmt" = "Приложению %1$@ сейчас запрещён доступ к сотовым данным. Чтобы исправить это, откройте «Настройки» > «Сотовая связь» и включите сотовые данные для приложения %2$@ или подключитесь к сети Wi-Fi.";

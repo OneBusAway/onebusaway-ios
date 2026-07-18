@@ -13,6 +13,7 @@ import CoreLocation
 @testable import OBAKit
 @testable import OBAKitCore
 
+@MainActor
 class WalkingDirectionsTests: XCTestCase {
 
     // Two locations exactly 140 meters apart

@@ -13,6 +13,7 @@ import Nimble
 
 /// Tests for `Survey.isExternalSurvey`, which keys off the hero question
 /// (the question at `position == 1`).
+@MainActor
 final class SurveyExternalSurveyTests: XCTestCase {
 
     // Positive: the hero question is an external survey.

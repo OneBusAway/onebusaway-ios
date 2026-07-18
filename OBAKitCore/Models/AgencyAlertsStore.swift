@@ -10,14 +10,28 @@
 import Foundation
 import os.log
 
+@MainActor
 @objc public protocol AgencyAlertsDelegate: NSObjectProtocol {
     @objc optional func agencyAlertsUpdated()
     @objc optional func agencyAlertsStore(_ store: AgencyAlertsStore, displayError error: Error)
 }
 
-public class AgencyAlertsStore: NSObject, RegionsServiceDelegate {
-    public var apiService: RESTAPIService?
-    public var obacoService: ObacoAPIService?
+// @unchecked Sendable: all mutable state (`agencies`, `alerts`, `readAlertIDs`,
+// the service references, and the test-only fetch-suppression flag) is guarded by
+// `stateLock`; the delegate table is confined to the main actor (registration is
+// @MainActor and notification reads it from a main-actor task).
+public class AgencyAlertsStore: NSObject, @unchecked Sendable {
+    public var apiService: RESTAPIService? {
+        get { stateLock.withLock { _apiService } }
+        set { stateLock.withLock { _apiService = newValue } }
+    }
+    private var _apiService: RESTAPIService?
+
+    public var obacoService: ObacoAPIService? {
+        get { stateLock.withLock { _obacoService } }
+        set { stateLock.withLock { _obacoService = newValue } }
+    }
+    private var _obacoService: ObacoAPIService?
 
     private let userDefaults: UserDefaults
 
@@ -26,6 +40,7 @@ public class AgencyAlertsStore: NSObject, RegionsServiceDelegate {
         static let readAgencyAlertIDs = "readAgencyAlertIDs"
     }
 
+    @MainActor
     public init(userDefaults: UserDefaults, regionsService: RegionsService) {
         self.userDefaults = userDefaults
         self.userDefaults.register(defaults: [
@@ -33,6 +48,7 @@ public class AgencyAlertsStore: NSObject, RegionsServiceDelegate {
         ])
 
         self.regionsService = regionsService
+        self.readAlertIDs = Set((userDefaults.array(forKey: UserDefaultKeys.readAgencyAlertIDs) as? [String]) ?? [])
 
         super.init()
 
@@ -46,12 +62,6 @@ public class AgencyAlertsStore: NSObject, RegionsServiceDelegate {
     // MARK: - Regions Service
 
     private let regionsService: RegionsService
-
-    public func regionsService(_ service: RegionsService, updatedRegion region: Region) {
-        cancelAllOperations()
-        deleteAgencyAlerts()
-        checkForUpdates()
-    }
 
     // MARK: - Updates
 
@@ -109,7 +119,7 @@ public class AgencyAlertsStore: NSObject, RegionsServiceDelegate {
         // Once a UI test has injected a synthetic alert (`seedRegionWideAlertForTesting()`),
         // skip live fetches entirely so the seeded alert is the only bulletin the
         // test can encounter.
-        guard !suppressLiveFetchesForTesting else {
+        guard !stateLock.withLock({ suppressLiveFetchesForTesting }) else {
             return
         }
         #endif
@@ -165,11 +175,9 @@ public class AgencyAlertsStore: NSObject, RegionsServiceDelegate {
 
     // MARK: - Read State
 
-    private lazy var readAlertIDs: Set<String> = {
-        let vals = userDefaults.array(forKey: UserDefaultKeys.readAgencyAlertIDs) as? [String]
-        var set = Set(vals ?? [String]())
-        return set
-    }()
+    /// Guarded by `stateLock`; populated eagerly in init (a `lazy var` would be
+    /// unsynchronized mutable state).
+    private var readAlertIDs: Set<String>
 
     public func markAlertRead(_ alert: AgencyAlert) {
         stateLock.withLock {
@@ -216,6 +224,7 @@ public class AgencyAlertsStore: NSObject, RegionsServiceDelegate {
     #if DEBUG
     /// Set once a synthetic alert has been seeded, so ``checkForUpdates()`` stops
     /// issuing live network fetches that could surface a competing bulletin.
+    /// Guarded by `stateLock`.
     private var suppressLiveFetchesForTesting = false
 
     /// Seeds a synthetic, unread, high-severity region-wide alert and notifies delegates,
@@ -224,7 +233,7 @@ public class AgencyAlertsStore: NSObject, RegionsServiceDelegate {
     /// The entity ID is unique per call so the read-state persisted in UserDefaults
     /// by earlier runs never suppresses the bulletin.
     public func seedRegionWideAlertForTesting() {
-        suppressLiveFetchesForTesting = true
+        stateLock.withLock { suppressLiveFetchesForTesting = true }
 
         var period = TransitRealtime_TimeRange()
         period.start = UInt64(Date().timeIntervalSince1970)
@@ -293,29 +302,39 @@ public class AgencyAlertsStore: NSObject, RegionsServiceDelegate {
 
     private let delegates = NSHashTable<AgencyAlertsDelegate>.weakObjects()
 
-    public func addDelegate(_ delegate: AgencyAlertsDelegate) {
+    @MainActor public func addDelegate(_ delegate: AgencyAlertsDelegate) {
         delegates.add(delegate)
     }
 
-    public func removeDelegate(_ delegate: AgencyAlertsDelegate) {
+    @MainActor public func removeDelegate(_ delegate: AgencyAlertsDelegate) {
         delegates.remove(delegate)
     }
 
     private func notifyDelegatesAlertsUpdated() {
-        let delegates = self.delegates.allObjects
-        DispatchQueue.main.async {
-            for d in delegates {
+        Task { @MainActor in
+            for d in self.delegates.allObjects {
                 d.agencyAlertsUpdated?()
             }
         }
     }
 
     private func notifyDelegates(error: Error) {
-        let delegates = self.delegates.allObjects
-        DispatchQueue.main.async {
-            for d in delegates {
+        Task { @MainActor in
+            for d in self.delegates.allObjects {
                 d.agencyAlertsStore?(self, displayError: error)
             }
         }
+    }
+}
+
+// MARK: - RegionsServiceDelegate
+
+// Conformance lives in an extension so the @MainActor protocol's isolation applies
+// to this witness only, not (via inference) to the whole class.
+extension AgencyAlertsStore: RegionsServiceDelegate {
+    public func regionsService(_ service: RegionsService, updatedRegion region: Region) {
+        cancelAllOperations()
+        deleteAgencyAlerts()
+        checkForUpdates()
     }
 }

@@ -14,6 +14,7 @@ import XCTest
 /// LiveActivityContentState builder emits (the same JSON file exists in both
 /// repos). Uses a default-configuration JSONDecoder because Apple decodes
 /// pushed content-state with default strategies — no convertFromSnakeCase.
+@MainActor
 class TripAttributesContentStateTests: XCTestCase {
     func testDecodesServerFixtureWithDefaultDecoder() throws {
         let url = Bundle(for: type(of: self)).url(forResource: "live_activity_content_state", withExtension: "json")!

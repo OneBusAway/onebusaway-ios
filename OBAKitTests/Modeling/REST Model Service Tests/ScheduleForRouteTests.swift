@@ -17,8 +17,8 @@ import Nimble
 class ScheduleForRouteTests: OBATestCase {
     let routeID = "1_100223"
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
 
         let dataLoader = (restService.dataLoader as! MockDataLoader)
         dataLoader.mock(

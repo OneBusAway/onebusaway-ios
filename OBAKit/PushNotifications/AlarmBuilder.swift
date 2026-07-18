@@ -108,7 +108,7 @@ class AlarmBuilder: NSObject {
 
         let arrivalDeparture = self.arrivalDeparture
 
-        await ProgressHUD.show()
+        ProgressHUD.show()
 
         defer {
             Task { @MainActor in
@@ -155,6 +155,12 @@ class AlarmTimePickerItem: ThemedBulletinPage {
     /// The current value of the "Track on Lock Screen" toggle.
     var trackOnLockScreen: Bool { userDefaults.bool(forKey: Self.trackOnLockScreenKey) }
 
+    // Required by ThemedBulletinPage's initializer contract (see its init(title:)).
+    @available(*, unavailable)
+    nonisolated override init(title: String) {
+        fatalError("Use init(arrivalDeparture:initialMinutes:userDefaults:)")
+    }
+
     init(arrivalDeparture: ArrivalDeparture, initialMinutes: Int, userDefaults: UserDefaults) {
         self.arrivalDeparture = arrivalDeparture
         self.userDefaults = userDefaults
@@ -170,9 +176,13 @@ class AlarmTimePickerItem: ThemedBulletinPage {
         actionButtonTitle = Strings.addAlarm
     }
 
-    override func makeViewsUnderDescription(with interfaceBuilder: BLTNInterfaceBuilder) -> [UIView]? {
-        timePickerManager.prepareForDisplay()
-        return [timePickerManager.pickerView, makeTrackOnLockScreenRow()]
+    // nonisolated to match BLTNPageItem's nonisolated declaration; BLTNBoard only
+    // calls this while presenting UI on the main thread.
+    nonisolated override func makeViewsUnderDescription(with interfaceBuilder: BLTNInterfaceBuilder) -> [UIView]? {
+        MainActor.assumeIsolated {
+            timePickerManager.prepareForDisplay()
+            return [timePickerManager.pickerView, makeTrackOnLockScreenRow()]
+        }
     }
 
     private func makeTrackOnLockScreenRow() -> UIView {

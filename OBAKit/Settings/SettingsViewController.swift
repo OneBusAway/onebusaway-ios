@@ -261,11 +261,21 @@ class SettingsViewController: FormViewController {
                                   comment: "Settings > Walking Speed section > HealthKit toggle")
                 $0.onChange { [weak self] row in
                     guard let self, row.value == true else { return }
-                    Task {
+                    // Eureka's onChange closure is nonisolated (pre-concurrency
+                    // library), so `row` can't cross into the main-actor task;
+                    // re-fetch it by tag inside instead.
+                    Task { @MainActor in
                         let granted = await self.application.walkingSpeedManager.requestHealthKitAuthorizationAndSync()
                         if !granted {
-                            row.value = false
-                            row.reload()
+                            if let row: SwitchRow = self.form.rowBy(tag: self.walkingSpeedUseHealthKitKey) {
+                                row.value = false
+                                row.reload()
+                            } else {
+                                // Should be unreachable (the row is created with this tag
+                                // above); if it ever fires, the toggle stays on and the
+                                // HealthKit source would be persisted despite the denial.
+                                Logger.error("HealthKit toggle row not found by tag; cannot revert after authorization failure.")
+                            }
                             self.showErrorToast(
                                 OBALoc(
                                     "settings_controller.walking_speed.healthkit_unavailable",
@@ -344,7 +354,10 @@ class SettingsViewController: FormViewController {
     private let crashAppKey = "crashAppKey"
     private let pushIDKey = "pushIDKey"
 
-    private lazy var debugSection: Section = {
+    private lazy var debugSection: Section = makeDebugSection()
+
+    // swiftlint:disable:next function_body_length
+    private func makeDebugSection() -> Section {
         let section = Section(OBALoc("settings_controller.debug_section.title", value: "Debug", comment: "Settings > Debug section title"))
 
         section <<< SwitchRow {
@@ -397,7 +410,7 @@ class SettingsViewController: FormViewController {
                 row.value = OBALoc("clipboard.copied_text_confirmation", value: "Copied to clipboard", comment: "This is displayed to confirm that something has been copied to clipboard.")
                 row.reload()
 
-                Task {
+                Task { @MainActor in
                     try? await Task.sleep(for: .seconds(2))
                     row.value = self.application.pushService?.pushUserID ?? OBALoc("more_controller.debug_section.push_id.not_available", value: "Not available", comment: "This is displayed instead of the user's push ID if the value is not available.")
                     row.reload()
@@ -409,7 +422,7 @@ class SettingsViewController: FormViewController {
         }
 
         return section
-    }()
+    }
 
     // MARK: - Migrate Data Section
 

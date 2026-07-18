@@ -58,6 +58,9 @@
 /* Groups button title in Bookmarks controller */
 "bookmarks_controller.groups_button_title" = "편집";
 
+/* Shown on a bookmark card when arrival data has loaded but there are no departures in the near future */
+"bookmarks_controller.no_upcoming_departures" = "예정된 출발 없음";
+
 /* A menu item that allows the user to sort their bookmarks by distance from the user. */
 "bookmarks_controller.sort_menu.sort_by_distance" = "거리순 정렬";
 
@@ -124,11 +127,29 @@
 /* Button to retry finding the user's vehicle. */
 "current_trip_controller.retry" = "다시 시도";
 
+/* An explanation of what the Base URL field of a custom region requires. */
+"custom_region_builder_controller.base_url_section.explanation" = "지역 API 서버의 루트 주소이며, \"/api/where\" 부분은 자동으로 추가되므로 제외합니다. \"https://\"가 기본으로 적용됩니다.";
+
 /* Title of the Base URL header. */
 "custom_region_builder_controller.base_url_section.header_title" = "기본 URL";
 
+/* Navigation bar title when editing an existing custom region. */
+"custom_region_builder_controller.edit_title" = "사용자 지정 지역 편집";
+
 /* Example custom region name */
 "custom_region_builder_controller.example_data.region_name" = "내 사용자 지정 지역";
+
+/* An explanation of the optional custom region name field. */
+"custom_region_builder_controller.name_section.explanation" = "선택 사항입니다. 비워 두면 첫 번째 교통 기관의 이름을 따서 지역 이름이 지정됩니다.";
+
+/* Title of the Name header. */
+"custom_region_builder_controller.name_section.header_title" = "이름";
+
+/* Navigation bar title when creating a new custom region. */
+"custom_region_builder_controller.new_title" = "새 사용자 지정 지역";
+
+/* An error message displayed when a custom region's server cannot be validated. First parameter is the server URL, second is the underlying error message. */
+"custom_region_builder_controller.server_validation_error_fmt" = "%1$@에서 호환되는 교통 API 서버에 연결할 수 없습니다. 기본 URL을 확인하고 다시 시도하세요.\n\n%2$@";
 
 /* An explanation of dragging the map to highlight the service area of a custom region. */
 "custom_region_builder_controller.service_area_section.explanation" = "지도를 드래그하여 이 지역의 대략적인 서비스 구역을 지정하세요.";
@@ -270,9 +291,6 @@
 
 /* Alert title when Live Activity fails to start */
 "live_activity.error.title" = "추적을 시작할 수 없음";
-
-/* Alert message explaining where to find the Live Activity */
-"live_activity.started.message" = "잠금 화면과 다이나믹 아일랜드에서 실시간 도착 정보를 확인할 수 있습니다.";
 
 /* Alert title when a Live Activity starts */
 "live_activity.started.title" = "잠금 화면에서 추적 중";
@@ -437,6 +455,12 @@
 /* Displayed in the map status view at the top of the map when the user must zoom in to see stops on the map */
 "map_status_view.zoom_in_for_stops" = "정류장을 보려면 확대하세요";
 
+/* Title of the alert shown when location services are disabled for the app. */
+"map_status_alert.location_services_off.title" = "Location Services Off";
+
+/* Title of the alert shown when the user has restricted the app to reduced-accuracy location. */
+"map_status_alert.precise_location_off.title" = "Precise Location Off";
+
 /* Header for a section that shows the user information about this app. */
 "more_controller.about_app" = "이 앱 정보";
 
@@ -587,6 +611,117 @@
 
 /* Vehicle occupancy status is unknown. */
 "occupancy_status.unknown" = "알 수 없음";
+
+/* Recap row label for notification permission */
+"onboarding.done.alerts_row" = "알림";
+
+/* Body of the final onboarding screen; the argument is a region name */
+"onboarding.done.body_fmt" = "%@ 준비 완료. 버스를 찾아볼까요.";
+
+/* Recap row label for location permission */
+"onboarding.done.location_row" = "위치";
+
+/* Primary button on the final onboarding screen */
+"onboarding.done.primary_button" = "탐색 시작";
+
+/* Recap row label for the chosen region */
+"onboarding.done.region_row" = "지역";
+
+/* Title of the final onboarding screen */
+"onboarding.done.title" = "준비 완료";
+
+/* Recap value for a disabled setting */
+"onboarding.done.value_off" = "꺼짐";
+
+/* Recap value for an enabled setting */
+"onboarding.done.value_on" = "켜짐";
+
+/* Detail for the map-centering benefit */
+"onboarding.location.benefit_map_body" = "검색 없이 바로 주변 환경으로 열립니다.";
+
+/* Heading for a benefit of granting location access */
+"onboarding.location.benefit_map_title" = "지도를 내 위치로 중심 맞추기";
+
+/* Detail for the nearby-stops benefit */
+"onboarding.location.benefit_nearby_body" = "거리순으로 정렬된 주변 버스와 지하철.";
+
+/* Heading for a benefit of granting location access */
+"onboarding.location.benefit_nearby_title" = "주변 정류장 보기";
+
+/* Footnote of the location onboarding screen; the argument is the app name */
+"onboarding.location.footnote_fmt" = "%@은(는) 앱이 열려 있는 동안에만 위치 정보를 사용합니다. 설정에서 언제든지 변경할 수 있습니다.";
+
+/* Button the user taps to grant access to their location. */
+"onboarding.location.primary_button" = "내 위치 사용";
+
+/* Button the user can tap on to decline access to their location. */
+"onboarding.location.secondary_button" = "나중에";
+
+/* Title of the location onboarding screen */
+"onboarding.location.title" = "주변 대중교통 보기";
+
+/* Body of the notifications onboarding screen */
+"onboarding.notifications.body" = "결빙 폭풍, 홍수 등 대중교통 운행 방식을 바꾸는 지역 전체 서비스 알림을 받아보세요.";
+
+/* Example service alert shown on the notifications onboarding screen */
+"onboarding.notifications.example_event" = "오늘 빅 게임: 경기장행 임시 열차 운행";
+
+/* Example service alert shown on the notifications onboarding screen */
+"onboarding.notifications.example_ferry" = "여객선 지연: 최대 40분 대기";
+
+/* Example service alert shown on the notifications onboarding screen */
+"onboarding.notifications.example_storm" = "겨울 폭풍 — 12개 노선 운행 축소";
+
+/* Footnote of the notifications onboarding screen */
+"onboarding.notifications.footnote" = "지역 전체의 중요한 알림만 받습니다. 스팸은 없으며, 나머지는 설정에서 직접 관리할 수 있습니다.";
+
+/* Decline button when the notifications step appears alone */
+"onboarding.notifications.maybe_later_button" = "나중에 할게요";
+
+/* Badge shown when the notifications step appears alone for existing users */
+"onboarding.notifications.new_badge" = "신규";
+
+/* Decline button on the notifications onboarding screen */
+"onboarding.notifications.not_now_button" = "나중에";
+
+/* Primary button on the notifications onboarding screen */
+"onboarding.notifications.primary_button" = "알림 켜기";
+
+/* Title of the notifications onboarding screen */
+"onboarding.notifications.title" = "운행 차질에 미리 대비하세요";
+
+/* Accessibility label for the onboarding progress bar */
+"onboarding.progress.accessibility_label" = "온보딩 진행률";
+
+/* Body of the region onboarding screen */
+"onboarding.region.body" = "가장 가까운 교통 네트워크를 찾았습니다.";
+
+/* Body of the region onboarding screen when no location is available */
+"onboarding.region.body_no_location" = "이용하는 교통 네트워크를 선택하세요.";
+
+/* Label on the detected-region card */
+"onboarding.region.detected_label" = "내 근처에서 감지됨";
+
+/* Header above the alternate-regions list */
+"onboarding.region.other_header" = "또는 다른 지역 선택";
+
+/* Link to the full region picker */
+"onboarding.region.see_all_button" = "모든 지역 보기";
+
+/* Title of the region onboarding screen */
+"onboarding.region.title" = "내 지역";
+
+/* Body of the first onboarding screen */
+"onboarding.welcome.body" = "이용하는 버스, 지하철, 여객선의 실시간 도착 정보 — 대중교통 이용자가 만든 무료 오픈소스 앱입니다.";
+
+/* Footnote of the first onboarding screen */
+"onboarding.welcome.footnote" = "전 세계 수십 개 교통 지역에서 이용 가능";
+
+/* Primary button on the first onboarding screen */
+"onboarding.welcome.primary_button" = "시작하기";
+
+/* Title of the first onboarding screen; the argument is the app name */
+"onboarding.welcome.title_fmt" = "%@에 오신 것을 환영합니다";
 
 /* Reachability bulletin shown when the user has disabled cellular data for this app in iOS Settings. Both substituted values are the app name. */
 "reachability_bulletin.description.cellular_data_restricted_fmt" = "현재 %1$@의 셀룰러 데이터 사용이 허용되어 있지 않습니다. 설정 > 셀룰러로 이동하여 %2$@의 셀룰러 데이터를 켜거나 WiFi 네트워크에 연결해 주세요.";

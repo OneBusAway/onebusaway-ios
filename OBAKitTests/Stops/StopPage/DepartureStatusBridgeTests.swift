@@ -15,6 +15,7 @@ import OBAKitCore
 /// fixtures rather than the hand-built values in `DepartureStatusTests`. They
 /// verify the init forwards `predicted`/`scheduleStatus` correctly and that the
 /// derived color and label stay consistent with the model's `scheduleStatus`.
+@MainActor
 final class DepartureStatusBridgeTests: XCTestCase {
 
     /// A live `ArrivalDeparture` (`predicted == true`) bridges to a real-time

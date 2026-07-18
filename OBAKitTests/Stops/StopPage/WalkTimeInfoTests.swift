@@ -2,6 +2,7 @@ import XCTest
 import CoreLocation
 @testable import OBAKit
 
+@MainActor
 final class WalkTimeInfoTests: XCTestCase {
     // ~111m per 0.001 degree latitude at the equator; use real CLLocations.
     private let stopLocation = CLLocation(latitude: 47.6097, longitude: -122.3331)

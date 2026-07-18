@@ -42,7 +42,12 @@ protocol MapRegionMapViewDelegate: NSObjectProtocol {
 
 // MARK: - MapRegionManager
 
-public class UserDroppedPin: MKPointAnnotation {}
+public class UserDroppedPin: MKPointAnnotation {
+    // Matches the isolation of the nonisolated MKPointAnnotation initializer it overrides.
+    nonisolated override public init() {
+        super.init()
+    }
+}
 
 public class MapRegionManager: NSObject,
     MKMapViewDelegate,
@@ -219,7 +224,7 @@ public class MapRegionManager: NSObject,
         }
     }
 
-    deinit {
+    isolated deinit {
         mapView.delegate = nil
         mapView.removeAllAnnotations()
         delegates.removeAllObjects()
@@ -542,8 +547,16 @@ public class MapRegionManager: NSObject,
     /// so the two surfaces agree on when stops appear.
     static let requiredHeightToShowStops = 40000.0
 
+    /// Whether the zoom-in-for-stops warning should show for a map whose
+    /// visible `MKMapRect` is `height` map points tall. Exposed so the SwiftUI
+    /// `MapPanelRootView` drives its status pill from the same threshold the
+    /// UIKit map uses, keeping the two surfaces in agreement.
+    public static func shouldShowZoomInWarning(forVisibleMapRectHeight height: Double) -> Bool {
+        height > requiredHeightToShowStops
+    }
+
     public var zoomInStatus: Bool {
-        mapView.visibleMapRect.height > MapRegionManager.requiredHeightToShowStops
+        MapRegionManager.shouldShowZoomInWarning(forVisibleMapRectHeight: mapView.visibleMapRect.height)
     }
 
     private func updateZoomWarningOverlay(mapHeight: Double) {
@@ -757,7 +770,16 @@ public class MapRegionManager: NSObject,
         let request = MKMapItemRequest(mapFeatureAnnotation: feature)
 
         do {
-            let mapItem = try await request.mapItem
+            // MKMapItemRequest and MKMapItem aren't Sendable, and Swift 6.2
+            // (CI's toolchain) won't let them cross the main-actor boundary
+            // around the nonisolated async `mapItem` accessor. Run the fetch in
+            // a detached task, handing each value across in a box: the request
+            // is one-shot and the fetched item has no other owner until the
+            // transfer completes.
+            let requestBox = UncheckedSendableBox(value: request)
+            let mapItem = try await Task.detached {
+                UncheckedSendableBox(value: try await requestBox.value.mapItem)
+            }.value.value
 
             let searchRequest = SearchRequest(
                 query: mapItem.name ?? "Dropped Pin",
@@ -1016,53 +1038,58 @@ public class MapRegionManager: NSObject,
         activeGeocoders[annotation] = geocoder
 
         geocoder.reverseGeocodeLocation(location) { [weak self] placemarks, error in
-            guard let self = self else { return }
+            // CLGeocoder invokes its completion handler on the main thread.
+            MainActor.assumeIsolated {
+                self?.handleGeocodeResult(annotation: annotation, placemarks: placemarks, error: error)
+            }
+        }
+    }
 
-            // Remove from active geocoders
-            self.activeGeocoders.removeValue(forKey: annotation)
+    private func handleGeocodeResult(annotation: UserDroppedPin, placemarks: [CLPlacemark]?, error: Error?) {
+        // Remove from active geocoders
+        activeGeocoders.removeValue(forKey: annotation)
 
-            // Verify this annotation still exists in our array (not removed)
-            guard self.userAnnotations.contains(where: { $0 === annotation }) else {
+        // Verify this annotation still exists in our array (not removed)
+        guard self.userAnnotations.contains(where: { $0 === annotation }) else {
+            return
+        }
+
+        if let error = error {
+            // Check if it was cancelled
+            if (error as NSError).code == CLError.geocodeCanceled.rawValue {
                 return
             }
+            Logger.error("Geocoding error: \(error.localizedDescription)")
+            annotation.title = "Unknown Location"
+            annotation.subtitle = "Could not retrieve location details"
+            return
+        }
 
-            if let error = error {
-                // Check if it was cancelled
-                if (error as NSError).code == CLError.geocodeCanceled.rawValue {
-                    return
-                }
-                Logger.error("Geocoding error: \(error.localizedDescription)")
-                annotation.title = "Unknown Location"
-                annotation.subtitle = "Could not retrieve location details"
-                return
-            }
+        guard let placemark = placemarks?.first else {
+            annotation.title = "Unknown Location"
+            return
+        }
 
-            guard let placemark = placemarks?.first else {
-                annotation.title = "Unknown Location"
-                return
-            }
+        // Update annotation with location details
+        self.updateAnnotation(annotation, with: placemark)
 
-            // Update annotation with location details
-            self.updateAnnotation(annotation, with: placemark)
+        // Create and Store MapItem
+        let mapItem = MKMapItem(placemark: MKPlacemark(placemark: placemark))
+        mapItem.name = annotation.title // Ensure the MapItem has the name we just generated
 
-            // Create and Store MapItem
-            let mapItem = MKMapItem(placemark: MKPlacemark(placemark: placemark))
-            mapItem.name = annotation.title // Ensure the MapItem has the name we just generated
+        // Store in Dictionary
+        self.userMapItems[annotation] = mapItem
 
-            // Store in Dictionary
-            self.userMapItems[annotation] = mapItem
+        // Trigger the initial "Open Sheet" behavior via SearchResponse
+        // This mimics the "search" behavior to open the sheet immediately upon drop
+        let query = annotation.title ?? "User Dropped Pin"
+        let request = SearchRequest(query: query, type: .address)
+        let response = SearchResponse(request: request, results: [mapItem], boundingRegion: nil, error: nil)
+        self.searchResponse = response
 
-            // Trigger the initial "Open Sheet" behavior via SearchResponse
-            // This mimics the "search" behavior to open the sheet immediately upon drop
-            let query = annotation.title ?? "User Dropped Pin"
-            let request = SearchRequest(query: query, type: .address)
-            let response = SearchResponse(request: request, results: [mapItem], boundingRegion: nil, error: nil)
-            self.searchResponse = response
-
-            // Clear searchResponse on next run loop to allow normal stop loading when panning
-            DispatchQueue.main.async { [weak self] in
-                self?.searchResponse = nil
-            }
+        // Clear searchResponse on next run loop to allow normal stop loading when panning
+        DispatchQueue.main.async { [weak self] in
+            self?.searchResponse = nil
         }
     }
 

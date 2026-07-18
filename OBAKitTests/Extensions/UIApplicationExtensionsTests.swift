@@ -13,6 +13,7 @@ import Nimble
 import UIKit
 @testable import OBAKit
 
+@MainActor
 class UIApplicationExtensionsTests: XCTestCase {
     
     func test_keyWindowFromScene_returnsKeyWindow() {

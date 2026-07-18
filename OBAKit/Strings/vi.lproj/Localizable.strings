@@ -58,6 +58,9 @@
 /* Groups button title in Bookmarks controller */
 "bookmarks_controller.groups_button_title" = "Sửa";
 
+/* Shown on a bookmark card when arrival data has loaded but there are no departures in the near future */
+"bookmarks_controller.no_upcoming_departures" = "Không có chuyến sắp tới";
+
 /* A menu item that allows the user to sort their bookmarks by distance from the user. */
 "bookmarks_controller.sort_menu.sort_by_distance" = "Sắp xếp theo khoảng cách";
 
@@ -124,11 +127,29 @@
 /* Button to retry finding the user's vehicle. */
 "current_trip_controller.retry" = "Thử lại";
 
+/* An explanation of what the Base URL field of a custom region requires. */
+"custom_region_builder_controller.base_url_section.explanation" = "Địa chỉ gốc của máy chủ API của khu vực, không có phần \"/api/where\" — phần đó sẽ được thêm tự động. Mặc định là \"https://\".";
+
 /* Title of the Base URL header. */
 "custom_region_builder_controller.base_url_section.header_title" = "URL cơ sở";
 
+/* Navigation bar title when editing an existing custom region. */
+"custom_region_builder_controller.edit_title" = "Chỉnh sửa khu vực tùy chỉnh";
+
 /* Example custom region name */
 "custom_region_builder_controller.example_data.region_name" = "Khu vực tùy chỉnh của tôi";
+
+/* An explanation of the optional custom region name field. */
+"custom_region_builder_controller.name_section.explanation" = "Tùy chọn. Nếu để trống, khu vực sẽ được đặt tên theo cơ quan giao thông đầu tiên của nó.";
+
+/* Title of the Name header. */
+"custom_region_builder_controller.name_section.header_title" = "Tên";
+
+/* Navigation bar title when creating a new custom region. */
+"custom_region_builder_controller.new_title" = "Khu vực tùy chỉnh mới";
+
+/* An error message displayed when a custom region's server cannot be validated. First parameter is the server URL, second is the underlying error message. */
+"custom_region_builder_controller.server_validation_error_fmt" = "Không thể kết nối đến máy chủ API giao thông tương thích tại %1$@. Kiểm tra URL gốc và thử lại.\n\n%2$@";
 
 /* An explanation of dragging the map to highlight the service area of a custom region. */
 "custom_region_builder_controller.service_area_section.explanation" = "Kéo bản đồ đến khu vực phục vụ gần đúng của khu vực này.";
@@ -270,9 +291,6 @@
 
 /* Alert title when Live Activity fails to start */
 "live_activity.error.title" = "Không thể bắt đầu theo dõi";
-
-/* Alert message explaining where to find the Live Activity */
-"live_activity.started.message" = "Bạn sẽ thấy cập nhật trực tiếp về giờ đến trên Màn hình khóa và Dynamic Island.";
 
 /* Alert title when a Live Activity starts */
 "live_activity.started.title" = "Đang theo dõi trên Màn hình khóa";
@@ -437,6 +455,12 @@
 /* Displayed in the map status view at the top of the map when the user must zoom in to see stops on the map */
 "map_status_view.zoom_in_for_stops" = "Phóng to để xem điểm dừng";
 
+/* Title of the alert shown when location services are disabled for the app. */
+"map_status_alert.location_services_off.title" = "Location Services Off";
+
+/* Title of the alert shown when the user has restricted the app to reduced-accuracy location. */
+"map_status_alert.precise_location_off.title" = "Precise Location Off";
+
 /* Header for a section that shows the user information about this app. */
 "more_controller.about_app" = "Giới thiệu ứng dụng";
 
@@ -587,6 +611,117 @@
 
 /* Vehicle occupancy status is unknown. */
 "occupancy_status.unknown" = "Không rõ";
+
+/* Recap row label for notification permission */
+"onboarding.done.alerts_row" = "Cảnh báo";
+
+/* Body of the final onboarding screen; the argument is a region name */
+"onboarding.done.body_fmt" = "%@ đã sẵn sàng. Cùng tìm xe buýt của bạn nào.";
+
+/* Recap row label for location permission */
+"onboarding.done.location_row" = "Vị trí";
+
+/* Primary button on the final onboarding screen */
+"onboarding.done.primary_button" = "Bắt đầu khám phá";
+
+/* Recap row label for the chosen region */
+"onboarding.done.region_row" = "Khu vực";
+
+/* Title of the final onboarding screen */
+"onboarding.done.title" = "Đã sẵn sàng";
+
+/* Recap value for a disabled setting */
+"onboarding.done.value_off" = "Tắt";
+
+/* Recap value for an enabled setting */
+"onboarding.done.value_on" = "Bật";
+
+/* Detail for the map-centering benefit */
+"onboarding.location.benefit_map_body" = "Mở thẳng vào khu vực xung quanh bạn — không cần tìm kiếm.";
+
+/* Heading for a benefit of granting location access */
+"onboarding.location.benefit_map_title" = "Căn giữa bản đồ theo vị trí của bạn";
+
+/* Detail for the nearby-stops benefit */
+"onboarding.location.benefit_nearby_body" = "Xe buýt và tàu quanh bạn, xếp hạng theo khoảng cách.";
+
+/* Heading for a benefit of granting location access */
+"onboarding.location.benefit_nearby_title" = "Xem các trạm gần đây";
+
+/* Footnote of the location onboarding screen; the argument is the app name */
+"onboarding.location.footnote_fmt" = "%@ chỉ sử dụng vị trí của bạn khi ứng dụng đang mở. Bạn có thể thay đổi điều này bất cứ lúc nào trong Cài đặt.";
+
+/* Button the user taps to grant access to their location. */
+"onboarding.location.primary_button" = "Dùng vị trí của tôi";
+
+/* Button the user can tap on to decline access to their location. */
+"onboarding.location.secondary_button" = "Để sau";
+
+/* Title of the location onboarding screen */
+"onboarding.location.title" = "Xem giao thông quanh bạn";
+
+/* Body of the notifications onboarding screen */
+"onboarding.notifications.body" = "Nhận thông báo về các cảnh báo dịch vụ trên toàn khu vực — bão băng, lũ lụt và các sự kiện lớn làm thay đổi cách vận hành giao thông.";
+
+/* Example service alert shown on the notifications onboarding screen */
+"onboarding.notifications.example_event" = "Trận đấu lớn hôm nay: thêm chuyến tàu đến sân vận động";
+
+/* Example service alert shown on the notifications onboarding screen */
+"onboarding.notifications.example_ferry" = "Phà trễ giờ: chờ đợi tới 40 phút";
+
+/* Example service alert shown on the notifications onboarding screen */
+"onboarding.notifications.example_storm" = "Bão mùa đông — giảm dịch vụ trên 12 tuyến";
+
+/* Footnote of the notifications onboarding screen */
+"onboarding.notifications.footnote" = "Chỉ các cảnh báo lớn trên toàn khu vực. Không spam — bạn kiểm soát phần còn lại trong Cài đặt.";
+
+/* Decline button when the notifications step appears alone */
+"onboarding.notifications.maybe_later_button" = "Có thể để sau";
+
+/* Badge shown when the notifications step appears alone for existing users */
+"onboarding.notifications.new_badge" = "MỚI";
+
+/* Decline button on the notifications onboarding screen */
+"onboarding.notifications.not_now_button" = "Để sau";
+
+/* Primary button on the notifications onboarding screen */
+"onboarding.notifications.primary_button" = "Bật thông báo";
+
+/* Title of the notifications onboarding screen */
+"onboarding.notifications.title" = "Luôn nắm bắt các gián đoạn";
+
+/* Accessibility label for the onboarding progress bar */
+"onboarding.progress.accessibility_label" = "Tiến trình hướng dẫn";
+
+/* Body of the region onboarding screen */
+"onboarding.region.body" = "Chúng tôi đã tìm thấy mạng lưới giao thông gần bạn nhất.";
+
+/* Body of the region onboarding screen when no location is available */
+"onboarding.region.body_no_location" = "Chọn mạng lưới giao thông bạn sử dụng.";
+
+/* Label on the detected-region card */
+"onboarding.region.detected_label" = "Phát hiện gần bạn";
+
+/* Header above the alternate-regions list */
+"onboarding.region.other_header" = "Hoặc chọn khu vực khác";
+
+/* Link to the full region picker */
+"onboarding.region.see_all_button" = "Xem tất cả khu vực";
+
+/* Title of the region onboarding screen */
+"onboarding.region.title" = "Khu vực của bạn";
+
+/* Body of the first onboarding screen */
+"onboarding.welcome.body" = "Giờ đến theo thời gian thực cho xe buýt, tàu và phà bạn sử dụng — được xây dựng bởi những người đi phương tiện công cộng, miễn phí và mã nguồn mở.";
+
+/* Footnote of the first onboarding screen */
+"onboarding.welcome.footnote" = "Có sẵn tại hàng chục khu vực giao thông trên toàn thế giới";
+
+/* Primary button on the first onboarding screen */
+"onboarding.welcome.primary_button" = "Bắt đầu";
+
+/* Title of the first onboarding screen; the argument is the app name */
+"onboarding.welcome.title_fmt" = "Chào mừng đến với %@";
 
 /* Reachability bulletin shown when the user has disabled cellular data for this app in iOS Settings. Both substituted values are the app name. */
 "reachability_bulletin.description.cellular_data_restricted_fmt" = "%1$@ hiện không được phép truy cập dữ liệu di động. Để khắc phục, hãy vào Cài đặt > Di động và bật dữ liệu di động cho %2$@, hoặc kết nối với mạng WiFi.";

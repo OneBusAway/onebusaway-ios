@@ -30,8 +30,8 @@ class ArrivalDepartureDeduplicationTests: OBATestCase {
         "https://www.example.com/api/where/arrivals-and-departures-for-stop/\(stopID).json"
     }
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
 
         let dataLoader = (restService.dataLoader as! MockDataLoader)
 

@@ -19,13 +19,13 @@ struct MoreButton: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: "line.3.horizontal")
-                .font(.body)
-                .imageScale(.medium)
-                .frame(width: 32, height: 32)
+                .font(.body.bold())
+                .frame(width: 22, height: 22)
+                .padding(8)
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
-        .regularGlassEffectIfAvailable(in: Capsule())
+        .regularGlassEffectIfAvailable(in: Circle())
         .accessibilityLabel(Text(OBALoc(
             "more_controller.title",
             value: "More",

@@ -11,6 +11,7 @@ import XCTest
 import Nimble
 @testable import OBAKit
 
+@MainActor
 class WalkingSpeedPresetTests: XCTestCase {
 
     func test_nearest_exactMatch() {

@@ -22,8 +22,8 @@ class RegionsServiceAutoSelectTests: OBATestCase {
     var dataLoader: MockDataLoader!
     var mockFileStorage: MockRegionsFileStorage!
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
 
         locationManagerMock = LocationManagerMock()
         locationService = LocationService(userDefaults: userDefaults, locationManager: locationManagerMock)

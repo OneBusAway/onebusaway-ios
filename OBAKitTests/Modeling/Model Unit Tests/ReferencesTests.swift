@@ -20,8 +20,8 @@ class ReferencesTests: OBATestCase {
 
     let tampaRegionIdentifier = 0
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         let data = Fixtures.loadData(file: "references.json")
         references = try! JSONDecoder.RESTDecoder(regionIdentifier: tampaRegionIdentifier).decode(References.self, from: data)
     }

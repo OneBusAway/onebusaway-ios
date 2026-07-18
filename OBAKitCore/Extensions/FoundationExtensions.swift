@@ -451,3 +451,21 @@ public extension UUID {
         self.init(uuidString: optionalUUIDString)
     }
 }
+
+// MARK: - Timer
+
+public extension Timer {
+    /// Schedules a timer on the current (main) run loop whose block runs on the
+    /// main actor.
+    ///
+    /// Timers scheduled from the main actor fire on the main thread, so entering
+    /// the actor with `MainActor.assumeIsolated` is safe; this wrapper carries
+    /// that contract once so call sites can pass a plain `@MainActor` closure.
+    @MainActor
+    @discardableResult
+    static func scheduledMainActorTimer(withTimeInterval interval: TimeInterval, repeats: Bool, block: @escaping @MainActor () -> Void) -> Timer {
+        scheduledTimer(withTimeInterval: interval, repeats: repeats) { _ in
+            MainActor.assumeIsolated(block)
+        }
+    }
+}

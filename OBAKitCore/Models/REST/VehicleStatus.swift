@@ -10,7 +10,9 @@
 import Foundation
 import CoreLocation
 
-public class VehicleStatus: NSObject, Identifiable, Decodable, HasReferences {
+// @unchecked Sendable per the HasReferences concurrency contract (see References.swift):
+// mutation is confined to decode + loadReferences, before the instance is shared.
+public final class VehicleStatus: NSObject, Identifiable, Decodable, HasReferences, @unchecked Sendable {
     public var id: String {
         return self.vehicleID
     }

@@ -8,6 +8,7 @@
 //
 
 #import "AppDelegate.h"
+#import "OBARootInterfaceLauncher.h"
 @import OBAKitCore;
 @import OBAKit;
 
@@ -73,8 +74,10 @@
 }
 
 - (void)applicationReloadRootInterface:(OBAApplication*)application {
-    self.rootController = [OBAApplicationRootControllerFactory makeWithApplication:application];
-    self.window.rootViewController = self.rootController;
+    [OBARootInterfaceLauncher reloadRootInterfaceWithApplication:application window:self.window showRootController:^{
+        self.rootController = [OBAApplicationRootControllerFactory makeWithApplication:application];
+        self.window.rootViewController = self.rootController;
+    }];
 }
 
 - (BOOL)canOpenURL:(NSURL*)url {

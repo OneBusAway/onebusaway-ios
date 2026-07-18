@@ -13,6 +13,7 @@ import Nimble
 import UIKit
 @testable import OBAKitCore
 
+@MainActor
 class AutoLayoutExtensionsTests: XCTestCase {
     
     func test_UIView_layoutDirectionIsRTL() {

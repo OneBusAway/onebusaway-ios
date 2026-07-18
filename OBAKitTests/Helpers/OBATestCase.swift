@@ -11,12 +11,17 @@ import XCTest
 import OBAKit
 @testable import OBAKitCore
 
+// Main-actor-isolated (inherited by every test class): the frameworks under test
+// are largely @MainActor. XCTest runs sync test methods on the main thread; it is
+// this @MainActor annotation that makes async setUp/tearDown and async test
+// methods hop to main as well.
+@MainActor
 open class OBATestCase: XCTestCase {
 
     var userDefaults: UserDefaults!
 
-    open override func setUp() {
-        super.setUp()
+    open override func setUp() async throws {
+        try await super.setUp()
         NSTimeZone.default = NSTimeZone(forSecondsFromGMT: 0) as TimeZone
         userDefaults = buildUserDefaults()
         userDefaults.removePersistentDomain(forName: userDefaultsSuiteName)
@@ -28,8 +33,8 @@ open class OBATestCase: XCTestCase {
         restService = buildRESTService()
     }
 
-    open override func tearDown() {
-        super.tearDown()
+    open override func tearDown() async throws {
+        try await super.tearDown()
         NSTimeZone.resetSystemTimeZone()
         userDefaults.removePersistentDomain(forName: userDefaultsSuiteName)
     }

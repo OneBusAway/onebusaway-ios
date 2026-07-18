@@ -14,6 +14,7 @@ import CoreLocation
 @testable import OBAKit
 @testable import OBAKitCore
 
+@MainActor
 class CoreLocationTests: XCTestCase {
 
     // MARK: - CLCircularRegion

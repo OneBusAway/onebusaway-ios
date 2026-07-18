@@ -9,6 +9,8 @@ import OBAKitCore
 import CoreLocation
 
 /// `WidgetDataProvider` is responsible for fetching and providing relevant data to the widget timeline provider.
+/// Main-actor-isolated because it owns a `CoreApplication` (itself `@MainActor`).
+@MainActor
 class WidgetDataProvider: NSObject, ObservableObject {
     static let shared = WidgetDataProvider()
 

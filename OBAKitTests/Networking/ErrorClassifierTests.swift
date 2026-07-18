@@ -11,6 +11,7 @@ import XCTest
 import Nimble
 @testable import OBAKitCore
 
+@MainActor
 class ErrorClassifierTests: XCTestCase {
 
     // MARK: - APIError Pass-Through

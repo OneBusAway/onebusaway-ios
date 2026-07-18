@@ -21,14 +21,14 @@ class BookmarksViewModelTests: OBATestCase {
     private let sortByGroupKey = "OBABookmarksController_SortBookmarksByGroup"
     var queue: OperationQueue!
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         queue = OperationQueue()
         queue.maxConcurrentOperationCount = 1
     }
 
-    override func tearDown() {
-        super.tearDown()
+    override func tearDown() async throws {
+        try await super.tearDown()
         queue.cancelAllOperations()
     }
 
@@ -364,7 +364,10 @@ class BookmarksViewModelTests: OBATestCase {
         }.store(in: &cancellables)
 
         viewModel.refresh()
-        await fulfillment(of: [errBatchDone], timeout: 2.0)
+        // Timeout sized for GitHub Actions runner headroom, not local speed —
+        // the batch's `Task { @MainActor }` chain lands well under a second
+        // locally but has flaked at 2s on CI under load.
+        await fulfillment(of: [errBatchDone], timeout: 10.0)
         cancellables.removeAll()
 
         expect(viewModel.lastRefreshHadError).to(beTrue())
@@ -390,7 +393,7 @@ class BookmarksViewModelTests: OBATestCase {
         }.store(in: &cancellables)
 
         viewModel.refresh()
-        await fulfillment(of: [cleanBatchDone], timeout: 2.0)
+        await fulfillment(of: [cleanBatchDone], timeout: 10.0)
 
         expect(viewModel.lastRefreshHadError).to(beFalse())
     }

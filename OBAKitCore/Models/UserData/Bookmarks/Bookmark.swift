@@ -9,8 +9,11 @@
 
 import Foundation
 
+// @unchecked Sendable: user-data model whose mutable properties are only written on the
+// main actor (user edits via UserDataStore); background consumers treat instances as
+// read-only snapshots.
 /// This is a bookmark for a `Stop` or a trip.
-@objc(OBABookmark) public class Bookmark: NSObject, Identifiable, Codable {
+@objc(OBABookmark) public final class Bookmark: NSObject, Identifiable, Codable, @unchecked Sendable {
 
     /// Optional. The unique identifier for the `BookmarkGroup` to which this object belongs.
     public var groupID: UUID?

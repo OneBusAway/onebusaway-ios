@@ -14,6 +14,7 @@ import Nimble
 
 /// Tests for `RegionCustomForm.normalizeBaseURL(_:)`, the sole gatekeeper for
 /// the Base URL a custom region is saved with.
+@MainActor
 class RegionCustomFormTests: XCTestCase {
 
     private func normalize(_ string: String) -> String? {

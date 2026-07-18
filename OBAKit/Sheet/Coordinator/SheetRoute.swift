@@ -13,7 +13,7 @@ import OBAKitCore
 // MARK: - SheetDetentConfiguration
 
 /// Per-route configuration for detent behaviour, drag indicator, dismiss lock, and background interaction.
-struct SheetDetentConfiguration {
+nonisolated struct SheetDetentConfiguration {
     let detents: Set<PresentationDetent>
     let initialDetent: PresentationDetent
     let showDragIndicator: Bool
@@ -58,7 +58,7 @@ struct SheetDetentConfiguration {
 /// Protocol that all sheet route enums must conform to.
 /// Each case provides detent configuration and a stacking preference.
 /// ViewModel construction lives in `AppSheetViewFactory`, not on the route itself.
-protocol SheetRouteable: Identifiable, Hashable {
+nonisolated protocol SheetRouteable: Identifiable, Hashable {
     var detentConfiguration: SheetDetentConfiguration { get }
     /// When `true`, `SheetCoordinator.push(_:)` routes this case to the stacked
     /// layer (a second sheet over the base sheet); otherwise content-swap.
@@ -68,7 +68,7 @@ protocol SheetRouteable: Identifiable, Hashable {
 // MARK: - AppSheetRoute
 
 /// All navigable destinations within the floating sheet.
-enum AppSheetRoute: SheetRouteable {
+nonisolated enum AppSheetRoute: SheetRouteable {
     // Base layer
     case home
     case search
@@ -89,7 +89,7 @@ enum AppSheetRoute: SheetRouteable {
 
 }
 
-extension AppSheetRoute {
+nonisolated extension AppSheetRoute {
     // MARK: Identifiable
 
     /// Case-name prefix only — `String(describing:)` for a case-less enum value
@@ -136,7 +136,7 @@ extension AppSheetRoute {
     }
 }
 
-extension AppSheetRoute {
+nonisolated extension AppSheetRoute {
     /// Detail destinations prefer the stacked layer so the base sheet peeks beneath.
     var prefersStacking: Bool {
         switch self {
@@ -148,7 +148,7 @@ extension AppSheetRoute {
     }
 }
 
-extension AppSheetRoute {
+nonisolated extension AppSheetRoute {
 
     /// "Almost-full" detent used as the largest stop for the home sheet and
     /// other content-swap routes. `.fraction(0.99)` rather than `.large`

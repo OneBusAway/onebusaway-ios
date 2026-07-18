@@ -12,11 +12,11 @@ import OBAKitCore
 
 // MARK: - View Model
 
-enum AdjacentTripOrder {
+nonisolated enum AdjacentTripOrder {
     case previous, next
 }
 
-struct AdjacentTripRowConfiguration: OBAContentConfiguration {
+nonisolated struct AdjacentTripRowConfiguration: OBAContentConfiguration {
     var order: AdjacentTripOrder
     var routeHeadsign: String
 
@@ -27,7 +27,7 @@ struct AdjacentTripRowConfiguration: OBAContentConfiguration {
     }
 }
 
-struct AdjacentTripItem: OBAListViewItem {
+nonisolated struct AdjacentTripItem: OBAListViewItem {
     var id: String { trip.id }
 
     let order: AdjacentTripOrder

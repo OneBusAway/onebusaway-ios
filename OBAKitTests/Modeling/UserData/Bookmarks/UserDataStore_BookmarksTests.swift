@@ -19,14 +19,14 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
     var userDefaultsStore: UserDefaultsStore!
     var stops: [Stop]!
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         userDefaultsStore = UserDefaultsStore(userDefaults: userDefaults)
         stops = try! Fixtures.loadSomeStops()
     }
 
-    override func tearDown() {
-        super.tearDown()
+    override func tearDown() async throws {
+        try await super.tearDown()
     }
 
     // MARK: - Bookmark Groups

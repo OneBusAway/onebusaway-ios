@@ -196,4 +196,17 @@ class MapRegionManagerTests: OBATestCase {
         // Debounce is 250ms; poll up to Nimble's default timeout for the load.
         await expect(mgr.stops).toEventuallyNot(beEmpty())
     }
+    // MARK: - Zoom-In Warning Threshold
+
+    /// The shared zoom-in-warning predicate (used by both the UIKit map's
+    /// `zoomInStatus` and the SwiftUI `MapPanelRootView`) shows the warning only
+    /// when the visible map rect is taller than the stop-loading threshold.
+    func test_shouldShowZoomInWarning_thresholdBehavior() {
+        // Comfortably above the 40,000-point threshold → warn.
+        expect(MapRegionManager.shouldShowZoomInWarning(forVisibleMapRectHeight: 100_000)) == true
+        // Comfortably below → no warning.
+        expect(MapRegionManager.shouldShowZoomInWarning(forVisibleMapRectHeight: 10_000)) == false
+        // Exactly at the threshold is not "too far out".
+        expect(MapRegionManager.shouldShowZoomInWarning(forVisibleMapRectHeight: 40_000)) == false
+    }
 }

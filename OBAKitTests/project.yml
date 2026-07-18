@@ -3,6 +3,20 @@ targets:
     type: bundle.unit-test
     platform: iOS
     sources: ["."]
+    settings:
+      base:
+        # Swift 6 migration Phase 4: pinned to the Swift 5 language mode
+        # because Xcode 27 beta 3's XCTest rejects @MainActor test classes in
+        # Swift 6 mode — full analysis in docs/swift6-migration-plan.md,
+        # "Phase 4 status". All three settings below are part of the same
+        # freeze (the measured, ratcheted status quo); when the flip succeeds
+        # on a future Xcode, remove all three together.
+        SWIFT_VERSION: "5.0"
+        SWIFT_DEFAULT_ACTOR_ISOLATION: nonisolated
+        SWIFT_APPROACHABLE_CONCURRENCY: NO
+        # Opt out of the project-wide zero-warning lock: this target still has
+        # ratcheted concurrency warnings (scripts/concurrency-warning-baseline.txt).
+        SWIFT_WARNINGS_AS_ERRORS_GROUPS: ""
     dependencies:
       - target: App
       - package: Nimble

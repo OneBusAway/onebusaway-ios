@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+#
+# Swift 6 migration ratchet (docs/swift6-migration-plan.md, Phase 0).
+#
+# Counts unique concurrency diagnostics emitted for files in this repo in an
+# xcodebuild log and compares the count against the checked-in baseline. The
+# count may only go down: builds that introduce new concurrency warnings fail,
+# and builds that fix warnings must lower the baseline in the same PR.
+#
+# Usage:
+#   scripts/concurrency_ratchet <xcodebuild-log-file>            # check
+#   scripts/concurrency_ratchet <xcodebuild-log-file> --update   # rewrite baseline
+#
+# The log must come from a build that compiled every target the baseline was
+# computed from (build-for-testing of the App scheme). Incremental builds
+# undercount because cached files don't re-emit warnings.
+
+set -euo pipefail
+
+LOG_FILE="${1:?usage: scripts/concurrency_ratchet <xcodebuild-log-file> [--update]}"
+MODE="${2:-check}"
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+BASELINE_FILE="$REPO_ROOT/scripts/concurrency-warning-baseline.txt"
+
+# Diagnostic-group tags and phrasing used by the Swift compiler for
+# data-race-safety warnings. Broad on purpose: better to ratchet a few extra
+# concurrency-adjacent diagnostics than to let a new category slip through.
+CONCURRENCY_PATTERN='\[#(ActorIsolatedCall|SendableClosureCaptures|RegionIsolation|ConformanceIsolation|MutableGlobalVariable|IsolatedConformances|AddPreconcurrencyImport|UnnecessaryEffectMarker)|Swift 6 language mode|data race|[Ss]endable|actor-isolated|nonisolated|isolated context|isolated code|global actor|concurrency-safe'
+
+matches() {
+  # xcodebuild indents diagnostics in some log formats; strip leading
+  # whitespace before anchoring on the repo path, and dedupe since the same
+  # diagnostic can be printed more than once per build.
+  # `|| true`: grep exits 1 on zero matches, which pipefail would otherwise
+  # turn into a script failure — but zero warnings is the goal state.
+  sed 's/^[[:space:]]*//' "$LOG_FILE" \
+    | grep "^$REPO_ROOT/.*warning:" \
+    | grep -E "$CONCURRENCY_PATTERN" \
+    | sort -u || true
+}
+
+count_warnings() {
+  matches | wc -l | tr -d ' '
+}
+
+CURRENT="$(count_warnings)"
+
+if [[ "$MODE" == "--update" ]]; then
+  echo "$CURRENT" > "$BASELINE_FILE"
+  echo "Baseline updated: $CURRENT concurrency warnings."
+  exit 0
+fi
+
+if [[ ! -f "$BASELINE_FILE" ]]; then
+  echo "error: no baseline at $BASELINE_FILE — run with --update to create it." >&2
+  exit 1
+fi
+
+BASELINE="$(tr -d '[:space:]' < "$BASELINE_FILE")"
+
+echo "Concurrency warnings: $CURRENT (baseline: $BASELINE)"
+
+if (( CURRENT > BASELINE )); then
+  echo "error: concurrency warning count grew from $BASELINE to $CURRENT." >&2
+  echo "New strict-concurrency diagnostics were introduced. Fix them, or if" >&2
+  echo "they are intentional, discuss raising the baseline in review." >&2
+  # Show the offenders to make CI output actionable.
+  matches | sed "s|^$REPO_ROOT/||" >&2
+  exit 1
+fi
+
+if (( CURRENT < BASELINE )); then
+  echo "Nice: count dropped from $BASELINE to $CURRENT. Lower the baseline in"
+  echo "this PR: scripts/concurrency_ratchet <log> --update"
+fi

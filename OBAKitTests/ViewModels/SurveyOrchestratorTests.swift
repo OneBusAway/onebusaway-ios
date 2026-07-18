@@ -27,18 +27,18 @@ class SurveyOrchestratorTests: OBATestCase {
     private var dataStore: UserDefaultsStore!
     private var orchestrator: SurveyOrchestrator!
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         dataStore = UserDefaultsStore(userDefaults: userDefaults)
         surveyService = SurveyService(apiService: nil, userDataStore: dataStore)
         orchestrator = SurveyOrchestrator(surveyService: surveyService)
     }
 
-    override func tearDown() {
+    override func tearDown() async throws {
         orchestrator = nil
         surveyService = nil
         dataStore = nil
-        super.tearDown()
+        try await super.tearDown()
     }
 
     // MARK: - Fixtures

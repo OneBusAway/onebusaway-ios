@@ -59,7 +59,7 @@ class CurrentTripViewModel: ObservableObject {
         self.route = route
     }
 
-    deinit {
+    isolated deinit {
         refreshTimer?.invalidate()
         findVehicleTask?.cancel()
     }

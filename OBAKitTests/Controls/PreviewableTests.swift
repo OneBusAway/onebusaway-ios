@@ -13,6 +13,7 @@ import Nimble
 import UIKit
 @testable import OBAKit
 
+@MainActor
 class PreviewableTests: XCTestCase {
     
     func test_Previewable_protocol() {

@@ -64,7 +64,7 @@ final class ServiceAlertViewController: UIViewController, WKNavigationDelegate {
 
     // MARK: - WKNavigationDelegate
 
-    func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+    func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping @MainActor (WKNavigationActionPolicy) -> Void) {
         guard navigationAction.navigationType == .linkActivated else {
             decisionHandler(.allow)
             return

@@ -19,8 +19,8 @@ class ProximityAlertTests: OBATestCase {
 
     var stop: Stop!
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         stop = try! Fixtures.loadSomeStops().first!
     }
 
@@ -125,8 +125,8 @@ class ProximityAlertStoreTests: OBATestCase {
     var userDefaultsStore: UserDefaultsStore!
     var stop: Stop!
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         userDefaultsStore = UserDefaultsStore(userDefaults: userDefaults)
         stop = try! Fixtures.loadSomeStops().first!
     }

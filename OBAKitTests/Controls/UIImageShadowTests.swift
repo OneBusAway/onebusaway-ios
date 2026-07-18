@@ -14,6 +14,7 @@ import UIKit
 import CoreGraphics
 @testable import OBAKit
 
+@MainActor
 class UIImageShadowTests: XCTestCase {
     
     func test_Shadow_struct() {

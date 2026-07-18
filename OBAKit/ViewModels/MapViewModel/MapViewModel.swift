@@ -48,11 +48,19 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
     @Published private(set) var showZoomWarning = false
 
     /// The currently selected base map type (standard vs. hybrid).
-    /// Persistence is handled by the consuming layer (UIKit: `MapViewController`'s `$mapType` sink).
+    /// Persistence is owned by `toggleMapType()`, which writes through
+    /// `MapRegionManager`; the UIKit `$mapType` sink only mirrors the value
+    /// onto MapKit and refreshes its toolbar icon.
     @Published private(set) var mapType: MapBaseType
 
     /// The current location authorization status. Used by the UI to show/hide location controls.
     @Published private(set) var locationAuthStatus: CLAuthorizationStatus
+
+    /// The current location accuracy authorization (full vs. reduced). Tracked
+    /// as published state — rather than read live from `locationService` — so
+    /// the top status pill re-evaluates when accuracy changes without the
+    /// coarse `locationAuthStatus` changing (e.g. after "Allow Once").
+    @Published private(set) var accuracyAuthorization: CLAccuracyAuthorization
 
     // MARK: - Survey Prompt
 
@@ -69,6 +77,7 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
     // MARK: - Private
 
     private let application: Application
+    private var cancellables = Set<AnyCancellable>()
 
     // MARK: - Init
 
@@ -76,13 +85,38 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
         self.application = application
         self.mapType = initialMapType
         self.locationAuthStatus = application.locationService.authorizationStatus
+        self.accuracyAuthorization = application.locationService.accuracyAuthorization
         self.surveyOrchestrator = SurveyOrchestrator(surveyService: application.surveyService)
         super.init()
         application.locationService.addDelegate(self)
+
+        // Keep `mapType` in step with `MapRegionManager.userSelectedMapType`,
+        // which UIKit surfaces (the toolbar toggle) and any future consumer
+        // may mutate. `UserDefaults.didChangeNotification` is coarse — it
+        // fires for any defaults change — but the cost is a single read of an
+        // integer-backed value and a comparison, and it avoids exposing the
+        // private storage key from `MapRegionManager`.
+        NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification, object: application.userDefaults)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.syncMapTypeFromRegionManager()
+            }
+            .store(in: &cancellables)
     }
 
-    deinit {
+    isolated deinit {
         application.locationService.removeDelegate(self)
+    }
+
+    /// Re-reads the persisted map type and mirrors it onto `mapType` when it
+    /// differs. No-op when the persisted value already matches — this is the
+    /// hot path for `UserDefaults.didChangeNotification` fan-out, so avoid a
+    /// republish on every unrelated defaults write.
+    private func syncMapTypeFromRegionManager() {
+        let persisted = MapBaseType(application.mapRegionManager.userSelectedMapType)
+        if persisted != mapType {
+            mapType = persisted
+        }
     }
 
     // MARK: - Lifecycle
@@ -131,12 +165,92 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
         showZoomWarning = show
     }
 
+    // MARK: - Zoom Constants
+
+    /// Latitude/longitude span used when the user taps the "Zoom in for stops"
+    /// affordance. Shared with `MapViewController.didTapZoomInForStops` and
+    /// `MapStatusPill` so both surfaces zoom to the same target.
+    static let zoomInForStopsSpan: Double = 0.01
+
+    /// Returns the zoom level to use when centering on the user's current
+    /// location. Full accuracy zooms tight (17); reduced accuracy zooms out
+    /// (11) so the ~1km approximation cell fits comfortably in view.
+    ///
+    /// Reads accuracy live from `locationService` rather than the cached
+    /// `@Published accuracyAuthorization`: iOS does not reliably deliver
+    /// `locationManagerDidChangeAuthorization` for a temporary full-accuracy
+    /// grant ("Allow Once"), so the cache can still read `.reducedAccuracy`
+    /// when the user taps "center on my location" right after granting. This
+    /// is an imperative one-shot read (not reactive display), so a live read
+    /// is correct and can't go stale.
+    func zoomLevelForCurrentLocation() -> Int {
+        return application.locationService.accuracyAuthorization == .reducedAccuracy ? 11 : 17
+    }
+
+    // MARK: - Top Pill State
+
+    /// What the top-center map-status pill should currently show. Zoom warning
+    /// wins over permission state, mirroring `MapStatusView.configure(for:zoomInStatus:)`.
+    enum TopPillState: Equatable {
+        case hidden
+        case zoomInForStops
+        case notDetermined
+        case locationServicesOff
+        /// Location services can't be changed by the user (MDM/parental
+        /// restriction) or the OS reports a status we don't recognize. The
+        /// pill shows a non-actionable warning — tapping opens no alert,
+        /// because there is nothing the user can do in Settings to resolve it.
+        /// Mirrors the old `MapStatusView.LocationState.locationServicesUnavailable`.
+        case locationServicesUnavailable
+        case impreciseLocation
+    }
+
+    var topPillState: TopPillState {
+        if showZoomWarning { return .zoomInForStops }
+        switch locationAuthStatus {
+        case .notDetermined:
+            return .notDetermined
+        case .denied:
+            return .locationServicesOff
+        case .restricted:
+            // A restricted user cannot lift the restriction in Settings, so a
+            // "Turn On in Settings" prompt would be a dead end. Surface a
+            // visible-but-non-actionable pill instead.
+            return .locationServicesUnavailable
+        case .authorizedAlways, .authorizedWhenInUse:
+            return accuracyAuthorization == .reducedAccuracy ? .impreciseLocation : .hidden
+        @unknown default:
+            // A future Apple-introduced denied-like status must still surface a
+            // visible pill rather than silently hiding the location status.
+            return .locationServicesUnavailable
+        }
+    }
+
+    // MARK: - Location Permission Helpers
+
+    /// Prompts the user for when-in-use location authorization. Thin wrapper so
+    /// SwiftUI callers don't need to reach into `application.locationService`.
+    func requestLocationAuthorization() {
+        application.locationService.requestInUseAuthorization()
+    }
+
+    /// Requests a one-shot full-accuracy elevation. `purposeKey` must match a
+    /// `NSLocationTemporaryUsageDescriptionDictionary` entry in the host app's
+    /// Info.plist (existing key: `MapStatusView`).
+    func requestTemporaryFullAccuracy(purposeKey: String) {
+        application.locationService.requestTemporaryFullAccuracyAuthorization(withPurposeKey: purposeKey)
+    }
+
     // MARK: - Map Type
 
-    /// Toggles between the standard and hybrid base map types.
-    /// The consuming layer (UIKit: `MapViewController`'s `$mapType` sink) persists the selection.
+    /// Toggles between the standard and hybrid base map types and persists
+    /// the choice through `MapRegionManager`. The UIKit path used to persist
+    /// this in its `$mapType` Combine sink; owning it here means SwiftUI-only
+    /// sessions persist too, and both paths share one write.
     func toggleMapType() {
-        mapType = mapType == .standard ? .hybrid : .standard
+        let next: MapBaseType = mapType == .standard ? .hybrid : .standard
+        mapType = next
+        application.mapRegionManager.userSelectedMapType = next.mkMapType
     }
 
     // MARK: - Bookmarks
@@ -205,6 +319,12 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
     nonisolated func locationService(_ service: LocationService, authorizationStatusChanged status: CLAuthorizationStatus) {
         Task { @MainActor in
             self.locationAuthStatus = status
+        }
+    }
+
+    nonisolated func locationService(_ service: LocationService, accuracyAuthorizationChanged accuracyAuthorization: CLAccuracyAuthorization) {
+        Task { @MainActor in
+            self.accuracyAuthorization = accuracyAuthorization
         }
     }
 }

@@ -14,6 +14,7 @@ import SwiftUI
 @testable import OBAKit
 
 @available(iOS 14.0, *)
+@MainActor
 class SwiftUIExtensionsTests: XCTestCase {
     
     func test_onFirstAppear_callsActionOnlyOnce() {

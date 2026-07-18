@@ -12,7 +12,7 @@ import CoreLocation
 import OBAKitCore
 
 /// Represents a real-time vehicle position for display on the vehicles map
-struct RealtimeVehicle: Identifiable, Hashable {
+nonisolated struct RealtimeVehicle: Identifiable, Hashable {
     let id: String
     let coordinate: CLLocationCoordinate2D
     let bearing: Float?

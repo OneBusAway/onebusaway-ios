@@ -17,6 +17,7 @@ import Nimble
 
 // swiftlint:disable large_tuple force_cast
 
+@MainActor
 class TestAppDelegate: ApplicationDelegate {
     var uiApplication: UIApplication?
 
@@ -38,6 +39,7 @@ class TestAppDelegate: ApplicationDelegate {
     var isIdleTimerDisabled = false
 }
 
+@MainActor
 class TestRegionsServiceDelegate: NSObject, RegionsServiceDelegate {
     func regionsServiceUnableToSelectRegion(_ service: RegionsService) {
         //
@@ -51,15 +53,15 @@ class TestRegionsServiceDelegate: NSObject, RegionsServiceDelegate {
 class ApplicationTests: OBATestCase {
     var queue: OperationQueue!
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
 
         queue = OperationQueue()
         queue.maxConcurrentOperationCount = 1
     }
 
-    override func tearDown() {
-        super.tearDown()
+    override func tearDown() async throws {
+        try await super.tearDown()
 
         queue.cancelAllOperations()
     }
@@ -425,6 +427,95 @@ class ApplicationTests: OBATestCase {
     }
 
 
+    func test_application_url_scheme_view_stop_with_no_root_yet_is_stashed_and_accepted() async {
+        let dataLoader = MockDataLoader(testName: name)
+        stubRegions(dataLoader: dataLoader)
+        let locManager = LocationManagerMock()
+        let locationService = LocationService(userDefaults: userDefaults, locationManager: locManager)
+        let config = AppConfig(regionsBaseURL: regionsURL, apiKey: apiKey, appVersion: appVersion, userDefaults: userDefaults, analytics: AnalyticsMock(), queue: queue, locationService: locationService, bundledRegionsFilePath: bundledRegionsPath, regionsAPIPath: regionsAPIPath, dataLoader: dataLoader)
+        let app = Application(config: config)
+        let delegate = TestAppDelegate()
+        app.delegate = delegate
+
+        guard let scheme = Bundle.main.extensionURLScheme else {
+            fail("No URL scheme configured")
+            return
+        }
+
+        let viewStopURL = URLSchemeRouter(scheme: scheme).encodeViewStop(stopID: "12345", regionID: 1)
+
+        await MainActor.run {
+            // `delegate.uiApplication` is nil, so `topViewController` is nil here,
+            // simulating a cold launch where the root view controller hasn't been
+            // installed yet. Before the fix, this URL was silently dropped (`false`).
+            let result = app.application(UIApplication.shared, open: viewStopURL, options: [:])
+
+            // The URL is still recognized and accepted: the stop ID is stashed in
+            // `pendingStopID` (the same stash the alarm-push path uses) and drained
+            // once the app becomes active and a root view controller exists.
+            expect(result).to(beTrue())
+        }
+    }
+
+    // MARK: - Onboarding Evaluate Tests
+
+    /// The headline behavior of the onboarding registry: an existing user (region set,
+    /// empty seen-store) gets backfilled and — with no push provider configured, as in
+    /// this test harness — matches no steps, so `evaluate` hands back nil and the app
+    /// goes straight to its root UI.
+    func test_onboarding_evaluate_existingUser_returnsNil() async {
+        let dataLoader = MockDataLoader(testName: name)
+        stubRegions(dataLoader: dataLoader)
+
+        // Seed the persisted region selection BEFORE constructing Application, so
+        // RegionsService loads the current region from storage. (Assigning
+        // `regionsService.currentRegion` after construction fires the region-change
+        // cascade — agencies + per-agency alert fetches — which is out of scope here.)
+        userDefaults.set(Fixtures.pugetSoundRegion.regionIdentifier, forKey: "OBACurrentRegionIdentifierUserDefaultsKey")
+
+        let locManager = LocationManagerMock()
+        let locationService = LocationService(userDefaults: userDefaults, locationManager: locManager)
+        let config = AppConfig(regionsBaseURL: regionsURL, apiKey: apiKey, appVersion: appVersion, userDefaults: userDefaults, analytics: AnalyticsMock(), queue: queue, locationService: locationService, bundledRegionsFilePath: bundledRegionsPath, regionsAPIPath: regionsAPIPath, dataLoader: dataLoader)
+        let app = Application(config: config)
+
+        let hasRegion = await MainActor.run { app.regionsService.currentRegion != nil }
+        expect(hasRegion).to(beTrue())
+
+        let controller = await withCheckedContinuation { continuation in
+            OnboardingFlowController.evaluate(application: app) { controller in
+                continuation.resume(returning: controller)
+            }
+        }
+
+        expect(controller).to(beNil())
+
+        // The backfill ran: legacy steps are seen, notifications deliberately is not.
+        await MainActor.run {
+            let store = OnboardingStepStore(userDefaults: app.userDefaults)
+            expect(store.seenVersion(of: .welcome)) == 1
+            expect(store.seenVersion(of: .region)) == 1
+            expect(store.seenVersion(of: .notifications)) == 0
+        }
+    }
+
+    /// A new user (no region) gets a flow — evaluate returns a controller.
+    func test_onboarding_evaluate_newUser_returnsController() async {
+        let dataLoader = MockDataLoader(testName: name)
+        stubRegions(dataLoader: dataLoader)
+        let locManager = LocationManagerMock()
+        let locationService = LocationService(userDefaults: userDefaults, locationManager: locManager)
+        let config = AppConfig(regionsBaseURL: regionsURL, apiKey: apiKey, appVersion: appVersion, userDefaults: userDefaults, analytics: AnalyticsMock(), queue: queue, locationService: locationService, bundledRegionsFilePath: bundledRegionsPath, regionsAPIPath: regionsAPIPath, dataLoader: dataLoader)
+        let app = Application(config: config)
+
+        let controller = await withCheckedContinuation { continuation in
+            OnboardingFlowController.evaluate(application: app) { controller in
+                continuation.resume(returning: controller)
+            }
+        }
+
+        expect(controller).toNot(beNil())
+    }
+
     func test_application_url_scheme_invalid_url_returns_false() async {
         let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)
@@ -628,6 +719,7 @@ class ApplicationTests: OBATestCase {
 
 // MARK: - Mock Classes for Push Service Testing
 
+@MainActor
 class MockPushServiceProvider: NSObject, PushServiceProvider {
     var isRegisteredForRemoteNotifications: Bool = false
     var notificationReceivedHandler: PushServiceNotificationReceivedHandler!

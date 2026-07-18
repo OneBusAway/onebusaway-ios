@@ -9,24 +9,23 @@ import XCTest
 import Nimble
 @testable import OBAKitCore
 
-@MainActor
 final class SurveyServicePrioritizationTests: OBATestCase {
 
     nonisolated(unsafe) private var surveyService: SurveyService!
     nonisolated(unsafe) private var testUserDefaults: UserDefaults!
     nonisolated(unsafe) private var testUserDataStore: UserDefaultsStore!
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         testUserDefaults = buildUserDefaults(suiteName: "\(userDefaultsSuiteName).prioritization")
         testUserDefaults.removePersistentDomain(forName: "\(userDefaultsSuiteName).prioritization")
         testUserDataStore = UserDefaultsStore(userDefaults: testUserDefaults)
         surveyService = SurveyService(apiService: nil, userDataStore: testUserDataStore)
     }
 
-    override func tearDown() {
+    override func tearDown() async throws {
         testUserDefaults.removePersistentDomain(forName: "\(userDefaultsSuiteName).prioritization")
-        super.tearDown()
+        try await super.tearDown()
     }
 
     // MARK: - Helpers

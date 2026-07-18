@@ -19,7 +19,7 @@ struct MyTripButton: View {
         Button(action: onTap) {
             Image(uiImage: Icons.busButton)
                 .renderingMode(.template)
-                .padding(12)
+                .frame(width: 40, height: 40)
                 .contentShape(Circle())
         }
         .liquidGlassButtonStyle(borderShape: .circle, fallbackShape: Circle())

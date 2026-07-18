@@ -12,12 +12,13 @@ import XCTest
 import Nimble
 @testable import OBAKitCore
 
+@MainActor
 class URLSchemeRouterTests: XCTestCase {
     
     var router: URLSchemeRouter!
     
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         router = URLSchemeRouter(scheme: "onebusaway")
     }
     

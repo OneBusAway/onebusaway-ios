@@ -21,8 +21,8 @@ class VehicleStatusModelOperationTests: OBATestCase {
 
     var dataLoader: MockDataLoader!
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
 
         dataLoader = (restService.dataLoader as! MockDataLoader)
     }

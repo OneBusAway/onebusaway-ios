@@ -14,6 +14,7 @@ import CoreLocation
 ///
 /// - Note: See `OBAKit.Application` for a richer version of this class suitable for use in an iOS app.
 @objc(OBACoreApplication)
+@MainActor
 open class CoreApplication: NSObject,
     AgencyAlertsDelegate,
     DataMigrationDelegate,
