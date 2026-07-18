@@ -175,8 +175,16 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
     /// Returns the zoom level to use when centering on the user's current
     /// location. Full accuracy zooms tight (17); reduced accuracy zooms out
     /// (11) so the ~1km approximation cell fits comfortably in view.
+    ///
+    /// Reads accuracy live from `locationService` rather than the cached
+    /// `@Published accuracyAuthorization`: iOS does not reliably deliver
+    /// `locationManagerDidChangeAuthorization` for a temporary full-accuracy
+    /// grant ("Allow Once"), so the cache can still read `.reducedAccuracy`
+    /// when the user taps "center on my location" right after granting. This
+    /// is an imperative one-shot read (not reactive display), so a live read
+    /// is correct and can't go stale.
     func zoomLevelForCurrentLocation() -> Int {
-        return accuracyAuthorization == .reducedAccuracy ? 11 : 17
+        return application.locationService.accuracyAuthorization == .reducedAccuracy ? 11 : 17
     }
 
     // MARK: - Top Pill State
@@ -188,6 +196,12 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
         case zoomInForStops
         case notDetermined
         case locationServicesOff
+        /// Location services can't be changed by the user (MDM/parental
+        /// restriction) or the OS reports a status we don't recognize. The
+        /// pill shows a non-actionable warning — tapping opens no alert,
+        /// because there is nothing the user can do in Settings to resolve it.
+        /// Mirrors the old `MapStatusView.LocationState.locationServicesUnavailable`.
+        case locationServicesUnavailable
         case impreciseLocation
     }
 
@@ -196,12 +210,19 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
         switch locationAuthStatus {
         case .notDetermined:
             return .notDetermined
-        case .denied, .restricted:
+        case .denied:
             return .locationServicesOff
+        case .restricted:
+            // A restricted user cannot lift the restriction in Settings, so a
+            // "Turn On in Settings" prompt would be a dead end. Surface a
+            // visible-but-non-actionable pill instead.
+            return .locationServicesUnavailable
         case .authorizedAlways, .authorizedWhenInUse:
             return accuracyAuthorization == .reducedAccuracy ? .impreciseLocation : .hidden
         @unknown default:
-            return .hidden
+            // A future Apple-introduced denied-like status must still surface a
+            // visible pill rather than silently hiding the location status.
+            return .locationServicesUnavailable
         }
     }
 

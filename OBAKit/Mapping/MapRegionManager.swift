@@ -517,8 +517,16 @@ public class MapRegionManager: NSObject,
 
     private static let requiredHeightToShowStops = 40000.0
 
+    /// Whether the zoom-in-for-stops warning should show for a map whose
+    /// visible `MKMapRect` is `height` map points tall. Exposed so the SwiftUI
+    /// `MapPanelRootView` drives its status pill from the same threshold the
+    /// UIKit map uses, keeping the two surfaces in agreement.
+    public static func shouldShowZoomInWarning(forVisibleMapRectHeight height: Double) -> Bool {
+        height > requiredHeightToShowStops
+    }
+
     public var zoomInStatus: Bool {
-        mapView.visibleMapRect.height > MapRegionManager.requiredHeightToShowStops
+        MapRegionManager.shouldShowZoomInWarning(forVisibleMapRectHeight: mapView.visibleMapRect.height)
     }
 
     private func updateZoomWarningOverlay(mapHeight: Double) {

@@ -105,6 +105,13 @@ struct MapPanelRootView: View {
         }
         .onMapCameraChange(frequency: .onEnd) { context in
             visibleRegion = context.region
+            // Drive the "Zoom in for stops" pill from the same threshold the
+            // UIKit map uses (`MapRegionManager.zoomInStatus`), so the SwiftUI
+            // surface shows the warning — and its zoom-in action becomes
+            // reachable — when the region is too broad to load stops.
+            mapViewModel.updateZoomWarning(
+                MapRegionManager.shouldShowZoomInWarning(forVisibleMapRectHeight: context.rect.height)
+            )
         }
         .overlay(alignment: .top) {
             MapStatusPill(
@@ -141,7 +148,17 @@ struct MapPanelRootView: View {
                     )
                     .presentationBackground(.clear)
                 }
-                .mapPermissionAlert(state: $permissionAlertState, onAction: handleAlertAction)
+                // Bind the live alert state only on the base (non-stacking)
+                // sheet layer. The `floatingSheet` content builder is re-invoked
+                // for every stacked sheet, so binding the shared
+                // `permissionAlertState` on all of them would fire multiple
+                // concurrent `.alert(isPresented:)` presentations against one
+                // value. The base sheet shows exactly one route at a time, so
+                // this yields a single alert host.
+                .mapPermissionAlert(
+                    state: route.prefersStacking ? .constant(nil) : $permissionAlertState,
+                    onAction: handleAlertAction
+                )
                 .onGeometryChange(for: CGFloat.self) { [halfScreenHeight] proxy in
                     // The transform closure is @Sendable; snapshot the @State value
                     // instead of reading main-actor view state inside it.
@@ -204,7 +221,7 @@ extension MapPanelRootView {
         switch state {
         case .notDetermined, .locationServicesOff, .impreciseLocation:
             permissionAlertState = state
-        case .hidden, .zoomInForStops:
+        case .hidden, .zoomInForStops, .locationServicesUnavailable:
             break
         }
     }
@@ -232,6 +249,11 @@ extension MapPanelRootView {
 
     private func centerOnUser() {
         guard let location = application.locationService.currentLocation else { return }
+        // `mapSize` is `.zero` until `.onGeometryChange` reports the first
+        // layout. Building a region from a zero size yields a zero-span
+        // `MKCoordinateSpan` and animates the Map to a degenerate zoom, so skip
+        // until we have a real size (the next tap, post-layout, works).
+        guard mapSize != .zero else { return }
         let region = MKCoordinateRegion(
             centeredOn: location.coordinate,
             zoomLevel: mapViewModel.zoomLevelForCurrentLocation(),

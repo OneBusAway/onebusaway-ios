@@ -183,32 +183,27 @@ class MapStatusView: UIView {
     }
 
     func configure(for state: LocationState, zoomInStatus: Bool) {
-        var shouldHide: Bool
-        var setImage: UIImage?
-        var setLargeImage: UIImage?
-        var setLabel: String?
-
-        switch state {
-        case .locationServicesUnavailable, .locationServicesOff, .notDetermined:
-            shouldHide = false
-            setImage = UIImage(systemName: "location.slash")
-            setLargeImage = UIImage(systemName: "location.slash.fill")
-            setLabel = OBALoc("map_status_view.location_services_unavailable", value: "Location services unavailable", comment: "Displayed in the map status view at the top of the map when the user has declined to give the app access to their location")
-        case .impreciseLocation:
-            shouldHide = false
-            setImage = UIImage(systemName: "location.circle")
-            setLargeImage = UIImage(systemName: "location.circle.fill")
-            setLabel = OBALoc("map_status_view.precise_location_unavailable", value: "Precise location unavailable", comment: "Displayed in the map status view at the top of the map when the user has declined to give the app access to their precise location")
-        case .locationServicesOn:
-            shouldHide = true
-        }
-
+        // The zoom-in warning wins over any permission state, matching the
+        // precedence in `MapViewModel.topPillState`. Both the SF Symbol names
+        // and the labels come from the shared `MapStatusIndicator`.
+        let indicator: MapStatusIndicator?
         if zoomInStatus {
-            shouldHide = false
-            setImage = UIImage(systemName: "plus.magnifyingglass")
-            setLargeImage = UIImage(systemName: "plus.magnifyingglass")
-            setLabel = OBALoc("map_status_view.zoom_in_for_stops", value: "Zoom in for stops", comment: "Displayed in the map status view at the top of the map when the user must zoom in to see stops on the map")
+            indicator = .zoomInForStops
+        } else {
+            switch state {
+            case .locationServicesUnavailable, .locationServicesOff, .notDetermined:
+                indicator = .locationUnavailable
+            case .impreciseLocation:
+                indicator = .preciseLocationUnavailable
+            case .locationServicesOn:
+                indicator = nil
+            }
         }
+
+        let shouldHide = indicator == nil
+        let setImage = indicator.map { UIImage(systemName: $0.symbolName) } ?? nil
+        let setLargeImage = indicator.map { UIImage(systemName: $0.largeSymbolName) } ?? nil
+        let setLabel = indicator?.localizedText
 
         // Cancel any in-flight animations to prevent a stale completion
         // from toggling isHidden after a newer state change.

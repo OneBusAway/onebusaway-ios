@@ -75,7 +75,7 @@ class MapViewController: UIViewController,
 
     public init(application: Application) {
         self.application = application
-        let initialMapType: MapBaseType = application.mapRegionManager.userSelectedMapType == .mutedStandard ? .standard : .hybrid
+        let initialMapType = MapBaseType(application.mapRegionManager.userSelectedMapType)
         self.viewModel = MapViewModel(application: application, initialMapType: initialMapType)
 
         super.init(nibName: nil, bundle: nil)

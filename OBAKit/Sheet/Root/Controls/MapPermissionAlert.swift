@@ -78,18 +78,24 @@ struct MapPermissionAlert: ViewModifier {
                 comment: "Title of the alert asking the user to enable location services."
             )
         case .locationServicesOff:
+            // NOTE: a distinct key from the UIKit `locationservices_alert_off.title`,
+            // which is a `%@`-format string ("%@ works best with your location.")
+            // consumed by `MapStatusView.alert(for:)`. Reusing that key here would
+            // render the raw format string, stray `%@` and all, as the alert title.
             return OBALoc(
-                "locationservices_alert_off.title",
+                "map_status_alert.location_services_off.title",
                 value: "Location Services Off",
                 comment: "Title of the alert shown when location services are disabled for the app."
             )
         case .impreciseLocation:
+            // Distinct key from the UIKit `locationservices_alert_imprecise.title`
+            // format string, for the same reason as `.locationServicesOff` above.
             return OBALoc(
-                "locationservices_alert_imprecise.title",
+                "map_status_alert.precise_location_off.title",
                 value: "Precise Location Off",
                 comment: "Title of the alert shown when the user has restricted the app to reduced-accuracy location."
             )
-        case .hidden, .zoomInForStops:
+        case .hidden, .zoomInForStops, .locationServicesUnavailable:
             return ""
         }
     }
@@ -129,7 +135,7 @@ struct MapPermissionAlert: ViewModifier {
                 value: "Keep Precise Location Off",
                 comment: "Cancel button in the precise-location alert; dismisses without raising accuracy from reduced to full."
             ), role: .cancel) {}
-        case .hidden, .zoomInForStops:
+        case .hidden, .zoomInForStops, .locationServicesUnavailable:
             EmptyView()
         }
     }

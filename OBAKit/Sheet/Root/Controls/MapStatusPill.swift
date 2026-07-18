@@ -47,7 +47,9 @@ struct MapStatusPill: View {
 
     private func handleTap() {
         switch state {
-        case .hidden:
+        case .hidden, .locationServicesUnavailable:
+            // `.locationServicesUnavailable` is a restricted/unknown status the
+            // user can't resolve in Settings, so the pill is display-only.
             return
         case .zoomInForStops:
             onZoomInForStops()
@@ -62,36 +64,35 @@ struct MapStatusPill: View {
 extension MapStatusPill {
     /// Presentation model for a single pill state. Split so the empty case
     /// (`.hidden`) simply returns `nil` and the view collapses to `EmptyView`.
+    /// The symbol name and label come from the shared `MapStatusIndicator` so
+    /// this pill and the UIKit `MapStatusView` can't drift.
     fileprivate struct Display {
         let symbolName: String
         let labelText: String
 
         init?(state: MapViewModel.TopPillState) {
-            switch state {
-            case .hidden:
-                return nil
-            case .zoomInForStops:
-                symbolName = "plus.magnifyingglass"
-                labelText = OBALoc(
-                    "map_status_view.zoom_in_for_stops",
-                    value: "Zoom in for stops",
-                    comment: "Displayed in the map status view at the top of the map when the user must zoom in to see stops on the map"
-                )
-            case .notDetermined, .locationServicesOff:
-                symbolName = "location.slash"
-                labelText = OBALoc(
-                    "map_status_view.location_services_unavailable",
-                    value: "Location services unavailable",
-                    comment: "Displayed in the map status view at the top of the map when the user has declined to give the app access to their location"
-                )
-            case .impreciseLocation:
-                symbolName = "location.circle"
-                labelText = OBALoc(
-                    "map_status_view.precise_location_unavailable",
-                    value: "Precise location unavailable",
-                    comment: "Displayed in the map status view at the top of the map when the user has declined to give the app access to their precise location"
-                )
-            }
+            guard let indicator = MapStatusIndicator(state) else { return nil }
+            symbolName = indicator.symbolName
+            labelText = indicator.localizedText
+        }
+    }
+}
+
+// MARK: - TopPillState → MapStatusIndicator
+
+extension MapStatusIndicator {
+    /// Maps a pill state onto the shared indicator, or `nil` for states that
+    /// render nothing (`.hidden`).
+    fileprivate init?(_ state: MapViewModel.TopPillState) {
+        switch state {
+        case .hidden:
+            return nil
+        case .zoomInForStops:
+            self = .zoomInForStops
+        case .notDetermined, .locationServicesOff, .locationServicesUnavailable:
+            self = .locationUnavailable
+        case .impreciseLocation:
+            self = .preciseLocationUnavailable
         }
     }
 }

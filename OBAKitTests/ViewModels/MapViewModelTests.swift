@@ -568,6 +568,22 @@ class MapViewModelTests: OBATestCase {
         expect(viewModel.topPillState) == .locationServicesOff
     }
 
+    /// A `.restricted` auth status maps to `.locationServicesUnavailable`, a
+    /// visible-but-non-actionable pill. A restricted (MDM/parental) user can't
+    /// lift the restriction in Settings, so folding it into `.locationServicesOff`
+    /// — which offers a "Turn On in Settings" prompt — would be a dead end.
+    @MainActor
+    func test_topPillState_restrictedMapsToLocationServicesUnavailable() async {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader)
+        let viewModel = MapViewModel(application: app)
+
+        viewModel.locationService(app.locationService, authorizationStatusChanged: .restricted)
+        for _ in 0..<5 { await Task.yield() }
+
+        expect(viewModel.topPillState) == .locationServicesUnavailable
+    }
+
     /// A `.notDetermined` auth status maps to `.notDetermined` when no zoom warning is active.
     @MainActor
     func test_topPillState_notDeterminedMapsToPill() async {
