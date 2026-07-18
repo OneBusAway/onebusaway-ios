@@ -334,6 +334,10 @@ public class Application: CoreApplication, PushServiceDelegate {
     }
 
     private var pendingAlarmStopID: StopID?
+
+    /// A `viewStop` deep link received before the root view controller was
+    /// installed (cold launch). Drained once the app becomes active.
+    private var pendingStopID: StopID?
     private var presentDonationUIOnActive = false
     private var presentAddRegionAlertOnActive = false
     private var donationPromptID: String?
@@ -451,6 +455,11 @@ public class Application: CoreApplication, PushServiceDelegate {
             pendingAlarmStopID = nil
         }
 
+        if let stopID = pendingStopID, let topViewController {
+            viewRouter.navigateTo(stopID: stopID, from: topViewController)
+            pendingStopID = nil
+        }
+
         if presentDonationUIOnActive, let topViewController {
             presentDonationUI(topViewController, id: donationPromptID)
             presentDonationUIOnActive = false
@@ -539,7 +548,11 @@ public class Application: CoreApplication, PushServiceDelegate {
 
         switch urlType {
         case .viewStop(let stopData):
-            guard let topViewController = self.topViewController else { return false }
+            guard let topViewController = self.topViewController else {
+                // UI not ready yet (cold launch). Navigate once the scene activates.
+                pendingStopID = stopData.stopID
+                return true
+            }
             viewRouter.navigateTo(stopID: stopData.stopID, from: topViewController)
             return true
         case .addRegion(let regionData):

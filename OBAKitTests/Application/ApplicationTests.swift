@@ -427,6 +427,36 @@ class ApplicationTests: OBATestCase {
     }
 
 
+    func test_application_url_scheme_view_stop_with_no_root_yet_is_stashed_and_accepted() async {
+        let dataLoader = MockDataLoader(testName: name)
+        stubRegions(dataLoader: dataLoader)
+        let locManager = LocationManagerMock()
+        let locationService = LocationService(userDefaults: userDefaults, locationManager: locManager)
+        let config = AppConfig(regionsBaseURL: regionsURL, apiKey: apiKey, appVersion: appVersion, userDefaults: userDefaults, analytics: AnalyticsMock(), queue: queue, locationService: locationService, bundledRegionsFilePath: bundledRegionsPath, regionsAPIPath: regionsAPIPath, dataLoader: dataLoader)
+        let app = Application(config: config)
+        let delegate = TestAppDelegate()
+        app.delegate = delegate
+
+        guard let scheme = Bundle.main.extensionURLScheme else {
+            fail("No URL scheme configured")
+            return
+        }
+
+        let viewStopURL = URLSchemeRouter(scheme: scheme).encodeViewStop(stopID: "12345", regionID: 1)
+
+        await MainActor.run {
+            // `delegate.uiApplication` is nil, so `topViewController` is nil here,
+            // simulating a cold launch where the root view controller hasn't been
+            // installed yet. Before the fix, this URL was silently dropped (`false`).
+            let result = app.application(UIApplication.shared, open: viewStopURL, options: [:])
+
+            // The URL is still recognized and accepted: the stop ID is stashed in
+            // `pendingStopID` and drained once the app becomes active and a root
+            // view controller exists (mirrors `pendingAlarmStopID`).
+            expect(result).to(beTrue())
+        }
+    }
+
     func test_application_url_scheme_invalid_url_returns_false() async {
         let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)
