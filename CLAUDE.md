@@ -117,8 +117,26 @@ The codebase supports easy customization through:
 
 Custom region addition:
 ```
-onebusaway://add-region?name=REGION_NAME&oba-url=ENCODED_SERVER_URL
+onebusaway://add-region?name=REGION_NAME
+    &oba-url=ENCODED_OBA_URL
+    &otp-url=ENCODED_OTP_URL
+    &sidecar-url=ENCODED_SIDECAR_URL
+    &umami-url=ENCODED_UMAMI_URL
+    &umami-id=UMAMI_WEBSITE_ID
 ```
+
+**Parameter details:**
+- `name` (required): Region display name
+- `oba-url` (required): OneBusAway server base URL
+- `otp-url` (optional): OpenTripPlanner server URL
+- `sidecar-url` (optional): Obaco sidecar server URL for OneBusAway.co features
+- `umami-url` and `umami-id` (optional, both required together): Umami analytics URL and website ID—leave both blank to disable analytics
+
+**Rules:**
+1. All optional parameters can be omitted; their absence preserves existing behavior
+2. **Umami is "both-or-nothing"**: analytics are enabled only if both `umami-url` and `umami-id` are present and valid; a partial pair is silently ignored
+3. URL parameters must be percent-encoded (e.g., query strings in nested URLs: `https://example.com/api?a=1&b=2` must be encoded as `https%3A%2F%2Fexample.com%2Fapi%3Fa%3D1%26b%3D2`)
+4. New URL fields are validated for well-formedness only; invalid optional URLs degrade to `nil`; only `oba-url` triggers a live server validation (existing behavior)
 
 ## Development Notes
 
