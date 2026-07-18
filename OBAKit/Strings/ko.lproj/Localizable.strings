@@ -437,6 +437,12 @@
 /* Displayed in the map status view at the top of the map when the user must zoom in to see stops on the map */
 "map_status_view.zoom_in_for_stops" = "정류장을 보려면 확대하세요";
 
+/* Title of the alert shown when location services are disabled for the app. */
+"map_status_alert.location_services_off.title" = "Location Services Off";
+
+/* Title of the alert shown when the user has restricted the app to reduced-accuracy location. */
+"map_status_alert.precise_location_off.title" = "Precise Location Off";
+
 /* Header for a section that shows the user information about this app. */
 "more_controller.about_app" = "이 앱 정보";
 

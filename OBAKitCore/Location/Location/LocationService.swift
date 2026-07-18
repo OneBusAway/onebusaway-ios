@@ -14,6 +14,12 @@ import CoreLocation
 @MainActor
 public protocol LocationServiceDelegate: NSObjectProtocol {
     @objc optional func locationService(_ service: LocationService, authorizationStatusChanged status: CLAuthorizationStatus)
+    /// Fired when the accuracy authorization changes *without* the coarse
+    /// `CLAuthorizationStatus` changing — e.g. the user grants one-shot full
+    /// accuracy ("Allow Once") or toggles Precise Location in Settings. These
+    /// transitions leave `authorizationStatusChanged` silent, so consumers that
+    /// react to accuracy (map status pills, zoom level) must observe this too.
+    @objc optional func locationService(_ service: LocationService, accuracyAuthorizationChanged accuracyAuthorization: CLAccuracyAuthorization)
     @objc optional func locationService(_ service: LocationService, locationChanged location: CLLocation)
     @objc optional func locationService(_ service: LocationService, headingChanged heading: CLHeading?)
     @objc optional func locationService(_ service: LocationService, errorReceived error: Error)
@@ -35,6 +41,7 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
     public init(userDefaults: UserDefaults, locationManager: LocationManager) {
         self.locationManager = locationManager
         authorizationStatus = locationManager.authorizationStatus
+        lastAccuracyAuthorization = locationManager.accuracyAuthorization
         currentLocation = locationManager.location
 
         self.userDefaults = userDefaults
@@ -89,6 +96,12 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
     private func notifyDelegatesAuthorizationChanged(_ status: CLAuthorizationStatus) {
         for delegate in delegates.allObjects {
             delegate.locationService?(self, authorizationStatusChanged: status)
+        }
+    }
+
+    private func notifyDelegatesAccuracyAuthorizationChanged(_ accuracyAuthorization: CLAccuracyAuthorization) {
+        for delegate in delegates.allObjects {
+            delegate.locationService?(self, accuracyAuthorizationChanged: accuracyAuthorization)
         }
     }
 
@@ -178,6 +191,12 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
         return locationManager.accuracyAuthorization
     }
 
+    /// Last accuracy authorization we notified delegates about. Tracked so a
+    /// `locationManagerDidChangeAuthorization` callback that carries only an
+    /// accuracy change (coarse status unchanged) can still be detected and
+    /// forwarded via `accuracyAuthorizationChanged`.
+    private var lastAccuracyAuthorization: CLAccuracyAuthorization
+
     // MARK: - State Management
 
     public func startUpdates() {
@@ -236,6 +255,16 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
     @available(iOS 14, *)
     public func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         authorizationStatus = manager.authorizationStatus
+
+        // Accuracy can change while the coarse status stays put (e.g. "Allow
+        // Once" elevates a reduced-accuracy session to full). That leaves the
+        // `authorizationStatus` didSet silent, so detect and forward the
+        // accuracy transition on its own channel.
+        let newAccuracy = manager.accuracyAuthorization
+        if newAccuracy != lastAccuracyAuthorization {
+            lastAccuracyAuthorization = newAccuracy
+            notifyDelegatesAccuracyAuthorizationChanged(newAccuracy)
+        }
     }
 
     public var successiveLocationComparisonWindow: TimeInterval = 60.0

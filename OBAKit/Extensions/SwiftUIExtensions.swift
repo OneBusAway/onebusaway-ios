@@ -7,6 +7,7 @@
 
 import SwiftUI
 import UIKit
+import OBAKitCore
 
 // MARK: - onFirstAppear
 
@@ -29,6 +30,31 @@ private struct FirstAppear: ViewModifier {
             guard !hasAppeared else { return }
             hasAppeared = true
             action()
+        }
+    }
+}
+
+// MARK: - liquidGlassButtonStyle
+
+public extension View {
+    /// Apply to a `Button` to give it Apple's interactive Liquid Glass surface
+    /// on iOS 26+ (the press/morph "grab" response that comes with
+    /// `.buttonStyle(.glass)`), with a `.plain` + `.regularMaterial` fallback
+    /// on older systems so the button still reads as floating.
+    ///
+    /// Two shape parameters because the two surfaces use different APIs:
+    /// `borderShape` drives the iOS 26 glass morphing, `fallbackShape` fills
+    /// the pre-26 material background. Pass matching shapes (e.g. `.circle` +
+    /// `Circle()`) for a consistent look across versions.
+    @ViewBuilder
+    func liquidGlassButtonStyle(
+        borderShape: ButtonBorderShape = .capsule,
+        fallbackShape: some Shape = Capsule()
+    ) -> some View {
+        if #available(iOS 26.0, *) {
+            self.buttonStyle(.glass).buttonBorderShape(borderShape)
+        } else {
+            self.buttonStyle(.plain).background(.regularMaterial, in: fallbackShape)
         }
     }
 }
@@ -68,27 +94,18 @@ public extension View {
     }
 }
 
-// MARK: - liquidGlassButtonStyle
-
-public extension View {
-    /// Apply to a `Button` to give it Apple's interactive Liquid Glass surface
-    /// on iOS 26+ (the press/morph "grab" response that comes with
-    /// `.buttonStyle(.glass)`), with a `.plain` + `.regularMaterial` fallback
-    /// on older systems so the button still reads as floating.
-    ///
-    /// Two shape parameters because the two surfaces use different APIs:
-    /// `borderShape` drives the iOS 26 glass morphing, `fallbackShape` fills
-    /// the pre-26 material background. Pass matching shapes (e.g. `.circle` +
-    /// `Circle()`) for a consistent look across versions.
-    @ViewBuilder
-    func liquidGlassButtonStyle(
-        borderShape: ButtonBorderShape = .capsule,
-        fallbackShape: some Shape = Capsule()
-    ) -> some View {
-        if #available(iOS 26.0, *) {
-            self.buttonStyle(.glass).buttonBorderShape(borderShape)
-        } else {
-            self.buttonStyle(.plain).background(.regularMaterial, in: fallbackShape)
-        }
-    }
+extension View {
+   /// Lifts an overlay above the floating sheet and syncs its opacity /
+   /// animation with the sheet's live drag height, so the bottom-leading
+   /// (trip) and bottom-trailing (map controls) toolbars move together as
+   /// the user drags. Callers still apply their own leading/trailing padding.
+   func floatingOverSheet(height: CGFloat, opacity: CGFloat, duration: CGFloat) -> some View {
+       self
+           .padding(.bottom, height + ThemeMetrics.padding)
+           .opacity(opacity)
+           .animation(
+               .interpolatingSpring(duration: duration, bounce: 0, initialVelocity: 0),
+               value: height
+           )
+   }
 }

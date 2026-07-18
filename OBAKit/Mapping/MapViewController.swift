@@ -75,7 +75,7 @@ class MapViewController: UIViewController,
 
     public init(application: Application) {
         self.application = application
-        let initialMapType: MapBaseType = application.mapRegionManager.userSelectedMapType == .mutedStandard ? .standard : .hybrid
+        let initialMapType = MapBaseType(application.mapRegionManager.userSelectedMapType)
         self.viewModel = MapViewModel(application: application, initialMapType: initialMapType)
 
         super.init(nibName: nil, bundle: nil)
@@ -316,13 +316,11 @@ class MapViewController: UIViewController,
         let userLocation = mapRegionManager.mapView.userLocation
         guard userLocation.isValid else { return }
 
-        var zoomLevel = 17
-
-        if application.locationService.accuracyAuthorization == .reducedAccuracy {
-            zoomLevel = 11
-        }
-
-        mapRegionManager.mapView.setCenterCoordinate(centerCoordinate: userLocation.coordinate, zoomLevel: zoomLevel, animated: true)
+        mapRegionManager.mapView.setCenterCoordinate(
+            centerCoordinate: userLocation.coordinate,
+            zoomLevel: viewModel.zoomLevelForCurrentLocation(),
+            animated: true
+        )
 
         // It is possible to activate the center map button via Voiceover. When the user
         // centers the map on their location, partially collapse the sheet to enable mapview interaction.
@@ -332,8 +330,6 @@ class MapViewController: UIViewController,
     }
 
     // MARK: - Status View Handlers
-
-    private static let zoomInForStopsSpan = 0.01
 
     @objc private func handleMapStatusTap(_ sender: UITapGestureRecognizer) {
         if viewModel.showZoomWarning {
@@ -347,8 +343,8 @@ class MapViewController: UIViewController,
         let currentCenter = mapRegionManager.mapView.region.center
 
         let targetSpan = MKCoordinateSpan(
-            latitudeDelta: MapViewController.zoomInForStopsSpan,
-            longitudeDelta: MapViewController.zoomInForStopsSpan
+            latitudeDelta: MapViewModel.zoomInForStopsSpan,
+            longitudeDelta: MapViewModel.zoomInForStopsSpan
         )
 
         let newRegion = MKCoordinateRegion(center: currentCenter, span: targetSpan)
@@ -1193,8 +1189,12 @@ private extension MapViewController {
         viewModel.$mapType
             .sink { [weak self] mapType in
                 guard let self else { return }
-                let mkType: MKMapType = mapType == .standard ? .mutedStandard : .hybrid
-                application.mapRegionManager.userSelectedMapType = mkType
+                // Persistence is owned by `MapViewModel.toggleMapType()`; the
+                // sink here only mirrors the selection onto MapKit's mapView
+                // and refreshes the toolbar icon so both stay in step when
+                // the value changes through any path (VM toggle, external
+                // defaults edit, cross-view sync).
+                mapRegionManager.mapView.mapType = mapType.mkMapType
                 setMapTypeButtonImage(toggleMapTypeButton, mapType: mapType)
             }
             .store(in: &cancellables)

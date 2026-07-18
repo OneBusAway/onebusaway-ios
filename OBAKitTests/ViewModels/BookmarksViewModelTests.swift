@@ -364,7 +364,10 @@ class BookmarksViewModelTests: OBATestCase {
         }.store(in: &cancellables)
 
         viewModel.refresh()
-        await fulfillment(of: [errBatchDone], timeout: 2.0)
+        // Timeout sized for GitHub Actions runner headroom, not local speed —
+        // the batch's `Task { @MainActor }` chain lands well under a second
+        // locally but has flaked at 2s on CI under load.
+        await fulfillment(of: [errBatchDone], timeout: 10.0)
         cancellables.removeAll()
 
         expect(viewModel.lastRefreshHadError).to(beTrue())
@@ -390,7 +393,7 @@ class BookmarksViewModelTests: OBATestCase {
         }.store(in: &cancellables)
 
         viewModel.refresh()
-        await fulfillment(of: [cleanBatchDone], timeout: 2.0)
+        await fulfillment(of: [cleanBatchDone], timeout: 10.0)
 
         expect(viewModel.lastRefreshHadError).to(beFalse())
     }
