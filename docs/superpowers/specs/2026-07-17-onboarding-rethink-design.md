@@ -27,6 +27,8 @@ Rebuild OBAKit's onboarding as a versioned, ordered **step registry** so that:
 | Region step vs. existing `RegionPickerView`? | New detected-region card UI as the onboarding step; "See all regions" pushes the existing full `RegionPickerView` (custom regions, Settings usage untouched). |
 | Presentation for existing users? | Full-screen at launch, same root-swap mechanism as today; single step, then hand-off to the app. |
 | Architecture | Approach A: shared step registry + SwiftUI flow container in OBAKit, deleting the per-app `OnboardingNavigationController` copies. |
+| HIG pre-alert screen rule (one "Continue"-style button, no skip)? | **Deliberately not followed.** Keep the design's two-button layout ("Use My Location"/"Turn On Notifications" + "Not Now"/"Maybe Later"). Rationale: declining marks the step seen forever, which respects the user more than forcing the OS prompt. Risk accepted as low-but-nonzero (HIG guidance, not the automatic-rejection rule — that applies only to tracking prompts). |
+| Provisional notification authorization? | Rejected. `UNAuthorizationOptions.provisional` delivers silently to Notification Center only, which defeats time-sensitive region-wide service alerts. |
 
 ## 1 · Registry & persistence
 
@@ -53,6 +55,8 @@ flow = steps
 ```
 
 Onboarding is needed iff `flow` is non-empty. This replaces `needsToOnboard(application:)`.
+
+Note: the notifications eligibility check requires an async fetch (`await UNUserNotificationCenter.current().notificationSettings()`), so flow computation is `async`. It is the only async predicate; the ObjC entry point wraps it (compute the flow, then decide root controller).
 
 ### Seen semantics
 
@@ -94,7 +98,7 @@ Shared `OnboardingScaffold` (SwiftUI): segmented progress bar, ringed hero circl
 
 - **Welcome** — new screen: brand hero, "Get Started", footnote about worldwide regions.
 - **Location** — replaces `RegionPickerLocationAuthorizationView` content; same behavior underneath: "Use My Location" sets `automaticallySelectRegion = true` and calls `requestInUseAuthorization()` via the existing `RegionPickerCoordinator`; "Not Now" sets it false. Benefit rows: nearby stops, map centering. Footnote: while-in-use only.
-- **Region** — detected-region card (auto-detect via `RegionPickerCoordinator`; map preview via `MKMapSnapshotter` or the existing `RegionPickerMap`), short nearest-regions list, "See all regions" pushes the existing `RegionPickerView`. Region confirmed via `regionProvider.setCurrentRegion(to:)`.
+- **Region** — detected-region card (auto-detect via `RegionPickerCoordinator`; map preview via the existing live `RegionPickerMap`, preferred over `MKMapSnapshotter` because snapshots don't adapt to dark-mode trait changes without re-snapshotting and don't capture overlays/annotations), short nearest-regions list, "See all regions" pushes the existing `RegionPickerView`. Region confirmed via `regionProvider.setCurrentRegion(to:)`.
 - **Notifications** — pitch screen for region-wide service alerts with illustrative (localized, static) alert cards. Primary button drives the existing `OBACloudPushService.requestPushID` path: `UNUserNotificationCenter.requestAuthorization` + `registerForRemoteNotifications`. Nothing else ships client-side.
 - **All set** — recap rows reflecting actual outcomes (region name, location on/off, alerts on/off), "Start Exploring".
 - **Migration** — existing `DataMigrationView` wrapped in the new chrome; not rebuilt.
@@ -103,7 +107,8 @@ New user-facing strings go through the normal `OBAKit/Strings` localization flow
 
 ## 4 · Error handling & edge cases
 
-- Push authorization/registration failure: log via CocoaLumberjack, mark seen, advance. Never traps the user.
+- Push authorization/registration failure: log via CocoaLumberjack, mark seen, advance. Never traps the user. APNs registration can be retried silently on a later launch even after the step is seen (authorization already granted → no UI); device tokens are never cached in local storage, per Apple's guidance.
+- "Allow Once" location grants revert to `.notDetermined` when the app is no longer in use, making the location step *eligible* again on a later launch — the seen-store is what prevents a re-show. Covered by a dedicated test.
 - Regions fail to load on the region step: existing `RegionPickerCoordinator` error handling applies; the step remains usable (retry/list).
 - App killed mid-flow: steps not yet marked seen reappear next launch; region cannot be skipped by force-quit because it is only marked seen on confirmation.
 - `TEST_ONBOARDING` env var (DEBUG): forces the full flow ignoring the store, keeping the flow previewable on Simulator (where the notifications step is otherwise ineligible).
@@ -117,6 +122,7 @@ Unit tests in `OBAKitTests` covering the registry math:
 - Version bump on one step re-shows only that step.
 - Eligibility gates: no push provider → no notifications step; already-determined notification permission → no notifications step; determined location permission → no location step.
 - Backfill runs once, never with a non-empty store, and is idempotent.
+- "Allow Once" scenario: location authorization back to `.notDetermined` after a temporary grant expires, but step already seen → not re-shown.
 - `OnboardingStepStore` round-trips seen versions through UserDefaults.
 
 Manual verification via `TEST_ONBOARDING` on the iPhone 17 simulator (light and dark).
