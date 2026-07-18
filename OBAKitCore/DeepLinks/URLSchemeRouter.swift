@@ -16,18 +16,31 @@ public struct StopURLData {
 }
 
 /// `AddRegionURLData` is a data structure that encapsulates the information needed to add a new region
-/// through a deep link. It contains the name of the region, the URL to the OneBusAway (OBA) server, and an optional
-/// URL to the OpenTripPlanner (OTP) server.
+/// through a deep link. All URL values must be percent-encoded inside the deep link; an unencoded `&`
+/// inside a nested URL ends that value.
 ///
 /// - Parameters:
 ///   - name: The name of the region to be added. This is a human-readable string that identifies the region.
 ///   - obaURL: The URL to the OneBusAway (OBA) server for the region. This URL is used to access transit data.
-///   - otpURL: An optional URL to the OpenTripPlanner (OTP) server. If provided, it can be used for trip planning.
-///             If nil, it indicates that the region does not support OTP or that the URL was not provided.
+///   - otpURL: An optional URL to the OpenTripPlanner (OTP) server, used for trip planning.
+///   - sidecarURL: An optional base URL for the Obaco sidecar server.
+///   - umamiURL: An optional Umami analytics server URL. Never read this directly to decide whether
+///               analytics is enabled — use `umamiAnalytics`.
+///   - umamiID: An optional Umami website ID. Like `umamiURL`, this can dangle (e.g. an ID with an
+///              invalid URL); use `umamiAnalytics`.
 public struct AddRegionURLData {
     public let name: String
     public let obaURL: URL
     public let otpURL: URL?
+    public let sidecarURL: URL?
+    public let umamiURL: URL?
+    public let umamiID: String?
+
+    /// The both-or-nothing Umami config: non-nil only when both `umamiURL` and a
+    /// non-blank `umamiID` are present. Consumers must use this, not the raw fields.
+    public var umamiAnalytics: UmamiAnalyticsConfig? {
+        UmamiAnalyticsConfig(url: umamiURL, id: umamiID)
+    }
 }
 
 /// `URLType` represents the types of URLs that the `URLSchemeRouter` can handle.
@@ -104,7 +117,9 @@ public class URLSchemeRouter: NSObject {
     }
 
     // MARK: - Add Region URLs
-    /// Encodes the OBA URL for adding custom region  along with its Name into an URL with the scheme `extensionURLScheme`. It also has optional OTP URL
+    /// Decodes an `AddRegionURLData` from `add-region` URL components. `name` and a valid
+    /// `oba-url` are required; `otp-url`, `sidecar-url`, `umami-url`, and `umami-id` are
+    /// optional, and invalid optional values degrade to `nil`.
     private func decodeAddRegion(from components: URLComponents) -> URLType? {
         guard
             let name = components.queryItem(named: "name")?.value,
@@ -113,12 +128,27 @@ public class URLSchemeRouter: NSObject {
             return .addRegion(nil)
         }
 
-        var otpURL: URL?
-        if let otpUrlString = components.queryItem(named: "otp-url")?.value {
-            otpURL = validateAndCreateURL(from: otpUrlString)
+        var umamiID: String?
+        if let rawUmamiID = components.queryItem(named: "umami-id")?.value {
+            let trimmed = rawUmamiID.strip()
+            umamiID = trimmed.isEmpty ? nil : trimmed
         }
 
-        return .addRegion(AddRegionURLData(name: name, obaURL: obaURL, otpURL: otpURL))
+        return .addRegion(AddRegionURLData(
+            name: name,
+            obaURL: obaURL,
+            otpURL: optionalURL(named: "otp-url", in: components),
+            sidecarURL: optionalURL(named: "sidecar-url", in: components),
+            umamiURL: optionalURL(named: "umami-url", in: components),
+            umamiID: umamiID))
+    }
+
+    /// Extracts and validates an optional URL query item; missing or invalid values become `nil`.
+    private func optionalURL(named name: String, in components: URLComponents) -> URL? {
+        guard let string = components.queryItem(named: name)?.value else {
+            return nil
+        }
+        return validateAndCreateURL(from: string)
     }
 
     /// Validates that a URL string represents a proper URL with a scheme or is a valid path
