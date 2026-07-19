@@ -725,6 +725,7 @@ class MockPushServiceProvider: NSObject, PushServiceProvider {
     var notificationReceivedHandler: PushServiceNotificationReceivedHandler!
     var errorHandler: PushServiceErrorHandler!
     var pushUserID: PushManagerUserID?
+    var deviceTokenUpdatedHandler: PushManagerUserIDCallback?
 
     func start(launchOptions: [AnyHashable: Any]) {
         // Mock implementation

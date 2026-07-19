@@ -284,6 +284,24 @@ public class Application: CoreApplication, PushServiceDelegate {
     /// An optional property that contains this app's configured push notifications service.
     public private(set) var pushService: PushService?
 
+    /// Keeps this device's APNs token registered with the current region's OBACloud server so
+    /// agencies can send service-alert push notifications to it. See #1204.
+    public private(set) lazy var pushRegistrationManager = PushRegistrationManager(
+        obacoServiceProvider: { [weak self] in self?.obacoService },
+        userDefaults: userDefaults,
+        testDeviceProvider: { [weak self] in
+            // "Test users only" audience: agencies preview an alert push against flagged
+            // devices before sending it to everyone. Debug builds always qualify; release
+            // builds qualify via the hidden Debug Mode setting.
+            #if DEBUG
+            return true
+            #else
+            return self?.userDataStore.debugMode ?? false
+            #endif
+        },
+        currentRegionIdentifierProvider: { [weak self] in self?.currentRegionIdentifier }
+    )
+
     private func configurePushNotifications(launchOptions: [AnyHashable: Any]) {
         guard let pushServiceProvider = config.pushServiceProvider else { return }
 
@@ -315,6 +333,11 @@ public class Application: CoreApplication, PushServiceDelegate {
             }
             self.viewRouter.navigateTo(stopID: pushBody.stopID, from: topViewController)
         }
+    }
+
+    public func pushService(_ pushService: PushService, receivedDeviceToken token: String) {
+        pushRegistrationManager.updateDeviceToken(token)
+        Task { await pushRegistrationManager.registerIfNeeded() }
     }
 
     /// Deletes the stored alarm whose deep-link identity matches `pushBody`, so the stop

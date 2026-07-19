@@ -21,6 +21,7 @@ private class RecordingPushServiceProvider: NSObject, PushServiceProvider {
     var startedLaunchOptions: [AnyHashable: Any]?
     var stubbedPushUserID: PushManagerUserID? = "mock-token"
     var isRegisteredForRemoteNotifications: Bool = true
+    var deviceTokenUpdatedHandler: PushManagerUserIDCallback?
 
     func start(launchOptions: [AnyHashable: Any]) {
         startedLaunchOptions = launchOptions
@@ -38,6 +39,7 @@ private class RecordingPushServiceProvider: NSObject, PushServiceProvider {
 private class PushServiceDelegateRecorder: NSObject, PushServiceDelegate {
     var receivedAlarms: [AlarmPushBody] = []
     var receivedDonationPromptIDs: [String?] = []
+    var receivedDeviceTokens: [String] = []
 
     func pushServicePresentingController(_ pushService: PushService) -> UIViewController? {
         nil
@@ -49,6 +51,10 @@ private class PushServiceDelegateRecorder: NSObject, PushServiceDelegate {
 
     func pushService(_ pushService: PushService, receivedDonationPrompt id: String?) {
         receivedDonationPromptIDs.append(id)
+    }
+
+    func pushService(_ pushService: PushService, receivedDeviceToken token: String) {
+        receivedDeviceTokens.append(token)
     }
 }
 
@@ -107,6 +113,14 @@ class PushServiceTests: OBATestCase {
     func test_pushID_asyncReturnsProviderToken() async {
         let token = await pushService.pushID()
         XCTAssertEqual(token, "mock-token")
+    }
+
+    func test_deviceTokenUpdates_areForwardedToDelegate() {
+        XCTAssertNotNil(provider.deviceTokenUpdatedHandler, "PushService must install the token handler during init")
+
+        provider.deviceTokenUpdatedHandler?("01abff007f")
+
+        XCTAssertEqual(delegate.receivedDeviceTokens, ["01abff007f"])
     }
 
     // MARK: - Alarm Payloads
