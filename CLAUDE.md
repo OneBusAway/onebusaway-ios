@@ -99,7 +99,7 @@ scripts/extract_strings               # Extract strings for localization
 ## Configuration & Deployment
 
 - **Target iOS Version**: 18.0+
-- **Swift Version**: 5.3+
+- **Swift Version**: Swift 5/6 language modes, current Xcode toolchain (modern syntax like shorthand optional binding and `URL.host()` is fine — the iOS 18 deployment target exceeds their requirements)
 - **Package Manager**: Swift Package Manager
 - **Project Generation**: XcodeGen from YAML configurations
 - **Localization**: in-repo .strings files (OBAKit/Strings, OBAKitCore/Strings)
