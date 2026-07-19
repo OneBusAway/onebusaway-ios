@@ -115,7 +115,7 @@ packages:
         exactVersion: 5.5.0
     FloatingPanel:
         url: https://github.com/SCENEE/FloatingPanel.git
-        exactVersion: 3.0.1
+        exactVersion: 3.2.2
     GRDB:
         url: https://github.com/groue/GRDB.swift.git
         minorVersion: 6.29.0
@@ -131,4 +131,4 @@ packages:
         maxVersion: 1.0.0
     SwiftProtobuf:
         url: https://github.com/apple/swift-protobuf.git
-        minorVersion: 1.32.0
+        minorVersion: 1.38.1
