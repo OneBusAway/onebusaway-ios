@@ -118,12 +118,12 @@ Two rules that come straight from the review of those sources:
    concurrency groups on that target so it can't regress (all five tags are
    real diagnostic groups in `swiftlang/swift`'s `DiagnosticGroups.def`, and
    the setting passes them via `-Werror <group>`).
-3. Fix the committed `Package.resolved` staleness: `Apps/OneBusAway/Package.resolved`
-   and `Apps/KiedyBus/Package.resolved` are missing entries (GRDB among them)
-   relative to the dependencies declared in `app_shared.yml`
-   (`minorVersion: 6.29.0`, resolving to 6.29.3 locally). Run
-   `scripts/update_package_resolved` so the Phase 1 GRDB upgrade is
-   reproducible in CI.
+3. Fix the committed `Package.resolved` staleness: the GRDB entries are now
+   pinned in both `Apps/OneBusAway/Package.resolved` and
+   `Apps/KiedyBus/Package.resolved` (`minorVersion: 7.11.0` in
+   `app_shared.yml`, resolving to 7.11.1; done alongside the Phase 1 GRDB
+   upgrade, issue #1195). KiedyBus still lacks an OTPKit pin (and its
+   transitives) — run `scripts/update_package_resolved` to finish this step.
 
 Do **not** set these via `xcodebuild` command-line overrides or a global
 xcconfig — they leak into SPM package compilation (measured: `swift-http-types`
@@ -383,7 +383,7 @@ is lifted. The ratchet still counts their warnings.
 
 | Package | Pinned | Swift 6 posture |
 |---|---|---|
-| GRDB.swift | `minorVersion: 6.29.0` range (resolves to 6.29.3) | GRDB 7 is the Sendable-annotated major (requires Xcode 16+); upgrade early in Phase 1 (its `6.x` works with `@preconcurrency` but 7 removes a whole class of warnings in `StopCacheDatabase`/`StopCacheRepository`, which are already `@unchecked Sendable` workarounds). Fix the stale committed `Package.resolved` files first (Phase 0 step 3) |
+| GRDB.swift | `minorVersion: 7.11.0` range (resolves to 7.11.1) | Done (issue #1195): GRDB 7 is the Sendable-annotated major; `StopCacheDatabase`/`StopCacheRepository` now declare compiler-checked `Sendable` instead of `@unchecked Sendable` |
 | Eureka, BLTNBoard, FloatingPanel, MarqueeLabel, Hyperconnectivity | 5.x-era | Unmaintained or slow-moving; plan on `@preconcurrency import` indefinitely. BLTNBoard is archived upstream — the existing `OBAKit/BLTNBoard` wrapper layer is the eventual replacement seam |
 | SwiftProtobuf | 1.32 | Generated `gtfs-realtime.pb.swift` is already `@unchecked Sendable`-annotated; regenerate with a current plugin if warnings appear |
 | firebase-ios-sdk, OTPKit, swift-openapi-* | current | Already tools-6.x; no action |
