@@ -6,7 +6,7 @@ name: OBAKit
 
 settings:
   base:
-    MARKETING_VERSION: 26.2.2
+    MARKETING_VERSION: 26.3.0
     # Swift 6 migration Phases 3–4 (docs/swift6-migration-plan.md): every
     # framework and app target builds in the Swift 6 language mode with
     # main-actor default isolation. Two targets override this base:
