@@ -472,6 +472,14 @@ public class Application: CoreApplication, PushServiceDelegate {
 
         alertsStore.checkForUpdates()
 
+        // Re-register the push token with OBACloud so the server's 180-day prune never drops
+        // this device, and so locale changes propagate. The manager dedupes, so this only
+        // hits the network when something changed or the last POST is a day old. Skipped on
+        // the Simulator, where pushService is never configured.
+        if pushService != nil {
+            Task { await pushRegistrationManager.refreshRegistration() }
+        }
+
         drainPendingUIPresentations()
 
         if let region = regionsService.currentRegion, let analytics {
@@ -690,6 +698,10 @@ public class Application: CoreApplication, PushServiceDelegate {
                 analytics.reportEvent(pageURL: "app://localhost/regions", label: AnalyticsLabels.manuallySelectedRegionChanged, value: region.name)
             }
         }
+
+        // By the time updatedRegion fires, willUpdateToRegion has already rebuilt
+        // obacoService for the new region, so this registers the token there.
+        Task { await pushRegistrationManager.registerIfNeeded() }
     }
 
     public func regionsService(_ service: RegionsService, displayError error: Error) {
