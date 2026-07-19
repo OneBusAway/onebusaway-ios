@@ -17,17 +17,18 @@ import OBAKitCore
 ///
 /// Historically the server only learned tokens as a side effect of alarm creation, which
 /// misses riders who never set an alarm, carries no locale for translated alert copy, and
-/// lets tokens age past the server's 180-day prune. This manager registers proactively:
+/// lets tokens age out of the server's inactivity prune. This manager registers proactively:
 /// `Application` calls ``refreshRegistration()`` on every foreground, feeds rotated tokens in
 /// via ``updateDeviceToken(_:)`` + ``registerIfNeeded()``, and calls ``registerIfNeeded()``
 /// again after a region change.
 ///
 /// The last successful registration (token, region, locale, test-device flag, timestamp) is
 /// persisted to user defaults; an unchanged registration is re-POSTed only after
-/// ``refreshInterval`` elapses, which keeps traffic well under the server's rate limit while
-/// still refreshing `last_seen_at` ahead of the prune.
+/// ``refreshInterval``, keeping routine traffic to roughly one POST per day while still
+/// refreshing the server's last-seen record ahead of its inactivity prune (failed POSTs retry
+/// on the next trigger).
 @MainActor
-public final class PushRegistrationManager: NSObject {
+public final class PushRegistrationManager {
 
     public typealias AuthorizationStatusProvider = @Sendable () async -> UNAuthorizationStatus
 
@@ -62,6 +63,8 @@ public final class PushRegistrationManager: NSObject {
     private let localeProvider: () -> String
     private let dateProvider: () -> Date
     private let requestRemoteNotificationsRegistration: () -> Void
+    /// Receives non-transient registration failures for remote error reporting. Injectable; defaults to a no-op.
+    private let errorReporter: (Error) -> Void
 
     private var deviceToken: String?
 
@@ -85,6 +88,8 @@ public final class PushRegistrationManager: NSObject {
     ///   - dateProvider: Injectable for tests; defaults to `Date()`.
     ///   - requestRemoteNotificationsRegistration: Injectable for tests; defaults to
     ///     `UIApplication.shared.registerForRemoteNotifications()`.
+    ///   - errorReporter: Receives non-transient registration failures for remote error
+    ///     reporting. Injectable; defaults to a no-op.
     public init(
         obacoServiceProvider: @escaping () -> ObacoAPIService?,
         userDefaults: UserDefaults,
@@ -97,7 +102,8 @@ public final class PushRegistrationManager: NSObject {
         dateProvider: @escaping () -> Date = { Date() },
         requestRemoteNotificationsRegistration: @escaping () -> Void = {
             UIApplication.shared.registerForRemoteNotifications()
-        }
+        },
+        errorReporter: @escaping (Error) -> Void = { _ in }
     ) {
         self.obacoServiceProvider = obacoServiceProvider
         self.userDefaults = userDefaults
@@ -107,19 +113,22 @@ public final class PushRegistrationManager: NSObject {
         self.localeProvider = localeProvider
         self.dateProvider = dateProvider
         self.requestRemoteNotificationsRegistration = requestRemoteNotificationsRegistration
+        self.errorReporter = errorReporter
     }
 
     /// Stores the latest hex-encoded APNs token. Side-effect free — follow with
     /// ``registerIfNeeded()``. Called from the push provider's token callback, which fires on
     /// every `registerForRemoteNotifications()` including token rotations.
     public func updateDeviceToken(_ token: String) {
+        guard !token.isEmpty else { return }
         deviceToken = token
     }
 
     /// Asks the OS for a (possibly rotated) device token and registers whatever token is
-    /// already known. Call on every app foreground: the token callback re-enters via
-    /// ``updateDeviceToken(_:)`` + ``registerIfNeeded()``, so a rotated token is registered
-    /// as soon as APNs delivers it. No-ops unless notification permission is granted.
+    /// already known. Call on every app foreground: callers are expected to route the
+    /// resulting token callback back through ``updateDeviceToken(_:)`` + ``registerIfNeeded()``,
+    /// so a rotated token is registered as soon as APNs delivers it. No-ops unless notification
+    /// permission is granted.
     public func refreshRegistration() async {
         guard await isAuthorized() else { return }
         requestRemoteNotificationsRegistration()
@@ -128,10 +137,10 @@ public final class PushRegistrationManager: NSObject {
 
     /// POSTs the current token to the current region's Obaco server — but only if the token,
     /// region, locale, or test-device flag changed since the last successful POST, or that
-    /// POST is older than ``refreshInterval``. No-ops without a token, an Obaco service, or
-    /// notification permission. Concurrent calls coalesce: on the first foreground after a
-    /// permission grant, the becomeActive trigger and the APNs token callback can overlap,
-    /// and only one POST should result.
+    /// POST is older than ``refreshInterval``. No-ops without a token, an Obaco service
+    /// matching the current region, or notification permission. Concurrent calls coalesce: on
+    /// the first foreground after a permission grant, the becomeActive trigger and the APNs
+    /// token callback can overlap, and only one POST should result.
     public func registerIfNeeded() async {
         guard !registrationInProgress else {
             // An in-flight pass will loop and re-read all inputs (including a token that
@@ -150,15 +159,17 @@ public final class PushRegistrationManager: NSObject {
     }
 
     private func performRegistrationIfNeeded() async {
-        guard
-            let deviceToken,
-            let obacoService = obacoServiceProvider(),
-            // Switching to a region without a sidecar leaves the previous region's service in
-            // place (CoreApplication.refreshObacoService early-returns) — never register
-            // against a region the user left.
-            obacoService.regionID == currentRegionIdentifierProvider(),
-            await isAuthorized()
-        else { return }
+        guard let deviceToken, let obacoService = obacoServiceProvider() else { return }
+
+        // Switching to a region without a sidecar leaves the previous region's service in
+        // place (CoreApplication.refreshObacoService early-returns) — never register
+        // against a region the user left.
+        guard obacoService.regionID == currentRegionIdentifierProvider() else {
+            Logger.info("Skipping push registration: service region \(obacoService.regionID) is not the current region.")
+            return
+        }
+
+        guard await isAuthorized() else { return }
 
         let candidate = Registration(
             token: deviceToken,
@@ -179,9 +190,17 @@ public final class PushRegistrationManager: NSObject {
                 locale: candidate.locale,
                 testDevice: candidate.testDevice)
             lastRegistration = candidate
+            Logger.info("Registered push token with region \(candidate.regionID) (locale \(candidate.locale), testDevice \(candidate.testDevice)).")
+        } catch is CancellationError {
+            // Backgrounding mid-POST; the next trigger retries. Not a failure worth logging.
         } catch {
-            // Leave `lastRegistration` untouched so the next trigger retries.
+            // Leave `lastRegistration` untouched so the next trigger retries. Server-side
+            // rejections are reported remotely: registrations are the server's only audience
+            // source, so a systematic failure (fleet-wide 422s) must not be invisible.
             Logger.error("Push registration failed: \(error)")
+            if case APIError.requestFailure = error {
+                errorReporter(error)
+            }
         }
     }
 
@@ -196,7 +215,14 @@ public final class PushRegistrationManager: NSObject {
 
     private var lastRegistration: Registration? {
         get {
-            try? userDefaults.decodeUserDefaultsObjects(type: Registration.self, key: Self.lastRegistrationUserDefaultsKey)
+            do {
+                return try userDefaults.decodeUserDefaultsObjects(type: Registration.self, key: Self.lastRegistrationUserDefaultsKey)
+            } catch {
+                // Schema drift degrades safely to "never registered" — the next POST is an
+                // idempotent upsert — but leave a breadcrumb for the mystery re-POST.
+                Logger.warn("Discarding undecodable push registration state: \(error)")
+                return nil
+            }
         }
         set {
             guard let newValue else {

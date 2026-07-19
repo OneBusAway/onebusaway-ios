@@ -31,6 +31,7 @@ class PushRegistrationManagerTests: OBATestCase {
         /// lets the coalescing test hold a registration mid-flight deterministically.
         var holdNextAuthCheck = false
         var authGate: CheckedContinuation<Void, Never>?
+        var reportedErrors: [Error] = []
     }
 
     private var controls: Controls!
@@ -72,7 +73,8 @@ class PushRegistrationManagerTests: OBATestCase {
             },
             localeProvider: { controls.locale },
             dateProvider: { controls.now },
-            requestRemoteNotificationsRegistration: { controls.remoteRegistrationRequests += 1 }
+            requestRemoteNotificationsRegistration: { controls.remoteRegistrationRequests += 1 },
+            errorReporter: { controls.reportedErrors.append($0) }
         )
     }
 
@@ -198,7 +200,7 @@ class PushRegistrationManagerTests: OBATestCase {
         XCTAssertTrue(dataLoader.recordedRequestURLs.contains { $0.path.hasSuffix("/regions/2/push_registrations") })
     }
 
-    /// The server prunes tokens not seen for 180 days; an unchanged registration is
+    /// The server prunes tokens it hasn't seen recently; an unchanged registration is
     /// therefore re-POSTed once its age exceeds the refresh interval.
     func test_registerIfNeeded_repostsWhenStale() async {
         mockRegistrationResponse()
@@ -280,5 +282,76 @@ class PushRegistrationManagerTests: OBATestCase {
         await manager.refreshRegistration()
         XCTAssertEqual(controls.remoteRegistrationRequests, 0)
         XCTAssertEqual(registrationRequestCount, 0)
+    }
+
+    /// The foreground refresh must POST the already-known token itself — APNs is not
+    /// guaranteed to re-deliver a token callback, so this is what keeps `last_seen_at` fresh.
+    func test_refreshRegistration_postsAlreadyKnownToken() async {
+        mockRegistrationResponse()
+        let manager = makeManager()
+        manager.updateDeviceToken("01abff007f")
+
+        await manager.refreshRegistration()
+
+        XCTAssertEqual(registrationRequestCount, 1)
+    }
+
+    /// A token that rotates while a registration is in flight must be registered by the
+    /// coalescing loop's follow-up pass — and recorded, so it isn't re-POSTed again.
+    func test_registerIfNeeded_registersRotatedTokenArrivingMidFlight() async {
+        mockRegistrationResponse()
+        let manager = makeManager()
+        manager.updateDeviceToken("01abff007f")
+
+        controls.holdNextAuthCheck = true
+        let first = Task { await manager.registerIfNeeded() }
+        while controls.authGate == nil { await Task.yield() }
+
+        manager.updateDeviceToken("cafed00d")
+        await manager.registerIfNeeded()
+
+        controls.authGate?.resume()
+        controls.authGate = nil
+        _ = await first.value
+
+        XCTAssertEqual(registrationRequestCount, 2, "Expected the follow-up pass to register the rotated token")
+
+        await manager.registerIfNeeded()
+        XCTAssertEqual(registrationRequestCount, 2, "Expected the rotated token to be recorded as registered")
+    }
+
+    /// Corrupted persisted state must degrade to "never registered", not crash or skip.
+    func test_registerIfNeeded_recoversFromCorruptedPersistedState() async {
+        defaults.set("not a plist blob", forKey: PushRegistrationManager.lastRegistrationUserDefaultsKey)
+        mockRegistrationResponse()
+        let manager = makeManager()
+        manager.updateDeviceToken("01abff007f")
+
+        await manager.registerIfNeeded()
+
+        XCTAssertEqual(registrationRequestCount, 1)
+    }
+
+    func test_updateDeviceToken_ignoresEmptyToken() async {
+        mockRegistrationResponse()
+        let manager = makeManager()
+        manager.updateDeviceToken("")
+
+        await manager.registerIfNeeded()
+
+        XCTAssertEqual(registrationRequestCount, 0)
+    }
+
+    /// Server rejections reach the injected error reporter (Crashlytics in production);
+    /// registrations are the server's only audience source, so fleet-wide failures must
+    /// be observable somewhere.
+    func test_registerIfNeeded_reportsServerRejectionsToErrorReporter() async {
+        mockRegistrationResponse(statusCode: 422)
+        let manager = makeManager()
+        manager.updateDeviceToken("01abff007f")
+
+        await manager.registerIfNeeded()
+
+        XCTAssertEqual(controls.reportedErrors.count, 1)
     }
 }

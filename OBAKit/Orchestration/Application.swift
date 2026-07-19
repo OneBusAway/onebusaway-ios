@@ -292,14 +292,17 @@ public class Application: CoreApplication, PushServiceDelegate {
         testDeviceProvider: { [weak self] in
             // "Test users only" audience: agencies preview an alert push against flagged
             // devices before sending it to everyone. Debug builds always qualify; release
-            // builds qualify via the hidden Debug Mode setting.
+            // builds qualify via the Debug Mode switch in Settings.
             #if DEBUG
             return true
             #else
             return self?.userDataStore.debugMode ?? false
             #endif
         },
-        currentRegionIdentifierProvider: { [weak self] in self?.currentRegionIdentifier }
+        currentRegionIdentifierProvider: { [weak self] in self?.currentRegionIdentifier },
+        errorReporter: { [weak self] error in
+            self?.analytics?.reportError?(error)
+        }
     )
 
     private func configurePushNotifications(launchOptions: [AnyHashable: Any]) {
@@ -472,10 +475,11 @@ public class Application: CoreApplication, PushServiceDelegate {
 
         alertsStore.checkForUpdates()
 
-        // Re-register the push token with OBACloud so the server's 180-day prune never drops
-        // this device, and so locale changes propagate. The manager dedupes, so this only
-        // hits the network when something changed or the last POST is a day old. Skipped on
-        // the Simulator, where pushService is never configured.
+        // Re-register the push token with OBACloud so the server's inactivity prune never
+        // drops this device, and so locale changes propagate. The manager dedupes, so this
+        // only hits the network when something changed or the last POST is older than
+        // PushRegistrationManager.refreshInterval. Skipped on the Simulator and in apps
+        // without a configured push provider, where pushService is never set.
         if pushService != nil {
             Task { await pushRegistrationManager.refreshRegistration() }
         }

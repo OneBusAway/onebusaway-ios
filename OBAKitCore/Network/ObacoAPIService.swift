@@ -36,6 +36,8 @@ public actor ObacoAPIService: @preconcurrency APIService {
     }
 
     public init(regionID: RegionIdentifier, delegate: ObacoServiceDelegate?, configuration: APIServiceConfiguration, dataLoader: URLDataLoader) {
+        assert(configuration.regionIdentifier == nil || configuration.regionIdentifier == regionID,
+               "ObacoAPIService regionID must match its configuration's regionIdentifier")
         self.regionID = regionID
         self.delegate = delegate
         self.configuration = configuration
@@ -191,11 +193,11 @@ public actor ObacoAPIService: @preconcurrency APIService {
 
     /// Removes this device's push registration from the OBACloud server.
     ///
-    /// The token travels as a query item; the server is a Rails app whose `params` merge query
-    /// and body, and its own request spec exercises DELETE this way.
+    /// The token travels as a query item, matching the server's contract.
     ///
-    /// Answers `204` on success and `404` if the token was never registered — the latter throws
-    /// `APIError.requestNotFound`, which callers may safely ignore.
+    /// Answers `204` on success and `404` if the token was never registered — the latter
+    /// throws `APIError.requestNotFound`. Callers treating "never registered" as success
+    /// should catch that case specifically rather than discarding all errors.
     @discardableResult
     public nonisolated func deletePushRegistration(token: String) async throws -> (Data, URLResponse) {
         let url = await buildURL(

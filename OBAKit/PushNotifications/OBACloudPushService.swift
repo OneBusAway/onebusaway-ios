@@ -31,7 +31,7 @@ public class OBACloudPushService: NSObject, PushServiceProvider {
     public var errorHandler: PushServiceErrorHandler!
 
     /// Called with the hex token on every successful APNs registration. Set by ``PushService`` during initialization.
-    public var deviceTokenUpdatedHandler: PushManagerUserIDCallback?
+    public var deviceTokenUpdatedHandler: PushServiceDeviceTokenCallback?
 
     /// The hex-encoded APNs device token, or `nil` if the device has not yet registered.
     private var deviceToken: String?

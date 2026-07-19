@@ -21,7 +21,7 @@ private class RecordingPushServiceProvider: NSObject, PushServiceProvider {
     var startedLaunchOptions: [AnyHashable: Any]?
     var stubbedPushUserID: PushManagerUserID? = "mock-token"
     var isRegisteredForRemoteNotifications: Bool = true
-    var deviceTokenUpdatedHandler: PushManagerUserIDCallback?
+    var deviceTokenUpdatedHandler: PushServiceDeviceTokenCallback?
 
     func start(launchOptions: [AnyHashable: Any]) {
         startedLaunchOptions = launchOptions

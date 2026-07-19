@@ -17,6 +17,8 @@ public typealias PushManagerUserID = String
 public typealias PushManagerUserIDCallback = ((PushManagerUserID) -> Void)
 public typealias PushServiceNotificationReceivedHandler = ((String, [AnyHashable: Any]?) -> Void)
 public typealias PushServiceErrorHandler = ((Error) -> Void)
+/// Carries the hex-encoded APNs device token (distinct from a provider's push user ID).
+public typealias PushServiceDeviceTokenCallback = (String) -> Void
 
 // MARK: - Errors
 
@@ -38,7 +40,7 @@ public protocol PushServiceProvider: NSObjectProtocol {
 
     /// Called with the hex-encoded APNs token every time the device (re-)registers with APNs,
     /// including token rotations. Set by ``PushService`` during initialization.
-    var deviceTokenUpdatedHandler: PushManagerUserIDCallback? { get set }
+    var deviceTokenUpdatedHandler: PushServiceDeviceTokenCallback? { get set }
 
     var pushUserID: PushManagerUserID? { get }
 }
