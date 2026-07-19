@@ -63,7 +63,7 @@ public final class PushRegistrationManager: NSObject {
     private let dateProvider: () -> Date
     private let requestRemoteNotificationsRegistration: () -> Void
 
-    private(set) var deviceToken: String?
+    private var deviceToken: String?
 
     /// Coalescing state: `registrationInProgress` is held for the duration of a registration
     /// pass; a caller arriving mid-flight sets `needsAnotherPass` and returns, and the holder
@@ -196,15 +196,14 @@ public final class PushRegistrationManager: NSObject {
 
     private var lastRegistration: Registration? {
         get {
-            guard let data = userDefaults.data(forKey: Self.lastRegistrationUserDefaultsKey) else { return nil }
-            return try? JSONDecoder().decode(Registration.self, from: data)
+            try? userDefaults.decodeUserDefaultsObjects(type: Registration.self, key: Self.lastRegistrationUserDefaultsKey)
         }
         set {
-            guard let newValue, let data = try? JSONEncoder().encode(newValue) else {
+            guard let newValue else {
                 userDefaults.removeObject(forKey: Self.lastRegistrationUserDefaultsKey)
                 return
             }
-            userDefaults.set(data, forKey: Self.lastRegistrationUserDefaultsKey)
+            try? userDefaults.encodeUserDefaultsObjects(newValue, key: Self.lastRegistrationUserDefaultsKey)
         }
     }
 }

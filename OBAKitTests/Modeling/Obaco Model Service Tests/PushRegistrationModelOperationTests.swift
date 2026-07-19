@@ -89,13 +89,19 @@ class PushRegistrationModelOperationTests: OBATestCase {
         }
     }
 
-    func testSuccessfulUnregistration() async throws {
+    /// Mocks the `DELETE /push_registrations` response for the token used by the
+    /// unregistration tests.
+    private func mockUnregistrationDELETE(statusCode: Int) {
         let dataLoader = (obacoService.dataLoader as! MockDataLoader)
-        dataLoader.mock(data: Data(), statusCode: 204) { request in
+        dataLoader.mock(data: Data(), statusCode: statusCode) { request in
             request.httpMethod == "DELETE" &&
             (request.url?.path.hasSuffix("/push_registrations") ?? false) &&
             (request.url?.query?.contains("token=01abff007f") ?? false)
         }
+    }
+
+    func testSuccessfulUnregistration() async throws {
+        mockUnregistrationDELETE(statusCode: 204)
 
         let (_, response) = try await obacoService.deletePushRegistration(token: "01abff007f")
         let httpResponse = try XCTUnwrap(response as? HTTPURLResponse)
@@ -105,11 +111,7 @@ class PushRegistrationModelOperationTests: OBATestCase {
     /// A 404 means the token was never registered — safe for callers to ignore, but the
     /// service layer still surfaces it faithfully.
     func testUnregistrationWith404Throws() async throws {
-        let dataLoader = (obacoService.dataLoader as! MockDataLoader)
-        dataLoader.mock(data: Data(), statusCode: 404) { request in
-            request.httpMethod == "DELETE" &&
-            (request.url?.path.hasSuffix("/push_registrations") ?? false)
-        }
+        mockUnregistrationDELETE(statusCode: 404)
 
         do {
             _ = try await obacoService.deletePushRegistration(token: "01abff007f")
