@@ -6,7 +6,7 @@ name: OBAKit
 
 settings:
   base:
-    MARKETING_VERSION: 26.2.2
+    MARKETING_VERSION: 26.3.0
     # Swift 6 migration Phases 3–4 (docs/swift6-migration-plan.md): every
     # framework and app target builds in the Swift 6 language mode with
     # main-actor default isolation. Two targets override this base:
@@ -115,10 +115,10 @@ packages:
         exactVersion: 5.5.0
     FloatingPanel:
         url: https://github.com/SCENEE/FloatingPanel.git
-        exactVersion: 3.0.1
+        exactVersion: 3.2.2
     GRDB:
         url: https://github.com/groue/GRDB.swift.git
-        minorVersion: 6.29.0
+        minorVersion: 7.11.0
     Hyperconnectivity:
         url: https://github.com/rwbutler/Hyperconnectivity.git
         exactVersion: 1.2.0
@@ -131,4 +131,4 @@ packages:
         maxVersion: 1.0.0
     SwiftProtobuf:
         url: https://github.com/apple/swift-protobuf.git
-        minorVersion: 1.32.0
+        minorVersion: 1.38.1
