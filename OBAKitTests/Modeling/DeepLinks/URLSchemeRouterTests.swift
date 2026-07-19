@@ -537,6 +537,132 @@ class URLSchemeRouterTests: XCTestCase {
             fail("Expected addRegion URLType")
         }
     }
+
+    // MARK: - Sidecar & Umami Parameters
+
+    private func decodeAddRegion(_ queryItems: [URLQueryItem]) -> AddRegionURLData? {
+        var components = URLComponents()
+        components.scheme = "onebusaway"
+        components.host = "add-region"
+        components.queryItems = queryItems
+        guard let url = components.url, case .addRegion(let data)? = router.decodeURLType(from: url) else {
+            fail("Expected addRegion URLType")
+            return nil
+        }
+        return data
+    }
+
+    func test_decodeURLType_addRegion_decodesAllNewParameters() {
+        let data = decodeAddRegion([
+            URLQueryItem(name: "name", value: "Test Region"),
+            URLQueryItem(name: "oba-url", value: "https://oba.example.com"),
+            URLQueryItem(name: "sidecar-url", value: "https://obaco.example.com"),
+            URLQueryItem(name: "umami-url", value: "https://analytics.example.com"),
+            URLQueryItem(name: "umami-id", value: "site-uuid-123")
+        ])
+
+        expect(data?.sidecarURL?.absoluteString) == "https://obaco.example.com"
+        expect(data?.umamiURL?.absoluteString) == "https://analytics.example.com"
+        expect(data?.umamiID) == "site-uuid-123"
+        expect(data?.umamiAnalytics?.url.absoluteString) == "https://analytics.example.com"
+        expect(data?.umamiAnalytics?.id) == "site-uuid-123"
+    }
+
+    func test_decodeURLType_addRegion_newParametersDefaultToNil() {
+        let data = decodeAddRegion([
+            URLQueryItem(name: "name", value: "Test Region"),
+            URLQueryItem(name: "oba-url", value: "https://oba.example.com")
+        ])
+
+        expect(data?.sidecarURL).to(beNil())
+        expect(data?.umamiURL).to(beNil())
+        expect(data?.umamiID).to(beNil())
+        expect(data?.umamiAnalytics).to(beNil())
+    }
+
+    func test_decodeURLType_addRegion_partialUmamiPairCollapsesToNilConfig() {
+        // URL without ID.
+        let urlOnly = decodeAddRegion([
+            URLQueryItem(name: "name", value: "Test Region"),
+            URLQueryItem(name: "oba-url", value: "https://oba.example.com"),
+            URLQueryItem(name: "umami-url", value: "https://analytics.example.com")
+        ])
+        expect(urlOnly?.umamiURL).toNot(beNil())
+        expect(urlOnly?.umamiAnalytics).to(beNil())
+
+        // ID without URL — the region still decodes; the dangling ID never becomes a config.
+        let idOnly = decodeAddRegion([
+            URLQueryItem(name: "name", value: "Test Region"),
+            URLQueryItem(name: "oba-url", value: "https://oba.example.com"),
+            URLQueryItem(name: "umami-id", value: "site-uuid-123")
+        ])
+        expect(idOnly?.umamiID) == "site-uuid-123"
+        expect(idOnly?.umamiAnalytics).to(beNil())
+
+        // Invalid umami URL + valid ID — dangling ID, nil config.
+        let invalidURL = decodeAddRegion([
+            URLQueryItem(name: "name", value: "Test Region"),
+            URLQueryItem(name: "oba-url", value: "https://oba.example.com"),
+            URLQueryItem(name: "umami-url", value: "not a valid url"),
+            URLQueryItem(name: "umami-id", value: "site-uuid-123")
+        ])
+        expect(invalidURL?.umamiURL).to(beNil())
+        expect(invalidURL?.umamiAnalytics).to(beNil())
+    }
+
+    func test_decodeURLType_addRegion_blankUmamiIDBecomesNil() {
+        let data = decodeAddRegion([
+            URLQueryItem(name: "name", value: "Test Region"),
+            URLQueryItem(name: "oba-url", value: "https://oba.example.com"),
+            URLQueryItem(name: "umami-url", value: "https://analytics.example.com"),
+            URLQueryItem(name: "umami-id", value: "   ")
+        ])
+        expect(data?.umamiID).to(beNil())
+        expect(data?.umamiAnalytics).to(beNil())
+    }
+
+    func test_decodeURLType_addRegion_invalidSidecarURLDegradesToNil() {
+        let data = decodeAddRegion([
+            URLQueryItem(name: "name", value: "Test Region"),
+            URLQueryItem(name: "oba-url", value: "https://oba.example.com"),
+            URLQueryItem(name: "sidecar-url", value: "not a valid url")
+        ])
+        expect(data).toNot(beNil())
+        expect(data?.sidecarURL).to(beNil())
+    }
+
+    // MARK: - Raw-String Decoding (percent-encoding behavior)
+
+    // The queryItems-based tests above auto-encode values on the way out, so they
+    // can never exercise encoding bugs. These two lock in the documented contract:
+    // nested URLs MUST be percent-encoded; an unencoded `&` truncates.
+
+    func test_decodeURLType_addRegion_rawString_percentEncodedNestedURL() {
+        let url = URL(string: "onebusaway://add-region?name=Raw%20Region&oba-url=https%3A%2F%2Foba.example.com&sidecar-url=https%3A%2F%2Fobaco.example.com%2Fapi%3Fa%3D1%26b%3D2&umami-url=https%3A%2F%2Fanalytics.example.com&umami-id=site-uuid-123")!
+
+        guard case .addRegion(let data)? = router.decodeURLType(from: url) else {
+            fail("Expected addRegion URLType")
+            return
+        }
+
+        expect(data?.name) == "Raw Region"
+        expect(data?.obaURL.absoluteString) == "https://oba.example.com"
+        expect(data?.sidecarURL?.absoluteString) == "https://obaco.example.com/api?a=1&b=2"
+        expect(data?.umamiAnalytics?.id) == "site-uuid-123"
+    }
+
+    func test_decodeURLType_addRegion_rawString_unencodedAmpersandTruncates() {
+        let url = URL(string: "onebusaway://add-region?name=Raw&oba-url=https://oba.example.com&sidecar-url=https://obaco.example.com/api?a=1&b=2")!
+
+        guard case .addRegion(let data)? = router.decodeURLType(from: url) else {
+            fail("Expected addRegion URLType")
+            return
+        }
+
+        // The unencoded `&` ends the sidecar-url value; `b=2` parses as a separate
+        // (ignored) query item. This is documented behavior, not a bug.
+        expect(data?.sidecarURL?.absoluteString) == "https://obaco.example.com/api?a=1"
+    }
 }
 
 // MARK: - Helper Extensions

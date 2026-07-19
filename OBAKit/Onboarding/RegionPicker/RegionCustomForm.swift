@@ -24,6 +24,9 @@ struct RegionCustomForm: View {
     // MARK: Form Fields
     @State private var regionName: String = ""
     @State private var baseURLString: String = ""
+    @State private var sidecarURLString: String = ""
+    @State private var umamiURLString: String = ""
+    @State private var umamiIDString: String = ""
     @State private var serviceArea: MKMapRect = MKMapRect(MKCoordinateRegion(center: CLLocationCoordinate2D(latitude: 27.9654987, longitude: -82.5101761), latitudinalMeters: 2000, longitudinalMeters: 2000))
     @State private var cameraPosition: MapCameraPosition = .automatic
 
@@ -32,12 +35,45 @@ struct RegionCustomForm: View {
         Self.normalizeBaseURL(baseURLString)
     }
 
+    /// The Sidecar URL field, normalized. Empty or invalid input degrades to `nil`.
+    var normalizedSidecarURL: URL? {
+        Self.normalizeURL(sidecarURLString)
+    }
+
+    /// The Umami analytics URL field, normalized. Empty or invalid input degrades to `nil`.
+    var normalizedUmamiURL: URL? {
+        Self.normalizeURL(umamiURLString)
+    }
+
     /// Normalizes user input into a base URL: trims whitespace, assumes
     /// `https://` when no scheme was typed, and strips a trailing `/api/where`
     /// (the field's help text promises that part is added automatically, so
     /// pasting a full API URL must not double it). Static and pure for
     /// testability.
     static func normalizeBaseURL(_ string: String) -> URL? {
+        guard let url = normalizeURL(string) else {
+            return nil
+        }
+
+        var urlString = url.absoluteString
+        if urlString.lowercased().hasSuffix("/api/where") {
+            urlString = String(urlString.dropLast("/api/where".count))
+            while urlString.hasSuffix("/") {
+                urlString = String(urlString.dropLast())
+            }
+        }
+
+        guard let finalURL = URL(string: urlString), finalURL.host() != nil else {
+            return nil
+        }
+        return finalURL
+    }
+
+    /// General URL normalization for human-typed input: trims whitespace,
+    /// assumes `https://` when no scheme was typed, strips trailing slashes,
+    /// and requires an http(s) scheme and a host. Static and pure for
+    /// testability.
+    static func normalizeURL(_ string: String) -> URL? {
         var urlString = string.strip()
         guard !urlString.isEmpty else {
             return nil
@@ -49,9 +85,6 @@ struct RegionCustomForm: View {
 
         while urlString.hasSuffix("/") {
             urlString = String(urlString.dropLast())
-        }
-        if urlString.lowercased().hasSuffix("/api/where") {
-            urlString = String(urlString.dropLast("/api/where".count))
         }
 
         guard
@@ -121,6 +154,35 @@ struct RegionCustomForm: View {
                 Text(OBALoc("custom_region_builder_controller.service_area_section.explanation", value: "Drag the map to the approximate service area of this region.", comment: "An explanation of dragging the map to highlight the service area of a custom region."))
             }
 
+            Section {
+                TextField("onebusaway.co", text: $sidecarURLString)
+                    .textContentType(.URL)
+                    .keyboardType(.URL)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+            } header: {
+                Text(OBALoc("custom_region_builder_controller.sidecar_section.header_title", value: "Sidecar Server", comment: "Title of the Sidecar Server header."))
+            } footer: {
+                // "OneBusAway.co" here names the Obaco sidecar service's own domain, not this app's brand.
+                // swiftlint:disable:next hardcoded_app_name
+                Text(OBALoc("custom_region_builder_controller.sidecar_section.explanation", value: "Optional. The address of an Obaco (OneBusAway.co) sidecar server, which powers features like alarms and surveys. \"https://\" is assumed.", comment: "An explanation of the optional Obaco sidecar server URL field of a custom region."))
+            }
+
+            Section {
+                TextField("analytics.example.com", text: $umamiURLString)
+                    .textContentType(.URL)
+                    .keyboardType(.URL)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                TextField(OBALoc("custom_region_builder_controller.analytics_section.website_id_placeholder", value: "Website ID", comment: "Placeholder for the Umami analytics website ID field."), text: $umamiIDString)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+            } header: {
+                Text(OBALoc("custom_region_builder_controller.analytics_section.header_title", value: "Analytics", comment: "Title of the Analytics header."))
+            } footer: {
+                Text(OBALoc("custom_region_builder_controller.analytics_section.explanation", value: "Optional. The address of an Umami analytics server and this region's website ID. Both fields are required to enable analytics; leave them blank to disable it.", comment: "An explanation of the optional Umami analytics fields of a custom region."))
+            }
+
             if editingRegion != nil {
                 Section {
                     Button(role: .destructive) {
@@ -164,6 +226,13 @@ struct RegionCustomForm: View {
             regionName = editingRegion.name
             baseURLString = displayString(for: editingRegion.OBABaseURL)
             serviceArea = editingRegion.serviceRect
+            if let sidecarBaseURL = editingRegion.sidecarBaseURL {
+                sidecarURLString = displayString(for: sidecarBaseURL)
+            }
+            if let umamiAnalytics = editingRegion.umamiAnalytics {
+                umamiURLString = displayString(for: umamiAnalytics.url)
+                umamiIDString = umamiAnalytics.id
+            }
         }
         else if let location = regionProvider.currentLocation {
             serviceArea = MKMapRect(MKCoordinateRegion(center: location.coordinate, latitudinalMeters: 2000, longitudinalMeters: 2000))
@@ -229,12 +298,17 @@ struct RegionCustomForm: View {
             name = agencies.first?.agency?.name ?? Self.defaultRegionName
         }
 
+        // openTripPlannerURL isn't editable in this form, so editing must carry
+        // the existing value forward rather than silently dropping it.
         let region = Region(
             name: name,
             OBABaseURL: baseURL,
             coordinateRegion: MKCoordinateRegion(serviceArea),
             contactEmail: editingRegion?.contactEmail ?? Self.placeholderContactEmail,
-            regionIdentifier: editingRegion?.regionIdentifier
+            regionIdentifier: editingRegion?.regionIdentifier,
+            openTripPlannerURL: editingRegion?.openTripPlannerURL,
+            sidecarBaseURL: normalizedSidecarURL,
+            umamiAnalytics: UmamiAnalyticsConfig(url: normalizedUmamiURL, id: umamiIDString)
         )
 
         do {

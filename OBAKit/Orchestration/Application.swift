@@ -599,8 +599,16 @@ public class Application: CoreApplication, PushServiceDelegate {
                     // Create region provider
                     let regionProvider = RegionPickerCoordinator(regionsService: self.regionsService, userDataStore: self.userDataStore)
 
-                    // Construct Region from URL data
-                    let currentRegion = Region(name: regionData.name, OBABaseURL: regionData.obaURL, coordinateRegion: adjustedRegionCoordinate, contactEmail: "example@example.com", openTripPlannerURL: regionData.otpURL)
+                    // Construct Region from URL data. umamiAnalytics applies the
+                    // both-or-nothing rule; no rule logic lives here.
+                    let currentRegion = Region(
+                        name: regionData.name,
+                        OBABaseURL: regionData.obaURL,
+                        coordinateRegion: adjustedRegionCoordinate,
+                        contactEmail: "example@example.com",
+                        openTripPlannerURL: regionData.otpURL,
+                        sidecarBaseURL: regionData.sidecarURL,
+                        umamiAnalytics: regionData.umamiAnalytics)
 
                     // Add and set current region
                     try await regionProvider.add(customRegion: currentRegion)
