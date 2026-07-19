@@ -62,7 +62,11 @@ struct RegionCustomForm: View {
                 urlString = String(urlString.dropLast())
             }
         }
-        return URL(string: urlString)
+
+        guard let finalURL = URL(string: urlString), finalURL.host() != nil else {
+            return nil
+        }
+        return finalURL
     }
 
     /// General URL normalization for human-typed input: trims whitespace,

@@ -51,6 +51,12 @@ class RegionCustomFormTests: XCTestCase {
         expect(self.normalize("   ")).to(beNil())
         expect(self.normalize("ftp://example.com")).to(beNil())
         expect(self.normalize("https://")).to(beNil())
+
+        // Regression: stripping "/api/where" from input where "api" parses as
+        // the host (e.g. "api/where" -> "https://api/where") must not leave a
+        // scheme-only, host-less URL like "https:" behind unvalidated.
+        expect(self.normalize("api/where")).to(beNil())
+        expect(self.normalize("https://api/where")).to(beNil())
     }
 
     // MARK: - normalizeURL (general, no /api/where handling)
