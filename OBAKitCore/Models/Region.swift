@@ -206,7 +206,7 @@ public class Region: NSObject, Identifiable, Codable {
     /// - Parameter coordinateRegion: The coordinate region that circumscribes this region.
     /// - Parameter contactEmail: The contact email address for this region.
     /// - Parameter regionIdentifier: The identifier for this region. If unassigned, it will be given a random value.
-    /// - Parameter regionIdentifier: The identifier for this region. If unassigned, it will be given a random value.
+    /// - Parameter openTripPlannerURL: Optional URL for the region's OpenTripPlanner server.
     /// - Parameter sidecarBaseURL: Optional base URL for the Obaco sidecar server.
     /// - Parameter umamiAnalytics: Optional Umami analytics configuration.
     public required init(name: String, OBABaseURL: URL, coordinateRegion: MKCoordinateRegion, contactEmail: String, regionIdentifier: Int? = nil, openTripPlannerURL: URL? = nil, sidecarBaseURL: URL? = nil, umamiAnalytics: UmamiAnalyticsConfig? = nil) {
