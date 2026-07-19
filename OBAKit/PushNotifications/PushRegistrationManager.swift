@@ -1,0 +1,210 @@
+//
+//  PushRegistrationManager.swift
+//  OBAKit
+//
+//  Copyright © Open Transit Software Foundation
+//  This source code is licensed under the Apache 2.0 license found in the
+//  LICENSE file in the root directory of this source tree.
+//
+
+import Foundation
+import UIKit
+import UserNotifications
+import OBAKitCore
+
+/// Keeps this device's APNs push token registered with the current region's OBACloud server
+/// so transit agencies can send service-alert push notifications to it.
+///
+/// Historically the server only learned tokens as a side effect of alarm creation, which
+/// misses riders who never set an alarm, carries no locale for translated alert copy, and
+/// lets tokens age past the server's 180-day prune. This manager registers proactively:
+/// `Application` calls ``refreshRegistration()`` on every foreground, feeds rotated tokens in
+/// via ``updateDeviceToken(_:)`` + ``registerIfNeeded()``, and calls ``registerIfNeeded()``
+/// again after a region change.
+///
+/// The last successful registration (token, region, locale, test-device flag, timestamp) is
+/// persisted to user defaults; an unchanged registration is re-POSTed only after
+/// ``refreshInterval`` elapses, which keeps traffic well under the server's rate limit while
+/// still refreshing `last_seen_at` ahead of the prune.
+@MainActor
+public final class PushRegistrationManager: NSObject {
+
+    public typealias AuthorizationStatusProvider = @Sendable () async -> UNAuthorizationStatus
+
+    /// The inputs that determine whether a new POST is needed, plus when the last one happened.
+    private struct Registration: Codable {
+        let token: String
+        let regionID: RegionIdentifier
+        let locale: String
+        let testDevice: Bool
+        let registeredAt: Date
+
+        /// Equivalence over everything except `registeredAt` — age is checked separately.
+        func isEquivalent(to other: Registration) -> Bool {
+            token == other.token &&
+            regionID == other.regionID &&
+            locale == other.locale &&
+            testDevice == other.testDevice
+        }
+    }
+
+    /// Re-POST an otherwise-unchanged registration this often so the server's 180-day
+    /// `last_seen_at` prune never drops this device.
+    nonisolated public static let refreshInterval: TimeInterval = 60 * 60 * 24
+
+    nonisolated static let lastRegistrationUserDefaultsKey = "PushRegistrationManager.lastRegistration"
+
+    private let obacoServiceProvider: () -> ObacoAPIService?
+    private let userDefaults: UserDefaults
+    private let testDeviceProvider: () -> Bool
+    private let currentRegionIdentifierProvider: () -> RegionIdentifier?
+    private let authorizationStatusProvider: AuthorizationStatusProvider
+    private let localeProvider: () -> String
+    private let dateProvider: () -> Date
+    private let requestRemoteNotificationsRegistration: () -> Void
+
+    private(set) var deviceToken: String?
+
+    /// Coalescing state: `registrationInProgress` is held for the duration of a registration
+    /// pass; a caller arriving mid-flight sets `needsAnotherPass` and returns, and the holder
+    /// loops once more (the dedupe check makes a redundant pass a no-op).
+    private var registrationInProgress = false
+    private var needsAnotherPass = false
+
+    /// - Parameters:
+    ///   - obacoServiceProvider: Resolves the current region's Obaco service on each call —
+    ///     the service is recreated whenever the region changes, so it must not be captured.
+    ///   - userDefaults: Backing store for the last-registration dedupe state.
+    ///   - testDeviceProvider: Whether this install should receive "Test users only" sends.
+    ///   - currentRegionIdentifierProvider: The user's current region. Guards against the
+    ///     stale-`obacoService` case: switching to a region without a sidecar leaves the old
+    ///     region's service in place, and we must never register against a region the user left.
+    ///   - authorizationStatusProvider: Injectable for tests; defaults to the real
+    ///     notification-center authorization status.
+    ///   - localeProvider: Injectable for tests; defaults to the device's BCP-47 identifier.
+    ///   - dateProvider: Injectable for tests; defaults to `Date()`.
+    ///   - requestRemoteNotificationsRegistration: Injectable for tests; defaults to
+    ///     `UIApplication.shared.registerForRemoteNotifications()`.
+    public init(
+        obacoServiceProvider: @escaping () -> ObacoAPIService?,
+        userDefaults: UserDefaults,
+        testDeviceProvider: @escaping () -> Bool,
+        currentRegionIdentifierProvider: @escaping () -> RegionIdentifier?,
+        authorizationStatusProvider: @escaping AuthorizationStatusProvider = {
+            await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
+        },
+        localeProvider: @escaping () -> String = { Locale.current.identifier(.bcp47) },
+        dateProvider: @escaping () -> Date = { Date() },
+        requestRemoteNotificationsRegistration: @escaping () -> Void = {
+            UIApplication.shared.registerForRemoteNotifications()
+        }
+    ) {
+        self.obacoServiceProvider = obacoServiceProvider
+        self.userDefaults = userDefaults
+        self.testDeviceProvider = testDeviceProvider
+        self.currentRegionIdentifierProvider = currentRegionIdentifierProvider
+        self.authorizationStatusProvider = authorizationStatusProvider
+        self.localeProvider = localeProvider
+        self.dateProvider = dateProvider
+        self.requestRemoteNotificationsRegistration = requestRemoteNotificationsRegistration
+    }
+
+    /// Stores the latest hex-encoded APNs token. Side-effect free — follow with
+    /// ``registerIfNeeded()``. Called from the push provider's token callback, which fires on
+    /// every `registerForRemoteNotifications()` including token rotations.
+    public func updateDeviceToken(_ token: String) {
+        deviceToken = token
+    }
+
+    /// Asks the OS for a (possibly rotated) device token and registers whatever token is
+    /// already known. Call on every app foreground: the token callback re-enters via
+    /// ``updateDeviceToken(_:)`` + ``registerIfNeeded()``, so a rotated token is registered
+    /// as soon as APNs delivers it. No-ops unless notification permission is granted.
+    public func refreshRegistration() async {
+        guard await isAuthorized() else { return }
+        requestRemoteNotificationsRegistration()
+        await registerIfNeeded()
+    }
+
+    /// POSTs the current token to the current region's Obaco server — but only if the token,
+    /// region, locale, or test-device flag changed since the last successful POST, or that
+    /// POST is older than ``refreshInterval``. No-ops without a token, an Obaco service, or
+    /// notification permission. Concurrent calls coalesce: on the first foreground after a
+    /// permission grant, the becomeActive trigger and the APNs token callback can overlap,
+    /// and only one POST should result.
+    public func registerIfNeeded() async {
+        guard !registrationInProgress else {
+            // An in-flight pass will loop and re-read all inputs (including a token that
+            // rotated underneath it) — nothing is lost by returning here.
+            needsAnotherPass = true
+            return
+        }
+
+        registrationInProgress = true
+        defer { registrationInProgress = false }
+
+        repeat {
+            needsAnotherPass = false
+            await performRegistrationIfNeeded()
+        } while needsAnotherPass
+    }
+
+    private func performRegistrationIfNeeded() async {
+        guard
+            let deviceToken,
+            let obacoService = obacoServiceProvider(),
+            // Switching to a region without a sidecar leaves the previous region's service in
+            // place (CoreApplication.refreshObacoService early-returns) — never register
+            // against a region the user left.
+            obacoService.regionID == currentRegionIdentifierProvider(),
+            await isAuthorized()
+        else { return }
+
+        let candidate = Registration(
+            token: deviceToken,
+            regionID: obacoService.regionID,
+            locale: localeProvider(),
+            testDevice: testDeviceProvider(),
+            registeredAt: dateProvider())
+
+        if let last = lastRegistration,
+           last.isEquivalent(to: candidate),
+           candidate.registeredAt.timeIntervalSince(last.registeredAt) < Self.refreshInterval {
+            return
+        }
+
+        do {
+            try await obacoService.postPushRegistration(
+                token: candidate.token,
+                locale: candidate.locale,
+                testDevice: candidate.testDevice)
+            lastRegistration = candidate
+        } catch {
+            // Leave `lastRegistration` untouched so the next trigger retries.
+            Logger.error("Push registration failed: \(error)")
+        }
+    }
+
+    /// Provisional and ephemeral authorization still deliver notifications — those riders
+    /// count as opted in. Only `.denied`/`.notDetermined` block registration.
+    private func isAuthorized() async -> Bool {
+        switch await authorizationStatusProvider() {
+        case .authorized, .provisional, .ephemeral: return true
+        default: return false
+        }
+    }
+
+    private var lastRegistration: Registration? {
+        get {
+            guard let data = userDefaults.data(forKey: Self.lastRegistrationUserDefaultsKey) else { return nil }
+            return try? JSONDecoder().decode(Registration.self, from: data)
+        }
+        set {
+            guard let newValue, let data = try? JSONEncoder().encode(newValue) else {
+                userDefaults.removeObject(forKey: Self.lastRegistrationUserDefaultsKey)
+                return
+            }
+            userDefaults.set(data, forKey: Self.lastRegistrationUserDefaultsKey)
+        }
+    }
+}
