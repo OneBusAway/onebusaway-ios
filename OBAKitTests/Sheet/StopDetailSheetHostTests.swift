@@ -28,13 +28,27 @@ final class StopDetailSheetHostTests: OBATestCase {
     }
 
     @MainActor
-    func test_makeNavigationController_wrapsStopViewControllerInNav() {
+    func test_makeNavigationController_wrapsStopPageControllerInNav() {
         let dataLoader = MockDataLoader(testName: name)
         let application = buildApplication(queue: queue, dataLoader: dataLoader)
 
-        let nav = StopDetailSheetHost.makeNavigationController(application: application, stopID: "1_10914")
+        let nav = StopDetailSheetHost.makeNavigationController(application: application, stopID: "1_10914", onClose: {})
 
         expect(nav.viewControllers.count) == 1
-        expect(nav.topViewController).to(beAKindOf(StopViewController.self))
+        expect(nav.topViewController).to(beAKindOf(StopPageViewController.self))
+    }
+
+    /// The host installs a leading Close button so the stacked stop-detail sheet
+    /// can be dismissed without dragging it down.
+    @MainActor
+    func test_makeNavigationController_installsLeadingCloseButton() {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+
+        let nav = StopDetailSheetHost.makeNavigationController(application: application, stopID: "1_10914", onClose: {})
+
+        let closeButton = nav.topViewController?.navigationItem.leftBarButtonItem
+        expect(closeButton).toNot(beNil())
+        expect(closeButton?.title) == Strings.close
     }
 }

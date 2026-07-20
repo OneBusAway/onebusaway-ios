@@ -199,8 +199,8 @@ nonisolated extension AppSheetRoute {
             )
         case .stopDetails:
             return SheetDetentConfiguration(
-                detents: [.medium, .large],
-                initialDetent: .medium,
+                detents: [.large],
+                initialDetent: .large,
                 isDismissDisabled: false
             )
         case .tripPlanner, .tripDetails, .routePicker, .currentTrip, .transitAlert, .more, .settings:
