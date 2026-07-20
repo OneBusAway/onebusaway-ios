@@ -96,4 +96,17 @@ class OBACloudPushServiceTests: OBATestCase {
         service.didRegisterForRemoteNotifications(withDeviceToken: Data([0x11]))
         XCTAssertTrue(receivedTokens.isEmpty)
     }
+
+    // MARK: - Token Update Handler
+
+    func test_didRegister_invokesDeviceTokenUpdatedHandlerOnEveryRegistration() {
+        var receivedTokens: [String] = []
+        service.deviceTokenUpdatedHandler = { receivedTokens.append($0) }
+
+        service.didRegisterForRemoteNotifications(withDeviceToken: Data([0xBE, 0xEF]))
+        // Token rotation (restore/reinstall) re-fires the handler with the new token.
+        service.didRegisterForRemoteNotifications(withDeviceToken: Data([0xCA, 0xFE]))
+
+        XCTAssertEqual(receivedTokens, ["beef", "cafe"])
+    }
 }

@@ -24,7 +24,7 @@ public actor ObacoAPIService: @preconcurrency APIService {
 
     public let logger = os.Logger(subsystem: "org.onebusaway.iphone", category: "ObacoAPIService")
 
-    private let regionID: RegionIdentifier
+    public nonisolated let regionID: RegionIdentifier
     private weak var delegate: ObacoServiceDelegate?
 
     private func shouldDisplayRegionTestAlerts() async -> Bool {
@@ -36,6 +36,8 @@ public actor ObacoAPIService: @preconcurrency APIService {
     }
 
     public init(regionID: RegionIdentifier, delegate: ObacoServiceDelegate?, configuration: APIServiceConfiguration, dataLoader: URLDataLoader) {
+        assert(configuration.regionIdentifier == nil || configuration.regionIdentifier == regionID,
+               "ObacoAPIService regionID must match its configuration's regionIdentifier")
         self.regionID = regionID
         self.delegate = delegate
         self.configuration = configuration
@@ -155,6 +157,62 @@ public actor ObacoAPIService: @preconcurrency APIService {
         let request = NSMutableURLRequest(url: url)
         request.httpMethod = "DELETE"
 
+        return try await data(for: request as URLRequest)
+    }
+
+    // MARK: - Push Registrations
+
+    /// Registers — or refreshes — this device's APNs push token with the OBACloud server so the
+    /// region's transit agencies can send service-alert push notifications to it.
+    ///
+    /// The server upserts on `(region, token)`, so create and update are the same call. A
+    /// successful response is a bare `204 No Content`.
+    ///
+    /// - Parameters:
+    ///   - token: The hex-encoded APNs device token.
+    ///   - locale: The device's BCP-47 locale identifier (e.g. `"es-MX"`), used by the server to
+    ///     pick the alert translation. Sent as-reported; the server does its own mapping.
+    ///   - testDevice: Whether this device should receive "Test users only" sends. The server
+    ///     resets an omitted value to `false` on every upsert, so it is always sent explicitly.
+    ///   - description: Free text identifying a test device to OBACloud admins (e.g. `"Aaron's
+    ///     iPhone 17"`). The server requires a non-blank value (≤255 chars) whenever
+    ///     `testDevice` is `true`, and rejects the registration with a `422` if it's missing.
+    ///     Sent only when non-nil and non-empty.
+    public nonisolated func postPushRegistration(token: String, locale: String, testDevice: Bool, description: String?) async throws {
+        let url = await buildURL(path: String(format: "/api/v2/regions/%d/push_registrations", regionID))
+        let urlRequest = NSMutableURLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10)
+        urlRequest.httpMethod = "POST"
+
+        var params: [String: Any] = [
+            "token": token,
+            "operating_system": "ios",
+            "locale": locale,
+            "test_device": testDevice ? "true" : "false"
+        ]
+
+        if let description, !description.isEmpty {
+            params["description"] = description
+        }
+
+        urlRequest.httpBody = NetworkHelpers.dictionary(toHTTPBodyData: params)
+
+        _ = try await data(for: urlRequest as URLRequest)
+    }
+
+    /// Removes this device's push registration from the OBACloud server.
+    ///
+    /// The token travels as a query item, matching the server's contract.
+    ///
+    /// Answers `204` on success and `404` if the token was never registered — the latter
+    /// throws `APIError.requestNotFound`. Callers treating "never registered" as success
+    /// should catch that case specifically rather than discarding all errors.
+    @discardableResult
+    public nonisolated func deletePushRegistration(token: String) async throws -> (Data, URLResponse) {
+        let url = await buildURL(
+            path: String(format: "/api/v2/regions/%d/push_registrations", regionID),
+            queryItems: [URLQueryItem(name: "token", value: token)])
+        let request = NSMutableURLRequest(url: url)
+        request.httpMethod = "DELETE"
         return try await data(for: request as URLRequest)
     }
 

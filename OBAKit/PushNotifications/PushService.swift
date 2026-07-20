@@ -17,6 +17,8 @@ public typealias PushManagerUserID = String
 public typealias PushManagerUserIDCallback = ((PushManagerUserID) -> Void)
 public typealias PushServiceNotificationReceivedHandler = ((String, [AnyHashable: Any]?) -> Void)
 public typealias PushServiceErrorHandler = ((Error) -> Void)
+/// Carries the hex-encoded APNs device token (distinct from a provider's push user ID).
+public typealias PushServiceDeviceTokenCallback = (String) -> Void
 
 // MARK: - Errors
 
@@ -36,6 +38,10 @@ public protocol PushServiceProvider: NSObjectProtocol {
     var notificationReceivedHandler: PushServiceNotificationReceivedHandler! { get set }
     var errorHandler: PushServiceErrorHandler! { get set }
 
+    /// Called with the hex-encoded APNs token every time the device (re-)registers with APNs,
+    /// including token rotations. Set by ``PushService`` during initialization.
+    var deviceTokenUpdatedHandler: PushServiceDeviceTokenCallback? { get set }
+
     var pushUserID: PushManagerUserID? { get }
 }
 
@@ -45,6 +51,9 @@ public protocol PushServiceDelegate: NSObjectProtocol {
     func pushServicePresentingController(_ pushService: PushService) -> UIViewController?
     func pushService(_ pushService: PushService, received arrivalDeparture: AlarmPushBody)
     func pushService(_ pushService: PushService, receivedDonationPrompt id: String?)
+
+    /// Called whenever APNs issues the device a (possibly rotated) push token.
+    func pushService(_ pushService: PushService, receivedDeviceToken token: String)
 }
 
 // MARK: - PushService
@@ -63,6 +72,10 @@ public class PushService: NSObject {
 
         self.serviceProvider.notificationReceivedHandler = notificationReceivedHandler(message:additionalData:)
         self.serviceProvider.errorHandler = errorHandler(error:)
+        self.serviceProvider.deviceTokenUpdatedHandler = { [weak self] token in
+            guard let self else { return }
+            self.delegate?.pushService(self, receivedDeviceToken: token)
+        }
     }
 
     // MARK: - PushServiceProvider Callbacks

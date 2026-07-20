@@ -353,6 +353,7 @@ class SettingsViewController: FormViewController {
     private let debugModeEnabled = "debugModeEnabled"
     private let crashAppKey = "crashAppKey"
     private let pushIDKey = "pushIDKey"
+    private let testDeviceDescriptionKey = "testDeviceDescriptionKey"
 
     private lazy var debugSection: Section = makeDebugSection()
 
@@ -418,6 +419,19 @@ class SettingsViewController: FormViewController {
             }
             $0.cellUpdate { cell, _ in
                 cell.titleLabel?.textColor = .label
+            }
+        }
+
+        section <<< TextRow {
+            $0.tag = testDeviceDescriptionKey
+            $0.title = OBALoc("settings_controller.debug_section.test_device_description", value: "Test Device Name", comment: "Settings > Debug section > Name identifying this device for test push notifications")
+            $0.placeholder = OBALoc("settings_controller.debug_section.test_device_description.placeholder", value: "e.g. Aaron's iPhone", comment: "Placeholder example for the test device name field")
+            $0.value = application.userDefaults.string(forKey: PushRegistrationManager.testDeviceDescriptionDefaultsKey)
+            $0.hidden = Condition.function([debugModeEnabled], { form in
+                return !((form.rowBy(tag: self.debugModeEnabled) as? SwitchRow)?.value ?? false)
+            })
+            $0.onChange { [weak self] row in
+                self?.application.userDefaults.set(row.value, forKey: PushRegistrationManager.testDeviceDescriptionDefaultsKey)
             }
         }
 
