@@ -17,15 +17,18 @@ public class DonationsManager {
     ///   - bundle: The application bundle. Usually, `Bundle.main`
     ///   - userDefaults: The user defaults object.
     ///   - analytics: The Analytics object.
+    ///   - appLaunchCount: Returns the number of times the app has been launched.
     public init(
         bundle: Bundle,
         userDefaults: UserDefaults,
         obacoService: ObacoAPIService?,
-        analytics: Analytics?
+        analytics: Analytics?,
+        appLaunchCount: @escaping () -> Int
     ) {
         self.bundle = bundle
         self.userDefaults = userDefaults
         self.analytics = analytics
+        self.appLaunchCount = appLaunchCount
     }
 
     // MARK: - Data
@@ -33,6 +36,7 @@ public class DonationsManager {
     private let bundle: Bundle
     var obacoService: ObacoAPIService?
     private let analytics: Analytics?
+    private let appLaunchCount: () -> Int
 
     // MARK: - User Defaults
 
@@ -80,9 +84,14 @@ public class DonationsManager {
         bundle.donationsEnabled && obacoService != nil
     }
 
+    /// The minimum number of app launches required before donation requests are shown.
+    private static let minimumAppLaunchesBeforeRequestingDonations = 3
+
     /// When true, it means the app should show an inline donation request UI.
     public var shouldRequestDonations: Bool {
         if !bundle.donationsEnabled { return false }
+
+        if appLaunchCount() < DonationsManager.minimumAppLaunchesBeforeRequestingDonations { return false }
 
         if let donationRequestReminderDate = donationRequestReminderDate, donationRequestReminderDate.timeIntervalSinceNow > 0 {
             return false

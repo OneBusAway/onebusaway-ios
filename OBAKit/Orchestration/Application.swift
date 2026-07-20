@@ -74,7 +74,8 @@ public class Application: CoreApplication, PushServiceDelegate {
         bundle: applicationBundle,
         userDefaults: userDefaults,
         obacoService: obacoService,
-        analytics: analytics
+        analytics: analytics,
+        appLaunchCount: { [userDataStore] in userDataStore.appLaunchCount }
     )
 
     /// Responsible for figuring out how to navigate between view controllers.
