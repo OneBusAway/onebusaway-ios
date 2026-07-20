@@ -41,6 +41,7 @@ struct GroupedListView: View {
 
     @Environment(\.obaFormatters) private var formatters
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @AppStorage("stopUIReducedColors") private var reducedColors = false
 
     /// At accessibility sizes the card layouts "stack" (the guide's committed
     /// layout): badge + countdown become glance tokens on the first line and
@@ -121,7 +122,7 @@ struct GroupedListView: View {
         VStack(alignment: .leading, spacing: 3) {
             if isAccessibilitySize {
                 HStack(alignment: .center) {
-                    RouteBadgeView(routeShortName: next.routeShortName, routeColor: routeColor, routeTextColor: next.route.textColor.map { Color(uiColor: $0) }, size: 48)
+                    RouteBadgeView(routeShortName: next.routeShortName, routeColor: routeColor, routeTextColor: next.route.textColor.map { Color(uiColor: $0) }, size: 48, reducedColors: reducedColors)
                     Spacer(minLength: 8)
                     CountdownView(minutes: next.arrivalDepartureMinutes, isRealTime: status.isRealTime, color: Color(uiColor: status.color))
                 }
@@ -133,7 +134,7 @@ struct GroupedListView: View {
                     .foregroundStyle(Color(uiColor: status.color))
             } else {
                 HStack(alignment: .center, spacing: 13) {
-                    RouteBadgeView(routeShortName: next.routeShortName, routeColor: routeColor, routeTextColor: next.route.textColor.map { Color(uiColor: $0) }, size: 48)
+                    RouteBadgeView(routeShortName: next.routeShortName, routeColor: routeColor, routeTextColor: next.route.textColor.map { Color(uiColor: $0) }, size: 48, reducedColors: reducedColors)
                     VStack(alignment: .leading, spacing: 3) {
                         headsignText(next)
                         HStack(spacing: 6) {

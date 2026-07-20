@@ -21,8 +21,13 @@ struct RouteBadgeView: View {
     let routeColor: Color
     var routeTextColor: Color?
     var size: CGFloat = 44
+    /// When true (Settings > Accessibility > "Reduce colors on stop page"),
+    /// route color shrinks to a thin vertical bar and the route number uses
+    /// the standard label color — same information, minimal color area.
+    var reducedColors: Bool = false
 
     @ScaledMetric(relativeTo: .body) private var scale: CGFloat = 1
+    @ScaledMetric(relativeTo: .body) private var barWidth: CGFloat = 5
     @Environment(\.colorSchemeContrast) private var contrast
 
     private var resolvedTextColor: Color {
@@ -39,15 +44,47 @@ struct RouteBadgeView: View {
         contrast == .increased ? AnyShapeStyle(routeColor) : AnyShapeStyle(routeColor.gradient)
     }
 
+    private var badgeFont: Font {
+        .system(size: (routeShortName.count <= 2 ? 18 : 13) * scale, weight: .heavy)
+    }
+
     var body: some View {
+        Group {
+            if reducedColors {
+                reducedBody
+            } else {
+                standardBody
+            }
+        }
+        .frame(width: size * scale, height: size * scale)
+        .accessibilityHidden(true) // route name is in the row's combined label
+    }
+
+    private var standardBody: some View {
         Text(routeShortName)
-            .font(.system(size: (routeShortName.count <= 2 ? 18 : 13) * scale, weight: .heavy))
+            .font(badgeFont)
             .monospacedDigit()
             .foregroundStyle(resolvedTextColor)
             .minimumScaleFactor(0.6)
             .lineLimit(1)
             .frame(width: size * scale, height: size * scale)
             .background(backgroundStyle, in: RoundedRectangle(cornerRadius: size * scale * 0.28, style: .continuous))
-            .accessibilityHidden(true) // route name is in the row's combined label
+    }
+
+    /// Same frame as the standard badge so departure rows keep their column
+    /// alignment when the setting flips.
+    private var reducedBody: some View {
+        HStack(spacing: 6 * scale) {
+            Capsule(style: .continuous)
+                .fill(routeColor)
+                .frame(width: barWidth, height: size * scale)
+            Text(routeShortName)
+                .font(badgeFont)
+                .monospacedDigit()
+                .foregroundStyle(.primary)
+                .minimumScaleFactor(0.6)
+                .lineLimit(1)
+            Spacer(minLength: 0)
+        }
     }
 }
