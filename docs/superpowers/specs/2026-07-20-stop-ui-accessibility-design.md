@@ -36,7 +36,9 @@ reads no contrast-related accessibility environment values.
 
 - The legacy UIKit `StopViewController` / `StopArrivalView`.
 - Map route labels or any screen other than the new stop page (plus the shared
-  badge used by the widget, which inherits the contrast fix for free).
+  badge used by the widget, which inherits the contrast fix in `fullColor`
+  rendering; in `accented`/`vibrant` widget modes the system's own tinting
+  overrides both the route color and the text color, so the fix is moot there).
 - Changing the green/red/blue departure-status colors. The words "on time" /
   "early" / "delayed" already carry that information redundantly in text.
 - Merging the two `RouteBadgeView` copies into one view.
@@ -72,8 +74,14 @@ Rules:
 - Gain an optional `routeTextColor` parameter; `DepartureRowView` and the
   widget pass `route.textColor` through.
 - Normal presentation: `minimumRatio` = 4.5 (AA). Background keeps the
-  existing `.gradient` fill; the ratio is computed against the flat base
-  color.
+  existing `.gradient` fill; the ratio is intentionally computed against the
+  flat base color, an approximation — the gradient's lighter band has
+  marginally lower contrast, and the Increase Contrast branch removes the
+  ambiguity where it matters by going flat.
+- Threshold note: WCAG large text (≥14 pt bold) and Apple's Accessibility
+  Inspector (bold → 3:1 at all sizes) would accept 3:1 for the heavy badge
+  text, but the badge can render as small as 13 pt, so we hold the stricter
+  4.5:1 floor everywhere rather than special-casing by size.
 - Under system Increase Contrast (`@Environment(\.colorSchemeContrast) ==
   .increased`): the badge uses a flat fill (no gradient) and raises
   `minimumRatio` to 7.0 (AAA) before falling back to computed black/white.
@@ -92,7 +100,11 @@ white (~1.8:1).
 
   When reduce motion is on, the affected element renders in its static state
   (no pulse). One-shot layout transitions (`withAnimation(.snappy)` toggles)
-  are unchanged — Apple's guidance targets continuous/large motion.
+  are unchanged: Apple's mandatory guidance covers automatic and repetitive
+  motion (the pulses), while de-motioning transitions is a best practice we
+  partially meet already — `.snappy` is a stiff, low-bounce spring, and none
+  of the gated toggles animate large positional or scale changes.
+  Implementation should verify that last point per call site.
 - **Increase Contrast:** covered in §1 (flat fill + 7:1 threshold).
 - **Reduce Transparency:** no change needed; the page's `.ultraThinMaterial`
   is a system material that adapts automatically.
@@ -112,8 +124,12 @@ existing `debugMode` pattern.
 **Presentation:** when enabled, the stop page's `RouteBadgeView` renders as:
 - a vertical capsule bar in the route color, ~5 pt wide × badge height, and
 - the route short name in `.primary` label color beside it,
-- inside the same fixed frame width as the standard badge, so the departure
-  rows keep their column alignment.
+- inside the same frame width as the standard badge, so the departure rows
+  keep their column alignment.
+
+Both the bar width and the frame scale with Dynamic Type via `@ScaledMetric`,
+matching the standard badge's existing scaling — fixed points would undercut
+the low-vision users this mode serves.
 
 The mode is read by the SwiftUI stop page via the app's `UserDefaults` suite
 (the same suite `UserDataStore` writes to) so the page updates when the
