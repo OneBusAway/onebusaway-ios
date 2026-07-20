@@ -292,12 +292,17 @@ public class Application: CoreApplication, PushServiceDelegate {
         testDeviceProvider: { [weak self] in
             // "Test users only" audience: agencies preview an alert push against flagged
             // devices before sending it to everyone. Debug builds always qualify; release
-            // builds qualify via the Debug Mode switch in Settings.
+            // builds qualify via the Debug Mode switch in Settings. Either way, the device
+            // only registers as a test device once a Test Device Name is set in the Debug
+            // settings.
             #if DEBUG
             return true
             #else
             return self?.userDataStore.debugMode ?? false
             #endif
+        },
+        testDeviceDescriptionProvider: { [weak self] in
+            self?.userDefaults.string(forKey: PushRegistrationManager.testDeviceDescriptionDefaultsKey)
         },
         currentRegionIdentifierProvider: { [weak self] in self?.currentRegionIdentifier },
         errorReporter: { [weak self] error in

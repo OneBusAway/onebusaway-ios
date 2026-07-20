@@ -24,6 +24,7 @@ class PushRegistrationManagerTests: OBATestCase {
         var authorizationStatus: UNAuthorizationStatus = .authorized
         var locale = "en-US"
         var testDevice = false
+        var testDeviceDescription: String?
         var currentRegionID: Int? = 1
         var now = Date(timeIntervalSince1970: 1_752_800_000)
         var remoteRegistrationRequests = 0
@@ -57,12 +58,34 @@ class PushRegistrationManagerTests: OBATestCase {
         }
     }
 
+    /// Captures the body of the request the service actually put on the wire, so the
+    /// downgrade/description tests can inspect what was (or wasn't) sent, not just how many
+    /// times it was sent.
+    private final class RequestCapture: @unchecked Sendable {
+        nonisolated(unsafe) var bodies: [String] = []
+    }
+
+    private func mockRegistrationResponseCapturingBody(statusCode: Int = 204) -> RequestCapture {
+        let capture = RequestCapture()
+        dataLoader.mock(data: Data(), statusCode: statusCode) { request in
+            guard request.httpMethod == "POST", request.url?.path.hasSuffix("/push_registrations") ?? false else {
+                return false
+            }
+            if let body = request.httpBody.flatMap({ String(data: $0, encoding: .utf8) }) {
+                capture.bodies.append(body)
+            }
+            return true
+        }
+        return capture
+    }
+
     private func makeManager() -> PushRegistrationManager {
         let controls = self.controls!
         return PushRegistrationManager(
             obacoServiceProvider: { [weak self] in self?.currentService },
             userDefaults: defaults,
             testDeviceProvider: { controls.testDevice },
+            testDeviceDescriptionProvider: { controls.testDeviceDescription },
             currentRegionIdentifierProvider: { controls.currentRegionID },
             authorizationStatusProvider: {
                 if controls.holdNextAuthCheck {
@@ -176,7 +199,47 @@ class PushRegistrationManagerTests: OBATestCase {
         manager.updateDeviceToken("01abff007f")
         await manager.registerIfNeeded()
 
+        // Setting `testDevice` alone doesn't change the wire value — without a description
+        // the candidate downgrades to a regular device, same as before. Naming the device is
+        // what actually flips `test_device` on the wire.
         controls.testDevice = true
+        controls.testDeviceDescription = "Aarons iPhone"
+        await manager.registerIfNeeded()
+
+        XCTAssertEqual(registrationRequestCount, 2)
+    }
+
+    /// The server rejects `test_device=true` without a `description` — a test device that
+    /// hasn't been named yet must register as a regular device rather than POST a
+    /// guaranteed 422.
+    func test_registerIfNeeded_downgradesTestDeviceWithoutDescription() async {
+        let capture = mockRegistrationResponseCapturingBody()
+        controls.testDevice = true
+        controls.testDeviceDescription = nil
+        let manager = makeManager()
+        manager.updateDeviceToken("01abff007f")
+
+        await manager.registerIfNeeded()
+
+        XCTAssertEqual(registrationRequestCount, 1)
+        let body = try? XCTUnwrap(capture.bodies.first)
+        XCTAssertEqual(capture.bodies.count, 1)
+        XCTAssertTrue(body?.contains("test_device=false") ?? false, "Body: \(String(describing: body))")
+        XCTAssertFalse(body?.contains("description=") ?? true, "Body: \(String(describing: body))")
+    }
+
+    /// A changed description is a real change to the wire payload (it identifies the device
+    /// to admins), so it must trigger a re-POST even though token/region/locale/testDevice
+    /// are unchanged.
+    func test_registerIfNeeded_repostsWhenDescriptionChanges() async {
+        mockRegistrationResponse()
+        controls.testDevice = true
+        controls.testDeviceDescription = "A"
+        let manager = makeManager()
+        manager.updateDeviceToken("01abff007f")
+        await manager.registerIfNeeded()
+
+        controls.testDeviceDescription = "B"
         await manager.registerIfNeeded()
 
         XCTAssertEqual(registrationRequestCount, 2)

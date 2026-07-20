@@ -38,6 +38,7 @@ public final class PushRegistrationManager {
         let regionID: RegionIdentifier
         let locale: String
         let testDevice: Bool
+        let description: String?
         let registeredAt: Date
 
         /// Equivalence over everything except `registeredAt` — age is checked separately.
@@ -45,7 +46,8 @@ public final class PushRegistrationManager {
             token == other.token &&
             regionID == other.regionID &&
             locale == other.locale &&
-            testDevice == other.testDevice
+            testDevice == other.testDevice &&
+            description == other.description
         }
     }
 
@@ -55,9 +57,15 @@ public final class PushRegistrationManager {
 
     nonisolated static let lastRegistrationUserDefaultsKey = "PushRegistrationManager.lastRegistration"
 
+    nonisolated static let testDeviceDescriptionDefaultsKey = "PushRegistrationManager.testDeviceDescription"
+
     private let obacoServiceProvider: () -> ObacoAPIService?
     private let userDefaults: UserDefaults
     private let testDeviceProvider: () -> Bool
+    /// Human-readable name identifying this test device to OBACloud admins. The server
+    /// requires it for `test_device=true` registrations; without one the device registers
+    /// as a regular device.
+    private let testDeviceDescriptionProvider: () -> String?
     private let currentRegionIdentifierProvider: () -> RegionIdentifier?
     private let authorizationStatusProvider: AuthorizationStatusProvider
     private let localeProvider: () -> String
@@ -79,6 +87,9 @@ public final class PushRegistrationManager {
     ///     the service is recreated whenever the region changes, so it must not be captured.
     ///   - userDefaults: Backing store for the last-registration dedupe state.
     ///   - testDeviceProvider: Whether this install should receive "Test users only" sends.
+    ///   - testDeviceDescriptionProvider: Human-readable name identifying this test device to
+    ///     OBACloud admins. The server requires it for `test_device=true` registrations;
+    ///     without one the device registers as a regular device.
     ///   - currentRegionIdentifierProvider: The user's current region. Guards against the
     ///     stale-`obacoService` case: switching to a region without a sidecar leaves the old
     ///     region's service in place, and we must never register against a region the user left.
@@ -94,6 +105,7 @@ public final class PushRegistrationManager {
         obacoServiceProvider: @escaping () -> ObacoAPIService?,
         userDefaults: UserDefaults,
         testDeviceProvider: @escaping () -> Bool,
+        testDeviceDescriptionProvider: @escaping () -> String? = { nil },
         currentRegionIdentifierProvider: @escaping () -> RegionIdentifier?,
         authorizationStatusProvider: @escaping AuthorizationStatusProvider = {
             await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
@@ -108,6 +120,7 @@ public final class PushRegistrationManager {
         self.obacoServiceProvider = obacoServiceProvider
         self.userDefaults = userDefaults
         self.testDeviceProvider = testDeviceProvider
+        self.testDeviceDescriptionProvider = testDeviceDescriptionProvider
         self.currentRegionIdentifierProvider = currentRegionIdentifierProvider
         self.authorizationStatusProvider = authorizationStatusProvider
         self.localeProvider = localeProvider
@@ -171,11 +184,19 @@ public final class PushRegistrationManager {
 
         guard await isAuthorized() else { return }
 
+        let trimmedDescription = testDeviceDescriptionProvider()?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let description = (trimmedDescription?.isEmpty ?? true) ? nil : trimmedDescription
+        // The server rejects test_device registrations without a description, so a test
+        // device that hasn't been named yet registers as a regular device instead of
+        // POSTing a guaranteed 422.
+        let testDevice = testDeviceProvider() && description != nil
+
         let candidate = Registration(
             token: deviceToken,
             regionID: obacoService.regionID,
             locale: localeProvider(),
-            testDevice: testDeviceProvider(),
+            testDevice: testDevice,
+            description: testDevice ? description : nil,
             registeredAt: dateProvider())
 
         if let last = lastRegistration,
@@ -188,7 +209,8 @@ public final class PushRegistrationManager {
             try await obacoService.postPushRegistration(
                 token: candidate.token,
                 locale: candidate.locale,
-                testDevice: candidate.testDevice)
+                testDevice: candidate.testDevice,
+                description: candidate.description)
             lastRegistration = candidate
             Logger.info("Registered push token with region \(candidate.regionID) (locale \(candidate.locale), testDevice \(candidate.testDevice)).")
         } catch is CancellationError {

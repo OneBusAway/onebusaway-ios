@@ -66,7 +66,7 @@ POST /api/v2/regions/{region_id}/push_registrations
 
 Responses: `204 No Content` on success; `422` `{error, messages}` on validation failure; `404` unknown region; `429` throttled.
 
-> ⚠️ The `description` requirement landed server-side on 2026-07-19. As of this writing the iOS client does **not** yet send it, so `test_device=true` registrations from the app will `422` until the client catches up — see the caveat in §6.
+> The `description` requirement landed server-side on 2026-07-19; the iOS client sends it from the **Test Device Name** field in Settings → Debug, and registers as a regular device (`test_device=false`) until that field is filled in.
 
 ```bash
 curl -X POST "https://onebusaway.co/api/v2/regions/1/push_registrations?key=org.example.app" \
@@ -196,7 +196,7 @@ Task { await pushRegistrationManager.registerIfNeeded() }
 Two subtleties worth knowing before you touch this code:
 
 - **Stale-region guard:** switching to a region *without* a sidecar leaves the previous region's `obacoService` in place (`CoreApplication.refreshObacoService()` early-returns). The manager compares `obacoService.regionID` against the current region and refuses to register against a region the user left.
-- **`test_device` gating:** debug builds always send `true`; release builds send `true` only when the Debug Mode switch in Settings is on. Agencies use the "Test users only" audience to preview an alert push before sending to everyone.
+- **`test_device` gating:** debug builds and Debug-Mode-enabled release builds only register as test devices once a **Test Device Name** is set in Settings → Debug; without one, they downgrade to a regular registration (`test_device=false`, no `description` sent) rather than POST a guaranteed 422. Agencies use the "Test users only" audience to preview an alert push before sending it to everyone.
 
 ### 4.3 Receiving notifications
 
@@ -271,8 +271,9 @@ Implement the server contract directly:
 1. Obtain the platform push token; hex-encode APNs tokens (FCM tokens are sent as-is with `operating_system=android`).
 2. Implement the three registration triggers from §3, with dedupe (persist your last successful `(token, region, locale, test_device)` + timestamp; re-POST on change or after ~24h).
 3. Always send `test_device` explicitly. Always send the unnormalized BCP-47 locale.
-4. Treat `204` as success, `422` as a bug to surface to your crash reporter, `429` as "back off, your dedupe is broken," and DELETE `404` as success.
-5. For trip alarms, store the returned alarm `url` — it is the only handle for cancellation.
+4. Send `description` whenever registering with `test_device=true` — the server rejects (`422`) a test-device registration with a blank or missing `description`. If you have no name to send, register with `test_device=false` instead of guaranteeing a failure.
+5. Treat `204` as success, `422` as a bug to surface to your crash reporter, `429` as "back off, your dedupe is broken," and DELETE `404` as success.
+6. For trip alarms, store the returned alarm `url` — it is the only handle for cancellation.
 
 ---
 
@@ -280,8 +281,8 @@ Implement the server contract directly:
 
 - **Simulators get no real APNs tokens.** OBAKit skips push configuration entirely under `#if targetEnvironment(simulator)`. Test registration logic with unit tests (see `PushRegistrationManagerTests` — the dedupe, coalescing, and auth-gating behaviors are all covered with injected closures and a mock data loader; no network or notification center needed).
 - **Debug builds hold *sandbox* tokens.** A debug-provisioned install registers with the APNs sandbox host; pushes sent through production APNs bounce off it. Alarms and Live Activities handle this by sending `apns_sandbox=1` from debug builds, which the server forwards to gorush as `development: true`.
-- **⚠️ Known gap #1 — test devices need a `description` the client doesn't send yet:** since 2026-07-19 the server rejects `test_device=true` registrations without a `description` param (`422`), and the iOS client doesn't send one — so debug-build registrations currently fail outright until the client adds it.
-- **⚠️ Known gap #2 — sandbox routing for service alerts:** the `push_registrations` API has no `apns_sandbox` param and the alert fan-out always uses production APNs — so even once registered, a *debug* build **cannot receive** the preview push. Until [OneBusAway/obacloud#983](https://github.com/OneBusAway/obacloud/issues/983) lands, verify alert delivery with a **TestFlight** build (production token) flagged via the Debug Mode switch.
+- **Setting up a test device:** since 2026-07-19 the server rejects `test_device=true` registrations without a non-blank `description` (`422`). To register this install as a test device: enable **Debug Mode** in Settings → Debug, fill in **Test Device Name** (e.g. "Aaron's iPhone 17"), then re-foreground the app so `PushRegistrationManager` picks up the change and re-POSTs. Until the name is set, the device silently registers as a regular device (`test_device=false`) instead of failing.
+- **⚠️ Known gap — sandbox routing for service alerts:** the `push_registrations` API has no `apns_sandbox` param and the alert fan-out always uses production APNs — so even once registered, a *debug* build **cannot receive** the preview push. Until [OneBusAway/obacloud#983](https://github.com/OneBusAway/obacloud/issues/983) lands, verify alert delivery with a **TestFlight** build (production token) flagged via the Debug Mode switch.
 - **End-to-end check:** register a device with `test_device=true`, have an OBACloud admin publish an alert with the "Test users only" audience, and confirm only flagged devices receive it.
 
 ---

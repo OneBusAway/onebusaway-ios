@@ -174,17 +174,25 @@ public actor ObacoAPIService: @preconcurrency APIService {
     ///     pick the alert translation. Sent as-reported; the server does its own mapping.
     ///   - testDevice: Whether this device should receive "Test users only" sends. The server
     ///     resets an omitted value to `false` on every upsert, so it is always sent explicitly.
-    public nonisolated func postPushRegistration(token: String, locale: String, testDevice: Bool) async throws {
+    ///   - description: Free text identifying a test device to OBACloud admins (e.g. `"Aaron's
+    ///     iPhone 17"`). The server requires a non-blank value (≤255 chars) whenever
+    ///     `testDevice` is `true`, and rejects the registration with a `422` if it's missing.
+    ///     Sent only when non-nil and non-empty.
+    public nonisolated func postPushRegistration(token: String, locale: String, testDevice: Bool, description: String?) async throws {
         let url = await buildURL(path: String(format: "/api/v2/regions/%d/push_registrations", regionID))
         let urlRequest = NSMutableURLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10)
         urlRequest.httpMethod = "POST"
 
-        let params: [String: Any] = [
+        var params: [String: Any] = [
             "token": token,
             "operating_system": "ios",
             "locale": locale,
             "test_device": testDevice ? "true" : "false"
         ]
+
+        if let description, !description.isEmpty {
+            params["description"] = description
+        }
 
         urlRequest.httpBody = NetworkHelpers.dictionary(toHTTPBodyData: params)
 

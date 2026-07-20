@@ -42,7 +42,7 @@ class PushRegistrationModelOperationTests: OBATestCase {
     func testSuccessfulRegistration_sendsAllContractParams() async throws {
         let capture = mockRegistrationPOST()
 
-        try await obacoService.postPushRegistration(token: "01abff007f", locale: "es-MX", testDevice: false)
+        try await obacoService.postPushRegistration(token: "01abff007f", locale: "es-MX", testDevice: false, description: nil)
 
         let body = try XCTUnwrap(capture.body, "Expected postPushRegistration to send a form-encoded body")
         XCTAssertTrue(body.contains("token=01abff007f"), "Body: \(body)")
@@ -57,16 +57,31 @@ class PushRegistrationModelOperationTests: OBATestCase {
     func testRegistration_flagsTestDevices() async throws {
         let capture = mockRegistrationPOST()
 
-        try await obacoService.postPushRegistration(token: "01abff007f", locale: "en-US", testDevice: true)
+        try await obacoService.postPushRegistration(token: "01abff007f", locale: "en-US", testDevice: true, description: "Aarons iPhone")
 
         let body = try XCTUnwrap(capture.body)
         XCTAssertTrue(body.contains("test_device=true"), "Body: \(body)")
+        // NetworkHelpers.dictionary(toHTTPBodyData:) percent-encodes the space as %20 —
+        // CharacterSet.urlQueryAllowed doesn't include space.
+        XCTAssertTrue(body.contains("description=Aarons%20iPhone"), "Body: \(body)")
+    }
+
+    /// A blank/omitted description must never reach the wire — the server treats an empty
+    /// `description` param the same as a missing one, and `test_device=false` doesn't
+    /// require one at all.
+    func testRegistration_omitsBlankDescription() async throws {
+        let capture = mockRegistrationPOST()
+
+        try await obacoService.postPushRegistration(token: "01abff007f", locale: "en-US", testDevice: false, description: nil)
+
+        let body = try XCTUnwrap(capture.body)
+        XCTAssertFalse(body.contains("description="), "Body: \(body)")
     }
 
     func testRegistration_targetsRegionScopedURL() async throws {
         let capture = mockRegistrationPOST()
 
-        try await obacoService.postPushRegistration(token: "01abff007f", locale: "en-US", testDevice: false)
+        try await obacoService.postPushRegistration(token: "01abff007f", locale: "en-US", testDevice: false, description: nil)
 
         let url = try XCTUnwrap(capture.url)
         XCTAssertTrue(
@@ -79,7 +94,7 @@ class PushRegistrationModelOperationTests: OBATestCase {
         _ = mockRegistrationPOST(statusCode: 422)
 
         do {
-            try await obacoService.postPushRegistration(token: "", locale: "en-US", testDevice: false)
+            try await obacoService.postPushRegistration(token: "", locale: "en-US", testDevice: false, description: nil)
             XCTFail("Expected postPushRegistration to throw APIError.requestFailure")
         } catch let error as APIError {
             guard case .requestFailure = error else {
