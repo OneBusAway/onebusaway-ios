@@ -320,6 +320,17 @@ class SettingsViewController: FormViewController {
     // MARK: - Debug Section
 
     private let debugModeEnabled = "debugModeEnabled"
+
+    /// Hides a row unless the Debug Mode switch is on.
+    ///
+    /// Captures only the tag string: a `Condition` is stored on its row for the lifetime
+    /// of the form the controller owns, so capturing `self` in one retains the controller
+    /// in a cycle and it never deallocates after dismissal.
+    private static func hiddenUnlessDebugMode(_ debugModeTag: String) -> Condition {
+        Condition.function([debugModeTag]) { form in
+            !((form.rowBy(tag: debugModeTag) as? SwitchRow)?.value ?? false)
+        }
+    }
     private let crashAppKey = "crashAppKey"
     private let pushIDKey = "pushIDKey"
     private let testDeviceDescriptionKey = "testDeviceDescriptionKey"
@@ -349,16 +360,14 @@ class SettingsViewController: FormViewController {
         section <<< SwitchRow {
             $0.tag = RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey
             $0.title = OBALoc("settings_controller.debug_section.always_refresh_regions", value: "Refresh regions on every launch", comment: "Settings > Debug section > Refresh regions on every launch")
-            $0.hidden = Condition.function([debugModeEnabled], { form in
-                return !((form.rowBy(tag: self.debugModeEnabled) as? SwitchRow)?.value ?? false)
-            })
+            $0.hidden = Self.hiddenUnlessDebugMode(debugModeEnabled)
         }
 
         section <<< LabelRow {
             $0.tag = crashAppKey
             $0.title = OBALoc("more_controller.debug_section.crash_row", value: "Crash the app", comment: "Title for a button that will crash the app.")
-            $0.hidden = Condition.function([debugModeEnabled], { form in
-                return !((form.rowBy(tag: self.debugModeEnabled) as? SwitchRow)?.value ?? false) && self.application.shouldShowCrashButton
+            $0.hidden = Condition.function([debugModeEnabled], { [debugModeEnabled, application] form in
+                return !((form.rowBy(tag: debugModeEnabled) as? SwitchRow)?.value ?? false) && application.shouldShowCrashButton
             })
             $0.onCellSelection { [weak self] _, _ in
                 guard let self else { return }
@@ -374,9 +383,7 @@ class SettingsViewController: FormViewController {
             $0.tag = pushIDKey
             $0.title = OBALoc("more_controller.debug_section.push_id.title", value: "Push ID", comment: "Title for the Push Notification ID row in the More Controller")
             $0.value = application.pushService?.pushUserID ?? OBALoc("more_controller.debug_section.push_id.not_available", value: "Not available", comment: "This is displayed instead of the user's push ID if the value is not available.")
-            $0.hidden = Condition.function([debugModeEnabled], { form in
-                return !((form.rowBy(tag: self.debugModeEnabled) as? SwitchRow)?.value ?? false)
-            })
+            $0.hidden = Self.hiddenUnlessDebugMode(debugModeEnabled)
             $0.disabled = true
             $0.onCellSelection { [weak self] _, row in
                 guard let self, let pushUserID = application.pushService?.pushUserID else { return }
@@ -402,9 +409,7 @@ class SettingsViewController: FormViewController {
             $0.title = OBALoc("settings_controller.debug_section.test_device_description", value: "Test Device Name", comment: "Settings > Debug section > Name identifying this device for test push notifications")
             $0.placeholder = OBALoc("settings_controller.debug_section.test_device_description.placeholder", value: "e.g. Aaron's iPhone", comment: "Placeholder example for the test device name field")
             $0.value = application.userDefaults.string(forKey: PushRegistrationManager.testDeviceDescriptionDefaultsKey)
-            $0.hidden = Condition.function([debugModeEnabled], { form in
-                return !((form.rowBy(tag: self.debugModeEnabled) as? SwitchRow)?.value ?? false)
-            })
+            $0.hidden = Self.hiddenUnlessDebugMode(debugModeEnabled)
             $0.onChange { [weak self] row in
                 guard let self else { return }
                 application.userDefaults.set(row.value, forKey: PushRegistrationManager.testDeviceDescriptionDefaultsKey)
@@ -420,13 +425,11 @@ class SettingsViewController: FormViewController {
         section <<< SwitchRow {
             $0.tag = AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts
             $0.title = OBALoc("settings_controller.alerts_section.display_test_alerts", value: "Display test alerts", comment: "Settings > Debug section > Display test alerts")
-            $0.hidden = Condition.function([debugModeEnabled], { form in
-                return !((form.rowBy(tag: self.debugModeEnabled) as? SwitchRow)?.value ?? false)
-            })
+            $0.hidden = Self.hiddenUnlessDebugMode(debugModeEnabled)
             // Test alerts only display for a named test device (see
             // AgencyAlertsStore.shouldDisplayTestAlerts), so the switch is inert without a name.
-            $0.disabled = Condition.function([testDeviceDescriptionKey], { form in
-                let name = (form.rowBy(tag: self.testDeviceDescriptionKey) as? TextRow)?.value?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            $0.disabled = Condition.function([testDeviceDescriptionKey], { [testDeviceDescriptionKey] form in
+                let name = (form.rowBy(tag: testDeviceDescriptionKey) as? TextRow)?.value?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
                 return name.isEmpty
             })
         }
@@ -447,9 +450,7 @@ class SettingsViewController: FormViewController {
             }
         }
 
-        section.hidden = application.hasDataToMigrate ? false : Condition.function([debugModeEnabled], { form in
-            return !((form.rowBy(tag: self.debugModeEnabled) as? SwitchRow)?.value ?? false)
-        })
+        section.hidden = application.hasDataToMigrate ? false : Self.hiddenUnlessDebugMode(debugModeEnabled)
 
         return section
     }()
