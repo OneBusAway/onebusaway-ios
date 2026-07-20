@@ -52,7 +52,6 @@ class MockAuthorizedLocationManager: NSObject, LocationManager {
     }
 
     var authorizationStatus: CLAuthorizationStatus = .authorizedWhenInUse
-    var isLocationServicesEnabled: Bool = true
 
     /// Stored so tests can toggle reduced accuracy without needing a separate
     /// mock class. Kept as `CLAccuracyAuthorization` even though it's only
