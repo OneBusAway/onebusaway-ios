@@ -22,18 +22,33 @@ struct StopDetailSheetHost: UIViewControllerRepresentable {
     let stopID: Stop.ID
 
     func makeUIViewController(context: Context) -> UINavigationController {
-        Self.makeNavigationController(application: application, stopID: stopID)
+        // `dismiss` clears the stacked `.sheet(item:)` binding, which the
+        // coordinator observes to pop this route — the same path the drag-down
+        // gesture takes, so storage stays in sync.
+        let dismiss = context.environment.dismiss
+        return Self.makeNavigationController(application: application, stopID: stopID, onClose: { dismiss() })
     }
 
-    // `StopViewController` reads `application`, `stopID`, and stores directly, so
-    // nothing SwiftUI-side changes over the sheet's lifetime.
+    // `StopPageViewController` reads `application`, `stopID`, and stores directly,
+    // so nothing SwiftUI-side changes over the sheet's lifetime.
     func updateUIViewController(_ uiViewController: UINavigationController, context: Context) { }
 
     /// Internal factory seam mirroring `MoreSheetHost`: builds the same
     /// controller hierarchy without a `Context`, so tests can drive the wiring
     /// without going through `UIHostingController`.
-    static func makeNavigationController(application: Application, stopID: Stop.ID) -> UINavigationController {
-        let stopController = StopViewController(application: application, stopID: stopID)
-        return UINavigationController(rootViewController: stopController)
+    static func makeNavigationController(
+        application: Application,
+        stopID: Stop.ID,
+        onClose: @escaping () -> Void
+    ) -> UINavigationController {
+        let stopPageController = StopPageViewController(application: application, stopID: stopID)
+        let closeButton = UIBarButtonItem(
+            primaryAction: UIAction(title: Strings.close) { _ in onClose() }
+        )
+        for state: UIControl.State in [.normal, .highlighted] {
+            closeButton.setTitleTextAttributes([.foregroundColor: UIColor.label], for: state)
+        }
+        stopPageController.navigationItem.leftBarButtonItem = closeButton
+        return UINavigationController(rootViewController: stopPageController)
     }
 }
