@@ -66,6 +66,15 @@ class PushRegistrationModelOperationTests: OBATestCase {
         XCTAssertTrue(body.contains("description=Aarons%20iPhone"), "Body: \(body)")
     }
 
+    func testRegistration_flagsApnsSandboxInDebugBuilds() async throws {
+        let capture = mockRegistrationPOST()
+
+        try await obacoService.postPushRegistration(token: "01abff007f", locale: "en-US", testDevice: true, description: "Aarons iPhone")
+
+        let body = try XCTUnwrap(capture.body)
+        XCTAssertTrue(body.contains("apns_sandbox=1"), "Expected a debug build to flag its registration for the APNs sandbox — its token is only valid there, so an unflagged test push bounces with BadDeviceToken. Body: \(body)")
+    }
+
     /// A blank/omitted description must never reach the wire — the server treats an empty
     /// `description` param the same as a missing one, and `test_device=false` doesn't
     /// require one at all.
