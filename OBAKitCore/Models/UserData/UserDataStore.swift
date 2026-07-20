@@ -301,9 +301,9 @@ public protocol UserDataStore: NSObjectProtocol {
 
     // MARK: - Alarm Lead Time
 
-    /// The user's preferred alarm lead time in minutes for one-tap alarms on
-    /// the Stop page. Adjustable per-alarm afterward. Defaults to 5.
-    var defaultAlarmLeadTimeMinutes: Int { get set }
+    /// The alarm lead time in minutes for one-tap alarms on the Stop page.
+    /// Adjustable per-alarm afterward.
+    var defaultAlarmLeadTimeMinutes: Int { get }
 
 }
 
@@ -367,7 +367,7 @@ public protocol StopPreferencesStore: NSObjectProtocol {
 public enum UserDataStoreDefaults {
     /// Default lead time in minutes for one-tap alarms on the Stop page.
     /// Referenced by OBAKit's `AlarmLeadTime.defaultMinutes`.
-    public static let alarmLeadTimeMinutes = 5
+    public static let alarmLeadTimeMinutes = 10
 }
 
 // MARK: - UserDefaultsStore
@@ -408,9 +408,12 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         self.userDefaults.register(defaults: [
             UserDefaultsKeys.debugMode: false,
             UserDefaultsKeys.walkingSpeedMetersPerSecond: WalkingSpeed.defaultMetersPerSecond,
-            UserDefaultsKeys.walkingSpeedSource: WalkingSpeedSource.manual.rawValue,
-            UserDefaultsKeys.defaultAlarmLeadTimeMinutes: UserDataStoreDefaults.alarmLeadTimeMinutes
+            UserDefaultsKeys.walkingSpeedSource: WalkingSpeedSource.manual.rawValue
         ])
+
+        // The alarm lead time used to be user-configurable; the setting has been removed
+        // and everyone gets `UserDataStoreDefaults.alarmLeadTimeMinutes` now.
+        self.userDefaults.removeObject(forKey: UserDefaultsKeys.defaultAlarmLeadTimeMinutes)
     }
 
     // MARK: - Debug Mode
@@ -1094,12 +1097,7 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
     // MARK: - Alarm Lead Time
 
     public var defaultAlarmLeadTimeMinutes: Int {
-        get {
-            userDefaults.integer(forKey: UserDefaultsKeys.defaultAlarmLeadTimeMinutes)
-        }
-        set {
-            userDefaults.set(newValue, forKey: UserDefaultsKeys.defaultAlarmLeadTimeMinutes)
-        }
+        UserDataStoreDefaults.alarmLeadTimeMinutes
     }
 
     // MARK: - Private Helpers

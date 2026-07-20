@@ -939,14 +939,8 @@
 /* Settings > Accessibility section title */
 "settings_controller.accessibility_section.title" = "辅助功能";
 
-/* Settings > Alerts section > default minutes-before for one-tap departure alarms */
-"settings_controller.alerts_section.default_alarm_lead_time" = "默认闹钟提前时间";
-
 /* Settings > Alerts section > Display test alerts */
 "settings_controller.alerts_section.display_test_alerts" = "显示测试通知";
-
-/* Lead-time segment label. %d is minutes. */
-"settings_controller.alerts_section.lead_time_fmt" = "%d分钟";
 
 /* Settings > Alerts section title */
 "settings_controller.alerts_section.title" = "公交公司通知";

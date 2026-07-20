@@ -65,8 +65,7 @@ class SettingsViewController: FormViewController {
             debugModeEnabled: application.userDataStore.debugMode,
             alwaysShowSurveysOnStops: application.userDataStore.alwaysShowSurveysOnStops,
             walkingSpeedMetersPerSecondKey: snapToPreset(application.userDataStore.walkingSpeedMetersPerSecond),
-            walkingSpeedUseHealthKitKey: application.userDataStore.walkingSpeedSource == .healthKit,
-            defaultAlarmLeadTimeMinutesKey: application.userDataStore.defaultAlarmLeadTimeMinutes
+            walkingSpeedUseHealthKitKey: application.userDataStore.walkingSpeedSource == .healthKit
         ])
     }
 
@@ -138,10 +137,6 @@ class SettingsViewController: FormViewController {
     private func saveAlertsValues(_ values: [String: Any?]) {
         if let testAlerts = values[AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts] as? Bool {
             application.userDefaults.set(testAlerts, forKey: AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts)
-        }
-
-        if let alarmLeadTime = values[defaultAlarmLeadTimeMinutesKey] as? Int {
-            application.userDataStore.defaultAlarmLeadTimeMinutes = alarmLeadTime
         }
     }
 
@@ -295,24 +290,12 @@ class SettingsViewController: FormViewController {
 
     // MARK: - Agency Alerts
 
-    private let defaultAlarmLeadTimeMinutesKey = "defaultAlarmLeadTimeMinutes"
-
     private lazy var alertsSection: Section = {
         let section = Section(OBALoc("settings_controller.alerts_section.title", value: "Agency Alerts", comment: "Settings > Alerts section title"))
 
         section <<< SwitchRow {
             $0.tag = AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts
             $0.title = OBALoc("settings_controller.alerts_section.display_test_alerts", value: "Display test alerts", comment: "Settings > Alerts section > Display test alerts")
-        }
-
-        section <<< SegmentedRow<Int> {
-            $0.tag = defaultAlarmLeadTimeMinutesKey
-            $0.title = OBALoc("settings_controller.alerts_section.default_alarm_lead_time", value: "Default alarm lead time", comment: "Settings > Alerts section > default minutes-before for one-tap departure alarms")
-            $0.options = [2, 5, 10]
-            $0.displayValueFor = { minutes in
-                guard let minutes else { return nil }
-                return String(format: OBALoc("settings_controller.alerts_section.lead_time_fmt", value: "%d min", comment: "Lead-time segment label. %d is minutes."), minutes)
-            }
         }
 
         return section

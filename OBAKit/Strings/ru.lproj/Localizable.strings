@@ -939,14 +939,8 @@
 /* Settings > Accessibility section title */
 "settings_controller.accessibility_section.title" = "Универсальный доступ";
 
-/* Settings > Alerts section > default minutes-before for one-tap departure alarms */
-"settings_controller.alerts_section.default_alarm_lead_time" = "Время напоминания по умолчанию";
-
 /* Settings > Alerts section > Display test alerts */
 "settings_controller.alerts_section.display_test_alerts" = "Показывать тестовые оповещения";
-
-/* Lead-time segment label. %d is minutes. */
-"settings_controller.alerts_section.lead_time_fmt" = "%d мин";
 
 /* Settings > Alerts section title */
 "settings_controller.alerts_section.title" = "Оповещения агентств";

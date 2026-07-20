@@ -939,14 +939,8 @@
 /* Settings > Accessibility section title */
 "settings_controller.accessibility_section.title" = "손쉬운 사용";
 
-/* Settings > Alerts section > default minutes-before for one-tap departure alarms */
-"settings_controller.alerts_section.default_alarm_lead_time" = "기본 미리 알림 시간";
-
 /* Settings > Alerts section > Display test alerts */
 "settings_controller.alerts_section.display_test_alerts" = "테스트 알림 표시";
-
-/* Lead-time segment label. %d is minutes. */
-"settings_controller.alerts_section.lead_time_fmt" = "%d분";
 
 /* Settings > Alerts section title */
 "settings_controller.alerts_section.title" = "운영 기관 알림";

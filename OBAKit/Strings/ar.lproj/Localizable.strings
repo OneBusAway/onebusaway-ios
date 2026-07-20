@@ -939,14 +939,8 @@
 /* Settings > Accessibility section title */
 "settings_controller.accessibility_section.title" = "تسهيلات الاستخدام";
 
-/* Settings > Alerts section > default minutes-before for one-tap departure alarms */
-"settings_controller.alerts_section.default_alarm_lead_time" = "مهلة التذكير الافتراضية";
-
 /* Settings > Alerts section > Display test alerts */
 "settings_controller.alerts_section.display_test_alerts" = "عرض التنبيهات التجريبية";
-
-/* Lead-time segment label. %d is minutes. */
-"settings_controller.alerts_section.lead_time_fmt" = "%d د";
 
 /* Settings > Alerts section title */
 "settings_controller.alerts_section.title" = "تنبيهات هيئات النقل";
