@@ -91,15 +91,15 @@ white (~1.8:1).
 
 ### 2. System accessibility settings
 
-- **Reduce Motion:** gate the three ungated `repeatForever` pulse animations
-  on `@Environment(\.accessibilityReduceMotion)`, matching the existing
-  `RealtimeGlyph` precedent (`RealtimeGlyph.swift:26`):
-  - `StopPageHeaderView.swift:201`
-  - `StopPageHeaderView.swift:235`
-  - `TripDetailPanelView.swift:193`
-
-  When reduce motion is on, the affected element renders in its static state
-  (no pulse). One-shot layout transitions (`withAnimation(.snappy)` toggles)
+- **Reduce Motion:** verified already handled — implementation review found
+  all three `repeatForever` pulse sites (`StopPageHeaderView.swift:201,235`,
+  `TripDetailPanelView.swift:193`) are already gated on
+  `@Environment(\.accessibilityReduceMotion)` with `guard !reduceMotion`
+  plus static-opacity fallbacks, matching the `RealtimeGlyph` precedent
+  (`RealtimeGlyph.swift:26`). An earlier grep saw the `repeatForever` calls
+  but missed the surrounding guards. No code change required; the
+  implementation plan keeps a verification-only check.
+  One-shot layout transitions (`withAnimation(.snappy)` toggles)
   are unchanged: Apple's mandatory guidance covers automatic and repetitive
   motion (the pulses), while de-motioning transitions is a best practice we
   partially meet already — `.snappy` is a stiff, low-bounce spring, and none
@@ -113,9 +113,14 @@ white (~1.8:1).
 
 ### 3. Opt-in reduced-color mode
 
-**Setting storage:** new `Bool` property on `UserDataStore`, key
-`UserDataStore.stopUIReducedColors`, registered default `false`, following the
-existing `debugMode` pattern.
+**Setting storage:** new `Bool` property on `UserDataStore`, registered
+default `false`, following the existing `debugMode` pattern — but with the
+deliberately dot-free defaults key `stopUIReducedColors` (not
+`UserDataStore.stopUIReducedColors`): the stop page reads it via
+`@AppStorage`, which observes UserDefaults through KVO, and KVO treats dots
+in a key as key-path separators, silently breaking live updates. The page
+already uses dot-free `@AppStorage` keys for this reason
+(`stopViewShowsServiceAlerts`).
 
 **Settings UI:** a `SwitchRow` in the existing **Accessibility** section of
 `SettingsViewController` ("Reduce colors on stop page"), seeded in
