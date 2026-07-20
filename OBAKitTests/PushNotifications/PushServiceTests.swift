@@ -142,6 +142,29 @@ class PushServiceTests: OBATestCase {
         XCTAssertTrue(delegate.receivedAlarms.isEmpty)
     }
 
+    /// Real remote notifications always include `aps` alongside the custom
+    /// data key (see `OBACloudPushService.userNotificationCenter(_:didReceive:...)`,
+    /// which forwards the entire `UNNotificationContent.userInfo`). This
+    /// mirrors that wire shape to guard against regressing to a strict
+    /// single-key count.
+    func test_alarmPayloadWithAPSSibling_isDecodedAndForwardedToDelegate() {
+        provider.notificationReceivedHandler("Your bus is arriving soon!", [
+            "aps": ["alert": ["body": "Your bus is arriving soon!"]],
+            "arrival_and_departure": validAlarmPayload
+        ])
+
+        XCTAssertEqual(delegate.receivedAlarms.count, 1)
+
+        let alarm = delegate.receivedAlarms[0]
+        XCTAssertEqual(alarm.tripID, "1_604387101")
+        XCTAssertEqual(alarm.stopID, "1_75403")
+        XCTAssertEqual(alarm.regionID, 1)
+        XCTAssertEqual(alarm.vehicleID, "1_4361")
+        XCTAssertEqual(alarm.stopSequence, 7)
+        XCTAssertEqual(alarm.serviceDateEpochTimestamp, 1717027200000)
+        XCTAssertEqual(alarm.serviceDate, Date(timeIntervalSince1970: 1717027200))
+    }
+
     // MARK: - Donation Payloads
 
     func test_donationPayload_forwardsTestIDToDelegate() {
@@ -156,6 +179,19 @@ class PushServiceTests: OBATestCase {
 
         XCTAssertEqual(delegate.receivedDonationPromptIDs.count, 1)
         XCTAssertNil(delegate.receivedDonationPromptIDs[0])
+    }
+
+    /// Real remote notifications always include `aps` alongside the custom
+    /// data key. Mirrors the wire shape delivered by
+    /// `OBACloudPushService.userNotificationCenter(_:didReceive:...)`.
+    func test_donationPayloadWithAPSSibling_forwardsTestIDToDelegate() {
+        provider.notificationReceivedHandler("Please donate", [
+            "aps": ["alert": ["body": "Please donate"]],
+            "donation": "experiment-42"
+        ])
+
+        XCTAssertEqual(delegate.receivedDonationPromptIDs.count, 1)
+        XCTAssertEqual(delegate.receivedDonationPromptIDs[0], "experiment-42")
     }
 
     // MARK: - Fallback Paths
@@ -176,6 +212,30 @@ class PushServiceTests: OBATestCase {
 
     func test_unknownSingleKeyPayload_doesNotRouteToAlarmOrDonation() {
         provider.notificationReceivedHandler("Hello", ["unknown_key": "whatever"])
+
+        XCTAssertTrue(delegate.receivedAlarms.isEmpty)
+        XCTAssertTrue(delegate.receivedDonationPromptIDs.isEmpty)
+    }
+
+    /// A plain service alert notification has no custom data key at all —
+    /// just the standard `aps` payload — and should fall through to display.
+    func test_apsOnlyPayload_doesNotRouteToAlarmOrDonation() {
+        provider.notificationReceivedHandler("Service alert", [
+            "aps": ["alert": ["body": "Service alert"]]
+        ])
+
+        XCTAssertTrue(delegate.receivedAlarms.isEmpty)
+        XCTAssertTrue(delegate.receivedDonationPromptIDs.isEmpty)
+    }
+
+    /// Two custom keys alongside `aps` is an ambiguous payload; it should
+    /// still fall through to display rather than guessing which key wins.
+    func test_twoCustomKeysWithAPSSibling_doesNotRouteToAlarmOrDonation() {
+        provider.notificationReceivedHandler("Hello", [
+            "aps": ["alert": ["body": "Hello"]],
+            "arrival_and_departure": validAlarmPayload,
+            "donation": "experiment-42"
+        ])
 
         XCTAssertTrue(delegate.receivedAlarms.isEmpty)
         XCTAssertTrue(delegate.receivedDonationPromptIDs.isEmpty)
