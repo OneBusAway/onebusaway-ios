@@ -119,7 +119,7 @@ open class CoreApplication: NSObject,
     // MARK: - Agency Alerts
 
     public var shouldDisplayRegionalTestAlerts: Bool {
-        return userDefaults.bool(forKey: AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts)
+        return AgencyAlertsStore.shouldDisplayTestAlerts(userDefaults: userDefaults)
     }
 
     public lazy var alertsStore = AgencyAlertsStore(userDefaults: userDefaults, regionsService: regionsService)

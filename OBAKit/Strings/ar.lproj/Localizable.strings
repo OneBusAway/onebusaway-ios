@@ -939,11 +939,8 @@
 /* Settings > Accessibility section title */
 "settings_controller.accessibility_section.title" = "تسهيلات الاستخدام";
 
-/* Settings > Alerts section > Display test alerts */
+/* Settings > Debug section > Display test alerts */
 "settings_controller.alerts_section.display_test_alerts" = "عرض التنبيهات التجريبية";
-
-/* Settings > Alerts section title */
-"settings_controller.alerts_section.title" = "تنبيهات هيئات النقل";
 
 /* Settings > Debug section > Refresh regions on every launch */
 "settings_controller.debug_section.always_refresh_regions" = "تحديث المناطق عند كل تشغيل";

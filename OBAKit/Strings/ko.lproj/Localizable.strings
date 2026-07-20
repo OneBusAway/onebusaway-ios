@@ -939,11 +939,8 @@
 /* Settings > Accessibility section title */
 "settings_controller.accessibility_section.title" = "손쉬운 사용";
 
-/* Settings > Alerts section > Display test alerts */
+/* Settings > Debug section > Display test alerts */
 "settings_controller.alerts_section.display_test_alerts" = "테스트 알림 표시";
-
-/* Settings > Alerts section title */
-"settings_controller.alerts_section.title" = "운영 기관 알림";
 
 /* Settings > Debug section > Refresh regions on every launch */
 "settings_controller.debug_section.always_refresh_regions" = "실행할 때마다 지역 새로고침";

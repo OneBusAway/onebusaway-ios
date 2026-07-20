@@ -939,11 +939,8 @@
 /* Settings > Accessibility section title */
 "settings_controller.accessibility_section.title" = "Универсальный доступ";
 
-/* Settings > Alerts section > Display test alerts */
+/* Settings > Debug section > Display test alerts */
 "settings_controller.alerts_section.display_test_alerts" = "Показывать тестовые оповещения";
-
-/* Settings > Alerts section title */
-"settings_controller.alerts_section.title" = "Оповещения агентств";
 
 /* Settings > Debug section > Refresh regions on every launch */
 "settings_controller.debug_section.always_refresh_regions" = "Обновлять регионы при каждом запуске";

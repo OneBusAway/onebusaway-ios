@@ -939,11 +939,8 @@
 /* Settings > Accessibility section title */
 "settings_controller.accessibility_section.title" = "Accessibility";
 
-/* Settings > Alerts section > Display test alerts */
+/* Settings > Debug section > Display test alerts */
 "settings_controller.alerts_section.display_test_alerts" = "Ipakita ang mga test alert";
-
-/* Settings > Alerts section title */
-"settings_controller.alerts_section.title" = "Mga Alerto ng Ahensya";
 
 /* Settings > Debug section > Refresh regions on every launch */
 "settings_controller.debug_section.always_refresh_regions" = "I-refresh ang mga rehiyon sa bawat paglunsad";

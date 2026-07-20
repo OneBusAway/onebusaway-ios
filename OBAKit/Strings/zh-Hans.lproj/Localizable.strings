@@ -939,11 +939,8 @@
 /* Settings > Accessibility section title */
 "settings_controller.accessibility_section.title" = "辅助功能";
 
-/* Settings > Alerts section > Display test alerts */
+/* Settings > Debug section > Display test alerts */
 "settings_controller.alerts_section.display_test_alerts" = "显示测试通知";
-
-/* Settings > Alerts section title */
-"settings_controller.alerts_section.title" = "公交公司通知";
 
 /* Settings > Debug section > Refresh regions on every launch */
 "settings_controller.debug_section.always_refresh_regions" = "启动应用时刷新地区信息";

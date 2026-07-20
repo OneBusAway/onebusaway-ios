@@ -37,7 +37,23 @@ public class AgencyAlertsStore: NSObject, @unchecked Sendable {
 
     public struct UserDefaultKeys {
         public static let displayRegionalTestAlerts = "displayRegionalTestAlerts"
+        /// Human-readable name identifying this test device to OBACloud admins. Written by
+        /// the Test Device Name field in Settings > Debug; read by push registration (OBAKit's
+        /// `PushRegistrationManager`) and by ``AgencyAlertsStore/shouldDisplayTestAlerts(userDefaults:)``.
+        /// The literal string predates this key living here — changing it would orphan saved names.
+        public static let testDeviceDescription = "PushRegistrationManager.testDeviceDescription"
         static let readAgencyAlertIDs = "readAgencyAlertIDs"
+    }
+
+    /// Whether regional test alerts should be shown: the "Display test alerts" switch must be
+    /// on *and* a Test Device Name must be set. Test alerts are a preview channel for named
+    /// test devices, mirroring how push registration only sends `test_device=true` once the
+    /// device is named.
+    public static func shouldDisplayTestAlerts(userDefaults: UserDefaults) -> Bool {
+        guard userDefaults.bool(forKey: UserDefaultKeys.displayRegionalTestAlerts) else { return false }
+        let name = userDefaults.string(forKey: UserDefaultKeys.testDeviceDescription)?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return !(name?.isEmpty ?? true)
     }
 
     @MainActor

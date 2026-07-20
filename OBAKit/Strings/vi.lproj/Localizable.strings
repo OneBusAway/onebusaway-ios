@@ -939,11 +939,8 @@
 /* Settings > Accessibility section title */
 "settings_controller.accessibility_section.title" = "Trợ năng";
 
-/* Settings > Alerts section > Display test alerts */
+/* Settings > Debug section > Display test alerts */
 "settings_controller.alerts_section.display_test_alerts" = "Hiển thị cảnh báo thử nghiệm";
-
-/* Settings > Alerts section title */
-"settings_controller.alerts_section.title" = "Cảnh báo từ đơn vị vận tải";
 
 /* Settings > Debug section > Refresh regions on every launch */
 "settings_controller.debug_section.always_refresh_regions" = "Làm mới khu vực mỗi lần khởi chạy";

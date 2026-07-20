@@ -38,7 +38,6 @@ class SettingsViewController: FormViewController {
         form
             +++ mapSection
             +++ experimentalSection
-            +++ alertsSection
             +++ accessibilitySection
             +++ walkingSpeedSection
             +++ surveySection
@@ -288,19 +287,6 @@ class SettingsViewController: FormViewController {
         return section
     }()
 
-    // MARK: - Agency Alerts
-
-    private lazy var alertsSection: Section = {
-        let section = Section(OBALoc("settings_controller.alerts_section.title", value: "Agency Alerts", comment: "Settings > Alerts section title"))
-
-        section <<< SwitchRow {
-            $0.tag = AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts
-            $0.title = OBALoc("settings_controller.alerts_section.display_test_alerts", value: "Display test alerts", comment: "Settings > Alerts section > Display test alerts")
-        }
-
-        return section
-    }()
-
    // MARK: - Privacy
 
     private let privacySectionReportingEnabled = "privacySectionReportingEnabled"
@@ -348,9 +334,15 @@ class SettingsViewController: FormViewController {
             $0.tag = debugModeEnabled
             $0.title = OBALoc("settings_controller.debug_section.debug_mode", value: "Debug Mode", comment: "Settings > Debug section > Debug mode")
             $0.onChange { [weak self] row in
-                guard let self, let refreshRegionsRow = form.rowBy(tag: RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey) as? SwitchRow, let value = row.value, value == false else { return }
+                guard let self, let value = row.value, value == false else { return }
 
-                refreshRegionsRow.value = false
+                // Turning Debug Mode off also turns off the debug-only behaviors it exposed.
+                if let refreshRegionsRow = form.rowBy(tag: RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey) as? SwitchRow {
+                    refreshRegionsRow.value = false
+                }
+                if let testAlertsRow = form.rowBy(tag: AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts) as? SwitchRow {
+                    testAlertsRow.value = false
+                }
             }
         }
 
@@ -414,8 +406,29 @@ class SettingsViewController: FormViewController {
                 return !((form.rowBy(tag: self.debugModeEnabled) as? SwitchRow)?.value ?? false)
             })
             $0.onChange { [weak self] row in
-                self?.application.userDefaults.set(row.value, forKey: PushRegistrationManager.testDeviceDescriptionDefaultsKey)
+                guard let self else { return }
+                application.userDefaults.set(row.value, forKey: PushRegistrationManager.testDeviceDescriptionDefaultsKey)
+
+                // Clearing the name revokes test-device status, so test alerts go with it.
+                let trimmed = row.value?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                if trimmed.isEmpty, let testAlertsRow = form.rowBy(tag: AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts) as? SwitchRow {
+                    testAlertsRow.value = false
+                }
             }
+        }
+
+        section <<< SwitchRow {
+            $0.tag = AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts
+            $0.title = OBALoc("settings_controller.alerts_section.display_test_alerts", value: "Display test alerts", comment: "Settings > Debug section > Display test alerts")
+            $0.hidden = Condition.function([debugModeEnabled], { form in
+                return !((form.rowBy(tag: self.debugModeEnabled) as? SwitchRow)?.value ?? false)
+            })
+            // Test alerts only display for a named test device (see
+            // AgencyAlertsStore.shouldDisplayTestAlerts), so the switch is inert without a name.
+            $0.disabled = Condition.function([testDeviceDescriptionKey], { form in
+                let name = (form.rowBy(tag: self.testDeviceDescriptionKey) as? TextRow)?.value?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                return name.isEmpty
+            })
         }
 
         return section
