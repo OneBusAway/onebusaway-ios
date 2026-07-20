@@ -412,8 +412,8 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
     /// page's `@AppStorage` readers and the Settings form reference the same
     /// string. Deliberately dot-free, unlike its `UserDataStore.`-prefixed
     /// neighbors: `@AppStorage` observes the key via KVO, which treats dots
-    /// as key-path separators and silently never fires. See the
-    /// accessibility spec.
+    /// as key-path separators and silently never fires. See
+    /// docs/superpowers/specs/2026-07-20-stop-ui-accessibility-design.md §3.
     public static let stopUIReducedColorsKey = "stopUIReducedColors"
 
     public init(userDefaults: UserDefaults) {

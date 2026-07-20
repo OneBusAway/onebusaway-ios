@@ -8,12 +8,14 @@ import SwiftUI
 
 /// Rounded-square route identity badge. Public so the widget extension can use it.
 ///
-/// Text color is WCAG-aware (same decision as the stop page's internal
-/// `RouteBadgeView`): agency text color when it clears the threshold, else
-/// computed black/white; Increase Contrast flattens the gradient and raises
-/// the threshold to 7:1. Note: in `accented`/`vibrant` widget rendering modes
-/// the system tints everything and this logic is moot; it matters in
-/// `fullColor` rendering.
+/// Text color and fill are decided by `RouteBadgeStyle` (WCAG-aware; see
+/// docs/superpowers/specs/2026-07-20-stop-ui-accessibility-design.md).
+/// Currently consumed by the trip Live Activity and in-app bookmark cards,
+/// neither of which is subject to widget `accented`/`vibrant` tinting; if
+/// this badge is ever placed in a timeline widget, the color logic only
+/// matters in `fullColor` rendering. Neither current consumer passes
+/// `routeTextColor`, so the agency-color path is exercised only by the stop
+/// page's separate badge.
 public struct RouteBadgeView: View {
     public let routeShortName: String
     public let routeColor: Color

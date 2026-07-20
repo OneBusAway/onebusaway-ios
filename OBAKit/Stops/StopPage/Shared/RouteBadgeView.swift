@@ -9,13 +9,11 @@ import OBAKitCore
 
 /// Rounded-square route identity badge — the only place route color appears in
 /// the departure list rows; the trip panel separately uses it for the vehicle
-/// glyph and approach timeline. Spec §4.3 still holds: route color never tints
-/// countdowns or adherence text.
+/// glyph and approach timeline. The stop-page-rethink spec's §4.3 still holds:
+/// route color never tints countdowns or adherence text.
 ///
-/// Text color is WCAG-aware: the agency's `route_text_color` is honored when
-/// it clears the contrast threshold, else black/white is computed. Under
-/// system Increase Contrast the gradient flattens and the threshold rises to
-/// 7:1 (see docs/superpowers/specs/2026-07-20-stop-ui-accessibility-design.md).
+/// Text color and fill are decided by `RouteBadgeStyle` (WCAG-aware; see
+/// docs/superpowers/specs/2026-07-20-stop-ui-accessibility-design.md).
 struct RouteBadgeView: View {
     let routeShortName: String
     let routeColor: Color

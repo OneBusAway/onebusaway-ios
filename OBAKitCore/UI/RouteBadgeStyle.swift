@@ -9,7 +9,8 @@ import SwiftUI
 /// The shared visual policy for route badges: which text color to draw over
 /// the route color (agency `route_text_color` when it clears the WCAG bar,
 /// else computed black/white) and whether the fill keeps its gradient. One
-/// home so the stop page badge and the public widget badge cannot drift.
+/// home so the stop page's badge and OBAKitCore's public `RouteBadgeView`
+/// (bookmark cards, trip Live Activity) cannot drift.
 public enum RouteBadgeStyle {
 
     /// AA (4.5:1) for the standard presentation; AAA (7:1) once the user

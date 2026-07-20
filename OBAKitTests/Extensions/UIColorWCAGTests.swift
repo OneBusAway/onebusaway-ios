@@ -72,4 +72,11 @@ struct UIColorWCAGTests {
         #expect(gray.badgeTextColor(preferring: .white, minimumRatio: 4.5) == UIColor.white)
         #expect(gray.badgeTextColor(preferring: .white, minimumRatio: 7.0) == UIColor.black)
     }
+
+    /// #7F7F7F under the 7:1 tier: white ≈ 3.6:1, black ≈ 5.8:1 — neither
+    /// clears the bar, so the decision must fall back to the better one.
+    @Test func whenNothingClearsTheBarTheHigherContrastFallbackWins() {
+        let midGray = UIColor(red: 127.0/255.0, green: 127.0/255.0, blue: 127.0/255.0, alpha: 1.0)
+        #expect(midGray.badgeTextColor(preferring: .white, minimumRatio: 7.0) == UIColor.black)
+    }
 }

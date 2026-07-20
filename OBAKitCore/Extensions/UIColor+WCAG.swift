@@ -13,12 +13,16 @@ public extension UIColor {
 
     /// WCAG 2.1 relative luminance: 0 (black) … 1 (white), with piecewise
     /// sRGB linearization.
+    ///
+    /// Assumes an RGB-convertible color (pattern colors degrade to luminance
+    /// 0); alpha is ignored — colors are treated as opaque.
     var wcagRelativeLuminance: CGFloat {
         var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
         getRed(&red, green: &green, blue: &blue, alpha: &alpha)
 
         func linearize(_ channel: CGFloat) -> CGFloat {
-            channel <= 0.03928 ? channel / 12.92 : pow((channel + 0.055) / 1.055, 2.4)
+            let clamped = min(max(channel, 0), 1)
+            return clamped <= 0.03928 ? clamped / 12.92 : pow((clamped + 0.055) / 1.055, 2.4)
         }
 
         return 0.2126 * linearize(red) + 0.7152 * linearize(green) + 0.0722 * linearize(blue)
