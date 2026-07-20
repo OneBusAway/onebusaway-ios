@@ -31,17 +31,11 @@ struct RouteBadgeView: View {
     @Environment(\.colorSchemeContrast) private var contrast
 
     private var resolvedTextColor: Color {
-        let minimumRatio: CGFloat = contrast == .increased ? 7.0 : 4.5
-        let background = UIColor(routeColor)
-        let preferred = routeTextColor.map { UIColor($0) }
-        return Color(uiColor: background.badgeTextColor(preferring: preferred, minimumRatio: minimumRatio))
+        RouteBadgeStyle.textColor(routeColor: routeColor, routeTextColor: routeTextColor, contrast: contrast)
     }
 
-    /// The gradient's luminance ramp is a small, intentional deviation from
-    /// the flat color the ratio is computed against; Increase Contrast goes
-    /// flat so the strict 7:1 tier has no ambiguity.
     private var backgroundStyle: AnyShapeStyle {
-        contrast == .increased ? AnyShapeStyle(routeColor) : AnyShapeStyle(routeColor.gradient)
+        RouteBadgeStyle.backgroundStyle(routeColor: routeColor, contrast: contrast)
     }
 
     private var badgeFont: Font {

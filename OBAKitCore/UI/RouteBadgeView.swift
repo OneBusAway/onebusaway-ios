@@ -31,14 +31,11 @@ public struct RouteBadgeView: View {
     }
 
     private var resolvedTextColor: Color {
-        let minimumRatio: CGFloat = contrast == .increased ? 7.0 : 4.5
-        let background = UIColor(routeColor)
-        let preferred = routeTextColor.map { UIColor($0) }
-        return Color(uiColor: background.badgeTextColor(preferring: preferred, minimumRatio: minimumRatio))
+        RouteBadgeStyle.textColor(routeColor: routeColor, routeTextColor: routeTextColor, contrast: contrast)
     }
 
     private var backgroundStyle: AnyShapeStyle {
-        contrast == .increased ? AnyShapeStyle(routeColor) : AnyShapeStyle(routeColor.gradient)
+        RouteBadgeStyle.backgroundStyle(routeColor: routeColor, contrast: contrast)
     }
 
     public var body: some View {

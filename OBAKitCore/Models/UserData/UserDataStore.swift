@@ -405,11 +405,16 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         static let walkingSpeedMetersPerSecond = "UserDataStore.walkingSpeedMetersPerSecond"
         static let walkingSpeedSource = "UserDataStore.walkingSpeedSource"
         static let defaultAlarmLeadTimeMinutes = "UserDataStore.defaultAlarmLeadTimeMinutes"
-        // Deliberately dot-free, unlike its neighbors: the stop page observes
-        // this key via @AppStorage, whose KVO treats dots as key-path
-        // separators and silently never fires. See the accessibility spec.
-        static let stopUIReducedColors = "stopUIReducedColors"
+        static let stopUIReducedColors = UserDefaultsStore.stopUIReducedColorsKey
     }
+
+    /// The defaults key backing `stopUIReducedColors`, public so the stop
+    /// page's `@AppStorage` readers and the Settings form reference the same
+    /// string. Deliberately dot-free, unlike its `UserDataStore.`-prefixed
+    /// neighbors: `@AppStorage` observes the key via KVO, which treats dots
+    /// as key-path separators and silently never fires. See the
+    /// accessibility spec.
+    public static let stopUIReducedColorsKey = "stopUIReducedColors"
 
     public init(userDefaults: UserDefaults) {
         self.userDefaults = userDefaults

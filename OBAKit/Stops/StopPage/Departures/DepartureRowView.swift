@@ -36,7 +36,7 @@ struct DepartureRowView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.obaFormatters) private var formatters
     @ScaledMetric(relativeTo: .body) private var alarmCircleSize: CGFloat = 34
-    @AppStorage("stopUIReducedColors") private var reducedColors = false
+    @AppStorage(UserDefaultsStore.stopUIReducedColorsKey) private var reducedColors = false
 
     private var dimmed: Bool { style == .past }
 

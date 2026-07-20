@@ -234,7 +234,7 @@ class SettingsViewController: FormViewController {
 
     private let walkingSpeedMetersPerSecondKey = "walkingSpeedMetersPerSecond"
     private let walkingSpeedUseHealthKitKey = "walkingSpeedUseHealthKit"
-    private let stopUIReducedColorsTag = "stopUIReducedColors"
+    private let stopUIReducedColorsTag = UserDefaultsStore.stopUIReducedColorsKey
 
     private func snapToPreset(_ speed: Double) -> Double {
         WalkingSpeedPreset.nearest(to: speed).rawValue
