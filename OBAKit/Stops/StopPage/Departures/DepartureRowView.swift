@@ -108,7 +108,8 @@ struct DepartureRowView: View {
     private var routeBadge: some View {
         RouteBadgeView(
             routeShortName: departure.routeShortName,
-            routeColor: Color(uiColor: departure.route.color ?? ThemeColors.shared.brand)
+            routeColor: Color(uiColor: departure.route.color ?? ThemeColors.shared.brand),
+            routeTextColor: departure.route.textColor.map { Color(uiColor: $0) }
         )
     }
 

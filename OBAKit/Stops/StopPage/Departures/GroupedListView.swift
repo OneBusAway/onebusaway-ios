@@ -121,7 +121,7 @@ struct GroupedListView: View {
         VStack(alignment: .leading, spacing: 3) {
             if isAccessibilitySize {
                 HStack(alignment: .center) {
-                    RouteBadgeView(routeShortName: next.routeShortName, routeColor: routeColor, size: 48)
+                    RouteBadgeView(routeShortName: next.routeShortName, routeColor: routeColor, routeTextColor: next.route.textColor.map { Color(uiColor: $0) }, size: 48)
                     Spacer(minLength: 8)
                     CountdownView(minutes: next.arrivalDepartureMinutes, isRealTime: status.isRealTime, color: Color(uiColor: status.color))
                 }
@@ -133,7 +133,7 @@ struct GroupedListView: View {
                     .foregroundStyle(Color(uiColor: status.color))
             } else {
                 HStack(alignment: .center, spacing: 13) {
-                    RouteBadgeView(routeShortName: next.routeShortName, routeColor: routeColor, size: 48)
+                    RouteBadgeView(routeShortName: next.routeShortName, routeColor: routeColor, routeTextColor: next.route.textColor.map { Color(uiColor: $0) }, size: 48)
                     VStack(alignment: .leading, spacing: 3) {
                         headsignText(next)
                         HStack(spacing: 6) {
