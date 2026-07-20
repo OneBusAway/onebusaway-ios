@@ -7,28 +7,49 @@
 import SwiftUI
 
 /// Rounded-square route identity badge. Public so the widget extension can use it.
+///
+/// Text color is WCAG-aware (same decision as the stop page's internal
+/// `RouteBadgeView`): agency text color when it clears the threshold, else
+/// computed black/white; Increase Contrast flattens the gradient and raises
+/// the threshold to 7:1. Note: in `accented`/`vibrant` widget rendering modes
+/// the system tints everything and this logic is moot; it matters in
+/// `fullColor` rendering.
 public struct RouteBadgeView: View {
     public let routeShortName: String
     public let routeColor: Color
+    public var routeTextColor: Color?
     public var size: CGFloat = 44
 
     @ScaledMetric(relativeTo: .body) private var scale: CGFloat = 1
+    @Environment(\.colorSchemeContrast) private var contrast
 
-    public init(routeShortName: String, routeColor: Color, size: CGFloat = 44) {
+    public init(routeShortName: String, routeColor: Color, routeTextColor: Color? = nil, size: CGFloat = 44) {
         self.routeShortName = routeShortName
         self.routeColor = routeColor
+        self.routeTextColor = routeTextColor
         self.size = size
+    }
+
+    private var resolvedTextColor: Color {
+        let minimumRatio: CGFloat = contrast == .increased ? 7.0 : 4.5
+        let background = UIColor(routeColor)
+        let preferred = routeTextColor.map { UIColor($0) }
+        return Color(uiColor: background.badgeTextColor(preferring: preferred, minimumRatio: minimumRatio))
+    }
+
+    private var backgroundStyle: AnyShapeStyle {
+        contrast == .increased ? AnyShapeStyle(routeColor) : AnyShapeStyle(routeColor.gradient)
     }
 
     public var body: some View {
         Text(routeShortName)
             .font(.system(size: (routeShortName.count <= 2 ? 18 : 13) * scale, weight: .heavy))
             .monospacedDigit()
-            .foregroundStyle(.white)
+            .foregroundStyle(resolvedTextColor)
             .minimumScaleFactor(0.6)
             .lineLimit(1)
             .frame(width: size * scale, height: size * scale)
-            .background(routeColor.gradient, in: RoundedRectangle(cornerRadius: size * scale * 0.28, style: .continuous))
+            .background(backgroundStyle, in: RoundedRectangle(cornerRadius: size * scale * 0.28, style: .continuous))
             .accessibilityHidden(true)
     }
 }
