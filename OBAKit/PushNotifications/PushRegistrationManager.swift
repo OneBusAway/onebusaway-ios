@@ -57,7 +57,9 @@ public final class PushRegistrationManager {
 
     nonisolated static let lastRegistrationUserDefaultsKey = "PushRegistrationManager.lastRegistration"
 
-    nonisolated static let testDeviceDescriptionDefaultsKey = "PushRegistrationManager.testDeviceDescription"
+    /// Canonical key lives in OBAKitCore so `AgencyAlertsStore.shouldDisplayTestAlerts`
+    /// can read the same value; this alias keeps existing call sites working.
+    nonisolated static let testDeviceDescriptionDefaultsKey = AgencyAlertsStore.UserDefaultKeys.testDeviceDescription
 
     private let obacoServiceProvider: () -> ObacoAPIService?
     private let userDefaults: UserDefaults

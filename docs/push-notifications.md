@@ -196,7 +196,7 @@ Task { await pushRegistrationManager.registerIfNeeded() }
 Two subtleties worth knowing before you touch this code:
 
 - **Stale-region guard:** switching to a region *without* a sidecar leaves the previous region's `obacoService` in place (`CoreApplication.refreshObacoService()` early-returns). The manager compares `obacoService.regionID` against the current region and refuses to register against a region the user left.
-- **`test_device` gating:** debug builds and Debug-Mode-enabled release builds only register as test devices once a **Test Device Name** is set in Settings → Debug; without one, they downgrade to a regular registration (`test_device=false`, no `description` sent) rather than POST a guaranteed 422. Agencies use the "Test users only" audience to preview an alert push before sending it to everyone.
+- **`test_device` gating:** debug builds and Debug-Mode-enabled release builds only register as test devices once a **Test Device Name** is set in Settings → Debug; without one, they downgrade to a regular registration (`test_device=false`, no `description` sent) rather than POST a guaranteed 422. Agencies use the "Test users only" audience to preview an alert push before sending it to everyone. The same name also gates the **Display test alerts** switch (Settings → Debug): regional test alerts are only fetched and shown once the switch is on *and* a name is set (`AgencyAlertsStore.shouldDisplayTestAlerts`).
 
 ### 4.3 Receiving notifications
 

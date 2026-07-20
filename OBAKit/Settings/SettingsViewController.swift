@@ -38,7 +38,6 @@ class SettingsViewController: FormViewController {
         form
             +++ mapSection
             +++ experimentalSection
-            +++ alertsSection
             +++ accessibilitySection
             +++ walkingSpeedSection
             +++ surveySection
@@ -65,8 +64,7 @@ class SettingsViewController: FormViewController {
             debugModeEnabled: application.userDataStore.debugMode,
             alwaysShowSurveysOnStops: application.userDataStore.alwaysShowSurveysOnStops,
             walkingSpeedMetersPerSecondKey: snapToPreset(application.userDataStore.walkingSpeedMetersPerSecond),
-            walkingSpeedUseHealthKitKey: application.userDataStore.walkingSpeedSource == .healthKit,
-            defaultAlarmLeadTimeMinutesKey: application.userDataStore.defaultAlarmLeadTimeMinutes
+            walkingSpeedUseHealthKitKey: application.userDataStore.walkingSpeedSource == .healthKit
         ])
     }
 
@@ -138,10 +136,6 @@ class SettingsViewController: FormViewController {
     private func saveAlertsValues(_ values: [String: Any?]) {
         if let testAlerts = values[AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts] as? Bool {
             application.userDefaults.set(testAlerts, forKey: AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts)
-        }
-
-        if let alarmLeadTime = values[defaultAlarmLeadTimeMinutesKey] as? Int {
-            application.userDataStore.defaultAlarmLeadTimeMinutes = alarmLeadTime
         }
     }
 
@@ -293,31 +287,6 @@ class SettingsViewController: FormViewController {
         return section
     }()
 
-    // MARK: - Agency Alerts
-
-    private let defaultAlarmLeadTimeMinutesKey = "defaultAlarmLeadTimeMinutes"
-
-    private lazy var alertsSection: Section = {
-        let section = Section(OBALoc("settings_controller.alerts_section.title", value: "Agency Alerts", comment: "Settings > Alerts section title"))
-
-        section <<< SwitchRow {
-            $0.tag = AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts
-            $0.title = OBALoc("settings_controller.alerts_section.display_test_alerts", value: "Display test alerts", comment: "Settings > Alerts section > Display test alerts")
-        }
-
-        section <<< SegmentedRow<Int> {
-            $0.tag = defaultAlarmLeadTimeMinutesKey
-            $0.title = OBALoc("settings_controller.alerts_section.default_alarm_lead_time", value: "Default alarm lead time", comment: "Settings > Alerts section > default minutes-before for one-tap departure alarms")
-            $0.options = [2, 5, 10]
-            $0.displayValueFor = { minutes in
-                guard let minutes else { return nil }
-                return String(format: OBALoc("settings_controller.alerts_section.lead_time_fmt", value: "%d min", comment: "Lead-time segment label. %d is minutes."), minutes)
-            }
-        }
-
-        return section
-    }()
-
    // MARK: - Privacy
 
     private let privacySectionReportingEnabled = "privacySectionReportingEnabled"
@@ -351,6 +320,17 @@ class SettingsViewController: FormViewController {
     // MARK: - Debug Section
 
     private let debugModeEnabled = "debugModeEnabled"
+
+    /// Hides a row unless the Debug Mode switch is on.
+    ///
+    /// Captures only the tag string: a `Condition` is stored on its row for the lifetime
+    /// of the form the controller owns, so capturing `self` in one retains the controller
+    /// in a cycle and it never deallocates after dismissal.
+    private static func hiddenUnlessDebugMode(_ debugModeTag: String) -> Condition {
+        Condition.function([debugModeTag]) { form in
+            !((form.rowBy(tag: debugModeTag) as? SwitchRow)?.value ?? false)
+        }
+    }
     private let crashAppKey = "crashAppKey"
     private let pushIDKey = "pushIDKey"
     private let testDeviceDescriptionKey = "testDeviceDescriptionKey"
@@ -365,25 +345,29 @@ class SettingsViewController: FormViewController {
             $0.tag = debugModeEnabled
             $0.title = OBALoc("settings_controller.debug_section.debug_mode", value: "Debug Mode", comment: "Settings > Debug section > Debug mode")
             $0.onChange { [weak self] row in
-                guard let self, let refreshRegionsRow = form.rowBy(tag: RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey) as? SwitchRow, let value = row.value, value == false else { return }
+                guard let self, let value = row.value, value == false else { return }
 
-                refreshRegionsRow.value = false
+                // Turning Debug Mode off also turns off the debug-only behaviors it exposed.
+                if let refreshRegionsRow = form.rowBy(tag: RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey) as? SwitchRow {
+                    refreshRegionsRow.value = false
+                }
+                if let testAlertsRow = form.rowBy(tag: AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts) as? SwitchRow {
+                    testAlertsRow.value = false
+                }
             }
         }
 
         section <<< SwitchRow {
             $0.tag = RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey
             $0.title = OBALoc("settings_controller.debug_section.always_refresh_regions", value: "Refresh regions on every launch", comment: "Settings > Debug section > Refresh regions on every launch")
-            $0.hidden = Condition.function([debugModeEnabled], { form in
-                return !((form.rowBy(tag: self.debugModeEnabled) as? SwitchRow)?.value ?? false)
-            })
+            $0.hidden = Self.hiddenUnlessDebugMode(debugModeEnabled)
         }
 
         section <<< LabelRow {
             $0.tag = crashAppKey
             $0.title = OBALoc("more_controller.debug_section.crash_row", value: "Crash the app", comment: "Title for a button that will crash the app.")
-            $0.hidden = Condition.function([debugModeEnabled], { form in
-                return !((form.rowBy(tag: self.debugModeEnabled) as? SwitchRow)?.value ?? false) && self.application.shouldShowCrashButton
+            $0.hidden = Condition.function([debugModeEnabled], { [debugModeEnabled, application] form in
+                return !((form.rowBy(tag: debugModeEnabled) as? SwitchRow)?.value ?? false) && application.shouldShowCrashButton
             })
             $0.onCellSelection { [weak self] _, _ in
                 guard let self else { return }
@@ -399,9 +383,7 @@ class SettingsViewController: FormViewController {
             $0.tag = pushIDKey
             $0.title = OBALoc("more_controller.debug_section.push_id.title", value: "Push ID", comment: "Title for the Push Notification ID row in the More Controller")
             $0.value = application.pushService?.pushUserID ?? OBALoc("more_controller.debug_section.push_id.not_available", value: "Not available", comment: "This is displayed instead of the user's push ID if the value is not available.")
-            $0.hidden = Condition.function([debugModeEnabled], { form in
-                return !((form.rowBy(tag: self.debugModeEnabled) as? SwitchRow)?.value ?? false)
-            })
+            $0.hidden = Self.hiddenUnlessDebugMode(debugModeEnabled)
             $0.disabled = true
             $0.onCellSelection { [weak self] _, row in
                 guard let self, let pushUserID = application.pushService?.pushUserID else { return }
@@ -427,12 +409,29 @@ class SettingsViewController: FormViewController {
             $0.title = OBALoc("settings_controller.debug_section.test_device_description", value: "Test Device Name", comment: "Settings > Debug section > Name identifying this device for test push notifications")
             $0.placeholder = OBALoc("settings_controller.debug_section.test_device_description.placeholder", value: "e.g. Aaron's iPhone", comment: "Placeholder example for the test device name field")
             $0.value = application.userDefaults.string(forKey: PushRegistrationManager.testDeviceDescriptionDefaultsKey)
-            $0.hidden = Condition.function([debugModeEnabled], { form in
-                return !((form.rowBy(tag: self.debugModeEnabled) as? SwitchRow)?.value ?? false)
-            })
+            $0.hidden = Self.hiddenUnlessDebugMode(debugModeEnabled)
             $0.onChange { [weak self] row in
-                self?.application.userDefaults.set(row.value, forKey: PushRegistrationManager.testDeviceDescriptionDefaultsKey)
+                guard let self else { return }
+                application.userDefaults.set(row.value, forKey: PushRegistrationManager.testDeviceDescriptionDefaultsKey)
+
+                // Clearing the name revokes test-device status, so test alerts go with it.
+                let trimmed = row.value?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                if trimmed.isEmpty, let testAlertsRow = form.rowBy(tag: AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts) as? SwitchRow {
+                    testAlertsRow.value = false
+                }
             }
+        }
+
+        section <<< SwitchRow {
+            $0.tag = AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts
+            $0.title = OBALoc("settings_controller.alerts_section.display_test_alerts", value: "Display test alerts", comment: "Settings > Debug section > Display test alerts")
+            $0.hidden = Self.hiddenUnlessDebugMode(debugModeEnabled)
+            // Test alerts only display for a named test device (see
+            // AgencyAlertsStore.shouldDisplayTestAlerts), so the switch is inert without a name.
+            $0.disabled = Condition.function([testDeviceDescriptionKey], { [testDeviceDescriptionKey] form in
+                let name = (form.rowBy(tag: testDeviceDescriptionKey) as? TextRow)?.value?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                return name.isEmpty
+            })
         }
 
         return section
@@ -451,9 +450,7 @@ class SettingsViewController: FormViewController {
             }
         }
 
-        section.hidden = application.hasDataToMigrate ? false : Condition.function([debugModeEnabled], { form in
-            return !((form.rowBy(tag: self.debugModeEnabled) as? SwitchRow)?.value ?? false)
-        })
+        section.hidden = application.hasDataToMigrate ? false : Self.hiddenUnlessDebugMode(debugModeEnabled)
 
         return section
     }()

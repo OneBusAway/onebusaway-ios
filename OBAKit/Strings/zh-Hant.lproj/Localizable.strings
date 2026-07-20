@@ -939,17 +939,8 @@
 /* Settings > Accessibility section title */
 "settings_controller.accessibility_section.title" = "輔助使用";
 
-/* Settings > Alerts section > default minutes-before for one-tap departure alarms */
-"settings_controller.alerts_section.default_alarm_lead_time" = "預設提醒提前時間";
-
-/* Settings > Alerts section > Display test alerts */
+/* Settings > Debug section > Display test alerts */
 "settings_controller.alerts_section.display_test_alerts" = "顯示測試警示";
-
-/* Lead-time segment label. %d is minutes. */
-"settings_controller.alerts_section.lead_time_fmt" = "%d 分鐘";
-
-/* Settings > Alerts section title */
-"settings_controller.alerts_section.title" = "營運機構警示";
 
 /* Settings > Debug section > Refresh regions on every launch */
 "settings_controller.debug_section.always_refresh_regions" = "每次啟動時重新整理區域";
