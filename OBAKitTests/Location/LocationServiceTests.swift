@@ -148,6 +148,7 @@ class LocationServiceTests: XCTestCase {
         service.requestInUseAuthorization()
         expect(service.isLocationUseAuthorized).to(beTrue())
         expect(locationManagerMock.locationUpdatesStarted).to(beTrue())
+        expect(locationManagerMock.headingUpdatesStarted).to(beTrue())
 
         del.status = nil
 
@@ -160,12 +161,14 @@ class LocationServiceTests: XCTestCase {
         expect(del.status).toNot(beNil())
         // The raw error is still forwarded to delegates.
         expect((del.error as? CLError)?.code) == .denied
-        // Updates were stopped, as Apple recommends for a denied error.
+        // Both location and heading updates were stopped, as Apple recommends.
         expect(locationManagerMock.locationUpdatesStarted).to(beFalse())
+        expect(locationManagerMock.headingUpdatesStarted).to(beFalse())
     }
 
     /// A subsequent authorization callback (the user re-enabling access) clears the
-    /// latch so location becomes usable again.
+    /// latch so location becomes usable again *and* updates resume, even though the
+    /// coarse authorization status is unchanged.
     func test_deniedError_clearedByAuthorizationChange() {
         let locationManagerMock = AuthorizableLocationManagerMock(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
         let service = LocationService(userDefaults: UserDefaults(), locationManager: locationManagerMock)
@@ -173,10 +176,34 @@ class LocationServiceTests: XCTestCase {
         service.requestInUseAuthorization()
         service.locationManager(CLLocationManager(), didFailWithError: CLError(.denied))
         expect(service.isLocationUseAuthorized).to(beFalse())
+        expect(locationManagerMock.locationUpdatesStarted).to(beFalse())
 
+        // Status stays `.authorizedWhenInUse`, so recovery must come from the latch
+        // clearing rather than an `authorizationStatus` value change.
         service.locationManager(CLLocationManager(), didChangeAuthorization: .authorizedWhenInUse)
 
         expect(service.isLocationUseAuthorized).to(beTrue())
+        expect(locationManagerMock.locationUpdatesStarted).to(beTrue())
+    }
+
+    /// A repeated `denied` error must not re-notify delegates — the latch only
+    /// fires on a real state transition.
+    func test_deniedError_repeated_doesNotReNotify() {
+        let locationManagerMock = AuthorizableLocationManagerMock(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
+        let service = LocationService(userDefaults: UserDefaults(), locationManager: locationManagerMock)
+        let del = LocDelegate()
+        service.addDelegate(del)
+
+        service.requestInUseAuthorization()
+        service.locationManager(CLLocationManager(), didFailWithError: CLError(.denied))
+        expect(service.isLocationUseAuthorized).to(beFalse())
+
+        del.status = nil
+        service.locationManager(CLLocationManager(), didFailWithError: CLError(.denied))
+
+        // Still latched, but no authorization notification for the no-op transition.
+        expect(service.isLocationUseAuthorized).to(beFalse())
+        expect(del.status).to(beNil())
     }
 
     /// Only a `denied` error latches unavailability; transient errors such as
