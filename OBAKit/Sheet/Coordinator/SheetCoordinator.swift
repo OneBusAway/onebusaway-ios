@@ -54,6 +54,15 @@ final class SheetCoordinator<Route: SheetRouteable>: ObservableObject {
         currentDetent = root.detentConfiguration.initialDetent
     }
 
+    // Workaround for a Swift 6.3 (Xcode 26.4) SIL optimizer crash: the
+    // EarlyPerfInliner segfaults inlining into this generic MainActor class's
+    // synthesized deinit under `-O`, so `xcodebuild archive` (Release) fails
+    // while Debug builds and Xcode 27 (Swift 6.4, bug fixed) are fine. Pinning
+    // this empty deinit to `@_optimize(none)` keeps the inliner off it. Remove
+    // once the minimum toolchain is past the fix.
+    @_optimize(none)
+    deinit {}
+
     // MARK: - Unified navigation
 
     /// Pushes a route on whichever layer it prefers.

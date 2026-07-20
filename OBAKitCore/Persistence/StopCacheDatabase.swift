@@ -12,15 +12,15 @@ import GRDB
 
 /// Manages the SQLite database used to cache transit stops for offline access and faster map rendering.
 /// See: https://github.com/OneBusAway/onebusaway-ios/issues/62
-public final class StopCacheDatabase: @unchecked Sendable {
+public final class StopCacheDatabase: Sendable {
 
     /// The underlying GRDB database queue for serialized access.
     let dbQueue: DatabaseQueue
 
-    /// Creates a persistent database at the specified directory.
+    /// Creates a persistent database at the specified path.
     /// If the database file is corrupted, it is deleted and recreated since this is a cache.
-    /// - Parameter databasePath: The directory in which to create the database file.
-    ///   Defaults to the app's Application Support directory.
+    /// - Parameter databasePath: The full path to the database file.
+    ///   Defaults to `stop_cache.sqlite` in the app's Application Support directory.
     public init(databasePath: String? = nil) throws {
         let path: String
         if let databasePath {

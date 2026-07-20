@@ -51,5 +51,41 @@ class RegionCustomFormTests: XCTestCase {
         expect(self.normalize("   ")).to(beNil())
         expect(self.normalize("ftp://example.com")).to(beNil())
         expect(self.normalize("https://")).to(beNil())
+
+        // Regression: stripping "/api/where" from input where "api" parses as
+        // the host (e.g. "api/where" -> "https://api/where") must not leave a
+        // scheme-only, host-less URL like "https:" behind unvalidated.
+        expect(self.normalize("api/where")).to(beNil())
+        expect(self.normalize("https://api/where")).to(beNil())
+    }
+
+    // MARK: - normalizeURL (general, no /api/where handling)
+
+    private func normalizeGeneral(_ string: String) -> String? {
+        RegionCustomForm.normalizeURL(string)?.absoluteString
+    }
+
+    func test_normalizeURL_prependsHTTPS() {
+        expect(self.normalizeGeneral("obaco.example.com")) == "https://obaco.example.com"
+    }
+
+    func test_normalizeURL_preservesExplicitScheme() {
+        expect(self.normalizeGeneral("http://example.com")) == "http://example.com"
+    }
+
+    func test_normalizeURL_stripsWhitespaceAndTrailingSlashes() {
+        expect(self.normalizeGeneral("  analytics.example.com/ \n")) == "https://analytics.example.com"
+    }
+
+    /// Unlike the Base URL field, general URLs keep an `/api/where` path verbatim.
+    func test_normalizeURL_doesNotStripAPIWhere() {
+        expect(self.normalizeGeneral("example.com/api/where")) == "https://example.com/api/where"
+    }
+
+    func test_normalizeURL_rejectsInvalidInput() {
+        expect(self.normalizeGeneral("")).to(beNil())
+        expect(self.normalizeGeneral("   ")).to(beNil())
+        expect(self.normalizeGeneral("ftp://example.com")).to(beNil())
+        expect(self.normalizeGeneral("https://")).to(beNil())
     }
 }

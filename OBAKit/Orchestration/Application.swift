@@ -74,7 +74,8 @@ public class Application: CoreApplication, PushServiceDelegate {
         bundle: applicationBundle,
         userDefaults: userDefaults,
         obacoService: obacoService,
-        analytics: analytics
+        analytics: analytics,
+        appLaunchCount: { [userDataStore] in userDataStore.appLaunchCount }
     )
 
     /// Responsible for figuring out how to navigate between view controllers.
@@ -284,6 +285,32 @@ public class Application: CoreApplication, PushServiceDelegate {
     /// An optional property that contains this app's configured push notifications service.
     public private(set) var pushService: PushService?
 
+    /// Keeps this device's APNs token registered with the current region's OBACloud server so
+    /// agencies can send service-alert push notifications to it. See #1204.
+    public private(set) lazy var pushRegistrationManager = PushRegistrationManager(
+        obacoServiceProvider: { [weak self] in self?.obacoService },
+        userDefaults: userDefaults,
+        testDeviceProvider: { [weak self] in
+            // "Test users only" audience: agencies preview an alert push against flagged
+            // devices before sending it to everyone. Debug builds always qualify; release
+            // builds qualify via the Debug Mode switch in Settings. Either way, the device
+            // only registers as a test device once a Test Device Name is set in the Debug
+            // settings.
+            #if DEBUG
+            return true
+            #else
+            return self?.userDataStore.debugMode ?? false
+            #endif
+        },
+        testDeviceDescriptionProvider: { [weak self] in
+            self?.userDefaults.string(forKey: PushRegistrationManager.testDeviceDescriptionDefaultsKey)
+        },
+        currentRegionIdentifierProvider: { [weak self] in self?.currentRegionIdentifier },
+        errorReporter: { [weak self] error in
+            self?.analytics?.reportError?(error)
+        }
+    )
+
     private func configurePushNotifications(launchOptions: [AnyHashable: Any]) {
         guard let pushServiceProvider = config.pushServiceProvider else { return }
 
@@ -315,6 +342,11 @@ public class Application: CoreApplication, PushServiceDelegate {
             }
             self.viewRouter.navigateTo(stopID: pushBody.stopID, from: topViewController)
         }
+    }
+
+    public func pushService(_ pushService: PushService, receivedDeviceToken token: String) {
+        pushRegistrationManager.updateDeviceToken(token)
+        Task { await pushRegistrationManager.registerIfNeeded() }
     }
 
     /// Deletes the stored alarm whose deep-link identity matches `pushBody`, so the stop
@@ -448,6 +480,15 @@ public class Application: CoreApplication, PushServiceDelegate {
         #endif
 
         alertsStore.checkForUpdates()
+
+        // Re-register the push token with OBACloud so the server's inactivity prune never
+        // drops this device, and so locale changes propagate. The manager dedupes, so this
+        // only hits the network when something changed or the last POST is older than
+        // PushRegistrationManager.refreshInterval. Skipped on the Simulator and in apps
+        // without a configured push provider, where pushService is never set.
+        if pushService != nil {
+            Task { await pushRegistrationManager.refreshRegistration() }
+        }
 
         drainPendingUIPresentations()
 
@@ -599,8 +640,16 @@ public class Application: CoreApplication, PushServiceDelegate {
                     // Create region provider
                     let regionProvider = RegionPickerCoordinator(regionsService: self.regionsService, userDataStore: self.userDataStore)
 
-                    // Construct Region from URL data
-                    let currentRegion = Region(name: regionData.name, OBABaseURL: regionData.obaURL, coordinateRegion: adjustedRegionCoordinate, contactEmail: "example@example.com", openTripPlannerURL: regionData.otpURL)
+                    // Construct Region from URL data. umamiAnalytics applies the
+                    // both-or-nothing rule; no rule logic lives here.
+                    let currentRegion = Region(
+                        name: regionData.name,
+                        OBABaseURL: regionData.obaURL,
+                        coordinateRegion: adjustedRegionCoordinate,
+                        contactEmail: "example@example.com",
+                        openTripPlannerURL: regionData.otpURL,
+                        sidecarBaseURL: regionData.sidecarURL,
+                        umamiAnalytics: regionData.umamiAnalytics)
 
                     // Add and set current region
                     try await regionProvider.add(customRegion: currentRegion)
@@ -659,6 +708,10 @@ public class Application: CoreApplication, PushServiceDelegate {
                 analytics.reportEvent(pageURL: "app://localhost/regions", label: AnalyticsLabels.manuallySelectedRegionChanged, value: region.name)
             }
         }
+
+        // By the time updatedRegion fires, willUpdateToRegion has already rebuilt
+        // obacoService for the new region, so this registers the token there.
+        Task { await pushRegistrationManager.registerIfNeeded() }
     }
 
     public func regionsService(_ service: RegionsService, displayError error: Error) {

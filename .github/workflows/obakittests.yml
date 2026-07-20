@@ -45,11 +45,24 @@ jobs:
     # change. The previous `**/*.yml` glob also matched vendored yml under
     # .build/checkouts and caused needless cache misses (→ full rebuilds).
     - uses: actions/cache@v4
+      id: deriveddata-cache
       with:
         path: DerivedData
         key: ${{ runner.os }}-deriveddata-${{ hashFiles('**/Package.resolved', 'project.yml', 'Apps/**/project.yml', '.github/workflows/obakittests.yml') }}
         restore-keys: |
           ${{ runner.os }}-deriveddata-
+
+    # A restore-keys fallback restores DerivedData built against a different
+    # dependency graph. Freshly resolved package checkouts then carry newer
+    # mtimes than the cached explicit precompiled modules, and swift-frontend
+    # hard-errors ("file ... has been modified since the module file was
+    # built", exit 65) instead of rebuilding the stale .pcm. Purge the
+    # precompiled modules on inexact restores — they rebuild in a fraction of
+    # the build step, unlike the rest of DerivedData. (Observed 2026-07-19 on
+    # the GRDB 6→7 pin bump, matching the same local failure mode.)
+    - name: Purge stale precompiled modules on inexact cache restore
+      if: steps.deriveddata-cache.outputs.cache-hit != 'true'
+      run: rm -rf DerivedData/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules
 
     # Pin Xcode deterministically so the set of bundled simulator runtimes is
     # known, instead of relying on `xcode-select` against whatever the image ships.

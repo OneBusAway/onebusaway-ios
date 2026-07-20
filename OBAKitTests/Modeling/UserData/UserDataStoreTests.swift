@@ -309,14 +309,17 @@ class UserDefaultsStoreTests: OBATestCase {
 
     // MARK: - Default Alarm Lead Time
 
-    func test_defaultAlarmLeadTime_defaultValueAndRoundTrip() {
-        expect(self.userDefaultsStore.defaultAlarmLeadTimeMinutes) == 5
-
-        userDefaultsStore.defaultAlarmLeadTimeMinutes = 10
+    func test_defaultAlarmLeadTime_is10Minutes() {
         expect(self.userDefaultsStore.defaultAlarmLeadTimeMinutes) == 10
+    }
+
+    func test_defaultAlarmLeadTime_ignoresAndClearsLegacyStoredValue() {
+        userDefaults.set(2, forKey: "UserDataStore.defaultAlarmLeadTimeMinutes")
 
         let newStore = UserDefaultsStore(userDefaults: userDefaults)
+
         expect(newStore.defaultAlarmLeadTimeMinutes) == 10
+        expect(self.userDefaults.object(forKey: "UserDataStore.defaultAlarmLeadTimeMinutes")).to(beNil())
     }
 
 }
