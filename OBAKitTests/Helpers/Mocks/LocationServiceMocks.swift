@@ -42,10 +42,6 @@ public class LocationManagerMock: NSObject, LocationManager {
         return .notDetermined
     }
 
-    public var isLocationServicesEnabled: Bool {
-        return true
-    }
-
     @available(iOS 14, *)
     public var accuracyAuthorization: CLAccuracyAuthorization {
         return .fullAccuracy

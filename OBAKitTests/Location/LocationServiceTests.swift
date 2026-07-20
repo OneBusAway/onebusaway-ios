@@ -132,4 +132,64 @@ class LocationServiceTests: XCTestCase {
 
         expect(delError) == err
     }
+
+    // MARK: - Denied error handling
+
+    /// A `denied` error means location is unusable even though `authorizationStatus`
+    /// still reads as authorized (e.g. Location Services switched off system-wide).
+    /// The service should latch that, report location unavailable, stop updates, and
+    /// re-notify delegates so the UI can hide its location affordances.
+    func test_deniedError_marksLocationUnavailable() {
+        let locationManagerMock = AuthorizableLocationManagerMock(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
+        let service = LocationService(userDefaults: UserDefaults(), locationManager: locationManagerMock)
+        let del = LocDelegate()
+        service.addDelegate(del)
+
+        service.requestInUseAuthorization()
+        expect(service.isLocationUseAuthorized).to(beTrue())
+        expect(locationManagerMock.locationUpdatesStarted).to(beTrue())
+
+        del.status = nil
+
+        service.locationManager(CLLocationManager(), didFailWithError: CLError(.denied))
+
+        // Per-app authorization is unchanged, but location is now reported unavailable.
+        expect(service.authorizationStatus) == .authorizedWhenInUse
+        expect(service.isLocationUseAuthorized).to(beFalse())
+        // Delegates were re-notified so UI (locate button, user dot) can update.
+        expect(del.status).toNot(beNil())
+        // The raw error is still forwarded to delegates.
+        expect((del.error as? CLError)?.code) == .denied
+        // Updates were stopped, as Apple recommends for a denied error.
+        expect(locationManagerMock.locationUpdatesStarted).to(beFalse())
+    }
+
+    /// A subsequent authorization callback (the user re-enabling access) clears the
+    /// latch so location becomes usable again.
+    func test_deniedError_clearedByAuthorizationChange() {
+        let locationManagerMock = AuthorizableLocationManagerMock(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
+        let service = LocationService(userDefaults: UserDefaults(), locationManager: locationManagerMock)
+
+        service.requestInUseAuthorization()
+        service.locationManager(CLLocationManager(), didFailWithError: CLError(.denied))
+        expect(service.isLocationUseAuthorized).to(beFalse())
+
+        service.locationManager(CLLocationManager(), didChangeAuthorization: .authorizedWhenInUse)
+
+        expect(service.isLocationUseAuthorized).to(beTrue())
+    }
+
+    /// Only a `denied` error latches unavailability; transient errors such as
+    /// `locationUnknown` must not disable location.
+    func test_nonDeniedError_doesNotMarkUnavailable() {
+        let locationManagerMock = AuthorizableLocationManagerMock(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
+        let service = LocationService(userDefaults: UserDefaults(), locationManager: locationManagerMock)
+
+        service.requestInUseAuthorization()
+        expect(service.isLocationUseAuthorized).to(beTrue())
+
+        service.locationManager(CLLocationManager(), didFailWithError: CLError(.locationUnknown))
+
+        expect(service.isLocationUseAuthorized).to(beTrue())
+    }
 }
