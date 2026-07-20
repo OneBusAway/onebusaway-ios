@@ -187,6 +187,12 @@ struct MapPanelRootView: View {
                 mapViewModel.onAppBecameActive()
             }
         }
+        .onChange(of: mapViewModel.didReceiveInitialLocation) { _, received in
+            // Recenter once on the first fix, so granting permission after
+            // launch moves the camera off the last region the user set.
+            guard received else { return }
+            centerOnUser()
+        }
     }
 
     /// Extracted from the `.floatingSheet` closure to keep `body` under Swift's

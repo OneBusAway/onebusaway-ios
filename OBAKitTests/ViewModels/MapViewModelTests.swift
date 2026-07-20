@@ -528,6 +528,51 @@ class MapViewModelTests: OBATestCase {
         expect(viewModel.zoomLevelForCurrentLocation()) == 11
     }
 
+    // MARK: - Initial Location Recenter
+
+    /// The first `locationChanged` delegate callback latches
+    /// `didReceiveInitialLocation` — the one-shot signal `MapPanelRootView`
+    /// uses to recenter the map on the user after permission is granted
+    /// post-launch. Mirrors the UIKit path's
+    /// `programmaticallyUpdateVisibleMapRegion`, which runs off the same
+    /// delegate callback and is gated by `initialMapChangeMade`.
+    @MainActor
+    func test_didReceiveInitialLocation_latchesOnFirstLocationChange() async {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader)
+        let viewModel = MapViewModel(application: app)
+
+        expect(viewModel.didReceiveInitialLocation) == false
+
+        viewModel.locationService(app.locationService, locationChanged: TestData.mockSeattleLocation)
+        for _ in 0..<5 { await Task.yield() }
+
+        expect(viewModel.didReceiveInitialLocation) == true
+    }
+
+    /// The latch fires exactly once: a second `locationChanged` after the flag
+    /// is set publishes no further change, so the view's `.onChange` recenter
+    /// stays a one-time event and doesn't yank the camera back on every
+    /// subsequent GPS update.
+    @MainActor
+    func test_didReceiveInitialLocation_publishesOnlyOnce() async {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader)
+        let viewModel = MapViewModel(application: app)
+
+        var observed: [Bool] = []
+        let cancellable = viewModel.$didReceiveInitialLocation.sink { observed.append($0) }
+        defer { cancellable.cancel() }
+
+        viewModel.locationService(app.locationService, locationChanged: TestData.mockSeattleLocation)
+        viewModel.locationService(app.locationService, locationChanged: TestData.mockSeattleLocation)
+        for _ in 0..<5 { await Task.yield() }
+
+        // Initial `false` plus a single `true` transition — the second callback
+        // is a no-op because the flag is already latched.
+        expect(observed) == [false, true]
+    }
+
     // MARK: - TopPillState
 
     /// Zoom warning wins over permission state so tapping the pill still routes

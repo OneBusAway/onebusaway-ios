@@ -62,6 +62,10 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
     /// coarse `locationAuthStatus` changing (e.g. after "Allow Once").
     @Published private(set) var accuracyAuthorization: CLAccuracyAuthorization
 
+    /// Latches `true` on the first location fix, so the map recenters on the
+    /// user exactly once — e.g. after permission is granted post-launch.
+    @Published private(set) var didReceiveInitialLocation = false
+
     // MARK: - Survey Prompt
 
     /// Emits the survey to present when one is eligible and found. One-shot per
@@ -325,6 +329,14 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
     nonisolated func locationService(_ service: LocationService, accuracyAuthorizationChanged accuracyAuthorization: CLAccuracyAuthorization) {
         Task { @MainActor in
             self.accuracyAuthorization = accuracyAuthorization
+        }
+    }
+
+    /// Latches `didReceiveInitialLocation` on the first fix; later fixes are no-ops.
+    nonisolated func locationService(_ service: LocationService, locationChanged location: CLLocation) {
+        Task { @MainActor in
+            guard !self.didReceiveInitialLocation else { return }
+            self.didReceiveInitialLocation = true
         }
     }
 }
