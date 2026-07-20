@@ -81,11 +81,13 @@ public class PushService: NSObject {
     // MARK: - PushServiceProvider Callbacks
 
     private func notificationReceivedHandler(message: String, additionalData: [AnyHashable: Any]?) {
-        guard
-            let additionalData = additionalData,
-            additionalData.keys.count == 1,
-            let key = additionalData.keys.first as? String
-        else {
+        // Remote-notification `userInfo` always includes an `aps` entry alongside
+        // any custom data key (see OBACloudPushService.userNotificationCenter(_:didReceive:...),
+        // which forwards the entire UNNotificationContent.userInfo). Routing must
+        // therefore count only the custom keys, ignoring `aps`, rather than requiring
+        // the whole dictionary to contain exactly one key.
+        let customKeys = (additionalData ?? [:]).keys.compactMap { $0 as? String }.filter { $0 != "aps" }
+        guard let additionalData, customKeys.count == 1, let key = customKeys.first else {
             displayMessage(message)
 
             return
