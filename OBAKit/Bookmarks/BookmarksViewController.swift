@@ -218,6 +218,16 @@ class BookmarksViewController: UIHostingController<BookmarksRootView>,
             regionID: application.currentRegion?.regionIdentifier ?? 0
         )
 
+        // Tapping Track again on a bookmark that is already tracked — or tracking
+        // the same trip from the stop page — would otherwise mint a second
+        // activity for one stop, leaving the user with duplicate Lock Screen
+        // cards and duplicate OBACloud push registrations.
+        if Activity<TripAttributes>.running(matching: staticData) != nil {
+            Logger.info("Live Activity already running for stop \(staticData.stopID) route \(staticData.routeShortName); not starting a duplicate.")
+            showLiveActivityStartedToast()
+            return
+        }
+
         guard let contentState = buildContentState(from: arrivalDepartures) else {
             // Shouldn't happen — the context menu only offers Track once arrival
             // data has loaded — but if data was cleared between the menu render
@@ -236,12 +246,19 @@ class BookmarksViewController: UIHostingController<BookmarksRootView>,
             )
             trackLiveActivity(activity, arrivalDepartures: arrivalDepartures)
             Logger.info("Started Live Activity with ID: \(activity.id)")
-            let message = OBALoc("live_activity.started.title", value: "Tracking on Lock Screen", comment: "Toast shown when a Live Activity starts on the Lock Screen")
-            ProgressHUD.showSuccessAndDismiss(message: message)
+            showLiveActivityStartedToast()
         } catch {
             Logger.error("Failed to start Live Activity: \(error)")
             showLiveActivityErrorAlert()
         }
+    }
+
+    /// Shared by the start path and the already-tracking guard, so a duplicate
+    /// tap gets the same confirmation the first tap did rather than silently
+    /// appearing to do nothing.
+    private func showLiveActivityStartedToast() {
+        let message = OBALoc("live_activity.started.title", value: "Tracking on Lock Screen", comment: "Toast shown when a Live Activity starts on the Lock Screen")
+        ProgressHUD.showSuccessAndDismiss(message: message)
     }
 
     func updateRunningLiveActivities() {
@@ -249,10 +266,15 @@ class BookmarksViewController: UIHostingController<BookmarksRootView>,
         for activity in activities {
             let staticData = activity.attributes.staticData
             let matchingBookmark = application.userDataStore.bookmarks.first(where: { bookmark in
+                // Delegates to the shared identity rule so this match can't
+                // drift from the start paths' duplicate guard.
                 let keys = Self.liveActivityKeys(for: bookmark)
-                return bookmark.stopID == staticData.stopID &&
-                       keys.routeShortName == staticData.routeShortName &&
-                       keys.routeHeadsign == staticData.routeHeadsign
+                let bookmarkIdentity = TripAttributes.StaticData(
+                    routeShortName: keys.routeShortName,
+                    routeHeadsign: keys.routeHeadsign,
+                    stopID: bookmark.stopID
+                )
+                return bookmarkIdentity.tracksSameTrip(as: staticData)
             })
             let arrivalDepartures = matchingBookmark.map { viewModel.arrivalDepartures(for: $0) } ?? []
 

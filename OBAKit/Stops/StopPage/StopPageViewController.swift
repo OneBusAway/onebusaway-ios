@@ -406,6 +406,16 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
             regionID: application.currentRegion?.regionIdentifier ?? 0
         )
 
+        // The same trip can be started from here and from the bookmarks list, so
+        // this guard has to live on both start paths — otherwise one stop ends up
+        // with two Lock Screen cards and two OBACloud push registrations.
+        if Activity<TripAttributes>.running(matching: staticData) != nil {
+            Logger.info("Live Activity already running for stop \(staticData.stopID) route \(staticData.routeShortName); not starting a duplicate.")
+            // Re-show the confirmation rather than appearing to do nothing.
+            viewModel.signalLiveActivityStarted()
+            return
+        }
+
         guard let contentState = buildLiveActivityContentState(for: departure) else {
             Logger.error("Failed to build content state for Live Activity")
             return
