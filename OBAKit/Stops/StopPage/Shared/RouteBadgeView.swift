@@ -27,6 +27,7 @@ struct RouteBadgeView: View {
     @ScaledMetric(relativeTo: .body) private var scale: CGFloat = 1
     @ScaledMetric(relativeTo: .body) private var barWidth: CGFloat = 5
     @Environment(\.colorSchemeContrast) private var contrast
+    @Environment(\.layoutDirection) private var layoutDirection
 
     private var resolvedTextColor: Color {
         RouteBadgeStyle.textColor(routeColor: routeColor, routeTextColor: routeTextColor, contrast: contrast)
@@ -64,19 +65,28 @@ struct RouteBadgeView: View {
     }
 
     /// Same frame as the standard badge so departure rows keep their column
-    /// alignment when the setting flips.
+    /// alignment when the setting flips. The thin color bar is drawn as a
+    /// leading overlay offset into the row's leading gap (negative leading), so
+    /// the route name keeps the full badge width instead of being squeezed by
+    /// the bar + spacing — otherwise `minimumScaleFactor` shrinks it to an
+    /// illegible size for names like "C Line".
     private var reducedBody: some View {
-        HStack(spacing: 6 * scale) {
-            Capsule(style: .continuous)
-                .fill(routeColor)
-                .frame(width: barWidth, height: size * scale)
-            Text(routeShortName)
-                .font(badgeFont)
-                .monospacedDigit()
-                .foregroundStyle(.primary)
-                .minimumScaleFactor(0.6)
-                .lineLimit(1)
-            Spacer(minLength: 0)
-        }
+        // `offset(x:)` is a physical shift, so the sign is flipped for RTL: the
+        // bar must move outward past the (right-hand) leading edge, not inward
+        // over the text.
+        let barOffset = (layoutDirection == .rightToLeft ? 1 : -1) * (barWidth + 6 * scale)
+        return Text(routeShortName)
+            .font(badgeFont)
+            .monospacedDigit()
+            .foregroundStyle(.primary)
+            .minimumScaleFactor(0.6)
+            .lineLimit(1)
+            .frame(width: size * scale, height: size * scale, alignment: .leading)
+            .overlay(alignment: .leading) {
+                Capsule(style: .continuous)
+                    .fill(routeColor)
+                    .frame(width: barWidth, height: size * scale)
+                    .offset(x: barOffset)
+            }
     }
 }
