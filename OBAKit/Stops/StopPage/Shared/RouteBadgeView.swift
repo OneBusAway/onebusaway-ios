@@ -27,6 +27,7 @@ struct RouteBadgeView: View {
     @ScaledMetric(relativeTo: .body) private var scale: CGFloat = 1
     @ScaledMetric(relativeTo: .body) private var barWidth: CGFloat = 5
     @Environment(\.colorSchemeContrast) private var contrast
+    @Environment(\.layoutDirection) private var layoutDirection
 
     private var resolvedTextColor: Color {
         RouteBadgeStyle.textColor(routeColor: routeColor, routeTextColor: routeTextColor, contrast: contrast)
@@ -70,7 +71,11 @@ struct RouteBadgeView: View {
     /// the bar + spacing — otherwise `minimumScaleFactor` shrinks it to an
     /// illegible size for names like "C Line".
     private var reducedBody: some View {
-        Text(routeShortName)
+        // `offset(x:)` is a physical shift, so the sign is flipped for RTL: the
+        // bar must move outward past the (right-hand) leading edge, not inward
+        // over the text.
+        let barOffset = (layoutDirection == .rightToLeft ? 1 : -1) * (barWidth + 6 * scale)
+        return Text(routeShortName)
             .font(badgeFont)
             .monospacedDigit()
             .foregroundStyle(.primary)
@@ -81,7 +86,7 @@ struct RouteBadgeView: View {
                 Capsule(style: .continuous)
                     .fill(routeColor)
                     .frame(width: barWidth, height: size * scale)
-                    .offset(x: -(barWidth + 6 * scale))
+                    .offset(x: barOffset)
             }
     }
 }
