@@ -36,6 +36,11 @@ public protocol UserDataStore: NSObjectProtocol {
 
     var debugMode: Bool { get set }
 
+    /// Whether the stop page renders route badges in reduced-color form
+    /// (thin route-color bar + label-colored text). Surfaced in
+    /// Settings > Accessibility.
+    var stopUIReducedColors: Bool { get set }
+
     // MARK: - Bookmark Groups
 
     /// Retrieves a list of `BookmarkGroup` objects.
@@ -400,13 +405,23 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         static let walkingSpeedMetersPerSecond = "UserDataStore.walkingSpeedMetersPerSecond"
         static let walkingSpeedSource = "UserDataStore.walkingSpeedSource"
         static let defaultAlarmLeadTimeMinutes = "UserDataStore.defaultAlarmLeadTimeMinutes"
+        static let stopUIReducedColors = UserDefaultsStore.stopUIReducedColorsKey
     }
+
+    /// The defaults key backing `stopUIReducedColors`, public so the stop
+    /// page's `@AppStorage` readers and the Settings form reference the same
+    /// string. Deliberately dot-free, unlike its `UserDataStore.`-prefixed
+    /// neighbors: `@AppStorage` observes the key via KVO, which treats dots
+    /// as key-path separators and silently never fires. See
+    /// docs/superpowers/specs/2026-07-20-stop-ui-accessibility-design.md §3.
+    public static let stopUIReducedColorsKey = "stopUIReducedColors"
 
     public init(userDefaults: UserDefaults) {
         self.userDefaults = userDefaults
 
         self.userDefaults.register(defaults: [
             UserDefaultsKeys.debugMode: false,
+            UserDefaultsKeys.stopUIReducedColors: false,
             UserDefaultsKeys.walkingSpeedMetersPerSecond: WalkingSpeed.defaultMetersPerSecond,
             UserDefaultsKeys.walkingSpeedSource: WalkingSpeedSource.manual.rawValue
         ])
@@ -424,6 +439,17 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         }
         set {
             userDefaults.set(newValue, forKey: UserDefaultsKeys.debugMode)
+        }
+    }
+
+    // MARK: - Stop UI Reduced Colors
+
+    public var stopUIReducedColors: Bool {
+        get {
+            return userDefaults.bool(forKey: UserDefaultsKeys.stopUIReducedColors)
+        }
+        set {
+            userDefaults.set(newValue, forKey: UserDefaultsKeys.stopUIReducedColors)
         }
     }
 

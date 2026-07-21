@@ -201,6 +201,21 @@ class UserDefaultsStoreTests: OBATestCase {
         expect(newStore.debugMode).to(beTrue())
     }
 
+    // MARK: - Stop UI Reduced Colors
+
+    func test_stopUIReducedColors_defaultValue() {
+        expect(self.userDefaultsStore.stopUIReducedColors).to(beFalse())
+    }
+
+    func test_stopUIReducedColors_setValue_persistsUnderTheAppStorageKey() {
+        userDefaultsStore.stopUIReducedColors = true
+        expect(self.userDefaultsStore.stopUIReducedColors).to(beTrue())
+        // The @AppStorage readers and the Eureka form must see the same key,
+        // and it must stay dot-free or KVO observation silently stops firing.
+        expect(UserDefaultsStore.stopUIReducedColorsKey) == "stopUIReducedColors"
+        expect(self.userDefaultsStore.userDefaults.bool(forKey: UserDefaultsStore.stopUIReducedColorsKey)).to(beTrue())
+    }
+
     // MARK: - Survey Properties
 
     func test_surveyUserIdentifier_generatesUUID() {

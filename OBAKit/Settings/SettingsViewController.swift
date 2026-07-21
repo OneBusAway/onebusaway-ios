@@ -64,7 +64,8 @@ class SettingsViewController: FormViewController {
             debugModeEnabled: application.userDataStore.debugMode,
             alwaysShowSurveysOnStops: application.userDataStore.alwaysShowSurveysOnStops,
             walkingSpeedMetersPerSecondKey: snapToPreset(application.userDataStore.walkingSpeedMetersPerSecond),
-            walkingSpeedUseHealthKitKey: application.userDataStore.walkingSpeedSource == .healthKit
+            walkingSpeedUseHealthKitKey: application.userDataStore.walkingSpeedSource == .healthKit,
+            stopUIReducedColorsTag: application.userDataStore.stopUIReducedColors
         ])
     }
 
@@ -108,6 +109,10 @@ class SettingsViewController: FormViewController {
 
         if let debugEnabled = values[debugModeEnabled] as? Bool {
             application.userDataStore.debugMode = debugEnabled
+        }
+
+        if let reducedColors = values[stopUIReducedColorsTag] as? Bool {
+            application.userDataStore.stopUIReducedColors = reducedColors
         }
 
         if let alwaysShowSurveys = values[alwaysShowSurveysOnStops] as? Bool {
@@ -217,6 +222,11 @@ class SettingsViewController: FormViewController {
             $0.title = OBALoc("settings_controller.accessibility_section.show_stop_annotation_labels", value: "Show route labels on the map", comment: "Settings > Accessibility section > Show route labels on the map")
         }
 
+        section <<< SwitchRow {
+            $0.tag = stopUIReducedColorsTag
+            $0.title = OBALoc("settings_controller.accessibility_section.reduce_stop_colors", value: "Reduce colors on stop page", comment: "Settings > Accessibility section > Toggle that renders stop page route badges as a thin color bar beside plain text instead of a colored square")
+        }
+
         return section
     }()
 
@@ -224,6 +234,7 @@ class SettingsViewController: FormViewController {
 
     private let walkingSpeedMetersPerSecondKey = "walkingSpeedMetersPerSecond"
     private let walkingSpeedUseHealthKitKey = "walkingSpeedUseHealthKit"
+    private let stopUIReducedColorsTag = UserDefaultsStore.stopUIReducedColorsKey
 
     private func snapToPreset(_ speed: Double) -> Double {
         WalkingSpeedPreset.nearest(to: speed).rawValue

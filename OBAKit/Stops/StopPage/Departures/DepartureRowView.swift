@@ -36,6 +36,7 @@ struct DepartureRowView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.obaFormatters) private var formatters
     @ScaledMetric(relativeTo: .body) private var alarmCircleSize: CGFloat = 34
+    @AppStorage(UserDefaultsStore.stopUIReducedColorsKey) private var reducedColors = false
 
     private var dimmed: Bool { style == .past }
 
@@ -108,7 +109,9 @@ struct DepartureRowView: View {
     private var routeBadge: some View {
         RouteBadgeView(
             routeShortName: departure.routeShortName,
-            routeColor: Color(uiColor: departure.route.color ?? ThemeColors.shared.brand)
+            routeColor: Color(uiColor: departure.route.color ?? ThemeColors.shared.brand),
+            routeTextColor: departure.route.textColor.map { Color(uiColor: $0) },
+            reducedColors: reducedColors
         )
     }
 
