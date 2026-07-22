@@ -25,11 +25,6 @@ public protocol LocationManager {
     /// to try to mock class functions.
     var authorizationStatus: CLAuthorizationStatus { get }
 
-    /// Replaces the CLLocationManager class func of the same name. This is used
-    /// to facilitate easier testing on a per-instance basis instead of having
-    /// to try to mock class functions.
-    var isLocationServicesEnabled: Bool { get }
-
     @available(iOS 14, *)
     var accuracyAuthorization: CLAccuracyAuthorization { get }
 
@@ -52,10 +47,6 @@ public protocol LocationManager {
 
 extension CLLocationManager: LocationManager {
     // nop. CLLocationManager already implements all of the protocol methods.
-
-    public var isLocationServicesEnabled: Bool {
-        return CLLocationManager.locationServicesEnabled()
-    }
 
     public var isHeadingAvailable: Bool {
         return CLLocationManager.headingAvailable()
