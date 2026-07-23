@@ -11,6 +11,64 @@ import UIKit
 import OBAKitCore
 import FloatingPanel
 
+// MARK: - TripProgressViewModel
+
+/// Testable value type encapsulating the "Stop X of Y" header data.
+/// Returns `nil` when progress data is unavailable and the header should be hidden.
+struct TripProgressViewModel {
+    let stopCountText: String
+    let etaText: String?
+    let progress: Float
+
+    init?(closestStopIndex: Int, totalStops: Int, userStopIndex: Int?, arrivalDepartureMinutes: Int?) {
+        guard totalStops > 0 else { return nil }
+        let currentStopNumber = closestStopIndex + 1
+        progress = Float(currentStopNumber) / Float(totalStops)
+        stopCountText = String(
+            format: OBALoc(
+                "trip_progress.stop_count_fmt",
+                value: "Stop %1$d of %2$d",
+                comment: "Shows the current stop position. e.g. Stop 5 of 18"
+            ),
+            currentStopNumber, totalStops
+        )
+        if let userStopIndex {
+            if userStopIndex < closestStopIndex {
+                etaText = OBALoc(
+                    "trip_progress.passed_your_stop",
+                    value: "Passed your stop",
+                    comment: "Shown when the vehicle has already passed the user's destination stop"
+                )
+            } else if userStopIndex == closestStopIndex {
+                etaText = OBALoc(
+                    "trip_progress.arriving_now",
+                    value: "Arriving now",
+                    comment: "Shown when the vehicle is arriving at the user's stop"
+                )
+            } else if let minutes = arrivalDepartureMinutes, minutes > 0 {
+                etaText = String(
+                    format: OBALoc(
+                        "trip_progress.eta_to_stop_fmt",
+                        value: "~%d min to your stop",
+                        comment: "Estimated time of arrival to the user's stop. e.g. ~8 min to your stop"
+                    ),
+                    minutes
+                )
+            } else {
+                etaText = OBALoc(
+                    "trip_progress.arriving_now",
+                    value: "Arriving now",
+                    comment: "Shown when the vehicle is arriving at the user's stop"
+                )
+            }
+        } else {
+            etaText = nil
+        }
+    }
+}
+
+// MARK: -
+
 /// Displays a list of stops for the trip corresponding to an `ArrivalDeparture` object.
 class TripFloatingPanelController: UIViewController,
     AppContext,
@@ -24,6 +82,7 @@ class TripFloatingPanelController: UIViewController,
         didSet {
             if isLoadedAndOnScreen {
                 listView.applyData(animated: false)
+                updateProgressView()
             }
         }
     }
@@ -37,6 +96,11 @@ class TripFloatingPanelController: UIViewController,
     }
 
     weak var parentTripViewController: TripViewController?
+
+    /// Tracks whether the floating panel is expanded enough to show the progress header.
+    /// Combined with data availability in `updateProgressView` to give `tripProgressWrapper`
+    /// a single source of truth for its hidden state.
+    private var isPanelExpandedEnoughForProgress = false
 
     // MARK: - Init/Deinit
 
@@ -87,6 +151,7 @@ class TripFloatingPanelController: UIViewController,
         super.viewWillAppear(animated)
 
         listView.applyData(animated: false)
+        updateProgressView()
     }
 
     // MARK: - Public Methods
@@ -119,20 +184,25 @@ class TripFloatingPanelController: UIViewController,
         switch panelState {
         case .tip:
             self.separatorView.isHidden = true
+            self.isPanelExpandedEnoughForProgress = false
             self.stopArrivalView.normalInfoStack.forEach { $0.isHidden = isAccessibility }
             self.stopArrivalView.accessibilityInfoStack.forEach { $0.isHidden = true }
         case .half:
             self.separatorView.isHidden = false
+            self.isPanelExpandedEnoughForProgress = true
             self.stopArrivalView.normalInfoStack.forEach { $0.isHidden = isAccessibility }
             self.stopArrivalView.accessibilityInfoStack.forEach { $0.isHidden = true }
             self.stopArrivalView.accessibilityMinimalInfoStack.forEach { $0.isHidden = !isAccessibility }
         case .full:
             self.separatorView.isHidden = false
+            self.isPanelExpandedEnoughForProgress = true
             self.stopArrivalView.normalInfoStack.forEach { $0.isHidden = isAccessibility }
             self.stopArrivalView.accessibilityInfoStack.forEach { $0.isHidden = !isAccessibility }
-        case .hidden: break
+        case .hidden:
+            self.isPanelExpandedEnoughForProgress = false
         default: break
         }
+        updateProgressView()
     }
 
     public func setListVisibility(isVisible: Bool) {
@@ -183,7 +253,29 @@ class TripFloatingPanelController: UIViewController,
         return view
     }()
 
-    private lazy var outerStack = UIStackView.verticalStack(arrangedSubviews: [topPaddingView, stopArrivalWrapper, separatorView, listView])
+    private lazy var tripProgressView: TripProgressView = TripProgressView.autolayoutNew()
+
+    private lazy var tripProgressWrapper: UIView = {
+        let wrapper = tripProgressView.embedInWrapperView(setConstraints: false)
+        wrapper.isHidden = true
+        NSLayoutConstraint.activate([
+            tripProgressView.topAnchor.constraint(equalTo: wrapper.topAnchor, constant: ThemeMetrics.compactPadding),
+            tripProgressView.leadingAnchor.constraint(equalTo: wrapper.readableContentGuide.leadingAnchor),
+            tripProgressView.trailingAnchor.constraint(equalTo: wrapper.readableContentGuide.trailingAnchor),
+            tripProgressView.bottomAnchor.constraint(equalTo: wrapper.bottomAnchor, constant: -ThemeMetrics.compactPadding)
+        ])
+        return wrapper
+    }()
+
+    private lazy var outerStack = UIStackView.verticalStack(arrangedSubviews: [topPaddingView, stopArrivalWrapper, tripProgressWrapper, separatorView, listView])
+
+    // MARK: - Helpers
+
+    /// Returns the index of the vehicle's closest stop within the trip's stop list, or nil if unavailable.
+    private func closestStopIndex(in tripDetails: TripDetails) -> Int? {
+        guard let closestStopID = tripDetails.status?.closestStopID else { return nil }
+        return tripDetails.stopTimes.firstIndex { $0.stopID == closestStopID }
+    }
 
     // MARK: - ListAdapterDataSource (Data Loading)
     func canCollapseSection(_ listView: OBAListView, section: OBAListViewSection) -> Bool {
@@ -290,9 +382,19 @@ class TripFloatingPanelController: UIViewController,
             contents.append(AdjacentTripItem(order: .previous, trip: previousTrip, onSelectAction: selectAdjacentTripAction).typeErased)
         }
 
+        let closestStopIdx = closestStopIndex(in: tripDetails)
+
         // Stop times
         let selectTripStopAction: OBAListViewAction<TripStopViewModel> = { [unowned self] item in self.onSelectTripStop(item) }
-        let stopTimes: [AnyOBAListViewItem] = tripDetails.stopTimes.map { TripStopViewModel(stopTime: $0, arrivalDeparture: arrivalDeparture, onSelectAction: selectTripStopAction).typeErased }
+        let stopTimes: [AnyOBAListViewItem] = tripDetails.stopTimes.enumerated().map { index, stopTime in
+            TripStopViewModel(
+                stopTime: stopTime,
+                arrivalDeparture: arrivalDeparture,
+                stopIndex: index,
+                closestStopIndex: closestStopIdx,
+                onSelectAction: selectTripStopAction
+            ).typeErased
+        }
         contents.append(contentsOf: stopTimes)
 
         // Next trip, if any.
@@ -302,6 +404,37 @@ class TripFloatingPanelController: UIViewController,
 
         let title: String? = showHeader ? OBALoc("trip_details_controller.service_alerts_footer", value: "Trip Details", comment: "Service alerts header in the trip details controller.") : nil
         return OBAListViewSection(id: "trip_stop_times", title: title, contents: contents)
+    }
+
+    // MARK: - Trip Progress
+
+    private func updateProgressView() {
+        guard
+            isPanelExpandedEnoughForProgress,
+            let tripDetails = tripDetails,
+            let currentIndex = closestStopIndex(in: tripDetails)
+        else {
+            tripProgressWrapper.isHidden = true
+            return
+        }
+
+        let arrivalDeparture = tripConvertible?.arrivalDeparture
+        let userStopIndex = arrivalDeparture.flatMap { ad in
+            tripDetails.stopTimes.firstIndex { $0.stopID == ad.stopID }
+        }
+
+        guard let vm = TripProgressViewModel(
+            closestStopIndex: currentIndex,
+            totalStops: tripDetails.stopTimes.count,
+            userStopIndex: userStopIndex,
+            arrivalDepartureMinutes: arrivalDeparture?.arrivalDepartureMinutes
+        ) else {
+            tripProgressWrapper.isHidden = true
+            return
+        }
+
+        tripProgressView.configure(stopCountText: vm.stopCountText, etaText: vm.etaText, progress: vm.progress)
+        tripProgressWrapper.isHidden = false
     }
 
     // MARK: - TripStop actions
@@ -374,5 +507,74 @@ class TripFloatingPanelController: UIViewController,
         }
 
         return OBAListViewMenuActions(previewProvider: previewProvider, performPreviewAction: commitPreviewAction, contextMenuProvider: menu)
+    }
+}
+
+// MARK: - TripProgressView
+
+/// Displays trip progress as "Stop X of Y", an optional ETA label, and a thin progress bar.
+final class TripProgressView: UIView {
+
+    private let stopCountLabel: UILabel = {
+        let label = UILabel.obaLabel(font: .preferredFont(forTextStyle: .caption1), textColor: ThemeColors.shared.secondaryLabel)
+        label.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        return label
+    }()
+
+    private let etaLabel: UILabel = {
+        let label = UILabel.obaLabel(font: .preferredFont(forTextStyle: .caption1), textColor: ThemeColors.shared.brand)
+        label.setContentHuggingPriority(.required, for: .horizontal)
+        label.setContentCompressionResistancePriority(.required, for: .horizontal)
+        label.textAlignment = .right
+        return label
+    }()
+
+    private let progressBar: UIProgressView = {
+        let bar = UIProgressView(progressViewStyle: .default)
+        bar.translatesAutoresizingMaskIntoConstraints = false
+        bar.progressTintColor = ThemeColors.shared.brand
+        bar.trackTintColor = ThemeColors.shared.separator
+        bar.layer.cornerRadius = 1.5
+        bar.clipsToBounds = true
+        return bar
+    }()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+
+        let labelsStack = UIStackView(arrangedSubviews: [stopCountLabel, etaLabel])
+        labelsStack.translatesAutoresizingMaskIntoConstraints = false
+        labelsStack.axis = .horizontal
+        labelsStack.spacing = ThemeMetrics.padding
+
+        addSubview(labelsStack)
+        addSubview(progressBar)
+
+        NSLayoutConstraint.activate([
+            labelsStack.topAnchor.constraint(equalTo: topAnchor),
+            labelsStack.leadingAnchor.constraint(equalTo: leadingAnchor),
+            labelsStack.trailingAnchor.constraint(equalTo: trailingAnchor),
+
+            progressBar.topAnchor.constraint(equalTo: labelsStack.bottomAnchor, constant: ThemeMetrics.compactPadding),
+            progressBar.leadingAnchor.constraint(equalTo: leadingAnchor),
+            progressBar.trailingAnchor.constraint(equalTo: trailingAnchor),
+            progressBar.bottomAnchor.constraint(equalTo: bottomAnchor),
+            progressBar.heightAnchor.constraint(equalToConstant: 3.0)
+        ])
+
+        isAccessibilityElement = true
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    func configure(stopCountText: String, etaText: String?, progress: Float) {
+        stopCountLabel.text = stopCountText
+        etaLabel.text = etaText
+        etaLabel.isHidden = etaText == nil
+        progressBar.setProgress(progress, animated: false)
+
+        accessibilityLabel = [stopCountText, etaText].compactMap { $0 }.joined(separator: ". ")
     }
 }
