@@ -36,17 +36,25 @@ class CurrentTripViewModelTests: OBATestCase {
     // MARK: - Application Builder
 
     /// Builds an `Application` whose REST API service routes through the supplied `MockDataLoader`.
-    /// When `withLocation` is false, the location service has no current location — useful for
-    /// driving the `.noLocation` branch.
-    private func createApplication(dataLoader: MockDataLoader, withLocation: Bool = true) -> Application {
+    /// - Parameters:
+    ///   - dataLoader: The mock data loader that stubs HTTP responses.
+    ///   - withLocation: When `false`, the location service has no current location — useful for
+    ///     driving the `.noLocation` branch.
+    ///   - withRegion: When `false`, places the user at Null Island (0, 0) so `RegionsService`
+    ///     cannot resolve a region and `apiService` stays `nil` — useful for driving the
+    ///     `.error` / no-service branch.
+    private func createApplication(dataLoader: MockDataLoader, withLocation: Bool = true, withRegion: Bool = true) -> Application {
         stubRegions(dataLoader: dataLoader)
         stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
         Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
 
         let locationService: LocationService
         if withLocation {
+            // When withRegion is false we use a location outside every OBA region (Null Island)
+            // so that RegionsService geo-selection cannot resolve a region and apiService stays nil.
+            let updateLocation = withRegion ? userLocation : CLLocation(latitude: 0, longitude: 0)
             let locManager = MockAuthorizedLocationManager(
-                updateLocation: userLocation,
+                updateLocation: updateLocation,
                 updateHeading: TestData.mockHeading
             )
             locationService = LocationService(userDefaults: userDefaults, locationManager: locManager)
@@ -69,7 +77,7 @@ class CurrentTripViewModelTests: OBATestCase {
             bundledRegionsFilePath: bundledRegionsPath,
             regionsAPIPath: regionsAPIPath,
             dataLoader: dataLoader,
-            fixedRegionName: Fixtures.pugetSoundRegion.name
+            fixedRegionName: withRegion ? Fixtures.pugetSoundRegion.name : nil
         )
 
         return Application(config: config)
@@ -309,18 +317,18 @@ class CurrentTripViewModelTests: OBATestCase {
         expect((surfaced as NSError).code) == 42
     }
 
-    /// `noStopsNearby` is a `MatchError` but not `noRealtimeData` — it must fall through
-    /// to the generic `.error` branch, not be silently mapped to `.noRealtime`.
+    /// `noStopsNearby` is a benign geographic condition — no failure haptic, no log noise,
+    /// and no retry button that can't help. It maps to `.noResults`, not `.error`.
     @MainActor
-    func test_handleError_noStopsNearby_fallsThroughToError() throws {
+    func test_handleError_noStopsNearby_setsNoResults() throws {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = CurrentTripViewModel(application: app, route: route30())
 
         viewModel.handle(error: NearbyTripMatcher.MatchError.noStopsNearby)
 
-        guard case .error = viewModel.state else {
-            XCTFail("Expected .error for .noStopsNearby, got \(viewModel.state)")
+        guard case .noResults = viewModel.state else {
+            XCTFail("Expected .noResults for .noStopsNearby, got \(viewModel.state)")
             return
         }
     }
@@ -388,6 +396,22 @@ class CurrentTripViewModelTests: OBATestCase {
             XCTFail("Expected .noLocation, got \(viewModel.state)")
             return
         }
+    }
+
+    @MainActor
+    func test_findVehicle_noApiService_setsErrorState() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader, withLocation: true, withRegion: false)
+        let viewModel = CurrentTripViewModel(application: app, route: route30())
+
+        viewModel.findVehicle()
+        for _ in 0..<5 { await Task.yield() }
+
+        guard case .error(let error) = viewModel.state else {
+            XCTFail("Expected .error for nil apiService, got \(viewModel.state)")
+            return
+        }
+        expect((error as NSError).domain) == "CurrentTripViewModel"
     }
 
 }

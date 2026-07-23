@@ -29,10 +29,9 @@ class CurrentTripViewModel: ObservableObject {
     @Published private(set) var matchResults: [NearbyTripMatcher.MatchResult] = []
 
     /// Set when exactly one match is found. UIKit consumers sink this and perform
-    /// the navigation push; SwiftUI consumers bind it to `.navigationDestination(item:)`.
-    /// Settable so consumers can clear it after acting (and so SwiftUI bindings can
-    /// drive it to `nil` on pop).
-    @Published var pendingNavigation: ArrivalDeparture?
+    /// the navigation push; SwiftUI consumers observe it via `.navigationDestination(item:)`.
+    /// Call `clearPendingNavigation()` after acting on it.
+    @Published private(set) var pendingNavigation: ArrivalDeparture?
 
     // MARK: - Configuration
 
@@ -161,11 +160,14 @@ class CurrentTripViewModel: ObservableObject {
         }
     }
 
-    /// Maps a matcher error onto VM state. `MatchError.noRealtimeData` gets its own
-    /// `.noRealtime` state; everything else surfaces as `.error(error)`.
+    /// Maps a matcher error onto VM state. Known `MatchError` cases get benign states;
+    /// everything else surfaces as `.error(error)`.
     func handle(error: Error) {
-        if let matchError = error as? NearbyTripMatcher.MatchError, matchError == .noRealtimeData {
-            state = .noRealtime
+        if let matchError = error as? NearbyTripMatcher.MatchError {
+            switch matchError {
+            case .noRealtimeData: state = .noRealtime
+            case .noStopsNearby:  state = .noResults
+            }
         } else {
             Logger.error("Failed to find trips: \(error)")
             state = .error(error)
@@ -178,6 +180,13 @@ class CurrentTripViewModel: ObservableObject {
     /// already holds the single result from `handle(results:)`.
     func pendingNavigationUnavailable() {
         state = .multipleResults
+        clearPendingNavigation()
+    }
+
+    /// Called by a consumer after it has acted on `pendingNavigation` (e.g. pushed
+    /// `TripViewController`). Clears the value so subsequent state changes do not
+    /// re-trigger navigation.
+    func clearPendingNavigation() {
         pendingNavigation = nil
     }
 
