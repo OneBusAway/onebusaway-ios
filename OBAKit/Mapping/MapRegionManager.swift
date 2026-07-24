@@ -284,7 +284,7 @@ public class MapRegionManager: NSObject,
 
             await MainActor.run {
                 // Some UI code is dependent on this being changed on Main.
-                self.stops = stops
+                self.setStops(stops)
             }
 
             saveStopsToCache(stops)
@@ -298,7 +298,7 @@ public class MapRegionManager: NSObject,
             let cachedStops = cachedStops(in: mapRegion)
             if !cachedStops.isEmpty {
                 await MainActor.run {
-                    self.stops = cachedStops
+                    self.setStops(cachedStops)
                 }
                 return
             }
@@ -380,7 +380,7 @@ public class MapRegionManager: NSObject,
         guard !cachedStops.isEmpty, !Task.isCancelled else { return false }
 
         await MainActor.run {
-            self.stops = cachedStops
+            self.publishStopsToDelegates(cachedStops)
         }
         return true
     }
@@ -430,7 +430,7 @@ public class MapRegionManager: NSObject,
                 if self.application.stopCacheRepository == nil {
                     // No cache to round-trip through, so publish directly —
                     // otherwise the map would show no pins at all.
-                    await MainActor.run { self.stops = fetched }
+                    await MainActor.run { self.publishStopsToDelegates(fetched) }
                 } else {
                     // Re-serve the band with the fresh stops: band → band, a
                     // clean incremental add, never band → narrow → band.
@@ -548,18 +548,24 @@ public class MapRegionManager: NSObject,
         }
     }
 
-    public private(set) var stops = [Stop]() {
-        didSet {
-            displayUniqueStopAnnotations()
-        }
+    public private(set) var stops = [Stop]()
+
+    /// UIKit publish: stores stops and diffs the manager's own `mapView`.
+    private func setStops(_ newStops: [Stop]) {
+        stops = newStops
+        displayUniqueStopAnnotations()
+    }
+
+    /// SwiftUI publish: stores stops and notifies delegates, skipping the
+    /// offscreen `mapView` diff SwiftUI hosts don't need.
+    private func publishStopsToDelegates(_ newStops: [Stop]) {
+        stops = newStops
+        notifyDelegatesStopsChanged()
     }
 
     private func displayUniqueStopAnnotations() {
-        var bookmarksHash = [StopID: Bookmark]()
         // When multiple bookmarks exist for the same stop, the last one in the bookmarks array takes precedence
-        for bm in bookmarks {
-            bookmarksHash[bm.stopID] = bm
-        }
+        let bookmarksHash = bookmarks.dedupedByStopID()
 
         let existingAnnotations = mapView.annotations
         let existingStopIDs = Set(existingAnnotations.compactMap { ($0 as? Stop)?.id })
@@ -807,22 +813,26 @@ public class MapRegionManager: NSObject,
         height <= requiredHeightToShowExtraStopData
     }
 
+    /// The full under-pin label gate (standard map + zoomed in + user default on),
+    /// shared so every map surface gates labels identically.
+    public static func shouldShowStopAnnotationLabels(
+        forVisibleMapRectHeight height: Double,
+        isStandardMapType: Bool,
+        showLabelsDefault: Bool
+    ) -> Bool {
+        isStandardMapType
+            && shouldShowExtraStopData(forVisibleMapRectHeight: height)
+            && showLabelsDefault
+    }
+
     var shouldHideExtraStopAnnotationData: Bool {
-        // only the standard map type shows extra data.
-        if mapView.mapType == .hybrid || mapView.mapType == .satellite {
-            return true
-        }
-
-        // only show the extra data below `requiredHeightToShowExtraStopData`
-        if mapView.visibleMapRect.height > MapRegionManager.requiredHeightToShowExtraStopData {
-            return true
-        }
-
-        // Finally, return the opposite of the appropriate user defaults value.
-        // This user defaults key is written in affirmative language and negated
-        // here because it's a lot easier for users to reason about a switch that
-        // says "show a thing" [true] or [false] versus "hide a thing" [true] or [false]
-        return !application.userDefaults.bool(forKey: MapRegionManager.mapViewShowsStopAnnotationLabelsDefaultsKey)
+        // Everything but hybrid/satellite (incl. muted standard) is "standard".
+        let isStandardMapType = !(mapView.mapType == .hybrid || mapView.mapType == .satellite)
+        return !MapRegionManager.shouldShowStopAnnotationLabels(
+            forVisibleMapRectHeight: mapView.visibleMapRect.height,
+            isStandardMapType: isStandardMapType,
+            showLabelsDefault: application.userDefaults.bool(forKey: MapRegionManager.mapViewShowsStopAnnotationLabelsDefaultsKey)
+        )
     }
 
     // MARK: - Map View Delegate
