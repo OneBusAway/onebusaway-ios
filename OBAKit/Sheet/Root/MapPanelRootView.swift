@@ -21,13 +21,34 @@ struct MapPanelRootView: View {
 
     @StateObject private var coordinator: SheetCoordinator<AppSheetRoute>
     @StateObject private var mapViewModel: MapViewModel
+    @StateObject private var stopsObserver: MapStopsObserver
 
     /// Presentation state only. The popup reads its data from
     /// `mapViewModel.weatherDisplay` so a refresh that finishes while the card
     /// is open updates the displayed forecast in place.
     @State private var isWeatherPopupPresented = false
 
+    /// The stop the user tapped, if any. Bound to the `Map`'s `selection`; cleared
+    /// after pushing so re-tapping the same stop pushes again.
+    @State private var selectedStopID: Stop.ID?
+
+    /// Whether the map is zoomed in far enough to load and show stops. Mirrors the
+    /// UIKit path's `requiredHeightToShowStops` gate so both surfaces suppress
+    /// stops (and skip the stops request) at region-level zoom.
+    @State private var isZoomedInForStops = false
+
+    /// Whether stop pins show their under-pin label (matches the UIKit
+    /// `shouldHideExtraStopAnnotationData` gate).
+    @State private var showStopLabels = false
+
+    /// Set when the first location fix arrives; cleared once the map has
+    /// actually been recentered. Needed because the fix can precede the Map's
+    /// first reported (non-zero) size, in which case the recenter must be
+    /// retried when the size lands.
+    @State private var needsInitialRecenter = false
+
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.colorScheme) private var colorScheme
 
     @State private var cameraPosition: MapCameraPosition = .userLocation(fallback: .automatic)
     @State private var mapSize: CGSize = .zero
@@ -61,28 +82,66 @@ struct MapPanelRootView: View {
 
     init(application: Application, factory: AppSheetViewFactory) {
         _coordinator = StateObject(wrappedValue: SheetCoordinator<AppSheetRoute>(root: .home))
+        _stopsObserver = StateObject(wrappedValue: MapStopsObserver(application: application))
         let initialMapType = MapBaseType(application.mapRegionManager.userSelectedMapType)
         _mapViewModel = StateObject(wrappedValue: MapViewModel(application: application, initialMapType: initialMapType))
         self.application = application
         self.factory = factory
+
+        // With no location fix, frame the current transit region rather than
+        // letting `.automatic` frame the bookmark annotations.
+        let fallback: MapCameraPosition = application.currentRegion.map { .rect($0.serviceRect) } ?? .automatic
+        _cameraPosition = State(initialValue: .userLocation(fallback: fallback))
     }
 
     var body: some View {
-        // TODO: Wire this SwiftUI `Map` to `application.mapRegionManager`.
-        // The UIKit `MapViewController` flow populates
-        // `mapRegionManager.stops` via `MapRegionManager.requestStops`
-        // whenever its MKMapView's region changes; both `RoutePickerViewModel`
-        // and `CurrentTripViewModel` read from that cache before falling back
-        // to a coordinate-based API call. Because this SwiftUI `Map` never
-        // touches `MapRegionManager`, the cache stays empty here and the
-        // pickers always hit the coordinate-fallback path — producing a
-        // different (often larger) route list than the UIKit picker shows for
-        // the same on-screen viewport. Fix is to observe `cameraPosition`
-        // changes, convert to an `MKCoordinateRegion`, and feed it into
-        // `MapRegionManager` so both surfaces agree on the cached stop set
-        // (also unblocks rendering stop annotations on the SwiftUI map).
-        Map(position: $cameraPosition) {
+        Map(position: $cameraPosition, selection: $selectedStopID) {
             UserAnnotation()
+            // Bookmark pins render at every zoom level, like the UIKit map.
+            ForEach(stopsObserver.bookmarks) { bookmark in
+                stopAnnotation(for: bookmark.stop, isBookmarked: true, label: bookmark.name)
+            }
+            // Regular stops show only zoomed in; `renderStops` already excludes
+            // bookmarked stops and precomputes labels.
+            if isZoomedInForStops {
+                ForEach(stopsObserver.renderStops) { renderStop in
+                    stopAnnotation(for: renderStop.stop, isBookmarked: false, label: renderStop.title)
+                }
+            }
+        }
+        .onMapCameraChange(frequency: .onEnd) { context in
+            visibleRegion = context.region
+            // Keep the "Zoom in for stops" pill in sync with the stop-loading
+            // threshold by updating it before the stop-loading early return, so it
+            // also works when the map is zoomed out.
+            mapViewModel.updateZoomWarning(
+                MapRegionManager.shouldShowZoomInWarning(forVisibleMapRectHeight: context.rect.height)
+            )
+
+            // Same stop-loading zoom gate as the UIKit region-change path.
+            isZoomedInForStops = context.rect.height <= MapRegionManager.requiredHeightToShowStops
+            guard isZoomedInForStops else {
+                // Zoomed out: clear stops, drop labels (so bookmark pins don't
+                // keep theirs painted over the map), and cancel any pending
+                // request.
+                showStopLabels = false
+                application.mapRegionManager.cancelScheduledStopsRequest()
+                stopsObserver.reset()
+                return
+            }
+            // Same label gate the UIKit map applies.
+            showStopLabels = MapRegionManager.shouldShowStopAnnotationLabels(
+                forVisibleMapRectHeight: context.rect.height,
+                isStandardMapType: mapViewModel.mapType == .standard,
+                showLabelsDefault: application.userDefaults.bool(forKey: MapRegionManager.mapViewShowsStopAnnotationLabelsDefaultsKey)
+            )
+            stopsObserver.updateViewport(context.region)
+            application.mapRegionManager.scheduleStopsRequest(in: context.region)
+        }
+        .onChange(of: selectedStopID) { _, id in
+            guard let id else { return }
+            coordinator.push(.stopDetails(stopID: id))
+            selectedStopID = nil
         }
         .mapStyle(mapViewModel.mapType == .standard ? .standard(emphasis: .muted) : .hybrid)
         .safeAreaPadding(.bottom, 180)
@@ -102,16 +161,12 @@ struct MapPanelRootView: View {
             proxy.size
         } action: { _, newValue in
             mapSize = newValue
-        }
-        .onMapCameraChange(frequency: .onEnd) { context in
-            visibleRegion = context.region
-            // Drive the "Zoom in for stops" pill from the same threshold the
-            // UIKit map uses (`MapRegionManager.zoomInStatus`), so the SwiftUI
-            // surface shows the warning — and its zoom-in action becomes
-            // reachable — when the region is too broad to load stops.
-            mapViewModel.updateZoomWarning(
-                MapRegionManager.shouldShowZoomInWarning(forVisibleMapRectHeight: context.rect.height)
-            )
+            // On a cold launch a cached location fix can arrive before the Map
+            // reports its first non-zero size, in which case the recenter in
+            // `.onChange(of: didReceiveInitialLocation)` bails (`centerOnUser`
+            // guards against a `.zero` size). That flag latches exactly once,
+            // so retry here when a real size arrives.
+            attemptInitialRecenter()
         }
         .overlay(alignment: .top) {
             MapStatusPill(
@@ -140,46 +195,7 @@ struct MapPanelRootView: View {
             myTripButton
         }
         .floatingSheet(coordinator: coordinator) { route in
-            factory.view(for: route)
-                .fullScreenCover(isPresented: $isWeatherPopupPresented) {
-                    WeatherDetailPopup(
-                        display: mapViewModel.weatherDisplay,
-                        isPresented: $isWeatherPopupPresented
-                    )
-                    .presentationBackground(.clear)
-                }
-                // Bind the live alert state only on the base (non-stacking)
-                // sheet layer. The `floatingSheet` content builder is re-invoked
-                // for every stacked sheet, so binding the shared
-                // `permissionAlertState` on all of them would fire multiple
-                // concurrent `.alert(isPresented:)` presentations against one
-                // value. The base sheet shows exactly one route at a time, so
-                // this yields a single alert host.
-                .mapPermissionAlert(
-                    state: route.prefersStacking ? .constant(nil) : $permissionAlertState,
-                    onAction: handleAlertAction
-                )
-                .onGeometryChange(for: CGFloat.self) { [halfScreenHeight] proxy in
-                    // The transform closure is @Sendable; snapshot the @State value
-                    // instead of reading main-actor view state inside it.
-                    max(min(proxy.size.height, halfScreenHeight), 0)
-                } action: { oldValue, newValue in
-                    guard !route.prefersStacking else { return }
-
-                    sheetHeight = newValue
-
-                    /// Opacity calculation — fade band sits immediately
-                    /// below `halfScreenHeight`.
-                    let fadeStart = halfScreenHeight - toolbarFadeRange
-                    let progress = max(min((newValue - fadeStart) / toolbarFadeRange, 1), 0)
-                    toolbarsOpacity = 1 - progress
-
-                    /// Animation duration
-                    let diff = abs(newValue - oldValue)
-                    let duration = max(min(diff / 100, 0.3), 0)
-                    toolbarsAnimationDuration = duration
-                }
-                .ignoresSafeArea()
+            buildSheetContent(for: route)
         }
         .onAppear {
             mapViewModel.start()
@@ -189,6 +205,100 @@ struct MapPanelRootView: View {
                 mapViewModel.onAppBecameActive()
             }
         }
+        .onChange(of: mapViewModel.didReceiveInitialLocation) { _, received in
+            // Recenter once on the first fix, so granting permission after
+            // launch moves the camera off the last region the user set.
+            guard received else { return }
+            needsInitialRecenter = true
+            attemptInitialRecenter()
+        }
+    }
+
+    /// A stop pin with an optional under-pin `label`. The empty `Annotation`
+    /// title suppresses MapKit's callout (a11y is on the icon); the visible
+    /// label is our own view below.
+    @MapContentBuilder
+    private func stopAnnotation(for stop: Stop, isBookmarked: Bool, label: String?) -> some MapContent {
+        Annotation("", coordinate: stop.coordinate) {
+            Image(uiImage: application.stopIconFactory.buildSquircleIcon(
+                for: stop,
+                isBookmarked: isBookmarked,
+                traits: UITraitCollection(userInterfaceStyle: colorScheme == .dark ? .dark : .light)
+            ))
+            .accessibilityLabel(Formatters.formattedAccessibilityLabel(stop: stop))
+            // Offset past the 48pt icon so the label sits below the pin.
+            .overlay(alignment: .top) {
+                stopLabel(label)
+                    .offset(y: ThemeMetrics.defaultMapAnnotationSize + 2)
+            }
+        }
+        .tag(stop.id)
+    }
+
+    /// The under-pin label, bold with a `systemBackground` outline so it reads
+    /// over the muted map (approximates the UIKit stroked label).
+    @ViewBuilder
+    private func stopLabel(_ label: String?) -> some View {
+        if showStopLabels, let label, !label.isEmpty {
+            Text(label)
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(Color(uiColor: .label))
+                .lineLimit(2)
+                .multilineTextAlignment(.center)
+                .fixedSize()
+                // `Text` can't render a glyph stroke, so approximate the UIKit
+                // map's stroked label with a `systemBackground` outline ring.
+                .mapLabelOutline(Color(uiColor: .systemBackground))
+                .allowsHitTesting(false)
+        }
+    }
+
+    /// Extracted from the `.floatingSheet` closure to keep `body` under Swift's
+    /// type-check budget — inlining causes a "compiler unable to type-check this
+    /// expression in reasonable time" error after `.onMapCameraChange` and
+    /// `.onChange(of: selectedStopID)` were added.
+    @ViewBuilder
+    private func buildSheetContent(for route: AppSheetRoute) -> some View {
+        factory.view(for: route)
+            .fullScreenCover(isPresented: $isWeatherPopupPresented) {
+                WeatherDetailPopup(
+                    display: mapViewModel.weatherDisplay,
+                    isPresented: $isWeatherPopupPresented
+                )
+                .presentationBackground(.clear)
+            }
+            // Bind the live alert state only on the base (non-stacking)
+            // sheet layer. The `floatingSheet` content builder is re-invoked
+            // for every stacked sheet, so binding the shared
+            // `permissionAlertState` on all of them would fire multiple
+            // concurrent `.alert(isPresented:)` presentations against one
+            // value. The base sheet shows exactly one route at a time, so
+            // this yields a single alert host.
+            .mapPermissionAlert(
+                state: route.prefersStacking ? .constant(nil) : $permissionAlertState,
+                onAction: handleAlertAction
+            )
+            .onGeometryChange(for: CGFloat.self) { [halfScreenHeight] proxy in
+                // The transform closure is @Sendable; snapshot the @State value
+                // instead of reading main-actor view state inside it.
+                max(min(proxy.size.height, halfScreenHeight), 0)
+            } action: { oldValue, newValue in
+                guard !route.prefersStacking else { return }
+
+                sheetHeight = newValue
+
+                /// Opacity calculation — fade band sits immediately
+                /// below `halfScreenHeight`.
+                let fadeStart = halfScreenHeight - toolbarFadeRange
+                let progress = max(min((newValue - fadeStart) / toolbarFadeRange, 1), 0)
+                toolbarsOpacity = 1 - progress
+
+                /// Animation duration
+                let diff = abs(newValue - oldValue)
+                let duration = max(min(diff / 100, 0.3), 0)
+                toolbarsAnimationDuration = duration
+            }
+            .ignoresSafeArea()
     }
 
     @ViewBuilder
@@ -246,6 +356,16 @@ extension MapPanelRootView {
 extension MapPanelRootView {
 
     // MARK: - Actions
+
+    /// Performs the once-per-launch recenter on the user's first location fix,
+    /// waiting out the `mapSize == .zero` window: called both when the fix
+    /// arrives and when the Map reports a size, and only consumes the flag when
+    /// a recenter can actually happen.
+    private func attemptInitialRecenter() {
+        guard needsInitialRecenter, mapSize != .zero else { return }
+        needsInitialRecenter = false
+        centerOnUser()
+    }
 
     private func centerOnUser() {
         guard let location = application.locationService.currentLocation else { return }

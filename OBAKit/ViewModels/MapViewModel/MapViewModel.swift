@@ -62,6 +62,10 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
     /// coarse `locationAuthStatus` changing (e.g. after "Allow Once").
     @Published private(set) var accuracyAuthorization: CLAccuracyAuthorization
 
+    /// Latches `true` on the first location fix, so the map recenters on the
+    /// user exactly once — e.g. after permission is granted post-launch.
+    @Published private(set) var didReceiveInitialLocation = false
+
     // MARK: - Survey Prompt
 
     /// Emits the survey to present when one is eligible and found. One-shot per
@@ -160,8 +164,17 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
     // MARK: - Zoom Warning
 
     /// Updates the "zoomed out too far" banner state. Called by the VC's
-    /// `MapRegionDelegate.mapRegionManagerShowZoomInStatus` callback.
+    /// `MapRegionDelegate.mapRegionManagerShowZoomInStatus` callback and by
+    /// `MapPanelRootView` on every camera settle.
+    ///
+    /// Publishes only on an actual change: `@Published` fires
+    /// `objectWillChange` even when the assigned value is identical, and the
+    /// SwiftUI `Map` re-emits `.onMapCameraChange(.onEnd)` on every view
+    /// update — an unconditional assignment here therefore closes an infinite
+    /// invalidation loop (camera event → publish → body re-eval → Map update →
+    /// camera event → …) that hangs the map at 100% CPU.
     func updateZoomWarning(_ show: Bool) {
+        guard showZoomWarning != show else { return }
         showZoomWarning = show
     }
 
@@ -325,6 +338,14 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
     nonisolated func locationService(_ service: LocationService, accuracyAuthorizationChanged accuracyAuthorization: CLAccuracyAuthorization) {
         Task { @MainActor in
             self.accuracyAuthorization = accuracyAuthorization
+        }
+    }
+
+    /// Latches `didReceiveInitialLocation` on the first fix; later fixes are no-ops.
+    nonisolated func locationService(_ service: LocationService, locationChanged location: CLLocation) {
+        Task { @MainActor in
+            guard !self.didReceiveInitialLocation else { return }
+            self.didReceiveInitialLocation = true
         }
     }
 }
