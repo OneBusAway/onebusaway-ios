@@ -109,3 +109,45 @@ extension View {
            )
    }
 }
+
+// MARK: - mapLabelOutline
+
+extension View {
+    /// Adds a `color` outline ring around the view — a SwiftUI stand-in for a
+    /// glyph stroke (which `Text` can't render), used to keep map labels legible
+    /// over the muted map the way the UIKit map's `NSAttributedString` stroke does.
+    func mapLabelOutline(_ color: Color, width: CGFloat = 1) -> some View {
+        modifier(MapLabelOutline(color: color, width: width))
+    }
+}
+
+/// Draws the outline by compositing offset, mask-tinted copies of the content
+/// behind it. Masking (rather than recoloring) keeps every copy the outline
+/// color regardless of the content's own foreground style.
+private struct MapLabelOutline: ViewModifier {
+    let color: Color
+    /// Outline radius, in points.
+    var width: CGFloat = 1
+
+    /// Eight evenly-spaced offsets around a `width`-radius circle — enough
+    /// samples to read as a continuous ring at label point sizes.
+    private var offsets: [CGSize] {
+        (0..<8).map { i in
+            let angle = Double(i) / 8 * 2 * .pi
+            return CGSize(width: cos(angle) * width, height: sin(angle) * width)
+        }
+    }
+
+    func body(content: Content) -> some View {
+        let ringOffsets = offsets
+        content.background {
+            ZStack {
+                ForEach(ringOffsets.indices, id: \.self) { index in
+                    color
+                        .mask { content }
+                        .offset(ringOffsets[index])
+                }
+            }
+        }
+    }
+}
