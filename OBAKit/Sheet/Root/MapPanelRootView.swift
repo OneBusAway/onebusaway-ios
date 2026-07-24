@@ -101,11 +101,11 @@ struct MapPanelRootView: View {
             ForEach(stopsObserver.bookmarks) { bookmark in
                 stopAnnotation(for: bookmark.stop, isBookmarked: true, label: bookmark.name)
             }
-            // Regular stops show only when zoomed in; bookmarked stops are
-            // excluded (they already render above as bookmark pins).
+            // Regular stops show only zoomed in; `renderStops` already excludes
+            // bookmarked stops and precomputes labels.
             if isZoomedInForStops {
-                ForEach(stopsObserver.stops.filter { !stopsObserver.bookmarkedStopIDs.contains($0.id) }) { stop in
-                    stopAnnotation(for: stop, isBookmarked: false, label: Formatters.formattedTitle(stop: stop))
+                ForEach(stopsObserver.renderStops) { renderStop in
+                    stopAnnotation(for: renderStop.stop, isBookmarked: false, label: renderStop.title)
                 }
             }
         }
@@ -121,10 +121,12 @@ struct MapPanelRootView: View {
                 stopsObserver.reset()
                 return
             }
-            // Labels show only zoomed in close, on the standard map, with the default on.
-            showStopLabels = MapRegionManager.shouldShowExtraStopData(forVisibleMapRectHeight: context.rect.height)
-                && mapViewModel.mapType == .standard
-                && application.userDefaults.bool(forKey: MapRegionManager.mapViewShowsStopAnnotationLabelsDefaultsKey)
+            // Same label gate the UIKit map applies.
+            showStopLabels = MapRegionManager.shouldShowStopAnnotationLabels(
+                forVisibleMapRectHeight: context.rect.height,
+                isStandardMapType: mapViewModel.mapType == .standard,
+                showLabelsDefault: application.userDefaults.bool(forKey: MapRegionManager.mapViewShowsStopAnnotationLabelsDefaultsKey)
+            )
             stopsObserver.updateViewport(context.region)
             application.mapRegionManager.scheduleStopsRequest(in: context.region)
         }
