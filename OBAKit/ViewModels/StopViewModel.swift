@@ -133,6 +133,11 @@ class StopViewModel: ObservableObject {
     /// SwiftUI stop page to show a non-blocking toast. Auto-resets after 2 seconds.
     @Published private(set) var liveActivityStarted = false
 
+    /// The pending auto-dismiss for the Live Activity toast. Each new signal
+    /// supersedes (cancels) it so every confirmation gets its full display
+    /// window — see `signalLiveActivityStarted()`.
+    private var liveActivityToastDismissTask: Task<Void, Never>?
+
     /// Departure ids with an in-flight `setAlarm`, so a double-tap can't create a
     /// duplicate alarm while the first create is suspended (MainActor-serialized,
     /// so a plain `Set` needs no further synchronization).
@@ -703,12 +708,24 @@ class StopViewModel: ObservableObject {
 
     /// Briefly raises `liveActivityStarted` so the SwiftUI stop page can show a
     /// non-blocking toast. Called by `StopPageViewController` after a successful
-    /// `Activity.request()`.
+    /// `Activity.request()`, and again when a duplicate Track attempt is
+    /// short-circuited — either way the user gets the same confirmation.
+    ///
+    /// Each signal supersedes the pending dismiss rather than racing it: without
+    /// the cancellation, a signal arriving late in the previous toast's window
+    /// would inherit that toast's imminent dismissal and vanish almost
+    /// immediately — leaving the duplicate tap looking like it did nothing.
     func signalLiveActivityStarted() {
+        liveActivityToastDismissTask?.cancel()
         liveActivityStarted = true
-        Task {
-            try? await Task.sleep(for: .seconds(2))
-            liveActivityStarted = false
+        liveActivityToastDismissTask = Task { [weak self] in
+            do {
+                try await Task.sleep(for: .seconds(2))
+            } catch {
+                // Superseded by a newer signal; that signal's task owns the dismissal.
+                return
+            }
+            self?.liveActivityStarted = false
         }
     }
 
