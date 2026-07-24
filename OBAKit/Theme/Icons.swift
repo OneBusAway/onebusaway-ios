@@ -276,6 +276,12 @@ nonisolated class Icons: NSObject {
     nonisolated(unsafe) private static let iconCache = NSCache<NSNumber, UIImage>()
     public static let squircleIconSize: CGFloat = 40
 
+    /// Shared squircle appearance constants, so this icon and `StopIconFactory`'s
+    /// map squircle stay in sync.
+    public static let squircleCornerRadiusRatio: CGFloat = 0.28
+    public static let squircleGradientTopBlend: CGFloat = 0.18
+    public static let squircleGradientBottomBlend: CGFloat = 0.12
+
     /// The transport glyph in white over a brand-color gradient squircle,
     /// echoing the stop page's `RouteBadgeView` treatment.
     public static func squircleTransportIcon(for routeType: Route.RouteType) -> UIImage {
@@ -285,11 +291,11 @@ nonisolated class Icons: NSObject {
         let rect = CGRect(x: 0, y: 0, width: squircleIconSize, height: squircleIconSize)
         let image = UIGraphicsImageRenderer(bounds: rect).image { context in
             let brand = ThemeColors.shared.brand
-            UIBezierPath(roundedRect: rect, cornerRadius: squircleIconSize * 0.28).addClip()
+            UIBezierPath(roundedRect: rect, cornerRadius: squircleIconSize * squircleCornerRadiusRatio).addClip()
 
             let colors = [
-                brand.blended(with: .white, amount: 0.18).cgColor,
-                brand.blended(with: .black, amount: 0.12).cgColor
+                brand.blended(with: .white, amount: squircleGradientTopBlend).cgColor,
+                brand.blended(with: .black, amount: squircleGradientBottomBlend).cgColor
             ]
             if let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors as CFArray, locations: [0, 1]) {
                 context.cgContext.drawLinearGradient(
