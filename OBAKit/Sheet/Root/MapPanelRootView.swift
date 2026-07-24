@@ -113,7 +113,10 @@ struct MapPanelRootView: View {
             // Same stop-loading zoom gate as the UIKit region-change path.
             isZoomedInForStops = context.rect.height <= MapRegionManager.requiredHeightToShowStops
             guard isZoomedInForStops else {
-                // Zoomed out: clear stops and cancel any pending request.
+                // Zoomed out: clear stops, drop labels (so bookmark pins don't
+                // keep theirs painted over the map), and cancel any pending
+                // request.
+                showStopLabels = false
                 application.mapRegionManager.cancelScheduledStopsRequest()
                 stopsObserver.reset()
                 return
