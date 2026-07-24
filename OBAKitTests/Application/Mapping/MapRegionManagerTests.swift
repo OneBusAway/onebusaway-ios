@@ -183,10 +183,12 @@ class MapRegionManagerTests: OBATestCase {
 
         let application = Application(config: config)
         let mgr = MapRegionManager(application: application)
+        // Centered on the fixture stops (~2.8km north of the mock device
+        // location) so the region-width cache serve actually covers them.
         let region = MKCoordinateRegion(
-            center: TestData.mockSeattleLocation.coordinate,
-            latitudinalMeters: 5000,
-            longitudinalMeters: 5000
+            center: CLLocationCoordinate2D(latitude: 47.653, longitude: -122.308),
+            latitudinalMeters: 8000,
+            longitudinalMeters: 8000
         )
 
         // Rapid succession: only the last should survive the debounce.
@@ -196,6 +198,135 @@ class MapRegionManagerTests: OBATestCase {
         // Debounce is 250ms; poll up to Nimble's default timeout for the load.
         await expect(mgr.stops).toEventuallyNot(beEmpty())
     }
+    // MARK: - Cache-First Serve
+
+    /// Records every `stopsUpdated` delivery so a test can inspect the order in
+    /// which stop sets are published (cache-first, then network).
+    @MainActor
+    private final class StopsRecorder: NSObject, MapRegionDelegate {
+        var deliveries: [[Stop]] = []
+        func mapRegionManager(_ manager: MapRegionManager, stopsUpdated stops: [Stop]) {
+            deliveries.append(stops)
+        }
+    }
+
+    /// Builds an application whose `currentRegion` is Puget Sound (regionId 1),
+    /// with the Seattle stops fixture mocked for any stops-for-location request.
+    private func makeSeattleApplication(dataLoader: MockDataLoader) -> Application {
+        stubRegions(dataLoader: dataLoader)
+        stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
+        Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
+
+        dataLoader.mock(data: Fixtures.loadData(file: "stops_for_location_seattle.json")) { request in
+            request.url?.path.contains("/api/where/stops-for-location.json") ?? false
+        }
+
+        let locManager = MockAuthorizedLocationManager(
+            updateLocation: TestData.mockSeattleLocation,
+            updateHeading: TestData.mockHeading
+        )
+        let locationService = LocationService(userDefaults: userDefaults, locationManager: locManager)
+
+        let config = AppConfig(
+            regionsBaseURL: regionsURL,
+            apiKey: apiKey,
+            appVersion: appVersion,
+            userDefaults: userDefaults,
+            analytics: AnalyticsMock(),
+            queue: queue,
+            locationService: locationService,
+            bundledRegionsFilePath: regionsFilePath,
+            regionsAPIPath: regionsPath,
+            dataLoader: dataLoader,
+            fixedRegionName: Fixtures.pugetSoundRegion.name
+        )
+        return Application(config: config)
+    }
+
+    /// A settle over a recently-viewed area serves persisted stops immediately
+    /// (before the debounce), then the network response refreshes them — so the
+    /// first delivery is the cached subset and the last is the full network set.
+    @MainActor
+    func test_scheduleStopsRequest_servesCachedStopsBeforeNetwork() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = makeSeattleApplication(dataLoader: dataLoader)
+        let mgr = MapRegionManager(application: application)
+
+        let regionId = try XCTUnwrap(application.currentRegion?.regionIdentifier)
+        // The cache DB is file-backed and shared across tests; start clean.
+        application.stopCacheRepository?.clearCache(regionId: regionId)
+
+        // Seed the cache with a distinguishable subset so the cache-served
+        // delivery is tellable apart from the full network set.
+        let fixtureStops = try Fixtures.loadSomeStops()
+        try XCTSkipIf(fixtureStops.count < 4, "Need at least 4 fixture stops")
+        let cachedStops = Array(fixtureStops.prefix(3))
+        application.stopCacheRepository?.saveStops(cachedStops, regionId: regionId)
+
+        let recorder = StopsRecorder()
+        mgr.addDelegate(recorder)
+
+        // Centered on the fixture stops (not the mock device location, which sits
+        // ~3km south of them) so the cache bounding-box query actually covers them.
+        let region = MKCoordinateRegion(
+            center: CLLocationCoordinate2D(latitude: 47.653, longitude: -122.308),
+            latitudinalMeters: 8000,
+            longitudinalMeters: 8000
+        )
+
+        mgr.scheduleStopsRequest(in: region)
+
+        // Network eventually replaces the cache set with the full fixture.
+        await expect(mgr.stops.count).toEventually(equal(fixtureStops.count))
+
+        // First delivery came from the cache, before the network landed.
+        let firstDelivery = try XCTUnwrap(recorder.deliveries.first)
+        expect(Set(firstDelivery.map(\.id))) == Set(cachedStops.map(\.id))
+        expect(Set(mgr.stops.map(\.id))) == Set(fixtureStops.map(\.id))
+    }
+
+    /// A cache miss is a no-op: the previously-loaded stops stay on the map until
+    /// the network refresh repopulates the cache — no empty set is ever
+    /// published (which would flash the map blank between the settle and the
+    /// network response).
+    @MainActor
+    func test_scheduleStopsRequest_cacheMissKeepsExistingStops() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = makeSeattleApplication(dataLoader: dataLoader)
+        let mgr = MapRegionManager(application: application)
+
+        let regionId = try XCTUnwrap(application.currentRegion?.regionIdentifier)
+        application.stopCacheRepository?.clearCache(regionId: regionId)
+
+        // Pre-populate stops so the map has existing pins to preserve.
+        // Centered on the fixture stops so the region-width cache serve covers them.
+        let seattleRegion = MKCoordinateRegion(
+            center: CLLocationCoordinate2D(latitude: 47.653, longitude: -122.308),
+            latitudinalMeters: 8000,
+            longitudinalMeters: 8000
+        )
+        await mgr.requestStops(in: seattleRegion)
+        expect(mgr.stops).toNot(beEmpty())
+
+        // Clear the cache so the upcoming settle is a genuine miss, while the
+        // manager still holds the pre-populated stops.
+        application.stopCacheRepository?.clearCache(regionId: regionId)
+
+        let recorder = StopsRecorder()
+        mgr.addDelegate(recorder)
+
+        mgr.scheduleStopsRequest(in: seattleRegion)
+
+        // The immediate band serve finds an empty cache and publishes nothing;
+        // the network refresh repopulates the cache and the band re-serve then
+        // delivers the stops.
+        await expect(recorder.deliveries).toEventuallyNot(beEmpty())
+        // No delivery in the sequence was ever an empty set: the cache miss left
+        // the map's stops untouched until the refresh arrived.
+        expect(recorder.deliveries.allSatisfy { !$0.isEmpty }).to(beTrue())
+        expect(mgr.stops).toNot(beEmpty())
+    }
+
     // MARK: - Zoom-In Warning Threshold
 
     /// The shared zoom-in-warning predicate (used by both the UIKit map's
@@ -208,5 +339,17 @@ class MapRegionManagerTests: OBATestCase {
         expect(MapRegionManager.shouldShowZoomInWarning(forVisibleMapRectHeight: 10_000)) == false
         // Exactly at the threshold is not "too far out".
         expect(MapRegionManager.shouldShowZoomInWarning(forVisibleMapRectHeight: 40_000)) == false
+    }
+
+    /// The under-pin label height gate (routes served / bookmark name), shared
+    /// by the UIKit `shouldHideExtraStopAnnotationData` and the SwiftUI
+    /// `MapPanelRootView` — labels show only at/below the 7,000-point threshold.
+    func test_shouldShowExtraStopData_thresholdBehavior() {
+        // Zoomed in close → show labels.
+        expect(MapRegionManager.shouldShowExtraStopData(forVisibleMapRectHeight: 1_000)) == true
+        // At the threshold → still show.
+        expect(MapRegionManager.shouldShowExtraStopData(forVisibleMapRectHeight: 7_000)) == true
+        // Zoomed out past it → hide.
+        expect(MapRegionManager.shouldShowExtraStopData(forVisibleMapRectHeight: 7_001)) == false
     }
 }

@@ -37,6 +37,16 @@ struct MapPanelRootView: View {
     /// stops (and skip the stops request) at region-level zoom.
     @State private var isZoomedInForStops = false
 
+    /// Whether stop pins show their under-pin label (matches the UIKit
+    /// `shouldHideExtraStopAnnotationData` gate).
+    @State private var showStopLabels = false
+
+    /// Set when the first location fix arrives; cleared once the map has
+    /// actually been recentered. Needed because the fix can precede the Map's
+    /// first reported (non-zero) size, in which case the recenter must be
+    /// retried when the size lands.
+    @State private var needsInitialRecenter = false
+
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.colorScheme) private var colorScheme
 
@@ -72,48 +82,47 @@ struct MapPanelRootView: View {
 
     init(application: Application, factory: AppSheetViewFactory) {
         _coordinator = StateObject(wrappedValue: SheetCoordinator<AppSheetRoute>(root: .home))
-        _stopsObserver = StateObject(wrappedValue: MapStopsObserver(mapRegionManager: application.mapRegionManager))
+        _stopsObserver = StateObject(wrappedValue: MapStopsObserver(application: application))
         let initialMapType = MapBaseType(application.mapRegionManager.userSelectedMapType)
         _mapViewModel = StateObject(wrappedValue: MapViewModel(application: application, initialMapType: initialMapType))
         self.application = application
         self.factory = factory
+
+        // With no location fix, frame the current transit region rather than
+        // letting `.automatic` frame the bookmark annotations.
+        let fallback: MapCameraPosition = application.currentRegion.map { .rect($0.serviceRect) } ?? .automatic
+        _cameraPosition = State(initialValue: .userLocation(fallback: fallback))
     }
 
     var body: some View {
         Map(position: $cameraPosition, selection: $selectedStopID) {
             UserAnnotation()
-            // Suppressed at region-level zoom to match the UIKit path, which
-            // removes stop annotations above `requiredHeightToShowStops`.
+            // Bookmark pins render at every zoom level, like the UIKit map.
+            ForEach(stopsObserver.bookmarks) { bookmark in
+                stopAnnotation(for: bookmark.stop, isBookmarked: true, label: bookmark.name)
+            }
+            // Regular stops show only when zoomed in; bookmarked stops are
+            // excluded (they already render above as bookmark pins).
             if isZoomedInForStops {
-                ForEach(stopsObserver.stops) { stop in
-                    // Empty title on the Annotation suppresses the visual label
-                    // (this project's SwiftUI SDK does not expose
-                    // `.annotationTitles(.hidden)` on `Map`, so we route
-                    // accessibility through the icon's own `accessibilityLabel`
-                    // instead of a hidden title string).
-                    Annotation("", coordinate: stop.coordinate) {
-                        Image(uiImage: application.stopIconFactory.buildSquircleIcon(
-                            for: stop,
-                            isBookmarked: application.userDataStore.findBookmark(stopID: stop.id) != nil,
-                            traits: UITraitCollection(userInterfaceStyle: colorScheme == .dark ? .dark : .light)
-                        ))
-                        .accessibilityLabel(stop.name)
-                    }
-                    .tag(stop.id)
+                ForEach(stopsObserver.stops.filter { !stopsObserver.bookmarkedStopIDs.contains($0.id) }) { stop in
+                    stopAnnotation(for: stop, isBookmarked: false, label: Formatters.formattedTitle(stop: stop))
                 }
             }
         }
         .onMapCameraChange(frequency: .onEnd) { context in
-            // Gate on the same threshold as the UIKit region-change path so both
-            // surfaces agree on when stops load, and so region-level zoom doesn't
-            // fire wasteful (server-throttled) full-region stop requests.
+            // Same stop-loading zoom gate as the UIKit region-change path.
             isZoomedInForStops = context.rect.height <= MapRegionManager.requiredHeightToShowStops
             guard isZoomedInForStops else {
-                // Zoomed out: clear accumulated stops, matching the UIKit path
-                // which removes all stop annotations above the threshold.
+                // Zoomed out: clear stops and cancel any pending request.
+                application.mapRegionManager.cancelScheduledStopsRequest()
                 stopsObserver.reset()
                 return
             }
+            // Labels show only zoomed in close, on the standard map, with the default on.
+            showStopLabels = MapRegionManager.shouldShowExtraStopData(forVisibleMapRectHeight: context.rect.height)
+                && mapViewModel.mapType == .standard
+                && application.userDefaults.bool(forKey: MapRegionManager.mapViewShowsStopAnnotationLabelsDefaultsKey)
+            stopsObserver.updateViewport(context.region)
             application.mapRegionManager.scheduleStopsRequest(in: context.region)
         }
         .onChange(of: selectedStopID) { _, id in
@@ -139,6 +148,12 @@ struct MapPanelRootView: View {
             proxy.size
         } action: { _, newValue in
             mapSize = newValue
+            // On a cold launch a cached location fix can arrive before the Map
+            // reports its first non-zero size, in which case the recenter in
+            // `.onChange(of: didReceiveInitialLocation)` bails (`centerOnUser`
+            // guards against a `.zero` size). That flag latches exactly once,
+            // so retry here when a real size arrives.
+            attemptInitialRecenter()
         }
         .onMapCameraChange(frequency: .onEnd) { context in
             visibleRegion = context.region
@@ -191,7 +206,46 @@ struct MapPanelRootView: View {
             // Recenter once on the first fix, so granting permission after
             // launch moves the camera off the last region the user set.
             guard received else { return }
-            centerOnUser()
+            needsInitialRecenter = true
+            attemptInitialRecenter()
+        }
+    }
+
+    /// A stop pin with an optional under-pin `label`. The empty `Annotation`
+    /// title suppresses MapKit's callout (a11y is on the icon); the visible
+    /// label is our own view below.
+    @MapContentBuilder
+    private func stopAnnotation(for stop: Stop, isBookmarked: Bool, label: String?) -> some MapContent {
+        Annotation("", coordinate: stop.coordinate) {
+            Image(uiImage: application.stopIconFactory.buildSquircleIcon(
+                for: stop,
+                isBookmarked: isBookmarked,
+                traits: UITraitCollection(userInterfaceStyle: colorScheme == .dark ? .dark : .light)
+            ))
+            .accessibilityLabel(Formatters.formattedAccessibilityLabel(stop: stop))
+            // Offset past the 48pt icon so the label sits below the pin.
+            .overlay(alignment: .top) {
+                stopLabel(label)
+                    .offset(y: ThemeMetrics.defaultMapAnnotationSize + 2)
+            }
+        }
+        .tag(stop.id)
+    }
+
+    /// The under-pin label, bold with a `systemBackground` halo so it reads
+    /// over the muted map (mirrors the UIKit stroked label).
+    @ViewBuilder
+    private func stopLabel(_ label: String?) -> some View {
+        if showStopLabels, let label, !label.isEmpty {
+            Text(label)
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(Color(uiColor: .label))
+                .lineLimit(2)
+                .multilineTextAlignment(.center)
+                .fixedSize()
+                .shadow(color: Color(uiColor: .systemBackground), radius: 1)
+                .shadow(color: Color(uiColor: .systemBackground), radius: 1)
+                .allowsHitTesting(false)
         }
     }
 
@@ -298,6 +352,16 @@ extension MapPanelRootView {
 extension MapPanelRootView {
 
     // MARK: - Actions
+
+    /// Performs the once-per-launch recenter on the user's first location fix,
+    /// waiting out the `mapSize == .zero` window: called both when the fix
+    /// arrives and when the Map reports a size, and only consumes the flag when
+    /// a recenter can actually happen.
+    private func attemptInitialRecenter() {
+        guard needsInitialRecenter, mapSize != .zero else { return }
+        needsInitialRecenter = false
+        centerOnUser()
+    }
 
     private func centerOnUser() {
         guard let location = application.locationService.currentLocation else { return }
