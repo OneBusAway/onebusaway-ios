@@ -340,11 +340,11 @@ public class MapRegionManager: NSObject,
         }
     }
 
-    /// Fetches stops and writes them to the cache **without** publishing the
-    /// raw set. SwiftUI hosts publish only via `serveCachedStops(in:)`, so this
-    /// stays cache-only; the UIKit path uses `requestStops(in:)`, which publishes.
-    private func refreshStopCache(in region: MKCoordinateRegion) async {
-        guard let apiService = application.apiService else { return }
+    /// Fetches stops, caches them, and returns the set so callers can publish it
+    /// directly when the cache can't (e.g. the database failed to open). Returns
+    /// `[]` when no API service is configured; rethrows network errors.
+    private func refreshStopCache(in region: MKCoordinateRegion) async throws -> [Stop] {
+        guard let apiService = application.apiService else { return [] }
 
         await MainActor.run {
             notifyDelegatesDataLoadingStarted()
@@ -356,14 +356,9 @@ public class MapRegionManager: NSObject,
         }
 
         let mapRegion = fudgedRegion(for: region, factor: preferredLoadDataRegionFudgeFactor)
-        do {
-            let stops = try await apiService.getStops(region: mapRegion).list
-            saveStopsToCache(stops)
-        } catch {
-            // Best-effort: the caller's cache re-serve still shows cached stops.
-            if error is CancellationError { return }
-            Logger.error("Background stop cache refresh failed: \(error)")
-        }
+        let stops = try await apiService.getStops(region: mapRegion).list
+        saveStopsToCache(stops)
+        return stops
     }
 
     /// Applies the network fudge-factor expansion to `region`, so the cache
@@ -377,14 +372,17 @@ public class MapRegionManager: NSObject,
 
     /// Publishes cached stops for `region` immediately (instant revisits),
     /// publishing only the latest region — neighborhood persistence lives in
-    /// `MapStopsObserver`. A cache miss or cancelled task is a no-op.
-    private func serveCachedStops(in region: MKCoordinateRegion) async {
+    /// `MapStopsObserver`. Returns `true` if it published a non-empty set; a
+    /// cache miss or cancelled task is a no-op that returns `false`.
+    @discardableResult
+    private func serveCachedStops(in region: MKCoordinateRegion) async -> Bool {
         let cachedStops = cachedStops(in: fudgedRegion(for: region, factor: preferredLoadDataRegionFudgeFactor))
-        guard !cachedStops.isEmpty, !Task.isCancelled else { return }
+        guard !cachedStops.isEmpty, !Task.isCancelled else { return false }
 
         await MainActor.run {
             self.stops = cachedStops
         }
+        return true
     }
 
     /// UIKit entrypoint: loads stops for the manager's own `mapView` region.
@@ -412,24 +410,41 @@ public class MapRegionManager: NSObject,
 
         pendingStopsRequestTask?.cancel()
         pendingStopsRequestTask = Task { [weak self] in
+            guard let self else { return }
+
             // Publish the band around this region immediately (before the
             // debounce), so a settle over a recently-viewed area shows pins
             // without waiting on the network.
-            await self?.serveCachedStops(in: region)
+            let servedFromCache = await self.serveCachedStops(in: region)
 
             try? await Task.sleep(for: .milliseconds(250))
             guard !Task.isCancelled else { return }
-            // Refresh the cache from the network *without* publishing the raw
-            // response — publishing the narrower network region between two
-            // band publishes is what flickered the band's outer pins.
-            await self?.refreshStopCache(in: region)
 
-            guard !Task.isCancelled else { return }
-            // Re-serve the band, now including the freshly-cached stops. This
-            // is the only publish that reflects the network result, so the
-            // rendered set moves band → band (a clean incremental add of any
-            // new stops), never band → narrow → band.
-            await self?.serveCachedStops(in: region)
+            do {
+                // Refresh the cache, but don't publish the raw response —
+                // publishing the narrower network region between two band
+                // publishes flickers the band's outer pins.
+                let fetched = try await self.refreshStopCache(in: region)
+                guard !Task.isCancelled else { return }
+
+                if self.application.stopCacheRepository == nil {
+                    // No cache to round-trip through, so publish directly —
+                    // otherwise the map would show no pins at all.
+                    await MainActor.run { self.stops = fetched }
+                } else {
+                    // Re-serve the band with the fresh stops: band → band, a
+                    // clean incremental add, never band → narrow → band.
+                    await self.serveCachedStops(in: region)
+                }
+            } catch is CancellationError {
+                return
+            } catch {
+                Logger.error("Map panel stop refresh failed: \(error)")
+                // Surface the error only when nothing is on-screen.
+                if !servedFromCache {
+                    await self.application.displayError(error)
+                }
+            }
         }
     }
 
