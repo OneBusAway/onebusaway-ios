@@ -31,6 +31,19 @@ class MapRegionManagerTests: OBATestCase {
         queue.cancelAllOperations()
     }
 
+    /// Polls a MainActor-isolated condition until it holds or the timeout
+    /// elapses. Used instead of Nimble's `toEventually`, whose `SyncExpectation`
+    /// is sent onto a background poll executor and trips the strict-concurrency
+    /// ratchet (`scripts/concurrency_ratchet`). Every read here stays on the
+    /// MainActor, so nothing crosses an isolation boundary.
+    @MainActor
+    private func pollUntil(timeout: TimeInterval = 2.0, _ condition: () -> Bool) async {
+        let deadline = Date().addingTimeInterval(timeout)
+        while !condition() && Date() < deadline {
+            try? await Task.sleep(nanoseconds: 20_000_000) // 20ms
+        }
+    }
+
     private var regionsFilePath: String { Bundle.main.path(forResource: "regions", ofType: "json")! }
 
     private func makeConfig(locationService: LocationService, bundledRegionsPath: String, dataLoader: MockDataLoader) -> AppConfig {
@@ -195,8 +208,9 @@ class MapRegionManagerTests: OBATestCase {
         mgr.scheduleStopsRequest(in: region)
         mgr.scheduleStopsRequest(in: region)
 
-        // Debounce is 250ms; poll up to Nimble's default timeout for the load.
-        await expect(mgr.stops).toEventuallyNot(beEmpty())
+        // Debounce is 250ms; poll for the load to land.
+        await pollUntil { !mgr.stops.isEmpty }
+        expect(mgr.stops).toNot(beEmpty())
     }
     // MARK: - Cache-First Serve
 
@@ -277,7 +291,8 @@ class MapRegionManagerTests: OBATestCase {
         mgr.scheduleStopsRequest(in: region)
 
         // Network eventually replaces the cache set with the full fixture.
-        await expect(mgr.stops.count).toEventually(equal(fixtureStops.count))
+        await pollUntil { mgr.stops.count == fixtureStops.count }
+        expect(mgr.stops.count) == fixtureStops.count
 
         // First delivery came from the cache, before the network landed.
         let firstDelivery = try XCTUnwrap(recorder.deliveries.first)
@@ -320,7 +335,8 @@ class MapRegionManagerTests: OBATestCase {
         // The immediate band serve finds an empty cache and publishes nothing;
         // the network refresh repopulates the cache and the band re-serve then
         // delivers the stops.
-        await expect(recorder.deliveries).toEventuallyNot(beEmpty())
+        await pollUntil { !recorder.deliveries.isEmpty }
+        expect(recorder.deliveries).toNot(beEmpty())
         // No delivery in the sequence was ever an empty set: the cache miss left
         // the map's stops untouched until the refresh arrived.
         expect(recorder.deliveries.allSatisfy { !$0.isEmpty }).to(beTrue())
