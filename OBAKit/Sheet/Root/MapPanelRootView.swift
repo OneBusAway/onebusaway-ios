@@ -235,8 +235,8 @@ struct MapPanelRootView: View {
         .tag(stop.id)
     }
 
-    /// The under-pin label, bold with a `systemBackground` halo so it reads
-    /// over the muted map (mirrors the UIKit stroked label).
+    /// The under-pin label, bold with a `systemBackground` outline so it reads
+    /// over the muted map (approximates the UIKit stroked label).
     @ViewBuilder
     private func stopLabel(_ label: String?) -> some View {
         if showStopLabels, let label, !label.isEmpty {
@@ -246,8 +246,9 @@ struct MapPanelRootView: View {
                 .lineLimit(2)
                 .multilineTextAlignment(.center)
                 .fixedSize()
-                .shadow(color: Color(uiColor: .systemBackground), radius: 1)
-                .shadow(color: Color(uiColor: .systemBackground), radius: 1)
+                // `Text` can't render a glyph stroke, so approximate the UIKit
+                // map's stroked label with a `systemBackground` outline ring.
+                .mapLabelOutline(Color(uiColor: .systemBackground))
                 .allowsHitTesting(false)
         }
     }
