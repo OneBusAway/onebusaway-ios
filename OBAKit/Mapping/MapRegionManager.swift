@@ -434,7 +434,14 @@ public class MapRegionManager: NSObject,
                 } else {
                     // Re-serve the band with the fresh stops: band → band, a
                     // clean incremental add, never band → narrow → band.
-                    await self.serveCachedStops(in: region)
+                    let republished = await self.serveCachedStops(in: region)
+
+                    // Cache reads can be empty after a successful fetch (e.g. cache write
+                    // failure or missing cache key). Fall back to the fetched stops so the
+                    // map isn't left blank, unless the request was cancelled by a newer one.
+                    if !republished, !Task.isCancelled {
+                        await MainActor.run { self.publishStopsToDelegates(fetched) }
+                    }
                 }
             } catch is CancellationError {
                 return
