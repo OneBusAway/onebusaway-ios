@@ -343,6 +343,40 @@ class MapRegionManagerTests: OBATestCase {
         expect(mgr.stops).toNot(beEmpty())
     }
 
+    /// A settle whose band re-serve comes back empty even though the network
+    /// fetch succeeded still publishes the fetched stops. This models the
+    /// production gap where `currentRegion`/`regionId` is momentarily
+    /// unavailable or the cache write silently no-ops, so the fresh stops would
+    /// otherwise be dropped and the map left blank despite a successful fetch.
+    @MainActor
+    func test_scheduleStopsRequest_publishesFetchedWhenCacheReserveEmpty() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = makeSeattleApplication(dataLoader: dataLoader)
+        let mgr = MapRegionManager(application: application)
+
+        let regionId = try XCTUnwrap(application.currentRegion?.regionIdentifier)
+        application.stopCacheRepository?.clearCache(regionId: regionId)
+
+        // The mock returns the Seattle fixture for any stops request, but this
+        // settle is centered ~70km south of those stops. So nothing is cached in
+        // this band (first serve empty), the network fetch succeeds and saves the
+        // Seattle stops, and the band re-serve — querying this far box — still
+        // finds nothing. The repository is non-nil, so without the fallback the
+        // fetched stops would be discarded and `mgr.stops` left empty.
+        let farRegion = MKCoordinateRegion(
+            center: CLLocationCoordinate2D(latitude: 47.0, longitude: -122.308),
+            latitudinalMeters: 5000,
+            longitudinalMeters: 5000
+        )
+
+        mgr.scheduleStopsRequest(in: farRegion)
+
+        let fixtureStops = try Fixtures.loadSomeStops()
+        try XCTSkipIf(fixtureStops.isEmpty, "Need a non-empty stops fixture")
+        await pollUntil { mgr.stops.count == fixtureStops.count }
+        expect(mgr.stops.count) == fixtureStops.count
+    }
+
     // MARK: - Zoom-In Warning Threshold
 
     /// The shared zoom-in-warning predicate (used by both the UIKit map's
