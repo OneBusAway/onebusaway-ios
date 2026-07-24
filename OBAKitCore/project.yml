@@ -2,7 +2,16 @@ targets:
   OBAKitCore:
     type: framework
     platform: iOS
-    sources: ["."]
+    sources:
+      # XcodeGen's synced folders can't mark headers public, so the umbrella
+      # header is carved out of the buildable folder and added as an explicit
+      # public header.
+      - path: "."
+        # The .proto schema is source material for pre-generated Swift, not a
+        # target member; without the exclusion Xcode tries to compile it.
+        excludes: ["OBAKitCore.h", "Models/Protobuf/gtfs-realtime.proto"]
+      - path: OBAKitCore.h
+        headerVisibility: public
     dependencies:
       - package: SwiftProtobuf
       - package: GRDB

@@ -2,7 +2,14 @@ targets:
   OBAKit:
     type: framework
     platform: iOS
-    sources: ["."]
+    sources:
+      # XcodeGen's synced folders can't mark headers public, so the umbrella
+      # header is carved out of the buildable folder and added as an explicit
+      # public header.
+      - path: "."
+        excludes: ["OBAKit.h"]
+      - path: OBAKit.h
+        headerVisibility: public
     dependencies:
       - target: OBAKitCore
       - package: BLTNBoard
