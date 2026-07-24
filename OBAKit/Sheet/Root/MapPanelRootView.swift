@@ -110,6 +110,14 @@ struct MapPanelRootView: View {
             }
         }
         .onMapCameraChange(frequency: .onEnd) { context in
+            visibleRegion = context.region
+            // Keep the "Zoom in for stops" pill in sync with the stop-loading
+            // threshold by updating it before the stop-loading early return, so it
+            // also works when the map is zoomed out.
+            mapViewModel.updateZoomWarning(
+                MapRegionManager.shouldShowZoomInWarning(forVisibleMapRectHeight: context.rect.height)
+            )
+
             // Same stop-loading zoom gate as the UIKit region-change path.
             isZoomedInForStops = context.rect.height <= MapRegionManager.requiredHeightToShowStops
             guard isZoomedInForStops else {
@@ -159,16 +167,6 @@ struct MapPanelRootView: View {
             // guards against a `.zero` size). That flag latches exactly once,
             // so retry here when a real size arrives.
             attemptInitialRecenter()
-        }
-        .onMapCameraChange(frequency: .onEnd) { context in
-            visibleRegion = context.region
-            // Drive the "Zoom in for stops" pill from the same threshold the
-            // UIKit map uses (`MapRegionManager.zoomInStatus`), so the SwiftUI
-            // surface shows the warning — and its zoom-in action becomes
-            // reachable — when the region is too broad to load stops.
-            mapViewModel.updateZoomWarning(
-                MapRegionManager.shouldShowZoomInWarning(forVisibleMapRectHeight: context.rect.height)
-            )
         }
         .overlay(alignment: .top) {
             MapStatusPill(
