@@ -589,6 +589,35 @@ class MapViewModelTests: OBATestCase {
         expect(viewModel.topPillState) == .zoomInForStops
     }
 
+    /// `updateZoomWarning` must not publish when the value is unchanged.
+    /// `@Published` fires `objectWillChange` even for identical assignments, and
+    /// this method runs on every camera settle; because the SwiftUI `Map`
+    /// re-emits `.onMapCameraChange(.onEnd)` on every view update, a same-value
+    /// publish here closes an infinite invalidation loop that hangs the map.
+    @MainActor
+    func test_updateZoomWarning_sameValueDoesNotPublish() {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader)
+        let viewModel = MapViewModel(application: app)
+
+        var publishCount = 0
+        let cancellable = viewModel.objectWillChange.sink { _ in publishCount += 1 }
+        defer { cancellable.cancel() }
+
+        viewModel.updateZoomWarning(true)
+        expect(publishCount) == 1
+
+        // Same value again: no publish — this is what breaks the camera-settle
+        // → publish → body re-eval → camera-settle feedback cycle.
+        viewModel.updateZoomWarning(true)
+        expect(publishCount) == 1
+
+        viewModel.updateZoomWarning(false)
+        expect(publishCount) == 2
+        viewModel.updateZoomWarning(false)
+        expect(publishCount) == 2
+    }
+
     /// With no zoom warning and full permission, the pill is hidden.
     @MainActor
     func test_topPillState_hiddenWhenAuthorizedAndZoomed() {
