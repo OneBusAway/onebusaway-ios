@@ -104,19 +104,7 @@ class StopIconFactory: NSObject {
 
     /// Draws a stop icon image with the specified properties.
     func renderIcon(routeType: Route.RouteType, direction: Direction, isBookmarked: Bool) -> UIImage {
-        let imageBounds = CGRect(x: 0, y: 0, width: iconSize, height: iconSize)
-        let rect = imageBounds.insetBy(dx: arrowTrackSize, dy: arrowTrackSize)
-
-        let renderer = UIGraphicsImageRenderer(size: CGSize(width: iconSize, height: iconSize))
-        return renderer.image { [weak self] rendererContext in
-            guard let self = self else { return }
-            let ctx = rendererContext.cgContext
-
-            if kUseDebugColors {
-                UIColor.magenta.setFill()
-                UIRectFill(imageBounds)
-            }
-
+        renderAnnotationImage(direction: direction) { rect, ctx in
             if isBookmarked {
                 self.drawBackground(color: bookmarkedStrokeColor, rect: rect, context: ctx)
                 self.drawIcon(routeType: routeType, rect: rect, context: ctx, color: .white)
@@ -127,6 +115,28 @@ class StopIconFactory: NSObject {
             }
 
             self.drawBorder(color: strokeColor, rect: rect, context: ctx)
+        }
+    }
+
+    /// Shared scaffolding for the stop-annotation icon variants: sets up the
+    /// renderer and the arrow-track inset, hands the inset rect to `drawContent`
+    /// (background, glyph, and border), then draws the directional arrow in the
+    /// outer track. Keeping the geometry here means the rounded-rect and
+    /// squircle variants can't silently diverge in layout.
+    private func renderAnnotationImage(direction: Direction, drawContent: (CGRect, CGContext) -> Void) -> UIImage {
+        let imageBounds = CGRect(x: 0, y: 0, width: iconSize, height: iconSize)
+        let rect = imageBounds.insetBy(dx: arrowTrackSize, dy: arrowTrackSize)
+
+        let renderer = UIGraphicsImageRenderer(size: imageBounds.size)
+        return renderer.image { rendererContext in
+            let ctx = rendererContext.cgContext
+
+            if kUseDebugColors {
+                UIColor.magenta.setFill()
+                UIRectFill(imageBounds)
+            }
+
+            drawContent(rect, ctx)
 
             self.drawArrowImage(direction: direction, strokeColor: strokeColor, rect: imageBounds, context: ctx)
         }
@@ -170,14 +180,7 @@ class StopIconFactory: NSObject {
             return cached
         }
 
-        let imageBounds = CGRect(x: 0, y: 0, width: iconSize, height: iconSize)
-        let rect = imageBounds.insetBy(dx: arrowTrackSize, dy: arrowTrackSize)
-
-        let renderer = UIGraphicsImageRenderer(size: CGSize(width: iconSize, height: iconSize))
-        let image = renderer.image { [weak self] rendererContext in
-            guard let self = self else { return }
-            let ctx = rendererContext.cgContext
-
+        let image = renderAnnotationImage(direction: direction) { rect, ctx in
             self.drawSquircleBackground(rect: rect, isBookmarked: isBookmarked, context: ctx)
             let glyphColor: UIColor = isBookmarked ? .white : self.transportIconColor
             self.drawIcon(routeType: routeType, rect: rect, context: ctx, color: glyphColor)
@@ -186,7 +189,6 @@ class StopIconFactory: NSObject {
             if !isBookmarked {
                 self.drawSquircleBorder(rect: rect, context: ctx)
             }
-            self.drawArrowImage(direction: direction, strokeColor: self.strokeColor, rect: imageBounds, context: ctx)
         }
 
         squircleIconCache.setObject(image, forKey: key)
