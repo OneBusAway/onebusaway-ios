@@ -164,8 +164,17 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
     // MARK: - Zoom Warning
 
     /// Updates the "zoomed out too far" banner state. Called by the VC's
-    /// `MapRegionDelegate.mapRegionManagerShowZoomInStatus` callback.
+    /// `MapRegionDelegate.mapRegionManagerShowZoomInStatus` callback and by
+    /// `MapPanelRootView` on every camera settle.
+    ///
+    /// Publishes only on an actual change: `@Published` fires
+    /// `objectWillChange` even when the assigned value is identical, and the
+    /// SwiftUI `Map` re-emits `.onMapCameraChange(.onEnd)` on every view
+    /// update — an unconditional assignment here therefore closes an infinite
+    /// invalidation loop (camera event → publish → body re-eval → Map update →
+    /// camera event → …) that hangs the map at 100% CPU.
     func updateZoomWarning(_ show: Bool) {
+        guard showZoomWarning != show else { return }
         showZoomWarning = show
     }
 
