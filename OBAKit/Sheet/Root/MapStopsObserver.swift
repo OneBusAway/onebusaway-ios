@@ -8,56 +8,187 @@
 //
 
 import Foundation
+import MapKit
 import OBAKitCore
 
-/// Bridges `MapRegionManager`'s `stopsUpdated` delegate callback to a
-/// `@Published` array so a SwiftUI `Map` can render stop annotations
-/// reactively.
+/// Bridges `MapRegionManager`'s `stopsUpdated` callback to `@Published` arrays
+/// a SwiftUI `Map` can render (stops + bookmarks).
 ///
-/// Intentionally separate from `MapViewModel`, which stays MapKit-free and does
-/// not adopt the UIKit-era `MapRegionDelegate`.
+/// The rendered set **accumulates** across settles (like the UIKit map, until
+/// zoom-out) so panning back is instant, bounded by a distance band around the
+/// last viewport plus a count cap. Deliberately separate from
+/// `mapRegionManager.stops`, which holds only the latest region.
 @MainActor
 final class MapStopsObserver: NSObject, ObservableObject, MapRegionDelegate {
 
-    /// Stops currently loaded for the visible map region.
+    /// The accumulated, pruned, id-sorted render set the `Map` draws.
     @Published private(set) var stops: [Stop] = []
 
-    init(mapRegionManager: MapRegionManager) {
+    /// Bookmarks for the current region, deduped by stop (last wins). Decoded
+    /// once here rather than per-pin in the annotation builder.
+    @Published private(set) var bookmarks: [Bookmark] = []
+
+    /// IDs of bookmarked stops, so regular stop pins can exclude them.
+    private(set) var bookmarkedStopIDs: Set<StopID> = []
+
+    /// Evict pins beyond this multiple of the viewport span.
+    private let pruneSpanFactor: Double
+
+    /// Hard cap on rendered pins (frame-rate backstop for dense metros).
+    private let renderCap: Int
+
+    /// Accumulated stops keyed by ID — the render set before publishing.
+    private var accumulated: [StopID: Stop] = [:]
+
+    /// Last settled viewport, the prune reference. Nil = no prune (set grows).
+    private var viewport: MKCoordinateRegion?
+
+    private let application: Application
+
+    init(application: Application, pruneSpanFactor: Double = 4.0, renderCap: Int = 400) {
+        self.application = application
+        self.pruneSpanFactor = pruneSpanFactor
+        self.renderCap = renderCap
         super.init()
-        // Seed with whatever's already loaded so a re-created observer isn't empty.
-        stops = mapRegionManager.stops
-        mapRegionManager.addDelegate(self)
+
+        // Seed the accumulator (and published set) so a re-created observer
+        // isn't empty.
+        for stop in application.mapRegionManager.stops {
+            accumulated[stop.id] = stop
+        }
+        stops = orderedStops()
+        application.mapRegionManager.addDelegate(self)
+
+        reloadBookmarks()
+        // Re-decode on bookmark changes so a visible pin restyles. Selector-based
+        // observation is auto-removed on dealloc, so no token/deinit needed.
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(bookmarksDidChange),
+            name: .bookmarksDidChange,
+            object: nil
+        )
     }
 
-    /// Clears the accumulated stops. Call when the map zooms out past the
-    /// stop-display threshold, mirroring the UIKit path, which removes all stop
-    /// annotations when zoomed out (`reloadStopAnnotations`).
+    /// Clears the render set and prune reference on zoom-out. Bookmarks stay
+    /// (like the UIKit map, at every zoom level).
     func reset() {
+        accumulated.removeAll()
+        viewport = nil
         guard !stops.isEmpty else { return }
         stops = []
     }
 
+    /// Records the settled viewport and prunes against it. Pruning here (not
+    /// only in `stopsUpdated`) bounds the set even on settles that load no
+    /// stops. Loop-safe: a re-fired same-region settle changes nothing.
+    func updateViewport(_ region: MKCoordinateRegion) {
+        viewport = region
+        if pruneAccumulated() {
+            publish()
+        }
+    }
+
+    // MARK: - Bookmarks
+
+    /// `.bookmarksDidChange` is posted from the main actor, so hop straight in.
+    @objc
+    private nonisolated func bookmarksDidChange() {
+        MainActor.assumeIsolated {
+            reloadBookmarks()
+        }
+    }
+
+    private func reloadBookmarks() {
+        let regionBookmarks = application.userDataStore.findBookmarks(in: application.currentRegion)
+
+        // Last bookmark for a stop wins, matching `displayUniqueStopAnnotations`.
+        var bookmarksByStopID = [StopID: Bookmark]()
+        for bookmark in regionBookmarks {
+            bookmarksByStopID[bookmark.stopID] = bookmark
+        }
+
+        bookmarkedStopIDs = Set(bookmarksByStopID.keys)
+        // Keep the store's ordering (deduped to each stop's winning bookmark)
+        // so republished arrays are deterministic across reloads.
+        bookmarks = regionBookmarks.filter { bookmarksByStopID[$0.stopID] === $0 }
+    }
+
     // MARK: - MapRegionDelegate
 
-    // `MapRegionDelegate` is `@objc optional`; annotate the implementation so
-    // Obj-C runtime discovery is explicit rather than relying on Swift's
-    // inferred bridging.
+    // `@objc` so Obj-C runtime discovery of this optional-protocol method is explicit.
     @objc
     func mapRegionManager(_ manager: MapRegionManager, stopsUpdated stops: [Stop]) {
-        // Accumulate (union) rather than replace, matching the UIKit path:
-        // `displayUniqueStopAnnotations` only *adds* stops not already on the map
-        // and never removes one just because it left the latest region's result.
-        // A settled camera re-issues the stops request on every pan, so replacing
-        // the array would make the SwiftUI `Map` tear down and re-add annotations
-        // each time — panning away and back would re-render the same pins (the
-        // reported flicker). By only appending genuinely new stops (and keeping
-        // existing instances), returning to a visited area is a no-op: nothing is
-        // republished, so the pins already on screen stay put. The accumulated set
-        // is bounded by `reset()` on zoom-out.
-        let existingIDs = Set(self.stops.map(\.id))
-        let newStops = stops.filter { !existingIDs.contains($0.id) }
-        guard !newStops.isEmpty else { return }
+        // Add new stops and replace changed ones, but keep the instance for
+        // unchanged stops so `ForEach` leaves those pins untouched.
+        var mutated = false
+        for stop in stops {
+            if let existing = accumulated[stop.id], existing.isEqual(stop) {
+                continue
+            }
+            accumulated[stop.id] = stop
+            mutated = true
+        }
+        if pruneAccumulated() {
+            mutated = true
+        }
+        if mutated {
+            publish()
+        }
+    }
 
-        self.stops += newStops
+    // MARK: - Prune / publish
+
+    /// Evicts stops outside the viewport band / beyond the cap. Returns `true`
+    /// if anything was removed. Early-returns cheaply when nothing is out of
+    /// bounds, so a no-op re-serve doesn't rebuild the dictionary.
+    @discardableResult
+    private func pruneAccumulated() -> Bool {
+        guard let viewport else { return false }
+
+        // Per-axis bounding box: `pruneSpanFactor` × the viewport half-span.
+        let latLimit = viewport.span.latitudeDelta / 2 * pruneSpanFactor
+        let lonLimit = viewport.span.longitudeDelta / 2 * pruneSpanFactor
+        let center = viewport.center
+
+        func isInBand(_ stop: Stop) -> Bool {
+            abs(stop.coordinate.latitude - center.latitude) <= latLimit &&
+                abs(stop.coordinate.longitude - center.longitude) <= lonLimit
+        }
+
+        let hasOutOfBand = accumulated.contains { !isInBand($0.value) }
+        guard hasOutOfBand || accumulated.count > renderCap else { return false }
+
+        if hasOutOfBand {
+            accumulated = accumulated.filter { isInBand($0.value) }
+        }
+
+        // Count cap: keep the `renderCap` nearest to center, evict the rest.
+        if accumulated.count > renderCap {
+            let nearest = accumulated.values
+                .sorted { squaredDistance($0, to: center) < squaredDistance($1, to: center) }
+                .prefix(renderCap)
+            accumulated = Dictionary(nearest.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        }
+
+        return true
+    }
+
+    /// Squared distance with longitude scaled by `cos(latitude)` so lat/lon
+    /// degrees compare on a common metric scale. Ordering only — no sqrt.
+    private func squaredDistance(_ stop: Stop, to center: CLLocationCoordinate2D) -> Double {
+        let dLat = stop.coordinate.latitude - center.latitude
+        let dLon = (stop.coordinate.longitude - center.longitude) * cos(center.latitude * .pi / 180)
+        return dLat * dLat + dLon * dLon
+    }
+
+    private func orderedStops() -> [Stop] {
+        accumulated.values.sorted { $0.id < $1.id }
+    }
+
+    /// Republishes the render set. Only called after a real mutation, so a
+    /// re-fired settle never republishes (avoids the body-eval loop).
+    private func publish() {
+        stops = orderedStops()
     }
 }
