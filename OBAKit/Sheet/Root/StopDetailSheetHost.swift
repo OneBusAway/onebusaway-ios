@@ -11,7 +11,7 @@ import SwiftUI
 import UIKit
 import OBAKitCore
 
-/// UIKit wiring wrapper: presents the existing `StopViewController` inside a
+/// UIKit wiring wrapper: presents the existing `StopPageViewController` inside a
 /// `UINavigationController` so its `navigationItem` bar buttons render correctly
 /// when reached via `AppSheetRoute.stopDetails`.
 ///

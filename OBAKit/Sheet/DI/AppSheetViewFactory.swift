@@ -77,7 +77,7 @@ final class AppSheetViewFactory {
         MoreSheetHost(application: application)
     }
 
-    /// Bridges `AppSheetRoute.stopDetails` to the existing UIKit `StopViewController`
+    /// Bridges `AppSheetRoute.stopDetails` to the existing `StopPageViewController`
     /// via `StopDetailSheetHost`. Swap this branch's return type once a SwiftUI
     /// stop-detail view lands.
     func stopDetailView(stopID: Stop.ID) -> StopDetailSheetHost {
