@@ -26,7 +26,13 @@ settings:
     SWIFT_WARNINGS_AS_ERRORS_GROUPS: "ActorIsolatedCall SendableClosureCaptures RegionIsolation ConformanceIsolation MutableGlobalVariable"
 
 options:
-  minimumXcodeGenVersion: 2.42
+  # Directory sources generate Xcode 16 buildable folders
+  # (PBXFileSystemSynchronizedRootGroup): the pbxproj records only the folder
+  # path and target membership follows the file system, so adding/removing
+  # files no longer touches the project file. Requires XcodeGen >= 2.45 for
+  # excludes -> membership exceptions and automatic Info.plist exclusion.
+  minimumXcodeGenVersion: 2.45.4
+  defaultSourceDirectoryType: syncedFolder
   generateEmptyDirectories: true
   groupSortPosition: top
   deploymentTarget:

@@ -11,6 +11,9 @@ targets:
       - path: Apps/KiedyBus
         name: App
         group: KiedyBus
+        # gpx files are simulated-location fixtures for schemes, not app
+        # resources; keep them out of the bundle.
+        excludes: ["gpx_files"]
       - path: Apps/Shared/CommonClient
         name: Common
         group: KiedyBus
