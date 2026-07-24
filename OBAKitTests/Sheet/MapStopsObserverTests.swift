@@ -251,7 +251,7 @@ final class MapStopsObserverTests: OBATestCase {
     // MARK: - Bookmarks
 
     @MainActor
-    func test_observer_publishesBookmarksAndReloadsOnChange() throws {
+    func test_observer_publishesBookmarksAndReloadsOnChange() async throws {
         let dataLoader = MockDataLoader(testName: name)
         let application = buildApplication(queue: queue, dataLoader: dataLoader)
 
@@ -267,14 +267,16 @@ final class MapStopsObserverTests: OBATestCase {
         expect(observer.bookmarks.map(\.stopID)) == [stops[0].id]
         expect(observer.bookmarkedStopIDs) == [stops[0].id]
 
-        // Adding a bookmark posts `.bookmarksDidChange`, and the observer
-        // republishes — this is what restyles an already-visible pin.
+        // Adding a bookmark posts `.bookmarksDidChange`; the observer reloads via
+        // a main-actor hop, so yield to let it land.
         let added = Bookmark(name: "Added", regionIdentifier: regionID, stop: stops[1])
         application.userDataStore.add(added, to: nil)
+        for _ in 0..<5 { await Task.yield() }
         expect(observer.bookmarkedStopIDs) == [stops[0].id, stops[1].id]
 
         // Deleting one removes it from the published set.
         application.userDataStore.delete(bookmark: added)
+        for _ in 0..<5 { await Task.yield() }
         expect(observer.bookmarkedStopIDs) == [stops[0].id]
     }
 

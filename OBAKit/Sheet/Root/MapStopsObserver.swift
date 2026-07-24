@@ -21,8 +21,21 @@ import OBAKitCore
 @MainActor
 final class MapStopsObserver: NSObject, ObservableObject, MapRegionDelegate {
 
+    /// A stop with its precomputed label, so the `Map` builder needn't filter or
+    /// format per body eval.
+    struct RenderStop: Identifiable {
+        let stop: Stop
+        let title: String
+        var id: StopID { stop.id }
+    }
+
     /// The accumulated, pruned, id-sorted render set the `Map` draws.
-    @Published private(set) var stops: [Stop] = []
+    @Published private(set) var stops: [Stop] = [] {
+        didSet { rebuildRenderStops() }
+    }
+
+    /// Non-bookmarked, labeled stops, rebuilt only on stop/bookmark changes.
+    @Published private(set) var renderStops: [RenderStop] = []
 
     /// Bookmarks for the current region, deduped by stop (last wins). Decoded
     /// once here rather than per-pin in the annotation builder.
@@ -91,27 +104,24 @@ final class MapStopsObserver: NSObject, ObservableObject, MapRegionDelegate {
 
     // MARK: - Bookmarks
 
-    /// `.bookmarksDidChange` is posted from the main actor, so hop straight in.
+    /// `.bookmarksDidChange` may be posted off the main actor, so hop rather
+    /// than assume isolation.
     @objc
     private nonisolated func bookmarksDidChange() {
-        MainActor.assumeIsolated {
-            reloadBookmarks()
+        Task { @MainActor [weak self] in
+            self?.reloadBookmarks()
         }
     }
 
     private func reloadBookmarks() {
         let regionBookmarks = application.userDataStore.findBookmarks(in: application.currentRegion)
-
-        // Last bookmark for a stop wins, matching `displayUniqueStopAnnotations`.
-        var bookmarksByStopID = [StopID: Bookmark]()
-        for bookmark in regionBookmarks {
-            bookmarksByStopID[bookmark.stopID] = bookmark
-        }
+        let bookmarksByStopID = regionBookmarks.dedupedByStopID()
 
         bookmarkedStopIDs = Set(bookmarksByStopID.keys)
         // Keep the store's ordering (deduped to each stop's winning bookmark)
         // so republished arrays are deterministic across reloads.
         bookmarks = regionBookmarks.filter { bookmarksByStopID[$0.stopID] === $0 }
+        rebuildRenderStops()
     }
 
     // MARK: - MapRegionDelegate
@@ -184,6 +194,14 @@ final class MapStopsObserver: NSObject, ObservableObject, MapRegionDelegate {
 
     private func orderedStops() -> [Stop] {
         accumulated.values.sorted { $0.id < $1.id }
+    }
+
+    /// Rebuilds `renderStops` so the filter and title formatting run once per
+    /// change, not per body eval.
+    private func rebuildRenderStops() {
+        renderStops = stops
+            .filter { !bookmarkedStopIDs.contains($0.id) }
+            .map { RenderStop(stop: $0, title: Formatters.formattedTitle(stop: $0)) }
     }
 
     /// Republishes the render set. Only called after a real mutation, so a
