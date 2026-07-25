@@ -832,18 +832,3 @@ extension StopPageViewController {
         viewModel.updateStopPreferences(stopPreferences)
     }
 }
-
-// MARK: - Trip Preview
-
-/// Lazily-built UIKit preview for row long-presses; the `TripViewController` is
-/// constructed only when SwiftUI actually presents the context-menu preview.
-struct TripViewControllerPreview: UIViewControllerRepresentable {
-    let departure: ArrivalDeparture
-    let application: Application
-
-    func makeUIViewController(context: Context) -> TripViewController {
-        TripViewController(application: application, arrivalDeparture: departure)
-    }
-
-    func updateUIViewController(_ uiViewController: TripViewController, context: Context) {}
-}
