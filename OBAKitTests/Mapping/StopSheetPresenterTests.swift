@@ -143,4 +143,73 @@ final class StopSheetPresenterTests: XCTestCase {
         XCTAssertFalse(presenter.isPresenting)
         XCTAssertEqual(dismissed, 1)
     }
+
+    // MARK: - Tab Bar
+
+    /// Mirrors the real hierarchy: the map sits in a navigation controller inside the tab bar
+    /// controller, which is why the tab bar draws over anything the map parents a panel to.
+    private func makeTabBarHostedParent() -> (tabBarController: UITabBarController, hosted: UIViewController) {
+        let hosted = UIViewController()
+        let tabBarController = UITabBarController()
+        tabBarController.viewControllers = [UINavigationController(rootViewController: hosted)]
+        window.rootViewController = tabBarController
+        tabBarController.view.layoutIfNeeded()
+
+        return (tabBarController, hosted)
+    }
+
+    /// The tab bar can't be beaten on z-order from inside the map, so the sheet hides it to
+    /// claim the bottom edge of the screen for its own chrome.
+    func test_present_hidesTheHostTabBar() {
+        let (tabBarController, hosted) = makeTabBarHostedParent()
+        XCTAssertFalse(tabBarController.isTabBarHidden)
+
+        presenter.present(UIViewController(), from: hosted) {}
+
+        XCTAssertTrue(tabBarController.isTabBarHidden)
+    }
+
+    func test_dismiss_restoresTheHostTabBar() {
+        let (tabBarController, hosted) = makeTabBarHostedParent()
+        presenter.present(UIViewController(), from: hosted) {}
+
+        presenter.dismiss(animated: false)
+
+        XCTAssertFalse(tabBarController.isTabBarHidden)
+    }
+
+    /// Swiping the sheet away skips `dismiss`, so the tab bar has to come back on this path too
+    /// or the rider is left with no way to change tabs.
+    func test_swipeAwayRemoval_restoresTheHostTabBar() throws {
+        let (tabBarController, hosted) = makeTabBarHostedParent()
+        presenter.present(UIViewController(), from: hosted) {}
+
+        presenter.floatingPanelDidRemove(try XCTUnwrap(panels(in: hosted).first))
+
+        XCTAssertFalse(tabBarController.isTabBarHidden)
+    }
+
+    /// Tapping a second stop tears the first sheet down, but the bar must stay hidden the whole
+    /// way through — restoring it mid-swap flashes it back behind the incoming sheet.
+    func test_presentingASecondStop_keepsTheHostTabBarHidden() {
+        let (tabBarController, hosted) = makeTabBarHostedParent()
+
+        presenter.present(UIViewController(), from: hosted) {}
+        presenter.present(UIViewController(), from: hosted) {}
+
+        XCTAssertTrue(tabBarController.isTabBarHidden)
+    }
+
+    /// The map-panel experience presents the stop page outside a tab bar controller, so a nil
+    /// host has to be a no-op rather than a crash.
+    func test_present_withoutAHostTabBar_stillPresents() {
+        presenter.present(UIViewController(), from: parent) {}
+
+        XCTAssertTrue(presenter.isPresenting)
+        XCTAssertEqual(panels.count, 1)
+    }
+
+    private func panels(in parent: UIViewController) -> [FloatingPanelController] {
+        parent.children.compactMap { $0 as? FloatingPanelController }
+    }
 }

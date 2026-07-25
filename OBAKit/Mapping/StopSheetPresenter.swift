@@ -33,6 +33,10 @@ final class StopSheetPresenter: NSObject {
     private var panel: FloatingPanelController?
     private var navigation: UINavigationController?
 
+    /// The tab bar controller whose bar is hidden for the current presentation. Non-nil only
+    /// while a sheet is onscreen, so the bar can be put back exactly once.
+    private var hostTabBarController: UITabBarController?
+
     /// Cleanup for the presentation currently onscreen. Held alongside the panel rather than
     /// as a settable property so that replacing one sheet with another fires the *outgoing*
     /// presentation's handler — assigning a new handler first would deselect the wrong
@@ -55,7 +59,9 @@ final class StopSheetPresenter: NSObject {
     ///   - parent: The view controller to add the panel to.
     ///   - onDismiss: Run once this presentation leaves the screen, however it leaves.
     func present(_ contentController: UIViewController, from parent: UIViewController, onDismiss: @escaping () -> Void) {
-        dismiss(animated: false)
+        // Swapping one stop for another leaves the tab bar hidden throughout: restoring it here
+        // would flash it back into place for a turn, behind the incoming sheet.
+        tearDown(animated: false, restoringTabBar: false)
 
         let navigation = UINavigationController(rootViewController: contentController)
         navigation.delegate = self
@@ -77,10 +83,16 @@ final class StopSheetPresenter: NSObject {
         self.panel = panel
         self.navigation = navigation
         self.dismissHandler = onDismiss
+        self.hostTabBarController = parent.tabBarController
 
         // Stock `FloatingPanelBottomLayout` already anchors .full/.half/.tip and opens at .half,
         // which is exactly the spec — no custom layout object needed.
-        panel.addPanel(toParent: parent)
+        //
+        // `animated` defaults to `false`, which makes the sheet pop into place fully formed. A
+        // fresh controller's state is `.hidden`, so passing `true` slides it up from offscreen
+        // the way a sheet is expected to arrive.
+        panel.addPanel(toParent: parent, animated: true)
+        setHostTabBarHidden(true, animated: true)
 
         // `navigationController(_:didShow:)` covers every push and pop, but is not guaranteed to
         // fire for the root controller before the panel is onscreen, so seed tracking here too.
@@ -88,12 +100,18 @@ final class StopSheetPresenter: NSObject {
         trackScrollView(in: contentController)
     }
 
-    /// Tears down the sheet if one is showing, running its dismissal handler.
+    /// Tears down the sheet if one is showing, running its dismissal handler and putting the tab
+    /// bar back.
+    func dismiss(animated: Bool = true) {
+        tearDown(animated: animated, restoringTabBar: true)
+    }
+
+    /// Releases the current presentation and detaches its panel from the view hierarchy.
     ///
     /// Detaches by way of `hide` rather than `removePanelFromParent` on purpose: the latter
     /// fires `floatingPanelDidRemove`, which would re-enter this method.
-    func dismiss(animated: Bool = true) {
-        guard let panel = releaseCurrentPresentation() else { return }
+    private func tearDown(animated: Bool, restoringTabBar: Bool) {
+        guard let panel = releaseCurrentPresentation(restoringTabBar: restoringTabBar) else { return }
 
         panel.willMove(toParent: nil)
         panel.hide(animated: animated) {
@@ -102,10 +120,11 @@ final class StopSheetPresenter: NSObject {
         }
     }
 
-    /// Clears the presenter's state, untracks the scroll view, and runs the dismissal handler.
+    /// Clears the presenter's state, untracks the scroll view, restores the tab bar unless the
+    /// caller is about to present again, and runs the dismissal handler.
     /// Returns the panel that was showing, or `nil` if there wasn't one.
     @discardableResult
-    private func releaseCurrentPresentation() -> FloatingPanelController? {
+    private func releaseCurrentPresentation(restoringTabBar: Bool = true) -> FloatingPanelController? {
         guard let panel else { return nil }
 
         let handler = dismissHandler
@@ -117,9 +136,32 @@ final class StopSheetPresenter: NSObject {
             panel.untrack(scrollView: trackingScrollView)
         }
 
+        if restoringTabBar {
+            setHostTabBarHidden(false, animated: true)
+            hostTabBarController = nil
+        }
+
         handler?()
 
         return panel
+    }
+
+    // MARK: - Tab Bar
+
+    /// Hides the host tab bar for the life of the sheet, and puts it back afterwards.
+    ///
+    /// The panel is parented to the map view controller, which lives inside the tab bar
+    /// controller's content area — so the tab bar draws over the sheet, and no z-order work
+    /// inside the map can change that (FloatingPanel also asserts against parenting a panel
+    /// directly to a `UITabBarController`). Hiding it hands the sheet the whole bottom edge of
+    /// the screen, the way Maps gives its place card that space, and leaves room for the sheet's
+    /// own bottom chrome.
+    ///
+    /// A useful side effect: with the bar hidden the rider can't switch tabs out from under a
+    /// live sheet, so there is no path that strands a hidden bar on another tab.
+    private func setHostTabBarHidden(_ hidden: Bool, animated: Bool) {
+        guard let hostTabBarController, hostTabBarController.isTabBarHidden != hidden else { return }
+        hostTabBarController.setTabBarHidden(hidden, animated: animated)
     }
 
     /// Keeps the bar transparent in every state so the header card's map snapshot runs
@@ -196,7 +238,7 @@ extension StopSheetPresenter: UINavigationControllerDelegate {
 extension StopSheetPresenter: FloatingPanelControllerDelegate {
     /// Fires when the rider swipes the sheet away. FloatingPanel has already detached the panel
     /// and removed it from the parent by this point, so this only has to release the
-    /// presenter's own state and run the dismissal handler.
+    /// presenter's own state, restore the tab bar, and run the dismissal handler.
     func floatingPanelDidRemove(_ fpc: FloatingPanelController) {
         guard fpc === panel else { return }
         releaseCurrentPresentation()
