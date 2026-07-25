@@ -57,7 +57,7 @@ public enum URLType {
 }
 /// Provides support for deep linking into the app by way of a custom URL scheme.
 ///
-/// Custom URL scheme deep linking (e.g. `onebusaway://view-stop?region_id=1&stop_id=12345`)
+/// Custom URL scheme deep linking (e.g. `onebusaway://view-stop?stopID=12345&regionID=1`)
 /// is the most reliable way to perform deep linking into the iOS app from an extension like the Today View.
 /// The only reason we don't use it everywhere is because the URLs generated are completely useless unless
 /// their recipient has a compatible version of OneBusAway installed on their device.
