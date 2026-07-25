@@ -179,7 +179,7 @@ public extension Sequence where Element == Route {
     /// - Returns: A localized, case-insensitive sorted Array.
     func localizedCaseInsensitiveSort() -> [Element] {
         return sorted { (s1, s2) -> Bool in
-            return s1.shortName.localizedCaseInsensitiveCompare(s2.shortName) == .orderedAscending
+            return s1.shortName.localizedStandardCompare(s2.shortName) == .orderedAscending
         }
     }
 }
