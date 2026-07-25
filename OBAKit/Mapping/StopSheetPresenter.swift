@@ -14,12 +14,11 @@ import OBAKitCore
 /// Presents the redesigned Stop page as a half-detent sheet over the map, replacing the
 /// push that the legacy `StopViewController` still uses.
 ///
-/// The content controller is wrapped in a `UINavigationController` for two reasons that both
-/// matter: `StopPageViewController` publishes its Filter / More / Schedules chrome through
-/// `navigationItem.rightBarButtonItems`, which needs a navigation bar to render, and its
-/// outbound navigation runs through `ViewRouter.navigate(to:from:)`, which asserts on a nil
-/// `navigationController`. Trip, alert, and bookmark-editor screens therefore push *inside*
-/// the sheet rather than replacing it.
+/// The content controller is wrapped in a `UINavigationController` so that outbound navigation,
+/// which runs through `ViewRouter.navigate(to:from:)` and asserts on a nil `navigationController`,
+/// has somewhere to go: trip, alert, and bookmark-editor screens push *inside* the sheet rather
+/// than replacing it. The bar itself is hidden while the stop page is on top — its chrome lives
+/// in a bottom toolbar and its own header — and comes back for whatever gets pushed.
 ///
 /// The presenter is deliberately ignorant of the map: it takes a dismissal handler per
 /// presentation instead of a map view, so the caller decides what cleanup (annotation
@@ -66,10 +65,22 @@ final class StopSheetPresenter: NSObject {
         let navigation = UINavigationController(rootViewController: contentController)
         navigation.delegate = self
         configureNavigationBar(navigation.navigationBar)
+        // Seeded here as well as in `willShow` so the bar is already gone on the first layout
+        // pass; letting the delegate callback do it alone flashes a bar's worth of empty space
+        // above the header as the sheet slides up.
+        navigation.setNavigationBarHidden(hidesNavigationBar(for: contentController), animated: false)
 
         let panel = FloatingPanelController(delegate: self)
         panel.set(contentViewController: navigation)
-        panel.isRemovalInteractionEnabled = true
+        panel.isRemovalInteractionEnabled = false
+
+        // The default `.static` mode gives the content view a constant height — the height of the
+        // *most expanded* detent — and slides it. At `.half` that puts the content's bottom edge
+        // roughly a full detent below the screen, which silently swallows anything anchored
+        // there: the stop page's bottom toolbar was only visible when the sheet happened to be
+        // at `.full`. `.fitToBounds` resizes the content to the surface's visible bounds instead,
+        // so the toolbar sits on the screen's bottom edge at every detent.
+        panel.contentMode = .fitToBounds
 
         let appearance = SurfaceAppearance()
         appearance.cornerRadius = ThemeMetrics.cornerRadius
@@ -212,13 +223,12 @@ final class StopSheetPresenter: NSObject {
             return
         }
 
-        // A hard cutoff, not the default soft blur: the chrome renders as a floating glass
-        // pill rather than a full-width bar, so without a decisive edge the topmost departure
-        // reads as smeared underneath the buttons. On iOS 18 there is no edge effect to
-        // configure and the transparent bar simply overlaps — the same as it does today on the
-        // map's other panels.
+        // No top edge effect at all. It exists to keep content from smearing under floating bar
+        // chrome, and the sheet has none — `StopPageViewController` moves its controls to a
+        // bottom toolbar when presented this way, leaving the sheet's top edge as a bare grabber
+        // over the page's own opaque header. Left on, the effect blurs that header's stop name.
         if #available(iOS 26.0, *) {
-            scrollView.topEdgeEffect.style = .hard
+            scrollView.topEdgeEffect.isHidden = true
         }
 
         panel.track(scrollView: scrollView)
@@ -228,8 +238,26 @@ final class StopSheetPresenter: NSObject {
 // MARK: - UINavigationControllerDelegate
 
 extension StopSheetPresenter: UINavigationControllerDelegate {
+    /// The stop page at the sheet's root shows no navigation bar; everything pushed on top of it
+    /// gets one back for its title and back button.
+    ///
+    /// Beyond having nothing to put in it — the page's chrome is its bottom toolbar and its own
+    /// header's close button — a visible bar costs the page a bar's worth of top safe area. The
+    /// header is a `safeAreaInset(edge: .top)`, so it *inherits* that inset and lays its content
+    /// out below it while its background still fills the whole strip, leaving ~50 pt of dead
+    /// space above the stop name that no amount of SwiftUI sizing can reclaim.
+    func navigationController(_ navigationController: UINavigationController, willShow viewController: UIViewController, animated: Bool) {
+        navigationController.setNavigationBarHidden(hidesNavigationBar(for: viewController), animated: animated)
+    }
+
     func navigationController(_ navigationController: UINavigationController, didShow viewController: UIViewController, animated: Bool) {
         trackScrollView(in: viewController)
+    }
+
+    /// Only the sheet-configured stop page hides the bar. Anything else in this stack — including
+    /// a stop page pushed from a nearby-stops list, which keeps its navigation-bar chrome — needs it.
+    private func hidesNavigationBar(for viewController: UIViewController) -> Bool {
+        (viewController as? StopPageViewController)?.showsBottomToolbar ?? false
     }
 }
 
@@ -242,5 +270,13 @@ extension StopSheetPresenter: FloatingPanelControllerDelegate {
     func floatingPanelDidRemove(_ fpc: FloatingPanelController) {
         guard fpc === panel else { return }
         releaseCurrentPresentation()
+    }
+
+    /// Fires on every detent transition. Notifies the stop page so it can hide its bottom
+    /// toolbar when the sheet is at `.tip` (nearly offscreen).
+    func floatingPanelDidChangeState(_ fpc: FloatingPanelController) {
+        guard fpc === panel,
+              let stopVC = navigation?.topViewController as? StopPageViewController else { return }
+        stopVC.setAtTip(fpc.state == .tip)
     }
 }

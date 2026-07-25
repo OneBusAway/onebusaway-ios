@@ -49,6 +49,22 @@ struct StopPageNavigationHandler {
     let dismissDonation: (@escaping () -> Void) -> Void
     /// Lazily builds the row long-press trip preview as an `AnyView`.
     let makeTripPreview: (ArrivalDeparture) -> AnyView
+
+    // The four below exist only for the sheet presentation's bottom toolbar. The pushed
+    // presentation reaches the same flows through `configureBarButtons()`' UIKit menus, which
+    // call the hosting VC's methods directly.
+
+    /// Presents the route-filter picker (`StopPreferencesWrappedView`).
+    let showRouteFilter: () -> Void
+    /// Pushes the service-alert list for this stop.
+    let showServiceAlerts: () -> Void
+    /// Pushes the nearby-stops list.
+    let showNearbyStops: () -> Void
+    /// Presents the report-a-problem flow.
+    let showReportProblem: () -> Void
+    /// Dismisses the sheet (its header's close button). No-op in the pushed presentation, which
+    /// leaves instead through the navigation bar's back button.
+    let closeSheet: () -> Void
 }
 
 /// Thin hosting wrapper for `StopPageView`. Its only job is to apply
@@ -65,13 +81,22 @@ struct StopPageRootView: View {
     /// times through the same instance as the rest of the app instead of
     /// spinning up ad-hoc `DateFormatter`s.
     let formatters: Formatters
+    /// `true` when the page is presented as a sheet over the map: the header goes light and
+    /// compact, and the chrome moves from the navigation bar to a bottom toolbar. `false` — the
+    /// pushed presentation — leaves both exactly as they were.
+    var showToolbarOnBottom = false
+    /// Controls whether the bottom toolbar is currently visible. Starts equal to
+    /// `showToolbarOnBottom`; set to `false` when the sheet is at its `.tip` detent.
+    var showBottomToolbar = false
 
     var body: some View {
         StopPageView(
             viewModel: viewModel,
             userDefaults: userDefaults,
             snapshotLoader: snapshotLoader,
-            navigation: navigation
+            navigation: navigation,
+            showToolbarOnBottom: showToolbarOnBottom,
+            showBottomToolbar: showBottomToolbar
         )
         .defaultAppStorage(userDefaults)
         .environment(\.obaFormatters, formatters)
@@ -97,6 +122,14 @@ struct StopPageView: View {
     /// Everything that leaves the page or presents a VC-owned modal. Supplied by
     /// the hosting VC so this view stays router-free.
     let navigation: StopPageNavigationHandler
+
+    /// Selects the sheet presentation's chrome: the light `StopPageSheetHeaderView` and a bottom
+    /// `StopPageToolbar`. `false` keeps the pushed presentation's dark map header and leaves the
+    /// chrome in the navigation bar, where `configureBarButtons()` puts it.
+    var showToolbarOnBottom = false
+    /// Whether the bottom toolbar is currently shown. Decoupled from `showToolbarOnBottom` so the
+    /// toolbar can be hidden at the `.tip` detent without also changing the header style.
+    var showBottomToolbar = false
 
     @State private var expandedDepartureID: String?
     @State private var expandedRouteID: RouteID?
@@ -172,22 +205,26 @@ struct StopPageView: View {
 
         List {
             if let stop = viewModel.stop {
-                Section {
-                    StopPageHeaderView(stop: stop, walkTime: walkTime, statusText: viewModel.statusText, snapshotLoader: snapshotLoader, onWalkingDirections: navigation.showWalkingDirections)
-                        .listRowInsets(EdgeInsets(top: 0, leading: Self.horizontalRowInset, bottom: 0, trailing: Self.horizontalRowInset))
-                        .listRowBackground(Color.clear)
-                        .listRowSeparator(.hidden)
+                if !showToolbarOnBottom {
+                    Section {
+                        StopPageHeaderView(stop: stop, walkTime: walkTime, statusText: viewModel.statusText, snapshotLoader: snapshotLoader, onWalkingDirections: navigation.showWalkingDirections)
+                            .listRowInsets(EdgeInsets(top: 0, leading: Self.horizontalRowInset, bottom: 0, trailing: Self.horizontalRowInset))
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
+                    }
                 }
             } else if showsLoadingState {
                 // Loading only. A first fetch that fails leaves no header at
                 // all — a "loading" skeleton sitting above an error message
                 // reads as two contradictory states on one page; the centered
                 // error row below owns the screen instead.
-                Section {
-                    StopPageHeaderPlaceholderView()
-                        .listRowInsets(EdgeInsets(top: 0, leading: Self.horizontalRowInset, bottom: 0, trailing: Self.horizontalRowInset))
-                        .listRowBackground(Color.clear)
-                        .listRowSeparator(.hidden)
+                if !showToolbarOnBottom {
+                    Section {
+                        StopPageHeaderPlaceholderView()
+                            .listRowInsets(EdgeInsets(top: 0, leading: Self.horizontalRowInset, bottom: 0, trailing: Self.horizontalRowInset))
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
+                    }
                 }
             }
 
@@ -341,6 +378,32 @@ struct StopPageView: View {
         // With `.plain`, rows whose `listRowInsets` leading/trailing are 0 sit
         // flush with the screen edges.
         .listStyle(.plain)
+        // Mirror of the bottom toolbar pattern: pins the sheet header at the safe-area
+        // boundary (just below the nav bar) so its position is identical at every detent.
+        // A VStack wrapper respected the raw top safe area differently at `.tip` vs `.half`
+        // — the nav bar isn't fully visible at `.tip`, so safe area ≈ 0 there but ≈ 44 pt
+        // at `.half`, causing the header to droop. `safeAreaInset` avoids that by delegating
+        // positioning to the List's own safe-area logic, the same way `.bottom` does for the
+        // toolbar. The push presentation is unaffected; it still uses its map-snapshot list row.
+        .safeAreaInset(edge: .top, spacing: 0) {
+            if showToolbarOnBottom {
+                if let stop = viewModel.stop {
+                    StopPageSheetHeaderView(stop: stop, walkTime: walkTime, onWalkingDirections: navigation.showWalkingDirections, onClose: navigation.closeSheet)
+                } else {
+                    // Unconditional, unlike the pushed presentation's header: with no navigation
+                    // bar behind the sheet, this strip carries the only close button, so a stop
+                    // whose first fetch failed must still render it.
+                    StopPageSheetHeaderPlaceholderView(showsSkeleton: showsLoadingState, onClose: navigation.closeSheet)
+                }
+            }
+        }
+        // `safeAreaInset` rather than an overlay: the list needs the bar's height added to its
+        // bottom inset, or the last departure sits permanently underneath it.
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if showBottomToolbar {
+                toolbar
+            }
+        }
         .task { await viewModel.start() }
         .onAppear(perform: seedLastUsedModeIfNeeded)
         .onDisappear { viewModel.deactivate() }
@@ -368,6 +431,35 @@ struct StopPageView: View {
             }
         }
         .animation(.spring(duration: 0.3), value: viewModel.liveActivityStarted)
+    }
+
+    /// The sheet presentation's bottom chrome. Reads the view model directly — `StopPageView` is
+    /// the page's only observer, so the freshness label and filter state stay live without
+    /// another subview subscribing.
+    private var toolbar: some View {
+        StopPageToolbar(
+            statusText: viewModel.statusText,
+            isRefreshing: viewModel.isLoading,
+            isFilterOn: viewModel.stopPreferences.hasHiddenRoutes && viewModel.isListFiltered,
+            // A single-route stop has nothing to filter down to.
+            canFilter: (viewModel.stop?.routes.count ?? 0) > 1,
+            isListFiltered: viewModel.isListFiltered,
+            hasServiceAlerts: !(viewModel.stopArrivals?.serviceAlerts ?? []).isEmpty,
+            onRefresh: { Task { await viewModel.refresh() } },
+            onSetListFiltered: { filtered in
+                viewModel.isListFiltered = filtered
+                // Picking "Filtered Routes" opens the picker, matching the pushed
+                // presentation's `filterMenu()` — otherwise choosing it on a stop with no
+                // saved hidden routes silently does nothing.
+                if filtered { navigation.showRouteFilter() }
+            },
+            onBookmark: { navigation.showBookmarkEditor(nil) },
+            onSchedule: navigation.showScheduleForStop,
+            onServiceAlerts: navigation.showServiceAlerts,
+            onNearbyStops: navigation.showNearbyStops,
+            onWalkingDirections: navigation.showWalkingDirections,
+            onReportProblem: navigation.showReportProblem
+        )
     }
 
     /// One-shot: a stop the user has never customized opens in the last mode they
@@ -567,6 +659,30 @@ private struct GlassContainerBackground: ViewModifier {
         .padding()
     }
     .environment(\.dynamicTypeSize, .accessibility5)
+}
+
+#Preview("Sheet presentation (showToolbarOnBottom)") {
+    List {
+        Section {
+            StopPageLoadingRow()
+        }
+    }
+    .listStyle(.plain)
+    .safeAreaInset(edge: .top, spacing: 0) {
+        StopPageSheetHeaderPlaceholderView(onClose: {})
+    }
+    .safeAreaInset(edge: .bottom, spacing: 0) {
+        StopPageToolbar(
+            statusText: "",
+            isRefreshing: false,
+            isFilterOn: false,
+            canFilter: true,
+            isListFiltered: false,
+            hasServiceAlerts: false,
+            onRefresh: {}, onSetListFiltered: { _ in }, onBookmark: {}, onSchedule: {},
+            onServiceAlerts: {}, onNearbyStops: {}, onWalkingDirections: {}, onReportProblem: {}
+        )
+    }
 }
 
 /// The footer: "Load more" (hidden once auto-extend hits the 12 h cap) and the

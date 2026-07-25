@@ -36,6 +36,10 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
     let viewModel: StopViewModel
     private var cancellables = Set<AnyCancellable>()
 
+    /// Called when the user taps the sheet's close button. Set by the map view controller
+    /// immediately after creating this controller; no-op when `showToolbarOnBottom` is false.
+    var onClose: (() -> Void)?
+
     public var idleTimerFailsafe: Timer?
 
     private lazy var dataLoadFeedbackGenerator = DataLoadFeedbackGenerator(application: application)
@@ -67,17 +71,23 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
         set { viewModel.transferContext = newValue }
     }
 
-    convenience init(application: Application, stop: Stop) {
-        self.init(application: application, stopID: stop.id, stop: stop)
+    /// `true` when this instance was built for the map's sheet presentation: the header goes
+    /// light and compact and the chrome moves to a bottom toolbar. Fixed at init — a controller
+    /// never migrates between presentations — so the pushed screen is unreachable from here.
+    private let showToolbarOnBottom: Bool
+
+    convenience init(application: Application, stop: Stop, showToolbarOnBottom: Bool = false) {
+        self.init(application: application, stopID: stop.id, stop: stop, showToolbarOnBottom: showToolbarOnBottom)
     }
 
-    convenience init(application: Application, stopID: StopID) {
-        self.init(application: application, stopID: stopID, stop: nil)
+    convenience init(application: Application, stopID: StopID, showToolbarOnBottom: Bool = false) {
+        self.init(application: application, stopID: stopID, stop: nil, showToolbarOnBottom: showToolbarOnBottom)
     }
 
-    private init(application: Application, stopID: StopID, stop: Stop?) {
+    private init(application: Application, stopID: StopID, stop: Stop?, showToolbarOnBottom: Bool) {
         self.application = application
         self.viewModel = StopViewModel(application: application, stopID: stopID, stop: stop)
+        self.showToolbarOnBottom = showToolbarOnBottom
 
         // Seed with placeholder closures; `self` isn't available until super.init
         // returns, so the real handler (which captures `self`) is installed below.
@@ -89,6 +99,15 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
             formatters: application.formatters
         ))
 
+        installRootView()
+
+        hidesBottomBarWhenPushed = false
+    }
+
+    /// Builds the SwiftUI root with the real navigation handler. Called again whenever
+    /// `showsBottomToolbar` changes — which only happens on entering or leaving preview mode,
+    /// before the rider has interacted with the page, so the `@State` reset costs nothing.
+    private func installRootView() {
         rootView = StopPageRootView(
             viewModel: viewModel,
             userDefaults: application.userDefaults,
@@ -97,10 +116,24 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
                 return await self.loadSnapshot(size: size)
             },
             navigation: makeNavigationHandler(),
-            formatters: application.formatters
+            formatters: application.formatters,
+            showToolbarOnBottom: showsBottomToolbar,
+            showBottomToolbar: showsBottomToolbar
         )
+    }
 
-        hidesBottomBarWhenPushed = false
+    /// Called by `StopSheetPresenter` when the panel's detent changes. Hides the
+    /// bottom toolbar at `.tip` (where the sheet is nearly offscreen) and restores
+    /// it when the sheet is dragged back up.
+    func setAtTip(_ isAtTip: Bool) {
+        rootView.showBottomToolbar = showsBottomToolbar && !isAtTip
+    }
+
+    /// Suppressed in preview mode: a peek is a bare glance, the same reason `configureBarButtons()`
+    /// clears the nav-bar items there. Internal so `StopPagePresentationTests` can assert which
+    /// presentation an instance was built for.
+    var showsBottomToolbar: Bool {
+        showToolbarOnBottom && !inPreviewMode
     }
 
     @available(*, unavailable)
@@ -160,7 +193,12 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
         showExternalSurveyError: {},
         showDonation: {},
         dismissDonation: { _ in },
-        makeTripPreview: { _ in AnyView(EmptyView()) }
+        makeTripPreview: { _ in AnyView(EmptyView()) },
+        showRouteFilter: {},
+        showServiceAlerts: {},
+        showNearbyStops: {},
+        showReportProblem: {},
+        closeSheet: {}
     )
 
     private func makeNavigationHandler() -> StopPageNavigationHandler {
@@ -189,7 +227,12 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
                     TripViewControllerPreview(departure: departure, application: self.application)
                         .frame(width: 320, height: 400)
                 )
-            }
+            },
+            showRouteFilter: { [weak self] in self?.filter() },
+            showServiceAlerts: { [weak self] in self?.showServiceAlerts() },
+            showNearbyStops: { [weak self] in self?.showNearbyStops() },
+            showReportProblem: { [weak self] in self?.showReportProblem() },
+            closeSheet: { [weak self] in self?.onClose?() }
         )
     }
 
@@ -478,11 +521,21 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
     func enterPreviewMode() {
         inPreviewMode = true
         configureBarButtons()
+        refreshBottomToolbar()
     }
 
     func exitPreviewMode() {
         inPreviewMode = false
         configureBarButtons()
+        refreshBottomToolbar()
+    }
+
+    /// Rebuilds the SwiftUI root so the toolbar appears or disappears with preview mode. Scoped
+    /// to the sheet: pushed controllers also enter and exit previews (Recents, Bookmarks, the map
+    /// drawer), and reinstalling their root view would reset page `@State` for no visible gain.
+    private func refreshBottomToolbar() {
+        guard showToolbarOnBottom else { return }
+        installRootView()
     }
 }
 
@@ -492,8 +545,15 @@ private extension StopPageViewController {
     /// Ported from `StopViewController.configureTabBarButtons()`, minus the Sort
     /// menu — the SwiftUI mode toggle supersedes it (spec decision).
     func configureBarButtons() {
-        // A peek preview shows a bare, non-interactive glance (no chrome).
         guard !inPreviewMode else {
+            navigationItem.rightBarButtonItems = nil
+            return
+        }
+
+        // Sheet presentation: every control lives in SwiftUI — `StopPageToolbar` at the bottom
+        // and the header's own close button — and `StopSheetPresenter` hides the navigation bar
+        // outright, so there is nowhere for bar items to go.
+        if showToolbarOnBottom {
             navigationItem.rightBarButtonItems = nil
             return
         }
@@ -562,8 +622,7 @@ private extension StopPageViewController {
         }
 
         let alertsAction = UIAction(title: Strings.serviceAlerts, image: UIImage(systemName: "exclamationmark.circle")) { [unowned self] _ in
-            let controller = ServiceAlertListController(application: self.application, serviceAlerts: self.viewModel.stopArrivals?.serviceAlerts ?? [])
-            self.application.viewRouter.navigate(to: controller, from: self)
+            self.showServiceAlerts()
         }
 
         // Disable the alerts action if there are no service alerts.
@@ -576,9 +635,7 @@ private extension StopPageViewController {
 
     func locationMenu() -> UIMenu {
         let nearbyAction = UIAction(title: OBALoc("stops_controller.nearby_stops", value: "Nearby Stops", comment: "Title of the row that will show stops that are near this one."), image: UIImage(systemName: "location")) { [unowned self] _ in
-            guard let coordinate = self.viewModel.stop?.coordinate else { return }
-            let nearbyController = NearbyStopsViewController(coordinate: coordinate, application: self.application)
-            self.application.viewRouter.navigate(to: nearbyController, from: self)
+            self.showNearbyStops()
         }
 
         var walkingDirectionActions: [UIMenuElement] = []
@@ -714,6 +771,20 @@ private extension StopPageViewController {
             popover.sourceRect = CGRect(origin: view.center, size: .zero)
         }
         present(sheet, animated: true)
+    }
+
+    /// Pushes the service-alert list. Shared by the More menu (pushed presentation) and the
+    /// bottom toolbar's More menu (sheet presentation) so the two can't drift apart.
+    func showServiceAlerts() {
+        let controller = ServiceAlertListController(application: application, serviceAlerts: viewModel.stopArrivals?.serviceAlerts ?? [])
+        application.viewRouter.navigate(to: controller, from: self)
+    }
+
+    /// Pushes the nearby-stops list. Shared by both presentations' More menus.
+    func showNearbyStops() {
+        guard let coordinate = viewModel.stop?.coordinate else { return }
+        let nearbyController = NearbyStopsViewController(coordinate: coordinate, application: application)
+        application.viewRouter.navigate(to: nearbyController, from: self)
     }
 
     func showReportProblem() {

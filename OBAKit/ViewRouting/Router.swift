@@ -97,11 +97,16 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
     /// Builds the Stop screen honoring the new-stop-page feature flag. All stop
     /// navigation and long-press previews must construct the controller through
     /// these factories so the flag governs every path.
-    public func makeStopController(stop: Stop, bookmark: Bookmark? = nil, transferContext: TransferContext? = nil) -> UIViewController {
+    ///
+    /// - Parameter showToolbarOnBottom: Pass `true` when the caller will present the result as a
+    ///   sheet rather than push it, which swaps the redesigned page's dark map header for a light
+    ///   one and moves its chrome into a bottom toolbar. Ignored when the flag or a transfer
+    ///   context routes to the legacy `StopViewController`, which has only the pushed layout.
+    public func makeStopController(stop: Stop, bookmark: Bookmark? = nil, transferContext: TransferContext? = nil, showToolbarOnBottom: Bool = false) -> UIViewController {
         // TransferContext UX (arrival-relative filtering, transfer banner) is not yet built on the new stop page — route transfers to the legacy screen until it is.
         let stopController: StopContextConfigurable
         if transferContext == nil, FeatureFlags.isNewStopPageEnabled(userDefaults: application.userDefaults) {
-            stopController = StopPageViewController(application: application, stop: stop)
+            stopController = StopPageViewController(application: application, stop: stop, showToolbarOnBottom: showToolbarOnBottom)
         } else {
             stopController = StopViewController(application: application, stop: stop)
         }
@@ -110,9 +115,9 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
         return stopController
     }
 
-    public func makeStopController(stopID: StopID) -> UIViewController {
+    public func makeStopController(stopID: StopID, showToolbarOnBottom: Bool = false) -> UIViewController {
         if FeatureFlags.isNewStopPageEnabled(userDefaults: application.userDefaults) {
-            return StopPageViewController(application: application, stopID: stopID)
+            return StopPageViewController(application: application, stopID: stopID, showToolbarOnBottom: showToolbarOnBottom)
         } else {
             return StopViewController(application: application, stopID: stopID)
         }

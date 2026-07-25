@@ -672,12 +672,12 @@ class MapViewController: UIViewController,
     ///   - annotation: The annotation the stop was opened from, if any. Deselected when the
     ///     stop sheet closes so the map doesn't keep a pin highlighted for a dismissed sheet.
     func show(stop: Stop, deselecting annotation: MKAnnotation? = nil) {
-        present(stopController: application.viewRouter.makeStopController(stop: stop), deselecting: annotation)
+        present(stopController: application.viewRouter.makeStopController(stop: stop, showToolbarOnBottom: true), deselecting: annotation)
     }
 
     /// Displays the specified stop by ID.
     func show(stopID: StopID) {
-        present(stopController: application.viewRouter.makeStopController(stopID: stopID))
+        present(stopController: application.viewRouter.makeStopController(stopID: stopID, showToolbarOnBottom: true))
     }
 
     /// Routes a stop screen to the presentation that suits it: the redesigned Stop page comes
@@ -692,6 +692,10 @@ class MapViewController: UIViewController,
         guard stopController is StopPageViewController else {
             application.viewRouter.navigate(to: stopController, from: self)
             return
+        }
+
+        if let stopPageVC = stopController as? StopPageViewController {
+            stopPageVC.onClose = { [weak self] in self?.stopSheet.dismiss() }
         }
 
         // Only one sheet at a time: clear whatever else is occupying this space first.
@@ -1180,7 +1184,9 @@ class MapViewController: UIViewController,
         else { return nil }
 
         let previewController = { () -> UIViewController in
-            let stopController = self.application.viewRouter.makeStopController(stop: stop)
+            // Built for the sheet, because that's where committing the peek lands it. The
+            // toolbar stays suppressed until `exitPreviewMode()`, so the glance itself is bare.
+            let stopController = self.application.viewRouter.makeStopController(stop: stop, showToolbarOnBottom: true)
             (stopController as? Previewable)?.enterPreviewMode()
             return stopController
         }
