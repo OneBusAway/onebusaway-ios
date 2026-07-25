@@ -139,6 +139,36 @@ final class StopSheetPresenterTests: XCTestCase {
         XCTAssertEqual(dismissed, 1)
     }
 
+    /// `hide(animated:)` installs the hidden state's constraints in a single layout pass and then
+    /// animates only the layers. Under `.fitToBounds` the hidden anchor leaves the content view
+    /// almost no height, so without intervention the stop page re-lays itself out for a ~100 pt
+    /// box on the animation's first frame: for the third of a second the sheet takes to slide
+    /// away, the rider watches it collapse into a clipped strip of header over the toolbar, with a
+    /// tall band of empty surface beneath. Freezing the height turns that back into a slide.
+    func test_dismiss_keepsTheContentAtItsCurrentSizeWhileTheSheetSlidesAway() throws {
+        for detent in [FloatingPanelState.full, .half, .tip] {
+            let presenter = StopSheetPresenter()
+            presenter.present(UIViewController(), from: parent) {}
+
+            let panel = try XCTUnwrap(panels.first)
+            panel.move(to: detent, animated: false)
+            parent.view.layoutIfNeeded()
+
+            let contentView = try XCTUnwrap(panel.surfaceView.contentView)
+            let heightBefore = contentView.bounds.height
+
+            presenter.dismiss(animated: true)
+            parent.view.layoutIfNeeded()
+
+            XCTAssertEqual(
+                contentView.bounds.height, heightBefore, accuracy: 0.5,
+                "Dismissing from \(detent) re-laid the sheet's content out at the hidden anchor's height instead of sliding it away."
+            )
+
+            presenter.dismiss(animated: false)
+        }
+    }
+
     func test_dismiss_withNothingPresented_isANoOp() {
         presenter.dismiss(animated: false)
         XCTAssertFalse(presenter.isPresenting)

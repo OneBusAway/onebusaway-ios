@@ -139,11 +139,35 @@ final class StopSheetPresenter: NSObject {
     private func tearDown(animated: Bool, restoringTabBar: Bool) {
         guard let panel = releaseCurrentPresentation(restoringTabBar: restoringTabBar) else { return }
 
+        if animated {
+            freezeContentHeight(of: panel)
+        }
+
         panel.willMove(toParent: nil)
         panel.hide(animated: animated) {
             panel.view.removeFromSuperview()
             panel.removeFromParent()
         }
+    }
+
+    /// Pins the content view to the height it has right now, for the length of the dismissal.
+    ///
+    /// `.fitToBounds` ties the content's height to the surface's, and the surface's hidden anchor
+    /// leaves it barely any: `hide(animated:)` sets the final constraints in one layout pass and
+    /// then animates only the layers, so the SwiftUI page re-lays itself out for a ~100 pt box on
+    /// the very first frame while the surface takes the rest of the animation to slide away. What
+    /// the rider sees for that third of a second is the stop page collapsed into a strip at the
+    /// top of the sheet — a clipped header over the toolbar — above a tall band of bare surface.
+    ///
+    /// A required height beats the surface's own content constraints (`.required - 1`), so the
+    /// content keeps its size and simply travels down with the sheet, which is what a dismissal
+    /// should look like. The panel is discarded immediately afterwards, so nothing has to undo it.
+    private func freezeContentHeight(of panel: FloatingPanelController) {
+        guard let contentView = panel.surfaceView.contentView, contentView.bounds.height > 0 else { return }
+
+        let frozen = contentView.heightAnchor.constraint(equalToConstant: contentView.bounds.height)
+        frozen.identifier = "StopSheet-dismissal-frozen-height"
+        frozen.isActive = true
     }
 
     /// Clears the presenter's state, untracks the scroll view, restores the tab bar unless the
