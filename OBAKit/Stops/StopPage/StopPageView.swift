@@ -85,9 +85,10 @@ struct StopPageRootView: View {
     /// compact, and the chrome moves from the navigation bar to a bottom toolbar. `false` — the
     /// pushed presentation — leaves both exactly as they were.
     var showToolbarOnBottom = false
-    /// Controls whether the bottom toolbar is currently visible. Starts equal to
-    /// `showToolbarOnBottom`; set to `false` when the sheet is at its `.tip` detent.
-    var showBottomToolbar = false
+    /// `true` while the sheet sits at its `.tip` detent, where there is room for one row of
+    /// chrome and nothing else: the bottom toolbar goes away and the header collapses to the
+    /// stop name and its close button.
+    var isCollapsed = false
 
     var body: some View {
         StopPageView(
@@ -96,7 +97,7 @@ struct StopPageRootView: View {
             snapshotLoader: snapshotLoader,
             navigation: navigation,
             showToolbarOnBottom: showToolbarOnBottom,
-            showBottomToolbar: showBottomToolbar
+            isCollapsed: isCollapsed
         )
         .defaultAppStorage(userDefaults)
         .environment(\.obaFormatters, formatters)
@@ -127,9 +128,14 @@ struct StopPageView: View {
     /// `StopPageToolbar`. `false` keeps the pushed presentation's dark map header and leaves the
     /// chrome in the navigation bar, where `configureBarButtons()` puts it.
     var showToolbarOnBottom = false
-    /// Whether the bottom toolbar is currently shown. Decoupled from `showToolbarOnBottom` so the
-    /// toolbar can be hidden at the `.tip` detent without also changing the header style.
-    var showBottomToolbar = false
+    /// `true` while the sheet is at its `.tip` detent. Decoupled from `showToolbarOnBottom` so
+    /// the chrome can shrink to fit the detent without changing which presentation is in play.
+    var isCollapsed = false
+
+    /// The bottom toolbar has no room at `.tip`, where the sheet is barely onscreen.
+    private var showBottomToolbar: Bool {
+        showToolbarOnBottom && !isCollapsed
+    }
 
     @State private var expandedDepartureID: String?
     @State private var expandedRouteID: RouteID?
@@ -388,12 +394,12 @@ struct StopPageView: View {
         .safeAreaInset(edge: .top, spacing: 0) {
             if showToolbarOnBottom {
                 if let stop = viewModel.stop {
-                    StopPageSheetHeaderView(stop: stop, walkTime: walkTime, onWalkingDirections: navigation.showWalkingDirections, onClose: navigation.closeSheet)
+                    StopPageSheetHeaderView(stop: stop, walkTime: walkTime, onWalkingDirections: navigation.showWalkingDirections, onClose: navigation.closeSheet, isCollapsed: isCollapsed)
                 } else {
                     // Unconditional, unlike the pushed presentation's header: with no navigation
                     // bar behind the sheet, this strip carries the only close button, so a stop
                     // whose first fetch failed must still render it.
-                    StopPageSheetHeaderPlaceholderView(showsSkeleton: showsLoadingState, onClose: navigation.closeSheet)
+                    StopPageSheetHeaderPlaceholderView(showsSkeleton: showsLoadingState, onClose: navigation.closeSheet, isCollapsed: isCollapsed)
                 }
             }
         }

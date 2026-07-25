@@ -8,7 +8,30 @@
 //
 
 import SwiftUI
+import UIKit
 import OBAKitCore
+
+/// Geometry shared between the collapsed sheet header and the panel layout that has to leave
+/// room for it.
+///
+/// `StopSheetPresenter` sizes its `.tip` detent from `collapsedHeight(for:)` rather than taking
+/// FloatingPanel's stock 69 pt. A detent shorter than its header doesn't merely crop the header:
+/// SwiftUI pins a `safeAreaInset(edge: .top)` view's *bottom* edge to the clamped inset boundary
+/// and lets the rest overflow upward, off the top of the sheet — so the first things to leave the
+/// screen are the stop name and the close button, the two the rider most needs there.
+nonisolated enum StopSheetHeaderMetrics {
+    static let topPadding: CGFloat = 4
+    static let collapsedBottomPadding: CGFloat = 10
+    /// The close button's fixed size, and so the floor on the collapsed header's content row.
+    static let closeButtonSize: CGFloat = 30
+
+    /// The height `StopPageSheetHeaderView(isCollapsed: true)` needs: one line of the stop name
+    /// (or the close button, whichever is taller), its padding, and the divider hairline.
+    static func collapsedHeight(for traitCollection: UITraitCollection) -> CGFloat {
+        let nameLine = UIFont.preferredFont(forTextStyle: .title2, compatibleWith: traitCollection).lineHeight
+        return topPadding + max(closeButtonSize, ceil(nameLine)) + collapsedBottomPadding + 1
+    }
+}
 
 /// The Stop page header used when the page is presented as a sheet over the map.
 ///
@@ -32,6 +55,9 @@ struct StopPageSheetHeaderView: View {
     /// sheet's root has no bar (see `StopSheetPresenter`), because a bar would impose a top safe
     /// area on the hosting controller that this header would absorb as dead space above the name.
     let onClose: () -> Void
+    /// `true` at the sheet's `.tip` detent, where the header has roughly one row's worth of
+    /// height to work with. See `collapsedHeight` for what has to survive that budget and why.
+    var isCollapsed = false
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
@@ -49,6 +75,15 @@ struct StopPageSheetHeaderView: View {
             .sorted { $0.localizedStandardCompare($1) == .orderedAscending }
     }
 
+    /// How many lines the stop name gets. Collapsed the header has one row to spend, so a
+    /// second line would push the close button's row past the detent and clip both.
+    private var nameLineLimit: Int {
+        if isCollapsed { return 1 }
+        // Accessibility sizes get more lines so the full name still reads instead of clipping
+        // at the larger glyph sizes.
+        return dynamicTypeSize.isAccessibilitySize ? 4 : 2
+    }
+
     var body: some View {
         // `spacing: 0` with an explicit trailing `Divider()`: inside a VStack the divider is
         // unambiguously horizontal, where an `.overlay` gives it no axis to infer one from.
@@ -64,15 +99,15 @@ struct StopPageSheetHeaderView: View {
                         Text(stop.name)
                             .font(.title2.weight(.bold))
                             .foregroundStyle(.primary)
-                            // Accessibility sizes get more lines so the full name still reads
-                            // instead of clipping at the larger glyph sizes.
-                            .lineLimit(dynamicTypeSize.isAccessibilitySize ? 4 : 2)
+                            .lineLimit(nameLineLimit)
                             .fixedSize(horizontal: false, vertical: true)
 
-                        Text(subtitle)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(2)
+                        if !isCollapsed {
+                            Text(subtitle)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(2)
+                        }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .accessibilityElement(children: .combine)
@@ -80,11 +115,11 @@ struct StopPageSheetHeaderView: View {
                     StopSheetCloseButton(action: onClose)
                 }
 
-                if let walkTime {
+                if let walkTime, !isCollapsed {
                     walkPill(walkTime)
                 }
 
-                if !routeBadgeNames.isEmpty {
+                if !isCollapsed, !routeBadgeNames.isEmpty {
                     // `FlowLayout` only ever receives `Text` here. It sizes subviews with an
                     // unspecified proposal, which a `Button` answers with a greedy height — that
                     // is what stretched the walk pill down the whole sheet, so the pill lives in
@@ -102,8 +137,8 @@ struct StopPageSheetHeaderView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 16)
-            .padding(.top, 4)
-            .padding(.bottom, 14)
+            .padding(.top, StopSheetHeaderMetrics.topPadding)
+            .padding(.bottom, isCollapsed ? StopSheetHeaderMetrics.collapsedBottomPadding : 14)
 
             // Separates the identity block from the scrolling departures below it. The sheet has
             // no nav bar hairline to do this job — the chrome moved to the bottom toolbar.
@@ -179,7 +214,7 @@ struct StopSheetCloseButton: View {
             Image(systemName: "xmark")
                 .font(.footnote.weight(.bold))
                 .foregroundStyle(.secondary)
-                .frame(width: 30, height: 30)
+                .frame(width: StopSheetHeaderMetrics.closeButtonSize, height: StopSheetHeaderMetrics.closeButtonSize)
                 .background(Color(uiColor: .secondarySystemFill), in: Circle())
                 .contentShape(Circle())
         }
@@ -200,6 +235,9 @@ struct StopPageSheetHeaderPlaceholderView: View {
     /// `false` once a first fetch has failed; the centered error row below owns the screen.
     var showsSkeleton = true
     let onClose: () -> Void
+    /// `true` at the sheet's `.tip` detent. Trims the skeleton to its name line so the strip
+    /// costs the same height the real collapsed header does.
+    var isCollapsed = false
 
     @ScaledMetric(relativeTo: .title2) private var nameLineHeight: CGFloat = 24
     @ScaledMetric(relativeTo: .subheadline) private var subtitleLineHeight: CGFloat = 20
@@ -218,8 +256,8 @@ struct StopPageSheetHeaderPlaceholderView: View {
             StopSheetCloseButton(action: onClose)
         }
         .padding(.horizontal, 16)
-        .padding(.top, 4)
-        .padding(.bottom, 14)
+        .padding(.top, StopSheetHeaderMetrics.topPadding)
+        .padding(.bottom, isCollapsed ? StopSheetHeaderMetrics.collapsedBottomPadding : 14)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color(uiColor: .systemBackground))
         .overlay(alignment: .bottom) { Divider() }
@@ -234,13 +272,15 @@ struct StopPageSheetHeaderPlaceholderView: View {
     private var skeleton: some View {
         VStack(alignment: .leading, spacing: 10) {
             skeletonLine(width: 220, height: nameLineHeight)
-            HStack(spacing: 8) {
-                skeletonLine(width: 96, height: subtitleLineHeight)
-                skeletonLine(width: 130, height: subtitleLineHeight)
-            }
-            HStack(spacing: 6) {
-                ForEach(0..<4, id: \.self) { _ in
-                    skeletonLine(width: 34, height: subtitleLineHeight)
+            if !isCollapsed {
+                HStack(spacing: 8) {
+                    skeletonLine(width: 96, height: subtitleLineHeight)
+                    skeletonLine(width: 130, height: subtitleLineHeight)
+                }
+                HStack(spacing: 6) {
+                    ForEach(0..<4, id: \.self) { _ in
+                        skeletonLine(width: 34, height: subtitleLineHeight)
+                    }
                 }
             }
         }

@@ -27,7 +27,8 @@ import OBAKitCore
 final class StopSheetPresenter: NSObject {
 
     /// Top inset for the content view, leaving room for the grabber above the navigation bar.
-    private static let grabberClearance: CGFloat = 16.0
+    /// `nonisolated` so `StopSheetLayout` can subtract it from a detent's budget.
+    nonisolated fileprivate static let grabberClearance: CGFloat = 16.0
 
     private var panel: FloatingPanelController?
     private var navigation: UINavigationController?
@@ -107,9 +108,12 @@ final class StopSheetPresenter: NSObject {
         self.dismissHandler = onDismiss
         self.hostTabBarController = parent.tabBarController
 
-        // Stock `FloatingPanelBottomLayout` already anchors .full/.half/.tip and opens at .half,
-        // which is exactly the spec — no custom layout object needed.
-        //
+        // Seeded from the parent's traits rather than left to `floatingPanel(_:layoutFor:)`
+        // alone: that delegate callback runs during `FloatingPanelController.init`, before the
+        // panel is in a hierarchy, so a rider running a large content size category would get a
+        // `.tip` sized for the default one until the next trait change.
+        panel.layout = StopSheetLayout(traitCollection: parent.traitCollection)
+
         // `animated` defaults to `false`, which makes the sheet pop into place fully formed. A
         // fresh controller's state is `.hidden`, so passing `true` slides it up from offscreen
         // the way a sheet is expected to arrive.
@@ -272,9 +276,43 @@ extension StopSheetPresenter: UINavigationControllerDelegate {
     }
 }
 
+// MARK: - Layout
+
+/// `FloatingPanelBottomLayout` with a `.tip` detent tall enough to hold the collapsed stop
+/// header.
+///
+/// The stock anchor is a flat 69 pt, which fits the collapsed header at the default content size
+/// category and nothing above it. Overflow there is not a graceful crop — see
+/// `StopSheetHeaderMetrics` — so the anchor grows with the type size instead. `.full` and `.half`
+/// are the stock anchors; only the peek detent has content it must be measured against.
+nonisolated final class StopSheetLayout: FloatingPanelBottomLayout {
+    private let tipInset: CGFloat
+
+    init(traitCollection: UITraitCollection) {
+        let stockTipInset: CGFloat = 69.0
+        // The grabber strip sits inside the surface but above the content view, so the header's
+        // share of a detent is the anchor minus that clearance — hence adding it back here.
+        let needed = StopSheetHeaderMetrics.collapsedHeight(for: traitCollection) + StopSheetPresenter.grabberClearance
+        tipInset = max(stockTipInset, needed)
+        super.init()
+    }
+
+    override var anchors: [FloatingPanelState: FloatingPanelLayoutAnchoring] {
+        var anchors = super.anchors
+        anchors[.tip] = FloatingPanelLayoutAnchor(absoluteInset: tipInset, edge: .bottom, referenceGuide: .safeArea)
+        return anchors
+    }
+}
+
 // MARK: - FloatingPanelControllerDelegate
 
 extension StopSheetPresenter: FloatingPanelControllerDelegate {
+
+    /// Re-measures the `.tip` detent when the rider changes their text size while a sheet is up.
+    func floatingPanel(_ fpc: FloatingPanelController, layoutFor newCollection: UITraitCollection) -> FloatingPanelLayout {
+        StopSheetLayout(traitCollection: newCollection)
+    }
+
     /// Fires when the rider swipes the sheet away. FloatingPanel has already detached the panel
     /// and removed it from the parent by this point, so this only has to release the
     /// presenter's own state, restore the tab bar, and run the dismissal handler.

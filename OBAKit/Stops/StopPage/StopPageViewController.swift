@@ -118,15 +118,22 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
             navigation: makeNavigationHandler(),
             formatters: application.formatters,
             showToolbarOnBottom: showsBottomToolbar,
-            showBottomToolbar: showsBottomToolbar
+            isCollapsed: isAtTip
         )
     }
 
-    /// Called by `StopSheetPresenter` when the panel's detent changes. Hides the
-    /// bottom toolbar at `.tip` (where the sheet is nearly offscreen) and restores
-    /// it when the sheet is dragged back up.
+    /// `true` while the sheet showing this page sits at its `.tip` detent. Stored rather than
+    /// derived so `installRootView()` — which runs again on preview-mode changes — rebuilds the
+    /// root with the detent the sheet is actually at instead of resetting it to expanded.
+    private var isAtTip = false
+
+    /// Called by `StopSheetPresenter` when the panel's detent changes. At `.tip` the sheet is
+    /// barely onscreen: the bottom toolbar goes away and the header collapses to the stop name
+    /// and its close button, which is all the detent has room for.
     func setAtTip(_ isAtTip: Bool) {
-        rootView.showBottomToolbar = showsBottomToolbar && !isAtTip
+        guard self.isAtTip != isAtTip else { return }
+        self.isAtTip = isAtTip
+        rootView.isCollapsed = isAtTip
     }
 
     /// Suppressed in preview mode: a peek is a bare glance, the same reason `configureBarButtons()`
