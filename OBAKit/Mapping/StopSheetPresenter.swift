@@ -137,37 +137,65 @@ final class StopSheetPresenter: NSObject {
     /// Detaches by way of `hide` rather than `removePanelFromParent` on purpose: the latter
     /// fires `floatingPanelDidRemove`, which would re-enter this method.
     private func tearDown(animated: Bool, restoringTabBar: Bool) {
-        guard let panel = releaseCurrentPresentation(restoringTabBar: restoringTabBar) else { return }
-
-        if animated {
-            freezeContentHeight(of: panel)
-        }
+        // An animated teardown holds the tab bar back until the sheet has gone; see
+        // `restoreDeferredTabBar()`.
+        guard let panel = releaseCurrentPresentation(restoringTabBar: restoringTabBar && !animated) else { return }
 
         panel.willMove(toParent: nil)
-        panel.hide(animated: animated) {
+
+        let detach = {
             panel.view.removeFromSuperview()
             panel.removeFromParent()
         }
+
+        guard animated else {
+            panel.hide(animated: false, completion: detach)
+            return
+        }
+
+        slideAway(panel) { [weak self] in
+            // Leaves the panel at the hidden anchor before it's discarded, so nothing observes a
+            // sheet that is offscreen by transform but still `.half` by state.
+            panel.hide(animated: false, completion: detach)
+
+            if restoringTabBar {
+                self?.restoreDeferredTabBar()
+            }
+        }
     }
 
-    /// Pins the content view to the height it has right now, for the length of the dismissal.
+    /// Slides the sheet off the bottom edge of the screen, then hands back for teardown.
     ///
-    /// `.fitToBounds` ties the content's height to the surface's, and the surface's hidden anchor
-    /// leaves it barely any: `hide(animated:)` sets the final constraints in one layout pass and
-    /// then animates only the layers, so the SwiftUI page re-lays itself out for a ~100 pt box on
-    /// the very first frame while the surface takes the rest of the animation to slide away. What
-    /// the rider sees for that third of a second is the stop page collapsed into a strip at the
-    /// top of the sheet — a clipped header over the toolbar — above a tall band of bare surface.
+    /// FloatingPanel's own `hide(animated:)` animates the surface's *layout*, and under
+    /// `.fitToBounds` that isn't a slide at all: the hidden anchor drives the surface's top edge
+    /// down to the bottom of the screen while the fit-to-bounds constraint goes on holding its
+    /// bottom edge there, so the sheet collapses in place instead of travelling. The SwiftUI page
+    /// inside is resized on every frame of that collapse — the rider watches the stop page fold
+    /// into a strip of clipped header over the toolbar, above a band of bare surface.
     ///
-    /// A required height beats the surface's own content constraints (`.required - 1`), so the
-    /// content keeps its size and simply travels down with the sheet, which is what a dismissal
-    /// should look like. The panel is discarded immediately afterwards, so nothing has to undo it.
-    private func freezeContentHeight(of panel: FloatingPanelController) {
-        guard let contentView = panel.surfaceView.contentView, contentView.bounds.height > 0 else { return }
+    /// Constraining the content's height to fight the collapse only moves the problem: the
+    /// surface's position constraints are `.defaultHigh` at both edges, so a required height that
+    /// neither of them can satisfy leaves the solver splitting the difference — at `.half`,
+    /// visibly hauling the sheet up the screen before it drops. A transform sidesteps the layout
+    /// system entirely: the whole sheet travels as one piece, at a fixed size, with no layout
+    /// pass to re-lay the page out.
+    private func slideAway(_ panel: FloatingPanelController, completion: @escaping () -> Void) {
+        let surface = panel.surfaceView
+        let distance = panel.view.bounds.maxY - surface.frame.minY
 
-        let frozen = contentView.heightAnchor.constraint(equalToConstant: contentView.bounds.height)
-        frozen.identifier = "StopSheet-dismissal-frozen-height"
-        frozen.isActive = true
+        guard distance > 0 else {
+            completion()
+            return
+        }
+
+        UIView.animate(withDuration: 0.3, delay: 0, options: [.curveEaseIn, .beginFromCurrentState]) {
+            surface.transform = CGAffineTransform(translationX: 0, y: distance)
+            // The backdrop is only visible at `.full`, where leaving it up for the whole slide
+            // would dim the map the sheet is uncovering.
+            panel.backdropView.alpha = 0
+        } completion: { _ in
+            completion()
+        }
     }
 
     /// Clears the presenter's state, untracks the scroll view, restores the tab bar unless the
@@ -212,6 +240,23 @@ final class StopSheetPresenter: NSObject {
     private func setHostTabBarHidden(_ hidden: Bool, animated: Bool) {
         guard let hostTabBarController, hostTabBarController.isTabBarHidden != hidden else { return }
         hostTabBarController.setTabBarHidden(hidden, animated: animated)
+    }
+
+    /// Puts the tab bar back after an animated dismissal has finished.
+    ///
+    /// The bar's return grows the map's bottom safe area, and the sheet's `.half` anchor is a
+    /// *fraction of the safe area* — so restoring it while the sheet is still onscreen re-solves
+    /// the anchor and yanks the sheet up the screen before it can slide down. `.full` and `.tip`
+    /// are absolute insets and barely move, which is why the jump only ever showed up at `.half`.
+    /// Waiting until the sheet has left means nothing is onscreen to re-lay out.
+    ///
+    /// Skipped when another sheet arrived during the slide: that presentation wants the bar
+    /// hidden, and it owns `hostTabBarController` now.
+    private func restoreDeferredTabBar() {
+        guard panel == nil else { return }
+
+        setHostTabBarHidden(false, animated: true)
+        hostTabBarController = nil
     }
 
     /// Keeps the bar transparent in every state so the header card's map snapshot runs

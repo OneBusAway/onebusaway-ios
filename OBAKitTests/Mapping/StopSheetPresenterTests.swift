@@ -49,6 +49,12 @@ final class StopSheetPresenterTests: XCTestCase {
         parent.children.compactMap { $0 as? FloatingPanelController }
     }
 
+    /// Lets an in-flight presentation or dismissal animation finish. Measuring a panel that is
+    /// still being animated into place reports whatever position that frame happened to catch.
+    private func spin(_ seconds: TimeInterval) {
+        RunLoop.current.run(until: Date().addingTimeInterval(seconds))
+    }
+
     // MARK: - Presentation
 
     func test_present_addsOnePanelOpenedAtTheHalfDetent() {
@@ -139,34 +145,76 @@ final class StopSheetPresenterTests: XCTestCase {
         XCTAssertEqual(dismissed, 1)
     }
 
-    /// `hide(animated:)` installs the hidden state's constraints in a single layout pass and then
-    /// animates only the layers. Under `.fitToBounds` the hidden anchor leaves the content view
-    /// almost no height, so without intervention the stop page re-lays itself out for a ~100 pt
-    /// box on the animation's first frame: for the third of a second the sheet takes to slide
-    /// away, the rider watches it collapse into a clipped strip of header over the toolbar, with a
-    /// tall band of empty surface beneath. Freezing the height turns that back into a slide.
-    func test_dismiss_keepsTheContentAtItsCurrentSizeWhileTheSheetSlidesAway() throws {
+    /// A dismissal should look like one thing leaving: the sheet travels straight down, at the
+    /// size the rider was just looking at, until it clears the bottom edge.
+    ///
+    /// Two mechanics make that harder than it sounds, and both showed up worst at `.half`.
+    /// FloatingPanel's `hide(animated:)` animates the surface's *layout*, and under
+    /// `.fitToBounds` the hidden anchor drives the surface's top edge down to the bottom of the
+    /// screen while the fit-to-bounds constraint goes on holding its bottom edge there — the
+    /// sheet collapses in place rather than travelling, re-laying the stop page out on every
+    /// frame. And restoring the tab bar grows the map's bottom safe area, which re-solves the
+    /// `.half` anchor's fraction *of* that safe area and hauls the sheet up the screen mid-exit.
+    ///
+    /// Measured against the panel's own view: the surface ends flush with the bottom edge, and
+    /// neither it nor the page inside it changed size on the way there.
+    func test_dismiss_slidesTheSheetStraightDownAtTheSizeItHad() throws {
+        let (_, hosted) = makeTabBarHostedParent()
+
         for detent in [FloatingPanelState.full, .half, .tip] {
             let presenter = StopSheetPresenter()
-            presenter.present(UIViewController(), from: parent) {}
+            presenter.present(UIViewController(), from: hosted) {}
 
-            let panel = try XCTUnwrap(panels.first)
+            spin(0.5)
+
+            let panel = try XCTUnwrap(panels(in: hosted).first)
             panel.move(to: detent, animated: false)
-            parent.view.layoutIfNeeded()
+            hosted.view.layoutIfNeeded()
 
-            let contentView = try XCTUnwrap(panel.surfaceView.contentView)
-            let heightBefore = contentView.bounds.height
+            let surface = panel.surfaceView
+            let contentView = try XCTUnwrap(surface.contentView)
+            let frameBefore = surface.frame
+            let contentHeightBefore = contentView.bounds.height
 
             presenter.dismiss(animated: true)
-            parent.view.layoutIfNeeded()
+            hosted.view.layoutIfNeeded()
 
             XCTAssertEqual(
-                contentView.bounds.height, heightBefore, accuracy: 0.5,
-                "Dismissing from \(detent) re-laid the sheet's content out at the hidden anchor's height instead of sliding it away."
+                surface.frame.minY, panel.view.bounds.maxY, accuracy: 0.5,
+                "Dismissing from \(detent) left the sheet's top edge short of the bottom of the screen."
+            )
+            XCTAssertEqual(
+                surface.frame.minX, frameBefore.minX, accuracy: 0.5,
+                "Dismissing from \(detent) moved the sheet sideways."
+            )
+            XCTAssertEqual(
+                surface.frame.height, frameBefore.height, accuracy: 0.5,
+                "Dismissing from \(detent) resized the sheet instead of sliding it away."
+            )
+            XCTAssertEqual(
+                contentView.bounds.height, contentHeightBefore, accuracy: 0.5,
+                "Dismissing from \(detent) re-laid the stop page out mid-slide."
             )
 
-            presenter.dismiss(animated: false)
+            // Let the slide finish, so the next detent measures its own sheet rather than one
+            // still on its way out.
+            spin(0.5)
+            XCTAssertEqual(panels(in: hosted).count, 0, "The \(detent) sheet never detached itself.")
         }
+    }
+
+    /// The tab bar's return is what changes the safe area the `.half` anchor is measured
+    /// against, so it has to wait for the sheet to be gone — but it does still have to happen.
+    func test_dismiss_animated_restoresTheHostTabBarOnceTheSheetHasGone() {
+        let (tabBarController, hosted) = makeTabBarHostedParent()
+        presenter.present(UIViewController(), from: hosted) {}
+        spin(0.5)
+
+        presenter.dismiss(animated: true)
+        XCTAssertTrue(tabBarController.isTabBarHidden, "The tab bar came back while the sheet was still onscreen.")
+
+        spin(0.8)
+        XCTAssertFalse(tabBarController.isTabBarHidden, "The tab bar never came back after the sheet left.")
     }
 
     func test_dismiss_withNothingPresented_isANoOp() {
