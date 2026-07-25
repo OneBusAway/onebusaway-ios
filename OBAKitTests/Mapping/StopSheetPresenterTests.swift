@@ -72,10 +72,23 @@ final class StopSheetPresenterTests: XCTestCase {
         XCTAssertIdentical(navigation?.viewControllers.first, content)
     }
 
-    func test_present_enablesSwipeToDismiss() {
+    /// Swipe-to-dismiss is off: the sheet header carries an explicit close button, and with
+    /// removal enabled a downward flick past `.tip` tears the sheet down instead of settling
+    /// there, which costs the rider the peek-at-the-map detent.
+    func test_present_disablesSwipeToDismiss() {
         presenter.present(UIViewController(), from: parent) {}
 
-        XCTAssertEqual(panels.first?.isRemovalInteractionEnabled, true)
+        XCTAssertEqual(panels.first?.isRemovalInteractionEnabled, false)
+    }
+
+    /// The tracked scroll view keeps its own content insets. FloatingPanel's default
+    /// (`.always`) assigns `contentInset` outright on every layout pass, which wipes the top
+    /// inset the stop page's `safeAreaInset(edge: .top)` header installs and strands the mode
+    /// toggle and first departure underneath it.
+    func test_present_leavesTheTrackedScrollViewsContentInsetsAlone() {
+        presenter.present(UIViewController(), from: parent) {}
+
+        XCTAssertEqual(panels.first?.contentInsetAdjustmentBehavior, .never)
     }
 
     // MARK: - Replacement

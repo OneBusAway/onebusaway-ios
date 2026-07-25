@@ -82,6 +82,17 @@ final class StopSheetPresenter: NSObject {
         // so the toolbar sits on the screen's bottom edge at every detent.
         panel.contentMode = .fitToBounds
 
+        // Hands the tracked scroll view's content insets back to whoever owns it — here, the
+        // SwiftUI `List`. The default `.always` takes them over three different ways:
+        // `track(scrollView:)` forces the scroll view's own `contentInsetAdjustmentBehavior` to
+        // `.never`, and both `adjustScrollContentInsetIfNeeded()` and every layout pass then
+        // assign `contentInset` outright (top: 0 for a bottom-positioned panel). That wipes the
+        // top inset `safeAreaInset(edge: .top)` installs for the stop page's header, leaving the
+        // mode toggle and the first departure stranded underneath it. `.always` exists to keep
+        // content visible at intermediate detents under `.static` sizing, which `.fitToBounds`
+        // already handles by resizing the content view to the surface's visible bounds.
+        panel.contentInsetAdjustmentBehavior = .never
+
         let appearance = SurfaceAppearance()
         appearance.cornerRadius = ThemeMetrics.cornerRadius
         // Unlike the map drawer — whose content controller paints its own background — the
