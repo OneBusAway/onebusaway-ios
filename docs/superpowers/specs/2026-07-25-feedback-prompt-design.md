@@ -43,9 +43,11 @@ without Mail.app configured. The complaint path is a wiring job, not new code.
 ## Non-Goals
 
 - **Legacy `StopViewController`.** `FeatureFlags.isNewStopPageEnabled` defaults
-  to `true`; the classic page is an opt-out toggle on its way to removal. A
-  rider who has explicitly turned the new page off will never accumulate
-  successes and will never be prompted. Acceptable.
+  to `true`; the classic page is an opt-out toggle on its way to removal. The
+  gate is *presentation*, not accrual: `StopViewController` builds the same
+  `StopViewModel`, so a rider who has turned the new page off goes on recording
+  successes and errors normally — there is simply no stop-sheet dismissal to
+  present from, so they are never prompted. Acceptable.
 - **Bookmarks tab as a success signal.** Bookmark rows refresh in bulk on a
   timer without per-stop rider intent, so counting them would inflate the
   counter without evidence of engagement. Stop views only.
@@ -220,11 +222,23 @@ Additional suppressions at presentation time:
   rider to ask for five stars. This is `sawErrorThisSession` on
   `PromptCoordinator` (§5). Reaching it from `StopViewModel` requires a second
   `StopViewModelEnvironment` member beyond `reviewPromptPolicy` — the view model
-  reaches everything through that protocol. Only the general `catch` sets it;
-  `catch APIError.requestNotFound` is the broken-bookmark path, sets
-  `operationError = nil`, and is not a failure the rider watched.
+  reaches everything through that protocol. The general `catch` sets it, and so
+  does `catch APIError.requestNotFound` **when there is no `bookmarkContext`**:
+  with a bookmark behind it a 404 is the broken-bookmark path, which explains
+  itself and offers a way out, but from a deep link, a search result, or a map
+  pin the same 404 leaves the page with no arrivals, no error, and no recovery.
+  That is a failure the rider watched.
 - A short delay (~1–2 s) after dismissal before presenting, per Apple's sample,
-  so the alert doesn't race the sheet animation.
+  so the alert doesn't race the sheet animation. The delay is a cancellable
+  `DispatchWorkItem` on `MapViewController`, and the suppressions above are
+  re-checked **when it fires**, not when it is armed. `StopSheetPresenter.present`
+  tears the outgoing sheet down as its first statement, so the dismissal handler
+  also runs when one sheet *replaces* another — without re-validation the alert
+  would land on top of the incoming stop sheet, over a map-item place card, on
+  another tab, or on a freshly resumed app. `presentIfEligible` takes a
+  caller-supplied `canPresent` closure for exactly this: its own
+  `presentedViewController == nil` check is blind to FloatingPanel children,
+  which is what all of those are.
 
 ### 5. `PromptCoordinator`: never two asks at once
 
@@ -307,7 +321,11 @@ All new code in `OBAKit/Feedback/`, matching `OBAKit/Donations/`:
   holds the only such conformance in the tree.
 - **`PromptCoordinator`** — §5.
 
-Owned by `Application` as `lazy var` properties beside `donationsManager`.
+`ReviewPromptPolicy` and `PromptCoordinator` are owned by `Application` as
+`lazy var` properties beside `donationsManager`. `FeedbackPromptPresenter` is a
+`private lazy var` on `MapViewController` instead — it is only ever presented
+from there, and the map is a tab root, so it outlives every alert and composer
+it puts up and the weak `mailComposeDelegate` stays valid.
 `CoreApplication` is `@MainActor` and OBAKit builds with
 `SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor` under Swift 6 complete checking, so
 `DonationsManager` is implicitly `@MainActor` and can call the coordinator
@@ -362,7 +380,11 @@ two `FeatureFlags` toggles and carries the footer "Restart the app to apply.",
 which is wrong copy for a live debug switch. Built as implemented: a dedicated
 "Feedback" section following the Surveys section's precedent
 (`alwaysShowSurveysOnStops` lives in its own feature section), placed between
-Surveys and Debug in `SettingsViewController`.
+Surveys and Debug in `SettingsViewController`. The whole section — header,
+rows, and footer — is hidden behind `hiddenUnlessDebugMode`, the same condition
+the Debug section's rows use, so riders never see it. Gating at the section
+rather than the rows is what keeps the footer's implementation detail out of
+the shipping UI too.
 
 - **Always show feedback prompt** (`ReviewPromptPolicy.alwaysShowPrompt`) —
   bypasses the counter, backoffs, version gate, and lifetime ask cap inside
@@ -375,16 +397,15 @@ Surveys and Debug in `SettingsViewController`.
   one foreground session (or one following a donation/survey engagement); the
   reset button's `promptCoordinator.reset()` call clears the persisted
   cooldown and starts a fresh session, so a single QA pass in a fresh session
-  is unaffected. A known wart carried from the Task 2 review: because
-  `alwaysShowPrompt` short-circuits `isPromptPending` before the ask-cap check,
-  every debug-triggered presentation still calls `recordPromptPresented()` and
-  increments `askCount`/stamps `lastVersionPrompted` on the real policy state —
-  three debug taps permanently silence the organic prompt for that install
-  until the reset button is used. `ReviewPromptPolicy.reset()` deliberately
-  does not clear the `alwaysShow` key itself, so the toggle also stays on
-  across a reset. The Feedback section's footer states both facts — the
-  real-ask-count cost of leaving the toggle on, and that resetting doesn't
-  turn it off — since neither is visible anywhere else in the UI.
+  is unaffected. Debug presentations do **not** spend the real ask budget:
+  because `alwaysShowPrompt` short-circuits `isPromptPending` ahead of the
+  ask-cap and version gates, `recordPromptPresented()` skips the matching
+  `askCount` and `lastVersionPrompted` writes while the toggle is on. It still
+  stamps `lastAskedDate`, zeroes `successCount`, and writes `.deferred` up
+  front, so an abandoned debug alert lands in the same defined state a real one
+  would. `ReviewPromptPolicy.reset()` deliberately does not clear the
+  `alwaysShow` key itself, so the toggle stays on across a reset; the Feedback
+  section's footer says so, since that isn't visible anywhere else in the UI.
 - **Reset feedback prompt state** — clears all five `ReviewPrompt.` keys **and**
   calls `PromptCoordinator.reset()`, which clears `lastEngagementDate` and
   `lastPromptKind` and starts a fresh in-memory session. Omitting the latter
@@ -495,8 +516,9 @@ clock, isolated `UserDefaults` suite:
 - Scheduled-only arrivals record none. (This lives here, not in the policy
   tests — the `predicted` filter is view-model logic.)
 - An arrival predicted only on a hidden route records none.
-- An errored fetch records no success and sets `sawErrorThisSession`;
-  `APIError.requestNotFound` does not.
+- An errored fetch records no success and sets `sawErrorThisSession`.
+  `APIError.requestNotFound` sets it too unless there is a `bookmarkContext`;
+  both branches are pinned.
 
 Alerts, deep-link opening, and the mail composer are not unit tested — the
 XCUITest runner is unreliable under Xcode 27. Verify manually with the debug
