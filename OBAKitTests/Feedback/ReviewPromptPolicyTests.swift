@@ -70,9 +70,18 @@ final class ReviewPromptPolicyTests: OBATestCase {
         XCTAssertTrue(policy.isPromptPending)
     }
 
-    /// The derived-not-stored requirement: a policy rebuilt from the same
-    /// defaults (as after app termination) must still report pending.
-    func test_pendingSurvivesRelaunchPastThreshold() {
+    /// A fresh policy instance built from the same defaults (as after app
+    /// termination) reads the persisted `successCount` and reports pending.
+    ///
+    /// NOTE: sharing the same `UserDefaults` suite means this alone doesn't
+    /// distinguish "derived from `successCount`" from "a separately stored
+    /// pending flag" — both would round-trip identically here. The genuine
+    /// derived-not-stored pin is `test_negativeBacksOff180Days` and
+    /// `test_abandonedAskBehavesAsDeferral`, which flip `isPromptPending`
+    /// from `false` to `true` purely by advancing the clock with no
+    /// intervening `recordSuccess()` call — no one-way edge-triggered flag
+    /// could do that.
+    func test_pendingSurvivesFreshPolicyInstance() {
         let first = makePolicy()
         recordSuccesses(7, on: first)
         XCTAssertTrue(first.isPromptPending)
@@ -88,9 +97,24 @@ final class ReviewPromptPolicyTests: OBATestCase {
         recordSuccesses(5, on: policy)
         policy.recordPromptPresented()
 
+        XCTAssertEqual(policy.outcome, .deferred, "outcome must be written up front, before the rider answers")
         XCTAssertFalse(policy.isPromptPending)
         recordSuccesses(5, on: policy)
         XCTAssertFalse(policy.isPromptPending, "backoff should still block")
+    }
+
+    /// Calling `recordOutcome` without a preceding `recordPromptPresented()` is an
+    /// undefended ordering hole: with no `lastAskedDate` on file, the backoff
+    /// `if let` in `isPromptPending` would be skipped entirely, and `successCount`
+    /// was never zeroed — so the rider would stay pending and get re-prompted on
+    /// every subsequent stop view, unboundedly, without ever burning an ask.
+    func test_outcomeWithoutPresentationStillConsumesTheAsk() {
+        let policy = makePolicy()
+        recordSuccesses(5, on: policy)
+        // No recordPromptPresented() call.
+        policy.recordOutcome(.negative)
+
+        XCTAssertFalse(policy.isPromptPending, "recording an outcome must always consume the ask")
     }
 
     /// An alert the rider abandons (app killed mid-prompt) never gets an

@@ -80,8 +80,20 @@ final class ReviewPromptPolicy {
     }
 
     /// Records how the rider actually answered.
+    ///
+    /// Defends against being called without a preceding `recordPromptPresented()`:
+    /// with no `lastAskedDate` on file, `.negative`/`.deferred` would otherwise be a
+    /// total no-op — the backoff `if let` in `isPromptPending` is skipped entirely,
+    /// and `successCount` was never zeroed, so the rider stays pending and gets
+    /// re-prompted on every subsequent stop view without ever burning an ask. Stamp
+    /// `lastAskedDate` and zero `successCount` here too, so the ask is always
+    /// consumed regardless of call order.
     func recordOutcome(_ outcome: FeedbackPromptOutcome) {
         userDefaults.set(outcome.rawValue, forKey: Keys.outcome)
+        if userDefaults.object(forKey: Keys.lastAskedDate) == nil {
+            userDefaults.set(now(), forKey: Keys.lastAskedDate)
+            userDefaults.set(0, forKey: Keys.successCount)
+        }
     }
 
     // MARK: - Eligibility
@@ -136,7 +148,11 @@ final class ReviewPromptPolicy {
 
     private var askCount: Int { userDefaults.integer(forKey: Keys.askCount) }
 
-    private var outcome: FeedbackPromptOutcome? {
+    /// The most recently recorded outcome. Internal rather than private so tests
+    /// can pin the presentation-time write in `recordPromptPresented()` — that
+    /// `.deferred` write happens before the rider answers, and nothing else in the
+    /// public interface makes it observable.
+    var outcome: FeedbackPromptOutcome? {
         guard let raw = userDefaults.string(forKey: Keys.outcome) else { return nil }
         return FeedbackPromptOutcome(rawValue: raw)
     }
