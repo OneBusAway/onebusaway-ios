@@ -218,6 +218,27 @@ final class PromptCoordinatorTests: OBATestCase {
         XCTAssertTrue(makeCoordinator().canShowReviewPrompt())
     }
 
+    /// Two kinds gated at once, both rolled back: neither was ever presented, so no
+    /// cooldown may survive.
+    ///
+    /// With a single undo slot the second `noteShown` evicted the first one's record,
+    /// and the first's `noteNotShown` then found nothing to restore — leaving the
+    /// engagement date set, and the review prompt blocked for 14 days, on behalf of two
+    /// prompts the rider never saw.
+    func test_bothKindsRolledBackLeaveNoCooldown() {
+        let coordinator = makeCoordinator()
+        coordinator.noteShown(.surveyPrompt) // T0
+
+        advance(days: 1)
+        coordinator.noteShown(.donationModal) // T0 + 1d
+
+        advance(days: 1)
+        coordinator.noteNotShown(.donationModal) // restores the survey's date
+        coordinator.noteNotShown(.surveyPrompt) // must clear it entirely
+
+        XCTAssertTrue(makeCoordinator().canShowReviewPrompt(), "no engagement ever happened")
+    }
+
     /// `noteNotShown(_:)` with no preceding `noteShown(_:)` for that kind must
     /// be a safe no-op rather than disturbing an unrelated, already-persisted
     /// engagement (e.g. one written directly by `noteSurveyEngaged()`).

@@ -39,12 +39,12 @@ final class PromptCoordinator {
 
     private var shownThisSession: Set<PromptKind> = []
 
-    /// Records the exact engagement-date write made by the most recent
-    /// `noteShown(_:)` call — the value it wrote (`writtenDate`) and what it
-    /// overwrote (`previousDate`) — so a matching `noteNotShown(_:)` can
-    /// restore it. Without this, gating a prompt (marking it shown to claim the
-    /// session slot) and then not actually presenting it would leave the
-    /// 14-day engagement cooldown running against a prompt the rider never saw.
+    /// Records the exact engagement-date write made by a `noteShown(_:)` call —
+    /// the value it wrote (`writtenDate`) and what it overwrote
+    /// (`previousDate`) — so a matching `noteNotShown(_:)` can restore it.
+    /// Without this, gating a prompt (marking it shown to claim the session
+    /// slot) and then not actually presenting it would leave the 14-day
+    /// engagement cooldown running against a prompt the rider never saw.
     ///
     /// `noteNotShown(_:)` only restores when the persisted date still equals
     /// `writtenDate` — i.e. only ever undoes its own write. A genuine
@@ -52,12 +52,17 @@ final class PromptCoordinator {
     /// `writtenDate`, so the later `noteNotShown` correctly declines to
     /// restore (and would otherwise erase a real engagement).
     private struct PendingEngagementUndo {
-        let kind: PromptKind
         let previousDate: Date?
         let writtenDate: Date
     }
 
-    private var pendingEngagementUndo: PendingEngagementUndo?
+    /// Keyed by kind, not a single slot: two kinds can be mid-flight at once
+    /// (a survey card gated but unpresented while a donation modal finishes
+    /// presenting), and with one slot the second `noteShown` would silently
+    /// evict the first one's undo record. Its `noteNotShown` would then find
+    /// nothing to restore and leave the cooldown running for 14 days against a
+    /// prompt the rider never saw.
+    private var pendingEngagementUndo: [PromptKind: PendingEngagementUndo] = [:]
 
     /// Set when a stop load fails. A rider who just watched the app fail is not
     /// a rider to ask for five stars.
@@ -126,7 +131,7 @@ final class PromptCoordinator {
         if kind != .review {
             let previousEngagementDate = userDefaults.object(forKey: Keys.lastEngagementDate) as? Date
             let writtenDate = now()
-            pendingEngagementUndo = PendingEngagementUndo(kind: kind, previousDate: previousEngagementDate, writtenDate: writtenDate)
+            pendingEngagementUndo[kind] = PendingEngagementUndo(previousDate: previousEngagementDate, writtenDate: writtenDate)
             userDefaults.set(writtenDate, forKey: Keys.lastEngagementDate)
         }
     }
@@ -143,7 +148,7 @@ final class PromptCoordinator {
     func noteNotShown(_ kind: PromptKind) {
         shownThisSession.remove(kind)
 
-        if let pending = pendingEngagementUndo, pending.kind == kind {
+        if let pending = pendingEngagementUndo.removeValue(forKey: kind) {
             let currentDate = userDefaults.object(forKey: Keys.lastEngagementDate) as? Date
             if currentDate == pending.writtenDate {
                 if let previousDate = pending.previousDate {
@@ -152,7 +157,6 @@ final class PromptCoordinator {
                     userDefaults.removeObject(forKey: Keys.lastEngagementDate)
                 }
             }
-            pendingEngagementUndo = nil
         }
     }
 
@@ -165,7 +169,7 @@ final class PromptCoordinator {
     func beginNewSession() {
         shownThisSession.removeAll()
         sawErrorThisSession = false
-        pendingEngagementUndo = nil
+        pendingEngagementUndo.removeAll()
     }
 
     /// Clears persisted cooldown state. Called by the debug reset so a QA

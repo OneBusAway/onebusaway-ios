@@ -260,28 +260,28 @@
 "fare_payments.dont_show_again" = "繼續並不再顯示";
 
 /* Defers the feedback prompt. */
-"feedback_prompt.later_button" = "Ask Me Later";
+"feedback_prompt.later_button" = "稍後再問";
 
 /* Body of the follow-up alert after negative feedback. */
-"feedback_prompt.negative.body" = "Would you tell us what's wrong? We read every message.";
+"feedback_prompt.negative.body" = "能告訴我們哪裡有問題嗎？我們會閱讀每一則訊息。";
 
 /* Declines to send feedback. */
-"feedback_prompt.negative.decline_button" = "No Thanks";
+"feedback_prompt.negative.decline_button" = "不用了";
 
 /* Opens the feedback email composer. */
-"feedback_prompt.negative.send_button" = "Send Feedback";
+"feedback_prompt.negative.send_button" = "傳送意見";
 
 /* Title of the follow-up alert after negative feedback. */
-"feedback_prompt.negative.title" = "Sorry about that.";
+"feedback_prompt.negative.title" = "很抱歉。";
 
 /* Negative answer to the feedback prompt. */
-"feedback_prompt.negative_button" = "Not really";
+"feedback_prompt.negative_button" = "不太喜歡";
 
 /* Positive answer to the feedback prompt. */
-"feedback_prompt.positive_button" = "Yes!";
+"feedback_prompt.positive_button" = "喜歡！";
 
 /* Title of the alert asking how the rider likes the app. %@ is the app name. */
-"feedback_prompt.title" = "Enjoying %@?";
+"feedback_prompt.title" = "喜歡%@嗎？";
 
 /* A voiceover title describing the 'grabber' for controlling the visibility of a card. */
 "floating_panel.controller.accessibility_label" = "卡片控制項";
@@ -549,7 +549,7 @@
 "more_controller.privacy_row_title" = "隱私權政策";
 
 /* A row that opens the App Store review form. %@ is the app name. */
-"more_controller.rate_app" = "Rate %@";
+"more_controller.rate_app" = "評分%@";
 
 /* Title of the More tab
    Title of the More tab / accessibility label for the map-panel more button. */
@@ -994,16 +994,16 @@
 "settings_controller.experimental_section.title" = "實驗性功能";
 
 /* Settings > Feedback section > Debug toggle that bypasses the prompt's gating */
-"settings_controller.feedback_section.always_show" = "Always show feedback prompt";
+"settings_controller.feedback_section.always_show" = "一律顯示意見回饋提示";
 
 /* Settings > Feedback section > Footer noting that resetting the prompt state does not turn the debug toggle off */
-"settings_controller.feedback_section.footer" = "Resetting clears the saved prompt state but leaves this toggle turned on.";
+"settings_controller.feedback_section.footer" = "重設會清除已儲存的提示狀態，但此開關仍會保持開啟。";
 
 /* Settings > Feedback section > Clears all feedback prompt bookkeeping */
-"settings_controller.feedback_section.reset" = "Reset feedback prompt state";
+"settings_controller.feedback_section.reset" = "重設意見回饋提示狀態";
 
 /* Settings > Feedback section title */
-"settings_controller.feedback_section.title" = "Feedback";
+"settings_controller.feedback_section.title" = "意見回饋";
 
 /* Settings > Map section > Show my current heading */
 "settings_controller.map_section.shows_heading" = "顯示我目前的方向";

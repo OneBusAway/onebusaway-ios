@@ -260,28 +260,28 @@
 "fare_payments.dont_show_again" = "المتابعة وعدم الإظهار مرة أخرى";
 
 /* Defers the feedback prompt. */
-"feedback_prompt.later_button" = "Ask Me Later";
+"feedback_prompt.later_button" = "اسألني لاحقًا";
 
 /* Body of the follow-up alert after negative feedback. */
-"feedback_prompt.negative.body" = "Would you tell us what's wrong? We read every message.";
+"feedback_prompt.negative.body" = "هل تخبرنا بما هو الخطأ؟ نقرأ كل رسالة.";
 
 /* Declines to send feedback. */
-"feedback_prompt.negative.decline_button" = "No Thanks";
+"feedback_prompt.negative.decline_button" = "لا، شكرًا";
 
 /* Opens the feedback email composer. */
-"feedback_prompt.negative.send_button" = "Send Feedback";
+"feedback_prompt.negative.send_button" = "إرسال ملاحظات";
 
 /* Title of the follow-up alert after negative feedback. */
-"feedback_prompt.negative.title" = "Sorry about that.";
+"feedback_prompt.negative.title" = "نعتذر عن ذلك.";
 
 /* Negative answer to the feedback prompt. */
-"feedback_prompt.negative_button" = "Not really";
+"feedback_prompt.negative_button" = "ليس تمامًا";
 
 /* Positive answer to the feedback prompt. */
-"feedback_prompt.positive_button" = "Yes!";
+"feedback_prompt.positive_button" = "نعم!";
 
 /* Title of the alert asking how the rider likes the app. %@ is the app name. */
-"feedback_prompt.title" = "Enjoying %@?";
+"feedback_prompt.title" = "هل تستمتع بـ %@؟";
 
 /* A voiceover title describing the 'grabber' for controlling the visibility of a card. */
 "floating_panel.controller.accessibility_label" = "أداة التحكم في البطاقة";
@@ -549,7 +549,7 @@
 "more_controller.privacy_row_title" = "سياسة الخصوصية";
 
 /* A row that opens the App Store review form. %@ is the app name. */
-"more_controller.rate_app" = "Rate %@";
+"more_controller.rate_app" = "تقييم %@";
 
 /* Title of the More tab
    Title of the More tab / accessibility label for the map-panel more button. */
@@ -994,16 +994,16 @@
 "settings_controller.experimental_section.title" = "تجريبي";
 
 /* Settings > Feedback section > Debug toggle that bypasses the prompt's gating */
-"settings_controller.feedback_section.always_show" = "Always show feedback prompt";
+"settings_controller.feedback_section.always_show" = "إظهار طلب الملاحظات دائمًا";
 
 /* Settings > Feedback section > Footer noting that resetting the prompt state does not turn the debug toggle off */
-"settings_controller.feedback_section.footer" = "Resetting clears the saved prompt state but leaves this toggle turned on.";
+"settings_controller.feedback_section.footer" = "تؤدي إعادة التعيين إلى مسح الحالة المحفوظة مع إبقاء هذا الخيار مُفعّلًا.";
 
 /* Settings > Feedback section > Clears all feedback prompt bookkeeping */
-"settings_controller.feedback_section.reset" = "Reset feedback prompt state";
+"settings_controller.feedback_section.reset" = "إعادة تعيين حالة طلب الملاحظات";
 
 /* Settings > Feedback section title */
-"settings_controller.feedback_section.title" = "Feedback";
+"settings_controller.feedback_section.title" = "الملاحظات";
 
 /* Settings > Map section > Show my current heading */
 "settings_controller.map_section.shows_heading" = "إظهار اتجاهي الحالي";

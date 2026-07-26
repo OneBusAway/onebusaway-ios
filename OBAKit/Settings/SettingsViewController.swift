@@ -431,6 +431,14 @@ class SettingsViewController: FormViewController {
                 if let testAlertsRow = form.rowBy(tag: AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts) as? SwitchRow {
                     testAlertsRow.value = false
                 }
+                // The override outlives its own UI otherwise: the row hides with the
+                // section, but the persisted flag keeps bypassing every prompt gate on
+                // what now looks like an ordinary install. Written directly as well as
+                // through the row, so it holds whether or not the row has been built.
+                if let alwaysShowRow = form.rowBy(tag: alwaysShowFeedbackPrompt) as? SwitchRow {
+                    alwaysShowRow.value = false
+                }
+                application.reviewPromptPolicy.alwaysShowPrompt = false
             }
         }
 

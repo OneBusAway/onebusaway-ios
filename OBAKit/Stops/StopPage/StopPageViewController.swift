@@ -841,10 +841,7 @@ private extension StopPageViewController {
             .environmentObject(donationModel)
             .environmentObject(AnalyticsModel(application.analytics))
 
-        // In the completion handler so a failed present doesn't charge the ask budget.
-        present(UIHostingController(rootView: learnMoreView), animated: true) { [weak self] in
-            self?.application.promptCoordinator.noteShown(.donationModal)
-        }
+        presentDonationModal(learnMoreView, coordinator: application.promptCoordinator)
     }
 
     /// Presents the "please don't dismiss" action sheet. `onHide` is invoked only

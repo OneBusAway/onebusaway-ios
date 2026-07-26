@@ -135,16 +135,7 @@ public class MoreViewController: UIViewController,
         guard application.donationsManager.donationsEnabled else { return }
 
         let view = application.donationsManager.buildLearnMoreView(presentingController: self)
-        let hostingController = UIHostingController(rootView: view)
-
-        // Registered in the completion handler, not before `present`: UIKit silently
-        // no-ops (without calling completion) when the presenter is detached or
-        // mid-transition, and charging the ask budget for a modal nobody saw would
-        // suppress the review prompt for 14 days. Same discipline as
-        // `FeedbackPromptPresenter.presentIfEligible`.
-        present(hostingController, animated: true) { [weak self] in
-            self?.application.promptCoordinator.noteShown(.donationModal)
-        }
+        presentDonationModal(view, coordinator: application.promptCoordinator)
     }
 
     // MARK: Updates and alerts section
