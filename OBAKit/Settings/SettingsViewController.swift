@@ -41,6 +41,7 @@ class SettingsViewController: FormViewController {
             +++ accessibilitySection
             +++ walkingSpeedSection
             +++ surveySection
+            +++ feedbackSection
             +++ debugSection
 
         if application.analytics != nil {
@@ -66,7 +67,8 @@ class SettingsViewController: FormViewController {
             alwaysShowSurveysOnStops: application.userDataStore.alwaysShowSurveysOnStops,
             walkingSpeedMetersPerSecondKey: snapToPreset(application.userDataStore.walkingSpeedMetersPerSecond),
             walkingSpeedUseHealthKitKey: application.userDataStore.walkingSpeedSource == .healthKit,
-            stopUIReducedColorsTag: application.userDataStore.stopUIReducedColors
+            stopUIReducedColorsTag: application.userDataStore.stopUIReducedColors,
+            alwaysShowFeedbackPrompt: application.reviewPromptPolicy.alwaysShowPrompt
         ])
     }
 
@@ -342,6 +344,46 @@ class SettingsViewController: FormViewController {
         section <<< SwitchRow {
             $0.tag = alwaysShowSurveysOnStops
             $0.title = OBALoc("settings_controller.survey_section.always_show_on_stops", value: "Always show on stops", comment: "Settings > Surveys section > Always show surveys on stops")
+        }
+
+        return section
+    }()
+
+    // MARK: - Feedback Section
+
+    private let alwaysShowFeedbackPrompt = "alwaysShowFeedbackPrompt"
+
+    private lazy var feedbackSection: Section = {
+        let section = Section(
+            header: OBALoc("settings_controller.feedback_section.title", value: "Feedback", comment: "Settings > Feedback section title"),
+            footer: OBALoc(
+                "settings_controller.feedback_section.footer",
+                value: "Resetting clears the feedback prompt's state, but leaves \"Always show feedback prompt\" turned on.",
+                comment: "Settings > Feedback section > Footer explaining that the reset button does not turn off the debug toggle above it"
+            )
+        )
+
+        // Writes on change instead of waiting for `saveFormValues()`, matching the
+        // Experimental section's precedent: a tester who kills the app to relaunch
+        // never triggers `viewWillDisappear`, so a deferred write would be lost.
+        section <<< SwitchRow {
+            $0.tag = alwaysShowFeedbackPrompt
+            $0.title = OBALoc("settings_controller.feedback_section.always_show", value: "Always show feedback prompt", comment: "Settings > Feedback section > Debug toggle that bypasses the prompt's gating")
+            $0.onChange { [weak self] row in
+                guard let self, let value = row.value else { return }
+                application.reviewPromptPolicy.alwaysShowPrompt = value
+            }
+        }
+
+        section <<< ButtonRow {
+            $0.title = OBALoc("settings_controller.feedback_section.reset", value: "Reset feedback prompt state", comment: "Settings > Feedback section > Clears all feedback prompt bookkeeping")
+            $0.onCellSelection { [weak self] _, _ in
+                guard let self else { return }
+                application.reviewPromptPolicy.reset()
+                // Also clear the coordinator's 14-day engagement cooldown, or a
+                // reset leaves QA blocked for two weeks.
+                application.promptCoordinator.reset()
+            }
         }
 
         return section

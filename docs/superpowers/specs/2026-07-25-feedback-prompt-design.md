@@ -359,15 +359,34 @@ takes days and the terminal states are permanent.
 
 These do **not** go in Settings → Experimental. That section holds exactly the
 two `FeatureFlags` toggles and carries the footer "Restart the app to apply.",
-which is wrong copy for a live debug switch. Follow the Surveys section's
-precedent (`alwaysShowSurveysOnStops` lives in its own feature section) or put
-them in the `hiddenUnlessDebugMode`-gated Debug section.
+which is wrong copy for a live debug switch. Built as implemented: a dedicated
+"Feedback" section following the Surveys section's precedent
+(`alwaysShowSurveysOnStops` lives in its own feature section), placed between
+Surveys and Debug in `SettingsViewController`.
 
-- **Always show feedback prompt** — bypasses the counter, backoffs, version
-  gate, and coordinator; not the `FeedbackPromptEnabled` kill switch.
+- **Always show feedback prompt** (`ReviewPromptPolicy.alwaysShowPrompt`) —
+  bypasses the counter, backoffs, version gate, and lifetime ask cap inside
+  `ReviewPromptPolicy.isPromptPending`. It does **not** bypass the
+  `FeedbackPromptEnabled` kill switch, and it does **not** bypass
+  `PromptCoordinator.canShowReviewPrompt()` — `FeedbackPromptPresenter.presentIfEligible`
+  ANDs both checks unconditionally, so the coordinator's session-scoped
+  interruption budget and 14-day engagement cooldown still apply while the
+  toggle is on. In practice this only matters across repeated presentations in
+  one foreground session (or one following a donation/survey engagement); the
+  reset button's `promptCoordinator.reset()` call clears the persisted
+  cooldown and starts a fresh session, so a single QA pass in a fresh session
+  is unaffected. A known wart carried from the Task 2 review: because
+  `alwaysShowPrompt` short-circuits `isPromptPending` before the ask-cap check,
+  every debug-triggered presentation still calls `recordPromptPresented()` and
+  increments `askCount`/stamps `lastVersionPrompted` on the real policy state —
+  three debug taps permanently silence the organic prompt for that install
+  until the reset button is used. `ReviewPromptPolicy.reset()` deliberately
+  does not clear the `alwaysShow` key itself, so the toggle stays on across a
+  reset; the Feedback section's footer calls this out.
 - **Reset feedback prompt state** — clears all five `ReviewPrompt.` keys **and**
-  the coordinator's `lastEngagementDate`. Omitting the latter would leave a QA
-  tester blocked for 14 days after a reset.
+  calls `PromptCoordinator.reset()`, which clears `lastEngagementDate` and
+  `lastPromptKind` and starts a fresh in-memory session. Omitting the latter
+  would leave a QA tester blocked for 14 days after a reset.
 
 ### 8. Analytics
 
