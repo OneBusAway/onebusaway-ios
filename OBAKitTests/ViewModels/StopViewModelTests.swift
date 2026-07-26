@@ -112,10 +112,10 @@ class StopViewModelTests: OBATestCase {
     /// Builds a `StopViewModel` backed by a real `Application` whose arrivals fetch
     /// fails with `statusCode` (no body).
     @MainActor
-    private func buildViewModelWithFailingArrivals(statusCode: Int) -> (StopViewModel, Application) {
+    private func buildViewModelWithFailingArrivals(statusCode: Int, bookmarkContext: Bookmark? = nil) -> (StopViewModel, Application) {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock(), arrivalsFailureStatusCode: statusCode)
-        let viewModel = StopViewModel(application: app, stopID: testStopID)
+        let viewModel = StopViewModel(application: app, stopID: testStopID, bookmarkContext: bookmarkContext)
         return (viewModel, app)
     }
 
@@ -992,11 +992,23 @@ class StopViewModelTests: OBATestCase {
         expect(application.promptCoordinator.sawErrorThisSession).to(beTrue())
     }
 
-    /// A broken bookmark is not a failure the rider watched happen.
+    /// A broken bookmark is not a failure the rider watched happen: the page says so
+    /// and offers a way out.
     @MainActor
-    func test_requestNotFound_doesNotFlagError() async {
-        let (viewModel, application) = buildViewModelWithFailingArrivals(statusCode: 404)
+    func test_requestNotFound_withBookmarkContext_doesNotFlagError() async throws {
+        let stop = try XCTUnwrap(try Fixtures.loadSomeStops().first)
+        let bookmark = Bookmark(name: "Broken", regionIdentifier: pugetSoundRegionIdentifier, stop: stop)
+        let (viewModel, application) = buildViewModelWithFailingArrivals(statusCode: 404, bookmarkContext: bookmark)
         await viewModel.refresh()
         expect(application.promptCoordinator.sawErrorThisSession).to(beFalse())
+    }
+
+    /// Without a bookmark behind it — a deep link, a search result, a map pin — the same
+    /// 404 strands the rider on a page with no arrivals and no error, which counts.
+    @MainActor
+    func test_requestNotFound_withoutBookmarkContext_flagsError() async {
+        let (viewModel, application) = buildViewModelWithFailingArrivals(statusCode: 404)
+        await viewModel.refresh()
+        expect(application.promptCoordinator.sawErrorThisSession).to(beTrue())
     }
 }

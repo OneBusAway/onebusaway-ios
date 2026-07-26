@@ -271,6 +271,16 @@ class StopViewModel: ObservableObject {
         } catch APIError.requestNotFound {
             operationError = nil
             isBrokenBookmark = bookmarkContext != nil
+
+            // With a bookmark behind it, a 404 is the broken-bookmark path: the page
+            // explains itself and offers a way out, and it isn't a failure the rider
+            // watched happen. Without one — a deep link, a search result, a map pin —
+            // the same 404 leaves the page with no arrivals, no error, and nothing to
+            // do, which is exactly the experience that shouldn't be followed by a
+            // request for five stars.
+            if bookmarkContext == nil {
+                environment.noteStopLoadFailed()
+            }
         } catch {
             operationError = error
             environment.noteStopLoadFailed()
