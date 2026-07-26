@@ -174,7 +174,7 @@ Three triggers feed `PushRegistrationManager`; all of them are safe to fire redu
 
 ```swift
 // 1. Every foreground (Application.applicationDidBecomeActive):
-if pushService != nil {                     // nil on Simulator / providerless apps
+if pushService != nil {                     // nil only in providerless (white-label) apps
     Task { await pushRegistrationManager.refreshRegistration() }
 }
 // refreshRegistration(): if authorized → registerForRemoteNotifications()
@@ -279,7 +279,9 @@ Implement the server contract directly:
 
 ## 6. Testing and the APNs sandbox
 
-- **Simulators get no real APNs tokens.** OBAKit skips push configuration entirely under `#if targetEnvironment(simulator)`. Test registration logic with unit tests (see `PushRegistrationManagerTests` — the dedupe, coalescing, and auth-gating behaviors are all covered with injected closures and a mock data loader; no network or notification center needed).
+- **Simulators do get real APNs tokens.** On an Apple silicon (or T2 Intel) Mac running macOS 13+ with an iOS 16+ runtime, the Simulator registers with APNs and receives remote pushes, so OBAKit configures push identically on Simulator and device — there is no `#if targetEnvironment(simulator)` carve-out. A Simulator token is a **sandbox** token, so it behaves exactly like a debug build's token in the two bullets below: alarms and Live Activities reach it, service-alert fan-out does not. To deliver a payload locally without involving a server at all, use `xcrun simctl push booted org.onebusaway.iphone payload.apns`. One knock-on effect: the notifications onboarding step is gated on `pushService != nil`, so it is now reachable on the Simulator — a clean install shows it, and granting or denying permission drops it from the flow.
+- **If no token ever arrives, check `apsd` before suspecting the app.** `xcrun simctl spawn booted log show --last 4m --style compact --predicate 'process == "apsd"'` should show the topic being enabled for the bundle ID and a token request against `sandbox.push.apple.com`. `Connected on 0 interfaces` plus `token: (null)` means the machine has no APNs connection — the app-side registration is fine and there is nothing to fix in this repo. App-side logging is an `os.Logger` on the bundle ID, and its `.info` lines (including `APNs device token: …`) are invisible to a default-level `log stream`; pass `--level debug --predicate 'subsystem == "org.onebusaway.iphone"'`.
+- **Registration logic is still best covered by unit tests.** See `PushRegistrationManagerTests` — the dedupe, coalescing, and auth-gating behaviors are all covered with injected closures and a mock data loader; no network or notification center needed.
 - **Debug builds hold *sandbox* tokens.** A debug-provisioned install registers with the APNs sandbox host; pushes sent through production APNs bounce off it. Alarms and Live Activities handle this by sending `apns_sandbox=1` from debug builds, which the server forwards to gorush as `development: true`.
 - **Setting up a test device:** since 2026-07-19 the server rejects `test_device=true` registrations without a non-blank `description` (`422`). To register this install as a test device: enable **Debug Mode** in Settings → Debug, fill in **Test Device Name** (e.g. "Aaron's iPhone 17"), then re-foreground the app so `PushRegistrationManager` picks up the change and re-POSTs. Until the name is set, the device silently registers as a regular device (`test_device=false`) instead of failing.
 - **⚠️ Known gap — sandbox routing for service alerts:** the `push_registrations` API has no `apns_sandbox` param and the alert fan-out always uses production APNs — so even once registered, a *debug* build **cannot receive** the preview push. Until [OneBusAway/obacloud#983](https://github.com/OneBusAway/obacloud/issues/983) lands, verify alert delivery with a **TestFlight** build (production token) flagged via the Debug Mode switch.

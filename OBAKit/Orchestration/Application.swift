@@ -311,16 +311,15 @@ public class Application: CoreApplication, PushServiceDelegate {
         }
     )
 
+    // Deliberately no Simulator carve-out: Simulators get real (sandbox) APNs tokens, so don't
+    // re-add a `#if targetEnvironment(simulator)` guard here. See docs/push-notifications.md §6
+    // for what a sandbox token does and doesn't receive.
     private func configurePushNotifications(launchOptions: [AnyHashable: Any]) {
         guard let pushServiceProvider = config.pushServiceProvider else { return }
 
-        #if targetEnvironment(simulator)
-            Logger.warn("Push notifications don't work on the Simulator. Run this app on a device instead!")
-            return
-        #else
-            self.pushService = PushService(serviceProvider: pushServiceProvider, delegate: self)
-            self.pushService?.start(launchOptions: launchOptions)
-        #endif
+        let pushService = PushService(serviceProvider: pushServiceProvider, delegate: self)
+        self.pushService = pushService
+        pushService.start(launchOptions: launchOptions)
     }
 
     public func pushServicePresentingController(_ pushService: PushService) -> UIViewController? {
@@ -484,8 +483,8 @@ public class Application: CoreApplication, PushServiceDelegate {
         // Re-register the push token with OBACloud so the server's inactivity prune never
         // drops this device, and so locale changes propagate. The manager dedupes, so this
         // only hits the network when something changed or the last POST is older than
-        // PushRegistrationManager.refreshInterval. Skipped on the Simulator and in apps
-        // without a configured push provider, where pushService is never set.
+        // PushRegistrationManager.refreshInterval. Skipped in apps without a configured
+        // push provider, where pushService is never set.
         if pushService != nil {
             Task { await pushRegistrationManager.refreshRegistration() }
         }
