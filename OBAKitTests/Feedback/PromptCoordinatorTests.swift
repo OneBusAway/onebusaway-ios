@@ -8,6 +8,7 @@
 //
 
 import XCTest
+import UIKit
 @testable import OBAKit
 
 final class PromptCoordinatorTests: OBATestCase {
@@ -19,8 +20,8 @@ final class PromptCoordinatorTests: OBATestCase {
         clock = Date(timeIntervalSince1970: 1_700_000_000)
     }
 
-    private func makeCoordinator() -> PromptCoordinator {
-        PromptCoordinator(userDefaults: userDefaults, now: { self.clock })
+    private func makeCoordinator(notificationCenter: NotificationCenter = .default) -> PromptCoordinator {
+        PromptCoordinator(userDefaults: userDefaults, notificationCenter: notificationCenter, now: { self.clock })
     }
 
     private func advance(days: Int) {
@@ -141,5 +142,126 @@ final class PromptCoordinatorTests: OBATestCase {
 
         let next = makeCoordinator()
         XCTAssertTrue(next.canShowReviewPrompt())
+    }
+
+    // MARK: - noteNotShown undo safety (review-round Finding 1 / 3a)
+
+    /// A genuine `noteSurveyEngaged()` that happens between a `noteShown(_:)`
+    /// gate and its matching `noteNotShown(_:)` must survive: the undo must
+    /// only ever roll back its own write, never a later engagement that
+    /// happens to share the same persisted key.
+    func test_noteNotShownDoesNotClobberLaterSurveyEngagement() {
+        let coordinator = makeCoordinator()
+        coordinator.noteShown(.surveyPrompt)
+
+        clock = clock.addingTimeInterval(1)
+        coordinator.noteSurveyEngaged()
+
+        coordinator.noteNotShown(.surveyPrompt)
+
+        advance(days: 13)
+        XCTAssertFalse(makeCoordinator().canShowReviewPrompt())
+
+        advance(days: 2)
+        XCTAssertTrue(makeCoordinator().canShowReviewPrompt())
+    }
+
+    /// Shows `.donationModal` then, 5 days later, `.surveyPrompt`; only the
+    /// most recent `noteShown(_:)` has a live undo record, so releasing the
+    /// *earlier* kind's slot must decline to touch the engagement date at
+    /// all — it must not revert the cooldown to the earlier (more expired)
+    /// date. The two check points are chosen so that "correctly kept the
+    /// surveyPrompt date" and "wrongly reverted to the donationModal date"
+    /// disagree: at day 15 only the wrong-revert behavior would have let the
+    /// cooldown lapse.
+    func test_noteNotShownForEarlierKindDoesNotRestoreAfterNewerKindShown() {
+        let coordinator = makeCoordinator()
+        coordinator.noteShown(.donationModal) // T0
+
+        advance(days: 5)
+        coordinator.noteShown(.surveyPrompt) // T0 + 5d
+        coordinator.noteNotShown(.donationModal) // mismatched kind — must be a no-op
+
+        advance(days: 10) // now = T0 + 15d: within 14d of surveyPrompt's date, past donationModal's
+        XCTAssertFalse(makeCoordinator().canShowReviewPrompt())
+
+        advance(days: 5) // now = T0 + 20d: past both 14-day windows
+        XCTAssertTrue(makeCoordinator().canShowReviewPrompt())
+    }
+
+    /// Same as above with the two kinds reversed, to pin that the "decline to
+    /// restore" behavior isn't an artifact of which kind happens to be shown
+    /// second.
+    func test_noteNotShownForEarlierKindDoesNotRestoreAfterNewerKindShownReversed() {
+        let coordinator = makeCoordinator()
+        coordinator.noteShown(.surveyPrompt) // T0
+
+        advance(days: 5)
+        coordinator.noteShown(.donationModal) // T0 + 5d
+        coordinator.noteNotShown(.surveyPrompt) // mismatched kind — must be a no-op
+
+        advance(days: 10) // now = T0 + 15d
+        XCTAssertFalse(makeCoordinator().canShowReviewPrompt())
+
+        advance(days: 5) // now = T0 + 20d
+        XCTAssertTrue(makeCoordinator().canShowReviewPrompt())
+    }
+
+    /// `noteNotShown(_:)` with no preceding `noteShown(_:)` for that kind must
+    /// be a safe no-op rather than disturbing an unrelated, already-persisted
+    /// engagement (e.g. one written directly by `noteSurveyEngaged()`).
+    func test_noteNotShownWithoutMatchingNoteShownIsANoOp() {
+        let coordinator = makeCoordinator()
+        coordinator.noteSurveyEngaged()
+        coordinator.noteNotShown(.surveyPrompt)
+
+        advance(days: 13)
+        XCTAssertFalse(makeCoordinator().canShowReviewPrompt())
+
+        advance(days: 2)
+        XCTAssertTrue(makeCoordinator().canShowReviewPrompt())
+    }
+
+    /// A `noteNotShown(_:)` call that arrives after `beginNewSession()` has
+    /// already rolled the session over must not resurrect the discarded undo
+    /// record and erase the engagement the earlier `noteShown(_:)` recorded.
+    func test_noteNotShownAfterNewSessionDoesNotRestoreStaleEngagement() {
+        let coordinator = makeCoordinator()
+        coordinator.noteShown(.donationModal)
+        coordinator.beginNewSession()
+
+        coordinator.noteNotShown(.donationModal)
+
+        advance(days: 13)
+        XCTAssertFalse(makeCoordinator().canShowReviewPrompt())
+
+        advance(days: 2)
+        XCTAssertTrue(makeCoordinator().canShowReviewPrompt())
+    }
+
+    // MARK: - Foreground notification wiring (review-round Finding 2 / 3b)
+
+    /// Exercises the actual `NotificationCenter` observer path end to end:
+    /// posting `willEnterForegroundNotification` on an injected center must
+    /// clear session state, proving `init` and `deinit` operate on the same
+    /// (injected, not `.default`) center.
+    func test_foregroundNotificationBeginsNewSession() {
+        let center = NotificationCenter()
+        let coordinator = makeCoordinator(notificationCenter: center)
+        coordinator.noteShown(.review)
+        coordinator.sawErrorThisSession = true
+        XCTAssertFalse(coordinator.canShowInlineCards())
+
+        center.post(name: UIApplication.willEnterForegroundNotification, object: nil)
+
+        // The observer block was registered on the main OperationQueue, which
+        // dispatches asynchronously; round-trip through the main queue once
+        // more so it has run before we assert.
+        let drained = expectation(description: "main queue drained")
+        DispatchQueue.main.async { drained.fulfill() }
+        wait(for: [drained], timeout: 1.0)
+
+        XCTAssertTrue(coordinator.canShowInlineCards())
+        XCTAssertFalse(coordinator.sawErrorThisSession)
     }
 }

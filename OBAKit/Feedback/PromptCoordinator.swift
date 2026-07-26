@@ -33,17 +33,31 @@ final class PromptCoordinator {
     static let engagementCooldown: TimeInterval = 14 * 86400
 
     private let userDefaults: UserDefaults
+    private let notificationCenter: NotificationCenter
     private let now: () -> Date
     private var observer: NSObjectProtocol?
 
     private var shownThisSession: Set<PromptKind> = []
 
-    /// The engagement-date value overwritten by the most recent `noteShown(_:)`
-    /// call, keyed by which kind wrote it, so a matching `noteNotShown(_:)` can
+    /// Records the exact engagement-date write made by the most recent
+    /// `noteShown(_:)` call — the value it wrote (`writtenDate`) and what it
+    /// overwrote (`previousDate`) — so a matching `noteNotShown(_:)` can
     /// restore it. Without this, gating a prompt (marking it shown to claim the
     /// session slot) and then not actually presenting it would leave the
     /// 14-day engagement cooldown running against a prompt the rider never saw.
-    private var pendingEngagementUndo: (kind: PromptKind, previousDate: Date?)?
+    ///
+    /// `noteNotShown(_:)` only restores when the persisted date still equals
+    /// `writtenDate` — i.e. only ever undoes its own write. A genuine
+    /// `noteSurveyEngaged()` call in between advances the persisted date past
+    /// `writtenDate`, so the later `noteNotShown` correctly declines to
+    /// restore (and would otherwise erase a real engagement).
+    private struct PendingEngagementUndo {
+        let kind: PromptKind
+        let previousDate: Date?
+        let writtenDate: Date
+    }
+
+    private var pendingEngagementUndo: PendingEngagementUndo?
 
     /// Set when a stop load fails. A rider who just watched the app fail is not
     /// a rider to ask for five stars.
@@ -55,6 +69,7 @@ final class PromptCoordinator {
         now: @escaping () -> Date = Date.init
     ) {
         self.userDefaults = userDefaults
+        self.notificationCenter = notificationCenter
         self.now = now
 
         observer = notificationCenter.addObserver(
@@ -68,7 +83,7 @@ final class PromptCoordinator {
 
     isolated deinit {
         if let observer {
-            NotificationCenter.default.removeObserver(observer)
+            notificationCenter.removeObserver(observer)
         }
     }
 
@@ -112,8 +127,9 @@ final class PromptCoordinator {
         // one would start the very cooldown that gates the review prompt.
         if kind != .review {
             let previousEngagementDate = userDefaults.object(forKey: Keys.lastEngagementDate) as? Date
-            pendingEngagementUndo = (kind, previousEngagementDate)
-            userDefaults.set(now(), forKey: Keys.lastEngagementDate)
+            let writtenDate = now()
+            pendingEngagementUndo = PendingEngagementUndo(kind: kind, previousDate: previousEngagementDate, writtenDate: writtenDate)
+            userDefaults.set(writtenDate, forKey: Keys.lastEngagementDate)
         }
     }
 
@@ -123,15 +139,20 @@ final class PromptCoordinator {
     ///
     /// Also undoes the engagement-cooldown write from the matching
     /// `noteShown(_:)`, if any — a gated-but-unpresented prompt is not an
-    /// engagement and must not block the review prompt for 14 days.
+    /// engagement and must not block the review prompt for 14 days. Only
+    /// restores when the persisted date still matches what that `noteShown(_:)`
+    /// wrote, so a genuine `noteSurveyEngaged()` in between is never clobbered.
     func noteNotShown(_ kind: PromptKind) {
         shownThisSession.remove(kind)
 
         if let pending = pendingEngagementUndo, pending.kind == kind {
-            if let previousDate = pending.previousDate {
-                userDefaults.set(previousDate, forKey: Keys.lastEngagementDate)
-            } else {
-                userDefaults.removeObject(forKey: Keys.lastEngagementDate)
+            let currentDate = userDefaults.object(forKey: Keys.lastEngagementDate) as? Date
+            if currentDate == pending.writtenDate {
+                if let previousDate = pending.previousDate {
+                    userDefaults.set(previousDate, forKey: Keys.lastEngagementDate)
+                } else {
+                    userDefaults.removeObject(forKey: Keys.lastEngagementDate)
+                }
             }
             pendingEngagementUndo = nil
         }
