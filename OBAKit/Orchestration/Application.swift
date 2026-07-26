@@ -396,6 +396,13 @@ public class Application: CoreApplication, PushServiceDelegate {
     }
 
     private func presentDonationUI(_ presentingController: UIViewController, id: String?) {
+        // `donationsEnabled` already folds in `obacoService != nil`, which is
+        // exactly what `buildLearnMoreView`/`buildObservableDonationModel` need
+        // to succeed — without this guard, a push arriving while donations are
+        // disabled or Obaco is unavailable would both persist a false "shown"
+        // state and crash on `buildLearnMoreView`'s internal `fatalError()`.
+        guard donationsManager.donationsEnabled else { return }
+
         analytics?.reportEvent(pageURL: "app://localhost/donations", label: AnalyticsLabels.donationPushNotificationTapped, value: id)
 
         promptCoordinator.noteShown(.donationModal)
