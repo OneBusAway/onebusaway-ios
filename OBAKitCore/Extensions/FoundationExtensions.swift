@@ -113,6 +113,22 @@ public extension Bundle {
         return dict["AppDevelopersEmailAddress"] as? String
     }
 
+    /// The App Store ID for this app, used to build a write-a-review deep link.
+    /// Absent in white-label builds that haven't been assigned one; callers hide
+    /// the affected UI rather than constructing a broken URL.
+    var appStoreID: String? {
+        OBAKitConfig?["AppStoreID"] as? String
+    }
+
+    /// Whether the in-app feedback prompt is offered at all.
+    ///
+    /// Defaults to `true` when the key is absent, unlike `donationsEnabled`: the
+    /// prompt needs no further configuration to function, so opting out is the
+    /// deliberate choice rather than opting in.
+    var feedbackPromptEnabled: Bool {
+        OBAKitConfig?["FeedbackPromptEnabled"] as? Bool ?? true
+    }
+
     /// The name of a fixed region to auto-select at launch, bypassing the region picker.
     /// See: https://github.com/OneBusAway/onebusaway-ios/issues/608
     var fixedRegionName: String? {

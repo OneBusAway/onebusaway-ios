@@ -63,6 +63,7 @@ targets:
         OBAKitConfig:
           AppDevelopersEmailAddress: iphone-app@onebusaway.org
           AppGroup: group.org.onebusaway.iphone
+          AppStoreID: "329380089"
           BundledRegionsFileName: regions.json
           Donations:
             Enabled: true
