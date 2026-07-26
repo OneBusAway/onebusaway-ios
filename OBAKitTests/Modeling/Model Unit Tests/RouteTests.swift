@@ -214,6 +214,19 @@ class RouteTests: OBATestCase {
         expect(sortedRoutes[1].shortName) == "m Route"
         expect(sortedRoutes[2].shortName) == "z Route"
     }
+
+    func test_arrayExtensionSort_numeric() {
+        let routeNames = ["10", "3", "11", "49", "Bellevue", "12"]
+        let routes = try! routeNames.enumerated().map { (index, name) -> Route in
+            let dict: [String: Any] = ["id": "route_\(index)", "agencyId": "1", "shortName": name, "type": 3]
+            return try Fixtures.dictionaryToModel(type: Route.self, dictionary: dict)
+        }
+
+        let sortedRoutes = routes.localizedCaseInsensitiveSort()
+        let sortedNames = sortedRoutes.map(\.shortName)
+
+        expect(sortedNames) == ["3", "10", "11", "12", "49", "Bellevue"]
+    }
 }
 
 // MARK: - Frequency Tests
