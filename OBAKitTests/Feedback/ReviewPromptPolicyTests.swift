@@ -23,11 +23,13 @@ private class PolicyBundle: Bundle {
         return super.object(forInfoDictionaryKey: key)
     }
 
-    static func create(enabled: Bool = true, version: String = "1.0") throws -> PolicyBundle {
+    static func create(enabled: Bool = true, version: String = "1.0", appStoreID: String? = "329380089") throws -> PolicyBundle {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         let bundle = try XCTUnwrap(PolicyBundle(path: dir.path))
-        bundle.config = ["FeedbackPromptEnabled": enabled]
+        var config: [String: Any] = ["FeedbackPromptEnabled": enabled]
+        if let appStoreID { config["AppStoreID"] = appStoreID }
+        bundle.config = config
         bundle.version = version
         return bundle
     }
@@ -42,6 +44,14 @@ final class ReviewPromptPolicyTests: OBATestCase {
         try await super.setUp()
         clock = Date(timeIntervalSince1970: 1_700_000_000)
         bundle = try PolicyBundle.create()
+    }
+
+    /// `reset()` deliberately spares this key, so nothing else clears it between tests —
+    /// and since it short-circuits `isPromptPending` to `true`, a leak turns later
+    /// assertions into false passes.
+    override func tearDown() async throws {
+        userDefaults.removeObject(forKey: "ReviewPrompt.alwaysShow")
+        try await super.tearDown()
     }
 
     private func makePolicy() -> ReviewPromptPolicy {
@@ -170,11 +180,69 @@ final class ReviewPromptPolicyTests: OBATestCase {
         policy.recordOutcome(.deferred)
 
         bundle.version = "1.1"
-        advance(days: 61)
-        XCTAssertFalse(policy.isPromptPending, "time alone must not re-arm the prompt")
 
+        // Day 59 with the success bar already cleared: only the backoff can still be
+        // holding the prompt back. Without this half the test passes for any backoff
+        // shorter than 61 days, because the day-61 assertion below is gated on the
+        // success count rather than on elapsed time.
+        advance(days: 59)
         recordSuccesses(5, on: policy)
-        XCTAssertTrue(policy.isPromptPending)
+        XCTAssertFalse(policy.isPromptPending, "the 60-day deferral must still be closed on day 59")
+
+        advance(days: 2)
+        XCTAssertTrue(policy.isPromptPending, "and open once it elapses")
+    }
+
+    /// A white-label target with no `AppStoreID` can't send anyone to the App Store, so
+    /// it must never be asked. Shipping without this gate meant KiedyBus riders got the
+    /// prompt, tapped "Yes!", went nowhere, and were recorded `.positive` — permanently
+    /// silencing both branches for someone who was never really asked.
+    func test_missingAppStoreIDSuppressesThePromptEntirely() throws {
+        bundle = try PolicyBundle.create(appStoreID: nil)
+        let policy = makePolicy()
+        recordSuccesses(5, on: policy)
+
+        XCTAssertFalse(policy.isPromptPending)
+
+        // Not even the debug override may open it — there is still nowhere to go.
+        policy.alwaysShowPrompt = true
+        XCTAssertFalse(policy.isPromptPending)
+    }
+
+    /// The Settings footer promises the toggle survives a reset.
+    func test_resetPreservesTheDebugOverride() {
+        let policy = makePolicy()
+        policy.alwaysShowPrompt = true
+        recordSuccesses(5, on: policy)
+
+        policy.reset()
+
+        XCTAssertTrue(policy.alwaysShowPrompt)
+        XCTAssertEqual(policy.successCount, 0)
+    }
+
+    /// A QA tap on "Yes!" must not write `.positive`. `recordPromptPresented()` already
+    /// skips the two permanent gates under the toggle so a QA pass can't silence the
+    /// organic prompt for good — but `.positive` is itself permanent, so letting it
+    /// through the debug path would defeat exactly that protection.
+    ///
+    /// The install is still left in the ordinary `.deferred` state the presentation
+    /// writes up front, so the organic prompt comes back on its own after the 60-day
+    /// backoff rather than never.
+    func test_debugOverrideDoesNotRecordOutcomes() {
+        let policy = makePolicy()
+        recordSuccesses(5, on: policy)
+        policy.alwaysShowPrompt = true
+
+        policy.recordPromptPresented()
+        policy.recordOutcome(.positive)
+
+        XCTAssertEqual(policy.outcome, .deferred, "the QA answer must not be persisted")
+
+        policy.alwaysShowPrompt = false
+        advance(days: 61)
+        recordSuccesses(5, on: policy)
+        XCTAssertTrue(policy.isPromptPending, "a QA pass defers the organic prompt, it doesn't kill it")
     }
 
     // MARK: - Version gate
@@ -300,5 +368,17 @@ final class ReviewPromptPolicyTests: OBATestCase {
         policy.reset()
         recordSuccesses(5, on: policy)
         XCTAssertTrue(policy.isPromptPending)
+    }
+}
+
+/// The write-review URL is the entire point of the positive branch, and it fails
+/// silently when wrong — drop `?action=write-review` and the App Store opens the
+/// ordinary product page, so the rider lands somewhere plausible and never reviews.
+final class WriteReviewURLTests: XCTestCase {
+
+    @MainActor
+    func test_writeReviewURL_carriesTheWriteReviewAction() throws {
+        let url = try XCTUnwrap(FeedbackPromptPresenter.writeReviewURL(appStoreID: "329380089"))
+        XCTAssertEqual(url.absoluteString, "https://apps.apple.com/app/id329380089?action=write-review")
     }
 }

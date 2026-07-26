@@ -89,7 +89,6 @@ final class PromptCoordinator {
 
     private enum Keys {
         static let lastEngagementDate = "PromptCoordinator.lastEngagementDate"
-        static let lastPromptKind = "PromptCoordinator.lastPromptKind"
     }
 
     // MARK: - Queries
@@ -121,7 +120,6 @@ final class PromptCoordinator {
 
     func noteShown(_ kind: PromptKind) {
         shownThisSession.insert(kind)
-        userDefaults.set(kind.rawValue, forKey: Keys.lastPromptKind)
 
         // A review prompt is not a donation/survey engagement; recording it as
         // one would start the very cooldown that gates the review prompt.
@@ -174,7 +172,6 @@ final class PromptCoordinator {
     /// tester isn't blocked for 14 days after resetting the policy.
     func reset() {
         userDefaults.removeObject(forKey: Keys.lastEngagementDate)
-        userDefaults.removeObject(forKey: Keys.lastPromptKind)
         beginNewSession()
     }
 }

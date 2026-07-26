@@ -94,6 +94,14 @@ public class AnalyticsLabels: NSObject {
     /// Label used when a feedback email is actually sent.
     @objc public static let feedbackEmailSent = "Feedback Email Sent"
 
+    /// Label used when the rider wanted to send feedback but the device can't compose
+    /// mail. Distinct from `feedbackEmailOpened` so this population — riders who
+    /// structurally cannot reach us — doesn't hide inside opened-then-abandoned.
+    @objc public static let feedbackEmailUnavailable = "Feedback Email Unavailable"
+
+    /// Label used when the mail composer reports a send failure.
+    @objc public static let feedbackEmailFailed = "Feedback Email Failed"
+
     /// Label used when the More tab's 'Rate' row is tapped.
     @objc public static let rateAppRowTapped = "Rate App Row Tapped"
 }

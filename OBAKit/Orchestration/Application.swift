@@ -405,10 +405,14 @@ public class Application: CoreApplication, PushServiceDelegate {
 
         analytics?.reportEvent(pageURL: "app://localhost/donations", label: AnalyticsLabels.donationPushNotificationTapped, value: id)
 
-        promptCoordinator.noteShown(.donationModal)
-
         let learnMoreView = donationsManager.buildLearnMoreView(presentingController: presentingController, donationPushNotificationID: id)
-        presentingController.present(UIHostingController(rootView: learnMoreView), animated: true)
+
+        // Registered in the completion handler so a push that arrives while the top
+        // controller is mid-transition doesn't burn the ask budget for a modal that
+        // never appeared. See `FeedbackPromptPresenter.presentIfEligible`.
+        presentingController.present(UIHostingController(rootView: learnMoreView), animated: true) { [weak self] in
+            self?.promptCoordinator.noteShown(.donationModal)
+        }
     }
 
     // MARK: - Alerts Store

@@ -89,6 +89,11 @@ final class ReviewPromptPolicy {
 
     /// Records how the rider actually answered.
     ///
+    /// Skipped entirely while the debug override is on, for the same reason
+    /// `recordPromptPresented()` skips the permanent gates: a QA tap on "Yes!" would
+    /// otherwise write `.positive`, and the moment the toggle went back off the organic
+    /// prompt would be silenced on that install for good.
+    ///
     /// Defends against being called without a preceding `recordPromptPresented()`:
     /// with no `lastAskedDate` on file, `.negative`/`.deferred` would otherwise be a
     /// total no-op — the backoff `if let` in `isPromptPending` is skipped entirely,
@@ -97,6 +102,8 @@ final class ReviewPromptPolicy {
     /// `lastAskedDate` and zero `successCount` here too, so the ask is always
     /// consumed regardless of call order.
     func recordOutcome(_ outcome: FeedbackPromptOutcome) {
+        guard !alwaysShowPrompt else { return }
+
         userDefaults.set(outcome.rawValue, forKey: Keys.outcome)
         if userDefaults.object(forKey: Keys.lastAskedDate) == nil {
             userDefaults.set(now(), forKey: Keys.lastAskedDate)
@@ -114,6 +121,14 @@ final class ReviewPromptPolicy {
     /// past — stranding the rider at five successes and no prompt forever.
     var isPromptPending: Bool {
         guard bundle.feedbackPromptEnabled else { return false }
+
+        // Without an App Store ID the positive branch has nowhere to go: the rider taps
+        // "Yes!", `openWriteReviewPage()` bails, and `.positive` is recorded — closing the
+        // prompt permanently for someone who was never actually asked anything answerable.
+        // Only OneBusAway configures `AppStoreID`, so every other white-label target would
+        // hit this. `MoreViewController` hides its Rate row on the same condition.
+        guard bundle.appStoreID != nil else { return false }
+
         if alwaysShowPrompt { return true }
         guard askCount < Self.maximumAsks else { return false }
         guard outcome != .positive else { return false }
@@ -142,7 +157,9 @@ final class ReviewPromptPolicy {
         set { userDefaults.set(newValue, forKey: Keys.alwaysShow) }
     }
 
-    /// Clears every persisted key so QA can re-run the flow from scratch.
+    /// Clears every persisted key *except* the debug override, so QA can re-run the
+    /// flow from scratch without the toggle switching itself off underneath them.
+    /// The Settings footer promises exactly this.
     func reset() {
         for key in [Keys.successCount, Keys.askCount, Keys.lastAskedDate,
                     Keys.outcome, Keys.lastVersionPrompted] {

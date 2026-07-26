@@ -20,7 +20,9 @@ import UIKit
 /// may display nothing at all, which would leave a rider who just tapped "Yes!"
 /// staring at an unchanged screen. The deep link is guaranteed to land them on
 /// the review form and isn't subject to the three-per-365-days budget. See
-/// docs/superpowers/specs/2026-07-25-feedback-prompt-design.md §10.
+/// docs/superpowers/specs/2026-07-25-feedback-prompt-design.md — "Apple's constraints"
+/// for the quoted guidance and the 3-per-365 budget, §10 for the guideline 5.6.1
+/// analysis and why `AppStore.requestReview(in:)` was rejected.
 @MainActor
 final class FeedbackPromptPresenter: NSObject {
 
@@ -112,18 +114,33 @@ final class FeedbackPromptPresenter: NSObject {
         Self.openWriteReviewPage()
     }
 
+    /// The App Store's write-a-review URL for the given app ID.
+    ///
+    /// Split out from `openWriteReviewPage()` so the `?action=write-review` query — the
+    /// whole point of the deep link, and silent when wrong, since the App Store happily
+    /// opens the plain product page instead — is testable without `UIApplication`.
+    static func writeReviewURL(appStoreID: String) -> URL? {
+        URL(string: "https://apps.apple.com/app/id\(appStoreID)?action=write-review")
+    }
+
     /// Opens the App Store's write-a-review page. Shared with the More tab's
     /// "Rate" row so both entry points build the URL identically. Callers report
     /// their own analytics; this only opens the URL.
     static func openWriteReviewPage() {
         guard let appStoreID = Bundle.main.appStoreID,
-              let url = URL(string: "https://apps.apple.com/app/id\(appStoreID)?action=write-review")
+              let url = writeReviewURL(appStoreID: appStoreID)
         else {
             Logger.warn("No AppStoreID configured; cannot open the write-review page.")
             return
         }
 
-        UIApplication.shared.open(url)
+        // The open can fail on a device where the App Store is unavailable — Screen Time
+        // restrictions, MDM. The rider sees nothing either way, so leave a trace.
+        UIApplication.shared.open(url, options: [:]) { success in
+            if !success {
+                Logger.error("Could not open the write-review page: \(url)")
+            }
+        }
     }
 
     // MARK: - Negative branch
@@ -154,13 +171,17 @@ final class FeedbackPromptPresenter: NSObject {
     }
 
     private func presentFeedbackEmail(from viewController: UIViewController) {
-        report(AnalyticsLabels.feedbackEmailOpened)
-
+        // Reported after the guard, not before it. A rider with no Mail account can't
+        // open a composer at all, and counting them as "opened" would hide them inside
+        // the ordinary opened-then-abandoned population — the one group whose feedback
+        // this feature structurally cannot collect is the one worth being able to see.
         guard let composer = contactUsHelper.buildMailComposer(target: .appDevelopers) else {
+            report(AnalyticsLabels.feedbackEmailUnavailable)
             viewController.present(contactUsHelper.buildCantSendEmailAlert(target: .appDevelopers), animated: true)
             return
         }
 
+        report(AnalyticsLabels.feedbackEmailOpened)
         composer.mailComposeDelegate = self
         viewController.present(composer, animated: true)
     }
@@ -184,9 +205,22 @@ extension FeedbackPromptPresenter: MFMailComposeViewControllerDelegate {
         didFinishWith result: MFMailComposeResult,
         error: Error?
     ) {
+        // Read before `dismiss` starts tearing the presentation down.
+        let presenter = controller.presentingViewController
+        controller.dismiss(animated: true)
+
         if result == .sent {
             report(AnalyticsLabels.feedbackEmailSent)
         }
-        controller.dismiss(animated: true)
+
+        // This rider already told us something is wrong. Letting a send failure dismiss
+        // silently would leave them believing the complaint was delivered when it wasn't.
+        // `MoreViewController` surfaces the same delegate's error the same way.
+        if let error, let presenter {
+            report(AnalyticsLabels.feedbackEmailFailed)
+            Task { @MainActor in
+                await AlertPresenter.show(error: error, presentingController: presenter)
+            }
+        }
     }
 }

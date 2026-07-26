@@ -283,7 +283,14 @@ class StopViewModel: ObservableObject {
             }
         } catch {
             operationError = error
-            environment.noteStopLoadFailed()
+
+            // A cancellation isn't a failure the rider watched happen: SwiftUI cancels
+            // the `.task` when the stop sheet goes away, which is the same instant the
+            // feedback prompt is armed. Counting it would suppress the prompt for the
+            // whole session every time someone dismissed a stop mid-load.
+            if !error.isCancellation {
+                environment.noteStopLoadFailed()
+            }
         }
 
         isLoading = false

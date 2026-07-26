@@ -20,7 +20,10 @@ final class PromptCoordinatorTests: OBATestCase {
         clock = Date(timeIntervalSince1970: 1_700_000_000)
     }
 
-    private func makeCoordinator(notificationCenter: NotificationCenter = .default) -> PromptCoordinator {
+    /// Defaults to a private center, not `.default`: every coordinator registers a
+    /// `willEnterForeground` observer, and a real foreground event mid-run would silently
+    /// reset the session out from under a session-state assertion.
+    private func makeCoordinator(notificationCenter: NotificationCenter = NotificationCenter()) -> PromptCoordinator {
         PromptCoordinator(userDefaults: userDefaults, notificationCenter: notificationCenter, now: { self.clock })
     }
 
@@ -37,6 +40,14 @@ final class PromptCoordinatorTests: OBATestCase {
     func test_reviewRefusedAfterSurveyPromptSameSession() {
         let coordinator = makeCoordinator()
         coordinator.noteShown(.surveyPrompt)
+        XCTAssertFalse(coordinator.canShowReviewPrompt())
+    }
+
+    /// The headline case: the session budget has to hold against the review prompt
+    /// itself, not just against the other two kinds.
+    func test_reviewRefusedAfterReviewPromptSameSession() {
+        let coordinator = makeCoordinator()
+        coordinator.noteShown(.review)
         XCTAssertFalse(coordinator.canShowReviewPrompt())
     }
 
