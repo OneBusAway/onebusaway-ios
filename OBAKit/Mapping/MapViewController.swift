@@ -186,6 +186,10 @@ class MapViewController: UIViewController,
         application.mapRegionManager.mapViewDelegate = self
         viewModel.reloadBookmarks()
 
+        // Settings is the only thing that can change the callout rule, and getting back here is
+        // the first thing that happens after it closes.
+        application.mapRegionManager.refreshStopAnnotationCallouts()
+
         navigationController?.setNavigationBarHidden(true, animated: false)
 
         updateVisibleMapRect()
@@ -667,10 +671,52 @@ class MapViewController: UIViewController,
 
     /// Displays the specified stop.
     ///
-    /// - Parameter stop: The stop to display.
-    func show(stop: Stop) {
-        application.viewRouter.navigateTo(stop: stop, from: self)
+    /// - Parameters:
+    ///   - stop: The stop to display.
+    ///   - annotation: The annotation the stop was opened from, if any. Deselected when the
+    ///     stop sheet closes so the map doesn't keep a pin highlighted for a dismissed sheet.
+    func show(stop: Stop, deselecting annotation: MKAnnotation? = nil) {
+        present(stopController: application.viewRouter.makeStopController(stop: stop, showToolbarOnBottom: true), deselecting: annotation)
     }
+
+    /// Displays the specified stop by ID.
+    func show(stopID: StopID) {
+        present(stopController: application.viewRouter.makeStopController(stopID: stopID, showToolbarOnBottom: true))
+    }
+
+    /// Routes a stop screen to the presentation that suits it: the redesigned Stop page comes
+    /// up as a half-detent sheet over the map, the legacy screen still pushes.
+    ///
+    /// The branch keys off the controller `makeStopController` actually returned rather than
+    /// re-reading `FeatureFlags.isNewStopPageEnabled`. That factory has a second reason to fall
+    /// back to the legacy screen — a non-nil transfer context — so a duplicated flag check here
+    /// would eventually disagree with it and drop `StopViewController` into a panel it was
+    /// never built for.
+    private func present(stopController: UIViewController, deselecting annotation: MKAnnotation? = nil) {
+        guard stopController is StopPageViewController else {
+            application.viewRouter.navigate(to: stopController, from: self)
+            return
+        }
+
+        if let stopPageVC = stopController as? StopPageViewController {
+            stopPageVC.onClose = { [weak self] in self?.stopSheet.dismiss() }
+        }
+
+        // Only one sheet at a time: clear whatever else is occupying this space first.
+        dismissExistingMapItemController()
+        semiModalPanel?.removePanelFromParent(animated: false)
+        semiModalPanel = nil
+
+        floatingPanel.move(to: .tip, animated: true)
+
+        stopSheet.present(stopController, from: self) { [weak self] in
+            guard let self, let annotation else { return }
+            self.mapRegionManager.mapView.deselectAnnotation(annotation, animated: true)
+        }
+    }
+
+    /// Owns the half-detent panel that shows the redesigned Stop page over the map.
+    private lazy var stopSheet = StopSheetPresenter()
 
     // MARK: - Overlays
 
@@ -723,6 +769,7 @@ class MapViewController: UIViewController,
     }
 
     private func showSemiModalPanel(childController: UIViewController) {
+        stopSheet.dismiss(animated: false)
         semiModalPanel?.removePanelFromParent(animated: false)
 
         let panel = createSemiModalPanel(childController: childController)
@@ -841,6 +888,7 @@ class MapViewController: UIViewController,
     ///   - mapItem: The map item to display
     ///   - userPin: Optional user-dropped pin associated with this map item (for removal functionality)
     private func displayMapItemController(_ mapItem: MKMapItem, userPin: UserDroppedPin? = nil) {
+        stopSheet.dismiss(animated: false)
         dismissExistingMapItemController()
         // Create remove pin handler if this is a user-dropped pin
         let removePinHandler: (() -> Void)?
@@ -873,7 +921,7 @@ class MapViewController: UIViewController,
     private lazy var mapPanelController = MapFloatingPanelController(application: application, mapRegionManager: application.mapRegionManager, delegate: self)
 
     func mapPanelController(_ controller: MapFloatingPanelController, didSelectStop stopID: Stop.ID) {
-        application.viewRouter.navigateTo(stopID: stopID, from: self)
+        show(stopID: stopID)
     }
 
     func mapPanelController(_ controller: MapFloatingPanelController, didSelectMapItem mapItem: MKMapItem) {
@@ -924,12 +972,13 @@ class MapViewController: UIViewController,
             present(alert, animated: true) {
                 mapView.deselectAnnotation(view.annotation, animated: true)
             }
-        } else if let stop = view.annotation as? Stop, UIAccessibility.isVoiceOverRunning {
-            // When VoiceOver is running, StopAnnotationView does not display a callout due to
-            // VoiceOver limitations with MKMapView. Therefore, we should skip any callouts
-            // and just go directly to pushing the stop onto the navigation stack.
+        } else if !view.canShowCallout, let stop = selectableStop(for: view.annotation) {
+            // No callout means there is no chevron to tap, so selection is the open gesture.
+            // `StopAnnotationView.updateCalloutVisibility()` owns that decision — don't duplicate
+            // its reasoning here, or the two will drift and leave annotations that select but
+            // never open.
             application.analytics?.reportEvent(pageURL: "app://localhost/map", label: AnalyticsLabels.mapStopAnnotationTapped, value: nil)
-            show(stop: stop)
+            show(stop: stop, deselecting: view.annotation)
         } else if let annotation = view.annotation as? UserDroppedPin {
             // Sheet presentation for user-dropped pins is handled via
             // mapRegionManager(_:didSelectUserAnnotation:) delegate callback.
@@ -970,12 +1019,20 @@ class MapViewController: UIViewController,
     }
 
     func mapView(_ mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl) {
-        if let stop = view.annotation as? Stop {
-            application.analytics?.reportEvent(pageURL: "app://localhost/map", label: AnalyticsLabels.mapStopAnnotationTapped, value: nil)
-            show(stop: stop)
-        } else if let bookmark = view.annotation as? Bookmark {
-            application.analytics?.reportEvent(pageURL: "app://localhost/map", label: AnalyticsLabels.mapStopAnnotationTapped, value: nil)
-            show(stop: bookmark.stop)
+        guard let stop = selectableStop(for: view.annotation) else { return }
+        application.analytics?.reportEvent(pageURL: "app://localhost/map", label: AnalyticsLabels.mapStopAnnotationTapped, value: nil)
+        show(stop: stop, deselecting: view.annotation)
+    }
+
+    /// The stop an annotation opens, for the two annotation types that render as a
+    /// `StopAnnotationView`. Bookmarked stops appear on the map as `Bookmark` rather than `Stop`
+    /// (see `MapRegionManager.displayUniqueStopAnnotations`), so anything that opens stops from
+    /// the map has to handle both or bookmarked stops quietly stop responding to taps.
+    private func selectableStop(for annotation: MKAnnotation?) -> Stop? {
+        switch annotation {
+        case let stop as Stop: return stop
+        case let bookmark as Bookmark: return bookmark.stop
+        default: return nil
         }
     }
 
@@ -1131,7 +1188,9 @@ class MapViewController: UIViewController,
         else { return nil }
 
         let previewController = { () -> UIViewController in
-            let stopController = self.application.viewRouter.makeStopController(stop: stop)
+            // Built for the sheet, because that's where committing the peek lands it. The
+            // toolbar stays suppressed until `exitPreviewMode()`, so the glance itself is bare.
+            let stopController = self.application.viewRouter.makeStopController(stop: stop, showToolbarOnBottom: true)
             (stopController as? Previewable)?.enterPreviewMode()
             return stopController
         }
@@ -1147,7 +1206,11 @@ class MapViewController: UIViewController,
                 previewable.exitPreviewMode()
             }
 
-            self.application.viewRouter.navigate(to: viewController, from: self, animated: false)
+            // The preview controller was built by `makeStopController`, so it lands in the same
+            // sheet a tap would produce — peek-and-pop and tap shouldn't disagree about what
+            // opening a stop looks like.
+            let annotation = (interaction.view as? MKAnnotationView)?.annotation
+            self.present(stopController: viewController, deselecting: annotation)
         }
     }
 

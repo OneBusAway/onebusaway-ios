@@ -58,6 +58,7 @@ class SettingsViewController: FormViewController {
             FeatureFlags.useNewStopPageKey: FeatureFlags.isNewStopPageEnabled(userDefaults: application.userDefaults),
             privacySectionReportingEnabled: application.analytics?.reportingEnabled() ?? false,
             DataLoadFeedbackGenerator.EnabledUserDefaultsKey: application.userDefaults.bool(forKey: DataLoadFeedbackGenerator.EnabledUserDefaultsKey),
+            OBAFloatingPanelController.AlwaysShowFullSheetOnVoiceoverUserDefaultsKey: application.userDefaults.bool(forKey: OBAFloatingPanelController.AlwaysShowFullSheetOnVoiceoverUserDefaultsKey),
             AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts: application.userDefaults.bool(forKey: AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts),
             RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey: application.userDefaults.bool(forKey: RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey),
             MapRegionManager.mapViewShowsStopAnnotationLabelsDefaultsKey: application.userDefaults.bool(forKey: MapRegionManager.mapViewShowsStopAnnotationLabelsDefaultsKey),
@@ -92,14 +93,7 @@ class SettingsViewController: FormViewController {
             application.mapRegionManager.mapViewShowsHeading = heading
         }
 
-        if let hapticFeedbackOnDataLoad = values[DataLoadFeedbackGenerator.EnabledUserDefaultsKey] as? Bool {
-            application.userDefaults.set(hapticFeedbackOnDataLoad, forKey: DataLoadFeedbackGenerator.EnabledUserDefaultsKey)
-        }
-
-        if let mapViewShowsStopAnnotationLabels = values[MapRegionManager.mapViewShowsStopAnnotationLabelsDefaultsKey] as? Bool {
-            application.userDefaults.set(mapViewShowsStopAnnotationLabels, forKey: MapRegionManager.mapViewShowsStopAnnotationLabelsDefaultsKey)
-        }
-
+        saveAccessibilityValues(values)
         saveExperimentalValues(values)
         saveAlertsValues(values)
 
@@ -109,10 +103,6 @@ class SettingsViewController: FormViewController {
 
         if let debugEnabled = values[debugModeEnabled] as? Bool {
             application.userDataStore.debugMode = debugEnabled
-        }
-
-        if let reducedColors = values[stopUIReducedColorsTag] as? Bool {
-            application.userDataStore.stopUIReducedColors = reducedColors
         }
 
         if let alwaysShowSurveys = values[alwaysShowSurveysOnStops] as? Bool {
@@ -126,6 +116,24 @@ class SettingsViewController: FormViewController {
         }
 
         saveWalkingSpeedValues(values)
+    }
+
+    private func saveAccessibilityValues(_ values: [String: Any?]) {
+        if let hapticFeedbackOnDataLoad = values[DataLoadFeedbackGenerator.EnabledUserDefaultsKey] as? Bool {
+            application.userDefaults.set(hapticFeedbackOnDataLoad, forKey: DataLoadFeedbackGenerator.EnabledUserDefaultsKey)
+        }
+
+        if let alwaysShowFullSheetOnVoiceover = values[OBAFloatingPanelController.AlwaysShowFullSheetOnVoiceoverUserDefaultsKey] as? Bool {
+            application.userDefaults.set(alwaysShowFullSheetOnVoiceover, forKey: OBAFloatingPanelController.AlwaysShowFullSheetOnVoiceoverUserDefaultsKey)
+        }
+
+        if let mapViewShowsStopAnnotationLabels = values[MapRegionManager.mapViewShowsStopAnnotationLabelsDefaultsKey] as? Bool {
+            application.userDefaults.set(mapViewShowsStopAnnotationLabels, forKey: MapRegionManager.mapViewShowsStopAnnotationLabelsDefaultsKey)
+        }
+
+        if let reducedColors = values[stopUIReducedColorsTag] as? Bool {
+            application.userDataStore.stopUIReducedColors = reducedColors
+        }
     }
 
     private func saveExperimentalValues(_ values: [String: Any?]) {
@@ -191,14 +199,25 @@ class SettingsViewController: FormViewController {
             footer: OBALoc("settings_controller.experimental_section.map_panel.footer", value: "Restart the app to apply.", comment: "Settings > Experimental section > Footer indicating changes apply on relaunch")
         )
 
+        // These two write on change instead of waiting for `saveFormValues()`. The section's own
+        // footer tells you to restart the app, and the natural way to do that — kill the app right
+        // where you're standing — never runs `viewWillDisappear`, so a deferred write is lost.
         section <<< SwitchRow {
             $0.tag = FeatureFlags.useMapPanelExperienceKey
             $0.title = OBALoc("settings_controller.experimental_section.map_panel", value: "Use map panel experience", comment: "Settings > Experimental section > Map panel toggle")
+            $0.onChange { [weak self] row in
+                guard let self, let value = row.value else { return }
+                application.userDefaults.set(value, forKey: FeatureFlags.useMapPanelExperienceKey)
+            }
         }
 
         section <<< SwitchRow {
             $0.tag = FeatureFlags.useNewStopPageKey
             $0.title = OBALoc("settings_controller.experimental_section.new_stop_page", value: "Use new stop page", comment: "Settings > Experimental section > New stop page toggle")
+            $0.onChange { [weak self] row in
+                guard let self, let value = row.value else { return }
+                application.userDefaults.set(value, forKey: FeatureFlags.useNewStopPageKey)
+            }
         }
 
         return section

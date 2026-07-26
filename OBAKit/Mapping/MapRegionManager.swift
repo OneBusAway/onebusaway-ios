@@ -659,6 +659,26 @@ public class MapRegionManager: NSObject,
         application.stopIconFactory
     }
 
+    /// The redesigned Stop page opens as a sheet directly over the map, so the callout's
+    /// preview-then-chevron detour costs a tap and buys nothing. The legacy Stop page pushes onto
+    /// the navigation stack, replacing the map wholesale, and keeps the callout as its preview.
+    var showsStopAnnotationCallouts: Bool {
+        !FeatureFlags.isNewStopPageEnabled(userDefaults: application.userDefaults)
+    }
+
+    /// Re-asks every stop annotation currently on the map whether it should show a callout.
+    ///
+    /// `canShowCallout` is computed once, when `viewFor` attaches the delegate, but
+    /// `showsStopAnnotationCallouts` reads a feature flag the user can flip from Settings without
+    /// relaunching. Everything else that opens a stop reads that flag live, so without this the
+    /// annotations already on screen keep answering with the rule from launch: the legacy Stop
+    /// page opens on the first tap with no callout in between.
+    public func refreshStopAnnotationCallouts() {
+        for annotation in mapView.annotations {
+            (mapView.view(for: annotation) as? StopAnnotationView)?.updateCalloutVisibility()
+        }
+    }
+
     private let requiredHeightToShowExtraStopData = 7000.0
 
     var shouldHideExtraStopAnnotationData: Bool {

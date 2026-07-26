@@ -52,6 +52,38 @@ extension UITraitEnvironment {
     }
 }
 
+// MARK: - UIView
+
+extension UIView {
+
+    /// Breadth-first search for the nearest descendant scroll view, including the receiver itself.
+    ///
+    /// SwiftUI exposes no public handle on the `UICollectionView` backing a `List`, but
+    /// `FloatingPanel` needs one to drive scroll-to-expand. The search is breadth-first so it
+    /// finds the list's own scroll view rather than one nested inside a row.
+    ///
+    /// - Important: `nil` means "SwiftUI's view hierarchy no longer has the shape we expect,"
+    ///   which is possible on any OS update. Callers must degrade gracefully — for the stop
+    ///   sheet that means grabber-only dragging — rather than treating it as a failure.
+    func nearestDescendantScrollView() -> UIScrollView? {
+        var queue: [UIView] = [self]
+        var index = 0
+
+        while index < queue.count {
+            let view = queue[index]
+            index += 1
+
+            if let scrollView = view as? UIScrollView {
+                return scrollView
+            }
+
+            queue.append(contentsOf: view.subviews)
+        }
+
+        return nil
+    }
+}
+
 // MARK: - UIApplication
 
 extension UIApplication {

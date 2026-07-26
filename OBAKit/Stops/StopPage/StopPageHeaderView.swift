@@ -239,6 +239,50 @@ private struct HeaderStatusLine: View {
     }
 }
 
+// MARK: - Preview
+
+#Preview {
+    let json = """
+    {
+        "code": "2255",
+        "direction": "N",
+        "id": "1_2255",
+        "lat": 47.6543,
+        "lon": -122.3133,
+        "locationType": 0,
+        "name": "E Pine St & 15th Ave",
+        "routeIds": ["1_102574", "1_100169", "1_102581"],
+        "routes": [
+            {"agencyId": "1", "id": "1_102574", "shortName": "11", "type": 3},
+            {"agencyId": "1", "id": "1_100169", "shortName": "43", "type": 3},
+            {"agencyId": "1", "id": "1_102581", "shortName": "49", "type": 3}
+        ],
+        "wheelchairBoarding": "unknown"
+    }
+    """
+    // swiftlint:disable force_try
+    let stop = try! JSONDecoder().decode(Stop.self, from: Data(json.utf8))
+    // swiftlint:enable force_try
+
+    VStack(spacing: 8) {
+        StopPageHeaderView(
+            stop: stop,
+            walkTime: WalkTimeInfo(walkMinutes: 7, distance: 520),
+            statusText: "Updated: 2 min ago",
+            snapshotLoader: { _ in nil },
+            onWalkingDirections: {}
+        )
+        StopPageHeaderView(
+            stop: stop,
+            walkTime: nil,
+            statusText: "",
+            snapshotLoader: { _ in nil },
+            onWalkingDirections: {}
+        )
+        StopPageHeaderPlaceholderView()
+    }
+}
+
 /// Minimal leading-aligned wrapping layout: subviews flow left-to-right at
 /// their ideal sizes and break onto new lines as needed, so chips wrap instead
 /// of compressing or truncating. Shared by the header's subtitle + route chips

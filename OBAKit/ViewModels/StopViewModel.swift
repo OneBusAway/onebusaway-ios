@@ -42,7 +42,7 @@ class StopViewModel: ObservableObject {
     /// page re-reads it on the view model's routine refresh churn, and the explicit
     /// dismiss path hides the card immediately via local view state.
     var shouldRequestDonations: Bool {
-        application.donationsManager.shouldRequestDonations
+        environment.shouldRequestDonations
     }
 
     /// Emits when the inline hero answer succeeds but the survey has remaining
@@ -92,8 +92,8 @@ class StopViewModel: ObservableObject {
         guard let operationError else { return nil }
         return ErrorClassifier.classify(
             operationError,
-            regionName: application.currentRegionName,
-            isCellularDataRestricted: application.isCellularDataRestricted
+            regionName: environment.currentRegionName,
+            isCellularDataRestricted: environment.isCellularDataRestricted
         ).localizedDescription
     }
 
@@ -153,7 +153,7 @@ class StopViewModel: ObservableObject {
 
     // MARK: - Private
 
-    private let application: Application
+    private let environment: any StopViewModelEnvironment
     let stopID: StopID
 
     private let surveyOrchestrator: SurveyOrchestrator
@@ -173,22 +173,22 @@ class StopViewModel: ObservableObject {
     // MARK: - Init
 
     init(
-        application: Application,
+        environment: any StopViewModelEnvironment,
         stopID: StopID,
         stop: Stop? = nil,
         bookmarkContext: Bookmark? = nil,
         transferContext: TransferContext? = nil
     ) {
-        self.application = application
+        self.environment = environment
         self.stopID = stopID
         self.stop = stop
         self.bookmarkContext = bookmarkContext
         self.transferContext = transferContext
         self.minutesAfter = StopViewModel.defaultMinutesAfter
-        self.surveyOrchestrator = SurveyOrchestrator(surveyService: application.surveyService)
+        self.surveyOrchestrator = SurveyOrchestrator(surveyService: environment.surveyService)
 
-        if let currentRegion = application.currentRegion {
-            self.stopPreferences = application.stopPreferencesDataStore.preferences(stopID: stopID, region: currentRegion)
+        if let currentRegion = environment.currentRegion {
+            self.stopPreferences = environment.stopPreferences(stopID: stopID, region: currentRegion)
         } else {
             self.stopPreferences = StopPreferences()
         }
@@ -197,6 +197,17 @@ class StopViewModel: ObservableObject {
             .publisher(for: .alarmFired)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in self?.rebuildAlarmIndex() }
+    }
+
+    /// Backward-compatible entry point for existing callers that pass `Application` directly.
+    convenience init(
+        application: Application,
+        stopID: StopID,
+        stop: Stop? = nil,
+        bookmarkContext: Bookmark? = nil,
+        transferContext: TransferContext? = nil
+    ) {
+        self.init(environment: application, stopID: stopID, stop: stop, bookmarkContext: bookmarkContext, transferContext: transferContext)
     }
 
     isolated deinit {
@@ -229,7 +240,7 @@ class StopViewModel: ObservableObject {
     /// is intentionally in-scope so the `!isLoading` ordering is expressed in code,
     /// not in a comment.
     func refresh() async {
-        guard !isLoading, let apiService = application.apiService else { return }
+        guard !isLoading, let apiService = environment.apiService else { return }
         isLoading = true
 
         var pendingExtensionMinutes: UInt?
@@ -289,7 +300,7 @@ class StopViewModel: ObservableObject {
         guard !hasPerformedInitialStopSetup else { return }
         hasPerformedInitialStopSetup = true
 
-        if let region = application.currentRegion {
+        if let region = environment.currentRegion {
             recordRecentStop(stop, region: region)
             reportStopViewed(stop)
         }
@@ -389,7 +400,7 @@ class StopViewModel: ObservableObject {
         onFailure: @escaping () -> Void = {}
     ) {
         guard let target = survey ?? currentSurvey else { return }
-        let launcher = ExternalSurveyLauncher(surveyService: application.surveyService)
+        let launcher = ExternalSurveyLauncher(surveyService: environment.surveyService)
         launcher.launch(
             survey: target,
             stop: stop,
@@ -411,8 +422,8 @@ class StopViewModel: ObservableObject {
     /// Persists updated stop preferences and re-renders the list.
     func updateStopPreferences(_ prefs: StopPreferences) {
         stopPreferences = prefs
-        guard let stop = stop, let region = application.currentRegion else { return }
-        application.stopPreferencesDataStore.set(stopPreferences: prefs, stop: stop, region: region)
+        guard let stop = stop, let region = environment.currentRegion else { return }
+        environment.setStopPreferences(prefs, stop: stop, region: region)
         disableFilterIfAllRoutesHidden()
     }
 
@@ -428,8 +439,8 @@ class StopViewModel: ObservableObject {
     /// preferences were saved — including one deliberately set back to
     /// Chronological — owns its sort type and must not be re-seeded.
     var hasCustomizedPreferences: Bool {
-        guard let region = application.currentRegion else { return false }
-        return application.stopPreferencesDataStore.hasPreferences(stopID: stopID, region: region)
+        guard let region = environment.currentRegion else { return false }
+        return environment.hasStopPreferences(stopID: stopID, region: region)
     }
 
     /// Applies a sort type for display only. Unlike `updateSortType`, this does
@@ -442,7 +453,7 @@ class StopViewModel: ObservableObject {
 
     /// Saves alarm creation to the user data store.
     func recordAlarmCreated(_ alarm: Alarm) {
-        application.userDataStore.add(alarm: alarm)
+        environment.addAlarm(alarm)
     }
 
     /// Records an alarm created outside the view model (the `AlarmBuilder`
@@ -456,8 +467,8 @@ class StopViewModel: ObservableObject {
     /// Returns whether an alarm can be created for the given arrival/departure.
     func canCreateAlarm(for arrivalDeparture: ArrivalDeparture) -> Bool {
         guard
-            application.features.obaco == .running,
-            application.features.push == .running
+            environment.obacoFeatureStatus == .running,
+            environment.pushFeatureStatus == .running
         else { return false }
         return arrivalDeparture.arrivalDepartureMinutes > 1
     }
@@ -487,11 +498,11 @@ class StopViewModel: ObservableObject {
     }
 
     private func recordRecentStop(_ stop: Stop, region: Region) {
-        application.userDataStore.addRecentStop(stop, region: region)
+        environment.recordRecentStop(stop, region: region)
     }
 
     private func reportStopViewed(_ stop: Stop) {
-        application.analytics?.reportStopViewed(
+        environment.analytics?.reportStopViewed(
             name: stop.name,
             id: stop.id,
             stopDistance: analyticsDistanceToStop(stop)
@@ -505,7 +516,7 @@ class StopViewModel: ObservableObject {
     }
 
     private func analyticsDistanceToStop(_ stop: Stop) -> String {
-        guard let userLocation = application.locationService.currentLocation else {
+        guard let userLocation = environment.currentUserLocation else {
             return "User Distance: 03200-INFINITY"
         }
         let distance = userLocation.distance(from: stop.location)
@@ -566,7 +577,7 @@ class StopViewModel: ObservableObject {
             statusText = ""
             return
         }
-        statusText = String(format: Strings.updatedAtFormat, application.formatters.timeAgoInWords(date: lastUpdated))
+        statusText = String(format: Strings.updatedAtFormat, environment.formatters.timeAgoInWords(date: lastUpdated))
     }
 
     // MARK: - Stop Page: Walk Time
@@ -575,16 +586,16 @@ class StopViewModel: ObservableObject {
     /// source for the header chip and the chronological walk line (§4.5).
     var walkTime: WalkTimeInfo? {
         WalkTimeInfo.compute(
-            from: application.locationService.currentLocation,
+            from: environment.currentUserLocation,
             to: stop?.location,
-            speedMetersPerSecond: application.userDataStore.walkingSpeedMetersPerSecond
+            speedMetersPerSecond: environment.walkingSpeedMetersPerSecond
         )
     }
 
     // MARK: - Stop Page: Alarms
 
     var defaultAlarmLeadTime: Int {
-        application.userDataStore.defaultAlarmLeadTimeMinutes
+        environment.defaultAlarmLeadTimeMinutes
     }
 
     func alarm(for arrivalDeparture: ArrivalDeparture) -> Alarm? {
@@ -603,9 +614,9 @@ class StopViewModel: ObservableObject {
         guard
             canCreateAlarm(for: arrivalDeparture),
             !alarmSetsInFlight.contains(arrivalDeparture.id),
-            let obacoService = application.obacoService,
-            let pushService = application.pushService,
-            let region = application.currentRegion,
+            let obacoService = environment.obacoService,
+            let pushService = environment.pushService,
+            let region = environment.currentRegion,
             let minutes = AlarmLeadTime.clamped(leadTimeMinutes, minutesUntilDeparture: arrivalDeparture.arrivalDepartureMinutes)
         else { return }
 
@@ -644,14 +655,14 @@ class StopViewModel: ObservableObject {
         // Optimistic removal; restore on failure.
         alarmsByDepartureID[arrivalDeparture.id] = nil
         do {
-            guard let obacoService = application.obacoService else {
+            guard let obacoService = environment.obacoService else {
                 // The alarm lives on the server and will still fire. Deleting only
                 // the local copy would leave the rider with a notification they can
                 // no longer see or cancel, so fail loudly instead.
                 throw AlarmCancellationError.serviceUnavailable
             }
             try await obacoService.deleteAlarm(url: alarm.url)
-            application.userDataStore.delete(alarm: alarm)
+            environment.deleteAlarm(alarm)
             // A refresh that landed mid-await could have re-inserted this entry
             // (rebuildAlarmIndex ran while the persisted alarm was still present);
             // re-assert the removal now that the alarm is actually deleted.
@@ -661,7 +672,7 @@ class StopViewModel: ObservableObject {
             // The alarm already fired and was deleted server-side. The optimistic
             // removal already cleared the UI — just clean up the local store and
             // stay silent (no error banner).
-            application.userDataStore.delete(alarm: alarm)
+            environment.deleteAlarm(alarm)
             alarmError = nil
         } catch {
             Logger.error("Alarm cancel failed for \(arrivalDeparture.id): \(error)")
@@ -723,7 +734,7 @@ class StopViewModel: ObservableObject {
 
         guard let oldAlarm, oldAlarm.url != newAlarm.url else { return }
 
-        if let obacoService = application.obacoService {
+        if let obacoService = environment.obacoService {
             do {
                 try await obacoService.deleteAlarm(url: oldAlarm.url)
             } catch {
@@ -739,14 +750,14 @@ class StopViewModel: ObservableObject {
         // delete failed: it shares the new alarm's deep link, and a leftover
         // copy would win the next `rebuildAlarmIndex()` and resurrect the old
         // lead time in the UI.
-        application.userDataStore.delete(alarm: oldAlarm)
+        environment.deleteAlarm(oldAlarm)
     }
 
     /// Rebuilds the departure-id → alarm index by matching each persisted
     /// alarm's deep link against the current departures. Called after each
     /// successful fetch so expired/foreign alarms fall out naturally.
     private func rebuildAlarmIndex() {
-        guard let region = application.currentRegion,
+        guard let region = environment.currentRegion,
               let departures = stopArrivals?.arrivalsAndDepartures
         else {
             alarmsByDepartureID = [:]
@@ -755,13 +766,13 @@ class StopViewModel: ObservableObject {
         // Fast path: `alarms` JSON-decodes the persisted store on every access.
         // With nothing persisted there's no expiry to run and no match to make,
         // so bail before touching `deleteExpiredAlarms()`.
-        guard !application.userDataStore.alarms.isEmpty else {
+        guard !environment.userAlarms.isEmpty else {
             alarmsByDepartureID = [:]
             return
         }
-        application.userDataStore.deleteExpiredAlarms()
+        environment.deleteExpiredAlarms()
         // Re-read the pruned set once, out of the loop (another decode per access).
-        let alarms = application.userDataStore.alarms
+        let alarms = environment.userAlarms
         var alarmsByVisit: [AlarmVisitIdentity: Alarm] = [:]
         for alarm in alarms {
             guard let deepLink = alarm.deepLink else { continue }
@@ -813,7 +824,7 @@ class StopViewModel: ObservableObject {
     /// Trip details backing the trip panel's approach timeline. Fetched on
     /// panel open, cached until the next refresh, live trips only (§4.1).
     func approachTripDetails(for arrivalDeparture: ArrivalDeparture) async -> TripDetails? {
-        guard arrivalDeparture.predicted, let apiService = application.apiService else { return nil }
+        guard arrivalDeparture.predicted, let apiService = environment.apiService else { return nil }
         if let cached = cachedApproachTripDetails(for: arrivalDeparture) { return cached }
         do {
             let details = try await apiService.getTrip(
