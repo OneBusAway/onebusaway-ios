@@ -581,6 +581,29 @@ class StopViewModelTests: OBATestCase {
         expect(viewModel.currentSurvey?.id) == 7
     }
 
+    /// A review prompt already shown this session suppresses the inline survey
+    /// card too, even though `surveyOrchestrator.isEligible()` alone would
+    /// still say yes — the coordinator's session-scoped `canShowInlineCards()`
+    /// gate must apply to both inline surfaces, not just donations.
+    @MainActor
+    func test_currentSurvey_suppressedAfterReviewPromptShownThisSession() async {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplicationWithHeroSurvey(
+            dataLoader: dataLoader,
+            analytics: AnalyticsMock(),
+            includeRemainingQuestion: false
+        )
+        app.userDataStore.alwaysShowSurveysOnStops = true
+        app.promptCoordinator.noteShown(.review)
+
+        let viewModel = StopViewModel(application: app, stopID: testStopID)
+
+        await app.surveyService.fetchSurveys()
+        await viewModel.refresh()
+
+        expect(viewModel.currentSurvey).to(beNil())
+    }
+
     /// Hero-only success: submit clears `currentSurvey`, marks the survey
     /// completed, and emits no error / no presentFullSurvey.
     @MainActor

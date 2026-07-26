@@ -398,6 +398,8 @@ public class Application: CoreApplication, PushServiceDelegate {
     private func presentDonationUI(_ presentingController: UIViewController, id: String?) {
         analytics?.reportEvent(pageURL: "app://localhost/donations", label: AnalyticsLabels.donationPushNotificationTapped, value: id)
 
+        promptCoordinator.noteShown(.donationModal)
+
         let learnMoreView = donationsManager.buildLearnMoreView(presentingController: presentingController, donationPushNotificationID: id)
         presentingController.present(UIHostingController(rootView: learnMoreView), animated: true)
     }

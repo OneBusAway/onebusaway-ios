@@ -364,7 +364,11 @@ class StopViewModel: ObservableObject {
     /// or `nil` if the gate is closed or no survey matches. Called whenever the
     /// stop is refreshed or the survey list is reloaded.
     private func recomputeCurrentSurvey() {
-        guard surveyOrchestrator.isEligible(), let stop else {
+        // `canShowInlineCards()` is session-scoped and flipped by an event that
+        // fires at most once per session (same property `shouldRequestDonations`
+        // gates on), so reading it here — on a method re-run on every stop
+        // refresh — can't erase a survey card the rider is currently looking at.
+        guard surveyOrchestrator.isEligible(), environment.promptCoordinator.canShowInlineCards(), let stop else {
             currentSurvey = nil
             return
         }

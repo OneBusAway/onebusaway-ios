@@ -134,6 +134,8 @@ public class MoreViewController: UIViewController,
     private func showDonationUI() {
         guard application.donationsManager.donationsEnabled else { return }
 
+        application.promptCoordinator.noteShown(.donationModal)
+
         let view = application.donationsManager.buildLearnMoreView(presentingController: self)
         let hostingController = UIHostingController(rootView: view)
         present(hostingController, animated: true)
