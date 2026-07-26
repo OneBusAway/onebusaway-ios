@@ -78,6 +78,18 @@ public class Application: CoreApplication, PushServiceDelegate {
         appLaunchCount: { [userDataStore] in userDataStore.appLaunchCount }
     )
 
+    @MainActor
+    lazy var promptCoordinator = PromptCoordinator(
+        userDefaults: userDefaults,
+        notificationCenter: notificationCenter
+    )
+
+    @MainActor
+    lazy var reviewPromptPolicy = ReviewPromptPolicy(
+        userDefaults: userDefaults,
+        bundle: applicationBundle
+    )
+
     /// Responsible for figuring out how to navigate between view controllers.
     @MainActor
     lazy var viewRouter = ViewRouter(application: self)

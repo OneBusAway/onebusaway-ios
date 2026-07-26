@@ -53,6 +53,13 @@ protocol StopViewModelEnvironment: AnyObject {
     /// `features.push`
     var pushFeatureStatus: Application.FeatureStatus { get }
 
+    /// Counts successful real-time stop views toward the feedback prompt.
+    var reviewPromptPolicy: ReviewPromptPolicy { get }
+
+    /// Records that a stop load failed, suppressing the feedback prompt for the
+    /// rest of this foreground session.
+    func noteStopLoadFailed()
+
     // MARK: - Utilities
 
     var analytics: Analytics? { get }
@@ -88,6 +95,8 @@ extension Application: StopViewModelEnvironment {
     var shouldRequestDonations: Bool { donationsManager.shouldRequestDonations }
     var obacoFeatureStatus: Application.FeatureStatus { features.obaco }
     var pushFeatureStatus: Application.FeatureStatus { features.push }
+
+    func noteStopLoadFailed() { promptCoordinator.sawErrorThisSession = true }
 }
 
 // MARK: - Preview stub
@@ -124,6 +133,11 @@ final class PreviewStopViewModelEnvironment: StopViewModelEnvironment {
     var shouldRequestDonations: Bool { false }
     var obacoFeatureStatus: Application.FeatureStatus { .off }
     var pushFeatureStatus: Application.FeatureStatus { .off }
+
+    lazy var reviewPromptPolicy = ReviewPromptPolicy(
+        userDefaults: UserDefaults(suiteName: "StopViewModelPreview")!
+    )
+    func noteStopLoadFailed() {}
 
     var analytics: Analytics? { nil }
     var formatters = Formatters(

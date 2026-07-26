@@ -46,12 +46,20 @@ class StopViewModelTests: OBATestCase {
         surveyHitCounter: SurveyHitCounter? = nil,
         arrivalsFixture: String = "arrivals_and_departures_empty.json",
         arrivalsData: Data? = nil,
+        arrivalsFailureStatusCode: Int? = nil,
         bundledRegionsFixture: String? = nil
     ) -> Application {
         stubRegions(dataLoader: dataLoader)
         stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
         Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
-        if let arrivalsData {
+        if let arrivalsFailureStatusCode {
+            // Empty (non-nil) data: `MockDataLoader.data(for:)` fatal-errors on nil data,
+            // and `APIService+GetData` branches on `httpResponse.statusCode` before it
+            // ever tries to decode a body.
+            dataLoader.mock(data: Data(), statusCode: arrivalsFailureStatusCode) { request in
+                request.url?.path.contains("/api/where/arrivals-and-departures-for-stop") ?? false
+            }
+        } else if let arrivalsData {
             dataLoader.mock(data: arrivalsData) { request in
                 request.url?.path.contains("/api/where/arrivals-and-departures-for-stop") ?? false
             }
@@ -86,6 +94,41 @@ class StopViewModelTests: OBATestCase {
         )
 
         return Application(config: config)
+    }
+
+    // MARK: - Review Prompt Builders
+
+    /// Builds a `StopViewModel` backed by a real `Application` whose arrivals fetch
+    /// returns `arrivalsFixture`. Returns the `Application` alongside the view model
+    /// so tests can assert on `application.reviewPromptPolicy`/`promptCoordinator`.
+    @MainActor
+    private func buildViewModel(arrivalsFixture: String) -> (StopViewModel, Application) {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock(), arrivalsFixture: arrivalsFixture)
+        let viewModel = StopViewModel(application: app, stopID: testStopID)
+        return (viewModel, app)
+    }
+
+    /// Builds a `StopViewModel` backed by a real `Application` whose arrivals fetch
+    /// fails with `statusCode` (no body).
+    @MainActor
+    private func buildViewModelWithFailingArrivals(statusCode: Int) -> (StopViewModel, Application) {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock(), arrivalsFailureStatusCode: statusCode)
+        let viewModel = StopViewModel(application: app, stopID: testStopID)
+        return (viewModel, app)
+    }
+
+    /// Hides every route present in `arrivals_and_departures_for_stop_1_10020.json`
+    /// (routes `1_30` and `1_65`) so the rider never sees a real-time row from that
+    /// fixture. Writes straight to the view model's in-memory `stopPreferences` via
+    /// `updateStopPreferences`, which assigns unconditionally before its `stop`/`region`
+    /// persistence guard — so this works even pre-refresh, when `stop` is still nil.
+    @MainActor
+    private func hideAllRoutes(in viewModel: StopViewModel) {
+        var prefs = viewModel.stopPreferences
+        prefs.hiddenRoutes = ["1_30", "1_65"]
+        viewModel.updateStopPreferences(prefs)
     }
 
     /// `RegionsService` prefers the on-disk regions file over the bundled one, and a
@@ -881,5 +924,56 @@ class StopViewModelTests: OBATestCase {
         expect(viewModel.alarmError).toNot(beNil())
         expect(viewModel.alarm(for: departure)).toNot(beNil())
         expect(app.userDataStore.alarms).toNot(beEmpty())
+    }
+
+    // MARK: - Review prompt success recording
+
+    @MainActor
+    func test_successfulFetchWithPredictedArrival_recordsOneSuccess() async {
+        let (viewModel, application) = buildViewModel(arrivalsFixture: "arrivals_and_departures_for_stop_1_10020.json")
+        await viewModel.refresh()
+        expect(application.reviewPromptPolicy.successCount) == 1
+    }
+
+    @MainActor
+    func test_repeatedRefreshes_recordOnlyOneSuccess() async {
+        let (viewModel, application) = buildViewModel(arrivalsFixture: "arrivals_and_departures_for_stop_1_10020.json")
+        await viewModel.refresh()
+        await viewModel.refresh()
+        await viewModel.refresh()
+        expect(application.reviewPromptPolicy.successCount) == 1
+    }
+
+    @MainActor
+    func test_scheduledOnlyArrivals_recordNoSuccess() async {
+        let (viewModel, application) = buildViewModel(arrivalsFixture: "arrivals_and_departures_for_stop_1_10020_no_realtime.json")
+        await viewModel.refresh()
+        expect(application.reviewPromptPolicy.successCount) == 0
+    }
+
+    /// Hide every route the fixture's predicted arrivals belong to, so the rider
+    /// never saw a real-time row.
+    @MainActor
+    func test_predictedArrivalOnHiddenRoute_recordsNoSuccess() async {
+        let (viewModel, application) = buildViewModel(arrivalsFixture: "arrivals_and_departures_for_stop_1_10020.json")
+        hideAllRoutes(in: viewModel)
+        await viewModel.refresh()
+        expect(application.reviewPromptPolicy.successCount) == 0
+    }
+
+    @MainActor
+    func test_failedFetch_recordsNoSuccessAndFlagsError() async {
+        let (viewModel, application) = buildViewModelWithFailingArrivals(statusCode: 500)
+        await viewModel.refresh()
+        expect(application.reviewPromptPolicy.successCount) == 0
+        expect(application.promptCoordinator.sawErrorThisSession).to(beTrue())
+    }
+
+    /// A broken bookmark is not a failure the rider watched happen.
+    @MainActor
+    func test_requestNotFound_doesNotFlagError() async {
+        let (viewModel, application) = buildViewModelWithFailingArrivals(statusCode: 404)
+        await viewModel.refresh()
+        expect(application.promptCoordinator.sawErrorThisSession).to(beFalse())
     }
 }

@@ -170,6 +170,11 @@ class StopViewModel: ObservableObject {
     /// analytics, recent-stops recording, and the "all routes hidden" filter invariant.
     private var hasPerformedInitialStopSetup = false
 
+    /// Debounces feedback-prompt success recording to one per stop view. Safe as
+    /// instance state because `StopPageViewController.init` builds exactly one
+    /// view model per stop presentation and it stays bound to a single stopID.
+    private var hasRecordedReviewSuccess = false
+
     // MARK: - Init
 
     init(
@@ -265,6 +270,7 @@ class StopViewModel: ObservableObject {
             isBrokenBookmark = bookmarkContext != nil
         } catch {
             operationError = error
+            environment.noteStopLoadFailed()
         }
 
         isLoading = false
@@ -290,6 +296,28 @@ class StopViewModel: ObservableObject {
         approachCache.removeAll()
         rebuildAlarmIndex()
         recomputeCurrentSurvey()
+        recordReviewSuccessIfNeeded(arrivals: arrivals)
+    }
+
+    /// Records a "success moment" for the feedback prompt: a load that surfaced
+    /// at least one real-time arrival the rider could actually see.
+    ///
+    /// Filters to the displayed list rather than the raw response — crediting a
+    /// success for a route the rider has hidden would count something they never
+    /// saw. Note that `predicted == true` means the server claims real-time data
+    /// for the trip; the predicted timestamps are nilified independently by
+    /// `ModelHelpers.nilifyDate`, so this is a claim of freshness, not proof of a
+    /// usable time.
+    private func recordReviewSuccessIfNeeded(arrivals: StopArrivals) {
+        guard !hasRecordedReviewSuccess else { return }
+
+        let visible = arrivals.arrivalsAndDepartures.filter { arrival in
+            !isListFiltered || !stopPreferences.isRouteIDHidden(arrival.routeID)
+        }
+        guard visible.contains(where: \.predicted) else { return }
+
+        hasRecordedReviewSuccess = true
+        environment.reviewPromptPolicy.recordSuccess()
     }
 
     /// Runs exactly once per VM lifetime on the first successful fetch:
