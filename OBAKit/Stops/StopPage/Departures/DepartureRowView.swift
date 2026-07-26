@@ -42,8 +42,8 @@ struct DepartureRowView: View {
 
     private var showsAlarmAffordance: Bool { canAlarm || hasAlarm }
 
-    private var scheduledTimeText: String {
-        formatters.timeFormatter.string(from: departure.scheduledDate)
+    private var timeDisplay: DepartureTimeDisplay {
+        DepartureTimeDisplay(arrivalDeparture: departure, formatters: formatters)
     }
 
     var body: some View {
@@ -60,9 +60,8 @@ struct DepartureRowView: View {
                     countdown
                 }
                 headsignText
-                Text(scheduledTimeText)
+                DepartureTimeText(display: timeDisplay)
                     .font(.footnote)
-                    .monospacedDigit()
                     .foregroundStyle(.secondary)
                 statusText
                 occupancyBadge
@@ -72,9 +71,8 @@ struct DepartureRowView: View {
                     VStack(alignment: .leading, spacing: 3) {
                         headsignText
                         HStack(spacing: 6) {
-                            Text(scheduledTimeText)
+                            DepartureTimeText(display: timeDisplay)
                                 .font(.footnote)
-                                .monospacedDigit()
                                 .foregroundStyle(.secondary)
                             Text("·").foregroundStyle(.tertiary)
                             statusText
@@ -164,7 +162,9 @@ struct DepartureRowView: View {
     }
 
     private var accessibilityText: String {
-        var clauses = [baseAccessibilityText]
+        // The clock time follows the countdown: VoiceOver can't perceive the
+        // strikethrough that carries this on screen.
+        var clauses = [baseAccessibilityText, timeDisplay.accessibilityTimeDescription]
 
         if status.showsOccupancy, let occupancy = departure.occupancyStatus, occupancy != .unknown {
             clauses.append(OccupancyBadge.localizedDescription(occupancy))
