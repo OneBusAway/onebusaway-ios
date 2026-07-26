@@ -302,8 +302,12 @@ public final class ArrivalDeparture: NSObject, Identifiable, Decodable, HasRefer
     }
 
     /// A more precise (but maybe not as useful?) calculation of the deviation of this trip from schedule.
+    ///
+    /// - Note: Measured against `scheduledDate` so that arrivals compare against
+    ///         `scheduledArrival`. Using `scheduledDeparture` unconditionally reports a
+    ///         late arrival as early by the length of the layover.
     private var rawDeviationFromScheduleInMinutes: Double {
-        return (arrivalDepartureDate.timeIntervalSinceNow - scheduledDeparture.timeIntervalSinceNow) / 60.0
+        return (arrivalDepartureDate.timeIntervalSinceNow - scheduledDate.timeIntervalSinceNow) / 60.0
     }
 
     /// Is this trip early, on time, delayed, or of an unknown status?

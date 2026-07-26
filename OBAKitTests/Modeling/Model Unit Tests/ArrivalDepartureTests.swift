@@ -381,4 +381,38 @@ class ArrivalDepartureTests: OBATestCase {
             try Fixtures.dictionaryToModel(type: ArrivalDeparture.self, dictionary: incompleteData)
         }.to(throwError())
     }
+
+    // MARK: - Schedule deviation
+
+    /// Builds a trip that sits at the stop for a ten minute layover and runs
+    /// three minutes late, so that measuring the deviation against the wrong
+    /// scheduled field produces a visibly different answer.
+    private func layoverArrivalDeparture(stopSequence: Int) throws -> ArrivalDeparture {
+        try Fixtures.arrivalDeparture(
+            scheduledArrival: 1_700_000_000,
+            predictedArrival: 1_700_000_180,    // 3 min after scheduled arrival
+            scheduledDeparture: 1_700_000_600,  // 10 min layover
+            predictedDeparture: 1_700_000_780,  // 3 min after scheduled departure
+            stopSequence: stopSequence
+        )
+    }
+
+    func test_deviation_forArrivingTrip_measuresAgainstScheduledArrival() throws {
+        // A non-zero stopSequence means `.arriving`, so the comparable baseline
+        // is scheduledArrival — not scheduledDeparture on the far side of the
+        // layover, which would report this late trip as 7 minutes early.
+        let arrival = try layoverArrivalDeparture(stopSequence: 5)
+
+        expect(arrival.arrivalDepartureStatus) == .arriving
+        expect(arrival.deviationFromScheduleInMinutes) == 3
+        expect(arrival.scheduleStatus) == .delayed
+    }
+
+    func test_deviation_forDepartingTrip_measuresAgainstScheduledDeparture() throws {
+        let departure = try layoverArrivalDeparture(stopSequence: 0)
+
+        expect(departure.arrivalDepartureStatus) == .departing
+        expect(departure.deviationFromScheduleInMinutes) == 3
+        expect(departure.scheduleStatus) == .delayed
+    }
 }

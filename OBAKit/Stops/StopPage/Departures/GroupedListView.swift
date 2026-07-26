@@ -55,6 +55,10 @@ struct GroupedListView: View {
         canAlarm(departure) || alarmLookup(departure) != nil
     }
 
+    private func timeDisplay(_ departure: ArrivalDeparture) -> DepartureTimeDisplay {
+        DepartureTimeDisplay(arrivalDeparture: departure, formatters: formatters)
+    }
+
     var body: some View {
         // One Section per route — the Section IS the card. Identity is the
         // stable RouteID; the accordion toggle lives INSIDE the Section so the
@@ -127,8 +131,8 @@ struct GroupedListView: View {
                     CountdownView(minutes: next.arrivalDepartureMinutes, isRealTime: status.isRealTime, color: Color(uiColor: status.color))
                 }
                 headsignText(next)
-                Text(formatters.timeFormatter.string(from: next.scheduledDate))
-                    .font(.footnote).monospacedDigit().foregroundStyle(.secondary)
+                DepartureTimeText(display: timeDisplay(next))
+                    .font(.footnote).foregroundStyle(.secondary)
                 Text(status.label)
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(Color(uiColor: status.color))
@@ -138,8 +142,8 @@ struct GroupedListView: View {
                     VStack(alignment: .leading, spacing: 3) {
                         headsignText(next)
                         HStack(spacing: 6) {
-                            Text(formatters.timeFormatter.string(from: next.scheduledDate))
-                                .font(.footnote).monospacedDigit().foregroundStyle(.secondary)
+                            DepartureTimeText(display: timeDisplay(next))
+                                .font(.footnote).foregroundStyle(.secondary)
                             Text("·").foregroundStyle(.tertiary)
                             Text(status.label)
                                 .font(.footnote.weight(.semibold))
@@ -262,8 +266,8 @@ struct GroupedListView: View {
                         CountdownView(minutes: departure.arrivalDepartureMinutes, isRealTime: status.isRealTime, color: Color(uiColor: status.color), emphasized: false)
                         tripChevron(departure)
                     }
-                    Text(formatters.timeFormatter.string(from: departure.scheduledDate))
-                        .font(.subheadline.weight(.semibold)).monospacedDigit()
+                    DepartureTimeText(display: timeDisplay(departure))
+                        .font(.subheadline.weight(.semibold))
                     Text(status.label)
                         .font(.subheadline)
                         .foregroundStyle(Color(uiColor: status.color))
@@ -275,8 +279,8 @@ struct GroupedListView: View {
                         alarmIcon(for: departure)
                         VStack(alignment: .leading, spacing: 2) {
                             HStack(spacing: 4) {
-                                Text(formatters.timeFormatter.string(from: departure.scheduledDate))
-                                    .font(.subheadline.weight(.semibold)).monospacedDigit()
+                                DepartureTimeText(display: timeDisplay(departure))
+                                    .font(.subheadline.weight(.semibold))
                                 Text("· \(status.label)")
                                     .font(.subheadline)
                                     .foregroundStyle(Color(uiColor: status.color))
@@ -345,15 +349,24 @@ struct GroupedListView: View {
     /// headsign, minutes, live/scheduled status, and occupancy when present.
     private func expandedRowAccessibilityLabel(_ departure: ArrivalDeparture, status: DepartureStatus) -> String {
         let fmt = OBALoc("stop_page.grouped.expanded_row.a11y_fmt", value: "Route %@ to %@, departs in %d minutes, %@", comment: "VoiceOver label for one expanded departure row inside a grouped route card: route, headsign, minutes, status.")
-        var label = String(format: fmt, departure.routeShortName, departure.tripHeadsign ?? "", departure.arrivalDepartureMinutes, status.accessibilityStatusDescription)
+        // Same clause list as `DepartureRowView.accessibilityText`; the clock
+        // time is spoken because the strikethrough carrying it is inaudible.
+        var clauses = [
+            String(format: fmt, departure.routeShortName, departure.tripHeadsign ?? "", departure.arrivalDepartureMinutes, status.accessibilityStatusDescription),
+            timeDisplay(departure).accessibilityTimeDescription
+        ]
         if status.showsOccupancy, let occupancy = departure.occupancyStatus, occupancy != .unknown {
-            label += ", " + OccupancyBadge.localizedDescription(occupancy)
+            clauses.append(OccupancyBadge.localizedDescription(occupancy))
         }
-        return label
+        return clauses.joined(separator: ", ")
     }
 
     private func groupAccessibilityLabel(_ group: StopPageListBuilder.RouteGroup<ArrivalDeparture>, status: DepartureStatus) -> String {
         let fmt = OBALoc("stop_page.grouped.a11y_fmt", value: "Route %@ to %@, next departure in %d minutes, %@. %d more departures loaded.", comment: "VoiceOver label for a grouped route card")
-        return String(format: fmt, group.next.routeShortName, group.next.tripHeadsign ?? "", group.next.arrivalDepartureMinutes, status.accessibilityStatusDescription, group.upcoming.count)
+        let label = String(format: fmt, group.next.routeShortName, group.next.tripHeadsign ?? "", group.next.arrivalDepartureMinutes, status.accessibilityStatusDescription, group.upcoming.count)
+        // Appended after the sentence rather than comma-joined like the row
+        // labels: this format string ends in a full stop, and VoiceOver's pause
+        // there keeps the time attached to the card rather than to the count.
+        return label + " " + timeDisplay(group.next).accessibilityTimeDescription
     }
 }
