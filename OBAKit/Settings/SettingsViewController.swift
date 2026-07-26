@@ -358,8 +358,8 @@ class SettingsViewController: FormViewController {
             header: OBALoc("settings_controller.feedback_section.title", value: "Feedback", comment: "Settings > Feedback section title"),
             footer: OBALoc(
                 "settings_controller.feedback_section.footer",
-                value: "Resetting clears the feedback prompt's state, but leaves \"Always show feedback prompt\" turned on.",
-                comment: "Settings > Feedback section > Footer explaining that the reset button does not turn off the debug toggle above it"
+                value: "Every prompt shown with this toggle on still counts toward the real 3-ask lifetime limit, so tapping through it enough silences the organic prompt on this device until you reset. Resetting clears that state but leaves the toggle turned on.",
+                comment: "Settings > Feedback section > Footer warning that debug presentations burn the real lifetime ask count, and that resetting does not turn the toggle off"
             )
         )
 

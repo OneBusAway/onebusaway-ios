@@ -381,8 +381,10 @@ Surveys and Debug in `SettingsViewController`.
   increments `askCount`/stamps `lastVersionPrompted` on the real policy state —
   three debug taps permanently silence the organic prompt for that install
   until the reset button is used. `ReviewPromptPolicy.reset()` deliberately
-  does not clear the `alwaysShow` key itself, so the toggle stays on across a
-  reset; the Feedback section's footer calls this out.
+  does not clear the `alwaysShow` key itself, so the toggle also stays on
+  across a reset. The Feedback section's footer states both facts — the
+  real-ask-count cost of leaving the toggle on, and that resetting doesn't
+  turn it off — since neither is visible anywhere else in the UI.
 - **Reset feedback prompt state** — clears all five `ReviewPrompt.` keys **and**
   calls `PromptCoordinator.reset()`, which clears `lastEngagementDate` and
   `lastPromptKind` and starts a fresh in-memory session. Omitting the latter
