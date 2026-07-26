@@ -31,7 +31,14 @@ class SurveyOrchestratorTests: OBATestCase {
         try await super.setUp()
         dataStore = UserDefaultsStore(userDefaults: userDefaults)
         surveyService = SurveyService(apiService: nil, userDataStore: dataStore)
-        orchestrator = SurveyOrchestrator(surveyService: surveyService)
+        let service = surveyService!
+        let defaults = userDefaults!
+        orchestrator = await MainActor.run {
+            SurveyOrchestrator(
+                surveyService: service,
+                promptCoordinator: PromptCoordinator(userDefaults: defaults)
+            )
+        }
     }
 
     override func tearDown() async throws {

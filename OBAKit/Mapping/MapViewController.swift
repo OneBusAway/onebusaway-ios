@@ -771,6 +771,16 @@ class MapViewController: UIViewController,
         feedbackPromptWorkItem = nil
     }
 
+    /// Clears the stop sheet because something else is about to occupy its space.
+    ///
+    /// The dismissal runs the sheet's handler synchronously, which arms the prompt — so the
+    /// cancel has to follow it, not precede it. The two belong together at every call site,
+    /// which is why they live here rather than being spelled out at each one.
+    private func dismissStopSheetForReplacement() {
+        stopSheet.dismiss(animated: false)
+        cancelScheduledFeedbackPrompt()
+    }
+
     /// Whether the map is still the quiet, unoccupied screen it was when the prompt was armed.
     ///
     /// `presentIfEligible`'s own `presentedViewController == nil` check can't see any of this:
@@ -836,10 +846,7 @@ class MapViewController: UIViewController,
     }
 
     private func showSemiModalPanel(childController: UIViewController) {
-        stopSheet.dismiss(animated: false)
-        // The dismissal above runs the sheet's handler synchronously and arms the prompt;
-        // this space is about to be occupied, so unschedule it.
-        cancelScheduledFeedbackPrompt()
+        dismissStopSheetForReplacement()
         semiModalPanel?.removePanelFromParent(animated: false)
 
         let panel = createSemiModalPanel(childController: childController)
@@ -958,10 +965,7 @@ class MapViewController: UIViewController,
     ///   - mapItem: The map item to display
     ///   - userPin: Optional user-dropped pin associated with this map item (for removal functionality)
     private func displayMapItemController(_ mapItem: MKMapItem, userPin: UserDroppedPin? = nil) {
-        stopSheet.dismiss(animated: false)
-        // As in `showSemiModalPanel`: the synchronous dismissal handler arms the prompt for
-        // a sheet that a place card is replacing.
-        cancelScheduledFeedbackPrompt()
+        dismissStopSheetForReplacement()
         dismissExistingMapItemController()
         // Create remove pin handler if this is a user-dropped pin
         let removePinHandler: (() -> Void)?

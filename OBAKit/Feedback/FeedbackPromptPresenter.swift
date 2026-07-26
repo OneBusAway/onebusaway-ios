@@ -81,27 +81,25 @@ final class FeedbackPromptPresenter: NSObject {
 
         let alert = UIAlertController(title: title, message: nil, preferredStyle: .alert)
 
-        alert.addAction(UIAlertAction(
-            title: OBALoc("feedback_prompt.positive_button", value: "Yes!", comment: "Positive answer to the feedback prompt."),
-            style: .default
+        alert.addAction(
+            title: OBALoc("feedback_prompt.positive_button", value: "Yes!", comment: "Positive answer to the feedback prompt.")
         ) { [weak self] _ in
             self?.handlePositive()
-        })
+        }
 
-        alert.addAction(UIAlertAction(
-            title: OBALoc("feedback_prompt.negative_button", value: "Not really", comment: "Negative answer to the feedback prompt."),
-            style: .default
+        alert.addAction(
+            title: OBALoc("feedback_prompt.negative_button", value: "Not really", comment: "Negative answer to the feedback prompt.")
         ) { [weak self] _ in
             self?.handleNegative(from: viewController)
-        })
+        }
 
-        alert.addAction(UIAlertAction(
+        alert.addAction(
             title: OBALoc("feedback_prompt.later_button", value: "Ask Me Later", comment: "Defers the feedback prompt."),
             style: .cancel
         ) { [weak self] _ in
             self?.application.reviewPromptPolicy.recordOutcome(.deferred)
             self?.report(AnalyticsLabels.feedbackDeferred)
-        })
+        }
 
         return alert
     }
@@ -140,17 +138,17 @@ final class FeedbackPromptPresenter: NSObject {
             preferredStyle: .alert
         )
 
-        alert.addAction(UIAlertAction(
-            title: OBALoc("feedback_prompt.negative.send_button", value: "Send Feedback", comment: "Opens the feedback email composer."),
-            style: .default
+        alert.addAction(
+            title: OBALoc("feedback_prompt.negative.send_button", value: "Send Feedback", comment: "Opens the feedback email composer.")
         ) { [weak self] _ in
             self?.presentFeedbackEmail(from: viewController)
-        })
+        }
 
-        alert.addAction(UIAlertAction(
+        alert.addAction(
             title: OBALoc("feedback_prompt.negative.decline_button", value: "No Thanks", comment: "Declines to send feedback."),
-            style: .cancel
-        ))
+            style: .cancel,
+            handler: nil
+        )
 
         viewController.present(alert, animated: true)
     }

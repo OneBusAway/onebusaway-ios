@@ -41,12 +41,11 @@ final class SurveyOrchestrator {
 
     private let surveyService: SurveyService
 
-    /// Shared interruption budget. Optional so existing tests/call sites that
-    /// construct an orchestrator without one keep working unchanged; `nil`
-    /// means survey engagement simply isn't reported anywhere.
-    private let promptCoordinator: PromptCoordinator?
+    /// Shared interruption budget. Survey engagement is reported here so a
+    /// survey the rider just answered suppresses other asks for a while.
+    private let promptCoordinator: PromptCoordinator
 
-    nonisolated init(surveyService: SurveyService, promptCoordinator: PromptCoordinator? = nil) {
+    nonisolated init(surveyService: SurveyService, promptCoordinator: PromptCoordinator) {
         self.surveyService = surveyService
         self.promptCoordinator = promptCoordinator
     }
@@ -99,7 +98,7 @@ final class SurveyOrchestrator {
         )
 
         surveyService.setNextReminderDate()
-        promptCoordinator?.noteSurveyEngaged()
+        promptCoordinator.noteSurveyEngaged()
 
         if survey.remainingQuestions.isEmpty {
             surveyService.markSurveyCompleted(survey)
@@ -114,7 +113,7 @@ final class SurveyOrchestrator {
     func dismiss(_ survey: Survey) {
         surveyService.dismissSurvey(survey)
         surveyService.setNextReminderDate()
-        promptCoordinator?.noteSurveyEngaged()
+        promptCoordinator.noteSurveyEngaged()
     }
 
     /// Pushes the next reminder out. Called by the map prompt after a
