@@ -112,6 +112,10 @@ class StopAnnotationView: MKAnnotationView {
     public override func prepareForDisplay() {
         super.prepareForDisplay()
 
+        // The delegate's answer can change between displays — it reads a feature flag the user
+        // can flip mid-session — and a recycled view still carries the previous one.
+        updateCalloutVisibility()
+
         guard let delegate = delegate else {
             return
         }
@@ -205,7 +209,10 @@ class StopAnnotationView: MKAnnotationView {
     /// - The redesigned Stop page, which opens as a sheet over the map. The sheet already lands at
     ///   a half detent showing the same name and routes the callout previewed, so the callout is
     ///   a tap the user has to spend for information they are about to get anyway.
-    fileprivate func updateCalloutVisibility() {
+    ///
+    /// Both inputs can change while a view sits on the map, so this is re-run on display and
+    /// whenever `MapRegionManager` refreshes the annotations it is already showing.
+    func updateCalloutVisibility() {
         let delegateAllowsCallouts = delegate?.showsStopAnnotationCallouts ?? true
         canShowCallout = !UIAccessibility.isVoiceOverRunning && delegateAllowsCallouts
     }

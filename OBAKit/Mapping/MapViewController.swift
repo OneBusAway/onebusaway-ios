@@ -186,6 +186,10 @@ class MapViewController: UIViewController,
         application.mapRegionManager.mapViewDelegate = self
         viewModel.reloadBookmarks()
 
+        // Settings is the only thing that can change the callout rule, and getting back here is
+        // the first thing that happens after it closes.
+        application.mapRegionManager.refreshStopAnnotationCallouts()
+
         navigationController?.setNavigationBarHidden(true, animated: false)
 
         updateVisibleMapRect()

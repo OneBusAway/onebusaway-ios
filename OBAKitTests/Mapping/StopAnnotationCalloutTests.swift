@@ -85,4 +85,76 @@ class StopAnnotationCalloutTests: OBATestCase {
         userDefaults.removeObject(forKey: FeatureFlags.useNewStopPageKey)
         expect(self.makeRegionManager().showsStopAnnotationCallouts).to(beFalse())
     }
+
+    // MARK: - End-to-end wiring
+
+    /// The delegate stubs above prove the rule; this proves the wiring. `viewFor` is the only
+    /// place the real delegate gets attached, so a stop annotation that comes out of it has to
+    /// carry the flag's answer.
+    @MainActor
+    func test_viewFor_flagDisabled_stopAnnotationShowsCallout() throws {
+        userDefaults.set(false, forKey: FeatureFlags.useNewStopPageKey)
+        let manager = makeRegionManager()
+        let stop = try XCTUnwrap(Fixtures.loadSomeStops().first)
+
+        let view = manager.mapView(manager.mapView, viewFor: stop) as? StopAnnotationView
+
+        expect(view?.canShowCallout).to(beTrue())
+    }
+
+    @MainActor
+    func test_viewFor_flagEnabled_stopAnnotationSuppressesCallout() throws {
+        userDefaults.set(true, forKey: FeatureFlags.useNewStopPageKey)
+        let manager = makeRegionManager()
+        let stop = try XCTUnwrap(Fixtures.loadSomeStops().first)
+
+        let view = manager.mapView(manager.mapView, viewFor: stop) as? StopAnnotationView
+
+        expect(view?.canShowCallout).to(beFalse())
+    }
+
+    // MARK: - Staleness
+
+    /// Turning the flag off in Settings takes effect everywhere that reads it live — the router
+    /// starts returning the legacy Stop page again — but an annotation view already on the map
+    /// answered the callout question at creation time. Left stale, the legacy page opens on the
+    /// first tap with no callout, which is the new page's behavior on the old page's screen.
+    @MainActor
+    func test_annotationOnMap_flagTurnedOff_refreshRestoresCallout() throws {
+        userDefaults.set(true, forKey: FeatureFlags.useNewStopPageKey)
+        let manager = makeRegionManager()
+        let stop = try XCTUnwrap(Fixtures.loadSomeStops().first)
+        let view = try XCTUnwrap(manager.mapView(manager.mapView, viewFor: stop) as? StopAnnotationView)
+        expect(view.canShowCallout).to(beFalse())
+
+        userDefaults.set(false, forKey: FeatureFlags.useNewStopPageKey)
+        expect(view.canShowCallout).to(beFalse()) // still stale...
+
+        view.updateCalloutVisibility()
+        expect(view.canShowCallout).to(beTrue())
+    }
+
+    /// MapKit's own re-display hook has to pick the change up too, for annotations that scroll
+    /// back into view rather than sitting on screen across the flag change.
+    @MainActor
+    func test_annotationOnMap_flagTurnedOn_prepareForDisplaySuppressesCallout() throws {
+        userDefaults.set(false, forKey: FeatureFlags.useNewStopPageKey)
+        let manager = makeRegionManager()
+        let stop = try XCTUnwrap(Fixtures.loadSomeStops().first)
+        let view = try XCTUnwrap(manager.mapView(manager.mapView, viewFor: stop) as? StopAnnotationView)
+        expect(view.canShowCallout).to(beTrue())
+
+        userDefaults.set(true, forKey: FeatureFlags.useNewStopPageKey)
+        view.prepareForDisplay()
+
+        expect(view.canShowCallout).to(beFalse())
+    }
+
+    @MainActor
+    func test_refreshStopAnnotationCallouts_withNoDisplayedAnnotations_isSafe() throws {
+        let manager = makeRegionManager()
+        manager.mapView.addAnnotation(try XCTUnwrap(Fixtures.loadSomeStops().first))
+
+        manager.refreshStopAnnotationCallouts()
+    }
 }

@@ -666,6 +666,19 @@ public class MapRegionManager: NSObject,
         !FeatureFlags.isNewStopPageEnabled(userDefaults: application.userDefaults)
     }
 
+    /// Re-asks every stop annotation currently on the map whether it should show a callout.
+    ///
+    /// `canShowCallout` is computed once, when `viewFor` attaches the delegate, but
+    /// `showsStopAnnotationCallouts` reads a feature flag the user can flip from Settings without
+    /// relaunching. Everything else that opens a stop reads that flag live, so without this the
+    /// annotations already on screen keep answering with the rule from launch: the legacy Stop
+    /// page opens on the first tap with no callout in between.
+    public func refreshStopAnnotationCallouts() {
+        for annotation in mapView.annotations {
+            (mapView.view(for: annotation) as? StopAnnotationView)?.updateCalloutVisibility()
+        }
+    }
+
     private let requiredHeightToShowExtraStopData = 7000.0
 
     var shouldHideExtraStopAnnotationData: Bool {
