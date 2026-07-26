@@ -190,7 +190,10 @@ class StopViewModel: ObservableObject {
         self.bookmarkContext = bookmarkContext
         self.transferContext = transferContext
         self.minutesAfter = StopViewModel.defaultMinutesAfter
-        self.surveyOrchestrator = SurveyOrchestrator(surveyService: environment.surveyService)
+        self.surveyOrchestrator = SurveyOrchestrator(
+            surveyService: environment.surveyService,
+            promptCoordinator: environment.promptCoordinator
+        )
 
         if let currentRegion = environment.currentRegion {
             self.stopPreferences = environment.stopPreferences(stopID: stopID, region: currentRegion)

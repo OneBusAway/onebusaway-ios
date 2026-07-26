@@ -233,6 +233,23 @@ class SurveyOrchestratorTests: OBATestCase {
         expect(self.dataStore.isSurveyCompleted(surveyId: survey.id, userIdentifier: userID)).to(beTrue())
     }
 
+    /// `dismiss(_:)` is a survey engagement, so it must start the coordinator's
+    /// 14-day cooldown that gates the review prompt — otherwise a rider who
+    /// just interacted with a survey card could be asked for a review in the
+    /// same sitting.
+    @MainActor
+    func test_dismiss_recordsSurveyEngagement() throws {
+        let coordinator = PromptCoordinator(userDefaults: userDefaults)
+        let orchestrator = SurveyOrchestrator(
+            surveyService: surveyService,
+            promptCoordinator: coordinator
+        )
+
+        XCTAssertTrue(coordinator.canShowReviewPrompt())
+        orchestrator.dismiss(Self.makeSurvey(questions: [Self.makeQuestion(id: 1)]))
+        XCTAssertFalse(coordinator.canShowReviewPrompt(), "engagement starts the 14-day cooldown")
+    }
+
     // MARK: - lastError accessor
 
     /// `lastError` is `nil` before any refresh runs. The gate in

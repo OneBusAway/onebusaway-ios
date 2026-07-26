@@ -309,8 +309,10 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
     func didPresentSurveyPrompt(_ survey: Survey, presented: Bool) {
         if presented {
             surveyOrchestrator.noteReminderAndAdvanceSession()
+            application.promptCoordinator.noteShown(.surveyPrompt)
         } else {
             hasShownSurveyThisSession = false
+            application.promptCoordinator.noteNotShown(.surveyPrompt)
         }
     }
 

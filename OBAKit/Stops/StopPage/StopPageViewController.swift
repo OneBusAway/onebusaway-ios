@@ -837,6 +837,8 @@ private extension StopPageViewController {
             return
         }
 
+        application.promptCoordinator.noteShown(.donationModal)
+
         let learnMoreView = DonationLearnMoreView()
             .environmentObject(donationModel)
             .environmentObject(AnalyticsModel(application.analytics))
