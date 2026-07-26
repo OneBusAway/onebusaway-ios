@@ -388,27 +388,13 @@ class ArrivalDepartureTests: OBATestCase {
     /// three minutes late, so that measuring the deviation against the wrong
     /// scheduled field produces a visibly different answer.
     private func layoverArrivalDeparture(stopSequence: Int) throws -> ArrivalDeparture {
-        try Fixtures.dictionaryToModel(type: ArrivalDeparture.self, dictionary: [
-            "arrivalEnabled": true,
-            "blockTripSequence": 1,
-            "departureEnabled": true,
-            "distanceFromStop": 100.0,
-            "lastUpdateTime": 1_700_000_000,
-            "numberOfStopsAway": 1,
-            "predicted": true,
-            "scheduledArrivalTime": 1_700_000_000,
-            "predictedArrivalTime": 1_700_000_180,   // 3 min after scheduled arrival
-            "scheduledDepartureTime": 1_700_000_600, // 10 min layover
-            "predictedDepartureTime": 1_700_000_780, // 3 min after scheduled departure
-            "routeId": "route_layover",
-            "serviceDate": 1_700_000_000,
-            "situationIds": [],
-            "status": "SCHEDULED",
-            "stopId": "stop_layover",
-            "stopSequence": stopSequence,
-            "tripId": "trip_layover",
-            "vehicleId": "vehicle_layover"
-        ])
+        try Fixtures.arrivalDeparture(
+            scheduledArrival: 1_700_000_000,
+            predictedArrival: 1_700_000_180,    // 3 min after scheduled arrival
+            scheduledDeparture: 1_700_000_600,  // 10 min layover
+            predictedDeparture: 1_700_000_780,  // 3 min after scheduled departure
+            stopSequence: stopSequence
+        )
     }
 
     func test_deviation_forArrivingTrip_measuresAgainstScheduledArrival() throws {

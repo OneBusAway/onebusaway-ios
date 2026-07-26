@@ -56,6 +56,45 @@ class Fixtures {
         return apiResponse.list
     }
 
+    /// Builds an `ArrivalDeparture` from timestamps, defaulting the ~15 keys of
+    /// decoder boilerplate that no test cares about. Times are seconds since the
+    /// epoch; pass the predicted ones as `nil` to model a schedule-only trip.
+    ///
+    /// `stopSequence` selects `arrivalDepartureStatus`: 0 is `.departing`,
+    /// anything else `.arriving`.
+    class func arrivalDeparture(
+        predicted: Bool = true,
+        scheduledArrival: Int = 1_700_000_000,
+        predictedArrival: Int? = nil,
+        scheduledDeparture: Int = 1_700_000_000,
+        predictedDeparture: Int? = nil,
+        stopSequence: Int = 5
+    ) throws -> ArrivalDeparture {
+        var dictionary: [String: Any] = [
+            "arrivalEnabled": true,
+            "blockTripSequence": 1,
+            "departureEnabled": true,
+            "distanceFromStop": 100.0,
+            "lastUpdateTime": scheduledArrival,
+            "numberOfStopsAway": 1,
+            "predicted": predicted,
+            "routeId": "route_1",
+            "scheduledArrivalTime": scheduledArrival,
+            "scheduledDepartureTime": scheduledDeparture,
+            "serviceDate": scheduledArrival,
+            "situationIds": [],
+            "status": "SCHEDULED",
+            "stopId": "stop_1",
+            "stopSequence": stopSequence,
+            "tripId": "trip_1",
+            "vehicleId": "vehicle_1"
+        ]
+        if let predictedArrival { dictionary["predictedArrivalTime"] = predictedArrival }
+        if let predictedDeparture { dictionary["predictedDepartureTime"] = predictedDeparture }
+
+        return try dictionaryToModel(type: ArrivalDeparture.self, dictionary: dictionary)
+    }
+
     class func loadAlarm(id: String = "1234567890", region: String = "1") throws -> Alarm {
         return try dictionaryToModel(type: Alarm.self, dictionary: ["url": String(format: "https://alerts.example.com/regions/%@/alarms/%@", region, id)])
     }

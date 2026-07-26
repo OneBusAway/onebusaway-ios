@@ -103,27 +103,10 @@ final class DepartureTimeDisplayTests: XCTestCase {
     // MARK: - Model bridge
 
     func test_initFromArrivalDeparture_usesPredictedTimeAsExpected() throws {
-        let arrivalDeparture = try Fixtures.dictionaryToModel(type: ArrivalDeparture.self, dictionary: [
-            "arrivalEnabled": true,
-            "blockTripSequence": 1,
-            "departureEnabled": true,
-            "distanceFromStop": 100.0,
-            "lastUpdateTime": 1_700_000_000,
-            "numberOfStopsAway": 1,
-            "predicted": true,
-            "scheduledArrivalTime": 1_700_000_000,
-            "predictedArrivalTime": 1_700_000_180,
-            "scheduledDepartureTime": 1_700_000_000,
-            "predictedDepartureTime": 1_700_000_180,
-            "routeId": "route_1",
-            "serviceDate": 1_700_000_000,
-            "situationIds": [],
-            "status": "SCHEDULED",
-            "stopId": "stop_1",
-            "stopSequence": 5,
-            "tripId": "trip_1",
-            "vehicleId": "vehicle_1"
-        ])
+        let arrivalDeparture = try Fixtures.arrivalDeparture(
+            predictedArrival: 1_700_000_180,
+            predictedDeparture: 1_700_000_180
+        )
 
         let display = DepartureTimeDisplay(arrivalDeparture: arrivalDeparture, formatters: formatters)
 
@@ -131,26 +114,25 @@ final class DepartureTimeDisplayTests: XCTestCase {
         XCTAssertEqual(display.scheduledTimeText, formatters.timeFormatter.string(from: arrivalDeparture.scheduledDate))
     }
 
+    func test_initFromArrivalDeparture_ignoresPredictionWhenFeedSaysNotPredicted() throws {
+        // A payload can carry predicted times while declaring `predicted: false`.
+        // `arrivalDepartureDate` hands back the prediction anyway, so the display
+        // has to gate on the flag or it would strike through a time the feed
+        // just told us not to trust.
+        let arrivalDeparture = try Fixtures.arrivalDeparture(
+            predicted: false,
+            predictedArrival: 1_700_000_180,
+            predictedDeparture: 1_700_000_180
+        )
+
+        let display = DepartureTimeDisplay(arrivalDeparture: arrivalDeparture, formatters: formatters)
+
+        XCTAssertEqual(display.expectedTimeText, formatters.timeFormatter.string(from: arrivalDeparture.scheduledDate))
+        XCTAssertNil(display.scheduledTimeText)
+    }
+
     func test_initFromArrivalDeparture_withoutPrediction_showsNoStrikethrough() throws {
-        let arrivalDeparture = try Fixtures.dictionaryToModel(type: ArrivalDeparture.self, dictionary: [
-            "arrivalEnabled": true,
-            "blockTripSequence": 1,
-            "departureEnabled": true,
-            "distanceFromStop": 100.0,
-            "lastUpdateTime": 1_700_000_000,
-            "numberOfStopsAway": 1,
-            "predicted": false,
-            "scheduledArrivalTime": 1_700_000_000,
-            "scheduledDepartureTime": 1_700_000_000,
-            "routeId": "route_1",
-            "serviceDate": 1_700_000_000,
-            "situationIds": [],
-            "status": "SCHEDULED",
-            "stopId": "stop_1",
-            "stopSequence": 5,
-            "tripId": "trip_1",
-            "vehicleId": "vehicle_1"
-        ])
+        let arrivalDeparture = try Fixtures.arrivalDeparture(predicted: false)
 
         let display = DepartureTimeDisplay(arrivalDeparture: arrivalDeparture, formatters: formatters)
 

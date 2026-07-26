@@ -349,19 +349,24 @@ struct GroupedListView: View {
     /// headsign, minutes, live/scheduled status, and occupancy when present.
     private func expandedRowAccessibilityLabel(_ departure: ArrivalDeparture, status: DepartureStatus) -> String {
         let fmt = OBALoc("stop_page.grouped.expanded_row.a11y_fmt", value: "Route %@ to %@, departs in %d minutes, %@", comment: "VoiceOver label for one expanded departure row inside a grouped route card: route, headsign, minutes, status.")
-        var label = String(format: fmt, departure.routeShortName, departure.tripHeadsign ?? "", departure.arrivalDepartureMinutes, status.accessibilityStatusDescription)
-        // The strikethrough that carries this on screen is inaudible.
-        label += ", " + timeDisplay(departure).accessibilityTimeDescription
+        // Same clause list as `DepartureRowView.accessibilityText`; the clock
+        // time is spoken because the strikethrough carrying it is inaudible.
+        var clauses = [
+            String(format: fmt, departure.routeShortName, departure.tripHeadsign ?? "", departure.arrivalDepartureMinutes, status.accessibilityStatusDescription),
+            timeDisplay(departure).accessibilityTimeDescription
+        ]
         if status.showsOccupancy, let occupancy = departure.occupancyStatus, occupancy != .unknown {
-            label += ", " + OccupancyBadge.localizedDescription(occupancy)
+            clauses.append(OccupancyBadge.localizedDescription(occupancy))
         }
-        return label
+        return clauses.joined(separator: ", ")
     }
 
     private func groupAccessibilityLabel(_ group: StopPageListBuilder.RouteGroup<ArrivalDeparture>, status: DepartureStatus) -> String {
         let fmt = OBALoc("stop_page.grouped.a11y_fmt", value: "Route %@ to %@, next departure in %d minutes, %@. %d more departures loaded.", comment: "VoiceOver label for a grouped route card")
         let label = String(format: fmt, group.next.routeShortName, group.next.tripHeadsign ?? "", group.next.arrivalDepartureMinutes, status.accessibilityStatusDescription, group.upcoming.count)
-        // The strikethrough that carries this on screen is inaudible.
+        // Appended after the sentence rather than comma-joined like the row
+        // labels: this format string ends in a full stop, and VoiceOver's pause
+        // there keeps the time attached to the card rather than to the count.
         return label + " " + timeDisplay(group.next).accessibilityTimeDescription
     }
 }
