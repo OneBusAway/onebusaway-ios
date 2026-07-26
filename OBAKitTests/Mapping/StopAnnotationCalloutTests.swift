@@ -18,6 +18,12 @@ import Nimble
 /// chevron that pushes the stop — so a regression here silently breaks that screen's entry point.
 class StopAnnotationCalloutTests: OBATestCase {
 
+    /// `@MainActor` because `StopIconFactory` is: OBAKit builds with
+    /// `SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor` while OBAKitTests is `nonisolated`
+    /// (see `Apps/Shared/app_shared.yml` and `OBAKitTests/project.yml`). A nested type
+    /// doesn't inherit the enclosing `OBATestCase`'s isolation, so without this the
+    /// `iconFactory` default value can't be evaluated in the stub's nonisolated init.
+    @MainActor
     private final class StopAnnotationDelegateStub: NSObject, StopAnnotationDelegate {
         var showsStopAnnotationCallouts: Bool
         var shouldHideExtraStopAnnotationData = false
