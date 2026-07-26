@@ -34,8 +34,19 @@ final class FeedbackPromptPresenter: NSObject {
 
     /// Presents the sentiment prompt if every gate allows it. Safe to call at
     /// any natural stopping point; it no-ops when ineligible.
-    func presentIfEligible(from viewController: UIViewController) {
-        guard application.reviewPromptPolicy.isPromptPending,
+    ///
+    /// - Parameters:
+    ///   - viewController: The controller to present from.
+    ///   - canPresent: Caller-owned suppression, evaluated here rather than by the
+    ///     caller so that a *delayed* call re-checks its own conditions at fire time.
+    ///     `presentedViewController == nil` is the only screen-occupancy check this
+    ///     type can make on its own, and it is blind to child view controllers — the
+    ///     stop sheet and the map's semi-modal panels are FloatingPanel children, not
+    ///     modals. Whoever schedules the call knows what else may have taken the
+    ///     screen in the meantime; this is where they say so.
+    func presentIfEligible(from viewController: UIViewController, canPresent: () -> Bool = { true }) {
+        guard canPresent(),
+              application.reviewPromptPolicy.isPromptPending,
               application.promptCoordinator.canShowReviewPrompt(),
               viewController.presentedViewController == nil
         else { return }
