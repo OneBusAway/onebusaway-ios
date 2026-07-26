@@ -2,9 +2,11 @@
 
 *Written 2026-07-16, revised same day after an adversarial documentation review.
 Measurements taken on `main` @ `0ae45cb3` with Xcode 27.0 beta 3 (Swift 6.4
-toolchain). CI runs Xcode 26.6 — see the toolchain caveat in the Phase 4
-status section: Xcode 26.2's compiler crashes the Swift 6 test suite at
-runtime. Contributors need a recent Xcode 26.4+ / 27 toolchain.*
+toolchain). CI runs the same toolchain as of 2026-07-25 — the `xcode-27`
+runner image ships Xcode 27.0 beta 3 — having previously been pinned to Xcode
+26.6; see the toolchain caveat in the Phase 4 status section: Xcode 26.2's
+compiler crashes the Swift 6 test suite at runtime. Contributors need a recent
+Xcode 26.4+ / 27 toolchain.*
 
 ## Where we started (2026-07-16; see the Sequencing summary for current status)
 
@@ -368,8 +370,9 @@ classes, and that path double-frees when objects deallocate inside tasks
 carrying task-locals (XCTest's async lifecycle guarantees exactly that). It
 reproduces on both iOS 18.5 and iOS 26.2 simulators, so it's codegen, not
 the runtime. Xcode 27 beta 3 (Swift 6.4) does not emit implicit isolated
-deinits and is unaffected — CI is pinned to Xcode 26.6, the newest
-same-generation compiler on GitHub's runner images. Watch the 11 explicit
+deinits and is unaffected — and as of 2026-07-25 CI builds with it too, on the
+`xcode-27` runner image (previously pinned to Xcode 26.6, the newest
+same-generation compiler on the GA images). Watch the 11 explicit
 `isolated deinit` sites on iOS 18 devices regardless: they use the
 back-deploy shim compiled by whatever Xcode builds the release.
 

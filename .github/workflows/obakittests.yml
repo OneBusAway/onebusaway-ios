@@ -8,8 +8,8 @@ on:
 
 # GitHub macOS Runner images are documented at:
 # https://github.com/actions/runner-images?tab=readme-ov-file
-# Installed versions of Xcode on macOS 15 are documented at:
-# https://github.com/actions/runner-images/blob/main/images/macos/macos-15-Readme.md
+# The `xcode-27` image (arm64, public preview) is documented at:
+# https://github.com/actions/runner-images/blob/main/images/macos/xcode-27-Readme.md
 #
 # Performance note (figures observed 2026-06 — a dated snapshot, not an invariant;
 # they will drift as the suite, runner images, and Xcode change): the OBAKitTests
@@ -25,15 +25,15 @@ on:
 
 jobs:
   build:
-    runs-on: macos-26
+    runs-on: xcode-27
     permissions:
       checks: write
       contents: read
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
 
-    - uses: actions/cache@v4
+    - uses: actions/cache@v6
       with:
         path: .build
         key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
@@ -44,7 +44,7 @@ jobs:
     # resolved dependency graph, the XcodeGen project specs, or this workflow
     # change. The previous `**/*.yml` glob also matched vendored yml under
     # .build/checkouts and caused needless cache misses (→ full rebuilds).
-    - uses: actions/cache@v4
+    - uses: actions/cache@v6
       id: deriveddata-cache
       with:
         path: DerivedData
@@ -64,18 +64,20 @@ jobs:
       if: steps.deriveddata-cache.outputs.cache-hit != 'true'
       run: rm -rf DerivedData/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules
 
-    # Pin Xcode deterministically so the set of bundled simulator runtimes is
-    # known, instead of relying on `xcode-select` against whatever the image ships.
-    # 26.6, not 26.2: the Swift 6 migration needs a compiler from the same
-    # generation as local development (Xcode 27 beta / Swift 6.4). Xcode 26.2's
-    # compiler emits implicitly-isolated deinits for MainActor-default classes
-    # whose runtime path double-frees in TaskLocal teardown, crashing the test
-    # suite regardless of simulator runtime (see docs/swift6-migration-plan.md,
-    # "Toolchain/runtime pairing caveat").
+    # The `xcode-27` image ships exactly one Xcode (27.0 beta), so this is close to
+    # a no-op today — it's here so that if the image ever carries a second Xcode,
+    # CI takes the newest one rather than whatever `xcode-select` defaults to.
+    # `latest`, not `latest-stable`: the only installed Xcode is a beta, and
+    # `latest-stable` filters betas out and fails. Following the image forward is
+    # deliberate — the Swift 6 migration needs a compiler of the same generation as
+    # local development (docs/swift6-migration-plan.md), which the older pinned
+    # Xcode 26.6 was not: it rejected code Xcode 27 accepts and turned main red
+    # (see a1244c48). The trade-off is that the toolchain is no longer pinned, so a
+    # new beta landing in the image can move the concurrency warning count below.
     - name: Setup Xcode
       uses: maxim-lobanov/setup-xcode@v1
       with:
-        xcode-version: '26.6'
+        xcode-version: 'latest'
 
     - name: Install xcodegen
       env:
@@ -83,22 +85,23 @@ jobs:
         HOMEBREW_NO_INSTALL_CLEANUP: 1
       run: brew install xcodegen
 
-    # Make iOS runtime acquisition explicit and time-boxed. An iOS 26+ runtime is
-    # REQUIRED, not merely preferred: the runner image also ships older runtimes
-    # (e.g. iOS 18.5), and running the Swift 6 build's tests on those routes every
-    # MainActor class deinit through the isolated-deinit back-deployment shim,
-    # which double-frees in TaskLocal teardown under Xcode 26.2's compiler
-    # (crash: swift_task_deinitOnExecutorMainActorBackDeploy →
-    # BUG_IN_CLIENT_OF_LIBMALLOC, seen 2026-07-16). On an SDK-matched iOS 26
-    # runtime the native runtime entry point is used and the shim never runs.
+    # Make iOS runtime acquisition explicit and time-boxed. An SDK-matched runtime
+    # is REQUIRED, not merely preferred: on an older runtime every MainActor class
+    # deinit routes through the isolated-deinit back-deployment shim instead of the
+    # native runtime entry point, and that path double-freed in TaskLocal teardown
+    # under Xcode 26.2's codegen (crash:
+    # swift_task_deinitOnExecutorMainActorBackDeploy → BUG_IN_CLIENT_OF_LIBMALLOC,
+    # seen 2026-07-16). Xcode 27 no longer emits those implicit isolated deinits,
+    # but the 11 explicit `isolated deinit` sites still take the shim. The
+    # `xcode-27` image ships only iOS 27 runtimes, so this normally skips.
     - name: Download iOS platform (if needed)
       timeout-minutes: 30
       run: |
-        if xcrun simctl runtime list 2>/dev/null | grep -qE "iOS (2[6-9]|[3-9][0-9])[0-9.]*.*\(Ready\)"; then
-          echo "An iOS 26+ simulator runtime is already installed; skipping download:"
+        if xcrun simctl runtime list 2>/dev/null | grep -qE "iOS (2[7-9]|[3-9][0-9])[0-9.]*.*\(Ready\)"; then
+          echo "An iOS 27+ simulator runtime is already installed; skipping download:"
           xcrun simctl runtime list | grep -E "iOS [0-9]" || true
         else
-          echo "No iOS 26+ simulator runtime found; downloading…"
+          echo "No iOS 27+ simulator runtime found; downloading…"
           xcodebuild -downloadPlatform iOS
         fi
 
@@ -113,11 +116,11 @@ jobs:
         xcodebuild -showsdks || true
 
     # Pick an iPhone simulator on the NEWEST installed iOS runtime and capture its
-    # UDID. Using `id=` in the destination (rather than `name=iPhone 16`) avoids the
-    # "multiple matching destinations" ambiguity. Newest-runtime matters: older
-    # runtimes on the image (iOS 18.x) crash the Swift 6 test suite in the
-    # isolated-deinit back-deploy shim (see the download step's note). Booting it
-    # here isolates first-boot cost from the test step.
+    # UDID. Using `id=` in the destination (rather than `name=iPhone 17 Pro`) avoids
+    # the "multiple matching destinations" ambiguity. Newest-runtime matters: should
+    # the image ever carry a pre-SDK runtime alongside iOS 27, the tests must not
+    # land on it — that's the isolated-deinit shim crash described in the download
+    # step's note. Booting it here isolates first-boot cost from the test step.
     - name: Prepare iOS Simulator
       run: |
         set -euo pipefail
@@ -159,9 +162,12 @@ jobs:
 
     # Swift 6 migration ratchet (docs/swift6-migration-plan.md): the number of
     # strict-concurrency warnings may only go down. Enforcing since 2026-07-16.
-    # The checked-in baseline (39) was measured on Xcode 27 beta 3; CI's Xcode
-    # 26.6 counts 37 for the same code, so the baseline is the max across the
-    # supported toolchains — don't "lower it to match CI" or local builds fail.
+    # The checked-in baseline (39) was measured on Xcode 27 beta 3, which is what
+    # the `xcode-27` image ships — so CI and local development now count the same
+    # code the same way. The baseline is still a ceiling across supported
+    # toolchains (the previously pinned Xcode 26.6 counted 37 for the same code),
+    # so don't lower it to match whatever a single toolchain reports, or builds on
+    # the others fail.
     # All remaining warnings are in OBAKitTests (pinned to Swift 5, see its
     # project.yml); every Swift 6 target is at zero and additionally locked by
     # SWIFT_WARNINGS_AS_ERRORS_GROUPS in Apps/Shared/app_shared.yml.
