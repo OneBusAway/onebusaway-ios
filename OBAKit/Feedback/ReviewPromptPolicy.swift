@@ -71,11 +71,19 @@ final class ReviewPromptPolicy {
     /// Writes `.deferred` up front so a rider who backgrounds and kills the app
     /// mid-alert lands in a defined state rather than leaving `lastAskedDate`
     /// set against a stale or absent outcome. `recordOutcome` overwrites it.
+    ///
+    /// The two *permanent* gates — the three-ask lifetime cap and the version
+    /// stamp — are skipped while the debug override is on. `alwaysShowPrompt`
+    /// short-circuits `isPromptPending` ahead of both, so a QA pass would
+    /// otherwise spend a budget it isn't subject to and silence the organic
+    /// prompt on that install for good.
     func recordPromptPresented() {
-        userDefaults.set(askCount + 1, forKey: Keys.askCount)
+        if !alwaysShowPrompt {
+            userDefaults.set(askCount + 1, forKey: Keys.askCount)
+            userDefaults.set(bundle.appVersion, forKey: Keys.lastVersionPrompted)
+        }
         userDefaults.set(now(), forKey: Keys.lastAskedDate)
         userDefaults.set(FeedbackPromptOutcome.deferred.rawValue, forKey: Keys.outcome)
-        userDefaults.set(bundle.appVersion, forKey: Keys.lastVersionPrompted)
         userDefaults.set(0, forKey: Keys.successCount)
     }
 
@@ -126,6 +134,9 @@ final class ReviewPromptPolicy {
 
     /// Debug override: bypasses the counter, backoffs, version gate, and
     /// lifetime cap. Does not bypass the `FeedbackPromptEnabled` kill switch.
+    ///
+    /// Presentations made under this toggle don't spend the lifetime ask count or
+    /// stamp the version gate — see `recordPromptPresented()`.
     var alwaysShowPrompt: Bool {
         get { userDefaults.bool(forKey: Keys.alwaysShow) }
         set { userDefaults.set(newValue, forKey: Keys.alwaysShow) }

@@ -358,10 +358,15 @@ class SettingsViewController: FormViewController {
             header: OBALoc("settings_controller.feedback_section.title", value: "Feedback", comment: "Settings > Feedback section title"),
             footer: OBALoc(
                 "settings_controller.feedback_section.footer",
-                value: "Every prompt shown with this toggle on still counts toward the real 3-ask lifetime limit, so tapping through it enough silences the organic prompt on this device until you reset. Resetting clears that state but leaves the toggle turned on.",
-                comment: "Settings > Feedback section > Footer warning that debug presentations burn the real lifetime ask count, and that resetting does not turn the toggle off"
+                value: "Resetting clears the saved prompt state but leaves this toggle turned on.",
+                comment: "Settings > Feedback section > Footer noting that resetting the prompt state does not turn the debug toggle off"
             )
         )
+
+        // Developer controls, not rider-facing ones — hidden with the rest of the
+        // debug affordances. Gated at the section so the header and the footer's
+        // implementation detail go with them.
+        section.hidden = Self.hiddenUnlessDebugMode(debugModeEnabled)
 
         // Writes on change instead of waiting for `saveFormValues()`, matching the
         // Experimental section's precedent: a tester who kills the app to relaunch
