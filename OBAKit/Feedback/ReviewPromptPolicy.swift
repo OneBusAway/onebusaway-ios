@@ -1,0 +1,143 @@
+//
+//  ReviewPromptPolicy.swift
+//  OBAKit
+//
+//  Copyright © Open Transit Software Foundation
+//  This source code is licensed under the Apache 2.0 license found in the
+//  LICENSE file in the root directory of this source tree.
+//
+
+import Foundation
+import OBAKitCore
+
+/// How a rider answered the sentiment prompt.
+enum FeedbackPromptOutcome: String {
+    case positive
+    case negative
+    case deferred
+}
+
+/// Decides whether to ask a rider how they're liking the app.
+///
+/// Pure policy: counts "success moments" handed to it by `StopViewModel`,
+/// applies the backoffs, and derives eligibility. Owns no UI and performs no
+/// presentation. Follows `DonationsManager`'s precedent of holding its own
+/// `UserDefaults` keys rather than widening the `UserDataStore` protocol.
+@MainActor
+final class ReviewPromptPolicy {
+
+    /// Successful real-time stop views required before asking.
+    static let successThreshold = 5
+
+    /// Maximum number of times a rider is ever asked.
+    static let maximumAsks = 3
+
+    private static let deferredBackoff: TimeInterval = 60 * 86400
+    private static let negativeBackoff: TimeInterval = 180 * 86400
+
+    private let userDefaults: UserDefaults
+    private let bundle: Bundle
+    private let now: () -> Date
+
+    init(
+        userDefaults: UserDefaults,
+        bundle: Bundle = .main,
+        now: @escaping () -> Date = Date.init
+    ) {
+        self.userDefaults = userDefaults
+        self.bundle = bundle
+        self.now = now
+    }
+
+    private enum Keys {
+        static let successCount = "ReviewPrompt.successCount"
+        static let askCount = "ReviewPrompt.askCount"
+        static let lastAskedDate = "ReviewPrompt.lastAskedDate"
+        static let outcome = "ReviewPrompt.outcome"
+        static let lastVersionPrompted = "ReviewPrompt.lastVersionPrompted"
+        static let alwaysShow = "ReviewPrompt.alwaysShow"
+    }
+
+    // MARK: - Recording
+
+    /// Records one successful real-time stop view. Callers are responsible for
+    /// debouncing to at most one call per stop view.
+    func recordSuccess() {
+        userDefaults.set(successCount + 1, forKey: Keys.successCount)
+    }
+
+    /// Called the moment the prompt appears — before the rider answers.
+    ///
+    /// Writes `.deferred` up front so a rider who backgrounds and kills the app
+    /// mid-alert lands in a defined state rather than leaving `lastAskedDate`
+    /// set against a stale or absent outcome. `recordOutcome` overwrites it.
+    func recordPromptPresented() {
+        userDefaults.set(askCount + 1, forKey: Keys.askCount)
+        userDefaults.set(now(), forKey: Keys.lastAskedDate)
+        userDefaults.set(FeedbackPromptOutcome.deferred.rawValue, forKey: Keys.outcome)
+        userDefaults.set(bundle.appVersion, forKey: Keys.lastVersionPrompted)
+        userDefaults.set(0, forKey: Keys.successCount)
+    }
+
+    /// Records how the rider actually answered.
+    func recordOutcome(_ outcome: FeedbackPromptOutcome) {
+        userDefaults.set(outcome.rawValue, forKey: Keys.outcome)
+    }
+
+    // MARK: - Eligibility
+
+    /// Whether the prompt should be shown at the next natural stopping point.
+    ///
+    /// Derived on every read rather than stored. A stored edge-triggered flag
+    /// would be lost when the app terminates and could never be re-set, because
+    /// `recordSuccess()` would never again *cross* a threshold it is already
+    /// past — stranding the rider at five successes and no prompt forever.
+    var isPromptPending: Bool {
+        guard bundle.feedbackPromptEnabled else { return false }
+        if alwaysShowPrompt { return true }
+        guard askCount < Self.maximumAsks else { return false }
+        guard outcome != .positive else { return false }
+        guard successCount >= Self.successThreshold else { return false }
+        guard userDefaults.string(forKey: Keys.lastVersionPrompted) != bundle.appVersion else {
+            return false
+        }
+
+        if let lastAsked = userDefaults.object(forKey: Keys.lastAskedDate) as? Date {
+            let backoff: TimeInterval = outcome == .negative ? Self.negativeBackoff : Self.deferredBackoff
+            guard now() >= lastAsked.addingTimeInterval(backoff) else { return false }
+        }
+
+        return true
+    }
+
+    // MARK: - Debug
+
+    /// Debug override: bypasses the counter, backoffs, version gate, and
+    /// lifetime cap. Does not bypass the `FeedbackPromptEnabled` kill switch.
+    var alwaysShowPrompt: Bool {
+        get { userDefaults.bool(forKey: Keys.alwaysShow) }
+        set { userDefaults.set(newValue, forKey: Keys.alwaysShow) }
+    }
+
+    /// Clears every persisted key so QA can re-run the flow from scratch.
+    func reset() {
+        for key in [Keys.successCount, Keys.askCount, Keys.lastAskedDate,
+                    Keys.outcome, Keys.lastVersionPrompted] {
+            userDefaults.removeObject(forKey: key)
+        }
+    }
+
+    // MARK: - Internals
+
+    /// Successes recorded since the last reset. Internal rather than private so
+    /// `StopViewModelTests` can assert on it — those tests drive a real
+    /// `Application`, so this is the only observable the recording path exposes.
+    var successCount: Int { userDefaults.integer(forKey: Keys.successCount) }
+
+    private var askCount: Int { userDefaults.integer(forKey: Keys.askCount) }
+
+    private var outcome: FeedbackPromptOutcome? {
+        guard let raw = userDefaults.string(forKey: Keys.outcome) else { return nil }
+        return FeedbackPromptOutcome(rawValue: raw)
+    }
+}
