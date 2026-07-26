@@ -1,0 +1,174 @@
+//
+//  FeedbackPromptPresenter.swift
+//  OBAKit
+//
+//  Copyright © Open Transit Software Foundation
+//  This source code is licensed under the Apache 2.0 license found in the
+//  LICENSE file in the root directory of this source tree.
+//
+
+import MessageUI
+import OBAKitCore
+import UIKit
+
+/// Presents the two-step feedback prompt and routes the rider to either the App
+/// Store review form or a pre-filled feedback email.
+///
+/// The positive branch opens Apple's documented `?action=write-review` deep link
+/// rather than calling `AppStore.requestReview(in:)`. Apple's own guidance says
+/// to "avoid requesting a review as the result of a user action" — `requestReview`
+/// may display nothing at all, which would leave a rider who just tapped "Yes!"
+/// staring at an unchanged screen. The deep link is guaranteed to land them on
+/// the review form and isn't subject to the three-per-365-days budget. See
+/// docs/superpowers/specs/2026-07-25-feedback-prompt-design.md §10.
+@MainActor
+final class FeedbackPromptPresenter: NSObject {
+
+    private let application: Application
+    private lazy var contactUsHelper = ContactUsHelper(application: application)
+
+    init(application: Application) {
+        self.application = application
+        super.init()
+    }
+
+    /// Presents the sentiment prompt if every gate allows it. Safe to call at
+    /// any natural stopping point; it no-ops when ineligible.
+    func presentIfEligible(from viewController: UIViewController) {
+        guard application.reviewPromptPolicy.isPromptPending,
+              application.promptCoordinator.canShowReviewPrompt(),
+              viewController.presentedViewController == nil
+        else { return }
+
+        application.promptCoordinator.noteShown(.review)
+        application.reviewPromptPolicy.recordPromptPresented()
+        report(AnalyticsLabels.feedbackPromptShown)
+
+        viewController.present(buildSentimentAlert(from: viewController), animated: true)
+    }
+
+    // MARK: - Step 1
+
+    private func buildSentimentAlert(from viewController: UIViewController) -> UIAlertController {
+        let title = String(
+            format: OBALoc(
+                "feedback_prompt.title",
+                value: "Enjoying %@?",
+                comment: "Title of the alert asking how the rider likes the app. %@ is the app name."
+            ),
+            Bundle.main.appName
+        )
+
+        let alert = UIAlertController(title: title, message: nil, preferredStyle: .alert)
+
+        alert.addAction(UIAlertAction(
+            title: OBALoc("feedback_prompt.positive_button", value: "Yes!", comment: "Positive answer to the feedback prompt."),
+            style: .default
+        ) { [weak self] _ in
+            self?.handlePositive()
+        })
+
+        alert.addAction(UIAlertAction(
+            title: OBALoc("feedback_prompt.negative_button", value: "Not really", comment: "Negative answer to the feedback prompt."),
+            style: .default
+        ) { [weak self] _ in
+            self?.handleNegative(from: viewController)
+        })
+
+        alert.addAction(UIAlertAction(
+            title: OBALoc("feedback_prompt.later_button", value: "Ask Me Later", comment: "Defers the feedback prompt."),
+            style: .cancel
+        ) { [weak self] _ in
+            self?.application.reviewPromptPolicy.recordOutcome(.deferred)
+            self?.report(AnalyticsLabels.feedbackDeferred)
+        })
+
+        return alert
+    }
+
+    // MARK: - Positive branch
+
+    private func handlePositive() {
+        application.reviewPromptPolicy.recordOutcome(.positive)
+        report(AnalyticsLabels.feedbackPositive)
+        Self.openWriteReviewPage()
+    }
+
+    /// Opens the App Store's write-a-review page. Shared with the More tab's
+    /// "Rate" row so both entry points build the URL identically. Callers report
+    /// their own analytics; this only opens the URL.
+    static func openWriteReviewPage() {
+        guard let appStoreID = Bundle.main.appStoreID,
+              let url = URL(string: "https://apps.apple.com/app/id\(appStoreID)?action=write-review")
+        else {
+            Logger.warn("No AppStoreID configured; cannot open the write-review page.")
+            return
+        }
+
+        UIApplication.shared.open(url)
+    }
+
+    // MARK: - Negative branch
+
+    private func handleNegative(from viewController: UIViewController) {
+        application.reviewPromptPolicy.recordOutcome(.negative)
+        report(AnalyticsLabels.feedbackNegative)
+
+        let alert = UIAlertController(
+            title: OBALoc("feedback_prompt.negative.title", value: "Sorry about that.", comment: "Title of the follow-up alert after negative feedback."),
+            message: OBALoc("feedback_prompt.negative.body", value: "Would you tell us what's wrong? We read every message.", comment: "Body of the follow-up alert after negative feedback."),
+            preferredStyle: .alert
+        )
+
+        alert.addAction(UIAlertAction(
+            title: OBALoc("feedback_prompt.negative.send_button", value: "Send Feedback", comment: "Opens the feedback email composer."),
+            style: .default
+        ) { [weak self] _ in
+            self?.presentFeedbackEmail(from: viewController)
+        })
+
+        alert.addAction(UIAlertAction(
+            title: OBALoc("feedback_prompt.negative.decline_button", value: "No Thanks", comment: "Declines to send feedback."),
+            style: .cancel
+        ))
+
+        viewController.present(alert, animated: true)
+    }
+
+    private func presentFeedbackEmail(from viewController: UIViewController) {
+        report(AnalyticsLabels.feedbackEmailOpened)
+
+        guard let composer = contactUsHelper.buildMailComposer(target: .appDevelopers) else {
+            viewController.present(contactUsHelper.buildCantSendEmailAlert(target: .appDevelopers), animated: true)
+            return
+        }
+
+        composer.mailComposeDelegate = self
+        viewController.present(composer, animated: true)
+    }
+
+    // MARK: - Analytics
+
+    private func report(_ label: String) {
+        application.analytics?.reportEvent(
+            pageURL: "app://localhost/feedback",
+            label: label,
+            value: nil
+        )
+    }
+}
+
+// MARK: - MFMailComposeViewControllerDelegate
+
+extension FeedbackPromptPresenter: MFMailComposeViewControllerDelegate {
+    func mailComposeController(
+        _ controller: MFMailComposeViewController,
+        didFinishWith result: MFMailComposeResult,
+        error: Error?
+    ) {
+        if result == .sent {
+            report(AnalyticsLabels.feedbackEmailSent)
+        }
+        controller.dismiss(animated: true)
+    }
+}
