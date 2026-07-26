@@ -13,7 +13,9 @@ import XCTest
 
 /// A `Bundle` reporting a configurable `OBAKitConfig`, so the policy's kill
 /// switch and version gate are testable without the host app's Info.plist.
-private class PolicyBundle: Bundle {
+// `Bundle` is already `@unchecked Sendable`; a subclass has to restate it or the
+// compiler warns. Mutated only from the test that owns the instance.
+private class PolicyBundle: Bundle, @unchecked Sendable {
     var config: [AnyHashable: Any] = [:]
     var version = "1.0"
 

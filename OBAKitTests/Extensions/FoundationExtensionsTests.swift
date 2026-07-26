@@ -171,7 +171,9 @@ class FoundationExtensionsTests: XCTestCase {
 
 /// A `Bundle` whose `OBAKitConfig` reports configurable feedback-prompt values,
 /// so these tests don't depend on the host app's Info.plist.
-private class FeedbackConfigBundle: Bundle {
+// `Bundle` is already `@unchecked Sendable`; a subclass has to restate it or the
+// compiler warns. Mutated only from the test that owns the instance.
+private class FeedbackConfigBundle: Bundle, @unchecked Sendable {
     var config: [AnyHashable: Any] = [:]
 
     override func object(forInfoDictionaryKey key: String) -> Any? {
