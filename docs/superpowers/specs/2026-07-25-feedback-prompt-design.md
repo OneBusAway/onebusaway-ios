@@ -498,6 +498,8 @@ clock, isolated `UserDefaults` suite:
 - `askCount` reaching 3 → permanently silenced, across outcome permutations.
 - Same-version gate blocks a second prompt; a version bump releases it.
 - `FeedbackPromptEnabled == false` → never pending.
+- Presentations made under `alwaysShowPrompt` spend no ask budget and stamp no
+  version, but still write `.deferred` and zero the counter.
 
 `OBAKitTests/Feedback/PromptCoordinatorTests.swift`:
 

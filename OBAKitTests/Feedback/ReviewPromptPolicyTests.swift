@@ -259,6 +259,37 @@ final class ReviewPromptPolicyTests: OBATestCase {
         XCTAssertFalse(disabled.isPromptPending)
     }
 
+    /// `alwaysShowPrompt` short-circuits `isPromptPending` ahead of the ask cap and the
+    /// version gate, so presentations made under it must not spend either. Three QA taps
+    /// used to silence the organic prompt on that install for good.
+    func test_alwaysShowDoesNotSpendTheLifetimeAskBudget() {
+        let policy = makePolicy()
+        policy.alwaysShowPrompt = true
+
+        for _ in 0..<5 {
+            policy.recordPromptPresented()
+            policy.recordOutcome(.deferred)
+        }
+
+        policy.alwaysShowPrompt = false
+        advance(days: 61)
+        recordSuccesses(5, on: policy)
+        XCTAssertTrue(policy.isPromptPending, "the real prompt is still available after five debug asks")
+    }
+
+    /// Everything else about `recordPromptPresented()` still runs under the toggle, so an
+    /// abandoned debug alert lands in the same defined state a real one would.
+    func test_alwaysShowStillWritesTheDeferredOutcomeUpFront() {
+        let policy = makePolicy()
+        policy.alwaysShowPrompt = true
+        recordSuccesses(5, on: policy)
+
+        policy.recordPromptPresented()
+
+        XCTAssertEqual(policy.outcome, .deferred)
+        XCTAssertEqual(policy.successCount, 0)
+    }
+
     func test_resetClearsAllState() {
         let policy = makePolicy()
         recordSuccesses(5, on: policy)
