@@ -170,6 +170,11 @@ class StopViewModel: ObservableObject {
     /// analytics, recent-stops recording, and the "all routes hidden" filter invariant.
     private var hasPerformedInitialStopSetup = false
 
+    /// Debounces feedback-prompt success recording to one per stop view. Safe as
+    /// instance state because `StopPageViewController.init` builds exactly one
+    /// view model per stop presentation and it stays bound to a single stopID.
+    private var hasRecordedReviewSuccess = false
+
     // MARK: - Init
 
     init(
@@ -185,7 +190,10 @@ class StopViewModel: ObservableObject {
         self.bookmarkContext = bookmarkContext
         self.transferContext = transferContext
         self.minutesAfter = StopViewModel.defaultMinutesAfter
-        self.surveyOrchestrator = SurveyOrchestrator(surveyService: environment.surveyService)
+        self.surveyOrchestrator = SurveyOrchestrator(
+            surveyService: environment.surveyService,
+            promptCoordinator: environment.promptCoordinator
+        )
 
         if let currentRegion = environment.currentRegion {
             self.stopPreferences = environment.stopPreferences(stopID: stopID, region: currentRegion)
@@ -263,8 +271,26 @@ class StopViewModel: ObservableObject {
         } catch APIError.requestNotFound {
             operationError = nil
             isBrokenBookmark = bookmarkContext != nil
+
+            // With a bookmark behind it, a 404 is the broken-bookmark path: the page
+            // explains itself and offers a way out, and it isn't a failure the rider
+            // watched happen. Without one — a deep link, a search result, a map pin —
+            // the same 404 leaves the page with no arrivals, no error, and nothing to
+            // do, which is exactly the experience that shouldn't be followed by a
+            // request for five stars.
+            if bookmarkContext == nil {
+                environment.noteStopLoadFailed()
+            }
         } catch {
             operationError = error
+
+            // A cancellation isn't a failure the rider watched happen: SwiftUI cancels
+            // the `.task` when the stop sheet goes away, which is the same instant the
+            // feedback prompt is armed. Counting it would suppress the prompt for the
+            // whole session every time someone dismissed a stop mid-load.
+            if !error.isCancellation {
+                environment.noteStopLoadFailed()
+            }
         }
 
         isLoading = false
@@ -290,6 +316,28 @@ class StopViewModel: ObservableObject {
         approachCache.removeAll()
         rebuildAlarmIndex()
         recomputeCurrentSurvey()
+        recordReviewSuccessIfNeeded(arrivals: arrivals)
+    }
+
+    /// Records a "success moment" for the feedback prompt: a load that surfaced
+    /// at least one real-time arrival the rider could actually see.
+    ///
+    /// Filters to the displayed list rather than the raw response — crediting a
+    /// success for a route the rider has hidden would count something they never
+    /// saw. Note that `predicted == true` means the server claims real-time data
+    /// for the trip; the predicted timestamps are nilified independently by
+    /// `ModelHelpers.nilifyDate`, so this is a claim of freshness, not proof of a
+    /// usable time.
+    private func recordReviewSuccessIfNeeded(arrivals: StopArrivals) {
+        guard !hasRecordedReviewSuccess else { return }
+
+        let visible = arrivals.arrivalsAndDepartures.filter { arrival in
+            !isListFiltered || !stopPreferences.isRouteIDHidden(arrival.routeID)
+        }
+        guard visible.contains(where: \.predicted) else { return }
+
+        hasRecordedReviewSuccess = true
+        environment.reviewPromptPolicy.recordSuccess()
     }
 
     /// Runs exactly once per VM lifetime on the first successful fetch:
@@ -333,7 +381,11 @@ class StopViewModel: ObservableObject {
     /// or `nil` if the gate is closed or no survey matches. Called whenever the
     /// stop is refreshed or the survey list is reloaded.
     private func recomputeCurrentSurvey() {
-        guard surveyOrchestrator.isEligible(), let stop else {
+        // `canShowInlineCards()` is session-scoped and flipped by an event that
+        // fires at most once per session (same property `shouldRequestDonations`
+        // gates on), so reading it here — on a method re-run on every stop
+        // refresh — can't erase a survey card the rider is currently looking at.
+        guard surveyOrchestrator.isEligible(), environment.promptCoordinator.canShowInlineCards(), let stop else {
             currentSurvey = nil
             return
         }

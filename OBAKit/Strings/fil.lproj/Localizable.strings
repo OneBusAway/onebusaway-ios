@@ -259,6 +259,30 @@
 /* A button that says continue and don't show again. */
 "fare_payments.dont_show_again" = "Magpatuloy at Huwag Nang Ipakita Muli";
 
+/* Defers the feedback prompt. */
+"feedback_prompt.later_button" = "Itanong mamaya";
+
+/* Body of the follow-up alert after negative feedback. */
+"feedback_prompt.negative.body" = "Puwede mong sabihin kung ano ang problema? Binabasa namin ang bawat mensahe.";
+
+/* Declines to send feedback. */
+"feedback_prompt.negative.decline_button" = "Huwag na lang";
+
+/* Opens the feedback email composer. */
+"feedback_prompt.negative.send_button" = "Magpadala ng feedback";
+
+/* Title of the follow-up alert after negative feedback. */
+"feedback_prompt.negative.title" = "Pasensya na.";
+
+/* Negative answer to the feedback prompt. */
+"feedback_prompt.negative_button" = "Hindi masyado";
+
+/* Positive answer to the feedback prompt. */
+"feedback_prompt.positive_button" = "Oo!";
+
+/* Title of the alert asking how the rider likes the app. %@ is the app name. */
+"feedback_prompt.title" = "Nagugustuhan mo ba ang %@?";
+
 /* A voiceover title describing the 'grabber' for controlling the visibility of a card. */
 "floating_panel.controller.accessibility_label" = "Kontrol ng card";
 
@@ -523,6 +547,9 @@
 
 /* A link to the app's Privacy Policy */
 "more_controller.privacy_row_title" = "Patakaran sa Privacy";
+
+/* A row that opens the App Store review form. %@ is the app name. */
+"more_controller.rate_app" = "I-rate ang %@";
 
 /* Title of the More tab
    Title of the More tab / accessibility label for the map-panel more button. */
@@ -965,6 +992,18 @@
 
 /* Settings > Experimental section title */
 "settings_controller.experimental_section.title" = "Eksperimental";
+
+/* Settings > Feedback section > Debug toggle that bypasses the prompt's gating */
+"settings_controller.feedback_section.always_show" = "Palaging ipakita ang paghingi ng feedback";
+
+/* Settings > Feedback section > Footer noting that resetting the prompt state does not turn the debug toggle off */
+"settings_controller.feedback_section.footer" = "Ang pag-reset ay nagbubura ng naka-save na estado ngunit nananatiling naka-on ang opsyong ito.";
+
+/* Settings > Feedback section > Clears all feedback prompt bookkeeping */
+"settings_controller.feedback_section.reset" = "I-reset ang estado ng paghingi ng feedback";
+
+/* Settings > Feedback section title */
+"settings_controller.feedback_section.title" = "Feedback";
 
 /* Settings > Map section > Show my current heading */
 "settings_controller.map_section.shows_heading" = "Ipakita ang kasalukuyan kong direksyon";

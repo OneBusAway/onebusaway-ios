@@ -86,7 +86,10 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
         self.mapType = initialMapType
         self.locationAuthStatus = application.locationService.authorizationStatus
         self.accuracyAuthorization = application.locationService.accuracyAuthorization
-        self.surveyOrchestrator = SurveyOrchestrator(surveyService: application.surveyService)
+        self.surveyOrchestrator = SurveyOrchestrator(
+            surveyService: application.surveyService,
+            promptCoordinator: application.promptCoordinator
+        )
         super.init()
         application.locationService.addDelegate(self)
 
@@ -309,8 +312,10 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
     func didPresentSurveyPrompt(_ survey: Survey, presented: Bool) {
         if presented {
             surveyOrchestrator.noteReminderAndAdvanceSession()
+            application.promptCoordinator.noteShown(.surveyPrompt)
         } else {
             hasShownSurveyThisSession = false
+            application.promptCoordinator.noteNotShown(.surveyPrompt)
         }
     }
 

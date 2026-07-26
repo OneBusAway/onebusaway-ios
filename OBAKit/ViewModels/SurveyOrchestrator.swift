@@ -41,8 +41,13 @@ final class SurveyOrchestrator {
 
     private let surveyService: SurveyService
 
-    nonisolated init(surveyService: SurveyService) {
+    /// Shared interruption budget. Survey engagement is reported here so a
+    /// survey the rider just answered suppresses other asks for a while.
+    private let promptCoordinator: PromptCoordinator
+
+    nonisolated init(surveyService: SurveyService, promptCoordinator: PromptCoordinator) {
         self.surveyService = surveyService
+        self.promptCoordinator = promptCoordinator
     }
 
     /// Whether a survey should be shown right now (launch-count cooldown,
@@ -93,6 +98,7 @@ final class SurveyOrchestrator {
         )
 
         surveyService.setNextReminderDate()
+        promptCoordinator.noteSurveyEngaged()
 
         if survey.remainingQuestions.isEmpty {
             surveyService.markSurveyCompleted(survey)
@@ -107,6 +113,7 @@ final class SurveyOrchestrator {
     func dismiss(_ survey: Survey) {
         surveyService.dismissSurvey(survey)
         surveyService.setNextReminderDate()
+        promptCoordinator.noteSurveyEngaged()
     }
 
     /// Pushes the next reminder out. Called by the map prompt after a

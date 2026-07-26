@@ -160,11 +160,55 @@ class FoundationExtensionsTests: XCTestCase {
     func test_Bundle_appGroup() {
         let bundle = Bundle.main
         let appGroup = bundle.appGroup
-        
+
         // This may be nil, but should not crash
         if let group = appGroup {
             expect(group).to(beAnInstanceOf(String.self))
             expect(group).toNot(beEmpty())
         }
+    }
+}
+
+/// A `Bundle` whose `OBAKitConfig` reports configurable feedback-prompt values,
+/// so these tests don't depend on the host app's Info.plist.
+// `Bundle` is already `@unchecked Sendable`; a subclass has to restate it or the
+// compiler warns. Mutated only from the test that owns the instance.
+private class FeedbackConfigBundle: Bundle, @unchecked Sendable {
+    var config: [AnyHashable: Any] = [:]
+
+    override func object(forInfoDictionaryKey key: String) -> Any? {
+        if key == "OBAKitConfig" { return config }
+        return super.object(forInfoDictionaryKey: key)
+    }
+
+    static func create(config: [AnyHashable: Any]) throws -> FeedbackConfigBundle {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let bundle = try XCTUnwrap(FeedbackConfigBundle(path: dir.path))
+        bundle.config = config
+        return bundle
+    }
+}
+
+final class BundleFeedbackConfigTests: XCTestCase {
+
+    func test_appStoreID_readsFromOBAKitConfig() throws {
+        let bundle = try FeedbackConfigBundle.create(config: ["AppStoreID": "329380089"])
+        XCTAssertEqual(bundle.appStoreID, "329380089")
+    }
+
+    func test_appStoreID_isNilWhenAbsent() throws {
+        let bundle = try FeedbackConfigBundle.create(config: [:])
+        XCTAssertNil(bundle.appStoreID)
+    }
+
+    func test_feedbackPromptEnabled_defaultsToTrueWhenAbsent() throws {
+        let bundle = try FeedbackConfigBundle.create(config: [:])
+        XCTAssertTrue(bundle.feedbackPromptEnabled)
+    }
+
+    func test_feedbackPromptEnabled_honorsExplicitFalse() throws {
+        let bundle = try FeedbackConfigBundle.create(config: ["FeedbackPromptEnabled": false])
+        XCTAssertFalse(bundle.feedbackPromptEnabled)
     }
 }

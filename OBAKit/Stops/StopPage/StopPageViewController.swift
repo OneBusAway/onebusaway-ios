@@ -841,7 +841,7 @@ private extension StopPageViewController {
             .environmentObject(donationModel)
             .environmentObject(AnalyticsModel(application.analytics))
 
-        present(UIHostingController(rootView: learnMoreView), animated: true)
+        presentDonationModal(learnMoreView, coordinator: application.promptCoordinator)
     }
 
     /// Presents the "please don't dismiss" action sheet. `onHide` is invoked only

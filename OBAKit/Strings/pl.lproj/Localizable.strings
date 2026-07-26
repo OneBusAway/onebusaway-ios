@@ -259,6 +259,30 @@
 /* A button that says continue and don't show again. */
 "fare_payments.dont_show_again" = "Kontynuuj i nie pokazuj więcej";
 
+/* Defers the feedback prompt. */
+"feedback_prompt.later_button" = "Zapytaj później";
+
+/* Body of the follow-up alert after negative feedback. */
+"feedback_prompt.negative.body" = "Powiesz nam, co jest nie tak? Czytamy każdą wiadomość.";
+
+/* Declines to send feedback. */
+"feedback_prompt.negative.decline_button" = "Nie, dziękuję";
+
+/* Opens the feedback email composer. */
+"feedback_prompt.negative.send_button" = "Wyślij opinię";
+
+/* Title of the follow-up alert after negative feedback. */
+"feedback_prompt.negative.title" = "Przykro nam.";
+
+/* Negative answer to the feedback prompt. */
+"feedback_prompt.negative_button" = "Niezbyt";
+
+/* Positive answer to the feedback prompt. */
+"feedback_prompt.positive_button" = "Tak!";
+
+/* Title of the alert asking how the rider likes the app. %@ is the app name. */
+"feedback_prompt.title" = "Podoba Ci się %@?";
+
 /* A voiceover title describing the 'grabber' for controlling the visibility of a card. */
 "floating_panel.controller.accessibility_label" = "Kontroler kart";
 
@@ -523,6 +547,9 @@
 
 /* A link to the app's Privacy Policy */
 "more_controller.privacy_row_title" = "Polityka prywatności";
+
+/* A row that opens the App Store review form. %@ is the app name. */
+"more_controller.rate_app" = "Oceń %@";
 
 /* Title of the More tab
    Title of the More tab / accessibility label for the map-panel more button. */
@@ -965,6 +992,18 @@
 
 /* Settings > Experimental section title */
 "settings_controller.experimental_section.title" = "Eksperymentalne";
+
+/* Settings > Feedback section > Debug toggle that bypasses the prompt's gating */
+"settings_controller.feedback_section.always_show" = "Zawsze pokazuj prośbę o opinię";
+
+/* Settings > Feedback section > Footer noting that resetting the prompt state does not turn the debug toggle off */
+"settings_controller.feedback_section.footer" = "Resetowanie czyści zapisany stan, ale pozostawia tę opcję włączoną.";
+
+/* Settings > Feedback section > Clears all feedback prompt bookkeeping */
+"settings_controller.feedback_section.reset" = "Zresetuj stan prośby o opinię";
+
+/* Settings > Feedback section title */
+"settings_controller.feedback_section.title" = "Opinie";
 
 /* Settings > Map section > Show my current heading */
 "settings_controller.map_section.shows_heading" = "Pokaż mój obecny kurs";

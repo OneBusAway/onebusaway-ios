@@ -259,6 +259,30 @@
 /* A button that says continue and don't show again. */
 "fare_payments.dont_show_again" = "Continuar e Não Mostrar Novamente";
 
+/* Defers the feedback prompt. */
+"feedback_prompt.later_button" = "Perguntar depois";
+
+/* Body of the follow-up alert after negative feedback. */
+"feedback_prompt.negative.body" = "Pode nos contar o que está errado? Lemos todas as mensagens.";
+
+/* Declines to send feedback. */
+"feedback_prompt.negative.decline_button" = "Não, obrigado";
+
+/* Opens the feedback email composer. */
+"feedback_prompt.negative.send_button" = "Enviar feedback";
+
+/* Title of the follow-up alert after negative feedback. */
+"feedback_prompt.negative.title" = "Sentimos muito.";
+
+/* Negative answer to the feedback prompt. */
+"feedback_prompt.negative_button" = "Nem tanto";
+
+/* Positive answer to the feedback prompt. */
+"feedback_prompt.positive_button" = "Sim!";
+
+/* Title of the alert asking how the rider likes the app. %@ is the app name. */
+"feedback_prompt.title" = "Está gostando do %@?";
+
 /* A voiceover title describing the 'grabber' for controlling the visibility of a card. */
 "floating_panel.controller.accessibility_label" = "Controle do cartão";
 
@@ -523,6 +547,9 @@
 
 /* A link to the app's Privacy Policy */
 "more_controller.privacy_row_title" = "Política de Privacidade";
+
+/* A row that opens the App Store review form. %@ is the app name. */
+"more_controller.rate_app" = "Avaliar %@";
 
 /* Title of the More tab
    Title of the More tab / accessibility label for the map-panel more button. */
@@ -965,6 +992,18 @@
 
 /* Settings > Experimental section title */
 "settings_controller.experimental_section.title" = "Experimental";
+
+/* Settings > Feedback section > Debug toggle that bypasses the prompt's gating */
+"settings_controller.feedback_section.always_show" = "Sempre mostrar a solicitação de feedback";
+
+/* Settings > Feedback section > Footer noting that resetting the prompt state does not turn the debug toggle off */
+"settings_controller.feedback_section.footer" = "Redefinir limpa o estado salvo, mas mantém esta opção ativada.";
+
+/* Settings > Feedback section > Clears all feedback prompt bookkeeping */
+"settings_controller.feedback_section.reset" = "Redefinir o estado da solicitação de feedback";
+
+/* Settings > Feedback section title */
+"settings_controller.feedback_section.title" = "Feedback";
 
 /* Settings > Map section > Show my current heading */
 "settings_controller.map_section.shows_heading" = "Mostrar minha direção atual";

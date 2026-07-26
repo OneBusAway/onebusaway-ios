@@ -53,6 +53,16 @@ protocol StopViewModelEnvironment: AnyObject {
     /// `features.push`
     var pushFeatureStatus: Application.FeatureStatus { get }
 
+    /// Counts successful real-time stop views toward the feedback prompt.
+    var reviewPromptPolicy: ReviewPromptPolicy { get }
+
+    /// Records that a stop load failed, suppressing the feedback prompt for the
+    /// rest of this foreground session.
+    func noteStopLoadFailed()
+
+    /// Shared interruption budget, so survey engagement defers the feedback prompt.
+    var promptCoordinator: PromptCoordinator { get }
+
     // MARK: - Utilities
 
     var analytics: Analytics? { get }
@@ -85,9 +95,19 @@ extension Application: StopViewModelEnvironment {
     }
 
     var currentUserLocation: CLLocation? { locationService.currentLocation }
-    var shouldRequestDonations: Bool { donationsManager.shouldRequestDonations }
+
+    var shouldRequestDonations: Bool {
+        // `canShowInlineCards()` is session-scoped and flipped by an event that
+        // fires at most once per session, so reading it from a property the stop
+        // page re-evaluates on every refresh tick is safe — it can't erase a card
+        // the rider is currently looking at mid-view.
+        donationsManager.shouldRequestDonations && promptCoordinator.canShowInlineCards()
+    }
+
     var obacoFeatureStatus: Application.FeatureStatus { features.obaco }
     var pushFeatureStatus: Application.FeatureStatus { features.push }
+
+    func noteStopLoadFailed() { promptCoordinator.sawErrorThisSession = true }
 }
 
 // MARK: - Preview stub
@@ -124,6 +144,15 @@ final class PreviewStopViewModelEnvironment: StopViewModelEnvironment {
     var shouldRequestDonations: Bool { false }
     var obacoFeatureStatus: Application.FeatureStatus { .off }
     var pushFeatureStatus: Application.FeatureStatus { .off }
+
+    lazy var reviewPromptPolicy = ReviewPromptPolicy(
+        userDefaults: UserDefaults(suiteName: "StopViewModelPreview")!
+    )
+    func noteStopLoadFailed() {}
+
+    lazy var promptCoordinator = PromptCoordinator(
+        userDefaults: UserDefaults(suiteName: "StopViewModelPreview")!
+    )
 
     var analytics: Analytics? { nil }
     var formatters = Formatters(

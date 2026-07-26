@@ -75,6 +75,35 @@ public class AnalyticsLabels: NSObject {
 
     /// Label used when a push notification results in a donation
     @objc public static let donationPushNotificationSuccess = "Donation Push Notification Success"
+
+    /// Label used when the sentiment feedback prompt is displayed.
+    @objc public static let feedbackPromptShown = "Feedback Prompt Shown"
+
+    /// Label used when a rider answers the feedback prompt positively.
+    @objc public static let feedbackPositive = "Feedback Positive"
+
+    /// Label used when a rider answers the feedback prompt negatively.
+    @objc public static let feedbackNegative = "Feedback Negative"
+
+    /// Label used when a rider defers the feedback prompt.
+    @objc public static let feedbackDeferred = "Feedback Deferred"
+
+    /// Label used when the feedback email composer is opened.
+    @objc public static let feedbackEmailOpened = "Feedback Email Opened"
+
+    /// Label used when a feedback email is actually sent.
+    @objc public static let feedbackEmailSent = "Feedback Email Sent"
+
+    /// Label used when the rider wanted to send feedback but the device can't compose
+    /// mail. Distinct from `feedbackEmailOpened` so this population — riders who
+    /// structurally cannot reach us — doesn't hide inside opened-then-abandoned.
+    @objc public static let feedbackEmailUnavailable = "Feedback Email Unavailable"
+
+    /// Label used when the mail composer reports a send failure.
+    @objc public static let feedbackEmailFailed = "Feedback Email Failed"
+
+    /// Label used when the More tab's 'Rate' row is tapped.
+    @objc public static let rateAppRowTapped = "Rate App Row Tapped"
 }
 
 /// Implement this protocol for reporting analytics events in order to be able to plug in a custom provider of your choosing.

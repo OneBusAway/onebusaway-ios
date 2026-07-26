@@ -78,6 +78,18 @@ public class Application: CoreApplication, PushServiceDelegate {
         appLaunchCount: { [userDataStore] in userDataStore.appLaunchCount }
     )
 
+    @MainActor
+    lazy var promptCoordinator = PromptCoordinator(
+        userDefaults: userDefaults,
+        notificationCenter: notificationCenter
+    )
+
+    @MainActor
+    lazy var reviewPromptPolicy = ReviewPromptPolicy(
+        userDefaults: userDefaults,
+        bundle: applicationBundle
+    )
+
     /// Responsible for figuring out how to navigate between view controllers.
     @MainActor
     lazy var viewRouter = ViewRouter(application: self)
@@ -383,10 +395,17 @@ public class Application: CoreApplication, PushServiceDelegate {
     }
 
     private func presentDonationUI(_ presentingController: UIViewController, id: String?) {
+        // `donationsEnabled` already folds in `obacoService != nil`, which is
+        // exactly what `buildLearnMoreView`/`buildObservableDonationModel` need
+        // to succeed — without this guard, a push arriving while donations are
+        // disabled or Obaco is unavailable would both persist a false "shown"
+        // state and crash on `buildLearnMoreView`'s internal `fatalError()`.
+        guard donationsManager.donationsEnabled else { return }
+
         analytics?.reportEvent(pageURL: "app://localhost/donations", label: AnalyticsLabels.donationPushNotificationTapped, value: id)
 
         let learnMoreView = donationsManager.buildLearnMoreView(presentingController: presentingController, donationPushNotificationID: id)
-        presentingController.present(UIHostingController(rootView: learnMoreView), animated: true)
+        presentingController.presentDonationModal(learnMoreView, coordinator: promptCoordinator)
     }
 
     // MARK: - Alerts Store

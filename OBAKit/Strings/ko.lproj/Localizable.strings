@@ -259,6 +259,30 @@
 /* A button that says continue and don't show again. */
 "fare_payments.dont_show_again" = "계속하고 다시 표시 안 함";
 
+/* Defers the feedback prompt. */
+"feedback_prompt.later_button" = "나중에 다시 묻기";
+
+/* Body of the follow-up alert after negative feedback. */
+"feedback_prompt.negative.body" = "무엇이 문제인지 알려주시겠어요? 모든 메시지를 읽고 있습니다.";
+
+/* Declines to send feedback. */
+"feedback_prompt.negative.decline_button" = "괜찮습니다";
+
+/* Opens the feedback email composer. */
+"feedback_prompt.negative.send_button" = "의견 보내기";
+
+/* Title of the follow-up alert after negative feedback. */
+"feedback_prompt.negative.title" = "불편을 드려 죄송합니다.";
+
+/* Negative answer to the feedback prompt. */
+"feedback_prompt.negative_button" = "별로예요";
+
+/* Positive answer to the feedback prompt. */
+"feedback_prompt.positive_button" = "네!";
+
+/* Title of the alert asking how the rider likes the app. %@ is the app name. */
+"feedback_prompt.title" = "%@ 마음에 드시나요?";
+
 /* A voiceover title describing the 'grabber' for controlling the visibility of a card. */
 "floating_panel.controller.accessibility_label" = "카드 컨트롤러";
 
@@ -523,6 +547,9 @@
 
 /* A link to the app's Privacy Policy */
 "more_controller.privacy_row_title" = "개인정보 처리방침";
+
+/* A row that opens the App Store review form. %@ is the app name. */
+"more_controller.rate_app" = "%@ 평가하기";
 
 /* Title of the More tab
    Title of the More tab / accessibility label for the map-panel more button. */
@@ -965,6 +992,18 @@
 
 /* Settings > Experimental section title */
 "settings_controller.experimental_section.title" = "실험적 기능";
+
+/* Settings > Feedback section > Debug toggle that bypasses the prompt's gating */
+"settings_controller.feedback_section.always_show" = "피드백 요청 항상 표시";
+
+/* Settings > Feedback section > Footer noting that resetting the prompt state does not turn the debug toggle off */
+"settings_controller.feedback_section.footer" = "초기화하면 저장된 상태는 지워지지만 이 설정은 켜진 상태로 유지됩니다.";
+
+/* Settings > Feedback section > Clears all feedback prompt bookkeeping */
+"settings_controller.feedback_section.reset" = "피드백 요청 상태 초기화";
+
+/* Settings > Feedback section title */
+"settings_controller.feedback_section.title" = "피드백";
 
 /* Settings > Map section > Show my current heading */
 "settings_controller.map_section.shows_heading" = "현재 방향 표시";

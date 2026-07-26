@@ -209,6 +209,10 @@ class MapViewController: UIViewController,
         super.viewWillDisappear(animated)
 
         navigationController?.setNavigationBarHidden(false, animated: false)
+
+        // A rider who dismisses a stop sheet and immediately switches tabs shouldn't be
+        // chased by an alert from a screen they've left.
+        cancelScheduledFeedbackPrompt()
     }
 
     // MARK: - Surveys
@@ -710,13 +714,86 @@ class MapViewController: UIViewController,
         floatingPanel.move(to: .tip, animated: true)
 
         stopSheet.present(stopController, from: self) { [weak self] in
-            guard let self, let annotation else { return }
-            self.mapRegionManager.mapView.deselectAnnotation(annotation, animated: true)
+            guard let self else { return }
+
+            if let annotation {
+                self.mapRegionManager.mapView.deselectAnnotation(annotation, animated: true)
+            }
+
+            self.scheduleFeedbackPrompt()
         }
+
+        // `StopSheetPresenter.present` tears the outgoing presentation down as its first
+        // statement, which runs the handler above synchronously — so a stop-to-stop swap
+        // arms the prompt for a sheet that is being replaced, not dismissed. Cancelling
+        // *after* the call is what unschedules that, whereas cancelling before it would
+        // be undone a line later.
+        cancelScheduledFeedbackPrompt()
     }
 
     /// Owns the half-detent panel that shows the redesigned Stop page over the map.
     private lazy var stopSheet = StopSheetPresenter()
+
+    /// Presents the feedback prompt after a stop sheet is dismissed — a natural
+    /// stopping point, and the only one available in the new stop page flow.
+    private lazy var feedbackPromptPresenter = FeedbackPromptPresenter(application: application)
+
+    // MARK: - Feedback Prompt
+
+    /// The pending delayed presentation, held so it can be cancelled when the map fills
+    /// the space the dismissed sheet left behind.
+    private var feedbackPromptWorkItem: DispatchWorkItem?
+
+    /// Arms the feedback prompt a beat after a stop sheet leaves the screen.
+    ///
+    /// The delay keeps the alert from racing the sheet's dismissal animation, per Apple's
+    /// sample guidance on delaying review asks. It also means the map can change out from
+    /// under the scheduled block — another sheet, a place card, a tab switch, a trip to the
+    /// background — so eligibility is re-checked when the timer fires rather than when it
+    /// is set.
+    private func scheduleFeedbackPrompt() {
+        cancelScheduledFeedbackPrompt()
+
+        let workItem = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+            self.feedbackPromptWorkItem = nil
+            self.feedbackPromptPresenter.presentIfEligible(from: self) { [weak self] in
+                self?.mapIsAtANaturalStoppingPoint ?? false
+            }
+        }
+
+        feedbackPromptWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: workItem)
+    }
+
+    private func cancelScheduledFeedbackPrompt() {
+        feedbackPromptWorkItem?.cancel()
+        feedbackPromptWorkItem = nil
+    }
+
+    /// Clears the stop sheet because something else is about to occupy its space.
+    ///
+    /// The dismissal runs the sheet's handler synchronously, which arms the prompt — so the
+    /// cancel has to follow it, not precede it. The two belong together at every call site,
+    /// which is why they live here rather than being spelled out at each one.
+    private func dismissStopSheetForReplacement() {
+        stopSheet.dismiss(animated: false)
+        cancelScheduledFeedbackPrompt()
+    }
+
+    /// Whether the map is still the quiet, unoccupied screen it was when the prompt was armed.
+    ///
+    /// `presentIfEligible`'s own `presentedViewController == nil` check can't see any of this:
+    /// the stop sheet and the semi-modal panels are FloatingPanel *children* of this controller,
+    /// not modal presentations. The spec's rule that the prompt never appears on the stop screen
+    /// depends entirely on the first three clauses here.
+    private var mapIsAtANaturalStoppingPoint: Bool {
+        !stopSheet.isPresenting
+            && semiModalPanel == nil
+            && semiModalMapItemController == nil
+            && view.window != nil
+            && UIApplication.shared.applicationState == .active
+    }
 
     // MARK: - Overlays
 
@@ -769,7 +846,7 @@ class MapViewController: UIViewController,
     }
 
     private func showSemiModalPanel(childController: UIViewController) {
-        stopSheet.dismiss(animated: false)
+        dismissStopSheetForReplacement()
         semiModalPanel?.removePanelFromParent(animated: false)
 
         let panel = createSemiModalPanel(childController: childController)
@@ -888,7 +965,7 @@ class MapViewController: UIViewController,
     ///   - mapItem: The map item to display
     ///   - userPin: Optional user-dropped pin associated with this map item (for removal functionality)
     private func displayMapItemController(_ mapItem: MKMapItem, userPin: UserDroppedPin? = nil) {
-        stopSheet.dismiss(animated: false)
+        dismissStopSheetForReplacement()
         dismissExistingMapItemController()
         // Create remove pin handler if this is a user-dropped pin
         let removePinHandler: (() -> Void)?

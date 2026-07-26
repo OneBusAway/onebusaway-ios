@@ -31,7 +31,14 @@ class SurveyOrchestratorTests: OBATestCase {
         try await super.setUp()
         dataStore = UserDefaultsStore(userDefaults: userDefaults)
         surveyService = SurveyService(apiService: nil, userDataStore: dataStore)
-        orchestrator = SurveyOrchestrator(surveyService: surveyService)
+        let service = surveyService!
+        let defaults = userDefaults!
+        orchestrator = await MainActor.run {
+            SurveyOrchestrator(
+                surveyService: service,
+                promptCoordinator: PromptCoordinator(userDefaults: defaults)
+            )
+        }
     }
 
     override func tearDown() async throws {
@@ -97,13 +104,19 @@ class SurveyOrchestratorTests: OBATestCase {
 
     /// Without an `apiService`, the submission throws and the orchestrator does
     /// not flip mark-completed or reminder.
+    ///
+    /// Also pins that a thrown submission does NOT record survey engagement —
+    /// `noteSurveyEngaged()` sits after the network call succeeds, so a throw
+    /// here must leave the coordinator's review-prompt gate untouched.
     @MainActor
     func test_submitHero_throwsWithoutAPIService() async {
         let hero = Self.makeQuestion(id: 1)
         let survey = Self.makeSurvey(questions: [hero])
+        let coordinator = PromptCoordinator(userDefaults: userDefaults)
+        let throwingOrchestrator = SurveyOrchestrator(surveyService: surveyService, promptCoordinator: coordinator)
 
         do {
-            _ = try await orchestrator.submitHero(
+            _ = try await throwingOrchestrator.submitHero(
                 survey: survey, answer: "yes", stopID: "1_TEST", stopLocation: nil
             )
             fail("Expected submitHero to throw without an apiService")
@@ -113,16 +126,23 @@ class SurveyOrchestratorTests: OBATestCase {
 
         expect(self.dataStore.isSurveyCompleted(surveyId: survey.id, userIdentifier: self.dataStore.surveyUserIdentifier)).to(beFalse())
         expect(self.dataStore.nextSurveyReminderDate).to(beNil())
+        XCTAssertTrue(coordinator.canShowReviewPrompt(), "a failed submission must not start the engagement cooldown")
     }
 
     /// Hero submit with no remaining questions returns `.completed`, marks the
     /// survey completed, and sets the reminder.
+    ///
+    /// Also pins that a successful submission is a survey engagement: it must
+    /// start the coordinator's 14-day cooldown that gates the review prompt.
     @MainActor
     func test_submitHero_returnsCompletedWhenNoRemainingQuestions() async throws {
         let hero = Self.makeQuestion(id: 1, position: 1)
         let survey = Self.makeSurvey(questions: [hero])
         let (service, _) = Self.buildLiveSurveyService(testName: name, userDataStore: dataStore)
-        let liveOrchestrator = SurveyOrchestrator(surveyService: service)
+        let coordinator = PromptCoordinator(userDefaults: userDefaults)
+        let liveOrchestrator = SurveyOrchestrator(surveyService: service, promptCoordinator: coordinator)
+
+        XCTAssertTrue(coordinator.canShowReviewPrompt())
 
         let outcome = try await liveOrchestrator.submitHero(
             survey: survey, answer: "yes", stopID: "1_TEST", stopLocation: nil
@@ -135,18 +155,25 @@ class SurveyOrchestratorTests: OBATestCase {
         let userID = dataStore.surveyUserIdentifier
         expect(self.dataStore.isSurveyCompleted(surveyId: survey.id, userIdentifier: userID)).to(beTrue())
         expect(self.dataStore.nextSurveyReminderDate).toNot(beNil())
+        XCTAssertFalse(coordinator.canShowReviewPrompt(), "a successful submission is an engagement and starts the 14-day cooldown")
     }
 
     /// Hero submit on a survey with remaining questions returns
     /// `.needsRemainingQuestions(heroResponseID:)`, advances the reminder, but
     /// does NOT mark the survey completed.
+    ///
+    /// Also pins that this outcome is still a survey engagement — it must
+    /// start the coordinator's 14-day cooldown just like `.completed` does.
     @MainActor
     func test_submitHero_returnsNeedsRemainingWhenFollowupsExist() async throws {
         let hero = Self.makeQuestion(id: 1, position: 1)
         let follow = Self.makeQuestion(id: 2, position: 2, required: false)
         let survey = Self.makeSurvey(questions: [hero, follow])
         let (service, _) = Self.buildLiveSurveyService(testName: name, userDataStore: dataStore)
-        let liveOrchestrator = SurveyOrchestrator(surveyService: service)
+        let coordinator = PromptCoordinator(userDefaults: userDefaults)
+        let liveOrchestrator = SurveyOrchestrator(surveyService: service, promptCoordinator: coordinator)
+
+        XCTAssertTrue(coordinator.canShowReviewPrompt())
 
         let outcome = try await liveOrchestrator.submitHero(
             survey: survey, answer: "yes", stopID: "1_TEST", stopLocation: CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3)
@@ -161,6 +188,7 @@ class SurveyOrchestratorTests: OBATestCase {
         let userID = dataStore.surveyUserIdentifier
         expect(self.dataStore.isSurveyCompleted(surveyId: survey.id, userIdentifier: userID)).to(beFalse())
         expect(self.dataStore.nextSurveyReminderDate).toNot(beNil())
+        XCTAssertFalse(coordinator.canShowReviewPrompt(), "a successful submission is an engagement and starts the 14-day cooldown")
     }
 
     /// A survey whose only question isn't at `position == 1` has `heroQuestion == nil`.
@@ -173,9 +201,11 @@ class SurveyOrchestratorTests: OBATestCase {
         let survey = Self.makeSurvey(questions: [follow])
         // Sanity check the fixture: this survey genuinely has no hero.
         expect(survey.heroQuestion).to(beNil())
+        let coordinator = PromptCoordinator(userDefaults: userDefaults)
+        let throwingOrchestrator = SurveyOrchestrator(surveyService: surveyService, promptCoordinator: coordinator)
 
         do {
-            _ = try await orchestrator.submitHero(
+            _ = try await throwingOrchestrator.submitHero(
                 survey: survey, answer: "yes", stopID: nil, stopLocation: nil
             )
             fail("Expected submitHero to throw .missingHeroQuestion")
@@ -189,6 +219,7 @@ class SurveyOrchestratorTests: OBATestCase {
         let userID = dataStore.surveyUserIdentifier
         expect(self.dataStore.isSurveyCompleted(surveyId: survey.id, userIdentifier: userID)).to(beFalse())
         expect(self.dataStore.nextSurveyReminderDate).to(beNil())
+        XCTAssertTrue(coordinator.canShowReviewPrompt(), "a guard-clause throw must not start the engagement cooldown")
     }
 
     // MARK: - Live SurveyService builder (for happy-path network)
@@ -231,6 +262,23 @@ class SurveyOrchestratorTests: OBATestCase {
 
         expect(self.dataStore.nextSurveyReminderDate).toNot(beNil())
         expect(self.dataStore.isSurveyCompleted(surveyId: survey.id, userIdentifier: userID)).to(beTrue())
+    }
+
+    /// `dismiss(_:)` is a survey engagement, so it must start the coordinator's
+    /// 14-day cooldown that gates the review prompt — otherwise a rider who
+    /// just interacted with a survey card could be asked for a review in the
+    /// same sitting.
+    @MainActor
+    func test_dismiss_recordsSurveyEngagement() {
+        let coordinator = PromptCoordinator(userDefaults: userDefaults)
+        let orchestrator = SurveyOrchestrator(
+            surveyService: surveyService,
+            promptCoordinator: coordinator
+        )
+
+        XCTAssertTrue(coordinator.canShowReviewPrompt())
+        orchestrator.dismiss(Self.makeSurvey(questions: [Self.makeQuestion(id: 1)]))
+        XCTAssertFalse(coordinator.canShowReviewPrompt(), "engagement starts the 14-day cooldown")
     }
 
     // MARK: - lastError accessor

@@ -135,8 +135,7 @@ public class MoreViewController: UIViewController,
         guard application.donationsManager.donationsEnabled else { return }
 
         let view = application.donationsManager.buildLearnMoreView(presentingController: self)
-        let hostingController = UIHostingController(rootView: view)
-        present(hostingController, animated: true)
+        presentDonationModal(view, coordinator: application.promptCoordinator)
     }
 
     // MARK: Updates and alerts section
@@ -199,40 +198,64 @@ public class MoreViewController: UIViewController,
             value: "About this App",
             comment: "Header for a section that shows the user information about this app.")
 
-        return OBAListViewSection(id: "about", title: header, contents: [
-            OBAListRowView.DefaultViewModel(
-                title: OBALoc(
-                    "more_controller.credits_row_title",
-                    value: "Credits",
-                    comment: "Credits - like who should get credit for creating this."),
+        var contents: [AnyOBAListViewItem] = []
+
+        if Bundle.main.appStoreID != nil {
+            contents.append(OBAListRowView.DefaultViewModel(
+                title: String(
+                    format: OBALoc(
+                        "more_controller.rate_app",
+                        value: "Rate %@",
+                        comment: "A row that opens the App Store review form. %@ is the app name."
+                    ),
+                    Bundle.main.appName
+                ),
                 onSelectAction: { [weak self] _ in
                     guard let self else { return }
-                    let credits = CreditsViewController(application: self.application)
-                    self.application.viewRouter.navigate(to: credits, from: self)
-                }),
+                    self.application.analytics?.reportEvent(
+                        pageURL: "app://localhost/feedback",
+                        label: AnalyticsLabels.rateAppRowTapped,
+                        value: nil
+                    )
+                    FeedbackPromptPresenter.openWriteReviewPage()
+                }
+            ).typeErased)
+        }
 
-            OBAListRowView.DefaultViewModel(
-                title: OBALoc(
-                    "more_controller.privacy_row_title",
-                    value: "Privacy Policy",
-                    comment: "A link to the app's Privacy Policy"),
-                onSelectAction: { [weak self] _ in
-                    guard let self, let url = Bundle.main.privacyPolicyURL else { return }
-                    let safari = SFSafariViewController(url: url)
-                    self.application.viewRouter.present(safari, from: self)
-                }),
+        contents.append(OBAListRowView.DefaultViewModel(
+            title: OBALoc(
+                "more_controller.credits_row_title",
+                value: "Credits",
+                comment: "Credits - like who should get credit for creating this."),
+            onSelectAction: { [weak self] _ in
+                guard let self else { return }
+                let credits = CreditsViewController(application: self.application)
+                self.application.viewRouter.navigate(to: credits, from: self)
+            }).typeErased)
 
-            OBAListRowView.DefaultViewModel(
-                title: OBALoc(
-                    "more_controller.view_logs_row_title",
-                    value: "View Logs",
-                    comment: "A link to view application logs"),
-                onSelectAction: { [weak self] _ in
-                    guard let self else { return }
-                    let logViewer = LogViewerViewController(application: self.application)
-                    self.application.viewRouter.navigate(to: logViewer, from: self)
-                })
-        ])
+        contents.append(OBAListRowView.DefaultViewModel(
+            title: OBALoc(
+                "more_controller.privacy_row_title",
+                value: "Privacy Policy",
+                comment: "A link to the app's Privacy Policy"),
+            onSelectAction: { [weak self] _ in
+                guard let self, let url = Bundle.main.privacyPolicyURL else { return }
+                let safari = SFSafariViewController(url: url)
+                self.application.viewRouter.present(safari, from: self)
+            }).typeErased)
+
+        contents.append(OBAListRowView.DefaultViewModel(
+            title: OBALoc(
+                "more_controller.view_logs_row_title",
+                value: "View Logs",
+                comment: "A link to view application logs"),
+            onSelectAction: { [weak self] _ in
+                guard let self else { return }
+                let logViewer = LogViewerViewController(application: self.application)
+                self.application.viewRouter.navigate(to: logViewer, from: self)
+            }).typeErased)
+
+        return OBAListViewSection(id: "about", title: header, contents: contents)
     }
 
     // MARK: - Help Out section
