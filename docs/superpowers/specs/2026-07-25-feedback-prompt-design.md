@@ -2,7 +2,7 @@
 
 **Date:** 2026-07-25
 **Branch:** `feedback`
-**Status:** Draft — revised after spec review
+**Status:** Approved
 
 ## Background
 
@@ -432,8 +432,10 @@ ratings disabled in Settings), so a rider who said "Yes!" is never actually
 asked. It also cannot be exercised in TestFlight at all — `requestReview` "has
 no effect in apps that you distribute for beta testing using TestFlight."
 
-**This is the one decision worth an explicit sign-off**, because it trades
-guideline-literalism against conversion, and both readings are defensible.
+**Decided 2026-07-25: the deep link.** The trade is guideline-literalism against
+conversion, and both readings are defensible; we take the branch that reliably
+delivers a warm rider to the review form and can be exercised in every build
+configuration.
 
 Also relevant and satisfied: guideline 3.2.2(x) forbids forcing riders to rate
 the app. Nothing here is required, gates functionality, or offers an incentive.
@@ -492,10 +494,8 @@ toggles.
 
 ## Open questions
 
-**One, and it needs an answer before implementation:** deep link versus deferred
-`requestReview` on the positive branch (§10). The spec currently specifies the
-deep link.
+None blocking. The positive-branch mechanism is settled (§10, deep link).
 
-Two smaller decisions taken without sign-off, each reversible in one line: the
-threshold of **5** successes, and debouncing per stop view rather than per
-refresh tick.
+Two smaller decisions taken without explicit sign-off, each reversible in one
+line: the threshold of **5** successes, and debouncing per stop view rather than
+per refresh tick.
