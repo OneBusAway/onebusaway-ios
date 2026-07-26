@@ -710,13 +710,27 @@ class MapViewController: UIViewController,
         floatingPanel.move(to: .tip, animated: true)
 
         stopSheet.present(stopController, from: self) { [weak self] in
-            guard let self, let annotation else { return }
-            self.mapRegionManager.mapView.deselectAnnotation(annotation, animated: true)
+            guard let self else { return }
+
+            if let annotation {
+                self.mapRegionManager.mapView.deselectAnnotation(annotation, animated: true)
+            }
+
+            // A short delay so the alert doesn't race the sheet's dismissal
+            // animation, per Apple's sample guidance on delaying review asks.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+                guard let self else { return }
+                self.feedbackPromptPresenter.presentIfEligible(from: self)
+            }
         }
     }
 
     /// Owns the half-detent panel that shows the redesigned Stop page over the map.
     private lazy var stopSheet = StopSheetPresenter()
+
+    /// Presents the feedback prompt after a stop sheet is dismissed — a natural
+    /// stopping point, and the only one available in the new stop page flow.
+    private lazy var feedbackPromptPresenter = FeedbackPromptPresenter(application: application)
 
     // MARK: - Overlays
 
