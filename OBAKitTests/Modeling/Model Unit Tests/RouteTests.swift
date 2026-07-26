@@ -198,21 +198,25 @@ class RouteTests: OBATestCase {
     }
     
     func test_arrayExtensionSort() {
-        let route1Data: [String: Any] = ["id": "route1", "agencyId": "1", "shortName": "z Route", "type": 3]
-        let route2Data: [String: Any] = ["id": "route2", "agencyId": "1", "shortName": "A Route", "type": 3]
-        let route3Data: [String: Any] = ["id": "route3", "agencyId": "1", "shortName": "m Route", "type": 3]
+        let route1Data: [String: Any] = ["id": "route1", "agencyId": "1", "shortName": "49", "type": 3]
+        let route2Data: [String: Any] = ["id": "route2", "agencyId": "1", "shortName": "10", "type": 3]
+        let route3Data: [String: Any] = ["id": "route3", "agencyId": "1", "shortName": "3", "type": 3]
+        let route4Data: [String: Any] = ["id": "route4", "agencyId": "1", "shortName": "Bellevue", "type": 3]
+        let route5Data: [String: Any] = ["id": "route5", "agencyId": "1", "shortName": "11", "type": 3]
+        let route6Data: [String: Any] = ["id": "route6", "agencyId": "1", "shortName": "12", "type": 3]
         
         let routes = try! [
             Fixtures.dictionaryToModel(type: Route.self, dictionary: route1Data),
             Fixtures.dictionaryToModel(type: Route.self, dictionary: route2Data),
-            Fixtures.dictionaryToModel(type: Route.self, dictionary: route3Data)
+            Fixtures.dictionaryToModel(type: Route.self, dictionary: route3Data),
+            Fixtures.dictionaryToModel(type: Route.self, dictionary: route4Data),
+            Fixtures.dictionaryToModel(type: Route.self, dictionary: route5Data),
+            Fixtures.dictionaryToModel(type: Route.self, dictionary: route6Data)
         ]
         
         let sortedRoutes = routes.localizedCaseInsensitiveSort()
         
-        expect(sortedRoutes[0].shortName) == "A Route"
-        expect(sortedRoutes[1].shortName) == "m Route"
-        expect(sortedRoutes[2].shortName) == "z Route"
+        expect(sortedRoutes.map(\.shortName)) == ["3", "10", "11", "12", "49", "Bellevue"]
     }
 }
 

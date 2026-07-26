@@ -174,12 +174,12 @@ public class Route: NSObject, Identifiable, Codable, HasReferences {
 
 public extension Sequence where Element == Route {
 
-    /// Performs a localized case insensitive sort on the receiver.
+    /// Performs a localized, natural sort on route short names.
     ///
-    /// - Returns: A localized, case-insensitive sorted Array.
+    /// - Returns: A localized, case-insensitive Array with numeric route names in natural order.
     func localizedCaseInsensitiveSort() -> [Element] {
         return sorted { (s1, s2) -> Bool in
-            return s1.shortName.localizedCaseInsensitiveCompare(s2.shortName) == .orderedAscending
+            return s1.shortName.localizedStandardCompare(s2.shortName) == .orderedAscending
         }
     }
 }
