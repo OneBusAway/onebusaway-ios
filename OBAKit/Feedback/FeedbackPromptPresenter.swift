@@ -40,11 +40,20 @@ final class FeedbackPromptPresenter: NSObject {
               viewController.presentedViewController == nil
         else { return }
 
-        application.promptCoordinator.noteShown(.review)
-        application.reviewPromptPolicy.recordPromptPresented()
-        report(AnalyticsLabels.feedbackPromptShown)
-
-        viewController.present(buildSentimentAlert(from: viewController), animated: true)
+        // These three writes only run in the presentation completion handler, which
+        // UIKit calls if and only if `present` actually succeeds (e.g. it silently
+        // no-ops without calling completion when `viewController` isn't in the window
+        // hierarchy or is mid-transition). Recording "shown" before that would burn
+        // one of only 3 lifetime asks and the session's single interruption slot for
+        // an alert the rider never saw. The completion handler still fires strictly
+        // before the alert becomes interactive, so this preserves the property that
+        // policy state is written before the rider can possibly answer.
+        viewController.present(buildSentimentAlert(from: viewController), animated: true) { [weak self] in
+            guard let self else { return }
+            self.application.promptCoordinator.noteShown(.review)
+            self.application.reviewPromptPolicy.recordPromptPresented()
+            self.report(AnalyticsLabels.feedbackPromptShown)
+        }
     }
 
     // MARK: - Step 1
