@@ -6,7 +6,10 @@ on:
     types: [completed]
     branches: [main]
 
-# Prevent multiple deploys from running simultaneously.
+# Prevent multiple deploys from running simultaneously. This also guarantees
+# unique build numbers: scripts/version stamps CFBundleVersion with a
+# minute-resolution timestamp, so two archives would only collide if they ran
+# concurrently, which this group forbids.
 concurrency:
   group: testflight-deploy
   cancel-in-progress: false
@@ -14,14 +17,22 @@ concurrency:
 jobs:
   deploy:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
-    runs-on: macos-15
+    runs-on: xcode-27
     timeout-minutes: 45
 
     steps:
-    - uses: actions/checkout@v4
+    # SECURITY — read before changing this step. `workflow_run` jobs run with the
+    # repository's secrets available, and the run that triggers them can
+    # originate from a fork's pull request. This is only safe because the
+    # checkout below takes no `ref:`, so it always checks out the default branch
+    # and never the pull request head. Do NOT add
+    # `ref: ${{ github.event.workflow_run.head_sha }}` or equivalent: that would
+    # execute untrusted fork code on a runner holding the signing certificate
+    # and the App Store Connect API key.
+    - uses: actions/checkout@v7
 
     # Cache Swift Package Manager dependencies.
-    - uses: actions/cache@v4
+    - uses: actions/cache@v6
       with:
         path: .build
         key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
@@ -29,19 +40,30 @@ jobs:
           ${{ runner.os }}-spm-
 
     # Cache Ruby gems (fastlane and its dependencies).
-    - uses: actions/cache@v4
+    - uses: actions/cache@v6
       with:
         path: vendor/bundle
         key: ${{ runner.os }}-gems-${{ hashFiles('**/Gemfile.lock') }}
         restore-keys: |
           ${{ runner.os }}-gems-
 
-    - name: Switch Xcode
-      run: |
-        sudo xcode-select -switch /Applications/Xcode_26.2.app
-        xcodebuild -version
+    # Matches obakittests.yml — see the longer rationale there. In short: the
+    # `xcode-27` image ships exactly one Xcode and it is a beta, so `latest`
+    # (not `latest-stable`, which filters betas out and fails) picks it. The
+    # previous `sudo xcode-select -switch /Applications/Xcode_26.2.app` was left
+    # over from the `macos-15` image and cannot work here — that Xcode is not
+    # installed on `xcode-27`. Keeping this in step with obakittests.yml matters:
+    # a build that archives on a different toolchain than the one the tests
+    # gated on is not the artifact anybody reviewed.
+    - name: Setup Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: 'latest'
 
     - name: Install dependencies
+      env:
+        HOMEBREW_NO_AUTO_UPDATE: 1
+        HOMEBREW_NO_INSTALL_CLEANUP: 1
       run: |
         brew install xcodegen
         bundle config path vendor/bundle
@@ -53,6 +75,8 @@ jobs:
         CERTIFICATE_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
         KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
       run: |
+        set -euo pipefail
+
         KEYCHAIN_PATH="$RUNNER_TEMP/app-signing.keychain-db"
         security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
         security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
@@ -64,26 +88,166 @@ jobs:
         security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
         security list-keychain -d user -s "$KEYCHAIN_PATH"
 
+        # `find-identity` only lists certificates whose private key is present and
+        # usable, so this simultaneously proves the .p12 carried its key and that
+        # it is a distribution rather than a development certificate. Without the
+        # check, a development-only .p12 fails much later inside xcodebuild with a
+        # message about profiles rather than about the certificate.
+        echo "=== Code signing identities in the CI keychain ==="
+        security find-identity -v -p codesigning "$KEYCHAIN_PATH"
+
+        # The team has more than one Apple Distribution certificate, and a
+        # provisioning profile is only usable by a certificate it explicitly
+        # lists. Printing the serial and expiry makes "which certificate is in
+        # CERTIFICATE_BASE64, and does the profile include it?" answerable from
+        # the log instead of by guesswork. Serial numbers and expiry dates are
+        # public certificate metadata; the private key is never printed.
+        # OpenSSL 3 needs -legacy to read the RC2/3DES-encrypted .p12 that
+        # Keychain Access produces; LibreSSL reads it natively and rejects the
+        # flag outright. The runner image has carried either at different times,
+        # so try both. Purely diagnostic — never fail the deploy over it.
+        echo "=== Distribution certificate details ==="
+        for flag in "-legacy" ""; do
+          if openssl pkcs12 -in "$CERT_PATH" -passin pass:"$CERTIFICATE_PASSWORD" \
+               -clcerts -nokeys $flag 2>/dev/null \
+               | openssl x509 -noout -serial -enddate -subject 2>/dev/null; then
+            break
+          fi
+        done
+        if ! security find-identity -v -p codesigning "$KEYCHAIN_PATH" \
+             | grep -qE "Apple Distribution|iPhone Distribution"; then
+          echo "::error::No distribution identity in the keychain. CERTIFICATE_BASE64 must be an Apple Distribution .p12 exported *with* its private key."
+          exit 1
+        fi
+
     - name: Install provisioning profiles
       env:
         PROVISIONING_PROFILE_BASE64: ${{ secrets.PROVISIONING_PROFILE_BASE64 }}
         WIDGET_PROVISIONING_PROFILE_BASE64: ${{ secrets.WIDGET_PROVISIONING_PROFILE_BASE64 }}
       run: |
-        PP_DIR=~/Library/MobileDevice/Provisioning\ Profiles
-        mkdir -p "$PP_DIR"
+        set -euo pipefail
+        python3 <<'PY'
+        import base64, datetime, hashlib, os, pathlib, plistlib, subprocess, sys
 
-        # Install the main app provisioning profile (org.onebusaway.iphone).
-        APP_PP_PATH="$RUNNER_TEMP/app.mobileprovision"
-        echo -n "$PROVISIONING_PROFILE_BASE64" | base64 --decode -o "$APP_PP_PATH"
-        cp "$APP_PP_PATH" "$PP_DIR/"
+        # Xcode 16 moved where it looks for provisioning profiles. Every run of
+        # this workflow before 2026-07-26 installed them into the pre-Xcode 16
+        # ~/Library/MobileDevice/Provisioning Profiles, which current Xcode never
+        # reads — so the profiles were present on disk and invisible to the build,
+        # and the archive failed with "No profiles for 'org.onebusaway.iphone'
+        # were found" even though the secrets were set correctly.
+        pp_dir = pathlib.Path.home() / "Library/Developer/Xcode/UserData/Provisioning Profiles"
+        pp_dir.mkdir(parents=True, exist_ok=True)
+        tmp = pathlib.Path(os.environ["RUNNER_TEMP"])
+        github_env = pathlib.Path(os.environ["GITHUB_ENV"])
 
-        # Install the widget provisioning profile (org.onebusaway.iphone.OBAWidget)
-        # if provided. Not needed when using a wildcard profile.
-        if [ -n "$WIDGET_PROVISIONING_PROFILE_BASE64" ]; then
-          WIDGET_PP_PATH="$RUNNER_TEMP/widget.mobileprovision"
-          echo -n "$WIDGET_PROVISIONING_PROFILE_BASE64" | base64 --decode -o "$WIDGET_PP_PATH"
-          cp "$WIDGET_PP_PATH" "$PP_DIR/"
-        fi
+        # `find-identity` prints each usable identity's certificate SHA-1, and a
+        # profile embeds the DER of every certificate it permits — so hashing those
+        # and looking for one in this list proves the profile and the certificate
+        # actually go together. This is the failure mode with no good symptom: a
+        # profile that is valid, correctly scoped, in the right directory, and still
+        # unusable because it was generated against a different certificate than the
+        # one in CERTIFICATE_BASE64. xcodebuild reports that as a missing profile.
+        identities = subprocess.run(
+            ["security", "find-identity", "-v", "-p", "codesigning"],
+            capture_output=True, text=True).stdout.upper()
+
+        # (label, secret name, bundle id the target needs, env var for the Fastfile)
+        PROFILES = [
+            ("app", "PROVISIONING_PROFILE_BASE64",
+             "org.onebusaway.iphone", "APP_PROVISIONING_PROFILE_NAME"),
+            ("widget", "WIDGET_PROVISIONING_PROFILE_BASE64",
+             "org.onebusaway.iphone.OBAWidget", "WIDGET_PROVISIONING_PROFILE_NAME"),
+        ]
+
+        for label, secret, expected_bundle_id, env_var in PROFILES:
+            encoded = os.environ.get(secret, "").strip()
+            if not encoded:
+                sys.exit(f"::error::{secret} is empty. A profile for "
+                         f"{expected_bundle_id} is required for the app-store export.")
+
+            raw = tmp / f"{label}.mobileprovision"
+            raw.write_bytes(base64.b64decode(encoded))
+
+            # A .mobileprovision is a CMS-signed plist, so it has to be unwrapped
+            # before it can be read. `security cms -D` is the obvious tool but it
+            # imports the signer certificates into the *default* keychain as a side
+            # effect, and the certificate step above has already repointed the
+            # keychain search list — reading a plist has no business mutating a
+            # keychain. openssl touches no keychain at all. `-noverify` skips
+            # signer chain validation, which is not a check worth doing here: the
+            # profile came from our own repository secret, and Xcode validates it
+            # for real at signing time.
+            unwrapped = subprocess.run(
+                ["openssl", "smime", "-inform", "DER", "-verify", "-noverify", "-in", str(raw)],
+                capture_output=True)
+            if unwrapped.returncode != 0:
+                sys.exit(f"::error::{secret} did not decode to a valid .mobileprovision. "
+                         "Re-create it with: base64 -i profile.mobileprovision | pbcopy")
+
+            profile = plistlib.loads(unwrapped.stdout)
+
+            # Only these three fields get logged. The decoded plist also embeds the
+            # team's public signing certificates and, for development profiles, the
+            # provisioned device UDIDs; none of that belongs in a public build log.
+            name = profile["Name"]
+            uuid = profile["UUID"]
+            expires = profile["ExpirationDate"]
+            # application-identifier is "<TEAMID>.<bundle id>".
+            bundle_id = profile["Entitlements"]["application-identifier"].split(".", 1)[1]
+
+            print(f"{label}: {name!r} ({uuid})")
+            print(f"  bundle id: {bundle_id}")
+            print(f"  expires:   {expires:%Y-%m-%d}")
+
+            if bundle_id not in (expected_bundle_id, "*"):
+                sys.exit(f"::error::{secret} holds a profile for {bundle_id!r}, but the "
+                         f"target needs {expected_bundle_id!r}. The wrong profile is in "
+                         "this secret.")
+
+            if expires < datetime.datetime.now():
+                sys.exit(f"::error::{secret} expired on {expires:%Y-%m-%d}. Download a "
+                         "fresh profile from the developer portal and update the secret.")
+
+            # App Store profiles provision no specific devices. A development or
+            # ad-hoc profile does, and would otherwise fail deep inside the export
+            # step with a far less obvious message.
+            if "ProvisionedDevices" in profile:
+                sys.exit(f"::error::{secret} lists provisioned devices, so it is a "
+                         "development or ad-hoc profile rather than an App Store one. "
+                         "Create an App Store distribution profile instead.")
+
+            # Xcode-managed profiles (the "iOS Team Store Provisioning Profile: …"
+            # ones Xcode generates for you) are rejected under manual signing:
+            # "Provisioning profile … is Xcode managed, but signing settings require
+            # a manually managed profile." The fix is a profile created explicitly
+            # in the developer portal, which is what this whole lane expects.
+            if profile.get("IsXcodeManaged"):
+                sys.exit(
+                    f"::error::{secret} holds an Xcode-managed profile "
+                    f"({name!r}), which cannot be used for manual signing. Create a "
+                    "manual App Store profile at "
+                    "https://developer.apple.com/account/resources/profiles/list "
+                    f"for {expected_bundle_id} (Distribution -> App Store Connect), "
+                    f"download it, and set the secret to its base64: "
+                    "base64 -i profile.mobileprovision | pbcopy")
+
+            fingerprints = [hashlib.sha1(der).hexdigest().upper()
+                            for der in profile.get("DeveloperCertificates", [])]
+            if not any(fp in identities for fp in fingerprints):
+                sys.exit(
+                    f"::error::{secret} lists no certificate that this keychain "
+                    f"holds, so the profile cannot sign anything. Profile "
+                    f"certificates: {', '.join(fingerprints) or '(none)'}. "
+                    "Regenerate the profile in the developer portal with the "
+                    "certificate whose .p12 is in CERTIFICATE_BASE64 selected "
+                    "(see the identity list printed by the previous step).")
+            print(f"  cert:      {fingerprints[0][:16]}… (present in keychain)")
+
+            # Xcode identifies installed profiles by filename UUID.
+            (pp_dir / f"{uuid}.mobileprovision").write_bytes(raw.read_bytes())
+            with github_env.open("a") as fh:
+                fh.write(f"{env_var}={name}\n")
+        PY
 
     - name: Deploy to TestFlight
       env:
@@ -92,6 +256,8 @@ jobs:
         APP_STORE_CONNECT_KEY_CONTENT: ${{ secrets.APP_STORE_CONNECT_KEY_CONTENT }}
       run: bundle exec fastlane beta
 
-    - name: Clean up keychain
+    - name: Clean up keychain and provisioning profiles
       if: always()
-      run: security delete-keychain "$RUNNER_TEMP/app-signing.keychain-db"
+      run: |
+        security delete-keychain "$RUNNER_TEMP/app-signing.keychain-db" || true
+        rm -f ~/Library/Developer/Xcode/UserData/Provisioning\ Profiles/*.mobileprovision

@@ -13,7 +13,12 @@ def update_all_apps
   apps += ["OBAKit", "OBAKitCore", "OBAWidget"]
   launch_directory = Dir.pwd
 
-  build_version = DateTime.now.strftime("%Y%m%d.%H")
+  # Minute resolution, not hour: two merges to main within the same hour would
+  # otherwise stamp identical CFBundleVersions and TestFlight rejects the second
+  # upload as a duplicate build. Still monotonically increasing against the
+  # hour-resolution numbers already uploaded, because CFBundleVersion components
+  # compare numerically (20260726.1502 > 20260726.15).
+  build_version = DateTime.now.strftime("%Y%m%d.%H%M")
 
   puts "Updating bundle build number to #{build_version}."
 
