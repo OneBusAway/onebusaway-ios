@@ -115,7 +115,81 @@ class URLSchemeRouterTests: XCTestCase {
     }
     
     // MARK: - Add Region URL Tests
-    
+
+    func test_decodeURLType_addRegion_decodesRegionID() {
+        var components = URLComponents()
+        components.scheme = "onebusaway"
+        components.host = "add-region"
+        components.queryItems = [
+            URLQueryItem(name: "name", value: "Test Region"),
+            URLQueryItem(name: "region-id", value: "19"),
+            URLQueryItem(name: "oba-url", value: "https://oba.example.com")
+        ]
+
+        guard let url = components.url else {
+            fail("Failed to create URL")
+            return
+        }
+
+        switch router.decodeURLType(from: url) {
+        case .addRegion(let data):
+            expect(data?.regionID) == 19
+        default:
+            fail("Expected addRegion URLType")
+        }
+    }
+
+    // Links generated before region-id was emitted must still add the region.
+    func test_decodeURLType_addRegion_regionIDIsNilWhenAbsent() {
+        var components = URLComponents()
+        components.scheme = "onebusaway"
+        components.host = "add-region"
+        components.queryItems = [
+            URLQueryItem(name: "name", value: "Test Region"),
+            URLQueryItem(name: "oba-url", value: "https://oba.example.com")
+        ]
+
+        guard let url = components.url else {
+            fail("Failed to create URL")
+            return
+        }
+
+        switch router.decodeURLType(from: url) {
+        case .addRegion(let data):
+            expect(data).toNot(beNil())
+            expect(data?.regionID).to(beNil())
+        default:
+            fail("Expected addRegion URLType")
+        }
+    }
+
+    // A junk region-id costs sidecar features, but the region is still worth
+    // adding — so it degrades to nil rather than rejecting the whole link.
+    func test_decodeURLType_addRegion_malformedRegionIDDegradesToNil() {
+        var components = URLComponents()
+        components.scheme = "onebusaway"
+        components.host = "add-region"
+        components.queryItems = [
+            URLQueryItem(name: "name", value: "Test Region"),
+            URLQueryItem(name: "region-id", value: "not-a-number"),
+            URLQueryItem(name: "oba-url", value: "https://oba.example.com")
+        ]
+
+        guard let url = components.url else {
+            fail("Failed to create URL")
+            return
+        }
+
+        switch router.decodeURLType(from: url) {
+        case .addRegion(let data):
+            expect(data).toNot(beNil())
+            expect(data?.name) == "Test Region"
+            expect(data?.regionID).to(beNil())
+        default:
+            fail("Expected addRegion URLType")
+        }
+    }
+
     func test_decodeURLType_addRegion_decodesValidURLWithOTPURL() {
         var components = URLComponents()
         components.scheme = "onebusaway"
