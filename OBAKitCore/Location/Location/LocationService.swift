@@ -40,11 +40,18 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
 
     public init(userDefaults: UserDefaults, locationManager: LocationManager) {
         self.locationManager = locationManager
-        authorizationStatus = locationManager.authorizationStatus
+        rawAuthorizationStatus = locationManager.authorizationStatus
         lastAccuracyAuthorization = locationManager.accuracyAuthorization
         currentLocation = locationManager.location
 
         self.userDefaults = userDefaults
+
+        // Seed the latch from the last session. Location Services being off
+        // system-wide survives an app relaunch, but nothing tells us so at
+        // launch: the per-app authorization still reads as authorized and no
+        // `denied` error has arrived yet. Without this seed the first frames
+        // would advertise location as available and then retract it.
+        locationServicesDenied = userDefaults.bool(forKey: UserDefaultsKeys.locationServicesDenied)
 
         super.init()
 
@@ -59,6 +66,7 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
 
     private struct UserDefaultsKeys {
         static let promptUserForLocationPermission = "LocationService.promptUserForLocationPermission"
+        static let locationServicesDenied = "LocationService.locationServicesDenied"
     }
 
     private func registerDefaults() {
@@ -137,39 +145,68 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
 
     // MARK: - Authorization
 
-    /// The current authorization state of the app.
-    public private(set) var authorizationStatus: CLAuthorizationStatus {
-        didSet {
-            notifyDelegatesAuthorizationChanged(authorizationStatus)
+    /// The app's own authorization, exactly as Core Location reports it.
+    private var rawAuthorizationStatus: CLAuthorizationStatus
 
-            if isLocationUseAuthorized {
-                startUpdates()
-            }
+    /// Latched when Core Location reports a `denied` error. This happens even
+    /// while `rawAuthorizationStatus` still reads as authorized — most commonly
+    /// when the user switches Location Services off system-wide, which does not
+    /// change the app's per-app authorization.
+    ///
+    /// Persisted, because that system-wide state outlives the app process while
+    /// the per-app authorization that masks it does not. See the seeding comment
+    /// in `init(userDefaults:locationManager:)`.
+    private var locationServicesDenied: Bool {
+        didSet {
+            guard locationServicesDenied != oldValue else { return }
+            userDefaults.set(locationServicesDenied, forKey: UserDefaultsKeys.locationServicesDenied)
         }
     }
 
-    /// Latched when Core Location reports a `denied` error. This can happen even
-    /// while `authorizationStatus` still reads as authorized — most commonly when
-    /// the user switches Location Services off system-wide, which does not change
-    /// the app's per-app authorization. While set, `isLocationUseAuthorized`
-    /// reports `false` so the UI hides location affordances (locate button, user
-    /// dot) that would otherwise appear active but never produce a fix. It is
-    /// cleared on the next authorization callback, when the user may have
-    /// re-enabled access.
-    private var locationServicesDenied = false {
-        didSet {
-            guard locationServicesDenied != oldValue else { return }
-            notifyDelegatesAuthorizationChanged(authorizationStatus)
+    private var isPerAppAuthorized: Bool {
+        rawAuthorizationStatus == .authorizedWhenInUse || rawAuthorizationStatus == .authorizedAlways
+    }
 
-            // When the latch clears while the app is still authorized, resume
-            // updates ourselves. The `authorizationStatus` didSet only restarts
-            // them when the coarse status *value* changes, which it often does
-            // not on recovery (e.g. it stays `.authorizedWhenInUse`), so relying
-            // on it alone would leave the stream stopped until the next app
-            // foreground.
-            if !locationServicesDenied, isLocationUseAuthorized {
-                startUpdates()
-            }
+    /// The current *effective* authorization state of the app.
+    ///
+    /// When the `locationServicesDenied` latch is set, this reports `.denied`
+    /// even though the per-app authorization still reads as authorized. That is
+    /// deliberate: consumers switch on this value to decide what to show
+    /// (`MapViewModel.topPillState`, `MapStatusView.state(for:)`), and a user
+    /// whose location is unusable needs the "Location Services Off / Turn On in
+    /// Settings" pill, not a silent absence of the locate button. The latch is
+    /// ignored while the app is not itself authorized, so `.notDetermined`
+    /// survives and the app can still prompt.
+    public var authorizationStatus: CLAuthorizationStatus {
+        guard locationServicesDenied, isPerAppAuthorized else { return rawAuthorizationStatus }
+        return .denied
+    }
+
+    /// The single funnel for both inputs to `authorizationStatus`. It applies
+    /// the new values and *then* reacts once to the effective transition.
+    ///
+    /// Property observers on the two inputs can't do this correctly: whichever
+    /// one is assigned first sees the other's stale value, and both firing
+    /// means delegates get notified twice for one logical change.
+    private func applyAuthorizationState(rawStatus: CLAuthorizationStatus, servicesDenied: Bool) {
+        let oldStatus = authorizationStatus
+        let wasAuthorized = isLocationUseAuthorized
+
+        rawAuthorizationStatus = rawStatus
+        locationServicesDenied = servicesDenied
+
+        guard authorizationStatus != oldStatus else { return }
+
+        notifyDelegatesAuthorizationChanged(authorizationStatus)
+
+        if isLocationUseAuthorized {
+            startUpdates()
+        } else if wasAuthorized {
+            // Access was revoked. Tear the manager down here — nobody else will,
+            // and a `CLLocationManager` left running keeps the location-usage
+            // indicator lit and the magnetometer powered for the rest of the
+            // process.
+            stopUpdates()
         }
     }
 
@@ -207,14 +244,13 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
 
     /// Answers the question of whether the device GPS can be consulted for location data.
     ///
-    /// This is derived from `authorizationStatus` plus the `locationServicesDenied`
-    /// latch. We deliberately avoid `CLLocationManager.locationServicesEnabled()`
-    /// because it performs a blocking, synchronous XPC call that Apple warns can
-    /// hang the main thread. When location services are disabled system-wide,
-    /// attempts to start updates fail via `locationManager(_:didFailWithError:)`
-    /// with a `denied` error, which we latch here — the pattern Apple recommends.
+    /// Derived from the effective `authorizationStatus`. We deliberately avoid
+    /// `CLLocationManager.locationServicesEnabled()` because it performs a
+    /// blocking, synchronous XPC call that Apple warns can hang the main thread.
+    /// When location services are disabled system-wide, attempts to start
+    /// updates fail via `locationManager(_:didFailWithError:)` with a `denied`
+    /// error, which we latch — the pattern Apple recommends.
     public var isLocationUseAuthorized: Bool {
-        guard !locationServicesDenied else { return false }
         return authorizationStatus == .authorizedWhenInUse || authorizationStatus == .authorizedAlways
     }
 
@@ -251,11 +287,10 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
         locationManager.startUpdatingLocation()
     }
 
+    /// Unlike its `start` counterpart this is unguarded: stopping is always safe,
+    /// and gating it on authorization would make a manager we started before
+    /// access was revoked impossible to ever turn off.
     public func stopUpdatingLocation() {
-        guard isLocationUseAuthorized else {
-            return
-        }
-
         locationManager.stopUpdatingLocation()
     }
 
@@ -279,24 +314,55 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
 
     // MARK: - Delegate
 
-    /// A fresh authorization callback means access was re-evaluated by the user
-    /// or system, so any latched `denied` state is stale. Clearing it before we
-    /// recompute `authorizationStatus` lets derived state (and any resumed
-    /// updates) reflect the new reality.
-    private func resetDeniedLatchForAuthorizationChange() {
-        locationServicesDenied = false
-    }
-
-    @available(iOS, introduced: 4.2, deprecated: 14.0)
-    public func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
-        resetDeniedLatchForAuthorizationChange()
-        authorizationStatus = status
+    /// Attempts to resume location updates after a latched `denied` error.
+    ///
+    /// Toggling Location Services back on system-wide does not change the app's
+    /// per-app authorization, so Core Location may deliver no authorization
+    /// callback at all — nothing would otherwise clear the latch, and the locate
+    /// button and user dot would stay hidden until the app was force-quit. The
+    /// app calls this when it returns to the foreground, which is where the user
+    /// lands after visiting Settings.
+    ///
+    /// This probes rather than assumes: the latch stays set until we have an
+    /// answer, so the UI does not flash location affordances on and back off.
+    /// A fix clears the latch (see `locationManager(_:didUpdateLocations:)`);
+    /// another `denied` error leaves it exactly as it was.
+    public func retryIfLocationServicesDenied() {
+        guard locationServicesDenied, isPerAppAuthorized else { return }
+        locationManager.startUpdatingLocation()
     }
 
     @available(iOS 14, *)
     public func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
-        resetDeniedLatchForAuthorizationChange()
-        authorizationStatus = manager.authorizationStatus
+        // A *change* of per-app authorization means the user just made a fresh
+        // decision, so any latched `denied` state is stale evidence and we
+        // re-arm optimistically. A callback that leaves the status untouched
+        // carries no new information — Core Location fires one whenever a
+        // delegate is assigned — so it must not clear the latch, or every
+        // spurious callback would restart updates against a location subsystem
+        // that is still off.
+        //
+        // Read the status from the injected manager, not from `manager`, so the
+        // path under test is the path that ships.
+        let newStatus = locationManager.authorizationStatus
+        let statusChanged = newStatus != rawAuthorizationStatus
+        applyAuthorizationState(rawStatus: newStatus, servicesDenied: statusChanged ? false : locationServicesDenied)
+
+        // Core Location delivers a callback as soon as the delegate is assigned,
+        // carrying an *unchanged* status. That is the app's earliest signal that
+        // it is authorized, and it is where location updates have always been
+        // started from — early enough that the first fix lands before the map
+        // settles. `applyAuthorizationState` deliberately reacts only to
+        // transitions, so starting updates has to happen outside of it or a
+        // relaunch of an already-authorized app would wait for the next
+        // foreground. Both calls below are idempotent.
+        if isLocationUseAuthorized {
+            startUpdates()
+        } else {
+            // Same reasoning for a latch seeded from the previous launch: probe
+            // it now rather than making the user wait for a foreground event.
+            retryIfLocationServicesDenied()
+        }
 
         // Accuracy can change while the coarse status stays put (e.g. "Allow
         // Once" elevates a reduced-accuracy session to full). That leaves the
@@ -314,6 +380,11 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
     public func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let newLocation = locations.last else {
             return
+        }
+
+        // A fix is proof that location is usable again, whatever we last latched.
+        if locationServicesDenied {
+            applyAuthorizationState(rawStatus: rawAuthorizationStatus, servicesDenied: false)
         }
 
         guard let currentLocation = currentLocation else {
@@ -339,17 +410,17 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
     }
 
     public func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        // A `denied` error means location is currently unavailable even if
-        // `authorizationStatus` still reads as authorized (e.g. Location Services
-        // switched off system-wide). Apple recommends stopping updates in this
-        // case; we also latch the state so `isLocationUseAuthorized` reports the
-        // location as unusable and the UI can hide its location affordances.
-        //
-        // Stop first (while still authorized, so the guards in `stopUpdates()`
-        // pass and both location and heading are torn down), then latch.
+        // A `denied` error means location is currently unavailable even if the
+        // per-app authorization still reads as authorized (e.g. Location
+        // Services switched off system-wide). Latching it flips the effective
+        // `authorizationStatus` to `.denied`, which stops updates as Apple
+        // recommends and lets the UI explain the situation.
         if let clError = error as? CLError, clError.code == .denied {
+            // Unconditional, as Apple recommends: a probe that re-confirms an
+            // already-latched denial must still leave the manager stopped, and
+            // `applyAuthorizationState` only reacts to state *transitions*.
             stopUpdates()
-            locationServicesDenied = true
+            applyAuthorizationState(rawStatus: rawAuthorizationStatus, servicesDenied: true)
         }
 
         notifyDelegatesErrorReceived(error)

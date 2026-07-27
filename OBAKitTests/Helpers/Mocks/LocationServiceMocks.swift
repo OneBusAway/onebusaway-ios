@@ -89,7 +89,12 @@ public class AuthorizableLocationManagerMock: LocationManagerMock {
     var updateHeading: OBAMockHeading
     public var _authorizationStatus: CLAuthorizationStatus = .notDetermined {
         didSet {
-            delegate?.locationManager?(CLLocationManager(), didChangeAuthorization: _authorizationStatus)
+            // The modern callback, not the iOS 14-deprecated
+            // `didChangeAuthorization:`. With an iOS 18 deployment target that
+            // deprecated overload is never invoked on device, so a mock that
+            // called it would exercise a path that doesn't ship. The service
+            // reads the status off this mock, so the argument is unused.
+            delegate?.locationManagerDidChangeAuthorization?(CLLocationManager())
         }
     }
 
@@ -106,9 +111,18 @@ public class AuthorizableLocationManagerMock: LocationManagerMock {
         return _authorizationStatus
     }
 
+    /// Simulates Location Services being switched off system-wide: the app's own
+    /// authorization is untouched, but every attempt to start updates comes back
+    /// as `CLError.denied` instead of a fix.
+    public var simulatesLocationServicesOff = false
+
     public override func startUpdatingLocation() {
         super.startUpdatingLocation()
-        if authorizationStatus == .authorizedWhenInUse {
+        guard authorizationStatus == .authorizedWhenInUse else { return }
+
+        if simulatesLocationServicesOff {
+            delegate?.locationManager?(CLLocationManager(), didFailWithError: CLError(.denied))
+        } else {
             location = updateLocation
         }
     }
