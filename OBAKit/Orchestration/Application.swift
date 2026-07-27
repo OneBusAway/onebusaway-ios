@@ -660,11 +660,16 @@ public class Application: CoreApplication, PushServiceDelegate {
 
                     // Construct Region from URL data. umamiAnalytics applies the
                     // both-or-nothing rule; no rule logic lives here.
+                    //
+                    // regionIdentifier must come from the link: Region falls back to a
+                    // random id when it's nil, and every Obaco call for the region then
+                    // 404s against an id the sidecar has never heard of.
                     let currentRegion = Region(
                         name: regionData.name,
                         OBABaseURL: regionData.obaURL,
                         coordinateRegion: adjustedRegionCoordinate,
                         contactEmail: "example@example.com",
+                        regionIdentifier: regionData.regionID,
                         openTripPlannerURL: regionData.otpURL,
                         sidecarBaseURL: regionData.sidecarURL,
                         umamiAnalytics: regionData.umamiAnalytics)
