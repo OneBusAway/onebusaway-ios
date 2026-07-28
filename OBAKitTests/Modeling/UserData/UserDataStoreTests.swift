@@ -37,7 +37,7 @@ class UserDefaultsStoreTests: OBATestCase {
         garbageDefaults.set("garbage data", forKey: "bookmarkGroups")
         let garbageStore = UserDefaultsStore(userDefaults: garbageDefaults)
 
-        expect(garbageStore.bookmarkGroups) == []
+        #expect(garbageStore.bookmarkGroups == [])
     }
 
     // MARK: - Recent Stops
@@ -47,7 +47,7 @@ class UserDefaultsStoreTests: OBATestCase {
         let stop = stops.first!
         userDefaultsStore.addRecentStop(stop, region: region)
 
-        expect(self.userDefaultsStore.recentStops) == [stop]
+        #expect(self.userDefaultsStore.recentStops == [stop])
     }
 
     func test_recentStops_uniqueStops() {
@@ -56,7 +56,7 @@ class UserDefaultsStoreTests: OBATestCase {
         userDefaultsStore.addRecentStop(stop, region: region)
         userDefaultsStore.addRecentStop(stop, region: region)
 
-        expect(self.userDefaultsStore.recentStops) == [stop]
+        #expect(self.userDefaultsStore.recentStops == [stop])
     }
 
     func test_recentStops_maxCount() {
@@ -67,7 +67,7 @@ class UserDefaultsStoreTests: OBATestCase {
             userDefaultsStore.addRecentStop(s, region: region)
         }
 
-        expect(self.userDefaultsStore.recentStops.count) == userDefaultsStore.maximumRecentStopsCount
+        #expect(self.userDefaultsStore.recentStops.count == userDefaultsStore.maximumRecentStopsCount)
     }
 
     func test_recentStops_search() {
@@ -81,9 +81,9 @@ class UserDefaultsStoreTests: OBATestCase {
         let mungedStopName = "\r\n\(stop.name.lowercased())\r\n"
         let matches = userDefaultsStore.findRecentStops(matching: mungedStopName)
 
-        expect(matches.count) >= 1
+        #expect(matches.count >= 1)
         let filtered = matches.filter({ $0.id == stop.id })
-        expect(filtered.first!) == stop
+        #expect(filtered.first! == stop)
     }
 
     func test_recentStops_removeAll() {
@@ -93,7 +93,7 @@ class UserDefaultsStoreTests: OBATestCase {
 
         userDefaultsStore.deleteAllRecentStops()
 
-        expect(self.userDefaultsStore.recentStops.count) == 0
+        #expect(self.userDefaultsStore.recentStops.count == 0)
     }
 
     func test_recentStops_removeStop() {
@@ -106,7 +106,7 @@ class UserDefaultsStoreTests: OBATestCase {
 
         userDefaultsStore.delete(recentStop: stop)
 
-        expect(self.userDefaultsStore.recentStops.count) == (stops.count - 1)
+        #expect(self.userDefaultsStore.recentStops.count == (stops.count - 1))
     }
 
     // MARK: - Alarms
@@ -121,12 +121,12 @@ class UserDefaultsStoreTests: OBATestCase {
         userDefaultsStore.add(alarm: futureAlarm)
 
         let IDs1 = userDefaultsStore.alarms.map({ String($0.url.absoluteString.split(separator: "/").last!) }).sorted()
-        expect(IDs1) == ["1", "2"]
+        #expect(IDs1 == ["1", "2"])
 
         userDefaultsStore.deleteExpiredAlarms()
 
         let IDs2 = userDefaultsStore.alarms.map({ String($0.url.absoluteString.split(separator: "/").last!) }).sorted()
-        expect(IDs2) == ["2"]
+        #expect(IDs2 == ["2"])
 
     }
 
@@ -141,12 +141,12 @@ class UserDefaultsStoreTests: OBATestCase {
         userDefaultsStore.add(alarm: futureAlarm)
 
         let IDs1 = userDefaultsStore.alarms.map({ String($0.url.absoluteString.split(separator: "/").last!) }).sorted()
-        expect(IDs1) == ["1", "2"]
+        #expect(IDs1 == ["1", "2"])
 
         userDefaultsStore.deleteExpiredAlarms()
 
         let IDs2 = userDefaultsStore.alarms.map({ String($0.url.absoluteString.split(separator: "/").last!) }).sorted()
-        expect(IDs2) == ["2"]
+        #expect(IDs2 == ["2"])
     }
 
     /// Regression test for the `tripDate`/`alarmDate` precision-loss bug in `Alarm.isEqual`.
@@ -165,7 +165,7 @@ class UserDefaultsStoreTests: OBATestCase {
         // which reads back from UserDefaults rather than returning the in-memory instance.
         let reloaded = userDefaultsStore.alarms.first { $0.url == alarm.url }
         expect(reloaded).toNot(beNil())
-        expect(reloaded) == alarm
+        #expect(reloaded == alarm)
 
         userDefaultsStore.delete(alarm: reloaded!)
 
@@ -175,17 +175,17 @@ class UserDefaultsStoreTests: OBATestCase {
     // MARK: - Selected Tab Index
 
     func test_selectedTabIndex_mapSelectedByDefault() {
-        expect(self.userDefaultsStore.lastSelectedView) == SelectedTab.map
+        #expect(self.userDefaultsStore.lastSelectedView == SelectedTab.map)
     }
 
     func test_selectedTabIndex_changingDefaults() {
         userDefaultsStore.lastSelectedView = .bookmarks
-        expect(self.userDefaultsStore.lastSelectedView) == SelectedTab.bookmarks
+        #expect(self.userDefaultsStore.lastSelectedView == SelectedTab.bookmarks)
     }
 
     func test_selectedTabIndex_invalidRawValueFallsBackToMap() {
         userDefaults.set(999, forKey: "UserDataStore.lastSelectedView")
-        expect(self.userDefaultsStore.lastSelectedView) == SelectedTab.map
+        #expect(self.userDefaultsStore.lastSelectedView == SelectedTab.map)
     }
 
     // MARK: - Debug Mode
@@ -213,7 +213,7 @@ class UserDefaultsStoreTests: OBATestCase {
         expect(self.userDefaultsStore.stopUIReducedColors).to(beTrue())
         // The @AppStorage readers and the Eureka form must see the same key,
         // and it must stay dot-free or KVO observation silently stops firing.
-        expect(UserDefaultsStore.stopUIReducedColorsKey) == "stopUIReducedColors"
+        #expect(UserDefaultsStore.stopUIReducedColorsKey == "stopUIReducedColors")
         expect(self.userDefaultsStore.userDefaults.bool(forKey: UserDefaultsStore.stopUIReducedColorsKey)).to(beTrue())
     }
 
@@ -227,21 +227,21 @@ class UserDefaultsStoreTests: OBATestCase {
     func test_surveyUserIdentifier_persistsBetweenCalls() {
         let first = userDefaultsStore.surveyUserIdentifier
         let second = userDefaultsStore.surveyUserIdentifier
-        expect(first) == second
+        #expect(first == second)
     }
 
     // MARK: - App Launch Counter
 
     func test_appLaunchCount_defaultValueIsZero() {
-        expect(self.userDefaultsStore.appLaunchCount) == 0
+        #expect(self.userDefaultsStore.appLaunchCount == 0)
     }
 
     func test_appLaunchCount_incrementsCorrectly() {
         userDefaultsStore.incrementAppLaunchCount()
-        expect(self.userDefaultsStore.appLaunchCount) == 1
+        #expect(self.userDefaultsStore.appLaunchCount == 1)
 
         userDefaultsStore.incrementAppLaunchCount()
-        expect(self.userDefaultsStore.appLaunchCount) == 2
+        #expect(self.userDefaultsStore.appLaunchCount == 2)
     }
 
     // MARK: - Survey Enabled
@@ -302,15 +302,15 @@ class UserDefaultsStoreTests: OBATestCase {
     }
 
     func test_walkingSpeedSource_defaultValue() {
-        expect(self.userDefaultsStore.walkingSpeedSource) == .manual
+        #expect(self.userDefaultsStore.walkingSpeedSource == .manual)
     }
 
     func test_walkingSpeedSource_roundTrip() {
         userDefaultsStore.walkingSpeedSource = .healthKit
-        expect(self.userDefaultsStore.walkingSpeedSource) == .healthKit
+        #expect(self.userDefaultsStore.walkingSpeedSource == .healthKit)
 
         userDefaultsStore.walkingSpeedSource = .manual
-        expect(self.userDefaultsStore.walkingSpeedSource) == .manual
+        #expect(self.userDefaultsStore.walkingSpeedSource == .manual)
     }
 
     func test_walkingSpeedMetersPerSecond_clampsBelowRange() {
@@ -326,7 +326,7 @@ class UserDefaultsStoreTests: OBATestCase {
     // MARK: - Default Alarm Lead Time
 
     func test_defaultAlarmLeadTime_is10Minutes() {
-        expect(self.userDefaultsStore.defaultAlarmLeadTimeMinutes) == 10
+        #expect(self.userDefaultsStore.defaultAlarmLeadTimeMinutes == 10)
     }
 
     func test_defaultAlarmLeadTime_ignoresAndClearsLegacyStoredValue() {
@@ -334,7 +334,7 @@ class UserDefaultsStoreTests: OBATestCase {
 
         let newStore = UserDefaultsStore(userDefaults: userDefaults)
 
-        expect(newStore.defaultAlarmLeadTimeMinutes) == 10
+        #expect(newStore.defaultAlarmLeadTimeMinutes == 10)
         expect(self.userDefaults.object(forKey: "UserDataStore.defaultAlarmLeadTimeMinutes")).to(beNil())
     }
 

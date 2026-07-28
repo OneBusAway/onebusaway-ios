@@ -10,6 +10,7 @@
 import Foundation
 import XCTest
 import Nimble
+import Testing
 import CoreLocation
 import MapKit
 
@@ -24,11 +25,11 @@ class NetworkHelperTests: OBATestCase {
         let qi1 = queryItems.first!
         let qi2 = queryItems.last!
 
-        expect(qi1.name) == "one"
-        expect(qi1.value) == "2"
+        #expect(qi1.name == "one")
+        #expect(qi1.value == "2")
 
-        expect(qi2.name) == "three"
-        expect(qi2.value) == "four"
+        #expect(qi2.name == "three")
+        #expect(qi2.value == "four")
     }
 
     /// Tests that Double values use period (.) as decimal separator regardless of locale.
@@ -59,13 +60,13 @@ class NetworkHelperTests: OBATestCase {
             // Verify the actual expected values
             switch item.name {
             case "lat":
-                expect(item.value) == "47.61098"
+                #expect(item.value == "47.61098")
             case "lon":
-                expect(item.value) == "-122.33845"
+                #expect(item.value == "-122.33845")
             case "latSpan":
-                expect(item.value) == "0.005"
+                #expect(item.value == "0.005")
             case "lonSpan":
-                expect(item.value) == "0.008"
+                #expect(item.value == "0.008")
             default:
                 fail("Unexpected query item: \(item.name)")
             }
@@ -82,7 +83,7 @@ class NetworkHelperTests: OBATestCase {
         let item = queryItems.first!
 
         expect(item.value).notTo(contain(","))
-        expect(item.value) == "3.14159"
+        #expect(item.value == "3.14159")
     }
 
     /// Tests the actual URL building for stops-for-location endpoint
@@ -175,6 +176,6 @@ class NetworkHelperTests: OBATestCase {
         // Verify Accept-Language header is set to en-US
         expect(capturedRequest).notTo(beNil())
         let acceptLanguage = capturedRequest?.value(forHTTPHeaderField: "Accept-Language")
-        expect(acceptLanguage) == "en-US"
+        #expect(acceptLanguage == "en-US")
     }
 }

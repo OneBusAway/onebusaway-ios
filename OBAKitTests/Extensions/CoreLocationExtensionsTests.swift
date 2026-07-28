@@ -20,11 +20,11 @@ import Testing
 class CoreLocationExtensionsTests: XCTestCase {
     
     func test_CLAuthorizationStatus_description() {
-        expect(CLAuthorizationStatus.authorizedAlways.description) == "authorizedAlways"
-        expect(CLAuthorizationStatus.authorizedWhenInUse.description) == "authorizedWhenInUse"
-        expect(CLAuthorizationStatus.denied.description) == "denied"
-        expect(CLAuthorizationStatus.notDetermined.description) == "notDetermined"
-        expect(CLAuthorizationStatus.restricted.description) == "restricted"
+        #expect(CLAuthorizationStatus.authorizedAlways.description == "authorizedAlways")
+        #expect(CLAuthorizationStatus.authorizedWhenInUse.description == "authorizedWhenInUse")
+        #expect(CLAuthorizationStatus.denied.description == "denied")
+        #expect(CLAuthorizationStatus.notDetermined.description == "notDetermined")
+        #expect(CLAuthorizationStatus.restricted.description == "restricted")
     }
     
     func test_CLAuthorizationStatus_initFromString() {
@@ -54,7 +54,7 @@ class CoreLocationExtensionsTests: XCTestCase {
         let transform = direction.affineTransform(rotatedBy: additionalRotation)
         
         expect(transform).to(beAnInstanceOf(CGAffineTransform.self))
-        expect(transform.isIdentity) == false
+        #expect(transform.isIdentity == false)
         
         // Test with zero additional rotation
         let transform0 = direction.affineTransform(rotatedBy: 0)
@@ -77,16 +77,16 @@ class CoreLocationExtensionsTests: XCTestCase {
     
     func test_CLLocationCoordinate2D_isNullIsland() {
         let nullIsland = CLLocationCoordinate2D(latitude: 0.0, longitude: 0.0)
-        expect(nullIsland.isNullIsland) == true
+        #expect(nullIsland.isNullIsland == true)
         
         let seattle = CLLocationCoordinate2D(latitude: 47.6062, longitude: -122.3321)
-        expect(seattle.isNullIsland) == false
+        #expect(seattle.isNullIsland == false)
         
         let nearNullIsland = CLLocationCoordinate2D(latitude: 0.0001, longitude: 0.0)
-        expect(nearNullIsland.isNullIsland) == false
+        #expect(nearNullIsland.isNullIsland == false)
         
         let otherZero = CLLocationCoordinate2D(latitude: 0.0, longitude: -122.3321)
-        expect(otherZero.isNullIsland) == false
+        #expect(otherZero.isNullIsland == false)
     }
     
     func test_CLCircularRegion_initWithMapRect() {
@@ -99,7 +99,7 @@ class CoreLocationExtensionsTests: XCTestCase {
         
         let region = CLCircularRegion(mapRect: mapRect)
         
-        expect(region.identifier) == "MapRectRegion"
+        #expect(region.identifier == "MapRectRegion")
         expect(region.radius).to(beGreaterThan(0))
         expect(region.center.latitude).toNot(equal(0))
         expect(region.center.longitude).toNot(equal(0))
@@ -109,6 +109,6 @@ class CoreLocationExtensionsTests: XCTestCase {
         let simpleRegion = CLCircularRegion(mapRect: simpleRect)
         
         expect(simpleRegion.radius).to(beGreaterThan(0))
-        expect(simpleRegion.identifier) == "MapRectRegion"
+        #expect(simpleRegion.identifier == "MapRectRegion")
     }
 }

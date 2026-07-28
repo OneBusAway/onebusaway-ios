@@ -9,6 +9,7 @@
 
 import XCTest
 import Nimble
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -77,7 +78,7 @@ class ScheduleForRouteViewModelTests: OBATestCase {
 
         let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app)
 
-        expect(viewModel.routeID) == routeID
+        #expect(viewModel.routeID == routeID)
     }
 
     @MainActor
@@ -100,7 +101,7 @@ class ScheduleForRouteViewModelTests: OBATestCase {
 
         let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app)
 
-        expect(viewModel.selectedDirectionIndex) == 0
+        #expect(viewModel.selectedDirectionIndex == 0)
     }
 
     // MARK: - Route Name Tests
@@ -112,7 +113,7 @@ class ScheduleForRouteViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app)
 
-        expect(viewModel.routeName) == routeID
+        #expect(viewModel.routeName == routeID)
     }
 
     // MARK: - Directions Tests
@@ -221,7 +222,7 @@ class ScheduleForRouteViewModelTests: OBATestCase {
         expect(result).toNot(equal("-"))
         expect(result).toNot(contain("AM"))
         expect(result).toNot(contain("PM"))
-        expect(result.count) == 5
+        #expect(result.count == 5)
     }
 
     @MainActor
@@ -238,7 +239,7 @@ class ScheduleForRouteViewModelTests: OBATestCase {
 
         let result = viewModel.formatTime(date)
 
-        expect(result) == "00:00"
+        #expect(result == "00:00")
     }
 
     @MainActor
@@ -255,7 +256,7 @@ class ScheduleForRouteViewModelTests: OBATestCase {
 
         let result = viewModel.formatTime(date)
 
-        expect(result) == "12:00"
+        #expect(result == "12:00")
     }
 
     @MainActor
@@ -267,7 +268,7 @@ class ScheduleForRouteViewModelTests: OBATestCase {
 
         let result = viewModel.formatTime(nil)
 
-        expect(result) == "-"
+        #expect(result == "-")
     }
 
     @MainActor

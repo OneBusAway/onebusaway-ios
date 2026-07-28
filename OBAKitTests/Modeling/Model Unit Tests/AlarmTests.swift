@@ -10,6 +10,7 @@
 import Foundation
 import XCTest
 import Nimble
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -19,7 +20,7 @@ class AlarmTests: OBATestCase {
 
     func test_init_baseCase_success() {
         let alarm = try! Fixtures.loadAlarm()
-        expect(alarm.url.absoluteString) == "https://alerts.example.com/regions/1/alarms/1234567890"
+        #expect(alarm.url.absoluteString == "https://alerts.example.com/regions/1/alarms/1234567890")
     }
 
     func test_appendingData() {
@@ -40,14 +41,14 @@ class AlarmTests: OBATestCase {
         alarm.set(tripDate: tripDate, alarmOffset: alarmOffset)
 
         let roundtripped = try! Fixtures.roundtripCodable(type: Alarm.self, model: alarm)
-        expect(roundtripped.url.absoluteString) == "https://alerts.example.com/regions/1/alarms/1234567890"
-        expect(roundtripped.deepLink!.title) == "Title"
-        expect(roundtripped.deepLink!.stopID) == "1234"
-        expect(roundtripped.deepLink!.tripID) == "9876"
-        expect(roundtripped.deepLink!.serviceDate.timeIntervalSince1970) == 1580428800
-        expect(roundtripped.deepLink!.stopSequence) == 7
-        expect(roundtripped.deepLink!.vehicleID) == "3456"
-        expect(roundtripped.tripDate!) == tripDate
-        expect(roundtripped.alarmDate!) == alarmDate
+        #expect(roundtripped.url.absoluteString == "https://alerts.example.com/regions/1/alarms/1234567890")
+        #expect(roundtripped.deepLink!.title == "Title")
+        #expect(roundtripped.deepLink!.stopID == "1234")
+        #expect(roundtripped.deepLink!.tripID == "9876")
+        #expect(roundtripped.deepLink!.serviceDate.timeIntervalSince1970 == 1580428800)
+        #expect(roundtripped.deepLink!.stopSequence == 7)
+        #expect(roundtripped.deepLink!.vehicleID == "3456")
+        #expect(roundtripped.tripDate! == tripDate)
+        #expect(roundtripped.alarmDate! == alarmDate)
     }
 }

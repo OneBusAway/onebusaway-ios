@@ -14,6 +14,7 @@ import XCTest
 @testable import OBAKitCore
 import CoreLocation
 import Nimble
+import Testing
 
 // swiftlint:disable large_tuple force_cast
 
@@ -496,9 +497,9 @@ class ApplicationTests: OBATestCase {
         // The backfill ran: legacy steps are seen, notifications deliberately is not.
         await MainActor.run {
             let store = OnboardingStepStore(userDefaults: app.userDefaults)
-            expect(store.seenVersion(of: .welcome)) == 1
-            expect(store.seenVersion(of: .region)) == 1
-            expect(store.seenVersion(of: .notifications)) == 0
+            #expect(store.seenVersion(of: .welcome) == 1)
+            #expect(store.seenVersion(of: .region) == 1)
+            #expect(store.seenVersion(of: .notifications) == 0)
         }
     }
 
@@ -584,7 +585,7 @@ class ApplicationTests: OBATestCase {
         app.regionsService(app.regionsService, changedAutomaticRegionSelection: false)
 
         // Analytics should have been called
-        expect(mockAnalytics.reportedEvents.count) >= 2
+        #expect(mockAnalytics.reportedEvents.count >= 2)
     }
 
     func test_regions_service_updated_region() {

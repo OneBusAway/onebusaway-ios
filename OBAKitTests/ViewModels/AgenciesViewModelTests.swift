@@ -9,6 +9,7 @@
 
 import XCTest
 import Nimble
+import Testing
 import Combine
 @testable import OBAKit
 @testable import OBAKitCore
@@ -83,6 +84,6 @@ final class AgenciesViewModelTests: OBATestCase {
         expect(viewModel.agencies).toNot(beEmpty())
 
         let names = viewModel.agencies.map { $0.agency.name }
-        expect(names) == names.sorted()
+        #expect(names == names.sorted())
     }
 }

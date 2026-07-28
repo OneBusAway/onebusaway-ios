@@ -9,6 +9,7 @@
 
 import XCTest
 import Nimble
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -32,16 +33,16 @@ class AgencyTests: OBATestCase {
         
         let agency = try! Fixtures.dictionaryToModel(type: Agency.self, dictionary: agencyData)
         
-        expect(agency.id) == "1"
-        expect(agency.name) == "King County Metro"
-        expect(agency.agencyURL.absoluteString) == "https://kingcounty.gov/metro"
-        expect(agency.timeZone) == "America/Los_Angeles"
-        expect(agency.language) == "en"
-        expect(agency.phone) == "206-553-3000"
-        expect(agency.fareURL?.absoluteString) == "https://kingcounty.gov/metro/fares"
-        expect(agency.email) == "customer.service@kingcounty.gov"
-        expect(agency.disclaimer) == "This is test data"
-        expect(agency.isPrivateService) == false
+        #expect(agency.id == "1")
+        #expect(agency.name == "King County Metro")
+        #expect(agency.agencyURL.absoluteString == "https://kingcounty.gov/metro")
+        #expect(agency.timeZone == "America/Los_Angeles")
+        #expect(agency.language == "en")
+        #expect(agency.phone == "206-553-3000")
+        #expect(agency.fareURL?.absoluteString == "https://kingcounty.gov/metro/fares")
+        #expect(agency.email == "customer.service@kingcounty.gov")
+        #expect(agency.disclaimer == "This is test data")
+        #expect(agency.isPrivateService == false)
     }
     
     func test_decodeMinimalAgency() {
@@ -57,13 +58,13 @@ class AgencyTests: OBATestCase {
         
         let agency = try! Fixtures.dictionaryToModel(type: Agency.self, dictionary: minimalData)
         
-        expect(agency.id) == "minimal_agency"
-        expect(agency.name) == "Minimal Agency"
-        expect(agency.agencyURL.absoluteString) == "https://example.com"
-        expect(agency.timeZone) == "UTC"
-        expect(agency.language) == "en"
-        expect(agency.phone) == "555-0123"
-        expect(agency.isPrivateService) == true
+        #expect(agency.id == "minimal_agency")
+        #expect(agency.name == "Minimal Agency")
+        #expect(agency.agencyURL.absoluteString == "https://example.com")
+        #expect(agency.timeZone == "UTC")
+        #expect(agency.language == "en")
+        #expect(agency.phone == "555-0123")
+        #expect(agency.isPrivateService == true)
         expect(agency.fareURL).to(beNil())
         expect(agency.email).to(beNil())
         expect(agency.disclaimer).to(beNil())
@@ -107,15 +108,15 @@ class AgencyTests: OBATestCase {
         let originalAgency = try! Fixtures.dictionaryToModel(type: Agency.self, dictionary: agencyData)
         let roundTrippedAgency = try! Fixtures.roundtripCodable(type: Agency.self, model: originalAgency)
         
-        expect(roundTrippedAgency.id) == originalAgency.id
-        expect(roundTrippedAgency.name) == originalAgency.name
-        expect(roundTrippedAgency.agencyURL) == originalAgency.agencyURL
-        expect(roundTrippedAgency.timeZone) == originalAgency.timeZone
-        expect(roundTrippedAgency.language) == originalAgency.language
-        expect(roundTrippedAgency.phone) == originalAgency.phone
-        expect(roundTrippedAgency.fareURL) == originalAgency.fareURL
-        expect(roundTrippedAgency.email) == originalAgency.email
-        expect(roundTrippedAgency.isPrivateService) == originalAgency.isPrivateService
+        #expect(roundTrippedAgency.id == originalAgency.id)
+        #expect(roundTrippedAgency.name == originalAgency.name)
+        #expect(roundTrippedAgency.agencyURL == originalAgency.agencyURL)
+        #expect(roundTrippedAgency.timeZone == originalAgency.timeZone)
+        #expect(roundTrippedAgency.language == originalAgency.language)
+        #expect(roundTrippedAgency.phone == originalAgency.phone)
+        #expect(roundTrippedAgency.fareURL == originalAgency.fareURL)
+        #expect(roundTrippedAgency.email == originalAgency.email)
+        #expect(roundTrippedAgency.isPrivateService == originalAgency.isPrivateService)
     }
     
     func test_decodeFailureWhenMissingRequiredFields() {

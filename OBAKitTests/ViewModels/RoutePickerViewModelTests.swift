@@ -9,6 +9,7 @@
 
 import XCTest
 import Nimble
+import Testing
 import Combine
 @testable import OBAKit
 @testable import OBAKitCore
@@ -132,11 +133,11 @@ class RoutePickerViewModelTests: OBATestCase {
         expect(vm.didFinishLoading).to(beTrue())
         expect(vm.loadError).to(beNil())
         expect(vm.allRoutes).toNot(beEmpty())
-        expect(vm.filteredRoutes.count) == vm.allRoutes.count
+        #expect(vm.filteredRoutes.count == vm.allRoutes.count)
 
         // Routes should be unique by ID.
         let ids = vm.allRoutes.map(\.id)
-        expect(Set(ids).count) == ids.count
+        #expect(Set(ids).count == ids.count)
     }
 
     /// Routes are sorted alphabetically (case-insensitive) — matches the existing VC behavior
@@ -153,7 +154,7 @@ class RoutePickerViewModelTests: OBATestCase {
         let resorted = sorted.localizedCaseInsensitiveSort()
 
         // VM-stored order must equal a fresh sort of the same set.
-        expect(sorted.map(\.id)) == resorted.map(\.id)
+        #expect(sorted.map(\.id) == resorted.map(\.id))
     }
 
     /// Calling `loadRoutes()` twice with a cache miss both times produces a stable, identical
@@ -173,8 +174,8 @@ class RoutePickerViewModelTests: OBATestCase {
         let secondCount = vm.allRoutes.count
         let secondIDs = vm.allRoutes.map(\.id)
 
-        expect(secondCount) == firstCount
-        expect(secondIDs) == firstIDs
+        #expect(secondCount == firstCount)
+        #expect(secondIDs == firstIDs)
         expect(vm.loadError).to(beNil())
     }
 
@@ -237,13 +238,13 @@ class RoutePickerViewModelTests: OBATestCase {
         let lowerCount = vm.filteredRoutes.count
 
         vm.updateSearch(needle.uppercased())
-        expect(vm.filteredRoutes.count) == lowerCount
+        #expect(vm.filteredRoutes.count == lowerCount)
 
         vm.updateSearch("zzzz_definitely_not_a_route")
         expect(vm.filteredRoutes).to(beEmpty())
 
         vm.updateSearch("")
-        expect(vm.filteredRoutes.count) == total
+        #expect(vm.filteredRoutes.count == total)
     }
 
     /// A query that matches only a route's long name (not its short name) still hits.
@@ -318,7 +319,7 @@ class RoutePickerViewModelTests: OBATestCase {
         // We expect at least two additional emissions after the baseline.
         expect(emissions.count).to(beGreaterThanOrEqualTo(baseline + 2))
         // Final emission should match the full set (search reset to empty).
-        expect(emissions.last) == vm.allRoutes.count
+        #expect(emissions.last == vm.allRoutes.count)
     }
 
     /// `$didFinishLoading` emits `true` after a successful load.
@@ -335,8 +336,8 @@ class RoutePickerViewModelTests: OBATestCase {
 
         await vm.loadRoutes()
 
-        expect(seen.first) == false
-        expect(seen.last) == true
+        #expect(seen.first == false)
+        #expect(seen.last == true)
     }
 
     // MARK: - loadError clear-on-retry
@@ -416,7 +417,7 @@ class RoutePickerViewModelTests: OBATestCase {
         // as #1.
         await app.mapRegionManager.requestDataForMapRegion()
         expect(app.mapRegionManager.stops).toNot(beEmpty())
-        expect(counter.hits) == 1
+        #expect(counter.hits == 1)
 
         let vm = RoutePickerViewModel(application: app)
         await vm.loadRoutes()
@@ -426,7 +427,7 @@ class RoutePickerViewModelTests: OBATestCase {
         expect(vm.didFinishLoading).to(beTrue())
         expect(vm.loadError).to(beNil())
         expect(vm.allRoutes).toNot(beEmpty())
-        expect(counter.hits) == 1
+        #expect(counter.hits == 1)
     }
 
     // MARK: - Cancellation

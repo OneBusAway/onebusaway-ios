@@ -9,6 +9,7 @@
 
 import XCTest
 import Nimble
+import Testing
 import CoreLocation
 @testable import OBAKit
 @testable import OBAKitCore
@@ -154,7 +155,7 @@ class NearbyStopsViewModelTests: OBATestCase {
         await first
         await second
 
-        expect(countingLoader.callCount) == 1
+        #expect(countingLoader.callCount == 1)
         expect(viewModel.stops).toNot(beEmpty())
         expect(viewModel.isLoading).to(beFalse())
     }

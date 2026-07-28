@@ -126,7 +126,7 @@ class VehiclesViewModelTests: OBATestCase {
         await viewModel.fetchVehicles()
 
         let agencyCount = try fixtureAgencyIDs().count
-        expect(viewModel.feedStatuses.count) == agencyCount
+        #expect(viewModel.feedStatuses.count == agencyCount)
         expect(viewModel.feedStatuses.allSatisfy(\.isSkipped)).to(beTrue())
         expect(viewModel.vehicles).to(beEmpty())
         expect(viewModel.error).to(beNil())
@@ -143,7 +143,7 @@ class VehiclesViewModelTests: OBATestCase {
         await viewModel.fetchVehicles()
 
         let names = viewModel.feedStatuses.map(\.agencyName)
-        expect(names) == names.sorted()
+        #expect(names == names.sorted())
     }
 
     @MainActor
@@ -154,8 +154,8 @@ class VehiclesViewModelTests: OBATestCase {
 
         await viewModel.fetchVehicles()
 
-        expect(viewModel.totalAgencyCount) == viewModel.feedStatuses.count
-        expect(viewModel.enabledAgencyCount) == 0
+        #expect(viewModel.totalAgencyCount == viewModel.feedStatuses.count)
+        #expect(viewModel.enabledAgencyCount == 0)
         expect(viewModel.allAgenciesEnabled).to(beFalse())
     }
 
@@ -174,7 +174,7 @@ class VehiclesViewModelTests: OBATestCase {
 
         expect(viewModel.isAgencyEnabled("40")).to(beFalse())
         expect(viewModel.allAgenciesEnabled).to(beFalse())
-        expect(app.userDataStore.disabledVehicleFeedAgencyIDs) == ["40"]
+        #expect(app.userDataStore.disabledVehicleFeedAgencyIDs == ["40"])
 
         viewModel.setAgencyEnabled(true, agencyID: "40")
 

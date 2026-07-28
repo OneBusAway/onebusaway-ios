@@ -9,6 +9,7 @@
 
 import XCTest
 import Nimble
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -30,14 +31,14 @@ class StopTests: OBATestCase {
         expect(stopOne.locationType).toNot(beNil())
         expect(stopOne.name).toNot(beNil())
         expect(stopOne.routeIDs).toNot(beNil())
-        expect(stopOne.routeIDs.count) == 12
+        #expect(stopOne.routeIDs.count == 12)
         expect(stopOne.routes).toNot(beNil())
-        expect(stopOne.routes.count) == 12
+        #expect(stopOne.routes.count == 12)
         expect(stopOne.routeTypes).toNot(beNil())
         expect(stopOne.prioritizedRouteTypeForDisplay).toNot(beNil())
         expect(stopOne.wheelchairBoarding).toNot(beNil())
 
-        expect(stopOne) == stopTwo
-        expect(stopOne.routes) == stopTwo.routes
+        #expect(stopOne == stopTwo)
+        #expect(stopOne.routes == stopTwo.routes)
     }
 }

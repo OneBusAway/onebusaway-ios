@@ -9,6 +9,7 @@
 
 import Foundation
 import Nimble
+import Testing
 import XCTest
 @testable import OBAKit
 @testable import OBAKitCore
@@ -28,6 +29,6 @@ class CollectionsTests: XCTestCase {
     func testFilter() {
         let list: [Any] = [1, "two", 3, "four", 5]
         let filtered = list.filter(type: Int.self)
-        expect(filtered) == [1, 3, 5]
+        #expect(filtered == [1, 3, 5])
     }
 }

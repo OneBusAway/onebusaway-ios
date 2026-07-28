@@ -9,6 +9,7 @@
 
 import XCTest
 import Nimble
+import Testing
 import CoreLocation
 @testable import OBAKit
 @testable import OBAKitCore
@@ -210,7 +211,7 @@ class SurveyOrchestratorTests: OBATestCase {
             )
             fail("Expected submitHero to throw .missingHeroQuestion")
         } catch let SurveyOrchestrator.OrchestratorError.missingHeroQuestion(surveyID) {
-            expect(surveyID) == survey.id
+            #expect(surveyID == survey.id)
         } catch {
             fail("Expected .missingHeroQuestion; got \(error)")
         }

@@ -9,6 +9,7 @@
 
 import XCTest
 import Nimble
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -22,28 +23,28 @@ class RegionCustomFormTests: XCTestCase {
     }
 
     func test_normalizeBaseURL_prependsHTTPS() {
-        expect(self.normalize("api.tampa.onebusaway.org")) == "https://api.tampa.onebusaway.org"
+        #expect(self.normalize("api.tampa.onebusaway.org") == "https://api.tampa.onebusaway.org")
     }
 
     func test_normalizeBaseURL_preservesExplicitScheme() {
-        expect(self.normalize("http://example.com")) == "http://example.com"
-        expect(self.normalize("https://example.com")) == "https://example.com"
+        #expect(self.normalize("http://example.com") == "http://example.com")
+        #expect(self.normalize("https://example.com") == "https://example.com")
     }
 
     func test_normalizeBaseURL_stripsWhitespace() {
-        expect(self.normalize("  api.example.com \n")) == "https://api.example.com"
+        #expect(self.normalize("  api.example.com \n") == "https://api.example.com")
     }
 
     /// The field's help text promises `/api/where` is appended automatically,
     /// so a pasted full API URL must not end up with the path doubled.
     func test_normalizeBaseURL_stripsTrailingAPIWhere() {
-        expect(self.normalize("https://api.tampa.onebusaway.org/api/where")) == "https://api.tampa.onebusaway.org"
-        expect(self.normalize("api.tampa.onebusaway.org/api/where/")) == "https://api.tampa.onebusaway.org"
-        expect(self.normalize("example.com/API/WHERE")) == "https://example.com"
+        #expect(self.normalize("https://api.tampa.onebusaway.org/api/where") == "https://api.tampa.onebusaway.org")
+        #expect(self.normalize("api.tampa.onebusaway.org/api/where/") == "https://api.tampa.onebusaway.org")
+        #expect(self.normalize("example.com/API/WHERE") == "https://example.com")
     }
 
     func test_normalizeBaseURL_stripsTrailingSlashes() {
-        expect(self.normalize("https://example.com/")) == "https://example.com"
+        #expect(self.normalize("https://example.com/") == "https://example.com")
     }
 
     func test_normalizeBaseURL_rejectsInvalidInput() {
@@ -66,20 +67,20 @@ class RegionCustomFormTests: XCTestCase {
     }
 
     func test_normalizeURL_prependsHTTPS() {
-        expect(self.normalizeGeneral("obaco.example.com")) == "https://obaco.example.com"
+        #expect(self.normalizeGeneral("obaco.example.com") == "https://obaco.example.com")
     }
 
     func test_normalizeURL_preservesExplicitScheme() {
-        expect(self.normalizeGeneral("http://example.com")) == "http://example.com"
+        #expect(self.normalizeGeneral("http://example.com") == "http://example.com")
     }
 
     func test_normalizeURL_stripsWhitespaceAndTrailingSlashes() {
-        expect(self.normalizeGeneral("  analytics.example.com/ \n")) == "https://analytics.example.com"
+        #expect(self.normalizeGeneral("  analytics.example.com/ \n") == "https://analytics.example.com")
     }
 
     /// Unlike the Base URL field, general URLs keep an `/api/where` path verbatim.
     func test_normalizeURL_doesNotStripAPIWhere() {
-        expect(self.normalizeGeneral("example.com/api/where")) == "https://example.com/api/where"
+        #expect(self.normalizeGeneral("example.com/api/where") == "https://example.com/api/where")
     }
 
     func test_normalizeURL_rejectsInvalidInput() {

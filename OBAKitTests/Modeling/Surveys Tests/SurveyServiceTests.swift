@@ -198,8 +198,8 @@ final class SurveyServiceTests: OBATestCase {
         }
         if case let .dataCorrupted(context) = thrown {
             let underlying = context.underlyingError as NSError?
-            expect(underlying?.domain) == NSCocoaErrorDomain
-            expect(underlying?.code) == 3840
+            #expect(underlying?.domain == NSCocoaErrorDomain)
+            #expect(underlying?.code == 3840)
         } else {
             fail("Expected DecodingError.dataCorrupted but got \(String(describing: thrown))")
         }
@@ -247,8 +247,8 @@ final class SurveyServiceTests: OBATestCase {
         }
         if case let .dataCorrupted(context) = thrown {
             let underlying = context.underlyingError as NSError?
-            expect(underlying?.domain) == NSCocoaErrorDomain
-            expect(underlying?.code) == 3840
+            #expect(underlying?.domain == NSCocoaErrorDomain)
+            #expect(underlying?.code == 3840)
         } else {
             fail("Expected DecodingError.dataCorrupted but got \(String(describing: thrown))")
         }
@@ -316,8 +316,8 @@ final class SurveyServiceTests: OBATestCase {
         }
         if case let .dataCorrupted(context) = thrown {
             let underlying = context.underlyingError as NSError?
-            expect(underlying?.domain) == NSCocoaErrorDomain
-            expect(underlying?.code) == 3840
+            #expect(underlying?.domain == NSCocoaErrorDomain)
+            #expect(underlying?.code == 3840)
         } else {
             fail("Expected DecodingError.dataCorrupted but got \(String(describing: thrown))")
         }

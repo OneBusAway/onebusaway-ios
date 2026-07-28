@@ -10,6 +10,7 @@
 import Foundation
 import XCTest
 import Nimble
+import Testing
 import UIKit
 @testable import OBAKit
 
@@ -34,10 +35,10 @@ class PreviewableTests: XCTestCase {
         let controller = TestPreviewableController()
         
         controller.enterPreviewMode()
-        expect(controller.enteredPreviewMode) == true
+        #expect(controller.enteredPreviewMode == true)
         
         controller.exitPreviewMode()
-        expect(controller.exitedPreviewMode) == true
+        #expect(controller.exitedPreviewMode == true)
     }
     
     func test_ControllerPreviewProvider_typealias() {

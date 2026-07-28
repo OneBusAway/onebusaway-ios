@@ -9,6 +9,7 @@
 
 import XCTest
 import Nimble
+import Testing
 @testable import OBAKit
 
 /// Behavior tests for `SheetCoordinator`'s content-swap and stacked navigation,
@@ -20,14 +21,14 @@ final class SheetCoordinatorTests: XCTestCase {
 
     func test_init_seedsRouteStackWithRoot() {
         let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
-        expect(coordinator.routeStack.count) == 1
-        expect(coordinator.currentRoute) == .home
-        expect(coordinator.canPop) == false
+        #expect(coordinator.routeStack.count == 1)
+        #expect(coordinator.currentRoute == .home)
+        #expect(coordinator.canPop == false)
     }
 
     func test_init_setsCurrentDetentToRootInitialDetent() {
         let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
-        expect(coordinator.currentDetent) == AppSheetRoute.home.detentConfiguration.initialDetent
+        #expect(coordinator.currentDetent == AppSheetRoute.home.detentConfiguration.initialDetent)
     }
 
     func test_init_stackedLayerStartsEmpty() {
@@ -42,11 +43,11 @@ final class SheetCoordinatorTests: XCTestCase {
         let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
         coordinator.push(.search)
 
-        expect(coordinator.routeStack.count) == 2
-        expect(coordinator.currentRoute) == .search
+        #expect(coordinator.routeStack.count == 2)
+        #expect(coordinator.currentRoute == .search)
         expect(coordinator.stackedRoutes).to(beEmpty())
-        expect(coordinator.canPop) == true
-        expect(coordinator.currentDetent) == AppSheetRoute.search.detentConfiguration.initialDetent
+        #expect(coordinator.canPop == true)
+        #expect(coordinator.currentDetent == AppSheetRoute.search.detentConfiguration.initialDetent)
     }
 
     func test_push_stackingRoute_appendsToStackedAndLeavesContentStackAlone() {
@@ -55,10 +56,10 @@ final class SheetCoordinatorTests: XCTestCase {
 
         coordinator.push(.tripPlanner)
 
-        expect(coordinator.routeStack.count) == 2
-        expect(coordinator.currentRoute) == .search
-        expect(coordinator.stackedRoutes) == [.tripPlanner]
-        expect(coordinator.stackedDetents) == [AppSheetRoute.tripPlanner.detentConfiguration.initialDetent]
+        #expect(coordinator.routeStack.count == 2)
+        #expect(coordinator.currentRoute == .search)
+        #expect(coordinator.stackedRoutes == [.tripPlanner])
+        #expect(coordinator.stackedDetents == [AppSheetRoute.tripPlanner.detentConfiguration.initialDetent])
     }
 
     func test_push_stackingRoute_stacksMultipleSheets() {
@@ -67,12 +68,12 @@ final class SheetCoordinatorTests: XCTestCase {
         coordinator.push(.stopDetails(stopID: "1_75403"))
         coordinator.push(.tripDetails(tripID: "t1"))
 
-        expect(coordinator.stackedRoutes) == [
+        #expect(coordinator.stackedRoutes == [
             .recentStopsAll,
             .stopDetails(stopID: "1_75403"),
             .tripDetails(tripID: "t1")
-        ]
-        expect(coordinator.stackedDetents.count) == 3
+        ])
+        #expect(coordinator.stackedDetents.count == 3)
     }
 
     // MARK: - Pop removes topmost layer
@@ -85,10 +86,10 @@ final class SheetCoordinatorTests: XCTestCase {
 
         coordinator.pop()
 
-        expect(coordinator.stackedRoutes) == [.tripPlanner]
-        expect(coordinator.stackedDetents.count) == 1
-        expect(coordinator.routeStack.count) == 2
-        expect(coordinator.currentRoute) == .search
+        #expect(coordinator.stackedRoutes == [.tripPlanner])
+        #expect(coordinator.stackedDetents.count == 1)
+        #expect(coordinator.routeStack.count == 2)
+        #expect(coordinator.currentRoute == .search)
     }
 
     func test_pop_lastStackedRoute_emptiesStackedLayer() {
@@ -108,10 +109,10 @@ final class SheetCoordinatorTests: XCTestCase {
 
         coordinator.pop()
 
-        expect(coordinator.routeStack.count) == 1
-        expect(coordinator.currentRoute) == .home
-        expect(coordinator.canPop) == false
-        expect(coordinator.currentDetent) == AppSheetRoute.home.detentConfiguration.initialDetent
+        #expect(coordinator.routeStack.count == 1)
+        #expect(coordinator.currentRoute == .home)
+        #expect(coordinator.canPop == false)
+        #expect(coordinator.currentDetent == AppSheetRoute.home.detentConfiguration.initialDetent)
     }
 
     func test_pop_atRoot_isNoOp() {
@@ -120,9 +121,9 @@ final class SheetCoordinatorTests: XCTestCase {
 
         coordinator.pop()
 
-        expect(coordinator.routeStack.count) == 1
-        expect(coordinator.currentRoute) == .home
-        expect(coordinator.currentDetent) == .large
+        #expect(coordinator.routeStack.count == 1)
+        #expect(coordinator.currentRoute == .home)
+        #expect(coordinator.currentDetent == .large)
     }
 
     // MARK: - truncateStacked (OS-driven dismiss)
@@ -135,8 +136,8 @@ final class SheetCoordinatorTests: XCTestCase {
 
         coordinator.truncateStacked(toDepth: 1)
 
-        expect(coordinator.stackedRoutes) == [.recentStopsAll]
-        expect(coordinator.stackedDetents.count) == 1
+        #expect(coordinator.stackedRoutes == [.recentStopsAll])
+        #expect(coordinator.stackedDetents.count == 1)
     }
 
     func test_truncateStacked_ignoresOutOfRangeDepth() {
@@ -145,7 +146,7 @@ final class SheetCoordinatorTests: XCTestCase {
 
         coordinator.truncateStacked(toDepth: 5)
 
-        expect(coordinator.stackedRoutes) == [.tripPlanner]
+        #expect(coordinator.stackedRoutes == [.tripPlanner])
     }
 
     // MARK: - setStackedDetent
@@ -158,7 +159,7 @@ final class SheetCoordinatorTests: XCTestCase {
         coordinator.setStackedDetent(.medium, at: 0)
         coordinator.setStackedDetent(.large, at: 1)
 
-        expect(coordinator.stackedDetents) == [.medium, .large]
+        #expect(coordinator.stackedDetents == [.medium, .large])
     }
 
     func test_setStackedDetent_ignoresOutOfRangeDepth() {
@@ -168,7 +169,7 @@ final class SheetCoordinatorTests: XCTestCase {
 
         coordinator.setStackedDetent(.medium, at: 5)
 
-        expect(coordinator.stackedDetents) == original
+        #expect(coordinator.stackedDetents == original)
     }
 
     // MARK: - stackedRoute(at:) / stackedDetent(at:fallback:)
@@ -178,8 +179,8 @@ final class SheetCoordinatorTests: XCTestCase {
         coordinator.push(.tripPlanner)
         coordinator.push(.stopDetails(stopID: "1"))
 
-        expect(coordinator.stackedRoute(at: 0)) == .tripPlanner
-        expect(coordinator.stackedRoute(at: 1)) == .stopDetails(stopID: "1")
+        #expect(coordinator.stackedRoute(at: 0) == .tripPlanner)
+        #expect(coordinator.stackedRoute(at: 1) == .stopDetails(stopID: "1"))
     }
 
     func test_stackedRoute_atDepth_returnsNilWhenOutOfRange() {
@@ -195,22 +196,22 @@ final class SheetCoordinatorTests: XCTestCase {
         coordinator.push(.tripPlanner)
         coordinator.setStackedDetent(.medium, at: 0)
 
-        expect(coordinator.stackedDetent(at: 0, fallback: .large)) == .medium
+        #expect(coordinator.stackedDetent(at: 0, fallback: .large) == .medium)
     }
 
     func test_stackedDetent_atDepth_returnsFallbackWhenOutOfRange() {
         let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
-        expect(coordinator.stackedDetent(at: 0, fallback: .large)) == .large
+        #expect(coordinator.stackedDetent(at: 0, fallback: .large) == .large)
     }
 
     // MARK: - canPop / popToRoot / currentDetents
 
     func test_canPop_isTrueWhenOnlyStackedPresented() {
         let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
-        expect(coordinator.canPop) == false
+        #expect(coordinator.canPop == false)
 
         coordinator.push(.tripPlanner)
-        expect(coordinator.canPop) == true
+        #expect(coordinator.canPop == true)
     }
 
     func test_popToRoot_clearsStackedAndUnwindsContentStack() {
@@ -221,22 +222,22 @@ final class SheetCoordinatorTests: XCTestCase {
 
         coordinator.popToRoot()
 
-        expect(coordinator.routeStack.count) == 1
-        expect(coordinator.currentRoute) == .home
+        #expect(coordinator.routeStack.count == 1)
+        #expect(coordinator.currentRoute == .home)
         expect(coordinator.stackedRoutes).to(beEmpty())
         expect(coordinator.stackedDetents).to(beEmpty())
-        expect(coordinator.canPop) == false
-        expect(coordinator.currentDetent) == AppSheetRoute.home.detentConfiguration.initialDetent
+        #expect(coordinator.canPop == false)
+        #expect(coordinator.currentDetent == AppSheetRoute.home.detentConfiguration.initialDetent)
     }
 
     func test_currentDetents_reflectsContentStackTopRegardlessOfStacked() {
         let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
-        expect(coordinator.currentDetents) == AppSheetRoute.home.detentConfiguration.detents
+        #expect(coordinator.currentDetents == AppSheetRoute.home.detentConfiguration.detents)
 
         coordinator.push(.search)
-        expect(coordinator.currentDetents) == AppSheetRoute.search.detentConfiguration.detents
+        #expect(coordinator.currentDetents == AppSheetRoute.search.detentConfiguration.detents)
 
         coordinator.push(.tripPlanner) // stacked — must not alter currentDetents
-        expect(coordinator.currentDetents) == AppSheetRoute.search.detentConfiguration.detents
+        #expect(coordinator.currentDetents == AppSheetRoute.search.detentConfiguration.detents)
     }
 }

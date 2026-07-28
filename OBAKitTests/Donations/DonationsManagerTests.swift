@@ -9,6 +9,7 @@
 
 import XCTest
 import Nimble
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -53,22 +54,22 @@ class DonationsManagerTests: OBATestCase {
 
     func test_shouldRequestDonations_firstLaunch_isFalse() throws {
         let manager = try buildManager(appLaunchCount: 1)
-        expect(manager.shouldRequestDonations) == false
+        #expect(manager.shouldRequestDonations == false)
     }
 
     func test_shouldRequestDonations_secondLaunch_isFalse() throws {
         let manager = try buildManager(appLaunchCount: 2)
-        expect(manager.shouldRequestDonations) == false
+        #expect(manager.shouldRequestDonations == false)
     }
 
     func test_shouldRequestDonations_thirdLaunch_isTrue() throws {
         let manager = try buildManager(appLaunchCount: 3)
-        expect(manager.shouldRequestDonations) == true
+        #expect(manager.shouldRequestDonations == true)
     }
 
     func test_shouldRequestDonations_laterLaunches_isTrue() throws {
         let manager = try buildManager(appLaunchCount: 100)
-        expect(manager.shouldRequestDonations) == true
+        #expect(manager.shouldRequestDonations == true)
     }
 
     // MARK: - Composition with Other Gates
@@ -76,23 +77,23 @@ class DonationsManagerTests: OBATestCase {
     func test_shouldRequestDonations_thirdLaunch_dismissed_isFalse() throws {
         let manager = try buildManager(appLaunchCount: 3)
         manager.dismissDonationsRequests()
-        expect(manager.shouldRequestDonations) == false
+        #expect(manager.shouldRequestDonations == false)
     }
 
     func test_shouldRequestDonations_thirdLaunch_futureReminder_isFalse() throws {
         let manager = try buildManager(appLaunchCount: 3)
         manager.remindUserLater()
-        expect(manager.shouldRequestDonations) == false
+        #expect(manager.shouldRequestDonations == false)
     }
 
     func test_shouldRequestDonations_thirdLaunch_pastReminder_isTrue() throws {
         let manager = try buildManager(appLaunchCount: 3)
         manager.donationRequestReminderDate = Date(timeIntervalSinceNow: -3600)
-        expect(manager.shouldRequestDonations) == true
+        #expect(manager.shouldRequestDonations == true)
     }
 
     func test_shouldRequestDonations_donationsDisabled_isFalse() throws {
         let manager = try buildManager(appLaunchCount: 3, donationsEnabled: false)
-        expect(manager.shouldRequestDonations) == false
+        #expect(manager.shouldRequestDonations == false)
     }
 }

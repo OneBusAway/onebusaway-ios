@@ -10,6 +10,7 @@
 import Foundation
 import XCTest
 import Nimble
+import Testing
 import UIKit
 @testable import OBAKit
 
@@ -26,7 +27,7 @@ class VisualEffectContainerViewTests: XCTestCase {
     
     func test_init_createsEffectView() {
         expect(self.containerView).toNot(beNil())
-        expect(self.containerView.subviews.count) == 1
+        #expect(self.containerView.subviews.count == 1)
         expect(self.containerView.subviews.first).to(beAnInstanceOf(UIVisualEffectView.self))
     }
     
@@ -36,7 +37,7 @@ class VisualEffectContainerViewTests: XCTestCase {
         
         // Verify it's the content view from the visual effect view
         let effectView = containerView.subviews.first as? UIVisualEffectView
-        expect(contentView) === effectView?.contentView
+        #expect(contentView === effectView?.contentView)
     }
     
     func test_addingSubviewsToContentView() {
@@ -45,14 +46,14 @@ class VisualEffectContainerViewTests: XCTestCase {
         
         containerView.contentView.addSubview(testLabel)
         
-        expect(self.containerView.contentView.subviews.count) == 1
-        expect(self.containerView.contentView.subviews.first) === testLabel
+        #expect(self.containerView.contentView.subviews.count == 1)
+        #expect(self.containerView.contentView.subviews.first === testLabel)
     }
     
     func test_visualEffectViewConstraints() {
         // Verify the effect view is properly constrained
         let effectView = containerView.subviews.first as? UIVisualEffectView
-        expect(effectView?.translatesAutoresizingMaskIntoConstraints) == false
+        #expect(effectView?.translatesAutoresizingMaskIntoConstraints == false)
         
         // Test that constraints exist (we can't easily test exact constraints in unit tests)
         expect(self.containerView.constraints.count).to(beGreaterThan(0))

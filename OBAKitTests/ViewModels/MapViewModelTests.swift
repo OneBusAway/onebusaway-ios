@@ -9,6 +9,7 @@
 
 import XCTest
 import Nimble
+import Testing
 import Combine
 import CoreLocation
 @testable import OBAKit
@@ -106,7 +107,7 @@ class MapViewModelTests: OBATestCase {
         await viewModel.loadWeather()
 
         expect(viewModel.weatherDisplay).toNot(beNil())
-        expect(viewModel.weatherDisplay?.header.regionName) == "Puget Sound"
+        #expect(viewModel.weatherDisplay?.header.regionName == "Puget Sound")
     }
 
     /// A transient weather fetch failure must NOT clear `weatherDisplay` —
@@ -138,7 +139,7 @@ class MapViewModelTests: OBATestCase {
         await viewModel.loadWeather()
 
         // Same instance — error path didn't overwrite or clear.
-        expect(viewModel.weatherDisplay) == firstDisplay
+        #expect(viewModel.weatherDisplay == firstDisplay)
     }
 
     /// When `application.obacoService` is nil (region retired the sidecar, or it
@@ -178,7 +179,7 @@ class MapViewModelTests: OBATestCase {
         expect(app.features.obaco).toNot(equal(.running))
 
         let viewModel = MapViewModel(application: app)
-        expect(viewModel.isWeatherFeatureAvailable) == false
+        #expect(viewModel.isWeatherFeatureAvailable == false)
         expect(viewModel.weatherDisplay).to(beNil())
 
         await viewModel.loadWeather()
@@ -198,22 +199,22 @@ class MapViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: dataLoader)
 
         let viewModel = MapViewModel(application: app)
-        expect(viewModel.mapType) == .standard
+        #expect(viewModel.mapType == .standard)
 
         var observed: [MapBaseType] = []
         let cancellable = viewModel.$mapType.sink { observed.append($0) }
         defer { cancellable.cancel() }
 
         viewModel.toggleMapType()
-        expect(viewModel.mapType) == .hybrid
-        expect(app.mapRegionManager.userSelectedMapType) == .hybrid
+        #expect(viewModel.mapType == .hybrid)
+        #expect(app.mapRegionManager.userSelectedMapType == .hybrid)
 
         viewModel.toggleMapType()
-        expect(viewModel.mapType) == .standard
-        expect(app.mapRegionManager.userSelectedMapType) == .mutedStandard
+        #expect(viewModel.mapType == .standard)
+        #expect(app.mapRegionManager.userSelectedMapType == .mutedStandard)
 
         // Initial value + two toggles.
-        expect(observed) == [.standard, .hybrid, .standard]
+        #expect(observed == [.standard, .hybrid, .standard])
     }
 
     /// An external mutation of `MapRegionManager.userSelectedMapType`
@@ -226,7 +227,7 @@ class MapViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: dataLoader)
 
         let viewModel = MapViewModel(application: app)
-        expect(viewModel.mapType) == .standard
+        #expect(viewModel.mapType == .standard)
 
         // External mutation — bypasses `toggleMapType()` entirely, simulating
         // the UIKit path or an out-of-VM defaults edit.
@@ -236,7 +237,7 @@ class MapViewModelTests: OBATestCase {
         // so give the runloop a few hops to deliver.
         for _ in 0..<5 { await Task.yield() }
 
-        expect(viewModel.mapType) == .hybrid
+        #expect(viewModel.mapType == .hybrid)
     }
 
     // MARK: - Location Authorization
@@ -248,14 +249,14 @@ class MapViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: dataLoader)
 
         let viewModel = MapViewModel(application: app)
-        expect(viewModel.locationAuthStatus) == .authorizedWhenInUse  // from the mock manager
+        #expect(viewModel.locationAuthStatus == .authorizedWhenInUse)  // from the mock manager
 
         viewModel.locationService(app.locationService, authorizationStatusChanged: .denied)
 
         // The callback hops to the main actor via `Task { @MainActor in ... }`.
         for _ in 0..<5 { await Task.yield() }
 
-        expect(viewModel.locationAuthStatus) == .denied
+        #expect(viewModel.locationAuthStatus == .denied)
     }
 
     // MARK: - Survey Prompt
@@ -391,7 +392,7 @@ class MapViewModelTests: OBATestCase {
         defer { cancellable.cancel() }
 
         await viewModel.checkForSurveyPrompt()
-        expect(received.count) == 1
+        #expect(received.count == 1)
 
         // Simulate the presenter dropping the survey.
         viewModel.didPresentSurveyPrompt(received[0], presented: false)
@@ -399,7 +400,7 @@ class MapViewModelTests: OBATestCase {
         expect(app.userDataStore.nextSurveyReminderDate).to(beNil())
 
         await viewModel.checkForSurveyPrompt()
-        expect(received.count) == 2
+        #expect(received.count == 2)
     }
 
     /// `didPresentSurveyPrompt(_:presented:)` with `presented == false` does not
@@ -462,7 +463,7 @@ class MapViewModelTests: OBATestCase {
         async let b: Void = viewModel.checkForSurveyPrompt()
         _ = await (a, b)
 
-        expect(received.count) == 1
+        #expect(received.count == 1)
     }
 
     /// When the refresh fails, `surveyToPresent` must not emit even if the
@@ -499,7 +500,7 @@ class MapViewModelTests: OBATestCase {
     /// same target when the user taps "Zoom in for stops."
     @MainActor
     func test_zoomInForStopsSpan_isSharedConstant() {
-        expect(MapViewModel.zoomInForStopsSpan) == 0.01
+        #expect(MapViewModel.zoomInForStopsSpan == 0.01)
     }
 
     /// Full-accuracy authorization returns a tight zoom (17); reduced-accuracy
@@ -511,8 +512,8 @@ class MapViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = MapViewModel(application: app)
 
-        expect(app.locationService.accuracyAuthorization) == .fullAccuracy
-        expect(viewModel.zoomLevelForCurrentLocation()) == 17
+        #expect(app.locationService.accuracyAuthorization == .fullAccuracy)
+        #expect(viewModel.zoomLevelForCurrentLocation() == 17)
     }
 
     /// Reduced accuracy backs off to 11 so the ~1km fuzz cell fits comfortably
@@ -524,8 +525,8 @@ class MapViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: dataLoader, accuracyAuthorization: .reducedAccuracy)
         let viewModel = MapViewModel(application: app)
 
-        expect(app.locationService.accuracyAuthorization) == .reducedAccuracy
-        expect(viewModel.zoomLevelForCurrentLocation()) == 11
+        #expect(app.locationService.accuracyAuthorization == .reducedAccuracy)
+        #expect(viewModel.zoomLevelForCurrentLocation() == 11)
     }
 
     // MARK: - TopPillState
@@ -541,7 +542,7 @@ class MapViewModelTests: OBATestCase {
         let viewModel = MapViewModel(application: app)
 
         viewModel.updateZoomWarning(true)
-        expect(viewModel.topPillState) == .zoomInForStops
+        #expect(viewModel.topPillState == .zoomInForStops)
     }
 
     /// With no zoom warning and full permission, the pill is hidden.
@@ -552,7 +553,7 @@ class MapViewModelTests: OBATestCase {
         let viewModel = MapViewModel(application: app)
 
         viewModel.updateZoomWarning(false)
-        expect(viewModel.topPillState) == .hidden
+        #expect(viewModel.topPillState == .hidden)
     }
 
     /// A `.denied` auth status maps to `.locationServicesOff` when no zoom warning is active.
@@ -565,7 +566,7 @@ class MapViewModelTests: OBATestCase {
         viewModel.locationService(app.locationService, authorizationStatusChanged: .denied)
         for _ in 0..<5 { await Task.yield() }
 
-        expect(viewModel.topPillState) == .locationServicesOff
+        #expect(viewModel.topPillState == .locationServicesOff)
     }
 
     /// A `.restricted` auth status maps to `.locationServicesUnavailable`, a
@@ -581,7 +582,7 @@ class MapViewModelTests: OBATestCase {
         viewModel.locationService(app.locationService, authorizationStatusChanged: .restricted)
         for _ in 0..<5 { await Task.yield() }
 
-        expect(viewModel.topPillState) == .locationServicesUnavailable
+        #expect(viewModel.topPillState == .locationServicesUnavailable)
     }
 
     /// A `.notDetermined` auth status maps to `.notDetermined` when no zoom warning is active.
@@ -594,7 +595,7 @@ class MapViewModelTests: OBATestCase {
         viewModel.locationService(app.locationService, authorizationStatusChanged: .notDetermined)
         for _ in 0..<5 { await Task.yield() }
 
-        expect(viewModel.topPillState) == .notDetermined
+        #expect(viewModel.topPillState == .notDetermined)
     }
 
     /// `.authorizedWhenInUse` + `.reducedAccuracy` surfaces the imprecise-location
@@ -609,7 +610,7 @@ class MapViewModelTests: OBATestCase {
         viewModel.locationService(app.locationService, authorizationStatusChanged: .authorizedWhenInUse)
         for _ in 0..<5 { await Task.yield() }
 
-        expect(viewModel.topPillState) == .impreciseLocation
+        #expect(viewModel.topPillState == .impreciseLocation)
     }
 
     /// Granting full accuracy while the coarse status stays `.authorizedWhenInUse`
@@ -624,12 +625,12 @@ class MapViewModelTests: OBATestCase {
 
         viewModel.locationService(app.locationService, authorizationStatusChanged: .authorizedWhenInUse)
         for _ in 0..<5 { await Task.yield() }
-        expect(viewModel.topPillState) == .impreciseLocation
+        #expect(viewModel.topPillState == .impreciseLocation)
 
         // Accuracy elevates to full without the coarse status changing.
         viewModel.locationService(app.locationService, accuracyAuthorizationChanged: .fullAccuracy)
         for _ in 0..<5 { await Task.yield() }
-        expect(viewModel.topPillState) == .hidden
+        #expect(viewModel.topPillState == .hidden)
     }
 
 }

@@ -50,8 +50,8 @@ final class WalkingSpeedManagerTests: OBATestCase {
 
         let result = await manager.requestHealthKitAuthorizationAndSync()
 
-        expect(result) == false
-        expect(self.store.walkingSpeedSource) == .manual
+        #expect(result == false)
+        #expect(self.store.walkingSpeedSource == .manual)
         // Speed left untouched even on failure.
         expectClose(self.store.walkingSpeedMetersPerSecond, 1.6)
     }
@@ -67,8 +67,8 @@ final class WalkingSpeedManagerTests: OBATestCase {
 
         let result = await manager.requestHealthKitAuthorizationAndSync()
 
-        expect(result) == true
-        expect(self.store.walkingSpeedSource) == .healthKit
+        #expect(result == true)
+        #expect(self.store.walkingSpeedSource == .healthKit)
         expectClose(self.store.walkingSpeedMetersPerSecond, 1.65)
     }
 
@@ -84,8 +84,8 @@ final class WalkingSpeedManagerTests: OBATestCase {
 
         let result = await manager.requestHealthKitAuthorizationAndSync()
 
-        expect(result) == false
-        expect(self.store.walkingSpeedSource) == .manual
+        #expect(result == false)
+        #expect(self.store.walkingSpeedSource == .manual)
         // Stored speed unchanged — the out-of-range sample must not leak in.
         expectClose(self.store.walkingSpeedMetersPerSecond, 1.4)
     }
@@ -100,8 +100,8 @@ final class WalkingSpeedManagerTests: OBATestCase {
 
         let result = await manager.requestHealthKitAuthorizationAndSync()
 
-        expect(result) == false
-        expect(self.store.walkingSpeedSource) == .manual
+        #expect(result == false)
+        #expect(self.store.walkingSpeedSource == .manual)
     }
 
     func test_requestAndSync_whenHealthKitUnavailable_forcesManual() async {
@@ -114,8 +114,8 @@ final class WalkingSpeedManagerTests: OBATestCase {
 
         let result = await manager.requestHealthKitAuthorizationAndSync()
 
-        expect(result) == false
-        expect(self.store.walkingSpeedSource) == .manual
+        #expect(result == false)
+        #expect(self.store.walkingSpeedSource == .manual)
     }
 
     // MARK: - refreshFromHealthKitIfPossible
@@ -132,7 +132,7 @@ final class WalkingSpeedManagerTests: OBATestCase {
         await manager.refreshFromHealthKitIfPossible()
 
         // The asymmetry: passive refresh must never downgrade source to .manual.
-        expect(self.store.walkingSpeedSource) == .healthKit
+        #expect(self.store.walkingSpeedSource == .healthKit)
         expectClose(self.store.walkingSpeedMetersPerSecond, 1.65)
     }
 
@@ -147,7 +147,7 @@ final class WalkingSpeedManagerTests: OBATestCase {
 
         await manager.refreshFromHealthKitIfPossible()
 
-        expect(self.store.walkingSpeedSource) == .healthKit
+        #expect(self.store.walkingSpeedSource == .healthKit)
         expectClose(self.store.walkingSpeedMetersPerSecond, 1.7)
     }
 
@@ -162,7 +162,7 @@ final class WalkingSpeedManagerTests: OBATestCase {
 
         await manager.refreshFromHealthKitIfPossible()
 
-        expect(self.store.walkingSpeedSource) == .healthKit
+        #expect(self.store.walkingSpeedSource == .healthKit)
         expectClose(self.store.walkingSpeedMetersPerSecond, 1.4)
     }
 }

@@ -9,6 +9,7 @@
 
 import XCTest
 import Nimble
+import Testing
 import Combine
 @testable import OBAKit
 @testable import OBAKitCore
@@ -134,6 +135,6 @@ final class ServiceAlertViewModelTests: OBATestCase {
         viewModel.viewDidAppear()
         // Allow a tick to confirm no re-render mutates the value to something else.
         try? await Task.sleep(nanoseconds: 100_000_000)
-        expect(viewModel.renderedHTML) == firstHTML
+        #expect(viewModel.renderedHTML == firstHTML)
     }
 }

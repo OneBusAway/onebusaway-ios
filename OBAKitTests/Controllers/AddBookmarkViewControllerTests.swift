@@ -9,6 +9,7 @@
 
 import XCTest
 import Nimble
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -95,9 +96,9 @@ class AddBookmarkViewControllerTests: OBATestCase {
         dataLoader.resetRecordedRequestURLs()
         let result = try await vc.loadData()
 
-        expect(result.count) == preloaded.count
-        expect(result.first?.tripID) == preloaded.first?.tripID
-        expect(self.arrivalsRequestCount(dataLoader)) == 0
+        #expect(result.count == preloaded.count)
+        #expect(result.first?.tripID == preloaded.first?.tripID)
+        #expect(self.arrivalsRequestCount(dataLoader) == 0)
     }
 
     // MARK: - Fallback to API
@@ -120,6 +121,6 @@ class AddBookmarkViewControllerTests: OBATestCase {
         let result = try await vc.loadData()
 
         expect(result).toNot(beEmpty())
-        expect(self.arrivalsRequestCount(dataLoader)) == 1
+        #expect(self.arrivalsRequestCount(dataLoader) == 1)
     }
 }

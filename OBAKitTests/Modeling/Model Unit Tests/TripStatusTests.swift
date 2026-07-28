@@ -53,32 +53,32 @@ class TripStatusTests: OBATestCase {
         
         let status = try! Fixtures.dictionaryToModel(type: TripStatus.self, dictionary: statusData)
         
-        expect(status.activeTripID) == "active_trip_123"
-        expect(status.id) == "active_trip_123" // id should return activeTripID
-        expect(status.blockTripSequence) == 3
-        expect(status.closestStopID) == "stop_closest"
-        expect(status.closestStopTimeOffset) == -120
-        expect(status.distanceAlongTrip) == 2500.75
-        expect(status.lastKnownDistanceAlongTrip) == 2480
-        expect(status.lastKnownLocation?.coordinate.latitude) == 47.6097
-        expect(status.lastKnownLocation?.coordinate.longitude) == -122.3331
-        expect(status.lastKnownOrientation) == 145.5
-        expect(status.lastLocationUpdateTime) == 1234567880
-        expect(status.lastUpdate?.timeIntervalSince1970) == 1234567890
-        expect(status.nextStopID) == "stop_next"
-        expect(status.nextStopTimeOffset) == 180
-        expect(status.orientation) == 150.0
-        expect(status.phase) == "IN_PROGRESS"
-        expect(status.position?.coordinate.latitude) == 47.6098
-        expect(status.position?.coordinate.longitude) == -122.3332
-        expect(status.isRealTime) == true
-        expect(status.scheduleDeviation) == -45
-        expect(status.scheduledDistanceAlongTrip) == 2545.75
-        expect(status.serviceDate.timeIntervalSince1970) == 2212819200
-        expect(status.situationIDs) == ["alert_trip_1"]
-        expect(status.statusModifier) == TripStatus.StatusModifier.default
-        expect(status.totalDistanceAlongTrip) == 15000.0
-        expect(status.vehicleID) == "vehicle_789"
+        #expect(status.activeTripID == "active_trip_123")
+        #expect(status.id == "active_trip_123")  // id should return activeTripID
+        #expect(status.blockTripSequence == 3)
+        #expect(status.closestStopID == "stop_closest")
+        #expect(status.closestStopTimeOffset == -120)
+        #expect(status.distanceAlongTrip == 2500.75)
+        #expect(status.lastKnownDistanceAlongTrip == 2480)
+        #expect(status.lastKnownLocation?.coordinate.latitude == 47.6097)
+        #expect(status.lastKnownLocation?.coordinate.longitude == -122.3331)
+        #expect(status.lastKnownOrientation == 145.5)
+        #expect(status.lastLocationUpdateTime == 1234567880)
+        #expect(status.lastUpdate?.timeIntervalSince1970 == 1234567890)
+        #expect(status.nextStopID == "stop_next")
+        #expect(status.nextStopTimeOffset == 180)
+        #expect(status.orientation == 150.0)
+        #expect(status.phase == "IN_PROGRESS")
+        #expect(status.position?.coordinate.latitude == 47.6098)
+        #expect(status.position?.coordinate.longitude == -122.3332)
+        #expect(status.isRealTime == true)
+        #expect(status.scheduleDeviation == -45)
+        #expect(status.scheduledDistanceAlongTrip == 2545.75)
+        #expect(status.serviceDate.timeIntervalSince1970 == 2212819200)
+        #expect(status.situationIDs == ["alert_trip_1"])
+        #expect(status.statusModifier == TripStatus.StatusModifier.default)
+        #expect(status.totalDistanceAlongTrip == 15000.0)
+        #expect(status.vehicleID == "vehicle_789")
     }
     
     func test_decodeMinimalTripStatus() {
@@ -105,9 +105,9 @@ class TripStatusTests: OBATestCase {
         
         let status = try! Fixtures.dictionaryToModel(type: TripStatus.self, dictionary: minimalData)
         
-        expect(status.activeTripID) == "minimal_trip"
-        expect(status.blockTripSequence) == 1
-        expect(status.closestStopID) == "minimal_stop"
+        #expect(status.activeTripID == "minimal_trip")
+        #expect(status.blockTripSequence == 1)
+        #expect(status.closestStopID == "minimal_stop")
         expect(status.lastUpdate).to(beNil())
         expect(status.nextStopID).to(beNil())
         expect(status.lastKnownDistanceAlongTrip).to(beNil())
@@ -148,7 +148,7 @@ class TripStatusTests: OBATestCase {
             ]
             
             let status = try! Fixtures.dictionaryToModel(type: TripStatus.self, dictionary: data)
-            expect(status.statusModifier) == expectedModifier
+            #expect(status.statusModifier == expectedModifier)
         }
     }
     
@@ -280,15 +280,15 @@ class TripStatusTests: OBATestCase {
         
         status.loadReferences(references, regionIdentifier: 888)
         
-        expect(status.regionIdentifier) == 888
+        #expect(status.regionIdentifier == 888)
         expect(status.activeTrip).toNot(beNil())
-        expect(status.activeTrip.id) == "ref_trip"
+        #expect(status.activeTrip.id == "ref_trip")
         expect(status.closestStop).toNot(beNil())
-        expect(status.closestStop.id) == "ref_stop_closest"
+        #expect(status.closestStop.id == "ref_stop_closest")
         expect(status.nextStop).toNot(beNil())
-        expect(status.nextStop?.id) == "ref_stop_next"
-        expect(status.serviceAlerts.count) == 1
-        expect(status.serviceAlerts.first?.id) == "ref_alert_1"
+        #expect(status.nextStop?.id == "ref_stop_next")
+        #expect(status.serviceAlerts.count == 1)
+        #expect(status.serviceAlerts.first?.id == "ref_alert_1")
     }
     
     func test_tripStatusEquality() {
@@ -320,10 +320,10 @@ class TripStatusTests: OBATestCase {
         differentData["activeTripId"] = "different_trip"
         let status3 = try! Fixtures.dictionaryToModel(type: TripStatus.self, dictionary: differentData)
         
-        expect(status1.isEqual(status2)) == true
-        expect(status1.isEqual(status3)) == false
-        expect(status1.hash) == status2.hash
-        expect(status1.hash) != status3.hash
+        #expect(status1.isEqual(status2) == true)
+        #expect(status1.isEqual(status3) == false)
+        #expect(status1.hash == status2.hash)
+        #expect(status1.hash != status3.hash)
     }
     
     func test_decodeFailureWhenMissingRequiredFields() {

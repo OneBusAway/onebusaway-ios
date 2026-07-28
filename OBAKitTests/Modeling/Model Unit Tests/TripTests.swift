@@ -9,6 +9,7 @@
 
 import XCTest
 import Nimble
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -32,16 +33,16 @@ class TripTests: OBATestCase {
         
         let trip = try! Fixtures.dictionaryToModel(type: Trip.self, dictionary: tripData)
         
-        expect(trip.id) == "1_18196913"
-        expect(trip.blockID) == "7001_1001"
-        expect(trip.routeID) == "1_100002"
-        expect(trip.serviceID) == "1_20200101"
-        expect(trip.shapeID) == "1_20010002"
-        expect(trip.headsign) == "Bellevue TC"
-        expect(trip.shortName) == "Express 001"
-        expect(trip.direction) == "0"
-        expect(trip.routeShortName) == "ST Express"
-        expect(trip.timeZone) == "America/Los_Angeles"
+        #expect(trip.id == "1_18196913")
+        #expect(trip.blockID == "7001_1001")
+        #expect(trip.routeID == "1_100002")
+        #expect(trip.serviceID == "1_20200101")
+        #expect(trip.shapeID == "1_20010002")
+        #expect(trip.headsign == "Bellevue TC")
+        #expect(trip.shortName == "Express 001")
+        #expect(trip.direction == "0")
+        #expect(trip.routeShortName == "ST Express")
+        #expect(trip.timeZone == "America/Los_Angeles")
         expect(trip.route).to(beNil())
         expect(trip.regionIdentifier).to(beNil())
     }
@@ -60,14 +61,14 @@ class TripTests: OBATestCase {
         
         let trip = try! Fixtures.dictionaryToModel(type: Trip.self, dictionary: minimalData)
         
-        expect(trip.id) == "minimal_trip"
-        expect(trip.blockID) == "block_123"
-        expect(trip.routeID) == "route_456"
-        expect(trip.serviceID) == "service_789"
-        expect(trip.shapeID) == "shape_abc"
-        expect(trip.routeShortName) == "99"
-        expect(trip.shortName) == "Short"
-        expect(trip.timeZone) == "UTC"
+        #expect(trip.id == "minimal_trip")
+        #expect(trip.blockID == "block_123")
+        #expect(trip.routeID == "route_456")
+        #expect(trip.serviceID == "service_789")
+        #expect(trip.shapeID == "shape_abc")
+        #expect(trip.routeShortName == "99")
+        #expect(trip.shortName == "Short")
+        #expect(trip.timeZone == "UTC")
     }
     
     func test_decodeWithBlankValues() {
@@ -129,8 +130,8 @@ class TripTests: OBATestCase {
         trip.loadReferences(references, regionIdentifier: 456)
         
         expect(trip.route).toNot(beNil())
-        expect(trip.route.id) == "1_100002"
-        expect(trip.regionIdentifier) == 456
+        #expect(trip.route.id == "1_100002")
+        #expect(trip.regionIdentifier == 456)
     }
     
     func test_routeHeadsign() {
@@ -158,7 +159,7 @@ class TripTests: OBATestCase {
         let route = try! Fixtures.dictionaryToModel(type: Route.self, dictionary: routeData)
         trip.route = route
         
-        expect(trip.routeHeadsign) == "ST Express - Bellevue TC"
+        #expect(trip.routeHeadsign == "ST Express - Bellevue TC")
     }
     
     func test_routeHeadsignWithoutTripHeadsign() {
@@ -185,7 +186,7 @@ class TripTests: OBATestCase {
         let route = try! Fixtures.dictionaryToModel(type: Route.self, dictionary: routeData)
         trip.route = route
         
-        expect(trip.routeHeadsign) == "ST Express"
+        #expect(trip.routeHeadsign == "ST Express")
     }
     
     func test_equalityAndHash() {
@@ -206,11 +207,11 @@ class TripTests: OBATestCase {
         let differentData = tripData.merging(["id": "different_trip"]) { _, new in new }
         let trip3 = try! Fixtures.dictionaryToModel(type: Trip.self, dictionary: differentData)
         
-        expect(trip1.isEqual(trip2)) == true
-        expect(trip1.isEqual(trip3)) == false
-        expect(trip1.isEqual("not a trip")) == false
+        #expect(trip1.isEqual(trip2) == true)
+        #expect(trip1.isEqual(trip3) == false)
+        #expect(trip1.isEqual("not a trip") == false)
         
-        expect(trip1.hash) == trip2.hash
-        expect(trip1.hash) != trip3.hash
+        #expect(trip1.hash == trip2.hash)
+        #expect(trip1.hash != trip3.hash)
     }
 }

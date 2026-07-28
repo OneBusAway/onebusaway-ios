@@ -9,6 +9,7 @@
 
 import XCTest
 import Nimble
+import Testing
 import CoreLocation
 @testable import OBAKit
 @testable import OBAKitCore
@@ -78,7 +79,7 @@ class NearbyTripMatcherTests: OBATestCase {
         )
 
         // Fixture has 2 arrivals on route 1_30 with vehicles 1_7028 and 1_7022.
-        expect(results.count) == 2
+        #expect(results.count == 2)
         let vehicleIDs = Set(results.compactMap { $0.arrivalDeparture.vehicleID })
         expect(vehicleIDs).to(contain("1_7028"))
         expect(vehicleIDs).to(contain("1_7022"))
@@ -97,7 +98,7 @@ class NearbyTripMatcherTests: OBATestCase {
         )
 
         // Fixture has 2 arrivals on route 1_65 with vehicles 1_3691 and 1_3674.
-        expect(results.count) == 2
+        #expect(results.count == 2)
         let vehicleIDs = Set(results.compactMap { $0.arrivalDeparture.vehicleID })
         expect(vehicleIDs).to(contain("1_3691"))
         expect(vehicleIDs).to(contain("1_3674"))
@@ -127,7 +128,7 @@ class NearbyTripMatcherTests: OBATestCase {
             )
             XCTFail("Expected MatchError.noStopsNearby")
         } catch let error as NearbyTripMatcher.MatchError {
-            expect(error) == .noStopsNearby
+            #expect(error == .noStopsNearby)
         } catch {
             XCTFail("Unexpected error: \(error)")
         }
@@ -156,9 +157,9 @@ class NearbyTripMatcherTests: OBATestCase {
             maxDistance: 500_000
         )
 
-        expect(tightResults.count) < wideResults.count
+        #expect(tightResults.count < wideResults.count)
         expect(tightResults).to(beEmpty())
-        expect(wideResults.count) == 2
+        #expect(wideResults.count == 2)
     }
 
     // MARK: - Sorting
@@ -175,9 +176,9 @@ class NearbyTripMatcherTests: OBATestCase {
             maxDistance: 500_000
         )
 
-        expect(results.count) >= 2
+        #expect(results.count >= 2)
         for i in 0..<(results.count - 1) {
-            expect(results[i].distanceFromUser) <= results[i + 1].distanceFromUser
+            #expect(results[i].distanceFromUser <= results[i + 1].distanceFromUser)
         }
     }
 
@@ -199,7 +200,7 @@ class NearbyTripMatcherTests: OBATestCase {
             )
             XCTFail("Expected MatchError.noStopsNearby")
         } catch let error as NearbyTripMatcher.MatchError {
-            expect(error) == .noStopsNearby
+            #expect(error == .noStopsNearby)
         } catch {
             XCTFail("Unexpected error: \(error)")
         }
@@ -258,7 +259,7 @@ class NearbyTripMatcherTests: OBATestCase {
             )
             XCTFail("Expected MatchError.noRealtimeData")
         } catch let error as NearbyTripMatcher.MatchError {
-            expect(error) == .noRealtimeData
+            #expect(error == .noRealtimeData)
         } catch {
             XCTFail("Unexpected error: \(error)")
         }
@@ -282,9 +283,9 @@ class NearbyTripMatcherTests: OBATestCase {
 
         // Route 1_30 has 2 unique vehicles (1_7028, 1_7022).
         // Even with duplicated stops, dedup should keep only 2.
-        expect(results.count) == 2
+        #expect(results.count == 2)
         let vehicleIDs = results.compactMap { $0.arrivalDeparture.vehicleID }
-        expect(Set(vehicleIDs).count) == 2
+        #expect(Set(vehicleIDs).count == 2)
     }
 
     // MARK: - MatchError

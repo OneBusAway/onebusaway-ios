@@ -10,6 +10,7 @@
 import Foundation
 import XCTest
 import Nimble
+import Testing
 import UIKit
 @testable import OBAKit
 
@@ -23,7 +24,7 @@ class BarButtonActivityIndicatorTests: XCTestCase {
         expect(barButtonItem.customView).to(beAnInstanceOf(UIActivityIndicatorView.self))
         
         let activityIndicator = barButtonItem.customView as! UIActivityIndicatorView
-        expect(activityIndicator.style) == .medium
-        expect(activityIndicator.isAnimating) == true
+        #expect(activityIndicator.style == .medium)
+        #expect(activityIndicator.isAnimating == true)
     }
 }

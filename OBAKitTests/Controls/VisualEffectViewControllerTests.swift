@@ -10,6 +10,7 @@
 import Foundation
 import XCTest
 import Nimble
+import Testing
 import UIKit
 @testable import OBAKit
 
@@ -32,7 +33,7 @@ class VisualEffectViewControllerTests: XCTestCase {
         viewController.viewDidLoad()
         
         expect(self.viewController.view.subviews).to(contain(self.viewController.visualEffectView))
-        expect(self.viewController.view.backgroundColor) == UIColor.clear
+        #expect(self.viewController.view.backgroundColor == UIColor.clear)
     }
     
     func test_visualEffectView_isAccessible() {
@@ -57,7 +58,7 @@ class VisualEffectViewControllerTests: XCTestCase {
         
         viewController.visualEffectView.contentView.addSubview(testLabel)
         
-        expect(self.viewController.visualEffectView.contentView.subviews.count) == 1
-        expect(self.viewController.visualEffectView.contentView.subviews.first) === testLabel
+        #expect(self.viewController.visualEffectView.contentView.subviews.count == 1)
+        #expect(self.viewController.visualEffectView.contentView.subviews.first === testLabel)
     }
 }

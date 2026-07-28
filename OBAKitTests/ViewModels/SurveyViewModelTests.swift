@@ -9,6 +9,7 @@
 
 import XCTest
 import Nimble
+import Testing
 import Combine
 import CoreLocation
 @testable import OBAKit
@@ -109,10 +110,10 @@ class SurveyViewModelTests: OBATestCase {
         let q2 = Self.makeQuestion(id: 2, position: 2)
         let vm = makeViewModel(questions: [q1, q2], heroResponseID: "hero-42")
 
-        expect(vm.survey.id) == 42
-        expect(vm.survey.name) == "Test Survey"
-        expect(vm.heroResponseID) == "hero-42"
-        expect(vm.questionsToShow.map(\.id)) == [2]
+        #expect(vm.survey.id == 42)
+        #expect(vm.survey.name == "Test Survey")
+        #expect(vm.heroResponseID == "hero-42")
+        #expect(vm.questionsToShow.map(\.id) == [2])
     }
 
     // MARK: - questionsToShow
@@ -124,10 +125,10 @@ class SurveyViewModelTests: OBATestCase {
         let follow = Self.makeQuestion(id: 2, position: 2)
 
         let vmFresh = makeViewModel(questions: [hero, follow])
-        expect(vmFresh.questionsToShow.map(\.id)) == [1, 2]
+        #expect(vmFresh.questionsToShow.map(\.id) == [1, 2])
 
         let vmRetry = makeViewModel(questions: [hero, follow], heroResponseID: "abc")
-        expect(vmRetry.questionsToShow.map(\.id)) == [2]
+        #expect(vmRetry.questionsToShow.map(\.id) == [2])
     }
 
     // MARK: - updateAnswer
@@ -325,7 +326,7 @@ class SurveyViewModelTests: OBATestCase {
         await vm.submit() // validationFailed
         await vm.submit() // validationFailed again
 
-        expect(received.count) == 2
+        #expect(received.count == 2)
         for r in received {
             if case .failure(.validationFailed) = r { continue }
             fail("Expected all results to be .validationFailed; got \(r)")
@@ -456,8 +457,8 @@ class SurveyViewModelTests: OBATestCase {
             onFailure: { failureCount += 1 }
         )
 
-        expect(failureCount) == 1
-        expect(successCount) == 0
+        #expect(failureCount == 1)
+        #expect(successCount == 0)
         expect(self.dataStore.isSurveyCompleted(surveyId: vm.survey.id, userIdentifier: self.dataStore.surveyUserIdentifier)).to(beFalse())
     }
 
@@ -545,9 +546,9 @@ class SurveyViewModelTests: OBATestCase {
         guard case .success = result else {
             fail("Expected .success; got \(result)"); return
         }
-        expect(counter.posts) == 1
-        expect(counter.puts) == 0
-        expect(vm.heroResponseID) == "808d3a515daa39f4c15a"
+        #expect(counter.posts == 1)
+        #expect(counter.puts == 0)
+        #expect(vm.heroResponseID == "808d3a515daa39f4c15a")
         let userID = dataStore.surveyUserIdentifier
         expect(self.dataStore.isSurveyCompleted(surveyId: vm.survey.id, userIdentifier: userID)).to(beTrue())
     }
@@ -569,9 +570,9 @@ class SurveyViewModelTests: OBATestCase {
         guard case .success = result else {
             fail("Expected .success; got \(result)"); return
         }
-        expect(counter.posts) == 1
-        expect(counter.puts) == 1
-        expect(vm.heroResponseID) == "808d3a515daa39f4c15a"
+        #expect(counter.posts == 1)
+        #expect(counter.puts == 1)
+        #expect(vm.heroResponseID == "808d3a515daa39f4c15a")
         let userID = dataStore.surveyUserIdentifier
         expect(self.dataStore.isSurveyCompleted(surveyId: vm.survey.id, userIdentifier: userID)).to(beTrue())
     }
@@ -596,10 +597,10 @@ class SurveyViewModelTests: OBATestCase {
         guard case .success = result else {
             fail("Expected .success; got \(result)"); return
         }
-        expect(counter.posts) == 0
-        expect(counter.puts) == 1
+        #expect(counter.posts == 0)
+        #expect(counter.puts == 1)
         // heroResponseID is unchanged — we didn't re-submit the hero.
-        expect(vm.heroResponseID) == "preset-hero"
+        #expect(vm.heroResponseID == "preset-hero")
     }
 
     /// Fresh path with hero only and no follow-up: the `remainingResponses.isEmpty`
@@ -620,8 +621,8 @@ class SurveyViewModelTests: OBATestCase {
         guard case .success = result else {
             fail("Expected .success; got \(result)"); return
         }
-        expect(counter.posts) == 1
-        expect(counter.puts) == 0
+        #expect(counter.posts == 1)
+        #expect(counter.puts == 0)
     }
 
     /// Retry path after a partial network failure: the fresh submit succeeded the hero POST
@@ -648,8 +649,8 @@ class SurveyViewModelTests: OBATestCase {
         guard case .success = result else {
             fail("Expected .success; got \(result)"); return
         }
-        expect(counter.posts) == 0
-        expect(counter.puts) == 1
+        #expect(counter.posts == 0)
+        #expect(counter.puts == 1)
 
         // PUT body is `{"responses": "<stringified JSON array>"}`. Decode both layers.
         let body = try XCTUnwrap(counter.lastPutBody)
@@ -659,7 +660,7 @@ class SurveyViewModelTests: OBATestCase {
         let responses = try XCTUnwrap(try JSONSerialization.jsonObject(with: innerData) as? [[String: Any]])
         let questionIDs = responses.compactMap { $0["question_id"] as? Int }
         expect(questionIDs).toNot(contain(hero.id))
-        expect(questionIDs) == [follow.id]
+        #expect(questionIDs == [follow.id])
     }
 
     /// `isSubmitting` toggles around a submit: false before, true while in-flight,
@@ -680,7 +681,7 @@ class SurveyViewModelTests: OBATestCase {
         await vm.submit()
 
         // Initial false + true on enter + false on exit.
-        expect(observed) == [false, true, false]
+        #expect(observed == [false, true, false])
         expect(vm.isSubmitting).to(beFalse())
     }
 
@@ -700,6 +701,6 @@ class SurveyViewModelTests: OBATestCase {
         _ = await (a, b)
 
         // Only one of the two reached the network leg.
-        expect(counter.posts) == 1
+        #expect(counter.posts == 1)
     }
 }

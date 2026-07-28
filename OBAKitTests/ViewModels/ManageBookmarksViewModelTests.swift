@@ -9,6 +9,7 @@
 
 import XCTest
 import Nimble
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -116,7 +117,7 @@ class ManageBookmarksViewModelTests: OBATestCase {
         let group = BookmarkGroup(name: "Home", sortOrder: 0)
         app.userDataStore.upsert(bookmarkGroup: group)
 
-        expect(vm.findGroup(id: group.id)) == group
+        #expect(vm.findGroup(id: group.id) == group)
         expect(vm.findGroup(id: UUID())).to(beNil())
     }
 
@@ -171,7 +172,7 @@ class ManageBookmarksViewModelTests: OBATestCase {
             headsign: bookmark.tripHeadsign,
             stopID: bookmark.stopID
         )
-        expect(removeEvents.first?.value as? String) == expectedValue
+        #expect((removeEvents.first?.value as? String) == expectedValue)
     }
 
     @MainActor
@@ -204,7 +205,7 @@ class ManageBookmarksViewModelTests: OBATestCase {
 
         vm.saveNameChange(bookmarkID: bookmark.id, newName: "New Name")
 
-        expect(app.userDataStore.findBookmark(id: bookmark.id)?.name) == "New Name"
+        #expect(app.userDataStore.findBookmark(id: bookmark.id)?.name == "New Name")
     }
 
     @MainActor
@@ -219,7 +220,7 @@ class ManageBookmarksViewModelTests: OBATestCase {
 
         vm.saveNameChange(bookmarkID: bookmark.id, newName: "   ")
 
-        expect(app.userDataStore.findBookmark(id: bookmark.id)?.name) == "Original"
+        #expect(app.userDataStore.findBookmark(id: bookmark.id)?.name == "Original")
     }
 
     // MARK: - restoreTransitName
@@ -237,7 +238,7 @@ class ManageBookmarksViewModelTests: OBATestCase {
         vm.restoreTransitName(for: bookmark)
 
         let expected = Formatters.formattedTitle(stop: stop)
-        expect(app.userDataStore.findBookmark(id: bookmark.id)?.name) == expected
+        #expect(app.userDataStore.findBookmark(id: bookmark.id)?.name == expected)
     }
 
     @MainActor
@@ -253,7 +254,7 @@ class ManageBookmarksViewModelTests: OBATestCase {
         vm.restoreTransitName(for: bookmark)
 
         let expected = "\(arrivalDep.routeShortName) - \(arrivalDep.tripHeadsign!)"
-        expect(app.userDataStore.findBookmark(id: bookmark.id)?.name) == expected
+        #expect(app.userDataStore.findBookmark(id: bookmark.id)?.name == expected)
     }
 
     // MARK: - moveBookmark
@@ -299,6 +300,6 @@ class ManageBookmarksViewModelTests: OBATestCase {
 
         let bookmarks = vm.bookmarksInGroup(group)
         expect(bookmarks).to(haveCount(3))
-        expect(bookmarks[1].id) == incoming.id
+        #expect(bookmarks[1].id == incoming.id)
     }
 }

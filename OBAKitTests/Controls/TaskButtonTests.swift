@@ -10,6 +10,7 @@
 import Foundation
 import XCTest
 import Nimble
+import Testing
 import SwiftUI
 @testable import OBAKit
 
@@ -20,7 +21,7 @@ class TaskButtonTests: XCTestCase {
     func test_ActionOption_allCases() {
         let allCases = TaskButton<Text>.ActionOption.allCases
         
-        expect(allCases.count) == 2
+        #expect(allCases.count == 2)
         expect(allCases).to(contain(.disableButton))
         expect(allCases).to(contain(.showProgressView))
     }
@@ -39,7 +40,7 @@ class TaskButtonTests: XCTestCase {
         let button = TaskButton("Test Button", actionOptions: customOptions, action: testAction)
         
         expect(button).toNot(beNil())
-        expect(button.actionOptions) == customOptions
+        #expect(button.actionOptions == customOptions)
     }
     
     func test_TaskButton_withImage_init() {
@@ -55,7 +56,7 @@ class TaskButtonTests: XCTestCase {
         let button = TaskButton(systemImageName: "star", actionOptions: customOptions, action: testAction)
         
         expect(button).toNot(beNil())
-        expect(button.actionOptions) == customOptions
+        #expect(button.actionOptions == customOptions)
     }
     
     func test_TaskButton_genericInit() {
@@ -65,6 +66,6 @@ class TaskButtonTests: XCTestCase {
         }
         
         expect(button).toNot(beNil())
-        expect(button.actionOptions) == Set(TaskButton<Text>.ActionOption.allCases)
+        #expect(button.actionOptions == Set(TaskButton<Text>.ActionOption.allCases))
     }
 }

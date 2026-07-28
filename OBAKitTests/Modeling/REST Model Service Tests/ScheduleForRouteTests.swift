@@ -9,6 +9,7 @@
 
 import XCTest
 import Nimble
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -46,7 +47,7 @@ class ScheduleForRouteTests: OBATestCase {
         let response = try await restService.getScheduleForRoute(routeID: routeID)
         let schedule = response.entry
 
-        expect(schedule.routeID) == "1_100223"
+        #expect(schedule.routeID == "1_100223")
         expect(schedule.scheduleDate).toNot(beNil())
         expect(schedule.serviceIDs).toNot(beEmpty())
         expect(schedule.stopTripGroupings).toNot(beEmpty())

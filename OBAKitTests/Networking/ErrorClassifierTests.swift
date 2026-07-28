@@ -9,6 +9,7 @@
 
 import XCTest
 import Nimble
+import Testing
 @testable import OBAKitCore
 
 @MainActor
@@ -105,7 +106,7 @@ class ErrorClassifierTests: XCTestCase {
 
         switch apiError {
         case .serverError(let regionName):
-            expect(regionName) == "Puget Sound"
+            #expect(regionName == "Puget Sound")
         default:
             fail("Expected .serverError, got \(apiError)")
         }
@@ -132,8 +133,8 @@ class ErrorClassifierTests: XCTestCase {
 
         switch apiError {
         case .serverUnavailable(let regionName, let statusCode):
-            expect(regionName) == "Puget Sound"
-            expect(statusCode) == 502
+            #expect(regionName == "Puget Sound")
+            #expect(statusCode == 502)
         default:
             fail("Expected .serverUnavailable, got \(apiError)")
         }
@@ -152,8 +153,8 @@ class ErrorClassifierTests: XCTestCase {
 
         switch apiError {
         case .serverUnavailable(let regionName, let statusCode):
-            expect(regionName) == "Tampa"
-            expect(statusCode) == 503
+            #expect(regionName == "Tampa")
+            #expect(statusCode == 503)
         default:
             fail("Expected .serverUnavailable, got \(apiError)")
         }
@@ -172,7 +173,7 @@ class ErrorClassifierTests: XCTestCase {
 
         switch apiError {
         case .requestFailure(let resp):
-            expect(resp.statusCode) == 501
+            #expect(resp.statusCode == 501)
         default:
             fail("Expected .requestFailure for 501, got \(apiError)")
         }
@@ -191,7 +192,7 @@ class ErrorClassifierTests: XCTestCase {
 
         switch apiError {
         case .requestFailure(let resp):
-            expect(resp.statusCode) == 500
+            #expect(resp.statusCode == 500)
         default:
             fail("Expected .requestFailure to pass through when regionName is nil, got \(apiError)")
         }
@@ -210,7 +211,7 @@ class ErrorClassifierTests: XCTestCase {
 
         switch apiError {
         case .requestFailure(let resp):
-            expect(resp.statusCode) == 503
+            #expect(resp.statusCode == 503)
         default:
             fail("Expected .requestFailure to pass through when regionName is nil, got \(apiError)")
         }
@@ -229,7 +230,7 @@ class ErrorClassifierTests: XCTestCase {
 
         switch apiError {
         case .requestFailure(let resp):
-            expect(resp.statusCode) == 400
+            #expect(resp.statusCode == 400)
         default:
             fail("Expected .requestFailure for 4xx, got \(apiError)")
         }
@@ -304,7 +305,7 @@ class ErrorClassifierTests: XCTestCase {
 
         switch apiError {
         case .serverUnavailable(let regionName, let statusCode):
-            expect(regionName) == "San Diego"
+            #expect(regionName == "San Diego")
             expect(statusCode).to(beNil())
         default:
             fail("Expected .serverUnavailable, got \(apiError)")
@@ -335,7 +336,7 @@ class ErrorClassifierTests: XCTestCase {
 
         switch apiError {
         case .serverUnavailable(let regionName, _):
-            expect(regionName) == "York Region"
+            #expect(regionName == "York Region")
         default:
             fail("Expected .serverUnavailable for timeout, got \(apiError)")
         }
@@ -352,7 +353,7 @@ class ErrorClassifierTests: XCTestCase {
 
         switch apiError {
         case .serverUnavailable(let regionName, _):
-            expect(regionName) == "Tampa"
+            #expect(regionName == "Tampa")
         default:
             fail("Expected .serverUnavailable, got \(apiError)")
         }
@@ -369,7 +370,7 @@ class ErrorClassifierTests: XCTestCase {
 
         switch apiError {
         case .serverUnavailable(let regionName, _):
-            expect(regionName) == "San Diego"
+            #expect(regionName == "San Diego")
         default:
             fail("Expected .serverUnavailable, got \(apiError)")
         }
@@ -422,7 +423,7 @@ class ErrorClassifierTests: XCTestCase {
 
         switch apiError {
         case .serverError(let regionName):
-            expect(regionName) == "Puget Sound"
+            #expect(regionName == "Puget Sound")
         default:
             fail("Expected .serverError to pass through, got \(apiError)")
         }
@@ -439,8 +440,8 @@ class ErrorClassifierTests: XCTestCase {
 
         switch apiError {
         case .serverUnavailable(let regionName, let statusCode):
-            expect(regionName) == "Puget Sound"
-            expect(statusCode) == 503
+            #expect(regionName == "Puget Sound")
+            #expect(statusCode == 503)
         default:
             fail("Expected .serverUnavailable to pass through, got \(apiError)")
         }
@@ -471,7 +472,7 @@ class ErrorClassifierTests: XCTestCase {
         ])
         let result = ErrorClassifier.classify(error, regionName: "Puget Sound")
 
-        expect(result.localizedDescription) == "Something unrelated happened"
+        #expect(result.localizedDescription == "Something unrelated happened")
     }
 
     // MARK: - Error Description Verification

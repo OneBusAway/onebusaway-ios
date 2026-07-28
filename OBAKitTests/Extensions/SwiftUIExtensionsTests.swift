@@ -10,6 +10,7 @@
 import Foundation
 import XCTest
 import Nimble
+import Testing
 import SwiftUI
 @testable import OBAKit
 
@@ -29,6 +30,6 @@ class SwiftUIExtensionsTests: XCTestCase {
         expect(testView).toNot(beNil())
         
         // The action should not have been called yet since onAppear hasn't triggered
-        expect(callCount) == 0
+        #expect(callCount == 0)
     }
 }

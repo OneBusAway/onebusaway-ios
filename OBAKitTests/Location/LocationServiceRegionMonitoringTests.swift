@@ -13,6 +13,7 @@ import XCTest
 @testable import OBAKitCore
 import CoreLocation
 import Nimble
+import Testing
 
 // swiftlint:disable force_try
 
@@ -41,14 +42,14 @@ class LocationServiceRegionMonitoringTests: OBATestCase {
 
         service.startMonitoringProximity(for: alert)
 
-        expect(self.locationManagerMock.monitoredRegions.count) == 1
+        #expect(self.locationManagerMock.monitoredRegions.count == 1)
 
         let region = locationManagerMock.monitoredRegions.first as? CLCircularRegion
         expect(region).toNot(beNil())
-        expect(region?.identifier) == "oba.proximity.\(alert.id.uuidString)"
-        expect(region?.center.latitude) == stop.location.coordinate.latitude
-        expect(region?.center.longitude) == stop.location.coordinate.longitude
-        expect(region?.radius) == 300.0
+        #expect(region?.identifier == "oba.proximity.\(alert.id.uuidString)")
+        #expect(region?.center.latitude == stop.location.coordinate.latitude)
+        #expect(region?.center.longitude == stop.location.coordinate.longitude)
+        #expect(region?.radius == 300.0)
         expect(region?.notifyOnEntry).to(beTrue())
         expect(region?.notifyOnExit).to(beFalse())
     }
@@ -69,7 +70,7 @@ class LocationServiceRegionMonitoringTests: OBATestCase {
         service.startMonitoringProximity(for: alert)
 
         let region = locationManagerMock.monitoredRegions.first as? CLCircularRegion
-        expect(region?.radius) == 200.0
+        #expect(region?.radius == 200.0)
     }
 
     func test_startMonitoringProximity_duplicateAlert_replacesRegion() {
@@ -79,8 +80,8 @@ class LocationServiceRegionMonitoringTests: OBATestCase {
         service.startMonitoringProximity(for: alert)
 
         // CLRegion uses identifier for equality in Set, so duplicate insert replaces
-        expect(self.locationManagerMock.monitoredRegions.count) == 1
-        expect(self.locationManagerMock.monitoredRegions.first?.identifier) == "oba.proximity.\(alert.id.uuidString)"
+        #expect(self.locationManagerMock.monitoredRegions.count == 1)
+        #expect(self.locationManagerMock.monitoredRegions.first?.identifier == "oba.proximity.\(alert.id.uuidString)")
     }
 
     func test_startMonitoringProximity_multipleAlerts() {
@@ -91,7 +92,7 @@ class LocationServiceRegionMonitoringTests: OBATestCase {
         service.startMonitoringProximity(for: alert1)
         service.startMonitoringProximity(for: alert2)
 
-        expect(self.locationManagerMock.monitoredRegions.count) == 2
+        #expect(self.locationManagerMock.monitoredRegions.count == 2)
     }
 
     // MARK: - Stop Monitoring
@@ -100,7 +101,7 @@ class LocationServiceRegionMonitoringTests: OBATestCase {
         let alert = ProximityAlert(stop: stop)
 
         service.startMonitoringProximity(for: alert)
-        expect(self.locationManagerMock.monitoredRegions.count) == 1
+        #expect(self.locationManagerMock.monitoredRegions.count == 1)
 
         service.stopMonitoringProximity(for: alert)
         expect(self.locationManagerMock.monitoredRegions).to(beEmpty())
@@ -114,7 +115,7 @@ class LocationServiceRegionMonitoringTests: OBATestCase {
 
         service.stopMonitoringProximity(for: alert2)
 
-        expect(self.locationManagerMock.monitoredRegions.count) == 1
+        #expect(self.locationManagerMock.monitoredRegions.count == 1)
     }
 
     func test_stopMonitoringProximity_onlyRemovesTargetRegion() {
@@ -127,9 +128,9 @@ class LocationServiceRegionMonitoringTests: OBATestCase {
 
         service.stopMonitoringProximity(for: alert1)
 
-        expect(self.locationManagerMock.monitoredRegions.count) == 1
+        #expect(self.locationManagerMock.monitoredRegions.count == 1)
         let remaining = self.locationManagerMock.monitoredRegions.first
-        expect(remaining?.identifier) == "oba.proximity.\(alert2.id.uuidString)"
+        #expect(remaining?.identifier == "oba.proximity.\(alert2.id.uuidString)")
     }
 
     // MARK: - Stop All Monitoring
@@ -158,12 +159,12 @@ class LocationServiceRegionMonitoringTests: OBATestCase {
         )
         locationManagerMock.startMonitoring(for: otherRegion)
 
-        expect(self.locationManagerMock.monitoredRegions.count) == 2
+        #expect(self.locationManagerMock.monitoredRegions.count == 2)
 
         service.stopMonitoringAllProximityAlerts()
 
-        expect(self.locationManagerMock.monitoredRegions.count) == 1
-        expect(self.locationManagerMock.monitoredRegions.first?.identifier) == "some-other-region"
+        #expect(self.locationManagerMock.monitoredRegions.count == 1)
+        #expect(self.locationManagerMock.monitoredRegions.first?.identifier == "some-other-region")
     }
 
     func test_stopMonitoringAllProximityAlerts_emptyRegions_isNoOp() {
@@ -186,7 +187,7 @@ class LocationServiceRegionMonitoringTests: OBATestCase {
 
         service.locationManager(CLLocationManager(), didEnterRegion: region)
 
-        expect(self.delegate.enteredRegionIdentifier) == "oba.proximity.\(alert.id.uuidString)"
+        #expect(self.delegate.enteredRegionIdentifier == "oba.proximity.\(alert.id.uuidString)")
     }
 
     func test_didEnterRegion_nonPrefixedCircularRegion_doesNotNotify() {
@@ -224,8 +225,8 @@ class LocationServiceRegionMonitoringTests: OBATestCase {
 
         service.locationManager(CLLocationManager(), monitoringDidFailFor: region, withError: error)
 
-        expect(self.delegate.monitoringFailedIdentifier) == region.identifier
-        expect((self.delegate.monitoringFailedError as? NSError)?.code) == 5
+        #expect(self.delegate.monitoringFailedIdentifier == region.identifier)
+        #expect((self.delegate.monitoringFailedError as? NSError)?.code == 5)
     }
 
     func test_monitoringDidFail_nilRegion_notifiesDelegate() {
@@ -252,8 +253,8 @@ class LocationServiceRegionMonitoringTests: OBATestCase {
 
         service.locationManager(CLLocationManager(), didEnterRegion: region)
 
-        expect(self.delegate.enteredRegionIdentifier) == "oba.proximity.\(alert.id.uuidString)"
-        expect(delegate2.enteredRegionIdentifier) == "oba.proximity.\(alert.id.uuidString)"
+        #expect(self.delegate.enteredRegionIdentifier == "oba.proximity.\(alert.id.uuidString)")
+        #expect(delegate2.enteredRegionIdentifier == "oba.proximity.\(alert.id.uuidString)")
     }
 }
 

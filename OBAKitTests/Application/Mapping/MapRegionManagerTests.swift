@@ -12,6 +12,7 @@ import XCTest
 @testable import OBAKit
 @testable import OBAKitCore
 import Nimble
+import Testing
 
 // swiftlintXdisable force_try
 
@@ -94,10 +95,10 @@ class MapRegionManagerTests: OBATestCase {
     /// when the visible map rect is taller than the stop-loading threshold.
     func test_shouldShowZoomInWarning_thresholdBehavior() {
         // Comfortably above the 40,000-point threshold → warn.
-        expect(MapRegionManager.shouldShowZoomInWarning(forVisibleMapRectHeight: 100_000)) == true
+        #expect(MapRegionManager.shouldShowZoomInWarning(forVisibleMapRectHeight: 100_000) == true)
         // Comfortably below → no warning.
-        expect(MapRegionManager.shouldShowZoomInWarning(forVisibleMapRectHeight: 10_000)) == false
+        #expect(MapRegionManager.shouldShowZoomInWarning(forVisibleMapRectHeight: 10_000) == false)
         // Exactly at the threshold is not "too far out".
-        expect(MapRegionManager.shouldShowZoomInWarning(forVisibleMapRectHeight: 40_000)) == false
+        #expect(MapRegionManager.shouldShowZoomInWarning(forVisibleMapRectHeight: 40_000) == false)
     }
 }

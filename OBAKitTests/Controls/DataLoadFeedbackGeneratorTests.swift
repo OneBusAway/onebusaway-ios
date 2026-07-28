@@ -10,6 +10,7 @@
 import Foundation
 import XCTest
 import Nimble
+import Testing
 import UIKit
 @testable import OBAKit
 
@@ -25,7 +26,7 @@ class DataLoadFeedbackGeneratorTests: OBATestCase {
     func test_init_registersDefaults() {
         _ = DataLoadFeedbackGenerator(userDefaults: userDefaults)
         
-        expect(self.userDefaults.bool(forKey: DataLoadFeedbackGenerator.EnabledUserDefaultsKey)) == true
+        #expect(self.userDefaults.bool(forKey: DataLoadFeedbackGenerator.EnabledUserDefaultsKey) == true)
     }
     
     func test_init_withApplication() {

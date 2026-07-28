@@ -9,6 +9,7 @@
 
 import XCTest
 import Nimble
+import Testing
 import Combine
 @testable import OBAKit
 @testable import OBAKitCore
@@ -107,7 +108,7 @@ final class AgencyAlertsViewModelTests: OBATestCase {
         viewModel.reloadServerData()
         viewModel.agencyAlertsUpdated()
 
-        expect(viewModel.collapsedSections) == ["agency_1", "agency_2"]
+        #expect(viewModel.collapsedSections == ["agency_1", "agency_2"])
     }
 
     @MainActor

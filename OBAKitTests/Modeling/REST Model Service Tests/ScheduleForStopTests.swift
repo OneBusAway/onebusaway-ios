@@ -9,6 +9,7 @@
 
 import XCTest
 import Nimble
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -46,7 +47,7 @@ class ScheduleForStopTests: OBATestCase {
         let response = try await restService.getScheduleForStop(stopID: stopID)
         let schedule = response.entry
 
-        expect(schedule.stopID) == "1_75403"
+        #expect(schedule.stopID == "1_75403")
         expect(schedule.date).toNot(beNil())
         expect(schedule.stopRouteSchedules).toNot(beEmpty())
     }

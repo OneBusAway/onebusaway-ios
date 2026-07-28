@@ -43,21 +43,21 @@ class StopsModelOperationTests: OBATestCase {
     func checkExpectations(_ response: RESTAPIResponse<[Stop]>) {
         let stops = response.list
 
-        expect(stops.count) == 26
+        #expect(stops.count == 26)
 
         let stop = stops.first!
 
-        expect(stop.code) == "10914"
-        expect(stop.direction) == .s
-        expect(stop.id) == "1_10914"
+        #expect(stop.code == "10914")
+        #expect(stop.direction == .s)
+        #expect(stop.id == "1_10914")
         expectClose(stop.location.coordinate.latitude, 47.656422)
         expectClose(stop.location.coordinate.longitude, -122.312164)
-        expect(stop.locationType) == .stop
-        expect(stop.name) == "15th Ave NE & NE Campus Pkwy"
-        expect(stop.routes.count) == 12
-        expect(stop.routes.first!.id) == "1_100059"     // Test that routes get sorted by ID.
-        expect(stop.wheelchairBoarding) == .unknown
-        expect(stop.regionIdentifier) == pugetSoundRegionIdentifier
+        #expect(stop.locationType == .stop)
+        #expect(stop.name == "15th Ave NE & NE Campus Pkwy")
+        #expect(stop.routes.count == 12)
+        #expect(stop.routes.first!.id == "1_100059")  // Test that routes get sorted by ID.
+        #expect(stop.wheelchairBoarding == .unknown)
+        #expect(stop.regionIdentifier == pugetSoundRegionIdentifier)
     }
 
     func testLoading_coordinate_success() async throws {
@@ -84,22 +84,23 @@ class StopsModelOperationTests: OBATestCase {
         stubApiCall()
 
         let stop = try await restService.getStop(id: "1_29270").entry
-        expect(stop.code) == "29270"
-        expect(stop.direction) == .e
-        expect(stop.id) == "1_29270"
+        #expect(stop.code == "29270")
+        #expect(stop.direction == .e)
+        #expect(stop.id == "1_29270")
         expectClose(stop.location.coordinate.latitude, 47.619846)
         expectClose(stop.location.coordinate.longitude, -122.320473)
-        expect(stop.locationType) == .stop
-        expect(stop.name) == "E John St & Broadway  E"
-        expect(stop.routes.count) == 4
-        expect(stop.routes.map(\.id)) == [
+        #expect(stop.locationType == .stop)
+        #expect(stop.name == "E John St & Broadway  E")
+        #expect(stop.routes.count == 4)
+        // Test that routes get sorted by ID.
+        #expect(stop.routes.map(\.id) == [
             "1_100002",
             "1_100223",
             "1_100275",
             "1_102650"
-        ]   // Test that routes get sorted by ID.
-        expect(stop.wheelchairBoarding) == .unknown
-        expect(stop.regionIdentifier) == pugetSoundRegionIdentifier
+        ])
+        #expect(stop.wheelchairBoarding == .unknown)
+        #expect(stop.regionIdentifier == pugetSoundRegionIdentifier)
 
     }
 }

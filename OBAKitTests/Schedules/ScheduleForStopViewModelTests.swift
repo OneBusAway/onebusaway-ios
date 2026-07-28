@@ -9,6 +9,7 @@
 
 import XCTest
 import Nimble
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -77,7 +78,7 @@ class ScheduleForStopViewModelTests: OBATestCase {
 
         let viewModel = ScheduleForStopViewModel(stopID: stopID, application: app)
 
-        expect(viewModel.stopID) == stopID
+        #expect(viewModel.stopID == stopID)
     }
 
     @MainActor
@@ -112,7 +113,7 @@ class ScheduleForStopViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = ScheduleForStopViewModel(stopID: stopID, application: app)
 
-        expect(viewModel.stopName) == stopID
+        #expect(viewModel.stopName == stopID)
     }
 
     // MARK: - Available Routes Tests
@@ -139,7 +140,7 @@ class ScheduleForStopViewModelTests: OBATestCase {
         let testRouteID = "test_route_123"
         viewModel.selectRoute(testRouteID)
 
-        expect(viewModel.selectedRouteID) == testRouteID
+        #expect(viewModel.selectedRouteID == testRouteID)
     }
 
     @MainActor
@@ -150,13 +151,13 @@ class ScheduleForStopViewModelTests: OBATestCase {
         let viewModel = ScheduleForStopViewModel(stopID: stopID, application: app)
 
         viewModel.selectRoute("route_1")
-        expect(viewModel.selectedRouteID) == "route_1"
+        #expect(viewModel.selectedRouteID == "route_1")
 
         viewModel.selectRoute("route_2")
-        expect(viewModel.selectedRouteID) == "route_2"
+        #expect(viewModel.selectedRouteID == "route_2")
 
         viewModel.selectRoute("route_3")
-        expect(viewModel.selectedRouteID) == "route_3"
+        #expect(viewModel.selectedRouteID == "route_3")
     }
 
     // MARK: - Loading State Tests

@@ -48,7 +48,7 @@ class WalkingDirectionsTests: XCTestCase {
         expectClose(fastTime, knownDistance / 1.8, within: 0.01)
 
         // Slower speed should yield a longer travel time
-        expect(slowTime!) > fastTime!
+        #expect(slowTime! > fastTime!)
     }
 
     // MARK: - Nil Locations

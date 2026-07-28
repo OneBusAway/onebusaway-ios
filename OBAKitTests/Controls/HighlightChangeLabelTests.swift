@@ -10,6 +10,7 @@
 import Foundation
 import XCTest
 import Nimble
+import Testing
 import UIKit
 import CoreLocation
 @testable import OBAKit
@@ -25,21 +26,21 @@ class HighlightChangeLabelTests: OBATestCase {
     }
     
     func test_init_setsContentPriorities() {
-        expect(self.label.contentCompressionResistancePriority(for: .vertical)) == .required
-        expect(self.label.contentCompressionResistancePriority(for: .horizontal)) == .required
-        expect(self.label.contentHuggingPriority(for: .horizontal)) == .required - 1
-        expect(self.label.contentHuggingPriority(for: .vertical)) == .required
+        #expect(self.label.contentCompressionResistancePriority(for: .vertical) == .required)
+        #expect(self.label.contentCompressionResistancePriority(for: .horizontal) == .required)
+        #expect(self.label.contentHuggingPriority(for: .horizontal) == .required - 1)
+        #expect(self.label.contentHuggingPriority(for: .vertical) == .required)
     }
     
     func test_highlightedBackgroundColor_defaultValue() {
-        expect(self.label.highlightedBackgroundColor) == ThemeColors.shared.propertyChanged
+        #expect(self.label.highlightedBackgroundColor == ThemeColors.shared.propertyChanged)
     }
     
     func test_highlightedBackgroundColor_canBeSet() {
         let newColor = UIColor.red
         label.highlightedBackgroundColor = newColor
         
-        expect(self.label.highlightedBackgroundColor) == newColor
+        #expect(self.label.highlightedBackgroundColor == newColor)
     }
     
     func test_highlightBackground_triggersAnimation() {

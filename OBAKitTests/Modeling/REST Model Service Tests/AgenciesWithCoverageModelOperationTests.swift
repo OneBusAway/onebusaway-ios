@@ -28,7 +28,7 @@ class AgenciesWithCoverageModelOperationTests: OBATestCase {
         let agencies = response.list
         let childrens = try XCTUnwrap(agencies.first)
 
-        expect(agencies.count) == 11
+        #expect(agencies.count == 11)
 
         expectClose(childrens.region.center.latitude, 47.6470785)
         expectClose(childrens.region.center.longitude, -122.296449)
@@ -36,8 +36,8 @@ class AgenciesWithCoverageModelOperationTests: OBATestCase {
         expectClose(childrens.region.span.latitudeDelta, 0.06330499999999972, within: 0.1)
         expectClose(childrens.region.span.longitudeDelta, 0.07930600000000254, within: 0.1)
 
-        expect(childrens.agencyID) == "98"
-        expect(childrens.agency.name) == "Seattle Children's Hospital"
+        #expect(childrens.agencyID == "98")
+        #expect(childrens.agency.name == "Seattle Children's Hospital")
         expect(childrens.agency.disclaimer).to(beNil())
         expect(childrens.agency.email).to(beNil())
         expect(childrens.agency.fareURL).to(beNil())

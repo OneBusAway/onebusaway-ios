@@ -10,6 +10,7 @@
 import Foundation
 import XCTest
 import Nimble
+import Testing
 @testable import OBAKitCore
 
 @MainActor
@@ -49,7 +50,7 @@ class CodableExtensionsTests: XCTestCase {
         let decoder = JSONDecoder()
         let result = try decoder.decode(TestStruct.self, from: data)
         
-        expect(result.validURL?.absoluteString) == "https://example.com"
+        #expect(result.validURL?.absoluteString == "https://example.com")
         expect(result.invalidURL).to(beNil()) // Invalid URL becomes nil
         expect(result.blankURL).to(beNil()) // Blank string becomes nil
         expect(result.nilURL).to(beNil()) // Null value becomes nil
@@ -66,7 +67,7 @@ class CodableExtensionsTests: XCTestCase {
         let decoder = JSONDecoder()
         let result = try decoder.decode(TestStruct.self, from: data)
         
-        expect(result.validURL?.absoluteString) == "https://example.com"
+        #expect(result.validURL?.absoluteString == "https://example.com")
         expect(result.invalidURL).to(beNil())
         expect(result.blankURL).to(beNil())
         expect(result.nilURL).to(beNil())
@@ -84,7 +85,7 @@ class CodableExtensionsTests: XCTestCase {
         let decoder = JSONDecoder()
         let result = try decoder.decode(TestStruct.self, from: data)
         
-        expect(result.validURL?.absoluteString) == "https://example.com"
+        #expect(result.validURL?.absoluteString == "https://example.com")
         expect(result.blankURL).to(beNil()) // Whitespace-only string should become nil
     }
     
@@ -100,7 +101,7 @@ class CodableExtensionsTests: XCTestCase {
         let decoder = JSONDecoder()
         let result = try decoder.decode(TestStruct.self, from: data)
         
-        expect(result.validURL?.absoluteString) == "https://example.com"
+        #expect(result.validURL?.absoluteString == "https://example.com")
         expect(result.invalidURL).to(beNil()) // Malformed URL becomes nil
     }
     
@@ -115,7 +116,7 @@ class CodableExtensionsTests: XCTestCase {
         let decoder = JSONDecoder()
         let result = try decoder.decode(TestStruct.self, from: data)
         
-        expect(result.validURL?.absoluteString) == "/path/to/resource"
-        expect(result.validURL?.path) == "/path/to/resource"
+        #expect(result.validURL?.absoluteString == "/path/to/resource")
+        #expect(result.validURL?.path == "/path/to/resource")
     }
 }

@@ -13,6 +13,7 @@ import XCTest
 @testable import OBAKitCore
 import CoreLocation
 import Nimble
+import Testing
 
 @MainActor
 class LocationServiceTests: XCTestCase {
@@ -21,7 +22,7 @@ class LocationServiceTests: XCTestCase {
     func test_authorization_defaultValueIsNotDetermined() {
         let service = LocationService(userDefaults: UserDefaults(), locationManager: LocationManagerMock())
 
-        expect(service.authorizationStatus) == .notDetermined
+        #expect(service.authorizationStatus == .notDetermined)
         expect(service.currentLocation).to(beNil())
         expect(service.canRequestAuthorization).to(beTrue())
     }
@@ -38,8 +39,8 @@ class LocationServiceTests: XCTestCase {
         waitUntil { (done) in
             expect(locationManagerMock.locationUpdatesStarted).to(beTrue())
             expect(locationManagerMock.headingUpdatesStarted).to(beTrue())
-            expect(delegate.location) == TestData.mockSeattleLocation
-            expect(delegate.heading) == TestData.mockHeading
+            #expect(delegate.location == TestData.mockSeattleLocation)
+            #expect(delegate.heading == TestData.mockHeading)
             expect(delegate.error).to(beNil())
             done()
         }
@@ -54,11 +55,11 @@ class LocationServiceTests: XCTestCase {
 
         service.startUpdatingLocation()
 
-        expect(service.currentLocation) == TestData.mockSeattleLocation
+        #expect(service.currentLocation == TestData.mockSeattleLocation)
 
         service.locationManager(CLLocationManager(), didUpdateLocations: [TestData.mockTampaLocation])
 
-        expect(service.currentLocation) == TestData.mockTampaLocation
+        #expect(service.currentLocation == TestData.mockTampaLocation)
     }
 
     func test_updateLocation_withNoLocation_doesNotTriggerUpdates() {
@@ -71,7 +72,7 @@ class LocationServiceTests: XCTestCase {
         service.addDelegate(del)
 
         service.locationManager(CLLocationManager(), didUpdateLocations: [])
-        expect(del.location) == TestData.mockSeattleLocation
+        #expect(del.location == TestData.mockSeattleLocation)
     }
 
     func test_updateLocation_withLowAccuracy_doesNotTriggerUpdates() {
@@ -84,12 +85,12 @@ class LocationServiceTests: XCTestCase {
 
         let seattle = CLLocation(coordinate: TestData.seattleCoordinate, altitude: 100.0, horizontalAccuracy: 10.0, verticalAccuracy: 10.0, timestamp: Date())
         service.locationManager(locManager, didUpdateLocations: [seattle])
-        expect(service.currentLocation) == seattle
+        #expect(service.currentLocation == seattle)
 
         let badLocation = CLLocation(coordinate: TestData.tampaCoordinate, altitude: 10.0, horizontalAccuracy: 1000, verticalAccuracy: 1000, timestamp: Date())
         service.locationManager(locManager, didUpdateLocations: [badLocation])
 
-        expect(service.currentLocation) == seattle
+        #expect(service.currentLocation == seattle)
     }
 
     func test_stopUpdates_disablesUpdates() {
@@ -130,6 +131,6 @@ class LocationServiceTests: XCTestCase {
 
         let delError = del.error! as NSError
 
-        expect(delError) == err
+        #expect(delError == err)
     }
 }

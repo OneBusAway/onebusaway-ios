@@ -9,6 +9,7 @@
 
 import XCTest
 import Nimble
+import Testing
 import Combine
 @testable import OBAKit
 @testable import OBAKitCore
@@ -166,12 +167,12 @@ class BookmarksViewModelTests: OBATestCase {
         let viewModel = BookmarksViewModel(application: app)
         viewModel.rebuildSections()
 
-        expect(viewModel.sections.map(\.id)) == [group.id.uuidString, "unknown_group"]
-        expect(viewModel.sections.map { $0.rows.map(\.name) }) == [["Grouped"], ["Ungrouped"]]
+        #expect(viewModel.sections.map(\.id) == [group.id.uuidString, "unknown_group"])
+        #expect(viewModel.sections.map { $0.rows.map(\.name) } == [["Grouped"], ["Ungrouped"]])
 
         viewModel.updateSortType(byGroup: false)
-        expect(viewModel.sections.map(\.id)) == ["distance_sorted_group"]
-        expect(viewModel.sections.first?.rows.count) == 2
+        #expect(viewModel.sections.map(\.id) == ["distance_sorted_group"])
+        #expect(viewModel.sections.first?.rows.count == 2)
     }
 
     /// Bookmarks from other regions must not appear, and a section whose
@@ -197,8 +198,8 @@ class BookmarksViewModelTests: OBATestCase {
         viewModel.rebuildSections()
 
         expect(viewModel.sections).to(beEmpty())
-        expect(viewModel.emptyState.title) == Strings.emptyBookmarkTitle
-        expect(viewModel.emptyState.body) == Strings.emptyBookmarkBody
+        #expect(viewModel.emptyState.title == Strings.emptyBookmarkTitle)
+        #expect(viewModel.emptyState.body == Strings.emptyBookmarkBody)
     }
 
     // MARK: - refreshAndWait
@@ -259,16 +260,16 @@ class BookmarksViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = BookmarksViewModel(application: app)
 
-        expect(viewModel.collapsedSectionIDs) == ["unknown_group"]
+        #expect(viewModel.collapsedSectionIDs == ["unknown_group"])
 
         viewModel.toggleSectionCollapsed("distance_sorted_group")
-        expect(viewModel.collapsedSectionIDs) == ["unknown_group", "distance_sorted_group"]
+        #expect(viewModel.collapsedSectionIDs == ["unknown_group", "distance_sorted_group"])
 
         viewModel.toggleSectionCollapsed("unknown_group")
-        expect(viewModel.collapsedSectionIDs) == ["distance_sorted_group"]
+        #expect(viewModel.collapsedSectionIDs == ["distance_sorted_group"])
 
         let persisted = try userDefaults.decodeUserDefaultsObjects(type: Set<String>.self, key: key)
-        expect(persisted) == ["distance_sorted_group"]
+        #expect(persisted == ["distance_sorted_group"])
     }
 
     // MARK: - BookmarkRowViewModel Equality
@@ -288,18 +289,18 @@ class BookmarksViewModelTests: OBATestCase {
         let base = BookmarkRowViewModel(bookmark: bookmark, arrivalDepartures: [], highlightedTripIDs: [])
 
         // Same inputs → equal, even though `bookmark` is a reference type.
-        expect(base) == BookmarkRowViewModel(bookmark: bookmark, arrivalDepartures: [], highlightedTripIDs: [])
+        #expect(base == BookmarkRowViewModel(bookmark: bookmark, arrivalDepartures: [], highlightedTripIDs: []))
 
         // Arrival data and highlights are display state → unequal.
-        expect(base) != BookmarkRowViewModel(bookmark: bookmark, arrivalDepartures: [arrivalDep], highlightedTripIDs: [])
-        expect(base) != BookmarkRowViewModel(bookmark: bookmark, arrivalDepartures: [], highlightedTripIDs: [arrivalDep.tripID])
+        #expect(base != BookmarkRowViewModel(bookmark: bookmark, arrivalDepartures: [arrivalDep], highlightedTripIDs: []))
+        #expect(base != BookmarkRowViewModel(bookmark: bookmark, arrivalDepartures: [], highlightedTripIDs: [arrivalDep.tripID]))
 
         // Mutable Bookmark fields (name, favorite) are display state → unequal.
         bookmark.name = "Renamed"
-        expect(base) != BookmarkRowViewModel(bookmark: bookmark, arrivalDepartures: [], highlightedTripIDs: [])
+        #expect(base != BookmarkRowViewModel(bookmark: bookmark, arrivalDepartures: [], highlightedTripIDs: []))
         bookmark.name = "Route 49"
         bookmark.isFavorite = true
-        expect(base) != BookmarkRowViewModel(bookmark: bookmark, arrivalDepartures: [], highlightedTripIDs: [])
+        #expect(base != BookmarkRowViewModel(bookmark: bookmark, arrivalDepartures: [], highlightedTripIDs: []))
     }
 
     /// The init clamp: whole-stop bookmarks never carry arrival data, even if

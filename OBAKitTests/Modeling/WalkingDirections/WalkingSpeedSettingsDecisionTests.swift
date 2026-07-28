@@ -25,7 +25,7 @@ final class WalkingSpeedSettingsDecisionTests: XCTestCase {
             useHealthKit: nil,
             segmentSpeed: 0.9
         )
-        expect(decision.source) == .manual
+        #expect(decision.source == .manual)
         expectClose(decision.speed, 0.9)
     }
 
@@ -36,7 +36,7 @@ final class WalkingSpeedSettingsDecisionTests: XCTestCase {
             useHealthKit: nil,
             segmentSpeed: nil
         )
-        expect(decision.source) == .healthKit
+        #expect(decision.source == .healthKit)
         expectClose(decision.speed, 1.65)
     }
 
@@ -51,7 +51,7 @@ final class WalkingSpeedSettingsDecisionTests: XCTestCase {
             useHealthKit: true,
             segmentSpeed: 1.4
         )
-        expect(decision.source) == .healthKit
+        #expect(decision.source == .healthKit)
         expectClose(decision.speed, 1.65)
     }
 
@@ -64,7 +64,7 @@ final class WalkingSpeedSettingsDecisionTests: XCTestCase {
             useHealthKit: false,
             segmentSpeed: nil
         )
-        expect(decision.source) == .manual
+        #expect(decision.source == .manual)
         expectClose(decision.speed, WalkingSpeedPreset.fast.rawValue)
     }
 
@@ -77,7 +77,7 @@ final class WalkingSpeedSettingsDecisionTests: XCTestCase {
             useHealthKit: false,
             segmentSpeed: 0.9
         )
-        expect(decision.source) == .manual
+        #expect(decision.source == .manual)
         expectClose(decision.speed, WalkingSpeedPreset.slow.rawValue)
     }
 }

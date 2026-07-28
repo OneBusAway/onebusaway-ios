@@ -32,17 +32,17 @@ class ReferencesTests: OBATestCase {
     func test_agencies_success() {
         let agencies = references.agencies
 
-        expect(agencies.count) == 1
+        #expect(agencies.count == 1)
 
         let agency = agencies.first!
         expect(agency.disclaimer).to(beNil())
-        expect(agency.id) == "Hillsborough Area Regional Transit"
-        expect(agency.language) == "en"
-        expect(agency.name) == "Hillsborough Area Regional Transit"
-        expect(agency.phone) == "813-254-4278"
+        #expect(agency.id == "Hillsborough Area Regional Transit")
+        #expect(agency.language == "en")
+        #expect(agency.name == "Hillsborough Area Regional Transit")
+        #expect(agency.phone == "813-254-4278")
         expect(agency.isPrivateService).to(beFalse())
-        expect(agency.timeZone) == "America/New_York"
-        expect(agency.agencyURL) == URL(string: "http://www.gohart.org")!
+        #expect(agency.timeZone == "America/New_York")
+        #expect(agency.agencyURL == URL(string: "http://www.gohart.org")!)
     }
 
     // MARK: - Routes
@@ -54,17 +54,17 @@ class ReferencesTests: OBATestCase {
         expect(self.references.routes.map { $0.id }).to(equal(expectedRoutes), description: "Make sure routes are sorted by their IDs for binary searching")
 
         let route = self.references.routes.first!
-        expect(route.agencyID) == "Hillsborough Area Regional Transit"
-        expect(route.agency.name) == "Hillsborough Area Regional Transit"
+        #expect(route.agencyID == "Hillsborough Area Regional Transit")
+        #expect(route.agency.name == "Hillsborough Area Regional Transit")
         expectEqualRGB(route.color, UIColor(red: (9.0 / 255.0), green: (52.0 / 255.0), blue: (109.0 / 255.0), alpha: 1.0))
         expect(route.routeDescription).to(beNil())
-        expect(route.id) == "Hillsborough Area Regional Transit_1"
-        expect(route.longName) == "Florida Avenue"
-        expect(route.shortName) == "1"
+        #expect(route.id == "Hillsborough Area Regional Transit_1")
+        #expect(route.longName == "Florida Avenue")
+        #expect(route.shortName == "1")
         expectEqualRGB(route.textColor, UIColor.white)
-        expect(route.routeType) == .bus
-        expect(route.routeURL) == URL(string: "http://www.gohart.org/routes/hart/01.html")!
-        expect(route.regionIdentifier) == 0
+        #expect(route.routeType == .bus)
+        #expect(route.routeURL == URL(string: "http://www.gohart.org/routes/hart/01.html")!)
+        #expect(route.regionIdentifier == 0)
     }
 
     // MARK: - Service Alerts
@@ -74,34 +74,34 @@ class ReferencesTests: OBATestCase {
         let response = try! JSONDecoder.RESTDecoder().decode(RESTAPIResponse<ArrivalDeparture>.self, from: data)
         let situations = response.references!.serviceAlerts
 
-        expect(situations.count) == 1
+        #expect(situations.count == 1)
 
         let situation = situations.first!
 
         let activeWindow = situation.activeWindows.first!
-        expect(activeWindow.interval) == DateInterval(start: Date(timeIntervalSince1970: 1539781200),
-                                                      end: Date(timeIntervalSince1970: 1539826200))
+        #expect(activeWindow.interval == DateInterval(start: Date(timeIntervalSince1970: 1539781200),
+                                                      end: Date(timeIntervalSince1970: 1539826200)))
 
         let entity = situation.affectedEntities.first!
-        expect(entity.routeID) == "MTS_10"
+        #expect(entity.routeID == "MTS_10")
 
         let consequence = situation.consequences.first!
-        expect(consequence.condition) == "detour"
-        expect(consequence.conditionDetails!.diversionPath) == "ue}aHt~hiVYxHt@lIxAjD|`@pb@tDbHh@|EHvEU~l@fAfN`C~E|DvDbIvB|NdClMxCbEbA`CxDfB`FLrKsNl]gA{@gPGKjF"
-        expect(consequence.conditionDetails?.stopIDs) == ["1_9972", "1_9974"]
+        #expect(consequence.condition == "detour")
+        #expect(consequence.conditionDetails!.diversionPath == "ue}aHt~hiVYxHt@lIxAjD|`@pb@tDbHh@|EHvEU~l@fAfN`C~E|DvDbIvB|NdClMxCbEbA`CxDfB`FLrKsNl]gA{@gPGKjF")
+        #expect(consequence.conditionDetails?.stopIDs == ["1_9972", "1_9974"])
 
-        expect(situation.createdAt) == Date.fromComponents(year: 2018, month: 10, day: 13, hour: 02, minute: 26, second: 33)
+        #expect(situation.createdAt == Date.fromComponents(year: 2018, month: 10, day: 13, hour: 02, minute: 26, second: 33))
 
         let desc = situation.situationDescription
-        expect(desc?.lang) == "en"
-        expect(desc?.value) == "Due to construction, the Washington St. off ramp from Pacific Highway will be closed Wednesday, October 17, from 6:30am - 6:30pm. Eastbound route 10 will detour, but will not miss any stops."
+        #expect(desc?.lang == "en")
+        #expect(desc?.value == "Due to construction, the Washington St. off ramp from Pacific Highway will be closed Wednesday, October 17, from 6:30am - 6:30pm. Eastbound route 10 will detour, but will not miss any stops.")
 
-        expect(situation.id) == "MTS_RTA:11638227"
-        expect(situation.publicationWindows) == []
-        expect(situation.reason) == "CONSTRUCTION"
-        expect(situation.severity) == ""
-        expect(situation.summary!.lang) == "en"
-        expect(situation.summary!.value) == "Washington St. ramp from Pac Hwy Closed"
+        #expect(situation.id == "MTS_RTA:11638227")
+        #expect(situation.publicationWindows == [])
+        #expect(situation.reason == "CONSTRUCTION")
+        #expect(situation.severity == "")
+        #expect(situation.summary!.lang == "en")
+        #expect(situation.summary!.value == "Washington St. ramp from Pac Hwy Closed")
         expect(situation.urlString).to(beNil())
     }
 
@@ -118,17 +118,17 @@ class ReferencesTests: OBATestCase {
             return
         }
 
-        expect(stop.code) == "6497"
-        expect(stop.direction) == .unknown
-        expect(stop.id) == "Hillsborough Area Regional Transit_6497"
+        #expect(stop.code == "6497")
+        #expect(stop.direction == .unknown)
+        #expect(stop.id == "Hillsborough Area Regional Transit_6497")
         expectClose(stop.location.coordinate.latitude, 28.066419, within: 0.01)
         expectClose(stop.location.coordinate.longitude, -82.429872, within: 0.01)
-        expect(stop.locationType) == .stop
-        expect(stop.name) == "University Area Transit Center"
-        expect(stop.routeIDs.count) == 10
-        expect(stop.routeIDs.first!) == "Hillsborough Area Regional Transit_1"
-        expect(stop.routes.first!.shortName) == "1"
-        expect(stop.wheelchairBoarding) == .unknown
+        #expect(stop.locationType == .stop)
+        #expect(stop.name == "University Area Transit Center")
+        #expect(stop.routeIDs.count == 10)
+        #expect(stop.routeIDs.first! == "Hillsborough Area Regional Transit_1")
+        #expect(stop.routes.first!.shortName == "1")
+        #expect(stop.wheelchairBoarding == .unknown)
     }
 
     func test_stopsWithIDs_preservesInputOrder() {
@@ -158,8 +158,8 @@ class ReferencesTests: OBATestCase {
         let result = references.stopsWithIDs([validID, invalidID])
 
         // Should only return the valid stop
-        expect(result.count) == 1
-        expect(result.first!.id) == validID
+        #expect(result.count == 1)
+        #expect(result.first!.id == validID)
     }
 
     // MARK: - Trips
@@ -175,16 +175,16 @@ class ReferencesTests: OBATestCase {
             return
         }
 
-        expect(trip.blockID) == "Hillsborough Area Regional Transit_288317"
+        #expect(trip.blockID == "Hillsborough Area Regional Transit_288317")
         expect(trip.direction).to(beNil())
-        expect(trip.id) == "Hillsborough Area Regional Transit_99283"
-        expect(trip.routeID) == "Hillsborough Area Regional Transit_9"
-        expect(trip.route.shortName) == "9"
+        #expect(trip.id == "Hillsborough Area Regional Transit_99283")
+        #expect(trip.routeID == "Hillsborough Area Regional Transit_9")
+        #expect(trip.route.shortName == "9")
         expect(trip.routeShortName).to(beNil())
         expect(trip.shortName).to(beNil())
-        expect(trip.serviceID) == "Hillsborough Area Regional Transit_We"
+        #expect(trip.serviceID == "Hillsborough Area Regional Transit_We")
         expect(trip.timeZone).to(beNil())
-        expect(trip.shapeID) == "Hillsborough Area Regional Transit_38042"
-        expect(trip.headsign) == "Downtown to UATC via 15th St"
+        #expect(trip.shapeID == "Hillsborough Area Regional Transit_38042")
+        #expect(trip.headsign == "Downtown to UATC via 15th St")
     }
 }
