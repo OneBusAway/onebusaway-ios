@@ -9,6 +9,7 @@
 
 import XCTest
 import Nimble
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -52,7 +53,7 @@ final class WalkingSpeedManagerTests: OBATestCase {
         expect(result) == false
         expect(self.store.walkingSpeedSource) == .manual
         // Speed left untouched even on failure.
-        expect(self.store.walkingSpeedMetersPerSecond).to(beCloseTo(1.6))
+        expectClose(self.store.walkingSpeedMetersPerSecond, 1.6)
     }
 
     func test_requestAndSync_whenSampleInRange_writesValueAndMarksHealthKit() async {
@@ -68,7 +69,7 @@ final class WalkingSpeedManagerTests: OBATestCase {
 
         expect(result) == true
         expect(self.store.walkingSpeedSource) == .healthKit
-        expect(self.store.walkingSpeedMetersPerSecond).to(beCloseTo(1.65))
+        expectClose(self.store.walkingSpeedMetersPerSecond, 1.65)
     }
 
     func test_requestAndSync_whenSampleOutOfRange_doesNotWriteAndForcesManual() async {
@@ -86,7 +87,7 @@ final class WalkingSpeedManagerTests: OBATestCase {
         expect(result) == false
         expect(self.store.walkingSpeedSource) == .manual
         // Stored speed unchanged — the out-of-range sample must not leak in.
-        expect(self.store.walkingSpeedMetersPerSecond).to(beCloseTo(1.4))
+        expectClose(self.store.walkingSpeedMetersPerSecond, 1.4)
     }
 
     func test_requestAndSync_whenAuthorizationThrows_forcesManual() async {
@@ -132,7 +133,7 @@ final class WalkingSpeedManagerTests: OBATestCase {
 
         // The asymmetry: passive refresh must never downgrade source to .manual.
         expect(self.store.walkingSpeedSource) == .healthKit
-        expect(self.store.walkingSpeedMetersPerSecond).to(beCloseTo(1.65))
+        expectClose(self.store.walkingSpeedMetersPerSecond, 1.65)
     }
 
     func test_passiveRefresh_withInRangeSample_updatesSpeed() async {
@@ -147,7 +148,7 @@ final class WalkingSpeedManagerTests: OBATestCase {
         await manager.refreshFromHealthKitIfPossible()
 
         expect(self.store.walkingSpeedSource) == .healthKit
-        expect(self.store.walkingSpeedMetersPerSecond).to(beCloseTo(1.7))
+        expectClose(self.store.walkingSpeedMetersPerSecond, 1.7)
     }
 
     func test_passiveRefresh_withOutOfRangeSample_isNoOp() async {
@@ -162,6 +163,6 @@ final class WalkingSpeedManagerTests: OBATestCase {
         await manager.refreshFromHealthKitIfPossible()
 
         expect(self.store.walkingSpeedSource) == .healthKit
-        expect(self.store.walkingSpeedMetersPerSecond).to(beCloseTo(1.4))
+        expectClose(self.store.walkingSpeedMetersPerSecond, 1.4)
     }
 }

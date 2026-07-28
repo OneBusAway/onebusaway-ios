@@ -10,6 +10,7 @@
 import XCTest
 import Nimble
 import CoreLocation
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -67,8 +68,8 @@ class VehicleStatusModelOperationTests: OBATestCase {
         let vehicle = try await restService.getVehicle(vehicleID: vehicleID).entry
         expect(vehicle.lastLocationUpdateTime) == Date.fromComponents(year: 2020, month: 05, day: 07, hour: 21, minute: 59, second: 04)
         expect(vehicle.lastUpdateTime) == Date.fromComponents(year: 2020, month: 05, day: 07, hour: 21, minute: 59, second: 04)
-        expect(vehicle.location!.coordinate.latitude).to(beCloseTo(47.6195))
-        expect(vehicle.location!.coordinate.longitude).to(beCloseTo(-122.3244))
+        expectClose(vehicle.location!.coordinate.latitude, 47.6195)
+        expectClose(vehicle.location!.coordinate.longitude, -122.3244)
         expect(vehicle.phase) == "in_progress"
         expect(vehicle.status) == "SCHEDULED"
     }
@@ -82,8 +83,8 @@ class VehicleStatusModelOperationTests: OBATestCase {
         expect(vehicle.vehicleID) == "1_4351"
         expect(vehicle.lastUpdateTime) == Date.fromComponents(year: 2020, month: 05, day: 07, hour: 21, minute: 59, second: 04)
         expect(vehicle.lastLocationUpdateTime) == Date.fromComponents(year: 2020, month: 05, day: 07, hour: 21, minute: 59, second: 04)
-        expect(vehicle.location?.coordinate.latitude).to(beCloseTo(47.6195))
-        expect(vehicle.location?.coordinate.longitude).to(beCloseTo(-122.3244))
+        expectClose(vehicle.location?.coordinate.latitude, 47.6195)
+        expectClose(vehicle.location?.coordinate.longitude, -122.3244)
 
         expect(vehicle.trip!.id) == "1_47649081"
         expect(vehicle.trip!.routeShortName).to(beNil())
@@ -106,12 +107,12 @@ class VehicleStatusModelOperationTests: OBATestCase {
         expect(tripStatus.closestStop.name) == "E Olive Way & Summit Ave E"
 
         expect(tripStatus.closestStopTimeOffset) == 23
-        expect(tripStatus.distanceAlongTrip).to(beCloseTo(2277.5779, within: 0.1))
+        expectClose(tripStatus.distanceAlongTrip, 2277.5779, within: 0.1)
         expect(tripStatus.lastKnownDistanceAlongTrip) == 0
 
         let lastKnown = tripStatus.lastKnownLocation!.coordinate
-        expect(lastKnown.latitude).to(beCloseTo(47.61949539))
-        expect(lastKnown.longitude).to(beCloseTo(-122.32442474))
+        expectClose(lastKnown.latitude, 47.61949539)
+        expectClose(lastKnown.longitude, -122.32442474)
         expect(tripStatus.lastKnownOrientation) == 0
         expect(tripStatus.lastLocationUpdateTime) == 1588888744000
         expect(tripStatus.lastUpdate) == Date.fromComponents(year: 2020, month: 05, day: 07, hour: 21, minute: 59, second: 04)
@@ -120,17 +121,17 @@ class VehicleStatusModelOperationTests: OBATestCase {
         expect(tripStatus.nextStop!.name) == "E Olive Way & Summit Ave E"
 
         expect(tripStatus.nextStopTimeOffset) == 23
-        expect(tripStatus.orientation).to(beCloseTo(204.6164, within: 0.1))
+        expectClose(tripStatus.orientation, 204.6164, within: 0.1)
         expect(tripStatus.phase) == "in_progress"
-        expect(tripStatus.position!.coordinate.latitude).to(beCloseTo(47.6195, within: 0.01))
-        expect(tripStatus.position!.coordinate.longitude).to(beCloseTo(-122.33187637, within: 0.01))
+        expectClose(tripStatus.position!.coordinate.latitude, 47.6195, within: 0.01)
+        expectClose(tripStatus.position!.coordinate.longitude, -122.33187637, within: 0.01)
         expect(tripStatus.isRealTime).to(beTrue())
         expect(tripStatus.scheduleDeviation) == -116
-        expect(tripStatus.scheduledDistanceAlongTrip).to(beCloseTo(2277.5779, within: 0.1))
+        expectClose(tripStatus.scheduledDistanceAlongTrip, 2277.5779, within: 0.1)
         expect(tripStatus.serviceDate) == Date.fromComponents(year: 2020, month: 05, day: 07, hour: 07, minute: 00, second: 00)
         expect(tripStatus.serviceAlerts.count) == 1
         expect(tripStatus.statusModifier) == .scheduled
-        expect(tripStatus.totalDistanceAlongTrip).to(beCloseTo(3302.4674, within: 0.01))
+        expectClose(tripStatus.totalDistanceAlongTrip, 3302.4674, within: 0.01)
         expect(tripStatus.vehicleID) == "1_4351"
     }
 

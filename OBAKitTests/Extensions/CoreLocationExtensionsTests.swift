@@ -13,6 +13,7 @@ import Nimble
 import CoreLocation
 import MapKit
 import CoreGraphics
+import Testing
 @testable import OBAKitCore
 
 @MainActor
@@ -37,13 +38,13 @@ class CoreLocationExtensionsTests: XCTestCase {
         let direction: CLLocationDirection = 180.0 // 180 degrees
         let expectedRadians = Double.pi // π radians
         
-        expect(direction.radians).to(beCloseTo(expectedRadians, within: 0.0001))
+        expectClose(direction.radians, expectedRadians, within: 0.0001)
         
         let direction90: CLLocationDirection = 90.0
-        expect(direction90.radians).to(beCloseTo(Double.pi / 2, within: 0.0001))
+        expectClose(direction90.radians, Double.pi / 2, within: 0.0001)
         
         let direction0: CLLocationDirection = 0.0
-        expect(direction0.radians).to(beCloseTo(0.0, within: 0.0001))
+        expectClose(direction0.radians, 0.0, within: 0.0001)
     }
     
     func test_CLLocationDirection_affineTransform() {
@@ -67,11 +68,11 @@ class CoreLocationExtensionsTests: XCTestCase {
         let distance = seattle.distance(from: bellevue)
         
         expect(distance).to(beGreaterThan(0))
-        expect(distance).to(beCloseTo(10580, within: 1000)) // Approximately 10.5km
+        expectClose(distance, 10580, within: 1000) // Approximately 10.5km
         
         // Test distance to self
         let samePointDistance = seattle.distance(from: seattle)
-        expect(samePointDistance).to(beCloseTo(0, within: 0.1))
+        expectClose(samePointDistance, 0, within: 0.1)
     }
     
     func test_CLLocationCoordinate2D_isNullIsland() {

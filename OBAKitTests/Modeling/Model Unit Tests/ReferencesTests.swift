@@ -10,6 +10,7 @@
 import XCTest
 import Nimble
 import CoreLocation
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -55,12 +56,12 @@ class ReferencesTests: OBATestCase {
         let route = self.references.routes.first!
         expect(route.agencyID) == "Hillsborough Area Regional Transit"
         expect(route.agency.name) == "Hillsborough Area Regional Transit"
-        expect(route.color).to(beCloseTo(UIColor(red: (9.0 / 255.0), green: (52.0 / 255.0), blue: (109.0 / 255.0), alpha: 1.0)))
+        expectEqualRGB(route.color, UIColor(red: (9.0 / 255.0), green: (52.0 / 255.0), blue: (109.0 / 255.0), alpha: 1.0))
         expect(route.routeDescription).to(beNil())
         expect(route.id) == "Hillsborough Area Regional Transit_1"
         expect(route.longName) == "Florida Avenue"
         expect(route.shortName) == "1"
-        expect(route.textColor).to(beCloseTo(UIColor.white))
+        expectEqualRGB(route.textColor, UIColor.white)
         expect(route.routeType) == .bus
         expect(route.routeURL) == URL(string: "http://www.gohart.org/routes/hart/01.html")!
         expect(route.regionIdentifier) == 0
@@ -120,8 +121,8 @@ class ReferencesTests: OBATestCase {
         expect(stop.code) == "6497"
         expect(stop.direction) == .unknown
         expect(stop.id) == "Hillsborough Area Regional Transit_6497"
-        expect(stop.location.coordinate.latitude).to(beCloseTo(28.066419, within: 0.01))
-        expect(stop.location.coordinate.longitude).to(beCloseTo(-82.429872, within: 0.01))
+        expectClose(stop.location.coordinate.latitude, 28.066419, within: 0.01)
+        expectClose(stop.location.coordinate.longitude, -82.429872, within: 0.01)
         expect(stop.locationType) == .stop
         expect(stop.name) == "University Area Transit Center"
         expect(stop.routeIDs.count) == 10

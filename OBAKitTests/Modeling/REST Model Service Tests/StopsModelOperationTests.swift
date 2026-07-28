@@ -11,6 +11,7 @@ import XCTest
 import Nimble
 import CoreLocation
 import MapKit
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -49,8 +50,8 @@ class StopsModelOperationTests: OBATestCase {
         expect(stop.code) == "10914"
         expect(stop.direction) == .s
         expect(stop.id) == "1_10914"
-        expect(stop.location.coordinate.latitude).to(beCloseTo(47.656422))
-        expect(stop.location.coordinate.longitude).to(beCloseTo(-122.312164))
+        expectClose(stop.location.coordinate.latitude, 47.656422)
+        expectClose(stop.location.coordinate.longitude, -122.312164)
         expect(stop.locationType) == .stop
         expect(stop.name) == "15th Ave NE & NE Campus Pkwy"
         expect(stop.routes.count) == 12
@@ -86,8 +87,8 @@ class StopsModelOperationTests: OBATestCase {
         expect(stop.code) == "29270"
         expect(stop.direction) == .e
         expect(stop.id) == "1_29270"
-        expect(stop.location.coordinate.latitude).to(beCloseTo(47.619846))
-        expect(stop.location.coordinate.longitude).to(beCloseTo(-122.320473))
+        expectClose(stop.location.coordinate.latitude, 47.619846)
+        expectClose(stop.location.coordinate.longitude, -122.320473)
         expect(stop.locationType) == .stop
         expect(stop.name) == "E John St & Broadway  E"
         expect(stop.routes.count) == 4

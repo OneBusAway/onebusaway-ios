@@ -11,6 +11,7 @@ import XCTest
 import Nimble
 import CoreLocation
 import MapKit
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -63,23 +64,23 @@ class RegionsModelOperationTests: OBATestCase {
         expect(open311.baseURL) == URL(string: "https://seeclickfix.com/open311/v2/")!
 
         let serviceRect = tampa.serviceRect
-        expect(serviceRect.minX).to(beCloseTo(72439895.2211))
-        expect(serviceRect.minY).to(beCloseTo(112245249.3519))
-        expect(serviceRect.maxX).to(beCloseTo(72956527.5911))
-        expect(serviceRect.maxY).to(beCloseTo(112722187.8406))
+        expectClose(serviceRect.minX, 72439895.2211)
+        expectClose(serviceRect.minY, 112245249.3519)
+        expectClose(serviceRect.maxX, 72956527.5911)
+        expectClose(serviceRect.maxY, 112722187.8406)
 
         let pugetSound = regions[1]
 
         expect(pugetSound.name) == "Puget Sound"
 
         let mapRect = MKMapRect(x: 42206703.270115554, y: 92590980.991902918, width: 1338771.0533083975, height: 1897888.1099742353)
-        expect(pugetSound.serviceRect.minX).to(beCloseTo(mapRect.minX))
-        expect(pugetSound.serviceRect.minY).to(beCloseTo(mapRect.minY))
-        expect(pugetSound.serviceRect.maxX).to(beCloseTo(mapRect.maxX))
-        expect(pugetSound.serviceRect.maxY).to(beCloseTo(mapRect.maxY))
+        expectClose(pugetSound.serviceRect.minX, mapRect.minX)
+        expectClose(pugetSound.serviceRect.minY, mapRect.minY)
+        expectClose(pugetSound.serviceRect.maxX, mapRect.maxX)
+        expectClose(pugetSound.serviceRect.maxY, mapRect.maxY)
 
-        expect(pugetSound.centerCoordinate.latitude).to(beCloseTo(47.795091214055))
-        expect(pugetSound.centerCoordinate.longitude).to(beCloseTo(-122.49868405298474))
+        expectClose(pugetSound.centerCoordinate.latitude, 47.795091214055)
+        expectClose(pugetSound.centerCoordinate.longitude, -122.49868405298474)
     }
 
 // WIP Fix for #777

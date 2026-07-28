@@ -9,6 +9,7 @@
 
 import XCTest
 import Nimble
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -143,8 +144,8 @@ class ServiceAlertTests: OBATestCase {
         let aboveThresholdData: [String: Any] = ["from": 10_000_000_001, "to": 10_000_000_002]
         let aboveThresholdWindow = try! Fixtures.dictionaryToModel(type: ServiceAlert.TimeWindow.self, dictionary: aboveThresholdData)
         
-        // Use beCloseTo to fix floating point error
-        expect(aboveThresholdWindow.from.timeIntervalSince1970).to(beCloseTo(10_000_000.001, within: 0.0001))
+        // Compare approximately to absorb floating point error
+        expectClose(aboveThresholdWindow.from.timeIntervalSince1970, 10_000_000.001, within: 0.0001)
     }
     
     func test_timeWindowWithMissingTo() {

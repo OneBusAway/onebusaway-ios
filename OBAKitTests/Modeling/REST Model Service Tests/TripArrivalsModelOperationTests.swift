@@ -11,6 +11,7 @@ import XCTest
 import Nimble
 import CoreLocation
 import MapKit
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -31,7 +32,7 @@ class TripArrivalsModelOperationTests: OBATestCase {
         expect(arrDep.arrivalEnabled).to(beTrue())
         expect(arrDep.blockTripSequence) == 6
         expect(arrDep.departureEnabled).to(beTrue())
-        expect(arrDep.distanceFromStop).to(beCloseTo(-2089.5461))
+        expectClose(arrDep.distanceFromStop, -2089.5461)
         expect(arrDep.frequency).to(beNil())
 
         expect(arrDep.lastUpdated) == Date.fromComponents(year: 2018, month: 10, day: 24, hour: 03, minute: 13, second: 42)

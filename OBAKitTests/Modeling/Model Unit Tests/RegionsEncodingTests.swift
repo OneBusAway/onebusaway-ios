@@ -11,6 +11,7 @@ import XCTest
 import Nimble
 import CoreLocation
 import MapKit
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -70,15 +71,15 @@ class RegionsEncodingTests: OBATestCase {
         expect(open311.baseURL) == URL(string: "https://seeclickfix.com/open311/v2/")!
 
         let bounds = tampaRT.regionBounds
-        expect(bounds[0].lat).to(beCloseTo(27.976910500000002))
-        expect(bounds[0].lon).to(beCloseTo(-82.445851))
-        expect(bounds[0].latSpan).to(beCloseTo(0.5424609999999994))
-        expect(bounds[0].lonSpan).to(beCloseTo(0.576357999999999))
+        expectClose(bounds[0].lat, 27.976910500000002)
+        expectClose(bounds[0].lon, -82.445851)
+        expectClose(bounds[0].latSpan, 0.5424609999999994)
+        expectClose(bounds[0].lonSpan, 0.576357999999999)
 
-        expect(bounds[1].lat).to(beCloseTo(27.919249999999998))
-        expect(bounds[1].lon).to(beCloseTo(-82.652145))
-        expect(bounds[1].latSpan).to(beCloseTo(0.47208000000000183))
-        expect(bounds[1].lonSpan).to(beCloseTo(0.3967700000000036))
+        expectClose(bounds[1].lat, 27.919249999999998)
+        expectClose(bounds[1].lon, -82.652145)
+        expectClose(bounds[1].latSpan, 0.47208000000000183)
+        expectClose(bounds[1].lonSpan, 0.3967700000000036)
     }
 
     func testUmamiAnalyticsDecoding() {
@@ -110,10 +111,10 @@ class RegionsEncodingTests: OBATestCase {
         expect(customRegion.OBABaseURL.absoluteString) == "http://www.example.com"
         expect(customRegion.contactEmail) == "contact@example.com"
 
-        expect(customRegion.serviceRect.origin.coordinate.latitude).to(beCloseTo(44.9778, within: 0.1))
-        expect(customRegion.serviceRect.origin.coordinate.longitude).to(beCloseTo(-93.2650, within: 0.1))
-        expect(customRegion.serviceRect.height).to(beCloseTo(9485.2270, within: 0.1))
-        expect(customRegion.serviceRect.width).to(beCloseTo(9453.3477, within: 0.1))
+        expectClose(customRegion.serviceRect.origin.coordinate.latitude, 44.9778, within: 0.1)
+        expectClose(customRegion.serviceRect.origin.coordinate.longitude, -93.2650, within: 0.1)
+        expectClose(customRegion.serviceRect.height, 9485.2270, within: 0.1)
+        expectClose(customRegion.serviceRect.width, 9453.3477, within: 0.1)
     }
 
     func testCustomRegions_roundtripping() {
@@ -126,10 +127,10 @@ class RegionsEncodingTests: OBATestCase {
         expect(customRegionRT.OBABaseURL.absoluteString) == "http://www.example.com"
         expect(customRegionRT.contactEmail) == "contact@example.com"
 
-        expect(customRegionRT.serviceRect.origin.coordinate.latitude).to(beCloseTo(44.9778, within: 0.1))
-        expect(customRegionRT.serviceRect.origin.coordinate.longitude).to(beCloseTo(-93.2650, within: 0.1))
-        expect(customRegionRT.serviceRect.height).to(beCloseTo(9485.2270, within: 0.1))
-        expect(customRegionRT.serviceRect.width).to(beCloseTo(9453.3477, within: 0.1))
+        expectClose(customRegionRT.serviceRect.origin.coordinate.latitude, 44.9778, within: 0.1)
+        expectClose(customRegionRT.serviceRect.origin.coordinate.longitude, -93.2650, within: 0.1)
+        expectClose(customRegionRT.serviceRect.height, 9485.2270, within: 0.1)
+        expectClose(customRegionRT.serviceRect.width, 9453.3477, within: 0.1)
     }
 
     // MARK: - UmamiAnalyticsConfig inits

@@ -10,6 +10,7 @@
 import XCTest
 import Nimble
 import CoreLocation
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -26,8 +27,8 @@ class WeatherOperationTests: OBATestCase {
 
         expect(forecast).toNot(beNil())
 
-        expect(forecast.location.coordinate.latitude).to(beCloseTo(47.63671875))
-        expect(forecast.location.coordinate.longitude).to(beCloseTo(-122.6953125))
+        expectClose(forecast.location.coordinate.latitude, 47.63671875)
+        expectClose(forecast.location.coordinate.longitude, -122.6953125)
 
         expect(forecast.regionIdentifier) == 1
         expect(forecast.regionName) == "Puget Sound"

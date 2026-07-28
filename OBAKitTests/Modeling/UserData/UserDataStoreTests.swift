@@ -10,6 +10,7 @@
 import XCTest
 import Nimble
 import CoreLocation
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -266,7 +267,7 @@ class UserDefaultsStoreTests: OBATestCase {
     func test_nextSurveyReminderDate_persistsValue() {
         let date = Date().addingTimeInterval(3600)
         userDefaultsStore.nextSurveyReminderDate = date
-        expect(self.userDefaultsStore.nextSurveyReminderDate).to(beCloseTo(date, within: 1))
+        expectClose(self.userDefaultsStore.nextSurveyReminderDate, date, within: 1)
     }
 
     // MARK: - Survey Completion Tracking
@@ -286,18 +287,18 @@ class UserDefaultsStoreTests: OBATestCase {
     // MARK: - Walking Speed
 
     func test_walkingSpeed_defaultValue() {
-        expect(self.userDefaultsStore.walkingSpeedMetersPerSecond).to(beCloseTo(1.4))
+        expectClose(self.userDefaultsStore.walkingSpeedMetersPerSecond, 1.4)
     }
 
     func test_walkingSpeed_roundTrip() {
         userDefaultsStore.walkingSpeedMetersPerSecond = 0.9
-        expect(self.userDefaultsStore.walkingSpeedMetersPerSecond).to(beCloseTo(0.9))
+        expectClose(self.userDefaultsStore.walkingSpeedMetersPerSecond, 0.9)
 
         userDefaultsStore.walkingSpeedMetersPerSecond = 1.8
-        expect(self.userDefaultsStore.walkingSpeedMetersPerSecond).to(beCloseTo(1.8))
+        expectClose(self.userDefaultsStore.walkingSpeedMetersPerSecond, 1.8)
 
         let newStore = UserDefaultsStore(userDefaults: userDefaults)
-        expect(newStore.walkingSpeedMetersPerSecond).to(beCloseTo(1.8))
+        expectClose(newStore.walkingSpeedMetersPerSecond, 1.8)
     }
 
     func test_walkingSpeedSource_defaultValue() {
@@ -314,12 +315,12 @@ class UserDefaultsStoreTests: OBATestCase {
 
     func test_walkingSpeedMetersPerSecond_clampsBelowRange() {
         userDefaultsStore.walkingSpeedMetersPerSecond = 0.1
-        expect(self.userDefaultsStore.walkingSpeedMetersPerSecond).to(beCloseTo(WalkingSpeed.validRange.lowerBound))
+        expectClose(self.userDefaultsStore.walkingSpeedMetersPerSecond, WalkingSpeed.validRange.lowerBound)
     }
 
     func test_walkingSpeedMetersPerSecond_clampsAboveRange() {
         userDefaultsStore.walkingSpeedMetersPerSecond = 10.0
-        expect(self.userDefaultsStore.walkingSpeedMetersPerSecond).to(beCloseTo(WalkingSpeed.validRange.upperBound))
+        expectClose(self.userDefaultsStore.walkingSpeedMetersPerSecond, WalkingSpeed.validRange.upperBound)
     }
 
     // MARK: - Default Alarm Lead Time

@@ -10,6 +10,7 @@
 import XCTest
 import Nimble
 import CoreLocation
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -183,10 +184,10 @@ class TripStatusTests: OBATestCase {
         
         let status = try! Fixtures.dictionaryToModel(type: TripStatus.self, dictionary: dataWithLocations)
         
-        expect(status.lastKnownLocation?.coordinate.latitude).to(beCloseTo(47.123456, within: 0.000001))
-        expect(status.lastKnownLocation?.coordinate.longitude).to(beCloseTo(-122.654321, within: 0.000001))
-        expect(status.position?.coordinate.latitude).to(beCloseTo(47.123457, within: 0.000001))
-        expect(status.position?.coordinate.longitude).to(beCloseTo(-122.654322, within: 0.000001))
+        expectClose(status.lastKnownLocation?.coordinate.latitude, 47.123456, within: 0.000001)
+        expectClose(status.lastKnownLocation?.coordinate.longitude, -122.654321, within: 0.000001)
+        expectClose(status.position?.coordinate.latitude, 47.123457, within: 0.000001)
+        expectClose(status.position?.coordinate.longitude, -122.654322, within: 0.000001)
     }
     
     func test_hasReferencesLoadReferences() {

@@ -9,6 +9,7 @@
 
 import XCTest
 import Nimble
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -25,7 +26,7 @@ final class WalkingSpeedSettingsDecisionTests: XCTestCase {
             segmentSpeed: 0.9
         )
         expect(decision.source) == .manual
-        expect(decision.speed).to(beCloseTo(0.9))
+        expectClose(decision.speed, 0.9)
     }
 
     func test_noToggle_noSegmentSpeed_leavesEverythingUntouched() {
@@ -36,7 +37,7 @@ final class WalkingSpeedSettingsDecisionTests: XCTestCase {
             segmentSpeed: nil
         )
         expect(decision.source) == .healthKit
-        expect(decision.speed).to(beCloseTo(1.65))
+        expectClose(decision.speed, 1.65)
     }
 
     // MARK: - Toggle ON
@@ -51,7 +52,7 @@ final class WalkingSpeedSettingsDecisionTests: XCTestCase {
             segmentSpeed: 1.4
         )
         expect(decision.source) == .healthKit
-        expect(decision.speed).to(beCloseTo(1.65))
+        expectClose(decision.speed, 1.65)
     }
 
     // MARK: - Toggle OFF
@@ -64,7 +65,7 @@ final class WalkingSpeedSettingsDecisionTests: XCTestCase {
             segmentSpeed: nil
         )
         expect(decision.source) == .manual
-        expect(decision.speed).to(beCloseTo(WalkingSpeedPreset.fast.rawValue))
+        expectClose(decision.speed, WalkingSpeedPreset.fast.rawValue)
     }
 
     func test_toggleOff_withSegmentSpeed_prefersSegmentThenSnaps() {
@@ -77,6 +78,6 @@ final class WalkingSpeedSettingsDecisionTests: XCTestCase {
             segmentSpeed: 0.9
         )
         expect(decision.source) == .manual
-        expect(decision.speed).to(beCloseTo(WalkingSpeedPreset.slow.rawValue))
+        expectClose(decision.speed, WalkingSpeedPreset.slow.rawValue)
     }
 }

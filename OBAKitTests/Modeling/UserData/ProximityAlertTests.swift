@@ -10,6 +10,7 @@
 import XCTest
 import Nimble
 import CoreLocation
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -63,7 +64,7 @@ class ProximityAlertTests: OBATestCase {
         expect(roundtripped.latitude) == alert.latitude
         expect(roundtripped.longitude) == alert.longitude
         expect(roundtripped.radiusMeters) == 350.0
-        expect(roundtripped.createdAt.timeIntervalSince1970).to(beCloseTo(alert.createdAt.timeIntervalSince1970, within: 1.0))
+        expectClose(roundtripped.createdAt.timeIntervalSince1970, alert.createdAt.timeIntervalSince1970, within: 1.0)
     }
 
     func test_codable_roundTrip_preservesCoordinate() {
