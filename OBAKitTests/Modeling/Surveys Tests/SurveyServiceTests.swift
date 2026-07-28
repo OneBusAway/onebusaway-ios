@@ -46,29 +46,29 @@ final class SurveyServiceTests: OBATestCase {
     func test_getSurveys_success_metadata() async throws {
         let response = try await loadSurveys()
 
-        expect(response.region.name).to(equal("Puget Sound"))
-        expect(response.region.id).to(equal(1))
+        #expect(response.region.name == "Puget Sound")
+        #expect(response.region.id == 1)
 
-        expect(response.surveys.count).to(equal(5))
-        expect(response).toNot(beNil())
+        #expect(response.surveys.count == 5)
+        #expect(response != nil)
     }
 
     func test_firstSurvey_basicProperties() async throws {
         let response = try await loadSurveys()
         let survey = response.surveys.first
 
-        expect(survey).toNot(beNil())
+        #expect(survey != nil)
 
-        expect(survey?.id).to(equal(1))
-        expect(survey?.name).to(equal("Always Visible — One-Time"))
+        #expect(survey?.id == 1)
+        #expect(survey?.name == "Always Visible — One-Time")
         expect(survey?.showOnMap).to(beTrue())
         expect(survey?.showOnStops).to(beTrue())
         expect(survey?.alwaysVisible).to(beTrue())
         expect(survey?.allowsMultipleResponses).to(beFalse())
 
-        expect(survey?.visibleStopsList?.count).to(equal(2))
-        expect(survey?.visibleRoutesList?.count).to(equal(2))
-        expect(survey?.questions.count).to(equal(5))
+        #expect(survey?.visibleStopsList?.count == 2)
+        #expect(survey?.visibleRoutesList?.count == 2)
+        #expect(survey?.questions.count == 5)
     }
 
     func test_firstSurvey_questionDecoding() async throws {
@@ -76,28 +76,28 @@ final class SurveyServiceTests: OBATestCase {
         let survey = response.surveys.first!
 
         let questions = survey.questions
-        expect(questions.count).to(equal(5))
+        #expect(questions.count == 5)
 
         // Q1: text
         let q1 = questions[0]
-        expect(q1.content.type).to(equal(.text))
-        expect(q1.content.labelText).to(equal("Do you like OBA IOS App ?"))
+        #expect(q1.content.type == .text)
+        #expect(q1.content.labelText == "Do you like OBA IOS App ?")
 
         // Q2: radio
         let q2 = questions[1]
-        expect(q2.content.type).to(equal(.radio))
-        expect(q2.content.options).to(equal(["Yes", "No"]))
+        #expect(q2.content.type == .radio)
+        #expect(q2.content.options == ["Yes", "No"])
 
         // Q3: checkbox
         let q3 = questions[2]
-        expect(q3.content.type).to(equal(.checkbox))
-        expect(q3.content.options).to(equal(["1", "2", "3", "4", "5"]))
+        #expect(q3.content.type == .checkbox)
+        #expect(q3.content.options == ["1", "2", "3", "4", "5"])
 
         // Q4: external survey
         let q4 = questions[3]
-        expect(q4.content.type).to(equal(.externalSurvey))
-        expect(q4.content.url).to(equal("http://127.0.0.1:3000"))
-        expect(q4.content.surveyProvider).to(equal("google_forms"))
+        #expect(q4.content.type == .externalSurvey)
+        #expect(q4.content.url == "http://127.0.0.1:3000")
+        #expect(q4.content.surveyProvider == "google_forms")
     }
 
     func test_firstSurvey_getQuestions_filtersCorrectly() async throws {
@@ -106,10 +106,10 @@ final class SurveyServiceTests: OBATestCase {
 
         let filtered = survey.getQuestions()
 
-        expect(filtered.count).to(equal(5))
-        expect(filtered.map(\.content.type)).to(equal([
+        #expect(filtered.count == 5)
+        #expect(filtered.map(\.content.type) == [
             .text, .radio, .checkbox, .externalSurvey, .label
-        ]))
+        ])
     }
 
     // MARK: - Survey Hero Question Submission
@@ -121,9 +121,9 @@ final class SurveyServiceTests: OBATestCase {
 
         let response = try await testRESTService.submitSurveyResponse(submissionModel)
 
-        expect(response.id).to(equal("808d3a515daa39f4c15a"))
-        expect(response.updatePath).to(equal("/api/v1/survey_responses/808d3a515daa39f4c15a"))
-        expect(response.userIdentifier).to(equal("b94e83ae-5337-42f4-bec7-2736e7929dcb"))
+        #expect(response.id == "808d3a515daa39f4c15a")
+        #expect(response.updatePath == "/api/v1/survey_responses/808d3a515daa39f4c15a")
+        #expect(response.userIdentifier == "b94e83ae-5337-42f4-bec7-2736e7929dcb")
     }
 
     private func setupMockSubmissionSuccess(_ surveyId: String = "") {
@@ -165,9 +165,9 @@ final class SurveyServiceTests: OBATestCase {
             additionalResponses: additionalResponses
         )
 
-        expect(response.id).to(equal("808d3a515daa39f4c15a"))
-        expect(response.updatePath).to(equal("/api/v1/survey_responses/808d3a515daa39f4c15a"))
-        expect(response.userIdentifier).to(equal("b94e83ae-5337-42f4-bec7-2736e7929dcb"))
+        #expect(response.id == "808d3a515daa39f4c15a")
+        #expect(response.updatePath == "/api/v1/survey_responses/808d3a515daa39f4c15a")
+        #expect(response.userIdentifier == "b94e83ae-5337-42f4-bec7-2736e7929dcb")
     }
 
     // MARK: - Error Scenarios
@@ -444,8 +444,8 @@ final class SurveyServiceTests: OBATestCase {
         // The string should be valid JSON containing our response
         let responsesString = responsesValue as! String
         let parsed = try JSONSerialization.jsonObject(with: responsesString.data(using: .utf8)!) as! [[String: Any]]
-        expect(parsed.count).to(equal(1))
-        expect(parsed[0]["answer"] as? String).to(equal("yes"))
+        #expect(parsed.count == 1)
+        #expect((parsed[0]["answer"] as? String) == "yes")
     }
 
     // MARK: - Missing Optional Fields
@@ -502,32 +502,32 @@ final class SurveyServiceTests: OBATestCase {
             questions: [q1, q2, q3]
         )
 
-        expect(survey.heroQuestion?.id).to(equal(10))
-        expect(survey.remainingQuestions.count).to(equal(2))
-        expect(survey.remainingQuestions.map(\.id)).to(equal([20, 30]))
+        #expect(survey.heroQuestion?.id == 10)
+        #expect(survey.remainingQuestions.count == 2)
+        #expect(survey.remainingQuestions.map(\.id) == [20, 30])
     }
 
     // MARK: - heroQuestionTitle
 
     func test_heroQuestionTitle_returnsTrimmedHeroText() {
         let survey = makeSurveyWithHero(labelText: "  Help us improve transit  ")
-        expect(survey.heroQuestionTitle).to(equal("Help us improve transit"))
+        #expect(survey.heroQuestionTitle == "Help us improve transit")
     }
 
     func test_heroQuestionTitle_nilWhenHeroTextIsEmpty() {
         let survey = makeSurveyWithHero(labelText: "")
-        expect(survey.heroQuestionTitle).to(beNil())
+        #expect(survey.heroQuestionTitle == nil)
     }
 
     func test_heroQuestionTitle_nilWhenHeroTextIsWhitespaceOnly() {
         let survey = makeSurveyWithHero(labelText: "   \n\t ")
-        expect(survey.heroQuestionTitle).to(beNil())
+        #expect(survey.heroQuestionTitle == nil)
     }
 
     func test_heroQuestionTitle_nilWhenNoHeroQuestion() {
         // Only a non-hero (position != 1) question exists.
         let survey = makeSurveyWithHero(labelText: "Question", position: 2)
-        expect(survey.heroQuestionTitle).to(beNil())
+        #expect(survey.heroQuestionTitle == nil)
     }
 
     private func makeSurveyWithHero(labelText: String, position: Int = 1) -> Survey {
@@ -564,7 +564,7 @@ final class SurveyServiceTests: OBATestCase {
 
         expect(service.allSurveys).to(beEmpty())
         expect(service.visibleSurveys).to(beEmpty())
-        expect(service.lastError).toNot(beNil())
+        #expect(service.lastError != nil)
 
         if case APIError.surveyServiceNotConfigured = service.lastError! {
             // Expected
@@ -587,9 +587,9 @@ final class SurveyServiceTests: OBATestCase {
         let service = SurveyService(apiService: testRESTService, userDataStore: store)
         await service.fetchSurveys()
 
-        expect(service.lastError).to(beNil())
-        expect(service.allSurveys.count).to(equal(5))
-        expect(service.visibleSurveys.count).to(equal(5))
+        #expect(service.lastError == nil)
+        #expect(service.allSurveys.count == 5)
+        #expect(service.visibleSurveys.count == 5)
         expect(service.isLoading).to(beFalse())
     }
 
@@ -606,7 +606,7 @@ final class SurveyServiceTests: OBATestCase {
 
         expect(service.allSurveys).to(beEmpty())
         expect(service.visibleSurveys).to(beEmpty())
-        expect(service.lastError).toNot(beNil())
+        #expect(service.lastError != nil)
         expect(service.isLoading).to(beFalse())
     }
 
@@ -637,8 +637,8 @@ final class SurveyServiceTests: OBATestCase {
         await service.fetchSurveys()
 
         // Should still have original surveys (cooldown prevented re-fetch)
-        expect(service.allSurveys.count).to(equal(initialCount))
-        expect(service.lastError).to(beNil()) // no error because fetch was skipped
+        #expect(service.allSurveys.count == initialCount)
+        #expect(service.lastError == nil)  // no error because fetch was skipped
     }
 
     @MainActor
@@ -662,8 +662,8 @@ final class SurveyServiceTests: OBATestCase {
         await service.fetchSurveys(force: true)
 
         // Fetch went through (no error since same mock data is still valid)
-        expect(service.allSurveys.count).to(equal(initialCount))
-        expect(service.lastError).to(beNil())
+        #expect(service.allSurveys.count == initialCount)
+        #expect(service.lastError == nil)
     }
 
     @MainActor
@@ -679,7 +679,7 @@ final class SurveyServiceTests: OBATestCase {
         await service.fetchSurveys()
 
         expect(service.allSurveys).to(beEmpty())
-        expect(service.lastError).toNot(beNil())
+        #expect(service.lastError != nil)
 
         // Replace with success data — should fetch because allSurveys is empty
         mockDataLoader.removeMappedResponses()
@@ -693,7 +693,7 @@ final class SurveyServiceTests: OBATestCase {
 
         // Should have fetched despite cooldown because allSurveys was empty
         expect(service.allSurveys.count).to(beGreaterThan(0))
-        expect(service.lastError).to(beNil())
+        #expect(service.lastError == nil)
     }
 
     @MainActor
@@ -722,8 +722,8 @@ final class SurveyServiceTests: OBATestCase {
         await service.fetchSurveys(force: true)
 
         // Surveys should be preserved, not cleared
-        expect(service.allSurveys.count).to(equal(initialCount))
-        expect(service.lastError).toNot(beNil())
+        #expect(service.allSurveys.count == initialCount)
+        #expect(service.lastError != nil)
     }
 
 }

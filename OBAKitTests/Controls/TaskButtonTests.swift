@@ -31,7 +31,7 @@ class TaskButtonTests: XCTestCase {
         let button = TaskButton("Test Button", action: testAction)
         
         // Test that the button can be created without crashing
-        expect(button).toNot(beNil())
+        #expect(button != nil)
     }
     
     func test_TaskButton_withText_customActionOptions() {
@@ -39,7 +39,7 @@ class TaskButtonTests: XCTestCase {
         let customOptions: Set<TaskButton<Text>.ActionOption> = [.disableButton]
         let button = TaskButton("Test Button", actionOptions: customOptions, action: testAction)
         
-        expect(button).toNot(beNil())
+        #expect(button != nil)
         #expect(button.actionOptions == customOptions)
     }
     
@@ -47,7 +47,7 @@ class TaskButtonTests: XCTestCase {
         let testAction: () async -> Void = { }
         let button = TaskButton(systemImageName: "star", action: testAction)
         
-        expect(button).toNot(beNil())
+        #expect(button != nil)
     }
     
     func test_TaskButton_withImage_customActionOptions() {
@@ -55,7 +55,7 @@ class TaskButtonTests: XCTestCase {
         let customOptions: Set<TaskButton<Image>.ActionOption> = [.showProgressView]
         let button = TaskButton(systemImageName: "star", actionOptions: customOptions, action: testAction)
         
-        expect(button).toNot(beNil())
+        #expect(button != nil)
         #expect(button.actionOptions == customOptions)
     }
     
@@ -65,7 +65,7 @@ class TaskButtonTests: XCTestCase {
             Text("Custom Label")
         }
         
-        expect(button).toNot(beNil())
+        #expect(button != nil)
         #expect(button.actionOptions == Set(TaskButton<Text>.ActionOption.allCases))
     }
 }

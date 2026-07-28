@@ -25,7 +25,7 @@ class CoreGraphicsExtensionsTests: XCTestCase {
         let colorSpace = CGColorSpaceCreateDeviceRGB()
         let context = CGContext(data: nil, width: Int(size.width), height: Int(size.height), bitsPerComponent: 8, bytesPerRow: 0, space: colorSpace, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
         
-        expect(context).toNot(beNil())
+        #expect(context != nil)
         
         guard let ctx = context else { return }
         

@@ -77,7 +77,7 @@ class ServiceAlertTests: OBATestCase {
         #expect(alert.publicationWindows.count == 1)
         #expect(alert.affectedEntities.count == 1)
         #expect(alert.consequences.count == 1)
-        expect(alert.regionIdentifier).to(beNil())
+        #expect(alert.regionIdentifier == nil)
     }
     
     func test_decodeMinimalServiceAlert() {
@@ -98,9 +98,9 @@ class ServiceAlertTests: OBATestCase {
         #expect(alert.createdAt.timeIntervalSince1970 == 1978307200)
         #expect(alert.reason == "OTHER")
         #expect(alert.severity == "INFO")
-        expect(alert.summary).to(beNil())
-        expect(alert.situationDescription).to(beNil())
-        expect(alert.urlString).to(beNil())
+        #expect(alert.summary == nil)
+        #expect(alert.situationDescription == nil)
+        #expect(alert.urlString == nil)
         #expect(alert.activeWindows.count == 0)
         #expect(alert.publicationWindows.count == 0)
         #expect(alert.affectedEntities.count == 0)
@@ -233,12 +233,12 @@ class ServiceAlertTests: OBATestCase {
         
         let entity = try! Fixtures.dictionaryToModel(type: ServiceAlert.AffectedEntity.self, dictionary: entityData)
         
-        expect(entity.agencyID).to(beNil())
-        expect(entity.applicationID).to(beNil())
-        expect(entity.directionID).to(beNil())
+        #expect(entity.agencyID == nil)
+        #expect(entity.applicationID == nil)
+        #expect(entity.directionID == nil)
         #expect(entity.routeID == "test_route")
-        expect(entity.stopID).to(beNil())
-        expect(entity.tripID).to(beNil())
+        #expect(entity.stopID == nil)
+        #expect(entity.tripID == nil)
     }
     
     func test_affectedEntityEquality() {
@@ -270,7 +270,7 @@ class ServiceAlertTests: OBATestCase {
         let consequence = try! Fixtures.dictionaryToModel(type: ServiceAlert.Consequence.self, dictionary: consequenceData)
         
         #expect(consequence.condition == "DETOUR")
-        expect(consequence.conditionDetails).toNot(beNil())
+        #expect(consequence.conditionDetails != nil)
         #expect(consequence.conditionDetails?.diversionPath == "test_polyline_string")
         #expect(consequence.conditionDetails?.stopIDs == ["stop1", "stop2", "stop3"])
     }
@@ -283,7 +283,7 @@ class ServiceAlertTests: OBATestCase {
         let consequence = try! Fixtures.dictionaryToModel(type: ServiceAlert.Consequence.self, dictionary: consequenceData)
         
         #expect(consequence.condition == "NO_SERVICE")
-        expect(consequence.conditionDetails).to(beNil())
+        #expect(consequence.conditionDetails == nil)
     }
     
     func test_consequenceEquality() {

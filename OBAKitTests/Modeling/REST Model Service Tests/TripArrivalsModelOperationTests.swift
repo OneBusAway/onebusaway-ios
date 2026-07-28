@@ -33,7 +33,7 @@ class TripArrivalsModelOperationTests: OBATestCase {
         #expect(arrDep.blockTripSequence == 6)
         expect(arrDep.departureEnabled).to(beTrue())
         expectClose(arrDep.distanceFromStop, -2089.5461)
-        expect(arrDep.frequency).to(beNil())
+        #expect(arrDep.frequency == nil)
 
         #expect(arrDep.lastUpdated == Date.fromComponents(year: 2018, month: 10, day: 24, hour: 03, minute: 13, second: 42))
 
@@ -60,7 +60,7 @@ class TripArrivalsModelOperationTests: OBATestCase {
 
         #expect(situationSummary.value == "Washington St. ramp from Pac Hwy Closed")
         #expect(firstConsequence.condition == "detour")
-        expect(firstConsequence.conditionDetails?.diversionPath).toNot(beNil())
+        #expect(firstConsequence.conditionDetails?.diversionPath != nil)
 
         #expect(arrDep.status == "default")
 
@@ -69,14 +69,14 @@ class TripArrivalsModelOperationTests: OBATestCase {
 
         #expect(arrDep.stopSequence == 1)
 
-        expect(arrDep.totalStopsInTrip).to(beNil())
+        #expect(arrDep.totalStopsInTrip == nil)
 
         #expect(arrDep.tripHeadsign == "University & College")
 
         #expect(arrDep.trip.id == "MTS_13405160")
-        expect(arrDep.trip.shortName).to(beNil())
+        #expect(arrDep.trip.shortName == nil)
 
-        expect(arrDep.tripStatus).toNot(beNil())
+        #expect(arrDep.tripStatus != nil)
         let tripStatus = try XCTUnwrap(arrDep.tripStatus)
         #expect(tripStatus.activeTrip.id == "MTS_13405160")
 

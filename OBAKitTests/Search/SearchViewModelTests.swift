@@ -125,7 +125,7 @@ class SearchViewModelTests: OBATestCase {
 
         let substituted = vm.response(substituting: "anything")
 
-        expect(substituted.boundingRegion).toNot(beNil())
+        #expect(substituted.boundingRegion != nil)
         #expect(substituted.boundingRegion?.center.latitude == 47.6)
         #expect(substituted.boundingRegion?.center.longitude == -122.3)
     }
@@ -145,13 +145,13 @@ class SearchViewModelTests: OBATestCase {
     @MainActor
     func test_init_vehicleSearchResponseIsNil() {
         let vm = SearchViewModel(searchResponse: makeSearchResponse(searchType: .address), apiService: nil)
-        expect(vm.vehicleSearchResponse).to(beNil())
+        #expect(vm.vehicleSearchResponse == nil)
     }
 
     @MainActor
     func test_init_vehicleErrorIsNil() {
         let vm = SearchViewModel(searchResponse: makeSearchResponse(searchType: .address), apiService: nil)
-        expect(vm.vehicleError).to(beNil())
+        #expect(vm.vehicleError == nil)
     }
 
     // MARK: - selectVehicle / nil apiService
@@ -160,7 +160,7 @@ class SearchViewModelTests: OBATestCase {
     func test_selectVehicle_nilApiService_vehicleSearchResponseRemainsNil() async {
         let vm = SearchViewModel(searchResponse: makeSearchResponse(searchType: .vehicleID), apiService: nil)
         await vm.selectVehicle(vehicleID: vehicleID)
-        expect(vm.vehicleSearchResponse).to(beNil())
+        #expect(vm.vehicleSearchResponse == nil)
     }
 
     @MainActor
@@ -169,7 +169,7 @@ class SearchViewModelTests: OBATestCase {
         // misconfiguration through `vehicleError` so the existing error sink can present it.
         let vm = SearchViewModel(searchResponse: makeSearchResponse(searchType: .vehicleID), apiService: nil)
         await vm.selectVehicle(vehicleID: vehicleID)
-        expect(vm.vehicleError).toNot(beNil())
+        #expect(vm.vehicleError != nil)
     }
 
     // MARK: - selectVehicle / success
@@ -183,8 +183,8 @@ class SearchViewModelTests: OBATestCase {
 
         await vm.selectVehicle(vehicleID: vehicleID)
 
-        expect(vm.vehicleSearchResponse).toNot(beNil())
-        expect(vm.vehicleError).to(beNil())
+        #expect(vm.vehicleSearchResponse != nil)
+        #expect(vm.vehicleError == nil)
     }
 
     @MainActor
@@ -197,7 +197,7 @@ class SearchViewModelTests: OBATestCase {
         await vm.selectVehicle(vehicleID: vehicleID)
 
         #expect(vm.vehicleSearchResponse?.results.count == 1)
-        expect(vm.vehicleSearchResponse?.results.first as? VehicleStatus).toNot(beNil())
+        #expect((vm.vehicleSearchResponse?.results.first as? VehicleStatus) != nil)
     }
 
     @MainActor
@@ -224,8 +224,8 @@ class SearchViewModelTests: OBATestCase {
 
         await vm.selectVehicle(vehicleID: vehicleID)
 
-        expect(vm.vehicleError).toNot(beNil())
-        expect(vm.vehicleSearchResponse).to(beNil())
+        #expect(vm.vehicleError != nil)
+        #expect(vm.vehicleSearchResponse == nil)
     }
 
     // MARK: - selectVehicle / keyNotFound → noTripsAvailable
@@ -240,7 +240,7 @@ class SearchViewModelTests: OBATestCase {
         await vm.selectVehicle(vehicleID: vehicleID)
 
         #expect((vm.vehicleError as? SearchError) == .noTripsAvailable)
-        expect(vm.vehicleSearchResponse).to(beNil())
+        #expect(vm.vehicleSearchResponse == nil)
     }
 
     // MARK: - selectVehicle / concurrent-call guard
@@ -262,7 +262,7 @@ class SearchViewModelTests: OBATestCase {
         await second
 
         #expect(countingLoader.callCount == 1)
-        expect(vm.vehicleSearchResponse).toNot(beNil())
+        #expect(vm.vehicleSearchResponse != nil)
     }
 
     // MARK: - selectVehicle / state transitions
@@ -276,14 +276,14 @@ class SearchViewModelTests: OBATestCase {
         )
 
         await vm.selectVehicle(vehicleID: vehicleID)
-        expect(vm.vehicleError).toNot(beNil())
+        #expect(vm.vehicleError != nil)
 
         loader.removeMappedResponses()
         loader.mock(URLString: vehicleURLString, with: Fixtures.loadData(file: "api_where_vehicle_1_4351.json"))
 
         await vm.selectVehicle(vehicleID: vehicleID)
 
-        expect(vm.vehicleError).to(beNil())
-        expect(vm.vehicleSearchResponse).toNot(beNil())
+        #expect(vm.vehicleError == nil)
+        #expect(vm.vehicleSearchResponse != nil)
     }
 }

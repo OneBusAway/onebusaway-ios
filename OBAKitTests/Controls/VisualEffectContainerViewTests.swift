@@ -26,14 +26,14 @@ class VisualEffectContainerViewTests: XCTestCase {
     }
     
     func test_init_createsEffectView() {
-        expect(self.containerView).toNot(beNil())
+        #expect(self.containerView != nil)
         #expect(self.containerView.subviews.count == 1)
         expect(self.containerView.subviews.first).to(beAnInstanceOf(UIVisualEffectView.self))
     }
     
     func test_contentView_isEffectViewContentView() {
         let contentView = containerView.contentView
-        expect(contentView).toNot(beNil())
+        #expect(contentView != nil)
         
         // Verify it's the content view from the visual effect view
         let effectView = containerView.subviews.first as? UIVisualEffectView

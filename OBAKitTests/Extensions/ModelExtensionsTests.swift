@@ -48,6 +48,6 @@ class ModelExtensionsTests: OBATestCase {
     func test_MKAnnotation_protocol_existence() {
         // Test that the protocol methods exist and are accessible
         // This ensures our extensions compile properly
-        expect(MKAnnotation.self).toNot(beNil())
+        #expect(MKAnnotation.self != nil)
     }
 }

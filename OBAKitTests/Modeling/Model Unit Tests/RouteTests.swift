@@ -40,10 +40,10 @@ class RouteTests: OBATestCase {
         #expect(route.routeDescription == "Express route serving Bellevue and Northgate")
         #expect(route.routeType == .bus)
         #expect(route.routeURL?.absoluteString == "https://www.soundtransit.org/schedules/st-express-594")
-        expect(route.color).toNot(beNil())
-        expect(route.textColor).toNot(beNil())
-        expect(route.agency).to(beNil())
-        expect(route.regionIdentifier).to(beNil())
+        #expect(route.color != nil)
+        #expect(route.textColor != nil)
+        #expect(route.agency == nil)
+        #expect(route.regionIdentifier == nil)
     }
     
     func test_decodeMinimalRoute() {
@@ -60,11 +60,11 @@ class RouteTests: OBATestCase {
         #expect(route.agencyID == "2")
         #expect(route.shortName == "99")
         #expect(route.routeType == .bus)
-        expect(route.longName).to(beNil())
-        expect(route.routeDescription).to(beNil())
-        expect(route.color).to(beNil())
-        expect(route.textColor).to(beNil())
-        expect(route.routeURL).to(beNil())
+        #expect(route.longName == nil)
+        #expect(route.routeDescription == nil)
+        #expect(route.color == nil)
+        #expect(route.textColor == nil)
+        #expect(route.routeURL == nil)
     }
     
     func test_decodeWithBlankValues() {
@@ -82,10 +82,10 @@ class RouteTests: OBATestCase {
         let route = try! Fixtures.dictionaryToModel(type: Route.self, dictionary: dataWithBlanks)
         
         // String.nilifyBlankValue should convert empty strings to nil
-        expect(route.longName).to(beNil())
-        expect(route.routeDescription).to(beNil())
-        expect(route.color).to(beNil())
-        expect(route.textColor).to(beNil())
+        #expect(route.longName == nil)
+        #expect(route.routeDescription == nil)
+        #expect(route.color == nil)
+        #expect(route.textColor == nil)
     }
     
     func test_routeTypeDecoding() {
@@ -142,7 +142,7 @@ class RouteTests: OBATestCase {
         
         route.loadReferences(references, regionIdentifier: 123)
         
-        expect(route.agency).toNot(beNil())
+        #expect(route.agency != nil)
         #expect(route.agency.id == "1")
         #expect(route.regionIdentifier == 123)
     }

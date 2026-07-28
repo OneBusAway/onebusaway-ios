@@ -52,7 +52,7 @@ class DataLoadFeedbackGeneratorTests: OBATestCase {
         let application = Application(config: config)
         let generator = DataLoadFeedbackGenerator(application: application)
 
-        expect(generator).toNot(beNil())
+        #expect(generator != nil)
     }
     
     func test_dataLoad_success() {
@@ -91,7 +91,7 @@ class DataLoadFeedbackGeneratorTests: OBATestCase {
         let successType = DataLoadFeedbackGenerator.FeedbackType.success
         let failedType = DataLoadFeedbackGenerator.FeedbackType.failed
         
-        expect(successType).to(equal(.success))
-        expect(failedType).to(equal(.failed))
+        #expect(successType == .success)
+        #expect(failedType == .failed)
     }
 }

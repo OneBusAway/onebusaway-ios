@@ -101,7 +101,7 @@ class ScheduleForStopViewModelTests: OBATestCase {
 
         let viewModel = ScheduleForStopViewModel(stopID: stopID, application: app)
 
-        expect(viewModel.selectedRouteID).to(beNil())
+        #expect(viewModel.selectedRouteID == nil)
     }
 
     // MARK: - Stop Name Tests
@@ -179,7 +179,7 @@ class ScheduleForStopViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = ScheduleForStopViewModel(stopID: stopID, application: app)
 
-        expect(viewModel.error).to(beNil())
+        #expect(viewModel.error == nil)
     }
 
     @MainActor
@@ -189,6 +189,6 @@ class ScheduleForStopViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = ScheduleForStopViewModel(stopID: stopID, application: app)
 
-        expect(viewModel.scheduleData).to(beNil())
+        #expect(viewModel.scheduleData == nil)
     }
 }

@@ -123,7 +123,7 @@ final class WeatherFormatterTests: XCTestCase {
     // MARK: - highLow
 
     func test_highLow_returnsNilForEmptyForecasts() {
-        expect(WeatherFormatter.highLow(from: [], locale: Locale(identifier: "en_US"))).to(beNil())
+        #expect(WeatherFormatter.highLow(from: [], locale: Locale(identifier: "en_US")) == nil)
     }
 
     /// `highLow` summarises whatever window it's handed — `upcomingHourly` is
@@ -168,7 +168,7 @@ final class WeatherFormatterTests: XCTestCase {
         let window = WeatherFormatter.upcomingHourly(from: hourly, now: now, calendar: calendar)
         let result = WeatherFormatter.highLow(from: window, locale: Locale(identifier: "en_US"))
 
-        expect(result).toNot(beNil())
+        #expect(result != nil)
         // 200°F would clearly show up if the cap weren't enforced.
         expect(result?.high).toNot(contain("200"))
         expect(result?.high).to(contain("59"))

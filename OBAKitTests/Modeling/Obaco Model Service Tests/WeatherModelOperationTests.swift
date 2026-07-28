@@ -25,7 +25,7 @@ class WeatherOperationTests: OBATestCase {
 
         let forecast = try await obacoService.getWeather()
 
-        expect(forecast).toNot(beNil())
+        #expect(forecast != nil)
 
         expectClose(forecast.location.coordinate.latitude, 47.63671875)
         expectClose(forecast.location.coordinate.longitude, -122.6953125)

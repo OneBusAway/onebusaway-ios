@@ -112,7 +112,7 @@ class EditBookmarkViewModelTests: OBATestCase {
 
         expect(vm.isAddMode).to(beTrue())
         #expect(vm.initialName == Formatters.formattedTitle(stop: stop))
-        expect(vm.initialGroupID).to(beNil())
+        #expect(vm.initialGroupID == nil)
         expect(vm.initialIsFavorite).to(beTrue())
     }
 
@@ -187,7 +187,7 @@ class EditBookmarkViewModelTests: OBATestCase {
 
         let vm = EditBookmarkViewModel(application: app, source: .stop(stop), bookmark: nil)
 
-        expect(vm.currentGroupID()).to(beNil())
+        #expect(vm.currentGroupID() == nil)
     }
 
     @MainActor
@@ -382,7 +382,7 @@ class EditBookmarkViewModelTests: OBATestCase {
 
         vm.persist(bookmark, name: "Home", isFavorite: false, to: nil, isNewBookmark: isNew)
 
-        expect(app.userDataStore.findBookmark(id: bookmark.id)).toNot(beNil())
+        #expect(app.userDataStore.findBookmark(id: bookmark.id) != nil)
     }
 
     @MainActor

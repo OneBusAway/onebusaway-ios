@@ -41,7 +41,7 @@ class RegionsModelOperationTests: OBATestCase {
         expect(tampa.isActive).to(beTrue())
         expect(tampa.isExperimental).to(beFalse())
 
-        expect(tampa.facebookURL).to(beNil())
+        #expect(tampa.facebookURL == nil)
         #expect(tampa.contactEmail == "onebusaway@gohart.org")
         #expect(tampa.openTripPlannerContactEmail == "otp-tampa@onebusaway.org")
         #expect(tampa.twitterURL == URL(string: "https://mobile.twitter.com/OBA_tampa")!)
@@ -50,16 +50,16 @@ class RegionsModelOperationTests: OBATestCase {
         #expect(tampa.sidecarBaseURL == URL(string: "https://onebusaway.co")!)
         #expect(tampa.siriBaseURL == URL(string: "https://tampa.onebusaway.org/onebusaway-api-webapp/siri/")!)
         #expect(tampa.openTripPlannerURL == URL(string: "https://otp.prod.obahart.org/otp/")!)
-        expect(tampa.stopInfoURL).to(beNil())
+        #expect(tampa.stopInfoURL == nil)
 
-        expect(tampa.paymentWarningBody).to(beNil())
-        expect(tampa.paymentWarningTitle).to(beNil())
+        #expect(tampa.paymentWarningBody == nil)
+        #expect(tampa.paymentWarningTitle == nil)
         #expect(tampa.paymentAndroidAppID == "co.bytemark.flamingo")
         #expect(tampa.paymentiOSAppStoreIdentifier == "1487465395")
         #expect(tampa.paymentiOSAppURLScheme == "fb313213768708402HART")
 
         let open311 = try XCTUnwrap(tampa.open311Servers?.first)
-        expect(open311.jurisdictionID).to(beNil())
+        #expect(open311.jurisdictionID == nil)
         #expect(open311.apiKey == "937033cad3054ec58a1a8156dcdd6ad8a416af2f")
         #expect(open311.baseURL == URL(string: "https://seeclickfix.com/open311/v2/")!)
 

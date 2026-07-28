@@ -91,7 +91,7 @@ final class AppSheetRouteTests: XCTestCase {
         #expect(config.detents == [.large])
         #expect(config.initialDetent == .large)
         #expect(config.isDismissDisabled == true)
-        expect(config.fullScreenDetent).to(beNil())
+        #expect(config.fullScreenDetent == nil)
     }
 
     func test_stackedAllListRoutes_shareLargeAndAllowDismiss() {
@@ -103,7 +103,7 @@ final class AppSheetRouteTests: XCTestCase {
             #expect(config.detents == [.large])
             #expect(config.initialDetent == .large)
             #expect(config.isDismissDisabled == false)
-            expect(config.fullScreenDetent).to(beNil())
+            #expect(config.fullScreenDetent == nil)
         }
     }
 
@@ -112,7 +112,7 @@ final class AppSheetRouteTests: XCTestCase {
         #expect(config.detents == [.medium, .large])
         #expect(config.initialDetent == .medium)
         #expect(config.isDismissDisabled == false)
-        expect(config.fullScreenDetent).to(beNil())
+        #expect(config.fullScreenDetent == nil)
     }
 
     func test_stackedDetailRoutes_shareLargeStartAndAllowDismiss() throws {
@@ -132,7 +132,7 @@ final class AppSheetRouteTests: XCTestCase {
             #expect(config.detents == [.medium, .large])
             #expect(config.initialDetent == .large)
             #expect(config.isDismissDisabled == false)
-            expect(config.fullScreenDetent).to(beNil())
+            #expect(config.fullScreenDetent == nil)
         }
     }
 
@@ -170,7 +170,7 @@ final class AppSheetRouteTests: XCTestCase {
             isDismissDisabled: false
         )
         #expect(config.showDragIndicator == true)
-        expect(config.fullScreenDetent).to(beNil())
+        #expect(config.fullScreenDetent == nil)
     }
 
     // MARK: - fullScreenDetent override

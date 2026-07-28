@@ -164,7 +164,7 @@ class UserDefaultsStoreTests: OBATestCase {
         // Force the encode → decode round-trip by going through the `alarms` getter,
         // which reads back from UserDefaults rather than returning the in-memory instance.
         let reloaded = userDefaultsStore.alarms.first { $0.url == alarm.url }
-        expect(reloaded).toNot(beNil())
+        #expect(reloaded != nil)
         #expect(reloaded == alarm)
 
         userDefaultsStore.delete(alarm: reloaded!)
@@ -261,7 +261,7 @@ class UserDefaultsStoreTests: OBATestCase {
     // MARK: - Next Survey Reminder Date
 
     func test_nextSurveyReminderDate_defaultsToNil() {
-        expect(self.userDefaultsStore.nextSurveyReminderDate).to(beNil())
+        #expect(self.userDefaultsStore.nextSurveyReminderDate == nil)
     }
 
     func test_nextSurveyReminderDate_persistsValue() {
@@ -335,7 +335,7 @@ class UserDefaultsStoreTests: OBATestCase {
         let newStore = UserDefaultsStore(userDefaults: userDefaults)
 
         #expect(newStore.defaultAlarmLeadTimeMinutes == 10)
-        expect(self.userDefaults.object(forKey: "UserDataStore.defaultAlarmLeadTimeMinutes")).to(beNil())
+        #expect(self.userDefaults.object(forKey: "UserDataStore.defaultAlarmLeadTimeMinutes") == nil)
     }
 
 }

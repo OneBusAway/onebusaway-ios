@@ -27,7 +27,7 @@ class MapKitExtensionsTests: XCTestCase {
         
         // We can't directly test the request properties since they're internal,
         // but we can verify the method creates a directions object successfully
-        expect(directions).toNot(beNil())
+        #expect(directions != nil)
     }
     
     func test_MKMapRect_mapPoints() {

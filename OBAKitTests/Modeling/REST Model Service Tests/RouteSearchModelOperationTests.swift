@@ -37,12 +37,12 @@ class RouteSearchModelOperationTests: OBATestCase {
 
         #expect(route.agency.id == "1")
         #expect(route.agency.name == "Metro Transit")
-        expect(route.color).to(beNil())
+        #expect(route.color == nil)
         #expect(route.routeDescription == "Capitol Hill - Downtown Seattle")
         #expect(route.id == "1_100002")
-        expect(route.longName).to(beNil())
+        #expect(route.longName == nil)
         #expect(route.shortName == "10")
-        expect(route.textColor).to(beNil())
+        #expect(route.textColor == nil)
         #expect(route.routeType == .bus)
         #expect(route.routeURL == URL(string: "http://metro.kingcounty.gov/schedules/010/n0.html")!)
     }

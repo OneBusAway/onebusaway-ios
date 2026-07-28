@@ -106,7 +106,7 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
         // Verify new state
         #expect(self.userDefaultsStore.bookmarkGroups == [keptGroup, renamedGroup, newGroup])
         #expect(self.userDefaultsStore.findGroup(id: renamedGroup.id)!.name == "i have been renamed")
-        expect(self.userDefaultsStore.findGroup(id: deletedGroup.id)).to(beNil())
+        #expect(self.userDefaultsStore.findGroup(id: deletedGroup.id) == nil)
     }
 
     // MARK: - Bookmarks
@@ -166,7 +166,7 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
         let stop = stops[0]
         let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
         userDefaultsStore.add(bookmark)
-        expect(self.userDefaultsStore.findBookmark(id: UUID())).to(beNil())
+        #expect(self.userDefaultsStore.findBookmark(id: UUID()) == nil)
     }
 
     func test_bookmark_addToGroup_groupUnregistered() {
@@ -356,7 +356,7 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
 
         let g1b2 = Bookmark(name: "Group 1/Bookmark 2", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
         userDefaultsStore.add(g1b2, to: group1)
-        expect(g1b2.groupID).toNot(beNil())
+        #expect(g1b2.groupID != nil)
         #expect(g1b2.groupID == group1.id)
 
         let g1b3 = Bookmark(name: "Group 1/Bookmark 3", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)

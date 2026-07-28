@@ -38,8 +38,8 @@ class AgenciesWithCoverageModelOperationTests: OBATestCase {
 
         #expect(childrens.agencyID == "98")
         #expect(childrens.agency.name == "Seattle Children's Hospital")
-        expect(childrens.agency.disclaimer).to(beNil())
-        expect(childrens.agency.email).to(beNil())
-        expect(childrens.agency.fareURL).to(beNil())
+        #expect(childrens.agency.disclaimer == nil)
+        #expect(childrens.agency.email == nil)
+        #expect(childrens.agency.fareURL == nil)
     }
 }

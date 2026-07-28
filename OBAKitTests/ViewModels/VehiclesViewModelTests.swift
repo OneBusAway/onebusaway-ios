@@ -96,8 +96,8 @@ class VehiclesViewModelTests: OBATestCase {
         expect(viewModel.vehicles).to(beEmpty())
         expect(viewModel.feedStatuses).to(beEmpty())
         expect(viewModel.isLoading).to(beFalse())
-        expect(viewModel.error).to(beNil())
-        expect(viewModel.lastUpdated).to(beNil())
+        #expect(viewModel.error == nil)
+        #expect(viewModel.lastUpdated == nil)
     }
 
     // MARK: - Fetch Guards
@@ -111,7 +111,7 @@ class VehiclesViewModelTests: OBATestCase {
 
         expect(viewModel.vehicles).to(beEmpty())
         expect(viewModel.feedStatuses).to(beEmpty())
-        expect(viewModel.lastUpdated).to(beNil())
+        #expect(viewModel.lastUpdated == nil)
         expect(viewModel.isLoading).to(beFalse())
     }
 
@@ -129,8 +129,8 @@ class VehiclesViewModelTests: OBATestCase {
         #expect(viewModel.feedStatuses.count == agencyCount)
         expect(viewModel.feedStatuses.allSatisfy(\.isSkipped)).to(beTrue())
         expect(viewModel.vehicles).to(beEmpty())
-        expect(viewModel.error).to(beNil())
-        expect(viewModel.lastUpdated).toNot(beNil())
+        #expect(viewModel.error == nil)
+        #expect(viewModel.lastUpdated != nil)
         expect(viewModel.isLoading).to(beFalse())
     }
 

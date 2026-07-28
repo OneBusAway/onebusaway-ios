@@ -10,6 +10,7 @@
 import XCTest
 import CoreLocation
 import Nimble
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -281,7 +282,7 @@ class RecentStopsViewModelTests: OBATestCase {
         // Pin the precondition the test relies on: if a future stub region ever covers
         // (0,0) (e.g. a worldwide bounding box), `currentRegion` would become non-nil
         // and the assertion below would pass for the wrong reason.
-        expect(app.currentRegion).to(beNil())
+        #expect(app.currentRegion == nil)
 
         viewModel.loadData()
 

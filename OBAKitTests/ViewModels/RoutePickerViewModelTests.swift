@@ -114,7 +114,7 @@ class RoutePickerViewModelTests: OBATestCase {
         expect(vm.allRoutes).to(beEmpty())
         expect(vm.filteredRoutes).to(beEmpty())
         expect(vm.didFinishLoading).to(beFalse())
-        expect(vm.loadError).to(beNil())
+        #expect(vm.loadError == nil)
     }
 
     // MARK: - API fallback load
@@ -131,7 +131,7 @@ class RoutePickerViewModelTests: OBATestCase {
         await vm.loadRoutes()
 
         expect(vm.didFinishLoading).to(beTrue())
-        expect(vm.loadError).to(beNil())
+        #expect(vm.loadError == nil)
         expect(vm.allRoutes).toNot(beEmpty())
         #expect(vm.filteredRoutes.count == vm.allRoutes.count)
 
@@ -176,7 +176,7 @@ class RoutePickerViewModelTests: OBATestCase {
 
         #expect(secondCount == firstCount)
         #expect(secondIDs == firstIDs)
-        expect(vm.loadError).to(beNil())
+        #expect(vm.loadError == nil)
     }
 
     // MARK: - Error paths
@@ -192,7 +192,7 @@ class RoutePickerViewModelTests: OBATestCase {
 
         await vm.loadRoutes()
 
-        expect(vm.loadError).toNot(beNil())
+        #expect(vm.loadError != nil)
         expect(vm.didFinishLoading).to(beTrue())
         expect(vm.allRoutes).to(beEmpty())
         expect(vm.filteredRoutes).to(beEmpty())
@@ -209,7 +209,7 @@ class RoutePickerViewModelTests: OBATestCase {
 
         await vm.loadRoutes()
 
-        expect(vm.loadError).toNot(beNil())
+        #expect(vm.loadError != nil)
         expect(vm.didFinishLoading).to(beTrue())
         expect(vm.allRoutes).to(beEmpty())
     }
@@ -371,17 +371,17 @@ class RoutePickerViewModelTests: OBATestCase {
 
         // Run #1: no location → loadError set.
         await vm.loadRoutes()
-        expect(vm.loadError).toNot(beNil())
+        #expect(vm.loadError != nil)
         expect(vm.didFinishLoading).to(beTrue())
 
         // Start updates: the mock manager publishes its canned location, which the
         // LocationService delegate ingests as `currentLocation`.
         locationService.startUpdates()
-        expect(locationService.currentLocation).toNot(beNil())
+        #expect(locationService.currentLocation != nil)
 
         // Run #2 on the same VM: success path clears loadError.
         await vm.loadRoutes()
-        expect(vm.loadError).to(beNil())
+        #expect(vm.loadError == nil)
         expect(vm.allRoutes).toNot(beEmpty())
     }
 
@@ -425,7 +425,7 @@ class RoutePickerViewModelTests: OBATestCase {
         // The cache branch must populate filteredRoutes from mapRegionManager.stops
         // without issuing another stops-for-location request.
         expect(vm.didFinishLoading).to(beTrue())
-        expect(vm.loadError).to(beNil())
+        #expect(vm.loadError == nil)
         expect(vm.allRoutes).toNot(beEmpty())
         #expect(counter.hits == 1)
     }
@@ -455,7 +455,7 @@ class RoutePickerViewModelTests: OBATestCase {
         await vm.loadRoutes()
 
         expect(vm.didFinishLoading).to(beFalse())
-        expect(vm.loadError).to(beNil())
+        #expect(vm.loadError == nil)
         expect(vm.allRoutes).to(beEmpty())
     }
 }

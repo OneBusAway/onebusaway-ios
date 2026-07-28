@@ -174,7 +174,7 @@ class NetworkHelperTests: OBATestCase {
         _ = try? await restService.getStops(coordinate: coordinate)
 
         // Verify Accept-Language header is set to en-US
-        expect(capturedRequest).notTo(beNil())
+        #expect(capturedRequest != nil)
         let acceptLanguage = capturedRequest?.value(forHTTPHeaderField: "Accept-Language")
         #expect(acceptLanguage == "en-US")
     }

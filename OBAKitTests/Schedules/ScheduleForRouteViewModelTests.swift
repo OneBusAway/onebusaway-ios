@@ -135,7 +135,7 @@ class ScheduleForRouteViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app)
 
-        expect(viewModel.currentDirection).to(beNil())
+        #expect(viewModel.currentDirection == nil)
     }
 
     // MARK: - Headsign Tests
@@ -219,7 +219,7 @@ class ScheduleForRouteViewModelTests: OBATestCase {
         let result = viewModel.formatTime(date)
 
         expect(result).to(contain(":"))
-        expect(result).toNot(equal("-"))
+        #expect(result != "-")
         expect(result).toNot(contain("AM"))
         expect(result).toNot(contain("PM"))
         #expect(result.count == 5)
@@ -285,7 +285,7 @@ class ScheduleForRouteViewModelTests: OBATestCase {
         // Locale-aware format contains colon and readable time
         expect(result).to(contain(":"))
         expect(result).toNot(beEmpty())
-        expect(result).toNot(equal("-"))
+        #expect(result != "-")
     }
 
     @MainActor
@@ -299,7 +299,7 @@ class ScheduleForRouteViewModelTests: OBATestCase {
 
         // Should return the localized "No departure" string
         expect(result).toNot(beEmpty())
-        expect(result).toNot(equal("-"))
+        #expect(result != "-")
     }
 
     // MARK: - Loading State Tests
@@ -321,7 +321,7 @@ class ScheduleForRouteViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app)
 
-        expect(viewModel.error).to(beNil())
+        #expect(viewModel.error == nil)
     }
 
     @MainActor
@@ -331,6 +331,6 @@ class ScheduleForRouteViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app)
 
-        expect(viewModel.scheduleData).to(beNil())
+        #expect(viewModel.scheduleData == nil)
     }
 }

@@ -9,6 +9,7 @@
 
 import XCTest
 import Nimble
+import Testing
 @testable import OBAKitCore
 
 /// Tests for `Survey.isExternalSurvey`, which keys off the hero question
@@ -53,7 +54,7 @@ final class SurveyExternalSurveyTests: XCTestCase {
         )
         let survey = SurveysTestHelpers.makeSurvey(questions: [nonHero])
 
-        expect(survey.heroQuestion).to(beNil())
+        #expect(survey.heroQuestion == nil)
         expect(survey.isExternalSurvey).to(beFalse())
     }
 }

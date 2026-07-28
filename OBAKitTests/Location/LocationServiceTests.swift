@@ -23,7 +23,7 @@ class LocationServiceTests: XCTestCase {
         let service = LocationService(userDefaults: UserDefaults(), locationManager: LocationManagerMock())
 
         #expect(service.authorizationStatus == .notDetermined)
-        expect(service.currentLocation).to(beNil())
+        #expect(service.currentLocation == nil)
         expect(service.canRequestAuthorization).to(beTrue())
     }
 
@@ -41,7 +41,7 @@ class LocationServiceTests: XCTestCase {
             expect(locationManagerMock.headingUpdatesStarted).to(beTrue())
             #expect(delegate.location == TestData.mockSeattleLocation)
             #expect(delegate.heading == TestData.mockHeading)
-            expect(delegate.error).to(beNil())
+            #expect(delegate.error == nil)
             done()
         }
     }
@@ -51,7 +51,7 @@ class LocationServiceTests: XCTestCase {
         locationManagerMock.requestWhenInUseAuthorization()
         let service = LocationService(userDefaults: UserDefaults(), locationManager: locationManagerMock)
 
-        expect(service.currentLocation).to(beNil())
+        #expect(service.currentLocation == nil)
 
         service.startUpdatingLocation()
 
@@ -81,7 +81,7 @@ class LocationServiceTests: XCTestCase {
         service.successiveLocationComparisonWindow = 60.0
         let locManager = CLLocationManager()
 
-        expect(service.currentLocation).to(beNil())
+        #expect(service.currentLocation == nil)
 
         let seattle = CLLocation(coordinate: TestData.seattleCoordinate, altitude: 100.0, horizontalAccuracy: 10.0, verticalAccuracy: 10.0, timestamp: Date())
         service.locationManager(locManager, didUpdateLocations: [seattle])
@@ -123,7 +123,7 @@ class LocationServiceTests: XCTestCase {
         let del = LocDelegate()
         service.addDelegate(del)
 
-        expect(del.error).to(beNil())
+        #expect(del.error == nil)
 
         let err = NSError(domain: "error", code: 100, userInfo: nil)
 

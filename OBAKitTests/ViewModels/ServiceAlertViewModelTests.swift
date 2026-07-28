@@ -86,7 +86,7 @@ final class ServiceAlertViewModelTests: OBATestCase {
         let alert = try loadServiceAlert()
 
         let viewModel = ServiceAlertViewModel(serviceAlert: alert, application: app)
-        expect(viewModel.renderedHTML).to(beNil())
+        #expect(viewModel.renderedHTML == nil)
     }
 
     @MainActor

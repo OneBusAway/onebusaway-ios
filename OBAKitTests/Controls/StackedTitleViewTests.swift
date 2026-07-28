@@ -53,7 +53,7 @@ class StackedTitleViewTests: XCTestCase {
         // Access the stack view indirectly by checking the subviews
         #expect(self.stackedTitleView.subviews.count == 1)
         let stackView = self.stackedTitleView.subviews.first as? UIStackView
-        expect(stackView).toNot(beNil())
+        #expect(stackView != nil)
         #expect(stackView?.arrangedSubviews.count == 2)
         #expect(stackView?.arrangedSubviews.first === self.stackedTitleView.titleLabel)
         #expect(stackView?.arrangedSubviews.last === self.stackedTitleView.subtitleLabel)

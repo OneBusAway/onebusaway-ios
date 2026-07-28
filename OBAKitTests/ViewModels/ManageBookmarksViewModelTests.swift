@@ -118,7 +118,7 @@ class ManageBookmarksViewModelTests: OBATestCase {
         app.userDataStore.upsert(bookmarkGroup: group)
 
         #expect(vm.findGroup(id: group.id) == group)
-        expect(vm.findGroup(id: UUID())).to(beNil())
+        #expect(vm.findGroup(id: UUID()) == nil)
     }
 
     @MainActor
@@ -131,8 +131,8 @@ class ManageBookmarksViewModelTests: OBATestCase {
         let bookmark = Bookmark(name: "Stop", regionIdentifier: pugetSoundRegionIdentifier, stop: stop)
         app.userDataStore.add(bookmark, to: nil)
 
-        expect(vm.findBookmark(id: bookmark.id)).toNot(beNil())
-        expect(vm.findBookmark(id: UUID())).to(beNil())
+        #expect(vm.findBookmark(id: bookmark.id) != nil)
+        #expect(vm.findBookmark(id: UUID()) == nil)
     }
 
     // MARK: - deleteBookmark
@@ -149,7 +149,7 @@ class ManageBookmarksViewModelTests: OBATestCase {
 
         vm.deleteBookmark(bookmark)
 
-        expect(app.userDataStore.findBookmark(id: bookmark.id)).to(beNil())
+        #expect(app.userDataStore.findBookmark(id: bookmark.id) == nil)
     }
 
     @MainActor

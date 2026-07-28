@@ -65,9 +65,9 @@ class AgencyTests: OBATestCase {
         #expect(agency.language == "en")
         #expect(agency.phone == "555-0123")
         #expect(agency.isPrivateService == true)
-        expect(agency.fareURL).to(beNil())
-        expect(agency.email).to(beNil())
-        expect(agency.disclaimer).to(beNil())
+        #expect(agency.fareURL == nil)
+        #expect(agency.email == nil)
+        #expect(agency.disclaimer == nil)
     }
     
     func test_decodeWithBlankValues() {
@@ -87,9 +87,9 @@ class AgencyTests: OBATestCase {
         let agency = try! Fixtures.dictionaryToModel(type: Agency.self, dictionary: dataWithBlanks)
         
         // String.nilifyBlankValue should convert empty strings to nil, but not whitespace-only strings
-        expect(agency.email).to(beNil())
-        expect(agency.disclaimer).to(beNil())
-        expect(agency.fareURL).to(beNil())
+        #expect(agency.email == nil)
+        #expect(agency.disclaimer == nil)
+        #expect(agency.fareURL == nil)
     }
     
     func test_encodeDecodeRoundTrip() {

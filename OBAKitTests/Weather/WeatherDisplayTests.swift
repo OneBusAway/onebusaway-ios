@@ -225,7 +225,7 @@ final class WeatherDisplayTests: XCTestCase {
         #expect(display.header.iconName == "clear-day")
         #expect(display.header.currentTemp == "71°")
         #expect(display.header.chanceOfRainText == "Chance of Rain: 0%")
-        expect(display.header.highLowText).toNot(beNil())
+        #expect(display.header.highLowText != nil)
 
         // Stats — current-hour wind / precip / feels-like.
         #expect(display.stats.feelsLikeText == "71°")

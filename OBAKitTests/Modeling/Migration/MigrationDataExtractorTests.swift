@@ -44,7 +44,7 @@ class MigrationDataExtractorTests: OBATestCase {
         #expect(groups.count == 4)
 
         let untitledGroup = groups[0]
-        expect(untitledGroup.name).to(beNil())
+        #expect(untitledGroup.name == nil)
         #expect(untitledGroup.bookmarks.count == 0)
 
         let workGroup = groups[1]

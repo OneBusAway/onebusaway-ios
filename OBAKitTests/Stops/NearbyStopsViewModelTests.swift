@@ -54,7 +54,7 @@ class NearbyStopsViewModelTests: OBATestCase {
     @MainActor
     func test_init_operationErrorIsNil() {
         let viewModel = NearbyStopsViewModel(coordinate: coordinate, apiService: nil)
-        expect(viewModel.operationError).to(beNil())
+        #expect(viewModel.operationError == nil)
     }
 
     // MARK: - Guard: nil apiService
@@ -80,7 +80,7 @@ class NearbyStopsViewModelTests: OBATestCase {
         // sink can present it.
         let viewModel = NearbyStopsViewModel(coordinate: coordinate, apiService: nil)
         await viewModel.loadStops()
-        expect(viewModel.operationError).toNot(beNil())
+        #expect(viewModel.operationError != nil)
     }
 
     // MARK: - Successful load
@@ -93,7 +93,7 @@ class NearbyStopsViewModelTests: OBATestCase {
         await viewModel.loadStops()
 
         expect(viewModel.stops).toNot(beEmpty())
-        expect(viewModel.operationError).to(beNil())
+        #expect(viewModel.operationError == nil)
     }
 
     @MainActor
@@ -115,7 +115,7 @@ class NearbyStopsViewModelTests: OBATestCase {
 
         await viewModel.loadStops()
 
-        expect(viewModel.operationError).toNot(beNil())
+        #expect(viewModel.operationError != nil)
     }
 
     @MainActor

@@ -30,9 +30,9 @@ class TripDetailsModelOperationTests: OBATestCase {
     }
 
     func checkExpectations(_ tripDetails: TripDetails) {
-        expect(tripDetails).toNot(beNil())
+        #expect(tripDetails != nil)
 
-        expect(tripDetails.frequency).to(beNil())
+        #expect(tripDetails.frequency == nil)
 
         #expect(tripDetails.tripID == self.tripID)
         let trip = tripDetails.trip!
@@ -41,7 +41,7 @@ class TripDetailsModelOperationTests: OBATestCase {
         #expect(tripDetails.serviceDate == Date.fromComponents(year: 2012, month: 07, day: 30, hour: 07, minute: 00, second: 00))
         #expect(tripDetails.timeZone == "America/Los_Angeles")
 
-        expect(tripDetails.status).to(beNil())
+        #expect(tripDetails.status == nil)
 
         #expect(tripDetails.stopTimes.count == 53)
 

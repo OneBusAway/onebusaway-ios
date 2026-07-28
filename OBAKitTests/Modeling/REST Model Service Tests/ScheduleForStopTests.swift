@@ -48,7 +48,7 @@ class ScheduleForStopTests: OBATestCase {
         let schedule = response.entry
 
         #expect(schedule.stopID == "1_75403")
-        expect(schedule.date).toNot(beNil())
+        #expect(schedule.date != nil)
         expect(schedule.stopRouteSchedules).toNot(beEmpty())
     }
 
@@ -118,7 +118,7 @@ class ScheduleForStopTests: OBATestCase {
         let stopTime = try XCTUnwrap(directionSchedule.scheduleStopTimes.first)
 
         let arrivalDate = stopTime.arrivalDate
-        expect(arrivalDate).toNot(beNil())
+        #expect(arrivalDate != nil)
 
         // Verify it's a valid date by checking it's after year 2000
         let year2000 = Date(timeIntervalSince1970: 946684800)
@@ -130,21 +130,21 @@ class ScheduleForStopTests: OBATestCase {
     func test_references_containsRoutes() async throws {
         let response = try await restService.getScheduleForStop(stopID: stopID)
 
-        expect(response.references).toNot(beNil())
+        #expect(response.references != nil)
         expect(response.references?.routes).toNot(beEmpty())
     }
 
     func test_references_containsStops() async throws {
         let response = try await restService.getScheduleForStop(stopID: stopID)
 
-        expect(response.references).toNot(beNil())
+        #expect(response.references != nil)
         expect(response.references?.stops).toNot(beEmpty())
     }
 
     func test_references_containsAgencies() async throws {
         let response = try await restService.getScheduleForStop(stopID: stopID)
 
-        expect(response.references).toNot(beNil())
+        #expect(response.references != nil)
         expect(response.references?.agencies).toNot(beEmpty())
     }
 }

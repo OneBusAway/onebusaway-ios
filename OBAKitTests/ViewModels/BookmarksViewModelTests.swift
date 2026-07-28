@@ -318,7 +318,7 @@ class BookmarksViewModelTests: OBATestCase {
 
         expect(row.isTripBookmark).to(beFalse())
         expect(row.arrivalDepartures).to(beEmpty())
-        expect(row.routesSubtitle).toNot(beNil())
+        #expect(row.routesSubtitle != nil)
     }
 
     // MARK: - lastRefreshHadError

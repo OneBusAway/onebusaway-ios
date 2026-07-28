@@ -27,7 +27,7 @@ class SwiftUIExtensionsTests: XCTestCase {
         
         // This test is limited since we can't easily trigger onAppear in unit tests
         // But we can verify the modifier compiles and the view can be created
-        expect(testView).toNot(beNil())
+        #expect(testView != nil)
         
         // The action should not have been called yet since onAppear hasn't triggered
         #expect(callCount == 0)

@@ -111,7 +111,7 @@ class CurrentTripViewModelTests: OBATestCase {
             return
         }
         expect(viewModel.matchResults).to(beEmpty())
-        expect(viewModel.pendingNavigation).to(beNil())
+        #expect(viewModel.pendingNavigation == nil)
     }
 
     // MARK: - handle(results:)
@@ -129,7 +129,7 @@ class CurrentTripViewModelTests: OBATestCase {
             return
         }
         expect(viewModel.matchResults).to(beEmpty())
-        expect(viewModel.pendingNavigation).to(beNil())
+        #expect(viewModel.pendingNavigation == nil)
     }
 
     @MainActor
@@ -141,7 +141,7 @@ class CurrentTripViewModelTests: OBATestCase {
         let result = makeMatchResult()
         viewModel.handle(results: [result])
 
-        expect(viewModel.pendingNavigation).toNot(beNil())
+        #expect(viewModel.pendingNavigation != nil)
         #expect(viewModel.pendingNavigation?.tripID == result.arrivalDeparture.tripID)
         #expect(viewModel.matchResults.count == 1)
         // State moves to `.multipleResults` so the underlying view shows the
@@ -167,7 +167,7 @@ class CurrentTripViewModelTests: OBATestCase {
 
         let result = makeMatchResult()
         viewModel.handle(results: [result])
-        expect(viewModel.pendingNavigation).toNot(beNil())
+        #expect(viewModel.pendingNavigation != nil)
 
         // Consumer acknowledges by clearing pendingNavigation (mirrors what the
         // SwiftUI `.onChange(of: pendingNavigation)` handler does).
@@ -176,7 +176,7 @@ class CurrentTripViewModelTests: OBATestCase {
         // Same trip surfaces again on the next timer tick.
         viewModel.handle(results: [result])
 
-        expect(viewModel.pendingNavigation).to(beNil())
+        #expect(viewModel.pendingNavigation == nil)
         #expect(viewModel.matchResults.count == 1)
     }
 
@@ -191,7 +191,7 @@ class CurrentTripViewModelTests: OBATestCase {
 
         let result = makeMatchResult()
         viewModel.handle(results: [result])
-        expect(viewModel.pendingNavigation).toNot(beNil())
+        #expect(viewModel.pendingNavigation != nil)
         viewModel.pendingNavigation = nil
 
         // User taps Try Again. resetState:true (default) resets to .loading
@@ -206,7 +206,7 @@ class CurrentTripViewModelTests: OBATestCase {
         // Simulate the next find returning the same trip — pendingNavigation
         // must fire again because the latch was cleared.
         viewModel.handle(results: [result])
-        expect(viewModel.pendingNavigation).toNot(beNil())
+        #expect(viewModel.pendingNavigation != nil)
         #expect(viewModel.pendingNavigation?.tripID == result.arrivalDeparture.tripID)
     }
 
@@ -275,7 +275,7 @@ class CurrentTripViewModelTests: OBATestCase {
             return
         }
         #expect(viewModel.matchResults.count == 2)
-        expect(viewModel.pendingNavigation).to(beNil())
+        #expect(viewModel.pendingNavigation == nil)
     }
 
     // MARK: - handle(error:)
@@ -339,7 +339,7 @@ class CurrentTripViewModelTests: OBATestCase {
 
         let result = makeMatchResult()
         viewModel.handle(results: [result])
-        expect(viewModel.pendingNavigation).toNot(beNil())
+        #expect(viewModel.pendingNavigation != nil)
         #expect(viewModel.matchResults.count == 1)
 
         viewModel.pendingNavigationUnavailable()
@@ -348,7 +348,7 @@ class CurrentTripViewModelTests: OBATestCase {
             XCTFail("Expected .multipleResults, got \(viewModel.state)")
             return
         }
-        expect(viewModel.pendingNavigation).to(beNil())
+        #expect(viewModel.pendingNavigation == nil)
         // The single match must still be available so the user can tap through.
         #expect(viewModel.matchResults.count == 1)
     }

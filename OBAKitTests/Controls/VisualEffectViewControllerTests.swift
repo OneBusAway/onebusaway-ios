@@ -25,8 +25,8 @@ class VisualEffectViewControllerTests: XCTestCase {
     }
     
     func test_init_setsUpView() {
-        expect(self.viewController).toNot(beNil())
-        expect(self.viewController.view).toNot(beNil())
+        #expect(self.viewController != nil)
+        #expect(self.viewController.view != nil)
     }
     
     func test_viewDidLoad_setsUpVisualEffectView() {
@@ -38,7 +38,7 @@ class VisualEffectViewControllerTests: XCTestCase {
     
     func test_visualEffectView_isAccessible() {
         let visualEffectView = viewController.visualEffectView
-        expect(visualEffectView).toNot(beNil())
+        #expect(visualEffectView != nil)
         expect(visualEffectView).to(beAnInstanceOf(UIVisualEffectView.self))
     }
     
@@ -46,7 +46,7 @@ class VisualEffectViewControllerTests: XCTestCase {
         // Test that visualEffectView has a content view  
         let visualEffectView = viewController.visualEffectView
         expect(visualEffectView).to(beAnInstanceOf(UIVisualEffectView.self))
-        expect(visualEffectView.contentView).toNot(beNil())
+        #expect(visualEffectView.contentView != nil)
     }
     
     func test_addingSubviewsToContentView() {

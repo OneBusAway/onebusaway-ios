@@ -127,9 +127,9 @@ class ApplicationTests: OBATestCase {
         let regionsService = app.regionsService
 
         let currentRegion = regionsService.currentRegion
-        expect(currentRegion).toNot(beNil())
+        #expect(currentRegion != nil)
 
-        expect(app.apiService).toNot(beNil())
+        #expect(app.apiService != nil)
     }
 
     // MARK: - When location not been authorized
@@ -154,8 +154,8 @@ class ApplicationTests: OBATestCase {
         expect(locManager.locationUpdatesStarted).to(beFalse())
         expect(locManager.headingUpdatesStarted).to(beFalse())
 
-        expect(app.regionsService.currentRegion).to(beNil())
-        expect(app.apiService).to(beNil())
+        #expect(app.regionsService.currentRegion == nil)
+        #expect(app.apiService == nil)
     }
 
     func test_app_locationNewlyAuthorized() {
@@ -178,13 +178,13 @@ class ApplicationTests: OBATestCase {
         expect(locManager.locationUpdatesStarted).to(beFalse())
         expect(locManager.headingUpdatesStarted).to(beFalse())
 
-        expect(app.apiService).to(beNil())
+        #expect(app.apiService == nil)
 
         locationService.requestInUseAuthorization()
         waitUntil { (done) in
             expect(locManager.locationUpdatesStarted).to(beTrue())
             expect(locManager.headingUpdatesStarted).to(beTrue())
-            expect(app.apiService).toNot(beNil())
+            #expect(app.apiService != nil)
 
             done()
         }
@@ -201,8 +201,8 @@ class ApplicationTests: OBATestCase {
 
         let app = Application(config: config)
 
-        expect(app).toNot(beNil())
-        expect(app.applicationBundle).to(equal(Bundle.main))
+        #expect(app != nil)
+        #expect(app.applicationBundle == Bundle.main)
     }
 
     func test_application_delegate_communication() {
@@ -309,7 +309,7 @@ class ApplicationTests: OBATestCase {
         let config = AppConfig(regionsBaseURL: regionsURL, apiKey: apiKey, appVersion: appVersion, userDefaults: userDefaults, analytics: AnalyticsMock(), queue: queue, locationService: locationService, bundledRegionsFilePath: bundledRegionsPath, regionsAPIPath: regionsAPIPath, dataLoader: dataLoader)
         let app = Application(config: config)
 
-        expect(app.features.obaco).to(equal(Application.FeatureStatus.off))
+        #expect(app.features.obaco == Application.FeatureStatus.off)
     }
 
     func test_features_push_status_off_when_no_provider() {
@@ -320,7 +320,7 @@ class ApplicationTests: OBATestCase {
         let config = AppConfig(regionsBaseURL: regionsURL, apiKey: apiKey, appVersion: appVersion, userDefaults: userDefaults, analytics: AnalyticsMock(), queue: queue, locationService: locationService, bundledRegionsFilePath: bundledRegionsPath, regionsAPIPath: regionsAPIPath, dataLoader: dataLoader)
         let app = Application(config: config)
 
-        expect(app.features.push).to(equal(Application.FeatureStatus.off))
+        #expect(app.features.push == Application.FeatureStatus.off)
     }
 
     func test_features_deep_linking_status_when_router_created() {
@@ -333,7 +333,7 @@ class ApplicationTests: OBATestCase {
 
         // When the appLinksRouter exists (which it will after first access), deep linking is running
         // Even without a sidecar URL, the router can handle basic URL schemes
-        expect(app.features.deepLinking).to(equal(Application.FeatureStatus.running))
+        #expect(app.features.deepLinking == Application.FeatureStatus.running)
     }
 
     // MARK: - Application Lifecycle Tests
@@ -492,7 +492,7 @@ class ApplicationTests: OBATestCase {
             }
         }
 
-        expect(controller).to(beNil())
+        #expect(controller == nil)
 
         // The backfill ran: legacy steps are seen, notifications deliberately is not.
         await MainActor.run {
@@ -518,7 +518,7 @@ class ApplicationTests: OBATestCase {
             }
         }
 
-        expect(controller).toNot(beNil())
+        #expect(controller != nil)
     }
 
     func test_application_url_scheme_invalid_url_returns_false() async {
@@ -565,7 +565,7 @@ class ApplicationTests: OBATestCase {
         let config = AppConfig(regionsBaseURL: regionsURL, apiKey: apiKey, appVersion: appVersion, userDefaults: userDefaults, analytics: mockAnalytics, queue: queue, locationService: locationService, bundledRegionsFilePath: bundledRegionsPath, regionsAPIPath: regionsAPIPath, dataLoader: dataLoader)
         let app = Application(config: config)
 
-        expect(app.analytics).toNot(beNil())
+        #expect(app.analytics != nil)
         expect(app.analytics).to(beIdenticalTo(mockAnalytics))
     }
 
@@ -685,7 +685,7 @@ class ApplicationTests: OBATestCase {
         app.apiServicesRefreshed()
 
         // Should update donationsManager.obacoService
-        expect(app.donationsManager).toNot(beNil())
+        #expect(app.donationsManager != nil)
     }
 
     // MARK: - Crash Button Tests
@@ -713,12 +713,12 @@ class ApplicationTests: OBATestCase {
         let app = Application(config: config)
 
         // Test that lazy properties can be accessed without crashing
-        expect(app.donationsManager).toNot(beNil())
-        expect(app.stopIconFactory).toNot(beNil())
-        expect(app.mapRegionManager).toNot(beNil())
-        expect(app.searchManager).toNot(beNil())
-        expect(app.userActivityBuilder).toNot(beNil())
-        expect(app.features).toNot(beNil())
+        #expect(app.donationsManager != nil)
+        #expect(app.stopIconFactory != nil)
+        #expect(app.mapRegionManager != nil)
+        #expect(app.searchManager != nil)
+        #expect(app.userActivityBuilder != nil)
+        #expect(app.features != nil)
     }
 }
 

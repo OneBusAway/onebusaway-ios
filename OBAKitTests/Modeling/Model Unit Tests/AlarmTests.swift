@@ -31,8 +31,8 @@ class AlarmTests: OBATestCase {
         let alarmOffset = 10 // - 10 minutes
         let alarmDate = tripDate.addingTimeInterval(-60.0 * TimeInterval(alarmOffset))
 
-        expect(tripDate).toNot(beNil())
-        expect(alarmDate).toNot(beNil())
+        #expect(tripDate != nil)
+        #expect(alarmDate != nil)
 
         let deepLink = ArrivalDepartureDeepLink(title: "Title", regionID: 1, stopID: "1234", tripID: "9876", serviceDate: serviceDate, stopSequence: 7, vehicleID: "3456")
 

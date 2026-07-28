@@ -102,11 +102,11 @@ class MapViewModelTests: OBATestCase {
         stubWeatherSuccess(dataLoader: dataLoader)
 
         let viewModel = MapViewModel(application: app)
-        expect(viewModel.weatherDisplay).to(beNil())
+        #expect(viewModel.weatherDisplay == nil)
 
         await viewModel.loadWeather()
 
-        expect(viewModel.weatherDisplay).toNot(beNil())
+        #expect(viewModel.weatherDisplay != nil)
         #expect(viewModel.weatherDisplay?.header.regionName == "Puget Sound")
     }
 
@@ -123,7 +123,7 @@ class MapViewModelTests: OBATestCase {
         let viewModel = MapViewModel(application: app)
         await viewModel.loadWeather()
         let firstDisplay = viewModel.weatherDisplay
-        expect(firstDisplay).toNot(beNil())
+        #expect(firstDisplay != nil)
 
         // Swap the weather mock for an error. The swap must be atomic: the
         // Application's background tasks (regions refresh, agency alerts) may have
@@ -175,17 +175,17 @@ class MapViewModelTests: OBATestCase {
         // Precondition: the bundled fixture has no `sidecarBaseURL`, so the
         // synchronous Obaco refresh during `Application` init leaves
         // `obacoService` nil and the feature gate stays closed.
-        expect(app.obacoService).to(beNil())
-        expect(app.features.obaco).toNot(equal(.running))
+        #expect(app.obacoService == nil)
+        #expect(app.features.obaco != .running)
 
         let viewModel = MapViewModel(application: app)
         #expect(viewModel.isWeatherFeatureAvailable == false)
-        expect(viewModel.weatherDisplay).to(beNil())
+        #expect(viewModel.weatherDisplay == nil)
 
         await viewModel.loadWeather()
 
         // Guard path took the early return; weatherDisplay stays nil.
-        expect(viewModel.weatherDisplay).to(beNil())
+        #expect(viewModel.weatherDisplay == nil)
     }
 
     // MARK: - Map Type
@@ -345,7 +345,7 @@ class MapViewModelTests: OBATestCase {
         await viewModel.checkForSurveyPrompt()
 
         expect(received).to(beEmpty())
-        expect(app.userDataStore.nextSurveyReminderDate).to(beNil())
+        #expect(app.userDataStore.nextSurveyReminderDate == nil)
     }
 
     /// `didPresentSurveyPrompt(_:presented:)` with `presented == true` advances the
@@ -370,9 +370,9 @@ class MapViewModelTests: OBATestCase {
             questions: [hero]
         )
 
-        expect(app.userDataStore.nextSurveyReminderDate).to(beNil())
+        #expect(app.userDataStore.nextSurveyReminderDate == nil)
         viewModel.didPresentSurveyPrompt(survey, presented: true)
-        expect(app.userDataStore.nextSurveyReminderDate).toNot(beNil())
+        #expect(app.userDataStore.nextSurveyReminderDate != nil)
     }
 
     /// After `presented == false`, the session flag rolls back so a second
@@ -397,7 +397,7 @@ class MapViewModelTests: OBATestCase {
         // Simulate the presenter dropping the survey.
         viewModel.didPresentSurveyPrompt(received[0], presented: false)
         // Reminder must NOT have advanced on the rollback path.
-        expect(app.userDataStore.nextSurveyReminderDate).to(beNil())
+        #expect(app.userDataStore.nextSurveyReminderDate == nil)
 
         await viewModel.checkForSurveyPrompt()
         #expect(received.count == 2)
@@ -424,9 +424,9 @@ class MapViewModelTests: OBATestCase {
             questions: [hero]
         )
 
-        expect(app.userDataStore.nextSurveyReminderDate).to(beNil())
+        #expect(app.userDataStore.nextSurveyReminderDate == nil)
         viewModel.didPresentSurveyPrompt(survey, presented: false)
-        expect(app.userDataStore.nextSurveyReminderDate).to(beNil())
+        #expect(app.userDataStore.nextSurveyReminderDate == nil)
     }
 
     /// Stubs the survey list endpoint to error so `fetchSurveys()` records
@@ -490,7 +490,7 @@ class MapViewModelTests: OBATestCase {
         // verifies that the orchestrator's `lastError` accessor (the gate's
         // input) actually surfaces on a failed refresh.
         expect(received).to(beEmpty())
-        expect(app.userDataStore.nextSurveyReminderDate).to(beNil())
+        #expect(app.userDataStore.nextSurveyReminderDate == nil)
     }
 
     // MARK: - Zoom Helpers

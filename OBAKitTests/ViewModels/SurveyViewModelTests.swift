@@ -276,7 +276,7 @@ class SurveyViewModelTests: OBATestCase {
         _ = await firstSubmissionResult(vm: vm)
 
         // Reminder date remains nil (cancel was never called and submit didn't reach completion).
-        expect(self.dataStore.nextSurveyReminderDate).to(beNil())
+        #expect(self.dataStore.nextSurveyReminderDate == nil)
         // Survey is not in the completed set.
         expect(self.dataStore.isSurveyCompleted(surveyId: vm.survey.id, userIdentifier: self.dataStore.surveyUserIdentifier)).to(beFalse())
     }
@@ -341,12 +341,12 @@ class SurveyViewModelTests: OBATestCase {
         let q = Self.makeQuestion(id: 1)
         let vm = makeViewModel(questions: [q])
 
-        expect(self.dataStore.nextSurveyReminderDate).to(beNil())
+        #expect(self.dataStore.nextSurveyReminderDate == nil)
 
         vm.cancel()
 
         // markSurveyForLater + setNextReminderDate ran.
-        expect(self.dataStore.nextSurveyReminderDate).toNot(beNil())
+        #expect(self.dataStore.nextSurveyReminderDate != nil)
         // NOT marked completed.
         let userID = dataStore.surveyUserIdentifier
         expect(self.dataStore.isSurveyCompleted(surveyId: vm.survey.id, userIdentifier: userID)).to(beFalse())

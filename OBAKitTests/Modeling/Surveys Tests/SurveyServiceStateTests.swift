@@ -120,10 +120,10 @@ final class SurveyServiceStateTests: OBATestCase {
         surveyService.setNextReminderDate()
 
         let storedDate = testUserDataStore.nextSurveyReminderDate
-        expect(storedDate).toNot(beNil())
+        #expect(storedDate != nil)
 
         let diff = Calendar.current.dateComponents([.day], from: now, to: storedDate!).day
-        expect(diff).to(equal(3))
+        #expect(diff == 3)
     }
 
     func test_setNextReminderDate_overwritesExistingDate() {
@@ -132,7 +132,7 @@ final class SurveyServiceStateTests: OBATestCase {
         surveyService.setNextReminderDate()
 
         let newDate = testUserDataStore.nextSurveyReminderDate
-        expect(newDate).toNot(beNil())
+        #expect(newDate != nil)
         expect(newDate).to(beGreaterThan(Date()))
     }
 
@@ -177,17 +177,17 @@ final class SurveyServiceStateTests: OBATestCase {
 
     func test_formatCheckboxAnswer_normalCase() throws {
         let result = try SurveyService.formatCheckboxAnswer(["Option A", "Option B"])
-        expect(result).to(equal("[\"Option A\",\"Option B\"]"))
+        #expect(result == "[\"Option A\",\"Option B\"]")
     }
 
     func test_formatCheckboxAnswer_emptyArray() throws {
         let result = try SurveyService.formatCheckboxAnswer([])
-        expect(result).to(equal("[]"))
+        #expect(result == "[]")
     }
 
     func test_formatCheckboxAnswer_singleItem() throws {
         let result = try SurveyService.formatCheckboxAnswer(["Only"])
-        expect(result).to(equal("[\"Only\"]"))
+        #expect(result == "[\"Only\"]")
     }
 
     // MARK: - createQuestionResponse
@@ -202,10 +202,10 @@ final class SurveyServiceStateTests: OBATestCase {
 
         let response = SurveyService.createQuestionResponse(question: question, answer: "Great")
 
-        expect(response.questionId).to(equal(42))
-        expect(response.questionType).to(equal("text"))
-        expect(response.questionLabel).to(equal("How are you?"))
-        expect(response.answer).to(equal("Great"))
+        #expect(response.questionId == 42)
+        #expect(response.questionType == "text")
+        #expect(response.questionLabel == "How are you?")
+        #expect(response.answer == "Great")
     }
 
     func test_createQuestionResponse_radioType() {
@@ -218,8 +218,8 @@ final class SurveyServiceStateTests: OBATestCase {
 
         let response = SurveyService.createQuestionResponse(question: question, answer: "A")
 
-        expect(response.questionType).to(equal("radio"))
-        expect(response.questionLabel).to(equal("Pick one"))
+        #expect(response.questionType == "radio")
+        #expect(response.questionLabel == "Pick one")
     }
 
     // MARK: - Submit methods with nil apiService
@@ -270,7 +270,7 @@ final class SurveyServiceStateTests: OBATestCase {
         service.markSurveyCompleted(survey)
 
         // visibleSurveys should be refreshed (count stays same since isActive doesn't depend on completion)
-        expect(service.visibleSurveys.count).to(equal(initialVisible))
+        #expect(service.visibleSurveys.count == initialVisible)
     }
 
     func test_markSurveyForLater_updatesVisibleSurveys() async {
@@ -283,7 +283,7 @@ final class SurveyServiceStateTests: OBATestCase {
         service.markSurveyForLater(survey)
 
         // visibleSurveys should be refreshed
-        expect(service.visibleSurveys.count).to(equal(initialVisible))
+        #expect(service.visibleSurveys.count == initialVisible)
     }
 
     // MARK: - Helpers

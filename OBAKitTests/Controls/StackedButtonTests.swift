@@ -43,9 +43,9 @@ class StackedButtonTests: XCTestCase {
     func test_title_nilValue() {
         stackedButton.title = nil
         
-        expect(self.stackedButton.title).to(beNil())
-        expect(self.stackedButton.textLabel.text).to(beNil())
-        expect(self.stackedButton.accessibilityLabel).to(beNil())
+        #expect(self.stackedButton.title == nil)
+        #expect(self.stackedButton.textLabel.text == nil)
+        #expect(self.stackedButton.accessibilityLabel == nil)
     }
     
     func test_textLabel_properties() {
@@ -88,7 +88,7 @@ class StackedButtonTests: XCTestCase {
         #expect(wrapperView.subviews.count == 1)
         
         let stackView = wrapperView.subviews.first as? UIStackView
-        expect(stackView).toNot(beNil())
+        #expect(stackView != nil)
         #expect(stackView?.arrangedSubviews.count == 2)
         #expect(stackView?.arrangedSubviews.first === self.stackedButton.imageView)
         #expect(stackView?.arrangedSubviews.last === self.stackedButton.textLabel)

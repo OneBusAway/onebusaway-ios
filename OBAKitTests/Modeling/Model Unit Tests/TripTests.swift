@@ -43,8 +43,8 @@ class TripTests: OBATestCase {
         #expect(trip.direction == "0")
         #expect(trip.routeShortName == "ST Express")
         #expect(trip.timeZone == "America/Los_Angeles")
-        expect(trip.route).to(beNil())
-        expect(trip.regionIdentifier).to(beNil())
+        #expect(trip.route == nil)
+        #expect(trip.regionIdentifier == nil)
     }
     
     func test_decodeMinimalTrip() {
@@ -86,9 +86,9 @@ class TripTests: OBATestCase {
         let trip = try! Fixtures.dictionaryToModel(type: Trip.self, dictionary: dataWithBlanks)
         
         // String.nilifyBlankValue should convert empty strings to nil
-        expect(trip.routeShortName).to(beNil())
-        expect(trip.shortName).to(beNil())
-        expect(trip.timeZone).to(beNil())
+        #expect(trip.routeShortName == nil)
+        #expect(trip.shortName == nil)
+        #expect(trip.timeZone == nil)
     }
     
     func test_hasReferencesLoadReferences() {
@@ -129,7 +129,7 @@ class TripTests: OBATestCase {
         
         trip.loadReferences(references, regionIdentifier: 456)
         
-        expect(trip.route).toNot(beNil())
+        #expect(trip.route != nil)
         #expect(trip.route.id == "1_100002")
         #expect(trip.regionIdentifier == 456)
     }

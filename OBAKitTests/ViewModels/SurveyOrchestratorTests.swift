@@ -126,7 +126,7 @@ class SurveyOrchestratorTests: OBATestCase {
         }
 
         expect(self.dataStore.isSurveyCompleted(surveyId: survey.id, userIdentifier: self.dataStore.surveyUserIdentifier)).to(beFalse())
-        expect(self.dataStore.nextSurveyReminderDate).to(beNil())
+        #expect(self.dataStore.nextSurveyReminderDate == nil)
         XCTAssertTrue(coordinator.canShowReviewPrompt(), "a failed submission must not start the engagement cooldown")
     }
 
@@ -155,7 +155,7 @@ class SurveyOrchestratorTests: OBATestCase {
         }
         let userID = dataStore.surveyUserIdentifier
         expect(self.dataStore.isSurveyCompleted(surveyId: survey.id, userIdentifier: userID)).to(beTrue())
-        expect(self.dataStore.nextSurveyReminderDate).toNot(beNil())
+        #expect(self.dataStore.nextSurveyReminderDate != nil)
         XCTAssertFalse(coordinator.canShowReviewPrompt(), "a successful submission is an engagement and starts the 14-day cooldown")
     }
 
@@ -188,7 +188,7 @@ class SurveyOrchestratorTests: OBATestCase {
         }
         let userID = dataStore.surveyUserIdentifier
         expect(self.dataStore.isSurveyCompleted(surveyId: survey.id, userIdentifier: userID)).to(beFalse())
-        expect(self.dataStore.nextSurveyReminderDate).toNot(beNil())
+        #expect(self.dataStore.nextSurveyReminderDate != nil)
         XCTAssertFalse(coordinator.canShowReviewPrompt(), "a successful submission is an engagement and starts the 14-day cooldown")
     }
 
@@ -201,7 +201,7 @@ class SurveyOrchestratorTests: OBATestCase {
         let follow = Self.makeQuestion(id: 2, position: 2, type: .text)
         let survey = Self.makeSurvey(questions: [follow])
         // Sanity check the fixture: this survey genuinely has no hero.
-        expect(survey.heroQuestion).to(beNil())
+        #expect(survey.heroQuestion == nil)
         let coordinator = PromptCoordinator(userDefaults: userDefaults)
         let throwingOrchestrator = SurveyOrchestrator(surveyService: surveyService, promptCoordinator: coordinator)
 
@@ -219,7 +219,7 @@ class SurveyOrchestratorTests: OBATestCase {
         // No bookkeeping should advance when the guard fires.
         let userID = dataStore.surveyUserIdentifier
         expect(self.dataStore.isSurveyCompleted(surveyId: survey.id, userIdentifier: userID)).to(beFalse())
-        expect(self.dataStore.nextSurveyReminderDate).to(beNil())
+        #expect(self.dataStore.nextSurveyReminderDate == nil)
         XCTAssertTrue(coordinator.canShowReviewPrompt(), "a guard-clause throw must not start the engagement cooldown")
     }
 
@@ -257,11 +257,11 @@ class SurveyOrchestratorTests: OBATestCase {
     func test_dismiss_setsReminderAndMarksCompleted() {
         let survey = Self.makeSurvey(questions: [Self.makeQuestion(id: 1)])
         let userID = dataStore.surveyUserIdentifier
-        expect(self.dataStore.nextSurveyReminderDate).to(beNil())
+        #expect(self.dataStore.nextSurveyReminderDate == nil)
 
         orchestrator.dismiss(survey)
 
-        expect(self.dataStore.nextSurveyReminderDate).toNot(beNil())
+        #expect(self.dataStore.nextSurveyReminderDate != nil)
         expect(self.dataStore.isSurveyCompleted(surveyId: survey.id, userIdentifier: userID)).to(beTrue())
     }
 
@@ -289,7 +289,7 @@ class SurveyOrchestratorTests: OBATestCase {
     /// session check doesn't get short-circuited by a stale value.
     @MainActor
     func test_lastError_isNilBeforeRefresh() {
-        expect(self.orchestrator.lastError).to(beNil())
+        #expect(self.orchestrator.lastError == nil)
     }
 
     /// `lastError` proxies the underlying `SurveyService.lastError`. With
@@ -298,7 +298,7 @@ class SurveyOrchestratorTests: OBATestCase {
     /// `MapViewModel.checkForSurveyPrompt` can gate on it.
     @MainActor
     func test_lastError_reflectsUnderlyingService_afterFetchFailure() async {
-        expect(self.orchestrator.lastError).to(beNil())
+        #expect(self.orchestrator.lastError == nil)
 
         await orchestrator.refreshSurveys()
 

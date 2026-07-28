@@ -5,6 +5,7 @@
 
 import XCTest
 import Nimble
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -53,7 +54,7 @@ final class ExternalSurveyLauncherTests: OBATestCase {
                                         onFailure: { failed = true })
 
         expect(attempted).to(beTrue())
-        expect(opened?.absoluteString).to(equal("https://oba.co/s"))
+        #expect(opened?.absoluteString == "https://oba.co/s")
         expect(succeeded).to(beTrue())
         expect(failed).to(beFalse())
         expect(self.isCompleted(1)).to(beTrue())
@@ -69,7 +70,7 @@ final class ExternalSurveyLauncherTests: OBATestCase {
         launcher.launch(survey: survey, stop: stop, onSuccess: {}, onFailure: {})
 
         let items = URLComponents(url: opened!, resolvingAgainstBaseURL: false)?.queryItems ?? []
-        expect(items.first { $0.name == "stop_id" }?.value).to(equal("1_99"))
+        #expect(items.first { $0.name == "stop_id" }?.value == "1_99")
     }
 
     func test_launch_nilURL_doesNotOpen_doesNotComplete_callsOnFailure() {

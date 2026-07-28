@@ -28,7 +28,7 @@ class StackedMarqueeTitleViewTests: XCTestCase {
     }
     
     func test_init_createsLabels() {
-        expect(self.titleView).toNot(beNil())
+        #expect(self.titleView != nil)
         expect(self.titleView.topLabel).to(beAnInstanceOf(MarqueeLabel.self))
         expect(self.titleView.bottomLabel).to(beAnInstanceOf(MarqueeLabel.self))
     }
@@ -43,7 +43,7 @@ class StackedMarqueeTitleViewTests: XCTestCase {
         let topLabel = titleView.topLabel
         
         #expect(topLabel.frame.width == testWidth)
-        expect(topLabel.font).toNot(beNil())
+        #expect(topLabel.font != nil)
         #expect(topLabel.adjustsFontForContentSizeCategory == true)
         #expect(topLabel.textAlignment == .center)
         #expect(topLabel.adjustsFontSizeToFitWidth == true)
@@ -55,7 +55,7 @@ class StackedMarqueeTitleViewTests: XCTestCase {
         let bottomLabel = titleView.bottomLabel
         
         #expect(bottomLabel.frame.width == testWidth)
-        expect(bottomLabel.font).toNot(beNil())
+        #expect(bottomLabel.font != nil)
         #expect(bottomLabel.adjustsFontForContentSizeCategory == true)
         #expect(bottomLabel.textAlignment == .center)
         #expect(bottomLabel.adjustsFontSizeToFitWidth == true)

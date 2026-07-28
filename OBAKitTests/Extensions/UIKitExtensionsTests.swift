@@ -21,7 +21,7 @@ class UIKitExtensionsTests: XCTestCase {
     func test_UIButton_chevronButton() {
         let button = UIButton.chevronButton
         #expect(button.buttonType == .detailDisclosure)
-        expect(button.image(for: .normal)).toNot(beNil())
+        #expect(button.image(for: .normal) != nil)
     }
     
     func test_UIButton_buildCloseButton() {

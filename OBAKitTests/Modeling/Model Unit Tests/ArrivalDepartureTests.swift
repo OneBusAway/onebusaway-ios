@@ -66,8 +66,8 @@ class ArrivalDepartureTests: OBATestCase {
         #expect(arrival.totalStopsInTrip == 25)
         #expect(arrival.tripID == "trip_789")
         #expect(arrival.vehicleID == "vehicle_001")
-        expect(arrival.frequency).to(beNil())
-        expect(arrival.tripStatus).to(beNil())
+        #expect(arrival.frequency == nil)
+        #expect(arrival.tripStatus == nil)
     }
     
     func test_decodeMinimalArrivalDeparture() {
@@ -99,16 +99,16 @@ class ArrivalDepartureTests: OBATestCase {
         #expect(arrival.distanceFromStop == 0.0)
         #expect(arrival.numberOfStopsAway == 0)
         #expect(arrival.predicted == false)
-        expect(arrival.predictedArrival).to(beNil())
-        expect(arrival.predictedDeparture).to(beNil())
+        #expect(arrival.predictedArrival == nil)
+        #expect(arrival.predictedDeparture == nil)
         #expect(arrival.routeID == "route_minimal")
         #expect(arrival.situationIDs == [])
         #expect(arrival.status == "UNKNOWN")
         #expect(arrival.stopID == "stop_minimal")
         #expect(arrival.stopSequence == 1)
-        expect(arrival.totalStopsInTrip).to(beNil())
+        #expect(arrival.totalStopsInTrip == nil)
         #expect(arrival.tripID == "trip_minimal")
-        expect(arrival.vehicleID).to(beNil())
+        #expect(arrival.vehicleID == nil)
     }
     
     func test_decodeArrivalDepartureWithBlankValues() {
@@ -138,7 +138,7 @@ class ArrivalDepartureTests: OBATestCase {
         let arrival = try! Fixtures.dictionaryToModel(type: ArrivalDeparture.self, dictionary: dataWithBlanks)
         
         // String.nilifyBlankValue should convert empty strings to nil
-        expect(arrival.vehicleID).to(beNil())
+        #expect(arrival.vehicleID == nil)
         // Private properties are not directly testable, but their effects should be seen in computed properties
     }
     
@@ -169,8 +169,8 @@ class ArrivalDepartureTests: OBATestCase {
         let arrival = try! Fixtures.dictionaryToModel(type: ArrivalDeparture.self, dictionary: dataWithInvalidTimes)
         
         // ModelHelpers.nilifyDate should have converted very early dates to nil
-        expect(arrival.predictedArrival).to(beNil())
-        expect(arrival.predictedDeparture).to(beNil())
+        #expect(arrival.predictedArrival == nil)
+        #expect(arrival.predictedDeparture == nil)
     }
     
     func test_hasReferencesLoadReferences() {
@@ -260,11 +260,11 @@ class ArrivalDepartureTests: OBATestCase {
         arrival.loadReferences(references, regionIdentifier: 777)
         
         #expect(arrival.regionIdentifier == 777)
-        expect(arrival.route).toNot(beNil())
+        #expect(arrival.route != nil)
         #expect(arrival.route.id == "route_ref")
-        expect(arrival.stop).toNot(beNil())
+        #expect(arrival.stop != nil)
         #expect(arrival.stop.id == "stop_ref")
-        expect(arrival.trip).toNot(beNil())
+        #expect(arrival.trip != nil)
         #expect(arrival.trip.id == "trip_ref")
         #expect(arrival.serviceAlerts.count == 2)
         #expect(arrival.serviceAlerts.map { $0.id }.sorted() == ["alert_ref_1", "alert_ref_2"])

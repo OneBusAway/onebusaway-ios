@@ -72,8 +72,8 @@ class ArrivalDepartureDeepLinkTests: OBATestCase {
         let deepLink2 = try! Fixtures.roundtripCodable(type: ArrivalDepartureDeepLink.self, model: deepLink1)
 
         #expect(deepLink2 == deepLink1)
-        expect(deepLink2.destinationStopID).to(beNil())
-        expect(deepLink2.vehicleID).to(beNil())
+        #expect(deepLink2.destinationStopID == nil)
+        #expect(deepLink2.vehicleID == nil)
     }
 
     // MARK: - Equality

@@ -44,11 +44,11 @@ final class UmamiAnalyticsTests: OBATestCase {
     // MARK: - UmamiJSONValue coercion
 
     func testJSONValueCoercion() {
-        expect(UmamiJSONValue("hi")).toNot(beNil())
-        expect(UmamiJSONValue(42)).toNot(beNil())
+        #expect(UmamiJSONValue("hi") != nil)
+        #expect(UmamiJSONValue(42) != nil)
         // Non-JSON / non-finite values are dropped (nil), never crash.
-        expect(UmamiJSONValue(Double.nan)).to(beNil())
-        expect(UmamiJSONValue(nil)).to(beNil())
+        #expect(UmamiJSONValue(Double.nan) == nil)
+        #expect(UmamiJSONValue(nil) == nil)
     }
 
     // MARK: - Request construction
@@ -81,7 +81,7 @@ final class UmamiAnalyticsTests: OBATestCase {
         #expect((payload["website"] as? String) == "site-uuid")
         #expect((payload["hostname"] as? String) == "api.example.org")
         #expect((payload["url"] as? String) == "/stop")
-        expect(payload["name"]).to(beNil())   // pageview → no name
+        #expect(payload["name"] == nil)  // pageview → no name
         let data = payload["data"] as! [String: Any]
         #expect((data["id"] as? String) == "1_75403")
         #expect((data["distance"] as? String) == "near")

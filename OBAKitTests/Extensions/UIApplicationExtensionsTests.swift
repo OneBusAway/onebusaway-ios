@@ -10,6 +10,7 @@
 import Foundation
 import XCTest
 import Nimble
+import Testing
 import UIKit
 @testable import OBAKit
 
@@ -28,7 +29,7 @@ class UIApplicationExtensionsTests: XCTestCase {
         if let keyWindow = keyWindow {
             expect(keyWindow).to(beAnInstanceOf(UIWindow.self))
         } else {
-            expect(keyWindow).to(beNil())
+            #expect(keyWindow == nil)
         }
     }
     

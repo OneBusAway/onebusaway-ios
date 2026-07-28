@@ -234,7 +234,7 @@ class NearbyTripMatcherTests: OBATestCase {
             XCTFail("Should rethrow the server error, not a MatchError")
         } catch {
             // Expected: the server error is rethrown, not swallowed.
-            expect(error).toNot(beNil())
+            #expect(error != nil)
         }
     }
 

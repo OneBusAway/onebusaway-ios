@@ -88,7 +88,7 @@ class StopArrivalsModelOperationTests: OBATestCase {
         #expect(arrDep.blockTripSequence == 9)
         expect(arrDep.departureEnabled).to(beTrue())
         expectClose(arrDep.distanceFromStop, 1232.648659247323)
-        expect(arrDep.frequency).to(beNil())
+        #expect(arrDep.frequency == nil)
 
         #expect(arrDep.lastUpdated == Date.fromComponents(year: 2018, month: 11, day: 02, hour: 06, minute: 55, second: 49))
 
@@ -100,7 +100,7 @@ class StopArrivalsModelOperationTests: OBATestCase {
         #expect(arrDep.route.id == "1_100447")
         #expect(arrDep.route.shortName == "49")
 
-        expect(arrDep.routeLongName).to(beNil())
+        #expect(arrDep.routeLongName == nil)
         #expect(arrDep.routeShortName == "49")
 
         #expect(arrDep.arrivalDepartureDate == Date.fromComponents(year: 2018, month: 11, day: 02, hour: 07, minute: 02, second: 36))
@@ -123,7 +123,7 @@ class StopArrivalsModelOperationTests: OBATestCase {
         #expect(arrDep.trip.id == "1_40984902")
         #expect(arrDep.trip.shortName == "LOCAL")
 
-        expect(arrDep.tripStatus).toNot(beNil())
+        #expect(arrDep.tripStatus != nil)
         let tripStatus = try XCTUnwrap(arrDep.tripStatus)
         #expect(tripStatus.activeTrip.id == "1_40984840")
 
@@ -172,6 +172,6 @@ class StopArrivalsModelOperationTests: OBATestCase {
         #expect(arrDep.blockTripSequence == 2)
         expect(arrDep.departureEnabled).to(beTrue())
         expectClose(arrDep.distanceFromStop, 63293.0860)
-        expect(arrDep.frequency).to(beNil())
+        #expect(arrDep.frequency == nil)
     }
 }

@@ -45,7 +45,7 @@ class LocationServiceRegionMonitoringTests: OBATestCase {
         #expect(self.locationManagerMock.monitoredRegions.count == 1)
 
         let region = locationManagerMock.monitoredRegions.first as? CLCircularRegion
-        expect(region).toNot(beNil())
+        #expect(region != nil)
         #expect(region?.identifier == "oba.proximity.\(alert.id.uuidString)")
         #expect(region?.center.latitude == stop.location.coordinate.latitude)
         #expect(region?.center.longitude == stop.location.coordinate.longitude)
@@ -199,7 +199,7 @@ class LocationServiceRegionMonitoringTests: OBATestCase {
 
         service.locationManager(CLLocationManager(), didEnterRegion: region)
 
-        expect(self.delegate.enteredRegionIdentifier).to(beNil())
+        #expect(self.delegate.enteredRegionIdentifier == nil)
     }
 
     func test_didEnterRegion_nonCircularRegion_doesNotNotify() {
@@ -210,7 +210,7 @@ class LocationServiceRegionMonitoringTests: OBATestCase {
 
         service.locationManager(CLLocationManager(), didEnterRegion: beaconRegion)
 
-        expect(self.delegate.enteredRegionIdentifier).to(beNil())
+        #expect(self.delegate.enteredRegionIdentifier == nil)
     }
 
     // MARK: - Delegate: monitoringDidFail
@@ -234,8 +234,8 @@ class LocationServiceRegionMonitoringTests: OBATestCase {
 
         service.locationManager(CLLocationManager(), monitoringDidFailFor: nil, withError: error)
 
-        expect(self.delegate.monitoringFailedIdentifier).to(beNil())
-        expect(self.delegate.monitoringFailedError).toNot(beNil())
+        #expect(self.delegate.monitoringFailedIdentifier == nil)
+        #expect(self.delegate.monitoringFailedError != nil)
     }
 
     // MARK: - Multiple Delegates

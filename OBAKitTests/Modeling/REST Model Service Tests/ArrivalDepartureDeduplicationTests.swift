@@ -87,7 +87,7 @@ class ArrivalDepartureDeduplicationTests: OBATestCase {
         // They are different trips on the same block, not terminal duplicates.
         #expect(arrDeps[0].vehicleID == "1_4361")
         #expect(arrDeps[1].vehicleID == "1_4361")
-        expect(arrDeps[0].tripID).toNot(equal(arrDeps[1].tripID))
+        #expect(arrDeps[0].tripID != arrDeps[1].tripID)
 
         let filtered = arrDeps.filteringTerminalDuplicates()
 

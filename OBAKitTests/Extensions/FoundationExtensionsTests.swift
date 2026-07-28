@@ -10,6 +10,7 @@
 import Foundation
 import XCTest
 import Nimble
+import Testing
 @testable import OBAKitCore
 
 @MainActor
@@ -44,7 +45,7 @@ class FoundationExtensionsTests: XCTestCase {
         // Test that our bundleIdentifier extension works by getting the CFBundleIdentifier value
         let bundleIdentifier = bundle.object(forInfoDictionaryKey: "CFBundleIdentifier") as? String
         
-        expect(bundleIdentifier).toNot(beNil())
+        #expect(bundleIdentifier != nil)
         expect(bundleIdentifier).toNot(beEmpty())
         expect(bundleIdentifier).to(contain("."))
     }
@@ -61,7 +62,7 @@ class FoundationExtensionsTests: XCTestCase {
         let copyright = bundle.copyright
         
         // This may be empty in test bundles, but should not crash
-        expect(copyright).toNot(beNil())
+        #expect(copyright != nil)
     }
     
     func test_Bundle_userActivityTypes() {

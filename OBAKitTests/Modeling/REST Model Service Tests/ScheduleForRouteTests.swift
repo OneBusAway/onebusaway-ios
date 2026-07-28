@@ -48,7 +48,7 @@ class ScheduleForRouteTests: OBATestCase {
         let schedule = response.entry
 
         #expect(schedule.routeID == "1_100223")
-        expect(schedule.scheduleDate).toNot(beNil())
+        #expect(schedule.scheduleDate != nil)
         expect(schedule.serviceIDs).toNot(beEmpty())
         expect(schedule.stopTripGroupings).toNot(beEmpty())
     }
@@ -58,7 +58,7 @@ class ScheduleForRouteTests: OBATestCase {
         let schedule = response.entry
 
         let grouping = try XCTUnwrap(schedule.stopTripGroupings.first)
-        expect(grouping.directionID).toNot(beNil())
+        #expect(grouping.directionID != nil)
         expect(grouping.stopIDs).toNot(beEmpty())
         expect(grouping.tripHeadsigns).toNot(beEmpty())
         expect(grouping.tripIDs).toNot(beEmpty())
@@ -112,14 +112,14 @@ class ScheduleForRouteTests: OBATestCase {
     func test_references_containsRoutes() async throws {
         let response = try await restService.getScheduleForRoute(routeID: routeID)
 
-        expect(response.references).toNot(beNil())
+        #expect(response.references != nil)
         expect(response.references?.routes).toNot(beEmpty())
     }
 
     func test_references_containsStops() async throws {
         let response = try await restService.getScheduleForRoute(routeID: routeID)
 
-        expect(response.references).toNot(beNil())
+        #expect(response.references != nil)
         expect(response.references?.stops).toNot(beEmpty())
     }
 }

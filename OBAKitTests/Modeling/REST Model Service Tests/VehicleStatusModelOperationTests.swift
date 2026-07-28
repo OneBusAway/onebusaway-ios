@@ -87,7 +87,7 @@ class VehicleStatusModelOperationTests: OBATestCase {
         expectClose(vehicle.location?.coordinate.longitude, -122.3244)
 
         #expect(vehicle.trip!.id == "1_47649081")
-        expect(vehicle.trip!.routeShortName).to(beNil())
+        #expect(vehicle.trip!.routeShortName == nil)
         #expect(vehicle.trip!.shortName == "LOCAL")
 
         #expect(vehicle.phase == "in_progress")
@@ -96,7 +96,7 @@ class VehicleStatusModelOperationTests: OBATestCase {
         let tripStatus = vehicle.tripStatus
 
         // Trip Status
-        expect(tripStatus).toNot(beNil())
+        #expect(tripStatus != nil)
 
         #expect(tripStatus.activeTrip.id == "1_47649081")
         #expect(tripStatus.activeTrip.headsign == "Downtown Seattle")
@@ -158,7 +158,7 @@ class VehicleStatusModelOperationTests: OBATestCase {
         let response = try await restService.getVehicle(vehicleID: vehicleID)
         let frequency = try XCTUnwrap(response.entry.tripStatus.frequency)
 
-        expect(frequency).toNot(beNil())
+        #expect(frequency != nil)
         #expect(frequency.startTime == Date.fromComponents(year: 2010, month: 11, day: 12, hour: 16, minute: 30, second: 00))
 
         #expect(frequency.endTime == Date.fromComponents(year: 2010, month: 11, day: 12, hour: 22, minute: 59, second: 59))

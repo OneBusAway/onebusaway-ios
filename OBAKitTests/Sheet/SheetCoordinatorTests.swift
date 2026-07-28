@@ -185,10 +185,10 @@ final class SheetCoordinatorTests: XCTestCase {
 
     func test_stackedRoute_atDepth_returnsNilWhenOutOfRange() {
         let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
-        expect(coordinator.stackedRoute(at: 0)).to(beNil())
+        #expect(coordinator.stackedRoute(at: 0) == nil)
 
         coordinator.push(.tripPlanner)
-        expect(coordinator.stackedRoute(at: 1)).to(beNil())
+        #expect(coordinator.stackedRoute(at: 1) == nil)
     }
 
     func test_stackedDetent_atDepth_returnsStoredDetent() {

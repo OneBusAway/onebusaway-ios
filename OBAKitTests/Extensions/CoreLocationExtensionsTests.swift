@@ -29,9 +29,9 @@ class CoreLocationExtensionsTests: XCTestCase {
     
     func test_CLAuthorizationStatus_initFromString() {
         // LosslessStringConvertible init always returns nil as implemented
-        expect(CLAuthorizationStatus("authorizedAlways")).to(beNil())
-        expect(CLAuthorizationStatus("denied")).to(beNil())
-        expect(CLAuthorizationStatus("invalid")).to(beNil())
+        #expect(CLAuthorizationStatus("authorizedAlways") == nil)
+        #expect(CLAuthorizationStatus("denied") == nil)
+        #expect(CLAuthorizationStatus("invalid") == nil)
     }
     
     func test_CLLocationDirection_radians() {
@@ -101,8 +101,8 @@ class CoreLocationExtensionsTests: XCTestCase {
         
         #expect(region.identifier == "MapRectRegion")
         expect(region.radius).to(beGreaterThan(0))
-        expect(region.center.latitude).toNot(equal(0))
-        expect(region.center.longitude).toNot(equal(0))
+        #expect(region.center.latitude != 0)
+        #expect(region.center.longitude != 0)
         
         // Test with a simple square map rect
         let simpleRect = MKMapRect(x: 0, y: 0, width: 1000, height: 1000)

@@ -51,9 +51,9 @@ class CodableExtensionsTests: XCTestCase {
         let result = try decoder.decode(TestStruct.self, from: data)
         
         #expect(result.validURL?.absoluteString == "https://example.com")
-        expect(result.invalidURL).to(beNil()) // Invalid URL becomes nil
-        expect(result.blankURL).to(beNil()) // Blank string becomes nil
-        expect(result.nilURL).to(beNil()) // Null value becomes nil
+        #expect(result.invalidURL == nil)  // Invalid URL becomes nil
+        #expect(result.blankURL == nil)  // Blank string becomes nil
+        #expect(result.nilURL == nil)  // Null value becomes nil
     }
     
     func test_decodeGarbageURL_missingKey() throws {
@@ -68,9 +68,9 @@ class CodableExtensionsTests: XCTestCase {
         let result = try decoder.decode(TestStruct.self, from: data)
         
         #expect(result.validURL?.absoluteString == "https://example.com")
-        expect(result.invalidURL).to(beNil())
-        expect(result.blankURL).to(beNil())
-        expect(result.nilURL).to(beNil())
+        #expect(result.invalidURL == nil)
+        #expect(result.blankURL == nil)
+        #expect(result.nilURL == nil)
     }
     
     func test_decodeGarbageURL_whitespaceURL() throws {
@@ -86,7 +86,7 @@ class CodableExtensionsTests: XCTestCase {
         let result = try decoder.decode(TestStruct.self, from: data)
         
         #expect(result.validURL?.absoluteString == "https://example.com")
-        expect(result.blankURL).to(beNil()) // Whitespace-only string should become nil
+        #expect(result.blankURL == nil)  // Whitespace-only string should become nil
     }
     
     func test_decodeGarbageURL_malformedURL() throws {
@@ -102,7 +102,7 @@ class CodableExtensionsTests: XCTestCase {
         let result = try decoder.decode(TestStruct.self, from: data)
         
         #expect(result.validURL?.absoluteString == "https://example.com")
-        expect(result.invalidURL).to(beNil()) // Malformed URL becomes nil
+        #expect(result.invalidURL == nil)  // Malformed URL becomes nil
     }
     
     func test_decodeGarbageURL_pathURL() throws {

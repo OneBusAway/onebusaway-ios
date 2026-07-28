@@ -54,7 +54,7 @@ class AppLinksRouterDeepLinkFormatTests: XCTestCase {
         let url = components.url!
         let parsed = URLComponents(url: url, resolvingAgainstBaseURL: false)!
 
-        expect(parsed.queryItem(named: "destination_stop_id")).to(beNil())
+        #expect(parsed.queryItem(named: "destination_stop_id") == nil)
         #expect(parsed.queryItems?.count == 3)
     }
 
@@ -104,7 +104,7 @@ class AppLinksRouterDeepLinkFormatTests: XCTestCase {
             vehicleID: nil
         )
 
-        expect(link.destinationStopID).to(beNil())
+        #expect(link.destinationStopID == nil)
     }
 
     // MARK: - Backward Compatibility
@@ -115,7 +115,7 @@ class AppLinksRouterDeepLinkFormatTests: XCTestCase {
         let url = URL(string: urlString)!
         let components = URLComponents(url: url, resolvingAgainstBaseURL: false)!
 
-        expect(components.queryItem(named: "destination_stop_id")).to(beNil())
+        #expect(components.queryItem(named: "destination_stop_id") == nil)
         #expect(components.queryItem(named: "trip_id")?.value == "1_545_trip")
         #expect(components.queryItem(named: "stop_sequence")?.value == "12")
     }

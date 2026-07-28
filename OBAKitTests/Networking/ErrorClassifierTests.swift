@@ -306,7 +306,7 @@ class ErrorClassifierTests: XCTestCase {
         switch apiError {
         case .serverUnavailable(let regionName, let statusCode):
             #expect(regionName == "San Diego")
-            expect(statusCode).to(beNil())
+            #expect(statusCode == nil)
         default:
             fail("Expected .serverUnavailable, got \(apiError)")
         }

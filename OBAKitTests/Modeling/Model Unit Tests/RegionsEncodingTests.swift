@@ -48,7 +48,7 @@ class RegionsEncodingTests: OBATestCase {
         expect(tampaRT.isExperimental).to(beFalse())
         expect(tampaRT.isCustom).to(beFalse())
 
-        expect(tampaRT.facebookURL).to(beNil())
+        #expect(tampaRT.facebookURL == nil)
         #expect(tampaRT.contactEmail == "onebusaway@gohart.org")
         #expect(tampaRT.openTripPlannerContactEmail == "otp-tampa@onebusaway.org")
         #expect(tampaRT.twitterURL == URL(string: "https://mobile.twitter.com/OBA_tampa")!)
@@ -57,16 +57,16 @@ class RegionsEncodingTests: OBATestCase {
         #expect(tampa.sidecarBaseURL == URL(string: "https://onebusaway.co")!)
         #expect(tampaRT.siriBaseURL == URL(string: "https://tampa.onebusaway.org/onebusaway-api-webapp/siri/")!)
         #expect(tampaRT.openTripPlannerURL == URL(string: "https://otp.prod.obahart.org/otp/")!)
-        expect(tampaRT.stopInfoURL).to(beNil())
+        #expect(tampaRT.stopInfoURL == nil)
 
-        expect(tampaRT.paymentWarningBody).to(beNil())
-        expect(tampaRT.paymentWarningTitle).to(beNil())
+        #expect(tampaRT.paymentWarningBody == nil)
+        #expect(tampaRT.paymentWarningTitle == nil)
         #expect(tampaRT.paymentAndroidAppID == "co.bytemark.flamingo")
         #expect(tampaRT.paymentiOSAppStoreIdentifier == "1487465395")
         #expect(tampaRT.paymentiOSAppURLScheme == "fb313213768708402HART")
 
         let open311 = tampaRT.open311Servers!.first!
-        expect(open311.jurisdictionID).to(beNil())
+        #expect(open311.jurisdictionID == nil)
         #expect(open311.apiKey == "937033cad3054ec58a1a8156dcdd6ad8a416af2f")
         #expect(open311.baseURL == URL(string: "https://seeclickfix.com/open311/v2/")!)
 
@@ -91,17 +91,17 @@ class RegionsEncodingTests: OBATestCase {
         #expect(umami?.id == "abc-123-uuid")
 
         // Explicit JSON null (region 1) → nil.
-        expect(regions[1].umamiAnalytics).to(beNil())
+        #expect(regions[1].umamiAnalytics == nil)
 
         // Absent key (region 2) → nil.
-        expect(regions[2].umamiAnalytics).to(beNil())
+        #expect(regions[2].umamiAnalytics == nil)
 
         // Survives a property-list encode → decode round trip (Region is persisted to disk).
         let plist = try! PropertyListEncoder().encode(regions)
         let roundTripped = try! PropertyListDecoder().decode([Region].self, from: plist)
         #expect(roundTripped[0].umamiAnalytics?.url == URL(string: "https://analytics.onebusawaycloud.com")!)
         #expect(roundTripped[0].umamiAnalytics?.id == "abc-123-uuid")
-        expect(roundTripped[1].umamiAnalytics).to(beNil())
+        #expect(roundTripped[1].umamiAnalytics == nil)
     }
 
     func testCustomRegions_creation() {
@@ -152,11 +152,11 @@ class RegionsEncodingTests: OBATestCase {
     }
 
     func testUmamiConfig_failableInit_partialPairsCollapseToNil() {
-        expect(UmamiAnalyticsConfig(url: nil, id: "site-123")).to(beNil())
-        expect(UmamiAnalyticsConfig(url: URL(string: "https://analytics.example.com"), id: nil)).to(beNil())
-        expect(UmamiAnalyticsConfig(url: URL(string: "https://analytics.example.com"), id: "")).to(beNil())
-        expect(UmamiAnalyticsConfig(url: URL(string: "https://analytics.example.com"), id: "   ")).to(beNil())
-        expect(UmamiAnalyticsConfig(url: nil, id: nil)).to(beNil())
+        #expect(UmamiAnalyticsConfig(url: nil, id: "site-123") == nil)
+        #expect(UmamiAnalyticsConfig(url: URL(string: "https://analytics.example.com"), id: nil) == nil)
+        #expect(UmamiAnalyticsConfig(url: URL(string: "https://analytics.example.com"), id: "") == nil)
+        #expect(UmamiAnalyticsConfig(url: URL(string: "https://analytics.example.com"), id: "   ") == nil)
+        #expect(UmamiAnalyticsConfig(url: nil, id: nil) == nil)
     }
 
     func testCustomRegions_creation_withSidecarAndUmami() {

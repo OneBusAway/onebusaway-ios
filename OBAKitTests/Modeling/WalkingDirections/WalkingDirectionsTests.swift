@@ -32,7 +32,7 @@ class WalkingDirectionsTests: XCTestCase {
 
     func test_travelTime_defaultVelocity() {
         let time = WalkingDirections.travelTime(from: locationA, to: locationB)
-        expect(time).toNot(beNil())
+        #expect(time != nil)
         expectClose(time, knownDistance / WalkingSpeed.defaultMetersPerSecond, within: 0.01)
     }
 
@@ -42,8 +42,8 @@ class WalkingDirectionsTests: XCTestCase {
         let slowTime = WalkingDirections.travelTime(from: locationA, to: locationB, velocity: 0.9)
         let fastTime = WalkingDirections.travelTime(from: locationA, to: locationB, velocity: 1.8)
 
-        expect(slowTime).toNot(beNil())
-        expect(fastTime).toNot(beNil())
+        #expect(slowTime != nil)
+        #expect(fastTime != nil)
         expectClose(slowTime, knownDistance / 0.9, within: 0.01)
         expectClose(fastTime, knownDistance / 1.8, within: 0.01)
 
@@ -55,28 +55,28 @@ class WalkingDirectionsTests: XCTestCase {
 
     func test_travelTime_nilFromLocation() {
         let time = WalkingDirections.travelTime(from: nil, to: locationB)
-        expect(time).to(beNil())
+        #expect(time == nil)
     }
 
     func test_travelTime_nilToLocation() {
         let time = WalkingDirections.travelTime(from: locationA, to: nil)
-        expect(time).to(beNil())
+        #expect(time == nil)
     }
 
     func test_travelTime_bothNil() {
         let time = WalkingDirections.travelTime(from: nil, to: nil)
-        expect(time).to(beNil())
+        #expect(time == nil)
     }
 
     // MARK: - Invalid Velocity
 
     func test_travelTime_zeroVelocity_returnsNil() {
         let time = WalkingDirections.travelTime(from: locationA, to: locationB, velocity: 0)
-        expect(time).to(beNil())
+        #expect(time == nil)
     }
 
     func test_travelTime_negativeVelocity_returnsNil() {
         let time = WalkingDirections.travelTime(from: locationA, to: locationB, velocity: -1.5)
-        expect(time).to(beNil())
+        #expect(time == nil)
     }
 }
