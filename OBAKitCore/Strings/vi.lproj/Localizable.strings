@@ -205,6 +205,12 @@
 /* The title of the Vehicles tab showing real-time vehicle positions on a map. */
 "common.vehicles" = "Phương tiện";
 
+/* VoiceOver clause naming the clock time of a departure. %@ is the time. */
+"departure_time.a11y_at_fmt" = "lúc %@";
+
+/* VoiceOver clause for a departure whose real-time prediction differs from its scheduled time. %1$@ is the scheduled time, %2$@ the predicted time. */
+"departure_time.a11y_rescheduled_fmt" = "theo lịch trình lúc %1$@, hiện dự kiến lúc %2$@";
+
 /* Use for vehicles that arrived X minutes ago. */
 "formatters.arrived_x_min_ago_fmt" = "Đã đến %d phút trước";
 

@@ -10,7 +10,8 @@
 import SwiftUI
 
 /// Lock-screen Live Activity card that matches the grouped route card header from StopPageView:
-/// route badge + headsign + scheduled time/adherence status + countdown + departure chips.
+/// route badge + headsign + corrected departure time (the scheduled time struck through when a
+/// prediction has moved it) with adherence status + countdown + departure chips.
 /// No alarm pill or expand chevron.
 public struct TripLiveActivityCardView: View {
     public let staticData: TripAttributes.StaticData
@@ -65,18 +66,27 @@ public struct TripLiveActivityCardView: View {
 
     @ViewBuilder
     private func timeStatusLine(for arrival: TripAttributes.ContentState.ArrivalInfo, now: Date) -> some View {
+        // Shared corrected-time component (#1225): when the prediction has
+        // moved off the timetable, the scheduled time renders struck through
+        // ahead of the corrected one.
+        let display = presenter.timeDisplay(for: arrival)
+        let deviation = presenter.deviationLabel(for: arrival, now: now)
+
         HStack(spacing: 6) {
-            Text(arrival.departureDate, style: .time)
+            DepartureTimeText(display: display)
                 .font(.footnote)
-                .monospacedDigit()
                 .foregroundStyle(.secondary)
             Text("·")
                 .font(.footnote)
                 .foregroundStyle(.tertiary)
-            Text(presenter.deviationLabel(for: arrival, now: now))
+            Text(deviation)
                 .font(.footnote.weight(.semibold))
                 .foregroundStyle(Color(uiColor: presenter.color(for: arrival)))
         }
+        // `DepartureTimeText` hides itself from VoiceOver (a strikethrough is
+        // inaudible), so the line speaks the combined clause instead.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(display.accessibilityTimeDescription), \(deviation)")
     }
 
     @ViewBuilder

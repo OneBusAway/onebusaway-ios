@@ -205,6 +205,12 @@
 /* The title of the Vehicles tab showing real-time vehicle positions on a map. */
 "common.vehicles" = "Veículos";
 
+/* VoiceOver clause naming the clock time of a departure. %@ is the time. */
+"departure_time.a11y_at_fmt" = "às %@";
+
+/* VoiceOver clause for a departure whose real-time prediction differs from its scheduled time. %1$@ is the scheduled time, %2$@ the predicted time. */
+"departure_time.a11y_rescheduled_fmt" = "programado para %1$@, agora previsto para %2$@";
+
 /* Use for vehicles that arrived X minutes ago. */
 "formatters.arrived_x_min_ago_fmt" = "Chegou há %d min";
 

@@ -39,6 +39,22 @@ extension Formatters {
 
         var value = self.accessibilityValue(for: firstArrivalDeparture)
 
+        // The visual card renders the corrected time with the schedule struck
+        // through (`DepartureTimeText`); a strikethrough is inaudible, so the
+        // correction is carried here in words. Only the corrected case is
+        // spoken: the base value above already names the expected clock time,
+        // so the plain "at %@" clause would merely repeat it. Appended as its
+        // own sentence — the base value ends with terminal punctuation, so a
+        // comma join would read "…at 9:57 PM., scheduled…". The joiner and
+        // period are code-level rather than a localized sentence-form key on
+        // purpose: this string is only ever spoken, punctuation surfaces as a
+        // pause, and a second key would force all 13 locales to re-adjudicate
+        // punctuation for translations that carried over verbatim (#1225).
+        let timeDisplay = DepartureTimeDisplay(arrivalDeparture: firstArrivalDeparture, formatters: self)
+        if timeDisplay.scheduledTimeText != nil {
+            value += " " + timeDisplay.accessibilityTimeDescription + "."
+        }
+
         if arrivalDepartures.count >= 2 {
             let textToAppend: String
             let secondArrivalDeparture = arrivalDepartures[1]
