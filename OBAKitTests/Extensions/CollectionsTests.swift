@@ -8,7 +8,6 @@
 //
 
 import Foundation
-import Nimble
 import Testing
 import XCTest
 @testable import OBAKit

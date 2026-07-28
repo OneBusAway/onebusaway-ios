@@ -9,7 +9,6 @@
 
 import XCTest
 import SwiftUI
-import Nimble
 import Testing
 @testable import OBAKit
 @testable import OBAKitCore

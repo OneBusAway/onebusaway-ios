@@ -11,7 +11,6 @@ import XCTest
 import MapKit
 @testable import OBAKit
 @testable import OBAKitCore
-import Nimble
 import Testing
 
 /// Covers the gate that decides whether tapping a stop annotation shows a callout or opens the

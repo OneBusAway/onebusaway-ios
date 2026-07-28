@@ -9,7 +9,6 @@
 
 import XCTest
 import CoreLocation
-import Nimble
 import Testing
 @testable import OBAKit
 @testable import OBAKitCore

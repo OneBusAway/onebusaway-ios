@@ -9,7 +9,6 @@
 
 import XCTest
 import MapKit
-import Nimble
 import Testing
 @testable import OBAKit
 @testable import OBAKitCore

@@ -12,7 +12,6 @@ import XCTest
 @testable import OBAKit
 @testable import OBAKitCore
 import CoreLocation
-import Nimble
 import Testing
 
 @MainActor

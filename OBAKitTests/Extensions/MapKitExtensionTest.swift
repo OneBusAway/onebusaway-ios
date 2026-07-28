@@ -9,7 +9,6 @@
 
 import Foundation
 import MapKit
-import Nimble
 import Testing
 import XCTest
 @testable import OBAKit

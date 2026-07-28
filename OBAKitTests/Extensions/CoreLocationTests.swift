@@ -8,7 +8,6 @@
 //
 
 import Foundation
-import Nimble
 import XCTest
 import CoreLocation
 import Testing

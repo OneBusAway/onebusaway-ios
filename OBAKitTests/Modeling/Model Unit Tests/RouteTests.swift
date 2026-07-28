@@ -8,7 +8,6 @@
 //
 
 import XCTest
-import Nimble
 import Testing
 import UIKit
 @testable import OBAKit

@@ -8,7 +8,6 @@
 //
 
 import XCTest
-import Nimble
 import CoreLocation
 import MapKit
 import Testing

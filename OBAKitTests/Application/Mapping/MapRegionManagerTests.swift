@@ -11,7 +11,6 @@ import Foundation
 import XCTest
 @testable import OBAKit
 @testable import OBAKitCore
-import Nimble
 import Testing
 
 // swiftlintXdisable force_try

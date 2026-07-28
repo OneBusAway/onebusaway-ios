@@ -8,7 +8,6 @@
 //
 
 import XCTest
-import Nimble
 import Testing
 import Combine
 import CoreLocation

@@ -9,7 +9,6 @@
 
 import Foundation
 import XCTest
-import Nimble
 import CoreLocation
 import MapKit
 import CoreGraphics

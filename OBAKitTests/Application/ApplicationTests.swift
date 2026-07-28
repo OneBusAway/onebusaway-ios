@@ -13,7 +13,6 @@ import XCTest
 @testable import OBAKit
 @testable import OBAKitCore
 import CoreLocation
-import Nimble
 import Testing
 
 // swiftlint:disable large_tuple force_cast

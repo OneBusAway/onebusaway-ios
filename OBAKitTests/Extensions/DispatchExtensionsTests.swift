@@ -9,7 +9,6 @@
 
 import Foundation
 import XCTest
-import Nimble
 @testable import OBAKit
 
 @MainActor
