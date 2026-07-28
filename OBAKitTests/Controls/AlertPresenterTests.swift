@@ -35,7 +35,7 @@ class AlertPresenterTests: XCTestCase {
         #expect(self.viewController.presentedAlert != nil)
         
         guard let alertController = self.viewController.presentedAlert else {
-            fail("Expected alert to be presented")
+            Issue.record("Expected alert to be presented")
             return
         }
         
@@ -55,7 +55,7 @@ class AlertPresenterTests: XCTestCase {
         #expect(self.viewController.presentedAlert != nil)
         
         guard let alertController = self.viewController.presentedAlert else {
-            fail("Expected alert to be presented")
+            Issue.record("Expected alert to be presented")
             return
         }
         
@@ -76,7 +76,7 @@ class AlertPresenterTests: XCTestCase {
         #expect(self.viewController.presentedAlert != nil)
         
         guard let alertController = self.viewController.presentedAlert else {
-            fail("Expected alert to be presented")
+            Issue.record("Expected alert to be presented")
             return
         }
         
@@ -95,7 +95,7 @@ class AlertPresenterTests: XCTestCase {
         #expect(self.viewController.presentedAlert != nil)
         
         guard let alertController = self.viewController.presentedAlert else {
-            fail("Expected alert to be presented")
+            Issue.record("Expected alert to be presented")
             return
         }
         

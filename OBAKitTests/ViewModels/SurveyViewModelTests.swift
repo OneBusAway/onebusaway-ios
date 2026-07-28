@@ -220,7 +220,7 @@ class SurveyViewModelTests: OBATestCase {
         let result = await firstSubmissionResult(vm: vm)
         switch result {
         case .failure(.validationFailed): break
-        default: fail("Expected .validationFailed; got \(result)")
+        default: Issue.record("Expected .validationFailed; got \(result)")
         }
     }
 
@@ -251,7 +251,7 @@ class SurveyViewModelTests: OBATestCase {
         let result = await firstSubmissionResult(vm: vm)
         switch result {
         case .failure(.malformedSurveyData): break
-        default: fail("Expected .malformedSurveyData for label-only survey; got \(result)")
+        default: Issue.record("Expected .malformedSurveyData for label-only survey; got \(result)")
         }
     }
 
@@ -308,7 +308,7 @@ class SurveyViewModelTests: OBATestCase {
         let result = await firstSubmissionResult(vm: vm)
         switch result {
         case .failure(.malformedSurveyData): break
-        default: fail("Expected .malformedSurveyData when hero is missing; got \(result)")
+        default: Issue.record("Expected .malformedSurveyData when hero is missing; got \(result)")
         }
     }
 
@@ -329,7 +329,7 @@ class SurveyViewModelTests: OBATestCase {
         #expect(received.count == 2)
         for r in received {
             if case .failure(.validationFailed) = r { continue }
-            fail("Expected all results to be .validationFailed; got \(r)")
+            Issue.record("Expected all results to be .validationFailed; got \(r)")
         }
     }
 
@@ -363,7 +363,7 @@ class SurveyViewModelTests: OBATestCase {
         let after = Date()
 
         guard let reminder = dataStore.nextSurveyReminderDate else {
-            fail("nextSurveyReminderDate not set")
+            Issue.record("nextSurveyReminderDate not set")
             return
         }
 
@@ -434,7 +434,7 @@ class SurveyViewModelTests: OBATestCase {
         let result = await firstSubmissionResult(vm: vm)
         switch result {
         case .failure(.validationFailed): break
-        default: fail("Expected .validationFailed when a non-external required is unanswered; got \(result)")
+        default: Issue.record("Expected .validationFailed when a non-external required is unanswered; got \(result)")
         }
     }
 
@@ -544,7 +544,7 @@ class SurveyViewModelTests: OBATestCase {
         let result = await firstSubmissionResult(vm: vm)
 
         guard case .success = result else {
-            fail("Expected .success; got \(result)"); return
+            Issue.record("Expected .success; got \(result)"); return
         }
         #expect(counter.posts == 1)
         #expect(counter.puts == 0)
@@ -568,7 +568,7 @@ class SurveyViewModelTests: OBATestCase {
         let result = await firstSubmissionResult(vm: vm)
 
         guard case .success = result else {
-            fail("Expected .success; got \(result)"); return
+            Issue.record("Expected .success; got \(result)"); return
         }
         #expect(counter.posts == 1)
         #expect(counter.puts == 1)
@@ -595,7 +595,7 @@ class SurveyViewModelTests: OBATestCase {
         let result = await firstSubmissionResult(vm: vm)
 
         guard case .success = result else {
-            fail("Expected .success; got \(result)"); return
+            Issue.record("Expected .success; got \(result)"); return
         }
         #expect(counter.posts == 0)
         #expect(counter.puts == 1)
@@ -619,7 +619,7 @@ class SurveyViewModelTests: OBATestCase {
         let result = await firstSubmissionResult(vm: vm)
 
         guard case .success = result else {
-            fail("Expected .success; got \(result)"); return
+            Issue.record("Expected .success; got \(result)"); return
         }
         #expect(counter.posts == 1)
         #expect(counter.puts == 0)
@@ -647,7 +647,7 @@ class SurveyViewModelTests: OBATestCase {
         let result = await firstSubmissionResult(vm: vm)
 
         guard case .success = result else {
-            fail("Expected .success; got \(result)"); return
+            Issue.record("Expected .success; got \(result)"); return
         }
         #expect(counter.posts == 0)
         #expect(counter.puts == 1)

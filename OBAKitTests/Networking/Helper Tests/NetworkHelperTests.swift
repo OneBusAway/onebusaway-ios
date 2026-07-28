@@ -68,7 +68,7 @@ class NetworkHelperTests: OBATestCase {
             case "lonSpan":
                 #expect(item.value == "0.008")
             default:
-                fail("Unexpected query item: \(item.name)")
+                Issue.record("Unexpected query item: \(item.name)")
             }
         }
     }

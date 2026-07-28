@@ -114,7 +114,7 @@ class ReferencesTests: OBATestCase {
         #expect(self.references.stops.map { $0.id } == expectedOrder, "Make sure stops are sorted by their IDs for binary searching")
 
         guard let stop = self.references.stopWithID("Hillsborough Area Regional Transit_6497") else {
-            fail("Failed to find stop with stopID: \"Hillsborough Area Regional Transit_6497\"")
+            Issue.record("Failed to find stop with stopID: \"Hillsborough Area Regional Transit_6497\"")
             return
         }
 
@@ -171,7 +171,7 @@ class ReferencesTests: OBATestCase {
         #expect(self.references.trips.map { $0.id } == expectedTrips, "Make sure trips are sorted by their IDs for binary searching")
 
         guard let trip = self.references.tripWithID("Hillsborough Area Regional Transit_99283") else {
-            fail("Failed to find trip with tripID: \"Hillsborough Area Regional Transit_99283\"")
+            Issue.record("Failed to find trip with tripID: \"Hillsborough Area Regional Transit_99283\"")
             return
         }
 

@@ -120,7 +120,7 @@ class SurveyOrchestratorTests: OBATestCase {
             _ = try await throwingOrchestrator.submitHero(
                 survey: survey, answer: "yes", stopID: "1_TEST", stopLocation: nil
             )
-            fail("Expected submitHero to throw without an apiService")
+            Issue.record("Expected submitHero to throw without an apiService")
         } catch {
             // Expected — apiService is nil.
         }
@@ -150,7 +150,7 @@ class SurveyOrchestratorTests: OBATestCase {
         )
 
         guard case .completed = outcome else {
-            fail("Expected .completed; got \(outcome)")
+            Issue.record("Expected .completed; got \(outcome)")
             return
         }
         let userID = dataStore.surveyUserIdentifier
@@ -182,7 +182,7 @@ class SurveyOrchestratorTests: OBATestCase {
 
         switch outcome {
         case .completed:
-            fail("Expected .needsRemainingQuestions; got .completed")
+            Issue.record("Expected .needsRemainingQuestions; got .completed")
         case .needsRemainingQuestions(let heroResponseID):
             #expect(!heroResponseID.isEmpty)
         }
@@ -209,11 +209,11 @@ class SurveyOrchestratorTests: OBATestCase {
             _ = try await throwingOrchestrator.submitHero(
                 survey: survey, answer: "yes", stopID: nil, stopLocation: nil
             )
-            fail("Expected submitHero to throw .missingHeroQuestion")
+            Issue.record("Expected submitHero to throw .missingHeroQuestion")
         } catch let SurveyOrchestrator.OrchestratorError.missingHeroQuestion(surveyID) {
             #expect(surveyID == survey.id)
         } catch {
-            fail("Expected .missingHeroQuestion; got \(error)")
+            Issue.record("Expected .missingHeroQuestion; got \(error)")
         }
 
         // No bookkeeping should advance when the guard fires.
@@ -303,14 +303,14 @@ class SurveyOrchestratorTests: OBATestCase {
         await orchestrator.refreshSurveys()
 
         guard let error = orchestrator.lastError as? APIError else {
-            fail("Expected APIError; got \(String(describing: orchestrator.lastError))")
+            Issue.record("Expected APIError; got \(String(describing: orchestrator.lastError))")
             return
         }
         switch error {
         case .surveyServiceNotConfigured:
             break  // expected
         default:
-            fail("Expected .surveyServiceNotConfigured; got \(error)")
+            Issue.record("Expected .surveyServiceNotConfigured; got \(error)")
         }
     }
 
@@ -324,7 +324,7 @@ class SurveyOrchestratorTests: OBATestCase {
         let after = Date()
 
         guard let reminder = dataStore.nextSurveyReminderDate else {
-            fail("nextSurveyReminderDate not set")
+            Issue.record("nextSurveyReminderDate not set")
             return
         }
         expect(reminder).to(beGreaterThanOrEqualTo(before.addingTimeInterval(3 * 86400 - 60)))

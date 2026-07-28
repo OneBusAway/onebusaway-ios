@@ -241,7 +241,8 @@ final class SurveyServiceStateTests: OBATestCase {
             )
         }
         guard case .surveyServiceNotConfigured = thrown else {
-            return fail("Expected APIError.surveyServiceNotConfigured but got \(String(describing: thrown))")
+            Issue.record("Expected APIError.surveyServiceNotConfigured but got \(String(describing: thrown))")
+            return
         }
     }
 
@@ -253,7 +254,8 @@ final class SurveyServiceStateTests: OBATestCase {
             )
         }
         guard case .surveyServiceNotConfigured = thrown else {
-            return fail("Expected APIError.surveyServiceNotConfigured but got \(String(describing: thrown))")
+            Issue.record("Expected APIError.surveyServiceNotConfigured but got \(String(describing: thrown))")
+            return
         }
     }
 

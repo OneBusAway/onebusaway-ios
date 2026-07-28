@@ -201,7 +201,7 @@ final class SurveyServiceTests: OBATestCase {
             #expect(underlying?.domain == NSCocoaErrorDomain)
             #expect(underlying?.code == 3840)
         } else {
-            fail("Expected DecodingError.dataCorrupted but got \(String(describing: thrown))")
+            Issue.record("Expected DecodingError.dataCorrupted but got \(String(describing: thrown))")
         }
     }
 
@@ -215,7 +215,8 @@ final class SurveyServiceTests: OBATestCase {
             try await self.testRESTService.getSurveys(userID: self.uuid)
         }
         guard case .requestFailure(let response) = thrown, response.statusCode == 500 else {
-            return fail("Expected APIError.requestFailure with 500 as status code but got \(String(describing: thrown))")
+            Issue.record("Expected APIError.requestFailure with 500 as status code but got \(String(describing: thrown))")
+            return
         }
     }
 
@@ -229,7 +230,8 @@ final class SurveyServiceTests: OBATestCase {
             try await self.testRESTService.getSurveys(userID: self.uuid)
         }
         guard case .requestNotFound(let response) = thrown, response.statusCode == 404 else {
-            return fail("Expected APIError.requestNotFound with 404 as status code but got \(String(describing: thrown))")
+            Issue.record("Expected APIError.requestNotFound with 404 as status code but got \(String(describing: thrown))")
+            return
         }
     }
 
@@ -250,7 +252,7 @@ final class SurveyServiceTests: OBATestCase {
             #expect(underlying?.domain == NSCocoaErrorDomain)
             #expect(underlying?.code == 3840)
         } else {
-            fail("Expected DecodingError.dataCorrupted but got \(String(describing: thrown))")
+            Issue.record("Expected DecodingError.dataCorrupted but got \(String(describing: thrown))")
         }
     }
 
@@ -266,7 +268,8 @@ final class SurveyServiceTests: OBATestCase {
             _ = try await self.testRESTService.submitSurveyResponse(submissionModel)
         }
         guard case .captivePortal = thrown else {
-            return fail("Expected captive portal response to throw APIError.CaptivePortal. Actual value: \(String(describing: thrown))")
+            Issue.record("Expected captive portal response to throw APIError.CaptivePortal. Actual value: \(String(describing: thrown))")
+            return
         }
     }
 
@@ -281,7 +284,8 @@ final class SurveyServiceTests: OBATestCase {
             _ = try await self.testRESTService.submitSurveyResponse(submissionModel)
         }
         guard case .requestFailure(let response) = thrown, response.statusCode == 500 else {
-            return fail("Expected APIError.requestFailure with 500 as status code but got \(String(describing: thrown))")
+            Issue.record("Expected APIError.requestFailure with 500 as status code but got \(String(describing: thrown))")
+            return
         }
     }
 
@@ -296,7 +300,8 @@ final class SurveyServiceTests: OBATestCase {
             _ = try await self.testRESTService.submitSurveyResponse(submissionModel)
         }
         guard case .requestNotFound(let response) = thrown, response.statusCode == 404 else {
-            return fail("Expected APIError.requestNotFound with 404 as status code but got \(String(describing: thrown))")
+            Issue.record("Expected APIError.requestNotFound with 404 as status code but got \(String(describing: thrown))")
+            return
         }
     }
 
@@ -319,7 +324,7 @@ final class SurveyServiceTests: OBATestCase {
             #expect(underlying?.domain == NSCocoaErrorDomain)
             #expect(underlying?.code == 3840)
         } else {
-            fail("Expected DecodingError.dataCorrupted but got \(String(describing: thrown))")
+            Issue.record("Expected DecodingError.dataCorrupted but got \(String(describing: thrown))")
         }
     }
 
@@ -337,7 +342,8 @@ final class SurveyServiceTests: OBATestCase {
             )
         }
         guard case .captivePortal = thrown else {
-            return fail("Expected captive portal response to throw APIError.CaptivePortal. Actual value: \(String(describing: thrown))")
+            Issue.record("Expected captive portal response to throw APIError.CaptivePortal. Actual value: \(String(describing: thrown))")
+            return
         }
     }
 
@@ -354,7 +360,8 @@ final class SurveyServiceTests: OBATestCase {
             )
         }
         guard case .requestFailure(let response) = thrown, response.statusCode == 500 else {
-            return fail("Expected APIError.requestFailure with 500 as status code but got \(String(describing: thrown))")
+            Issue.record("Expected APIError.requestFailure with 500 as status code but got \(String(describing: thrown))")
+            return
         }
     }
 
@@ -371,7 +378,8 @@ final class SurveyServiceTests: OBATestCase {
             )
         }
         guard case .requestNotFound(let response) = thrown, response.statusCode == 404 else {
-            return fail("Expected APIError.requestNotFound with 404 as status code but got \(String(describing: thrown))")
+            Issue.record("Expected APIError.requestNotFound with 404 as status code but got \(String(describing: thrown))")
+            return
         }
     }
 
@@ -482,7 +490,8 @@ final class SurveyServiceTests: OBATestCase {
             try await service.getSurveys(userID: self.uuid)
         }
         guard case .noRegionSelected = thrown else {
-            return fail("Expected APIError.noRegionSelected but got \(String(describing: thrown))")
+            Issue.record("Expected APIError.noRegionSelected but got \(String(describing: thrown))")
+            return
         }
     }
 
@@ -569,7 +578,7 @@ final class SurveyServiceTests: OBATestCase {
         if case APIError.surveyServiceNotConfigured = service.lastError! {
             // Expected
         } else {
-            fail("Expected APIError.surveyServiceNotConfigured but got \(service.lastError!)")
+            Issue.record("Expected APIError.surveyServiceNotConfigured but got \(service.lastError!)")
         }
     }
 

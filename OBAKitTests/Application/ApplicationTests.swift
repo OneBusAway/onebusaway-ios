@@ -419,7 +419,7 @@ class ApplicationTests: OBATestCase {
         let app = Application(config: config)
 
         guard let scheme = Bundle.main.extensionURLScheme else {
-            fail("No URL scheme configured")
+            Issue.record("No URL scheme configured")
             return
         }
 
@@ -443,7 +443,7 @@ class ApplicationTests: OBATestCase {
         app.delegate = delegate
 
         guard let scheme = Bundle.main.extensionURLScheme else {
-            fail("No URL scheme configured")
+            Issue.record("No URL scheme configured")
             return
         }
 
