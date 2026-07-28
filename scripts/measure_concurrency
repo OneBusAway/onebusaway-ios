@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+#
+# Measure the Swift 6 concurrency warning count from scratch
+# (docs/swift6-migration-plan.md, Phase 0).
+#
+# Why this exists: counting warnings from an ordinary build UNDERCOUNTS, badly
+# and silently. Xcode's compilation cache replays cached object files without
+# re-emitting their diagnostics, so any file served from cache contributes zero
+# warnings to the log. Passing a fresh `-derivedDataPath` is NOT enough — the
+# cache lives at COMPILATION_CACHE_CAS_PATH, which defaults to a machine-global
+# location (~/Library/Developer/Xcode/DerivedData/CompilationCache.noindex)
+# outside whatever derived data path you pass.
+#
+# Measured 2026-07-28 on one unchanged tree: the true count was 38, while warm
+# -derivedDataPath builds reported 4, 12, 16, and 17 depending on cache state.
+# Committing a baseline from one of those numbers would wedge CI for everyone
+# else, because CI (fresh runner, cold cache) counts correctly and higher.
+#
+# This script isolates BOTH caches in a temp directory so the count is real.
+#
+# Usage:
+#   scripts/measure_concurrency            # print the true count
+#   scripts/measure_concurrency --update   # ...and rewrite the baseline
+
+set -euo pipefail
+
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$REPO_ROOT"
+
+SIMULATOR="${SIMULATOR:-iPhone 17 Pro}"
+WORKDIR="$(mktemp -d)"
+trap 'rm -rf "$WORKDIR"' EXIT
+
+LOG="$WORKDIR/xcodebuild.log"
+
+echo "==> Building cold (isolated DerivedData + isolated compilation cache)."
+echo "    Scratch: $WORKDIR"
+echo "    This takes several minutes; a warm build would be faster but wrong."
+
+set -o pipefail
+xcodebuild build-for-testing \
+  -scheme 'App' \
+  -destination "platform=iOS Simulator,name=${SIMULATOR}" \
+  -derivedDataPath "$WORKDIR/DerivedData" \
+  COMPILATION_CACHE_CAS_PATH="$WORKDIR/CompilationCache" \
+  -quiet > "$LOG" 2>&1
+
+echo "==> Build finished. Counting diagnostics."
+exec "$REPO_ROOT/scripts/concurrency_ratchet" "$LOG" "${1:-check}"
