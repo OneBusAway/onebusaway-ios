@@ -376,6 +376,10 @@ public class MapRegionManager: NSObject,
     /// cache miss or cancelled task is a no-op that returns `false`.
     @discardableResult
     private func serveCachedStops(in region: MKCoordinateRegion) async -> Bool {
+        // Bail before the SQLite bounding-box query when the task is already
+        // cancelled — a settle superseded by a newer one shouldn't pay for a
+        // GRDB read whose result would be thrown away.
+        guard !Task.isCancelled else { return false }
         let cachedStops = cachedStops(in: fudgedRegion(for: region, factor: preferredLoadDataRegionFudgeFactor))
         guard !cachedStops.isEmpty, !Task.isCancelled else { return false }
 
@@ -443,9 +447,18 @@ public class MapRegionManager: NSObject,
                         await MainActor.run { self.publishStopsToDelegates(fetched) }
                     }
                 }
-            } catch is CancellationError {
-                return
             } catch {
+                // A cancelled request isn't a failure — it's the expected
+                // outcome of a newer camera settle superseding this one, and it
+                // arrives in several shapes (Swift `CancellationError`, or a
+                // URLSession `NSError`/`URLError` with `NSURLErrorCancelled`),
+                // so lean on `Error.isCancellation` plus `Task.isCancelled`
+                // rather than a typed catch. Surfacing it would pop a modal
+                // error bulletin every time the user pans across an uncached
+                // area twice in quick succession.
+                if Task.isCancelled || error.isCancellation {
+                    return
+                }
                 Logger.error("Map panel stop refresh failed: \(error)")
                 // Surface the error only when nothing is on-screen.
                 if !servedFromCache {

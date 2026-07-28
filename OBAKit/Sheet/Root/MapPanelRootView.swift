@@ -54,6 +54,11 @@ struct MapPanelRootView: View {
     @State private var mapSize: CGSize = .zero
     @State private var visibleRegion: MKCoordinateRegion?
 
+    /// Height of the last settled visible map rect, in projected points. Kept so
+    /// the label gate can be re-evaluated (e.g. on a map-type toggle) without
+    /// waiting for the next camera move.
+    @State private var visibleMapRectHeight: CGFloat?
+
     // Measured height of the top-center status pill, used to offset the
     // weather button so the two don't overlap when the pill is visible.
     // Zero when the pill isn't rendered (`.hidden` state), which naturally
@@ -110,6 +115,7 @@ struct MapPanelRootView: View {
         }
         .onMapCameraChange(frequency: .onEnd) { context in
             visibleRegion = context.region
+            visibleMapRectHeight = context.rect.height
             // Keep the "Zoom in for stops" pill in sync with the stop-loading
             // threshold by updating it before the stop-loading early return, so it
             // also works when the map is zoomed out.
@@ -128,14 +134,16 @@ struct MapPanelRootView: View {
                 stopsObserver.reset()
                 return
             }
-            // Same label gate the UIKit map applies.
-            showStopLabels = MapRegionManager.shouldShowStopAnnotationLabels(
-                forVisibleMapRectHeight: context.rect.height,
-                isStandardMapType: mapViewModel.mapType == .standard,
-                showLabelsDefault: application.userDefaults.bool(forKey: MapRegionManager.mapViewShowsStopAnnotationLabelsDefaultsKey)
-            )
+            recomputeStopLabels()
             stopsObserver.updateViewport(context.region)
             application.mapRegionManager.scheduleStopsRequest(in: context.region)
+        }
+        // The map-type toggle changes the label gate (labels only show on the
+        // standard map), but doesn't move the camera — re-evaluate here so labels
+        // don't stay stale until the user next pans. The UIKit path re-evaluates
+        // per annotation view.
+        .onChange(of: mapViewModel.mapType) { _, _ in
+            recomputeStopLabels()
         }
         .onChange(of: selectedStopID) { _, id in
             guard let id else { return }
@@ -234,21 +242,39 @@ struct MapPanelRootView: View {
         .tag(stop.id)
     }
 
+    /// Re-evaluates `showStopLabels` from the last settled viewport height and
+    /// the current map type / labels default. Called both from the camera-change
+    /// handler and whenever the map type flips, so a toggle updates labels
+    /// immediately rather than on the next pan. Zoomed-out viewports keep labels
+    /// off (bookmark pins shouldn't carry labels over the whole-region map).
+    private func recomputeStopLabels() {
+        guard isZoomedInForStops, let rectHeight = visibleMapRectHeight else {
+            showStopLabels = false
+            return
+        }
+        showStopLabels = MapRegionManager.shouldShowStopAnnotationLabels(
+            forVisibleMapRectHeight: rectHeight,
+            isStandardMapType: mapViewModel.mapType == .standard,
+            showLabelsDefault: application.userDefaults.bool(forKey: MapRegionManager.mapViewShowsStopAnnotationLabelsDefaultsKey)
+        )
+    }
+
     /// The under-pin label, bold with a `systemBackground` outline so it reads
     /// over the muted map (approximates the UIKit stroked label).
     @ViewBuilder
     private func stopLabel(_ label: String?) -> some View {
         if showStopLabels, let label, !label.isEmpty {
-            Text(label)
-                .font(.system(size: 11, weight: .bold))
-                .foregroundStyle(Color(uiColor: .label))
-                .lineLimit(2)
-                .multilineTextAlignment(.center)
-                .fixedSize()
-                // `Text` can't render a glyph stroke, so approximate the UIKit
-                // map's stroked label with a `systemBackground` outline ring.
-                .mapLabelOutline(Color(uiColor: .systemBackground))
-                .allowsHitTesting(false)
+            // `Text` can't render a glyph stroke, so approximate the UIKit map's
+            // stroked label with a `systemBackground` outline ring.
+            MapLabelOutline(color: Color(uiColor: .systemBackground)) {
+                Text(label)
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(Color(uiColor: .label))
+                    .lineLimit(2)
+                    .multilineTextAlignment(.center)
+                    .fixedSize()
+            }
+            .allowsHitTesting(false)
         }
     }
 

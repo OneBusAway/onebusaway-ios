@@ -19,7 +19,7 @@ import OBAKitCore
 /// last viewport plus a count cap. Deliberately separate from
 /// `mapRegionManager.stops`, which holds only the latest region.
 @MainActor
-final class MapStopsObserver: NSObject, ObservableObject, MapRegionDelegate {
+final class MapStopsObserver: NSObject, ObservableObject, MapRegionDelegate, RegionsServiceDelegate {
 
     /// A stop with its precomputed label, so the `Map` builder needn't filter or
     /// format per body eval.
@@ -81,6 +81,11 @@ final class MapStopsObserver: NSObject, ObservableObject, MapRegionDelegate {
             name: .bookmarksDidChange,
             object: nil
         )
+        // A region switch changes which bookmarks are "current", but doesn't
+        // repost `.bookmarksDidChange` — observe the region directly so the pins
+        // don't stay filtered to the old region until an unrelated bookmark
+        // edit. The delegate table is weak, so no explicit removal is needed.
+        application.regionsService.addDelegate(self)
     }
 
     /// Clears the render set and prune reference on zoom-out. Bookmarks stay
@@ -111,6 +116,14 @@ final class MapStopsObserver: NSObject, ObservableObject, MapRegionDelegate {
         Task { @MainActor [weak self] in
             self?.reloadBookmarks()
         }
+    }
+
+    // MARK: - RegionsServiceDelegate
+
+    // `@objc` so Obj-C runtime discovery of this optional-protocol method is explicit.
+    @objc
+    func regionsService(_ service: RegionsService, updatedRegion region: Region) {
+        reloadBookmarks()
     }
 
     private func reloadBookmarks() {
