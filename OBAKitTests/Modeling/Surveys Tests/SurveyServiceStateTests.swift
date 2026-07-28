@@ -7,6 +7,7 @@
 
 import XCTest
 import Nimble
+import Testing
 @testable import OBAKitCore
 
 final class SurveyServiceStateTests: OBATestCase {
@@ -230,31 +231,27 @@ final class SurveyServiceStateTests: OBATestCase {
             answer: "test"
         )
 
-        await expect {
+        let thrown = await #expect(throws: APIError.self) {
             try await self.surveyService.submitHeroQuestion(
                 survey: survey,
                 heroQuestionResponse: response
             )
-        }.to(throwError { error in
-            if case APIError.surveyServiceNotConfigured = error {
-                return
-            }
-            fail("Expected APIError.surveyServiceNotConfigured but got \(error)")
-        })
+        }
+        guard case .surveyServiceNotConfigured = thrown else {
+            return fail("Expected APIError.surveyServiceNotConfigured but got \(String(describing: thrown))")
+        }
     }
 
     func test_submitAdditionalQuestions_nilApiService_throws() async {
-        await expect {
+        let thrown = await #expect(throws: APIError.self) {
             try await self.surveyService.submitAdditionalQuestions(
                 responseID: "some-id",
                 additionalResponses: []
             )
-        }.to(throwError { error in
-            if case APIError.surveyServiceNotConfigured = error {
-                return
-            }
-            fail("Expected APIError.surveyServiceNotConfigured but got \(error)")
-        })
+        }
+        guard case .surveyServiceNotConfigured = thrown else {
+            return fail("Expected APIError.surveyServiceNotConfigured but got \(String(describing: thrown))")
+        }
     }
 
     // MARK: - visibleSurveys re-filter on state changes

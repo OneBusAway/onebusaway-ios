@@ -7,6 +7,7 @@
 
 import XCTest
 import Nimble
+import Testing
 @testable import OBAKitCore
 
 final class SurveyServiceTests: OBATestCase {
@@ -178,15 +179,12 @@ final class SurveyServiceTests: OBATestCase {
 
         makeResponseFailureMock(data, url: url, statusCode: 200, error: error)
 
-        await expect {
+        let thrown = await #expect(throws: APIError.self) {
             try await self.testRESTService.getSurveys(userID: self.uuid)
         }
-        .to(throwError { error in
-            if case APIError.captivePortal = error {
-                return
-            }
-            fail("Expected captive portal response to throw APIError.CaptivePortal. Actual value: \(error)")
-        })
+        guard case .captivePortal = thrown else {
+            return XCTFail("Expected APIError.captivePortal, got \(String(describing: thrown))")
+        }
     }
 
     func test_get_surveys_malformed_response_data() async throws {
@@ -195,18 +193,16 @@ final class SurveyServiceTests: OBATestCase {
 
         makeResponseFailureMock(malformedJsonResponse, url: url, statusCode: 200)
 
-        await expect {
+        let thrown = await #expect(throws: DecodingError.self) {
             try await self.testRESTService.getSurveys(userID: self.uuid)
         }
-        .to(throwError { error in
-            if case let DecodingError.dataCorrupted(context) = error {
-                let underlying = context.underlyingError as NSError?
-                expect(underlying?.domain) == NSCocoaErrorDomain
-                expect(underlying?.code) == 3840
-            } else {
-                fail("Expected DecodingError.dataCorrupted but got \(error)")
-            }
-        })
+        if case let .dataCorrupted(context) = thrown {
+            let underlying = context.underlyingError as NSError?
+            expect(underlying?.domain) == NSCocoaErrorDomain
+            expect(underlying?.code) == 3840
+        } else {
+            fail("Expected DecodingError.dataCorrupted but got \(String(describing: thrown))")
+        }
     }
 
     func test_get_surveys_internal_server_error() async throws {
@@ -215,15 +211,12 @@ final class SurveyServiceTests: OBATestCase {
 
         makeResponseFailureMock(response, url: url, statusCode: 500)
 
-        await expect {
+        let thrown = await #expect(throws: APIError.self) {
             try await self.testRESTService.getSurveys(userID: self.uuid)
         }
-        .to(throwError { error in
-            if case APIError.requestFailure(let response) = error, response.statusCode == 500 {
-                return
-            }
-            fail("Expected APIError.requestFailure with 500 as status code but got \(error)")
-        })
+        guard case .requestFailure(let response) = thrown, response.statusCode == 500 else {
+            return fail("Expected APIError.requestFailure with 500 as status code but got \(String(describing: thrown))")
+        }
     }
 
     func test_get_surveys_not_found_error() async throws {
@@ -232,15 +225,12 @@ final class SurveyServiceTests: OBATestCase {
 
         makeResponseFailureMock(response, url: url, statusCode: 404)
 
-        await expect {
+        let thrown = await #expect(throws: APIError.self) {
             try await self.testRESTService.getSurveys(userID: self.uuid)
         }
-        .to(throwError { error in
-            if case APIError.requestNotFound(let response) = error, response.statusCode == 404 {
-                return
-            }
-            fail("Expected APIError.requestNotFound with 404 as status code but got \(error)")
-        })
+        guard case .requestNotFound(let response) = thrown, response.statusCode == 404 else {
+            return fail("Expected APIError.requestNotFound with 404 as status code but got \(String(describing: thrown))")
+        }
     }
 
     // MARK: - Submit First Question Failures
@@ -251,19 +241,17 @@ final class SurveyServiceTests: OBATestCase {
 
         makeResponseFailureMock(response, url: url, statusCode: 200)
 
-        await expect {
+        let thrown = await #expect(throws: DecodingError.self) {
             let submissionModel = self.makeFirstQuestionSubmissionModel()
             _ = try await self.testRESTService.submitSurveyResponse(submissionModel)
         }
-        .to(throwError { error in
-            if case let DecodingError.dataCorrupted(context) = error {
-                let underlying = context.underlyingError as NSError?
-                expect(underlying?.domain) == NSCocoaErrorDomain
-                expect(underlying?.code) == 3840
-            } else {
-                fail("Expected DecodingError.dataCorrupted but got \(error)")
-            }
-        })
+        if case let .dataCorrupted(context) = thrown {
+            let underlying = context.underlyingError as NSError?
+            expect(underlying?.domain) == NSCocoaErrorDomain
+            expect(underlying?.code) == 3840
+        } else {
+            fail("Expected DecodingError.dataCorrupted but got \(String(describing: thrown))")
+        }
     }
 
     func test_submit_first_question_captive_portal() async throws {
@@ -273,16 +261,13 @@ final class SurveyServiceTests: OBATestCase {
 
         makeResponseFailureMock(data, url: url, statusCode: 200, error: error)
 
-        await expect {
+        let thrown = await #expect(throws: APIError.self) {
             let submissionModel = self.makeFirstQuestionSubmissionModel()
             _ = try await self.testRESTService.submitSurveyResponse(submissionModel)
         }
-        .to(throwError { error in
-            if case APIError.captivePortal = error {
-                return
-            }
-            fail("Expected captive portal response to throw APIError.CaptivePortal. Actual value: \(error)")
-        })
+        guard case .captivePortal = thrown else {
+            return fail("Expected captive portal response to throw APIError.CaptivePortal. Actual value: \(String(describing: thrown))")
+        }
     }
 
     func test_submit_first_question_internal_server_error() async throws {
@@ -291,16 +276,13 @@ final class SurveyServiceTests: OBATestCase {
 
         makeResponseFailureMock(response, url: url, statusCode: 500)
 
-        await expect {
+        let thrown = await #expect(throws: APIError.self) {
             let submissionModel = self.makeFirstQuestionSubmissionModel()
             _ = try await self.testRESTService.submitSurveyResponse(submissionModel)
         }
-        .to(throwError { error in
-            if case APIError.requestFailure(let response) = error, response.statusCode == 500 {
-                return
-            }
-            fail("Expected APIError.requestFailure with 500 as status code but got \(error)")
-        })
+        guard case .requestFailure(let response) = thrown, response.statusCode == 500 else {
+            return fail("Expected APIError.requestFailure with 500 as status code but got \(String(describing: thrown))")
+        }
     }
 
     func test_submit_first_question_not_found_error() async throws {
@@ -309,16 +291,13 @@ final class SurveyServiceTests: OBATestCase {
 
         makeResponseFailureMock(response, url: url, statusCode: 404)
 
-        await expect {
+        let thrown = await #expect(throws: APIError.self) {
             let submissionModel = self.makeFirstQuestionSubmissionModel()
             _ = try await self.testRESTService.submitSurveyResponse(submissionModel)
         }
-        .to(throwError { error in
-            if case APIError.requestNotFound(let response) = error, response.statusCode == 404 {
-                return
-            }
-            fail("Expected APIError.requestNotFound with 404 as status code but got \(error)")
-        })
+        guard case .requestNotFound(let response) = thrown, response.statusCode == 404 else {
+            return fail("Expected APIError.requestNotFound with 404 as status code but got \(String(describing: thrown))")
+        }
     }
 
     // MARK: - Submit Additional Question Failures
@@ -329,21 +308,19 @@ final class SurveyServiceTests: OBATestCase {
 
         makeResponseFailureMock(response, url: url, statusCode: 200)
 
-        await expect {
+        let thrown = await #expect(throws: DecodingError.self) {
             try await self.testRESTService.updateSurveyResponse(
                 responseID: "surveyResponseId",
                 additionalResponses: []
             )
         }
-        .to(throwError { error in
-            if case let DecodingError.dataCorrupted(context) = error {
-                let underlying = context.underlyingError as NSError?
-                expect(underlying?.domain) == NSCocoaErrorDomain
-                expect(underlying?.code) == 3840
-            } else {
-                fail("Expected DecodingError.dataCorrupted but got \(error)")
-            }
-        })
+        if case let .dataCorrupted(context) = thrown {
+            let underlying = context.underlyingError as NSError?
+            expect(underlying?.domain) == NSCocoaErrorDomain
+            expect(underlying?.code) == 3840
+        } else {
+            fail("Expected DecodingError.dataCorrupted but got \(String(describing: thrown))")
+        }
     }
 
     func test_submit_additional_question_captive_portal() async throws {
@@ -353,18 +330,15 @@ final class SurveyServiceTests: OBATestCase {
 
         makeResponseFailureMock(data, url: url, statusCode: 200, error: error)
 
-        await expect {
+        let thrown = await #expect(throws: APIError.self) {
             try await self.testRESTService.updateSurveyResponse(
                 responseID: "surveyResponseId",
                 additionalResponses: []
             )
         }
-        .to(throwError { error in
-            if case APIError.captivePortal = error {
-                return
-            }
-            fail("Expected captive portal response to throw APIError.CaptivePortal. Actual value: \(error)")
-        })
+        guard case .captivePortal = thrown else {
+            return fail("Expected captive portal response to throw APIError.CaptivePortal. Actual value: \(String(describing: thrown))")
+        }
     }
 
     func test_submit_additional_question_internal_server_error() async throws {
@@ -373,18 +347,15 @@ final class SurveyServiceTests: OBATestCase {
 
         makeResponseFailureMock(response, url: url, statusCode: 500)
 
-        await expect {
+        let thrown = await #expect(throws: APIError.self) {
             try await self.testRESTService.updateSurveyResponse(
                 responseID: "surveyResponseId",
                 additionalResponses: []
             )
         }
-        .to(throwError { error in
-            if case APIError.requestFailure(let response) = error, response.statusCode == 500 {
-                return
-            }
-            fail("Expected APIError.requestFailure with 500 as status code but got \(error)")
-        })
+        guard case .requestFailure(let response) = thrown, response.statusCode == 500 else {
+            return fail("Expected APIError.requestFailure with 500 as status code but got \(String(describing: thrown))")
+        }
     }
 
     func test_submit_additional_question_not_found_error() async throws {
@@ -393,18 +364,15 @@ final class SurveyServiceTests: OBATestCase {
 
         makeResponseFailureMock(response, url: url, statusCode: 404)
 
-        await expect {
+        let thrown = await #expect(throws: APIError.self) {
             try await self.testRESTService.updateSurveyResponse(
                 responseID: "surveyResponseId",
                 additionalResponses: []
             )
         }
-        .to(throwError { error in
-            if case APIError.requestNotFound(let response) = error, response.statusCode == 404 {
-                return
-            }
-            fail("Expected APIError.requestNotFound with 404 as status code but got \(error)")
-        })
+        guard case .requestNotFound(let response) = thrown, response.statusCode == 404 else {
+            return fail("Expected APIError.requestNotFound with 404 as status code but got \(String(describing: thrown))")
+        }
     }
 
     // MARK: - isActive
@@ -510,14 +478,12 @@ final class SurveyServiceTests: OBATestCase {
         )
         let service = RESTAPIService(config, dataLoader: mockDataLoader)
 
-        await expect {
+        let thrown = await #expect(throws: APIError.self) {
             try await service.getSurveys(userID: self.uuid)
-        }.to(throwError { error in
-            if case APIError.noRegionSelected = error {
-                return
-            }
-            fail("Expected APIError.noRegionSelected but got \(error)")
-        })
+        }
+        guard case .noRegionSelected = thrown else {
+            return fail("Expected APIError.noRegionSelected but got \(String(describing: thrown))")
+        }
     }
 
     // MARK: - remainingQuestions
