@@ -53,12 +53,12 @@ class CoreLocationExtensionsTests: XCTestCase {
         
         let transform = direction.affineTransform(rotatedBy: additionalRotation)
         
-        expect(transform).to(beAnInstanceOf(CGAffineTransform.self))
+        #expect(type(of: transform) == CGAffineTransform.self)
         #expect(transform.isIdentity == false)
         
         // Test with zero additional rotation
         let transform0 = direction.affineTransform(rotatedBy: 0)
-        expect(transform0).to(beAnInstanceOf(CGAffineTransform.self))
+        #expect(type(of: transform0) == CGAffineTransform.self)
     }
     
     func test_CLLocationCoordinate2D_distance() {
@@ -67,7 +67,7 @@ class CoreLocationExtensionsTests: XCTestCase {
         
         let distance = seattle.distance(from: bellevue)
         
-        expect(distance).to(beGreaterThan(0))
+        #expect(distance > 0)
         expectClose(distance, 10580, within: 1000) // Approximately 10.5km
         
         // Test distance to self
@@ -100,7 +100,7 @@ class CoreLocationExtensionsTests: XCTestCase {
         let region = CLCircularRegion(mapRect: mapRect)
         
         #expect(region.identifier == "MapRectRegion")
-        expect(region.radius).to(beGreaterThan(0))
+        #expect(region.radius > 0)
         #expect(region.center.latitude != 0)
         #expect(region.center.longitude != 0)
         
@@ -108,7 +108,7 @@ class CoreLocationExtensionsTests: XCTestCase {
         let simpleRect = MKMapRect(x: 0, y: 0, width: 1000, height: 1000)
         let simpleRegion = CLCircularRegion(mapRect: simpleRect)
         
-        expect(simpleRegion.radius).to(beGreaterThan(0))
+        #expect(simpleRegion.radius > 0)
         #expect(simpleRegion.identifier == "MapRectRegion")
     }
 }

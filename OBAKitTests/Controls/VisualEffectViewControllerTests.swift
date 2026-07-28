@@ -32,20 +32,20 @@ class VisualEffectViewControllerTests: XCTestCase {
     func test_viewDidLoad_setsUpVisualEffectView() {
         viewController.viewDidLoad()
         
-        expect(self.viewController.view.subviews).to(contain(self.viewController.visualEffectView))
+        #expect(self.viewController.view.subviews.contains(self.viewController.visualEffectView))
         #expect(self.viewController.view.backgroundColor == UIColor.clear)
     }
     
     func test_visualEffectView_isAccessible() {
         let visualEffectView = viewController.visualEffectView
         #expect(visualEffectView != nil)
-        expect(visualEffectView).to(beAnInstanceOf(UIVisualEffectView.self))
+        #expect(type(of: visualEffectView) == UIVisualEffectView.self)
     }
     
     func test_contentView_throughVisualEffectView() {
         // Test that visualEffectView has a content view  
         let visualEffectView = viewController.visualEffectView
-        expect(visualEffectView).to(beAnInstanceOf(UIVisualEffectView.self))
+        #expect(type(of: visualEffectView) == UIVisualEffectView.self)
         #expect(visualEffectView.contentView != nil)
     }
     

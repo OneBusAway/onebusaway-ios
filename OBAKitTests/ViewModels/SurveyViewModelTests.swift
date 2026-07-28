@@ -369,8 +369,8 @@ class SurveyViewModelTests: OBATestCase {
 
         let lowerBound = before.addingTimeInterval(3 * 86400 - 60)
         let upperBound = after.addingTimeInterval(3 * 86400 + 60)
-        expect(reminder).to(beGreaterThanOrEqualTo(lowerBound))
-        expect(reminder).to(beLessThanOrEqualTo(upperBound))
+        #expect(reminder >= lowerBound)
+        #expect(reminder <= upperBound)
     }
 
     // MARK: - Helpers
@@ -659,7 +659,7 @@ class SurveyViewModelTests: OBATestCase {
         let innerData = try XCTUnwrap(inner.data(using: .utf8))
         let responses = try XCTUnwrap(try JSONSerialization.jsonObject(with: innerData) as? [[String: Any]])
         let questionIDs = responses.compactMap { $0["question_id"] as? Int }
-        expect(questionIDs).toNot(contain(hero.id))
+        #expect(!questionIDs.contains(hero.id))
         #expect(questionIDs == [follow.id])
     }
 

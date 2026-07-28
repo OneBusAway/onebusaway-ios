@@ -25,8 +25,8 @@ class StackedTitleViewTests: XCTestCase {
     }
     
     func test_init_createsLabels() {
-        expect(self.stackedTitleView.titleLabel).to(beAnInstanceOf(UILabel.self))
-        expect(self.stackedTitleView.subtitleLabel).to(beAnInstanceOf(UILabel.self))
+        #expect(type(of: self.stackedTitleView.titleLabel) == UILabel.self)
+        #expect(type(of: self.stackedTitleView.subtitleLabel) == UILabel.self)
     }
     
     func test_titleLabel_properties() {

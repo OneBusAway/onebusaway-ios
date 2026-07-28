@@ -770,10 +770,10 @@ class StopViewModelTests: OBATestCase {
 
         let transfer = TransferContext(arrivalTime: Date(), fromRouteShortName: "1", fromTripHeadsign: "Downtown")
         let transferController = app.viewRouter.makeStopController(stop: stop, transferContext: transfer)
-        expect(transferController).to(beAKindOf(StopViewController.self))
+        #expect(transferController is StopViewController)
 
         let plainController = app.viewRouter.makeStopController(stop: stop, transferContext: nil)
-        expect(plainController).to(beAKindOf(StopPageViewController.self))
+        #expect(plainController is StopPageViewController)
     }
 
     // MARK: - Alarm Lead Time
@@ -842,7 +842,7 @@ class StopViewModelTests: OBATestCase {
         #expect(fetched != nil)
 
         // Warm: the sync accessor returns the exact cached instance.
-        expect(viewModel.cachedApproachTripDetails(for: departure)).to(beIdenticalTo(fetched))
+        #expect(viewModel.cachedApproachTripDetails(for: departure) === fetched)
 
         // Refresh clears the cache, so the accessor goes cold again.
         await viewModel.refresh()

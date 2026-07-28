@@ -173,7 +173,7 @@ class ArrivalDepartureDeduplicationTests: OBATestCase {
                 XCTFail("Filtered entry with id \(filteredID) not found in original array")
                 continue
             }
-            expect(inputIndex).to(beGreaterThan(lastInputIndex), description: "Original ordering must be preserved")
+            #expect(inputIndex > lastInputIndex, "Original ordering must be preserved")
             lastInputIndex = inputIndex
         }
     }

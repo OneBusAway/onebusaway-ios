@@ -447,7 +447,7 @@ final class SurveyServiceTests: OBATestCase {
 
         // responses should be a String (JSON-stringified), not an Array
         let responsesValue = json["responses"]
-        expect(responsesValue).to(beAKindOf(String.self))
+        #expect(responsesValue is String)
 
         // The string should be valid JSON containing our response
         let responsesString = responsesValue as! String
@@ -636,7 +636,7 @@ final class SurveyServiceTests: OBATestCase {
         await service.fetchSurveys()
 
         let initialCount = service.allSurveys.count
-        expect(initialCount).to(beGreaterThan(0))
+        #expect(initialCount > 0)
 
         // Replace mock with different data — but cooldown should prevent fetching
         mockDataLoader.removeMappedResponses()
@@ -665,7 +665,7 @@ final class SurveyServiceTests: OBATestCase {
         await service.fetchSurveys()
 
         let initialCount = service.allSurveys.count
-        expect(initialCount).to(beGreaterThan(0))
+        #expect(initialCount > 0)
 
         // force: true should bypass cooldown and actually fetch
         await service.fetchSurveys(force: true)
@@ -701,7 +701,7 @@ final class SurveyServiceTests: OBATestCase {
         await service.fetchSurveys()
 
         // Should have fetched despite cooldown because allSurveys was empty
-        expect(service.allSurveys.count).to(beGreaterThan(0))
+        #expect(service.allSurveys.count > 0)
         #expect(service.lastError == nil)
     }
 
@@ -721,7 +721,7 @@ final class SurveyServiceTests: OBATestCase {
         await service.fetchSurveys()
 
         let initialCount = service.allSurveys.count
-        expect(initialCount).to(beGreaterThan(0))
+        #expect(initialCount > 0)
 
         // Now simulate a failure on second fetch
         mockDataLoader.removeMappedResponses()

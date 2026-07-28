@@ -32,13 +32,13 @@ class ScheduleForStopTests: OBATestCase {
 
     func test_urlBuilder_generatesCorrectURL() {
         let url = restService.urlBuilder.getScheduleForStop(id: stopID)
-        expect(url.absoluteString).to(contain("/api/where/schedule-for-stop/\(stopID).json"))
+        #expect(url.absoluteString.contains("/api/where/schedule-for-stop/\(stopID).json"))
     }
 
     func test_urlBuilder_withDate_includesDateParameter() {
         let date = Date(timeIntervalSince1970: 1765008000) // 2025-12-06
         let url = restService.urlBuilder.getScheduleForStop(id: stopID, date: date)
-        expect(url.absoluteString).to(contain("date="))
+        #expect(url.absoluteString.contains("date="))
     }
 
     // MARK: - Model Decoding Tests
@@ -57,7 +57,7 @@ class ScheduleForStopTests: OBATestCase {
         let schedule = response.entry
 
         // The fixture has multiple routes at this stop
-        expect(schedule.stopRouteSchedules.count).to(beGreaterThanOrEqualTo(1))
+        #expect(schedule.stopRouteSchedules.count >= 1)
 
         let routeSchedule = try XCTUnwrap(schedule.stopRouteSchedules.first)
         #expect(!routeSchedule.routeID.isEmpty)
@@ -86,8 +86,8 @@ class ScheduleForStopTests: OBATestCase {
         #expect(!stopTime.tripID.isEmpty)
         #expect(!stopTime.serviceID.isEmpty)
         // arrivalTime and departureTime are Unix timestamps in milliseconds
-        expect(stopTime.arrivalTime).to(beGreaterThan(0))
-        expect(stopTime.departureTime).to(beGreaterThan(0))
+        #expect(stopTime.arrivalTime > 0)
+        #expect(stopTime.departureTime > 0)
         #expect(stopTime.arrivalEnabled)
         #expect(stopTime.departureEnabled)
     }
@@ -105,8 +105,8 @@ class ScheduleForStopTests: OBATestCase {
         let minTimestamp: Int64 = 946684800000 // 2000-01-01 in ms
         let maxTimestamp: Int64 = 4102444800000 // 2100-01-01 in ms
 
-        expect(stopTime.arrivalTime).to(beGreaterThan(minTimestamp))
-        expect(stopTime.arrivalTime).to(beLessThan(maxTimestamp))
+        #expect(stopTime.arrivalTime > minTimestamp)
+        #expect(stopTime.arrivalTime < maxTimestamp)
     }
 
     func test_arrivalDate_convertsCorrectly() async throws {
@@ -122,7 +122,7 @@ class ScheduleForStopTests: OBATestCase {
 
         // Verify it's a valid date by checking it's after year 2000
         let year2000 = Date(timeIntervalSince1970: 946684800)
-        expect(arrivalDate).to(beGreaterThan(year2000))
+        #expect(arrivalDate > year2000)
     }
 
     // MARK: - References Tests

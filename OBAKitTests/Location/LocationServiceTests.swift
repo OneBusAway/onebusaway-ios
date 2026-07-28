@@ -27,7 +27,7 @@ class LocationServiceTests: XCTestCase {
         #expect(service.canRequestAuthorization)
     }
 
-    func test_authorization_granted() {
+    func test_authorization_granted() async {
         let locationManagerMock = AuthorizableLocationManagerMock(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
         let service = LocationService(userDefaults: UserDefaults(), locationManager: locationManagerMock)
         let delegate = LocDelegate()
@@ -36,14 +36,13 @@ class LocationServiceTests: XCTestCase {
 
         service.requestInUseAuthorization()
 
-        waitUntil { (done) in
-            #expect(locationManagerMock.locationUpdatesStarted)
-            #expect(locationManagerMock.headingUpdatesStarted)
-            #expect(delegate.location == TestData.mockSeattleLocation)
-            #expect(delegate.heading == TestData.mockHeading)
-            #expect(delegate.error == nil)
-            done()
-        }
+        await poll(until: { locationManagerMock.locationUpdatesStarted },
+                   "location updates never started")
+        #expect(locationManagerMock.locationUpdatesStarted)
+        #expect(locationManagerMock.headingUpdatesStarted)
+        #expect(delegate.location == TestData.mockSeattleLocation)
+        #expect(delegate.heading == TestData.mockHeading)
+        #expect(delegate.error == nil)
     }
 
     func test_updateLocation_successiveUpdates_succeed() {

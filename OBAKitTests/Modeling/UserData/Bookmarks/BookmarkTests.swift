@@ -49,7 +49,7 @@ class BookmarkTests: OBATestCase {
 
     func testUpdatingStopPropertyWithRightStop() {
         let bookmark = Bookmark(name: "BM 1", regionIdentifier: region.regionIdentifier, stop: stops[0])
-        expect(bookmark.stop.routes.count).to(beGreaterThan(1))
+        #expect(bookmark.stop.routes.count > 1)
         let stop = stops[0]
         stop.routes = []
         bookmark.stop = stop

@@ -29,14 +29,14 @@ class StackedMarqueeTitleViewTests: XCTestCase {
     
     func test_init_createsLabels() {
         #expect(self.titleView != nil)
-        expect(self.titleView.topLabel).to(beAnInstanceOf(MarqueeLabel.self))
-        expect(self.titleView.bottomLabel).to(beAnInstanceOf(MarqueeLabel.self))
+        #expect(type(of: self.titleView.topLabel) == MarqueeLabel.self)
+        #expect(type(of: self.titleView.bottomLabel) == MarqueeLabel.self)
     }
     
     func test_init_addsLabelsAsSubviews() {
         #expect(self.titleView.subviews.count == 2)
-        expect(self.titleView.subviews).to(contain(self.titleView.topLabel))
-        expect(self.titleView.subviews).to(contain(self.titleView.bottomLabel))
+        #expect(self.titleView.subviews.contains(self.titleView.topLabel))
+        #expect(self.titleView.subviews.contains(self.titleView.bottomLabel))
     }
     
     func test_topLabel_configuration() {

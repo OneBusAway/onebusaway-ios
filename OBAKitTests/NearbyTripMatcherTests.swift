@@ -81,8 +81,8 @@ class NearbyTripMatcherTests: OBATestCase {
         // Fixture has 2 arrivals on route 1_30 with vehicles 1_7028 and 1_7022.
         #expect(results.count == 2)
         let vehicleIDs = Set(results.compactMap { $0.arrivalDeparture.vehicleID })
-        expect(vehicleIDs).to(contain("1_7028"))
-        expect(vehicleIDs).to(contain("1_7022"))
+        #expect(vehicleIDs.contains("1_7028"))
+        #expect(vehicleIDs.contains("1_7022"))
     }
 
     func test_findTrips_returnsMatchesForRoute65() async throws {
@@ -100,8 +100,8 @@ class NearbyTripMatcherTests: OBATestCase {
         // Fixture has 2 arrivals on route 1_65 with vehicles 1_3691 and 1_3674.
         #expect(results.count == 2)
         let vehicleIDs = Set(results.compactMap { $0.arrivalDeparture.vehicleID })
-        expect(vehicleIDs).to(contain("1_3691"))
-        expect(vehicleIDs).to(contain("1_3674"))
+        #expect(vehicleIDs.contains("1_3691"))
+        #expect(vehicleIDs.contains("1_3674"))
     }
 
     // MARK: - Route Filtering

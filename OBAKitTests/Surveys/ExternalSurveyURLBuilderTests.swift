@@ -75,7 +75,7 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
 
         let url = builder.buildURL(for: survey, stop: nil)
 
-        expect(url?.absoluteString).to(contain("source=app"))
+        #expect(url?.absoluteString.contains("source=app") == true)
     }
 
     // MARK: - user_id
@@ -158,7 +158,7 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
         let url = builder.buildURL(for: survey, stop: stop)
 
         #expect(self.queryValue(in: url, for: "route_id") == "1_40")
-        expect(self.queryValue(in: url, for: "route_id")).toNot(contain(","))
+        #expect(self.queryValue(in: url, for: "route_id")?.contains(",") == false)
     }
 
     func test_buildURL_omitsRouteID_whenStopHasNoRoutes() {
@@ -188,8 +188,8 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
         let survey = SurveysTestHelpers.makeSurvey(questions: [makeQuestionWithFields(["recent_stop_ids"])])
         let url = builder.buildURL(for: survey, stop: nil)
 
-        expect(self.queryValue(in: url, for: "recent_stop_ids")).to(contain("1_75403"))
-        expect(self.queryValue(in: url, for: "recent_stop_ids")).to(contain("1_29270"))
+        #expect(self.queryValue(in: url, for: "recent_stop_ids")?.contains("1_75403") == true)
+        #expect(self.queryValue(in: url, for: "recent_stop_ids")?.contains("1_29270") == true)
     }
 
     func test_buildURL_appendsSingleRecentStopID_whenOneStopInStore() {
@@ -200,7 +200,7 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
         let url = builder.buildURL(for: survey, stop: nil)
 
         #expect(self.queryValue(in: url, for: "recent_stop_ids") == "1_75403")
-        expect(self.queryValue(in: url, for: "recent_stop_ids")).toNot(contain(","))
+        #expect(self.queryValue(in: url, for: "recent_stop_ids")?.contains(",") == false)
     }
 
     func test_buildURL_omitsRecentStopIDs_whenListIsEmpty() {
@@ -258,8 +258,8 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
         let queryItemNames = URLComponents(url: url!, resolvingAgainstBaseURL: false)?
             .queryItems?.map(\.name) ?? []
 
-        expect(queryItemNames).toNot(contain("unknown_key"))
-        expect(queryItemNames).toNot(contain("another_unknown"))
+        #expect(!queryItemNames.contains("unknown_key"))
+        #expect(!queryItemNames.contains("another_unknown"))
     }
 
     // MARK: - Multiple Fields
@@ -279,7 +279,7 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
         #expect(self.queryValue(in: url, for: "user_id") == testUserID)
         #expect(self.queryValue(in: url, for: "region_id") == "1")
         #expect(self.queryValue(in: url, for: "stop_id") == "1_29270")
-        expect(self.queryValue(in: url, for: "recent_stop_ids")).to(contain("1_75403"))
+        #expect(self.queryValue(in: url, for: "recent_stop_ids")?.contains("1_75403") == true)
     }
 
     func test_buildURL_appendsAllSixFields_whenAllDataAvailable() {
@@ -299,7 +299,7 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
         #expect(self.queryValue(in: url, for: "region_id") == "1")
         #expect(self.queryValue(in: url, for: "stop_id") == "1_29270")
         #expect(self.queryValue(in: url, for: "route_id") == "1_40,1_44")
-        expect(self.queryValue(in: url, for: "recent_stop_ids")).to(contain("1_75403"))
+        #expect(self.queryValue(in: url, for: "recent_stop_ids")?.contains("1_75403") == true)
         #expect(self.queryValue(in: url, for: "current_location") == "47.6062,-122.3321")
     }
 

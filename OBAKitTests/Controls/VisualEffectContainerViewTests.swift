@@ -28,7 +28,7 @@ class VisualEffectContainerViewTests: XCTestCase {
     func test_init_createsEffectView() {
         #expect(self.containerView != nil)
         #expect(self.containerView.subviews.count == 1)
-        expect(self.containerView.subviews.first).to(beAnInstanceOf(UIVisualEffectView.self))
+        #expect(self.containerView.subviews.first.map { type(of: $0) == UIVisualEffectView.self } == true)
     }
     
     func test_contentView_isEffectViewContentView() {
@@ -56,7 +56,7 @@ class VisualEffectContainerViewTests: XCTestCase {
         #expect(effectView?.translatesAutoresizingMaskIntoConstraints == false)
         
         // Test that constraints exist (we can't easily test exact constraints in unit tests)
-        expect(self.containerView.constraints.count).to(beGreaterThan(0))
+        #expect(self.containerView.constraints.count > 0)
     }
     
     func test_initWithCoder_fatalError() {

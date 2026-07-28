@@ -327,7 +327,7 @@ class SurveyOrchestratorTests: OBATestCase {
             Issue.record("nextSurveyReminderDate not set")
             return
         }
-        expect(reminder).to(beGreaterThanOrEqualTo(before.addingTimeInterval(3 * 86400 - 60)))
-        expect(reminder).to(beLessThanOrEqualTo(after.addingTimeInterval(3 * 86400 + 60)))
+        #expect(reminder >= before.addingTimeInterval(3 * 86400 - 60))
+        #expect(reminder <= after.addingTimeInterval(3 * 86400 + 60))
     }
 }

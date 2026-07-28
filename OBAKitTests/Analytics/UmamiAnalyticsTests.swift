@@ -71,8 +71,8 @@ final class UmamiAnalyticsTests: OBATestCase {
 
         // Explicit, non-bot User-Agent — full format: "OneBusAway/<version> (iOS <ver>; <model>)".
         let ua = try XCTUnwrap(request.value(forHTTPHeaderField: "User-Agent"))
-        expect(ua).to(contain("OneBusAway/"))
-        expect(ua).to(match("^OneBusAway/.+ \\(iOS .+; .+\\)$"))
+        #expect(ua.contains("OneBusAway/"))
+        #expect(NSPredicate(format: "SELF MATCHES %@", "^OneBusAway/.+ \\(iOS .+; .+\\)$").evaluate(with: ua))
 
         // Body matches the Umami contract.
         let body = try JSONSerialization.jsonObject(with: try XCTUnwrap(request.httpBody)) as! [String: Any]

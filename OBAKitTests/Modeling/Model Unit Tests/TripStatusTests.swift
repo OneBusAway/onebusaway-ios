@@ -347,9 +347,9 @@ class TripStatusTests: OBATestCase {
         ]
         // Missing activeTripId
         
-        expect {
+        #expect(throws: (any Error).self) {
             try Fixtures.dictionaryToModel(type: TripStatus.self, dictionary: incompleteData)
-        }.to(throwError())
+        }
         
         incompleteData = [
             "activeTripId": "incomplete_trip",
@@ -371,8 +371,8 @@ class TripStatusTests: OBATestCase {
         ]
         // Missing blockTripSequence
         
-        expect {
+        #expect(throws: (any Error).self) {
             try Fixtures.dictionaryToModel(type: TripStatus.self, dictionary: incompleteData)
-        }.to(throwError())
+        }
     }
 }

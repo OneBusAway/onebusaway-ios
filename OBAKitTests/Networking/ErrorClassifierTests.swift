@@ -116,8 +116,8 @@ class ErrorClassifierTests: XCTestCase {
         let error = APIError.serverError(regionName: "Puget Sound")
         let description = error.localizedDescription
 
-        expect(description).to(contain("Puget Sound"))
-        expect(description).to(contain("try again"))
+        #expect(description.contains("Puget Sound"))
+        #expect(description.contains("try again"))
     }
 
     func test_classify_requestFailure502_becomesServerUnavailable() {
@@ -319,8 +319,8 @@ class ErrorClassifierTests: XCTestCase {
         let result = ErrorClassifier.classify(decodingError, regionName: nil)
 
         let description = result.localizedDescription
-        expect(description).toNot(contain("couldn't be read"))
-        expect(description).to(contain("server"))
+        #expect(!description.contains("couldn't be read"))
+        #expect(description.contains("server"))
     }
 
     // MARK: - NSURLError Classification
@@ -481,16 +481,16 @@ class ErrorClassifierTests: XCTestCase {
         let error = APIError.serverUnavailable(regionName: "Puget Sound", statusCode: 502)
         let description = error.localizedDescription
 
-        expect(description).to(contain("Puget Sound"))
-        expect(description).to(contain("down"))
+        #expect(description.contains("Puget Sound"))
+        #expect(description.contains("down"))
     }
 
     func test_cellularDataRestricted_errorDescription_mentionsSettings() {
         let error = APIError.cellularDataRestricted
         let description = error.localizedDescription
 
-        expect(description).to(contain("Settings"))
-        expect(description).to(contain("Cellular"))
+        #expect(description.contains("Settings"))
+        #expect(description.contains("Cellular"))
     }
 }
 

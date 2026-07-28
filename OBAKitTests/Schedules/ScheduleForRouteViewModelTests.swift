@@ -218,10 +218,10 @@ class ScheduleForRouteViewModelTests: OBATestCase {
 
         let result = viewModel.formatTime(date)
 
-        expect(result).to(contain(":"))
+        #expect(result.contains(":"))
         #expect(result != "-")
-        expect(result).toNot(contain("AM"))
-        expect(result).toNot(contain("PM"))
+        #expect(!result.contains("AM"))
+        #expect(!result.contains("PM"))
         #expect(result.count == 5)
     }
 
@@ -283,7 +283,7 @@ class ScheduleForRouteViewModelTests: OBATestCase {
         let result = viewModel.formatTimeAccessible(date)
 
         // Locale-aware format contains colon and readable time
-        expect(result).to(contain(":"))
+        #expect(result.contains(":"))
         #expect(!result.isEmpty)
         #expect(result != "-")
     }

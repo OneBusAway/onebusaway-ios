@@ -9,6 +9,7 @@
 
 import Foundation
 import XCTest
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 import Nimble
@@ -32,7 +33,9 @@ class FormattersTests: OBATestCase {
 
         let str = formatters.explanation(from: arrDep)
 
-        expect(str).to(match("Arrived \\d+ min ago"))
+        // Nimble's `match` was NSPredicate MATCHES: a whole-string regex, not a
+        // substring search. Keep NSPredicate so the anchoring is unchanged.
+        #expect(NSPredicate(format: "SELF MATCHES %@", "Arrived \\d+ min ago").evaluate(with: str))
     }
 
     // MARK: - Transfer-Relative Time

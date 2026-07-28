@@ -48,6 +48,6 @@ class PreviewableTests: XCTestCase {
         }
         
         let controller = provider()
-        expect(controller).to(beAnInstanceOf(UIViewController.self))
+        #expect(controller.map { type(of: $0) == UIViewController.self } == true)
     }
 }

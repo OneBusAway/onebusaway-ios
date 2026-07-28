@@ -174,7 +174,7 @@ class EditBookmarkViewModelTests: OBATestCase {
         let group = BookmarkGroup(name: "Commute", sortOrder: 0)
         app.userDataStore.upsert(bookmarkGroup: group)
 
-        expect(vm.bookmarkGroups).to(haveCount(1))
+        #expect(vm.bookmarkGroups.count == 1)
     }
 
     // MARK: - currentGroupID
@@ -404,7 +404,7 @@ class EditBookmarkViewModelTests: OBATestCase {
         vm.persist(bookmark, name: "Stop", isFavorite: true, to: group.id, isNewBookmark: isNew)
 
         let inGroup = app.userDataStore.bookmarksInGroup(group)
-        expect(inGroup).to(containElementSatisfying { $0.id == bookmark.id })
+        #expect(inGroup.contains { $0.id == bookmark.id })
     }
 
     @MainActor
@@ -430,7 +430,7 @@ class EditBookmarkViewModelTests: OBATestCase {
 
         vm.persist(saved, name: "Stop", isFavorite: true, to: groupB.id, isNewBookmark: isNew)
 
-        expect(app.userDataStore.bookmarksInGroup(groupB)).to(containElementSatisfying { $0.id == bookmark.id })
+        #expect(app.userDataStore.bookmarksInGroup(groupB).contains { $0.id == bookmark.id })
     }
 
     @MainActor
@@ -450,7 +450,7 @@ class EditBookmarkViewModelTests: OBATestCase {
         vm.persist(bookmark, name: "Route", isFavorite: true, to: nil, isNewBookmark: isNew)
 
         let addBookmarkEvents = analyticsMock.reportedEvents.filter { $0.label == AnalyticsLabels.addBookmark }
-        expect(addBookmarkEvents).to(haveCount(1))
+        #expect(addBookmarkEvents.count == 1)
         let expectedValue = AnalyticsLabels.addRemoveBookmarkValue(
             routeID: arrivalDep.routeID,
             headsign: arrivalDep.tripHeadsign,

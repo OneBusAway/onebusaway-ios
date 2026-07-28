@@ -100,11 +100,11 @@ final class ServiceAlertViewModelTests: OBATestCase {
 
         let html = await waitForRender(viewModel: viewModel)
         let rendered = try XCTUnwrap(html)
-        expect(rendered).to(contain("<html>"))
-        expect(rendered).to(contain("</html>"))
-        expect(rendered).to(contain("<h1>"))
+        #expect(rendered.contains("<html>"))
+        #expect(rendered.contains("</html>"))
+        #expect(rendered.contains("<h1>"))
         // The fixture's situation has at least one active window + an affected route.
-        expect(rendered).to(contain("In Effect"))
+        #expect(rendered.contains("In Effect"))
     }
 
     @MainActor

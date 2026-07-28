@@ -57,7 +57,7 @@ class AutoLayoutExtensionsTests: XCTestCase {
         
         #expect(label.translatesAutoresizingMaskIntoConstraints == false)
         #expect(label.frame == .zero)
-        expect(label).to(beAnInstanceOf(UILabel.self))
+        #expect(type(of: label) == UILabel.self)
     }
     
     func test_UIView_spacerView() {

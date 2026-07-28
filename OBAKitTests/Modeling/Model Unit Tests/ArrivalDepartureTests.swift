@@ -354,9 +354,9 @@ class ArrivalDepartureTests: OBATestCase {
         ]
         // Missing arrivalEnabled
         
-        expect {
+        #expect(throws: (any Error).self) {
             try Fixtures.dictionaryToModel(type: ArrivalDeparture.self, dictionary: incompleteData)
-        }.to(throwError())
+        }
         
         incompleteData = [
             "arrivalEnabled": true,
@@ -378,9 +378,9 @@ class ArrivalDepartureTests: OBATestCase {
         ]
         // Missing routeId
         
-        expect {
+        #expect(throws: (any Error).self) {
             try Fixtures.dictionaryToModel(type: ArrivalDeparture.self, dictionary: incompleteData)
-        }.to(throwError())
+        }
     }
 
     // MARK: - Schedule deviation

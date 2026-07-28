@@ -61,7 +61,7 @@ class UserDefaultsStoreTests: OBATestCase {
 
     func test_recentStops_maxCount() {
         let stops = try! Fixtures.loadSomeStops()
-        expect(stops.count).to(beGreaterThan(userDefaultsStore.maximumRecentStopsCount))
+        #expect(stops.count > userDefaultsStore.maximumRecentStopsCount)
 
         for s in stops {
             userDefaultsStore.addRecentStop(s, region: region)
@@ -169,7 +169,7 @@ class UserDefaultsStoreTests: OBATestCase {
 
         userDefaultsStore.delete(alarm: reloaded!)
 
-        expect(self.userDefaultsStore.alarms.map(\.url)).toNot(contain(alarm.url))
+        #expect(!self.userDefaultsStore.alarms.map(\.url).contains(alarm.url))
     }
 
     // MARK: - Selected Tab Index

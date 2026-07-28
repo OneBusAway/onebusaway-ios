@@ -75,13 +75,13 @@ final class WeatherFormatterTests: XCTestCase {
 
     func test_formatTemp_usLocaleKeepsFahrenheit() {
         let result = WeatherFormatter.formatTemp(50, locale: Locale(identifier: "en_US"))
-        expect(result).to(contain("50"))
+        #expect(result.contains("50"))
     }
 
     func test_formatTemp_metricLocaleConvertsToCelsius() {
         // 50°F == 10°C
         let result = WeatherFormatter.formatTemp(50, locale: Locale(identifier: "fr_FR"))
-        expect(result).to(contain("10"))
+        #expect(result.contains("10"))
     }
 
     // MARK: - formatWindSpeed
@@ -116,8 +116,8 @@ final class WeatherFormatterTests: XCTestCase {
     func test_formatTime_24HourLocaleHasNoAmPm() {
         let date = Date(timeIntervalSince1970: 1782525600)
         let result = WeatherFormatter.formatTime(date, locale: Locale(identifier: "fr_FR")).uppercased()
-        expect(result).toNot(contain("AM"))
-        expect(result).toNot(contain("PM"))
+        #expect(!result.contains("AM"))
+        #expect(!result.contains("PM"))
     }
 
     // MARK: - highLow
@@ -170,8 +170,8 @@ final class WeatherFormatterTests: XCTestCase {
 
         #expect(result != nil)
         // 200°F would clearly show up if the cap weren't enforced.
-        expect(result?.high).toNot(contain("200"))
-        expect(result?.high).to(contain("59"))
-        expect(result?.low).to(contain("50"))
+        #expect(result?.high.contains("200") == false)
+        #expect(result?.high.contains("59") == true)
+        #expect(result?.low.contains("50") == true)
     }
 }

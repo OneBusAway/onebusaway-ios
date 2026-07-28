@@ -21,9 +21,9 @@ class CollectionsTests: XCTestCase {
         let mySet: Set = ["one", "two", "three"]
         let array = mySet.allObjects
 
-        expect(array).to(contain("one"))
-        expect(array).to(contain("two"))
-        expect(array).to(contain("three"))
+        #expect(array.contains("one"))
+        #expect(array.contains("two"))
+        #expect(array.contains("three"))
     }
 
     func testFilter() {

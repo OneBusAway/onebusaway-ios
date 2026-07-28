@@ -77,7 +77,7 @@ class StopPagePresentationTests: OBATestCase {
 
         let controller = application.viewRouter.makeStopController(stop: stop, showToolbarOnBottom: true)
 
-        expect(controller).to(beAKindOf(StopViewController.self))
+        #expect(controller is StopViewController)
     }
 
     // MARK: - Navigation bar chrome

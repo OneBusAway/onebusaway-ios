@@ -22,8 +22,8 @@ class TaskButtonTests: XCTestCase {
         let allCases = TaskButton<Text>.ActionOption.allCases
         
         #expect(allCases.count == 2)
-        expect(allCases).to(contain(.disableButton))
-        expect(allCases).to(contain(.showProgressView))
+        #expect(allCases.contains(.disableButton))
+        #expect(allCases.contains(.showProgressView))
     }
     
     func test_TaskButton_withText_init() {

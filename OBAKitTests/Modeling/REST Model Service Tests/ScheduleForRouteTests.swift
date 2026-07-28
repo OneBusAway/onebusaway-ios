@@ -32,13 +32,13 @@ class ScheduleForRouteTests: OBATestCase {
 
     func test_urlBuilder_generatesCorrectURL() {
         let url = restService.urlBuilder.getScheduleForRoute(id: routeID)
-        expect(url.absoluteString).to(contain("/api/where/schedule-for-route/\(routeID).json"))
+        #expect(url.absoluteString.contains("/api/where/schedule-for-route/\(routeID).json"))
     }
 
     func test_urlBuilder_withDate_includesDateParameter() {
         let date = Date(timeIntervalSince1970: 1765008000) // 2025-12-06
         let url = restService.urlBuilder.getScheduleForRoute(id: routeID, date: date)
-        expect(url.absoluteString).to(contain("date="))
+        #expect(url.absoluteString.contains("date="))
     }
 
     // MARK: - Model Decoding Tests
@@ -87,8 +87,8 @@ class ScheduleForRouteTests: OBATestCase {
         #expect(!stopTime.stopID.isEmpty)
         #expect(!stopTime.tripID.isEmpty)
         // arrivalTime and departureTime are in seconds from midnight
-        expect(stopTime.arrivalTime).to(beGreaterThan(0))
-        expect(stopTime.departureTime).to(beGreaterThan(0))
+        #expect(stopTime.arrivalTime > 0)
+        #expect(stopTime.departureTime > 0)
         #expect(stopTime.arrivalEnabled)
         #expect(stopTime.departureEnabled)
     }
@@ -103,8 +103,8 @@ class ScheduleForRouteTests: OBATestCase {
 
         // The fixture has arrivalTime: 31500 which equals 8:45 AM (31500 / 3600 = 8.75 hours)
         // Times should be between 0 (midnight) and 86400 (next midnight) or slightly beyond for overnight routes
-        expect(stopTime.arrivalTime).to(beGreaterThanOrEqualTo(0))
-        expect(stopTime.arrivalTime).to(beLessThan(86400 * 2)) // Allow for overnight schedules
+        #expect(stopTime.arrivalTime >= 0)
+        #expect(stopTime.arrivalTime < 86400 * 2)  // Allow for overnight schedules
     }
 
     // MARK: - References Tests

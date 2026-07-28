@@ -133,7 +133,9 @@ final class SurveyServiceStateTests: OBATestCase {
 
         let newDate = testUserDataStore.nextSurveyReminderDate
         #expect(newDate != nil)
-        expect(newDate).to(beGreaterThan(Date()))
+        // `newDate` is Date?; Swift won't compare Date? to Date. `map` keeps
+        // Nimble's beGreaterThan semantics, where a nil actual is a failure.
+        #expect(newDate.map { $0 > Date() } == true)
     }
 
     // MARK: - markSurveyCompleted
@@ -265,7 +267,7 @@ final class SurveyServiceStateTests: OBATestCase {
         let service = await buildServiceWithLoadedSurveys()
         let initialVisible = service.visibleSurveys.count
 
-        expect(initialVisible).to(beGreaterThan(0))
+        #expect(initialVisible > 0)
 
         // Marking a survey completed should trigger re-filter of visibleSurveys
         let survey = service.allSurveys.first!
@@ -279,7 +281,7 @@ final class SurveyServiceStateTests: OBATestCase {
         let service = await buildServiceWithLoadedSurveys()
         let initialVisible = service.visibleSurveys.count
 
-        expect(initialVisible).to(beGreaterThan(0))
+        #expect(initialVisible > 0)
 
         let survey = service.allSurveys.first!
         service.markSurveyForLater(survey)

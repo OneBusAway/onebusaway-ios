@@ -227,7 +227,7 @@ class RoutePickerViewModelTests: OBATestCase {
 
         await vm.loadRoutes()
         let total = vm.allRoutes.count
-        expect(total).to(beGreaterThan(0))
+        #expect(total > 0)
 
         // Pick a real route to derive a guaranteed-matching substring.
         let sample = vm.allRoutes.first!
@@ -273,7 +273,7 @@ class RoutePickerViewModelTests: OBATestCase {
         guard !route.shortName.lowercased().contains(needle) else { return }
 
         vm.updateSearch(needle)
-        expect(vm.filteredRoutes.map(\.id)).to(contain(route.id))
+        #expect(vm.filteredRoutes.map(\.id).contains(route.id))
     }
 
     /// `updateSearch` called BEFORE `loadRoutes()` is a no-op (filteredRoutes stays empty),
@@ -317,7 +317,7 @@ class RoutePickerViewModelTests: OBATestCase {
         vm.updateSearch("")
 
         // We expect at least two additional emissions after the baseline.
-        expect(emissions.count).to(beGreaterThanOrEqualTo(baseline + 2))
+        #expect(emissions.count >= baseline + 2)
         // Final emission should match the full set (search reset to empty).
         #expect(emissions.last == vm.allRoutes.count)
     }

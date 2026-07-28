@@ -41,6 +41,6 @@ final class MoreSheetHostTests: OBATestCase {
         let nav = MoreSheetHost.makeNavigationController(application: application)
 
         #expect(nav.viewControllers.count == 1)
-        expect(nav.topViewController).to(beAKindOf(MoreViewController.self))
+        #expect(nav.topViewController is MoreViewController)
     }
 }

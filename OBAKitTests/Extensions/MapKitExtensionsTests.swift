@@ -23,7 +23,7 @@ class MapKitExtensionsTests: XCTestCase {
         let directions = MKDirections.walkingDirections(to: coordinate)
         
         // Test that we get a valid MKDirections object
-        expect(directions).to(beAnInstanceOf(MKDirections.self))
+        #expect(type(of: directions) == MKDirections.self)
         
         // We can't directly test the request properties since they're internal,
         // but we can verify the method creates a directions object successfully
@@ -50,7 +50,7 @@ class MapKitExtensionsTests: XCTestCase {
         let polygon = mapRect.polygon
         
         #expect(polygon.pointCount == 4)
-        expect(polygon).to(beAnInstanceOf(MKPolygon.self))
+        #expect(type(of: polygon) == MKPolygon.self)
     }
     
     func test_MKMapRect_initFromCoordinateRegion() {
@@ -60,8 +60,8 @@ class MapKitExtensionsTests: XCTestCase {
         
         let mapRect = MKMapRect(region)
         
-        expect(mapRect.size.width).to(beGreaterThan(0))
-        expect(mapRect.size.height).to(beGreaterThan(0))
+        #expect(mapRect.size.width > 0)
+        #expect(mapRect.size.height > 0)
     }
     
     func test_MKMapRect_codable() throws {
@@ -120,7 +120,7 @@ class MapKitExtensionsTests: XCTestCase {
         let polygon = MKPolygon(coordinateRegion: region)
         
         #expect(polygon.pointCount == 4)
-        expect(polygon).to(beAnInstanceOf(MKPolygon.self))
+        #expect(type(of: polygon) == MKPolygon.self)
     }
     
     func test_MKUserLocation_isValid() {

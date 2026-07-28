@@ -129,9 +129,9 @@ class AgencyTests: OBATestCase {
             "privateService": false
         ]
         
-        expect {
+        #expect(throws: (any Error).self) {
             try Fixtures.dictionaryToModel(type: Agency.self, dictionary: incompleteData)
-        }.to(throwError())
+        }
         
         incompleteData = [
             "id": "missing_name",
@@ -142,8 +142,8 @@ class AgencyTests: OBATestCase {
             "privateService": false
         ]
         
-        expect {
+        #expect(throws: (any Error).self) {
             try Fixtures.dictionaryToModel(type: Agency.self, dictionary: incompleteData)
-        }.to(throwError())
+        }
     }
 }

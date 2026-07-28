@@ -275,8 +275,8 @@ class FrequencyTests: OBATestCase {
         ]
         // Missing startTime
         
-        expect {
+        #expect(throws: (any Error).self) {
             try Fixtures.dictionaryToModel(type: Frequency.self, dictionary: incompleteData)
-        }.to(throwError())
+        }
     }
 }

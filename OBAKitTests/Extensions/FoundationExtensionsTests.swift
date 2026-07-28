@@ -47,7 +47,9 @@ class FoundationExtensionsTests: XCTestCase {
         
         #expect(bundleIdentifier != nil)
         #expect(bundleIdentifier?.isEmpty == false)
-        expect(bundleIdentifier).to(contain("."))
+        // `bundleIdentifier` is String?; Nimble's contain failed on nil, and so
+        // does `?.contains(...) == true`.
+        #expect(bundleIdentifier?.contains(".") == true)
     }
     
     func test_Bundle_appVersion() {
@@ -71,7 +73,7 @@ class FoundationExtensionsTests: XCTestCase {
         
         // This may be nil, but should not crash
         if let types = userActivityTypes {
-            expect(types).to(beAnInstanceOf([String].self))
+            #expect(type(of: types) == [String].self)
         }
     }
     
@@ -80,7 +82,7 @@ class FoundationExtensionsTests: XCTestCase {
         let donationsEnabled = bundle.donationsEnabled
         
         // This should return a boolean value without crashing
-        expect(donationsEnabled).to(beAnInstanceOf(Bool.self))
+        #expect(type(of: donationsEnabled) == Bool.self)
     }
     
     func test_Bundle_donationManagementPortal() {
@@ -89,7 +91,7 @@ class FoundationExtensionsTests: XCTestCase {
         
         // This may be nil, but should not crash
         if let portalURL = portal {
-            expect(portalURL).to(beAnInstanceOf(URL.self))
+            #expect(type(of: portalURL) == URL.self)
         }
     }
     
@@ -99,7 +101,7 @@ class FoundationExtensionsTests: XCTestCase {
         
         // This may be nil, but should not crash
         if let urlScheme = scheme {
-            expect(urlScheme).to(beAnInstanceOf(String.self))
+            #expect(type(of: urlScheme) == String.self)
             #expect(!urlScheme.isEmpty)
         }
     }
@@ -110,7 +112,7 @@ class FoundationExtensionsTests: XCTestCase {
         
         // This may be nil, but should not crash
         if let name = fileName {
-            expect(name).to(beAnInstanceOf(String.self))
+            #expect(type(of: name) == String.self)
             #expect(!name.isEmpty)
         }
     }
@@ -121,7 +123,7 @@ class FoundationExtensionsTests: XCTestCase {
         
         // This may be nil, but should not crash
         if let path = filePath {
-            expect(path).to(beAnInstanceOf(String.self))
+            #expect(type(of: path) == String.self)
             #expect(!path.isEmpty)
         }
     }
@@ -132,7 +134,7 @@ class FoundationExtensionsTests: XCTestCase {
         
         // This may be nil, but should not crash
         if let url = baseAddress {
-            expect(url).to(beAnInstanceOf(URL.self))
+            #expect(type(of: url) == URL.self)
         }
     }
     
@@ -142,7 +144,7 @@ class FoundationExtensionsTests: XCTestCase {
         
         // This may be nil, but should not crash
         if let path = apiPath {
-            expect(path).to(beAnInstanceOf(String.self))
+            #expect(type(of: path) == String.self)
             #expect(!path.isEmpty)
         }
     }
@@ -153,7 +155,7 @@ class FoundationExtensionsTests: XCTestCase {
         
         // This may be nil, but should not crash
         if let key = apiKey {
-            expect(key).to(beAnInstanceOf(String.self))
+            #expect(type(of: key) == String.self)
             #expect(!key.isEmpty)
         }
     }
@@ -164,7 +166,7 @@ class FoundationExtensionsTests: XCTestCase {
 
         // This may be nil, but should not crash
         if let group = appGroup {
-            expect(group).to(beAnInstanceOf(String.self))
+            #expect(type(of: group) == String.self)
             #expect(!group.isEmpty)
         }
     }

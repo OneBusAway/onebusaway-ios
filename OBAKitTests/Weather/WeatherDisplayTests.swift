@@ -230,7 +230,7 @@ final class WeatherDisplayTests: XCTestCase {
         // Stats — current-hour wind / precip / feels-like.
         #expect(display.stats.feelsLikeText == "71°")
         #expect(display.stats.precipText == "0%")
-        expect(display.stats.windText).to(contain("mph"))
+        #expect(display.stats.windText.contains("mph"))
 
         // Button pill mirrors the current temperature.
         #expect(display.buttonTitle == "71°")
@@ -280,8 +280,8 @@ final class WeatherDisplayTests: XCTestCase {
         let display = WeatherDisplay(forecast: forecast, locale: usLocale, now: pugetSoundNow, calendar: utcCalendar)
         let highLowText = try XCTUnwrap(display.header.highLowText)
 
-        expect(highLowText).to(beginWith("H:"))
-        expect(highLowText).to(contain("  L:"))
+        #expect(highLowText.hasPrefix("H:"))
+        #expect(highLowText.contains("  L:"))
         // Two spaces between the two halves — the format is deliberately wide.
         #expect(highLowText.components(separatedBy: "  ").count == 2)
     }

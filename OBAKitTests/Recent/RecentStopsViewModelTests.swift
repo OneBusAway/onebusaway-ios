@@ -91,7 +91,7 @@ class RecentStopsViewModelTests: OBATestCase {
 
         viewModel.loadData()
 
-        expect(viewModel.recentStops).to(contain(stop))
+        #expect(viewModel.recentStops.contains(stop))
     }
 
     @MainActor
@@ -117,7 +117,7 @@ class RecentStopsViewModelTests: OBATestCase {
 
         viewModel.loadData()
 
-        expect(viewModel.alarms.map(\.url)).to(contain(alarm.url))
+        #expect(viewModel.alarms.map(\.url).contains(alarm.url))
     }
 
     // MARK: - deleteAllRecentStops
@@ -156,8 +156,8 @@ class RecentStopsViewModelTests: OBATestCase {
 
         viewModel.delete(recentStop: stopA)
 
-        expect(viewModel.recentStops).toNot(contain(stopA))
-        expect(viewModel.recentStops).to(contain(stopB))
+        #expect(!viewModel.recentStops.contains(stopA))
+        #expect(viewModel.recentStops.contains(stopB))
     }
 
     // MARK: - delete(alarm:)
@@ -178,13 +178,13 @@ class RecentStopsViewModelTests: OBATestCase {
         app.userDataStore.add(alarm: alarm)
         let viewModel = RecentStopsViewModel(application: app)
         viewModel.loadData()
-        expect(viewModel.alarms.map(\.url)).to(contain(alarm.url))
+        #expect(viewModel.alarms.map(\.url).contains(alarm.url))
 
         // Await the returned Task so the remote DELETE completes inside the test
         // boundary — otherwise it races past tearDown.
         await viewModel.delete(alarm: alarm).value
 
-        expect(viewModel.alarms.map(\.url)).toNot(contain(alarm.url))
+        #expect(!viewModel.alarms.map(\.url).contains(alarm.url))
     }
 
     @MainActor
@@ -212,7 +212,7 @@ class RecentStopsViewModelTests: OBATestCase {
 
         await viewModel.delete(alarm: alarm).value
 
-        expect(viewModel.alarms.map(\.url)).toNot(contain(alarm.url))
+        #expect(!viewModel.alarms.map(\.url).contains(alarm.url))
         #expect(didHitRemote)
     }
 
@@ -238,7 +238,7 @@ class RecentStopsViewModelTests: OBATestCase {
         await viewModel.delete(alarm: alarm).value
 
         // Remote failure does not undo the local removal — that's the contract.
-        expect(viewModel.alarms.map(\.url)).toNot(contain(alarm.url))
+        #expect(!viewModel.alarms.map(\.url).contains(alarm.url))
     }
 
     // MARK: - loadData / nil currentRegion

@@ -158,7 +158,7 @@ class ApplicationTests: OBATestCase {
         #expect(app.apiService == nil)
     }
 
-    func test_app_locationNewlyAuthorized() {
+    func test_app_locationNewlyAuthorized() async {
         let dataLoader = MockDataLoader(testName: name)
 
         stubRegions(dataLoader: dataLoader)
@@ -181,13 +181,11 @@ class ApplicationTests: OBATestCase {
         #expect(app.apiService == nil)
 
         locationService.requestInUseAuthorization()
-        waitUntil { (done) in
-            #expect(locManager.locationUpdatesStarted)
-            #expect(locManager.headingUpdatesStarted)
-            #expect(app.apiService != nil)
-
-            done()
-        }
+        await poll(until: { locManager.locationUpdatesStarted },
+                   "location updates never started")
+        #expect(locManager.locationUpdatesStarted)
+        #expect(locManager.headingUpdatesStarted)
+        #expect(app.apiService != nil)
     }
 
     // MARK: - Minimal Proof of Concept Tests
@@ -391,7 +389,7 @@ class ApplicationTests: OBATestCase {
 
         // Just test that the property is accessible and returns a boolean
         let shouldPerform = app.shouldPerformMigration
-        expect([true, false]).to(contain(shouldPerform))
+        #expect([true, false].contains(shouldPerform))
     }
 
     func test_has_data_to_migrate_returns_data_migrator_value() {
@@ -404,7 +402,7 @@ class ApplicationTests: OBATestCase {
 
         // Just test that the property is accessible and returns a boolean
         let hasData = app.hasDataToMigrate
-        expect([true, false]).to(contain(hasData))
+        #expect([true, false].contains(hasData))
     }
 
     // MARK: - URL Scheme and Deep Link Tests
@@ -566,7 +564,7 @@ class ApplicationTests: OBATestCase {
         let app = Application(config: config)
 
         #expect(app.analytics != nil)
-        expect(app.analytics).to(beIdenticalTo(mockAnalytics))
+        #expect(app.analytics === mockAnalytics)
     }
 
     // MARK: - Regions Service Delegate Tests
