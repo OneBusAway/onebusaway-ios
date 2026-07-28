@@ -23,13 +23,13 @@ class FoundationExtensionsTests: XCTestCase {
     /// direction is user-visible: swallow a real error, or alert on every
     /// dismissed context-menu preview.
     func test_error_isCancellation() {
-        expect(CancellationError().isCancellation).to(beTrue())
-        expect(URLError(.cancelled).isCancellation).to(beTrue())
-        expect(NSError(domain: NSURLErrorDomain, code: NSURLErrorCancelled).isCancellation).to(beTrue())
+        #expect(CancellationError().isCancellation)
+        #expect(URLError(.cancelled).isCancellation)
+        #expect(NSError(domain: NSURLErrorDomain, code: NSURLErrorCancelled).isCancellation)
 
-        expect(URLError(.badServerResponse).isCancellation).to(beFalse())
-        expect(URLError(.timedOut).isCancellation).to(beFalse())
-        expect(NSError(domain: NSCocoaErrorDomain, code: NSURLErrorCancelled).isCancellation).to(beFalse())
+        #expect(!(URLError(.badServerResponse).isCancellation))
+        #expect(!(URLError(.timedOut).isCancellation))
+        #expect(!(NSError(domain: NSCocoaErrorDomain, code: NSURLErrorCancelled).isCancellation))
     }
     
     func test_Bundle_appName() {
@@ -37,7 +37,7 @@ class FoundationExtensionsTests: XCTestCase {
         let appName = bundle.appName
         
         // This will vary by app, but should not be empty for main bundle
-        expect(appName).toNot(beEmpty())
+        #expect(!appName.isEmpty)
     }
     
     func test_Bundle_bundleIdentifier_extension() {
@@ -46,7 +46,7 @@ class FoundationExtensionsTests: XCTestCase {
         let bundleIdentifier = bundle.object(forInfoDictionaryKey: "CFBundleIdentifier") as? String
         
         #expect(bundleIdentifier != nil)
-        expect(bundleIdentifier).toNot(beEmpty())
+        #expect(bundleIdentifier?.isEmpty == false)
         expect(bundleIdentifier).to(contain("."))
     }
     
@@ -54,7 +54,7 @@ class FoundationExtensionsTests: XCTestCase {
         let bundle = Bundle.main
         let appVersion = bundle.appVersion
         
-        expect(appVersion).toNot(beEmpty())
+        #expect(!appVersion.isEmpty)
     }
     
     func test_Bundle_copyright() {
@@ -100,7 +100,7 @@ class FoundationExtensionsTests: XCTestCase {
         // This may be nil, but should not crash
         if let urlScheme = scheme {
             expect(urlScheme).to(beAnInstanceOf(String.self))
-            expect(urlScheme).toNot(beEmpty())
+            #expect(!urlScheme.isEmpty)
         }
     }
     
@@ -111,7 +111,7 @@ class FoundationExtensionsTests: XCTestCase {
         // This may be nil, but should not crash
         if let name = fileName {
             expect(name).to(beAnInstanceOf(String.self))
-            expect(name).toNot(beEmpty())
+            #expect(!name.isEmpty)
         }
     }
     
@@ -122,7 +122,7 @@ class FoundationExtensionsTests: XCTestCase {
         // This may be nil, but should not crash
         if let path = filePath {
             expect(path).to(beAnInstanceOf(String.self))
-            expect(path).toNot(beEmpty())
+            #expect(!path.isEmpty)
         }
     }
     
@@ -143,7 +143,7 @@ class FoundationExtensionsTests: XCTestCase {
         // This may be nil, but should not crash
         if let path = apiPath {
             expect(path).to(beAnInstanceOf(String.self))
-            expect(path).toNot(beEmpty())
+            #expect(!path.isEmpty)
         }
     }
     
@@ -154,7 +154,7 @@ class FoundationExtensionsTests: XCTestCase {
         // This may be nil, but should not crash
         if let key = apiKey {
             expect(key).to(beAnInstanceOf(String.self))
-            expect(key).toNot(beEmpty())
+            #expect(!key.isEmpty)
         }
     }
     
@@ -165,7 +165,7 @@ class FoundationExtensionsTests: XCTestCase {
         // This may be nil, but should not crash
         if let group = appGroup {
             expect(group).to(beAnInstanceOf(String.self))
-            expect(group).toNot(beEmpty())
+            #expect(!group.isEmpty)
         }
     }
 }

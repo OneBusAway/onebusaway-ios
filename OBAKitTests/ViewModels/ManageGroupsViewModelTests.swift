@@ -67,7 +67,7 @@ class ManageGroupsViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: dataLoader)
         let vm = ManageGroupsViewModel(application: app)
 
-        expect(vm.bookmarkGroups).to(beEmpty())
+        #expect(vm.bookmarkGroups.isEmpty)
     }
 
     @MainActor
@@ -113,7 +113,7 @@ class ManageGroupsViewModelTests: OBATestCase {
 
         vm.replaceGroups([])
 
-        expect(vm.bookmarkGroups).to(beEmpty())
+        #expect(vm.bookmarkGroups.isEmpty)
     }
 
     @MainActor

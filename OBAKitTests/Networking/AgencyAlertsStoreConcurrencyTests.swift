@@ -141,9 +141,9 @@ class AgencyAlertsStoreConcurrencyTests: OBATestCase {
         // After the fanout, every alert must be marked read exactly once (idempotent
         // inserts into a `Set`), and the alert set itself must be intact.
         #expect(store.recentHighSeverityAlerts.count == alerts.count)
-        expect(store.recentUnreadHighSeverityAlerts).to(beEmpty())
+        #expect(store.recentUnreadHighSeverityAlerts.isEmpty)
         for alert in alerts {
-            expect(store.isAlertUnread(alert)).to(beFalse())
+            #expect(!(store.isAlertUnread(alert)))
         }
     }
 }

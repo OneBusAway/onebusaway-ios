@@ -53,7 +53,7 @@ class MapRegionManagerTests: OBATestCase {
         let mgr = MapRegionManager(application: application)
 
         #expect(mgr.mapView != nil)
-        expect(mgr.mapView.showsScale).to(beTrue())
+        #expect(mgr.mapView.showsScale)
 
         // Disable traffic in the Simulator to work around a bug in Xcode 11 and 12
         // where the console spews hundreds of error messages that read:
@@ -61,9 +61,9 @@ class MapRegionManagerTests: OBATestCase {
         //
         // https://stackoverflow.com/a/63176707
         #if targetEnvironment(simulator)
-        expect(mgr.mapView.showsTraffic).to(beFalse())
+        #expect(!(mgr.mapView.showsTraffic))
         #else
-        expect(mgr.mapView.showsTraffic).to(beTrue())
+        #expect(mgr.mapView.showsTraffic)
         #endif
     }
 

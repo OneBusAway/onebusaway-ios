@@ -38,7 +38,7 @@ class StopsForRouteModelOperationTests: OBATestCase {
         #expect(stopsForRoute.stopGroupings.count == 1)
         let stopGrouping = stopsForRoute.stopGroupings.first!
 
-        expect(stopGrouping.ordered).to(beTrue())
+        #expect(stopGrouping.ordered)
         #expect(stopGrouping.groupingType == "direction")
         #expect(stopGrouping.stopGroups.count == 2)
 

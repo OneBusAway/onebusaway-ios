@@ -123,7 +123,7 @@ class NetworkHelperTests: OBATestCase {
         let expectedData2 = "three=four&one=2".data(using: .utf8)
         let match2 = (expectedData2 == data)
 
-        expect(match1 || match2).to(beTrue())
+        #expect((match1 || match2))
     }
 
     /// Tests that Double values in HTTP body use period as decimal separator regardless of locale

@@ -158,7 +158,7 @@ class NearbyTripMatcherTests: OBATestCase {
         )
 
         #expect(tightResults.count < wideResults.count)
-        expect(tightResults).to(beEmpty())
+        #expect(tightResults.isEmpty)
         #expect(wideResults.count == 2)
     }
 
@@ -233,8 +233,15 @@ class NearbyTripMatcherTests: OBATestCase {
         } catch is NearbyTripMatcher.MatchError {
             XCTFail("Should rethrow the server error, not a MatchError")
         } catch {
-            // Expected: the server error is rethrown, not swallowed.
-            #expect(error != nil)
+            // Expected: the server error is rethrown, not swallowed. Reaching
+            // this branch at all *is* the assertion — the `catch is MatchError`
+            // above already rejects the failure mode under test.
+            //
+            // This previously read `expect(error).toNot(beNil())`, which was
+            // vacuous: `error` is a non-optional `any Error` here, so it could
+            // never be nil. Nimble's generic `expect()` hid that; `#expect`
+            // made the compiler say so ("comparing non-optional value of type
+            // 'any Error' to 'nil' always returns true").
         }
     }
 
@@ -292,11 +299,11 @@ class NearbyTripMatcherTests: OBATestCase {
 
     func test_matchError_noStopsNearby_localizedDescription() {
         let error = NearbyTripMatcher.MatchError.noStopsNearby
-        expect(error.localizedDescription).toNot(beEmpty())
+        #expect(!error.localizedDescription.isEmpty)
     }
 
     func test_matchError_noRealtimeData_localizedDescription() {
         let error = NearbyTripMatcher.MatchError.noRealtimeData
-        expect(error.localizedDescription).toNot(beEmpty())
+        #expect(!error.localizedDescription.isEmpty)
     }
 }

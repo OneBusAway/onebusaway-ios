@@ -40,7 +40,7 @@ class ReferencesTests: OBATestCase {
         #expect(agency.language == "en")
         #expect(agency.name == "Hillsborough Area Regional Transit")
         #expect(agency.phone == "813-254-4278")
-        expect(agency.isPrivateService).to(beFalse())
+        #expect(!(agency.isPrivateService))
         #expect(agency.timeZone == "America/New_York")
         #expect(agency.agencyURL == URL(string: "http://www.gohart.org")!)
     }
@@ -148,7 +148,7 @@ class ReferencesTests: OBATestCase {
 
     func test_stopsWithIDs_returnsEmptyArrayForEmptyInput() {
         let result = references.stopsWithIDs([])
-        expect(result).to(beEmpty())
+        #expect(result.isEmpty)
     }
 
     func test_stopsWithIDs_filtersOutInvalidIDs() {

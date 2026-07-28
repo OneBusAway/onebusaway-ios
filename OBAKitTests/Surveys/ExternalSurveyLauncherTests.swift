@@ -53,11 +53,11 @@ final class ExternalSurveyLauncherTests: OBATestCase {
                                         onSuccess: { succeeded = true },
                                         onFailure: { failed = true })
 
-        expect(attempted).to(beTrue())
+        #expect(attempted)
         #expect(opened?.absoluteString == "https://oba.co/s")
-        expect(succeeded).to(beTrue())
-        expect(failed).to(beFalse())
-        expect(self.isCompleted(1)).to(beTrue())
+        #expect(succeeded)
+        #expect(!(failed))
+        #expect(self.isCompleted(1))
     }
 
     func test_launch_appendsStopID_whenStopProvided() {
@@ -84,10 +84,10 @@ final class ExternalSurveyLauncherTests: OBATestCase {
                                         onSuccess: {},
                                         onFailure: { failed = true })
 
-        expect(attempted).to(beFalse())
-        expect(openerCalled).to(beFalse())
-        expect(failed).to(beTrue())
-        expect(self.isCompleted(1)).to(beFalse())
+        #expect(!(attempted))
+        #expect(!(openerCalled))
+        #expect(failed)
+        #expect(!(self.isCompleted(1)))
     }
 
     func test_launch_openFailure_doesNotComplete_callsOnFailure() {
@@ -101,8 +101,8 @@ final class ExternalSurveyLauncherTests: OBATestCase {
                         onSuccess: { succeeded = true },
                         onFailure: { failed = true })
 
-        expect(succeeded).to(beFalse())
-        expect(failed).to(beTrue())
-        expect(self.isCompleted(1)).to(beFalse())
+        #expect(!(succeeded))
+        #expect(failed)
+        #expect(!(self.isCompleted(1)))
     }
 }

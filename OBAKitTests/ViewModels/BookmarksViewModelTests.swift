@@ -74,7 +74,7 @@ class BookmarksViewModelTests: OBATestCase {
 
         let viewModel = BookmarksViewModel(application: app)
 
-        expect(viewModel.sortByGroup).to(beTrue())
+        #expect(viewModel.sortByGroup)
     }
 
     /// `init` reads the persisted value back out of UserDefaults.
@@ -87,7 +87,7 @@ class BookmarksViewModelTests: OBATestCase {
 
         let viewModel = BookmarksViewModel(application: app)
 
-        expect(viewModel.sortByGroup).to(beFalse())
+        #expect(!(viewModel.sortByGroup))
     }
 
     /// `updateSortType` writes the new value to UserDefaults under the documented key
@@ -100,8 +100,8 @@ class BookmarksViewModelTests: OBATestCase {
         let viewModel = BookmarksViewModel(application: app)
         viewModel.updateSortType(byGroup: false)
 
-        expect(viewModel.sortByGroup).to(beFalse())
-        expect(self.userDefaults.bool(forKey: self.sortByGroupKey)).to(beFalse())
+        #expect(!(viewModel.sortByGroup))
+        #expect(!(self.userDefaults.bool(forKey: self.sortByGroupKey)))
     }
 
     // MARK: - isLoading
@@ -114,7 +114,7 @@ class BookmarksViewModelTests: OBATestCase {
 
         let viewModel = BookmarksViewModel(application: app)
 
-        expect(viewModel.isLoading).to(beFalse())
+        #expect(!(viewModel.isLoading))
     }
 
     /// A refresh that finds no eligible bookmarks must not leave `isLoading` stuck on `true`.
@@ -133,7 +133,7 @@ class BookmarksViewModelTests: OBATestCase {
         // yield enough times for it to run and emit the delegate callback.
         for _ in 0..<5 { await Task.yield() }
 
-        expect(viewModel.isLoading).to(beFalse())
+        #expect(!(viewModel.isLoading))
     }
 
     // MARK: - Section Building
@@ -197,7 +197,7 @@ class BookmarksViewModelTests: OBATestCase {
         let viewModel = BookmarksViewModel(application: app)
         viewModel.rebuildSections()
 
-        expect(viewModel.sections).to(beEmpty())
+        #expect(viewModel.sections.isEmpty)
         #expect(viewModel.emptyState.title == Strings.emptyBookmarkTitle)
         #expect(viewModel.emptyState.body == Strings.emptyBookmarkBody)
     }
@@ -214,7 +214,7 @@ class BookmarksViewModelTests: OBATestCase {
         let viewModel = BookmarksViewModel(application: app)
         await viewModel.refreshAndWait()
 
-        expect(viewModel.isLoading).to(beFalse())
+        #expect(!(viewModel.isLoading))
     }
 
     /// `refreshAndWait` resumes only after its own batch completes, with the
@@ -240,10 +240,10 @@ class BookmarksViewModelTests: OBATestCase {
         let viewModel = BookmarksViewModel(application: app)
         await viewModel.refreshAndWait()
 
-        expect(viewModel.isLoading).to(beFalse())
+        #expect(!(viewModel.isLoading))
         let row = try XCTUnwrap(viewModel.sections.first?.rows.first)
-        expect(row.hasLoadedArrivalData).to(beTrue())
-        expect(row.arrivalDepartures).toNot(beEmpty())
+        #expect(row.hasLoadedArrivalData)
+        #expect(!row.arrivalDepartures.isEmpty)
     }
 
     // MARK: - Collapse State
@@ -316,8 +316,8 @@ class BookmarksViewModelTests: OBATestCase {
 
         let row = BookmarkRowViewModel(bookmark: stopBookmark, arrivalDepartures: [arrivalDep], highlightedTripIDs: [])
 
-        expect(row.isTripBookmark).to(beFalse())
-        expect(row.arrivalDepartures).to(beEmpty())
+        #expect(!(row.isTripBookmark))
+        #expect(row.arrivalDepartures.isEmpty)
         #expect(row.routesSubtitle != nil)
     }
 
@@ -353,7 +353,7 @@ class BookmarksViewModelTests: OBATestCase {
         ) { $0.url?.path.contains("/api/where/arrivals-and-departures-for-stop") ?? false })
 
         let viewModel = BookmarksViewModel(application: app)
-        expect(viewModel.lastRefreshHadError).to(beFalse())
+        #expect(!(viewModel.lastRefreshHadError))
 
         // Wait for the batch to fully complete (isLoading: false → true → false).
         let errBatchDone = expectation(description: "error batch finishes")
@@ -371,7 +371,7 @@ class BookmarksViewModelTests: OBATestCase {
         await fulfillment(of: [errBatchDone], timeout: 10.0)
         cancellables.removeAll()
 
-        expect(viewModel.lastRefreshHadError).to(beTrue())
+        #expect(viewModel.lastRefreshHadError)
 
         // Swap to a success stub — a clean batch must reset the flag. The swap is
         // atomic so in-flight background requests can never hit an empty mock table.
@@ -396,6 +396,6 @@ class BookmarksViewModelTests: OBATestCase {
         viewModel.refresh()
         await fulfillment(of: [cleanBatchDone], timeout: 10.0)
 
-        expect(viewModel.lastRefreshHadError).to(beFalse())
+        #expect(!(viewModel.lastRefreshHadError))
     }
 }

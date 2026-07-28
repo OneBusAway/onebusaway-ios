@@ -68,9 +68,9 @@ final class AgencyAlertsViewModelTests: OBATestCase {
 
         let viewModel = AgencyAlertsViewModel(application: app)
 
-        expect(viewModel.alerts).to(beEmpty())
-        expect(viewModel.isLoading).to(beFalse())
-        expect(viewModel.collapsedSections).to(beEmpty())
+        #expect(viewModel.alerts.isEmpty)
+        #expect(!(viewModel.isLoading))
+        #expect(viewModel.collapsedSections.isEmpty)
     }
 
     @MainActor
@@ -81,7 +81,7 @@ final class AgencyAlertsViewModelTests: OBATestCase {
         let viewModel = AgencyAlertsViewModel(application: app)
         viewModel.reloadServerData()
 
-        expect(viewModel.isLoading).to(beTrue())
+        #expect(viewModel.isLoading)
     }
 
     @MainActor
@@ -93,7 +93,7 @@ final class AgencyAlertsViewModelTests: OBATestCase {
         viewModel.reloadServerData()
         viewModel.agencyAlertsUpdated()
 
-        expect(viewModel.isLoading).to(beFalse())
+        #expect(!(viewModel.isLoading))
     }
 
     @MainActor
@@ -120,6 +120,6 @@ final class AgencyAlertsViewModelTests: OBATestCase {
         viewModel.reloadServerData()
         viewModel.agencyAlertsStore(app.alertsStore, displayError: URLError(.badServerResponse))
 
-        expect(viewModel.isLoading).to(beFalse())
+        #expect(!(viewModel.isLoading))
     }
 }

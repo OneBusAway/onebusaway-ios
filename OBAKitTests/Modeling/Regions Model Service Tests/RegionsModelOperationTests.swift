@@ -34,12 +34,12 @@ class RegionsModelOperationTests: OBATestCase {
         #expect(tampa.versionInfo == "2.4.15-cs|2|4|15|cs|d41e1a8978da14e98a2e19d109a23018957db7cf")
         #expect(tampa.language == "en_US")
 
-        expect(tampa.supportsEmbeddedSocial).to(beFalse())
-        expect(tampa.supportsOBADiscoveryAPIs).to(beTrue())
-        expect(tampa.supportsOTPBikeshare).to(beTrue())
-        expect(tampa.supportsSiriRealtimeAPIs).to(beTrue())
-        expect(tampa.isActive).to(beTrue())
-        expect(tampa.isExperimental).to(beFalse())
+        #expect(!(tampa.supportsEmbeddedSocial))
+        #expect(tampa.supportsOBADiscoveryAPIs)
+        #expect(tampa.supportsOTPBikeshare)
+        #expect(tampa.supportsSiriRealtimeAPIs)
+        #expect(tampa.isActive)
+        #expect(!(tampa.isExperimental))
 
         #expect(tampa.facebookURL == nil)
         #expect(tampa.contactEmail == "onebusaway@gohart.org")

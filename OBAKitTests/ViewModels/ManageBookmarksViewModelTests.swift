@@ -80,7 +80,7 @@ class ManageBookmarksViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: dataLoader)
         let vm = ManageBookmarksViewModel(application: app)
 
-        expect(vm.bookmarkGroups).to(beEmpty())
+        #expect(vm.bookmarkGroups.isEmpty)
 
         let group = BookmarkGroup(name: "Work", sortOrder: 0)
         app.userDataStore.upsert(bookmarkGroup: group)
@@ -188,7 +188,7 @@ class ManageBookmarksViewModelTests: OBATestCase {
 
         vm.deleteBookmark(bookmark)
 
-        expect(analyticsMock.reportedEvents).to(beEmpty())
+        #expect(analyticsMock.reportedEvents.isEmpty)
     }
 
     // MARK: - saveNameChange
@@ -275,7 +275,7 @@ class ManageBookmarksViewModelTests: OBATestCase {
         vm.moveBookmark(bookmark, to: group, at: 0)
 
         expect(vm.bookmarksInGroup(group)).to(haveCount(1))
-        expect(vm.bookmarksInGroup(nil)).to(beEmpty())
+        #expect(vm.bookmarksInGroup(nil).isEmpty)
     }
 
     @MainActor

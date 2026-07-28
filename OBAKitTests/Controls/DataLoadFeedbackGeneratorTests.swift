@@ -62,7 +62,7 @@ class DataLoadFeedbackGeneratorTests: OBATestCase {
         // This should not crash and should complete successfully
         feedbackGenerator.dataLoad(.success)
         
-        expect(true).to(beTrue()) // Test that it doesn't crash
+        #expect(true)  // Test that it doesn't crash
     }
     
     func test_dataLoad_failed() {
@@ -72,7 +72,7 @@ class DataLoadFeedbackGeneratorTests: OBATestCase {
         // This should not crash and should complete successfully
         feedbackGenerator.dataLoad(.failed)
         
-        expect(true).to(beTrue()) // Test that it doesn't crash
+        #expect(true)  // Test that it doesn't crash
     }
     
     func test_dataLoad_disabled() {
@@ -83,7 +83,7 @@ class DataLoadFeedbackGeneratorTests: OBATestCase {
         feedbackGenerator.dataLoad(.success)
         feedbackGenerator.dataLoad(.failed)
         
-        expect(true).to(beTrue()) // Test that it doesn't crash
+        #expect(true)  // Test that it doesn't crash
     }
     
     func test_feedbackType_cases() {

@@ -75,7 +75,7 @@ class MapPanelViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: dataLoader)
 
         let viewModel = MapPanelViewModel(application: app)
-        expect(viewModel.nearbyStops).to(beEmpty())
+        #expect(viewModel.nearbyStops.isEmpty)
 
         var emissions: [[Stop]] = []
         let cancellable = viewModel.$nearbyStops.sink { emissions.append($0) }
@@ -105,7 +105,7 @@ class MapPanelViewModelTests: OBATestCase {
         viewModel.refreshAlerts()
 
         #expect(viewModel.highSeverityAlerts.count == app.alertsStore.recentHighSeverityAlerts.count)
-        expect(viewModel.highSeverityAlerts).to(beEmpty())
+        #expect(viewModel.highSeverityAlerts.isEmpty)
     }
 
     /// `refreshAlerts()` reflects non-empty store state and maps every qualifying alert.

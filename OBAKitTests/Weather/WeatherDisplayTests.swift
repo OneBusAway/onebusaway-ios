@@ -118,7 +118,7 @@ final class WeatherDisplayTests: XCTestCase {
 
         let window = WeatherFormatter.upcomingHourly(from: hourly, now: now, calendar: utcCalendar)
 
-        expect(window).to(beEmpty())
+        #expect(window.isEmpty)
     }
 
     /// A glitch that ships the same hour twice would otherwise give `ForEach`
@@ -166,7 +166,7 @@ final class WeatherDisplayTests: XCTestCase {
 
     func test_list_emptyUpcomingReturnsEmpty() {
         let entries = HourlyEntry.list(from: [], locale: usLocale)
-        expect(entries).to(beEmpty())
+        #expect(entries.isEmpty)
     }
 
     // MARK: - WeatherFormatter unit gaps
@@ -237,7 +237,7 @@ final class WeatherDisplayTests: XCTestCase {
 
         // Hourly strip — non-empty, first cell labelled "Now" and flagged as
         // the current hour, later cells fall through to formatted times.
-        expect(display.hourly).toNot(beEmpty())
+        #expect(!display.hourly.isEmpty)
         let firstHour = try XCTUnwrap(display.hourly.first)
         #expect(firstHour.timeLabel == "Now")
         #expect(firstHour.isNow == true)

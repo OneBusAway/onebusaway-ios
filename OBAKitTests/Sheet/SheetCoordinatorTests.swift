@@ -33,8 +33,8 @@ final class SheetCoordinatorTests: XCTestCase {
 
     func test_init_stackedLayerStartsEmpty() {
         let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
-        expect(coordinator.stackedRoutes).to(beEmpty())
-        expect(coordinator.stackedDetents).to(beEmpty())
+        #expect(coordinator.stackedRoutes.isEmpty)
+        #expect(coordinator.stackedDetents.isEmpty)
     }
 
     // MARK: - Push dispatches by prefersStacking
@@ -45,7 +45,7 @@ final class SheetCoordinatorTests: XCTestCase {
 
         #expect(coordinator.routeStack.count == 2)
         #expect(coordinator.currentRoute == .search)
-        expect(coordinator.stackedRoutes).to(beEmpty())
+        #expect(coordinator.stackedRoutes.isEmpty)
         #expect(coordinator.canPop == true)
         #expect(coordinator.currentDetent == AppSheetRoute.search.detentConfiguration.initialDetent)
     }
@@ -98,8 +98,8 @@ final class SheetCoordinatorTests: XCTestCase {
 
         coordinator.pop()
 
-        expect(coordinator.stackedRoutes).to(beEmpty())
-        expect(coordinator.stackedDetents).to(beEmpty())
+        #expect(coordinator.stackedRoutes.isEmpty)
+        #expect(coordinator.stackedDetents.isEmpty)
     }
 
     func test_pop_withoutStacked_removesTopAndRestoresPreviousInitialDetent() {
@@ -224,8 +224,8 @@ final class SheetCoordinatorTests: XCTestCase {
 
         #expect(coordinator.routeStack.count == 1)
         #expect(coordinator.currentRoute == .home)
-        expect(coordinator.stackedRoutes).to(beEmpty())
-        expect(coordinator.stackedDetents).to(beEmpty())
+        #expect(coordinator.stackedRoutes.isEmpty)
+        #expect(coordinator.stackedDetents.isEmpty)
         #expect(coordinator.canPop == false)
         #expect(coordinator.currentDetent == AppSheetRoute.home.detentConfiguration.initialDetent)
     }

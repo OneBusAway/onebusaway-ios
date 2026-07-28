@@ -324,7 +324,7 @@ class MapViewModelTests: OBATestCase {
 
         await viewModel.checkForSurveyPrompt()
 
-        expect(received).to(beEmpty())
+        #expect(received.isEmpty)
     }
 
     /// When eligible but no survey matches the map, `surveyToPresent` does not emit
@@ -344,7 +344,7 @@ class MapViewModelTests: OBATestCase {
 
         await viewModel.checkForSurveyPrompt()
 
-        expect(received).to(beEmpty())
+        #expect(received.isEmpty)
         #expect(app.userDataStore.nextSurveyReminderDate == nil)
     }
 
@@ -489,7 +489,7 @@ class MapViewModelTests: OBATestCase {
         // `test_lastError_reflectsUnderlyingService_afterFetchFailure` which
         // verifies that the orchestrator's `lastError` accessor (the gate's
         // input) actually surfaces on a failed refresh.
-        expect(received).to(beEmpty())
+        #expect(received.isEmpty)
         #expect(app.userDataStore.nextSurveyReminderDate == nil)
     }
 

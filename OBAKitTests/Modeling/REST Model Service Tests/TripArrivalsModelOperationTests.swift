@@ -29,16 +29,16 @@ class TripArrivalsModelOperationTests: OBATestCase {
         let response = try await restService.getTripArrivalDepartureAtStop(stopID: stopID, tripID: "trip123", serviceDate: Date(timeIntervalSince1970: 1234567890), vehicleID: "vehicle_123", stopSequence: 1)
         let arrDep = response.entry
 
-        expect(arrDep.arrivalEnabled).to(beTrue())
+        #expect(arrDep.arrivalEnabled)
         #expect(arrDep.blockTripSequence == 6)
-        expect(arrDep.departureEnabled).to(beTrue())
+        #expect(arrDep.departureEnabled)
         expectClose(arrDep.distanceFromStop, -2089.5461)
         #expect(arrDep.frequency == nil)
 
         #expect(arrDep.lastUpdated == Date.fromComponents(year: 2018, month: 10, day: 24, hour: 03, minute: 13, second: 42))
 
         #expect(arrDep.numberOfStopsAway == -4)
-        expect(arrDep.predicted).to(beTrue())
+        #expect(arrDep.predicted)
 
         #expect(arrDep.arrivalDepartureDate == Date.fromComponents(year: 2018, month: 10, day: 24, hour: 03, minute: 10, second: 00))
 

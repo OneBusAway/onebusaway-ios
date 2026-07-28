@@ -90,7 +90,7 @@ class ScheduleForStopViewModelTests: OBATestCase {
 
         let viewModel = ScheduleForStopViewModel(stopID: stopID, application: app, initialDate: testDate)
 
-        expect(Calendar.current.isDate(viewModel.selectedDate, inSameDayAs: testDate)).to(beTrue())
+        #expect(Calendar.current.isDate(viewModel.selectedDate, inSameDayAs: testDate))
     }
 
     @MainActor
@@ -125,7 +125,7 @@ class ScheduleForStopViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = ScheduleForStopViewModel(stopID: stopID, application: app)
 
-        expect(viewModel.availableRoutes).to(beEmpty())
+        #expect(viewModel.availableRoutes.isEmpty)
     }
 
     // MARK: - Route Selection Tests
@@ -169,7 +169,7 @@ class ScheduleForStopViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = ScheduleForStopViewModel(stopID: stopID, application: app)
 
-        expect(viewModel.isLoading).to(beFalse())
+        #expect(!(viewModel.isLoading))
     }
 
     @MainActor

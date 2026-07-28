@@ -125,7 +125,7 @@ class VehicleStatusModelOperationTests: OBATestCase {
         #expect(tripStatus.phase == "in_progress")
         expectClose(tripStatus.position!.coordinate.latitude, 47.6195, within: 0.01)
         expectClose(tripStatus.position!.coordinate.longitude, -122.33187637, within: 0.01)
-        expect(tripStatus.isRealTime).to(beTrue())
+        #expect(tripStatus.isRealTime)
         #expect(tripStatus.scheduleDeviation == -116)
         expectClose(tripStatus.scheduledDistanceAlongTrip, 2277.5779, within: 0.1)
         #expect(tripStatus.serviceDate == Date.fromComponents(year: 2020, month: 05, day: 07, hour: 07, minute: 00, second: 00))

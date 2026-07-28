@@ -84,16 +84,16 @@ class StopArrivalsModelOperationTests: OBATestCase {
         #expect(arrivals.arrivalsAndDepartures.count == 1)
 
         let arrDep = try XCTUnwrap(arrivals.arrivalsAndDepartures.first)
-        expect(arrDep.arrivalEnabled).to(beTrue())
+        #expect(arrDep.arrivalEnabled)
         #expect(arrDep.blockTripSequence == 9)
-        expect(arrDep.departureEnabled).to(beTrue())
+        #expect(arrDep.departureEnabled)
         expectClose(arrDep.distanceFromStop, 1232.648659247323)
         #expect(arrDep.frequency == nil)
 
         #expect(arrDep.lastUpdated == Date.fromComponents(year: 2018, month: 11, day: 02, hour: 06, minute: 55, second: 49))
 
         #expect(arrDep.numberOfStopsAway == 4)
-        expect(arrDep.predicted).to(beTrue())
+        #expect(arrDep.predicted)
 
         #expect(arrDep.arrivalDepartureDate == Date.fromComponents(year: 2018, month: 11, day: 02, hour: 07, minute: 02, second: 36))
 
@@ -168,9 +168,9 @@ class StopArrivalsModelOperationTests: OBATestCase {
         #expect(arrivals.arrivalsAndDepartures.count == 1)
 
         let arrDep = try XCTUnwrap(arrivals.arrivalsAndDepartures.first)
-        expect(arrDep.arrivalEnabled).to(beTrue())
+        #expect(arrDep.arrivalEnabled)
         #expect(arrDep.blockTripSequence == 2)
-        expect(arrDep.departureEnabled).to(beTrue())
+        #expect(arrDep.departureEnabled)
         expectClose(arrDep.distanceFromStop, 63293.0860)
         #expect(arrDep.frequency == nil)
     }

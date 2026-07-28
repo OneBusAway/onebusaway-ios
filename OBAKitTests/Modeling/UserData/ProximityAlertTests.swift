@@ -80,21 +80,21 @@ class ProximityAlertTests: OBATestCase {
     func test_isExpired_falseWhenFresh() {
         let alert = ProximityAlert(stop: stop)
 
-        expect(alert.isExpired).to(beFalse())
+        #expect(!(alert.isExpired))
     }
 
     func test_isExpired_trueWhenOlderThan24Hours() {
         let expiredDate = Date().addingTimeInterval(-25 * 60 * 60)
         let alert = ProximityAlert(stop: stop, createdAt: expiredDate)
 
-        expect(alert.isExpired).to(beTrue())
+        #expect(alert.isExpired)
     }
 
     func test_isExpired_falseJustUnder24Hours() {
         let justUnderDate = Date().addingTimeInterval(-24 * 60 * 60 + 5) // 5 seconds under 24 hours
         let alert = ProximityAlert(stop: stop, createdAt: justUnderDate)
 
-        expect(alert.isExpired).to(beFalse())
+        #expect(!(alert.isExpired))
     }
 
     // MARK: - Equality
@@ -102,20 +102,20 @@ class ProximityAlertTests: OBATestCase {
     func test_equality_sameID() {
         let alert = ProximityAlert(stop: stop)
 
-        expect(alert.isEqual(alert)).to(beTrue())
+        #expect(alert.isEqual(alert))
     }
 
     func test_equality_differentID() {
         let alert1 = ProximityAlert(stop: stop)
         let alert2 = ProximityAlert(stop: stop)
 
-        expect(alert1.isEqual(alert2)).to(beFalse())
+        #expect(!(alert1.isEqual(alert2)))
     }
 
     func test_equality_nonProximityAlertObject() {
         let alert = ProximityAlert(stop: stop)
 
-        expect(alert.isEqual("not an alert")).to(beFalse())
+        #expect(!(alert.isEqual("not an alert")))
     }
 }
 
@@ -135,7 +135,7 @@ class ProximityAlertStoreTests: OBATestCase {
     // MARK: - Empty State
 
     func test_proximityAlerts_emptyByDefault() {
-        expect(self.userDefaultsStore.proximityAlerts).to(beEmpty())
+        #expect(self.userDefaultsStore.proximityAlerts.isEmpty)
     }
 
     // MARK: - Add
@@ -168,7 +168,7 @@ class ProximityAlertStoreTests: OBATestCase {
 
         userDefaultsStore.delete(proximityAlert: alert)
 
-        expect(self.userDefaultsStore.proximityAlerts).to(beEmpty())
+        #expect(self.userDefaultsStore.proximityAlerts.isEmpty)
     }
 
     func test_delete_nonexistentAlert_isNoOp() {
@@ -208,7 +208,7 @@ class ProximityAlertStoreTests: OBATestCase {
 
         userDefaultsStore.deleteAllProximityAlerts()
 
-        expect(self.userDefaultsStore.proximityAlerts).to(beEmpty())
+        #expect(self.userDefaultsStore.proximityAlerts.isEmpty)
     }
 
     // MARK: - Expired Alerts
@@ -245,7 +245,7 @@ class ProximityAlertStoreTests: OBATestCase {
 
         userDefaultsStore.deleteExpiredProximityAlerts()
 
-        expect(self.userDefaultsStore.proximityAlerts).to(beEmpty())
+        #expect(self.userDefaultsStore.proximityAlerts.isEmpty)
     }
 
     func test_deleteExpired_doesNotPostNotification_whenNothingExpired() {

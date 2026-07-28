@@ -49,7 +49,7 @@ class ScheduleForStopTests: OBATestCase {
 
         #expect(schedule.stopID == "1_75403")
         #expect(schedule.date != nil)
-        expect(schedule.stopRouteSchedules).toNot(beEmpty())
+        #expect(!schedule.stopRouteSchedules.isEmpty)
     }
 
     func test_stopRouteSchedules_parsing() async throws {
@@ -60,8 +60,8 @@ class ScheduleForStopTests: OBATestCase {
         expect(schedule.stopRouteSchedules.count).to(beGreaterThanOrEqualTo(1))
 
         let routeSchedule = try XCTUnwrap(schedule.stopRouteSchedules.first)
-        expect(routeSchedule.routeID).toNot(beEmpty())
-        expect(routeSchedule.stopRouteDirectionSchedules).toNot(beEmpty())
+        #expect(!routeSchedule.routeID.isEmpty)
+        #expect(!routeSchedule.stopRouteDirectionSchedules.isEmpty)
     }
 
     func test_stopRouteDirectionSchedules_parsing() async throws {
@@ -71,8 +71,8 @@ class ScheduleForStopTests: OBATestCase {
         let routeSchedule = try XCTUnwrap(schedule.stopRouteSchedules.first)
         let directionSchedule = try XCTUnwrap(routeSchedule.stopRouteDirectionSchedules.first)
 
-        expect(directionSchedule.tripHeadsign).toNot(beEmpty())
-        expect(directionSchedule.scheduleStopTimes).toNot(beEmpty())
+        #expect(!directionSchedule.tripHeadsign.isEmpty)
+        #expect(!directionSchedule.scheduleStopTimes.isEmpty)
     }
 
     func test_scheduleStopTimes_parsing() async throws {
@@ -83,13 +83,13 @@ class ScheduleForStopTests: OBATestCase {
         let directionSchedule = try XCTUnwrap(routeSchedule.stopRouteDirectionSchedules.first)
         let stopTime = try XCTUnwrap(directionSchedule.scheduleStopTimes.first)
 
-        expect(stopTime.tripID).toNot(beEmpty())
-        expect(stopTime.serviceID).toNot(beEmpty())
+        #expect(!stopTime.tripID.isEmpty)
+        #expect(!stopTime.serviceID.isEmpty)
         // arrivalTime and departureTime are Unix timestamps in milliseconds
         expect(stopTime.arrivalTime).to(beGreaterThan(0))
         expect(stopTime.departureTime).to(beGreaterThan(0))
-        expect(stopTime.arrivalEnabled).to(beTrue())
-        expect(stopTime.departureEnabled).to(beTrue())
+        #expect(stopTime.arrivalEnabled)
+        #expect(stopTime.departureEnabled)
     }
 
     func test_arrivalTime_isUnixTimestampInMilliseconds() async throws {
@@ -131,20 +131,20 @@ class ScheduleForStopTests: OBATestCase {
         let response = try await restService.getScheduleForStop(stopID: stopID)
 
         #expect(response.references != nil)
-        expect(response.references?.routes).toNot(beEmpty())
+        #expect(response.references?.routes.isEmpty == false)
     }
 
     func test_references_containsStops() async throws {
         let response = try await restService.getScheduleForStop(stopID: stopID)
 
         #expect(response.references != nil)
-        expect(response.references?.stops).toNot(beEmpty())
+        #expect(response.references?.stops.isEmpty == false)
     }
 
     func test_references_containsAgencies() async throws {
         let response = try await restService.getScheduleForStop(stopID: stopID)
 
         #expect(response.references != nil)
-        expect(response.references?.agencies).toNot(beEmpty())
+        #expect(response.references?.agencies.isEmpty == false)
     }
 }

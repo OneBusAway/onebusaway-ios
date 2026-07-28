@@ -55,8 +55,8 @@ class StopPagePresentationTests: OBATestCase {
         let byStop = application.viewRouter.makeStopController(stop: stop) as? StopPageViewController
         let byID = application.viewRouter.makeStopController(stopID: stop.id) as? StopPageViewController
 
-        expect(byStop?.showsBottomToolbar).to(beFalse())
-        expect(byID?.showsBottomToolbar).to(beFalse())
+        #expect(byStop?.showsBottomToolbar == false)
+        #expect(byID?.showsBottomToolbar == false)
     }
 
     func test_makeStopController_optsIntoTheSheetPresentation() throws {
@@ -65,8 +65,8 @@ class StopPagePresentationTests: OBATestCase {
         let byStop = application.viewRouter.makeStopController(stop: stop, showToolbarOnBottom: true) as? StopPageViewController
         let byID = application.viewRouter.makeStopController(stopID: stop.id, showToolbarOnBottom: true) as? StopPageViewController
 
-        expect(byStop?.showsBottomToolbar).to(beTrue())
-        expect(byID?.showsBottomToolbar).to(beTrue())
+        #expect(byStop?.showsBottomToolbar == true)
+        #expect(byID?.showsBottomToolbar == true)
     }
 
     /// The legacy screen has only the pushed layout, so the flag must be inert there rather than
@@ -114,12 +114,12 @@ class StopPagePresentationTests: OBATestCase {
         let sheet = StopPageViewController(application: application, stop: stop, showToolbarOnBottom: true)
         sheet.loadViewIfNeeded()
         sheet.enterPreviewMode()
-        expect(sheet.showsBottomToolbar).to(beFalse())
+        #expect(!(sheet.showsBottomToolbar))
 
         // Committing the peek restores the toolbar, since the same instance is what gets
         // presented in the sheet.
         sheet.exitPreviewMode()
-        expect(sheet.showsBottomToolbar).to(beTrue())
+        #expect(sheet.showsBottomToolbar)
     }
 
     /// Leaving a preview must put the pushed page's bar items back, not leave it bare.

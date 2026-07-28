@@ -36,9 +36,9 @@ final class UmamiAnalyticsTests: OBATestCase {
     // MARK: - isSuccessfulIngest
 
     func testSuccessDetection() {
-        expect(UmamiAnalytics.isSuccessfulIngest(self.successBody)).to(beTrue())
-        expect(UmamiAnalytics.isSuccessfulIngest(self.beepBoopBody)).to(beFalse())
-        expect(UmamiAnalytics.isSuccessfulIngest("not json".data(using: .utf8)!)).to(beFalse())
+        #expect(UmamiAnalytics.isSuccessfulIngest(self.successBody))
+        #expect(!(UmamiAnalytics.isSuccessfulIngest(self.beepBoopBody)))
+        #expect(!(UmamiAnalytics.isSuccessfulIngest("not json".data(using: .utf8)!)))
     }
 
     // MARK: - UmamiJSONValue coercion

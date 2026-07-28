@@ -26,7 +26,7 @@ final class SurveyExternalSurveyTests: XCTestCase {
         )
         let survey = SurveysTestHelpers.makeSurvey(questions: [hero])
 
-        expect(survey.isExternalSurvey).to(beTrue())
+        #expect(survey.isExternalSurvey)
     }
 
     // Negative: the hero question exists but is an in-app question type.
@@ -38,7 +38,7 @@ final class SurveyExternalSurveyTests: XCTestCase {
         )
         let survey = SurveysTestHelpers.makeSurvey(questions: [hero])
 
-        expect(survey.isExternalSurvey).to(beFalse())
+        #expect(!(survey.isExternalSurvey))
     }
 
     // Nil along the line: questions exist but none is at position 1, so
@@ -55,6 +55,6 @@ final class SurveyExternalSurveyTests: XCTestCase {
         let survey = SurveysTestHelpers.makeSurvey(questions: [nonHero])
 
         #expect(survey.heroQuestion == nil)
-        expect(survey.isExternalSurvey).to(beFalse())
+        #expect(!(survey.isExternalSurvey))
     }
 }

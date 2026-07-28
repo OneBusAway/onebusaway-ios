@@ -110,7 +110,7 @@ class CurrentTripViewModelTests: OBATestCase {
             XCTFail("Expected initial state .loading, got \(viewModel.state)")
             return
         }
-        expect(viewModel.matchResults).to(beEmpty())
+        #expect(viewModel.matchResults.isEmpty)
         #expect(viewModel.pendingNavigation == nil)
     }
 
@@ -128,7 +128,7 @@ class CurrentTripViewModelTests: OBATestCase {
             XCTFail("Expected .noResults, got \(viewModel.state)")
             return
         }
-        expect(viewModel.matchResults).to(beEmpty())
+        #expect(viewModel.matchResults.isEmpty)
         #expect(viewModel.pendingNavigation == nil)
     }
 

@@ -53,7 +53,7 @@ class ArrivalDepartureDeduplicationTests: OBATestCase {
     func test_filteringTerminalDuplicates_handlesEmptyArray() {
         let empty: [ArrivalDeparture] = []
         let filtered = empty.filteringTerminalDuplicates()
-        expect(filtered).to(beEmpty())
+        #expect(filtered.isEmpty)
     }
 
     /// A single-element array passes through unchanged.
@@ -213,7 +213,7 @@ class ArrivalDepartureDeduplicationTests: OBATestCase {
         }
 
         // This entry has predicted == true.
-        expect(entry.predicted).to(beTrue())
+        #expect(entry.predicted)
 
         // Create a pair with the same identity. Both are the same object
         // (both predicted), so the first-in should win.
@@ -221,7 +221,7 @@ class ArrivalDepartureDeduplicationTests: OBATestCase {
         let filtered = pair.filteringTerminalDuplicates()
 
         #expect(filtered.count == 1)
-        expect(filtered[0].predicted).to(beTrue())
+        #expect(filtered[0].predicted)
         #expect(filtered[0].tripID == entry.tripID)
     }
 }

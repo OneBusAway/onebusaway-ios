@@ -91,6 +91,6 @@ class CoreGraphicsExtensionsTests: XCTestCase {
             // Empty closure
         }
         
-        expect(true).to(beTrue()) // Test that it doesn't crash
+        #expect(true)  // Test that it doesn't crash
     }
 }

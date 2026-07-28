@@ -90,7 +90,7 @@ class SurveyOrchestratorTests: OBATestCase {
     @MainActor
     func test_isEligible_isFalseWhenSurveysDisabled() {
         dataStore.isSurveyEnabled = false
-        expect(self.orchestrator.isEligible()).to(beFalse())
+        #expect(!(self.orchestrator.isEligible()))
     }
 
     /// `alwaysShowSurveysOnStops` opens the gate regardless of launch count / reminder.
@@ -98,7 +98,7 @@ class SurveyOrchestratorTests: OBATestCase {
     func test_isEligible_isTrueWithAlwaysShowFlag() {
         dataStore.isSurveyEnabled = true
         dataStore.alwaysShowSurveysOnStops = true
-        expect(self.orchestrator.isEligible()).to(beTrue())
+        #expect(self.orchestrator.isEligible())
     }
 
     // MARK: - submitHero
@@ -125,7 +125,7 @@ class SurveyOrchestratorTests: OBATestCase {
             // Expected — apiService is nil.
         }
 
-        expect(self.dataStore.isSurveyCompleted(surveyId: survey.id, userIdentifier: self.dataStore.surveyUserIdentifier)).to(beFalse())
+        #expect(!(self.dataStore.isSurveyCompleted(surveyId: survey.id, userIdentifier: self.dataStore.surveyUserIdentifier)))
         #expect(self.dataStore.nextSurveyReminderDate == nil)
         XCTAssertTrue(coordinator.canShowReviewPrompt(), "a failed submission must not start the engagement cooldown")
     }
@@ -154,7 +154,7 @@ class SurveyOrchestratorTests: OBATestCase {
             return
         }
         let userID = dataStore.surveyUserIdentifier
-        expect(self.dataStore.isSurveyCompleted(surveyId: survey.id, userIdentifier: userID)).to(beTrue())
+        #expect(self.dataStore.isSurveyCompleted(surveyId: survey.id, userIdentifier: userID))
         #expect(self.dataStore.nextSurveyReminderDate != nil)
         XCTAssertFalse(coordinator.canShowReviewPrompt(), "a successful submission is an engagement and starts the 14-day cooldown")
     }
@@ -184,10 +184,10 @@ class SurveyOrchestratorTests: OBATestCase {
         case .completed:
             fail("Expected .needsRemainingQuestions; got .completed")
         case .needsRemainingQuestions(let heroResponseID):
-            expect(heroResponseID).toNot(beEmpty())
+            #expect(!heroResponseID.isEmpty)
         }
         let userID = dataStore.surveyUserIdentifier
-        expect(self.dataStore.isSurveyCompleted(surveyId: survey.id, userIdentifier: userID)).to(beFalse())
+        #expect(!(self.dataStore.isSurveyCompleted(surveyId: survey.id, userIdentifier: userID)))
         #expect(self.dataStore.nextSurveyReminderDate != nil)
         XCTAssertFalse(coordinator.canShowReviewPrompt(), "a successful submission is an engagement and starts the 14-day cooldown")
     }
@@ -218,7 +218,7 @@ class SurveyOrchestratorTests: OBATestCase {
 
         // No bookkeeping should advance when the guard fires.
         let userID = dataStore.surveyUserIdentifier
-        expect(self.dataStore.isSurveyCompleted(surveyId: survey.id, userIdentifier: userID)).to(beFalse())
+        #expect(!(self.dataStore.isSurveyCompleted(surveyId: survey.id, userIdentifier: userID)))
         #expect(self.dataStore.nextSurveyReminderDate == nil)
         XCTAssertTrue(coordinator.canShowReviewPrompt(), "a guard-clause throw must not start the engagement cooldown")
     }
@@ -262,7 +262,7 @@ class SurveyOrchestratorTests: OBATestCase {
         orchestrator.dismiss(survey)
 
         #expect(self.dataStore.nextSurveyReminderDate != nil)
-        expect(self.dataStore.isSurveyCompleted(surveyId: survey.id, userIdentifier: userID)).to(beTrue())
+        #expect(self.dataStore.isSurveyCompleted(surveyId: survey.id, userIdentifier: userID))
     }
 
     /// `dismiss(_:)` is a survey engagement, so it must start the coordinator's

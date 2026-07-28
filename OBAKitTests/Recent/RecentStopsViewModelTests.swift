@@ -68,7 +68,7 @@ class RecentStopsViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: MockDataLoader(testName: name))
         let viewModel = RecentStopsViewModel(application: app)
 
-        expect(viewModel.alarms).to(beEmpty())
+        #expect(viewModel.alarms.isEmpty)
     }
 
     @MainActor
@@ -76,7 +76,7 @@ class RecentStopsViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: MockDataLoader(testName: name))
         let viewModel = RecentStopsViewModel(application: app)
 
-        expect(viewModel.recentStops).to(beEmpty())
+        #expect(viewModel.recentStops.isEmpty)
     }
 
     // MARK: - loadData
@@ -104,7 +104,7 @@ class RecentStopsViewModelTests: OBATestCase {
 
         viewModel.loadData()
 
-        expect(viewModel.recentStops).to(beEmpty())
+        #expect(viewModel.recentStops.isEmpty)
     }
 
     @MainActor
@@ -132,11 +132,11 @@ class RecentStopsViewModelTests: OBATestCase {
         }
         let viewModel = RecentStopsViewModel(application: app)
         viewModel.loadData()
-        expect(viewModel.recentStops).toNot(beEmpty())
+        #expect(!viewModel.recentStops.isEmpty)
 
         viewModel.deleteAllRecentStops()
 
-        expect(viewModel.recentStops).to(beEmpty())
+        #expect(viewModel.recentStops.isEmpty)
     }
 
     // MARK: - delete(recentStop:)
@@ -213,7 +213,7 @@ class RecentStopsViewModelTests: OBATestCase {
         await viewModel.delete(alarm: alarm).value
 
         expect(viewModel.alarms.map(\.url)).toNot(contain(alarm.url))
-        expect(didHitRemote).to(beTrue())
+        #expect(didHitRemote)
     }
 
     @MainActor
@@ -288,6 +288,6 @@ class RecentStopsViewModelTests: OBATestCase {
 
         // When currentRegion is nil, loadData() exits early and returns an empty list —
         // no accidental nil == nil matches.
-        expect(viewModel.recentStops).to(beEmpty())
+        #expect(viewModel.recentStops.isEmpty)
     }
 }

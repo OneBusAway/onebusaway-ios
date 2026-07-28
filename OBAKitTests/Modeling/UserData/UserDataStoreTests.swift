@@ -191,37 +191,37 @@ class UserDefaultsStoreTests: OBATestCase {
     // MARK: - Debug Mode
 
     func test_debugMode_defaultValue() {
-        expect(self.userDefaultsStore.debugMode).to(beFalse())
+        #expect(!(self.userDefaultsStore.debugMode))
     }
 
     func test_debugMode_setValue() {
         self.userDefaultsStore.debugMode = true
-        expect(self.userDefaultsStore.debugMode).to(beTrue())
+        #expect(self.userDefaultsStore.debugMode)
 
         let newStore = UserDefaultsStore(userDefaults: userDefaults)
-        expect(newStore.debugMode).to(beTrue())
+        #expect(newStore.debugMode)
     }
 
     // MARK: - Stop UI Reduced Colors
 
     func test_stopUIReducedColors_defaultValue() {
-        expect(self.userDefaultsStore.stopUIReducedColors).to(beFalse())
+        #expect(!(self.userDefaultsStore.stopUIReducedColors))
     }
 
     func test_stopUIReducedColors_setValue_persistsUnderTheAppStorageKey() {
         userDefaultsStore.stopUIReducedColors = true
-        expect(self.userDefaultsStore.stopUIReducedColors).to(beTrue())
+        #expect(self.userDefaultsStore.stopUIReducedColors)
         // The @AppStorage readers and the Eureka form must see the same key,
         // and it must stay dot-free or KVO observation silently stops firing.
         #expect(UserDefaultsStore.stopUIReducedColorsKey == "stopUIReducedColors")
-        expect(self.userDefaultsStore.userDefaults.bool(forKey: UserDefaultsStore.stopUIReducedColorsKey)).to(beTrue())
+        #expect(self.userDefaultsStore.userDefaults.bool(forKey: UserDefaultsStore.stopUIReducedColorsKey))
     }
 
     // MARK: - Survey Properties
 
     func test_surveyUserIdentifier_generatesUUID() {
         let id = userDefaultsStore.surveyUserIdentifier
-        expect(id).toNot(beEmpty())
+        #expect(!id.isEmpty)
     }
 
     func test_surveyUserIdentifier_persistsBetweenCalls() {
@@ -247,15 +247,15 @@ class UserDefaultsStoreTests: OBATestCase {
     // MARK: - Survey Enabled
 
     func test_isSurveyEnabled_defaultsToTrue() {
-        expect(self.userDefaultsStore.isSurveyEnabled).to(beTrue())
+        #expect(self.userDefaultsStore.isSurveyEnabled)
     }
 
     func test_isSurveyEnabled_persistsValue() {
         userDefaultsStore.isSurveyEnabled = false
-        expect(self.userDefaultsStore.isSurveyEnabled).to(beFalse())
+        #expect(!(self.userDefaultsStore.isSurveyEnabled))
 
         userDefaultsStore.isSurveyEnabled = true
-        expect(self.userDefaultsStore.isSurveyEnabled).to(beTrue())
+        #expect(self.userDefaultsStore.isSurveyEnabled)
     }
 
     // MARK: - Next Survey Reminder Date
@@ -274,14 +274,14 @@ class UserDefaultsStoreTests: OBATestCase {
 
     func test_markSurveyCompleted_tracksCompletedSurvey() {
         userDefaultsStore.markSurveyCompleted(surveyId: 1, userIdentifier: "user1")
-        expect(self.userDefaultsStore.isSurveyCompleted(surveyId: 1, userIdentifier: "user1")).to(beTrue())
-        expect(self.userDefaultsStore.isSurveyCompleted(surveyId: 2, userIdentifier: "user1")).to(beFalse())
+        #expect(self.userDefaultsStore.isSurveyCompleted(surveyId: 1, userIdentifier: "user1"))
+        #expect(!(self.userDefaultsStore.isSurveyCompleted(surveyId: 2, userIdentifier: "user1")))
     }
 
     func test_markSurveyForLater_tracksLaterSurvey() {
         userDefaultsStore.markSurveyForLater(surveyId: 1, userIdentifier: "user1")
         // Immediately after marking, shouldShowSurveyLater returns false (0 launches since marking)
-        expect(self.userDefaultsStore.shouldShowSurveyLater(surveyId: 1, userIdentifier: "user1")).to(beFalse())
+        #expect(!(self.userDefaultsStore.shouldShowSurveyLater(surveyId: 1, userIdentifier: "user1")))
     }
 
     // MARK: - Walking Speed

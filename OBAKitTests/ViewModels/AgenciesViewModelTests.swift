@@ -65,7 +65,7 @@ final class AgenciesViewModelTests: OBATestCase {
 
         let viewModel = AgenciesViewModel(application: app)
 
-        expect(viewModel.agencies).to(beEmpty())
+        #expect(viewModel.agencies.isEmpty)
     }
 
     @MainActor
@@ -81,7 +81,7 @@ final class AgenciesViewModelTests: OBATestCase {
         let viewModel = AgenciesViewModel(application: app)
         _ = try? await viewModel.loadData()
 
-        expect(viewModel.agencies).toNot(beEmpty())
+        #expect(!viewModel.agencies.isEmpty)
 
         let names = viewModel.agencies.map { $0.agency.name }
         #expect(names == names.sorted())

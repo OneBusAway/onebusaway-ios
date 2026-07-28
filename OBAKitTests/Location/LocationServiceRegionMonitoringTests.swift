@@ -50,8 +50,8 @@ class LocationServiceRegionMonitoringTests: OBATestCase {
         #expect(region?.center.latitude == stop.location.coordinate.latitude)
         #expect(region?.center.longitude == stop.location.coordinate.longitude)
         #expect(region?.radius == 300.0)
-        expect(region?.notifyOnEntry).to(beTrue())
-        expect(region?.notifyOnExit).to(beFalse())
+        #expect(region?.notifyOnEntry == true)
+        #expect(region?.notifyOnExit == false)
     }
 
     func test_startMonitoringProximity_unauthorized_doesNotMonitor() {
@@ -61,7 +61,7 @@ class LocationServiceRegionMonitoringTests: OBATestCase {
 
         unauthorizedService.startMonitoringProximity(for: alert)
 
-        expect(unauthorizedMock.monitoredRegions).to(beEmpty())
+        #expect(unauthorizedMock.monitoredRegions.isEmpty)
     }
 
     func test_startMonitoringProximity_defaultRadius() {
@@ -104,7 +104,7 @@ class LocationServiceRegionMonitoringTests: OBATestCase {
         #expect(self.locationManagerMock.monitoredRegions.count == 1)
 
         service.stopMonitoringProximity(for: alert)
-        expect(self.locationManagerMock.monitoredRegions).to(beEmpty())
+        #expect(self.locationManagerMock.monitoredRegions.isEmpty)
     }
 
     func test_stopMonitoringProximity_nonexistentAlert_isNoOp() {
@@ -145,7 +145,7 @@ class LocationServiceRegionMonitoringTests: OBATestCase {
 
         service.stopMonitoringAllProximityAlerts()
 
-        expect(self.locationManagerMock.monitoredRegions).to(beEmpty())
+        #expect(self.locationManagerMock.monitoredRegions.isEmpty)
     }
 
     func test_stopMonitoringAllProximityAlerts_preservesNonPrefixedRegions() {
@@ -168,11 +168,11 @@ class LocationServiceRegionMonitoringTests: OBATestCase {
     }
 
     func test_stopMonitoringAllProximityAlerts_emptyRegions_isNoOp() {
-        expect(self.locationManagerMock.monitoredRegions).to(beEmpty())
+        #expect(self.locationManagerMock.monitoredRegions.isEmpty)
 
         service.stopMonitoringAllProximityAlerts()
 
-        expect(self.locationManagerMock.monitoredRegions).to(beEmpty())
+        #expect(self.locationManagerMock.monitoredRegions.isEmpty)
     }
 
     // MARK: - Delegate: didEnterRegion

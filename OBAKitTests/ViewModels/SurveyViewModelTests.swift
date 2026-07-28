@@ -146,7 +146,7 @@ class SurveyViewModelTests: OBATestCase {
 
         // Validation should pass — both required questions answered. Network attempt throws.
         let result = await firstSubmissionResult(vm: vm)
-        expect(self.isNetworkFailure(result)).to(beTrue(), description: "expected validation to pass; got \(result)")
+        #expect(self.isNetworkFailure(result), "expected validation to pass; got \(result)")
     }
 
     /// A second answer for the same question replaces the first.
@@ -160,7 +160,7 @@ class SurveyViewModelTests: OBATestCase {
 
         // Validation passes (only required question is answered), so submit reaches the network.
         let result = await firstSubmissionResult(vm: vm)
-        expect(self.isNetworkFailure(result)).to(beTrue(), description: "expected validation to pass; got \(result)")
+        #expect(self.isNetworkFailure(result), "expected validation to pass; got \(result)")
     }
 
     // MARK: - toggleCheckbox
@@ -178,7 +178,7 @@ class SurveyViewModelTests: OBATestCase {
 
         // Validation should pass — selection still stored after deselecting "a".
         let result = await firstSubmissionResult(vm: vm)
-        expect(self.isNetworkFailure(result)).to(beTrue(), description: "expected validation to pass; got \(result)")
+        #expect(self.isNetworkFailure(result), "expected validation to pass; got \(result)")
     }
 
     /// Toggling all options off leaves a stored answer (an empty JSON array `"[]"`), which is
@@ -193,7 +193,7 @@ class SurveyViewModelTests: OBATestCase {
 
         // An empty-array answer is still stored; validation passes.
         let result = await firstSubmissionResult(vm: vm)
-        expect(self.isNetworkFailure(result)).to(beTrue(), description: "expected validation to pass; got \(result)")
+        #expect(self.isNetworkFailure(result), "expected validation to pass; got \(result)")
     }
 
     /// Toggling a checkbox on a question that was never touched succeeds — the
@@ -236,7 +236,7 @@ class SurveyViewModelTests: OBATestCase {
         vm.updateAnswer(for: hero, answer: "answered")
 
         let result = await firstSubmissionResult(vm: vm)
-        expect(self.isNetworkFailure(result)).to(beTrue(), description: "expected validation to pass; got \(result)")
+        #expect(self.isNetworkFailure(result), "expected validation to pass; got \(result)")
     }
 
     /// A survey whose hero question can't be answered (e.g. label-only) cannot be
@@ -264,7 +264,7 @@ class SurveyViewModelTests: OBATestCase {
 
         // No answers — but the only remaining question (id=2) is optional. Validation passes.
         let result = await firstSubmissionResult(vm: vm)
-        expect(self.isNetworkFailure(result)).to(beTrue(), description: "expected validation to pass; got \(result)")
+        #expect(self.isNetworkFailure(result), "expected validation to pass; got \(result)")
     }
 
     /// Validation failure does NOT mark the survey completed or set a reminder.
@@ -278,7 +278,7 @@ class SurveyViewModelTests: OBATestCase {
         // Reminder date remains nil (cancel was never called and submit didn't reach completion).
         #expect(self.dataStore.nextSurveyReminderDate == nil)
         // Survey is not in the completed set.
-        expect(self.dataStore.isSurveyCompleted(surveyId: vm.survey.id, userIdentifier: self.dataStore.surveyUserIdentifier)).to(beFalse())
+        #expect(!(self.dataStore.isSurveyCompleted(surveyId: vm.survey.id, userIdentifier: self.dataStore.surveyUserIdentifier)))
     }
 
     /// Network failure does NOT mark the survey completed either — only a successful
@@ -290,9 +290,9 @@ class SurveyViewModelTests: OBATestCase {
         vm.updateAnswer(for: q, answer: "yes")
 
         let result = await firstSubmissionResult(vm: vm)
-        expect(self.isNetworkFailure(result)).to(beTrue())
+        #expect(self.isNetworkFailure(result))
 
-        expect(self.dataStore.isSurveyCompleted(surveyId: vm.survey.id, userIdentifier: self.dataStore.surveyUserIdentifier)).to(beFalse())
+        #expect(!(self.dataStore.isSurveyCompleted(surveyId: vm.survey.id, userIdentifier: self.dataStore.surveyUserIdentifier)))
     }
 
     /// On the fresh path, if the survey has no hero question at all, submission
@@ -349,7 +349,7 @@ class SurveyViewModelTests: OBATestCase {
         #expect(self.dataStore.nextSurveyReminderDate != nil)
         // NOT marked completed.
         let userID = dataStore.surveyUserIdentifier
-        expect(self.dataStore.isSurveyCompleted(surveyId: vm.survey.id, userIdentifier: userID)).to(beFalse())
+        #expect(!(self.dataStore.isSurveyCompleted(surveyId: vm.survey.id, userIdentifier: userID)))
     }
 
     /// The reminder date set by `cancel()` is roughly 3 days in the future (matches
@@ -415,7 +415,7 @@ class SurveyViewModelTests: OBATestCase {
         vm.updateAnswer(for: hero, answer: "yes")
 
         let result = await firstSubmissionResult(vm: vm)
-        expect(self.isNetworkFailure(result)).to(beTrue(), description: "expected validation to pass with required external survey question unanswered; got \(result)")
+        #expect(self.isNetworkFailure(result), "expected validation to pass with required external survey question unanswered; got \(result)")
     }
 
     /// Excluding external-survey questions must not bypass *other* unanswered
@@ -459,7 +459,7 @@ class SurveyViewModelTests: OBATestCase {
 
         #expect(failureCount == 1)
         #expect(successCount == 0)
-        expect(self.dataStore.isSurveyCompleted(surveyId: vm.survey.id, userIdentifier: self.dataStore.surveyUserIdentifier)).to(beFalse())
+        #expect(!(self.dataStore.isSurveyCompleted(surveyId: vm.survey.id, userIdentifier: self.dataStore.surveyUserIdentifier)))
     }
 
     // MARK: - Two-Stage Submit (happy path, retry, re-entrancy)
@@ -550,7 +550,7 @@ class SurveyViewModelTests: OBATestCase {
         #expect(counter.puts == 0)
         #expect(vm.heroResponseID == "808d3a515daa39f4c15a")
         let userID = dataStore.surveyUserIdentifier
-        expect(self.dataStore.isSurveyCompleted(surveyId: vm.survey.id, userIdentifier: userID)).to(beTrue())
+        #expect(self.dataStore.isSurveyCompleted(surveyId: vm.survey.id, userIdentifier: userID))
     }
 
     /// Fresh path with hero + follow-up: hero POST first, then a single PUT for the
@@ -574,7 +574,7 @@ class SurveyViewModelTests: OBATestCase {
         #expect(counter.puts == 1)
         #expect(vm.heroResponseID == "808d3a515daa39f4c15a")
         let userID = dataStore.surveyUserIdentifier
-        expect(self.dataStore.isSurveyCompleted(surveyId: vm.survey.id, userIdentifier: userID)).to(beTrue())
+        #expect(self.dataStore.isSurveyCompleted(surveyId: vm.survey.id, userIdentifier: userID))
     }
 
     /// Retry path (`heroResponseID` preset): the hero POST is skipped entirely;
@@ -682,7 +682,7 @@ class SurveyViewModelTests: OBATestCase {
 
         // Initial false + true on enter + false on exit.
         #expect(observed == [false, true, false])
-        expect(vm.isSubmitting).to(beFalse())
+        #expect(!(vm.isSubmitting))
     }
 
     /// Concurrent `submit()` calls: the in-flight guard prevents the second from

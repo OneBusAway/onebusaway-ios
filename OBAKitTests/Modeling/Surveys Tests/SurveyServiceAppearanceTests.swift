@@ -49,7 +49,7 @@ final class SurveyServiceAppearanceTests: OBATestCase {
         ])
 
         #expect(service.allSurveys.count == 2)
-        expect(service.visibleSurveys).to(beEmpty())
+        #expect(service.visibleSurveys.isEmpty)
         #expect(service.findSurveyForMap() == nil)
         #expect(service.findSurveyForStop(stopID: "STOP_A", routeIDs: ["R1"]) == nil)
     }
@@ -271,7 +271,7 @@ final class SurveyServiceAppearanceTests: OBATestCase {
 
         #expect(service.lastError == nil)
         #expect(service.allSurveys.map(\.id) == [1])
-        expect(service.isLoading).to(beFalse())
+        #expect(!(service.isLoading))
     }
 
     // SUSPECTED INEFFICIENCY: an empty (but successful) response leaves
@@ -287,7 +287,7 @@ final class SurveyServiceAppearanceTests: OBATestCase {
         mockLoader.mock(URLString: urlString, with: encode([]))
         let service = SurveyService(apiService: buildREST(mockLoader), userDataStore: store)
         await service.fetchSurveys()
-        expect(service.allSurveys).to(beEmpty())
+        #expect(service.allSurveys.isEmpty)
 
         // Without force, a second fetch still runs because allSurveys is empty.
         mockLoader.removeMappedResponses()

@@ -60,6 +60,6 @@ final class SurveyServiceExternalURLTests: OBATestCase {
         let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
 
         #expect(items.first { $0.name == "user_id" }?.value == "test-user-123")
-        expect(items.contains { $0.name == "region_id" }).to(beFalse())
+        #expect(!(items.contains { $0.name == "region_id" }))
     }
 }

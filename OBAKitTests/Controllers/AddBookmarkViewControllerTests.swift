@@ -120,7 +120,7 @@ class AddBookmarkViewControllerTests: OBATestCase {
         dataLoader.resetRecordedRequestURLs()
         let result = try await vc.loadData()
 
-        expect(result).toNot(beEmpty())
+        #expect(!result.isEmpty)
         #expect(self.arrivalsRequestCount(dataLoader) == 1)
     }
 }

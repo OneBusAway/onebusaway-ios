@@ -42,13 +42,13 @@ class NearbyStopsViewModelTests: OBATestCase {
     @MainActor
     func test_init_stopsIsEmpty() {
         let viewModel = NearbyStopsViewModel(coordinate: coordinate, apiService: nil)
-        expect(viewModel.stops).to(beEmpty())
+        #expect(viewModel.stops.isEmpty)
     }
 
     @MainActor
     func test_init_isLoadingIsFalse() {
         let viewModel = NearbyStopsViewModel(coordinate: coordinate, apiService: nil)
-        expect(viewModel.isLoading).to(beFalse())
+        #expect(!(viewModel.isLoading))
     }
 
     @MainActor
@@ -63,14 +63,14 @@ class NearbyStopsViewModelTests: OBATestCase {
     func test_loadStops_nilApiService_stopsRemainsEmpty() async {
         let viewModel = NearbyStopsViewModel(coordinate: coordinate, apiService: nil)
         await viewModel.loadStops()
-        expect(viewModel.stops).to(beEmpty())
+        #expect(viewModel.stops.isEmpty)
     }
 
     @MainActor
     func test_loadStops_nilApiService_isLoadingReturnsFalse() async {
         let viewModel = NearbyStopsViewModel(coordinate: coordinate, apiService: nil)
         await viewModel.loadStops()
-        expect(viewModel.isLoading).to(beFalse())
+        #expect(!(viewModel.isLoading))
     }
 
     @MainActor
@@ -92,7 +92,7 @@ class NearbyStopsViewModelTests: OBATestCase {
 
         await viewModel.loadStops()
 
-        expect(viewModel.stops).toNot(beEmpty())
+        #expect(!viewModel.stops.isEmpty)
         #expect(viewModel.operationError == nil)
     }
 
@@ -103,7 +103,7 @@ class NearbyStopsViewModelTests: OBATestCase {
 
         await viewModel.loadStops()
 
-        expect(viewModel.isLoading).to(beFalse())
+        #expect(!(viewModel.isLoading))
     }
 
     // MARK: - Failed load
@@ -125,7 +125,7 @@ class NearbyStopsViewModelTests: OBATestCase {
 
         await viewModel.loadStops()
 
-        expect(viewModel.stops).to(beEmpty())
+        #expect(viewModel.stops.isEmpty)
     }
 
     @MainActor
@@ -135,7 +135,7 @@ class NearbyStopsViewModelTests: OBATestCase {
 
         await viewModel.loadStops()
 
-        expect(viewModel.isLoading).to(beFalse())
+        #expect(!(viewModel.isLoading))
     }
 
     // MARK: - Guard: prevents concurrent double-load
@@ -156,7 +156,7 @@ class NearbyStopsViewModelTests: OBATestCase {
         await second
 
         #expect(countingLoader.callCount == 1)
-        expect(viewModel.stops).toNot(beEmpty())
-        expect(viewModel.isLoading).to(beFalse())
+        #expect(!viewModel.stops.isEmpty)
+        #expect(!(viewModel.isLoading))
     }
 }

@@ -205,7 +205,7 @@ class StopViewModelTests: OBATestCase {
         #expect(observed == observed.sorted())
         #expect(observed.last == 720)
         #expect(viewModel.minutesAfter == 720)
-        expect(viewModel.isLoadMoreExhausted).to(beTrue())
+        #expect(viewModel.isLoadMoreExhausted)
 
         // Verify each hop made strict forward progress (no duplicates after the initial value).
         let distinctAscending = Array(NSOrderedSet(array: observed)) as! [UInt]
@@ -303,11 +303,11 @@ class StopViewModelTests: OBATestCase {
         app.stopPreferencesDataStore.set(stopPreferences: prefs, stop: stub, region: region)
 
         let viewModel = StopViewModel(application: app, stopID: testStopID)
-        expect(viewModel.isListFiltered).to(beTrue())  // default ON
+        #expect(viewModel.isListFiltered)  // default ON
 
         await viewModel.refresh()
 
-        expect(viewModel.isListFiltered).to(beFalse())
+        #expect(!(viewModel.isListFiltered))
     }
 
     // MARK: - $stop re-emit guard
@@ -352,12 +352,12 @@ class StopViewModelTests: OBATestCase {
 
         let viewModel = StopViewModel(application: app, stopID: testStopID)
         #expect(viewModel.lastUpdated == nil)
-        expect(viewModel.shouldRefresh).to(beTrue())
+        #expect(viewModel.shouldRefresh)
 
         await viewModel.refresh()
 
         #expect(viewModel.lastUpdated != nil)
-        expect(viewModel.shouldRefresh).to(beFalse())  // <30 s elapsed → below threshold
+        #expect(!(viewModel.shouldRefresh))  // <30 s elapsed → below threshold
     }
 
     // MARK: - Inline Hero Survey
@@ -389,8 +389,8 @@ class StopViewModelTests: OBATestCase {
 
         await viewModel.submitHeroAnswer("yes", stopLocation: nil)
 
-        expect(errors).to(beEmpty())
-        expect(presented).to(beEmpty())
+        #expect(errors.isEmpty)
+        #expect(presented.isEmpty)
     }
 
     /// `dismissCurrentSurvey()` with no current survey is a no-op and does not set
@@ -472,7 +472,7 @@ class StopViewModelTests: OBATestCase {
 
         #expect(failureCount == 1)
         #expect(successCount == 0)
-        expect(app.userDataStore.isSurveyCompleted(surveyId: survey.id, userIdentifier: app.userDataStore.surveyUserIdentifier)).to(beFalse())
+        #expect(!(app.userDataStore.isSurveyCompleted(surveyId: survey.id, userIdentifier: app.userDataStore.surveyUserIdentifier)))
     }
 
     // MARK: - Inline Hero Success Paths
@@ -634,10 +634,10 @@ class StopViewModelTests: OBATestCase {
         await viewModel.submitHeroAnswer("yes", stopLocation: coord)
 
         #expect(viewModel.currentSurvey == nil)
-        expect(errors).to(beEmpty())
-        expect(presented).to(beEmpty())
+        #expect(errors.isEmpty)
+        #expect(presented.isEmpty)
         let userID = app.userDataStore.surveyUserIdentifier
-        expect(app.userDataStore.isSurveyCompleted(surveyId: 7, userIdentifier: userID)).to(beTrue())
+        #expect(app.userDataStore.isSurveyCompleted(surveyId: 7, userIdentifier: userID))
     }
 
     /// Needs-remaining outcome: card clears AND `presentFullSurvey` emits with the
@@ -667,7 +667,7 @@ class StopViewModelTests: OBATestCase {
         await viewModel.submitHeroAnswer("yes", stopLocation: coord)
 
         #expect(viewModel.currentSurvey == nil)
-        expect(errors).to(beEmpty())
+        #expect(errors.isEmpty)
         #expect(presented.count == 1)
         #expect(presented.first?.survey.id == 7)
         #expect(presented.first?.heroResponseID == "808d3a515daa39f4c15a")
@@ -675,7 +675,7 @@ class StopViewModelTests: OBATestCase {
         #expect(presented.first?.stopLocation?.longitude == coord.longitude)
         // Hero-only success path runs mark-completed; needs-remaining does not.
         let userID = app.userDataStore.surveyUserIdentifier
-        expect(app.userDataStore.isSurveyCompleted(surveyId: 7, userIdentifier: userID)).to(beFalse())
+        #expect(!(app.userDataStore.isSurveyCompleted(surveyId: 7, userIdentifier: userID)))
     }
 
     /// Submission failure path: `currentSurvey` is preserved and the error
@@ -764,7 +764,7 @@ class StopViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock())
 
         // The new-stop-page flag defaults to ON when unset.
-        expect(FeatureFlags.isNewStopPageEnabled(userDefaults: app.userDefaults)).to(beTrue())
+        #expect(FeatureFlags.isNewStopPageEnabled(userDefaults: app.userDefaults))
 
         let stop = try XCTUnwrap(try Fixtures.loadSomeStops().first)
 
@@ -833,7 +833,7 @@ class StopViewModelTests: OBATestCase {
         await viewModel.refresh()
 
         let departure = try XCTUnwrap(viewModel.stopArrivals?.arrivalsAndDepartures.first)
-        expect(departure.predicted).to(beTrue())
+        #expect(departure.predicted)
 
         // Cold: nothing cached until the async path has run.
         #expect(viewModel.cachedApproachTripDetails(for: departure) == nil)
@@ -949,7 +949,7 @@ class StopViewModelTests: OBATestCase {
 
         #expect(viewModel.alarmError != nil)
         #expect(viewModel.alarm(for: departure) != nil)
-        expect(app.userDataStore.alarms).toNot(beEmpty())
+        #expect(!app.userDataStore.alarms.isEmpty)
     }
 
     // MARK: - Review prompt success recording
@@ -992,7 +992,7 @@ class StopViewModelTests: OBATestCase {
         let (viewModel, application) = buildViewModelWithFailingArrivals(statusCode: 500)
         await viewModel.refresh()
         #expect(application.reviewPromptPolicy.successCount == 0)
-        expect(application.promptCoordinator.sawErrorThisSession).to(beTrue())
+        #expect(application.promptCoordinator.sawErrorThisSession)
     }
 
     /// A broken bookmark is not a failure the rider watched happen: the page says so
@@ -1003,7 +1003,7 @@ class StopViewModelTests: OBATestCase {
         let bookmark = Bookmark(name: "Broken", regionIdentifier: pugetSoundRegionIdentifier, stop: stop)
         let (viewModel, application) = buildViewModelWithFailingArrivals(statusCode: 404, bookmarkContext: bookmark)
         await viewModel.refresh()
-        expect(application.promptCoordinator.sawErrorThisSession).to(beFalse())
+        #expect(!(application.promptCoordinator.sawErrorThisSession))
     }
 
     /// Without a bookmark behind it — a deep link, a search result, a map pin — the same
@@ -1012,6 +1012,6 @@ class StopViewModelTests: OBATestCase {
     func test_requestNotFound_withoutBookmarkContext_flagsError() async {
         let (viewModel, application) = buildViewModelWithFailingArrivals(statusCode: 404)
         await viewModel.refresh()
-        expect(application.promptCoordinator.sawErrorThisSession).to(beTrue())
+        #expect(application.promptCoordinator.sawErrorThisSession)
     }
 }

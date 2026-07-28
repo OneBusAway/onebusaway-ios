@@ -61,10 +61,10 @@ final class SurveyServiceTests: OBATestCase {
 
         #expect(survey?.id == 1)
         #expect(survey?.name == "Always Visible — One-Time")
-        expect(survey?.showOnMap).to(beTrue())
-        expect(survey?.showOnStops).to(beTrue())
-        expect(survey?.alwaysVisible).to(beTrue())
-        expect(survey?.allowsMultipleResponses).to(beFalse())
+        #expect(survey?.showOnMap == true)
+        #expect(survey?.showOnStops == true)
+        #expect(survey?.alwaysVisible == true)
+        #expect(survey?.allowsMultipleResponses == false)
 
         #expect(survey?.visibleStopsList?.count == 2)
         #expect(survey?.visibleRoutesList?.count == 2)
@@ -382,7 +382,7 @@ final class SurveyServiceTests: OBATestCase {
             startDate: Date().addingTimeInterval(-3600),
             endDate: Date().addingTimeInterval(3600)
         )
-        expect(survey.isActive).to(beTrue())
+        #expect(survey.isActive)
     }
 
     func test_isActive_pastEndDate_returnsFalse() {
@@ -390,7 +390,7 @@ final class SurveyServiceTests: OBATestCase {
             startDate: Date().addingTimeInterval(-7200),
             endDate: Date().addingTimeInterval(-3600)
         )
-        expect(survey.isActive).to(beFalse())
+        #expect(!(survey.isActive))
     }
 
     func test_isActive_futureStartDate_returnsFalse() {
@@ -398,12 +398,12 @@ final class SurveyServiceTests: OBATestCase {
             startDate: Date().addingTimeInterval(3600),
             endDate: Date().addingTimeInterval(7200)
         )
-        expect(survey.isActive).to(beFalse())
+        #expect(!(survey.isActive))
     }
 
     func test_isActive_nilDates_returnsTrue() {
         let survey = makeSurveyForIsActive(startDate: nil, endDate: nil)
-        expect(survey.isActive).to(beTrue())
+        #expect(survey.isActive)
     }
 
     private func makeSurveyForIsActive(startDate: Date?, endDate: Date?) -> Survey {
@@ -461,8 +461,8 @@ final class SurveyServiceTests: OBATestCase {
         let response = try await testRESTService.getSurveys(userID: uuid)
         let survey = response.surveys.first!
 
-        expect(survey.allowsMultipleResponses).to(beFalse())
-        expect(survey.alwaysVisible).to(beFalse())
+        #expect(!(survey.allowsMultipleResponses))
+        #expect(!(survey.alwaysVisible))
     }
 
     // MARK: - getSurveys nil region
@@ -562,8 +562,8 @@ final class SurveyServiceTests: OBATestCase {
 
         await service.fetchSurveys()
 
-        expect(service.allSurveys).to(beEmpty())
-        expect(service.visibleSurveys).to(beEmpty())
+        #expect(service.allSurveys.isEmpty)
+        #expect(service.visibleSurveys.isEmpty)
         #expect(service.lastError != nil)
 
         if case APIError.surveyServiceNotConfigured = service.lastError! {
@@ -590,7 +590,7 @@ final class SurveyServiceTests: OBATestCase {
         #expect(service.lastError == nil)
         #expect(service.allSurveys.count == 5)
         #expect(service.visibleSurveys.count == 5)
-        expect(service.isLoading).to(beFalse())
+        #expect(!(service.isLoading))
     }
 
     @MainActor
@@ -604,10 +604,10 @@ final class SurveyServiceTests: OBATestCase {
         let service = SurveyService(apiService: testRESTService, userDataStore: store)
         await service.fetchSurveys()
 
-        expect(service.allSurveys).to(beEmpty())
-        expect(service.visibleSurveys).to(beEmpty())
+        #expect(service.allSurveys.isEmpty)
+        #expect(service.visibleSurveys.isEmpty)
         #expect(service.lastError != nil)
-        expect(service.isLoading).to(beFalse())
+        #expect(!(service.isLoading))
     }
 
     // MARK: - Staleness / Cooldown Tests
@@ -678,7 +678,7 @@ final class SurveyServiceTests: OBATestCase {
         let service = SurveyService(apiService: testRESTService, userDataStore: store)
         await service.fetchSurveys()
 
-        expect(service.allSurveys).to(beEmpty())
+        #expect(service.allSurveys.isEmpty)
         #expect(service.lastError != nil)
 
         // Replace with success data — should fetch because allSurveys is empty

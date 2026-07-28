@@ -24,7 +24,7 @@ class LocationServiceTests: XCTestCase {
 
         #expect(service.authorizationStatus == .notDetermined)
         #expect(service.currentLocation == nil)
-        expect(service.canRequestAuthorization).to(beTrue())
+        #expect(service.canRequestAuthorization)
     }
 
     func test_authorization_granted() {
@@ -37,8 +37,8 @@ class LocationServiceTests: XCTestCase {
         service.requestInUseAuthorization()
 
         waitUntil { (done) in
-            expect(locationManagerMock.locationUpdatesStarted).to(beTrue())
-            expect(locationManagerMock.headingUpdatesStarted).to(beTrue())
+            #expect(locationManagerMock.locationUpdatesStarted)
+            #expect(locationManagerMock.headingUpdatesStarted)
             #expect(delegate.location == TestData.mockSeattleLocation)
             #expect(delegate.heading == TestData.mockHeading)
             #expect(delegate.error == nil)
@@ -98,23 +98,23 @@ class LocationServiceTests: XCTestCase {
         let service = LocationService(userDefaults: UserDefaults(), locationManager: locationManagerMock)
 
         service.stopUpdates()
-        expect(locationManagerMock.locationUpdatesStarted).to(beFalse())
-        expect(locationManagerMock.headingUpdatesStarted).to(beFalse())
+        #expect(!(locationManagerMock.locationUpdatesStarted))
+        #expect(!(locationManagerMock.headingUpdatesStarted))
     }
 
     func test_startUpdates_withoutAuthorization_doesNothing() {
         let locationManagerMock = LocationManagerMock()
         let service = LocationService(userDefaults: UserDefaults(), locationManager: locationManagerMock)
 
-        expect(service.isLocationUseAuthorized).to(beFalse())
-        expect(locationManagerMock.locationUpdatesStarted).to(beFalse())
-        expect(locationManagerMock.headingUpdatesStarted).to(beFalse())
+        #expect(!(service.isLocationUseAuthorized))
+        #expect(!(locationManagerMock.locationUpdatesStarted))
+        #expect(!(locationManagerMock.headingUpdatesStarted))
 
         service.startUpdates()
 
-        expect(service.isLocationUseAuthorized).to(beFalse())
-        expect(locationManagerMock.locationUpdatesStarted).to(beFalse())
-        expect(locationManagerMock.headingUpdatesStarted).to(beFalse())
+        #expect(!(service.isLocationUseAuthorized))
+        #expect(!(locationManagerMock.locationUpdatesStarted))
+        #expect(!(locationManagerMock.headingUpdatesStarted))
     }
 
     func test_receiveErrors() {

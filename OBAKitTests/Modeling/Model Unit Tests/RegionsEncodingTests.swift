@@ -26,7 +26,7 @@ class RegionsEncodingTests: OBATestCase {
 
         let tampa = regionsObjects[0]
         #expect(tampa.name == "Tampa Bay")
-        expect(tampa.isCustom).to(beFalse())
+        #expect(tampa.isCustom == false)
 
         let plistData = try! PropertyListEncoder().encode(regionsObjects)
         let roundTripped = try! PropertyListDecoder().decode([Region].self, from: plistData)
@@ -40,13 +40,13 @@ class RegionsEncodingTests: OBATestCase {
         #expect(tampaRT.versionInfo == "2.4.15-cs|2|4|15|cs|d41e1a8978da14e98a2e19d109a23018957db7cf")
         #expect(tampaRT.language == "en_US")
 
-        expect(tampaRT.supportsEmbeddedSocial).to(beFalse())
-        expect(tampaRT.supportsOBADiscoveryAPIs).to(beTrue())
-        expect(tampaRT.supportsOTPBikeshare).to(beTrue())
-        expect(tampaRT.supportsSiriRealtimeAPIs).to(beTrue())
-        expect(tampaRT.isActive).to(beTrue())
-        expect(tampaRT.isExperimental).to(beFalse())
-        expect(tampaRT.isCustom).to(beFalse())
+        #expect(!(tampaRT.supportsEmbeddedSocial))
+        #expect(tampaRT.supportsOBADiscoveryAPIs)
+        #expect(tampaRT.supportsOTPBikeshare)
+        #expect(tampaRT.supportsSiriRealtimeAPIs)
+        #expect(tampaRT.isActive)
+        #expect(!(tampaRT.isExperimental))
+        #expect(tampaRT.isCustom == false)
 
         #expect(tampaRT.facebookURL == nil)
         #expect(tampaRT.contactEmail == "onebusaway@gohart.org")

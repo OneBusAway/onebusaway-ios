@@ -90,7 +90,7 @@ class ScheduleForRouteViewModelTests: OBATestCase {
 
         let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app, initialDate: testDate)
 
-        expect(Calendar.current.isDate(viewModel.selectedDate, inSameDayAs: testDate)).to(beTrue())
+        #expect(Calendar.current.isDate(viewModel.selectedDate, inSameDayAs: testDate))
     }
 
     @MainActor
@@ -125,7 +125,7 @@ class ScheduleForRouteViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app)
 
-        expect(viewModel.directions).to(beEmpty())
+        #expect(viewModel.directions.isEmpty)
     }
 
     @MainActor
@@ -147,7 +147,7 @@ class ScheduleForRouteViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app)
 
-        expect(viewModel.currentHeadsign).to(beEmpty())
+        #expect(viewModel.currentHeadsign.isEmpty)
     }
 
     // MARK: - Stop Names and IDs Tests
@@ -159,7 +159,7 @@ class ScheduleForRouteViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app)
 
-        expect(viewModel.stopNames).to(beEmpty())
+        #expect(viewModel.stopNames.isEmpty)
     }
 
     @MainActor
@@ -169,7 +169,7 @@ class ScheduleForRouteViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app)
 
-        expect(viewModel.stopIDs).to(beEmpty())
+        #expect(viewModel.stopIDs.isEmpty)
     }
 
     // MARK: - Departure Times Tests
@@ -181,7 +181,7 @@ class ScheduleForRouteViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app)
 
-        expect(viewModel.departureTimes).to(beEmpty())
+        #expect(viewModel.departureTimes.isEmpty)
     }
 
     @MainActor
@@ -191,7 +191,7 @@ class ScheduleForRouteViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app)
 
-        expect(viewModel.sortedDepartureTimes).to(beEmpty())
+        #expect(viewModel.sortedDepartureTimes.isEmpty)
     }
 
     @MainActor
@@ -201,7 +201,7 @@ class ScheduleForRouteViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app)
 
-        expect(viewModel.departureTimesDisplay).to(beEmpty())
+        #expect(viewModel.departureTimesDisplay.isEmpty)
     }
 
     // MARK: - Time Formatting Tests
@@ -284,7 +284,7 @@ class ScheduleForRouteViewModelTests: OBATestCase {
 
         // Locale-aware format contains colon and readable time
         expect(result).to(contain(":"))
-        expect(result).toNot(beEmpty())
+        #expect(!result.isEmpty)
         #expect(result != "-")
     }
 
@@ -298,7 +298,7 @@ class ScheduleForRouteViewModelTests: OBATestCase {
         let result = viewModel.formatTimeAccessible(nil)
 
         // Should return the localized "No departure" string
-        expect(result).toNot(beEmpty())
+        #expect(!result.isEmpty)
         #expect(result != "-")
     }
 
@@ -311,7 +311,7 @@ class ScheduleForRouteViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app)
 
-        expect(viewModel.isLoading).to(beFalse())
+        #expect(!(viewModel.isLoading))
     }
 
     @MainActor
