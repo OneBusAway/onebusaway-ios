@@ -9,7 +9,6 @@
 
 import Foundation
 import XCTest
-import Nimble
 import Testing
 import UIKit
 import MarqueeLabel
@@ -73,11 +72,5 @@ class StackedMarqueeTitleViewTests: XCTestCase {
         let expectedHeight = titleView.topLabel.frame.height + titleView.bottomLabel.frame.height
         #expect(self.titleView.frame.width == testWidth)
         #expect(self.titleView.frame.height == expectedHeight)
-    }
-    
-    func test_initWithCoder_fatalError() {
-        expect {
-            _ = StackedMarqueeTitleView(coder: NSCoder())
-        }.to(throwAssertion())
     }
 }

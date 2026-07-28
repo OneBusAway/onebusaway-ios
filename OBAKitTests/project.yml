@@ -21,12 +21,7 @@ targets:
         # unrelated and still required (see the XCTest note).
     dependencies:
       - target: App
-      - package: Nimble
     info:
       path: "Info.plist"
       properties:
         NSPrincipalClass: OBAKitTests.OBAKitTestsSetup
-packages:
-  Nimble:
-    url: https://github.com/Quick/Nimble.git
-    from: 13.7.0

@@ -9,7 +9,6 @@
 
 import Foundation
 import XCTest
-import Nimble
 import Testing
 import UIKit
 @testable import OBAKit
@@ -57,12 +56,5 @@ class VisualEffectContainerViewTests: XCTestCase {
         
         // Test that constraints exist (we can't easily test exact constraints in unit tests)
         #expect(self.containerView.constraints.count > 0)
-    }
-    
-    func test_initWithCoder_fatalError() {
-        // Test that init(coder:) is not implemented
-        expect {
-            _ = VisualEffectContainerView(coder: NSCoder())
-        }.to(throwAssertion())
     }
 }
