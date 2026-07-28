@@ -258,7 +258,8 @@ class StopViewModelTests: OBATestCase {
 
     /// `refreshSurveys()` runs as part of the one-shot initial-fetch block, not on every
     /// auto-refresh — so the `/surveys.json` endpoint must be hit exactly once across
-    /// multiple refreshes. The fetch happens from a detached `Task`, so assert eventually.
+    /// multiple refreshes. The fetch runs in `surveyRefreshTask`; awaiting it gives an
+    /// exact count rather than a polled one.
     @MainActor
     func test_surveys_refreshedExactlyOnceAcrossRefreshes() async {
         let dataLoader = MockDataLoader(testName: name)
@@ -272,10 +273,11 @@ class StopViewModelTests: OBATestCase {
         await viewModel.refresh()
         await viewModel.refresh()
 
-        await expect(counter.hits).toEventually(equal(1))
-        // Guard against regression to per-refresh fetching: hits must not climb past 1.
-        // Without this, `toEventually` would latch onto the transient `1` on its way to 2/3.
-        await expect(counter.hits).toNever(beGreaterThan(1))
+        // Awaiting the fetch is what makes `== 1` exact: it rules out both "never
+        // fetched" and "fetched per refresh" in a single assertion. Polling could
+        // only catch the former, and would latch onto a transient 1 on the way to 3.
+        await viewModel.surveyRefreshTask?.value
+        expect(counter.hits) == 1
     }
 
     // MARK: - Filter invariant on initial load (issue #2)

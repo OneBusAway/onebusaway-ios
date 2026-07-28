@@ -9,6 +9,7 @@
 
 import XCTest
 import Nimble
+import Testing
 import CoreLocation
 @testable import OBAKit
 @testable import OBAKitCore
@@ -192,7 +193,9 @@ class VehiclesViewModelTests: OBATestCase {
 
         viewModel.startAutoRefresh()
 
-        await expect(viewModel.lastUpdated).toEventuallyNot(beNil())
+        // `startAutoRefresh` spawns a non-terminating fetch/sleep loop, so there is
+        // no completion to await — this is the one place polling is the right tool.
+        await poll(until: { viewModel.lastUpdated != nil }, "startAutoRefresh never fetched")
 
         viewModel.stopAutoRefresh()
 

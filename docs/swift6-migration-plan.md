@@ -391,11 +391,47 @@ error types use `#expect(throws: SomeType.self)` and pattern-match its returned
 value; and drop the `await` on non-async bodies or you get
 `#UnnecessaryEffectMarker`.
 
-The 8 that remain are 3 Nimble polling calls (`toEventually` / `toNever` /
-`toEventuallyNot` — see below) plus 5 genuinely test-local issues:
-`TestData`'s mutable statics (3), `DonationsConfigBundle` needing to restate
-`@unchecked Sendable` (1), and a `waitUntil` closure capture in
-`ApplicationTests` (1).
+The 8 that remained were 3 Nimble polling calls plus 5 genuinely test-local
+issues: `TestData`'s mutable statics (3), `DonationsConfigBundle` needing to
+restate `@unchecked Sendable` (1), and a `waitUntil` closure capture in
+`ApplicationTests` (1). The polling calls are gone as of the next section,
+leaving those 5.
+
+### Polling: 8 → 5, and two of three sites became deterministic (2026-07-28)
+
+The three `toEventually` / `toNever` / `toEventuallyNot` calls were Nimble's
+last irreplaceable feature. They turned out to be two different problems.
+
+**Two of them didn't need polling at all.** `StopViewModel.refreshSurveys()`
+fired an *unowned* `Task`, so the test had no completion to await and had to
+poll `counter.hits` — with a second `toNever(beGreaterThan(1))` bolted on
+purely to stop `toEventually` latching onto a transient `1` on its way to `3`.
+Giving that task an owner (`private(set) var surveyRefreshTask`) collapses both
+fuzzy assertions into one exact one:
+
+```swift
+await viewModel.surveyRefreshTask?.value
+expect(counter.hits) == 1
+```
+
+Instant instead of timeout-bounded, and it rules out *both* "never fetched" and
+"fetched per refresh" — which the polled version could not. Verified
+load-bearing by deleting the `await`: `hits` is then `0` and the test fails.
+Storing the task also fixes a real (if minor) production wart — it was
+previously uncancellable; it and `liveActivityToastDismissTask` are now
+cancelled in `deinit`.
+
+**The third genuinely needs polling.** `VehiclesViewModel.startAutoRefresh()`
+spawns a non-terminating `while !Task.isCancelled { fetch; sleep }` loop, so
+there is no completion to await, and signalling from the mock wouldn't help
+(the request arriving and `lastUpdated` being set are different moments). That
+one site is served by `OBAKitTests/Helpers/Polling.swift` — a ~25-line
+`poll(until:)` built on `Issue.record`, which (like `#expect`) works correctly
+inside an `XCTestCase` subclass and reports at the call site via
+`#_sourceLocation`. Verified by making it fail deliberately.
+
+Prefer awaiting a real signal over polling: most "eventually" assertions are a
+symptom of production code firing a `Task` nobody owns.
 
 ### Is Nimble still worth it?
 
@@ -407,16 +443,40 @@ over equality and nil checks, which `#expect(a == b)` covers natively — the
 macro decomposes the expression and reports both operands, which is the exact
 thing matcher DSLs were invented to provide over `XCTAssertTrue(a == b)`.
 
-Nimble's one genuinely differentiated feature is **polling**, and it is used
-**three times** in the whole suite. Swift Testing has no equivalent:
-`confirmation()` counts events within a scope and `.timeLimit()` is a
-whole-test timeout; neither polls a condition until it becomes true. (A
-third-party package, `dfed/swift-testing-expectation`, exists to fill this
-gap.) `beCloseTo` (93 uses) also has no built-in, though it is a small helper.
+Nimble's one genuinely differentiated feature was **polling**, used three times
+in the whole suite. Swift Testing has no equivalent: `confirmation()` counts
+events within a scope and `.timeLimit()` is a whole-test timeout; neither polls
+a condition until it becomes true. (A third-party package,
+`dfed/swift-testing-expectation`, exists to fill this gap.) As of the polling
+section above, all three are converted and the capability lives in
+`Helpers/Polling.swift` — so **Nimble no longer does anything this suite
+cannot do without it.**
 
-So the dependency's remaining justification is three call sites. Don't
-big-bang 2,867 assertions — but there's no reason to *add* Nimble usage, and
-`modernize-tests` can convert files that get touched anyway.
+What remains is volume, not capability. Removing the dependency means
+rewriting ~2,860 assertions across 132 files:
+
+| Nimble | Count | Swift Testing |
+|---|---:|---|
+| `expect(x) == y` | 1,373 | `#expect(x == y)` |
+| `.to(beNil())` / `.toNot(beNil())` | 470 | `#expect(x == nil)` / `!= nil` |
+| `.to(beTrue())` / `.to(beFalse())` | 277 | `#expect(x)` / `#expect(!x)` |
+| `.to(beEmpty())` / `.toNot(beEmpty())` | 137 | `#expect(x.isEmpty)` / `!` |
+| `fail("…")` | 133 | `Issue.record("…")` |
+| `.to(equal(y))` / `.toNot(equal(y))` | 132 | `#expect(x == y)` / `!=` |
+| **`.to(beCloseTo(y, within: t))`** | **95** | **needs a helper** |
+| `.to(contain(y))` / `.toNot(...)` | 75 | `#expect(x.contains(y))` |
+| `.to(beGreaterThan/LessThan/OrEqualTo)` | 51 | `#expect(x > y)` etc. |
+| `.to(haveCount(n))` | 13 | `#expect(x.count == n)` |
+| `.to(beAKindOf(T))` / `beIdenticalTo` | 7 | `#expect(x is T)` / `===` |
+| `.to(throwError…)` (sync remainder) | 7 | `#expect(throws:)` |
+| `waitUntil { done in }` | 3 | `confirmation` or restructure |
+
+Mostly scriptable, and landable file-by-file because `#expect` works inside
+`XCTestCase` — no test restructuring, no `OBATestCase` changes. The real risk
+is not compilation but **silently weakening an assertion**, which a green suite
+won't catch: guard it by checking that the converted `#expect` count matches
+the former `expect(` count per file, reviewing diffs in batches, and
+spot-checking with deliberate inversions.
 
 **Toolchain caveat (2026-07-16, cost two CI cycles to isolate):** building
 with **Xcode 26.2** crashes the Swift 6 test suite at runtime — a
@@ -486,14 +546,14 @@ is lifted. The ratchet still counts their warnings.
 | 1 | OBAKitCore (+ approachable concurrency) | 119 → 0 | Core in Swift 6 mode | ✅ done |
 | 2 | OBAKit (+ MainActor default) | 467 → 0 | OBAKit in Swift 6 mode | ✅ done |
 | 3 | App, OBAWidget, KiedyBus | 14 → 0 | whole project `SWIFT_VERSION = 6.0` | ✅ done |
-| 4 | OBAKitTests | 8 remain* | tests in Swift 6 mode | ⛔ blocked on Xcode 27 b3 XCTest (see Phase 4 status) |
+| 4 | OBAKitTests | 5 remain* | tests in Swift 6 mode | ⛔ blocked on Xcode 27 b3 XCTest (see Phase 4 status) |
 
 *\* The test count spiked to 596 after Phase 1 (`OBATestCase` going
 `@MainActor` surfaced autoclosure warnings), then collapsed once every
 remaining plain-`XCTestCase` class was annotated `@MainActor`.
 Ratchet baseline: 999 → 733 (Phase 1) → 57 (Phase 2) → 39 (Phase 3) → 38 →
-8 (2026-07-28, Nimble → `#expect(throws:)`; all 8 are in the pinned
-OBAKitTests target).*
+8 (2026-07-28, Nimble → `#expect(throws:)`) → 5 (polling sites; all 5 are
+in the pinned OBAKitTests target).*
 
 ### Phase 1 implementation notes (2026-07-16)
 

@@ -46,4 +46,6 @@ xcodebuild build-for-testing \
   -quiet > "$LOG" 2>&1
 
 echo "==> Build finished. Counting diagnostics."
-exec "$REPO_ROOT/scripts/concurrency_ratchet" "$LOG" "${1:-check}"
+# Deliberately NOT `exec`: that replaces this shell and the EXIT trap never
+# fires, leaking a full DerivedData + CAS (~3.5 GB) per run.
+"$REPO_ROOT/scripts/concurrency_ratchet" "$LOG" "${1:-check}"
