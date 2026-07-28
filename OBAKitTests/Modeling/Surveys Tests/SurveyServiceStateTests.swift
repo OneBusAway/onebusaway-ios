@@ -231,8 +231,11 @@ final class SurveyServiceStateTests: OBATestCase {
             answer: "test"
         )
 
+        // `_ =`: `surveyService` is @MainActor, so its return value is
+        // main-actor-isolated and can't be handed back as the macro's `sending`
+        // result. The test only cares about the thrown error.
         let thrown = await #expect(throws: APIError.self) {
-            try await self.surveyService.submitHeroQuestion(
+            _ = try await self.surveyService.submitHeroQuestion(
                 survey: survey,
                 heroQuestionResponse: response
             )
@@ -244,7 +247,7 @@ final class SurveyServiceStateTests: OBATestCase {
 
     func test_submitAdditionalQuestions_nilApiService_throws() async {
         let thrown = await #expect(throws: APIError.self) {
-            try await self.surveyService.submitAdditionalQuestions(
+            _ = try await self.surveyService.submitAdditionalQuestions(
                 responseID: "some-id",
                 additionalResponses: []
             )

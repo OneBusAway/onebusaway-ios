@@ -433,6 +433,41 @@ inside an `XCTestCase` subclass and reports at the call site via
 Prefer awaiting a real signal over polling: most "eventually" assertions are a
 symptom of production code firing a `Task` nobody owns.
 
+### Phase 4 reaches zero, and the target is locked (2026-07-28)
+
+The last five were test-local:
+
+- **`TestData.mockSeattleLocation` / `mockTampaLocation`** were `static var`
+  holding immediate-closure results that nothing ever assigns to — `let` clears
+  the "nonisolated global shared mutable state" diagnostic. They must stay
+  *single shared instances* rather than becoming computed properties:
+  `LocationServiceTests` compares against them with `==`, and
+  `CLLocation`/`CLHeading` inherit NSObject identity comparison, so a fresh
+  instance per access would fail those tests.
+- **`OBAMockHeading`** is now `public final` with `let` stored properties and
+  `@unchecked Sendable`. Making it `final` first is what makes the unchecked
+  promise honest — per the Phase 1 guidance, an `open` class lets a future
+  subclass add mutable state and silently inherit it. (`final` drops the
+  implicit `public` that `open` carried, so the class and its overrides need
+  explicit `public`.)
+- **`DonationsConfigBundle`** restates `@unchecked Sendable`, matching the
+  `PolicyBundle` / `FeedbackConfigBundle` precedent in 17b04d4e.
+- **`ApplicationTests`'s `waitUntil`** — Nimble again; its `done` callback is a
+  non-Sendable `() -> Void` captured by a `@Sendable` operation block. Replaced
+  with an `async` test and a `withCheckedContinuation`, which is also a more
+  honest way to say "drain the queue".
+
+With the count at zero, `OBAKitTests/project.yml` dropped its
+`SWIFT_WARNINGS_AS_ERRORS_GROUPS: ""` opt-out, so **every target in the project
+now escalates the five concurrency groups to errors.** Verified in both
+directions: the build passes clean, and reverting one fixture to `var` turns it
+straight into `error: … [#MutableGlobalVariable]`.
+
+Dropping the opt-out immediately caught two diagnostics the ratchet had never
+been able to see — see the macro-expansion blind spot under "Measurement
+gotchas". That is the clearest argument for the lock: the ratchet counts what
+it can grep, the compiler checks everything.
+
 ### Is Nimble still worth it?
 
 Measured on this suite: 132 of 187 test files import Nimble and there are 2,867
@@ -495,11 +530,13 @@ same-generation compiler on the GA images). Watch the 11 explicit
 `isolated deinit` sites on iOS 18 devices regardless: they use the
 back-deploy shim compiled by whatever Xcode builds the release.
 
-Consequence of the pin worth remembering: the test target compiles with only
-`complete`-checking warnings, not Swift 6 enforcement — concurrency
-regressions in test-only helpers and mocks (e.g. the `@unchecked Sendable`
-mocks in `OBAKitTests/Helpers/Mocks/`) won't be compiler errors until the pin
-is lifted. The ratchet still counts their warnings.
+Consequence of the pin worth remembering: the test target compiles in the
+Swift 5 language mode, so it does not get *full* Swift 6 enforcement. It is no
+longer unguarded, though — as of 2026-07-28 it reached zero concurrency
+warnings and dropped its `SWIFT_WARNINGS_AS_ERRORS_GROUPS` opt-out, so the five
+concurrency diagnostic groups are escalated to errors here exactly as they are
+on every other target. A regression in a test-only helper or mock is now a
+build failure, not a ratcheted warning (verified by reintroducing one).
 
 ## Dependency notes
 
@@ -526,6 +563,18 @@ is lifted. The ratchet still counts their warnings.
   are visible in the log as compile tasks that "failed with exit code 0 but
   produced no further output"; `concurrency_ratchet --update` now warns when
   it sees a cluster of them.
+- **The ratchet cannot see inside macro expansions.** Diagnostics raised in
+  expanded code are reported against the expansion buffer (`macro expansion
+  #expect:2:42: warning: …`), with the real file named only in a follow-up
+  "expanded code originates here" note — so `concurrency_ratchet`'s repo-path
+  anchor never matches them. Found 2026-07-28: the `#expect(throws:)`
+  conversion left two `#RegionIsolation` diagnostics inside expansions while
+  the ratchet reported **zero**. They surfaced only when OBAKitTests dropped
+  its `SWIFT_WARNINGS_AS_ERRORS_GROUPS` opt-out and they became build errors
+  (fix: `_ =` the unused result, so the macro's closure returns `Void` instead
+  of a main-actor-isolated value it would have to *send*). Now that every
+  target escalates the concurrency groups to errors, **the compiler is the real
+  gate and the ratchet is a secondary signal.**
 - Reproduce the baseline with:
   `xcodebuild build -project OBAKit.xcodeproj -scheme App -destination 'platform=iOS Simulator,name=iPhone 17 Pro' SWIFT_STRICT_CONCURRENCY=complete`
   then count `sort -u`'d `warning:` lines under the repo path. Don't pass
@@ -546,14 +595,16 @@ is lifted. The ratchet still counts their warnings.
 | 1 | OBAKitCore (+ approachable concurrency) | 119 → 0 | Core in Swift 6 mode | ✅ done |
 | 2 | OBAKit (+ MainActor default) | 467 → 0 | OBAKit in Swift 6 mode | ✅ done |
 | 3 | App, OBAWidget, KiedyBus | 14 → 0 | whole project `SWIFT_VERSION = 6.0` | ✅ done |
-| 4 | OBAKitTests | 5 remain* | tests in Swift 6 mode | ⛔ blocked on Xcode 27 b3 XCTest (see Phase 4 status) |
+| 4 | OBAKitTests | 0* | tests in Swift 6 mode | ⛔ blocked on Xcode 27 b3 XCTest (see Phase 4 status) |
 
 *\* The test count spiked to 596 after Phase 1 (`OBATestCase` going
 `@MainActor` surfaced autoclosure warnings), then collapsed once every
 remaining plain-`XCTestCase` class was annotated `@MainActor`.
 Ratchet baseline: 999 → 733 (Phase 1) → 57 (Phase 2) → 39 (Phase 3) → 38 →
-8 (2026-07-28, Nimble → `#expect(throws:)`) → 5 (polling sites; all 5 are
-in the pinned OBAKitTests target).*
+8 (2026-07-28, Nimble → `#expect(throws:)`) → 5 (polling sites) → **0**
+(test-local fixtures; the target is now locked with the project-wide
+`SWIFT_WARNINGS_AS_ERRORS_GROUPS`, though the Swift 6 *language mode* flip is
+still blocked on XCTest).*
 
 ### Phase 1 implementation notes (2026-07-16)
 

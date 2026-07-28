@@ -76,7 +76,7 @@ class ApplicationTests: OBATestCase {
         return (locManager, locationService, config)
     }
 
-    @MainActor func test_appCreation_locationAlreadyAuthorized_updatesLocation() {
+    @MainActor func test_appCreation_locationAlreadyAuthorized_updatesLocation() async {
         let (locManager, _, config) = configureAuthorizedObjects()
 
         let dataLoader = (config.dataLoader as! MockDataLoader)
@@ -99,9 +99,13 @@ class ApplicationTests: OBATestCase {
         expect(locManager.updatingLocation).to(beTrue())
         expect(locManager.updatingHeading).to(beTrue())
 
-        waitUntil { (done) in
+        // Drain the work `applicationDidBecomeActive` queued, so it can't outlive
+        // the test. An operation appended now runs after those already enqueued.
+        // (Was Nimble's `waitUntil`, whose `done` callback is a non-Sendable
+        // `() -> Void` captured by a `@Sendable` operation block.)
+        await withCheckedContinuation { continuation in
             config.queue.addOperation {
-                done()
+                continuation.resume()
             }
         }
     }

@@ -16,7 +16,9 @@ import Nimble
 /// value, so these tests don't depend on the host app's Info.plist. Each
 /// instance is backed by a unique temporary directory because `Bundle` caches
 /// instances by path and would otherwise return a previously-created fake.
-private class DonationsConfigBundle: Bundle {
+// `Bundle` is already `@unchecked Sendable`; a subclass has to restate it or the
+// compiler warns. Mutated only from the test that owns the instance.
+private class DonationsConfigBundle: Bundle, @unchecked Sendable {
     var donationsEnabledValue = true
 
     override func object(forInfoDictionaryKey key: String) -> Any? {

@@ -25,6 +25,18 @@
 #
 # So: do not hand-roll the measurement build. Use `scripts/measure_concurrency`,
 # which isolates both caches.
+#
+# BLIND SPOT: diagnostics raised inside a macro expansion are invisible here.
+# The compiler reports them against the expansion buffer ("macro expansion
+# #expect:2:42: warning: ...") and only mentions the real file in a follow-up
+# "expanded code originates here" note, so the repo-path anchor below never
+# matches. Found 2026-07-28: converting tests to `#expect(throws:)` put two
+# #RegionIsolation diagnostics inside expansions while this script still
+# reported zero. They surfaced only when OBAKitTests dropped its
+# SWIFT_WARNINGS_AS_ERRORS_GROUPS opt-out and they became build errors.
+# Since every target now escalates the concurrency groups to errors, the
+# compiler — not this script — is the real gate; treat this count as a
+# secondary signal rather than proof of cleanliness.
 
 set -euo pipefail
 
