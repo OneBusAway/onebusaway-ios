@@ -43,12 +43,6 @@ final class SurveyOrchestratorTests: OBATestCase {
         }
     }
 
-    isolated deinit {
-        orchestrator = nil
-        surveyService = nil
-        dataStore = nil
-    }
-
     // MARK: - Fixtures
 
     private static func makeQuestion(

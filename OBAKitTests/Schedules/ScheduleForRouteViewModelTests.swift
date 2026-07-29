@@ -226,7 +226,7 @@ final class ScheduleForRouteViewModelTests: OBATestCase {
     }
 
     @Test @MainActor
-    func `Format time midnight returns0000`() {
+    func `Format time midnight returns 0000`() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForRoute(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -243,7 +243,7 @@ final class ScheduleForRouteViewModelTests: OBATestCase {
     }
 
     @Test @MainActor
-    func `Format time noon returns1200`() {
+    func `Format time noon returns 1200`() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForRoute(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)

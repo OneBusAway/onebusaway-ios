@@ -164,7 +164,7 @@ final class ReviewPromptPolicyTests: OBATestCase {
         #expect(!policy.isPromptPending)
     }
 
-    @Test func `Negative backs off180 days`() {
+    @Test func `Negative backs off 180 days`() {
         let policy = makePolicy()
         recordSuccesses(5, on: policy)
         policy.recordPromptPresented()
@@ -179,7 +179,7 @@ final class ReviewPromptPolicyTests: OBATestCase {
         #expect(policy.isPromptPending)
     }
 
-    @Test func `Deferred backs off60 days`() {
+    @Test func `Deferred backs off 60 days`() {
         let policy = makePolicy()
         recordSuccesses(5, on: policy)
         policy.recordPromptPresented()

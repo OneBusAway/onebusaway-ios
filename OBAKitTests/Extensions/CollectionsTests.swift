@@ -25,7 +25,7 @@ final class CollectionsTests {
         #expect(array.contains("three"))
     }
 
-    @Test func `Filter`() {
+    @Test func filter() {
         let list: [Any] = [1, "two", 3, "four", 5]
         let filtered = list.filter(type: Int.self)
         #expect(filtered == [1, 3, 5])

@@ -32,7 +32,7 @@ final class ModelExtensionsTests: OBATestCase {
         #expect(zeroCoordinate.longitude == 0)
     }
     
-    @Test func `CL location coordinate2 d validation`() {
+    @Test func `CL location coordinate 2 d validation`() {
         // Test coordinate validation methods
         let validCoordinate = CLLocationCoordinate2D(latitude: 47.6062, longitude: -122.3321)
         #expect(CLLocationCoordinate2DIsValid(validCoordinate) == true)

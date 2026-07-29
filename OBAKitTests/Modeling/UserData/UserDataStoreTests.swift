@@ -325,7 +325,7 @@ final class UserDefaultsStoreTests: OBATestCase {
 
     // MARK: - Default Alarm Lead Time
 
-    @Test func `Default alarm lead time is10 minutes`() {
+    @Test func `Default alarm lead time is 10 minutes`() {
         #expect(self.userDefaultsStore.defaultAlarmLeadTimeMinutes == 10)
     }
 

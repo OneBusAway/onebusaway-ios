@@ -249,7 +249,7 @@ final class LiveActivityRegistryTests: OBATestCase {
     }
 
     /// A retry that finds the row already deleted has nothing left to do, so the entry can go.
-    @Test func `Reconcile forgets delete URL when server reports404`() async {
+    @Test func `Reconcile forgets delete URL when server reports 404`() async {
         persistDeleteURLs([deadActivityID: deadDeleteURL.absoluteString])
         mockDeleteResponse(statusCode: 404)
 
@@ -258,7 +258,7 @@ final class LiveActivityRegistryTests: OBATestCase {
         #expect(persistedDeleteURLs.isEmpty, "Expected a 404 (the subscription is already gone) to drop the persisted delete URL.")
     }
 
-    @Test func `Reconcile forgets delete URL when server reports410`() async {
+    @Test func `Reconcile forgets delete URL when server reports 410`() async {
         persistDeleteURLs([deadActivityID: deadDeleteURL.absoluteString])
         mockDeleteResponse(statusCode: 410)
 
@@ -364,7 +364,7 @@ final class LiveActivityRegistryTests: OBATestCase {
         let expectedURL = deadDeleteURL
 
         // Lets the mocked POST cancel the very task that issued it.
-        let tokenTask = UnsafeTaskBox()
+        let tokenTask = SendableBox<Task<Void, Never>?>(nil)
 
         let registrationBody = Data(#"{"url":"\#(deadDeleteURL.absoluteString)"}"#.utf8)
         dataLoader.mock(data: registrationBody, statusCode: 200) { request in
@@ -372,7 +372,7 @@ final class LiveActivityRegistryTests: OBATestCase {
             // The production race, made deterministic: the user dismisses the Live Activity while
             // its push token registration is still in flight, so the token task is cancelled after
             // the server has already created the row.
-            tokenTask.cancel()
+            tokenTask.value?.cancel()
             return true
         }
 
@@ -395,7 +395,7 @@ final class LiveActivityRegistryTests: OBATestCase {
                 confirm: { !Task.isCancelled }
             )
         }
-        tokenTask.set(task)
+        tokenTask.value = task
         gate.continuation.yield(())
         gate.continuation.finish()
         await task.value
@@ -429,26 +429,6 @@ final class LiveActivityRegistryTests: OBATestCase {
 
         #expect((error as? URLError)?.code == .cancelled, "Expected the mock to fail a request from a cancelled task with URLError.cancelled (-999), exactly as URLSession does.")
         #expect(recorder.urls.isEmpty, "A cancelled request is one the server never saw; the mock must not record it.")
-    }
-
-    /// Holds the task that a mocked response needs to cancel. `@unchecked Sendable` because the
-    /// matcher runs on whatever thread the request is issued from; the lock is the real guarantee.
-    ///
-    /// `nonisolated` for the same reason, and it has to be said explicitly: the
-    /// target defaults to main-actor isolation, so without it these methods are
-    /// main-actor and calling them from a matcher is the same runtime isolation
-    /// trap that `DeleteRecorder` hit.
-    private nonisolated final class UnsafeTaskBox: @unchecked Sendable {
-        private let lock = NSLock()
-        private var task: Task<Void, Never>?
-
-        func set(_ task: Task<Void, Never>) {
-            lock.withLock { self.task = task }
-        }
-
-        func cancel() {
-            lock.withLock { task }?.cancel()
-        }
     }
 
     // MARK: - Persistence contract

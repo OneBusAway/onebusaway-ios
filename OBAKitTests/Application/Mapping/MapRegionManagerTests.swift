@@ -33,7 +33,7 @@ final class MapRegionManagerTests: OBATestCase {
         )
     }
 
-    @Test func `Init`() {
+    @Test func initialization() {
         let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)
         stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)

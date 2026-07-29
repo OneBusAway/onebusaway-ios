@@ -39,12 +39,6 @@ final class SurveyViewModelTests: OBATestCase {
         cancellables = []
     }
 
-    isolated deinit {
-        cancellables = nil
-        surveyService = nil
-        dataStore = nil
-    }
-
     // MARK: - Fixtures
 
     private static func makeQuestion(

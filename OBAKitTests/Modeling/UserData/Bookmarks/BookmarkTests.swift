@@ -27,7 +27,7 @@ final class BookmarkTests: OBATestCase {
         stops = try! Fixtures.loadSomeStops()
     }
 
-    @Test func `Creation`() {
+    @Test func creation() {
         let stop = stops[0]
         let bookmark = Bookmark(name: "BM 1", regionIdentifier: region.regionIdentifier, stop: stop)
         #expect(bookmark.name == "BM 1")

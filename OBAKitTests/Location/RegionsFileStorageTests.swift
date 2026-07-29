@@ -20,7 +20,6 @@ final class RegionsFileStorageTests {
     private var storage: RegionsFileStorage!
 
     init() {
-
         fileManager = .default
         temporaryDirectory = fileManager.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try! fileManager.createDirectory(at: temporaryDirectory, withIntermediateDirectories: true)

@@ -134,7 +134,7 @@ final class PushRegistrationModelOperationTests: OBATestCase {
 
     /// A 404 means the token was never registered — safe for callers to ignore, but the
     /// service layer still surfaces it faithfully.
-    @Test func `Unregistration with404 throws`() async throws {
+    @Test func `Unregistration with 404 throws`() async throws {
         mockUnregistrationDELETE(statusCode: 404)
 
         do {

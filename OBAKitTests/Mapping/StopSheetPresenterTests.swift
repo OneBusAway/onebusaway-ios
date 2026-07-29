@@ -26,7 +26,6 @@ final class StopSheetPresenterTests {
     private var presenter: StopSheetPresenter!
 
     init() {
-
         parent = UIViewController()
         window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
         window.rootViewController = parent
@@ -51,18 +50,6 @@ final class StopSheetPresenterTests {
 
     /// Lets an in-flight presentation or dismissal animation finish. Measuring a panel that is
     /// still being animated into place reports whatever position that frame happened to catch.
-    /// Lets queued main-actor work and in-flight animations run.
-    ///
-    /// This used to be `RunLoop.current.run(until:)`. Under XCTest that drained
-    /// the main queue, because the test method ran directly on the main thread's
-    /// run loop. A Swift Testing `@MainActor` test body is itself a main-queue
-    /// item, so blocking inside it cannot re-entrantly drain further main-queue
-    /// blocks — dismissal completion handlers would never fire. Suspending
-    /// instead releases the main actor, which is what actually lets the work run.
-    private func spin(_ seconds: TimeInterval) async {
-        try? await Task.sleep(for: .seconds(seconds))
-    }
-
     // MARK: - Presentation
 
     @Test func `Present adds one panel opened at the half detent`() {

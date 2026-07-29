@@ -8,11 +8,11 @@ final class AlarmLeadTimeTests {
         #expect(AlarmLeadTime.clamped(5, minutesUntilDeparture: 20) == 5)
     }
 
-    @Test func `Clamps to maximum15`() {
+    @Test func `Clamps to maximum 15`() {
         #expect(AlarmLeadTime.clamped(30, minutesUntilDeparture: 60) == 15)
     }
 
-    @Test func `Clamps to minimum1`() {
+    @Test func `Clamps to minimum 1`() {
         #expect(AlarmLeadTime.clamped(0, minutesUntilDeparture: 20) == 1)
     }
 

@@ -90,7 +90,7 @@ final class PromptCoordinatorTests: OBATestCase {
 
     // MARK: - 14-day engagement cooldown
 
-    @Test func `Review refused within14 days of donation modal`() {
+    @Test func `Review refused within 14 days of donation modal`() {
         let coordinator = makeCoordinator()
         coordinator.noteShown(.donationModal)
 
@@ -103,7 +103,7 @@ final class PromptCoordinatorTests: OBATestCase {
         #expect(later.canShowReviewPrompt())
     }
 
-    @Test func `Review refused within14 days of survey engagement`() {
+    @Test func `Review refused within 14 days of survey engagement`() {
         let coordinator = makeCoordinator()
         coordinator.noteSurveyEngaged()
 

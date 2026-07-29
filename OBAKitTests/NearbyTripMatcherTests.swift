@@ -67,7 +67,7 @@ final class NearbyTripMatcherTests: OBATestCase {
 
     // MARK: - Positive Match
 
-    @Test func `Find trips returns matches for route30`() async throws {
+    @Test func `Find trips returns matches for route 30`() async throws {
         let stops = stopsFromArrivalsFixture()
         stubArrivals()
 
@@ -86,7 +86,7 @@ final class NearbyTripMatcherTests: OBATestCase {
         #expect(vehicleIDs.contains("1_7022"))
     }
 
-    @Test func `Find trips returns matches for route65`() async throws {
+    @Test func `Find trips returns matches for route 65`() async throws {
         let stops = stopsFromArrivalsFixture()
         stubArrivals()
 

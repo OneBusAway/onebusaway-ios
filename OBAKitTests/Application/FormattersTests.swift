@@ -25,7 +25,7 @@ final class FormattersTests: OBATestCase {
     let usLocale = Locale(identifier: "en_US")
     let calendar = Calendar(identifier: .gregorian)
 
-    @Test func `Example`() {
+    @Test func example() {
         let formatters = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
         let stopArrivals = try! Fixtures.loadRESTAPIPayload(type: StopArrivals.self, fileName: "arrivals-and-departures-for-stop-1_75414.json")
         let arrDep = stopArrivals.arrivalsAndDepartures.first!

@@ -36,8 +36,6 @@ final class StopPagePresentationTests: OBATestCase {
 
     isolated deinit {
         queue.cancelAllOperations()
-        queue = nil
-        application = nil
     }
 
     private func makeStop() throws -> Stop {

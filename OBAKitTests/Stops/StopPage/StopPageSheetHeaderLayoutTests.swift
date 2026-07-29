@@ -38,7 +38,6 @@ final class StopPageSheetHeaderLayoutTests {
     private var presenter: StopSheetPresenter!
 
     init() {
-
         parent = UIViewController()
         window = UIWindow(frame: CGRect(origin: .zero, size: Self.screenSize))
         window.rootViewController = parent
@@ -127,18 +126,6 @@ final class StopPageSheetHeaderLayoutTests {
         )
 
         return TipLayout(header: headerFrame, contentTop: contentFrame.minY)
-    }
-
-    /// Lets queued main-actor work and in-flight animations run.
-    ///
-    /// This used to be `RunLoop.current.run(until:)`. Under XCTest that drained
-    /// the main queue, because the test method ran directly on the main thread's
-    /// run loop. A Swift Testing `@MainActor` test body is itself a main-queue
-    /// item, so blocking inside it cannot re-entrantly drain further main-queue
-    /// blocks — dismissal completion handlers would never fire. Suspending
-    /// instead releases the main actor, which is what actually lets the work run.
-    private func spin(_ seconds: TimeInterval) async {
-        try? await Task.sleep(for: .seconds(seconds))
     }
 
     /// The peek detent has to show the stop name and the close button, or it is a strip of route

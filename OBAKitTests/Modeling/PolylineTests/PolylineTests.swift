@@ -139,7 +139,7 @@ final class PolylineTests {
     @Test func `Empty polyline should be empty location array`() {
         let sut = Polyline(encodedPolyline: "")
         #expect(sut.coordinates != nil)
-        #expect((sut.coordinates!).count == 0)
+        #expect(sut.coordinates?.isEmpty == true)
     }
 
     @Test func `Invalid polyline should return nil`() {
@@ -227,7 +227,7 @@ final class PolylineTests {
         let sut = Polyline(encodedPolyline: "", encodedLevels: "")
 
         #expect(sut.levels != nil, "Level array should not be nil for empty string")
-        #expect((sut.levels!).count == 0)
+        #expect(sut.levels?.isEmpty == true)
     }
 
     @Test func `Invalid levels should return nil level array`() {
@@ -340,7 +340,7 @@ final class PolylineTests {
         #expect(2 == decodedLevels!.count)
     }
 
-    @Test func `Precision`() {
+    @Test func precision() {
         // OSRM uses a 6 digit precision
         let _ = Polyline(encodedPolyline: "ak{hRak{hR", precision: 1e6)
     }

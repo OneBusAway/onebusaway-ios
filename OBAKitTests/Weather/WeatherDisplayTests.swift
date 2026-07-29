@@ -86,7 +86,7 @@ final class WeatherDisplayTests {
     }
 
     /// Even when the API ships 48 hours, the window is capped at 24.
-    @Test func `Upcoming hourly capped at24 entries`() {
+    @Test func `Upcoming hourly capped at 24 entries`() {
         let currentHour = utcCalendar.dateInterval(of: .hour, for: now)!.start
         let hourly = makeHourly(epochs: (0..<48).map { currentHour.addingTimeInterval(Double($0) * 3600).timeIntervalSince1970 })
 

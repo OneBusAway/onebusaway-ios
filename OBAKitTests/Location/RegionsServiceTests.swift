@@ -210,7 +210,7 @@ final class RegionsServiceTests: OBATestCase {
     // MARK: - Persistence
 
     // It stores downloaded region data in file storage when the regions property is set.
-    @Test func `Persistence`() async throws {
+    @Test func persistence() async throws {
         stubRegionsJustPugetSound(dataLoader: dataLoader)
         userDefaults.set(Date(), forKey: RegionsService.regionsUpdatedAtUserDefaultsKey)
 

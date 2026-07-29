@@ -17,7 +17,7 @@ import CoreLocation
 @Suite(.serialized)
 final class BookmarkGroupTests: OBATestCase {
 
-    @Test func `Creation`() {
+    @Test func creation() {
         let group = BookmarkGroup(name: "Group 1", sortOrder: 0)
         #expect(group.name == "Group 1")
     }

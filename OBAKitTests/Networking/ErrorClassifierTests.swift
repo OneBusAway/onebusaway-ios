@@ -93,7 +93,7 @@ final class ErrorClassifierTests {
 
     // MARK: - Server Error Classification (500 vs other 5xx)
 
-    @Test func `Classify request failure500 becomes server error`() {
+    @Test func `Classify request failure 500 becomes server error`() {
         let url = URL(string: "https://api.pugetsound.onebusaway.org/api/where/stops.json")!
         let response = HTTPURLResponse(url: url, statusCode: 500, httpVersion: nil, headerFields: nil)!
         let error = APIError.requestFailure(response)
@@ -120,7 +120,7 @@ final class ErrorClassifierTests {
         #expect(description.contains("try again"))
     }
 
-    @Test func `Classify request failure502 becomes server unavailable`() {
+    @Test func `Classify request failure 502 becomes server unavailable`() {
         let url = URL(string: "https://api.pugetsound.onebusaway.org/api/where/stops.json")!
         let response = HTTPURLResponse(url: url, statusCode: 502, httpVersion: nil, headerFields: nil)!
         let error = APIError.requestFailure(response)
@@ -140,7 +140,7 @@ final class ErrorClassifierTests {
         }
     }
 
-    @Test func `Classify request failure503 becomes server unavailable`() {
+    @Test func `Classify request failure 503 becomes server unavailable`() {
         let url = URL(string: "https://api.pugetsound.onebusaway.org/api/where/stops.json")!
         let response = HTTPURLResponse(url: url, statusCode: 503, httpVersion: nil, headerFields: nil)!
         let error = APIError.requestFailure(response)
@@ -160,7 +160,7 @@ final class ErrorClassifierTests {
         }
     }
 
-    @Test func `Classify request failure501 does not become server unavailable`() {
+    @Test func `Classify request failure 501 does not become server unavailable`() {
         let url = URL(string: "https://api.pugetsound.onebusaway.org/api/where/stops.json")!
         let response = HTTPURLResponse(url: url, statusCode: 501, httpVersion: nil, headerFields: nil)!
         let error = APIError.requestFailure(response)
@@ -179,7 +179,7 @@ final class ErrorClassifierTests {
         }
     }
 
-    @Test func `Classify request failure500 without region name stays as request failure`() {
+    @Test func `Classify request failure 500 without region name stays as request failure`() {
         let url = URL(string: "https://api.pugetsound.onebusaway.org/api/where/stops.json")!
         let response = HTTPURLResponse(url: url, statusCode: 500, httpVersion: nil, headerFields: nil)!
         let error = APIError.requestFailure(response)
@@ -198,7 +198,7 @@ final class ErrorClassifierTests {
         }
     }
 
-    @Test func `Classify request failure503 without region name stays as request failure`() {
+    @Test func `Classify request failure 503 without region name stays as request failure`() {
         let url = URL(string: "https://api.pugetsound.onebusaway.org/api/where/stops.json")!
         let response = HTTPURLResponse(url: url, statusCode: 503, httpVersion: nil, headerFields: nil)!
         let error = APIError.requestFailure(response)
@@ -217,7 +217,7 @@ final class ErrorClassifierTests {
         }
     }
 
-    @Test func `Classify request failure400 does not become server unavailable`() {
+    @Test func `Classify request failure 400 does not become server unavailable`() {
         let url = URL(string: "https://api.pugetsound.onebusaway.org/api/where/stops.json")!
         let response = HTTPURLResponse(url: url, statusCode: 400, httpVersion: nil, headerFields: nil)!
         let error = APIError.requestFailure(response)

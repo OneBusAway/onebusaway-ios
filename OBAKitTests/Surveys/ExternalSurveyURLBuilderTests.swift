@@ -35,12 +35,6 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
         )
     }
 
-    isolated deinit {
-        builder = nil
-        applicationContext = nil
-        userDefaultsStore = nil
-    }
-
     // MARK: - buildURL
 
     @Test func `Build URL returns nil when survey has no questions`() {

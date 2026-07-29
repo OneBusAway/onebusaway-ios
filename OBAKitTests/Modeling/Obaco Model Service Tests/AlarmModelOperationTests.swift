@@ -86,7 +86,7 @@ final class AlarmModelOperationTests: OBATestCase {
     /// `200`. `APIService.data(for:)` reads an empty-bodied `200` as a disguised 404 — a
     /// workaround for the REST API's handling of bogus IDs — which turned every successful
     /// alarm cancel into a `requestNotFound` failure. That heuristic must not apply here.
-    @Test func `Successful alarm deletion with empty200`() async throws {
+    @Test func `Successful alarm deletion with empty 200`() async throws {
         let alarm = try Fixtures.loadAlarm()
 
         let dataLoader = (obacoService.dataLoader as! MockDataLoader)
@@ -104,7 +104,7 @@ final class AlarmModelOperationTests: OBATestCase {
     }
 
     /// A genuine 404 — the alarm is already gone — must still surface as `requestNotFound`.
-    @Test func `Alarm deletion with404`() async throws {
+    @Test func `Alarm deletion with 404`() async throws {
         let alarm = try Fixtures.loadAlarm()
 
         let dataLoader = (obacoService.dataLoader as! MockDataLoader)

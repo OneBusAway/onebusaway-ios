@@ -507,7 +507,7 @@ final class MapViewModelTests: OBATestCase {
     /// backs off to a coarser zoom (11) so the ~1km fuzz cell fits in view.
     /// Mirrors the branch in `MapViewController.centerMapOnUserLocation`.
     @Test @MainActor
-    func `Zoom level for current location full accuracy returns17`() {
+    func `Zoom level for current location full accuracy returns 17`() {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = MapViewModel(application: app)
@@ -520,7 +520,7 @@ final class MapViewModelTests: OBATestCase {
     /// on screen. Companion to `_fullAccuracyReturns17` — both branches must
     /// stay covered or a future refactor could silently change one.
     @Test @MainActor
-    func `Zoom level for current location reduced accuracy returns11`() {
+    func `Zoom level for current location reduced accuracy returns 11`() {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader, accuracyAuthorization: .reducedAccuracy)
         let viewModel = MapViewModel(application: app)

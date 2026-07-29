@@ -33,8 +33,6 @@ final class SettingsExperimentalFlagsTests: OBATestCase {
 
     isolated deinit {
         queue.cancelAllOperations()
-        queue = nil
-        application = nil
     }
 
     private func makeLoadedController() -> SettingsViewController {

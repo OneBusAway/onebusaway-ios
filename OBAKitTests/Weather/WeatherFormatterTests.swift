@@ -131,7 +131,7 @@ final class WeatherFormatterTests {
     /// the cap test belongs there. This test pins the cap end-to-end: feed
     /// 25 raw entries with an outlier 25th, send them through `upcomingHourly`
     /// → `highLow`, and confirm the outlier is dropped.
-    @Test func `High low through upcoming hourly capped at24 entries`() {
+    @Test func `High low through upcoming hourly capped at 24 entries`() {
         // Anchor "now" at epoch 0 (UTC) so the upcomingHourly past-hour filter
         // sees the synthesised entries as upcoming.
         let now = Date(timeIntervalSince1970: 0)

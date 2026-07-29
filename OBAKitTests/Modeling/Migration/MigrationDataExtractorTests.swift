@@ -71,7 +71,7 @@ final class MigrationDataExtractorTests: OBATestCase {
         #expect(mikaGroup.bookmarks.count == 2)
     }
 
-    @Test func `Bookmarks`() {
+    @Test func bookmarks() {
         let bookmarks = extractor.extractBookmarks()!
 
         #expect(bookmarks.count == 2)

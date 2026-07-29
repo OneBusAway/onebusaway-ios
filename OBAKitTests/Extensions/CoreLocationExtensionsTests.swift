@@ -60,7 +60,7 @@ final class CoreLocationExtensionsTests {
         #expect(type(of: transform0) == CGAffineTransform.self)
     }
     
-    @Test func `CL location coordinate2 d distance`() {
+    @Test func `CL location coordinate 2 d distance`() {
         let seattle = CLLocationCoordinate2D(latitude: 47.6062, longitude: -122.3321)
         let bellevue = CLLocationCoordinate2D(latitude: 47.6101, longitude: -122.2015)
         
@@ -74,7 +74,7 @@ final class CoreLocationExtensionsTests {
         expectClose(samePointDistance, 0, within: 0.1)
     }
     
-    @Test func `CL location coordinate2 d is null island`() {
+    @Test func `CL location coordinate 2 d is null island`() {
         let nullIsland = CLLocationCoordinate2D(latitude: 0.0, longitude: 0.0)
         #expect(nullIsland.isNullIsland == true)
         
