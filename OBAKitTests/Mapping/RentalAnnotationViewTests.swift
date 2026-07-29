@@ -80,6 +80,19 @@ final class RentalAnnotationViewTests {
         #expect(label.contains(rental.displayLabel))
     }
 
+    /// Assigning `accessibilityLabel` replaces MapKit's title/subtitle default, so
+    /// a station's occupancy line has to be carried across explicitly or VoiceOver
+    /// users lose it on every browse pass.
+    @Test func accessibilityLabelIncludesStationAvailability() throws {
+        let annotation = RentalAnnotation(rental: try RentalFixtures.station(vehiclesAvailable: 4))
+        annotation.showsFuelLabel = true
+        let subtitle = try #require(annotation.subtitle)
+        let subject = RentalAnnotationView(annotation: annotation, reuseIdentifier: nil)
+
+        let label = try #require(subject.accessibilityLabel)
+        #expect(label.contains(subtitle))
+    }
+
     /// The child label must not be its own element, or VoiceOver announces the
     /// figure twice.
     @Test func childLabelIsNotAnAccessibilityElement() throws {

@@ -112,8 +112,10 @@ public class RentalAnnotationView: MKMarkerAnnotationView {
         fuelLabel.isHidden = fuelText == nil || !rentalAnnotation.showsFuelLabel
 
         // VoiceOver ignores the zoom gate: a visual-density rule must not cost a
-        // VoiceOver user the fuel figure.
-        accessibilityLabel = [rental.displayLabel, fuelText]
+        // VoiceOver user information. The station occupancy line is carried across
+        // explicitly because assigning accessibilityLabel replaces MapKit's
+        // title/subtitle default — anything omitted here is silently lost.
+        accessibilityLabel = [rental.displayLabel, rentalAnnotation.subtitle, fuelText]
             .compactMap { $0 }
             .joined(separator: ", ")
     }
