@@ -24,7 +24,7 @@ Every task's requirements implicitly include this section.
 - **Tests are Swift Testing** (`@Suite` / `@Test` / `#expect`), never XCTest. Suites are `final class`, annotated `@MainActor @Suite(.serialized)`.
 - **Test isolation comes from fixtures, not scheduling.** Swift Testing runs suites in parallel via task groups in one process. Never touch `UserDefaults.standard`; use `OBATestCase`'s per-instance `userDefaultsSuiteName`.
 - **OTPKit's rental models have no public memberwise initializer.** `RentalVehicle`, `VehicleRentalStation`, `FuelInfo`, and `VehicleType` expose only internal memberwise inits. Test fixtures must be built by decoding JSON through `VehicleRental.init(from:)`, which *is* public. Task 1 builds that helper.
-- **New user-facing strings** go in `OBAKit/Strings/en.lproj/Localizable.strings` via `OBALoc(...)` with a `value:` and a `comment:`. Do not hand-edit other locales.
+- **New user-facing strings are declared ONLY in code**, via `OBALoc("key", value: "English text", comment: "…")`. Do **not** add them to `OBAKit/Strings/en.lproj/Localizable.strings`, and do not hand-edit other locales. `OBAKitTests/Strings/LocalizationTests.swift` asserts key parity between `en` and all 12 other locales, so an en-only entry fails that suite 12 times over. Every rental string already on this branch (`map_layers.bikes`, `map_sheet.title`, `rental_detail.range`, …) has zero `.strings` entries and relies on the `value:` default — follow that.
 - **Lint before each commit:** `scripts/swiftlint.sh`.
 
 ### Standard commands
@@ -86,7 +86,6 @@ xcodebuild test-without-building -only-testing:OBAKitTests/<SuiteName> \
 | `OBAKit/Mapping/MapViewController+MapLayers.swift` | Seed the coordinator's filter; observe the change notification. |
 | `OBAKit/Mapping/MapViewController.swift:166-167` | Register the new notification observer. |
 | `OBAKit/Analytics/Analytics.swift` | Add the `rentalRangeFilterChanged` label. |
-| `OBAKit/Strings/en.lproj/Localizable.strings` | Two new strings. |
 
 ---
 
@@ -361,7 +360,6 @@ git commit -m "Add the fail-open rental range filter predicate"
 
 **Files:**
 - Create: `OBAKit/Mapping/Layers/RentalRangePreset.swift`
-- Modify: `OBAKit/Strings/en.lproj/Localizable.strings`
 - Test: `OBAKitTests/Mapping/RentalRangePresetTests.swift`
 
 **Interfaces:**
@@ -552,15 +550,6 @@ struct RentalRangePreset: Equatable, Identifiable {
 }
 ```
 
-- [ ] **Step 4: Add the localized string**
-
-Append to `OBAKit/Strings/en.lproj/Localizable.strings`:
-
-```
-/* Range filter menu option imposing no minimum range */
-"map_sheet.minimum_range_any" = "Any";
-```
-
 - [ ] **Step 5: Run the test to verify it passes**
 
 ```bash
@@ -580,7 +569,6 @@ Expected: PASS, **13 tests executed**.
 ```bash
 scripts/swiftlint.sh
 git add OBAKit/Mapping/Layers/RentalRangePreset.swift \
-        OBAKit/Strings/en.lproj/Localizable.strings \
         OBAKitTests/Mapping/RentalRangePresetTests.swift
 git commit -m "Add the locale-appropriate rental range preset ladder"
 ```
@@ -1951,7 +1939,6 @@ git commit -m "Route rental annotations through RentalVisibility"
 
 **Files:**
 - Modify: `OBAKit/Mapping/Layers/MapSheetView.swift`
-- Modify: `OBAKit/Strings/en.lproj/Localizable.strings`
 
 **Interfaces:**
 - Consumes: `RentalRangePreset` (Task 2), `MapRegionManager.rentalRangeFilter` (Task 5).
@@ -2035,15 +2022,6 @@ Then add these two methods after `layerSection(title:group:)`:
     }
 ```
 
-- [ ] **Step 3: Add the localized string**
-
-Append to `OBAKit/Strings/en.lproj/Localizable.strings`:
-
-```
-/* Map sheet row label for the rental minimum-range filter */
-"map_sheet.minimum_range" = "Minimum range";
-```
-
 - [ ] **Step 4: Build and verify the sheet renders**
 
 ```bash
@@ -2058,8 +2036,7 @@ Expected: build succeeds. Then run the app on the simulator, open the Map sheet 
 
 ```bash
 scripts/swiftlint.sh
-git add OBAKit/Mapping/Layers/MapSheetView.swift \
-        OBAKit/Strings/en.lproj/Localizable.strings
+git add OBAKit/Mapping/Layers/MapSheetView.swift
 git commit -m "Add the minimum-range row to the Map sheet"
 ```
 
