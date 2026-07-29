@@ -71,4 +71,8 @@ import OBAKitCore
     func viewportDidChange(_ mapRect: MKMapRect?) {
         // The existing stop pipeline already reacts to region changes.
     }
+
+    func mapAnnotationsWereCleared() {
+        // The existing stop pipeline re-adds stops via displayUniqueStopAnnotations.
+    }
 }

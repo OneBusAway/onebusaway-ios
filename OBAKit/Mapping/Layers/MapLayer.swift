@@ -117,6 +117,12 @@ public enum MapLayerRefreshPolicy: Equatable {
     /// nil when the viewport is outside `zoomWindow` — the layer removes its
     /// annotations in response, mirroring the stop pipeline's zoom gate.
     func viewportDidChange(_ mapRect: MKMapRect?)
+
+    /// Called after something wiped the map wholesale (search flows call
+    /// `removeAllAnnotations`). The layer re-adds any annotations it still
+    /// considers delivered — without this, its bookkeeping and the map disagree
+    /// and diffed updates mutate annotations that are no longer displayed.
+    func mapAnnotationsWereCleared()
 }
 
 extension Notification.Name {

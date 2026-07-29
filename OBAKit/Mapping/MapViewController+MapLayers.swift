@@ -170,6 +170,12 @@ extension MapViewController: RegionsServiceDelegate {
         // Rebuild region-scoped layers: a new region may gain or lose bikeshare.
         configureMapLayers()
     }
+
+    public func regionsService(_ service: RegionsService, updatedRegionsList regions: [Region]) {
+        // A regions-list refresh can flip the current region's bikeshare fields in
+        // place without changing the region identity; re-evaluate the layers.
+        configureMapLayers()
+    }
 }
 
 // MARK: - RentalLayerActionsDelegate
@@ -193,8 +199,16 @@ extension MapViewController: RentalLayerActionsDelegate {
 
     /// Opens a rental deep link. No `canOpenURL` pre-check: partner schemes can't
     /// be enumerated in `LSApplicationQueriesSchemes` ahead of time, and most GBFS
-    /// iOS URIs are universal links anyway.
-    func rentalLayer(open url: URL) {
-        application.open(url, options: [:], completionHandler: nil)
+    /// iOS URIs are universal links anyway. When a custom-scheme URI fails to open
+    /// (operator app not installed), fall back to the operator's web page instead
+    /// of a dead button.
+    func rentalLayer(open url: URL, webFallback: URL?) {
+        application.open(url, options: [:]) { [weak self] success in
+            guard !success else { return }
+            Logger.info("Rental deep link failed to open: \(url)")
+            if let webFallback {
+                self?.application.open(webFallback, options: [:], completionHandler: nil)
+            }
+        }
     }
 }

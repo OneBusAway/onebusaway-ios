@@ -107,6 +107,10 @@ import OTPKit
         coordinator.viewportDidChange(mapRect)
     }
 
+    func mapAnnotationsWereCleared() {
+        coordinator.reattachAnnotations()
+    }
+
     func annotationView(for annotation: MKAnnotation, in mapView: MKMapView) -> MKAnnotationView? {
         if annotation is RentalAnnotation {
             return mapView.dequeueReusableAnnotationView(

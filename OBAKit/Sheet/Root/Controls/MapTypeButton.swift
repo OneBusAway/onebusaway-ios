@@ -34,7 +34,11 @@ struct MapTypeButton: View {
     }
 
     private var symbolName: String {
-        mapType == .standard ? "map" : "globe"
+        switch mapType {
+        case .standard: return "map"
+        case .satellite: return "globe.americas.fill"
+        case .hybrid: return "globe"
+        }
     }
 
     private var accessibilityValueText: String {

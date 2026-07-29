@@ -20,8 +20,9 @@ import UIKit
     /// the vehicle's coordinate and a rental mode preselected.
     func rentalLayer(planTripUsing rental: VehicleRental)
 
-    /// Open a rental deep link (app URI or operator web page).
-    func rentalLayer(open url: URL)
+    /// Open a rental deep link, falling back to the operator's web page when the
+    /// primary URI fails to open (e.g. custom scheme with no app installed).
+    func rentalLayer(open url: URL, webFallback: URL?)
 }
 
 // MARK: - Detail Sheet
@@ -41,9 +42,10 @@ final class RentalDetailViewController: UIHostingController<RentalDetailView> {
         super.init(rootView: RentalDetailView(
             rental: rental,
             fetchedAt: fetchedAt,
+            staleAfter: staleAfter,
             userLocation: userLocation,
             onPlanTrip: { delegate?.rentalLayer(planTripUsing: $0) },
-            onOpenURL: { delegate?.rentalLayer(open: $0) }
+            onOpenURL: { delegate?.rentalLayer(open: $0, webFallback: $1) }
         ))
     }
 
@@ -56,9 +58,11 @@ final class RentalDetailViewController: UIHostingController<RentalDetailView> {
 struct RentalDetailView: View {
     let rental: VehicleRental
     let fetchedAt: Date?
+    /// The layer's declared trust window; past it, the footer flags the data as stale.
+    let staleAfter: Duration?
     let userLocation: CLLocation?
     var onPlanTrip: (VehicleRental) -> Void
-    var onOpenURL: (URL) -> Void
+    var onOpenURL: (URL, URL?) -> Void
 
     /// Reverse-geocoded on selection — never in bulk. Falls back to a plain
     /// distance string while loading or when geocoding fails.
@@ -85,7 +89,7 @@ struct RentalDetailView: View {
 
             if let deepLink = deepLinkURL {
                 Button {
-                    onOpenURL(deepLink.url)
+                    onOpenURL(deepLink.url, deepLink.webFallback)
                 } label: {
                     Text(deepLink.title)
                         .font(.subheadline.weight(.medium))
@@ -211,30 +215,45 @@ struct RentalDetailView: View {
 
     /// Deep link: the GBFS iOS URI when present, the operator's web page as
     /// fallback, nothing (the norm on the launch feed) otherwise.
-    private var deepLinkURL: (title: String, url: URL)? {
+    private var deepLinkURL: (title: String, url: URL, webFallback: URL?)? {
         let operatorName = rental.rentalNetwork?.displayName
         let template = OBALoc("rental_detail.open_in_fmt", value: "Open in %@", comment: "Button opening the rental operator's app or website")
+        let webURL = rental.rentalNetwork?.url.flatMap(URL.init(string:))
 
         if let ios = rental.rentalUris?.ios, let url = URL(string: ios) {
-            return (String(format: template, operatorName ?? url.host() ?? "app"), url)
+            return (String(format: template, operatorName ?? url.host() ?? "app"), url, webURL)
         }
-        if let web = rental.rentalNetwork?.url, let url = URL(string: web) {
-            return (String(format: template, operatorName ?? url.host() ?? "web"), url)
+        if let webURL {
+            return (String(format: template, operatorName ?? webURL.host() ?? "web"), webURL, nil)
         }
         return nil
     }
 
+    /// Re-rendered every 30s so a sheet left open keeps telling the truth, and the
+    /// layer's declared `staleAfter` window flags data past its trust horizon.
     @ViewBuilder private var attributionFooter: some View {
-        let freshness = fetchedAt.map {
-            String(format: OBALoc("rental_detail.updated_fmt", value: "Updated %@", comment: "Feed freshness line; the argument is a relative time like '12 seconds ago'"),
-                   RelativeDateTimeFormatter().localizedString(for: $0, relativeTo: Date()))
-        }
+        TimelineView(.periodic(from: .now, by: 30)) { context in
+            let freshness = fetchedAt.map {
+                String(format: OBALoc("rental_detail.updated_fmt", value: "Updated %@", comment: "Feed freshness line; the argument is a relative time like '12 seconds ago'"),
+                       RelativeDateTimeFormatter().localizedString(for: $0, relativeTo: context.date))
+            }
 
-        let parts = [rental.rentalNetwork?.displayName, freshness].compactMap { $0 }
-        if !parts.isEmpty {
-            Text(parts.joined(separator: " · "))
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            let isStale: Bool = {
+                guard let fetchedAt, let staleAfter else { return false }
+                return context.date.timeIntervalSince(fetchedAt) > Double(staleAfter.components.seconds)
+            }()
+
+            let parts = [rental.rentalNetwork?.displayName, freshness].compactMap { $0 }
+            if !parts.isEmpty {
+                Text(parts.joined(separator: " · "))
+                    .font(.caption)
+                    .foregroundStyle(isStale ? AnyShapeStyle(.orange) : AnyShapeStyle(.secondary))
+            }
+            if isStale {
+                Text(OBALoc("rental_detail.stale_warning", value: "This data may be out of date.", comment: "Warning shown when rental data is older than the layer's freshness window"))
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+            }
         }
     }
 
@@ -275,9 +294,10 @@ final class RentalClusterListViewController: UIHostingController<RentalClusterLi
         super.init(rootView: RentalClusterListView(
             rentals: rentals,
             fetchedAt: fetchedAt,
+            staleAfter: staleAfter,
             userLocation: userLocation,
             onPlanTrip: { delegate?.rentalLayer(planTripUsing: $0) },
-            onOpenURL: { delegate?.rentalLayer(open: $0) }
+            onOpenURL: { delegate?.rentalLayer(open: $0, webFallback: $1) }
         ))
     }
 
@@ -290,9 +310,10 @@ final class RentalClusterListViewController: UIHostingController<RentalClusterLi
 struct RentalClusterListView: View {
     let rentals: [VehicleRental]
     let fetchedAt: Date?
+    let staleAfter: Duration?
     let userLocation: CLLocation?
     var onPlanTrip: (VehicleRental) -> Void
-    var onOpenURL: (URL) -> Void
+    var onOpenURL: (URL, URL?) -> Void
 
     @State private var selectedRental: VehicleRental?
 
@@ -313,6 +334,7 @@ struct RentalClusterListView: View {
                 RentalDetailView(
                     rental: rental,
                     fetchedAt: fetchedAt,
+                    staleAfter: staleAfter,
                     userLocation: userLocation,
                     onPlanTrip: onPlanTrip,
                     onOpenURL: onOpenURL

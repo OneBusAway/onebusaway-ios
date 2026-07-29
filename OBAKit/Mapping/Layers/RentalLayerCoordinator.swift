@@ -134,7 +134,14 @@ import OTPKit
         }
 
         for rental in snapshot.updated {
-            annotations[rental.id]?.update(with: rental)
+            guard let annotation = annotations[rental.id] else { continue }
+            annotation.update(with: rental)
+            // Re-assigning the annotation re-runs the view's configure() so glyphs
+            // (availability counts) and tint (operative state) track the data;
+            // identity is unchanged, so selection survives.
+            if let view = mapView.view(for: annotation) as? RentalAnnotationView {
+                view.annotation = annotation
+            }
         }
 
         let factors = combinedFormFactors
@@ -161,6 +168,14 @@ import OTPKit
                 comment: "Reason shown on a dimmed rental layer row when its server is unreachable"
             )))
         }
+    }
+
+    /// Re-adds every tracked annotation to the map after a wholesale
+    /// `removeAllAnnotations` (search flows). `addAnnotations` ignores members
+    /// that are already present, so this is safe to call unconditionally.
+    func reattachAnnotations() {
+        guard let mapView, !annotations.isEmpty else { return }
+        mapView.addAnnotations(Array(annotations.values))
     }
 
     private func pruneAnnotations(notMatching factors: Set<VehicleFormFactor>) {

@@ -349,8 +349,17 @@ public class MapRegionManager: NSObject,
         if isStopsLayerEnabled {
             displayUniqueStopAnnotations()
         } else {
-            mapView.removeAnnotations(type: Stop.self)
+            removeStopAnnotationsPreservingSelection()
         }
+    }
+
+    /// Removes stop annotations for the layer toggle, but never a stop the rider is
+    /// actively looking at: a searched or selected stop is explicit user intent and
+    /// outranks the browse-layer preference (bookmarks get the same exemption).
+    private func removeStopAnnotationsPreservingSelection() {
+        let selectedStopIDs = Set(mapView.selectedAnnotations.compactMap { ($0 as? Stop)?.id })
+        let stopsToRemove = mapView.annotations.compactMap { $0 as? Stop }.filter { !selectedStopIDs.contains($0.id) }
+        mapView.removeAnnotations(stopsToRemove)
     }
 
     /// Feeds the current viewport to a layer, applying its zoom window: outside
@@ -658,6 +667,15 @@ public class MapRegionManager: NSObject,
         mapView.removeAllAnnotations()
         mapView.removeOverlays(mapView.overlays)
         reloadStopAnnotations()
+        notifyMapLayersAnnotationsCleared()
+    }
+
+    /// `removeAllAnnotations` strips layer annotations behind the layers' backs;
+    /// tell them so their bookkeeping and the map agree again.
+    private func notifyMapLayersAnnotationsCleared() {
+        for layer in mapLayers where isMapLayerEnabled(id: layer.id) {
+            layer.mapAnnotationsWereCleared()
+        }
     }
 
     private func searchResponseOverridesStopLoading() -> Bool {
@@ -724,6 +742,7 @@ public class MapRegionManager: NSObject,
 
     private func displaySearchResult(stopsForRoute: StopsForRoute) {
         mapView.removeAllAnnotations()
+        notifyMapLayersAnnotationsCleared()
 
         mapView.addOverlays(stopsForRoute.polylines)
         mapView.addAnnotations(stopsForRoute.stops)
@@ -826,14 +845,19 @@ public class MapRegionManager: NSObject,
 
         updateZoomWarningOverlay(mapHeight: mapView.visibleMapRect.height)
 
-        guard mapView.visibleMapRect.height <= MapRegionManager.requiredHeightToShowStops, isStopsLayerEnabled else {
+        // The zoom gate applies regardless of the layer toggle: `getStops` with a
+        // region-scale bounding box is exactly what the 40,000-height gate prevents.
+        guard mapView.visibleMapRect.height <= MapRegionManager.requiredHeightToShowStops else {
             mapView.removeAnnotations(type: Stop.self)
-            // Data still loads below even when annotations are hidden: other
-            // surfaces (like the nearby stops list) read `stops` directly.
-            if !isStopsLayerEnabled {
-                regionChangeRequestTimer?.invalidate()
-                regionChangeRequestTimer = Timer.scheduledTimer(timeInterval: 0.25, target: self, selector: #selector(requestDataForMapRegion(_:)), userInfo: nil, repeats: false)
-            }
+            return
+        }
+
+        guard isStopsLayerEnabled else {
+            removeStopAnnotationsPreservingSelection()
+            // Data still loads even when annotations are hidden: other surfaces
+            // (like the nearby stops list) read `stops` directly.
+            regionChangeRequestTimer?.invalidate()
+            regionChangeRequestTimer = Timer.scheduledTimer(timeInterval: 0.25, target: self, selector: #selector(requestDataForMapRegion(_:)), userInfo: nil, repeats: false)
             return
         }
 

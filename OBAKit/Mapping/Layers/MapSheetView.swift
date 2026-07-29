@@ -213,7 +213,10 @@ struct MapSheetView: View {
                 set: { model.setEnabled($0, layer: layer) }
             ))
             .labelsHidden()
-            .disabled(unavailableReason != nil)
+            // Unavailable blocks turning a layer *on* (it can't load), but an
+            // enabled layer must always be switchable off — a failing layer the
+            // rider can't disable is a stuck switch.
+            .disabled(unavailableReason != nil && !model.isEnabled(layer))
         }
         .opacity(unavailableReason == nil ? 1 : 0.5)
     }
