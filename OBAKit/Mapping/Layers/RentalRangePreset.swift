@@ -34,7 +34,8 @@ struct RentalRangePreset: Equatable, Identifiable {
     /// miles), and anything unrecognized lands on metric, which is right for most
     /// of the world.
     static func presets(
-        measurementSystem: Locale.MeasurementSystem = Locale.current.measurementSystem
+        measurementSystem: Locale.MeasurementSystem = Locale.current.measurementSystem,
+        locale: Locale = .current
     ) -> [RentalRangePreset] {
         let usesMiles = measurementSystem == .us || measurementSystem == .uk
         let unit: UnitLength = usesMiles ? .miles : .kilometers
@@ -44,6 +45,8 @@ struct RentalRangePreset: Equatable, Identifiable {
             meters: 0,
             title: OBALoc("map_sheet.minimum_range_any", value: "Any", comment: "Range filter menu option imposing no minimum range")
         )
+
+        let formatter = Self.formatter(for: locale)
 
         return [anyRung] + values.map { value in
             let measurement = Measurement(value: value, unit: unit)
@@ -63,11 +66,12 @@ struct RentalRangePreset: Equatable, Identifiable {
 
     /// `.providedUnit` suppresses both conversion and locale substitution, so the
     /// displayed number matches the rung exactly ("5 mi", not "8 km").
-    private static let formatter: MeasurementFormatter = {
+    private static func formatter(for locale: Locale) -> MeasurementFormatter {
         let formatter = MeasurementFormatter()
+        formatter.locale = locale
         formatter.unitOptions = .providedUnit
         formatter.unitStyle = .medium
         formatter.numberFormatter.maximumFractionDigits = 0
         return formatter
-    }()
+    }
 }
