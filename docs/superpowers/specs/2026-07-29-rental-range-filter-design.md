@@ -1,0 +1,290 @@
+# Rental Range Filter and Fuel Labels
+
+Two related additions to the rental map layers:
+
+1. A **minimum-range filter** in the Map sheet, so riders never have to tap a
+   scooter only to discover it has two miles left in it.
+2. A **fuel label** under each rental annotation, so the same judgment can be
+   made at a glance without tapping anything.
+
+Both act on `FuelInfo`, which carries `percent` (a 0...1 charge ratio) and
+`range` (estimated remaining meters). Either may be nil, and on the launch feed
+`percent` is null across the entire fleet while `range` is populated — every
+decision below is shaped by that asymmetry.
+
+## Decisions
+
+| Question | Decision |
+| --- | --- |
+| Label content | `percent` when present, else `range`, else no label |
+| Filter control | Menu-style picker with discrete presets |
+| Entities without range data | Fail open — always shown |
+| Label density | Gated on a zoom threshold tighter than the layer's own |
+| Threshold scope | One shared value for Bikes and Scooters |
+
+## Architecture
+
+### Filtering model
+
+Three new types, all pure Swift with no MapKit and no async.
+
+**`RentalRangeFilter`** — the predicate.
+
+```swift
+struct RentalRangeFilter: Equatable {
+    /// Threshold in meters. Zero means "Any" — no filtering at all.
+    let minimumRangeMeters: Int
+
+    static let any = RentalRangeFilter(minimumRangeMeters: 0)
+    var isActive: Bool { minimumRangeMeters > 0 }
+
+    func allows(_ rental: VehicleRental) -> Bool {
+        guard isActive,
+              case .vehicle(let vehicle) = rental,
+              let range = vehicle.fuel?.range else {
+            return true
+        }
+        return range >= minimumRangeMeters
+    }
+}
+```
+
+The single `guard` encodes fail-open: docked stations, pedal bikes, and powered
+vehicles whose feed omits `range` all leave through the same early return. This
+matches the fail-open convention already established by
+`VehicleRental.matches(formFactors:)`, and it means the filter can never empty
+the map on a feed that doesn't publish range.
+
+Comparison is `>=`, so a 5 mi threshold keeps a vehicle reporting exactly
+5 mi (8,047 m at the preset's stored value).
+
+**`RentalRangePreset`** — the menu ladder.
+
+```swift
+struct RentalRangePreset: Equatable, Identifiable {
+    let meters: Int     // 0 == Any
+    let title: String   // "Any", "5 mi", "10 km"
+    var id: Int { meters }
+
+    static func presets(measurementSystem: Locale.MeasurementSystem) -> [RentalRangePreset]
+    static func nearest(toMeters: Int, in presets: [RentalRangePreset]) -> RentalRangePreset
+}
+```
+
+Rungs are whole numbers in the rider's own units rather than a metric ladder
+converted from miles — "8 km" reads as a bug:
+
+- Imperial: Any, 1 mi, 2 mi, 5 mi, 10 mi, 15 mi
+- Metric: Any, 2 km, 5 km, 10 km, 15 km, 25 km
+
+Titles come from a `MeasurementFormatter` with `unitOptions = .providedUnit` and
+zero fraction digits, so the displayed number matches the rung exactly. "Any" is
+a localized string, not a formatted measurement.
+
+The persisted value is always meters. When it doesn't match a rung in the
+current ladder — the rider's locale changed after they chose one — the menu
+highlights the nearest rung via `nearest(toMeters:in:)` while filtering
+continues to use the stored value. Snapping and rewriting on read would silently
+alter a preference the rider set deliberately.
+
+**`RentalVisibility`** — the cache that makes the filter work at all.
+
+`VehicleRentalSource` emits only diffs (`added` / `removed` / `updated`) against
+what it has previously delivered. If the coordinator simply declined to create
+an annotation for an under-threshold vehicle, that vehicle would never reappear
+when the threshold was lowered — it isn't in `added` anymore. So the client needs
+its own complete cache of delivered entities, with visibility derived from it.
+
+```swift
+struct RentalVisibility {
+    struct Changes: Equatable {
+        var added: [VehicleRental] = []
+        var removed: [VehicleRental.ID] = []
+        var updated: [VehicleRental] = []
+        var isEmpty: Bool { added.isEmpty && removed.isEmpty && updated.isEmpty }
+    }
+
+    private(set) var formFactors: Set<VehicleFormFactor> = []
+    private(set) var filter: RentalRangeFilter = .any
+
+    mutating func apply(_ snapshot: VehicleRentalSnapshot) -> Changes
+    mutating func setFormFactors(_ formFactors: Set<VehicleFormFactor>) -> Changes
+    mutating func setFilter(_ filter: RentalRangeFilter) -> Changes
+}
+```
+
+An entity is visible when it matches the current form factors **and** passes the
+filter. Every mutation returns the exact set of changes to apply to the map, so
+the caller never has to recompute anything.
+
+Memory stays bounded without extra work: the source replaces its `delivered` map
+wholesale on each fetch and reports everything absent as `removed`, so the cache
+tracks the padded viewport rather than growing across a session.
+
+The case that needs the most care is an `updated` entity that **crosses** the
+threshold — a scooter that drained below it, or fresh data that lifts one above
+it. Such an entity must be translated into an add or a remove, not an update:
+
+| Was visible | Now visible | Emitted as |
+| --- | --- | --- |
+| yes | yes | `updated` |
+| yes | no | `removed` |
+| no | yes | `added` |
+| no | no | nothing |
+
+For determinism, `apply` preserves snapshot order, while the wholesale
+recomputations in `setFormFactors` and `setFilter` sort by id — mirroring how
+`VehicleRentalSource` sorts its own `removed` array.
+
+This type also absorbs `RentalLayerCoordinator.pruneAnnotations(notMatching:)`,
+which does a subset of the same job today. The coordinator is left with what it
+should have been all along: translating `Changes` into `MKMapView` calls.
+
+### Ownership and wiring
+
+The threshold is one shared value across both rental layers, so it lives on
+`MapRegionManager` beside the existing per-layer enablement, under
+`mapLayer.rentals.minimumRangeMeters`:
+
+```swift
+public static let rentalMinimumRangeDefaultsKey = "mapLayer.rentals.minimumRangeMeters"
+public var rentalRangeFilter: RentalRangeFilter { get set }  // setter persists + posts
+```
+
+Putting it here makes the Map sheet's Reset button work without new machinery:
+`mapLayersDifferFromDefaults` ORs in `rentalRangeFilter != .any`, and
+`resetMapLayersToDefaults()` sets it back to `.any`. The manager already
+references `StopsMapLayer.layerID` directly, so a rental-specific property is
+not a new kind of coupling.
+
+The alternative — a dedicated `RentalRangeFilterStore` — was rejected because
+the Map sheet and the coordinator would each need an instance, and keeping two
+instances in sync through `UserDefaults` is more moving parts than the property
+it replaces.
+
+`MapViewController` is the composition root. It observes a new
+`.rentalRangeFilterDidChange` notification and forwards to the coordinator,
+exactly as it already handles `.mapLayerEnabledStateDidChange`:
+
+```swift
+rentalLayerCoordinator?.setRangeFilter(mapRegionManager.rentalRangeFilter)
+```
+
+`RentalLayerCoordinator` is seeded with the persisted value at construction, so
+a filter set in a previous session applies to the first fetch rather than
+arriving one notification late.
+
+### Map sheet row
+
+A menu-style `Picker` appended to the "Other ways to get around" section, below
+the Bikes and Scooters rows. It appears whenever at least one rental layer row
+is visible — deliberately *not* gated on those layers being enabled, so the row
+doesn't jump in and out of the sheet as the rider toggles them, and so the
+filter can be set before turning a layer on.
+
+New strings:
+
+- `map_sheet.minimum_range` — "Minimum range"
+- `map_sheet.minimum_range_any` — "Any"
+
+### Fuel label
+
+`RentalFormat` moves out of `RentalDetailViewController.swift` into its own
+`RentalFormat.swift`. It is shared formatting logic that was never
+detail-sheet-specific, and this change adds a third consumer. It gains:
+
+```swift
+/// Battery percent when the feed provides it, else remaining range, else nil.
+static func fuelLabelText(for rental: VehicleRental) -> String?
+```
+
+Percent is clamped to 0...1 before formatting — a feed can report 1.2 — and
+reuses the existing `batteryText(_:)`. Range reuses the cached
+`distanceFormatter`. Stations return nil: they have no fuel of their own.
+
+`RentalAnnotation` gains `showsFuelLabel: Bool`, defaulting to false.
+
+`RentalAnnotationView` gains a `UILabel`:
+
+- pinned `centerXAnchor` to the view's `centerXAnchor`, `topAnchor` to the
+  view's `bottomAnchor` + 1, with `clipsToBounds = false`
+- bold `.caption1` via a symbolic trait, so Dynamic Type applies
+- `.rentalPurple` when operative, `.systemGray` when not, matching
+  `markerTintColor`
+- a white shadow, so the text stays legible over satellite basemaps
+- hidden when the text is nil or `showsFuelLabel` is false
+- cleared in `prepareForReuse()`, alongside the existing reuse resets
+
+**The zoom gate lives on the annotation, not the view.**
+`RentalMapLayer.annotationView(for:)` only dequeues a view and has no access to
+viewport state. So `RentalLayerCoordinator` sets `showsFuelLabel` on its
+annotations from the `mapRect` it already receives in `viewportDidChange`, and
+re-assigns `view.annotation` to re-run `configure()` — the same mechanism the
+existing update path uses to refresh glyphs without disturbing selection. New
+annotations are created with the current value, so they render correctly on
+first appearance.
+
+The threshold is **8,000 map points**, against the layer's own `zoomWindow` of
+20,000. These are `MKMapRect` units, not meters: at Seattle's latitude 20,000
+map points is roughly a 2 km-tall viewport, and 8,000 is roughly 800 m — a few
+blocks, where markers are far enough apart for labels to read. The exact number
+is a starting estimate and should be checked against a real dense fleet on
+device.
+
+The label is a plain subview, so it does not participate in MapKit's marker
+collision logic; some overlap in an unusually dense block is accepted rather
+than solved. Cluster annotations never get a label — a cluster has no single
+fuel value.
+
+**VoiceOver ignores the density gate.** The view's `accessibilityLabel`
+incorporates the fuel text even when the visual label is hidden by zoom: a
+visual-clutter rule should not cost a VoiceOver user information. The label
+itself is `isAccessibilityElement = false` so it isn't announced twice.
+
+### Analytics
+
+One event when the threshold changes, reported from the same place the filter is
+persisted, alongside the existing `AnalyticsLabels.mapLayerToggled`. The value is
+the chosen threshold in meters.
+
+## Testing
+
+The rental layer currently has no test coverage at all, so this is greenfield.
+The architecture above is shaped to put nearly all of the logic in types that
+need neither a map view nor an async pipeline to exercise.
+
+Swift Testing throughout, `.serialized` suites, per the conventions in
+`CLAUDE.md`.
+
+| Suite | Covers |
+| --- | --- |
+| `RentalRangeFilterTests` | the allow matrix: station, pedal bike, unknown range, below / exactly at / above threshold, and an inactive filter admitting everything |
+| `RentalRangePresetTests` | both ladders, meters conversion, titles, nearest-rung selection for an off-ladder stored value |
+| `RentalVisibilityTests` | snapshot add/remove/update diffs; raising the threshold hides; **lowering it restores from cache with no refetch**; updates that cross the threshold in both directions; form-factor pruning; deterministic ordering |
+| `RentalFormatTests` | percent rounding and out-of-range clamping, range fallback when percent is nil, nil for stations and for vehicles with no fuel |
+| `RentalAnnotationViewTests` | label text and hidden state per `showsFuelLabel`, gray when non-operative, accessibility label present while the visual label is hidden |
+| `MapRegionManager` persistence | default is Any, round-trip through a scratch `UserDefaults`, `mapLayersDifferFromDefaults`, reset |
+
+`RentalLayerCoordinator` gets no suite of its own. With `RentalVisibility`
+extracted, what remains is `mapView.addAnnotations` plumbing behind a 250 ms
+debounce and an `AsyncStream` — a large amount of test scaffolding for very
+little logic, and the logic it would cover is tested directly in
+`RentalVisibilityTests`.
+
+`scripts/generate_project` must be re-run after adding each new source or test
+file. XcodeGen picks files up from disk, and a test file the project doesn't know
+about doesn't fail — it silently runs zero tests, which reads as passing.
+
+Test fixtures need `VehicleRental` values with controlled `FuelInfo`. OTPKit's
+own `TestFixtures` are not visible to this target, so a small local builder for
+station / pedal bike / powered vehicle with a given range and percent goes in
+the test helpers.
+
+## Out of scope
+
+- Server-side range filtering. The OTP `vehicleRentalsByBbox` query has no such
+  parameter; this is a client-side display filter over data already fetched.
+- Separate thresholds per layer. One shared value, per the request.
+- Mirroring the filter into Settings. The Map sheet owns rental layer
+  configuration.
+- Filtering by operator, price, or vehicle type.
