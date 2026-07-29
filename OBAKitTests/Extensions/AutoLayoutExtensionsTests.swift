@@ -8,15 +8,15 @@
 //
 
 import Foundation
-import XCTest
 import Testing
 import UIKit
 @testable import OBAKitCore
 
 @MainActor
-class AutoLayoutExtensionsTests: XCTestCase {
+@Suite(.serialized)
+final class AutoLayoutExtensionsTests {
     
-    func test_UIView_layoutDirectionIsRTL() {
+    @Test func `UI view layout direction is RTL`() {
         let view = UIView()
         
         // For most locales, this should be false
@@ -28,7 +28,7 @@ class AutoLayoutExtensionsTests: XCTestCase {
         #expect(view.layoutDirectionIsRTL == true)
     }
     
-    func test_UIView_layoutDirectionIsLTR() {
+    @Test func `UI view layout direction is LTR`() {
         let view = UIView()
         
         // For most locales, this should be true
@@ -44,14 +44,14 @@ class AutoLayoutExtensionsTests: XCTestCase {
         #expect(view.layoutDirectionIsLTR == true)
     }
     
-    func test_UIView_autolayoutNew() {
+    @Test func `UI view autolayout new`() {
         let view = UIView.autolayoutNew()
         
         #expect(view.translatesAutoresizingMaskIntoConstraints == false)
         #expect(view.frame == .zero)
     }
     
-    func test_UILabel_autolayoutNew() {
+    @Test func `UI label autolayout new`() {
         let label = UILabel.autolayoutNew()
         
         #expect(label.translatesAutoresizingMaskIntoConstraints == false)
@@ -59,7 +59,7 @@ class AutoLayoutExtensionsTests: XCTestCase {
         #expect(type(of: label) == UILabel.self)
     }
     
-    func test_UIView_spacerView() {
+    @Test func `UI view spacer view`() {
         let height: CGFloat = 20.0
         let spacer = UIView.spacerView(height: height)
         
@@ -72,7 +72,7 @@ class AutoLayoutExtensionsTests: XCTestCase {
         #expect(heightConstraints.count == 1)
     }
     
-    func test_UIView_embedInWrapperView_withConstraints() {
+    @Test func `UI view embed in wrapper view with constraints`() {
         let childView = UIView()
         let wrapper = childView.embedInWrapperView(setConstraints: true)
         
@@ -82,7 +82,7 @@ class AutoLayoutExtensionsTests: XCTestCase {
         #expect(childView.superview === wrapper)
     }
     
-    func test_UIView_embedInWrapperView_withoutConstraints() {
+    @Test func `UI view embed in wrapper view without constraints`() {
         let childView = UIView()
         let wrapper = childView.embedInWrapperView(setConstraints: false)
         
@@ -92,14 +92,14 @@ class AutoLayoutExtensionsTests: XCTestCase {
         #expect(childView.superview === wrapper)
     }
     
-    func test_AutoLayoutPinTarget_cases() {
+    @Test func `Auto layout pin target cases`() {
         #expect(UIView.AutoLayoutPinTarget.edges.rawValue == 0)
         #expect(UIView.AutoLayoutPinTarget.layoutMargins.rawValue == 1)
         #expect(UIView.AutoLayoutPinTarget.readableContent.rawValue == 2)
         #expect(UIView.AutoLayoutPinTarget.safeArea.rawValue == 3)
     }
     
-    func test_LayoutConstraints_struct() {
+    @Test func `Layout constraints struct`() {
         let view = UIView()
         let superview = UIView()
         superview.addSubview(view)

@@ -8,16 +8,15 @@
 //
 
 import Foundation
-import XCTest
 import Testing
 import SwiftUI
 @testable import OBAKit
 
-@available(iOS 14.0, *)
 @MainActor
-class SwiftUIExtensionsTests: XCTestCase {
+@Suite(.serialized)
+final class SwiftUIExtensionsTests {
     
-    func test_onFirstAppear_callsActionOnlyOnce() {
+    @Test func `On first appear calls action only once`() {
         var callCount = 0
         _ = Text("Test")
             .onFirstAppear {

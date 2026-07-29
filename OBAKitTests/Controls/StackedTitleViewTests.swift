@@ -8,27 +8,26 @@
 //
 
 import Foundation
-import XCTest
 import Testing
 import UIKit
 @testable import OBAKit
 
 @MainActor
-class StackedTitleViewTests: XCTestCase {
+@Suite(.serialized)
+final class StackedTitleViewTests {
     
     var stackedTitleView: StackedTitleView!
     
-    override func setUp() async throws {
-        try await super.setUp()
+    init() {
         stackedTitleView = StackedTitleView(frame: .zero)
     }
     
-    func test_init_createsLabels() {
+    @Test func `Init creates labels`() {
         #expect(type(of: self.stackedTitleView.titleLabel) == UILabel.self)
         #expect(type(of: self.stackedTitleView.subtitleLabel) == UILabel.self)
     }
     
-    func test_titleLabel_properties() {
+    @Test func `Title label properties`() {
         let titleLabel = stackedTitleView.titleLabel
         
         #expect(titleLabel.textAlignment == .center)
@@ -38,7 +37,7 @@ class StackedTitleViewTests: XCTestCase {
         #expect(titleLabel.contentHuggingPriority(for: .horizontal) == .defaultLow)
     }
     
-    func test_subtitleLabel_properties() {
+    @Test func `Subtitle label properties`() {
         let subtitleLabel = stackedTitleView.subtitleLabel
         
         #expect(subtitleLabel.textAlignment == .center)
@@ -48,7 +47,7 @@ class StackedTitleViewTests: XCTestCase {
         #expect(subtitleLabel.contentHuggingPriority(for: .horizontal) == .defaultLow)
     }
     
-    func test_stackView_configuration() {
+    @Test func `Stack view configuration`() {
         // Access the stack view indirectly by checking the subviews
         #expect(self.stackedTitleView.subviews.count == 1)
         let stackView = self.stackedTitleView.subviews.first as? UIStackView
@@ -58,7 +57,7 @@ class StackedTitleViewTests: XCTestCase {
         #expect(stackView?.arrangedSubviews.last === self.stackedTitleView.subtitleLabel)
     }
     
-    func test_titleAndSubtitle_canBeSet() {
+    @Test func `Title and subtitle can be set`() {
         stackedTitleView.titleLabel.text = "Test Title"
         stackedTitleView.subtitleLabel.text = "Test Subtitle"
         

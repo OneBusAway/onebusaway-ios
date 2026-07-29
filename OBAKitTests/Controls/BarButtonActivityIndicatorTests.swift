@@ -8,15 +8,15 @@
 //
 
 import Foundation
-import XCTest
 import Testing
 import UIKit
 @testable import OBAKit
 
 @MainActor
-class BarButtonActivityIndicatorTests: XCTestCase {
+@Suite(.serialized)
+final class BarButtonActivityIndicatorTests {
     
-    func test_UIActivityIndicatorView_asNavigationItem() {
+    @Test func `UI activity indicator view as navigation item`() {
         let barButtonItem = UIActivityIndicatorView.asNavigationItem()
         
         #expect(type(of: barButtonItem) == UIBarButtonItem.self)

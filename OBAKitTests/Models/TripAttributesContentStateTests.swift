@@ -7,7 +7,8 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
+import Foundation
+import Testing
 @testable import OBAKitCore
 
 /// Contract test: decodes the exact fixture that obacloud's
@@ -15,30 +16,31 @@ import XCTest
 /// repos). Uses a default-configuration JSONDecoder because Apple decodes
 /// pushed content-state with default strategies — no convertFromSnakeCase.
 @MainActor
-class TripAttributesContentStateTests: XCTestCase {
-    func testDecodesServerFixtureWithDefaultDecoder() throws {
+@Suite(.serialized)
+final class TripAttributesContentStateTests {
+    @Test func `Decodes server fixture with default decoder`() throws {
         let url = Bundle(for: type(of: self)).url(forResource: "live_activity_content_state", withExtension: "json")!
         let data = try Data(contentsOf: url)
 
         let state = try JSONDecoder().decode(TripAttributes.ContentState.self, from: data)
 
-        XCTAssertEqual(state.arrivals.count, 3)
+        #expect(state.arrivals.count == 3)
 
         let first = state.arrivals[0]
-        XCTAssertEqual(first.departureTime, 1767980460)
-        XCTAssertEqual(first.scheduleStatus, .onTime)
-        XCTAssertEqual(first.scheduleDeviation, 60)
-        XCTAssertFalse(first.isArrival)
-        XCTAssertEqual(first.departureDate, Date(timeIntervalSince1970: 1767980460))
+        #expect(first.departureTime == 1767980460)
+        #expect(first.scheduleStatus == .onTime)
+        #expect(first.scheduleDeviation == 60)
+        #expect(!first.isArrival)
+        #expect(first.departureDate == Date(timeIntervalSince1970: 1767980460))
 
-        XCTAssertEqual(state.arrivals[1].scheduleStatus, .delayed)
-        XCTAssertEqual(state.arrivals[2].scheduleStatus, .unknown)
+        #expect(state.arrivals[1].scheduleStatus == .delayed)
+        #expect(state.arrivals[2].scheduleStatus == .unknown)
     }
 
-    func testScheduleStatusBridgesToExistingEnum() {
-        XCTAssertEqual(TripAttributes.ContentState.ScheduleStatusValue.onTime.scheduleStatus, ScheduleStatus.onTime)
-        XCTAssertEqual(TripAttributes.ContentState.ScheduleStatusValue.early.scheduleStatus, ScheduleStatus.early)
-        XCTAssertEqual(TripAttributes.ContentState.ScheduleStatusValue.delayed.scheduleStatus, ScheduleStatus.delayed)
-        XCTAssertEqual(TripAttributes.ContentState.ScheduleStatusValue.unknown.scheduleStatus, ScheduleStatus.unknown)
+    @Test func `Schedule status bridges to existing enum`() {
+        #expect(TripAttributes.ContentState.ScheduleStatusValue.onTime.scheduleStatus == ScheduleStatus.onTime)
+        #expect(TripAttributes.ContentState.ScheduleStatusValue.early.scheduleStatus == ScheduleStatus.early)
+        #expect(TripAttributes.ContentState.ScheduleStatusValue.delayed.scheduleStatus == ScheduleStatus.delayed)
+        #expect(TripAttributes.ContentState.ScheduleStatusValue.unknown.scheduleStatus == ScheduleStatus.unknown)
     }
 }

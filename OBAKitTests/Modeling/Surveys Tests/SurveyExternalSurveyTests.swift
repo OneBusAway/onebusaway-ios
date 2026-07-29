@@ -7,17 +7,17 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
 import Testing
 @testable import OBAKitCore
 
 /// Tests for `Survey.isExternalSurvey`, which keys off the hero question
 /// (the question at `position == 1`).
 @MainActor
-final class SurveyExternalSurveyTests: XCTestCase {
+@Suite(.serialized)
+final class SurveyExternalSurveyTests {
 
     // Positive: the hero question is an external survey.
-    func test_isExternalSurvey_whenHeroQuestionIsExternal_returnsTrue() {
+    @Test func `Is external survey when hero question is external returns true`() {
         let hero = SurveysTestHelpers.makeSurveyQuestion(
             position: 1,
             type: .externalSurvey,
@@ -29,7 +29,7 @@ final class SurveyExternalSurveyTests: XCTestCase {
     }
 
     // Negative: the hero question exists but is an in-app question type.
-    func test_isExternalSurvey_whenHeroQuestionIsNotExternal_returnsFalse() {
+    @Test func `Is external survey when hero question is not external returns false`() {
         let hero = SurveysTestHelpers.makeSurveyQuestion(
             position: 1,
             type: .radio,
@@ -45,7 +45,7 @@ final class SurveyExternalSurveyTests: XCTestCase {
     // non-empty list (with an external question at a non-hero position) locks
     // in the `position == 1` lookup that `isExternalSurvey` depends on, rather
     // than only exercising the empty-array path.
-    func test_isExternalSurvey_whenNoHeroQuestion_returnsFalse() {
+    @Test func `Is external survey when no hero question returns false`() {
         let nonHero = SurveysTestHelpers.makeSurveyQuestion(
             position: 2,
             type: .externalSurvey,

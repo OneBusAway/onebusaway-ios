@@ -7,7 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
+import Testing
 import UIKit
 @testable import OBAKit
 
@@ -16,23 +16,24 @@ import UIKit
 /// properties the caller depends on: it finds the *shallowest* scroll view, and it reports
 /// absence rather than trapping.
 @MainActor
-final class UIViewScrollViewSearchTests: XCTestCase {
+@Suite(.serialized)
+final class UIViewScrollViewSearchTests {
 
-    func test_returnsNil_whenHierarchyHasNoScrollView() {
+    @Test func `Returns nil when hierarchy has no scroll view`() {
         let root = UIView()
         let child = UIView()
         root.addSubview(child)
         child.addSubview(UILabel())
 
-        XCTAssertNil(root.nearestDescendantScrollView())
+        #expect(root.nearestDescendantScrollView() == nil)
     }
 
-    func test_returnsReceiver_whenReceiverIsAScrollView() {
+    @Test func `Returns receiver when receiver is a scroll view`() {
         let scrollView = UIScrollView()
-        XCTAssertIdentical(scrollView.nearestDescendantScrollView(), scrollView)
+        #expect(scrollView.nearestDescendantScrollView() === scrollView)
     }
 
-    func test_findsNestedScrollView() {
+    @Test func `Finds nested scroll view`() {
         let root = UIView()
         let middle = UIView()
         let scrollView = UIScrollView()
@@ -40,13 +41,13 @@ final class UIViewScrollViewSearchTests: XCTestCase {
         root.addSubview(middle)
         middle.addSubview(scrollView)
 
-        XCTAssertIdentical(root.nearestDescendantScrollView(), scrollView)
+        #expect(root.nearestDescendantScrollView() === scrollView)
     }
 
     /// The search must be breadth-first. A SwiftUI `List`'s rows can themselves contain scroll
     /// views; tracking one of those instead of the list would make the sheet resize off a
     /// single row's scrolling.
-    func test_prefersShallowerScrollView_overOneNestedDeeperInAnEarlierBranch() {
+    @Test func `Prefers shallower scroll view over one nested deeper in an earlier branch`() {
         let root = UIView()
 
         // Earlier branch, deeper scroll view — a row's own scroll view.
@@ -62,11 +63,11 @@ final class UIViewScrollViewSearchTests: XCTestCase {
         root.addSubview(firstBranch)
         root.addSubview(shallowScrollView)
 
-        XCTAssertIdentical(root.nearestDescendantScrollView(), shallowScrollView)
+        #expect(root.nearestDescendantScrollView() === shallowScrollView)
     }
 
     /// `UITableView` and `UICollectionView` are the concrete types SwiftUI actually produces.
-    func test_findsCollectionView() {
+    @Test func `Finds collection view`() {
         let root = UIView()
         let collectionView = UICollectionView(
             frame: .zero,
@@ -74,6 +75,6 @@ final class UIViewScrollViewSearchTests: XCTestCase {
         )
         root.addSubview(collectionView)
 
-        XCTAssertIdentical(root.nearestDescendantScrollView(), collectionView)
+        #expect(root.nearestDescendantScrollView() === collectionView)
     }
 }

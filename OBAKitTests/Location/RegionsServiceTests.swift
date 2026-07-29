@@ -9,6 +9,7 @@
 
 import Foundation
 import XCTest
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 import CoreLocation
@@ -267,7 +268,7 @@ class RegionsServiceTests: OBATestCase {
 
         regionsService.currentRegion = newRegion
 
-        XCTAssertDidCallDelegateMethodWithValue(testDelegate.newRegionSelected, newRegion, "Expected RegionsService to inform delegates of the new region selection")
+        expectDidCallDelegateMethod(testDelegate.newRegionSelected, newRegion, "Expected RegionsService to inform delegates of the new region selection")
         XCTAssertEqual(regionsService.currentRegion, newRegion, "Expected RegionsService to update its currentRegion property to the new region")
     }
 

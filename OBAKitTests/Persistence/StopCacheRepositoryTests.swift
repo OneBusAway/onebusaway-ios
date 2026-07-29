@@ -7,29 +7,30 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
+import Foundation
+import Testing
 import CoreLocation
 @testable import OBAKitCore
 
 // swiftlint:disable force_try
 
 @MainActor
-class StopCacheRepositoryTests: XCTestCase {
+@Suite(.serialized)
+final class StopCacheRepositoryTests {
 
-    var database: StopCacheDatabase!
-    var repository: StopCacheRepository!
+    let database: StopCacheDatabase
+    let repository: StopCacheRepository
 
-    override func setUp() async throws {
-        try await super.setUp()
+    init() {
         database = try! StopCacheDatabase(inMemory: true)
         repository = StopCacheRepository(database: database)
     }
 
-    override func tearDown() async throws {
-        repository = nil
-        database = nil
-        try await super.tearDown()
-    }
+    // `tearDown` nilled both properties out. That was housekeeping XCTest
+    // needed because it keeps test-case instances alive for the whole run;
+    // Swift Testing releases the suite instance after each test, so letting
+    // ARC do it is equivalent — and a `deinit` that only assigns nil to
+    // properties of the object being destroyed is a no-op anyway.
 
     // MARK: - Helpers
 
@@ -65,29 +66,29 @@ class StopCacheRepositoryTests: XCTestCase {
 
     // MARK: - Save and Retrieve
 
-    func test_saveAndRetrieveStops_roundTripsCorrectly() {
+    @Test func `Save and retrieve stops round trips correctly`() {
         let stop = makeStop(id: "1_75403", code: "75403", name: "E Pine St & 15th Ave", lat: 47.6153, lon: -122.3148, direction: "W", routeIDs: ["1_10", "1_49"])
 
         repository.saveStops([stop], regionId: 1)
 
         let results = repository.stopsInRegion(minLat: 47.0, maxLat: 48.0, minLon: -123.0, maxLon: -122.0, regionId: 1)
 
-        XCTAssertEqual(results.count, 1)
+        #expect(results.count == 1)
 
         let cached = results[0]
-        XCTAssertEqual(cached.id, "1_75403")
-        XCTAssertEqual(cached.code, "75403")
-        XCTAssertEqual(cached.name, "E Pine St & 15th Ave")
-        XCTAssertEqual(cached.location.coordinate.latitude, 47.6153, accuracy: 0.0001)
-        XCTAssertEqual(cached.location.coordinate.longitude, -122.3148, accuracy: 0.0001)
-        XCTAssertEqual(cached.direction, .w)
-        XCTAssertEqual(cached.locationType, .stop)
-        XCTAssertEqual(cached.routeIDs, ["1_10", "1_49"])
-        XCTAssertEqual(cached.wheelchairBoarding, .unknown)
-        XCTAssertEqual(cached.regionIdentifier, 1)
+        #expect(cached.id == "1_75403")
+        #expect(cached.code == "75403")
+        #expect(cached.name == "E Pine St & 15th Ave")
+        expectClose(cached.location.coordinate.latitude, 47.6153, within: 0.0001)
+        expectClose(cached.location.coordinate.longitude, -122.3148, within: 0.0001)
+        #expect(cached.direction == .w)
+        #expect(cached.locationType == .stop)
+        #expect(cached.routeIDs == ["1_10", "1_49"])
+        #expect(cached.wheelchairBoarding == .unknown)
+        #expect(cached.regionIdentifier == 1)
     }
 
-    func test_saveStops_upsertsOnCompositeKey() {
+    @Test func `Save stops upserts on composite key`() {
         let original = makeStop(id: "1_100", name: "Original Name", lat: 47.6, lon: -122.3)
         repository.saveStops([original], regionId: 1)
 
@@ -95,11 +96,11 @@ class StopCacheRepositoryTests: XCTestCase {
         repository.saveStops([updated], regionId: 1)
 
         let results = repository.stopsInRegion(minLat: 47.0, maxLat: 48.0, minLon: -123.0, maxLon: -122.0, regionId: 1)
-        XCTAssertEqual(results.count, 1)
-        XCTAssertEqual(results[0].name, "Updated Name")
+        #expect(results.count == 1)
+        #expect(results[0].name == "Updated Name")
     }
 
-    func test_sameStopId_differentRegions_storedSeparately() {
+    @Test func `Same stop id different regions stored separately`() {
         let stop = makeStop(id: "1_100", name: "Seattle Stop", lat: 47.6, lon: -122.3)
         repository.saveStops([stop], regionId: 1)
 
@@ -107,57 +108,57 @@ class StopCacheRepositoryTests: XCTestCase {
         repository.saveStops([sameIdDifferentRegion], regionId: 2)
 
         let seattleResults = repository.stopsInRegion(minLat: 47.0, maxLat: 48.0, minLon: -123.0, maxLon: -122.0, regionId: 1)
-        XCTAssertEqual(seattleResults.count, 1)
-        XCTAssertEqual(seattleResults[0].name, "Seattle Stop")
+        #expect(seattleResults.count == 1)
+        #expect(seattleResults[0].name == "Seattle Stop")
 
         let tampaResults = repository.stopsInRegion(minLat: 27.0, maxLat: 28.0, minLon: -83.0, maxLon: -82.0, regionId: 2)
-        XCTAssertEqual(tampaResults.count, 1)
-        XCTAssertEqual(tampaResults[0].name, "Tampa Stop")
+        #expect(tampaResults.count == 1)
+        #expect(tampaResults[0].name == "Tampa Stop")
     }
 
     // MARK: - Bounding Box Query
 
-    func test_stopsInRegion_onlyReturnsStopsWithinBounds() {
+    @Test func `Stops in region only returns stops within bounds`() {
         let inside = makeStop(id: "inside", lat: 47.61, lon: -122.33)
         let outside = makeStop(id: "outside", lat: 48.50, lon: -121.00)
 
         repository.saveStops([inside, outside], regionId: 1)
 
         let results = repository.stopsInRegion(minLat: 47.5, maxLat: 47.7, minLon: -122.5, maxLon: -122.0, regionId: 1)
-        XCTAssertEqual(results.count, 1)
-        XCTAssertEqual(results[0].id, "inside")
+        #expect(results.count == 1)
+        #expect(results[0].id == "inside")
     }
 
-    func test_stopsInRegion_returnsEmptyForNoMatches() {
+    @Test func `Stops in region returns empty for no matches`() {
         let stop = makeStop(id: "1_100", lat: 47.6, lon: -122.3)
         repository.saveStops([stop], regionId: 1)
 
         let results = repository.stopsInRegion(minLat: 0.0, maxLat: 1.0, minLon: 0.0, maxLon: 1.0, regionId: 1)
-        XCTAssertEqual(results.count, 0)
+        #expect(results.count == 0)
     }
 
-    func test_stopsInRegion_filtersByRegionId() {
+    @Test func `Stops in region filters by region id`() {
         let stop = makeStop(id: "1_100", lat: 47.6, lon: -122.3)
         repository.saveStops([stop], regionId: 1)
 
         // Same bounding box, different region — should return nothing
         let results = repository.stopsInRegion(minLat: 47.0, maxLat: 48.0, minLon: -123.0, maxLon: -122.0, regionId: 999)
-        XCTAssertEqual(results.count, 0)
+        #expect(results.count == 0)
     }
 
-    func test_stopsInRegion_includesStopsOnBoundary() {
+    @Test func `Stops in region includes stops on boundary`() {
         let edgeStop = makeStop(id: "edge", lat: 47.5, lon: -122.5)
         repository.saveStops([edgeStop], regionId: 1)
 
         // Query with bounds exactly matching the stop's coordinates
         let results = repository.stopsInRegion(minLat: 47.5, maxLat: 47.5, minLon: -122.5, maxLon: -122.5, regionId: 1)
-        XCTAssertEqual(results.count, 1)
-        XCTAssertEqual(results[0].id, "edge")
+        #expect(results.count == 1)
+        #expect(results[0].id == "edge")
     }
 
     // MARK: - Purge Stale Data
 
-    func test_deleteStopsOlderThan_removesStaleEntries() {
+    @Test func `Delete stops older than removes stale entries`() {
         let stop = makeStop(id: "old_stop", lat: 47.6, lon: -122.3)
         repository.saveStops([stop], regionId: 1)
 
@@ -166,10 +167,10 @@ class StopCacheRepositoryTests: XCTestCase {
         repository.deleteStopsOlderThan(futureDate, regionId: 1)
 
         let results = repository.stopsInRegion(minLat: 47.0, maxLat: 48.0, minLon: -123.0, maxLon: -122.0, regionId: 1)
-        XCTAssertEqual(results.count, 0)
+        #expect(results.count == 0)
     }
 
-    func test_deleteStopsOlderThan_preservesFreshEntries() {
+    @Test func `Delete stops older than preserves fresh entries`() {
         let stop = makeStop(id: "fresh_stop", lat: 47.6, lon: -122.3)
         repository.saveStops([stop], regionId: 1)
 
@@ -178,11 +179,11 @@ class StopCacheRepositoryTests: XCTestCase {
         repository.deleteStopsOlderThan(pastDate, regionId: 1)
 
         let results = repository.stopsInRegion(minLat: 47.0, maxLat: 48.0, minLon: -123.0, maxLon: -122.0, regionId: 1)
-        XCTAssertEqual(results.count, 1)
-        XCTAssertEqual(results[0].id, "fresh_stop")
+        #expect(results.count == 1)
+        #expect(results[0].id == "fresh_stop")
     }
 
-    func test_deleteStopsOlderThan_scopedToRegion() {
+    @Test func `Delete stops older than scoped to region`() {
         let stop1 = makeStop(id: "1_100", lat: 47.6, lon: -122.3)
         let stop2 = makeStop(id: "2_100", lat: 27.9, lon: -82.5)
 
@@ -194,16 +195,16 @@ class StopCacheRepositoryTests: XCTestCase {
 
         // Region 1 should be empty
         let region1Results = repository.stopsInRegion(minLat: 47.0, maxLat: 48.0, minLon: -123.0, maxLon: -122.0, regionId: 1)
-        XCTAssertEqual(region1Results.count, 0)
+        #expect(region1Results.count == 0)
 
         // Region 2 should be untouched
         let region2Results = repository.stopsInRegion(minLat: 27.0, maxLat: 28.0, minLon: -83.0, maxLon: -82.0, regionId: 2)
-        XCTAssertEqual(region2Results.count, 1)
+        #expect(region2Results.count == 1)
     }
 
     // MARK: - Clear Cache
 
-    func test_clearCache_removesAllStopsForRegion_andPreservesOtherRegions() {
+    @Test func `Clear cache removes all stops for region and preserves other regions`() {
         let region1Stops = (1...5).map { makeStop(id: "stop_\($0)", lat: 47.6 + Double($0) * 0.001, lon: -122.3) }
         repository.saveStops(region1Stops, regionId: 1)
 
@@ -213,26 +214,26 @@ class StopCacheRepositoryTests: XCTestCase {
         repository.clearCache(regionId: 1)
 
         let region1Results = repository.stopsInRegion(minLat: 47.0, maxLat: 48.0, minLon: -123.0, maxLon: -122.0, regionId: 1)
-        XCTAssertEqual(region1Results.count, 0)
+        #expect(region1Results.count == 0)
 
         // Region 2 should be untouched
         let region2Results = repository.stopsInRegion(minLat: 27.0, maxLat: 28.0, minLon: -83.0, maxLon: -82.0, regionId: 2)
-        XCTAssertEqual(region2Results.count, 1)
-        XCTAssertEqual(region2Results[0].id, "region2_stop")
+        #expect(region2Results.count == 1)
+        #expect(region2Results[0].id == "region2_stop")
     }
 
     // MARK: - Direction Handling
 
-    func test_stopWithNilDirection_roundTripsAsUnknown() {
+    @Test func `Stop with nil direction round trips as unknown`() {
         let stop = makeStop(id: "no_dir", direction: nil)
         repository.saveStops([stop], regionId: 1)
 
         let results = repository.stopsInRegion(minLat: 47.0, maxLat: 48.0, minLon: -123.0, maxLon: -122.0, regionId: 1)
-        XCTAssertEqual(results.count, 1)
-        XCTAssertEqual(results[0].direction, .unknown)
+        #expect(results.count == 1)
+        #expect(results[0].direction == .unknown)
     }
 
-    func test_allDirections_roundTripCorrectly() {
+    @Test func `All directions round trip correctly`() {
         let directions = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
         let expectedDirections: [Direction] = [.n, .ne, .e, .se, .s, .sw, .w, .nw]
 
@@ -242,39 +243,39 @@ class StopCacheRepositoryTests: XCTestCase {
 
             let results = repository.stopsInRegion(minLat: 47.0, maxLat: 48.0, minLon: -123.0, maxLon: -122.0, regionId: 1)
             let match = results.first { $0.id == "dir_\(dir)" }
-            XCTAssertNotNil(match, "Stop with direction \(dir) should exist in cache")
-            XCTAssertEqual(match?.direction, expectedDirections[index], "Direction \(dir) should round-trip to \(expectedDirections[index])")
+            #expect(match != nil, "Stop with direction \(dir) should exist in cache")
+            #expect(match?.direction == expectedDirections[index], "Direction \(dir) should round-trip to \(expectedDirections[index])")
         }
     }
 
     // MARK: - Routes Safety
 
-    func test_cachedStop_routesIsNotNil_afterRoundTrip() {
+    @Test func `Cached stop routes is not nil after round trip`() {
         let stop = makeStop(id: "1_100")
         repository.saveStops([stop], regionId: 1)
 
         let results = repository.stopsInRegion(minLat: 47.0, maxLat: 48.0, minLon: -123.0, maxLon: -122.0, regionId: 1)
-        XCTAssertEqual(results.count, 1)
+        #expect(results.count == 1)
 
         // Stop.routes is [Route]! — if this is nil, the next line would crash.
-        XCTAssertNotNil(results[0].routes)
+        #expect(results[0].routes != nil)
         // Accessing prioritizedRouteTypeForDisplay exercises routes.map internally.
-        XCTAssertEqual(results[0].prioritizedRouteTypeForDisplay, .unknown)
+        #expect(results[0].prioritizedRouteTypeForDisplay == .unknown)
     }
 
-    func test_cachedStop_emptyRouteIDs_roundTripsCorrectly() {
+    @Test func `Cached stop empty route IDs round trips correctly`() {
         let stop = makeStop(id: "no_routes", routeIDs: [])
         repository.saveStops([stop], regionId: 1)
 
         let results = repository.stopsInRegion(minLat: 47.0, maxLat: 48.0, minLon: -123.0, maxLon: -122.0, regionId: 1)
-        XCTAssertEqual(results.count, 1)
-        XCTAssertNotNil(results[0].routes)
-        XCTAssertEqual(results[0].routeIDs, [])
+        #expect(results.count == 1)
+        #expect(results[0].routes != nil)
+        #expect(results[0].routeIDs == [])
     }
 
     // MARK: - Corrupted Data
 
-    func test_stopsInRegion_gracefullyHandlesCorruptedStopData() throws {
+    @Test func `Stops in region gracefully handles corrupted stop data`() throws {
         // Insert a record with invalid blob data directly via GRDB
         try database.dbQueue.write { db in
             try db.execute(
@@ -292,13 +293,13 @@ class StopCacheRepositoryTests: XCTestCase {
 
         // The corrupted record should be silently filtered out by compactMap in stopsInRegion
         let results = repository.stopsInRegion(minLat: 47.0, maxLat: 48.0, minLon: -123.0, maxLon: -122.0, regionId: 1)
-        XCTAssertEqual(results.count, 1)
-        XCTAssertEqual(results[0].id, "valid_1")
+        #expect(results.count == 1)
+        #expect(results[0].id == "valid_1")
     }
 
     // MARK: - Nil Direction / WheelchairBoarding
 
-    func test_stopWithNilDirectionAndWheelchairBoarding_roundTripsCorrectly() {
+    @Test func `Stop with nil direction and wheelchair boarding round trips correctly`() {
         // direction=nil and wheelchairBoarding=nil should round-trip cleanly
         // through Stop's own Codable (no manual dictionary involved).
         let dict: [String: Any] = [
@@ -317,14 +318,14 @@ class StopCacheRepositoryTests: XCTestCase {
         repository.saveStops([stop], regionId: 1)
 
         let results = repository.stopsInRegion(minLat: 47.0, maxLat: 48.0, minLon: -123.0, maxLon: -122.0, regionId: 1)
-        XCTAssertEqual(results.count, 1)
-        XCTAssertEqual(results[0].id, "nil_fields")
-        XCTAssertEqual(results[0].direction, .unknown)
+        #expect(results.count == 1)
+        #expect(results[0].id == "nil_fields")
+        #expect(results[0].direction == .unknown)
     }
 
     // MARK: - Failable Init
 
-    func test_saveStops_persistsAllValidStops() {
+    @Test func `Save stops persists all valid stops`() {
         // Verifies the failable CachedStop.init? doesn't accidentally skip valid stops.
         // Note: The encoding-failure path (init? returning nil) isn't practically testable
         // because Stop always encodes successfully. The read-side filtering of corrupted
@@ -333,19 +334,19 @@ class StopCacheRepositoryTests: XCTestCase {
         repository.saveStops(stops, regionId: 1)
 
         let results = repository.stopsInRegion(minLat: 47.0, maxLat: 48.0, minLon: -123.0, maxLon: -122.0, regionId: 1)
-        XCTAssertEqual(results.count, 5)
+        #expect(results.count == 5)
     }
 
     // MARK: - Multiple Stops
 
-    func test_saveMultipleStops_allPersisted() {
+    @Test func `Save multiple stops all persisted`() {
         let stops = (1...50).map {
             makeStop(id: "stop_\($0)", lat: 47.6 + Double($0) * 0.001, lon: -122.3)
         }
         repository.saveStops(stops, regionId: 1)
 
         let results = repository.stopsInRegion(minLat: 47.0, maxLat: 48.0, minLon: -123.0, maxLon: -122.0, regionId: 1)
-        XCTAssertEqual(results.count, 50)
+        #expect(results.count == 50)
     }
 }
 

@@ -8,23 +8,22 @@
 //
 
 import Foundation
-import XCTest
 import Testing
 @testable import OBAKitCore
 
 @MainActor
-class URLSchemeRouterTests: XCTestCase {
+@Suite(.serialized)
+final class URLSchemeRouterTests {
     
     var router: URLSchemeRouter!
     
-    override func setUp() async throws {
-        try await super.setUp()
+    init() {
         router = URLSchemeRouter(scheme: "onebusaway")
     }
     
     // MARK: - Initialization Tests
     
-    func test_initialization_setsScheme() {
+    @Test func `Initialization sets scheme`() {
         let customRouter = URLSchemeRouter(scheme: "customscheme")
         // Test by trying to encode a URL and checking the scheme
         let url = customRouter.encodeViewStop(stopID: "123", regionID: 1)
@@ -33,7 +32,7 @@ class URLSchemeRouterTests: XCTestCase {
     
     // MARK: - View Stop URL Tests
     
-    func test_encodeViewStop_createsValidURL() {
+    @Test func `Encode view stop creates valid URL`() {
         let stopID = "12345"
         let regionID = 1
         
@@ -48,7 +47,7 @@ class URLSchemeRouterTests: XCTestCase {
         #expect(components?.queryItems?.contains { $0.name == "regionID" && $0.value == String(regionID) } == true)
     }
     
-    func test_decodeURLType_viewStop_decodesValidURL() {
+    @Test func `Decode URL type view stop decodes valid URL`() {
         // First encode a URL
         let stopID = "67890"
         let regionID = 2
@@ -66,7 +65,7 @@ class URLSchemeRouterTests: XCTestCase {
         }
     }
     
-    func test_decodeURLType_viewStop_returnsNilForMissingStopID() {
+    @Test func `Decode URL type view stop returns nil for missing stop ID`() {
         var components = URLComponents()
         components.scheme = "onebusaway"
         components.host = "view-stop"
@@ -81,7 +80,7 @@ class URLSchemeRouterTests: XCTestCase {
         #expect(result == nil)
     }
     
-    func test_decodeURLType_viewStop_returnsNilForMissingRegionID() {
+    @Test func `Decode URL type view stop returns nil for missing region ID`() {
         var components = URLComponents()
         components.scheme = "onebusaway"
         components.host = "view-stop"
@@ -96,7 +95,7 @@ class URLSchemeRouterTests: XCTestCase {
         #expect(result == nil)
     }
     
-    func test_decodeURLType_viewStop_returnsNilForInvalidRegionID() {
+    @Test func `Decode URL type view stop returns nil for invalid region ID`() {
         var components = URLComponents()
         components.scheme = "onebusaway"
         components.host = "view-stop"
@@ -116,7 +115,7 @@ class URLSchemeRouterTests: XCTestCase {
     
     // MARK: - Add Region URL Tests
 
-    func test_decodeURLType_addRegion_decodesRegionID() {
+    @Test func `Decode URL type add region decodes region ID`() {
         var components = URLComponents()
         components.scheme = "onebusaway"
         components.host = "add-region"
@@ -140,7 +139,7 @@ class URLSchemeRouterTests: XCTestCase {
     }
 
     // Links generated before region-id was emitted must still add the region.
-    func test_decodeURLType_addRegion_regionIDIsNilWhenAbsent() {
+    @Test func `Decode URL type add region region IDIs nil when absent`() {
         var components = URLComponents()
         components.scheme = "onebusaway"
         components.host = "add-region"
@@ -165,7 +164,7 @@ class URLSchemeRouterTests: XCTestCase {
 
     // A junk region-id costs sidecar features, but the region is still worth
     // adding — so it degrades to nil rather than rejecting the whole link.
-    func test_decodeURLType_addRegion_malformedRegionIDDegradesToNil() {
+    @Test func `Decode URL type add region malformed region ID degrades to nil`() {
         var components = URLComponents()
         components.scheme = "onebusaway"
         components.host = "add-region"
@@ -190,7 +189,7 @@ class URLSchemeRouterTests: XCTestCase {
         }
     }
 
-    func test_decodeURLType_addRegion_decodesValidURLWithOTPURL() {
+    @Test func `Decode URL type add region decodes valid URL with OTPURL`() {
         var components = URLComponents()
         components.scheme = "onebusaway"
         components.host = "add-region"
@@ -218,7 +217,7 @@ class URLSchemeRouterTests: XCTestCase {
         }
     }
     
-    func test_decodeURLType_addRegion_decodesValidURLWithoutOTPURL() {
+    @Test func `Decode URL type add region decodes valid URL without OTPURL`() {
         var components = URLComponents()
         components.scheme = "onebusaway"
         components.host = "add-region"
@@ -245,7 +244,7 @@ class URLSchemeRouterTests: XCTestCase {
         }
     }
     
-    func test_decodeURLType_addRegion_returnsNilDataForMissingName() {
+    @Test func `Decode URL type add region returns nil data for missing name`() {
         var components = URLComponents()
         components.scheme = "onebusaway"
         components.host = "add-region"
@@ -268,7 +267,7 @@ class URLSchemeRouterTests: XCTestCase {
         }
     }
     
-    func test_decodeURLType_addRegion_returnsNilDataForMissingOBAURL() {
+    @Test func `Decode URL type add region returns nil data for missing OBAURL`() {
         var components = URLComponents()
         components.scheme = "onebusaway"
         components.host = "add-region"
@@ -291,7 +290,7 @@ class URLSchemeRouterTests: XCTestCase {
         }
     }
     
-    func test_decodeURLType_addRegion_returnsNilDataForEmptyOBAURL() {
+    @Test func `Decode URL type add region returns nil data for empty OBAURL`() {
         var components = URLComponents()
         components.scheme = "onebusaway"
         components.host = "add-region"
@@ -315,7 +314,7 @@ class URLSchemeRouterTests: XCTestCase {
         }
     }
     
-    func test_decodeURLType_addRegion_handlesEmptyOTPURL() {
+    @Test func `Decode URL type add region handles empty OTPURL`() {
         var components = URLComponents()
         components.scheme = "onebusaway"
         components.host = "add-region"
@@ -345,7 +344,7 @@ class URLSchemeRouterTests: XCTestCase {
     
     // MARK: - General URL Decoding Tests
     
-    func test_decodeURLType_returnsNilForUnknownHost() {
+    @Test func `Decode URL type returns nil for unknown host`() {
         var components = URLComponents()
         components.scheme = "onebusaway"
         components.host = "unknown-host"
@@ -360,13 +359,13 @@ class URLSchemeRouterTests: XCTestCase {
         #expect(result == nil)
     }
     
-    func test_decodeURLType_returnsNilForInvalidURL() {
+    @Test func `Decode URL type returns nil for invalid URL`() {
         let url = URL(string: "not://a/valid/url")!
         let result = router.decodeURLType(from: url)
         #expect(result == nil)
     }
     
-    func test_decodeURLType_returnsNilForURLWithoutHost() {
+    @Test func `Decode URL type returns nil for URL without host`() {
         var components = URLComponents()
         components.scheme = "onebusaway"
         components.path = "/some/path"
@@ -382,7 +381,7 @@ class URLSchemeRouterTests: XCTestCase {
     
     // MARK: - Edge Cases
     
-    func test_encodeViewStop_handlesSpecialCharactersInStopID() {
+    @Test func `Encode view stop handles special characters in stop ID`() {
         let stopID = "stop+with/special&chars=123"
         let regionID = 1
         
@@ -400,7 +399,7 @@ class URLSchemeRouterTests: XCTestCase {
         }
     }
     
-    func test_decodeURLType_addRegion_handlesEncodedURLValues() {
+    @Test func `Decode URL type add region handles encoded URL values`() {
         var components = URLComponents()
         components.scheme = "onebusaway"
         components.host = "add-region"
@@ -426,7 +425,7 @@ class URLSchemeRouterTests: XCTestCase {
         }
     }
     
-    func test_decodeURLType_handlesEmptyQueryValues() {
+    @Test func `Decode URL type handles empty query values`() {
         var components = URLComponents()
         components.scheme = "onebusaway"
         components.host = "view-stop"
@@ -453,7 +452,7 @@ class URLSchemeRouterTests: XCTestCase {
     
     // MARK: - URL Validation Tests
     
-    func test_decodeURLType_addRegion_rejectsInvalidOBAURL() {
+    @Test func `Decode URL type add region rejects invalid OBAURL`() {
         var components = URLComponents()
         components.scheme = "onebusaway"
         components.host = "add-region"
@@ -477,7 +476,7 @@ class URLSchemeRouterTests: XCTestCase {
         }
     }
     
-    func test_decodeURLType_addRegion_rejectsWhitespaceOnlyOBAURL() {
+    @Test func `Decode URL type add region rejects whitespace only OBAURL`() {
         var components = URLComponents()
         components.scheme = "onebusaway"
         components.host = "add-region"
@@ -501,7 +500,7 @@ class URLSchemeRouterTests: XCTestCase {
         }
     }
     
-    func test_decodeURLType_addRegion_rejectsInvalidOTPURL() {
+    @Test func `Decode URL type add region rejects invalid OTPURL`() {
         var components = URLComponents()
         components.scheme = "onebusaway"
         components.host = "add-region"
@@ -529,7 +528,7 @@ class URLSchemeRouterTests: XCTestCase {
         }
     }
     
-    func test_decodeURLType_addRegion_acceptsValidPathOBAURL() {
+    @Test func `Decode URL type add region accepts valid path OBAURL`() {
         var components = URLComponents()
         components.scheme = "onebusaway"
         components.host = "add-region"
@@ -556,7 +555,7 @@ class URLSchemeRouterTests: XCTestCase {
         }
     }
     
-    func test_decodeURLType_addRegion_acceptsValidPathOTPURL() {
+    @Test func `Decode URL type add region accepts valid path OTPURL`() {
         var components = URLComponents()
         components.scheme = "onebusaway"
         components.host = "add-region"
@@ -584,7 +583,7 @@ class URLSchemeRouterTests: XCTestCase {
         }
     }
     
-    func test_decodeURLType_addRegion_acceptsComplexValidURLs() {
+    @Test func `Decode URL type add region accepts complex valid URLs`() {
         var components = URLComponents()
         components.scheme = "onebusaway"
         components.host = "add-region"
@@ -626,7 +625,7 @@ class URLSchemeRouterTests: XCTestCase {
         return data
     }
 
-    func test_decodeURLType_addRegion_decodesAllNewParameters() {
+    @Test func `Decode URL type add region decodes all new parameters`() {
         let data = decodeAddRegion([
             URLQueryItem(name: "name", value: "Test Region"),
             URLQueryItem(name: "oba-url", value: "https://oba.example.com"),
@@ -642,7 +641,7 @@ class URLSchemeRouterTests: XCTestCase {
         #expect(data?.umamiAnalytics?.id == "site-uuid-123")
     }
 
-    func test_decodeURLType_addRegion_newParametersDefaultToNil() {
+    @Test func `Decode URL type add region new parameters default to nil`() {
         let data = decodeAddRegion([
             URLQueryItem(name: "name", value: "Test Region"),
             URLQueryItem(name: "oba-url", value: "https://oba.example.com")
@@ -654,7 +653,7 @@ class URLSchemeRouterTests: XCTestCase {
         #expect(data?.umamiAnalytics == nil)
     }
 
-    func test_decodeURLType_addRegion_partialUmamiPairCollapsesToNilConfig() {
+    @Test func `Decode URL type add region partial umami pair collapses to nil config`() {
         // URL without ID.
         let urlOnly = decodeAddRegion([
             URLQueryItem(name: "name", value: "Test Region"),
@@ -684,7 +683,7 @@ class URLSchemeRouterTests: XCTestCase {
         #expect(invalidURL?.umamiAnalytics == nil)
     }
 
-    func test_decodeURLType_addRegion_blankUmamiIDBecomesNil() {
+    @Test func `Decode URL type add region blank umami ID becomes nil`() {
         let data = decodeAddRegion([
             URLQueryItem(name: "name", value: "Test Region"),
             URLQueryItem(name: "oba-url", value: "https://oba.example.com"),
@@ -695,7 +694,7 @@ class URLSchemeRouterTests: XCTestCase {
         #expect(data?.umamiAnalytics == nil)
     }
 
-    func test_decodeURLType_addRegion_invalidSidecarURLDegradesToNil() {
+    @Test func `Decode URL type add region invalid sidecar URL degrades to nil`() {
         let data = decodeAddRegion([
             URLQueryItem(name: "name", value: "Test Region"),
             URLQueryItem(name: "oba-url", value: "https://oba.example.com"),
@@ -711,7 +710,7 @@ class URLSchemeRouterTests: XCTestCase {
     // can never exercise encoding bugs. These two lock in the documented contract:
     // nested URLs MUST be percent-encoded; an unencoded `&` truncates.
 
-    func test_decodeURLType_addRegion_rawString_percentEncodedNestedURL() {
+    @Test func `Decode URL type add region raw string percent encoded nested URL`() {
         let url = URL(string: "onebusaway://add-region?name=Raw%20Region&oba-url=https%3A%2F%2Foba.example.com&sidecar-url=https%3A%2F%2Fobaco.example.com%2Fapi%3Fa%3D1%26b%3D2&umami-url=https%3A%2F%2Fanalytics.example.com&umami-id=site-uuid-123")!
 
         guard case .addRegion(let data)? = router.decodeURLType(from: url) else {
@@ -725,7 +724,7 @@ class URLSchemeRouterTests: XCTestCase {
         #expect(data?.umamiAnalytics?.id == "site-uuid-123")
     }
 
-    func test_decodeURLType_addRegion_rawString_unencodedAmpersandTruncates() {
+    @Test func `Decode URL type add region raw string unencoded ampersand truncates`() {
         let url = URL(string: "onebusaway://add-region?name=Raw&oba-url=https://oba.example.com&sidecar-url=https://obaco.example.com/api?a=1&b=2")!
 
         guard case .addRegion(let data)? = router.decodeURLType(from: url) else {

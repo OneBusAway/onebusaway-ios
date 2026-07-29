@@ -8,29 +8,28 @@
 //
 
 import Foundation
-import XCTest
 import Testing
 import UIKit
 @testable import OBAKit
 @testable import OBAKitCore
 
 @MainActor
-class StackedButtonTests: XCTestCase {
+@Suite(.serialized)
+final class StackedButtonTests {
     
     var stackedButton: StackedButton!
     
-    override func setUp() async throws {
-        try await super.setUp()
+    init() {
         stackedButton = StackedButton(frame: .zero)
     }
     
-    func test_init_setsDefaultProperties() {
+    @Test func `Init sets default properties`() {
         #expect(self.stackedButton.translatesAutoresizingMaskIntoConstraints == false)
         #expect(self.stackedButton.isUserInteractionEnabled == true)
         #expect(self.stackedButton.backgroundColor == .clear)
     }
     
-    func test_title_getterAndSetter() {
+    @Test func `Title getter and setter`() {
         let testTitle = "Test Button"
         stackedButton.title = testTitle
         
@@ -39,7 +38,7 @@ class StackedButtonTests: XCTestCase {
         #expect(self.stackedButton.accessibilityLabel == testTitle)
     }
     
-    func test_title_nilValue() {
+    @Test func `Title nil value`() {
         stackedButton.title = nil
         
         #expect(self.stackedButton.title == nil)
@@ -47,7 +46,7 @@ class StackedButtonTests: XCTestCase {
         #expect(self.stackedButton.accessibilityLabel == nil)
     }
     
-    func test_textLabel_properties() {
+    @Test func `Text label properties`() {
         let textLabel = stackedButton.textLabel
         
         #expect(textLabel.numberOfLines == 1)
@@ -60,7 +59,7 @@ class StackedButtonTests: XCTestCase {
         #expect(textLabel.font == UIFont.preferredFont(forTextStyle: .footnote).bold)
     }
     
-    func test_imageView_properties() {
+    @Test func `Image view properties`() {
         let imageView = stackedButton.imageView
         
         #expect(imageView.contentMode == .scaleAspectFit)
@@ -71,14 +70,14 @@ class StackedButtonTests: XCTestCase {
         #expect(imageView.tintColor == ThemeColors.shared.brand)
     }
     
-    func test_imageView_canSetImage() {
+    @Test func `Image view can set image`() {
         let testImage = UIImage(systemName: "star")
         stackedButton.imageView.image = testImage
         
         #expect(self.stackedButton.imageView.image == testImage)
     }
     
-    func test_stackView_configuration() {
+    @Test func `Stack view configuration`() {
         // Check that the button has the expected subview structure
         #expect(self.stackedButton.subviews.count == 1)
         

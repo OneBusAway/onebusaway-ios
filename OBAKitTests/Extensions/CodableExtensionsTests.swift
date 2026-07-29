@@ -8,12 +8,12 @@
 //
 
 import Foundation
-import XCTest
 import Testing
 @testable import OBAKitCore
 
 @MainActor
-class CodableExtensionsTests: XCTestCase {
+@Suite(.serialized)
+final class CodableExtensionsTests {
     
     struct TestStruct: Codable {
         let validURL: URL?
@@ -35,7 +35,7 @@ class CodableExtensionsTests: XCTestCase {
         }
     }
     
-    func test_decodeGarbageURL_validURL() throws {
+    @Test func `Decode garbage URL valid URL`() throws {
         let json = """
         {
             "validURL": "https://example.com",
@@ -55,7 +55,7 @@ class CodableExtensionsTests: XCTestCase {
         #expect(result.nilURL == nil)  // Null value becomes nil
     }
     
-    func test_decodeGarbageURL_missingKey() throws {
+    @Test func `Decode garbage URL missing key`() throws {
         let json = """
         {
             "validURL": "https://example.com"
@@ -72,7 +72,7 @@ class CodableExtensionsTests: XCTestCase {
         #expect(result.nilURL == nil)
     }
     
-    func test_decodeGarbageURL_whitespaceURL() throws {
+    @Test func `Decode garbage URL whitespace URL`() throws {
         let json = """
         {
             "blankURL": "   ",
@@ -88,7 +88,7 @@ class CodableExtensionsTests: XCTestCase {
         #expect(result.blankURL == nil)  // Whitespace-only string should become nil
     }
     
-    func test_decodeGarbageURL_malformedURL() throws {
+    @Test func `Decode garbage URL malformed URL`() throws {
         let json = """
         {
             "invalidURL": "http://[malformed",
@@ -104,7 +104,7 @@ class CodableExtensionsTests: XCTestCase {
         #expect(result.invalidURL == nil)  // Malformed URL becomes nil
     }
     
-    func test_decodeGarbageURL_pathURL() throws {
+    @Test func `Decode garbage URL path URL`() throws {
         let json = """
         {
             "validURL": "/path/to/resource"

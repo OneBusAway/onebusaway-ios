@@ -7,70 +7,68 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
+import Foundation
+import Testing
 @testable import OBAKit
 
 @MainActor
-final class OnboardingStepStoreTests: XCTestCase {
-    private var userDefaults: UserDefaults!
-    private var store: OnboardingStepStore!
-    private var suiteName: String!
+@Suite(.serialized)
+final class OnboardingStepStoreTests {
+    private let userDefaults: UserDefaults
+    private let store: OnboardingStepStore
 
-    override func setUp() async throws {
-        try await super.setUp()
-        let name = "OnboardingStepStoreTests-\(UUID().uuidString)"
-        await MainActor.run {
-            suiteName = name
-            userDefaults = UserDefaults(suiteName: name)
-            store = OnboardingStepStore(userDefaults: userDefaults)
-        }
+    /// `nonisolated` so `deinit` can read it without hopping to the main actor.
+    private nonisolated let suiteName: String
+
+    init() {
+        suiteName = "OnboardingStepStoreTests-\(UUID().uuidString)"
+        userDefaults = UserDefaults(suiteName: suiteName)!
+        store = OnboardingStepStore(userDefaults: userDefaults)
     }
 
-    override func tearDown() async throws {
-        let name = await MainActor.run { suiteName }
-        UserDefaults().removePersistentDomain(forName: name!)
-        try await super.tearDown()
+    deinit {
+        UserDefaults().removePersistentDomain(forName: suiteName)
     }
 
-    func test_unseenStep_hasVersionZero() {
-        XCTAssertEqual(store.seenVersion(of: .notifications), 0)
-        XCTAssertTrue(store.isEmpty)
+    @Test func `Unseen step has version zero`() {
+        #expect(store.seenVersion(of: .notifications) == 0)
+        #expect(store.isEmpty)
     }
 
-    func test_markSeen_roundTripsThroughUserDefaults() {
+    @Test func `Mark seen round trips through user defaults`() {
         store.markSeen(.welcome, version: 1)
-        XCTAssertEqual(store.seenVersion(of: .welcome), 1)
-        XCTAssertFalse(store.isEmpty)
+        #expect(store.seenVersion(of: .welcome) == 1)
+        #expect(!store.isEmpty)
 
         // A second store over the same defaults sees the same data.
         let rehydrated = OnboardingStepStore(userDefaults: userDefaults)
-        XCTAssertEqual(rehydrated.seenVersion(of: .welcome), 1)
+        #expect(rehydrated.seenVersion(of: .welcome) == 1)
     }
 
-    func test_markSeen_neverLowersVersion() {
+    @Test func `Mark seen never lowers version`() {
         store.markSeen(.location, version: 3)
         store.markSeen(.location, version: 1)
-        XCTAssertEqual(store.seenVersion(of: .location), 3)
+        #expect(store.seenVersion(of: .location) == 3)
     }
 
-    func test_backfill_existingUser_marksLegacyStepsButNotNotifications() {
-        XCTAssertTrue(store.backfillIfNeeded(hasCurrentRegion: true))
-        XCTAssertEqual(store.seenVersion(of: .welcome), 1)
-        XCTAssertEqual(store.seenVersion(of: .location), 1)
-        XCTAssertEqual(store.seenVersion(of: .region), 1)
-        XCTAssertEqual(store.seenVersion(of: .done), 1)
-        XCTAssertEqual(store.seenVersion(of: .notifications), 0)
-        XCTAssertEqual(store.seenVersion(of: .migration), 0)
+    @Test func `Backfill existing user marks legacy steps but not notifications`() {
+        #expect(store.backfillIfNeeded(hasCurrentRegion: true))
+        #expect(store.seenVersion(of: .welcome) == 1)
+        #expect(store.seenVersion(of: .location) == 1)
+        #expect(store.seenVersion(of: .region) == 1)
+        #expect(store.seenVersion(of: .done) == 1)
+        #expect(store.seenVersion(of: .notifications) == 0)
+        #expect(store.seenVersion(of: .migration) == 0)
     }
 
-    func test_backfill_newUser_doesNothing() {
-        XCTAssertFalse(store.backfillIfNeeded(hasCurrentRegion: false))
-        XCTAssertTrue(store.isEmpty)
+    @Test func `Backfill new user does nothing`() {
+        #expect(!store.backfillIfNeeded(hasCurrentRegion: false))
+        #expect(store.isEmpty)
     }
 
-    func test_backfill_nonEmptyStore_neverRunsAgain() {
+    @Test func `Backfill non empty store never runs again`() {
         store.markSeen(.welcome, version: 1)
-        XCTAssertFalse(store.backfillIfNeeded(hasCurrentRegion: true))
-        XCTAssertEqual(store.seenVersion(of: .region), 0)
+        #expect(!store.backfillIfNeeded(hasCurrentRegion: true))
+        #expect(store.seenVersion(of: .region) == 0)
     }
 }

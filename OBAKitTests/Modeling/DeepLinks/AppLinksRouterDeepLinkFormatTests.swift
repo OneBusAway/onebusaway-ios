@@ -8,7 +8,6 @@
 //
 
 import Foundation
-import XCTest
 import Testing
 @testable import OBAKitCore
 
@@ -16,11 +15,12 @@ import Testing
 /// These tests verify URL construction and parsing without requiring a full `Application` object.
 /// See: https://github.com/OneBusAway/onebusaway-ios/issues/449
 @MainActor
-class AppLinksRouterDeepLinkFormatTests: XCTestCase {
+@Suite(.serialized)
+final class AppLinksRouterDeepLinkFormatTests {
 
     // MARK: - URL Construction with destination_stop_id
 
-    func test_urlWithDestinationStopID_containsQueryParam() {
+    @Test func `Url with destination stop ID contains query param`() {
         var components = URLComponents(string: "https://onebusaway.co")!
         components.path = "/regions/1/stops/1_75403/trips"
 
@@ -41,7 +41,7 @@ class AppLinksRouterDeepLinkFormatTests: XCTestCase {
         #expect(parsed.queryItem(named: "stop_sequence")?.value == "12")
     }
 
-    func test_urlWithoutDestinationStopID_doesNotContainQueryParam() {
+    @Test func `Url without destination stop ID does not contain query param`() {
         var components = URLComponents(string: "https://onebusaway.co")!
         components.path = "/regions/1/stops/1_75403/trips"
         components.queryItems = [
@@ -57,7 +57,7 @@ class AppLinksRouterDeepLinkFormatTests: XCTestCase {
         #expect(parsed.queryItems?.count == 3)
     }
 
-    func test_destinationStopIDWithSpecialCharacters_encodedCorrectly() {
+    @Test func `Destination stop ID with special characters encoded correctly`() {
         var components = URLComponents(string: "https://onebusaway.co")!
         components.path = "/regions/1/stops/1_75403/trips"
         components.queryItems = [
@@ -75,7 +75,7 @@ class AppLinksRouterDeepLinkFormatTests: XCTestCase {
 
     // MARK: - Deep Link Model from URL with destination_stop_id
 
-    func test_deepLinkInit_withDestinationStopID_setsProperty() {
+    @Test func `Deep link init with destination stop ID sets property`() {
         let link = ArrivalDepartureDeepLink(
             title: "545 - Seattle",
             regionID: 1,
@@ -92,7 +92,7 @@ class AppLinksRouterDeepLinkFormatTests: XCTestCase {
         #expect(link.regionID == 1)
     }
 
-    func test_deepLinkInit_withoutDestinationStopID_isNil() {
+    @Test func `Deep link init without destination stop ID is nil`() {
         let link = ArrivalDepartureDeepLink(
             title: "545 - Seattle",
             regionID: 1,
@@ -108,7 +108,7 @@ class AppLinksRouterDeepLinkFormatTests: XCTestCase {
 
     // MARK: - Backward Compatibility
 
-    func test_backwardCompatibility_existingURLFormat_parsesWithoutDestination() {
+    @Test func `Backward compatibility existing URL format parses without destination`() {
         // Simulates a URL from an older client that doesn't include destination_stop_id
         let urlString = "https://onebusaway.co/regions/1/stops/1_75403/trips?trip_id=1_545_trip&service_date=1710273600.0&stop_sequence=12"
         let url = URL(string: urlString)!
@@ -119,7 +119,7 @@ class AppLinksRouterDeepLinkFormatTests: XCTestCase {
         #expect(components.queryItem(named: "stop_sequence")?.value == "12")
     }
 
-    func test_backwardCompatibility_newURLFormat_parsesWithDestination() {
+    @Test func `Backward compatibility new URL format parses with destination`() {
         // Simulates a URL from a new client that includes destination_stop_id
         let urlString = "https://onebusaway.co/regions/1/stops/1_75403/trips?trip_id=1_545_trip&service_date=1710273600.0&stop_sequence=12&destination_stop_id=1_431"
         let url = URL(string: urlString)!

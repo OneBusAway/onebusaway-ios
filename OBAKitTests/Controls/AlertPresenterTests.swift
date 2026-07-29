@@ -8,24 +8,23 @@
 //
 
 import Foundation
-import XCTest
 import Testing
 import UIKit
 @testable import OBAKit
 @testable import OBAKitCore
 
 @MainActor
-class AlertPresenterTests: XCTestCase {
+@Suite(.serialized)
+final class AlertPresenterTests {
     
     var viewController: MockPresentingViewController!
     
-    override func setUp() async throws {
-        try await super.setUp()
+    init() {
         viewController = MockPresentingViewController()
     }
     
-    @MainActor
-    func test_showError_withError() async {
+    @Test @MainActor
+    func `Show error with error`() async {
         let error = TestError.testError
         
         await AlertPresenter.show(error: error, presentingController: viewController)
@@ -44,8 +43,8 @@ class AlertPresenterTests: XCTestCase {
         #expect(alertController.actions.first?.title == Strings.dismiss)
     }
     
-    @MainActor
-    func test_showError_withErrorMessage() async {
+    @Test @MainActor
+    func `Show error with error message`() async {
         let errorMessage = "Test error message"
         
         await AlertPresenter.show(errorMessage: errorMessage, presentingController: viewController)
@@ -64,8 +63,8 @@ class AlertPresenterTests: XCTestCase {
         #expect(alertController.actions.first?.title == Strings.dismiss)
     }
     
-    @MainActor
-    func test_showDismissableAlert() async {
+    @Test @MainActor
+    func `Show dismissable alert`() async {
         let title = "Test Title"
         let message = "Test Message"
         
@@ -86,8 +85,8 @@ class AlertPresenterTests: XCTestCase {
         #expect(alertController.preferredStyle == UIAlertController.Style.alert)
     }
     
-    @MainActor
-    func test_showDismissableAlert_withNilTitleAndMessage() async {
+    @Test @MainActor
+    func `Show dismissable alert with nil title and message`() async {
         await AlertPresenter.showDismissableAlert(title: nil, message: nil, presentingController: viewController)
         
         #expect(self.viewController.presentCallCount == 1)

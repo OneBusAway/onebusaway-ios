@@ -7,30 +7,30 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
 import Testing
 @testable import OBAKit
 
 /// Behavior tests for `SheetCoordinator`'s content-swap and stacked navigation,
 /// using `AppSheetRoute` as the concrete `SheetRouteable` driver.
 @MainActor
-final class SheetCoordinatorTests: XCTestCase {
+@Suite(.serialized)
+final class SheetCoordinatorTests {
 
     // MARK: - Init
 
-    func test_init_seedsRouteStackWithRoot() {
+    @Test func `Init seeds route stack with root`() {
         let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
         #expect(coordinator.routeStack.count == 1)
         #expect(coordinator.currentRoute == .home)
         #expect(coordinator.canPop == false)
     }
 
-    func test_init_setsCurrentDetentToRootInitialDetent() {
+    @Test func `Init sets current detent to root initial detent`() {
         let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
         #expect(coordinator.currentDetent == AppSheetRoute.home.detentConfiguration.initialDetent)
     }
 
-    func test_init_stackedLayerStartsEmpty() {
+    @Test func `Init stacked layer starts empty`() {
         let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
         #expect(coordinator.stackedRoutes.isEmpty)
         #expect(coordinator.stackedDetents.isEmpty)
@@ -38,7 +38,7 @@ final class SheetCoordinatorTests: XCTestCase {
 
     // MARK: - Push dispatches by prefersStacking
 
-    func test_push_nonStackingRoute_appendsContentStackAndResetsDetent() {
+    @Test func `Push non stacking route appends content stack and resets detent`() {
         let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
         coordinator.push(.search)
 
@@ -49,7 +49,7 @@ final class SheetCoordinatorTests: XCTestCase {
         #expect(coordinator.currentDetent == AppSheetRoute.search.detentConfiguration.initialDetent)
     }
 
-    func test_push_stackingRoute_appendsToStackedAndLeavesContentStackAlone() {
+    @Test func `Push stacking route appends to stacked and leaves content stack alone`() {
         let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
         coordinator.push(.search)
 
@@ -61,7 +61,7 @@ final class SheetCoordinatorTests: XCTestCase {
         #expect(coordinator.stackedDetents == [AppSheetRoute.tripPlanner.detentConfiguration.initialDetent])
     }
 
-    func test_push_stackingRoute_stacksMultipleSheets() {
+    @Test func `Push stacking route stacks multiple sheets`() {
         let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
         coordinator.push(.recentStopsAll)
         coordinator.push(.stopDetails(stopID: "1_75403"))
@@ -77,7 +77,7 @@ final class SheetCoordinatorTests: XCTestCase {
 
     // MARK: - Pop removes topmost layer
 
-    func test_pop_withStackedPresented_removesTopStackedAndPreservesContentStack() {
+    @Test func `Pop with stacked presented removes top stacked and preserves content stack`() {
         let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
         coordinator.push(.search)
         coordinator.push(.tripPlanner)
@@ -91,7 +91,7 @@ final class SheetCoordinatorTests: XCTestCase {
         #expect(coordinator.currentRoute == .search)
     }
 
-    func test_pop_lastStackedRoute_emptiesStackedLayer() {
+    @Test func `Pop last stacked route empties stacked layer`() {
         let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
         coordinator.push(.tripPlanner)
 
@@ -101,7 +101,7 @@ final class SheetCoordinatorTests: XCTestCase {
         #expect(coordinator.stackedDetents.isEmpty)
     }
 
-    func test_pop_withoutStacked_removesTopAndRestoresPreviousInitialDetent() {
+    @Test func `Pop without stacked removes top and restores previous initial detent`() {
         let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
         coordinator.push(.search)
         coordinator.currentDetent = .medium
@@ -114,7 +114,7 @@ final class SheetCoordinatorTests: XCTestCase {
         #expect(coordinator.currentDetent == AppSheetRoute.home.detentConfiguration.initialDetent)
     }
 
-    func test_pop_atRoot_isNoOp() {
+    @Test func `Pop at root is no op`() {
         let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
         coordinator.currentDetent = .large
 
@@ -127,7 +127,7 @@ final class SheetCoordinatorTests: XCTestCase {
 
     // MARK: - truncateStacked (OS-driven dismiss)
 
-    func test_truncateStacked_removesEverythingAtAndAboveDepth() {
+    @Test func `Truncate stacked removes everything at and above depth`() {
         let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
         coordinator.push(.recentStopsAll)
         coordinator.push(.stopDetails(stopID: "1"))
@@ -139,7 +139,7 @@ final class SheetCoordinatorTests: XCTestCase {
         #expect(coordinator.stackedDetents.count == 1)
     }
 
-    func test_truncateStacked_ignoresOutOfRangeDepth() {
+    @Test func `Truncate stacked ignores out of range depth`() {
         let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
         coordinator.push(.tripPlanner)
 
@@ -150,7 +150,7 @@ final class SheetCoordinatorTests: XCTestCase {
 
     // MARK: - setStackedDetent
 
-    func test_setStackedDetent_persistsAtGivenDepth() {
+    @Test func `Set stacked detent persists at given depth`() {
         let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
         coordinator.push(.tripPlanner)
         coordinator.push(.stopDetails(stopID: "1"))
@@ -161,7 +161,7 @@ final class SheetCoordinatorTests: XCTestCase {
         #expect(coordinator.stackedDetents == [.medium, .large])
     }
 
-    func test_setStackedDetent_ignoresOutOfRangeDepth() {
+    @Test func `Set stacked detent ignores out of range depth`() {
         let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
         coordinator.push(.tripPlanner)
         let original = coordinator.stackedDetents
@@ -173,7 +173,7 @@ final class SheetCoordinatorTests: XCTestCase {
 
     // MARK: - stackedRoute(at:) / stackedDetent(at:fallback:)
 
-    func test_stackedRoute_atDepth_returnsRouteWhenInRange() {
+    @Test func `Stacked route at depth returns route when in range`() {
         let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
         coordinator.push(.tripPlanner)
         coordinator.push(.stopDetails(stopID: "1"))
@@ -182,7 +182,7 @@ final class SheetCoordinatorTests: XCTestCase {
         #expect(coordinator.stackedRoute(at: 1) == .stopDetails(stopID: "1"))
     }
 
-    func test_stackedRoute_atDepth_returnsNilWhenOutOfRange() {
+    @Test func `Stacked route at depth returns nil when out of range`() {
         let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
         #expect(coordinator.stackedRoute(at: 0) == nil)
 
@@ -190,7 +190,7 @@ final class SheetCoordinatorTests: XCTestCase {
         #expect(coordinator.stackedRoute(at: 1) == nil)
     }
 
-    func test_stackedDetent_atDepth_returnsStoredDetent() {
+    @Test func `Stacked detent at depth returns stored detent`() {
         let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
         coordinator.push(.tripPlanner)
         coordinator.setStackedDetent(.medium, at: 0)
@@ -198,14 +198,14 @@ final class SheetCoordinatorTests: XCTestCase {
         #expect(coordinator.stackedDetent(at: 0, fallback: .large) == .medium)
     }
 
-    func test_stackedDetent_atDepth_returnsFallbackWhenOutOfRange() {
+    @Test func `Stacked detent at depth returns fallback when out of range`() {
         let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
         #expect(coordinator.stackedDetent(at: 0, fallback: .large) == .large)
     }
 
     // MARK: - canPop / popToRoot / currentDetents
 
-    func test_canPop_isTrueWhenOnlyStackedPresented() {
+    @Test func `Can pop is true when only stacked presented`() {
         let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
         #expect(coordinator.canPop == false)
 
@@ -213,7 +213,7 @@ final class SheetCoordinatorTests: XCTestCase {
         #expect(coordinator.canPop == true)
     }
 
-    func test_popToRoot_clearsStackedAndUnwindsContentStack() {
+    @Test func `Pop to root clears stacked and unwinds content stack`() {
         let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
         coordinator.push(.search)
         coordinator.push(.nearbyAll)        // stacked
@@ -229,7 +229,7 @@ final class SheetCoordinatorTests: XCTestCase {
         #expect(coordinator.currentDetent == AppSheetRoute.home.detentConfiguration.initialDetent)
     }
 
-    func test_currentDetents_reflectsContentStackTopRegardlessOfStacked() {
+    @Test func `Current detents reflects content stack top regardless of stacked`() {
         let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
         #expect(coordinator.currentDetents == AppSheetRoute.home.detentConfiguration.detents)
 

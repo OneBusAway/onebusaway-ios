@@ -8,15 +8,15 @@
 //
 
 import Foundation
-import XCTest
 import Testing
 import UIKit
 @testable import OBAKit
 
 @MainActor
-class PreviewableTests: XCTestCase {
+@Suite(.serialized)
+final class PreviewableTests {
     
-    func test_Previewable_protocol() {
+    @Test func `Previewable protocol`() {
         // Test that a class can conform to Previewable
         class TestPreviewableController: UIViewController, Previewable {
             var enteredPreviewMode = false
@@ -40,7 +40,7 @@ class PreviewableTests: XCTestCase {
         #expect(controller.exitedPreviewMode == true)
     }
     
-    func test_ControllerPreviewProvider_typealias() {
+    @Test func `Controller preview provider typealias`() {
         // Test that the typealias works correctly
         let provider: ControllerPreviewProvider = {
             return UIViewController()

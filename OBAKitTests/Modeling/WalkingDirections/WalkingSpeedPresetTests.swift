@@ -7,20 +7,20 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
 import Testing
 @testable import OBAKit
 
 @MainActor
-class WalkingSpeedPresetTests: XCTestCase {
+@Suite(.serialized)
+final class WalkingSpeedPresetTests {
 
-    func test_nearest_exactMatch() {
+    @Test func `Nearest exact match`() {
         #expect(WalkingSpeedPreset.nearest(to: 0.9) == .slow)
         #expect(WalkingSpeedPreset.nearest(to: 1.4) == .average)
         #expect(WalkingSpeedPreset.nearest(to: 1.8) == .fast)
     }
 
-    func test_nearest_picksClosestPreset() {
+    @Test func `Nearest picks closest preset`() {
         // 1.0 → halfway-ish, closer to 0.9 (slow)
         #expect(WalkingSpeedPreset.nearest(to: 1.0) == .slow)
         // 1.3 closer to 1.4 (average)
@@ -29,7 +29,7 @@ class WalkingSpeedPresetTests: XCTestCase {
         #expect(WalkingSpeedPreset.nearest(to: 1.7) == .fast)
     }
 
-    func test_nearest_outOfRange_clampsToNearestEnd() {
+    @Test func `Nearest out of range clamps to nearest end`() {
         // Below slow → still slow
         #expect(WalkingSpeedPreset.nearest(to: 0.1) == .slow)
         // Above fast → still fast

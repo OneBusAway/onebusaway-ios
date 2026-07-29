@@ -8,28 +8,28 @@
 //
 
 import Foundation
-import XCTest
 import Testing
 import UIKit
 @testable import OBAKit
 @testable import OBAKitCore
 
 @MainActor
-class UIKitExtensionsTests: XCTestCase {
+@Suite(.serialized)
+final class UIKitExtensionsTests {
     
-    func test_UIButton_chevronButton() {
+    @Test func `UI button chevron button`() {
         let button = UIButton.chevronButton
         #expect(button.buttonType == .detailDisclosure)
         #expect(button.image(for: .normal) != nil)
     }
     
-    func test_UIButton_buildCloseButton() {
+    @Test func `UI button build close button`() {
         let button = UIButton.buildCloseButton()
         #expect(button.translatesAutoresizingMaskIntoConstraints == false)
         #expect(button.accessibilityLabel == Strings.close)
     }
     
-    func test_UITraitEnvironment_isAccessibility() {
+    @Test func `UI trait environment is accessibility`() {
         _ = UITraitCollection(preferredContentSizeCategory: .extraLarge)
         let view = UIView()
         view.overrideUserInterfaceStyle = .unspecified

@@ -25,26 +25,28 @@ let defaultDelta: Double = 0.0001
 /// `actual` is optional so that call sites reading through an optional chain
 /// (`vehicle.location?.coordinate.latitude`) work unchanged; `nil` fails, as it
 /// did under Nimble.
+/// - Parameter comment: Optional context, carried over from the message
+///   argument that `XCTAssertEqual(_:_:accuracy:_:)` accepted.
 func expectClose(
     _ actual: Double?,
     _ expected: Double,
     within delta: Double = defaultDelta,
+    _ comment: Comment? = nil,
     sourceLocation: SourceLocation = #_sourceLocation
 ) {
+    func record(_ description: String) {
+        let detail = comment.map { "\($0.rawValue) — " } ?? ""
+        Issue.record("\(detail)\(description)", sourceLocation: sourceLocation)
+    }
+
     guard let actual else {
-        Issue.record(
-            "expected a value close to \(expected), got nil",
-            sourceLocation: sourceLocation
-        )
+        record("expected a value close to \(expected), got nil")
         return
     }
 
     let difference = abs(actual - expected)
     guard difference < delta else {
-        Issue.record(
-            "expected \(actual) to be within \(delta) of \(expected), but it is off by \(difference)",
-            sourceLocation: sourceLocation
-        )
+        record("expected \(actual) to be within \(delta) of \(expected), but it is off by \(difference)")
         return
     }
 }
@@ -55,12 +57,14 @@ func expectClose(
     _ actual: Date?,
     _ expected: Date,
     within delta: TimeInterval = defaultDelta,
+    _ comment: Comment? = nil,
     sourceLocation: SourceLocation = #_sourceLocation
 ) {
     expectClose(
         actual?.timeIntervalSinceReferenceDate,
         expected.timeIntervalSinceReferenceDate,
         within: delta,
+        comment,
         sourceLocation: sourceLocation
     )
 }

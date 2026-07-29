@@ -7,27 +7,25 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
+import Foundation
+import Testing
 @testable import OBAKit
 
 @MainActor
-final class OnboardingRegistryTests: XCTestCase {
-    private var store: OnboardingStepStore!
-    private var suiteName: String!
+@Suite(.serialized)
+final class OnboardingRegistryTests {
+    private let store: OnboardingStepStore
 
-    override func setUp() async throws {
-        try await super.setUp()
-        let name = "OnboardingRegistryTests-\(UUID().uuidString)"
-        await MainActor.run {
-            suiteName = name
-            store = OnboardingStepStore(userDefaults: UserDefaults(suiteName: name)!)
-        }
+    /// `nonisolated` so `deinit` can read it without hopping to the main actor.
+    private nonisolated let suiteName: String
+
+    init() {
+        suiteName = "OnboardingRegistryTests-\(UUID().uuidString)"
+        store = OnboardingStepStore(userDefaults: UserDefaults(suiteName: suiteName)!)
     }
 
-    override func tearDown() async throws {
-        let name = await MainActor.run { suiteName }
-        UserDefaults().removePersistentDomain(forName: name!)
-        try await super.tearDown()
+    deinit {
+        UserDefaults().removePersistentDomain(forName: suiteName)
     }
 
     /// Environment helper: a brand-new install with everything available.
@@ -44,46 +42,46 @@ final class OnboardingRegistryTests: XCTestCase {
         OnboardingRegistry.flow(environment: environment, store: store).map(\.id)
     }
 
-    func test_newUser_getsFullOrderedFlow() {
-        XCTAssertEqual(flowIDs(newUserEnvironment()), [.welcome, .location, .region, .notifications, .done])
+    @Test func `New user gets full ordered flow`() {
+        #expect(flowIDs(newUserEnvironment()) == [.welcome, .location, .region, .notifications, .done])
     }
 
-    func test_migratingUser_getsMigrationFirst() {
+    @Test func `Migrating user gets migration first`() {
         var env = newUserEnvironment()
         env.hasDataToMigrate = true
         env.shouldPerformMigration = true
-        XCTAssertEqual(flowIDs(env), [.migration, .welcome, .location, .region, .notifications, .done])
+        #expect(flowIDs(env) == [.migration, .welcome, .location, .region, .notifications, .done])
     }
 
-    func test_backfilledExistingUser_getsExactlyNotifications() {
+    @Test func `Backfilled existing user gets exactly notifications`() {
         store.backfillIfNeeded(hasCurrentRegion: true)
-        XCTAssertEqual(flowIDs(newUserEnvironment()), [.notifications])
+        #expect(flowIDs(newUserEnvironment()) == [.notifications])
     }
 
-    func test_noPushProvider_hidesNotificationsStep() {
+    @Test func `No push provider hides notifications step`() {
         var env = newUserEnvironment()
         env.isPushServiceConfigured = false
-        XCTAssertEqual(flowIDs(env), [.welcome, .location, .region, .done])
+        #expect(flowIDs(env) == [.welcome, .location, .region, .done])
     }
 
-    func test_determinedNotificationPermission_hidesNotificationsStep() {
+    @Test func `Determined notification permission hides notifications step`() {
         var env = newUserEnvironment()
         env.notificationAuthorizationDetermined = true
-        XCTAssertEqual(flowIDs(env), [.welcome, .location, .region, .done])
+        #expect(flowIDs(env) == [.welcome, .location, .region, .done])
     }
 
-    func test_determinedLocationPermission_hidesLocationStep() {
+    @Test func `Determined location permission hides location step`() {
         var env = newUserEnvironment()
         env.locationAuthorizationDetermined = true
-        XCTAssertEqual(flowIDs(env), [.welcome, .region, .notifications, .done])
+        #expect(flowIDs(env) == [.welcome, .region, .notifications, .done])
     }
 
-    func test_versionBump_reshowsOnlyThatStep() {
+    @Test func `Version bump reshows only that step`() {
         store.backfillIfNeeded(hasCurrentRegion: true)
         store.markSeen(.notifications, version: 1)
         let env = newUserEnvironment()
 
-        XCTAssertEqual(flowIDs(env), [])
+        #expect(flowIDs(env) == [])
 
         // Simulate a future release bumping the location step to v2.
         let bumped = OnboardingRegistry.steps.map { step in
@@ -92,33 +90,33 @@ final class OnboardingRegistryTests: XCTestCase {
                 : step
         }
         let flow = OnboardingRegistry.flow(steps: bumped, environment: env, store: store)
-        XCTAssertEqual(flow.map(\.id), [.location])
+        #expect(flow.map(\.id) == [.location])
     }
 
-    func test_migration_ignoresSeenState() {
+    @Test func `Migration ignores seen state`() {
         var env = newUserEnvironment()
         env.hasDataToMigrate = true
         env.shouldPerformMigration = true
         store.markSeen(.migration, version: 99)
-        XCTAssertTrue(flowIDs(env).contains(.migration))
+        #expect(flowIDs(env).contains(.migration))
     }
 
-    func test_allowOnceReversion_stepSeenSoNotReshown() {
+    @Test func `Allow once reversion step seen so not reshown`() {
         // "Allow Once" reverts location auth to .notDetermined after use, but a seen step stays hidden.
         var env = newUserEnvironment()
         env.locationAuthorizationDetermined = false
         store.markSeen(.location, version: 1)
-        XCTAssertFalse(flowIDs(env).contains(.location))
+        #expect(!flowIDs(env).contains(.location))
     }
 
-    func test_registry_stepIDsAndWeightsAreUnique() {
-        XCTAssertEqual(Set(OnboardingRegistry.steps.map(\.id)).count, OnboardingRegistry.steps.count)
-        XCTAssertEqual(Set(OnboardingRegistry.steps.map(\.weight)).count, OnboardingRegistry.steps.count)
+    @Test func `Registry step IDs and weights are unique`() {
+        #expect(Set(OnboardingRegistry.steps.map(\.id)).count == OnboardingRegistry.steps.count)
+        #expect(Set(OnboardingRegistry.steps.map(\.weight)).count == OnboardingRegistry.steps.count)
     }
 
-    func test_flow_sortsByWeightNotDeclarationOrder() {
+    @Test func `Flow sorts by weight not declaration order`() {
         let reversed = Array(OnboardingRegistry.steps.reversed())
         let flow = OnboardingRegistry.flow(steps: reversed, environment: newUserEnvironment(), store: store)
-        XCTAssertEqual(flow.map(\.id), [.welcome, .location, .region, .notifications, .done])
+        #expect(flow.map(\.id) == [.welcome, .location, .region, .notifications, .done])
     }
 }
