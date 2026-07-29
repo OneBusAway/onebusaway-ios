@@ -77,9 +77,28 @@ converted from miles — "8 km" reads as a bug:
 - Imperial: Any, 1 mi, 2 mi, 5 mi, 10 mi, 15 mi
 - Metric: Any, 2 km, 5 km, 10 km, 15 km, 25 km
 
+`Locale.MeasurementSystem` is a **struct**, not an enum — it has `.metric`,
+`.us`, and `.uk`, and can be constructed from any BCP-47 identifier, so it can
+never be switched exhaustively. The selection is therefore written to make the
+mile ladder the *explicit* case and metric the fallback:
+
+```swift
+let system = Locale.current.measurementSystem
+let usesMiles = system == .us || system == .uk
+```
+
+The `.uk` case genuinely wants miles — UK road distances are in miles even
+though the UK is otherwise metric — and any unrecognized or future system falls
+through to metric, which is right for most of the world. Testing `== .metric`
+and defaulting the other branch to miles would get `.uk` right by accident and
+every unknown system wrong.
+
 Titles come from a `MeasurementFormatter` with `unitOptions = .providedUnit` and
-zero fraction digits, so the displayed number matches the rung exactly. "Any" is
-a localized string, not a formatted measurement.
+zero fraction digits, so the displayed number matches the rung exactly. Verified
+empirically: this yields exactly "5 mi" and "10 km" under `en_US`, `de_DE`, and
+`en_GB` — `.providedUnit` suppresses both conversion and locale substitution, and
+mutating `formatter.numberFormatter` in place takes effect. "Any" is a localized
+string, not a formatted measurement.
 
 The persisted value is always meters. When it doesn't match a rung in the
 current ladder — the rider's locale changed after they chose one — the menu
@@ -176,8 +195,11 @@ arriving one notification late.
 
 ### Map sheet row
 
-A menu-style `Picker` appended to the "Other ways to get around" section, below
-the Bikes and Scooters rows. It appears whenever at least one rental layer row
+A `Picker` with an explicit `.pickerStyle(.menu)` appended to the "Other ways to
+get around" section, below the Bikes and Scooters rows. The style is stated
+explicitly rather than left to `.automatic`, which Apple documents as "based on
+the picker's context" — in a `List` that has resolved to a navigation link in some
+OS versions and a menu in others. It appears whenever at least one rental layer row
 is visible — deliberately *not* gated on those layers being enabled, so the row
 doesn't jump in and out of the sheet as the rider toggles them, and so the
 filter can be set before turning a layer on.
@@ -199,10 +221,40 @@ static func fuelLabelText(for rental: VehicleRental) -> String?
 ```
 
 Percent is clamped to 0...1 before formatting — a feed can report 1.2 — and
-reuses the existing `batteryText(_:)`. Range reuses the cached
-`distanceFormatter`. Stations return nil: they have no fuel of their own.
+reuses the existing `batteryText(_:)`. Stations return nil: they have no fuel of
+their own.
+
+The range fallback needs its **own** `MKDistanceFormatter` with
+`unitStyle = .abbreviated`. The existing shared `RentalFormat.distanceFormatter`
+uses the default style, which spells the unit out — verified: 5,470 m renders as
+`"3.4 miles"` under `en_US`, where `.abbreviated` gives `"3.4 mi"`. Only the
+abbreviated form is short enough to sit under a map pin. The detail sheet's
+existing spelled-out rendering is deliberate and stays as it is, so the two
+surfaces need two formatters rather than one mutated in place.
 
 `RentalAnnotation` gains `showsFuelLabel: Bool`, defaulting to false.
+
+#### Why not MapKit's built-in text
+
+`MKMarkerAnnotationView` already has `titleVisibility` and `subtitleVisibility`,
+documented as "the visibility of the title text rendered beneath the marker
+balloon", with `MKFeatureVisibility.adaptive` letting MapKit place the text
+according to current map state — collision-aware, which a custom subview is not.
+It was considered and rejected:
+
+- The text can only come from the annotation's `title` or `subtitle`. `title` is
+  the rider-facing display label ("Lime e-bike"), used by the callout and by
+  VoiceOver; `subtitle` is station availability. Putting "62%" in either means
+  giving up the thing that's there now.
+- `subtitleVisibility`'s documentation says "MapKit shows the text when the user
+  selects a marker" — selection-driven, not the always-on glance the mockup
+  wants.
+- Styling is not exposed: the built-in text is Maps-app styled, not bold purple.
+
+So the custom label stands, with the collision caveat below accepted knowingly
+rather than by omission.
+
+#### The label
 
 `RentalAnnotationView` gains a `UILabel`:
 
@@ -213,7 +265,9 @@ reuses the existing `batteryText(_:)`. Range reuses the cached
   `markerTintColor`
 - a white shadow, so the text stays legible over satellite basemaps
 - hidden when the text is nil or `showsFuelLabel` is false
-- cleared in `prepareForReuse()`, alongside the existing reuse resets
+- cleared in `prepareForReuse()`, alongside the existing reuse resets —
+  `MKAnnotationView`'s default implementation is documented as doing nothing, so
+  every piece of subclass state must be reset by hand or it leaks across reuse
 
 **The zoom gate lives on the annotation, not the view.**
 `RentalMapLayer.annotationView(for:)` only dequeues a view and has no access to
@@ -224,22 +278,51 @@ existing update path uses to refresh glyphs without disturbing selection. New
 annotations are created with the current value, so they render correctly on
 first appearance.
 
+Re-assigning `annotation` is not a *documented* reconfigure hook; it works
+because the subclass observes it with `didSet`. It is retained here only because
+the existing update path already relies on it and a second mechanism for the same
+job would be worse than one unofficial one. `prepareForDisplay()` is the
+documented pre-display hook and is the fallback if the re-assignment turns out to
+disturb selection or clustering.
+
 The threshold is **8,000 map points**, against the layer's own `zoomWindow` of
-20,000. These are `MKMapRect` units, not meters: at Seattle's latitude 20,000
-map points is roughly a 2 km-tall viewport, and 8,000 is roughly 800 m — a few
-blocks, where markers are far enough apart for labels to read. The exact number
-is a starting estimate and should be checked against a real dense fleet on
-device.
+20,000. These are `MKMapRect` units, not meters. Confirmed against
+`MKMapPointsPerMeterAtLatitude`: at latitude 47.6 there are 9.9464 map points per
+metre, so 20,000 map points is a **2,011 m**-tall viewport and 8,000 is
+**804 m** — a few blocks, where markers are far enough apart for labels to read.
+The exact number is a starting estimate and should be checked against a real
+dense fleet on device.
+
+**The geometry has to be measured, not assumed.** Apple documents neither what
+occupies `MKMarkerAnnotationView.bounds` (balloon only, balloon plus tip, or
+balloon plus shadow) nor its default `centerOffset`; `MKAnnotationView` only
+states that the map places the view's *center* at the annotation's coordinate
+unless `centerOffset` says otherwise. So "top pinned to `bottomAnchor` + 1"
+is an intent, not a guarantee — the first implementation step is to log the
+view's `bounds` and `centerOffset` after layout and set the constant from that.
+Budget for a gap or an overlap needing correction.
 
 The label is a plain subview, so it does not participate in MapKit's marker
-collision logic; some overlap in an unusually dense block is accepted rather
-than solved. Cluster annotations never get a label — a cluster has no single
-fuel value.
+collision logic: `collisionMode` interprets a collision frame derived from the
+view's own frame, and a subview drawn outside `bounds` is invisible to it. Some
+overlap in an unusually dense block is accepted rather than solved. The
+alternative — growing the view's frame to enclose the label and compensating
+with `centerOffset` so decluttering accounts for it — means fighting
+`MKMarkerAnnotationView`'s internally managed balloon layout, and is out of scope
+unless overlap proves bad in practice.
+
+Cluster annotations never get a label — a cluster has no single fuel value.
 
 **VoiceOver ignores the density gate.** The view's `accessibilityLabel`
 incorporates the fuel text even when the visual label is hidden by zoom: a
 visual-clutter rule should not cost a VoiceOver user information. The label
 itself is `isAccessibilityElement = false` so it isn't announced twice.
+
+Apple does not document what `MKAnnotationView` derives from an annotation's
+`title`/`subtitle` for VoiceOver, so whether setting `accessibilityLabel`
+*replaces* that or reads alongside it is unverified. Confirm with VoiceOver on
+device before considering this part done; if it duplicates, the fix is to compose
+the full string (label plus fuel) rather than append.
 
 ### Analytics
 
