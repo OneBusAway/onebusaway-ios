@@ -36,8 +36,8 @@ final class UmamiAnalyticsTests: OBATestCase {
 
     func testSuccessDetection() {
         #expect(UmamiAnalytics.isSuccessfulIngest(self.successBody))
-        #expect(!(UmamiAnalytics.isSuccessfulIngest(self.beepBoopBody)))
-        #expect(!(UmamiAnalytics.isSuccessfulIngest("not json".data(using: .utf8)!)))
+        #expect(!UmamiAnalytics.isSuccessfulIngest(self.beepBoopBody))
+        #expect(!UmamiAnalytics.isSuccessfulIngest("not json".data(using: .utf8)!))
     }
 
     // MARK: - UmamiJSONValue coercion

@@ -277,7 +277,7 @@ class SurveyViewModelTests: OBATestCase {
         // Reminder date remains nil (cancel was never called and submit didn't reach completion).
         #expect(self.dataStore.nextSurveyReminderDate == nil)
         // Survey is not in the completed set.
-        #expect(!(self.dataStore.isSurveyCompleted(surveyId: vm.survey.id, userIdentifier: self.dataStore.surveyUserIdentifier)))
+        #expect(!self.dataStore.isSurveyCompleted(surveyId: vm.survey.id, userIdentifier: self.dataStore.surveyUserIdentifier))
     }
 
     /// Network failure does NOT mark the survey completed either — only a successful
@@ -291,7 +291,7 @@ class SurveyViewModelTests: OBATestCase {
         let result = await firstSubmissionResult(vm: vm)
         #expect(self.isNetworkFailure(result))
 
-        #expect(!(self.dataStore.isSurveyCompleted(surveyId: vm.survey.id, userIdentifier: self.dataStore.surveyUserIdentifier)))
+        #expect(!self.dataStore.isSurveyCompleted(surveyId: vm.survey.id, userIdentifier: self.dataStore.surveyUserIdentifier))
     }
 
     /// On the fresh path, if the survey has no hero question at all, submission
@@ -348,7 +348,7 @@ class SurveyViewModelTests: OBATestCase {
         #expect(self.dataStore.nextSurveyReminderDate != nil)
         // NOT marked completed.
         let userID = dataStore.surveyUserIdentifier
-        #expect(!(self.dataStore.isSurveyCompleted(surveyId: vm.survey.id, userIdentifier: userID)))
+        #expect(!self.dataStore.isSurveyCompleted(surveyId: vm.survey.id, userIdentifier: userID))
     }
 
     /// The reminder date set by `cancel()` is roughly 3 days in the future (matches
@@ -458,7 +458,7 @@ class SurveyViewModelTests: OBATestCase {
 
         #expect(failureCount == 1)
         #expect(successCount == 0)
-        #expect(!(self.dataStore.isSurveyCompleted(surveyId: vm.survey.id, userIdentifier: self.dataStore.surveyUserIdentifier)))
+        #expect(!self.dataStore.isSurveyCompleted(surveyId: vm.survey.id, userIdentifier: self.dataStore.surveyUserIdentifier))
     }
 
     // MARK: - Two-Stage Submit (happy path, retry, re-entrancy)
@@ -681,7 +681,7 @@ class SurveyViewModelTests: OBATestCase {
 
         // Initial false + true on enter + false on exit.
         #expect(observed == [false, true, false])
-        #expect(!(vm.isSubmitting))
+        #expect(!vm.isSubmitting)
     }
 
     /// Concurrent `submit()` calls: the in-flight guard prevents the second from

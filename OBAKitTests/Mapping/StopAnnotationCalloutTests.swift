@@ -57,7 +57,7 @@ class StopAnnotationCalloutTests: OBATestCase {
     func test_annotationView_delegateSuppressesCallouts_hidesCallout() {
         let view = makeAnnotationView()
         view.delegate = StopAnnotationDelegateStub(showsStopAnnotationCallouts: false)
-        #expect(!(view.canShowCallout))
+        #expect(!view.canShowCallout)
     }
 
     func test_annotationView_delegateReassigned_recomputesCallout() {
@@ -78,7 +78,7 @@ class StopAnnotationCalloutTests: OBATestCase {
 
     func test_regionManager_newStopPageEnabled_suppressesCallouts() {
         userDefaults.set(true, forKey: FeatureFlags.useNewStopPageKey)
-        #expect(!(self.makeRegionManager().showsStopAnnotationCallouts))
+        #expect(!self.makeRegionManager().showsStopAnnotationCallouts)
     }
 
     func test_regionManager_newStopPageDisabled_keepsCallouts() {
@@ -89,7 +89,7 @@ class StopAnnotationCalloutTests: OBATestCase {
     func test_regionManager_flagUnset_suppressesCallouts() {
         // `isNewStopPageEnabled` defaults to true, so an untouched install gets the sheet.
         userDefaults.removeObject(forKey: FeatureFlags.useNewStopPageKey)
-        #expect(!(self.makeRegionManager().showsStopAnnotationCallouts))
+        #expect(!self.makeRegionManager().showsStopAnnotationCallouts)
     }
 
     // MARK: - End-to-end wiring
@@ -131,10 +131,10 @@ class StopAnnotationCalloutTests: OBATestCase {
         let manager = makeRegionManager()
         let stop = try XCTUnwrap(Fixtures.loadSomeStops().first)
         let view = try XCTUnwrap(manager.mapView(manager.mapView, viewFor: stop) as? StopAnnotationView)
-        #expect(!(view.canShowCallout))
+        #expect(!view.canShowCallout)
 
         userDefaults.set(false, forKey: FeatureFlags.useNewStopPageKey)
-        #expect(!(view.canShowCallout))  // still stale...
+        #expect(!view.canShowCallout)  // still stale...
 
         view.updateCalloutVisibility()
         #expect(view.canShowCallout)
@@ -153,7 +153,7 @@ class StopAnnotationCalloutTests: OBATestCase {
         userDefaults.set(true, forKey: FeatureFlags.useNewStopPageKey)
         view.prepareForDisplay()
 
-        #expect(!(view.canShowCallout))
+        #expect(!view.canShowCallout)
     }
 
     @MainActor

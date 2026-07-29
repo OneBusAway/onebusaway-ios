@@ -37,7 +37,7 @@ final class SurveyExternalSurveyTests: XCTestCase {
         )
         let survey = SurveysTestHelpers.makeSurvey(questions: [hero])
 
-        #expect(!(survey.isExternalSurvey))
+        #expect(!survey.isExternalSurvey)
     }
 
     // Nil along the line: questions exist but none is at position 1, so
@@ -54,6 +54,6 @@ final class SurveyExternalSurveyTests: XCTestCase {
         let survey = SurveysTestHelpers.makeSurvey(questions: [nonHero])
 
         #expect(survey.heroQuestion == nil)
-        #expect(!(survey.isExternalSurvey))
+        #expect(!survey.isExternalSurvey)
     }
 }

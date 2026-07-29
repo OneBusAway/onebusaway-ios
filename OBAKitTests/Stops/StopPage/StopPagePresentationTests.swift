@@ -113,7 +113,7 @@ class StopPagePresentationTests: OBATestCase {
         let sheet = StopPageViewController(application: application, stop: stop, showToolbarOnBottom: true)
         sheet.loadViewIfNeeded()
         sheet.enterPreviewMode()
-        #expect(!(sheet.showsBottomToolbar))
+        #expect(!sheet.showsBottomToolbar)
 
         // Committing the peek restores the toolbar, since the same instance is what gets
         // presented in the sheet.

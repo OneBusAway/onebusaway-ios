@@ -42,7 +42,7 @@ class RegionSupportsScheduleForRouteTests: OBATestCase {
 
     func test_supportsScheduleForRoute_OBA2_0_SNAPSHOT_returnsFalse() throws {
         let region = try regionWithVersionInfo("2.0.0-SNAPSHOT|2|0|0|SNAPSHOT|abc")
-        #expect(!(region.supportsScheduleForRoute))
+        #expect(!region.supportsScheduleForRoute)
     }
 
     // MARK: - OBA 2.1+ should support schedule-for-route

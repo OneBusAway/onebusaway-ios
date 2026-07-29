@@ -190,7 +190,7 @@ class UserDefaultsStoreTests: OBATestCase {
     // MARK: - Debug Mode
 
     func test_debugMode_defaultValue() {
-        #expect(!(self.userDefaultsStore.debugMode))
+        #expect(!self.userDefaultsStore.debugMode)
     }
 
     func test_debugMode_setValue() {
@@ -204,7 +204,7 @@ class UserDefaultsStoreTests: OBATestCase {
     // MARK: - Stop UI Reduced Colors
 
     func test_stopUIReducedColors_defaultValue() {
-        #expect(!(self.userDefaultsStore.stopUIReducedColors))
+        #expect(!self.userDefaultsStore.stopUIReducedColors)
     }
 
     func test_stopUIReducedColors_setValue_persistsUnderTheAppStorageKey() {
@@ -251,7 +251,7 @@ class UserDefaultsStoreTests: OBATestCase {
 
     func test_isSurveyEnabled_persistsValue() {
         userDefaultsStore.isSurveyEnabled = false
-        #expect(!(self.userDefaultsStore.isSurveyEnabled))
+        #expect(!self.userDefaultsStore.isSurveyEnabled)
 
         userDefaultsStore.isSurveyEnabled = true
         #expect(self.userDefaultsStore.isSurveyEnabled)
@@ -274,13 +274,13 @@ class UserDefaultsStoreTests: OBATestCase {
     func test_markSurveyCompleted_tracksCompletedSurvey() {
         userDefaultsStore.markSurveyCompleted(surveyId: 1, userIdentifier: "user1")
         #expect(self.userDefaultsStore.isSurveyCompleted(surveyId: 1, userIdentifier: "user1"))
-        #expect(!(self.userDefaultsStore.isSurveyCompleted(surveyId: 2, userIdentifier: "user1")))
+        #expect(!self.userDefaultsStore.isSurveyCompleted(surveyId: 2, userIdentifier: "user1"))
     }
 
     func test_markSurveyForLater_tracksLaterSurvey() {
         userDefaultsStore.markSurveyForLater(surveyId: 1, userIdentifier: "user1")
         // Immediately after marking, shouldShowSurveyLater returns false (0 launches since marking)
-        #expect(!(self.userDefaultsStore.shouldShowSurveyLater(surveyId: 1, userIdentifier: "user1")))
+        #expect(!self.userDefaultsStore.shouldShowSurveyLater(surveyId: 1, userIdentifier: "user1"))
     }
 
     // MARK: - Walking Speed

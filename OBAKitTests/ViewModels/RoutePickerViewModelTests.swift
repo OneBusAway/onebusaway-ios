@@ -112,7 +112,7 @@ class RoutePickerViewModelTests: OBATestCase {
 
         #expect(vm.allRoutes.isEmpty)
         #expect(vm.filteredRoutes.isEmpty)
-        #expect(!(vm.didFinishLoading))
+        #expect(!vm.didFinishLoading)
         #expect(vm.loadError == nil)
     }
 
@@ -453,7 +453,7 @@ class RoutePickerViewModelTests: OBATestCase {
 
         await vm.loadRoutes()
 
-        #expect(!(vm.didFinishLoading))
+        #expect(!vm.didFinishLoading)
         #expect(vm.loadError == nil)
         #expect(vm.allRoutes.isEmpty)
     }

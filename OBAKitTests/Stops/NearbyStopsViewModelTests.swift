@@ -47,7 +47,7 @@ class NearbyStopsViewModelTests: OBATestCase {
     @MainActor
     func test_init_isLoadingIsFalse() {
         let viewModel = NearbyStopsViewModel(coordinate: coordinate, apiService: nil)
-        #expect(!(viewModel.isLoading))
+        #expect(!viewModel.isLoading)
     }
 
     @MainActor
@@ -69,7 +69,7 @@ class NearbyStopsViewModelTests: OBATestCase {
     func test_loadStops_nilApiService_isLoadingReturnsFalse() async {
         let viewModel = NearbyStopsViewModel(coordinate: coordinate, apiService: nil)
         await viewModel.loadStops()
-        #expect(!(viewModel.isLoading))
+        #expect(!viewModel.isLoading)
     }
 
     @MainActor
@@ -102,7 +102,7 @@ class NearbyStopsViewModelTests: OBATestCase {
 
         await viewModel.loadStops()
 
-        #expect(!(viewModel.isLoading))
+        #expect(!viewModel.isLoading)
     }
 
     // MARK: - Failed load
@@ -134,7 +134,7 @@ class NearbyStopsViewModelTests: OBATestCase {
 
         await viewModel.loadStops()
 
-        #expect(!(viewModel.isLoading))
+        #expect(!viewModel.isLoading)
     }
 
     // MARK: - Guard: prevents concurrent double-load
@@ -156,6 +156,6 @@ class NearbyStopsViewModelTests: OBATestCase {
 
         #expect(countingLoader.callCount == 1)
         #expect(!viewModel.stops.isEmpty)
-        #expect(!(viewModel.isLoading))
+        #expect(!viewModel.isLoading)
     }
 }

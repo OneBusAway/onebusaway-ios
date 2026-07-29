@@ -138,7 +138,7 @@ class EditBookmarkViewModelTests: OBATestCase {
         let bookmark = Bookmark(name: "My Custom Name", regionIdentifier: pugetSoundRegionIdentifier, stop: stop)
         let vm = EditBookmarkViewModel(application: app, source: .stop(stop), bookmark: bookmark)
 
-        #expect(!(vm.isAddMode))
+        #expect(!vm.isAddMode)
         #expect(vm.initialName == "My Custom Name")
     }
 
@@ -319,11 +319,11 @@ class EditBookmarkViewModelTests: OBATestCase {
         }
         #expect(saved.name == "Original")
         #expect(saved.isFavorite)
-        #expect(!(isNew))
+        #expect(!isNew)
 
         vm.persist(saved, name: "Updated Name", isFavorite: false, to: nil, isNewBookmark: isNew)
         #expect(saved.name == "Updated Name")
-        #expect(!(saved.isFavorite))
+        #expect(!saved.isFavorite)
     }
 
     @MainActor
@@ -361,7 +361,7 @@ class EditBookmarkViewModelTests: OBATestCase {
             XCTFail("Expected .readyToSave, got \(outcome)")
             return
         }
-        #expect(!(isNew))
+        #expect(!isNew)
     }
 
     // MARK: - persist

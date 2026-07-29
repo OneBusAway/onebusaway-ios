@@ -68,7 +68,7 @@ final class AgencyAlertsViewModelTests: OBATestCase {
         let viewModel = AgencyAlertsViewModel(application: app)
 
         #expect(viewModel.alerts.isEmpty)
-        #expect(!(viewModel.isLoading))
+        #expect(!viewModel.isLoading)
         #expect(viewModel.collapsedSections.isEmpty)
     }
 
@@ -92,7 +92,7 @@ final class AgencyAlertsViewModelTests: OBATestCase {
         viewModel.reloadServerData()
         viewModel.agencyAlertsUpdated()
 
-        #expect(!(viewModel.isLoading))
+        #expect(!viewModel.isLoading)
     }
 
     @MainActor
@@ -119,6 +119,6 @@ final class AgencyAlertsViewModelTests: OBATestCase {
         viewModel.reloadServerData()
         viewModel.agencyAlertsStore(app.alertsStore, displayError: URLError(.badServerResponse))
 
-        #expect(!(viewModel.isLoading))
+        #expect(!viewModel.isLoading)
     }
 }

@@ -89,7 +89,7 @@ class SurveyOrchestratorTests: OBATestCase {
     @MainActor
     func test_isEligible_isFalseWhenSurveysDisabled() {
         dataStore.isSurveyEnabled = false
-        #expect(!(self.orchestrator.isEligible()))
+        #expect(!self.orchestrator.isEligible())
     }
 
     /// `alwaysShowSurveysOnStops` opens the gate regardless of launch count / reminder.
@@ -124,7 +124,7 @@ class SurveyOrchestratorTests: OBATestCase {
             // Expected — apiService is nil.
         }
 
-        #expect(!(self.dataStore.isSurveyCompleted(surveyId: survey.id, userIdentifier: self.dataStore.surveyUserIdentifier)))
+        #expect(!self.dataStore.isSurveyCompleted(surveyId: survey.id, userIdentifier: self.dataStore.surveyUserIdentifier))
         #expect(self.dataStore.nextSurveyReminderDate == nil)
         XCTAssertTrue(coordinator.canShowReviewPrompt(), "a failed submission must not start the engagement cooldown")
     }
@@ -186,7 +186,7 @@ class SurveyOrchestratorTests: OBATestCase {
             #expect(!heroResponseID.isEmpty)
         }
         let userID = dataStore.surveyUserIdentifier
-        #expect(!(self.dataStore.isSurveyCompleted(surveyId: survey.id, userIdentifier: userID)))
+        #expect(!self.dataStore.isSurveyCompleted(surveyId: survey.id, userIdentifier: userID))
         #expect(self.dataStore.nextSurveyReminderDate != nil)
         XCTAssertFalse(coordinator.canShowReviewPrompt(), "a successful submission is an engagement and starts the 14-day cooldown")
     }
@@ -217,7 +217,7 @@ class SurveyOrchestratorTests: OBATestCase {
 
         // No bookkeeping should advance when the guard fires.
         let userID = dataStore.surveyUserIdentifier
-        #expect(!(self.dataStore.isSurveyCompleted(surveyId: survey.id, userIdentifier: userID)))
+        #expect(!self.dataStore.isSurveyCompleted(surveyId: survey.id, userIdentifier: userID))
         #expect(self.dataStore.nextSurveyReminderDate == nil)
         XCTAssertTrue(coordinator.canShowReviewPrompt(), "a guard-clause throw must not start the engagement cooldown")
     }

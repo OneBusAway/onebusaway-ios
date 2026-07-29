@@ -23,5 +23,4 @@ targets:
       - target: App
     info:
       path: "Info.plist"
-      properties:
-        NSPrincipalClass: OBAKitTests.OBAKitTestsSetup
+      properties: {}

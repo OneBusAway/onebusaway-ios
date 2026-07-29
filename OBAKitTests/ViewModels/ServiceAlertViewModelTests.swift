@@ -117,7 +117,7 @@ final class ServiceAlertViewModelTests: OBATestCase {
         let viewModel = ServiceAlertViewModel(serviceAlert: alert, application: app)
         viewModel.viewDidAppear()
 
-        #expect(!(app.userDataStore.isUnread(serviceAlert: alert)))
+        #expect(!app.userDataStore.isUnread(serviceAlert: alert))
     }
 
     @MainActor

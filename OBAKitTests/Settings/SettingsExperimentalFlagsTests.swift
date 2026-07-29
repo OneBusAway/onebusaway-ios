@@ -61,7 +61,7 @@ final class SettingsExperimentalFlagsTests: OBATestCase {
         let controller = makeLoadedController()
         try row(controller, FeatureFlags.useNewStopPageKey).value = false
 
-        #expect(!(FeatureFlags.isNewStopPageEnabled(userDefaults: self.application.userDefaults)))
+        #expect(!FeatureFlags.isNewStopPageEnabled(userDefaults: self.application.userDefaults))
     }
 
     func test_newStopPage_togglingBackOnPersistsImmediately() throws {
@@ -77,7 +77,7 @@ final class SettingsExperimentalFlagsTests: OBATestCase {
         try row(controller, FeatureFlags.useNewStopPageKey).value = false
         controller.viewWillDisappear(false)
 
-        #expect(!(FeatureFlags.isNewStopPageEnabled(userDefaults: self.application.userDefaults)))
+        #expect(!FeatureFlags.isNewStopPageEnabled(userDefaults: self.application.userDefaults))
     }
 
     // MARK: - Map panel
@@ -102,6 +102,6 @@ final class SettingsExperimentalFlagsTests: OBATestCase {
         switchRow.value = false
         controller.viewWillDisappear(false)
 
-        #expect(!(self.application.userDefaults.bool(forKey: OBAFloatingPanelController.AlwaysShowFullSheetOnVoiceoverUserDefaultsKey)))
+        #expect(!self.application.userDefaults.bool(forKey: OBAFloatingPanelController.AlwaysShowFullSheetOnVoiceoverUserDefaultsKey))
     }
 }

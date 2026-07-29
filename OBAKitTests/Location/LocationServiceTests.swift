@@ -96,23 +96,23 @@ class LocationServiceTests: XCTestCase {
         let service = LocationService(userDefaults: UserDefaults(), locationManager: locationManagerMock)
 
         service.stopUpdates()
-        #expect(!(locationManagerMock.locationUpdatesStarted))
-        #expect(!(locationManagerMock.headingUpdatesStarted))
+        #expect(!locationManagerMock.locationUpdatesStarted)
+        #expect(!locationManagerMock.headingUpdatesStarted)
     }
 
     func test_startUpdates_withoutAuthorization_doesNothing() {
         let locationManagerMock = LocationManagerMock()
         let service = LocationService(userDefaults: UserDefaults(), locationManager: locationManagerMock)
 
-        #expect(!(service.isLocationUseAuthorized))
-        #expect(!(locationManagerMock.locationUpdatesStarted))
-        #expect(!(locationManagerMock.headingUpdatesStarted))
+        #expect(!service.isLocationUseAuthorized)
+        #expect(!locationManagerMock.locationUpdatesStarted)
+        #expect(!locationManagerMock.headingUpdatesStarted)
 
         service.startUpdates()
 
-        #expect(!(service.isLocationUseAuthorized))
-        #expect(!(locationManagerMock.locationUpdatesStarted))
-        #expect(!(locationManagerMock.headingUpdatesStarted))
+        #expect(!service.isLocationUseAuthorized)
+        #expect(!locationManagerMock.locationUpdatesStarted)
+        #expect(!locationManagerMock.headingUpdatesStarted)
     }
 
     func test_receiveErrors() {

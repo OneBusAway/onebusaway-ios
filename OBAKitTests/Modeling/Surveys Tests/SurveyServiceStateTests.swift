@@ -36,7 +36,7 @@ final class SurveyServiceStateTests: OBATestCase {
         setAppLaunchCount(3)
 
         let result = surveyService.shouldShowSurvey()
-        #expect(!(result))
+        #expect(!result)
     }
 
     func test_shouldShowSurvey_returnsFalse_whenAppLaunchIsZero() {
@@ -44,7 +44,7 @@ final class SurveyServiceStateTests: OBATestCase {
         setAppLaunchCount(0)
 
         let result = surveyService.shouldShowSurvey()
-        #expect(!(result))
+        #expect(!result)
     }
 
     func test_shouldShowSurvey_returnsFalse_whenLaunchCountNotMultipleOfThree() {
@@ -52,7 +52,7 @@ final class SurveyServiceStateTests: OBATestCase {
         setAppLaunchCount(4)
 
         let result = surveyService.shouldShowSurvey()
-        #expect(!(result))
+        #expect(!result)
     }
 
     func test_shouldShowSurvey_returnsTrue_whenLaunchCountIsMultipleOfThree() {
@@ -69,7 +69,7 @@ final class SurveyServiceStateTests: OBATestCase {
         testUserDataStore.nextSurveyReminderDate = Date().addingTimeInterval(3600)
 
         let result = surveyService.shouldShowSurvey()
-        #expect(!(result))
+        #expect(!result)
     }
 
     func test_shouldShowSurvey_returnsTrue_whenNextReminderDateIsInPast() {
@@ -98,7 +98,7 @@ final class SurveyServiceStateTests: OBATestCase {
         setAppLaunchCount(3)
 
         let result = surveyService.shouldShowSurvey()
-        #expect(!(result))
+        #expect(!result)
     }
 
     func test_shouldShowSurvey_returnsTrue_whenEnabledAndAlwaysShowIsOn() {
@@ -155,7 +155,7 @@ final class SurveyServiceStateTests: OBATestCase {
 
         let userID = testUserDataStore.surveyUserIdentifier
         // Immediately after marking, shouldShowSurveyLater returns false (0 launches since marking)
-        #expect(!(self.testUserDataStore.shouldShowSurveyLater(surveyId: 9, userIdentifier: userID)))
+        #expect(!self.testUserDataStore.shouldShowSurveyLater(surveyId: 9, userIdentifier: userID))
     }
 
     // MARK: - Combined Behavior
@@ -171,7 +171,7 @@ final class SurveyServiceStateTests: OBATestCase {
         testUserDataStore.isSurveyEnabled = false
         setAppLaunchCount(3)
 
-        #expect(!(self.surveyService.shouldShowSurvey()))
+        #expect(!self.surveyService.shouldShowSurvey())
     }
 
     // MARK: - formatCheckboxAnswer

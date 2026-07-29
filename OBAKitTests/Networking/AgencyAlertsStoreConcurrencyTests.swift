@@ -142,7 +142,7 @@ class AgencyAlertsStoreConcurrencyTests: OBATestCase {
         #expect(store.recentHighSeverityAlerts.count == alerts.count)
         #expect(store.recentUnreadHighSeverityAlerts.isEmpty)
         for alert in alerts {
-            #expect(!(store.isAlertUnread(alert)))
+            #expect(!store.isAlertUnread(alert))
         }
     }
 }

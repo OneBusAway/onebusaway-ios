@@ -270,7 +270,7 @@ final class SurveyServiceAppearanceTests: OBATestCase {
 
         #expect(service.lastError == nil)
         #expect(service.allSurveys.map(\.id) == [1])
-        #expect(!(service.isLoading))
+        #expect(!service.isLoading)
     }
 
     // SUSPECTED INEFFICIENCY: an empty (but successful) response leaves

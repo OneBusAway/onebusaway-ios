@@ -59,7 +59,7 @@ class MapRegionManagerTests: OBATestCase {
         //
         // https://stackoverflow.com/a/63176707
         #if targetEnvironment(simulator)
-        #expect(!(mgr.mapView.showsTraffic))
+        #expect(!mgr.mapView.showsTraffic)
         #else
         #expect(mgr.mapView.showsTraffic)
         #endif

@@ -168,7 +168,7 @@ class ScheduleForStopViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = ScheduleForStopViewModel(stopID: stopID, application: app)
 
-        #expect(!(viewModel.isLoading))
+        #expect(!viewModel.isLoading)
     }
 
     @MainActor

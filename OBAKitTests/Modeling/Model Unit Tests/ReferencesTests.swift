@@ -39,7 +39,7 @@ class ReferencesTests: OBATestCase {
         #expect(agency.language == "en")
         #expect(agency.name == "Hillsborough Area Regional Transit")
         #expect(agency.phone == "813-254-4278")
-        #expect(!(agency.isPrivateService))
+        #expect(!agency.isPrivateService)
         #expect(agency.timeZone == "America/New_York")
         #expect(agency.agencyURL == URL(string: "http://www.gohart.org")!)
     }

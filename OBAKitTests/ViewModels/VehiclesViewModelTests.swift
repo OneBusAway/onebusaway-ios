@@ -94,7 +94,7 @@ class VehiclesViewModelTests: OBATestCase {
 
         #expect(viewModel.vehicles.isEmpty)
         #expect(viewModel.feedStatuses.isEmpty)
-        #expect(!(viewModel.isLoading))
+        #expect(!viewModel.isLoading)
         #expect(viewModel.error == nil)
         #expect(viewModel.lastUpdated == nil)
     }
@@ -111,7 +111,7 @@ class VehiclesViewModelTests: OBATestCase {
         #expect(viewModel.vehicles.isEmpty)
         #expect(viewModel.feedStatuses.isEmpty)
         #expect(viewModel.lastUpdated == nil)
-        #expect(!(viewModel.isLoading))
+        #expect(!viewModel.isLoading)
     }
 
     // MARK: - Fetch
@@ -134,7 +134,7 @@ class VehiclesViewModelTests: OBATestCase {
         #expect(viewModel.vehicles.isEmpty)
         #expect(viewModel.error == nil)
         #expect(viewModel.lastUpdated != nil)
-        #expect(!(viewModel.isLoading))
+        #expect(!viewModel.isLoading)
     }
 
     @MainActor
@@ -159,7 +159,7 @@ class VehiclesViewModelTests: OBATestCase {
 
         #expect(viewModel.totalAgencyCount == viewModel.feedStatuses.count)
         #expect(viewModel.enabledAgencyCount == 0)
-        #expect(!(viewModel.allAgenciesEnabled))
+        #expect(!viewModel.allAgenciesEnabled)
     }
 
     // MARK: - Agency Filtering
@@ -175,8 +175,8 @@ class VehiclesViewModelTests: OBATestCase {
 
         viewModel.setAgencyEnabled(false, agencyID: "40")
 
-        #expect(!(viewModel.isAgencyEnabled("40")))
-        #expect(!(viewModel.allAgenciesEnabled))
+        #expect(!viewModel.isAgencyEnabled("40"))
+        #expect(!viewModel.allAgenciesEnabled)
         #expect(app.userDataStore.disabledVehicleFeedAgencyIDs == ["40"])
 
         viewModel.setAgencyEnabled(true, agencyID: "40")

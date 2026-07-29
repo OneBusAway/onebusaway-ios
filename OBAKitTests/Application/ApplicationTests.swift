@@ -84,14 +84,14 @@ class ApplicationTests: OBATestCase {
         stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
         Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
 
-        #expect(!(locManager.updatingLocation))
-        #expect(!(locManager.updatingHeading))
+        #expect(!locManager.updatingLocation)
+        #expect(!locManager.updatingHeading)
 
         let app = Application(config: config)
 
         // Location Manager does not initially start updating location.
-        #expect(!(locManager.updatingLocation))
-        #expect(!(locManager.updatingHeading))
+        #expect(!locManager.updatingLocation)
+        #expect(!locManager.updatingHeading)
 
         // The application becoming active causes the location manager to begin updates.
         app.applicationDidBecomeActive(UIApplication.shared)
@@ -146,12 +146,12 @@ class ApplicationTests: OBATestCase {
 
         let config = AppConfig(regionsBaseURL: regionsURL, apiKey: apiKey, appVersion: appVersion, userDefaults: userDefaults, analytics: AnalyticsMock(), queue: queue, locationService: locationService, bundledRegionsFilePath: bundledRegionsPath, regionsAPIPath: regionsAPIPath, dataLoader: dataLoader)
 
-        #expect(!(locationService.isLocationUseAuthorized))
+        #expect(!locationService.isLocationUseAuthorized)
 
         let app = Application(config: config)
 
-        #expect(!(locManager.locationUpdatesStarted))
-        #expect(!(locManager.headingUpdatesStarted))
+        #expect(!locManager.locationUpdatesStarted)
+        #expect(!locManager.headingUpdatesStarted)
 
         #expect(app.regionsService.currentRegion == nil)
         #expect(app.apiService == nil)
@@ -169,13 +169,13 @@ class ApplicationTests: OBATestCase {
         let config = AppConfig(regionsBaseURL: regionsURL, apiKey: apiKey, appVersion: appVersion, userDefaults: userDefaults, analytics: AnalyticsMock(), queue: queue, locationService: locationService, bundledRegionsFilePath: bundledRegionsPath, regionsAPIPath: regionsAPIPath, dataLoader: dataLoader)
         let appDelegate = TestAppDelegate()
 
-        #expect(!(locationService.isLocationUseAuthorized))
+        #expect(!locationService.isLocationUseAuthorized)
 
         let app = Application(config: config)
         app.delegate = appDelegate
 
-        #expect(!(locManager.locationUpdatesStarted))
-        #expect(!(locManager.headingUpdatesStarted))
+        #expect(!locManager.locationUpdatesStarted)
+        #expect(!locManager.headingUpdatesStarted)
 
         #expect(app.apiService == nil)
 
@@ -212,7 +212,7 @@ class ApplicationTests: OBATestCase {
 
         app.delegate = delegate
 
-        #expect(!(delegate.called_applicationReloadRootInterface))
+        #expect(!delegate.called_applicationReloadRootInterface)
 
         app.reloadRootUserInterface()
 
@@ -230,7 +230,7 @@ class ApplicationTests: OBATestCase {
 
         app.delegate = delegate
 
-        #expect(!(app.isIdleTimerDisabled))
+        #expect(!app.isIdleTimerDisabled)
 
         app.isIdleTimerDisabled = true
 
@@ -254,7 +254,7 @@ class ApplicationTests: OBATestCase {
         let testURL = URL(string: "https://example.com")!
         let result = app.canOpenURL(testURL)
 
-        #expect(!(result))  // TestAppDelegate returns false
+        #expect(!result)  // TestAppDelegate returns false
     }
 
     func test_application_is_registered_for_remote_notifications_proxies_delegate() {
@@ -292,7 +292,7 @@ class ApplicationTests: OBATestCase {
         let config = AppConfig(regionsBaseURL: regionsURL, apiKey: apiKey, appVersion: appVersion, userDefaults: userDefaults, analytics: AnalyticsMock(), queue: queue, locationService: locationService, bundledRegionsFilePath: bundledRegionsPath, regionsAPIPath: regionsAPIPath, dataLoader: dataLoader)
         let app = Application(config: config)
 
-        #expect(!(app.shouldShowCrashButton))
+        #expect(!app.shouldShowCrashButton)
     }
 
     // MARK: - Feature Availability Tests
@@ -372,7 +372,7 @@ class ApplicationTests: OBATestCase {
 
         // Now resign active should stop location updates
         app.applicationWillResignActive(UIApplication.shared)
-        #expect(!(locManager.updatingLocation))
+        #expect(!locManager.updatingLocation)
     }
 
     // MARK: - Data Migration Tests
@@ -529,7 +529,7 @@ class ApplicationTests: OBATestCase {
 
         await MainActor.run {
             let result = app.application(UIApplication.shared, open: invalidURL, options: [:])
-            #expect(!(result))
+            #expect(!result)
         }
     }
 
@@ -547,7 +547,7 @@ class ApplicationTests: OBATestCase {
         let result = app.application(UIApplication.shared, continue: userActivity, restorationHandler: { _ in })
 
         // Should return false when appLinksRouter is nil
-        #expect(!(result))
+        #expect(!result)
     }
 
     // MARK: - Analytics Tests

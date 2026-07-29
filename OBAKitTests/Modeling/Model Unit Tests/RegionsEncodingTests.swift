@@ -39,12 +39,12 @@ class RegionsEncodingTests: OBATestCase {
         #expect(tampaRT.versionInfo == "2.4.15-cs|2|4|15|cs|d41e1a8978da14e98a2e19d109a23018957db7cf")
         #expect(tampaRT.language == "en_US")
 
-        #expect(!(tampaRT.supportsEmbeddedSocial))
+        #expect(!tampaRT.supportsEmbeddedSocial)
         #expect(tampaRT.supportsOBADiscoveryAPIs)
         #expect(tampaRT.supportsOTPBikeshare)
         #expect(tampaRT.supportsSiriRealtimeAPIs)
         #expect(tampaRT.isActive)
-        #expect(!(tampaRT.isExperimental))
+        #expect(!tampaRT.isExperimental)
         #expect(tampaRT.isCustom == false)
 
         #expect(tampaRT.facebookURL == nil)

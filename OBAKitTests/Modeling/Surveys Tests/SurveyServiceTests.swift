@@ -396,7 +396,7 @@ final class SurveyServiceTests: OBATestCase {
             startDate: Date().addingTimeInterval(-7200),
             endDate: Date().addingTimeInterval(-3600)
         )
-        #expect(!(survey.isActive))
+        #expect(!survey.isActive)
     }
 
     func test_isActive_futureStartDate_returnsFalse() {
@@ -404,7 +404,7 @@ final class SurveyServiceTests: OBATestCase {
             startDate: Date().addingTimeInterval(3600),
             endDate: Date().addingTimeInterval(7200)
         )
-        #expect(!(survey.isActive))
+        #expect(!survey.isActive)
     }
 
     func test_isActive_nilDates_returnsTrue() {
@@ -467,8 +467,8 @@ final class SurveyServiceTests: OBATestCase {
         let response = try await testRESTService.getSurveys(userID: uuid)
         let survey = response.surveys.first!
 
-        #expect(!(survey.allowsMultipleResponses))
-        #expect(!(survey.alwaysVisible))
+        #expect(!survey.allowsMultipleResponses)
+        #expect(!survey.alwaysVisible)
     }
 
     // MARK: - getSurveys nil region
@@ -597,7 +597,7 @@ final class SurveyServiceTests: OBATestCase {
         #expect(service.lastError == nil)
         #expect(service.allSurveys.count == 5)
         #expect(service.visibleSurveys.count == 5)
-        #expect(!(service.isLoading))
+        #expect(!service.isLoading)
     }
 
     @MainActor
@@ -614,7 +614,7 @@ final class SurveyServiceTests: OBATestCase {
         #expect(service.allSurveys.isEmpty)
         #expect(service.visibleSurveys.isEmpty)
         #expect(service.lastError != nil)
-        #expect(!(service.isLoading))
+        #expect(!service.isLoading)
     }
 
     // MARK: - Staleness / Cooldown Tests

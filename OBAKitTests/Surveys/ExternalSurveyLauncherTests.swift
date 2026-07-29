@@ -55,7 +55,7 @@ final class ExternalSurveyLauncherTests: OBATestCase {
         #expect(attempted)
         #expect(opened?.absoluteString == "https://oba.co/s")
         #expect(succeeded)
-        #expect(!(failed))
+        #expect(!failed)
         #expect(self.isCompleted(1))
     }
 
@@ -83,10 +83,10 @@ final class ExternalSurveyLauncherTests: OBATestCase {
                                         onSuccess: {},
                                         onFailure: { failed = true })
 
-        #expect(!(attempted))
-        #expect(!(openerCalled))
+        #expect(!attempted)
+        #expect(!openerCalled)
         #expect(failed)
-        #expect(!(self.isCompleted(1)))
+        #expect(!self.isCompleted(1))
     }
 
     func test_launch_openFailure_doesNotComplete_callsOnFailure() {
@@ -100,8 +100,8 @@ final class ExternalSurveyLauncherTests: OBATestCase {
                         onSuccess: { succeeded = true },
                         onFailure: { failed = true })
 
-        #expect(!(succeeded))
+        #expect(!succeeded)
         #expect(failed)
-        #expect(!(self.isCompleted(1)))
+        #expect(!self.isCompleted(1))
     }
 }

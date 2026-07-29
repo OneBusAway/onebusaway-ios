@@ -306,7 +306,7 @@ class StopViewModelTests: OBATestCase {
 
         await viewModel.refresh()
 
-        #expect(!(viewModel.isListFiltered))
+        #expect(!viewModel.isListFiltered)
     }
 
     // MARK: - $stop re-emit guard
@@ -356,7 +356,7 @@ class StopViewModelTests: OBATestCase {
         await viewModel.refresh()
 
         #expect(viewModel.lastUpdated != nil)
-        #expect(!(viewModel.shouldRefresh))  // <30 s elapsed → below threshold
+        #expect(!viewModel.shouldRefresh)  // <30 s elapsed → below threshold
     }
 
     // MARK: - Inline Hero Survey
@@ -471,7 +471,7 @@ class StopViewModelTests: OBATestCase {
 
         #expect(failureCount == 1)
         #expect(successCount == 0)
-        #expect(!(app.userDataStore.isSurveyCompleted(surveyId: survey.id, userIdentifier: app.userDataStore.surveyUserIdentifier)))
+        #expect(!app.userDataStore.isSurveyCompleted(surveyId: survey.id, userIdentifier: app.userDataStore.surveyUserIdentifier))
     }
 
     // MARK: - Inline Hero Success Paths
@@ -674,7 +674,7 @@ class StopViewModelTests: OBATestCase {
         #expect(presented.first?.stopLocation?.longitude == coord.longitude)
         // Hero-only success path runs mark-completed; needs-remaining does not.
         let userID = app.userDataStore.surveyUserIdentifier
-        #expect(!(app.userDataStore.isSurveyCompleted(surveyId: 7, userIdentifier: userID)))
+        #expect(!app.userDataStore.isSurveyCompleted(surveyId: 7, userIdentifier: userID))
     }
 
     /// Submission failure path: `currentSurvey` is preserved and the error
@@ -1002,7 +1002,7 @@ class StopViewModelTests: OBATestCase {
         let bookmark = Bookmark(name: "Broken", regionIdentifier: pugetSoundRegionIdentifier, stop: stop)
         let (viewModel, application) = buildViewModelWithFailingArrivals(statusCode: 404, bookmarkContext: bookmark)
         await viewModel.refresh()
-        #expect(!(application.promptCoordinator.sawErrorThisSession))
+        #expect(!application.promptCoordinator.sawErrorThisSession)
     }
 
     /// Without a bookmark behind it — a deep link, a search result, a map pin — the same

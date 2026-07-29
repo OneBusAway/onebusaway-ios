@@ -77,7 +77,7 @@ class ProximityAlertTests: OBATestCase {
     func test_isExpired_falseWhenFresh() {
         let alert = ProximityAlert(stop: stop)
 
-        #expect(!(alert.isExpired))
+        #expect(!alert.isExpired)
     }
 
     func test_isExpired_trueWhenOlderThan24Hours() {
@@ -91,7 +91,7 @@ class ProximityAlertTests: OBATestCase {
         let justUnderDate = Date().addingTimeInterval(-24 * 60 * 60 + 5) // 5 seconds under 24 hours
         let alert = ProximityAlert(stop: stop, createdAt: justUnderDate)
 
-        #expect(!(alert.isExpired))
+        #expect(!alert.isExpired)
     }
 
     // MARK: - Equality
@@ -106,13 +106,13 @@ class ProximityAlertTests: OBATestCase {
         let alert1 = ProximityAlert(stop: stop)
         let alert2 = ProximityAlert(stop: stop)
 
-        #expect(!(alert1.isEqual(alert2)))
+        #expect(!alert1.isEqual(alert2))
     }
 
     func test_equality_nonProximityAlertObject() {
         let alert = ProximityAlert(stop: stop)
 
-        #expect(!(alert.isEqual("not an alert")))
+        #expect(!alert.isEqual("not an alert"))
     }
 }
 

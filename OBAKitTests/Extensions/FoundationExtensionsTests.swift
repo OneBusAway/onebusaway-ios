@@ -26,9 +26,9 @@ class FoundationExtensionsTests: XCTestCase {
         #expect(URLError(.cancelled).isCancellation)
         #expect(NSError(domain: NSURLErrorDomain, code: NSURLErrorCancelled).isCancellation)
 
-        #expect(!(URLError(.badServerResponse).isCancellation))
-        #expect(!(URLError(.timedOut).isCancellation))
-        #expect(!(NSError(domain: NSCocoaErrorDomain, code: NSURLErrorCancelled).isCancellation))
+        #expect(!URLError(.badServerResponse).isCancellation)
+        #expect(!URLError(.timedOut).isCancellation)
+        #expect(!NSError(domain: NSCocoaErrorDomain, code: NSURLErrorCancelled).isCancellation)
     }
     
     func test_Bundle_appName() {

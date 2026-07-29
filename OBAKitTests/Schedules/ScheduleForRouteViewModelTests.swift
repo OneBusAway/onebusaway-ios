@@ -310,7 +310,7 @@ class ScheduleForRouteViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app)
 
-        #expect(!(viewModel.isLoading))
+        #expect(!viewModel.isLoading)
     }
 
     @MainActor
