@@ -203,6 +203,23 @@ final class SurveyViewModelTests: OBATestCase {
         _ = vm
     }
 
+    /// Checkbox answers must encode in sorted order so logically identical
+    /// selections produce a stable JSON payload (#1169).
+    @Test @MainActor
+    func `Toggle checkbox encodes selections in sorted order`() throws {
+        let q = Self.makeQuestion(id: 9, type: .checkbox, options: ["a", "b", "c"])
+        let vm = makeViewModel(questions: [q])
+
+        // Select out of order — without `.sorted()` the JSON order follows Set
+        // iteration and is not stable across runs / platforms.
+        vm.toggleCheckbox(option: "c", selected: true, for: q)
+        vm.toggleCheckbox(option: "a", selected: true, for: q)
+        vm.toggleCheckbox(option: "b", selected: true, for: q)
+
+        let expected = try SurveyService.formatCheckboxAnswer(["a", "b", "c"])
+        #expect(vm.storedAnswer(for: q) == expected)
+    }
+
     // MARK: - submit validation
 
     /// `submit()` with no responses on a survey with required questions emits `.validationFailed`.
@@ -647,6 +664,40 @@ final class SurveyViewModelTests: OBATestCase {
         #expect(counter.puts == 1)
 
         // PUT body is `{"responses": "<stringified JSON array>"}`. Decode both layers.
+        let body = try #require(counter.lastPutBody)
+        let outer = try #require(try JSONSerialization.jsonObject(with: body) as? [String: Any])
+        let inner = try #require(outer["responses"] as? String)
+        let innerData = try #require(inner.data(using: .utf8))
+        let responses = try #require(try JSONSerialization.jsonObject(with: innerData) as? [[String: Any]])
+        let questionIDs = responses.compactMap { $0["question_id"] as? Int }
+        #expect(!questionIDs.contains(hero.id))
+        #expect(questionIDs == [follow.id])
+    }
+
+    /// Fresh path with hero + follow-up: the PUT for additional questions must
+    /// exclude the hero answer — wire-level parity with the retry-path filter
+    /// test (#1169).
+    @Test @MainActor
+    func `Submit fresh path filters hero from additional responses`() async throws {
+        let counter = HitCounter()
+        let liveService = buildLiveSurveyService(counter: counter)
+        let hero = Self.makeQuestion(id: 1, position: 1, type: .text)
+        let follow = Self.makeQuestion(id: 2, position: 2, type: .text)
+        let vm = SurveyViewModel(
+            survey: Self.makeSurvey(questions: [hero, follow]),
+            surveyService: liveService
+        )
+        vm.updateAnswer(for: hero, answer: "yes")
+        vm.updateAnswer(for: follow, answer: "additional")
+
+        let result = await firstSubmissionResult(vm: vm)
+
+        guard case .success = result else {
+            Issue.record("Expected .success; got \(result)"); return
+        }
+        #expect(counter.posts == 1)
+        #expect(counter.puts == 1)
+
         let body = try #require(counter.lastPutBody)
         let outer = try #require(try JSONSerialization.jsonObject(with: body) as? [String: Any])
         let inner = try #require(outer["responses"] as? String)
