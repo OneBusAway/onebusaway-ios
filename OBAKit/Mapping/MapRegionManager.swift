@@ -320,7 +320,7 @@ public class MapRegionManager: NSObject,
     }
 
     /// The UserDefaults key persisting the shared rental minimum-range threshold.
-    public static let rentalMinimumRangeDefaultsKey = "mapLayer.rentals.minimumRangeMeters"
+    static let rentalMinimumRangeDefaultsKey = "mapLayer.rentals.minimumRangeMeters"
 
     /// The minimum-range filter shared by the Bikes and Scooters layers — one
     /// threshold, not one per layer.
@@ -329,7 +329,7 @@ public class MapRegionManager: NSObject,
     /// and `resetMapLayersToDefaults()` cover it, which is what makes the Map
     /// sheet's Reset button honest. No `register(defaults:)` is needed: an unset
     /// key reads as 0, which is exactly `.any`.
-    public var rentalRangeFilter: RentalRangeFilter {
+    var rentalRangeFilter: RentalRangeFilter {
         get {
             RentalRangeFilter(
                 minimumRangeMeters: application.userDefaults.integer(forKey: Self.rentalMinimumRangeDefaultsKey)

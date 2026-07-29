@@ -54,28 +54,28 @@ final class MapRegionManagerRentalFilterTests: OBATestCase {
     }
 
     @Test func postsOnChange() async {
-        var posted = false
-        let token = NotificationCenter.default.addObserver(
-            forName: .rentalRangeFilterDidChange, object: nil, queue: nil
-        ) { _ in posted = true }
-        defer { NotificationCenter.default.removeObserver(token) }
+        await confirmation("filter change posts a notification") { posted in
+            let token = NotificationCenter.default.addObserver(
+                forName: .rentalRangeFilterDidChange, object: nil, queue: nil
+            ) { _ in posted() }
+            defer { NotificationCenter.default.removeObserver(token) }
 
-        manager.rentalRangeFilter = RentalRangeFilter(minimumRangeMeters: 8047)
-        #expect(posted)
+            manager.rentalRangeFilter = RentalRangeFilter(minimumRangeMeters: 8047)
+        }
     }
 
     /// A redundant write must not post — the coordinator would refilter for nothing.
-    @Test func doesNotPostWhenUnchanged() {
+    @Test func doesNotPostWhenUnchanged() async {
         manager.rentalRangeFilter = RentalRangeFilter(minimumRangeMeters: 8047)
 
-        var posted = false
-        let token = NotificationCenter.default.addObserver(
-            forName: .rentalRangeFilterDidChange, object: nil, queue: nil
-        ) { _ in posted = true }
-        defer { NotificationCenter.default.removeObserver(token) }
+        await confirmation("redundant write posts nothing", expectedCount: 0) { posted in
+            let token = NotificationCenter.default.addObserver(
+                forName: .rentalRangeFilterDidChange, object: nil, queue: nil
+            ) { _ in posted() }
+            defer { NotificationCenter.default.removeObserver(token) }
 
-        manager.rentalRangeFilter = RentalRangeFilter(minimumRangeMeters: 8047)
-        #expect(posted == false)
+            manager.rentalRangeFilter = RentalRangeFilter(minimumRangeMeters: 8047)
+        }
     }
 
     /// An active filter is a difference from defaults, so Reset must be offered
