@@ -1233,7 +1233,7 @@ xcodebuild test-without-building -only-testing:OBAKitTests/RentalVisibilityTests
   -destination 'platform=iOS Simulator,OS=26.3.1,name=iPhone 17 Pro' 2>&1 | tail -20
 ```
 
-Expected: PASS, **20 tests executed**.
+Expected: PASS, **19 tests executed**.
 
 - [ ] **Step 5: Lint and commit**
 
