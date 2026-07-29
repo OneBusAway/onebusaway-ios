@@ -73,6 +73,27 @@ import UIKit
         objectWillChange.send()
         mapRegionManager.resetMapLayersToDefaults()
     }
+
+    // MARK: - Rental Range Filter
+
+    /// Computed once per sheet presentation: the ladder involves a
+    /// MeasurementFormatter and a localized string, neither worth redoing per render.
+    let rangeFilterPresets = RentalRangePreset.presets()
+
+    /// The rung to highlight. A stored value that isn't on the current ladder — the
+    /// rider's locale changed since they chose it — highlights the closest rung
+    /// without the stored preference being rewritten.
+    var selectedRangePresetID: Int {
+        RentalRangePreset.nearest(
+            toMeters: mapRegionManager.rentalRangeFilter.minimumRangeMeters,
+            in: rangeFilterPresets
+        )?.id ?? 0
+    }
+
+    func selectRangePreset(id: Int) {
+        objectWillChange.send()
+        mapRegionManager.rentalRangeFilter = RentalRangeFilter(minimumRangeMeters: id)
+    }
 }
 
 struct MapSheetView: View {
@@ -89,10 +110,7 @@ struct MapSheetView: View {
                     group: .transit
                 )
 
-                layerSection(
-                    title: OBALoc("map_sheet.other_modes_group", value: "Other ways to get around", comment: "Map sheet group header for non-transit mobility layers"),
-                    group: .otherModes
-                )
+                otherModesSection
             }
             .navigationTitle(OBALoc("map_sheet.title", value: "Map", comment: "Title of the Map sheet"))
             .navigationBarTitleDisplayMode(.inline)
@@ -180,6 +198,45 @@ struct MapSheetView: View {
                 }
             }
         }
+    }
+
+    /// The non-transit section, which carries the range-filter row beneath its
+    /// layer toggles. The row shows whenever a rental layer row is visible — not
+    /// only when one is enabled — so it doesn't jump in and out of the sheet as the
+    /// rider toggles them, and so the filter can be set before turning a layer on.
+    @ViewBuilder
+    private var otherModesSection: some View {
+        let layers = model.visibleLayers(in: .otherModes)
+        if !layers.isEmpty {
+            Section(OBALoc("map_sheet.other_modes_group", value: "Other ways to get around", comment: "Map sheet group header for non-transit mobility layers")) {
+                ForEach(layers, id: \.id) { layer in
+                    layerRow(layer)
+                }
+                rangeFilterRow
+            }
+        }
+    }
+
+    /// `.menu` is stated explicitly rather than left to `.automatic`, which Apple
+    /// documents as "based on the picker's context" — in a List that has resolved
+    /// to a navigation link in some OS versions and a menu in others.
+    private var rangeFilterRow: some View {
+        Picker(selection: Binding(
+            get: { model.selectedRangePresetID },
+            set: { model.selectRangePreset(id: $0) }
+        )) {
+            ForEach(model.rangeFilterPresets) { preset in
+                Text(preset.title).tag(preset.meters)
+            }
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "bolt")
+                    .foregroundStyle(Color(uiColor: .rentalPurple))
+                    .frame(width: 28)
+                Text(OBALoc("map_sheet.minimum_range", value: "Minimum range", comment: "Map sheet row label for the rental minimum-range filter"))
+            }
+        }
+        .pickerStyle(.menu)
     }
 
     @ViewBuilder
