@@ -136,6 +136,16 @@ An entity is visible when it matches the current form factors **and** passes the
 filter. Every mutation returns the exact set of changes to apply to the map, so
 the caller never has to recompute anything.
 
+It needs no isolation annotation and no explicit `Sendable` conformance. OBAKit
+defaults to main-actor isolation, so `RentalVisibility` is implicitly main-actor
+isolated; it lives as a `var` on the `@MainActor` `RentalLayerCoordinator` and is
+mutated only from that class's main-actor methods. The existing
+`Task { for await snapshot in snapshots }` pattern already inherits the
+enclosing main-actor context, which is why the current `apply(_:)` call compiles
+today, and `Changes` never crosses an isolation boundary — it is returned to a
+main-actor caller. A struct is preferable to a class here precisely because it
+cannot be captured and mutated from somewhere else.
+
 Memory stays bounded without extra work: the source replaces its `delivered` map
 wholesale on each fetch and reports everything absent as `removed`, so the cache
 tracks the padded viewport rather than growing across a session.
@@ -318,11 +328,20 @@ incorporates the fuel text even when the visual label is hidden by zoom: a
 visual-clutter rule should not cost a VoiceOver user information. The label
 itself is `isAccessibilityElement = false` so it isn't announced twice.
 
-Apple does not document what `MKAnnotationView` derives from an annotation's
-`title`/`subtitle` for VoiceOver, so whether setting `accessibilityLabel`
-*replaces* that or reads alongside it is unverified. Confirm with VoiceOver on
-device before considering this part done; if it duplicates, the fix is to compose
-the full string (label plus fuel) rather than append.
+Apple documents no default VoiceOver derivation for `MKAnnotationView` — a
+documentation search turns up nothing on how (or whether) it builds a label from
+the annotation's `title`/`subtitle`. What *is* documented, in "Supporting
+VoiceOver in your app", is the general UIKit rule: `accessibilityLabel` is a
+single property supplying the text VoiceOver reads, and duplicate announcements
+come from *child* accessibility elements rather than from a set label being
+appended to a derived one. So composing the full string ourselves and setting
+`isAccessibilityElement = false` on the child label is the right shape.
+
+The one residual unknown is narrow: whether `MKAnnotationView` is an
+accessibility element at all by default, and whether MapKit synthesizes anything
+around it. Confirm with VoiceOver on device, focusing a rental pin and checking
+that exactly one announcement is heard containing both the vehicle name and the
+fuel figure.
 
 ### Analytics
 
@@ -338,6 +357,28 @@ need neither a map view nor an async pipeline to exercise.
 
 Swift Testing throughout, `.serialized` suites, per the conventions in
 `CLAUDE.md`.
+
+**Isolation must come from the fixtures, not from the schedule.** Swift Testing's
+own documentation states that tests "run in parallel with respect to each other
+using task groups, generally within the same process," with `.serialized`
+serializing only *within* a suite; global parallelization is off only under
+`--no-parallel` or `SWT_EXPERIMENTAL_MAXIMUM_PARALLELIZATION_WIDTH=1`. The
+`parallelizable: false` on the `OBAKitTests` scheme target governs XCTest's
+multi-process parallel testing, and nothing in the documentation establishes that
+it disables Swift Testing's in-process task-group parallelism. So the plan does
+not rely on it.
+
+Concretely, the `MapRegionManager` persistence suite must never touch
+`UserDefaults.standard`. It inherits `OBATestCase`, whose
+`userDefaultsSuiteName` is already `"OBAKitTests.\(UUID().uuidString)"` — a
+per-instance scratch domain, torn down in `deinit`. That gives real isolation
+regardless of what runs concurrently, which is the only kind worth having.
+
+Suites that construct UIKit views (`RentalAnnotationViewTests`) or touch
+`RentalLayerCoordinator` are `@MainActor`. This is not merely a UIKit
+requirement: OBAKit builds with main-actor default isolation, so
+`RentalVisibility` and `RentalRangeFilter` are themselves implicitly main-actor
+isolated and unreachable from a `nonisolated` test context.
 
 | Suite | Covers |
 | --- | --- |
