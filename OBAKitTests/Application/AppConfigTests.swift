@@ -10,16 +10,16 @@
 import UIKit
 
 import Foundation
-import XCTest
 @testable import OBAKit
 @testable import OBAKitCore
 import CoreLocation
 import Testing
 
-class AppConfigTests: OBATestCase {
+@Suite(.serialized)
+final class AppConfigTests: OBATestCase {
     let regionsBaseURL = URL(string: "http://www.example.com")!
 
-    func testAppConfig_creation_propertiesWork() {
+    @Test func `App config creation properties work`() {
         let queue = OperationQueue()
 
         let locationManager = MockAuthorizedLocationManager(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)

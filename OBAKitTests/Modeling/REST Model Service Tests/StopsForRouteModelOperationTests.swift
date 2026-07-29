@@ -7,7 +7,6 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
 import Testing
 import CoreLocation
 import MapKit
@@ -16,10 +15,11 @@ import MapKit
 
 // swiftlint:disable force_cast
 
-class StopsForRouteModelOperationTests: OBATestCase {
+@Suite(.serialized)
+final class StopsForRouteModelOperationTests: OBATestCase {
     let routeID = "12345"
 
-    func testLoading_success() async throws {
+    @Test func `Loading success`() async throws {
         let dataLoader = (restService.dataLoader as! MockDataLoader)
         dataLoader.mock(
             URLString: "https://www.example.com/api/where/stops-for-route/\(routeID).json",

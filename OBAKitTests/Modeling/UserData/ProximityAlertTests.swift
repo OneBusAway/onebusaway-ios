@@ -7,26 +7,28 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
 import CoreLocation
+import Foundation
 import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
 // swiftlint:disable force_try
 
-class ProximityAlertTests: OBATestCase {
+@Suite(.serialized)
+final class ProximityAlertTests: OBATestCase {
 
     var stop: Stop!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
+
         stop = try! Fixtures.loadSomeStops().first!
     }
 
     // MARK: - Model Init
 
-    func test_init_setsPropertiesFromStop() {
+    @Test func `Init sets properties from stop`() {
         let alert = ProximityAlert(stop: stop)
 
         #expect(alert.stopID == stop.id)
@@ -36,13 +38,13 @@ class ProximityAlertTests: OBATestCase {
         #expect(alert.radiusMeters == 200.0)
     }
 
-    func test_init_customRadius() {
+    @Test func `Init custom radius`() {
         let alert = ProximityAlert(stop: stop, radiusMeters: 500.0)
 
         #expect(alert.radiusMeters == 500.0)
     }
 
-    func test_coordinate_returnsCorrectValue() {
+    @Test func `Coordinate returns correct value`() {
         let alert = ProximityAlert(stop: stop)
 
         #expect(alert.coordinate.latitude == stop.location.coordinate.latitude)
@@ -51,7 +53,7 @@ class ProximityAlertTests: OBATestCase {
 
     // MARK: - Codable Round-Trip
 
-    func test_codable_roundTrip() {
+    @Test func `Codable round trip`() {
         let alert = ProximityAlert(stop: stop, radiusMeters: 350.0)
         let roundtripped = try! Fixtures.roundtripCodable(type: ProximityAlert.self, model: alert)
 
@@ -64,7 +66,7 @@ class ProximityAlertTests: OBATestCase {
         expectClose(roundtripped.createdAt.timeIntervalSince1970, alert.createdAt.timeIntervalSince1970, within: 1.0)
     }
 
-    func test_codable_roundTrip_preservesCoordinate() {
+    @Test func `Codable round trip preserves coordinate`() {
         let alert = ProximityAlert(stop: stop)
         let roundtripped = try! Fixtures.roundtripCodable(type: ProximityAlert.self, model: alert)
 
@@ -74,20 +76,20 @@ class ProximityAlertTests: OBATestCase {
 
     // MARK: - Expiration
 
-    func test_isExpired_falseWhenFresh() {
+    @Test func `Is expired false when fresh`() {
         let alert = ProximityAlert(stop: stop)
 
         #expect(!alert.isExpired)
     }
 
-    func test_isExpired_trueWhenOlderThan24Hours() {
+    @Test func `Is expired true when older than24 hours`() {
         let expiredDate = Date().addingTimeInterval(-25 * 60 * 60)
         let alert = ProximityAlert(stop: stop, createdAt: expiredDate)
 
         #expect(alert.isExpired)
     }
 
-    func test_isExpired_falseJustUnder24Hours() {
+    @Test func `Is expired false just under24 hours`() {
         let justUnderDate = Date().addingTimeInterval(-24 * 60 * 60 + 5) // 5 seconds under 24 hours
         let alert = ProximityAlert(stop: stop, createdAt: justUnderDate)
 
@@ -96,20 +98,20 @@ class ProximityAlertTests: OBATestCase {
 
     // MARK: - Equality
 
-    func test_equality_sameID() {
+    @Test func `Equality same ID`() {
         let alert = ProximityAlert(stop: stop)
 
         #expect(alert.isEqual(alert))
     }
 
-    func test_equality_differentID() {
+    @Test func `Equality different ID`() {
         let alert1 = ProximityAlert(stop: stop)
         let alert2 = ProximityAlert(stop: stop)
 
         #expect(!alert1.isEqual(alert2))
     }
 
-    func test_equality_nonProximityAlertObject() {
+    @Test func `Equality non proximity alert object`() {
         let alert = ProximityAlert(stop: stop)
 
         #expect(!alert.isEqual("not an alert"))
@@ -118,26 +120,28 @@ class ProximityAlertTests: OBATestCase {
 
 // MARK: - UserDefaultsStore Integration
 
-class ProximityAlertStoreTests: OBATestCase {
+@Suite(.serialized)
+final class ProximityAlertStoreTests: OBATestCase {
 
     var userDefaultsStore: UserDefaultsStore!
     var stop: Stop!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
+
         userDefaultsStore = UserDefaultsStore(userDefaults: userDefaults)
         stop = try! Fixtures.loadSomeStops().first!
     }
 
     // MARK: - Empty State
 
-    func test_proximityAlerts_emptyByDefault() {
+    @Test func `Proximity alerts empty by default`() {
         #expect(self.userDefaultsStore.proximityAlerts.isEmpty)
     }
 
     // MARK: - Add
 
-    func test_add_storesAlert() {
+    @Test func `Add stores alert`() {
         let alert = ProximityAlert(stop: stop)
         userDefaultsStore.add(proximityAlert: alert)
 
@@ -146,7 +150,7 @@ class ProximityAlertStoreTests: OBATestCase {
         #expect(self.userDefaultsStore.proximityAlerts.first?.stopID == stop.id)
     }
 
-    func test_add_multipleAlerts() {
+    @Test func `Add multiple alerts`() {
         let stops = try! Fixtures.loadSomeStops()
         let alert1 = ProximityAlert(stop: stops[0])
         let alert2 = ProximityAlert(stop: stops[1])
@@ -159,7 +163,7 @@ class ProximityAlertStoreTests: OBATestCase {
 
     // MARK: - Delete
 
-    func test_delete_removesAlert() {
+    @Test func `Delete removes alert`() {
         let alert = ProximityAlert(stop: stop)
         userDefaultsStore.add(proximityAlert: alert)
 
@@ -168,7 +172,7 @@ class ProximityAlertStoreTests: OBATestCase {
         #expect(self.userDefaultsStore.proximityAlerts.isEmpty)
     }
 
-    func test_delete_nonexistentAlert_isNoOp() {
+    @Test func `Delete nonexistent alert is no op`() {
         let alert1 = ProximityAlert(stop: stop)
         let alert2 = ProximityAlert(stop: stop)
         userDefaultsStore.add(proximityAlert: alert1)
@@ -179,7 +183,7 @@ class ProximityAlertStoreTests: OBATestCase {
         #expect(self.userDefaultsStore.proximityAlerts.first?.id == alert1.id)
     }
 
-    func test_delete_onlyRemovesTargetAlert() {
+    @Test func `Delete only removes target alert`() {
         let stops = try! Fixtures.loadSomeStops()
         let alert1 = ProximityAlert(stop: stops[0])
         let alert2 = ProximityAlert(stop: stops[1])
@@ -195,7 +199,7 @@ class ProximityAlertStoreTests: OBATestCase {
 
     // MARK: - Delete All
 
-    func test_deleteAll_removesAllAlerts() {
+    @Test func `Delete all removes all alerts`() {
         let stops = try! Fixtures.loadSomeStops()
         let alert1 = ProximityAlert(stop: stops[0])
         let alert2 = ProximityAlert(stop: stops[1])
@@ -210,7 +214,7 @@ class ProximityAlertStoreTests: OBATestCase {
 
     // MARK: - Expired Alerts
 
-    func test_deleteExpired_keepsNonExpiredAlerts() {
+    @Test func `Delete expired keeps non expired alerts`() {
         let alert = ProximityAlert(stop: stop)
         userDefaultsStore.add(proximityAlert: alert)
 
@@ -219,7 +223,7 @@ class ProximityAlertStoreTests: OBATestCase {
         #expect(self.userDefaultsStore.proximityAlerts.count == 1)
     }
 
-    func test_deleteExpired_removesExpiredAlerts() {
+    @Test func `Delete expired removes expired alerts`() {
         let expiredDate = Date().addingTimeInterval(-25 * 60 * 60) // 25 hours ago
         let expiredAlert = ProximityAlert(stop: stop, createdAt: expiredDate)
         let freshAlert = ProximityAlert(stop: stop)
@@ -232,7 +236,7 @@ class ProximityAlertStoreTests: OBATestCase {
         #expect(self.userDefaultsStore.proximityAlerts.first?.id == freshAlert.id)
     }
 
-    func test_deleteExpired_removesAllWhenAllExpired() {
+    @Test func `Delete expired removes all when all expired`() {
         let stops = try! Fixtures.loadSomeStops()
         let expiredDate = Date().addingTimeInterval(-25 * 60 * 60)
         let alert1 = ProximityAlert(stop: stops[0], createdAt: expiredDate)
@@ -245,32 +249,28 @@ class ProximityAlertStoreTests: OBATestCase {
         #expect(self.userDefaultsStore.proximityAlerts.isEmpty)
     }
 
-    func test_deleteExpired_doesNotPostNotification_whenNothingExpired() {
+    @Test func `Delete expired does not post notification when nothing expired`() async {
         let alert = ProximityAlert(stop: stop)
         userDefaultsStore.add(proximityAlert: alert)
 
-        let notificationExpectation = expectation(forNotification: .proximityAlertsDidChange, object: userDefaultsStore)
-        notificationExpectation.isInverted = true
-
-        userDefaultsStore.deleteExpiredProximityAlerts()
-
-        waitForExpectations(timeout: 0.5)
+        await expectProximityAlertsNotification(count: 0) {
+            userDefaultsStore.deleteExpiredProximityAlerts()
+        }
     }
 
-    func test_deleteExpired_postsNotification_whenExpiredAlertsRemoved() {
+    @Test func `Delete expired posts notification when expired alerts removed`() async {
         let expiredDate = Date().addingTimeInterval(-25 * 60 * 60)
         let alert = ProximityAlert(stop: stop, createdAt: expiredDate)
         userDefaultsStore.add(proximityAlert: alert)
 
-        expectation(forNotification: .proximityAlertsDidChange, object: userDefaultsStore)
-        userDefaultsStore.deleteExpiredProximityAlerts()
-
-        waitForExpectations(timeout: 1.0)
+        await expectProximityAlertsNotification {
+            userDefaultsStore.deleteExpiredProximityAlerts()
+        }
     }
 
     // MARK: - Persistence Across Stores
 
-    func test_persistsAcrossStoreInstances() {
+    @Test func `Persists across store instances`() {
         let alert = ProximityAlert(stop: stop)
         userDefaultsStore.add(proximityAlert: alert)
 
@@ -287,32 +287,54 @@ class ProximityAlertStoreTests: OBATestCase {
 
     // MARK: - Notification
 
-    func test_add_postsNotification() {
+    @Test func `Add posts notification`() async {
         let alert = ProximityAlert(stop: stop)
 
-        expectation(forNotification: .proximityAlertsDidChange, object: userDefaultsStore)
-        userDefaultsStore.add(proximityAlert: alert)
-
-        waitForExpectations(timeout: 1.0)
+        await expectProximityAlertsNotification {
+            userDefaultsStore.add(proximityAlert: alert)
+        }
     }
 
-    func test_delete_postsNotification() {
-        let alert = ProximityAlert(stop: stop)
-        userDefaultsStore.add(proximityAlert: alert)
-
-        expectation(forNotification: .proximityAlertsDidChange, object: userDefaultsStore)
-        userDefaultsStore.delete(proximityAlert: alert)
-
-        waitForExpectations(timeout: 1.0)
-    }
-
-    func test_deleteAll_postsNotification() {
+    @Test func `Delete posts notification`() async {
         let alert = ProximityAlert(stop: stop)
         userDefaultsStore.add(proximityAlert: alert)
 
-        expectation(forNotification: .proximityAlertsDidChange, object: userDefaultsStore)
-        userDefaultsStore.deleteAllProximityAlerts()
-
-        waitForExpectations(timeout: 1.0)
+        await expectProximityAlertsNotification {
+            userDefaultsStore.delete(proximityAlert: alert)
+        }
     }
+
+    @Test func `Delete all posts notification`() async {
+        let alert = ProximityAlert(stop: stop)
+        userDefaultsStore.add(proximityAlert: alert)
+
+        await expectProximityAlertsNotification {
+            userDefaultsStore.deleteAllProximityAlerts()
+        }
+    }
+
+    /// Confirms `.proximityAlertsDidChange` is posted while `body` runs — or,
+    /// with `count: 0`, that it isn't.
+    ///
+    /// Replaces `expectation(forNotification:object:)`. `UserDataStore` posts
+    /// synchronously, so there is nothing to wait for; the old
+    /// `waitForExpectations(timeout:)` calls were burning their timeout on the
+    /// inverted case and returning immediately on the rest.
+    private func expectProximityAlertsNotification(
+        count: Int = 1,
+        sourceLocation: SourceLocation = #_sourceLocation,
+        during body: () -> Void
+    ) async {
+        await confirmation(expectedCount: count, sourceLocation: sourceLocation) { posted in
+            let token = NotificationCenter.default.addObserver(
+                forName: .proximityAlertsDidChange,
+                object: userDefaultsStore,
+                queue: nil
+            ) { _ in posted() }
+            defer { NotificationCenter.default.removeObserver(token) }
+
+            body()
+        }
+    }
+
 }

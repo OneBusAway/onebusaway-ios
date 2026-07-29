@@ -8,7 +8,7 @@
 //
 
 import Foundation
-import XCTest
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -18,12 +18,14 @@ import XCTest
 /// delivery, and failure handling. They deliberately avoid asserting on anything
 /// driven by `UNUserNotificationCenter.requestAuthorization`, whose behavior is
 /// simulator- and permission-state-dependent.
-class OBACloudPushServiceTests: OBATestCase {
+@Suite(.serialized)
+final class OBACloudPushServiceTests: OBATestCase {
 
     private var service: OBACloudPushService!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
+
         service = OBACloudPushService()
         // The real handlers are installed by PushService during init. Install benign
         // defaults so an async authorization denial can never crash a test.
@@ -33,53 +35,53 @@ class OBACloudPushServiceTests: OBATestCase {
 
     // MARK: - Token Conversion
 
-    func test_didRegister_convertsTokenDataToLowercaseHexString() {
+    @Test func `Did register converts token data to lowercase hex string`() {
         service.didRegisterForRemoteNotifications(withDeviceToken: Data([0x01, 0xAB, 0xFF, 0x00, 0x7F]))
 
-        XCTAssertEqual(service.pushUserID, "01abff007f")
-        XCTAssertTrue(service.isRegisteredForRemoteNotifications)
+        #expect(service.pushUserID == "01abff007f")
+        #expect(service.isRegisteredForRemoteNotifications)
     }
 
-    func test_beforeRegistration_noTokenIsAvailable() {
-        XCTAssertNil(service.pushUserID)
-        XCTAssertFalse(service.isRegisteredForRemoteNotifications)
+    @Test func `Before registration no token is available`() {
+        #expect(service.pushUserID == nil)
+        #expect(!service.isRegisteredForRemoteNotifications)
     }
 
     // MARK: - Callback Delivery
 
-    func test_requestPushID_withExistingToken_invokesCallbackImmediately() {
+    @Test func `Request push ID with existing token invokes callback immediately`() {
         service.didRegisterForRemoteNotifications(withDeviceToken: Data([0xDE, 0xAD]))
 
         var receivedTokens: [String] = []
         service.requestPushID { receivedTokens.append($0) }
 
-        XCTAssertEqual(receivedTokens, ["dead"])
+        #expect(receivedTokens == ["dead"])
     }
 
-    func test_didRegister_deliversAllPendingCallbacksExactlyOnce() {
+    @Test func `Did register delivers all pending callbacks exactly once`() {
         var firstTokens: [String] = []
         var secondTokens: [String] = []
         service.requestPushID { firstTokens.append($0) }
         service.requestPushID { secondTokens.append($0) }
 
-        XCTAssertTrue(firstTokens.isEmpty, "Callbacks must not fire before a token arrives")
+        #expect(firstTokens.isEmpty, "Callbacks must not fire before a token arrives")
 
         service.didRegisterForRemoteNotifications(withDeviceToken: Data([0xBE, 0xEF]))
 
-        XCTAssertEqual(firstTokens, ["beef"])
-        XCTAssertEqual(secondTokens, ["beef"])
+        #expect(firstTokens == ["beef"])
+        #expect(secondTokens == ["beef"])
 
         // A re-registration (token rotation) must not re-invoke already-delivered callbacks.
         service.didRegisterForRemoteNotifications(withDeviceToken: Data([0xCA, 0xFE]))
 
-        XCTAssertEqual(firstTokens, ["beef"])
-        XCTAssertEqual(secondTokens, ["beef"])
-        XCTAssertEqual(service.pushUserID, "cafe")
+        #expect(firstTokens == ["beef"])
+        #expect(secondTokens == ["beef"])
+        #expect(service.pushUserID == "cafe")
     }
 
     // MARK: - Failure Handling
 
-    func test_didFail_forwardsErrorAndClearsPendingCallbacks() {
+    @Test func `Did fail forwards error and clears pending callbacks`() {
         var receivedErrors: [Error] = []
         service.errorHandler = { receivedErrors.append($0) }
 
@@ -89,17 +91,17 @@ class OBACloudPushServiceTests: OBATestCase {
         let registrationError = NSError(domain: "test", code: 3000, userInfo: nil)
         service.didFailToRegisterForRemoteNotifications(withError: registrationError)
 
-        XCTAssertEqual(receivedErrors.count, 1)
-        XCTAssertEqual((receivedErrors.first as NSError?)?.code, 3000)
+        #expect(receivedErrors.count == 1)
+        #expect((receivedErrors.first as NSError?)?.code == 3000)
 
         // A token arriving after failure must not invoke the cleared callbacks.
         service.didRegisterForRemoteNotifications(withDeviceToken: Data([0x11]))
-        XCTAssertTrue(receivedTokens.isEmpty)
+        #expect(receivedTokens.isEmpty)
     }
 
     // MARK: - Token Update Handler
 
-    func test_didRegister_invokesDeviceTokenUpdatedHandlerOnEveryRegistration() {
+    @Test func `Did register invokes device token updated handler on every registration`() {
         var receivedTokens: [String] = []
         service.deviceTokenUpdatedHandler = { receivedTokens.append($0) }
 
@@ -107,6 +109,6 @@ class OBACloudPushServiceTests: OBATestCase {
         // Token rotation (restore/reinstall) re-fires the handler with the new token.
         service.didRegisterForRemoteNotifications(withDeviceToken: Data([0xCA, 0xFE]))
 
-        XCTAssertEqual(receivedTokens, ["beef", "cafe"])
+        #expect(receivedTokens == ["beef", "cafe"])
     }
 }

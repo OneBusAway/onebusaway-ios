@@ -8,27 +8,28 @@
 //
 
 import Foundation
-import XCTest
 import Testing
 import UIKit
 @testable import OBAKit
 
-class DataLoadFeedbackGeneratorTests: OBATestCase {
+@Suite(.serialized)
+final class DataLoadFeedbackGeneratorTests: OBATestCase {
     
     var feedbackGenerator: DataLoadFeedbackGenerator!
     
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
+
         feedbackGenerator = DataLoadFeedbackGenerator(userDefaults: userDefaults)
     }
     
-    func test_init_registersDefaults() {
+    @Test func `Init registers defaults`() {
         _ = DataLoadFeedbackGenerator(userDefaults: userDefaults)
         
         #expect(self.userDefaults.bool(forKey: DataLoadFeedbackGenerator.EnabledUserDefaultsKey) == true)
     }
     
-    func test_init_withApplication() {
+    @Test func `Init with application`() {
         // Inject a MockDataLoader instead of the `AppConfig(appBundle:userDefaults:analytics:)`
         // convenience init, which defaults to `URLSession.shared`. `Application.init` calls
         // `regionsService.updateRegionsList()`, so that init would hit the live regions server.
@@ -52,7 +53,7 @@ class DataLoadFeedbackGeneratorTests: OBATestCase {
         _ = DataLoadFeedbackGenerator(application: application)
     }
     
-    func test_dataLoad_success() {
+    @Test func `Data load success`() {
         // Enable feedback
         userDefaults.set(true, forKey: DataLoadFeedbackGenerator.EnabledUserDefaultsKey)
         
@@ -62,7 +63,7 @@ class DataLoadFeedbackGeneratorTests: OBATestCase {
         #expect(true)  // Test that it doesn't crash
     }
     
-    func test_dataLoad_failed() {
+    @Test func `Data load failed`() {
         // Enable feedback
         userDefaults.set(true, forKey: DataLoadFeedbackGenerator.EnabledUserDefaultsKey)
         
@@ -72,7 +73,7 @@ class DataLoadFeedbackGeneratorTests: OBATestCase {
         #expect(true)  // Test that it doesn't crash
     }
     
-    func test_dataLoad_disabled() {
+    @Test func `Data load disabled`() {
         // Disable feedback
         userDefaults.set(false, forKey: DataLoadFeedbackGenerator.EnabledUserDefaultsKey)
         
@@ -83,7 +84,7 @@ class DataLoadFeedbackGeneratorTests: OBATestCase {
         #expect(true)  // Test that it doesn't crash
     }
     
-    func test_feedbackType_cases() {
+    @Test func `Feedback type cases`() {
         // Test that the enum cases exist
         let successType = DataLoadFeedbackGenerator.FeedbackType.success
         let failedType = DataLoadFeedbackGenerator.FeedbackType.failed

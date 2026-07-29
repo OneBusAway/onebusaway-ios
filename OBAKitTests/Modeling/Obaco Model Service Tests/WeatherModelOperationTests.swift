@@ -7,17 +7,18 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
 import CoreLocation
+import Foundation
 import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
 // swiftlint:disable force_cast
 
-class WeatherOperationTests: OBATestCase {
+@Suite(.serialized)
+final class WeatherOperationTests: OBATestCase {
 
-    func testSuccessfulWeatherRequest() async throws {
+    @Test func `Successful weather request`() async throws {
         let dataLoader = (obacoService.dataLoader as! MockDataLoader)
         let data = Fixtures.loadData(file: "pugetsound-weather.json")
         dataLoader.mock(URLString: "https://alerts.example.com/api/v1/regions/1/weather.json", with: data)

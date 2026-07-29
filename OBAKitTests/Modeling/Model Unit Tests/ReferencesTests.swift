@@ -7,28 +7,30 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
 import CoreLocation
+import Foundation
 import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
 // swiftlint:disable force_try
 
-class ReferencesTests: OBATestCase {
+@Suite(.serialized)
+final class ReferencesTests: OBATestCase {
     var references: References!
 
     let tampaRegionIdentifier = 0
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
+
         let data = Fixtures.loadData(file: "references.json")
         references = try! JSONDecoder.RESTDecoder(regionIdentifier: tampaRegionIdentifier).decode(References.self, from: data)
     }
 
     // MARK: - Agencies
 
-    func test_agencies_success() {
+    @Test func `Agencies success`() {
         let agencies = references.agencies
 
         #expect(agencies.count == 1)
@@ -46,7 +48,7 @@ class ReferencesTests: OBATestCase {
 
     // MARK: - Routes
 
-    func test_routes_success() {
+    @Test func `Routes success`() {
         // Make sure routes are being sorted by their IDs for binary searching.
         let expectedRoutes = ["Hillsborough Area Regional Transit_1", "Hillsborough Area Regional Transit_12", "Hillsborough Area Regional Transit_14", "Hillsborough Area Regional Transit_16", "Hillsborough Area Regional Transit_18", "Hillsborough Area Regional Transit_2", "Hillsborough Area Regional Transit_21", "Hillsborough Area Regional Transit_33", "Hillsborough Area Regional Transit_39", "Hillsborough Area Regional Transit_400", "Hillsborough Area Regional Transit_41", "Hillsborough Area Regional Transit_45", "Hillsborough Area Regional Transit_5", "Hillsborough Area Regional Transit_57", "Hillsborough Area Regional Transit_6", "Hillsborough Area Regional Transit_9"]
 
@@ -68,7 +70,7 @@ class ReferencesTests: OBATestCase {
 
     // MARK: - Service Alerts
 
-    func test_serviceAlerts_success() {
+    @Test func `Service alerts success`() {
         let data = Fixtures.loadData(file: "arrival-and-departure-for-stop-MTS_11589.json")
         let response = try! JSONDecoder.RESTDecoder().decode(RESTAPIResponse<ArrivalDeparture>.self, from: data)
         let situations = response.references!.serviceAlerts
@@ -106,7 +108,7 @@ class ReferencesTests: OBATestCase {
 
     // MARK: - Stops
 
-    func test_stops_success() {
+    @Test func `Stops success`() {
         // Make sure stops are being sorted by their IDs for binary searching.
         let expectedOrder = ["Hillsborough Area Regional Transit_1513", "Hillsborough Area Regional Transit_2601", "Hillsborough Area Regional Transit_2625", "Hillsborough Area Regional Transit_3113", "Hillsborough Area Regional Transit_3114", "Hillsborough Area Regional Transit_3432", "Hillsborough Area Regional Transit_4301", "Hillsborough Area Regional Transit_4493", "Hillsborough Area Regional Transit_454", "Hillsborough Area Regional Transit_4547", "Hillsborough Area Regional Transit_455", "Hillsborough Area Regional Transit_4604", "Hillsborough Area Regional Transit_4677", "Hillsborough Area Regional Transit_6497", "Hillsborough Area Regional Transit_6499", "Hillsborough Area Regional Transit_6528", "Hillsborough Area Regional Transit_6592", "Hillsborough Area Regional Transit_683", "Hillsborough Area Regional Transit_6902", "Hillsborough Area Regional Transit_698", "Hillsborough Area Regional Transit_6990", "Hillsborough Area Regional Transit_7434", "Hillsborough Area Regional Transit_7581", "Hillsborough Area Regional Transit_7703", "Hillsborough Area Regional Transit_7924", "Hillsborough Area Regional Transit_928"]
 
@@ -130,7 +132,7 @@ class ReferencesTests: OBATestCase {
         #expect(stop.wheelchairBoarding == .unknown)
     }
 
-    func test_stopsWithIDs_preservesInputOrder() {
+    @Test func `Stops with IDs preserves input order`() {
         // Get some stop IDs from the references in a specific order that differs from the internal sorted order
         let stopIDs = references.stops.map { $0.id }
 
@@ -145,12 +147,12 @@ class ReferencesTests: OBATestCase {
                 "stopsWithIDs should preserve the order of the input IDs array")
     }
 
-    func test_stopsWithIDs_returnsEmptyArrayForEmptyInput() {
+    @Test func `Stops with IDs returns empty array for empty input`() {
         let result = references.stopsWithIDs([])
         #expect(result.isEmpty)
     }
 
-    func test_stopsWithIDs_filtersOutInvalidIDs() {
+    @Test func `Stops with IDs filters out invalid IDs`() {
         let validID = references.stops.first!.id
         let invalidID = "invalid_stop_id_that_does_not_exist"
 
@@ -163,7 +165,7 @@ class ReferencesTests: OBATestCase {
 
     // MARK: - Trips
 
-    func test_trips_success() {
+    @Test func `Trips success`() {
         // Make sure stops are being sorted by their IDs for binary searching.
         let expectedTrips = ["Hillsborough Area Regional Transit_101412", "Hillsborough Area Regional Transit_101445", "Hillsborough Area Regional Transit_102332", "Hillsborough Area Regional Transit_102333", "Hillsborough Area Regional Transit_102381", "Hillsborough Area Regional Transit_102382", "Hillsborough Area Regional Transit_102675", "Hillsborough Area Regional Transit_102676", "Hillsborough Area Regional Transit_102677", "Hillsborough Area Regional Transit_98479", "Hillsborough Area Regional Transit_98522", "Hillsborough Area Regional Transit_98523", "Hillsborough Area Regional Transit_98683", "Hillsborough Area Regional Transit_98684", "Hillsborough Area Regional Transit_98715", "Hillsborough Area Regional Transit_98716", "Hillsborough Area Regional Transit_98870", "Hillsborough Area Regional Transit_98902", "Hillsborough Area Regional Transit_99282", "Hillsborough Area Regional Transit_99283", "Hillsborough Area Regional Transit_99312", "Hillsborough Area Regional Transit_99313", "Hillsborough Area Regional Transit_99494", "Hillsborough Area Regional Transit_99495", "Hillsborough Area Regional Transit_99538", "Hillsborough Area Regional Transit_99539", "Hillsborough Area Regional Transit_99872", "Hillsborough Area Regional Transit_99873", "Hillsborough Area Regional Transit_99904", "Hillsborough Area Regional Transit_99905"]
 

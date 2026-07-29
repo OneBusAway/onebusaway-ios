@@ -7,20 +7,21 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
 import CoreLocation
 import MapKit
+import Foundation
 import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
 // swiftlint:disable force_cast function_body_length
 
-class TripArrivalsModelOperationTests: OBATestCase {
+@Suite(.serialized)
+final class TripArrivalsModelOperationTests: OBATestCase {
     let stopID = "1_10914"
     lazy var apiPath = "https://www.example.com/api/where/arrival-and-departure-for-stop/\(stopID).json"
 
-    func testLoading_success() async throws {
+    @Test func `Loading success`() async throws {
         let dataLoader = (restService.dataLoader as! MockDataLoader)
         let data = Fixtures.loadData(file: "arrival-and-departure-for-stop-MTS_11589.json")
         dataLoader.mock(URLString: apiPath, with: data)
@@ -53,9 +54,9 @@ class TripArrivalsModelOperationTests: OBATestCase {
 
         #expect(arrDep.serviceAlerts.count == 1)
 
-        let situation = try XCTUnwrap(arrDep.serviceAlerts.first)
-        let situationSummary = try XCTUnwrap(situation.summary)
-        let firstConsequence = try XCTUnwrap(situation.consequences.first)
+        let situation = try #require(arrDep.serviceAlerts.first)
+        let situationSummary = try #require(situation.summary)
+        let firstConsequence = try #require(situation.consequences.first)
 
         #expect(situationSummary.value == "Washington St. ramp from Pac Hwy Closed")
         #expect(firstConsequence.condition == "detour")
@@ -76,7 +77,7 @@ class TripArrivalsModelOperationTests: OBATestCase {
         #expect(arrDep.trip.shortName == nil)
 
         #expect(arrDep.tripStatus != nil)
-        let tripStatus = try XCTUnwrap(arrDep.tripStatus)
+        let tripStatus = try #require(arrDep.tripStatus)
         #expect(tripStatus.activeTrip.id == "MTS_13405160")
 
         #expect(arrDep.vehicleID == "MTS_806")

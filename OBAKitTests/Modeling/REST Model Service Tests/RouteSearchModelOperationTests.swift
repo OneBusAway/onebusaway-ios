@@ -7,7 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
+import Foundation
 import Testing
 import CoreLocation
 import MapKit
@@ -16,13 +16,14 @@ import MapKit
 
 // swiftlint:disable force_cast
 
-class RouteSearchModelOperationTests: OBATestCase {
+@Suite(.serialized)
+final class RouteSearchModelOperationTests: OBATestCase {
     let query = "Link"
     let center = CLLocationCoordinate2D(latitude: 47.0, longitude: -122)
     let radius = 5000.0
     lazy var region = CLCircularRegion(center: center, radius: radius, identifier: "identifier")
 
-    func testLoading_success() async throws {
+    @Test func `Loading success`() async throws {
         let dataLoader = (restService.dataLoader as! MockDataLoader)
         let data = Fixtures.loadData(file: "routes-for-location-10.json")
         dataLoader.mock(URLString: "https://www.example.com/api/where/routes-for-location.json", with: data)
@@ -32,7 +33,7 @@ class RouteSearchModelOperationTests: OBATestCase {
 
         #expect(routes.count == 1)
 
-        let route = try XCTUnwrap(routes.first)
+        let route = try #require(routes.first)
 
         #expect(route.agency.id == "1")
         #expect(route.agency.name == "Metro Transit")

@@ -7,7 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
+import Foundation
 import Testing
 @testable import OBAKit
 @testable import OBAKitCore
@@ -16,17 +16,18 @@ import Testing
 
 /// Tests for `TripViewModel`. Regression coverage for the `catch is CancellationError`
 /// branch added in the VM refactor.
-class TripViewModelTests: OBATestCase {
+@Suite(.serialized)
+final class TripViewModelTests: OBATestCase {
     var queue: OperationQueue!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
+
         queue = OperationQueue()
         queue.maxConcurrentOperationCount = 1
     }
 
-    override func tearDown() async throws {
-        try await super.tearDown()
+    isolated deinit {
         queue.cancelAllOperations()
     }
 
@@ -101,8 +102,8 @@ class TripViewModelTests: OBATestCase {
     /// A cancelled `loadData()` task must not surface a user-facing error. The `catch is
     /// CancellationError { return }` branch in `loadData()` handles this; if it's removed,
     /// the cancellation would fall through to the generic `catch { operationError = error }`.
-    @MainActor
-    func test_loadData_doesNotSurfaceCancellationError() async throws {
+    @Test @MainActor
+    func `Load data does not surface cancellation error`() async throws {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
 

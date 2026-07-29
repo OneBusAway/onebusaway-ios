@@ -7,7 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
+import Foundation
 import Testing
 @testable import OBAKit
 @testable import OBAKitCore
@@ -17,23 +17,24 @@ import Testing
 /// tests drive the representable through its `internal`
 /// `makeNavigationController(application:)` factory seam and inspect the
 /// resulting controller hierarchy — no `UIHostingController` needed.
+@Suite(.serialized)
 final class MoreSheetHostTests: OBATestCase {
 
     private var queue: OperationQueue!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
+
         queue = OperationQueue()
         queue.maxConcurrentOperationCount = 1
     }
 
-    override func tearDown() async throws {
-        try await super.tearDown()
+    isolated deinit {
         queue.cancelAllOperations()
     }
 
-    @MainActor
-    func test_makeNavigationController_wrapsMoreViewControllerInNav() {
+    @Test @MainActor
+    func `Make navigation controller wraps more view controller in nav`() {
         let dataLoader = MockDataLoader(testName: name)
         let application = buildApplication(queue: queue, dataLoader: dataLoader)
 

@@ -7,7 +7,6 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
 import Testing
 import CoreLocation
 @testable import OBAKit
@@ -15,8 +14,9 @@ import CoreLocation
 
 // swiftlint:disable force_try force_cast
 
-class RegionalAlertsModelOperationTests: OBATestCase {
-    func testSuccessfulRequest() async throws {
+@Suite(.serialized)
+final class RegionalAlertsModelOperationTests: OBATestCase {
+    @Test func `Successful request`() async throws {
         let dataLoader = (restService.dataLoader as! MockDataLoader)
         stubAgenciesWithCoverage(dataLoader: dataLoader)
         Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)

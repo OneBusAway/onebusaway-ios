@@ -7,22 +7,23 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
 import CoreLocation
+import Foundation
 import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
 // swiftlint:disable function_body_length force_cast
 
-class VehicleStatusModelOperationTests: OBATestCase {
+@Suite(.serialized)
+final class VehicleStatusModelOperationTests: OBATestCase {
     let vehicleID = "1_4351"
     lazy var apiPath = "https://www.example.com/api/where/vehicle/\(vehicleID).json"
 
     var dataLoader: MockDataLoader!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
 
         dataLoader = (restService.dataLoader as! MockDataLoader)
     }
@@ -43,25 +44,24 @@ class VehicleStatusModelOperationTests: OBATestCase {
 
     // MARK: - Vehicle Status
 
-    func testLoading_vehicleStatus_failure_garbageData() async throws {
+    @Test func `Loading vehicle status failure garbage data`() async throws {
         stubVehicle14351CaptivePortal()
 
-        // TODO: XCTAssertThrowsError does not support async. Make a XCTAssertThrowsAPIError helper method.
-        do {
+        // The do/catch this replaces carried a TODO asking for an
+        // XCTAssertThrowsAPIError helper, because XCTAssertThrowsError could not
+        // take an async expression. #expect(throws:) can, so the helper is moot.
+        // APIError isn't Equatable, so match the case rather than the value.
+        let thrown = await #expect(throws: APIError.self) {
             _ = try await restService.getVehicle(vehicleID: vehicleID)
-            XCTFail("Expected a captive portal response to throw an error.")
-        } catch(let error as APIError) {
-            if case APIError.captivePortal = error {
-                return // Success
-            } else {
-                XCTFail("Expected captive portal response to throw APIError.CaptivePortal. Actual value: \(error)")
-            }
-        } catch {
-            XCTFail("Expected captive portal response to throw an APIError. Actual value: \(error)")
+        }
+
+        guard case .captivePortal? = thrown else {
+            Issue.record("Expected APIError.captivePortal, got \(String(describing: thrown))")
+            return
         }
     }
 
-    func testLoading_vehicleStatus_success() async throws {
+    @Test func `Loading vehicle status success`() async throws {
         stubVehicle14351Success()
 
         let vehicle = try await restService.getVehicle(vehicleID: vehicleID).entry
@@ -75,7 +75,7 @@ class VehicleStatusModelOperationTests: OBATestCase {
 
     // MARK: - Trip Status
 
-    func testLoading_tripStatus_success() async throws {
+    @Test func `Loading trip status success`() async throws {
         stubVehicle14351Success()
 
         let vehicle = try await restService.getVehicle(vehicleID: vehicleID).entry
@@ -132,11 +132,11 @@ class VehicleStatusModelOperationTests: OBATestCase {
 
     // MARK: - References
 
-    func testLoading_references_success() async throws {
+    @Test func `Loading references success`() async throws {
         stubVehicle14351Success()
 
         let response = try await restService.getVehicle(vehicleID: vehicleID)
-        let references = try XCTUnwrap(response.references)
+        let references = try #require(response.references)
         #expect(references.agencies.count == 1)
         #expect(references.routes.count == 3)
         #expect(references.serviceAlerts.count == 1)
@@ -146,12 +146,12 @@ class VehicleStatusModelOperationTests: OBATestCase {
 
     // MARK: - Frequency
 
-    func testLoading_frequency_success() async throws {
+    @Test func `Loading frequency success`() async throws {
         let data = Fixtures.loadData(file: "frequency-vehicle.json")
         dataLoader.mock(URLString: "https://www.example.com/api/where/vehicle/\(vehicleID).json", with: data)
 
         let response = try await restService.getVehicle(vehicleID: vehicleID)
-        let frequency = try XCTUnwrap(response.entry.tripStatus.frequency)
+        let frequency = try #require(response.entry.tripStatus.frequency)
 
         #expect(frequency.startTime == Date.fromComponents(year: 2010, month: 11, day: 12, hour: 16, minute: 30, second: 00))
 

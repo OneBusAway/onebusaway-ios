@@ -7,12 +7,12 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
 import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
-class RegionSupportsScheduleForRouteTests: OBATestCase {
+@Suite(.serialized)
+final class RegionSupportsScheduleForRouteTests: OBATestCase {
 
     /// Helper to create a Region with a specific `obaVersionInfo` value.
     private func regionWithVersionInfo(_ versionInfo: String) throws -> Region {
@@ -40,14 +40,14 @@ class RegionSupportsScheduleForRouteTests: OBATestCase {
 
     // MARK: - OBA 2.0.x should not support schedule-for-route
 
-    func test_supportsScheduleForRoute_OBA2_0_SNAPSHOT_returnsFalse() throws {
+    @Test func `Supports schedule for route OBA 2 0 SNAPSHOT returns false`() throws {
         let region = try regionWithVersionInfo("2.0.0-SNAPSHOT|2|0|0|SNAPSHOT|abc")
         #expect(!region.supportsScheduleForRoute)
     }
 
     // MARK: - OBA 2.1+ should support schedule-for-route
 
-    func test_supportsScheduleForRoute_Tampa_returnsTrue() throws {
+    @Test func `Supports schedule for route tampa returns true`() throws {
         // Real Tampa fixture data
         let region = try regionWithVersionInfo("2.4.15-cs|2|4|15|cs|d41e1a8978da14e98a2e19d109a23018957db7cf")
         #expect(region.supportsScheduleForRoute)
@@ -55,21 +55,21 @@ class RegionSupportsScheduleForRouteTests: OBATestCase {
 
     // MARK: - Empty/unparseable version info should default to true
 
-    func test_supportsScheduleForRoute_emptyString_returnsTrue() throws {
+    @Test func `Supports schedule for route empty string returns true`() throws {
         let region = try regionWithVersionInfo("")
         #expect(region.supportsScheduleForRoute)
     }
 
     // MARK: - Custom region (hardcoded "x.y.z.custom" in init) should default to true
 
-    func test_supportsScheduleForRoute_customRegion_returnsTrue() {
+    @Test func `Supports schedule for route custom region returns true`() {
         let region = Fixtures.customMinneapolisRegion
         #expect(region.supportsScheduleForRoute)
     }
 
     // MARK: - No-pipe format (e.g. Mayaguez "2.1.0") should default to true
 
-    func test_supportsScheduleForRoute_noPipeFormat_returnsTrue() throws {
+    @Test func `Supports schedule for route no pipe format returns true`() throws {
         let region = try regionWithVersionInfo("2.1.0")
         #expect(region.supportsScheduleForRoute)
     }

@@ -7,7 +7,6 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
 import CoreLocation
 import MapKit
 import Testing
@@ -16,14 +15,16 @@ import Testing
 
 // swiftlint:disable force_cast
 
-class StopsModelOperationTests: OBATestCase {
+@Suite(.serialized)
+final class StopsModelOperationTests: OBATestCase {
     let coordinate = CLLocationCoordinate2D(latitude: 47.6230999, longitude: -122.3132122)
     let urlString = "https://www.example.com/api/where/stops-for-location.json"
 
     var dataLoader: MockDataLoader!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
+
         dataLoader = (restService.dataLoader as! MockDataLoader)
     }
 
@@ -59,27 +60,27 @@ class StopsModelOperationTests: OBATestCase {
         #expect(stop.regionIdentifier == pugetSoundRegionIdentifier)
     }
 
-    func testLoading_coordinate_success() async throws {
+    @Test func `Loading coordinate success`() async throws {
         stubApiCall()
 
         self.checkExpectations(try await restService.getStops(coordinate: coordinate))
     }
 
-    func testLoading_region_success() async throws {
+    @Test func `Loading region success`() async throws {
         stubApiCall()
 
         let region = MKCoordinateRegion(center: self.coordinate, span: MKCoordinateSpan(latitudeDelta: 0.1, longitudeDelta: 0.1))
         self.checkExpectations(try await restService.getStops(region: region))
     }
 
-    func testLoading_circularRegion_success() async throws {
+    @Test func `Loading circular region success`() async throws {
         stubApiCall()
 
         let circularRegion = CLCircularRegion(center: self.coordinate, radius: 100.0, identifier: "query")
         self.checkExpectations(try await restService.getStops(circularRegion: circularRegion, query: "query"))
     }
 
-    func testLoading_specificID_success() async throws {
+    @Test func `Loading specific ID success`() async throws {
         stubApiCall()
 
         let stop = try await restService.getStop(id: "1_29270").entry

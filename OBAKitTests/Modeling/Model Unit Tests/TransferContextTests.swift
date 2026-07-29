@@ -7,17 +7,19 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
+import Foundation
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
 // swiftlint:disable force_try
 
-class TransferContextTests: OBATestCase {
+@Suite(.serialized)
+final class TransferContextTests: OBATestCase {
 
     // MARK: - minutesUntilDeparture
 
-    func test_minutesUntilDeparture_futurePositive() {
+    @Test func `Minutes until departure future positive`() {
         let arrivalTime = Date(timeIntervalSince1970: 1_000_000)
         let context = TransferContext(
             arrivalTime: arrivalTime,
@@ -26,10 +28,10 @@ class TransferContextTests: OBATestCase {
         )
         // Departure 10 minutes after arrival
         let departureDate = arrivalTime.addingTimeInterval(10 * 60)
-        XCTAssertEqual(context.minutesUntilDeparture(from: departureDate), 10)
+        #expect(context.minutesUntilDeparture(from: departureDate) == 10)
     }
 
-    func test_minutesUntilDeparture_pastNegative() {
+    @Test func `Minutes until departure past negative`() {
         let arrivalTime = Date(timeIntervalSince1970: 1_000_000)
         let context = TransferContext(
             arrivalTime: arrivalTime,
@@ -38,22 +40,22 @@ class TransferContextTests: OBATestCase {
         )
         // Departure 5 minutes before arrival
         let departureDate = arrivalTime.addingTimeInterval(-5 * 60)
-        XCTAssertEqual(context.minutesUntilDeparture(from: departureDate), -5)
+        #expect(context.minutesUntilDeparture(from: departureDate) == -5)
     }
 
-    func test_minutesUntilDeparture_exactZero() {
+    @Test func `Minutes until departure exact zero`() {
         let arrivalTime = Date(timeIntervalSince1970: 1_000_000)
         let context = TransferContext(
             arrivalTime: arrivalTime,
             fromRouteShortName: "10",
             fromTripHeadsign: "Capitol Hill"
         )
-        XCTAssertEqual(context.minutesUntilDeparture(from: arrivalTime), 0)
+        #expect(context.minutesUntilDeparture(from: arrivalTime) == 0)
     }
 
     // MARK: - temporalState
 
-    func test_temporalState_future() {
+    @Test func `Temporal state future`() {
         let arrivalTime = Date(timeIntervalSince1970: 1_000_000)
         let context = TransferContext(
             arrivalTime: arrivalTime,
@@ -61,10 +63,10 @@ class TransferContextTests: OBATestCase {
             fromTripHeadsign: "Capitol Hill"
         )
         let departureDate = arrivalTime.addingTimeInterval(5 * 60)
-        XCTAssertEqual(context.temporalState(for: departureDate), .future)
+        #expect(context.temporalState(for: departureDate) == .future)
     }
 
-    func test_temporalState_past() {
+    @Test func `Temporal state past`() {
         let arrivalTime = Date(timeIntervalSince1970: 1_000_000)
         let context = TransferContext(
             arrivalTime: arrivalTime,
@@ -72,22 +74,22 @@ class TransferContextTests: OBATestCase {
             fromTripHeadsign: "Capitol Hill"
         )
         let departureDate = arrivalTime.addingTimeInterval(-3 * 60)
-        XCTAssertEqual(context.temporalState(for: departureDate), .past)
+        #expect(context.temporalState(for: departureDate) == .past)
     }
 
-    func test_temporalState_present() {
+    @Test func `Temporal state present`() {
         let arrivalTime = Date(timeIntervalSince1970: 1_000_000)
         let context = TransferContext(
             arrivalTime: arrivalTime,
             fromRouteShortName: "10",
             fromTripHeadsign: "Capitol Hill"
         )
-        XCTAssertEqual(context.temporalState(for: arrivalTime), .present)
+        #expect(context.temporalState(for: arrivalTime) == .present)
     }
 
     // MARK: - Edge cases
 
-    func test_minutesUntilDeparture_roundsTowardZero() {
+    @Test func `Minutes until departure rounds toward zero`() {
         let arrivalTime = Date(timeIntervalSince1970: 1_000_000)
         let context = TransferContext(
             arrivalTime: arrivalTime,
@@ -96,10 +98,10 @@ class TransferContextTests: OBATestCase {
         )
         // 90 seconds = 1.5 minutes, Int truncation -> 1
         let departureDate = arrivalTime.addingTimeInterval(90)
-        XCTAssertEqual(context.minutesUntilDeparture(from: departureDate), 1)
+        #expect(context.minutesUntilDeparture(from: departureDate) == 1)
     }
 
-    func test_minutesUntilDeparture_negativeFractionalRoundsTowardZero() {
+    @Test func `Minutes until departure negative fractional rounds toward zero`() {
         let arrivalTime = Date(timeIntervalSince1970: 1_000_000)
         let context = TransferContext(
             arrivalTime: arrivalTime,
@@ -108,10 +110,10 @@ class TransferContextTests: OBATestCase {
         )
         // -90 seconds = -1.5 minutes, Int truncation toward zero -> -1
         let departureDate = arrivalTime.addingTimeInterval(-90)
-        XCTAssertEqual(context.minutesUntilDeparture(from: departureDate), -1)
+        #expect(context.minutesUntilDeparture(from: departureDate) == -1)
     }
 
-    func test_minutesUntilDeparture_largeOffset() {
+    @Test func `Minutes until departure large offset`() {
         let arrivalTime = Date(timeIntervalSince1970: 1_000_000)
         let context = TransferContext(
             arrivalTime: arrivalTime,
@@ -120,12 +122,12 @@ class TransferContextTests: OBATestCase {
         )
         // 2 hours after arrival
         let departureDate = arrivalTime.addingTimeInterval(120 * 60)
-        XCTAssertEqual(context.minutesUntilDeparture(from: departureDate), 120)
+        #expect(context.minutesUntilDeparture(from: departureDate) == 120)
     }
 
     // MARK: - Factory method
 
-    func test_fromFactory_populatesFieldsCorrectly() {
+    @Test func `From factory populates fields correctly`() {
         let arrivalTime = Date(timeIntervalSince1970: 1_000_000)
 
         // Use the Fixtures-loaded ArrivalDeparture to test the factory.
@@ -137,13 +139,13 @@ class TransferContextTests: OBATestCase {
 
         let context = TransferContext.from(arrivalDeparture: arrDep, arrivalDate: arrivalTime)
 
-        XCTAssertEqual(context.arrivalTime, arrivalTime)
-        XCTAssertEqual(context.fromRouteShortName, arrDep.routeShortName)
-        XCTAssertEqual(context.fromTripHeadsign, arrDep.tripHeadsign ?? "")
+        #expect(context.arrivalTime == arrivalTime)
+        #expect(context.fromRouteShortName == arrDep.routeShortName)
+        #expect(context.fromTripHeadsign == (arrDep.tripHeadsign ?? ""))
         // fromRouteDisplay is now computed from the component fields.
         let expectedDisplay = [arrDep.routeShortName, arrDep.tripHeadsign ?? ""]
             .filter { !$0.isEmpty }
             .joined(separator: " - ")
-        XCTAssertEqual(context.fromRouteDisplay, expectedDisplay)
+        #expect(context.fromRouteDisplay == expectedDisplay)
     }
 }

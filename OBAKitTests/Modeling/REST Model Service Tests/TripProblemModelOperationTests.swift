@@ -7,7 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
+import Foundation
 import Testing
 import CoreLocation
 @testable import OBAKit
@@ -15,7 +15,8 @@ import CoreLocation
 
 // swiftlint:disable force_cast
 
-class TripProblemModelOperationTests: OBATestCase {
+@Suite(.serialized)
+final class TripProblemModelOperationTests: OBATestCase {
     let tripID = "123456"
     let serviceDate = Date(timeIntervalSince1970: 101010101)
     let vehicleID = "987654321"
@@ -36,7 +37,7 @@ class TripProblemModelOperationTests: OBATestCase {
         "userLon": "-122.1"
     ]
 
-    func testSuccessfulRequest() async throws {
+    @Test func `Successful request`() async throws {
         let dataLoader = (restService.dataLoader as! MockDataLoader)
 
         dataLoader.mock(data: Fixtures.loadData(file: "report_trip_problem.json")) { request -> Bool in

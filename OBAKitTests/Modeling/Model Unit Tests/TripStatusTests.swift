@@ -7,7 +7,6 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
 import CoreLocation
 import Testing
 @testable import OBAKit
@@ -15,9 +14,10 @@ import Testing
 
 // swiftlint:disable force_try
 
-class TripStatusTests: OBATestCase {
+@Suite(.serialized)
+final class TripStatusTests: OBATestCase {
     
-    func test_decodeValidTripStatus() {
+    @Test func `Decode valid trip status`() {
         let statusData: [String: Any] = [
             "activeTripId": "active_trip_123",
             "blockTripSequence": 3,
@@ -80,7 +80,7 @@ class TripStatusTests: OBATestCase {
         #expect(status.vehicleID == "vehicle_789")
     }
     
-    func test_decodeMinimalTripStatus() {
+    @Test func `Decode minimal trip status`() {
         let minimalData: [String: Any] = [
             "activeTripId": "minimal_trip",
             "blockTripSequence": 1,
@@ -117,7 +117,7 @@ class TripStatusTests: OBATestCase {
         #expect(status.vehicleID == nil)
     }
     
-    func test_statusModifierDecoding() {
+    @Test func `Status modifier decoding`() {
         let statusTestCases: [(String, TripStatus.StatusModifier)] = [
             ("default", .default),
             ("canceled", .canceled),
@@ -151,7 +151,7 @@ class TripStatusTests: OBATestCase {
         }
     }
     
-    func test_locationDecoding() {
+    @Test func `Location decoding`() {
         let dataWithLocations: [String: Any] = [
             "activeTripId": "location_test",
             "blockTripSequence": 1,
@@ -189,7 +189,7 @@ class TripStatusTests: OBATestCase {
         expectClose(status.position?.coordinate.longitude, -122.654322, within: 0.000001)
     }
     
-    func test_hasReferencesLoadReferences() {
+    @Test func `Has references load references`() {
         let statusData: [String: Any] = [
             "activeTripId": "ref_trip",
             "blockTripSequence": 1,
@@ -290,7 +290,7 @@ class TripStatusTests: OBATestCase {
         #expect(status.serviceAlerts.first?.id == "ref_alert_1")
     }
     
-    func test_tripStatusEquality() {
+    @Test func `Trip status equality`() {
         let statusData: [String: Any] = [
             "activeTripId": "equality_trip",
             "blockTripSequence": 1,
@@ -325,7 +325,7 @@ class TripStatusTests: OBATestCase {
         #expect(status1.hash != status3.hash)
     }
     
-    func test_decodeFailureWhenMissingRequiredFields() {
+    @Test func `Decode failure when missing required fields`() {
         var incompleteData: [String: Any] = [
             "blockTripSequence": 1,
             "closestStop": "incomplete_stop",

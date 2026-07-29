@@ -8,18 +8,18 @@
 //
 
 import Foundation
-import XCTest
 import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
 // swiftlint:disable force_try
 
-class ArrivalDepartureDeepLinkTests: OBATestCase {
+@Suite(.serialized)
+final class ArrivalDepartureDeepLinkTests: OBATestCase {
 
     // MARK: - Codable Round-Trip
 
-    func test_roundTripping_success() {
+    @Test func `Round tripping success`() {
         let deepLink1 = ArrivalDepartureDeepLink(title: "Title", regionID: 1, stopID: "1234", tripID: "9876", serviceDate: Date(timeIntervalSinceReferenceDate: 0), stopSequence: 7, vehicleID: "3456")
         let deepLink2 = try! Fixtures.roundtripCodable(type: ArrivalDepartureDeepLink.self, model: deepLink1)
 
@@ -34,7 +34,7 @@ class ArrivalDepartureDeepLinkTests: OBATestCase {
         #expect(deepLink2.vehicleID == deepLink1.vehicleID)
     }
 
-    func test_roundTripping_withDestinationStopID() {
+    @Test func `Round tripping with destination stop ID`() {
         let deepLink1 = ArrivalDepartureDeepLink(
             title: "Route 550 - Bellevue",
             regionID: 1,
@@ -58,7 +58,7 @@ class ArrivalDepartureDeepLinkTests: OBATestCase {
         #expect(deepLink2.vehicleID == "1_v100")
     }
 
-    func test_roundTripping_withoutDestinationStopID_isNil() {
+    @Test func `Round tripping without destination stop ID is nil`() {
         let deepLink1 = ArrivalDepartureDeepLink(
             title: "Route 545",
             regionID: 2,
@@ -77,7 +77,7 @@ class ArrivalDepartureDeepLinkTests: OBATestCase {
 
     // MARK: - Equality
 
-    func test_isEqual_matchingDestinationStopID() {
+    @Test func `Is equal matching destination stop ID`() {
         let link1 = ArrivalDepartureDeepLink(
             title: "10", regionID: 1, stopID: "A", tripID: "T",
             serviceDate: Date(timeIntervalSince1970: 1_500_000_000),
@@ -91,7 +91,7 @@ class ArrivalDepartureDeepLinkTests: OBATestCase {
         #expect(link1.isEqual(link2) == true)
     }
 
-    func test_isEqual_differentDestinationStopID() {
+    @Test func `Is equal different destination stop ID`() {
         let link1 = ArrivalDepartureDeepLink(
             title: "10", regionID: 1, stopID: "A", tripID: "T",
             serviceDate: Date(timeIntervalSince1970: 1_500_000_000),
@@ -105,7 +105,7 @@ class ArrivalDepartureDeepLinkTests: OBATestCase {
         #expect(link1.isEqual(link2) == false)
     }
 
-    func test_isEqual_nilVsNonNilDestinationStopID() {
+    @Test func `Is equal nil vs non nil destination stop ID`() {
         let link1 = ArrivalDepartureDeepLink(
             title: "10", regionID: 1, stopID: "A", tripID: "T",
             serviceDate: Date(timeIntervalSince1970: 1_500_000_000),
@@ -121,7 +121,7 @@ class ArrivalDepartureDeepLinkTests: OBATestCase {
 
     // MARK: - Hashing
 
-    func test_hash_includesDestinationStopID() {
+    @Test func `Hash includes destination stop ID`() {
         let link1 = ArrivalDepartureDeepLink(
             title: "10", regionID: 1, stopID: "A", tripID: "T",
             serviceDate: Date(timeIntervalSince1970: 1_500_000_000),
@@ -135,7 +135,7 @@ class ArrivalDepartureDeepLinkTests: OBATestCase {
         #expect(link1.hash != link2.hash)
     }
 
-    func test_hash_nilDestinationStopID_consistentWithEquality() {
+    @Test func `Hash nil destination stop ID consistent with equality`() {
         let link1 = ArrivalDepartureDeepLink(
             title: "10", regionID: 1, stopID: "A", tripID: "T",
             serviceDate: Date(timeIntervalSince1970: 1_500_000_000),

@@ -7,18 +7,20 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
+import Foundation
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
 // swiftlint:disable force_try
 
-class ArrivalDepartureItemTransferTests: OBATestCase {
+@Suite(.serialized)
+final class ArrivalDepartureItemTransferTests: OBATestCase {
 
     /// Loads a real ArrivalDeparture from fixture data and verifies that
     /// creating an ArrivalDepartureItem with a TransferContext produces
     /// different minutes and temporal state than without one.
-    func test_arrivalDepartureItem_withTransferContext_overridesMinutesAndTemporalState() {
+    @Test func `Arrival departure item with transfer context overrides minutes and temporal state`() {
         let stopArrivals = try! Fixtures.loadRESTAPIPayload(
             type: StopArrivals.self,
             fileName: "arrivals-and-departures-for-stop-1_75414.json"
@@ -47,19 +49,15 @@ class ArrivalDepartureItemTransferTests: OBATestCase {
         )
 
         // The transfer-relative minutes should be -5 (departed 5 min before rider arrives).
-        XCTAssertEqual(itemWithTransfer.arrivalDepartureMinutes, -5)
-        XCTAssertEqual(itemWithTransfer.temporalState, .past)
+        #expect(itemWithTransfer.arrivalDepartureMinutes == -5)
+        #expect(itemWithTransfer.temporalState == .past)
 
         // Without transfer context, minutes are relative to Date.now — they should differ.
-        XCTAssertNotEqual(
-            itemWithoutTransfer.arrivalDepartureMinutes,
-            itemWithTransfer.arrivalDepartureMinutes,
-            "Transfer context should produce different minutes than real-time minutes"
-        )
+        #expect(itemWithoutTransfer.arrivalDepartureMinutes != itemWithTransfer.arrivalDepartureMinutes, "Transfer context should produce different minutes than real-time minutes")
     }
 
     /// Verifies that a departure exactly at the transfer arrival time shows as .present / 0 min.
-    func test_arrivalDepartureItem_withTransferContext_atArrivalTime() {
+    @Test func `Arrival departure item with transfer context at arrival time`() {
         let stopArrivals = try! Fixtures.loadRESTAPIPayload(
             type: StopArrivals.self,
             fileName: "arrivals-and-departures-for-stop-1_75414.json"
@@ -79,12 +77,12 @@ class ArrivalDepartureItemTransferTests: OBATestCase {
             transferContext: context
         )
 
-        XCTAssertEqual(item.arrivalDepartureMinutes, 0)
-        XCTAssertEqual(item.temporalState, .present)
+        #expect(item.arrivalDepartureMinutes == 0)
+        #expect(item.temporalState == .present)
     }
 
     /// Verifies that a departure 10 minutes after transfer arrival shows as .future / 10 min.
-    func test_arrivalDepartureItem_withTransferContext_futureAfterArrival() {
+    @Test func `Arrival departure item with transfer context future after arrival`() {
         let stopArrivals = try! Fixtures.loadRESTAPIPayload(
             type: StopArrivals.self,
             fileName: "arrivals-and-departures-for-stop-1_75414.json"
@@ -105,7 +103,7 @@ class ArrivalDepartureItemTransferTests: OBATestCase {
             transferContext: context
         )
 
-        XCTAssertEqual(item.arrivalDepartureMinutes, 10)
-        XCTAssertEqual(item.temporalState, .future)
+        #expect(item.arrivalDepartureMinutes == 10)
+        #expect(item.temporalState == .future)
     }
 }

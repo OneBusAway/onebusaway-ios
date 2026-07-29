@@ -7,16 +7,16 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
 import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
 // swiftlint:disable force_try
 
-class StopTests: OBATestCase {
+@Suite(.serialized)
+final class StopTests: OBATestCase {
 
-    func test_RoundtrippingStops() {
+    @Test func `Roundtripping stops`() {
         let stopOne = try! Fixtures.loadSomeStops().first!
         let data = try! PropertyListEncoder().encode(stopOne)
         let stopTwo = try! PropertyListDecoder().decode(Stop.self, from: data)

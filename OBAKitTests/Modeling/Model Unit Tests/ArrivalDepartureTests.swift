@@ -7,16 +7,16 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
 import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
 // swiftlint:disable force_try
 
-class ArrivalDepartureTests: OBATestCase {
+@Suite(.serialized)
+final class ArrivalDepartureTests: OBATestCase {
     
-    func test_decodeValidArrivalDeparture() {
+    @Test func `Decode valid arrival departure`() {
         let arrivalData: [String: Any] = [
             "arrivalEnabled": true,
             "blockTripSequence": 2,
@@ -69,7 +69,7 @@ class ArrivalDepartureTests: OBATestCase {
         #expect(arrival.tripStatus == nil)
     }
     
-    func test_decodeMinimalArrivalDeparture() {
+    @Test func `Decode minimal arrival departure`() {
         let minimalData: [String: Any] = [
             "arrivalEnabled": false,
             "blockTripSequence": 1,
@@ -110,7 +110,7 @@ class ArrivalDepartureTests: OBATestCase {
         #expect(arrival.vehicleID == nil)
     }
     
-    func test_decodeArrivalDepartureWithBlankValues() {
+    @Test func `Decode arrival departure with blank values`() {
         let dataWithBlanks: [String: Any] = [
             "arrivalEnabled": true,
             "blockTripSequence": 1,
@@ -141,7 +141,7 @@ class ArrivalDepartureTests: OBATestCase {
         // Private properties are not directly testable, but their effects should be seen in computed properties
     }
     
-    func test_decodeArrivalDepartureWithInvalidPredictedTimes() {
+    @Test func `Decode arrival departure with invalid predicted times`() {
         // Test with very early predicted times that should be nullified
         let dataWithInvalidTimes: [String: Any] = [
             "arrivalEnabled": true,
@@ -172,7 +172,7 @@ class ArrivalDepartureTests: OBATestCase {
         #expect(arrival.predictedDeparture == nil)
     }
     
-    func test_hasReferencesLoadReferences() {
+    @Test func `Has references load references`() {
         let arrivalData: [String: Any] = [
             "arrivalEnabled": true,
             "blockTripSequence": 1,
@@ -269,7 +269,7 @@ class ArrivalDepartureTests: OBATestCase {
         #expect(arrival.serviceAlerts.map { $0.id }.sorted() == ["alert_ref_1", "alert_ref_2"])
     }
     
-    func test_occupancyStatusDecoding() {
+    @Test func `Occupancy status decoding`() {
         let occupancyData: [String: Any] = [
             "arrivalEnabled": true,
             "blockTripSequence": 1,
@@ -298,7 +298,7 @@ class ArrivalDepartureTests: OBATestCase {
         #expect(arrival.historicalOccupancyStatus?.rawValue == "MANY_SEATS_AVAILABLE")
     }
     
-    func test_arrivalDepartureEquality() {
+    @Test func `Arrival departure equality`() {
         let arrivalData: [String: Any] = [
             "arrivalEnabled": true,
             "blockTripSequence": 1,
@@ -332,7 +332,7 @@ class ArrivalDepartureTests: OBATestCase {
         #expect(arrival1.hash != arrival3.hash)
     }
     
-    func test_decodeFailureWhenMissingRequiredFields() {
+    @Test func `Decode failure when missing required fields`() {
         var incompleteData: [String: Any] = [
             "blockTripSequence": 1,
             "departureEnabled": true,
@@ -397,7 +397,7 @@ class ArrivalDepartureTests: OBATestCase {
         )
     }
 
-    func test_deviation_forArrivingTrip_measuresAgainstScheduledArrival() throws {
+    @Test func `Deviation for arriving trip measures against scheduled arrival`() throws {
         // A non-zero stopSequence means `.arriving`, so the comparable baseline
         // is scheduledArrival — not scheduledDeparture on the far side of the
         // layover, which would report this late trip as 7 minutes early.
@@ -408,7 +408,7 @@ class ArrivalDepartureTests: OBATestCase {
         #expect(arrival.scheduleStatus == .delayed)
     }
 
-    func test_deviation_forDepartingTrip_measuresAgainstScheduledDeparture() throws {
+    @Test func `Deviation for departing trip measures against scheduled departure`() throws {
         let departure = try layoverArrivalDeparture(stopSequence: 0)
 
         #expect(departure.arrivalDepartureStatus == .departing)

@@ -8,7 +8,7 @@
 //
 
 import Foundation
-import XCTest
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 import CoreLocation
@@ -16,14 +16,15 @@ import CoreLocation
 // MARK: - Auto Region Selection Tests
 // See: https://github.com/OneBusAway/onebusaway-ios/issues/608
 
-class RegionsServiceAutoSelectTests: OBATestCase {
+@Suite(.serialized)
+final class RegionsServiceAutoSelectTests: OBATestCase {
     var locationManagerMock: LocationManagerMock!
     var locationService: LocationService!
     var dataLoader: MockDataLoader!
     var mockFileStorage: MockRegionsFileStorage!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
 
         locationManagerMock = LocationManagerMock()
         locationService = LocationService(userDefaults: userDefaults, locationManager: locationManagerMock)
@@ -33,7 +34,7 @@ class RegionsServiceAutoSelectTests: OBATestCase {
 
     // MARK: - Fixed Region by Name
 
-    func test_fixedRegionName_matchesBundledRegion() throws {
+    @Test func `Fixed region name matches bundled region`() throws {
         stubRegions(dataLoader: dataLoader)
 
         let service = RegionsService(
@@ -46,11 +47,11 @@ class RegionsServiceAutoSelectTests: OBATestCase {
             fixedRegionName: "Puget Sound"
         )
 
-        let currentRegion = try XCTUnwrap(service.currentRegion)
-        XCTAssertEqual(currentRegion.name, "Puget Sound")
+        let currentRegion = try #require(service.currentRegion)
+        #expect(currentRegion.name == "Puget Sound")
     }
 
-    func test_fixedRegionName_noMatch_fallsToURL() throws {
+    @Test func `Fixed region name no match falls to URL`() throws {
         stubRegions(dataLoader: dataLoader)
 
         let service = RegionsService(
@@ -64,11 +65,11 @@ class RegionsServiceAutoSelectTests: OBATestCase {
             fixedRegionOBABaseURL: URL(string: "https://api.tampa.onebusawaycloud.com/")
         )
 
-        let currentRegion = try XCTUnwrap(service.currentRegion)
-        XCTAssertEqual(currentRegion.name, "Tampa Bay")
+        let currentRegion = try #require(service.currentRegion)
+        #expect(currentRegion.name == "Tampa Bay")
     }
 
-    func test_fixedRegionName_noMatch_noURL_regionRemainsNil() {
+    @Test func `Fixed region name no match no URL region remains nil`() {
         stubRegions(dataLoader: dataLoader)
 
         let service = RegionsService(
@@ -81,10 +82,10 @@ class RegionsServiceAutoSelectTests: OBATestCase {
             fixedRegionName: "Nonexistent Region"
         )
 
-        XCTAssertNil(service.currentRegion)
+        #expect(service.currentRegion == nil)
     }
 
-    func test_fixedRegion_disablesAutoSelect() throws {
+    @Test func `Fixed region disables auto select`() throws {
         stubRegions(dataLoader: dataLoader)
 
         let service = RegionsService(
@@ -97,14 +98,14 @@ class RegionsServiceAutoSelectTests: OBATestCase {
             fixedRegionName: "Puget Sound"
         )
 
-        XCTAssertNotNil(service.currentRegion)
-        XCTAssertFalse(service.automaticallySelectRegion, "Auto-select should be disabled when a fixed region is matched")
+        #expect(service.currentRegion != nil)
+        #expect(!service.automaticallySelectRegion, "Auto-select should be disabled when a fixed region is matched")
     }
 
-    func test_fixedRegion_onlyAppliesWhenCurrentRegionNil() throws {
+    @Test func `Fixed region only applies when current region nil`() throws {
         stubRegions(dataLoader: dataLoader)
 
-        let tampaBay = try XCTUnwrap(Fixtures.loadSomeRegions().first(where: { $0.name == "Tampa Bay" }))
+        let tampaBay = try #require(Fixtures.loadSomeRegions().first(where: { $0.name == "Tampa Bay" }))
         userDefaults.set(tampaBay.regionIdentifier, forKey: RegionsService.currentRegionIdentifierUserDefaultsKey)
         userDefaults.set(false, forKey: RegionsService.automaticallySelectRegionUserDefaultsKey)
 
@@ -118,17 +119,17 @@ class RegionsServiceAutoSelectTests: OBATestCase {
             fixedRegionName: "Puget Sound"
         )
 
-        let currentRegion = try XCTUnwrap(service.currentRegion)
-        XCTAssertEqual(currentRegion.name, "Tampa Bay", "Fixed region should not override a previously selected region")
+        let currentRegion = try #require(service.currentRegion)
+        #expect(currentRegion.name == "Tampa Bay", "Fixed region should not override a previously selected region")
     }
 
     // MARK: - Single Active Region Auto-Select
 
-    func test_singleActiveRegion_autoSelected() throws {
+    @Test func `Single active region auto selected`() throws {
         stubRegionsJustPugetSound(dataLoader: dataLoader)
 
         // Seed file storage with just one region so it's the only active region available.
-        let pugetSound = try XCTUnwrap(Fixtures.loadSomeRegions().first(where: { $0.name == "Puget Sound" }))
+        let pugetSound = try #require(Fixtures.loadSomeRegions().first(where: { $0.name == "Puget Sound" }))
         mockFileStorage.storedDefaultRegions = [pugetSound]
 
         let service = RegionsService(
@@ -140,11 +141,11 @@ class RegionsServiceAutoSelectTests: OBATestCase {
             fileStorage: mockFileStorage
         )
 
-        let currentRegion = try XCTUnwrap(service.currentRegion)
-        XCTAssertEqual(currentRegion.name, "Puget Sound", "The only active region should be auto-selected")
+        let currentRegion = try #require(service.currentRegion)
+        #expect(currentRegion.name == "Puget Sound", "The only active region should be auto-selected")
     }
 
-    func test_multipleActiveRegions_noAutoSelect() {
+    @Test func `Multiple active regions no auto select`() {
         stubRegions(dataLoader: dataLoader)
 
         // The bundled regions-v3.json has multiple active regions.
@@ -157,12 +158,12 @@ class RegionsServiceAutoSelectTests: OBATestCase {
             fileStorage: mockFileStorage
         )
 
-        XCTAssertNil(service.currentRegion, "Region should not be auto-selected when multiple active regions exist")
+        #expect(service.currentRegion == nil, "Region should not be auto-selected when multiple active regions exist")
     }
 
     // MARK: - Location-Based Selection Priority
 
-    func test_locationBasedSelection_takesPriority() throws {
+    @Test func `Location based selection takes priority`() throws {
         stubRegions(dataLoader: dataLoader)
 
         // Set location inside Puget Sound region.
@@ -178,13 +179,13 @@ class RegionsServiceAutoSelectTests: OBATestCase {
             fixedRegionName: "Tampa Bay"
         )
 
-        let currentRegion = try XCTUnwrap(service.currentRegion)
-        XCTAssertEqual(currentRegion.name, "Puget Sound", "Location-based selection should take priority over fixed region config")
+        let currentRegion = try #require(service.currentRegion)
+        #expect(currentRegion.name == "Puget Sound", "Location-based selection should take priority over fixed region config")
     }
 
     // MARK: - Fixed Region with URL Match
 
-    func test_fixedRegionURL_matchesBundledRegion() throws {
+    @Test func `Fixed region URL matches bundled region`() throws {
         stubRegions(dataLoader: dataLoader)
 
         // Use a name that won't match, but provide the correct Tampa Bay URL.
@@ -199,13 +200,13 @@ class RegionsServiceAutoSelectTests: OBATestCase {
             fixedRegionOBABaseURL: URL(string: "https://api.tampa.onebusawaycloud.com/")
         )
 
-        let currentRegion = try XCTUnwrap(service.currentRegion)
-        XCTAssertEqual(currentRegion.name, "Tampa Bay")
+        let currentRegion = try #require(service.currentRegion)
+        #expect(currentRegion.name == "Tampa Bay")
     }
 
     // MARK: - No Config, No Location, Multiple Regions
 
-    func test_noFixedRegion_noLocation_multipleRegions_remainsNil() {
+    @Test func `No fixed region no location multiple regions remains nil`() {
         stubRegions(dataLoader: dataLoader)
 
         let service = RegionsService(
@@ -217,6 +218,6 @@ class RegionsServiceAutoSelectTests: OBATestCase {
             fileStorage: mockFileStorage
         )
 
-        XCTAssertNil(service.currentRegion, "Without config, location, or single region, currentRegion should remain nil")
+        #expect(service.currentRegion == nil, "Without config, location, or single region, currentRegion should remain nil")
     }
 }

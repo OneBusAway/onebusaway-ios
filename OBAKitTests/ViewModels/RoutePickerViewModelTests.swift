@@ -7,7 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
+import Foundation
 import Testing
 import Combine
 @testable import OBAKit
@@ -18,18 +18,19 @@ import Combine
 /// Tests for `RoutePickerViewModel`. Covers initial state, the API-fallback load
 /// path, missing-location error path, API failure surfacing, search filtering
 /// (case-insensitivity, short vs long name match, empty-query reset), and sort order.
-class RoutePickerViewModelTests: OBATestCase {
+@Suite(.serialized)
+final class RoutePickerViewModelTests: OBATestCase {
 
     var queue: OperationQueue!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
+
         queue = OperationQueue()
         queue.maxConcurrentOperationCount = 1
     }
 
-    override func tearDown() async throws {
-        try await super.tearDown()
+    isolated deinit {
         queue.cancelAllOperations()
     }
 
@@ -104,8 +105,8 @@ class RoutePickerViewModelTests: OBATestCase {
     // MARK: - Initial State
 
     /// Before `loadRoutes()` runs, the VM exposes empty lists and a `false` finished flag.
-    @MainActor
-    func test_initialState_isEmptyAndNotLoaded() {
+    @Test @MainActor
+    func `Initial state is empty and not loaded`() {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         let vm = RoutePickerViewModel(application: app)
@@ -120,8 +121,8 @@ class RoutePickerViewModelTests: OBATestCase {
 
     /// With no cached stops, the VM fetches via the API service, deduplicates and sorts
     /// routes, and flips `didFinishLoading` to `true`.
-    @MainActor
-    func test_loadRoutes_apiFallback_populatesFilteredRoutes() async {
+    @Test @MainActor
+    func `Load routes api fallback populates filtered routes`() async {
         let dataLoader = MockDataLoader(testName: name)
         stubStopsForLocation(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -141,8 +142,8 @@ class RoutePickerViewModelTests: OBATestCase {
 
     /// Routes are sorted alphabetically (case-insensitive) — matches the existing VC behavior
     /// via `localizedCaseInsensitiveSort()`.
-    @MainActor
-    func test_loadRoutes_sortsRoutesCaseInsensitively() async {
+    @Test @MainActor
+    func `Load routes sorts routes case insensitively`() async {
         let dataLoader = MockDataLoader(testName: name)
         stubStopsForLocation(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -158,8 +159,8 @@ class RoutePickerViewModelTests: OBATestCase {
 
     /// Calling `loadRoutes()` twice with a cache miss both times produces a stable, identical
     /// result — no duplication, no error, same route set.
-    @MainActor
-    func test_loadRoutes_canBeCalledRepeatedly() async {
+    @Test @MainActor
+    func `Load routes can be called repeatedly`() async {
         let dataLoader = MockDataLoader(testName: name)
         stubStopsForLocation(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -182,8 +183,8 @@ class RoutePickerViewModelTests: OBATestCase {
 
     /// With no current location, `loadRoutes()` surfaces a localized error message and
     /// flips `didFinishLoading` so the UI can render the error state.
-    @MainActor
-    func test_loadRoutes_noLocation_setsLoadError() async {
+    @Test @MainActor
+    func `Load routes no location sets load error`() async {
         let dataLoader = MockDataLoader(testName: name)
         stubStopsForLocation(dataLoader: dataLoader)
         let app = createApplicationWithoutLocation(dataLoader: dataLoader)
@@ -199,8 +200,8 @@ class RoutePickerViewModelTests: OBATestCase {
 
     /// An API failure (invalid response payload) is surfaced as a `loadError` rather than
     /// crashing or leaving the UI stuck in a loading state.
-    @MainActor
-    func test_loadRoutes_apiError_setsLoadError() async {
+    @Test @MainActor
+    func `Load routes api error sets load error`() async {
         let dataLoader = MockDataLoader(testName: name)
         stubStopsForLocationWithError(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -217,8 +218,8 @@ class RoutePickerViewModelTests: OBATestCase {
 
     /// Empty query restores all routes; a non-matching query yields zero results;
     /// a matching prefix narrows the list and stays case-insensitive across upper/lower forms.
-    @MainActor
-    func test_updateSearch_filtersCaseInsensitively() async {
+    @Test @MainActor
+    func `Update search filters case insensitively`() async {
         let dataLoader = MockDataLoader(testName: name)
         stubStopsForLocation(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -247,8 +248,8 @@ class RoutePickerViewModelTests: OBATestCase {
     }
 
     /// A query that matches only a route's long name (not its short name) still hits.
-    @MainActor
-    func test_updateSearch_matchesLongName() async {
+    @Test @MainActor
+    func `Update search matches long name`() async {
         let dataLoader = MockDataLoader(testName: name)
         stubStopsForLocation(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -277,8 +278,8 @@ class RoutePickerViewModelTests: OBATestCase {
 
     /// `updateSearch` called BEFORE `loadRoutes()` is a no-op (filteredRoutes stays empty),
     /// but stores the query so a later load honors it.
-    @MainActor
-    func test_updateSearch_beforeLoad_isHonoredAfterLoad() async {
+    @Test @MainActor
+    func `Update search before load is honored after load`() async {
         let dataLoader = MockDataLoader(testName: name)
         stubStopsForLocation(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -297,8 +298,8 @@ class RoutePickerViewModelTests: OBATestCase {
     // MARK: - Publisher contracts
 
     /// `$filteredRoutes` emits whenever the search query changes the result set.
-    @MainActor
-    func test_filteredRoutesPublisher_emitsOnSearchChange() async {
+    @Test @MainActor
+    func `Filtered routes publisher emits on search change`() async {
         let dataLoader = MockDataLoader(testName: name)
         stubStopsForLocation(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -322,8 +323,8 @@ class RoutePickerViewModelTests: OBATestCase {
     }
 
     /// `$didFinishLoading` emits `true` after a successful load.
-    @MainActor
-    func test_didFinishLoadingPublisher_flipsAfterLoad() async {
+    @Test @MainActor
+    func `Did finish loading publisher flips after load`() async {
         let dataLoader = MockDataLoader(testName: name)
         stubStopsForLocation(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -349,8 +350,8 @@ class RoutePickerViewModelTests: OBATestCase {
     /// no location (error path) and then receives one (success path). This is the
     /// shape that actually exercises the clear-on-retry contract — a fresh VM would
     /// pass regardless of whether the clear line existed.
-    @MainActor
-    func test_loadRoutes_retryClearsPriorLoadError() async {
+    @Test @MainActor
+    func `Load routes retry clears prior load error`() async {
         let dataLoader = MockDataLoader(testName: name)
         stubStopsForLocation(dataLoader: dataLoader)
         stubRegions(dataLoader: dataLoader)
@@ -388,8 +389,8 @@ class RoutePickerViewModelTests: OBATestCase {
 
     /// When `mapRegionManager.stops` is already populated, `loadRoutes()` takes the
     /// cache path and does not hit the stops API.
-    @MainActor
-    func test_loadRoutes_cacheFirst_doesNotHitAPI() async {
+    @Test @MainActor
+    func `Load routes cache first does not hit API`() async {
         let dataLoader = MockDataLoader(testName: name)
 
         // Counter wrapping the stops-for-location matcher.
@@ -434,8 +435,8 @@ class RoutePickerViewModelTests: OBATestCase {
     /// A cancelled `loadRoutes()` finalizes without setting `loadError`. The VM
     /// matches both `CancellationError` and `URLError(.cancelled)` so a re-observed
     /// VM doesn't get stuck on "Loading routes…".
-    @MainActor
-    func test_loadRoutes_cancellation_finalizesWithoutError() async {
+    @Test @MainActor
+    func `Load routes cancellation finalizes without error`() async {
         let dataLoader = MockDataLoader(testName: name)
         // Stub the stops endpoint to throw URLError(.cancelled) — the shape
         // URLSession surfaces when a data task is cancelled.

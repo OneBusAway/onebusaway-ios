@@ -7,7 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
+import Foundation
 import Testing
 import CoreLocation
 @testable import OBAKit
@@ -15,7 +15,8 @@ import CoreLocation
 
 // swiftlint:disable force_cast
 
-class TripDetailsModelOperationTests: OBATestCase {
+@Suite(.serialized)
+final class TripDetailsModelOperationTests: OBATestCase {
     let vehicleID = "1_1234"
     let tripID = "1_18196913"
     lazy var vehicleTripAPIPath = "https://www.example.com/api/where/trip-for-vehicle/\(vehicleID).json"
@@ -23,8 +24,9 @@ class TripDetailsModelOperationTests: OBATestCase {
 
     var dataLoader: MockDataLoader!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
+
         dataLoader = (restService.dataLoader as! MockDataLoader)
     }
 
@@ -56,7 +58,7 @@ class TripDetailsModelOperationTests: OBATestCase {
         #expect(tripDetails.serviceAlerts.count == 0)
     }
 
-    func testLoading_vehicleDetails_success() async throws {
+    @Test func `Loading vehicle details success`() async throws {
         let data = Fixtures.loadData(file: "trip_details_1_18196913.json")
         dataLoader.mock(URLString: vehicleTripAPIPath, with: data)
 
@@ -64,7 +66,7 @@ class TripDetailsModelOperationTests: OBATestCase {
         self.checkExpectations(trip)
     }
 
-    func testLoading_tripDetails_success() async throws {
+    @Test func `Loading trip details success`() async throws {
         let data = Fixtures.loadData(file: "trip_details_1_18196913.json")
         dataLoader.mock(URLString: tripDetailsAPIPath, with: data)
 

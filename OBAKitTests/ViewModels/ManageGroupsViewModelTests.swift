@@ -7,23 +7,24 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
+import Foundation
 import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
 /// Tests for `ManageGroupsViewModel`. Covers group list access and the replace-all mutation.
-class ManageGroupsViewModelTests: OBATestCase {
+@Suite(.serialized)
+final class ManageGroupsViewModelTests: OBATestCase {
     var queue: OperationQueue!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
+
         queue = OperationQueue()
         queue.maxConcurrentOperationCount = 1
     }
 
-    override func tearDown() async throws {
-        try await super.tearDown()
+    isolated deinit {
         queue.cancelAllOperations()
     }
 
@@ -60,8 +61,8 @@ class ManageGroupsViewModelTests: OBATestCase {
 
     // MARK: - bookmarkGroups
 
-    @MainActor
-    func test_bookmarkGroups_startsEmpty() {
+    @Test @MainActor
+    func `Bookmark groups starts empty`() {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         let vm = ManageGroupsViewModel(application: app)
@@ -69,8 +70,8 @@ class ManageGroupsViewModelTests: OBATestCase {
         #expect(vm.bookmarkGroups.isEmpty)
     }
 
-    @MainActor
-    func test_bookmarkGroups_reflectsDataStore() {
+    @Test @MainActor
+    func `Bookmark groups reflects data store`() {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         let vm = ManageGroupsViewModel(application: app)
@@ -84,8 +85,8 @@ class ManageGroupsViewModelTests: OBATestCase {
 
     // MARK: - replaceGroups
 
-    @MainActor
-    func test_replaceGroups_updatesDataStore() {
+    @Test @MainActor
+    func `Replace groups updates data store`() {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         let vm = ManageGroupsViewModel(application: app)
@@ -103,8 +104,8 @@ class ManageGroupsViewModelTests: OBATestCase {
         #expect(groupNames.contains("Beta"))
     }
 
-    @MainActor
-    func test_replaceGroups_withEmpty_clearsAllGroups() {
+    @Test @MainActor
+    func `Replace groups with empty clears all groups`() {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         let vm = ManageGroupsViewModel(application: app)
@@ -117,8 +118,8 @@ class ManageGroupsViewModelTests: OBATestCase {
         #expect(vm.bookmarkGroups.isEmpty)
     }
 
-    @MainActor
-    func test_replaceGroups_preservesExistingGroupIDs() {
+    @Test @MainActor
+    func `Replace groups preserves existing group IDs`() {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         let vm = ManageGroupsViewModel(application: app)
@@ -136,8 +137,8 @@ class ManageGroupsViewModelTests: OBATestCase {
 
     // MARK: - groups(from:)
 
-    @MainActor
-    func test_groupsFrom_convertsRowsToBookmarkGroups() {
+    @Test @MainActor
+    func `Groups from converts rows to bookmark groups`() {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         let vm = ManageGroupsViewModel(application: app)
@@ -155,8 +156,8 @@ class ManageGroupsViewModelTests: OBATestCase {
         #expect(groups[1].sortOrder == 1)
     }
 
-    @MainActor
-    func test_groupsFrom_skipsEmptyAndWhitespaceOnlyNames() {
+    @Test @MainActor
+    func `Groups from skips empty and whitespace only names`() {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         let vm = ManageGroupsViewModel(application: app)
@@ -173,8 +174,8 @@ class ManageGroupsViewModelTests: OBATestCase {
         #expect(groups[0].name == "Valid")
     }
 
-    @MainActor
-    func test_groupsFrom_preservesExistingUUIDTags() {
+    @Test @MainActor
+    func `Groups from preserves existing UUID tags`() {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         let vm = ManageGroupsViewModel(application: app)
@@ -189,8 +190,8 @@ class ManageGroupsViewModelTests: OBATestCase {
         #expect(groups.first?.name == "Renamed Group")
     }
 
-    @MainActor
-    func test_groupsFrom_assignsFreshIDWhenTagIsNilOrInvalid() {
+    @Test @MainActor
+    func `Groups from assigns fresh ID when tag is nil or invalid`() {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         let vm = ManageGroupsViewModel(application: app)

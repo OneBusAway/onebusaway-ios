@@ -7,7 +7,6 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
 import Testing
 import CoreLocation
 @testable import OBAKit
@@ -15,7 +14,8 @@ import CoreLocation
 
 // swiftlint:disable force_cast
 
-class StopProblemModelOperationTests: OBATestCase {
+@Suite(.serialized)
+final class StopProblemModelOperationTests: OBATestCase {
     let stopID = "1_1234"
     let comment = "comment comment comment"
     let location = CLLocation(latitude: 47.1, longitude: -122.1)
@@ -26,7 +26,7 @@ class StopProblemModelOperationTests: OBATestCase {
         "userLon": "-122.1"
     ]
 
-    func testSuccessfulRequest() async throws {
+    @Test func `Successful request`() async throws {
         let dataLoader = (restService.dataLoader as! MockDataLoader)
 
         dataLoader.mock(data: Fixtures.loadData(file: "report_stop_problem.json")) { request -> Bool in

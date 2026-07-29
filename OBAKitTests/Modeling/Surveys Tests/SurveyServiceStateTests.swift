@@ -5,32 +5,33 @@
 //  Created by Mohamed Sliem on 13/12/2025.
 //
 
-import XCTest
+import Foundation
 import Testing
 @testable import OBAKitCore
 
+@Suite(.serialized)
 final class SurveyServiceStateTests: OBATestCase {
 
     nonisolated(unsafe) private var surveyService: SurveyService!
     nonisolated(unsafe) private var testUserDefaults: UserDefaults!
     nonisolated(unsafe) private var testUserDataStore: UserDefaultsStore!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
+
         testUserDefaults = buildUserDefaults(suiteName: "\(userDefaultsSuiteName).state")
         testUserDefaults.removePersistentDomain(forName: "\(userDefaultsSuiteName).state")
         testUserDataStore = UserDefaultsStore(userDefaults: testUserDefaults)
         surveyService = SurveyService(apiService: nil, userDataStore: testUserDataStore)
     }
 
-    override func tearDown() async throws {
+    isolated deinit {
         testUserDefaults.removePersistentDomain(forName: "\(userDefaultsSuiteName).state")
-        try await super.tearDown()
     }
 
     // MARK: - shouldShowSurvey
 
-    func test_shouldShowSurvey_returnsFalse_whenFeatureDisabled() {
+    @Test func `Should show survey returns false when feature disabled`() {
         testUserDataStore.isSurveyEnabled = false
         // Even with correct launch count, disabled means no survey
         setAppLaunchCount(3)
@@ -39,7 +40,7 @@ final class SurveyServiceStateTests: OBATestCase {
         #expect(!result)
     }
 
-    func test_shouldShowSurvey_returnsFalse_whenAppLaunchIsZero() {
+    @Test func `Should show survey returns false when app launch is zero`() {
         testUserDataStore.isSurveyEnabled = true
         setAppLaunchCount(0)
 
@@ -47,7 +48,7 @@ final class SurveyServiceStateTests: OBATestCase {
         #expect(!result)
     }
 
-    func test_shouldShowSurvey_returnsFalse_whenLaunchCountNotMultipleOfThree() {
+    @Test func `Should show survey returns false when launch count not multiple of three`() {
         testUserDataStore.isSurveyEnabled = true
         setAppLaunchCount(4)
 
@@ -55,7 +56,7 @@ final class SurveyServiceStateTests: OBATestCase {
         #expect(!result)
     }
 
-    func test_shouldShowSurvey_returnsTrue_whenLaunchCountIsMultipleOfThree() {
+    @Test func `Should show survey returns true when launch count is multiple of three`() {
         testUserDataStore.isSurveyEnabled = true
         setAppLaunchCount(6)
 
@@ -63,7 +64,7 @@ final class SurveyServiceStateTests: OBATestCase {
         #expect(result)
     }
 
-    func test_shouldShowSurvey_returnsFalse_whenNextReminderDateIsInFuture() {
+    @Test func `Should show survey returns false when next reminder date is in future`() {
         testUserDataStore.isSurveyEnabled = true
         setAppLaunchCount(6)
         testUserDataStore.nextSurveyReminderDate = Date().addingTimeInterval(3600)
@@ -72,7 +73,7 @@ final class SurveyServiceStateTests: OBATestCase {
         #expect(!result)
     }
 
-    func test_shouldShowSurvey_returnsTrue_whenNextReminderDateIsInPast() {
+    @Test func `Should show survey returns true when next reminder date is in past`() {
         testUserDataStore.isSurveyEnabled = true
         setAppLaunchCount(6)
         testUserDataStore.nextSurveyReminderDate = Date().addingTimeInterval(-300)
@@ -81,7 +82,7 @@ final class SurveyServiceStateTests: OBATestCase {
         #expect(result)
     }
 
-    func test_shouldShowSurvey_returnsTrue_whenReminderDateIsNil() {
+    @Test func `Should show survey returns true when reminder date is nil`() {
         testUserDataStore.isSurveyEnabled = true
         setAppLaunchCount(6)
         testUserDataStore.nextSurveyReminderDate = nil
@@ -92,7 +93,7 @@ final class SurveyServiceStateTests: OBATestCase {
 
     // MARK: - Issue 9: alwaysShowSurveysOnStops should not bypass isSurveyEnabled
 
-    func test_shouldShowSurvey_returnsFalse_whenDisabled_evenIfAlwaysShowIsOn() {
+    @Test func `Should show survey returns false when disabled even if always show is on`() {
         testUserDataStore.isSurveyEnabled = false
         testUserDataStore.alwaysShowSurveysOnStops = true
         setAppLaunchCount(3)
@@ -101,7 +102,7 @@ final class SurveyServiceStateTests: OBATestCase {
         #expect(!result)
     }
 
-    func test_shouldShowSurvey_returnsTrue_whenEnabledAndAlwaysShowIsOn() {
+    @Test func `Should show survey returns true when enabled and always show is on`() {
         testUserDataStore.isSurveyEnabled = true
         testUserDataStore.alwaysShowSurveysOnStops = true
         // Launch count 1 — NOT a multiple of 3, but alwaysShow should bypass that
@@ -113,7 +114,7 @@ final class SurveyServiceStateTests: OBATestCase {
 
     // MARK: - setNextReminderDate
 
-    func test_setNextReminderDate_setsDateThreeDaysAhead() {
+    @Test func `Set next reminder date sets date three days ahead`() {
         let now = Date()
 
         surveyService.setNextReminderDate()
@@ -125,7 +126,7 @@ final class SurveyServiceStateTests: OBATestCase {
         #expect(diff == 3)
     }
 
-    func test_setNextReminderDate_overwritesExistingDate() {
+    @Test func `Set next reminder date overwrites existing date`() {
         testUserDataStore.nextSurveyReminderDate = Date().addingTimeInterval(-50)
 
         surveyService.setNextReminderDate()
@@ -139,7 +140,7 @@ final class SurveyServiceStateTests: OBATestCase {
 
     // MARK: - markSurveyCompleted
 
-    func test_markSurveyCompleted_tracksSurvey() {
+    @Test func `Mark survey completed tracks survey`() {
         let survey = makeSurvey(id: 7)
         surveyService.markSurveyCompleted(survey)
 
@@ -149,7 +150,7 @@ final class SurveyServiceStateTests: OBATestCase {
 
     // MARK: - markSurveyForLater
 
-    func test_markSurveyForLater_tracksSurvey() {
+    @Test func `Mark survey for later tracks survey`() {
         let survey = makeSurvey(id: 9)
         surveyService.markSurveyForLater(survey)
 
@@ -160,14 +161,14 @@ final class SurveyServiceStateTests: OBATestCase {
 
     // MARK: - Combined Behavior
 
-    func test_shouldShowSurvey_minimumValidCase() {
+    @Test func `Should show survey minimum valid case`() {
         testUserDataStore.isSurveyEnabled = true
         setAppLaunchCount(3)
 
         #expect(self.surveyService.shouldShowSurvey())
     }
 
-    func test_shouldShowSurvey_whenLaunchIsThirdButFeatureDisabled_returnsFalse() {
+    @Test func `Should show survey when launch is third but feature disabled returns false`() {
         testUserDataStore.isSurveyEnabled = false
         setAppLaunchCount(3)
 
@@ -176,24 +177,24 @@ final class SurveyServiceStateTests: OBATestCase {
 
     // MARK: - formatCheckboxAnswer
 
-    func test_formatCheckboxAnswer_normalCase() throws {
+    @Test func `Format checkbox answer normal case`() throws {
         let result = try SurveyService.formatCheckboxAnswer(["Option A", "Option B"])
         #expect(result == "[\"Option A\",\"Option B\"]")
     }
 
-    func test_formatCheckboxAnswer_emptyArray() throws {
+    @Test func `Format checkbox answer empty array`() throws {
         let result = try SurveyService.formatCheckboxAnswer([])
         #expect(result == "[]")
     }
 
-    func test_formatCheckboxAnswer_singleItem() throws {
+    @Test func `Format checkbox answer single item`() throws {
         let result = try SurveyService.formatCheckboxAnswer(["Only"])
         #expect(result == "[\"Only\"]")
     }
 
     // MARK: - createQuestionResponse
 
-    func test_createQuestionResponse_returnsCorrectFields() {
+    @Test func `Create question response returns correct fields`() {
         let question = SurveyQuestion(
             id: 42,
             position: 1,
@@ -209,7 +210,7 @@ final class SurveyServiceStateTests: OBATestCase {
         #expect(response.answer == "Great")
     }
 
-    func test_createQuestionResponse_radioType() {
+    @Test func `Create question response radio type`() {
         let question = SurveyQuestion(
             id: 10,
             position: 2,
@@ -225,7 +226,7 @@ final class SurveyServiceStateTests: OBATestCase {
 
     // MARK: - Submit methods with nil apiService
 
-    func test_submitHeroQuestion_nilApiService_throws() async {
+    @Test func `Submit hero question nil api service throws`() async {
         let survey = makeSurvey(id: 1, questions: makeQuestions())
         let response = SurveyService.createQuestionResponse(
             question: survey.questions[0],
@@ -247,7 +248,7 @@ final class SurveyServiceStateTests: OBATestCase {
         }
     }
 
-    func test_submitAdditionalQuestions_nilApiService_throws() async {
+    @Test func `Submit additional questions nil api service throws`() async {
         let thrown = await #expect(throws: APIError.self) {
             _ = try await self.surveyService.submitAdditionalQuestions(
                 responseID: "some-id",
@@ -262,7 +263,7 @@ final class SurveyServiceStateTests: OBATestCase {
 
     // MARK: - visibleSurveys re-filter on state changes
 
-    func test_markSurveyCompleted_updatesVisibleSurveys() async {
+    @Test func `Mark survey completed updates visible surveys`() async {
         let service = await buildServiceWithLoadedSurveys()
         let initialVisible = service.visibleSurveys.count
 
@@ -276,7 +277,7 @@ final class SurveyServiceStateTests: OBATestCase {
         #expect(service.visibleSurveys.count == initialVisible)
     }
 
-    func test_markSurveyForLater_updatesVisibleSurveys() async {
+    @Test func `Mark survey for later updates visible surveys`() async {
         let service = await buildServiceWithLoadedSurveys()
         let initialVisible = service.visibleSurveys.count
 

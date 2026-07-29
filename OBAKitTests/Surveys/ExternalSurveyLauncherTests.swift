@@ -3,11 +3,12 @@
 //  OBAKitTests
 //
 
-import XCTest
+import Foundation
 import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
+@Suite(.serialized)
 final class ExternalSurveyLauncherTests: OBATestCase {
 
     nonisolated(unsafe) private var testUserDefaults: UserDefaults!
@@ -15,8 +16,9 @@ final class ExternalSurveyLauncherTests: OBATestCase {
     nonisolated(unsafe) private var context: MockSurveyURLApplicationContext!
     nonisolated(unsafe) private var service: SurveyService!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
+
         testUserDefaults = buildUserDefaults(suiteName: "\(userDefaultsSuiteName).launcher")
         testUserDefaults.removePersistentDomain(forName: "\(userDefaultsSuiteName).launcher")
         store = UserDefaultsStore(userDefaults: testUserDefaults)
@@ -25,9 +27,8 @@ final class ExternalSurveyLauncherTests: OBATestCase {
         service = SurveyService(apiService: nil, userDataStore: store, application: context)
     }
 
-    override func tearDown() async throws {
+    isolated deinit {
         testUserDefaults.removePersistentDomain(forName: "\(userDefaultsSuiteName).launcher")
-        try await super.tearDown()
     }
 
     private func externalSurvey(id: Int = 1, url: String?, fields: [String] = []) -> Survey {
@@ -40,7 +41,7 @@ final class ExternalSurveyLauncherTests: OBATestCase {
         store.isSurveyCompleted(surveyId: id, userIdentifier: "u-1")
     }
 
-    func test_launch_opensExactURL_marksCompleted_callsOnSuccess() {
+    @Test func `Launch opens exact URL marks completed calls on success`() {
         let survey = externalSurvey(url: "https://oba.co/s")
         var opened: URL?
         var succeeded = false
@@ -59,7 +60,7 @@ final class ExternalSurveyLauncherTests: OBATestCase {
         #expect(self.isCompleted(1))
     }
 
-    func test_launch_appendsStopID_whenStopProvided() {
+    @Test func `Launch appends stop ID when stop provided`() {
         let survey = externalSurvey(url: "https://oba.co/s", fields: ["stop_id"])
         let stop = SurveysTestHelpers.makeStop(id: "1_99")
         var opened: URL?
@@ -72,7 +73,7 @@ final class ExternalSurveyLauncherTests: OBATestCase {
         #expect(items.first { $0.name == "stop_id" }?.value == "1_99")
     }
 
-    func test_launch_nilURL_doesNotOpen_doesNotComplete_callsOnFailure() {
+    @Test func `Launch nil URL does not open does not complete calls on failure`() {
         let survey = externalSurvey(url: nil)
         var openerCalled = false
         var failed = false
@@ -89,7 +90,7 @@ final class ExternalSurveyLauncherTests: OBATestCase {
         #expect(!self.isCompleted(1))
     }
 
-    func test_launch_openFailure_doesNotComplete_callsOnFailure() {
+    @Test func `Launch open failure does not complete calls on failure`() {
         let survey = externalSurvey(url: "https://oba.co/s")
         var succeeded = false
         var failed = false
