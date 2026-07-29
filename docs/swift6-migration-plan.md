@@ -392,10 +392,12 @@ value; and drop the `await` on non-async bodies or you get
 `#UnnecessaryEffectMarker`.
 
 The 8 that remained were 3 Nimble polling calls plus 5 genuinely test-local
-issues: `TestData`'s mutable statics (3), `DonationsConfigBundle` needing to
-restate `@unchecked Sendable` (1), and a `waitUntil` closure capture in
-`ApplicationTests` (1). The polling calls are gone as of the next section,
-leaving those 5.
+issues: `TestData`'s statics (3 — two `static var`s that were nonisolated
+global mutable state, plus `mockHeading`, whose `OBAMockHeading` type was not
+yet `Sendable`), `DonationsConfigBundle` needing to restate `@unchecked
+Sendable` (1), and a `waitUntil` closure capture in `ApplicationTests` (1).
+These are diagnostic counts, not declaration counts. The polling calls are gone
+as of the next section, leaving those 5.
 
 ### Polling: 8 → 5, and two of three sites became deterministic (2026-07-28)
 

@@ -32,7 +32,7 @@ cold_build_init() {
   # never fires, and each run leaks a full DerivedData + CAS (~3.5 GB).
   trap 'rm -rf "$WORKDIR"' EXIT
 
-  cd "$REPO_ROOT"
+  cd "$REPO_ROOT" || exit 1
 }
 
 # cold_build <log-path> [extra xcodebuild args...]

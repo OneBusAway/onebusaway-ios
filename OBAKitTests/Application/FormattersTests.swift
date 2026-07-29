@@ -32,8 +32,10 @@ class FormattersTests: OBATestCase {
 
         let str = formatters.explanation(from: arrDep)
 
-        // Nimble's `match` was NSPredicate MATCHES: a whole-string regex, not a
-        // substring search. Keep NSPredicate so the anchoring is unchanged.
+        // Deliberately stricter than what it replaced. Nimble's `match` was
+        // `range(of:options:.regularExpression)` -- an UNANCHORED substring
+        // search -- whereas `SELF MATCHES` anchors to the whole string, so this
+        // also asserts nothing surrounds the phrase. That's the intent here.
         #expect(NSPredicate(format: "SELF MATCHES %@", "Arrived \\d+ min ago").evaluate(with: str))
     }
 
