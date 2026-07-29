@@ -16,6 +16,7 @@ Every task's requirements implicitly include this section.
 
 - **Simulator destination must pin the OS: `platform=iOS Simulator,OS=26.3.1,name=iPhone 17 Pro`.** iPhone 16 is not installed, so `CLAUDE.md`'s destination string is stale. Worse, the bare form `platform=iOS Simulator,name=iPhone 17 Pro` **fails to resolve on this machine** — six iOS runtimes are installed (18.5, 26.3, and four separate 27.0 builds), and `xcodebuild` responds with "Unable to find a device matching the provided destination specifier" while listing only macOS and watchOS candidates. That error looks like a missing simulator; it is actually ambiguity. Always pin `OS=26.3.1`.
 - **Run `scripts/generate_project OneBusAway` after creating ANY new source or test file.** XcodeGen discovers files from disk. A test file the project doesn't know about does not fail — it silently runs zero tests, which reads as passing.
+- **`OBAKit.xcodeproj` is gitignored** (`.gitignore:16`, `OBAKit.xcodeproj/**`). It is generated, never committed — do not add it to any `git add`, and do not list it among changed files in a report. The proof that XcodeGen picked up a new file is the test count, not the project file.
 - **Always `set -o pipefail` before piping `xcodebuild` to `tail`.** Without it a failed build exits 0 and the failure is invisible.
 - **A failing test run stalls for ~10 minutes in `simctl diagnose`.** Once failures have printed, kill `xcodebuild` rather than waiting. Do not run two failing suites concurrently.
 - **Swift 6 language mode, main-actor default isolation** in OBAKit (OBAKitCore pins back to `nonisolated`). The five concurrency diagnostic groups are escalated to **errors** — a data-race warning fails the build.
@@ -350,8 +351,7 @@ Expected: PASS, **8 tests executed**. If it reports 0 tests, `generate_project` 
 scripts/swiftlint.sh
 git add OBAKit/Mapping/Layers/RentalRangeFilter.swift \
         OBAKitTests/Mapping/RentalFixtures.swift \
-        OBAKitTests/Mapping/RentalRangeFilterTests.swift \
-        OBAKit.xcodeproj
+        OBAKitTests/Mapping/RentalRangeFilterTests.swift
 git commit -m "Add the fail-open rental range filter predicate"
 ```
 
@@ -581,8 +581,7 @@ Expected: PASS, **12 tests executed**.
 scripts/swiftlint.sh
 git add OBAKit/Mapping/Layers/RentalRangePreset.swift \
         OBAKit/Strings/en.lproj/Localizable.strings \
-        OBAKitTests/Mapping/RentalRangePresetTests.swift \
-        OBAKit.xcodeproj
+        OBAKitTests/Mapping/RentalRangePresetTests.swift
 git commit -m "Add the locale-appropriate rental range preset ladder"
 ```
 
@@ -799,8 +798,7 @@ Expected: PASS, **10 tests executed**.
 scripts/swiftlint.sh
 git add OBAKit/Mapping/Layers/RentalFormat.swift \
         OBAKit/Mapping/Layers/RentalDetailViewController.swift \
-        OBAKitTests/Mapping/RentalFormatTests.swift \
-        OBAKit.xcodeproj
+        OBAKitTests/Mapping/RentalFormatTests.swift
 git commit -m "Extract RentalFormat and add abbreviated fuel-label text"
 ```
 
@@ -1242,8 +1240,7 @@ Expected: PASS, **20 tests executed**.
 ```bash
 scripts/swiftlint.sh
 git add OBAKit/Mapping/Layers/RentalVisibility.swift \
-        OBAKitTests/Mapping/RentalVisibilityTests.swift \
-        OBAKit.xcodeproj
+        OBAKitTests/Mapping/RentalVisibilityTests.swift
 git commit -m "Add RentalVisibility: cache delivered rentals and diff visibility"
 ```
 
@@ -1480,8 +1477,7 @@ scripts/swiftlint.sh
 git add OBAKit/Mapping/MapRegionManager.swift \
         OBAKit/Mapping/Layers/MapLayer.swift \
         OBAKit/Analytics/Analytics.swift \
-        OBAKitTests/Mapping/MapRegionManagerRentalFilterTests.swift \
-        OBAKit.xcodeproj
+        OBAKitTests/Mapping/MapRegionManagerRentalFilterTests.swift
 git commit -m "Persist the rental range filter alongside map layer preferences"
 ```
 
@@ -1759,8 +1755,7 @@ Expected: PASS, **11 tests executed**.
 scripts/swiftlint.sh
 git add OBAKit/Mapping/Layers/RentalAnnotation.swift \
         OBAKit/Mapping/Layers/RentalAnnotationView.swift \
-        OBAKitTests/Mapping/RentalAnnotationViewTests.swift \
-        OBAKit.xcodeproj
+        OBAKitTests/Mapping/RentalAnnotationViewTests.swift
 git commit -m "Render battery percent or range beneath rental markers"
 ```
 
