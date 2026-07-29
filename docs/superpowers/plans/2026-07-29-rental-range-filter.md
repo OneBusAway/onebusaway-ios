@@ -1715,7 +1715,7 @@ Replace the body of `configure()` with:
 
         // VoiceOver ignores the zoom gate: a visual-density rule must not cost a
         // VoiceOver user the fuel figure.
-        accessibilityLabel = [rental.displayLabel, fuelText]
+        accessibilityLabel = [rental.displayLabel, rentalAnnotation.subtitle, fuelText]
             .compactMap { $0 }
             .joined(separator: ", ")
     }
@@ -1747,7 +1747,7 @@ xcodebuild test-without-building -only-testing:OBAKitTests/RentalAnnotationViewT
   -destination 'platform=iOS Simulator,OS=26.3.1,name=iPhone 17 Pro' 2>&1 | tail -20
 ```
 
-Expected: PASS, **11 tests executed**.
+Expected: PASS, **12 tests executed**.
 
 - [ ] **Step 6: Lint and commit**
 
