@@ -7,6 +7,8 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
+import Combine
+import OBAKitCore
 import SwiftUI
 import UIKit
 
@@ -24,28 +26,19 @@ import UIKit
     @Published private(set) var selectedBaseType: MapBaseType
     @Published private var stateVersion = 0
 
-    private var availabilityObserver: NSObjectProtocol?
+    private var cancellables = Set<AnyCancellable>()
 
     init(mapRegionManager: MapRegionManager, mapViewModel: MapViewModel) {
         self.mapRegionManager = mapRegionManager
         self.mapViewModel = mapViewModel
         self.selectedBaseType = mapViewModel.mapType
 
-        availabilityObserver = NotificationCenter.default.addObserver(
-            forName: .mapLayerAvailabilityDidChange,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            MainActor.assumeIsolated {
+        NotificationCenter.default.publisher(for: .mapLayerAvailabilityDidChange)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
                 self?.stateVersion += 1
             }
-        }
-    }
-
-    deinit {
-        if let availabilityObserver {
-            NotificationCenter.default.removeObserver(availabilityObserver)
-        }
+            .store(in: &cancellables)
     }
 
     // MARK: - Basemap

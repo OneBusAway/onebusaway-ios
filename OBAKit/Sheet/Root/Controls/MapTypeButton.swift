@@ -45,6 +45,12 @@ struct MapTypeButton: View {
                 value: "standard",
                 comment: "Voiceover text indicating the current map type as the standard base map."
             )
+        case .satellite:
+            return OBALoc(
+                "map_controller.map_type.satellite.accessibility_value",
+                value: "satellite",
+                comment: "Voiceover text indicating the current map type as the satellite base map."
+            )
         case .hybrid:
             return OBALoc(
                 "map_controller.map_type.hybrid.accessibility_value",

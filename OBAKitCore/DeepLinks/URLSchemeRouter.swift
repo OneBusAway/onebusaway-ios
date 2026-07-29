@@ -37,6 +37,13 @@ public struct AddRegionURLData {
     public let regionID: Int?
     public let obaURL: URL
     public let otpURL: URL?
+    /// An optional URL to an OTP 2.x GTFS GraphQL server (`otp-graphql-url`).
+    /// Its presence is the explicit "this is an OTP 2.x GraphQL server" signal;
+    /// when set, it is preferred over `otpURL` for trip planning.
+    public let otpGraphQLURL: URL?
+    /// Whether the GraphQL server exposes vehicle rental data
+    /// (`otp-graphql-bikeshare=true`). Meaningless without `otpGraphQLURL`.
+    public let supportsOTPGraphQLBikeshare: Bool
     public let sidecarURL: URL?
     public let umamiURL: URL?
     public let umamiID: String?
@@ -123,7 +130,8 @@ public class URLSchemeRouter: NSObject {
 
     // MARK: - Add Region URLs
     /// Decodes an `AddRegionURLData` from `add-region` URL components. `name` and a valid
-    /// `oba-url` are required; `region-id`, `otp-url`, `sidecar-url`, `umami-url`, and
+    /// `oba-url` are required; `region-id`, `otp-url`, `otp-graphql-url`,
+    /// `otp-graphql-bikeshare`, `sidecar-url`, `umami-url`, and
     /// `umami-id` are optional, and invalid optional values degrade to `nil`.
     private func decodeAddRegion(from components: URLComponents) -> URLType? {
         guard
@@ -146,11 +154,15 @@ public class URLSchemeRouter: NSObject {
             regionID = Int(rawRegionID.strip())
         }
 
+        let bikeshareFlag = components.queryItem(named: "otp-graphql-bikeshare")?.value?.strip().lowercased()
+
         return .addRegion(AddRegionURLData(
             name: name,
             regionID: regionID,
             obaURL: obaURL,
             otpURL: optionalURL(named: "otp-url", in: components),
+            otpGraphQLURL: optionalURL(named: "otp-graphql-url", in: components),
+            supportsOTPGraphQLBikeshare: bikeshareFlag == "true" || bikeshareFlag == "1",
             sidecarURL: optionalURL(named: "sidecar-url", in: components),
             umamiURL: optionalURL(named: "umami-url", in: components),
             umamiID: umamiID))

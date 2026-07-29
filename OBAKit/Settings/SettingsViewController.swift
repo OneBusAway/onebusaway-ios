@@ -190,6 +190,21 @@ class SettingsViewController: FormViewController {
             $0.title = OBALoc("settings_controller.map_section.shows_heading", value: "Show my current heading", comment: "Settings > Map section > Show my current heading")
         }
 
+        // Map layer switches mirror the Map sheet: same UserDefaults keys, written
+        // through MapRegionManager immediately. The Map sheet is canonical;
+        // Settings does not own this state.
+        for layer in application.mapRegionManager.mapLayers where layer.availability != .unsupported {
+            section <<< SwitchRow { [weak self] in
+                $0.tag = MapRegionManager.mapLayerDefaultsKey(id: layer.id)
+                $0.title = layer.title
+                $0.value = self?.application.mapRegionManager.isMapLayerEnabled(id: layer.id) ?? layer.isEnabledByDefault
+                $0.onChange { [weak self] row in
+                    guard let self, let value = row.value else { return }
+                    application.mapRegionManager.setMapLayerEnabled(value, id: layer.id)
+                }
+            }
+        }
+
         return section
     }()
 

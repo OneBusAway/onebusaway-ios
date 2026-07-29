@@ -209,6 +209,7 @@ class MapViewController: UIViewController,
 
         viewModel.start()
         updateVoiceover()
+        showMapLayersNudgeIfNeeded()
         Task { @MainActor [weak viewModel] in await viewModel?.checkForSurveyPrompt() }
     }
 
@@ -528,7 +529,7 @@ class MapViewController: UIViewController,
         // provides it; OTP 1.x REST is the fallback. Only the GraphQL service can
         // support vehicle rental features.
         let serverURL: URL
-        let apiService: APIService
+        let apiService: OTPKit.APIService
         if let graphQLURL = region.openTripPlannerGraphQLURL {
             serverURL = graphQLURL
             apiService = GraphQLAPIService(baseURL: graphQLURL)
@@ -681,7 +682,7 @@ class MapViewController: UIViewController,
 
     /// The active-layer count on the basemap button — the primary discoverability
     /// lever for the Map sheet: layer state is readable without opening anything.
-    private lazy var mapLayerBadge: UILabel = {
+    lazy var mapLayerBadge: UILabel = {
         let label = UILabel.autolayoutNew()
         label.font = .systemFont(ofSize: 10, weight: .bold)
         label.textColor = .white
@@ -694,26 +695,10 @@ class MapViewController: UIViewController,
         return label
     }()
 
-    func updateMapLayerBadge() {
-        let count = mapRegionManager.enabledMapLayerCount
-        mapLayerBadge.text = String(count)
-        mapLayerBadge.isHidden = count == 0
-    }
-
     /// The basemap button opens the Map sheet, which absorbs the old
     /// standard/hybrid toggle as its basemap tiles.
     @objc private func toggleMapType() {
         presentMapSheet()
-    }
-
-    private func presentMapSheet() {
-        let model = MapSheetModel(mapRegionManager: mapRegionManager, mapViewModel: viewModel)
-        let hosting = UIHostingController(rootView: MapSheetView(model: model))
-        if let sheet = hosting.sheetPresentationController {
-            sheet.detents = [.medium(), .large()]
-            sheet.prefersGrabberVisible = true
-        }
-        present(hosting, animated: true)
     }
 
     private func setMapTypeButtonImage(_ button: UIButton, mapType: MapBaseType) {
@@ -728,69 +713,9 @@ class MapViewController: UIViewController,
 
     // MARK: - Map Layers
 
-    private var rentalLayerCoordinator: RentalLayerCoordinator?
+    var rentalLayerCoordinator: RentalLayerCoordinator?
 
-    /// Registers the map's toggleable layers: the stops adapter always, the
-    /// rental layers only when the current region is configured for bikeshare.
-    /// Called at load and again whenever the region changes.
-    func configureMapLayers() {
-        if mapRegionManager.mapLayer(id: StopsMapLayer.layerID) == nil {
-            mapRegionManager.registerMapLayer(StopsMapLayer(manager: mapRegionManager))
-        }
-
-        configureRentalLayers()
-        updateMapLayerBadge()
-    }
-
-    private func configureRentalLayers() {
-        // Tear down any layers built for a previous region; preferences persist.
-        mapRegionManager.removeMapLayer(id: RentalMapLayer.bikesLayerID)
-        mapRegionManager.removeMapLayer(id: RentalMapLayer.scootersLayerID)
-        rentalLayerCoordinator = nil
-
-        // Region flag = product enablement; the GraphQL service supplies the
-        // capability. Whether the server actually works is decided by the first
-        // fetch, which can dim the rows at runtime.
-        guard let region = application.regionsService.currentRegion,
-              region.isBikeshareEnabled,
-              let graphQLURL = region.openTripPlannerGraphQLURL else {
-            return
-        }
-
-        let service = GraphQLAPIService(baseURL: graphQLURL)
-        let coordinator = RentalLayerCoordinator(service: service, mapView: mapRegionManager.mapView)
-        rentalLayerCoordinator = coordinator
-
-        let bikes = RentalMapLayer.bikesLayer(coordinator: coordinator)
-        bikes.actionsDelegate = self
-        mapRegionManager.registerMapLayer(bikes)
-
-        let scooters = RentalMapLayer.scootersLayer(coordinator: coordinator)
-        scooters.actionsDelegate = self
-        mapRegionManager.registerMapLayer(scooters)
-    }
-
-    /// Presents a layer-owned detail sheet (vehicle detail or cluster list) for
-    /// an annotation, when some registered layer claims it.
-    /// - Returns: true when a layer presented a detail surface.
-    private func presentLayerDetail(for annotation: MKAnnotation, in mapView: MKMapView) -> Bool {
-        for layer in mapRegionManager.mapLayers {
-            guard let controller = layer.detailViewController(for: annotation) else { continue }
-
-            if let sheet = controller.sheetPresentationController {
-                sheet.detents = [.medium(), .large()]
-                sheet.prefersGrabberVisible = true
-            }
-            present(controller, animated: true)
-            mapView.deselectAnnotation(annotation, animated: true)
-            return true
-        }
-        return false
-    }
-
-    @objc private func mapLayerStateDidChange(_ note: NSNotification) {
-        updateMapLayerBadge()
-    }
+    // The layer/sheet/nudge machinery lives in MapViewController+MapLayers.swift.
 
     // MARK: - Application State
 
@@ -1500,37 +1425,6 @@ private extension MapViewController {
         mapStatusView.configure(for: locationState, zoomInStatus: viewModel.showZoomWarning)
         locationButton.isHidden = !application.locationService.isLocationUseAuthorized
         layoutMapMargins()
-    }
-}
-
-// MARK: - RegionsServiceDelegate
-
-extension MapViewController: RegionsServiceDelegate {
-    public func regionsService(_ service: RegionsService, updatedRegion region: Region) {
-        // Rebuild region-scoped layers: a new region may gain or lose bikeshare.
-        configureMapLayers()
-    }
-}
-
-// MARK: - RentalLayerActionsDelegate
-
-extension MapViewController: RentalLayerActionsDelegate {
-    /// "Plan a trip using this bike": route through the vehicle's exact coordinate
-    /// as a via point with a rental mode preselected — OTP has no "use vehicle X"
-    /// parameter, but routing through the spot where the vehicle stands picks it up.
-    /// Transit + Bikeshare (not Bikeshare Only) because via routing requires a
-    /// transit mode in the request on OTP's default configuration.
-    func rentalLayer(planTripUsing rental: VehicleRental) {
-        dismiss(animated: true) { [weak self] in
-            self?.showTripPlanner(viaPoint: rental.coordinate, preselectedMode: .transitBikeRental)
-        }
-    }
-
-    /// Opens a rental deep link. No `canOpenURL` pre-check: partner schemes can't
-    /// be enumerated in `LSApplicationQueriesSchemes` ahead of time, and most GBFS
-    /// iOS URIs are universal links anyway.
-    func rentalLayer(open url: URL) {
-        application.open(url, options: [:], completionHandler: nil)
     }
 }
 

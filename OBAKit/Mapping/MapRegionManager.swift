@@ -312,6 +312,11 @@ public class MapRegionManager: NSObject,
         }
 
         NotificationCenter.default.post(name: .mapLayerEnabledStateDidChange, object: id)
+        application.analytics?.reportEvent(
+            pageURL: "app://localhost/map",
+            label: AnalyticsLabels.mapLayerToggled,
+            value: "\(id):\(enabled ? "on" : "off")"
+        )
     }
 
     /// The number of enabled, non-hidden layers — the basemap button's badge.
