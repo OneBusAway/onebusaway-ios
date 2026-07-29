@@ -8,41 +8,42 @@
 //
 
 import Foundation
-import XCTest
 import Testing
 import UIKit
 import CoreLocation
 @testable import OBAKit
 @testable import OBAKitCore
 
-class HighlightChangeLabelTests: OBATestCase {
+@Suite(.serialized)
+final class HighlightChangeLabelTests: OBATestCase {
     
     var label: HighlightChangeLabel!
     
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
+
         label = HighlightChangeLabel(frame: .zero)
     }
     
-    func test_init_setsContentPriorities() {
+    @Test func `Init sets content priorities`() {
         #expect(self.label.contentCompressionResistancePriority(for: .vertical) == .required)
         #expect(self.label.contentCompressionResistancePriority(for: .horizontal) == .required)
         #expect(self.label.contentHuggingPriority(for: .horizontal) == .required - 1)
         #expect(self.label.contentHuggingPriority(for: .vertical) == .required)
     }
     
-    func test_highlightedBackgroundColor_defaultValue() {
+    @Test func `Highlighted background color default value`() {
         #expect(self.label.highlightedBackgroundColor == ThemeColors.shared.propertyChanged)
     }
     
-    func test_highlightedBackgroundColor_canBeSet() {
+    @Test func `Highlighted background color can be set`() {
         let newColor = UIColor.red
         label.highlightedBackgroundColor = newColor
         
         #expect(self.label.highlightedBackgroundColor == newColor)
     }
     
-    func test_highlightBackground_triggersAnimation() {
+    @Test func `Highlight background triggers animation`() {
         // Set an initial background color
         let initialColor = UIColor.blue.cgColor
         label.layer.backgroundColor = initialColor
@@ -64,7 +65,7 @@ class HighlightChangeLabelTests: OBATestCase {
         }
     }
     
-    func test_configure_withArrivalDeparture() {
+    @Test func `Configure with arrival departure`() {
         // This test verifies that the configure method doesn't crash
         // We'll use minimal setup since model creation is complex
         _ = Formatters(locale: Locale(identifier: "en_US"), calendar: Calendar.current, themeColors: ThemeColors.shared)

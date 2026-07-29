@@ -14,12 +14,13 @@ import Testing
 
 // swiftlint:disable force_try syntactic_sugar
 
-class MigrationDataExtractorTests: OBATestCase {
+@Suite(.serialized)
+final class MigrationDataExtractorTests: OBATestCase {
 
     var extractor: MigrationDataExtractor!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
 
         let testValues = try! Dictionary<String, Any>(plistPath: Fixtures.path(to: "migration_test_preferences.plist"))!
         for (k, v) in testValues {
@@ -29,15 +30,15 @@ class MigrationDataExtractorTests: OBATestCase {
         extractor = MigrationDataExtractor(defaults: userDefaults)
     }
 
-    func test_hasData() {
+    @Test func `Has data`() {
         #expect(self.extractor.hasDataToMigrate == true)
     }
 
-    func test_userID() {
+    @Test func `User ID`() {
         #expect(self.extractor.oldUserID == "B72C5F1A-B8E5-4FB3-A857-CAC6EAC86DE0")
     }
 
-    func test_bookmarkGroups() {
+    @Test func `Bookmark groups`() {
         let groups = extractor.extractBookmarkGroups()!
 
         #expect(groups.count == 4)
@@ -70,7 +71,7 @@ class MigrationDataExtractorTests: OBATestCase {
         #expect(mikaGroup.bookmarks.count == 2)
     }
 
-    func test_bookmarks() {
+    @Test func bookmarks() {
         let bookmarks = extractor.extractBookmarks()!
 
         #expect(bookmarks.count == 2)
@@ -83,13 +84,13 @@ class MigrationDataExtractorTests: OBATestCase {
         #expect(bm1.routeID == "40_100479")
     }
 
-    func test_recentStops() {
+    @Test func `Recent stops`() {
         let recentStops = extractor.extractRecentStops()!
 
         #expect(recentStops.count == 6)
     }
 
-    func test_currentRegion() {
+    @Test func `Current region`() {
         let region = extractor.extractRegion()!
 
         #expect(region.name == "Puget Sound")

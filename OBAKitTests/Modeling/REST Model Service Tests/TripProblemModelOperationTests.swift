@@ -7,7 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
+import Foundation
 import Testing
 import CoreLocation
 @testable import OBAKit
@@ -15,7 +15,8 @@ import CoreLocation
 
 // swiftlint:disable force_cast
 
-class TripProblemModelOperationTests: OBATestCase {
+@Suite(.serialized)
+final class TripProblemModelOperationTests: OBATestCase {
     let tripID = "123456"
     let serviceDate = Date(timeIntervalSince1970: 101010101)
     let vehicleID = "987654321"
@@ -36,13 +37,16 @@ class TripProblemModelOperationTests: OBATestCase {
         "userLon": "-122.1"
     ]
 
-    func testSuccessfulRequest() async throws {
+    @Test func `Successful request`() async throws {
         let dataLoader = (restService.dataLoader as! MockDataLoader)
 
+        // Hoisted: the matcher is @Sendable, so it must not capture `self` — the
+        // suite is main-actor isolated and `expectedParams` with it.
+        let expectedParams = self.expectedParams
         dataLoader.mock(data: Fixtures.loadData(file: "report_trip_problem.json")) { request -> Bool in
             let url = request.url!
             return url.absoluteString.starts(with: "https://www.example.com/api/where/report-problem-with-trip.json")
-            && url.containsQueryParams(self.expectedParams)
+            && url.containsQueryParams(expectedParams)
         }
 
         let report = RESTAPIService.TripProblemReport(tripID: tripID, serviceDate: serviceDate, vehicleID: vehicleID, stopID: stopID, code: code, comment: comment, userOnVehicle: userOnVehicle, location: location)

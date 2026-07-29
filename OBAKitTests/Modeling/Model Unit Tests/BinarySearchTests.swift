@@ -5,18 +5,18 @@
 //  Created by Alan Chu on 8/23/20.
 //
 
-import XCTest
 import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
-class BinarySearchTests: OBATestCase {
+@Suite(.serialized)
+final class BinarySearchTests: OBATestCase {
     struct Person {
         var id: String
         var name: String
     }
 
-    func testBinarySearch() {
+    @Test func `Binary search`() {
         let people: [Person] = [
             .init(id: "43", name: "Bob"),
             .init(id: "33", name: "Rob"),

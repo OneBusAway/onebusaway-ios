@@ -7,11 +7,12 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
+import Foundation
 import Testing
 @testable import App
 @testable import OBAKitCore
 
+@Suite(.serialized)
 final class UmamiAnalyticsTests: OBATestCase {
 
     private let successBody = #"{"cache":"x","sessionId":"s","visitId":"v"}"#.data(using: .utf8)!
@@ -26,7 +27,7 @@ final class UmamiAnalyticsTests: OBATestCase {
 
     // MARK: - path(from:)
 
-    func testPathReduction() {
+    @Test func `Path reduction`() {
         #expect(UmamiAnalytics.path(from: "app://localhost/map") == "/map")
         #expect(UmamiAnalytics.path(from: "app://localhost") == "/")
         #expect(UmamiAnalytics.path(from: "app://localhost/search?q=x") == "/search")
@@ -34,7 +35,7 @@ final class UmamiAnalyticsTests: OBATestCase {
 
     // MARK: - isSuccessfulIngest
 
-    func testSuccessDetection() {
+    @Test func `Success detection`() {
         #expect(UmamiAnalytics.isSuccessfulIngest(self.successBody))
         #expect(!UmamiAnalytics.isSuccessfulIngest(self.beepBoopBody))
         #expect(!UmamiAnalytics.isSuccessfulIngest("not json".data(using: .utf8)!))
@@ -42,7 +43,7 @@ final class UmamiAnalyticsTests: OBATestCase {
 
     // MARK: - UmamiJSONValue coercion
 
-    func testJSONValueCoercion() {
+    @Test func `JSON value coercion`() {
         #expect(UmamiJSONValue("hi") != nil)
         #expect(UmamiJSONValue(42) != nil)
         // Non-JSON / non-finite values are dropped (nil), never crash.
@@ -52,29 +53,31 @@ final class UmamiAnalyticsTests: OBATestCase {
 
     // MARK: - Request construction
 
-    func testReportStopViewedBuildsContractRequest() async throws {
+    @Test func `Report stop viewed builds contract request`() async throws {
         let loader = MockDataLoader(testName: name)
-        var captured: URLRequest?
+        // Boxed: the matcher is @Sendable and runs off the main actor, so it
+        // cannot write to a main-actor-isolated local.
+        let captured = SendableBox<URLRequest?>(nil)
         loader.mock(data: successBody) { request in
-            captured = request
+            captured.value = request
             return true
         }
 
         let reporter = makeReporter(loader: loader)
         await reporter.reportStopViewed(name: "Pine St", id: "1_75403", stopDistance: "near")
 
-        let request = try XCTUnwrap(captured)
+        let request = try #require(captured.value)
         #expect(request.url?.absoluteString == "https://analytics.example.com/api/send")
         #expect(request.httpMethod == "POST")
         #expect(request.value(forHTTPHeaderField: "Content-Type") == "application/json")
 
         // Explicit, non-bot User-Agent — full format: "OneBusAway/<version> (iOS <ver>; <model>)".
-        let ua = try XCTUnwrap(request.value(forHTTPHeaderField: "User-Agent"))
+        let ua = try #require(request.value(forHTTPHeaderField: "User-Agent"))
         #expect(ua.contains("OneBusAway/"))
         #expect(NSPredicate(format: "SELF MATCHES %@", "^OneBusAway/.+ \\(iOS .+; .+\\)$").evaluate(with: ua))
 
         // Body matches the Umami contract.
-        let body = try JSONSerialization.jsonObject(with: try XCTUnwrap(request.httpBody)) as! [String: Any]
+        let body = try JSONSerialization.jsonObject(with: try #require(request.httpBody)) as! [String: Any]
         #expect((body["type"] as? String) == "event")
         let payload = body["payload"] as! [String: Any]
         #expect((payload["website"] as? String) == "site-uuid")
@@ -86,19 +89,21 @@ final class UmamiAnalyticsTests: OBATestCase {
         #expect((data["distance"] as? String) == "near")
     }
 
-    func testReportEventIncludesName() async throws {
+    @Test func `Report event includes name`() async throws {
         let loader = MockDataLoader(testName: name)
-        var captured: URLRequest?
+        // Boxed: the matcher is @Sendable and runs off the main actor, so it
+        // cannot write to a main-actor-isolated local.
+        let captured = SendableBox<URLRequest?>(nil)
         loader.mock(data: successBody) { request in
-            captured = request
+            captured.value = request
             return true
         }
 
         let reporter = makeReporter(loader: loader)
         await reporter.reportEvent(pageURL: "app://localhost/map", label: "Clicked MapStopIcon", value: nil)
 
-        let request = try XCTUnwrap(captured)
-        let body = try JSONSerialization.jsonObject(with: try XCTUnwrap(request.httpBody)) as! [String: Any]
+        let request = try #require(captured.value)
+        let body = try JSONSerialization.jsonObject(with: try #require(request.httpBody)) as! [String: Any]
         let payload = body["payload"] as! [String: Any]
         #expect((payload["name"] as? String) == "Clicked MapStopIcon")
         #expect((payload["url"] as? String) == "/map")
@@ -106,7 +111,7 @@ final class UmamiAnalyticsTests: OBATestCase {
 
     // MARK: - Fail-safe
 
-    func testNonJSONValueDoesNotCrashOrThrow() async throws {
+    @Test func `Non JSON value does not crash or throw`() async throws {
         let loader = MockDataLoader(testName: name)
         loader.mock(data: successBody) { _ in true }
         let reporter = makeReporter(loader: loader)
@@ -116,7 +121,7 @@ final class UmamiAnalyticsTests: OBATestCase {
         #expect(loader.recordedRequestURLs.count == 1)
     }
 
-    func testBeepBoopResponseIsSwallowed() async throws {
+    @Test func `Beep boop response is swallowed`() async throws {
         let loader = MockDataLoader(testName: name)
         loader.mock(data: beepBoopBody) { _ in true }
         let reporter = makeReporter(loader: loader)

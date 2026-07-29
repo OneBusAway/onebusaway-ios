@@ -8,7 +8,6 @@
 //
 
 import Foundation
-import XCTest
 import Testing
 @testable import OBAKit
 @testable import OBAKitCore
@@ -21,11 +20,12 @@ enum ModelDecodingError: Error {
     case invalidModelList
 }
 
-class FormattersTests: OBATestCase {
+@Suite(.serialized)
+final class FormattersTests: OBATestCase {
     let usLocale = Locale(identifier: "en_US")
     let calendar = Calendar(identifier: .gregorian)
 
-    func testExample() {
+    @Test func example() {
         let formatters = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
         let stopArrivals = try! Fixtures.loadRESTAPIPayload(type: StopArrivals.self, fileName: "arrivals-and-departures-for-stop-1_75414.json")
         let arrDep = stopArrivals.arrivalsAndDepartures.first!
@@ -41,25 +41,25 @@ class FormattersTests: OBATestCase {
 
     // MARK: - Transfer-Relative Time
 
-    func test_shortFormattedTransferTime_positiveMinutes() {
+    @Test func `Short formatted transfer time positive minutes`() {
         let formatters = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
         let result = formatters.shortFormattedTransferTime(minutes: 4)
-        XCTAssertEqual(result, "4m")
+        #expect(result == "4m")
     }
 
-    func test_shortFormattedTransferTime_negativeMinutes() {
+    @Test func `Short formatted transfer time negative minutes`() {
         let formatters = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
         let result = formatters.shortFormattedTransferTime(minutes: -3)
-        XCTAssertEqual(result, "-3m")
+        #expect(result == "-3m")
     }
 
-    func test_shortFormattedTransferTime_zero() {
+    @Test func `Short formatted transfer time zero`() {
         let formatters = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
         let result = formatters.shortFormattedTransferTime(minutes: 0)
-        XCTAssertEqual(result, "NOW")
+        #expect(result == "NOW")
     }
 
-    func test_transferArrivalBannerText() {
+    @Test func `Transfer arrival banner text`() {
         let formatters = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
 
         let arrivalTime = Date(timeIntervalSince1970: 1_000_000)
@@ -69,7 +69,7 @@ class FormattersTests: OBATestCase {
 
         let result = formatters.transferArrivalBannerText(arrivalTime: arrivalTime, routeDisplay: "10 - Capitol Hill")
 
-        XCTAssertTrue(result.contains("10 - Capitol Hill"), "Banner should contain route display: \(result)")
-        XCTAssertTrue(result.contains(expectedTime), "Banner should contain formatted time '\(expectedTime)': \(result)")
+        #expect(result.contains("10 - Capitol Hill"), "Banner should contain route display: \(result)")
+        #expect(result.contains(expectedTime), "Banner should contain formatted time '\(expectedTime)': \(result)")
     }
 }

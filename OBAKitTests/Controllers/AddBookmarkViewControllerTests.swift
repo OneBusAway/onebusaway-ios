@@ -7,7 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
+import Foundation
 import Testing
 @testable import OBAKit
 @testable import OBAKitCore
@@ -15,17 +15,18 @@ import Testing
 /// Locks down the `preloadedArrivals` short-circuit on `AddBookmarkViewController.loadData()`:
 /// when the parent screen already has arrivals in hand, the controller must reuse them and
 /// skip the `arrivals-and-departures-for-stop` REST call.
-class AddBookmarkViewControllerTests: OBATestCase {
+@Suite(.serialized)
+final class AddBookmarkViewControllerTests: OBATestCase {
     var queue: OperationQueue!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
+
         queue = OperationQueue()
         queue.maxConcurrentOperationCount = 1
     }
 
-    override func tearDown() async throws {
-        try await super.tearDown()
+    isolated deinit {
         queue.cancelAllOperations()
     }
 
@@ -68,7 +69,7 @@ class AddBookmarkViewControllerTests: OBATestCase {
             type: StopArrivals.self,
             fileName: "arrivals-and-departures-for-stop-1_10914.json"
         )
-        return try XCTUnwrap(stopArrivals.arrivalsAndDepartures.first)
+        return try #require(stopArrivals.arrivalsAndDepartures.first)
     }
 
     /// Returns the count of recorded requests whose path identifies the
@@ -81,8 +82,8 @@ class AddBookmarkViewControllerTests: OBATestCase {
 
     // MARK: - Preloaded short-circuit
 
-    @MainActor
-    func test_loadData_withPreloadedArrivals_returnsThemWithoutNetworkFetch() async throws {
+    @Test @MainActor
+    func `Load data with preloaded arrivals returns them without network fetch`() async throws {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         let stop = try makeStop()
@@ -102,8 +103,8 @@ class AddBookmarkViewControllerTests: OBATestCase {
 
     // MARK: - Fallback to API
 
-    @MainActor
-    func test_loadData_withoutPreloadedArrivals_fetchesFromAPI() async throws {
+    @Test @MainActor
+    func `Load data without preloaded arrivals fetches from API`() async throws {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         let stop = try makeStop()

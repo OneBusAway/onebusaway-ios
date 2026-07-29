@@ -8,14 +8,14 @@
 //
 
 import Foundation
-import XCTest
 @testable import OBAKit
 @testable import OBAKitCore
 import Testing
 
 // swiftlintXdisable force_try
 
-class MapRegionManagerTests: OBATestCase {
+@Suite(.serialized)
+final class MapRegionManagerTests: OBATestCase {
     private var regionsFilePath: String { Bundle.main.path(forResource: "regions", ofType: "json")! }
 
     private func makeConfig(locationService: LocationService, bundledRegionsPath: String, dataLoader: MockDataLoader) -> AppConfig {
@@ -33,7 +33,7 @@ class MapRegionManagerTests: OBATestCase {
         )
     }
 
-    func test_init() {
+    @Test func initialization() {
         let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)
         stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
@@ -66,7 +66,7 @@ class MapRegionManagerTests: OBATestCase {
     }
 
     /// When `currentRegion` is nil, `visibleMapRect` also returns `nil`.
-    func test_visibleMapRect_nilRegion() {
+    @Test func `Visible map rect nil region`() {
         let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)
         stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
@@ -91,7 +91,7 @@ class MapRegionManagerTests: OBATestCase {
     /// The shared zoom-in-warning predicate (used by both the UIKit map's
     /// `zoomInStatus` and the SwiftUI `MapPanelRootView`) shows the warning only
     /// when the visible map rect is taller than the stop-loading threshold.
-    func test_shouldShowZoomInWarning_thresholdBehavior() {
+    @Test func `Should show zoom in warning threshold behavior`() {
         // Comfortably above the 40,000-point threshold → warn.
         #expect(MapRegionManager.shouldShowZoomInWarning(forVisibleMapRectHeight: 100_000) == true)
         // Comfortably below → no warning.

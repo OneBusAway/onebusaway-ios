@@ -4,11 +4,13 @@
 //
 //  Created by Divesh Patil on 29/01/26.
 //
-import XCTest
+import Foundation
+import Testing
 @testable import OBAKitCore
 
 @MainActor
-final class DecodingErrorReporterTests: XCTestCase {
+@Suite(.serialized)
+final class DecodingErrorReporterTests {
 
     // MARK: - Test Models
     
@@ -23,14 +25,13 @@ final class DecodingErrorReporterTests: XCTestCase {
         let count: Int
     }
 
-    override func tearDown() async throws {
+    deinit {
         DecodingErrorReporter.reportHandler = nil
-        try await super.tearDown()
     }
 
     // MARK: - keyNotFound Tests
     
-    func testKeyNotFound() throws {
+    @Test func `Key not found`() throws {
         let json = """
         {
             "id": 123,
@@ -43,18 +44,16 @@ final class DecodingErrorReporterTests: XCTestCase {
         
         do {
             _ = try JSONDecoder().decode(TestModel.self, from: json)
-            XCTFail("Expected decoding to fail")
+            Issue.record("Expected decoding to fail")
         } catch let error as DecodingError {
             let message = DecodingErrorReporter.message(from: error)
             
-            XCTAssertTrue(message.contains("Missing key: 'name'"),
-                         "Message should contain the missing key name")
-            XCTAssertTrue(message.contains("Path:"),
-                         "Message should contain path information")
+            #expect(message.contains("Missing key: 'name'"), "Message should contain the missing key name")
+            #expect(message.contains("Path:"), "Message should contain path information")
         }
     }
     
-    func testKeyNotFoundWithNestedPath() throws {
+    @Test func `Key not found with nested path`() throws {
         struct Model: Decodable {
             let data: DataWrapper
         }
@@ -80,20 +79,18 @@ final class DecodingErrorReporterTests: XCTestCase {
         
         do {
             _ = try JSONDecoder().decode(Model.self, from: json)
-            XCTFail("Expected decoding to fail")
+            Issue.record("Expected decoding to fail")
         } catch let error as DecodingError {
             let message = DecodingErrorReporter.message(from: error)
             
-            XCTAssertTrue(message.contains("Missing key: 'required'"),
-                         "Message should contain the missing key")
-            XCTAssertTrue(message.contains("data → items → Index 0") || message.contains("data → items"),
-                         "Message should contain the full path: \(message)")
+            #expect(message.contains("Missing key: 'required'"), "Message should contain the missing key")
+            #expect(message.contains("data → items → Index 0") || message.contains("data → items"), "Message should contain the full path: \(message)")
         }
     }
 
     // MARK: - typeMismatch Tests
     
-    func testTypeMismatch() throws {
+    @Test func `Type mismatch`() throws {
         let json = """
         {
             "id": "not_a_number",
@@ -107,20 +104,17 @@ final class DecodingErrorReporterTests: XCTestCase {
         
         do {
             _ = try JSONDecoder().decode(TestModel.self, from: json)
-            XCTFail("Expected decoding to fail")
+            Issue.record("Expected decoding to fail")
         } catch let error as DecodingError {
             let message = DecodingErrorReporter.message(from: error)
             
-            XCTAssertTrue(message.contains("Type mismatch"),
-                         "Message should indicate type mismatch")
-            XCTAssertTrue(message.contains("Int") || message.contains("expected"),
-                         "Message should mention expected type")
-            XCTAssertTrue(message.contains("Path:"),
-                         "Message should contain path")
+            #expect(message.contains("Type mismatch"), "Message should indicate type mismatch")
+            #expect(message.contains("Int") || message.contains("expected"), "Message should mention expected type")
+            #expect(message.contains("Path:"), "Message should contain path")
         }
     }
     
-    func testTypeMismatchInNestedObject() throws {
+    @Test func `Type mismatch in nested object`() throws {
         let json = """
         {
             "id": 123,
@@ -134,20 +128,18 @@ final class DecodingErrorReporterTests: XCTestCase {
         
         do {
             _ = try JSONDecoder().decode(TestModel.self, from: json)
-            XCTFail("Expected decoding to fail")
+            Issue.record("Expected decoding to fail")
         } catch let error as DecodingError {
             let message = DecodingErrorReporter.message(from: error)
             
-            XCTAssertTrue(message.contains("Type mismatch"),
-                         "Message should indicate type mismatch")
-            XCTAssertTrue(message.contains("nested"),
-                         "Message should show nested path")
+            #expect(message.contains("Type mismatch"), "Message should indicate type mismatch")
+            #expect(message.contains("nested"), "Message should show nested path")
         }
     }
 
     // MARK: - valueNotFound Tests
     
-    func testValueNotFound() throws {
+    @Test func `Value not found`() throws {
         let json = """
         {
             "id": 123,
@@ -161,22 +153,19 @@ final class DecodingErrorReporterTests: XCTestCase {
         
         do {
             _ = try JSONDecoder().decode(TestModel.self, from: json)
-            XCTFail("Expected decoding to fail")
+            Issue.record("Expected decoding to fail")
         } catch let error as DecodingError {
             let message = DecodingErrorReporter.message(from: error)
             
-            XCTAssertTrue(message.contains("Missing value"),
-                         "Message should indicate missing value")
-            XCTAssertTrue(message.contains("String") || message.contains("expected"),
-                         "Message should mention expected type")
-            XCTAssertTrue(message.contains("Path:"),
-                         "Message should contain path")
+            #expect(message.contains("Missing value"), "Message should indicate missing value")
+            #expect(message.contains("String") || message.contains("expected"), "Message should mention expected type")
+            #expect(message.contains("Path:"), "Message should contain path")
         }
     }
 
     // MARK: - dataCorrupted Tests
     
-    func testDataCorrupted() throws {
+    @Test func `Data corrupted`() throws {
         struct DateModel: Decodable {
             let timestamp: Date
         }
@@ -192,36 +181,32 @@ final class DecodingErrorReporterTests: XCTestCase {
         
         do {
             _ = try decoder.decode(DateModel.self, from: json)
-            XCTFail("Expected decoding to fail")
+            Issue.record("Expected decoding to fail")
         } catch let error as DecodingError {
             let message = DecodingErrorReporter.message(from: error)
             
-            XCTAssertTrue(message.contains("Data corrupted") || message.contains("corrupted"),
-                         "Message should indicate data corruption")
-            XCTAssertTrue(message.contains("Path:"),
-                         "Message should contain path")
+            #expect(message.contains("Data corrupted") || message.contains("corrupted"), "Message should indicate data corruption")
+            #expect(message.contains("Path:"), "Message should contain path")
         }
     }
 
     // MARK: - Path Formatting Tests
     
-    func testRootPath() throws {
+    @Test func `Root path`() throws {
         let json = "{}".data(using: .utf8)!
         
         do {
             _ = try JSONDecoder().decode(TestModel.self, from: json)
-            XCTFail("Expected decoding to fail")
+            Issue.record("Expected decoding to fail")
         } catch let error as DecodingError {
             let message = DecodingErrorReporter.message(from: error)
             
-            XCTAssertTrue(message.contains("Path:"),
-                         "Message should contain path information")
-            XCTAssertTrue(message.contains("Path: root"),
-                         "Empty coding path should display 'root'")
+            #expect(message.contains("Path:"), "Message should contain path information")
+            #expect(message.contains("Path: root"), "Empty coding path should display 'root'")
         }
     }
     
-    func testNestedPathFormatting() throws {
+    @Test func `Nested path formatting`() throws {
         struct DeepModel: Decodable {
             let level1: Level1
         }
@@ -247,18 +232,17 @@ final class DecodingErrorReporterTests: XCTestCase {
         
         do {
             _ = try JSONDecoder().decode(DeepModel.self, from: json)
-            XCTFail("Expected decoding to fail")
+            Issue.record("Expected decoding to fail")
         } catch let error as DecodingError {
             let message = DecodingErrorReporter.message(from: error)
             
-            XCTAssertTrue(message.contains("→") || message.contains("level1") && message.contains("level2") && message.contains("level3"),
-                         "Message should show nested path with arrow separator: \(message)")
+            #expect(message.contains("→") || message.contains("level1") && message.contains("level2") && message.contains("level3"), "Message should show nested path with arrow separator: \(message)")
         }
     }
 
     // MARK: - Context Information Tests
     
-    func testContextInformation() throws {
+    @Test func `Context information`() throws {
         let json = """
         {
             "id": 123,
@@ -271,77 +255,80 @@ final class DecodingErrorReporterTests: XCTestCase {
         
         do {
             _ = try JSONDecoder().decode(TestModel.self, from: json)
-            XCTFail("Expected decoding to fail")
+            Issue.record("Expected decoding to fail")
         } catch let error as DecodingError {
             let message = DecodingErrorReporter.message(from: error)
             
-            XCTAssertTrue(message.contains("Context:"),
-                         "Message should include context section")
+            #expect(message.contains("Context:"), "Message should include context section")
         }
     }
     
     // MARK: - Handler Verification Tests
     
-    func testReportHandlerCapturesErrorType() {
+    @Test func `Report handler captures error type`() async {
         let testCases: [(DecodingError, String)] = [
             (.keyNotFound(TestCodingKey(stringValue: "test"), .init(codingPath: [], debugDescription: "Missing")), "keyNotFound"),
             (.typeMismatch(String.self, .init(codingPath: [], debugDescription: "Wrong type")), "typeMismatch"),
             (.valueNotFound(String.self, .init(codingPath: [], debugDescription: "Null value")), "valueNotFound"),
             (.dataCorrupted(.init(codingPath: [], debugDescription: "Corrupted")), "dataCorrupted")
         ]
-        
+
         for (error, expectedType) in testCases {
-            let expectation = self.expectation(description: "Handler called for \(expectedType)")
             let capturedError = SendableBox<DecodingError?>(nil)
-            
-            DecodingErrorReporter.reportHandler = { error, _, _, _ in
-                capturedError.value = error
-                expectation.fulfill()
+
+            // `report` invokes the handler synchronously, so this is satisfied
+            // before the closure returns. It replaces an XCTestExpectation
+            // whose `waitForExpectations(timeout: 1.0)` never actually waited —
+            // the confirmation states the real contract: called exactly once.
+            await confirmation("Handler called for \(expectedType)") { handlerCalled in
+                DecodingErrorReporter.reportHandler = { error, _, _, _ in
+                    capturedError.value = error
+                    handlerCalled()
+                }
+
+                let mockURL = URL(string: "https://api.onebusaway.org/test")!
+                DecodingErrorReporter.report(error: error, url: mockURL, httpMethod: "GET")
             }
-            
-            let mockURL = URL(string: "https://api.onebusaway.org/test")!
-            DecodingErrorReporter.report(error: error, url: mockURL, httpMethod: "GET")
-            
-            waitForExpectations(timeout: 1.0)
-            XCTAssertNotNil(capturedError.value, "Should capture \(expectedType) error")
+
+            #expect(capturedError.value != nil, "Should capture \(expectedType) error")
             
             switch capturedError.value {
             case .keyNotFound where expectedType == "keyNotFound":
-                XCTAssertTrue(true)
+                #expect(true)
             case .typeMismatch where expectedType == "typeMismatch":
-                XCTAssertTrue(true)
+                #expect(true)
             case .valueNotFound where expectedType == "valueNotFound":
-                XCTAssertTrue(true)
+                #expect(true)
             case .dataCorrupted where expectedType == "dataCorrupted":
-                XCTAssertTrue(true)
+                #expect(true)
             default:
-                XCTFail("Error type mismatch for \(expectedType)")
+                Issue.record("Error type mismatch for \(expectedType)")
             }
         }
     }
     
-    func testReportHandlerWithDifferentHTTPMethods() {
-        let postExpectation = self.expectation(description: "POST handler called")
+    @Test func `Report handler with different HTTP methods`() async {
         let capturedMethod = SendableBox<String?>(nil)
-        
-        DecodingErrorReporter.reportHandler = { _, _, httpMethod, _ in
-            capturedMethod.value = httpMethod
-            postExpectation.fulfill()
+
+        await confirmation("POST handler called") { handlerCalled in
+            DecodingErrorReporter.reportHandler = { _, _, httpMethod, _ in
+                capturedMethod.value = httpMethod
+                handlerCalled()
+            }
+
+            let mockURL = URL(string: "https://api.onebusaway.org/stops")!
+            let mockError = DecodingError.keyNotFound(
+                TestCodingKey(stringValue: "id"),
+                .init(codingPath: [], debugDescription: "Missing id")
+            )
+
+            DecodingErrorReporter.report(error: mockError, url: mockURL, httpMethod: "POST")
         }
-        
-        let mockURL = URL(string: "https://api.onebusaway.org/stops")!
-        let mockError = DecodingError.keyNotFound(
-            TestCodingKey(stringValue: "id"),
-            .init(codingPath: [], debugDescription: "Missing id")
-        )
-        
-        DecodingErrorReporter.report(error: mockError, url: mockURL, httpMethod: "POST")
-        
-        waitForExpectations(timeout: 1.0)
-        XCTAssertEqual(capturedMethod.value, "POST", "Should capture POST method correctly")
+
+        #expect(capturedMethod.value == "POST", "Should capture POST method correctly")
     }
     
-    func testReportHandlerNotCalledWhenNil() {
+    @Test func `Report handler not called when nil`() {
         DecodingErrorReporter.reportHandler = nil
         
         let mockURL = URL(string: "https://api.onebusaway.org/test")!
@@ -349,10 +336,10 @@ final class DecodingErrorReporterTests: XCTestCase {
         
         DecodingErrorReporter.report(error: mockError, url: mockURL, httpMethod: "GET")
         
-        XCTAssertTrue(true, "Should handle nil handler gracefully")
+        #expect(true, "Should handle nil handler gracefully")
     }
 
-    func testReportHandlerCapturesURLCorrectly() {
+    @Test func `Report handler captures URL correctly`() {
         let capturedURL = SendableBox<URL?>(nil)
         let testURL = URL(string: "https://api.onebusaway.org/api/where/stops?key=TEST")!
 
@@ -363,10 +350,10 @@ final class DecodingErrorReporterTests: XCTestCase {
         let error = DecodingError.dataCorrupted(.init(codingPath: [], debugDescription: "Test"))
         DecodingErrorReporter.report(error: error, url: testURL, httpMethod: "GET")
 
-        XCTAssertEqual(capturedURL.value, testURL)
+        #expect(capturedURL.value == testURL)
     }
 
-    func testReportHandlerCapturesMessageCorrectly() {
+    @Test func `Report handler captures message correctly`() {
         let capturedMessage = SendableBox<String?>(nil)
         let testURL = URL(string: "https://api.onebusaway.org/api/where/stops?key=TEST")!
 
@@ -380,17 +367,12 @@ final class DecodingErrorReporterTests: XCTestCase {
         )
         DecodingErrorReporter.report(error: error, url: testURL, httpMethod: "GET")
 
-        XCTAssertNotNil(capturedMessage.value)
-        XCTAssertTrue(capturedMessage.value!.contains("Missing key: 'fare'"))
+        #expect(capturedMessage.value != nil)
+        #expect(capturedMessage.value!.contains("Missing key: 'fare'"))
     }
     
     // MARK: - Helper Types
 
-    final class SendableBox<T>: @unchecked Sendable {
-        var value: T
-        init(_ value: T) { self.value = value }
-    }
-    
     struct TestCodingKey: CodingKey {
         var stringValue: String
         var intValue: Int?

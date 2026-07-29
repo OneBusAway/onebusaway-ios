@@ -7,18 +7,19 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
+import Foundation
 import Testing
 @testable import OBAKitCore
 
 /// Tests for `WeatherFormatter`: pure-function helpers feeding both the UIKit
 /// weather button and the SwiftUI weather card.
 @MainActor
-final class WeatherFormatterTests: XCTestCase {
+@Suite(.serialized)
+final class WeatherFormatterTests {
 
     // MARK: - systemImageName
 
-    func test_systemImageName_knownKeys() {
+    @Test func `System image name known keys`() {
         let cases: [(key: String, symbol: String)] = [
             ("clear-day", "sun.max.fill"),
             ("clear-night", "moon.stars.fill"),
@@ -36,19 +37,19 @@ final class WeatherFormatterTests: XCTestCase {
         }
     }
 
-    func test_systemImageName_unknownKeyFallsBackToCloud() {
+    @Test func `System image name unknown key falls back to cloud`() {
         #expect(WeatherFormatter.systemImageName(for: "tornado") == "cloud.fill")
         #expect(WeatherFormatter.systemImageName(for: "") == "cloud.fill")
     }
 
     // MARK: - conditionText
 
-    func test_conditionText_groupsDayAndNightVariants() {
+    @Test func `Condition text groups day and night variants`() {
         #expect(WeatherFormatter.conditionText(for: "clear-day") == WeatherFormatter.conditionText(for: "clear-night"))
         #expect(WeatherFormatter.conditionText(for: "partly-cloudy-day") == WeatherFormatter.conditionText(for: "partly-cloudy-night"))
     }
 
-    func test_conditionText_unknownKeyReturnsPlaceholder() {
+    @Test func `Condition text unknown key returns placeholder`() {
         #expect(WeatherFormatter.conditionText(for: "tornado") == "—")
     }
 
@@ -58,7 +59,7 @@ final class WeatherFormatterTests: XCTestCase {
     /// warning gate accepts must also produce a real condition string, not
     /// the "—" fallback. If a future key is added to the metadata table
     /// without a matching `ConditionKey` case, this fails.
-    func test_isKnownIconKey_impliesConditionText() {
+    @Test func `Is known icon key implies condition text`() {
         let placeholder = OBALoc(
             "weather.condition.unknown",
             value: "—",
@@ -72,12 +73,12 @@ final class WeatherFormatterTests: XCTestCase {
 
     // MARK: - formatTemp (locale-dependent)
 
-    func test_formatTemp_usLocaleKeepsFahrenheit() {
+    @Test func `Format temp us locale keeps fahrenheit`() {
         let result = WeatherFormatter.formatTemp(50, locale: Locale(identifier: "en_US"))
         #expect(result.contains("50"))
     }
 
-    func test_formatTemp_metricLocaleConvertsToCelsius() {
+    @Test func `Format temp metric locale converts to celsius`() {
         // 50°F == 10°C
         let result = WeatherFormatter.formatTemp(50, locale: Locale(identifier: "fr_FR"))
         #expect(result.contains("10"))
@@ -85,26 +86,27 @@ final class WeatherFormatterTests: XCTestCase {
 
     // MARK: - formatWindSpeed
 
-    func test_formatWindSpeed_usLocaleUsesMph() {
+    @Test func `Format wind speed us locale uses mph`() {
         let result = WeatherFormatter.formatWindSpeed(16.0934, locale: Locale(identifier: "en_US"))
         #expect(result == "10 mph")
     }
 
-    func test_formatWindSpeed_ukLocaleUsesMph() {
+    @Test func `Format wind speed uk locale uses mph`() {
         let result = WeatherFormatter.formatWindSpeed(16.0934, locale: Locale(identifier: "en_GB"))
         #expect(result == "10 mph")
     }
 
-    func test_formatWindSpeed_metricLocaleUsesKmh() {
+    @Test func `Format wind speed metric locale uses kmh`() {
         let result = WeatherFormatter.formatWindSpeed(10, locale: Locale(identifier: "fr_FR"))
         #expect(result == "10 km/h")
     }
 
     // MARK: - formatTime
 
-    func test_formatTime_usLocaleHasAmPmMarker() {
-        // Don't pin to a specific hour — the formatter renders in the host
-        // timezone, which varies across CI runners. The contract for en_US is
+    @Test func `Format time us locale has am pm marker`() {
+        // Don't pin to a specific hour — the formatter renders in whatever
+        // `NSTimeZone.default` is, which OBATestCase pins to GMT for the bundle
+        // but this suite does not inherit. The contract for en_US is
         // "12-hour clock with an AM/PM marker", which we can check regardless
         // of which hour the date lands on.
         let date = Date(timeIntervalSince1970: 1782525600)
@@ -112,7 +114,7 @@ final class WeatherFormatterTests: XCTestCase {
         #expect((result.contains("AM") || result.contains("PM")) == true)
     }
 
-    func test_formatTime_24HourLocaleHasNoAmPm() {
+    @Test func `Format time 24 hour locale has no am pm`() {
         let date = Date(timeIntervalSince1970: 1782525600)
         let result = WeatherFormatter.formatTime(date, locale: Locale(identifier: "fr_FR")).uppercased()
         #expect(!result.contains("AM"))
@@ -121,7 +123,7 @@ final class WeatherFormatterTests: XCTestCase {
 
     // MARK: - highLow
 
-    func test_highLow_returnsNilForEmptyForecasts() {
+    @Test func `High low returns nil for empty forecasts`() {
         #expect(WeatherFormatter.highLow(from: [], locale: Locale(identifier: "en_US")) == nil)
     }
 
@@ -130,7 +132,7 @@ final class WeatherFormatterTests: XCTestCase {
     /// the cap test belongs there. This test pins the cap end-to-end: feed
     /// 25 raw entries with an outlier 25th, send them through `upcomingHourly`
     /// → `highLow`, and confirm the outlier is dropped.
-    func test_highLow_throughUpcomingHourly_cappedAt24Entries() {
+    @Test func `High low through upcoming hourly capped at 24 entries`() {
         // Anchor "now" at epoch 0 (UTC) so the upcomingHourly past-hour filter
         // sees the synthesised entries as upcoming.
         let now = Date(timeIntervalSince1970: 0)

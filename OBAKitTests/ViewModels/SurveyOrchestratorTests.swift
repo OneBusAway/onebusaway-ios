@@ -7,7 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
+import Foundation
 import Testing
 import CoreLocation
 @testable import OBAKit
@@ -21,14 +21,16 @@ import CoreLocation
 /// Network paths are exercised against `SurveyService(apiService: nil)` — any
 /// call that reaches the network throws, which lets us positively assert that
 /// the caller's guards executed before the network branch.
-class SurveyOrchestratorTests: OBATestCase {
+@Suite(.serialized)
+final class SurveyOrchestratorTests: OBATestCase {
 
     private var surveyService: SurveyService!
     private var dataStore: UserDefaultsStore!
     private var orchestrator: SurveyOrchestrator!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
+
         dataStore = UserDefaultsStore(userDefaults: userDefaults)
         surveyService = SurveyService(apiService: nil, userDataStore: dataStore)
         let service = surveyService!
@@ -39,13 +41,6 @@ class SurveyOrchestratorTests: OBATestCase {
                 promptCoordinator: PromptCoordinator(userDefaults: defaults)
             )
         }
-    }
-
-    override func tearDown() async throws {
-        orchestrator = nil
-        surveyService = nil
-        dataStore = nil
-        try await super.tearDown()
     }
 
     // MARK: - Fixtures
@@ -86,15 +81,15 @@ class SurveyOrchestratorTests: OBATestCase {
     // MARK: - isEligible
 
     /// When the global toggle is off, the gate is closed.
-    @MainActor
-    func test_isEligible_isFalseWhenSurveysDisabled() {
+    @Test @MainActor
+    func `Is eligible is false when surveys disabled`() {
         dataStore.isSurveyEnabled = false
         #expect(!self.orchestrator.isEligible())
     }
 
     /// `alwaysShowSurveysOnStops` opens the gate regardless of launch count / reminder.
-    @MainActor
-    func test_isEligible_isTrueWithAlwaysShowFlag() {
+    @Test @MainActor
+    func `Is eligible is true with always show flag`() {
         dataStore.isSurveyEnabled = true
         dataStore.alwaysShowSurveysOnStops = true
         #expect(self.orchestrator.isEligible())
@@ -108,8 +103,8 @@ class SurveyOrchestratorTests: OBATestCase {
     /// Also pins that a thrown submission does NOT record survey engagement —
     /// `noteSurveyEngaged()` sits after the network call succeeds, so a throw
     /// here must leave the coordinator's review-prompt gate untouched.
-    @MainActor
-    func test_submitHero_throwsWithoutAPIService() async {
+    @Test @MainActor
+    func `Submit hero throws without API service`() async {
         let hero = Self.makeQuestion(id: 1)
         let survey = Self.makeSurvey(questions: [hero])
         let coordinator = PromptCoordinator(userDefaults: userDefaults)
@@ -126,7 +121,7 @@ class SurveyOrchestratorTests: OBATestCase {
 
         #expect(!self.dataStore.isSurveyCompleted(surveyId: survey.id, userIdentifier: self.dataStore.surveyUserIdentifier))
         #expect(self.dataStore.nextSurveyReminderDate == nil)
-        XCTAssertTrue(coordinator.canShowReviewPrompt(), "a failed submission must not start the engagement cooldown")
+        #expect(coordinator.canShowReviewPrompt(), "a failed submission must not start the engagement cooldown")
     }
 
     /// Hero submit with no remaining questions returns `.completed`, marks the
@@ -134,15 +129,15 @@ class SurveyOrchestratorTests: OBATestCase {
     ///
     /// Also pins that a successful submission is a survey engagement: it must
     /// start the coordinator's 14-day cooldown that gates the review prompt.
-    @MainActor
-    func test_submitHero_returnsCompletedWhenNoRemainingQuestions() async throws {
+    @Test @MainActor
+    func `Submit hero returns completed when no remaining questions`() async throws {
         let hero = Self.makeQuestion(id: 1, position: 1)
         let survey = Self.makeSurvey(questions: [hero])
         let (service, _) = Self.buildLiveSurveyService(testName: name, userDataStore: dataStore)
         let coordinator = PromptCoordinator(userDefaults: userDefaults)
         let liveOrchestrator = SurveyOrchestrator(surveyService: service, promptCoordinator: coordinator)
 
-        XCTAssertTrue(coordinator.canShowReviewPrompt())
+        #expect(coordinator.canShowReviewPrompt())
 
         let outcome = try await liveOrchestrator.submitHero(
             survey: survey, answer: "yes", stopID: "1_TEST", stopLocation: nil
@@ -155,7 +150,7 @@ class SurveyOrchestratorTests: OBATestCase {
         let userID = dataStore.surveyUserIdentifier
         #expect(self.dataStore.isSurveyCompleted(surveyId: survey.id, userIdentifier: userID))
         #expect(self.dataStore.nextSurveyReminderDate != nil)
-        XCTAssertFalse(coordinator.canShowReviewPrompt(), "a successful submission is an engagement and starts the 14-day cooldown")
+        #expect(!coordinator.canShowReviewPrompt(), "a successful submission is an engagement and starts the 14-day cooldown")
     }
 
     /// Hero submit on a survey with remaining questions returns
@@ -164,8 +159,8 @@ class SurveyOrchestratorTests: OBATestCase {
     ///
     /// Also pins that this outcome is still a survey engagement — it must
     /// start the coordinator's 14-day cooldown just like `.completed` does.
-    @MainActor
-    func test_submitHero_returnsNeedsRemainingWhenFollowupsExist() async throws {
+    @Test @MainActor
+    func `Submit hero returns needs remaining when followups exist`() async throws {
         let hero = Self.makeQuestion(id: 1, position: 1)
         let follow = Self.makeQuestion(id: 2, position: 2, required: false)
         let survey = Self.makeSurvey(questions: [hero, follow])
@@ -173,7 +168,7 @@ class SurveyOrchestratorTests: OBATestCase {
         let coordinator = PromptCoordinator(userDefaults: userDefaults)
         let liveOrchestrator = SurveyOrchestrator(surveyService: service, promptCoordinator: coordinator)
 
-        XCTAssertTrue(coordinator.canShowReviewPrompt())
+        #expect(coordinator.canShowReviewPrompt())
 
         let outcome = try await liveOrchestrator.submitHero(
             survey: survey, answer: "yes", stopID: "1_TEST", stopLocation: CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3)
@@ -188,15 +183,15 @@ class SurveyOrchestratorTests: OBATestCase {
         let userID = dataStore.surveyUserIdentifier
         #expect(!self.dataStore.isSurveyCompleted(surveyId: survey.id, userIdentifier: userID))
         #expect(self.dataStore.nextSurveyReminderDate != nil)
-        XCTAssertFalse(coordinator.canShowReviewPrompt(), "a successful submission is an engagement and starts the 14-day cooldown")
+        #expect(!coordinator.canShowReviewPrompt(), "a successful submission is an engagement and starts the 14-day cooldown")
     }
 
     /// A survey whose only question isn't at `position == 1` has `heroQuestion == nil`.
     /// `submitHero` must throw `.missingHeroQuestion` rather than crash on the force-unwrap
     /// of optional hero data. `Survey` is decoded from the network, so this shape is
     /// defensible.
-    @MainActor
-    func test_submitHero_throwsMissingHeroQuestionWhenNoPositionOneQuestion() async {
+    @Test @MainActor
+    func `Submit hero throws missing hero question when no position one question`() async {
         let follow = Self.makeQuestion(id: 2, position: 2, type: .text)
         let survey = Self.makeSurvey(questions: [follow])
         // Sanity check the fixture: this survey genuinely has no hero.
@@ -219,7 +214,7 @@ class SurveyOrchestratorTests: OBATestCase {
         let userID = dataStore.surveyUserIdentifier
         #expect(!self.dataStore.isSurveyCompleted(surveyId: survey.id, userIdentifier: userID))
         #expect(self.dataStore.nextSurveyReminderDate == nil)
-        XCTAssertTrue(coordinator.canShowReviewPrompt(), "a guard-clause throw must not start the engagement cooldown")
+        #expect(coordinator.canShowReviewPrompt(), "a guard-clause throw must not start the engagement cooldown")
     }
 
     // MARK: - Live SurveyService builder (for happy-path network)
@@ -252,8 +247,8 @@ class SurveyOrchestratorTests: OBATestCase {
 
     /// `dismiss(_:)` sets the reminder date. The dismissal is recorded via
     /// `markSurveyCompleted` (which `SurveyService.dismissSurvey` calls).
-    @MainActor
-    func test_dismiss_setsReminderAndMarksCompleted() {
+    @Test @MainActor
+    func `Dismiss sets reminder and marks completed`() {
         let survey = Self.makeSurvey(questions: [Self.makeQuestion(id: 1)])
         let userID = dataStore.surveyUserIdentifier
         #expect(self.dataStore.nextSurveyReminderDate == nil)
@@ -268,17 +263,17 @@ class SurveyOrchestratorTests: OBATestCase {
     /// 14-day cooldown that gates the review prompt — otherwise a rider who
     /// just interacted with a survey card could be asked for a review in the
     /// same sitting.
-    @MainActor
-    func test_dismiss_recordsSurveyEngagement() {
+    @Test @MainActor
+    func `Dismiss records survey engagement`() {
         let coordinator = PromptCoordinator(userDefaults: userDefaults)
         let orchestrator = SurveyOrchestrator(
             surveyService: surveyService,
             promptCoordinator: coordinator
         )
 
-        XCTAssertTrue(coordinator.canShowReviewPrompt())
+        #expect(coordinator.canShowReviewPrompt())
         orchestrator.dismiss(Self.makeSurvey(questions: [Self.makeQuestion(id: 1)]))
-        XCTAssertFalse(coordinator.canShowReviewPrompt(), "engagement starts the 14-day cooldown")
+        #expect(!coordinator.canShowReviewPrompt(), "engagement starts the 14-day cooldown")
     }
 
     // MARK: - lastError accessor
@@ -286,8 +281,8 @@ class SurveyOrchestratorTests: OBATestCase {
     /// `lastError` is `nil` before any refresh runs. The gate in
     /// `MapViewModel.checkForSurveyPrompt` relies on this so the very first
     /// session check doesn't get short-circuited by a stale value.
-    @MainActor
-    func test_lastError_isNilBeforeRefresh() {
+    @Test @MainActor
+    func `Last error is nil before refresh`() {
         #expect(self.orchestrator.lastError == nil)
     }
 
@@ -295,8 +290,8 @@ class SurveyOrchestratorTests: OBATestCase {
     /// `apiService: nil`, `fetchSurveys` records `APIError.surveyServiceNotConfigured`
     /// rather than throwing — this verifies the orchestrator surfaces it so
     /// `MapViewModel.checkForSurveyPrompt` can gate on it.
-    @MainActor
-    func test_lastError_reflectsUnderlyingService_afterFetchFailure() async {
+    @Test @MainActor
+    func `Last error reflects underlying service after fetch failure`() async {
         #expect(self.orchestrator.lastError == nil)
 
         await orchestrator.refreshSurveys()
@@ -316,8 +311,8 @@ class SurveyOrchestratorTests: OBATestCase {
     // MARK: - noteReminderAndAdvanceSession
 
     /// `noteReminderAndAdvanceSession()` advances the reminder by ~3 days.
-    @MainActor
-    func test_noteReminderAndAdvanceSession_setsReminderAboutThreeDaysOut() {
+    @Test @MainActor
+    func `Note reminder and advance session sets reminder about three days out`() {
         let before = Date()
         orchestrator.noteReminderAndAdvanceSession()
         let after = Date()

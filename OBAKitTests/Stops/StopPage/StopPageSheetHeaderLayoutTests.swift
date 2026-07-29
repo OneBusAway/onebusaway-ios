@@ -7,7 +7,8 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
+import Foundation
+import Testing
 import SwiftUI
 import UIKit
 import FloatingPanel
@@ -24,7 +25,8 @@ import FloatingPanel
 /// it. `StopPageSheetHeaderView(isCollapsed:)` exists to keep the header inside that budget, and
 /// these tests measure whether it actually does.
 @MainActor
-final class StopPageSheetHeaderLayoutTests: XCTestCase {
+@Suite(.serialized)
+final class StopPageSheetHeaderLayoutTests {
 
     /// The home-indicator inset. It is load-bearing here: it comes out of the same height the top
     /// inset region is clamped against, so a simulator window without one hides the bug.
@@ -35,9 +37,7 @@ final class StopPageSheetHeaderLayoutTests: XCTestCase {
     private var parent: UIViewController!
     private var presenter: StopSheetPresenter!
 
-    override func setUp() async throws {
-        try await super.setUp()
-
+    init() {
         parent = UIViewController()
         window = UIWindow(frame: CGRect(origin: .zero, size: Self.screenSize))
         window.rootViewController = parent
@@ -48,14 +48,13 @@ final class StopPageSheetHeaderLayoutTests: XCTestCase {
         presenter = StopSheetPresenter()
     }
 
-    override func tearDown() async throws {
+    // `isolated deinit` because the cleanup below touches main-actor UI state.
+    // The `= nil` assignments the old `tearDown` performed are dropped: they
+    // only mattered because XCTest holds test-case instances for the whole run,
+    // and assigning nil inside `deinit` releases nothing extra regardless.
+    isolated deinit {
         presenter.dismiss(animated: false)
-        presenter = nil
         window.isHidden = true
-        window = nil
-        parent = nil
-
-        try await super.tearDown()
     }
 
     /// Stands in for `StopPageView`'s sheet presentation: the same `List` + top-inset header
@@ -97,8 +96,8 @@ final class StopPageSheetHeaderLayoutTests: XCTestCase {
     }
 
     /// Presents the harness, drops it to `.tip`, and reports where the header settled.
-    private func layoutAtTip(isCollapsed: Bool) throws -> TipLayout {
-        let stop = try XCTUnwrap(Fixtures.loadSomeStops().first)
+    private func layoutAtTip(isCollapsed: Bool) async throws -> TipLayout {
+        let stop = try #require(Fixtures.loadSomeStops().first)
         var headerFrame: CGRect = .null
 
         let content = UIHostingController(rootView: Harness(
@@ -108,7 +107,7 @@ final class StopPageSheetHeaderLayoutTests: XCTestCase {
         ))
         presenter.present(content, from: parent) {}
 
-        let panel = try XCTUnwrap(parent.children.compactMap { $0 as? FloatingPanelController }.first)
+        let panel = try #require(parent.children.compactMap { $0 as? FloatingPanelController }.first)
         // The real sheet's root is a `StopPageViewController`, whose navigation bar the presenter
         // hides. A bare hosting controller keeps its bar, and the bar's own height would floor the
         // content view well above the detent — masking what this test is measuring.
@@ -116,53 +115,40 @@ final class StopPageSheetHeaderLayoutTests: XCTestCase {
 
         // Let the presentation animation land before moving; interrupting it mid-flight leaves
         // the surface wherever the animator had got to.
-        spin(0.6)
+        await spin(0.6)
         panel.move(to: .tip, animated: false)
         parent.view.layoutIfNeeded()
-        spin(0.4)
+        await spin(0.4)
 
-        let contentFrame = try XCTUnwrap(panel.surfaceView.contentView).convert(
-            try XCTUnwrap(panel.surfaceView.contentView).bounds,
+        let contentFrame = try #require(panel.surfaceView.contentView).convert(
+            try #require(panel.surfaceView.contentView).bounds,
             to: nil
         )
 
         return TipLayout(header: headerFrame, contentTop: contentFrame.minY)
     }
 
-    private func spin(_ seconds: TimeInterval) {
-        RunLoop.current.run(until: Date().addingTimeInterval(seconds))
-    }
-
     /// The peek detent has to show the stop name and the close button, or it is a strip of route
     /// badges the rider can't identify or dismiss.
-    func test_collapsedHeader_fitsEntirelyWithinTheTipDetent() throws {
-        let layout = try layoutAtTip(isCollapsed: true)
+    @Test func `Collapsed header fits entirely within the tip detent`() async throws {
+        let layout = try await layoutAtTip(isCollapsed: true)
 
-        XCTAssertGreaterThanOrEqual(
-            layout.header.minY, layout.contentTop - 0.5,
-            "The collapsed header overflowed the top of the sheet, taking the stop name and close button with it."
-        )
-        XCTAssertLessThanOrEqual(
-            layout.header.maxY, Self.screenSize.height - Self.bottomSafeArea + 0.5,
-            "The collapsed header ran past the safe area, so its lower half sits under the home indicator."
-        )
+        #expect(layout.header.minY >= layout.contentTop - 0.5, "The collapsed header overflowed the top of the sheet, taking the stop name and close button with it.")
+        #expect(layout.header.maxY <= Self.screenSize.height - Self.bottomSafeArea + 0.5, "The collapsed header ran past the safe area, so its lower half sits under the home indicator.")
     }
 
     /// The counterpart: the full header genuinely does not fit, which is why the collapsed variant
     /// exists at all. If SwiftUI ever starts cropping a top inset from the bottom instead — or the
     /// header slims down enough to fit — this test says so, and `isCollapsed` can be revisited.
-    func test_fullHeader_doesNotFitTheTipDetent() throws {
-        let layout = try layoutAtTip(isCollapsed: false)
+    @Test func `Full header does not fit the tip detent`() async throws {
+        let layout = try await layoutAtTip(isCollapsed: false)
 
-        XCTAssertLessThan(
-            layout.header.minY, layout.contentTop,
-            "The full header now fits the tip detent; the collapsed variant may no longer be needed."
-        )
+        #expect(layout.header.minY < layout.contentTop, "The full header now fits the tip detent; the collapsed variant may no longer be needed.")
     }
 
     /// The detent is sized from the collapsed header, so a rider running a large text size gets a
     /// taller peek rather than a clipped one.
-    func test_tipDetentGrowsWithTheContentSizeCategory() {
+    @Test func `Tip detent grows with the content size category`() {
         let standard = StopSheetHeaderMetrics.collapsedHeight(
             for: UITraitCollection(preferredContentSizeCategory: .large)
         )
@@ -170,6 +156,6 @@ final class StopPageSheetHeaderLayoutTests: XCTestCase {
             for: UITraitCollection(preferredContentSizeCategory: .accessibilityExtraExtraExtraLarge)
         )
 
-        XCTAssertGreaterThan(accessibility, standard)
+        #expect(accessibility > standard)
     }
 }

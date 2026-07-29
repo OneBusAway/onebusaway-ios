@@ -7,16 +7,16 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
 import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
 // swiftlint:disable force_try
 
-class TripTests: OBATestCase {
+@Suite(.serialized)
+final class TripTests: OBATestCase {
     
-    func test_decodeValidTrip() {
+    @Test func `Decode valid trip`() {
         let tripData: [String: Any] = [
             "id": "1_18196913",
             "blockId": "7001_1001",
@@ -46,7 +46,7 @@ class TripTests: OBATestCase {
         #expect(trip.regionIdentifier == nil)
     }
     
-    func test_decodeMinimalTrip() {
+    @Test func `Decode minimal trip`() {
         let minimalData: [String: Any] = [
             "id": "minimal_trip",
             "blockId": "block_123",
@@ -70,7 +70,7 @@ class TripTests: OBATestCase {
         #expect(trip.timeZone == "UTC")
     }
     
-    func test_decodeWithBlankValues() {
+    @Test func `Decode with blank values`() {
         let dataWithBlanks: [String: Any] = [
             "id": "blank_trip",
             "blockId": "block_blank",
@@ -90,7 +90,7 @@ class TripTests: OBATestCase {
         #expect(trip.timeZone == nil)
     }
     
-    func test_hasReferencesLoadReferences() {
+    @Test func `Has references load references`() {
         let tripData: [String: Any] = [
             "id": "test_trip",
             "blockId": "test_block",
@@ -133,7 +133,7 @@ class TripTests: OBATestCase {
         #expect(trip.regionIdentifier == 456)
     }
     
-    func test_routeHeadsign() {
+    @Test func `Route headsign`() {
         let tripData: [String: Any] = [
             "id": "headsign_trip",
             "blockId": "test_block",
@@ -161,7 +161,7 @@ class TripTests: OBATestCase {
         #expect(trip.routeHeadsign == "ST Express - Bellevue TC")
     }
     
-    func test_routeHeadsignWithoutTripHeadsign() {
+    @Test func `Route headsign without trip headsign`() {
         let tripData: [String: Any] = [
             "id": "no_headsign_trip",
             "blockId": "test_block",
@@ -188,7 +188,7 @@ class TripTests: OBATestCase {
         #expect(trip.routeHeadsign == "ST Express")
     }
     
-    func test_equalityAndHash() {
+    @Test func `Equality and hash`() {
         let tripData: [String: Any] = [
             "id": "equality_test",
             "blockId": "test_block",

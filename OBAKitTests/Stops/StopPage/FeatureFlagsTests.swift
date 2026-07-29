@@ -6,30 +6,31 @@
 //  This source code is licensed under the Apache 2.0 license found in the
 //  LICENSE file in the root directory of this source tree.
 //
-import XCTest
+import Foundation
+import Testing
 @testable import OBAKitCore
 
 @MainActor
-final class FeatureFlagsTests: XCTestCase {
+@Suite(.serialized)
+final class FeatureFlagsTests {
     private var defaults: UserDefaults!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    init() {
         defaults = UserDefaults(suiteName: "FeatureFlagsTests")!
         defaults.removePersistentDomain(forName: "FeatureFlagsTests")
     }
 
-    func test_newStopPage_defaultsToEnabled() {
-        XCTAssertTrue(FeatureFlags.isNewStopPageEnabled(userDefaults: defaults))
+    @Test func `New stop page defaults to enabled`() {
+        #expect(FeatureFlags.isNewStopPageEnabled(userDefaults: defaults))
     }
 
-    func test_newStopPage_respectsExplicitFalse() {
+    @Test func `New stop page respects explicit false`() {
         defaults.set(false, forKey: FeatureFlags.useNewStopPageKey)
-        XCTAssertFalse(FeatureFlags.isNewStopPageEnabled(userDefaults: defaults))
+        #expect(!FeatureFlags.isNewStopPageEnabled(userDefaults: defaults))
     }
 
-    func test_newStopPage_respectsExplicitTrue() {
+    @Test func `New stop page respects explicit true`() {
         defaults.set(true, forKey: FeatureFlags.useNewStopPageKey)
-        XCTAssertTrue(FeatureFlags.isNewStopPageEnabled(userDefaults: defaults))
+        #expect(FeatureFlags.isNewStopPageEnabled(userDefaults: defaults))
     }
 }

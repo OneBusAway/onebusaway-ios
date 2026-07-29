@@ -1,32 +1,33 @@
-import XCTest
+import Testing
 import CoreLocation
 @testable import OBAKit
 
 @MainActor
-final class WalkTimeInfoTests: XCTestCase {
+@Suite(.serialized)
+final class WalkTimeInfoTests {
     // ~111m per 0.001 degree latitude at the equator; use real CLLocations.
     private let stopLocation = CLLocation(latitude: 47.6097, longitude: -122.3331)
 
-    func test_computesMinutesRoundedUp() {
+    @Test func `Computes minutes rounded up`() {
         // ~500m at 1.25 m/s = 400s = 6.67 min -> 7 min
         let user = CLLocation(latitude: 47.6142, longitude: -122.3331)
         let info = WalkTimeInfo.compute(from: user, to: stopLocation, speedMetersPerSecond: 1.25)
-        XCTAssertNotNil(info)
-        XCTAssertEqual(info!.walkMinutes, 7)
+        #expect(info != nil)
+        #expect(info!.walkMinutes == 7)
     }
 
-    func test_nilWhenUserLocationMissing() {
-        XCTAssertNil(WalkTimeInfo.compute(from: nil, to: stopLocation, speedMetersPerSecond: 1.25))
+    @Test func `Nil when user location missing`() {
+        #expect(WalkTimeInfo.compute(from: nil, to: stopLocation, speedMetersPerSecond: 1.25) == nil)
     }
 
-    func test_nilWhenVeryClose() {
+    @Test func `Nil when very close`() {
         // <= 40m: suppress, matching today's WalkTimeView behavior.
         let user = CLLocation(latitude: 47.60972, longitude: -122.3331)
-        XCTAssertNil(WalkTimeInfo.compute(from: user, to: stopLocation, speedMetersPerSecond: 1.25))
+        #expect(WalkTimeInfo.compute(from: user, to: stopLocation, speedMetersPerSecond: 1.25) == nil)
     }
 
-    func test_nilWhenSpeedInvalid() {
+    @Test func `Nil when speed invalid`() {
         let user = CLLocation(latitude: 47.6142, longitude: -122.3331)
-        XCTAssertNil(WalkTimeInfo.compute(from: user, to: stopLocation, speedMetersPerSecond: 0))
+        #expect(WalkTimeInfo.compute(from: user, to: stopLocation, speedMetersPerSecond: 0) == nil)
     }
 }

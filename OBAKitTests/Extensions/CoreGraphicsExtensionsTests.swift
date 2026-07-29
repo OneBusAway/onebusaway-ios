@@ -8,7 +8,6 @@
 //
 
 import Foundation
-import XCTest
 import Testing
 import CoreGraphics
 import UIKit
@@ -16,9 +15,10 @@ import UIKit
 @testable import OBAKitCore
 
 @MainActor
-class CoreGraphicsExtensionsTests: XCTestCase {
+@Suite(.serialized)
+final class CoreGraphicsExtensionsTests {
     
-    func test_CGContext_pushPop() {
+    @Test func `CG context push pop`() {
         // Create a simple graphics context for testing
         let size = CGSize(width: 100, height: 100)
         let colorSpace = CGColorSpaceCreateDeviceRGB()
@@ -46,7 +46,7 @@ class CoreGraphicsExtensionsTests: XCTestCase {
         #expect(restoredTransform.ty == initialTransform.ty)
     }
     
-    func test_CGContext_pushPop_nested() {
+    @Test func `CG context push pop nested`() {
         let size = CGSize(width: 100, height: 100)
         let colorSpace = CGColorSpaceCreateDeviceRGB()
         let context = CGContext(data: nil, width: Int(size.width), height: Int(size.height), bitsPerComponent: 8, bytesPerRow: 0, space: colorSpace, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
@@ -78,7 +78,7 @@ class CoreGraphicsExtensionsTests: XCTestCase {
         #expect(finalTransform.ty == initialTransform.ty)
     }
     
-    func test_CGContext_pushPop_doesNotCrash() {
+    @Test func `CG context push pop does not crash`() {
         let size = CGSize(width: 100, height: 100)
         let colorSpace = CGColorSpaceCreateDeviceRGB()
         let context = CGContext(data: nil, width: Int(size.width), height: Int(size.height), bitsPerComponent: 8, bytesPerRow: 0, space: colorSpace, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)

@@ -7,7 +7,8 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
+import Foundation
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -18,7 +19,8 @@ import XCTest
 /// subset of languages, and the final tier must be deterministic — it used to
 /// be backed by a dictionary, whose arbitrary ordering made "whatever we can
 /// get our hands on" vary between processes.
-class AgencyAlertTranslationTests: OBATestCase {
+@Suite(.serialized)
+final class AgencyAlertTranslationTests: OBATestCase {
 
     private func translation(_ language: String, _ text: String) -> TransitRealtime_TranslatedString.Translation {
         var t = TransitRealtime_TranslatedString.Translation()
@@ -51,39 +53,39 @@ class AgencyAlertTranslationTests: OBATestCase {
         return try AgencyAlert(feedEntity: feedEntity, agency: nil)
     }
 
-    func test_exactLanguageMatch_wins() throws {
+    @Test func `Exact language match wins`() throws {
         let alert = try makeAlert(headerTranslations: [
             translation("en", "English title"),
             translation("fr", "Titre français")
         ])
 
-        XCTAssertEqual(alert.title(forLocale: Locale(identifier: "fr_FR")), "Titre français")
+        #expect(alert.title(forLocale: Locale(identifier: "fr_FR")) == "Titre français")
     }
 
-    func test_missingLanguage_fallsBackToEnglish() throws {
+    @Test func `Missing language falls back to english`() throws {
         let alert = try makeAlert(headerTranslations: [
             translation("fr", "Titre français"),
             translation("en", "English title")
         ])
 
-        XCTAssertEqual(alert.title(forLocale: Locale(identifier: "es_ES")), "English title")
+        #expect(alert.title(forLocale: Locale(identifier: "es_ES")) == "English title")
     }
 
-    func test_missingLanguageAndEnglish_fallsBackToFirstEntryInFeedOrder() throws {
+    @Test func `Missing language and english falls back to first entry in feed order`() throws {
         let alert = try makeAlert(headerTranslations: [
             translation("fr", "Titre français"),
             translation("de", "Deutscher Titel")
         ])
 
-        XCTAssertEqual(alert.title(forLocale: Locale(identifier: "es_ES")), "Titre français")
+        #expect(alert.title(forLocale: Locale(identifier: "es_ES")) == "Titre français")
     }
 
-    func test_duplicateLanguageEntries_firstWins() throws {
+    @Test func `Duplicate language entries first wins`() throws {
         let alert = try makeAlert(headerTranslations: [
             translation("en", "First English title"),
             translation("en", "Second English title")
         ])
 
-        XCTAssertEqual(alert.title(forLocale: Locale(identifier: "en_US")), "First English title")
+        #expect(alert.title(forLocale: Locale(identifier: "en_US")) == "First English title")
     }
 }

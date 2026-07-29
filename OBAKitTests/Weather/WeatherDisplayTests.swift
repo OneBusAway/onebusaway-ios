@@ -7,7 +7,6 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
 import Testing
 import Foundation
 @testable import OBAKit
@@ -17,7 +16,8 @@ import Foundation
 /// review pinned down: past-hour filtering, "Now" labelling, the 24-entry cap,
 /// Date-based identity, and the empty-input edge case.
 @MainActor
-final class WeatherDisplayTests: XCTestCase {
+@Suite(.serialized)
+final class WeatherDisplayTests {
 
     // MARK: - Fixtures
 
@@ -71,7 +71,7 @@ final class WeatherDisplayTests: XCTestCase {
     /// The Obaco API sometimes ships the previous full hour at index 0.
     /// `upcomingHourly` must drop it so the "Now" cell aligns with the actual
     /// current hour, not an hour ago.
-    func test_upcomingHourly_dropsHoursBeforeCurrentHourBucket() {
+    @Test func `Upcoming hourly drops hours before current hour bucket`() {
         let oneHourAgo = now.addingTimeInterval(-3600)
         let currentHour = utcCalendar.dateInterval(of: .hour, for: now)!.start
         let nextHour = currentHour.addingTimeInterval(3600)
@@ -86,7 +86,7 @@ final class WeatherDisplayTests: XCTestCase {
     }
 
     /// Even when the API ships 48 hours, the window is capped at 24.
-    func test_upcomingHourly_cappedAt24Entries() {
+    @Test func `Upcoming hourly capped at 24 entries`() {
         let currentHour = utcCalendar.dateInterval(of: .hour, for: now)!.start
         let hourly = makeHourly(epochs: (0..<48).map { currentHour.addingTimeInterval(Double($0) * 3600).timeIntervalSince1970 })
 
@@ -97,7 +97,7 @@ final class WeatherDisplayTests: XCTestCase {
 
     /// Even if the API delivers hourly entries out of chronological order, the
     /// window must still start at the current hour (sort before slicing).
-    func test_upcomingHourly_sortsOutOfOrderInput() {
+    @Test func `Upcoming hourly sorts out of order input`() {
         let currentHour = utcCalendar.dateInterval(of: .hour, for: now)!.start
         let inOrder = (0..<3).map { currentHour.addingTimeInterval(Double($0) * 3600).timeIntervalSince1970 }
         let shuffled = [inOrder[2], inOrder[0], inOrder[1]]
@@ -111,7 +111,7 @@ final class WeatherDisplayTests: XCTestCase {
     }
 
     /// If every entry is in the past, none survive the filter.
-    func test_upcomingHourly_allPastEntriesReturnsEmpty() {
+    @Test func `Upcoming hourly all past entries returns empty`() {
         let past = (1...3).map { now.addingTimeInterval(-Double($0) * 3600).timeIntervalSince1970 }
         let hourly = makeHourly(epochs: past)
 
@@ -122,7 +122,7 @@ final class WeatherDisplayTests: XCTestCase {
 
     /// A glitch that ships the same hour twice would otherwise give `ForEach`
     /// duplicate `id`s and mark both cells `isNow`. The window de-dupes.
-    func test_upcomingHourly_dedupesRepeatedTimestamps() {
+    @Test func `Upcoming hourly dedupes repeated timestamps`() {
         let currentHour = utcCalendar.dateInterval(of: .hour, for: now)!.start
         let nextHour = currentHour.addingTimeInterval(3600)
         let hourly = makeHourly(epochs: [currentHour.timeIntervalSince1970,
@@ -139,7 +139,7 @@ final class WeatherDisplayTests: XCTestCase {
 
     /// First entry of a pre-windowed slice should be labelled "Now" and
     /// flagged `isNow`.
-    func test_list_firstEntryIsNow() {
+    @Test func `List first entry is now`() {
         let currentHour = utcCalendar.dateInterval(of: .hour, for: now)!.start
         let upcoming = makeHourly(epochs: (0..<3).map { currentHour.addingTimeInterval(Double($0) * 3600).timeIntervalSince1970 })
 
@@ -153,7 +153,7 @@ final class WeatherDisplayTests: XCTestCase {
     /// Identity is the hour timestamp, not the array index. This is what keeps
     /// `ForEach`/`LazyHStack` from reusing the same cell view for a different
     /// hour across refreshes.
-    func test_list_identityIsHourTimestamp() {
+    @Test func `List identity is hour timestamp`() {
         let currentHour = utcCalendar.dateInterval(of: .hour, for: now)!.start
         let upcoming = makeHourly(epochs: (0..<3).map { currentHour.addingTimeInterval(Double($0) * 3600).timeIntervalSince1970 })
 
@@ -163,7 +163,7 @@ final class WeatherDisplayTests: XCTestCase {
         #expect(entries.map(\.id) == expectedIds)
     }
 
-    func test_list_emptyUpcomingReturnsEmpty() {
+    @Test func `List empty upcoming returns empty`() {
         let entries = HourlyEntry.list(from: [], locale: usLocale)
         #expect(entries.isEmpty)
     }
@@ -174,13 +174,13 @@ final class WeatherDisplayTests: XCTestCase {
     /// `day == night` never pinned an actual mapping — a regression that
     /// returned the unknown-key fallback for every key would still satisfy
     /// it. Lock down at least one concrete mapping.
-    func test_conditionText_mapsKnownIconKeys() {
+    @Test func `Condition text maps known icon keys`() {
         #expect(WeatherFormatter.conditionText(for: "snow") == "Snow")
         #expect(WeatherFormatter.conditionText(for: "clear-day") == "Clear")
         #expect(WeatherFormatter.conditionText(for: "rain") == "Rain")
     }
 
-    func test_isKnownIconKey_distinguishesMappedFromUnmapped() {
+    @Test func `Is known icon key distinguishes mapped from unmapped`() {
         #expect(WeatherFormatter.isKnownIconKey("clear-day") == true)
         #expect(WeatherFormatter.isKnownIconKey("partly-cloudy-night") == true)
         #expect(WeatherFormatter.isKnownIconKey("thunderstorm") == false)
@@ -191,7 +191,7 @@ final class WeatherDisplayTests: XCTestCase {
     /// key the formatter models, so adding a new condition to the metadata
     /// without a matching palette entry fails here instead of silently
     /// rendering as gray.
-    func test_weatherIconPalette_coversAllKnownIconKeys() {
+    @Test func `Weather icon palette covers all known icon keys`() {
         let paletteKeys = Set(WeatherIconPalette.colors.keys)
         let missing = WeatherFormatter.knownIconKeys.subtracting(paletteKeys)
         #expect(missing == [])
@@ -214,7 +214,7 @@ final class WeatherDisplayTests: XCTestCase {
     /// both consume the same Header/Stats/HourlyEntry slices. Pinning the
     /// derived strings from a fixture locks the contract so a formatter tweak
     /// that only updates one surface would fail here.
-    func test_init_populatesHeaderStatsAndHourlyFromFixture() throws {
+    @Test func `Init populates header stats and hourly from fixture`() throws {
         let forecast = try loadPugetSoundForecast()
         let display = WeatherDisplay(forecast: forecast, locale: usLocale, now: pugetSoundNow, calendar: utcCalendar)
 
@@ -237,7 +237,7 @@ final class WeatherDisplayTests: XCTestCase {
         // Hourly strip — non-empty, first cell labelled "Now" and flagged as
         // the current hour, later cells fall through to formatted times.
         #expect(!display.hourly.isEmpty)
-        let firstHour = try XCTUnwrap(display.hourly.first)
+        let firstHour = try #require(display.hourly.first)
         #expect(firstHour.timeLabel == "Now")
         #expect(firstHour.isNow == true)
         if display.hourly.count > 1 {
@@ -251,7 +251,7 @@ final class WeatherDisplayTests: XCTestCase {
     /// The Puget Sound fixture happens to have `precip_probability == 0`, so
     /// truncation never bites in the fixture test. Cover the typical case so
     /// a regression that flips truncation to rounding (or vice-versa) trips.
-    func test_stats_precipTextTruncatesToInteger() throws {
+    @Test func `Stats precip text truncates to integer`() throws {
         let json: [String: Any] = [
             "icon": "rain",
             "precip_per_hour": 1.2,
@@ -274,10 +274,10 @@ final class WeatherDisplayTests: XCTestCase {
     /// Header owns the `"H:%@  L:%@"` join (the only formatting it does on
     /// hi/lo). The fixture test only asserts non-nil, so an upstream tweak
     /// that swapped the order or dropped the prefix would slip through.
-    func test_header_highLowTextJoinsWithLocalisedFormat() throws {
+    @Test func `Header high low text joins with localised format`() throws {
         let forecast = try loadPugetSoundForecast()
         let display = WeatherDisplay(forecast: forecast, locale: usLocale, now: pugetSoundNow, calendar: utcCalendar)
-        let highLowText = try XCTUnwrap(display.header.highLowText)
+        let highLowText = try #require(display.header.highLowText)
 
         #expect(highLowText.hasPrefix("H:"))
         #expect(highLowText.contains("  L:"))

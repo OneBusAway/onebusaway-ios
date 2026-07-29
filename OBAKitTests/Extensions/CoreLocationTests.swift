@@ -8,18 +8,18 @@
 //
 
 import Foundation
-import XCTest
 import CoreLocation
 import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
 @MainActor
-class CoreLocationTests: XCTestCase {
+@Suite(.serialized)
+final class CoreLocationTests {
 
     // MARK: - CLCircularRegion
 
-    func test_creation_fromMapRect() {
+    @Test func `Creation from map rect`() {
         let region = CLCircularRegion(mapRect: TestData.seattleMapRect)
 
         expectClose(region.center.latitude, TestData.seattleMapRectCenter.latitude)
@@ -29,7 +29,7 @@ class CoreLocationTests: XCTestCase {
 
     // MARK: - Distance
 
-    func test_distanceCalculation() {
+    @Test func `Distance calculation`() {
         let pt1 = CLLocationCoordinate2D(latitude: 47.62365100, longitude: -122.31257200)
         let pt2 = CLLocationCoordinate2D(latitude: 47.632352, longitude: -122.312526)
 

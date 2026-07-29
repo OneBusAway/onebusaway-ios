@@ -8,7 +8,6 @@
 //
 
 import Foundation
-import XCTest
 import CoreLocation
 import MapKit
 import CoreGraphics
@@ -16,9 +15,10 @@ import Testing
 @testable import OBAKitCore
 
 @MainActor
-class CoreLocationExtensionsTests: XCTestCase {
+@Suite(.serialized)
+final class CoreLocationExtensionsTests {
     
-    func test_CLAuthorizationStatus_description() {
+    @Test func `CL authorization status description`() {
         #expect(CLAuthorizationStatus.authorizedAlways.description == "authorizedAlways")
         #expect(CLAuthorizationStatus.authorizedWhenInUse.description == "authorizedWhenInUse")
         #expect(CLAuthorizationStatus.denied.description == "denied")
@@ -26,14 +26,14 @@ class CoreLocationExtensionsTests: XCTestCase {
         #expect(CLAuthorizationStatus.restricted.description == "restricted")
     }
     
-    func test_CLAuthorizationStatus_initFromString() {
+    @Test func `CL authorization status init from string`() {
         // LosslessStringConvertible init always returns nil as implemented
         #expect(CLAuthorizationStatus("authorizedAlways") == nil)
         #expect(CLAuthorizationStatus("denied") == nil)
         #expect(CLAuthorizationStatus("invalid") == nil)
     }
     
-    func test_CLLocationDirection_radians() {
+    @Test func `CL location direction radians`() {
         let direction: CLLocationDirection = 180.0 // 180 degrees
         let expectedRadians = Double.pi // π radians
         
@@ -46,7 +46,7 @@ class CoreLocationExtensionsTests: XCTestCase {
         expectClose(direction0.radians, 0.0, within: 0.0001)
     }
     
-    func test_CLLocationDirection_affineTransform() {
+    @Test func `CL location direction affine transform`() {
         let direction: CLLocationDirection = 90.0 // 90 degrees
         let additionalRotation: CGFloat = CGFloat.pi / 4 // 45 degrees
         
@@ -60,7 +60,7 @@ class CoreLocationExtensionsTests: XCTestCase {
         #expect(type(of: transform0) == CGAffineTransform.self)
     }
     
-    func test_CLLocationCoordinate2D_distance() {
+    @Test func `CL location coordinate 2 d distance`() {
         let seattle = CLLocationCoordinate2D(latitude: 47.6062, longitude: -122.3321)
         let bellevue = CLLocationCoordinate2D(latitude: 47.6101, longitude: -122.2015)
         
@@ -74,7 +74,7 @@ class CoreLocationExtensionsTests: XCTestCase {
         expectClose(samePointDistance, 0, within: 0.1)
     }
     
-    func test_CLLocationCoordinate2D_isNullIsland() {
+    @Test func `CL location coordinate 2 d is null island`() {
         let nullIsland = CLLocationCoordinate2D(latitude: 0.0, longitude: 0.0)
         #expect(nullIsland.isNullIsland == true)
         
@@ -88,7 +88,7 @@ class CoreLocationExtensionsTests: XCTestCase {
         #expect(otherZero.isNullIsland == false)
     }
     
-    func test_CLCircularRegion_initWithMapRect() {
+    @Test func `CL circular region init with map rect`() {
         let mapRect = MKMapRect(
             x: 43013871.99811534,
             y: 93728205.2278356,

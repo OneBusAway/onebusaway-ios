@@ -7,25 +7,30 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
+import Foundation
+import Testing
 import CoreLocation
 @testable import OBAKit
 @testable import OBAKitCore
 
 // swiftlint:disable force_try force_cast
 
-class LiveActivityModelOperationTests: OBATestCase {
+@Suite(.serialized)
+final class LiveActivityModelOperationTests: OBATestCase {
 
-    func testSuccessfulLiveActivityRegistration() async throws {
+    @Test func `Successful live activity registration`() async throws {
         let data = """
         {"url": "https://sidecar.onebusaway.org/api/v2/regions/1/live_activities/abc123"}
         """.data(using: .utf8)!
 
         let dataLoader = (obacoService.dataLoader as! MockDataLoader)
 
-        var capturedRequest: URLRequest?
+        // Boxed rather than a plain `var`: the matcher is @Sendable, so it cannot
+        // mutate main-actor state — which, given the target's default isolation,
+        // a local in a test body is.
+        let capturedRequest = SendableBox<URLRequest?>(nil)
         dataLoader.mock(data: data) { request in
-            capturedRequest = request
+            capturedRequest.value = request
             return request.url?.host == "alerts.example.com" &&
                 request.url?.path == "/api/v2/regions/1/live_activities" &&
                 request.httpMethod == "POST"
@@ -43,26 +48,26 @@ class LiveActivityModelOperationTests: OBATestCase {
             stopSequence: nil
         )
 
-        XCTAssertEqual(url.absoluteString, "https://sidecar.onebusaway.org/api/v2/regions/1/live_activities/abc123")
+        #expect(url.absoluteString == "https://sidecar.onebusaway.org/api/v2/regions/1/live_activities/abc123")
 
-        let request = try XCTUnwrap(capturedRequest)
-        let body = try XCTUnwrap(request.httpBody)
-        let bodyString = try XCTUnwrap(String(data: body, encoding: .utf8))
+        let request = try #require(capturedRequest.value)
+        let body = try #require(request.httpBody)
+        let bodyString = try #require(String(data: body, encoding: .utf8))
         let params = formParams(from: bodyString)
 
-        XCTAssertEqual(params["activity_id"], "activity-123")
-        XCTAssertEqual(params["push_token"], "push-token-abc")
-        XCTAssertEqual(params["stop_id"], "1_11420")
-        XCTAssertEqual(params["route_short_name"], "10")
-        XCTAssertEqual(params["trip_headsign"], "Downtown Seattle")
-        XCTAssertNil(params["trip_id"])
-        XCTAssertNil(params["service_date"])
-        XCTAssertNil(params["vehicle_id"])
-        XCTAssertNil(params["stop_sequence"])
-        XCTAssertEqual(params["apns_sandbox"], "1", "Expected a debug build to flag the Live Activity for the APNs sandbox, as the ActivityKit token is a sandbox token. Without this flag, server routes pushes to production APNs and they bounce.")
+        #expect(params["activity_id"] == "activity-123")
+        #expect(params["push_token"] == "push-token-abc")
+        #expect(params["stop_id"] == "1_11420")
+        #expect(params["route_short_name"] == "10")
+        #expect(params["trip_headsign"] == "Downtown Seattle")
+        #expect(params["trip_id"] == nil)
+        #expect(params["service_date"] == nil)
+        #expect(params["vehicle_id"] == nil)
+        #expect(params["stop_sequence"] == nil)
+        #expect(params["apns_sandbox"] == "1", "Expected a debug build to flag the Live Activity for the APNs sandbox, as the ActivityKit token is a sandbox token. Without this flag, server routes pushes to production APNs and they bounce.")
     }
 
-    func testSuccessfulLiveActivityDeletion() async throws {
+    @Test func `Successful live activity deletion`() async throws {
         let liveActivityURL = URL(string: "https://sidecar.onebusaway.org/api/v2/regions/1/live_activities/abc123")!
 
         let dataLoader = (obacoService.dataLoader as! MockDataLoader)
@@ -72,8 +77,8 @@ class LiveActivityModelOperationTests: OBATestCase {
         }
 
         let (_, response) = try await obacoService.deleteLiveActivity(url: liveActivityURL)
-        let httpResponse = try XCTUnwrap(response as? HTTPURLResponse, "Expected deleteLiveActivity response to be of type HTTPURLResponse")
-        XCTAssertEqual(httpResponse.statusCode, 200)
+        let httpResponse = try #require(response as? HTTPURLResponse, "Expected deleteLiveActivity response to be of type HTTPURLResponse")
+        #expect(httpResponse.statusCode == 200)
     }
 
     // MARK: - Helpers

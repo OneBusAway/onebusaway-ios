@@ -7,16 +7,16 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
 import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
 // swiftlint:disable force_try
 
-class AgencyModelTests: OBATestCase {
+@Suite(.serialized)
+final class AgencyModelTests: OBATestCase {
 
-    func test_BasicAgencyDecoding() {
+    @Test func `Basic agency decoding`() {
         let agencyData: [String: Any] = [
             "id": "1",
             "name": "King County Metro",

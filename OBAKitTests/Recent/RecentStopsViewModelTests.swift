@@ -7,25 +7,26 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
 import CoreLocation
+import Foundation
 import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
 // swiftlint:disable force_try
 
-class RecentStopsViewModelTests: OBATestCase {
+@Suite(.serialized)
+final class RecentStopsViewModelTests: OBATestCase {
     var queue: OperationQueue!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
+
         queue = OperationQueue()
         queue.maxConcurrentOperationCount = 1
     }
 
-    override func tearDown() async throws {
-        try await super.tearDown()
+    isolated deinit {
         queue.cancelAllOperations()
     }
 
@@ -62,16 +63,16 @@ class RecentStopsViewModelTests: OBATestCase {
 
     // MARK: - Initial State
 
-    @MainActor
-    func test_init_alarmsIsEmpty() {
+    @Test @MainActor
+    func `Init alarms is empty`() {
         let app = createApplication(dataLoader: MockDataLoader(testName: name))
         let viewModel = RecentStopsViewModel(application: app)
 
         #expect(viewModel.alarms.isEmpty)
     }
 
-    @MainActor
-    func test_init_recentStopsIsEmpty() {
+    @Test @MainActor
+    func `Init recent stops is empty`() {
         let app = createApplication(dataLoader: MockDataLoader(testName: name))
         let viewModel = RecentStopsViewModel(application: app)
 
@@ -80,8 +81,8 @@ class RecentStopsViewModelTests: OBATestCase {
 
     // MARK: - loadData
 
-    @MainActor
-    func test_loadData_populatesRecentStopsForCurrentRegion() {
+    @Test @MainActor
+    func `Load data populates recent stops for current region`() {
         let app = createApplication(dataLoader: MockDataLoader(testName: name))
         let stop = try! Fixtures.loadSomeStops().first!
         stop.regionIdentifier = Fixtures.pugetSoundRegion.regionIdentifier
@@ -93,8 +94,8 @@ class RecentStopsViewModelTests: OBATestCase {
         #expect(viewModel.recentStops.contains(stop))
     }
 
-    @MainActor
-    func test_loadData_excludesStopsFromOtherRegions() {
+    @Test @MainActor
+    func `Load data excludes stops from other regions`() {
         let app = createApplication(dataLoader: MockDataLoader(testName: name))
         let stop = try! Fixtures.loadSomeStops().first!
         stop.regionIdentifier = Fixtures.tampaRegion.regionIdentifier
@@ -106,8 +107,8 @@ class RecentStopsViewModelTests: OBATestCase {
         #expect(viewModel.recentStops.isEmpty)
     }
 
-    @MainActor
-    func test_loadData_populatesAlarms() {
+    @Test @MainActor
+    func `Load data populates alarms`() {
         let app = createApplication(dataLoader: MockDataLoader(testName: name))
         let alarm = try! Fixtures.loadAlarm()
         alarm.set(tripDate: Date(timeIntervalSinceNow: 300), alarmOffset: 2)
@@ -121,8 +122,8 @@ class RecentStopsViewModelTests: OBATestCase {
 
     // MARK: - deleteAllRecentStops
 
-    @MainActor
-    func test_deleteAllRecentStops_emptiesRecentStops() {
+    @Test @MainActor
+    func `Delete all recent stops empties recent stops`() {
         let app = createApplication(dataLoader: MockDataLoader(testName: name))
         let stops = try! Fixtures.loadSomeStops()
         stops.prefix(3).forEach {
@@ -140,8 +141,8 @@ class RecentStopsViewModelTests: OBATestCase {
 
     // MARK: - delete(recentStop:)
 
-    @MainActor
-    func test_delete_recentStop_removesItAndKeepsOthers() {
+    @Test @MainActor
+    func `Delete recent stop removes it and keeps others`() {
         let app = createApplication(dataLoader: MockDataLoader(testName: name))
         let stops = try! Fixtures.loadSomeStops()
         let stopA = stops[0]
@@ -161,8 +162,8 @@ class RecentStopsViewModelTests: OBATestCase {
 
     // MARK: - delete(alarm:)
 
-    @MainActor
-    func test_delete_alarm_removesItLocally() async {
+    @Test @MainActor
+    func `Delete alarm removes it locally`() async {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         let alarm = try! Fixtures.loadAlarm()
@@ -180,14 +181,14 @@ class RecentStopsViewModelTests: OBATestCase {
         #expect(viewModel.alarms.map(\.url).contains(alarm.url))
 
         // Await the returned Task so the remote DELETE completes inside the test
-        // boundary — otherwise it races past tearDown.
+        // boundary — otherwise it races past the end of the test.
         await viewModel.delete(alarm: alarm).value
 
         #expect(!viewModel.alarms.map(\.url).contains(alarm.url))
     }
 
-    @MainActor
-    func test_delete_alarm_remoteSuccess_keepsLocalRemoval() async {
+    @Test @MainActor
+    func `Delete alarm remote success keeps local removal`() async {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         let alarm = try! Fixtures.loadAlarm()
@@ -195,10 +196,11 @@ class RecentStopsViewModelTests: OBATestCase {
         // Track whether the remote DELETE actually hit the stub. The catch-all matcher
         // pattern from the local-only test would silently disable obaco; we want this
         // test to *fail* if the remote call is short-circuited.
-        var didHitRemote = false
+        // Boxed: the matcher is @Sendable and cannot write to a main-actor local.
+        let didHitRemote = SendableBox(false)
         dataLoader.mock(data: Data(), matcher: { req in
             if req.url?.path.contains("/alarms/") == true {
-                didHitRemote = true
+                didHitRemote.value = true
                 return true
             }
             return false
@@ -212,11 +214,11 @@ class RecentStopsViewModelTests: OBATestCase {
         await viewModel.delete(alarm: alarm).value
 
         #expect(!viewModel.alarms.map(\.url).contains(alarm.url))
-        #expect(didHitRemote)
+        #expect(didHitRemote.value)
     }
 
-    @MainActor
-    func test_delete_alarm_remoteFailure_keepsLocalRemoval() async {
+    @Test @MainActor
+    func `Delete alarm remote failure keeps local removal`() async {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         let alarm = try! Fixtures.loadAlarm()
@@ -242,8 +244,8 @@ class RecentStopsViewModelTests: OBATestCase {
 
     // MARK: - loadData / nil currentRegion
 
-    @MainActor
-    func test_loadData_nilCurrentRegion_recentStopsIsEmpty() {
+    @Test @MainActor
+    func `Load data nil current region recent stops is empty`() {
         // Use "Null Island" (0, 0) which is in the Gulf of Guinea — not covered by any
         // transit region — so application.currentRegion is nil when loadData() runs.
         let dataLoader = MockDataLoader(testName: name)

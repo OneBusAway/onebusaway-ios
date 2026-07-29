@@ -8,29 +8,28 @@
 //
 
 import Foundation
-import XCTest
 import Testing
 import UIKit
 @testable import OBAKit
 
 @MainActor
-class VisualEffectContainerViewTests: XCTestCase {
+@Suite(.serialized)
+final class VisualEffectContainerViewTests {
     
     var containerView: VisualEffectContainerView!
     
-    override func setUp() async throws {
-        try await super.setUp()
+    init() {
         let blurEffect = UIBlurEffect(style: .regular)
         containerView = VisualEffectContainerView(blurEffect: blurEffect)
     }
     
-    func test_init_createsEffectView() {
+    @Test func `Init creates effect view`() {
         #expect(self.containerView != nil)
         #expect(self.containerView.subviews.count == 1)
         #expect(self.containerView.subviews.first.map { type(of: $0) == UIVisualEffectView.self } == true)
     }
     
-    func test_contentView_isEffectViewContentView() {
+    @Test func `Content view is effect view content view`() {
         let contentView = containerView.contentView
         
         // Verify it's the content view from the visual effect view
@@ -38,7 +37,7 @@ class VisualEffectContainerViewTests: XCTestCase {
         #expect(contentView === effectView?.contentView)
     }
     
-    func test_addingSubviewsToContentView() {
+    @Test func `Adding subviews to content view`() {
         let testLabel = UILabel()
         testLabel.text = "Test Label"
         
@@ -48,7 +47,7 @@ class VisualEffectContainerViewTests: XCTestCase {
         #expect(self.containerView.contentView.subviews.first === testLabel)
     }
     
-    func test_visualEffectViewConstraints() {
+    @Test func `Visual effect view constraints`() {
         // Verify the effect view is properly constrained
         let effectView = containerView.subviews.first as? UIVisualEffectView
         #expect(effectView?.translatesAutoresizingMaskIntoConstraints == false)

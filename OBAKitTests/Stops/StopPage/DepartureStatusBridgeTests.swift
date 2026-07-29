@@ -7,7 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
+import Testing
 import OBAKitCore
 @testable import OBAKit
 
@@ -16,43 +16,44 @@ import OBAKitCore
 /// verify the init forwards `predicted`/`scheduleStatus` correctly and that the
 /// derived color and label stay consistent with the model's `scheduleStatus`.
 @MainActor
-final class DepartureStatusBridgeTests: XCTestCase {
+@Suite(.serialized)
+final class DepartureStatusBridgeTests {
 
     /// A live `ArrivalDeparture` (`predicted == true`) bridges to a real-time
     /// status: occupancy is shown and the color/label follow its `scheduleStatus`.
-    func test_realtimeArrivalDeparture_isRealTimeWithConsistentColorAndLabel() throws {
+    @Test func `Realtime arrival departure is real time with consistent color and label`() throws {
         let arrivalDeparture = try Fixtures.loadRESTAPIPayload(
             type: ArrivalDeparture.self,
             fileName: "arrival-and-departure-for-stop-1_11420.json"
         )
         // Guard the fixture's real-time premise so a fixture change can't silently
         // reduce this to a scheduled-only case.
-        XCTAssertTrue(arrivalDeparture.predicted)
+        #expect(arrivalDeparture.predicted)
 
         let status = DepartureStatus(arrivalDeparture: arrivalDeparture)
-        XCTAssertTrue(status.isRealTime)
-        XCTAssertTrue(status.showsOccupancy)
+        #expect(status.isRealTime)
+        #expect(status.showsOccupancy)
         assertColorAndLabelConsistent(status, with: arrivalDeparture.scheduleStatus)
     }
 
     /// A schedule-only `ArrivalDeparture` (`predicted == false`) bridges to the
     /// honesty state: no occupancy, gray, and the "schedule data" label that
     /// deliberately never claims the bus is "on time" (§4.1).
-    func test_scheduledOnlyArrivalDeparture_isNotRealTimeWithScheduleDataLabel() throws {
+    @Test func `Scheduled only arrival departure is not real time with schedule data label`() throws {
         let stopArrivals = try Fixtures.loadRESTAPIPayload(
             type: StopArrivals.self,
             fileName: "arrivals_and_departures_for_stop_1_10020_no_realtime.json"
         )
-        let arrivalDeparture = try XCTUnwrap(stopArrivals.arrivalsAndDepartures.first)
+        let arrivalDeparture = try #require(stopArrivals.arrivalsAndDepartures.first)
         // Every entry in this fixture has `predicted == false`.
-        XCTAssertFalse(arrivalDeparture.predicted)
+        #expect(!arrivalDeparture.predicted)
 
         let status = DepartureStatus(arrivalDeparture: arrivalDeparture)
-        XCTAssertFalse(status.isRealTime)
-        XCTAssertFalse(status.showsOccupancy)
-        XCTAssertEqual(status.label, "schedule data")
-        XCTAssertNotEqual(status.label, "on time")
-        XCTAssertEqual(status.color, UIColor.secondaryLabel)
+        #expect(!status.isRealTime)
+        #expect(!status.showsOccupancy)
+        #expect(status.label == "schedule data")
+        #expect(status.label != "on time")
+        #expect(status.color == UIColor.secondaryLabel)
     }
 
     /// Asserts the real-time status' derived color and label agree with whatever
@@ -60,17 +61,17 @@ final class DepartureStatusBridgeTests: XCTestCase {
     private func assertColorAndLabelConsistent(_ status: DepartureStatus, with scheduleStatus: ScheduleStatus) {
         switch scheduleStatus {
         case .onTime:
-            XCTAssertEqual(status.color, ThemeColors.shared.departureOnTime)
-            XCTAssertEqual(status.label, "on time")
+            #expect(status.color == ThemeColors.shared.departureOnTime)
+            #expect(status.label == "on time")
         case .early:
-            XCTAssertEqual(status.color, ThemeColors.shared.departureEarly)
-            XCTAssertTrue(status.label.contains("early"))
+            #expect(status.color == ThemeColors.shared.departureEarly)
+            #expect(status.label.contains("early"))
         case .delayed:
-            XCTAssertEqual(status.color, ThemeColors.shared.departureLate)
-            XCTAssertTrue(status.label.contains("late"))
+            #expect(status.color == ThemeColors.shared.departureLate)
+            #expect(status.label.contains("late"))
         case .unknown:
-            XCTAssertEqual(status.color, UIColor.secondaryLabel)
-            XCTAssertEqual(status.label, "schedule data")
+            #expect(status.color == UIColor.secondaryLabel)
+            #expect(status.label == "schedule data")
         }
     }
 }

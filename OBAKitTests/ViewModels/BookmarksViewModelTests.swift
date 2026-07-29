@@ -7,7 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
+import Foundation
 import Testing
 import Combine
 @testable import OBAKit
@@ -17,18 +17,19 @@ import Combine
 
 /// Tests for `BookmarksViewModel`. Verifies that the `sortByGroup` preference is read
 /// from and written to UserDefaults under the documented key.
-class BookmarksViewModelTests: OBATestCase {
+@Suite(.serialized)
+final class BookmarksViewModelTests: OBATestCase {
     private let sortByGroupKey = "OBABookmarksController_SortBookmarksByGroup"
     var queue: OperationQueue!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
+
         queue = OperationQueue()
         queue.maxConcurrentOperationCount = 1
     }
 
-    override func tearDown() async throws {
-        try await super.tearDown()
+    isolated deinit {
         queue.cancelAllOperations()
     }
 
@@ -66,8 +67,8 @@ class BookmarksViewModelTests: OBATestCase {
     // MARK: - Tests
 
     /// `init` defaults to `true` (set via `register(defaults:)`) on a clean UserDefaults.
-    @MainActor
-    func test_init_defaultsSortByGroupToTrue() {
+    @Test @MainActor
+    func `Init defaults sort by group to true`() {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
 
@@ -77,8 +78,8 @@ class BookmarksViewModelTests: OBATestCase {
     }
 
     /// `init` reads the persisted value back out of UserDefaults.
-    @MainActor
-    func test_init_readsSortByGroupFromUserDefaults() {
+    @Test @MainActor
+    func `Init reads sort by group from user defaults`() {
         userDefaults.set(false, forKey: sortByGroupKey)
 
         let dataLoader = MockDataLoader(testName: name)
@@ -91,8 +92,8 @@ class BookmarksViewModelTests: OBATestCase {
 
     /// `updateSortType` writes the new value to UserDefaults under the documented key
     /// and updates the published property.
-    @MainActor
-    func test_updateSortType_persistsToUserDefaults() {
+    @Test @MainActor
+    func `Update sort type persists to user defaults`() {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
 
@@ -106,8 +107,8 @@ class BookmarksViewModelTests: OBATestCase {
     // MARK: - isLoading
 
     /// `isLoading` starts `false` before any refresh.
-    @MainActor
-    func test_isLoading_defaultsToFalse() {
+    @Test @MainActor
+    func `Is loading defaults to false`() {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
 
@@ -119,8 +120,8 @@ class BookmarksViewModelTests: OBATestCase {
     /// A refresh that finds no eligible bookmarks must not leave `isLoading` stuck on `true`.
     /// `beginBatch(count: 0)` is the zero-fetch edge case in `BookmarkDataLoader` — the
     /// loader still has to report a clean `false` transition so consumer UI can recover.
-    @MainActor
-    func test_isLoading_remainsFalseWhenNoBookmarksToLoad() async {
+    @Test @MainActor
+    func `Is loading remains false when no bookmarks to load`() async {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
 
@@ -141,8 +142,8 @@ class BookmarksViewModelTests: OBATestCase {
     /// string, ungrouped bookmarks land in `"unknown_group"`, and distance
     /// sorting uses `"distance_sorted_group"`. These IDs key users' persisted
     /// collapse state — renaming any of them silently orphans that state.
-    @MainActor
-    func test_rebuildSections_sectionIDsMatchLegacyVocabulary() throws {
+    @Test @MainActor
+    func `Rebuild sections section IDs match legacy vocabulary`() throws {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
 
@@ -150,7 +151,7 @@ class BookmarksViewModelTests: OBATestCase {
             type: StopArrivals.self,
             fileName: "arrivals-and-departures-for-stop-1_10914.json"
         )
-        let arrivalDep = try XCTUnwrap(stopArrivals.arrivalsAndDepartures.first)
+        let arrivalDep = try #require(stopArrivals.arrivalsAndDepartures.first)
 
         let group = BookmarkGroup(name: "Work", sortOrder: 0)
         app.userDataStore.upsert(bookmarkGroup: group)
@@ -177,8 +178,8 @@ class BookmarksViewModelTests: OBATestCase {
     /// Bookmarks from other regions must not appear, and a section whose
     /// bookmarks are all filtered out is omitted entirely — with the standard
     /// empty state shown rather than a blank list.
-    @MainActor
-    func test_rebuildSections_filtersBookmarksFromOtherRegions() throws {
+    @Test @MainActor
+    func `Rebuild sections filters bookmarks from other regions`() throws {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
 
@@ -186,7 +187,7 @@ class BookmarksViewModelTests: OBATestCase {
             type: StopArrivals.self,
             fileName: "arrivals-and-departures-for-stop-1_10914.json"
         )
-        let arrivalDep = try XCTUnwrap(stopArrivals.arrivalsAndDepartures.first)
+        let arrivalDep = try #require(stopArrivals.arrivalsAndDepartures.first)
 
         app.userDataStore.add(
             Bookmark(name: "Elsewhere", regionIdentifier: pugetSoundRegionIdentifier + 1, arrivalDeparture: arrivalDep),
@@ -205,8 +206,8 @@ class BookmarksViewModelTests: OBATestCase {
 
     /// A pull-to-refresh with zero eligible bookmarks must return promptly
     /// rather than suspending forever (the spinner would never dismiss).
-    @MainActor
-    func test_refreshAndWait_returnsForEmptyBatch() async {
+    @Test @MainActor
+    func `Refresh and wait returns for empty batch`() async {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
 
@@ -218,8 +219,8 @@ class BookmarksViewModelTests: OBATestCase {
 
     /// `refreshAndWait` resumes only after its own batch completes, with the
     /// fetched arrival data already applied to `sections`.
-    @MainActor
-    func test_refreshAndWait_waitsForItsBatchAndAppliesData() async throws {
+    @Test @MainActor
+    func `Refresh and wait waits for its batch and applies data`() async throws {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
 
@@ -227,7 +228,7 @@ class BookmarksViewModelTests: OBATestCase {
             type: StopArrivals.self,
             fileName: "arrivals-and-departures-for-stop-1_10914.json"
         )
-        let arrivalDep = try XCTUnwrap(stopArrivals.arrivalsAndDepartures.first)
+        let arrivalDep = try #require(stopArrivals.arrivalsAndDepartures.first)
         app.userDataStore.add(
             Bookmark(name: "Route 49", regionIdentifier: pugetSoundRegionIdentifier, arrivalDeparture: arrivalDep),
             to: nil
@@ -240,7 +241,7 @@ class BookmarksViewModelTests: OBATestCase {
         await viewModel.refreshAndWait()
 
         #expect(!viewModel.isLoading)
-        let row = try XCTUnwrap(viewModel.sections.first?.rows.first)
+        let row = try #require(viewModel.sections.first?.rows.first)
         #expect(row.hasLoadedArrivalData)
         #expect(!row.arrivalDepartures.isEmpty)
     }
@@ -250,8 +251,8 @@ class BookmarksViewModelTests: OBATestCase {
     /// Collapse state persisted by the legacy `BookmarksViewController` (same
     /// key, same `Set<String>` encoding) must survive into the rewrite, and
     /// toggling must round-trip back to UserDefaults.
-    @MainActor
-    func test_collapsedSections_persistenceRoundTrip() throws {
+    @Test @MainActor
+    func `Collapsed sections persistence round trip`() throws {
         let key = "collapsedBookmarkSections"
         try userDefaults.encodeUserDefaultsObjects(Set(["unknown_group"]), key: key)
 
@@ -276,13 +277,13 @@ class BookmarksViewModelTests: OBATestCase {
     /// `BookmarkRowViewModel.==` gates the `sections` publish in
     /// `rebuildSections()` — any display-relevant field omitted from `==`
     /// means a permanently stale row on screen.
-    @MainActor
-    func test_bookmarkRowViewModel_equalityCoversDisplayFields() throws {
+    @Test @MainActor
+    func `Bookmark row view model equality covers display fields`() throws {
         let stopArrivals = try Fixtures.loadRESTAPIPayload(
             type: StopArrivals.self,
             fileName: "arrivals-and-departures-for-stop-1_10914.json"
         )
-        let arrivalDep = try XCTUnwrap(stopArrivals.arrivalsAndDepartures.first)
+        let arrivalDep = try #require(stopArrivals.arrivalsAndDepartures.first)
         let bookmark = Bookmark(name: "Route 49", regionIdentifier: pugetSoundRegionIdentifier, arrivalDeparture: arrivalDep)
 
         let base = BookmarkRowViewModel(bookmark: bookmark, arrivalDepartures: [], highlightedTripIDs: [])
@@ -304,13 +305,13 @@ class BookmarksViewModelTests: OBATestCase {
 
     /// The init clamp: whole-stop bookmarks never carry arrival data, even if
     /// a caller passes some.
-    @MainActor
-    func test_bookmarkRowViewModel_clampsArrivalsForStopBookmarks() throws {
+    @Test @MainActor
+    func `Bookmark row view model clamps arrivals for stop bookmarks`() throws {
         let stopArrivals = try Fixtures.loadRESTAPIPayload(
             type: StopArrivals.self,
             fileName: "arrivals-and-departures-for-stop-1_10914.json"
         )
-        let arrivalDep = try XCTUnwrap(stopArrivals.arrivalsAndDepartures.first)
+        let arrivalDep = try #require(stopArrivals.arrivalsAndDepartures.first)
         let stopBookmark = Bookmark(name: "Stop", regionIdentifier: pugetSoundRegionIdentifier, stop: arrivalDep.stop)
 
         let row = BookmarkRowViewModel(bookmark: stopBookmark, arrivalDepartures: [arrivalDep], highlightedTripIDs: [])
@@ -327,8 +328,8 @@ class BookmarksViewModelTests: OBATestCase {
     /// Regression test for the `lastBatchHadError` → `lastRefreshHadError` plumbing added in
     /// `BookmarkDataLoader` and `BookmarksViewModel`. Requires a region-eligible trip bookmark so
     /// the loader dispatches a real per-bookmark fetch that can fail.
-    @MainActor
-    func test_refresh_setsAndResetsLastRefreshHadError() async throws {
+    @Test @MainActor
+    func `Refresh sets and resets last refresh had error`() async throws {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
 
@@ -337,7 +338,7 @@ class BookmarksViewModelTests: OBATestCase {
             type: StopArrivals.self,
             fileName: "arrivals-and-departures-for-stop-1_10914.json"
         )
-        let arrivalDep = try XCTUnwrap(stopArrivals.arrivalsAndDepartures.first)
+        let arrivalDep = try #require(stopArrivals.arrivalsAndDepartures.first)
         let bookmark = Bookmark(
             name: "Route 49",
             regionIdentifier: pugetSoundRegionIdentifier,
@@ -355,19 +356,19 @@ class BookmarksViewModelTests: OBATestCase {
         #expect(!viewModel.lastRefreshHadError)
 
         // Wait for the batch to fully complete (isLoading: false → true → false).
-        let errBatchDone = expectation(description: "error batch finishes")
+        var errBatchDone = false
         var seenLoading = false
         var cancellables = Set<AnyCancellable>()
         viewModel.$isLoading.sink { isLoading in
             if isLoading { seenLoading = true }
-            if seenLoading && !isLoading { errBatchDone.fulfill() }
+            if seenLoading && !isLoading { errBatchDone = true }
         }.store(in: &cancellables)
 
         viewModel.refresh()
         // Timeout sized for GitHub Actions runner headroom, not local speed —
         // the batch's `Task { @MainActor }` chain lands well under a second
         // locally but has flaked at 2s on CI under load.
-        await fulfillment(of: [errBatchDone], timeout: 10.0)
+        await poll(until: { errBatchDone }, timeout: .seconds(10), "error batch never finished")
         cancellables.removeAll()
 
         #expect(viewModel.lastRefreshHadError)
@@ -385,15 +386,15 @@ class BookmarksViewModelTests: OBATestCase {
             ) { $0.url?.path.contains("/api/where/arrivals-and-departures-for-stop") ?? false }
         }
 
-        let cleanBatchDone = expectation(description: "clean batch finishes")
+        var cleanBatchDone = false
         var seenLoading2 = false
         viewModel.$isLoading.sink { isLoading in
             if isLoading { seenLoading2 = true }
-            if seenLoading2 && !isLoading { cleanBatchDone.fulfill() }
+            if seenLoading2 && !isLoading { cleanBatchDone = true }
         }.store(in: &cancellables)
 
         viewModel.refresh()
-        await fulfillment(of: [cleanBatchDone], timeout: 10.0)
+        await poll(until: { cleanBatchDone }, timeout: .seconds(10), "clean batch never finished")
 
         #expect(!viewModel.lastRefreshHadError)
     }

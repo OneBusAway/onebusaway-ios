@@ -8,16 +8,16 @@
 //
 
 import Foundation
-import XCTest
 import Testing
 import UIKit
 import CoreGraphics
 @testable import OBAKit
 
 @MainActor
-class UIImageShadowTests: XCTestCase {
+@Suite(.serialized)
+final class UIImageShadowTests {
     
-    func test_Shadow_struct() {
+    @Test func `Shadow struct`() {
         let offset = CGSize(width: 1, height: 2)
         let blur: CGFloat = 5.0
         let color = UIColor.black
@@ -29,7 +29,7 @@ class UIImageShadowTests: XCTestCase {
         #expect(shadow.color == color)
     }
     
-    func test_UIImage_resizableShadowImage_basic() {
+    @Test func `UI image resizable shadow image basic`() {
         let sideLength: CGFloat = 50.0
         let cornerRadius: CGFloat = 10.0
         let shadow = Shadow(offset: .zero, blur: 5.0, color: .black)
@@ -52,7 +52,7 @@ class UIImageShadowTests: XCTestCase {
         #expect(shadowImage.resizingMode == .tile)
     }
     
-    func test_UIImage_resizableShadowImage_withCapInsets() {
+    @Test func `UI image resizable shadow image with cap insets`() {
         let sideLength: CGFloat = 40.0
         let cornerRadius: CGFloat = 8.0
         let shadow = Shadow(offset: CGSize(width: 2, height: 2), blur: 3.0, color: .gray)
@@ -74,7 +74,7 @@ class UIImageShadowTests: XCTestCase {
         #expect(shadowImage.capInsets.right > 0)
     }
     
-    func test_UIImage_resizableShadowImage_differentParameters() {
+    @Test func `UI image resizable shadow image different parameters`() {
         // Test with different parameters to ensure robustness
         let shadows = [
             Shadow(offset: .zero, blur: 0.0, color: .clear),
@@ -95,7 +95,7 @@ class UIImageShadowTests: XCTestCase {
         }
     }
     
-    func test_UIImage_resizableShadowImage_zeroCornerRadius() {
+    @Test func `UI image resizable shadow image zero corner radius`() {
         let sideLength: CGFloat = 60.0
         let cornerRadius: CGFloat = 0.0 // No rounded corners
         let shadow = Shadow(offset: CGSize(width: 1, height: 1), blur: 4.0, color: .black)
@@ -117,7 +117,7 @@ class UIImageShadowTests: XCTestCase {
         #expect(shadowImage.capInsets.right == shadow.blur)
     }
     
-    func test_UIImage_resizableShadowImage_imageSizeCalculation() {
+    @Test func `UI image resizable shadow image image size calculation`() {
         let sideLength: CGFloat = 100.0
         let cornerRadius: CGFloat = 15.0
         let blur: CGFloat = 8.0

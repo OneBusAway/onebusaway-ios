@@ -8,17 +8,17 @@
 //
 
 import Foundation
-import XCTest
 @testable import OBAKit
 @testable import OBAKitCore
 import CoreLocation
 import Testing
 
 @MainActor
-class LocationServiceTests: XCTestCase {
+@Suite(.serialized)
+final class LocationServiceTests {
     // MARK: - Authorization
 
-    func test_authorization_defaultValueIsNotDetermined() {
+    @Test func `Authorization default value is not determined`() {
         let service = LocationService(userDefaults: UserDefaults(), locationManager: LocationManagerMock())
 
         #expect(service.authorizationStatus == .notDetermined)
@@ -26,7 +26,7 @@ class LocationServiceTests: XCTestCase {
         #expect(service.canRequestAuthorization)
     }
 
-    func test_authorization_granted() async {
+    @Test func `Authorization granted`() async {
         let locationManagerMock = AuthorizableLocationManagerMock(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
         let service = LocationService(userDefaults: UserDefaults(), locationManager: locationManagerMock)
         let delegate = LocDelegate()
@@ -44,7 +44,7 @@ class LocationServiceTests: XCTestCase {
         #expect(delegate.error == nil)
     }
 
-    func test_updateLocation_successiveUpdates_succeed() {
+    @Test func `Update location successive updates succeed`() {
         let locationManagerMock = AuthorizableLocationManagerMock(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
         locationManagerMock.requestWhenInUseAuthorization()
         let service = LocationService(userDefaults: UserDefaults(), locationManager: locationManagerMock)
@@ -60,7 +60,7 @@ class LocationServiceTests: XCTestCase {
         #expect(service.currentLocation == TestData.mockTampaLocation)
     }
 
-    func test_updateLocation_withNoLocation_doesNotTriggerUpdates() {
+    @Test func `Update location with no location does not trigger updates`() {
         let locationManagerMock = AuthorizableLocationManagerMock(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
         let service = LocationService(userDefaults: UserDefaults(), locationManager: locationManagerMock)
 
@@ -73,7 +73,7 @@ class LocationServiceTests: XCTestCase {
         #expect(del.location == TestData.mockSeattleLocation)
     }
 
-    func test_updateLocation_withLowAccuracy_doesNotTriggerUpdates() {
+    @Test func `Update location with low accuracy does not trigger updates`() {
         let locationManagerMock = AuthorizableLocationManagerMock(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
         let service = LocationService(userDefaults: UserDefaults(), locationManager: locationManagerMock)
         service.successiveLocationComparisonWindow = 60.0
@@ -91,7 +91,7 @@ class LocationServiceTests: XCTestCase {
         #expect(service.currentLocation == seattle)
     }
 
-    func test_stopUpdates_disablesUpdates() {
+    @Test func `Stop updates disables updates`() {
         let locationManagerMock = AuthorizableLocationManagerMock(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
         let service = LocationService(userDefaults: UserDefaults(), locationManager: locationManagerMock)
 
@@ -100,7 +100,7 @@ class LocationServiceTests: XCTestCase {
         #expect(!locationManagerMock.headingUpdatesStarted)
     }
 
-    func test_startUpdates_withoutAuthorization_doesNothing() {
+    @Test func `Start updates without authorization does nothing`() {
         let locationManagerMock = LocationManagerMock()
         let service = LocationService(userDefaults: UserDefaults(), locationManager: locationManagerMock)
 
@@ -115,7 +115,7 @@ class LocationServiceTests: XCTestCase {
         #expect(!locationManagerMock.headingUpdatesStarted)
     }
 
-    func test_receiveErrors() {
+    @Test func `Receive errors`() {
         let locationManagerMock = LocationManagerMock()
         let service = LocationService(userDefaults: UserDefaults(), locationManager: locationManagerMock)
         let del = LocDelegate()

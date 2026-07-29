@@ -7,16 +7,17 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
 import CoreLocation
 import MapKit
+import Foundation
 import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
 // swiftlint:disable function_body_length force_cast
 
-class StopArrivalsModelOperationTests: OBATestCase {
+@Suite(.serialized)
+final class StopArrivalsModelOperationTests: OBATestCase {
     let campusParkwayStopID = "1_10914"
     let galerStopID = "1_11370"
     let rvtdStopID = "1739_d1e8e68e-83f8-487f-baf5-f465fe70fc84.json"
@@ -26,8 +27,8 @@ class StopArrivalsModelOperationTests: OBATestCase {
         "https://www.example.com/api/where/arrivals-and-departures-for-stop/\(stopID).json"
     }
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
 
         let dataLoader = (restService.dataLoader as! MockDataLoader)
 
@@ -52,7 +53,7 @@ class StopArrivalsModelOperationTests: OBATestCase {
         )
     }
 
-    func test_arrivalAndDepartureStatus() async throws {
+    @Test func `Arrival and departure status`() async throws {
         let arrivals = try await restService.getArrivalsAndDeparturesForStop(id: galerStopID, minutesBefore: 5, minutesAfter: 30).entry
 
         #expect(arrivals.arrivalsAndDepartures.count == 5)
@@ -68,12 +69,12 @@ class StopArrivalsModelOperationTests: OBATestCase {
         #expect(arrivals.arrivalsAndDepartures[4].arrivalDepartureStatus == .arriving)
     }
 
-    func testLoading_success() async throws {
+    @Test func `Loading success`() async throws {
         let arrivals = try await restService.getArrivalsAndDeparturesForStop(id: campusParkwayStopID, minutesBefore: 5, minutesAfter: 30).entry
 
         #expect(arrivals.nearbyStops.count == 4)
         #expect(arrivals.nearbyStops.count == 4)
-        #expect(try XCTUnwrap(arrivals.nearbyStops.first).name == "15th Ave NE & NE Campus Pkwy")
+        #expect(try #require(arrivals.nearbyStops.first).name == "15th Ave NE & NE Campus Pkwy")
 
         #expect(arrivals.serviceAlerts.count == 0)
 
@@ -82,7 +83,7 @@ class StopArrivalsModelOperationTests: OBATestCase {
 
         #expect(arrivals.arrivalsAndDepartures.count == 1)
 
-        let arrDep = try XCTUnwrap(arrivals.arrivalsAndDepartures.first)
+        let arrDep = try #require(arrivals.arrivalsAndDepartures.first)
         #expect(arrDep.arrivalEnabled)
         #expect(arrDep.blockTripSequence == 9)
         #expect(arrDep.departureEnabled)
@@ -123,7 +124,7 @@ class StopArrivalsModelOperationTests: OBATestCase {
         #expect(arrDep.trip.shortName == "LOCAL")
 
         #expect(arrDep.tripStatus != nil)
-        let tripStatus = try XCTUnwrap(arrDep.tripStatus)
+        let tripStatus = try #require(arrDep.tripStatus)
         #expect(tripStatus.activeTrip.id == "1_40984840")
 
         #expect(arrDep.vehicleID == "1_4559")
@@ -133,7 +134,7 @@ class StopArrivalsModelOperationTests: OBATestCase {
     /// server emit two `arrivalAndDeparture` entries for one trip visit (identical stop,
     /// trip, route, service date, and stop sequence — i.e. identical `ArrivalDeparture.id`).
     /// Ingestion must collapse these to a single entry, keeping the most recent report.
-    func testLoading_duplicateTripVisits_collapsedToFreshestReport() async throws {
+    @Test func `Loading duplicate trip visits collapsed to freshest report`() async throws {
         let arrivals = try await restService.getArrivalsAndDeparturesForStop(id: duplicatesStopID, minutesBefore: 5, minutesAfter: 30).entry
 
         // The fixture contains three entries: trip 1_40984902 reported twice
@@ -145,7 +146,7 @@ class StopArrivalsModelOperationTests: OBATestCase {
 
         // The duplicated trip keeps its original (first-occurrence) position, but is
         // represented by the report with the newer lastUpdateTime.
-        let deduped = try XCTUnwrap(arrivals.arrivalsAndDepartures.first)
+        let deduped = try #require(arrivals.arrivalsAndDepartures.first)
         #expect(deduped.tripID == "1_40984902")
         #expect(deduped.vehicleID == "1_8109999")
         #expect(deduped.occupancyStatus == .empty)
@@ -153,7 +154,7 @@ class StopArrivalsModelOperationTests: OBATestCase {
         #expect(arrivals.arrivalsAndDepartures.last?.tripID == "1_40984903")
     }
 
-    func testLoading_rogueValley() async throws {
+    @Test func `Loading rogue valley`() async throws {
         // There are some indications that the data shape from RVTD is different from some other regions.
         // This test is meant to ensure that these different data sources work equally well.
 
@@ -166,7 +167,7 @@ class StopArrivalsModelOperationTests: OBATestCase {
 
         #expect(arrivals.arrivalsAndDepartures.count == 1)
 
-        let arrDep = try XCTUnwrap(arrivals.arrivalsAndDepartures.first)
+        let arrDep = try #require(arrivals.arrivalsAndDepartures.first)
         #expect(arrDep.arrivalEnabled)
         #expect(arrDep.blockTripSequence == 2)
         #expect(arrDep.departureEnabled)

@@ -9,7 +9,6 @@
 
 import Foundation
 import UIKit
-import XCTest
 @testable import OBAKit
 @testable import OBAKitCore
 import CoreLocation
@@ -50,18 +49,18 @@ class TestRegionsServiceDelegate: NSObject, RegionsServiceDelegate {
     }
 }
 
-class ApplicationTests: OBATestCase {
+@Suite(.serialized)
+final class ApplicationTests: OBATestCase {
     var queue: OperationQueue!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
 
         queue = OperationQueue()
         queue.maxConcurrentOperationCount = 1
     }
 
-    override func tearDown() async throws {
-        try await super.tearDown()
+    isolated deinit {
 
         queue.cancelAllOperations()
     }
@@ -76,7 +75,7 @@ class ApplicationTests: OBATestCase {
         return (locManager, locationService, config)
     }
 
-    @MainActor func test_appCreation_locationAlreadyAuthorized_updatesLocation() async {
+    @Test @MainActor func `App creation location already authorized updates location`() async {
         let (locManager, _, config) = configureAuthorizedObjects()
 
         let dataLoader = (config.dataLoader as! MockDataLoader)
@@ -110,7 +109,7 @@ class ApplicationTests: OBATestCase {
         }
     }
 
-    func test_appCreation_locationAlreadyAuthorized_regionAvailable_createsRESTAPIService() {
+    @Test func `App creation location already authorized region available creates RESTAPI service`() {
         let (_, locService, config) = configureAuthorizedObjects()
 
         let dataLoader = (config.dataLoader as! MockDataLoader)
@@ -133,7 +132,7 @@ class ApplicationTests: OBATestCase {
 
     // MARK: - When location not been authorized
 
-    func test_app_locationNotDetermined_init() {
+    @Test func `App location not determined init`() {
         let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)
         stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
@@ -157,7 +156,7 @@ class ApplicationTests: OBATestCase {
         #expect(app.apiService == nil)
     }
 
-    func test_app_locationNewlyAuthorized() async {
+    @Test func `App location newly authorized`() async {
         let dataLoader = MockDataLoader(testName: name)
 
         stubRegions(dataLoader: dataLoader)
@@ -189,7 +188,7 @@ class ApplicationTests: OBATestCase {
 
     // MARK: - Minimal Proof of Concept Tests
 
-    func test_application_initializes_with_config() {
+    @Test func `Application initializes with config`() {
         let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)
         let locManager = LocationManagerMock()
@@ -201,7 +200,7 @@ class ApplicationTests: OBATestCase {
         #expect(app.applicationBundle == Bundle.main)
     }
 
-    func test_application_delegate_communication() {
+    @Test func `Application delegate communication`() {
         let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)
         let locManager = LocationManagerMock()
@@ -219,7 +218,7 @@ class ApplicationTests: OBATestCase {
         #expect(delegate.called_applicationReloadRootInterface)
     }
 
-    func test_application_idle_timer_disabled_proxies_delegate() {
+    @Test func `Application idle timer disabled proxies delegate`() {
         let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)
         let locManager = LocationManagerMock()
@@ -240,7 +239,7 @@ class ApplicationTests: OBATestCase {
 
     // MARK: - Property and Feature Tests
 
-    func test_application_can_open_url_proxies_delegate() {
+    @Test func `Application can open url proxies delegate`() {
         let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)
         let locManager = LocationManagerMock()
@@ -257,7 +256,7 @@ class ApplicationTests: OBATestCase {
         #expect(!result)  // TestAppDelegate returns false
     }
 
-    func test_application_is_registered_for_remote_notifications_proxies_delegate() {
+    @Test func `Application is registered for remote notifications proxies delegate`() {
         let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)
         let locManager = LocationManagerMock()
@@ -272,7 +271,7 @@ class ApplicationTests: OBATestCase {
         #expect(app.isRegisteredForRemoteNotifications)
     }
 
-    func test_application_credits_proxies_delegate() {
+    @Test func `Application credits proxies delegate`() {
         let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)
         let locManager = LocationManagerMock()
@@ -284,7 +283,7 @@ class ApplicationTests: OBATestCase {
         #expect(app.credits.isEmpty)
     }
 
-    func test_application_should_show_crash_button_returns_false_without_delegate() {
+    @Test func `Application should show crash button returns false without delegate`() {
         let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)
         let locManager = LocationManagerMock()
@@ -297,7 +296,7 @@ class ApplicationTests: OBATestCase {
 
     // MARK: - Feature Availability Tests
 
-    func test_features_obaco_status_off_when_no_region() {
+    @Test func `Features obaco status off when no region`() {
         let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)
         let locManager = LocationManagerMock()
@@ -308,7 +307,7 @@ class ApplicationTests: OBATestCase {
         #expect(app.features.obaco == Application.FeatureStatus.off)
     }
 
-    func test_features_push_status_off_when_no_provider() {
+    @Test func `Features push status off when no provider`() {
         let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)
         let locManager = LocationManagerMock()
@@ -319,7 +318,7 @@ class ApplicationTests: OBATestCase {
         #expect(app.features.push == Application.FeatureStatus.off)
     }
 
-    func test_features_deep_linking_status_when_router_created() {
+    @Test func `Features deep linking status when router created`() {
         let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)
         let locManager = LocationManagerMock()
@@ -334,7 +333,7 @@ class ApplicationTests: OBATestCase {
 
     // MARK: - Application Lifecycle Tests
 
-    func test_application_did_finish_launching() {
+    @Test func `Application did finish launching`() {
         let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)
         let locManager = LocationManagerMock()
@@ -356,7 +355,7 @@ class ApplicationTests: OBATestCase {
         #expect(delegate.called_applicationReloadRootInterface)
     }
 
-    @MainActor func test_application_will_resign_active() {
+    @Test @MainActor func `Application will resign active`() {
         let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)
         stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
@@ -377,7 +376,7 @@ class ApplicationTests: OBATestCase {
 
     // MARK: - Data Migration Tests
 
-    func test_should_perform_migration_returns_data_migrator_value() {
+    @Test func `Should perform migration returns data migrator value`() {
         let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)
         let locManager = LocationManagerMock()
@@ -390,7 +389,7 @@ class ApplicationTests: OBATestCase {
         #expect([true, false].contains(shouldPerform))
     }
 
-    func test_has_data_to_migrate_returns_data_migrator_value() {
+    @Test func `Has data to migrate returns data migrator value`() {
         let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)
         let locManager = LocationManagerMock()
@@ -405,7 +404,7 @@ class ApplicationTests: OBATestCase {
 
     // MARK: - URL Scheme and Deep Link Tests
 
-    func test_application_url_scheme_add_region_returns_true() async {
+    @Test func `Application url scheme add region returns true`() async {
         let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)
         stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
@@ -428,7 +427,7 @@ class ApplicationTests: OBATestCase {
     }
 
 
-    func test_application_url_scheme_view_stop_with_no_root_yet_is_stashed_and_accepted() async {
+    @Test func `Application url scheme view stop with no root yet is stashed and accepted`() async {
         let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)
         let locManager = LocationManagerMock()
@@ -464,7 +463,7 @@ class ApplicationTests: OBATestCase {
     /// empty seen-store) gets backfilled and — with no push provider configured, as in
     /// this test harness — matches no steps, so `evaluate` hands back nil and the app
     /// goes straight to its root UI.
-    func test_onboarding_evaluate_existingUser_returnsNil() async {
+    @Test func `Onboarding evaluate existing user returns nil`() async {
         let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)
 
@@ -500,7 +499,7 @@ class ApplicationTests: OBATestCase {
     }
 
     /// A new user (no region) gets a flow — evaluate returns a controller.
-    func test_onboarding_evaluate_newUser_returnsController() async {
+    @Test func `Onboarding evaluate new user returns controller`() async {
         let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)
         let locManager = LocationManagerMock()
@@ -517,7 +516,7 @@ class ApplicationTests: OBATestCase {
         #expect(controller != nil)
     }
 
-    func test_application_url_scheme_invalid_url_returns_false() async {
+    @Test func `Application url scheme invalid url returns false`() async {
         let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)
         let locManager = LocationManagerMock()
@@ -535,7 +534,7 @@ class ApplicationTests: OBATestCase {
 
     // MARK: - User Activity Tests
 
-    func test_application_continue_user_activity_without_app_links_router() {
+    @Test func `Application continue user activity without app links router`() {
         let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)
         let locManager = LocationManagerMock()
@@ -552,7 +551,7 @@ class ApplicationTests: OBATestCase {
 
     // MARK: - Analytics Tests
 
-    func test_application_has_analytics_property() {
+    @Test func `Application has analytics property`() {
         let mockAnalytics = AnalyticsMock()
         let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)
@@ -567,7 +566,7 @@ class ApplicationTests: OBATestCase {
 
     // MARK: - Regions Service Delegate Tests
 
-    func test_regions_service_changed_automatic_region_selection() {
+    @Test func `Regions service changed automatic region selection`() {
         let mockAnalytics = AnalyticsMock()
         let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)
@@ -584,7 +583,7 @@ class ApplicationTests: OBATestCase {
         #expect(mockAnalytics.reportedEvents.count >= 2)
     }
 
-    func test_regions_service_updated_region() {
+    @Test func `Regions service updated region`() {
         let mockAnalytics = AnalyticsMock()
         let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)
@@ -603,7 +602,7 @@ class ApplicationTests: OBATestCase {
 
     // MARK: - Push Service Tests
 
-    func test_push_service_received_donation_prompt_with_no_top_view_controller() {
+    @Test func `Push service received donation prompt with no top view controller`() {
         let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)
         let locManager = LocationManagerMock()
@@ -624,7 +623,7 @@ class ApplicationTests: OBATestCase {
 
     // MARK: - Error Display Tests
 
-    func test_display_error_without_delegate() async {
+    @Test func `Display error without delegate`() async {
         let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)
         let locManager = LocationManagerMock()
@@ -640,7 +639,7 @@ class ApplicationTests: OBATestCase {
 
     // MARK: - Agency Alerts Tests
 
-    func test_agency_alerts_store_display_error() {
+    @Test func `Agency alerts store display error`() {
         let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)
         let locManager = LocationManagerMock()
@@ -654,8 +653,8 @@ class ApplicationTests: OBATestCase {
         app.agencyAlertsStore(app.alertsStore, displayError: testError)
     }
 
-    @MainActor
-    func test_agency_alerts_updated_without_alerts() {
+    @Test @MainActor
+    func `Agency alerts updated without alerts`() {
         let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)
         let locManager = LocationManagerMock()
@@ -669,7 +668,7 @@ class ApplicationTests: OBATestCase {
 
     // MARK: - API Services Tests
 
-    func test_api_services_refreshed() {
+    @Test func `Api services refreshed`() {
         let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)
         let locManager = LocationManagerMock()
@@ -683,7 +682,7 @@ class ApplicationTests: OBATestCase {
 
     // MARK: - Crash Button Tests
 
-    func test_perform_test_crash_without_delegate() {
+    @Test func `Perform test crash without delegate`() {
         let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)
         let locManager = LocationManagerMock()
@@ -697,7 +696,7 @@ class ApplicationTests: OBATestCase {
 
     // MARK: - Property Access Tests
 
-    func test_lazy_properties_initialization() {
+    @Test func `Lazy properties initialization`() {
         let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)
         let locManager = LocationManagerMock()

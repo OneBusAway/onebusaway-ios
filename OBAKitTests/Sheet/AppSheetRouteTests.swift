@@ -7,7 +7,6 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
 import Testing
 @testable import OBAKit
 @testable import OBAKitCore
@@ -15,11 +14,12 @@ import Testing
 /// Pure-enum tests for `AppSheetRoute`: stable identifiers,
 /// stacking preference, and per-detent configuration.
 @MainActor
-final class AppSheetRouteTests: XCTestCase {
+@Suite(.serialized)
+final class AppSheetRouteTests {
 
     // MARK: - Identifiers
 
-    func test_id_isStableForCaselessRoutes() {
+    @Test func `Id is stable for caseless routes`() {
         #expect(AppSheetRoute.home.id == "home")
         #expect(AppSheetRoute.search.id == "search")
         #expect(AppSheetRoute.nearbyAll.id == "nearbyAll")
@@ -31,7 +31,7 @@ final class AppSheetRouteTests: XCTestCase {
         #expect(AppSheetRoute.settings.id == "settings")
     }
 
-    func test_id_embedsAssociatedValues() throws {
+    @Test func `Id embeds associated values`() throws {
         #expect(AppSheetRoute.stopDetails(stopID: "1_75403").id == "stopDetails-1_75403")
         #expect(AppSheetRoute.tripDetails(tripID: "trip_42").id == "tripDetails-trip_42")
         let route = try Fixtures.createRoute(id: "route_8")
@@ -39,7 +39,7 @@ final class AppSheetRouteTests: XCTestCase {
         #expect(AppSheetRoute.transitAlert(alertID: "alert_99").id == "transitAlert-alert_99")
     }
 
-    func test_id_differsBetweenInstancesOfSameCase() {
+    @Test func `Id differs between instances of same case`() {
         let a = AppSheetRoute.stopDetails(stopID: "1_75403")
         let b = AppSheetRoute.stopDetails(stopID: "1_75404")
         #expect(a.id != b.id)
@@ -47,13 +47,13 @@ final class AppSheetRouteTests: XCTestCase {
 
     // MARK: - Stacking preference
 
-    func test_prefersStacking_baseLayerRoutes() {
+    @Test func `Prefers stacking base layer routes`() {
         #expect(AppSheetRoute.home.prefersStacking == false)
         #expect(AppSheetRoute.search.prefersStacking == false)
         #expect(AppSheetRoute.routePicker.prefersStacking == false)
     }
 
-    func test_prefersStacking_stackedLayerRoutes() throws {
+    @Test func `Prefers stacking stacked layer routes`() throws {
         #expect(AppSheetRoute.stopDetails(stopID: "1").prefersStacking == true)
         #expect(AppSheetRoute.tripPlanner.prefersStacking == true)
         #expect(AppSheetRoute.tripDetails(tripID: "t").prefersStacking == true)
@@ -69,7 +69,7 @@ final class AppSheetRouteTests: XCTestCase {
 
     // MARK: - Detent configuration
 
-    func test_homeDetent_startsAtSmallAndOffersAllThree() {
+    @Test func `Home detent starts at small and offers all three`() {
         let config = AppSheetRoute.home.detentConfiguration
         #expect(config.detents == [.height(80), .medium, AppSheetRoute.largeDetent])
         #expect(config.initialDetent == .height(80))
@@ -77,7 +77,7 @@ final class AppSheetRouteTests: XCTestCase {
         #expect(config.isDismissDisabled == true)
     }
 
-    func test_homeDetent_flipsToFullScreenAtLargeDetent() {
+    @Test func `Home detent flips to full screen at large detent`() {
         // `upThrough:` isn't honored with custom `.height` detents, so the home
         // route flips background interaction to `.disabled` only when parked at
         // `largeDetent` via `fullScreenDetent`.
@@ -85,7 +85,7 @@ final class AppSheetRouteTests: XCTestCase {
         #expect(config.fullScreenDetent == AppSheetRoute.largeDetent)
     }
 
-    func test_searchDetent_isFullLargeAndDismissDisabled() {
+    @Test func `Search detent is full large and dismiss disabled`() {
         let config = AppSheetRoute.search.detentConfiguration
         #expect(config.detents == [.large])
         #expect(config.initialDetent == .large)
@@ -93,7 +93,7 @@ final class AppSheetRouteTests: XCTestCase {
         #expect(config.fullScreenDetent == nil)
     }
 
-    func test_stackedAllListRoutes_shareLargeAndAllowDismiss() {
+    @Test func `Stacked all list routes share large and allow dismiss`() {
         // These all-list routes are stacked sheets, so the OS owns dismissal
         // and `isDismissDisabled` must be `false` for `truncateStacked` to stay
         // in sync with the drag-down gesture.
@@ -106,7 +106,7 @@ final class AppSheetRouteTests: XCTestCase {
         }
     }
 
-    func test_stopDetailsDetent_startsMediumAndIsInteractivelyDismissible() {
+    @Test func `Stop details detent starts medium and is interactively dismissible`() {
         let config = AppSheetRoute.stopDetails(stopID: "1").detentConfiguration
         #expect(config.detents == [.medium, .large])
         #expect(config.initialDetent == .medium)
@@ -114,7 +114,7 @@ final class AppSheetRouteTests: XCTestCase {
         #expect(config.fullScreenDetent == nil)
     }
 
-    func test_stackedDetailRoutes_shareLargeStartAndAllowDismiss() throws {
+    @Test func `Stacked detail routes share large start and allow dismiss`() throws {
         let currentTripRoute = try Fixtures.createRoute(id: "r")
         let routes: [AppSheetRoute] = [
             .tripPlanner,
@@ -135,7 +135,7 @@ final class AppSheetRouteTests: XCTestCase {
         }
     }
 
-    func test_allRoutes_showDragIndicator() throws {
+    @Test func `All routes show drag indicator`() throws {
         // No route currently opts out of the drag indicator; this guards against
         // an accidental flip when adding a new case.
         let currentTripRoute = try Fixtures.createRoute(id: "r")
@@ -150,11 +150,11 @@ final class AppSheetRouteTests: XCTestCase {
         }
     }
 
-    func test_largeDetent_isFractionedJustBelowFullScreen() {
+    @Test func `Large detent is fractioned just below full screen`() {
         #expect(AppSheetRoute.largeDetent == .fraction(0.99))
     }
 
-    func test_homeCollapsedHeight_matchesMapBottomInset() {
+    @Test func `Home collapsed height matches map bottom inset`() {
         // Shared with `MapPanelRootView` so the map's bottom safe-area padding
         // matches the collapsed sheet — keep the constant pinned.
         #expect(AppSheetRoute.homeCollapsedHeight == 80)
@@ -162,7 +162,7 @@ final class AppSheetRouteTests: XCTestCase {
 
     // MARK: - SheetDetentConfiguration defaults
 
-    func test_sheetDetentConfiguration_appliesDefaultsForOptionalFields() {
+    @Test func `Sheet detent configuration applies defaults for optional fields`() {
         let config = SheetDetentConfiguration(
             detents: [.medium],
             initialDetent: .medium,
@@ -179,18 +179,18 @@ final class AppSheetRouteTests: XCTestCase {
     /// The override predicate is the testable surface here;
     /// `PresentationBackgroundInteraction` is opaque and can't be compared
     /// directly, so the modifier itself stays out of the test.
-    func test_shouldDisableBackgroundForFullScreen_homeAtLargeDetentIsTrue() {
+    @Test func `Should disable background for full screen home at large detent is true`() {
         let config = AppSheetRoute.home.detentConfiguration
         #expect(config.shouldDisableBackgroundForFullScreen(at: AppSheetRoute.largeDetent) == true)
     }
 
-    func test_shouldDisableBackgroundForFullScreen_homeBelowLargeDetentIsFalse() {
+    @Test func `Should disable background for full screen home below large detent is false`() {
         let config = AppSheetRoute.home.detentConfiguration
         #expect(config.shouldDisableBackgroundForFullScreen(at: .medium) == false)
         #expect(config.shouldDisableBackgroundForFullScreen(at: .height(AppSheetRoute.homeCollapsedHeight)) == false)
     }
 
-    func test_shouldDisableBackgroundForFullScreen_isFalseWhenFullScreenDetentNotConfigured() {
+    @Test func `Should disable background for full screen is false when full screen detent not configured`() {
         // `.search` does not set `fullScreenDetent`, so the predicate must
         // return `false` regardless of the current detent.
         let config = AppSheetRoute.search.detentConfiguration
@@ -200,19 +200,19 @@ final class AppSheetRouteTests: XCTestCase {
 
     // MARK: - Hashable / Equatable
 
-    func test_equality_sameCaseSameAssociatedValueAreEqual() {
+    @Test func `Equality same case same associated value are equal`() {
         #expect(AppSheetRoute.stopDetails(stopID: "1_1") == AppSheetRoute.stopDetails(stopID: "1_1"))
         #expect(AppSheetRoute.tripDetails(tripID: "t") == AppSheetRoute.tripDetails(tripID: "t"))
     }
 
-    func test_equality_differentAssociatedValuesAreNotEqual() throws {
+    @Test func `Equality different associated values are not equal`() throws {
         #expect(AppSheetRoute.stopDetails(stopID: "1_1") != AppSheetRoute.stopDetails(stopID: "1_2"))
         let route1 = try Fixtures.createRoute(id: "r1")
         let route2 = try Fixtures.createRoute(id: "r2")
         #expect(AppSheetRoute.currentTrip(route: route1) != AppSheetRoute.currentTrip(route: route2))
     }
 
-    func test_hash_consistency_forValueEqualRoutes() throws {
+    @Test func `Hash consistency for value equal routes`() throws {
         let route1 = try Fixtures.createRoute(id: "r1")
         let route2 = try Fixtures.createRoute(id: "r1")
         let sheetRoute1 = AppSheetRoute.currentTrip(route: route1)

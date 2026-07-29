@@ -7,7 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
+import Foundation
 import Testing
 import CoreLocation
 @testable import OBAKit
@@ -15,23 +15,21 @@ import CoreLocation
 
 // swiftlint:disable force_try type_name
 
-class UserDefaultsStore_BookmarksTests: OBATestCase {
+@Suite(.serialized)
+final class UserDefaultsStore_BookmarksTests: OBATestCase {
     var userDefaultsStore: UserDefaultsStore!
     var stops: [Stop]!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
+
         userDefaultsStore = UserDefaultsStore(userDefaults: userDefaults)
         stops = try! Fixtures.loadSomeStops()
     }
 
-    override func tearDown() async throws {
-        try await super.tearDown()
-    }
-
     // MARK: - Bookmark Groups
 
-    func test_bookmarkGroups_roundTripping() {
+    @Test func `Bookmark groups round tripping`() {
         let group = BookmarkGroup(name: "Group!", sortOrder: 0)
 
         #expect(self.userDefaultsStore.bookmarkGroups == [])
@@ -39,7 +37,7 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
         #expect(self.userDefaultsStore.bookmarkGroups == [group])
     }
 
-    func test_bookmarkGroups_addDuplicate() {
+    @Test func `Bookmark groups add duplicate`() {
         let group = BookmarkGroup(name: "Group!", sortOrder: 0)
 
         userDefaultsStore.upsert(bookmarkGroup: group)
@@ -47,21 +45,21 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
         #expect(self.userDefaultsStore.bookmarkGroups == [group])
     }
 
-    func test_bookmarkGroups_delete() {
+    @Test func `Bookmark groups delete`() {
         let group = BookmarkGroup(name: "Group!", sortOrder: 0)
         userDefaultsStore.upsert(bookmarkGroup: group)
         userDefaultsStore.deleteGroup(group)
         #expect(self.userDefaultsStore.bookmarkGroups == [])
     }
 
-    func test_bookmarkGroups_deleteByID() {
+    @Test func `Bookmark groups delete by ID`() {
         let group = BookmarkGroup(name: "Group!", sortOrder: 0)
         userDefaultsStore.upsert(bookmarkGroup: group)
         userDefaultsStore.deleteGroup(id: group.id)
         #expect(self.userDefaultsStore.bookmarkGroups == [])
     }
 
-    func test_bookmarkGroups_deleteNonexistent() {
+    @Test func `Bookmark groups delete nonexistent`() {
         let group = BookmarkGroup(name: "Group!", sortOrder: 1)
         let group2 = BookmarkGroup(name: "Group!", sortOrder: 2)
         userDefaultsStore.upsert(bookmarkGroup: group)
@@ -69,7 +67,7 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
         #expect(self.userDefaultsStore.bookmarkGroups == [group])
     }
 
-    func test_bookmarkGroups_findByID() {
+    @Test func `Bookmark groups find by ID`() {
         let group = BookmarkGroup(name: "Group!", sortOrder: 1)
         userDefaultsStore.upsert(bookmarkGroup: group)
 
@@ -80,7 +78,7 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
         #expect(found == group)
     }
 
-    func test_bookmarkGroups_replacement() {
+    @Test func `Bookmark groups replacement`() {
         // Create and populate
         let keptGroup = BookmarkGroup(name: "kept", sortOrder: 0)
         userDefaultsStore.upsert(bookmarkGroup: keptGroup)
@@ -110,7 +108,7 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
 
     // MARK: - Bookmarks
 
-    func test_bookmarks_retrieval_notInGroup() {
+    @Test func `Bookmarks retrieval not in group`() {
         let group = BookmarkGroup(name: "Group!", sortOrder: 0)
         userDefaultsStore.upsert(bookmarkGroup: group)
 
@@ -125,7 +123,7 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
         #expect(self.userDefaultsStore.bookmarksInGroup(nil) == [bookmark2])
     }
 
-    func test_bookmarks_retrieval_inGroup() {
+    @Test func `Bookmarks retrieval in group`() {
         let group = BookmarkGroup(name: "Group!", sortOrder: 0)
         userDefaultsStore.upsert(bookmarkGroup: group)
 
@@ -140,35 +138,35 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
         #expect(self.userDefaultsStore.bookmarksInGroup(group) == [bookmark])
     }
 
-    func test_bookmarks_propertyRoundTripping() {
+    @Test func `Bookmarks property round tripping`() {
         let stop = stops[0]
         let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
         userDefaultsStore.add(bookmark)
         #expect(self.userDefaultsStore.bookmarks == [bookmark])
     }
 
-    func test_bookmark_findByID() {
+    @Test func `Bookmark find by ID`() {
         let stop = stops[0]
         let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
         userDefaultsStore.add(bookmark)
         #expect(self.userDefaultsStore.findBookmark(id: bookmark.id) == bookmark)
     }
 
-    func test_bookmark_findByStopID() {
+    @Test func `Bookmark find by stop ID`() {
         let stop = stops[0]
         let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
         userDefaultsStore.add(bookmark)
         #expect(self.userDefaultsStore.findBookmark(stopID: stop.id) == bookmark)
     }
 
-    func test_bookmark_find_noMatch() {
+    @Test func `Bookmark find no match`() {
         let stop = stops[0]
         let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
         userDefaultsStore.add(bookmark)
         #expect(self.userDefaultsStore.findBookmark(id: UUID()) == nil)
     }
 
-    func test_bookmark_addToGroup_groupUnregistered() {
+    @Test func `Bookmark add to group group unregistered`() {
         let stop = stops[0]
         let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
         let group = BookmarkGroup(name: "My Group", sortOrder: 0)
@@ -179,7 +177,7 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
         #expect(self.userDefaultsStore.bookmarksInGroup(group) == [bookmark])
     }
 
-    func test_bookmark_changeGroup() {
+    @Test func `Bookmark change group`() {
         let stop = stops[0]
         let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
 
@@ -197,7 +195,7 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
         #expect(self.userDefaultsStore.bookmarksInGroup(group2).first!.id == bookmark.id)
     }
 
-    func test_bookmark_removeFromGroup() {
+    @Test func `Bookmark remove from group`() {
         let stop = stops[0]
         let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
 
@@ -211,7 +209,7 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
         #expect(self.userDefaultsStore.bookmarksInGroup(group) == [])
     }
 
-    func test_bookmark_addToGroup_groupRegistered() {
+    @Test func `Bookmark add to group group registered`() {
         let stop = stops[0]
         let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
         let group = BookmarkGroup(name: "My Group", sortOrder: 0)
@@ -223,7 +221,7 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
         #expect(self.userDefaultsStore.bookmarksInGroup(group) == [bookmark])
     }
 
-    func test_bookmark_addDuplicate() {
+    @Test func `Bookmark add duplicate`() {
         let stop = stops[0]
         let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
 
@@ -233,7 +231,7 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
         #expect(self.userDefaultsStore.bookmarks == [bookmark])
     }
 
-    func test_bookmark_delete() {
+    @Test func `Bookmark delete`() {
         let stop = stops[0]
         let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
 
@@ -243,7 +241,7 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
         #expect(self.userDefaultsStore.bookmarks == [])
     }
 
-    func test_bookmark_deleteNonexistent() {
+    @Test func `Bookmark delete nonexistent`() {
         let stop = stops[0]
         let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
         let bookmark2 = Bookmark(name: "My Bookmark 2", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
@@ -254,7 +252,7 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
         #expect(self.userDefaultsStore.bookmarks == [bookmark])
     }
 
-    func test_bookmark_add_existingRecord() {
+    @Test func `Bookmark add existing record`() {
         let stop = stops[0]
 
         let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
@@ -268,7 +266,7 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
 
     // MARK: - Bookmark Sort Order
 
-    func test_bookmark_sortOrder_noGroup() {
+    @Test func `Bookmark sort order no group`() {
         let stop = stops[0]
 
         var bookmark0 = Bookmark(name: "Bookmark 0", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
@@ -304,7 +302,7 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
         #expect(bookmark1.sortOrder == 1)
     }
 
-    func test_bookmark_sortOrder_inGroup() {
+    @Test func `Bookmark sort order in group`() {
         let stop = stops[0]
         let group = BookmarkGroup(name: "Group!", sortOrder: 0)
         userDefaultsStore.upsert(bookmarkGroup: group)
@@ -342,7 +340,7 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
         #expect(bookmark1.sortOrder == 1)
     }
 
-    func test_bookmark_sortOrder_acrossGroups() {
+    @Test func `Bookmark sort order across groups`() {
         let stop = stops[0]
         let group1 = BookmarkGroup(name: "Group 1", sortOrder: 0)
         userDefaultsStore.upsert(bookmarkGroup: group1)

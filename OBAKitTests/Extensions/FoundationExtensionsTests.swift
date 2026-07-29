@@ -8,12 +8,12 @@
 //
 
 import Foundation
-import XCTest
 import Testing
 @testable import OBAKitCore
 
 @MainActor
-class FoundationExtensionsTests: XCTestCase {
+@Suite(.serialized)
+final class FoundationExtensionsTests {
 
     // MARK: - Error.isCancellation
 
@@ -21,7 +21,7 @@ class FoundationExtensionsTests: XCTestCase {
     /// surfaced (e.g. `TripViewModel`), so misclassification in either
     /// direction is user-visible: swallow a real error, or alert on every
     /// dismissed context-menu preview.
-    func test_error_isCancellation() {
+    @Test func `Error is cancellation`() {
         #expect(CancellationError().isCancellation)
         #expect(URLError(.cancelled).isCancellation)
         #expect(NSError(domain: NSURLErrorDomain, code: NSURLErrorCancelled).isCancellation)
@@ -31,7 +31,7 @@ class FoundationExtensionsTests: XCTestCase {
         #expect(!NSError(domain: NSCocoaErrorDomain, code: NSURLErrorCancelled).isCancellation)
     }
     
-    func test_Bundle_appName() {
+    @Test func `Bundle app name`() {
         let bundle = Bundle.main
         let appName = bundle.appName
         
@@ -39,7 +39,7 @@ class FoundationExtensionsTests: XCTestCase {
         #expect(!appName.isEmpty)
     }
     
-    func test_Bundle_bundleIdentifier_extension() {
+    @Test func `Bundle bundle identifier extension`() {
         let bundle = Bundle.main
         // Test that our bundleIdentifier extension works by getting the CFBundleIdentifier value
         let bundleIdentifier = bundle.object(forInfoDictionaryKey: "CFBundleIdentifier") as? String
@@ -51,21 +51,21 @@ class FoundationExtensionsTests: XCTestCase {
         #expect(bundleIdentifier?.contains(".") == true)
     }
     
-    func test_Bundle_appVersion() {
+    @Test func `Bundle app version`() {
         let bundle = Bundle.main
         let appVersion = bundle.appVersion
         
         #expect(!appVersion.isEmpty)
     }
     
-    func test_Bundle_copyright() {
+    @Test func `Bundle copyright`() {
         let bundle = Bundle.main
 
         // This may be empty in test bundles, but should not crash
         _ = bundle.copyright
     }
     
-    func test_Bundle_userActivityTypes() {
+    @Test func `Bundle user activity types`() {
         let bundle = Bundle.main
         let userActivityTypes = bundle.userActivityTypes
         
@@ -75,7 +75,7 @@ class FoundationExtensionsTests: XCTestCase {
         }
     }
     
-    func test_Bundle_donationsEnabled() {
+    @Test func `Bundle donations enabled`() {
         let bundle = Bundle.main
         let donationsEnabled = bundle.donationsEnabled
         
@@ -83,7 +83,7 @@ class FoundationExtensionsTests: XCTestCase {
         #expect(type(of: donationsEnabled) == Bool.self)
     }
     
-    func test_Bundle_donationManagementPortal() {
+    @Test func `Bundle donation management portal`() {
         let bundle = Bundle.main
         let portal = bundle.donationManagementPortal
         
@@ -93,7 +93,7 @@ class FoundationExtensionsTests: XCTestCase {
         }
     }
     
-    func test_Bundle_extensionURLScheme() {
+    @Test func `Bundle extension URL scheme`() {
         let bundle = Bundle.main
         let scheme = bundle.extensionURLScheme
         
@@ -104,7 +104,7 @@ class FoundationExtensionsTests: XCTestCase {
         }
     }
     
-    func test_Bundle_bundledRegionsFileName() {
+    @Test func `Bundle bundled regions file name`() {
         let bundle = Bundle.main
         let fileName = bundle.bundledRegionsFileName
         
@@ -115,7 +115,7 @@ class FoundationExtensionsTests: XCTestCase {
         }
     }
     
-    func test_Bundle_bundledRegionsFilePath() {
+    @Test func `Bundle bundled regions file path`() {
         let bundle = Bundle.main
         let filePath = bundle.bundledRegionsFilePath
         
@@ -126,7 +126,7 @@ class FoundationExtensionsTests: XCTestCase {
         }
     }
     
-    func test_Bundle_regionsServerBaseAddress() {
+    @Test func `Bundle regions server base address`() {
         let bundle = Bundle.main
         let baseAddress = bundle.regionsServerBaseAddress
         
@@ -136,7 +136,7 @@ class FoundationExtensionsTests: XCTestCase {
         }
     }
     
-    func test_Bundle_regionsServerAPIPath() {
+    @Test func `Bundle regions server API path`() {
         let bundle = Bundle.main
         let apiPath = bundle.regionsServerAPIPath
         
@@ -147,7 +147,7 @@ class FoundationExtensionsTests: XCTestCase {
         }
     }
     
-    func test_Bundle_restServerAPIKey() {
+    @Test func `Bundle rest server API key`() {
         let bundle = Bundle.main
         let apiKey = bundle.restServerAPIKey
         
@@ -158,7 +158,7 @@ class FoundationExtensionsTests: XCTestCase {
         }
     }
     
-    func test_Bundle_appGroup() {
+    @Test func `Bundle app group`() {
         let bundle = Bundle.main
         let appGroup = bundle.appGroup
 
@@ -174,7 +174,9 @@ class FoundationExtensionsTests: XCTestCase {
 /// so these tests don't depend on the host app's Info.plist.
 // `Bundle` is already `@unchecked Sendable`; a subclass has to restate it or the
 // compiler warns. Mutated only from the test that owns the instance.
-private class FeedbackConfigBundle: Bundle, @unchecked Sendable {
+// `nonisolated`: overrides nonisolated Bundle members, which the
+// target's main-actor default isolation would conflict with.
+private nonisolated class FeedbackConfigBundle: Bundle, @unchecked Sendable {
     var config: [AnyHashable: Any] = [:]
 
     override func object(forInfoDictionaryKey key: String) -> Any? {
@@ -185,31 +187,32 @@ private class FeedbackConfigBundle: Bundle, @unchecked Sendable {
     static func create(config: [AnyHashable: Any]) throws -> FeedbackConfigBundle {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        let bundle = try XCTUnwrap(FeedbackConfigBundle(path: dir.path))
+        let bundle = try #require(FeedbackConfigBundle(path: dir.path))
         bundle.config = config
         return bundle
     }
 }
 
-final class BundleFeedbackConfigTests: XCTestCase {
+@Suite(.serialized)
+final class BundleFeedbackConfigTests {
 
-    func test_appStoreID_readsFromOBAKitConfig() throws {
+    @Test func `App store ID reads from OBA kit config`() throws {
         let bundle = try FeedbackConfigBundle.create(config: ["AppStoreID": "329380089"])
-        XCTAssertEqual(bundle.appStoreID, "329380089")
+        #expect(bundle.appStoreID == "329380089")
     }
 
-    func test_appStoreID_isNilWhenAbsent() throws {
+    @Test func `App store ID is nil when absent`() throws {
         let bundle = try FeedbackConfigBundle.create(config: [:])
-        XCTAssertNil(bundle.appStoreID)
+        #expect(bundle.appStoreID == nil)
     }
 
-    func test_feedbackPromptEnabled_defaultsToTrueWhenAbsent() throws {
+    @Test func `Feedback prompt enabled defaults to true when absent`() throws {
         let bundle = try FeedbackConfigBundle.create(config: [:])
-        XCTAssertTrue(bundle.feedbackPromptEnabled)
+        #expect(bundle.feedbackPromptEnabled)
     }
 
-    func test_feedbackPromptEnabled_honorsExplicitFalse() throws {
+    @Test func `Feedback prompt enabled honors explicit false`() throws {
         let bundle = try FeedbackConfigBundle.create(config: ["FeedbackPromptEnabled": false])
-        XCTAssertFalse(bundle.feedbackPromptEnabled)
+        #expect(!bundle.feedbackPromptEnabled)
     }
 }

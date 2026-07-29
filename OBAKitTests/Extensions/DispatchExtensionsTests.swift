@@ -8,34 +8,37 @@
 //
 
 import Foundation
-import XCTest
+import Testing
 @testable import OBAKit
 
 @MainActor
-class DispatchExtensionsTests: XCTestCase {
+@Suite(.serialized)
+final class DispatchExtensionsTests {
     
-    func test_debounce_executesAction() {
-        let expectation = self.expectation(description: "Debounce executes action")
-        
-        DispatchQueue.main.debounce(interval: 0.1) {
-            expectation.fulfill()
-        }
-        
-        waitForExpectations(timeout: 1.0)
-    }
-    
-    func test_throttle_executesAction() {
-        let expectation = self.expectation(description: "Throttle executes action")
+    // These three genuinely wait on a dispatch callback, so — unlike the
+    // handler tests elsewhere — they cannot collapse into a bare
+    // `confirmation`. The first two use `poll`, the repo's replacement for
+    // "wait until this becomes true", which returns as soon as the condition
+    // holds rather than burning the full timeout the way `waitForExpectations`
+    // did. The third deliberately keeps a fixed wait; see its own comment.
 
-        DispatchQueue.main.throttle(deadline: .now() + 0.1) {
-            expectation.fulfill()
-        }
+    @Test func `Debounce executes action`() async {
+        var ran = false
 
-        waitForExpectations(timeout: 1.0)
+        DispatchQueue.main.debounce(interval: 0.1) { ran = true }
+
+        await poll(until: { ran }, "debounced action should have run")
     }
 
-    func test_debounce_suppressesSecondCallWithinInterval() {
-        let expectation = self.expectation(description: "Debounced action runs exactly once")
+    @Test func `Throttle executes action`() async {
+        var ran = false
+
+        DispatchQueue.main.throttle(deadline: .now() + 0.1) { ran = true }
+
+        await poll(until: { ran }, "throttled action should have run")
+    }
+
+    @Test func `Debounce suppresses second call within interval`() async throws {
         var count = 0
 
         // Unique context: the debounce bookkeeping is global and would otherwise
@@ -44,11 +47,11 @@ class DispatchExtensionsTests: XCTestCase {
         DispatchQueue.main.debounce(interval: 0.5, context: context) { count += 1 }
         DispatchQueue.main.debounce(interval: 0.5, context: context) { count += 1 }
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-            XCTAssertEqual(count, 1)
-            expectation.fulfill()
-        }
+        // Deliberately a fixed wait rather than a poll: the assertion is that a
+        // second call never lands, and polling for "count == 1" would pass the
+        // instant the first one did — before the suppressed one could show up.
+        try await Task.sleep(for: .milliseconds(200))
 
-        waitForExpectations(timeout: 1.0)
+        #expect(count == 1)
     }
 }

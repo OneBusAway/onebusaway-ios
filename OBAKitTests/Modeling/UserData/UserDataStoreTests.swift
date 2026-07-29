@@ -7,31 +7,29 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
 import CoreLocation
+import Foundation
 import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
 // swiftlint:disable force_try
 
-class UserDefaultsStoreTests: OBATestCase {
+@Suite(.serialized)
+final class UserDefaultsStoreTests: OBATestCase {
     var userDefaultsStore: UserDefaultsStore!
     var region: Region!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
+
         userDefaultsStore = UserDefaultsStore(userDefaults: userDefaults)
         region = try! Fixtures.loadSomeRegions()[1]
     }
 
-    override func tearDown() async throws {
-        try await super.tearDown()
-    }
-
     // MARK: - Core
 
-    func test_garbageData_doesNotBreakApp() {
+    @Test func `Garbage data does not break app`() {
         let garbageDefaults = UserDefaults(suiteName: "garbage data test")!
         garbageDefaults.set("garbage data", forKey: "bookmarkGroups")
         let garbageStore = UserDefaultsStore(userDefaults: garbageDefaults)
@@ -41,7 +39,7 @@ class UserDefaultsStoreTests: OBATestCase {
 
     // MARK: - Recent Stops
 
-    func test_recentStops_addStop() {
+    @Test func `Recent stops add stop`() {
         let stops = try! Fixtures.loadSomeStops()
         let stop = stops.first!
         userDefaultsStore.addRecentStop(stop, region: region)
@@ -49,7 +47,7 @@ class UserDefaultsStoreTests: OBATestCase {
         #expect(self.userDefaultsStore.recentStops == [stop])
     }
 
-    func test_recentStops_uniqueStops() {
+    @Test func `Recent stops unique stops`() {
         let stops = try! Fixtures.loadSomeStops()
         let stop = stops.first!
         userDefaultsStore.addRecentStop(stop, region: region)
@@ -58,7 +56,7 @@ class UserDefaultsStoreTests: OBATestCase {
         #expect(self.userDefaultsStore.recentStops == [stop])
     }
 
-    func test_recentStops_maxCount() {
+    @Test func `Recent stops max count`() {
         let stops = try! Fixtures.loadSomeStops()
         #expect(stops.count > userDefaultsStore.maximumRecentStopsCount)
 
@@ -69,7 +67,7 @@ class UserDefaultsStoreTests: OBATestCase {
         #expect(self.userDefaultsStore.recentStops.count == userDefaultsStore.maximumRecentStopsCount)
     }
 
-    func test_recentStops_search() {
+    @Test func `Recent stops search`() {
         let stops = try! Fixtures.loadSomeStops()
 
         for s in stops {
@@ -85,7 +83,7 @@ class UserDefaultsStoreTests: OBATestCase {
         #expect(filtered.first! == stop)
     }
 
-    func test_recentStops_removeAll() {
+    @Test func `Recent stops remove all`() {
         let stops = try! Fixtures.loadSomeStops()
         let stop = stops.first!
         userDefaultsStore.addRecentStop(stop, region: region)
@@ -95,7 +93,7 @@ class UserDefaultsStoreTests: OBATestCase {
         #expect(self.userDefaultsStore.recentStops.count == 0)
     }
 
-    func test_recentStops_removeStop() {
+    @Test func `Recent stops remove stop`() {
         let stops = try! Fixtures.loadSomeStops().prefix(20)
         let stop = stops.first!
 
@@ -110,7 +108,7 @@ class UserDefaultsStoreTests: OBATestCase {
 
     // MARK: - Alarms
 
-    func test_alarms_deleteMissingTripDate() {
+    @Test func `Alarms delete missing trip date`() {
         let missingDataAlarm = try! Fixtures.loadAlarm(id: "1")
 
         let futureAlarm = try! Fixtures.loadAlarm(id: "2")
@@ -129,7 +127,7 @@ class UserDefaultsStoreTests: OBATestCase {
 
     }
 
-    func test_alarms_deleteExpired() {
+    @Test func `Alarms delete expired`() {
         let expiredAlarm = try! Fixtures.loadAlarm(id: "1")
         expiredAlarm.set(tripDate: Date(timeIntervalSinceReferenceDate: 0), alarmOffset: 5)
 
@@ -154,7 +152,7 @@ class UserDefaultsStoreTests: OBATestCase {
     /// so the reloaded Alarm would no longer compare equal to its in-memory original — and
     /// any equality-based delete would silently no-op. This test persists, reloads, then
     /// deletes by the round-tripped instance to anchor the fix path to a named test.
-    func test_alarms_delete_afterUserDefaultsRoundTrip() {
+    @Test func `Alarms delete after user defaults round trip`() {
         let alarm = try! Fixtures.loadAlarm(id: "round-trip")
         alarm.set(tripDate: Date(timeIntervalSinceNow: 300), alarmOffset: 2)
 
@@ -173,27 +171,27 @@ class UserDefaultsStoreTests: OBATestCase {
 
     // MARK: - Selected Tab Index
 
-    func test_selectedTabIndex_mapSelectedByDefault() {
+    @Test func `Selected tab index map selected by default`() {
         #expect(self.userDefaultsStore.lastSelectedView == SelectedTab.map)
     }
 
-    func test_selectedTabIndex_changingDefaults() {
+    @Test func `Selected tab index changing defaults`() {
         userDefaultsStore.lastSelectedView = .bookmarks
         #expect(self.userDefaultsStore.lastSelectedView == SelectedTab.bookmarks)
     }
 
-    func test_selectedTabIndex_invalidRawValueFallsBackToMap() {
+    @Test func `Selected tab index invalid raw value falls back to map`() {
         userDefaults.set(999, forKey: "UserDataStore.lastSelectedView")
         #expect(self.userDefaultsStore.lastSelectedView == SelectedTab.map)
     }
 
     // MARK: - Debug Mode
 
-    func test_debugMode_defaultValue() {
+    @Test func `Debug mode default value`() {
         #expect(!self.userDefaultsStore.debugMode)
     }
 
-    func test_debugMode_setValue() {
+    @Test func `Debug mode set value`() {
         self.userDefaultsStore.debugMode = true
         #expect(self.userDefaultsStore.debugMode)
 
@@ -203,11 +201,11 @@ class UserDefaultsStoreTests: OBATestCase {
 
     // MARK: - Stop UI Reduced Colors
 
-    func test_stopUIReducedColors_defaultValue() {
+    @Test func `Stop UI reduced colors default value`() {
         #expect(!self.userDefaultsStore.stopUIReducedColors)
     }
 
-    func test_stopUIReducedColors_setValue_persistsUnderTheAppStorageKey() {
+    @Test func `Stop UI reduced colors set value persists under the app storage key`() {
         userDefaultsStore.stopUIReducedColors = true
         #expect(self.userDefaultsStore.stopUIReducedColors)
         // The @AppStorage readers and the Eureka form must see the same key,
@@ -218,12 +216,12 @@ class UserDefaultsStoreTests: OBATestCase {
 
     // MARK: - Survey Properties
 
-    func test_surveyUserIdentifier_generatesUUID() {
+    @Test func `Survey user identifier generates UUID`() {
         let id = userDefaultsStore.surveyUserIdentifier
         #expect(!id.isEmpty)
     }
 
-    func test_surveyUserIdentifier_persistsBetweenCalls() {
+    @Test func `Survey user identifier persists between calls`() {
         let first = userDefaultsStore.surveyUserIdentifier
         let second = userDefaultsStore.surveyUserIdentifier
         #expect(first == second)
@@ -231,11 +229,11 @@ class UserDefaultsStoreTests: OBATestCase {
 
     // MARK: - App Launch Counter
 
-    func test_appLaunchCount_defaultValueIsZero() {
+    @Test func `App launch count default value is zero`() {
         #expect(self.userDefaultsStore.appLaunchCount == 0)
     }
 
-    func test_appLaunchCount_incrementsCorrectly() {
+    @Test func `App launch count increments correctly`() {
         userDefaultsStore.incrementAppLaunchCount()
         #expect(self.userDefaultsStore.appLaunchCount == 1)
 
@@ -245,11 +243,11 @@ class UserDefaultsStoreTests: OBATestCase {
 
     // MARK: - Survey Enabled
 
-    func test_isSurveyEnabled_defaultsToTrue() {
+    @Test func `Is survey enabled defaults to true`() {
         #expect(self.userDefaultsStore.isSurveyEnabled)
     }
 
-    func test_isSurveyEnabled_persistsValue() {
+    @Test func `Is survey enabled persists value`() {
         userDefaultsStore.isSurveyEnabled = false
         #expect(!self.userDefaultsStore.isSurveyEnabled)
 
@@ -259,11 +257,11 @@ class UserDefaultsStoreTests: OBATestCase {
 
     // MARK: - Next Survey Reminder Date
 
-    func test_nextSurveyReminderDate_defaultsToNil() {
+    @Test func `Next survey reminder date defaults to nil`() {
         #expect(self.userDefaultsStore.nextSurveyReminderDate == nil)
     }
 
-    func test_nextSurveyReminderDate_persistsValue() {
+    @Test func `Next survey reminder date persists value`() {
         let date = Date().addingTimeInterval(3600)
         userDefaultsStore.nextSurveyReminderDate = date
         expectClose(self.userDefaultsStore.nextSurveyReminderDate, date, within: 1)
@@ -271,13 +269,13 @@ class UserDefaultsStoreTests: OBATestCase {
 
     // MARK: - Survey Completion Tracking
 
-    func test_markSurveyCompleted_tracksCompletedSurvey() {
+    @Test func `Mark survey completed tracks completed survey`() {
         userDefaultsStore.markSurveyCompleted(surveyId: 1, userIdentifier: "user1")
         #expect(self.userDefaultsStore.isSurveyCompleted(surveyId: 1, userIdentifier: "user1"))
         #expect(!self.userDefaultsStore.isSurveyCompleted(surveyId: 2, userIdentifier: "user1"))
     }
 
-    func test_markSurveyForLater_tracksLaterSurvey() {
+    @Test func `Mark survey for later tracks later survey`() {
         userDefaultsStore.markSurveyForLater(surveyId: 1, userIdentifier: "user1")
         // Immediately after marking, shouldShowSurveyLater returns false (0 launches since marking)
         #expect(!self.userDefaultsStore.shouldShowSurveyLater(surveyId: 1, userIdentifier: "user1"))
@@ -285,11 +283,11 @@ class UserDefaultsStoreTests: OBATestCase {
 
     // MARK: - Walking Speed
 
-    func test_walkingSpeed_defaultValue() {
+    @Test func `Walking speed default value`() {
         expectClose(self.userDefaultsStore.walkingSpeedMetersPerSecond, 1.4)
     }
 
-    func test_walkingSpeed_roundTrip() {
+    @Test func `Walking speed round trip`() {
         userDefaultsStore.walkingSpeedMetersPerSecond = 0.9
         expectClose(self.userDefaultsStore.walkingSpeedMetersPerSecond, 0.9)
 
@@ -300,11 +298,11 @@ class UserDefaultsStoreTests: OBATestCase {
         expectClose(newStore.walkingSpeedMetersPerSecond, 1.8)
     }
 
-    func test_walkingSpeedSource_defaultValue() {
+    @Test func `Walking speed source default value`() {
         #expect(self.userDefaultsStore.walkingSpeedSource == .manual)
     }
 
-    func test_walkingSpeedSource_roundTrip() {
+    @Test func `Walking speed source round trip`() {
         userDefaultsStore.walkingSpeedSource = .healthKit
         #expect(self.userDefaultsStore.walkingSpeedSource == .healthKit)
 
@@ -312,23 +310,23 @@ class UserDefaultsStoreTests: OBATestCase {
         #expect(self.userDefaultsStore.walkingSpeedSource == .manual)
     }
 
-    func test_walkingSpeedMetersPerSecond_clampsBelowRange() {
+    @Test func `Walking speed meters per second clamps below range`() {
         userDefaultsStore.walkingSpeedMetersPerSecond = 0.1
         expectClose(self.userDefaultsStore.walkingSpeedMetersPerSecond, WalkingSpeed.validRange.lowerBound)
     }
 
-    func test_walkingSpeedMetersPerSecond_clampsAboveRange() {
+    @Test func `Walking speed meters per second clamps above range`() {
         userDefaultsStore.walkingSpeedMetersPerSecond = 10.0
         expectClose(self.userDefaultsStore.walkingSpeedMetersPerSecond, WalkingSpeed.validRange.upperBound)
     }
 
     // MARK: - Default Alarm Lead Time
 
-    func test_defaultAlarmLeadTime_is10Minutes() {
+    @Test func `Default alarm lead time is 10 minutes`() {
         #expect(self.userDefaultsStore.defaultAlarmLeadTimeMinutes == 10)
     }
 
-    func test_defaultAlarmLeadTime_ignoresAndClearsLegacyStoredValue() {
+    @Test func `Default alarm lead time ignores and clears legacy stored value`() {
         userDefaults.set(2, forKey: "UserDataStore.defaultAlarmLeadTimeMinutes")
 
         let newStore = UserDefaultsStore(userDefaults: userDefaults)

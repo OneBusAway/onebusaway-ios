@@ -7,7 +7,6 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
 import Testing
 import UIKit
 @testable import OBAKit
@@ -15,9 +14,10 @@ import UIKit
 
 // swiftlint:disable force_try
 
-class RouteTests: OBATestCase {
+@Suite(.serialized)
+final class RouteTests: OBATestCase {
     
-    func test_decodeValidRoute() {
+    @Test func `Decode valid route`() {
         let routeData: [String: Any] = [
             "id": "1_100002",
             "agencyId": "1",
@@ -45,7 +45,7 @@ class RouteTests: OBATestCase {
         #expect(route.regionIdentifier == nil)
     }
     
-    func test_decodeMinimalRoute() {
+    @Test func `Decode minimal route`() {
         let minimalData: [String: Any] = [
             "id": "minimal_route",
             "agencyId": "2",
@@ -66,7 +66,7 @@ class RouteTests: OBATestCase {
         #expect(route.routeURL == nil)
     }
     
-    func test_decodeWithBlankValues() {
+    @Test func `Decode with blank values`() {
         let dataWithBlanks: [String: Any] = [
             "id": "blank_route",
             "agencyId": "3",
@@ -87,7 +87,7 @@ class RouteTests: OBATestCase {
         #expect(route.textColor == nil)
     }
     
-    func test_routeTypeDecoding() {
+    @Test func `Route type decoding`() {
         let testCases: [(Int, Route.RouteType)] = [
             (0, .lightRail),
             (1, .subway),
@@ -114,7 +114,7 @@ class RouteTests: OBATestCase {
         }
     }
     
-    func test_hasReferencesLoadReferences() {
+    @Test func `Has references load references`() {
         let routeData: [String: Any] = [
             "id": "1_100002",
             "agencyId": "1",
@@ -146,7 +146,7 @@ class RouteTests: OBATestCase {
         #expect(route.regionIdentifier == 123)
     }
     
-    func test_equalityAndHash() {
+    @Test func `Equality and hash`() {
         let routeData: [String: Any] = [
             "id": "equality_test",
             "agencyId": "1",
@@ -174,7 +174,7 @@ class RouteTests: OBATestCase {
         #expect(route1.hash != route3.hash)
     }
     
-    func test_encodeDecodeRoundTrip() {
+    @Test func `Encode decode round trip`() {
         let routeData: [String: Any] = [
             "id": "roundtrip_test",
             "agencyId": "1",
@@ -197,7 +197,7 @@ class RouteTests: OBATestCase {
         #expect(roundTrippedRoute.routeURL == originalRoute.routeURL)
     }
     
-    func test_arrayExtensionSort() {
+    @Test func `Array extension sort`() {
         let route1Data: [String: Any] = ["id": "route1", "agencyId": "1", "shortName": "z Route", "type": 3]
         let route2Data: [String: Any] = ["id": "route2", "agencyId": "1", "shortName": "A Route", "type": 3]
         let route3Data: [String: Any] = ["id": "route3", "agencyId": "1", "shortName": "m Route", "type": 3]
@@ -215,7 +215,7 @@ class RouteTests: OBATestCase {
         #expect(sortedRoutes[2].shortName == "z Route")
     }
 
-    func test_arrayExtensionSort_numeric() {
+    @Test func `Array extension sort numeric`() {
         let routeNames = ["10", "3", "11", "49", "Bellevue", "12"]
         let routes = try! routeNames.enumerated().map { (index, name) -> Route in
             let dict: [String: Any] = ["id": "route_\(index)", "agencyId": "1", "shortName": name, "type": 3]
@@ -231,9 +231,10 @@ class RouteTests: OBATestCase {
 
 // MARK: - Frequency Tests
 
-class FrequencyTests: OBATestCase {
+@Suite(.serialized)
+final class FrequencyTests: OBATestCase {
     
-    func test_decodeValidFrequency() {
+    @Test func `Decode valid frequency`() {
         let frequencyData: [String: Any] = [
             "startTime": 1609459200000, // Milliseconds since epoch
             "endTime": 1609545600000,   
@@ -247,7 +248,7 @@ class FrequencyTests: OBATestCase {
         #expect(frequency.headway == 600.0)
     }
     
-    func test_frequencyEquality() {
+    @Test func `Frequency equality`() {
         let frequencyData: [String: Any] = [
             "startTime": 1609459200000,
             "endTime": 1609545600000,
@@ -267,7 +268,7 @@ class FrequencyTests: OBATestCase {
         #expect(frequency1.hash != frequency3.hash)
     }
     
-    func test_decodeFailureWhenMissingRequiredFields() {
+    @Test func `Decode failure when missing required fields`() {
         let incompleteData: [String: Any] = [
             "endTime": 1609545600000,
             "headway": 600.0

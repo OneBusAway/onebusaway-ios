@@ -8,21 +8,21 @@
 //
 
 import Foundation
-import XCTest
 import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
 // swiftlint:disable force_try
 
-class AlarmTests: OBATestCase {
+@Suite(.serialized)
+final class AlarmTests: OBATestCase {
 
-    func test_init_baseCase_success() {
+    @Test func `Init base case success`() {
         let alarm = try! Fixtures.loadAlarm()
         #expect(alarm.url.absoluteString == "https://alerts.example.com/regions/1/alarms/1234567890")
     }
 
-    func test_appendingData() {
+    @Test func `Appending data`() {
         let alarm = try! Fixtures.loadAlarm()
         let interval: TimeInterval = 1580428800
         let serviceDate = Date(timeIntervalSince1970: interval) // January 31, 2020, 12:00 AM GMT

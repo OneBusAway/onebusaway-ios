@@ -7,7 +7,6 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
 import CoreLocation
 import MapKit
 import Testing
@@ -16,8 +15,9 @@ import Testing
 
 // swiftlint:disable force_cast
 
-class AgenciesWithCoverageModelOperationTests: OBATestCase {
-    func testLoading_success() async throws {
+@Suite(.serialized)
+final class AgenciesWithCoverageModelOperationTests: OBATestCase {
+    @Test func `Loading success`() async throws {
         let dataLoader = (restService.dataLoader as! MockDataLoader)
         let data = Fixtures.loadData(file: "agencies_with_coverage.json")
         dataLoader.mock(URLString: "https://www.example.com/api/where/agencies-with-coverage.json", with: data)
@@ -25,7 +25,7 @@ class AgenciesWithCoverageModelOperationTests: OBATestCase {
         let response = try await restService.getAgenciesWithCoverage()
 
         let agencies = response.list
-        let childrens = try XCTUnwrap(agencies.first)
+        let childrens = try #require(agencies.first)
 
         #expect(agencies.count == 11)
 

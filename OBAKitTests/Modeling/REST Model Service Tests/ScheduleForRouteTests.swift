@@ -7,18 +7,19 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
+import Foundation
 import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
 // swiftlint:disable force_cast
 
-class ScheduleForRouteTests: OBATestCase {
+@Suite(.serialized)
+final class ScheduleForRouteTests: OBATestCase {
     let routeID = "1_100223"
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
 
         let dataLoader = (restService.dataLoader as! MockDataLoader)
         dataLoader.mock(
@@ -29,12 +30,12 @@ class ScheduleForRouteTests: OBATestCase {
 
     // MARK: - URL Builder Tests
 
-    func test_urlBuilder_generatesCorrectURL() {
+    @Test func `Url builder generates correct URL`() {
         let url = restService.urlBuilder.getScheduleForRoute(id: routeID)
         #expect(url.absoluteString.contains("/api/where/schedule-for-route/\(routeID).json"))
     }
 
-    func test_urlBuilder_withDate_includesDateParameter() {
+    @Test func `Url builder with date includes date parameter`() {
         let date = Date(timeIntervalSince1970: 1765008000) // 2025-12-06
         let url = restService.urlBuilder.getScheduleForRoute(id: routeID, date: date)
         #expect(url.absoluteString.contains("date="))
@@ -42,7 +43,7 @@ class ScheduleForRouteTests: OBATestCase {
 
     // MARK: - Model Decoding Tests
 
-    func test_loading_success() async throws {
+    @Test func `Loading success`() async throws {
         let response = try await restService.getScheduleForRoute(routeID: routeID)
         let schedule = response.entry
 
@@ -51,35 +52,35 @@ class ScheduleForRouteTests: OBATestCase {
         #expect(!schedule.stopTripGroupings.isEmpty)
     }
 
-    func test_stopTripGroupings_parsing() async throws {
+    @Test func `Stop trip groupings parsing`() async throws {
         let response = try await restService.getScheduleForRoute(routeID: routeID)
         let schedule = response.entry
 
-        let grouping = try XCTUnwrap(schedule.stopTripGroupings.first)
+        let grouping = try #require(schedule.stopTripGroupings.first)
         #expect(!grouping.stopIDs.isEmpty)
         #expect(!grouping.tripHeadsigns.isEmpty)
         #expect(!grouping.tripIDs.isEmpty)
         #expect(!grouping.tripsWithStopTimes.isEmpty)
     }
 
-    func test_tripsWithStopTimes_parsing() async throws {
+    @Test func `Trips with stop times parsing`() async throws {
         let response = try await restService.getScheduleForRoute(routeID: routeID)
         let schedule = response.entry
 
-        let grouping = try XCTUnwrap(schedule.stopTripGroupings.first)
-        let tripWithStopTimes = try XCTUnwrap(grouping.tripsWithStopTimes.first)
+        let grouping = try #require(schedule.stopTripGroupings.first)
+        let tripWithStopTimes = try #require(grouping.tripsWithStopTimes.first)
 
         #expect(!tripWithStopTimes.tripID.isEmpty)
         #expect(!tripWithStopTimes.stopTimes.isEmpty)
     }
 
-    func test_stopTimes_parsing() async throws {
+    @Test func `Stop times parsing`() async throws {
         let response = try await restService.getScheduleForRoute(routeID: routeID)
         let schedule = response.entry
 
-        let grouping = try XCTUnwrap(schedule.stopTripGroupings.first)
-        let tripWithStopTimes = try XCTUnwrap(grouping.tripsWithStopTimes.first)
-        let stopTime = try XCTUnwrap(tripWithStopTimes.stopTimes.first)
+        let grouping = try #require(schedule.stopTripGroupings.first)
+        let tripWithStopTimes = try #require(grouping.tripsWithStopTimes.first)
+        let stopTime = try #require(tripWithStopTimes.stopTimes.first)
 
         #expect(!stopTime.stopID.isEmpty)
         #expect(!stopTime.tripID.isEmpty)
@@ -90,13 +91,13 @@ class ScheduleForRouteTests: OBATestCase {
         #expect(stopTime.departureEnabled)
     }
 
-    func test_arrivalTime_isSecondsFromMidnight() async throws {
+    @Test func `Arrival time is seconds from midnight`() async throws {
         let response = try await restService.getScheduleForRoute(routeID: routeID)
         let schedule = response.entry
 
-        let grouping = try XCTUnwrap(schedule.stopTripGroupings.first)
-        let tripWithStopTimes = try XCTUnwrap(grouping.tripsWithStopTimes.first)
-        let stopTime = try XCTUnwrap(tripWithStopTimes.stopTimes.first)
+        let grouping = try #require(schedule.stopTripGroupings.first)
+        let tripWithStopTimes = try #require(grouping.tripsWithStopTimes.first)
+        let stopTime = try #require(tripWithStopTimes.stopTimes.first)
 
         // The fixture has arrivalTime: 31500 which equals 8:45 AM (31500 / 3600 = 8.75 hours)
         // Times should be between 0 (midnight) and 86400 (next midnight) or slightly beyond for overnight routes
@@ -106,14 +107,14 @@ class ScheduleForRouteTests: OBATestCase {
 
     // MARK: - References Tests
 
-    func test_references_containsRoutes() async throws {
+    @Test func `References contains routes`() async throws {
         let response = try await restService.getScheduleForRoute(routeID: routeID)
 
         #expect(response.references != nil)
         #expect(response.references?.routes.isEmpty == false)
     }
 
-    func test_references_containsStops() async throws {
+    @Test func `References contains stops`() async throws {
         let response = try await restService.getScheduleForRoute(routeID: routeID)
 
         #expect(response.references != nil)

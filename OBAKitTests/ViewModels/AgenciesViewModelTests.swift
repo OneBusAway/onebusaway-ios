@@ -7,7 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
+import Foundation
 import Testing
 import Combine
 @testable import OBAKit
@@ -15,17 +15,18 @@ import Combine
 
 /// Tests for `AgenciesViewModel`. Verifies the success path sorts by name,
 /// and that loading state resets to `false` after completion.
+@Suite(.serialized)
 final class AgenciesViewModelTests: OBATestCase {
     var queue: OperationQueue!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
+
         queue = OperationQueue()
         queue.maxConcurrentOperationCount = 1
     }
 
-    override func tearDown() async throws {
-        try await super.tearDown()
+    isolated deinit {
         queue.cancelAllOperations()
     }
 
@@ -57,8 +58,8 @@ final class AgenciesViewModelTests: OBATestCase {
         return Application(config: config)
     }
 
-    @MainActor
-    func test_init_emptyState() {
+    @Test @MainActor
+    func `Init empty state`() {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
 
@@ -67,8 +68,8 @@ final class AgenciesViewModelTests: OBATestCase {
         #expect(viewModel.agencies.isEmpty)
     }
 
-    @MainActor
-    func test_loadData_success_populatesAgenciesSortedByName() async {
+    @Test @MainActor
+    func `Load data success populates agencies sorted by name`() async {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
 

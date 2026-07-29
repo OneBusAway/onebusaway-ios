@@ -7,7 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
+import Foundation
 import Testing
 import Combine
 import CoreLocation
@@ -17,18 +17,19 @@ import CoreLocation
 // swiftlint:disable force_cast force_try
 
 /// Tests for `StopViewModel`. Regression tests for review issues #1, #2, and #8.
-class StopViewModelTests: OBATestCase {
+@Suite(.serialized)
+final class StopViewModelTests: OBATestCase {
     let testStopID = "1_TEST"
     var queue: OperationQueue!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
+
         queue = OperationQueue()
         queue.maxConcurrentOperationCount = 1
     }
 
-    override func tearDown() async throws {
-        try await super.tearDown()
+    isolated deinit {
         queue.cancelAllOperations()
     }
 
@@ -186,8 +187,8 @@ class StopViewModelTests: OBATestCase {
 
     /// Empty results should drive the auto-extend recursion all the way to the 720-minute cap,
     /// monotonically increase `minutesAfter`, and flip `isLoadMoreExhausted` to true.
-    @MainActor
-    func test_autoExtend_walksToCapAndFlipsExhausted() async {
+    @Test @MainActor
+    func `Auto extend walks to cap and flips exhausted`() async {
         let dataLoader = MockDataLoader(testName: name)
         let analytics = AnalyticsMock()
         let app = createApplication(dataLoader: dataLoader, analytics: analytics)
@@ -215,8 +216,8 @@ class StopViewModelTests: OBATestCase {
 
     /// `reportStopViewed` must fire exactly once per VM lifetime, even when refresh() is
     /// invoked many times by the auto-extend chain or by the user.
-    @MainActor
-    func test_analyticsFiresExactlyOnceAcrossRefreshes() async {
+    @Test @MainActor
+    func `Analytics fires exactly once across refreshes`() async {
         let dataLoader = MockDataLoader(testName: name)
         let analytics = AnalyticsMock()
         let app = createApplication(dataLoader: dataLoader, analytics: analytics)
@@ -239,8 +240,8 @@ class StopViewModelTests: OBATestCase {
 
     /// `addRecentStop` is one-shot per VM lifetime — multiple successful refreshes must not
     /// re-touch the recents list.
-    @MainActor
-    func test_recentStop_recordedExactlyOnce() async {
+    @Test @MainActor
+    func `Recent stop recorded exactly once`() async {
         let dataLoader = MockDataLoader(testName: name)
         let analytics = AnalyticsMock()
         let app = createApplication(dataLoader: dataLoader, analytics: analytics)
@@ -260,8 +261,8 @@ class StopViewModelTests: OBATestCase {
     /// auto-refresh — so the `/surveys.json` endpoint must be hit exactly once across
     /// multiple refreshes. The fetch runs in `surveyRefreshTask`; awaiting it gives an
     /// exact count rather than a polled one.
-    @MainActor
-    func test_surveys_refreshedExactlyOnceAcrossRefreshes() async {
+    @Test @MainActor
+    func `Surveys refreshed exactly once across refreshes`() async {
         let dataLoader = MockDataLoader(testName: name)
         let analytics = AnalyticsMock()
         let counter = SurveyHitCounter()
@@ -285,13 +286,13 @@ class StopViewModelTests: OBATestCase {
     /// If the persisted preferences for this stop hide every route the stop serves,
     /// the first successful fetch must flip `isListFiltered` to `false` so the user
     /// doesn't land on an empty list.
-    @MainActor
-    func test_disableFilter_runsOnInitialLoadWhenAllRoutesHidden() async throws {
+    @Test @MainActor
+    func `Disable filter runs on initial load when all routes hidden`() async throws {
         let dataLoader = MockDataLoader(testName: name)
         let analytics = AnalyticsMock()
         let app = createApplication(dataLoader: dataLoader, analytics: analytics)
 
-        let region = try XCTUnwrap(app.currentRegion)
+        let region = try #require(app.currentRegion)
 
         // The fixture's stop serves a single route, "1_R1". Pre-hide it.
         // We need a `Stop` object to call the data-store setter; build a minimal one from JSON.
@@ -314,8 +315,8 @@ class StopViewModelTests: OBATestCase {
     /// `$stop` must not re-emit across refreshes when the underlying value is unchanged.
     /// Re-emission would re-run the VC's `applyData` + `configureTabBarButtons` + title
     /// assignment for no reason on every 30 s refresh cycle.
-    @MainActor
-    func test_stop_doesNotReEmitWhenUnchangedAcrossRefreshes() async {
+    @Test @MainActor
+    func `Stop does not re emit when unchanged across refreshes`() async {
         let dataLoader = MockDataLoader(testName: name)
         let analytics = AnalyticsMock()
         let app = createApplication(dataLoader: dataLoader, analytics: analytics)
@@ -343,8 +344,8 @@ class StopViewModelTests: OBATestCase {
 
     /// `shouldRefresh` returns `true` when no successful fetch has happened yet, and `false`
     /// immediately after a successful refresh.
-    @MainActor
-    func test_shouldRefresh_nilLastUpdatedIsTrue_recentLastUpdatedIsFalse() async {
+    @Test @MainActor
+    func `Should refresh nil last updated is true recent last updated is false`() async {
         let dataLoader = MockDataLoader(testName: name)
         let analytics = AnalyticsMock()
         let app = createApplication(dataLoader: dataLoader, analytics: analytics)
@@ -362,8 +363,8 @@ class StopViewModelTests: OBATestCase {
     // MARK: - Inline Hero Survey
 
     /// On a fresh VM (before any fetch), `currentSurvey` is `nil`.
-    @MainActor
-    func test_currentSurvey_isNilBeforeFetch() {
+    @Test @MainActor
+    func `Current survey is nil before fetch`() {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock())
 
@@ -374,8 +375,8 @@ class StopViewModelTests: OBATestCase {
 
     /// `submitHeroAnswer` with no current survey is a no-op (no error emission, no
     /// presentFullSurvey emission).
-    @MainActor
-    func test_submitHeroAnswer_isNoOpWhenNoCurrentSurvey() async {
+    @Test @MainActor
+    func `Submit hero answer is no op when no current survey`() async {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock())
 
@@ -394,8 +395,8 @@ class StopViewModelTests: OBATestCase {
 
     /// `dismissCurrentSurvey()` with no current survey is a no-op and does not set
     /// the reminder date.
-    @MainActor
-    func test_dismissCurrentSurvey_isNoOpWhenNoCurrentSurvey() {
+    @Test @MainActor
+    func `Dismiss current survey is no op when no current survey`() {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock())
 
@@ -409,8 +410,8 @@ class StopViewModelTests: OBATestCase {
 
     /// `launchExternalSurvey()` with no explicit target and no `currentSurvey`
     /// must be a no-op: neither callback fires, and no survey is touched.
-    @MainActor
-    func test_launchExternalSurvey_noCurrentSurveyAndNoTarget_isNoOp() {
+    @Test @MainActor
+    func `Launch external survey no current survey and no target is no op`() {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock())
 
@@ -431,8 +432,8 @@ class StopViewModelTests: OBATestCase {
     /// When an explicit target is passed but the URL cannot be built, the
     /// launcher's failure path runs: `onFailure` fires, `onSuccess` does not,
     /// and the survey stays uncompleted.
-    @MainActor
-    func test_launchExternalSurvey_explicitTargetWithNoURL_callsFailure() {
+    @Test @MainActor
+    func `Launch external survey explicit target with no URL calls failure`() {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock())
         let viewModel = StopViewModel(application: app, stopID: testStopID)
@@ -562,8 +563,8 @@ class StopViewModelTests: OBATestCase {
 
     /// After a refresh, `currentSurvey` becomes non-nil when the survey list is
     /// populated, eligibility is open, and a matching survey exists.
-    @MainActor
-    func test_currentSurvey_populatedAfterRefreshWhenEligible() async {
+    @Test @MainActor
+    func `Current survey populated after refresh when eligible`() async {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplicationWithHeroSurvey(
             dataLoader: dataLoader,
@@ -587,8 +588,8 @@ class StopViewModelTests: OBATestCase {
     /// card too, even though `surveyOrchestrator.isEligible()` alone would
     /// still say yes — the coordinator's session-scoped `canShowInlineCards()`
     /// gate must apply to both inline surfaces, not just donations.
-    @MainActor
-    func test_currentSurvey_suppressedAfterReviewPromptShownThisSession() async {
+    @Test @MainActor
+    func `Current survey suppressed after review prompt shown this session`() async {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplicationWithHeroSurvey(
             dataLoader: dataLoader,
@@ -608,8 +609,8 @@ class StopViewModelTests: OBATestCase {
 
     /// Hero-only success: submit clears `currentSurvey`, marks the survey
     /// completed, and emits no error / no presentFullSurvey.
-    @MainActor
-    func test_submitHeroAnswer_completedOutcome_clearsCard() async {
+    @Test @MainActor
+    func `Submit hero answer completed outcome clears card`() async {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplicationWithHeroSurvey(
             dataLoader: dataLoader,
@@ -641,8 +642,8 @@ class StopViewModelTests: OBATestCase {
 
     /// Needs-remaining outcome: card clears AND `presentFullSurvey` emits with the
     /// hero response id (from the canned fixture) and stop location forwarded.
-    @MainActor
-    func test_submitHeroAnswer_needsRemainingOutcome_clearsCardAndEmitsPresent() async {
+    @Test @MainActor
+    func `Submit hero answer needs remaining outcome clears card and emits present`() async {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplicationWithHeroSurvey(
             dataLoader: dataLoader,
@@ -679,8 +680,8 @@ class StopViewModelTests: OBATestCase {
 
     /// Submission failure path: `currentSurvey` is preserved and the error
     /// publisher emits exactly once.
-    @MainActor
-    func test_submitHeroAnswer_errorPath_emitsErrorAndKeepsCard() async {
+    @Test @MainActor
+    func `Submit hero answer error path emits error and keeps card`() async {
         let dataLoader = MockDataLoader(testName: name)
         // Stub the surveys list, but NOT the submit endpoint — submission throws.
         let app = createApplicationWithHeroSurvey(
@@ -722,8 +723,8 @@ class StopViewModelTests: OBATestCase {
     /// Re-entrancy guard: a second concurrent `submitHeroAnswer` is dropped while
     /// the first is in flight, so the survey is only marked completed once and
     /// `presentFullSurvey` does not double-fire on the needs-remaining path.
-    @MainActor
-    func test_submitHeroAnswer_reEntrancyGuard_blocksConcurrentSubmit() async {
+    @Test @MainActor
+    func `Submit hero answer re entrancy guard blocks concurrent submit`() async {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplicationWithHeroSurvey(
             dataLoader: dataLoader,
@@ -757,15 +758,15 @@ class StopViewModelTests: OBATestCase {
     /// `StopViewController`, even with the new-stop-page flag ON (its default),
     /// because the transfer UX isn't built on the new page yet. A plain open with
     /// the flag ON resolves to the new `StopPageViewController`.
-    @MainActor
-    func test_makeStopController_transferContext_fallsBackToLegacyScreen() throws {
+    @Test @MainActor
+    func `Make stop controller transfer context falls back to legacy screen`() throws {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock())
 
         // The new-stop-page flag defaults to ON when unset.
         #expect(FeatureFlags.isNewStopPageEnabled(userDefaults: app.userDefaults))
 
-        let stop = try XCTUnwrap(try Fixtures.loadSomeStops().first)
+        let stop = try #require(try Fixtures.loadSomeStops().first)
 
         let transfer = TransferContext(arrivalTime: Date(), fromRouteShortName: "1", fromTripHeadsign: "Downtown")
         let transferController = app.viewRouter.makeStopController(stop: stop, transferContext: transfer)
@@ -779,8 +780,8 @@ class StopViewModelTests: OBATestCase {
 
     /// `alarmLeadTimeMinutes` derives the displayed lead time from the alarm's
     /// `tripDate`/`alarmDate` spread, not from any stored minutes field.
-    @MainActor
-    func test_alarmLeadTimeMinutes_derivesFromDates() throws {
+    @Test @MainActor
+    func `Alarm lead time minutes derives from dates`() throws {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock())
         let viewModel = StopViewModel(application: app, stopID: testStopID)
@@ -793,8 +794,8 @@ class StopViewModelTests: OBATestCase {
 
     /// With no `tripDate`/`alarmDate` to measure, the lead time falls back to the
     /// default rather than surfacing a bogus value.
-    @MainActor
-    func test_alarmLeadTimeMinutes_fallsBackToDefaultOnNilDates() throws {
+    @Test @MainActor
+    func `Alarm lead time minutes falls back to default on nil dates`() throws {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock())
         let viewModel = StopViewModel(application: app, stopID: testStopID)
@@ -813,8 +814,8 @@ class StopViewModelTests: OBATestCase {
     /// size on insert" behavior: nil before the async fetch has populated the
     /// cache, identical to the fetched details afterwards, and nil again after
     /// a refresh invalidates the cache.
-    @MainActor
-    func test_cachedApproachTripDetails_warmAfterFetch_invalidatedByRefresh() async throws {
+    @Test @MainActor
+    func `Cached approach trip details warm after fetch invalidated by refresh`() async throws {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(
             dataLoader: dataLoader,
@@ -831,7 +832,7 @@ class StopViewModelTests: OBATestCase {
         let viewModel = StopViewModel(application: app, stopID: testStopID)
         await viewModel.refresh()
 
-        let departure = try XCTUnwrap(viewModel.stopArrivals?.arrivalsAndDepartures.first)
+        let departure = try #require(viewModel.stopArrivals?.arrivalsAndDepartures.first)
         #expect(departure.predicted)
 
         // Cold: nothing cached until the async path has run.
@@ -852,8 +853,8 @@ class StopViewModelTests: OBATestCase {
     /// vehicleID and serviceDate — so the cache has to key on all three. Keyed on
     /// tripID alone, the same trip running on two service days shares one entry and
     /// the panel renders the other day's timeline.
-    @MainActor
-    func test_approachCache_sameTripDifferentServiceDate_doesNotCollide() async throws {
+    @Test @MainActor
+    func `Approach cache same trip different service date does not collide`() async throws {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(
             dataLoader: dataLoader,
@@ -869,9 +870,9 @@ class StopViewModelTests: OBATestCase {
         let viewModel = StopViewModel(application: app, stopID: testStopID)
         await viewModel.refresh()
 
-        let departures = try XCTUnwrap(viewModel.stopArrivals?.arrivalsAndDepartures)
-        let today = try XCTUnwrap(departures.first { $0.vehicleID == "1_7028" })
-        let tomorrow = try XCTUnwrap(departures.first { $0.vehicleID == "1_9999" })
+        let departures = try #require(viewModel.stopArrivals?.arrivalsAndDepartures)
+        let today = try #require(departures.first { $0.vehicleID == "1_7028" })
+        let tomorrow = try #require(departures.first { $0.vehicleID == "1_9999" })
 
         // Same trip, different instance: only the service date and vehicle differ.
         #expect(today.tripID == tomorrow.tripID)
@@ -891,13 +892,13 @@ class StopViewModelTests: OBATestCase {
     /// approach cache key has to account for.
     private func arrivalsWithSameTripOnTwoServiceDays() throws -> Data {
         let raw = Fixtures.loadData(file: "arrivals_and_departures_for_stop_1_10020.json")
-        var payload = try XCTUnwrap(try JSONSerialization.jsonObject(with: raw) as? [String: Any])
-        var data = try XCTUnwrap(payload["data"] as? [String: Any])
-        var entry = try XCTUnwrap(data["entry"] as? [String: Any])
-        var arrDeps = try XCTUnwrap(entry["arrivalsAndDepartures"] as? [[String: Any]])
+        var payload = try #require(try JSONSerialization.jsonObject(with: raw) as? [String: Any])
+        var data = try #require(payload["data"] as? [String: Any])
+        var entry = try #require(data["entry"] as? [String: Any])
+        var arrDeps = try #require(entry["arrivalsAndDepartures"] as? [[String: Any]])
 
-        var nextDay = try XCTUnwrap(arrDeps.first)
-        let serviceDate = try XCTUnwrap(nextDay["serviceDate"] as? Int)
+        var nextDay = try #require(arrDeps.first)
+        let serviceDate = try #require(nextDay["serviceDate"] as? Int)
         nextDay["serviceDate"] = serviceDate + 86_400_000 // ms
         nextDay["vehicleId"] = "1_9999"
         arrDeps.append(nextDay)
@@ -913,8 +914,8 @@ class StopViewModelTests: OBATestCase {
     /// Cancelling with no Obaco service must not report success: the server alarm is
     /// still armed and will still fire, so dropping the local copy would leave the
     /// rider with a buzzing alarm they can no longer see or cancel.
-    @MainActor
-    func test_cancelAlarm_withoutObacoService_keepsAlarmAndSurfacesError() async throws {
+    @Test @MainActor
+    func `Cancel alarm without obaco service keeps alarm and surfaces error`() async throws {
         removeStoredRegionsFile()
 
         let dataLoader = MockDataLoader(testName: name)
@@ -931,8 +932,8 @@ class StopViewModelTests: OBATestCase {
         let viewModel = StopViewModel(application: app, stopID: testStopID)
         await viewModel.refresh()
 
-        let departure = try XCTUnwrap(viewModel.stopArrivals?.arrivalsAndDepartures.first)
-        let region = try XCTUnwrap(app.currentRegion)
+        let departure = try #require(viewModel.stopArrivals?.arrivalsAndDepartures.first)
+        let region = try #require(app.currentRegion)
 
         let alarm = try Fixtures.loadAlarm()
         alarm.deepLink = ArrivalDepartureDeepLink(arrivalDeparture: departure, regionID: region.regionIdentifier)
@@ -953,15 +954,15 @@ class StopViewModelTests: OBATestCase {
 
     // MARK: - Review prompt success recording
 
-    @MainActor
-    func test_successfulFetchWithPredictedArrival_recordsOneSuccess() async {
+    @Test @MainActor
+    func `Successful fetch with predicted arrival records one success`() async {
         let (viewModel, application) = buildViewModel(arrivalsFixture: "arrivals_and_departures_for_stop_1_10020.json")
         await viewModel.refresh()
         #expect(application.reviewPromptPolicy.successCount == 1)
     }
 
-    @MainActor
-    func test_repeatedRefreshes_recordOnlyOneSuccess() async {
+    @Test @MainActor
+    func `Repeated refreshes record only one success`() async {
         let (viewModel, application) = buildViewModel(arrivalsFixture: "arrivals_and_departures_for_stop_1_10020.json")
         await viewModel.refresh()
         await viewModel.refresh()
@@ -969,8 +970,8 @@ class StopViewModelTests: OBATestCase {
         #expect(application.reviewPromptPolicy.successCount == 1)
     }
 
-    @MainActor
-    func test_scheduledOnlyArrivals_recordNoSuccess() async {
+    @Test @MainActor
+    func `Scheduled only arrivals record no success`() async {
         let (viewModel, application) = buildViewModel(arrivalsFixture: "arrivals_and_departures_for_stop_1_10020_no_realtime.json")
         await viewModel.refresh()
         #expect(application.reviewPromptPolicy.successCount == 0)
@@ -978,16 +979,16 @@ class StopViewModelTests: OBATestCase {
 
     /// Hide every route the fixture's predicted arrivals belong to, so the rider
     /// never saw a real-time row.
-    @MainActor
-    func test_predictedArrivalOnHiddenRoute_recordsNoSuccess() async {
+    @Test @MainActor
+    func `Predicted arrival on hidden route records no success`() async {
         let (viewModel, application) = buildViewModel(arrivalsFixture: "arrivals_and_departures_for_stop_1_10020.json")
         hideAllRoutes(in: viewModel)
         await viewModel.refresh()
         #expect(application.reviewPromptPolicy.successCount == 0)
     }
 
-    @MainActor
-    func test_failedFetch_recordsNoSuccessAndFlagsError() async {
+    @Test @MainActor
+    func `Failed fetch records no success and flags error`() async {
         let (viewModel, application) = buildViewModelWithFailingArrivals(statusCode: 500)
         await viewModel.refresh()
         #expect(application.reviewPromptPolicy.successCount == 0)
@@ -996,9 +997,9 @@ class StopViewModelTests: OBATestCase {
 
     /// A broken bookmark is not a failure the rider watched happen: the page says so
     /// and offers a way out.
-    @MainActor
-    func test_requestNotFound_withBookmarkContext_doesNotFlagError() async throws {
-        let stop = try XCTUnwrap(try Fixtures.loadSomeStops().first)
+    @Test @MainActor
+    func `Request not found with bookmark context does not flag error`() async throws {
+        let stop = try #require(try Fixtures.loadSomeStops().first)
         let bookmark = Bookmark(name: "Broken", regionIdentifier: pugetSoundRegionIdentifier, stop: stop)
         let (viewModel, application) = buildViewModelWithFailingArrivals(statusCode: 404, bookmarkContext: bookmark)
         await viewModel.refresh()
@@ -1007,8 +1008,8 @@ class StopViewModelTests: OBATestCase {
 
     /// Without a bookmark behind it — a deep link, a search result, a map pin — the same
     /// 404 strands the rider on a page with no arrivals and no error, which counts.
-    @MainActor
-    func test_requestNotFound_withoutBookmarkContext_flagsError() async {
+    @Test @MainActor
+    func `Request not found without bookmark context flags error`() async {
         let (viewModel, application) = buildViewModelWithFailingArrivals(statusCode: 404)
         await viewModel.refresh()
         #expect(application.promptCoordinator.sawErrorThisSession)

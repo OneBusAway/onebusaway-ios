@@ -9,14 +9,14 @@
 
 import Foundation
 import Testing
-import XCTest
 @testable import OBAKit
 @testable import OBAKitCore
 
 @MainActor
-class CollectionsTests: XCTestCase {
+@Suite(.serialized)
+final class CollectionsTests {
 
-    func test_set_allObjects() {
+    @Test func `Set all objects`() {
         let mySet: Set = ["one", "two", "three"]
         let array = mySet.allObjects
 
@@ -25,7 +25,7 @@ class CollectionsTests: XCTestCase {
         #expect(array.contains("three"))
     }
 
-    func testFilter() {
+    @Test func filter() {
         let list: [Any] = [1, "two", 3, "four", 5]
         let filtered = list.filter(type: Int.self)
         #expect(filtered == [1, 3, 5])

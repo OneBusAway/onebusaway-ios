@@ -8,16 +8,16 @@
 //
 
 import Foundation
-import XCTest
 import Testing
 import MapKit
 import CoreLocation
 @testable import OBAKit
 @testable import OBAKitCore
 
-class ModelExtensionsTests: OBATestCase {
+@Suite(.serialized)
+final class ModelExtensionsTests: OBATestCase {
     
-    func test_MKAnnotation_conformance() {
+    @Test func `MK annotation conformance`() {
         // Test that our model extensions properly conform to MKAnnotation
         // These models use Decodable initializers only, so we'll test the protocol conformance
         
@@ -32,7 +32,7 @@ class ModelExtensionsTests: OBATestCase {
         #expect(zeroCoordinate.longitude == 0)
     }
     
-    func test_CLLocationCoordinate2D_validation() {
+    @Test func `CL location coordinate 2 d validation`() {
         // Test coordinate validation methods
         let validCoordinate = CLLocationCoordinate2D(latitude: 47.6062, longitude: -122.3321)
         #expect(CLLocationCoordinate2DIsValid(validCoordinate) == true)

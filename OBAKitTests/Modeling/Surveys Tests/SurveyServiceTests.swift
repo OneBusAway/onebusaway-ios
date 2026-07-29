@@ -5,10 +5,11 @@
 //  Created by Mohamed Sliem on 04/12/2025.
 //
 
-import XCTest
+import Foundation
 import Testing
 @testable import OBAKitCore
 
+@Suite(.serialized)
 final class SurveyServiceTests: OBATestCase {
 
     // MARK: - Helpers
@@ -16,8 +17,9 @@ final class SurveyServiceTests: OBATestCase {
     private var mockDataLoader: MockDataLoader!
     private var testRESTService: RESTAPIService!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
+
         mockDataLoader = MockDataLoader(testName: name)
         let config = APIServiceConfiguration(
             baseURL: baseURL,
@@ -42,7 +44,7 @@ final class SurveyServiceTests: OBATestCase {
         return try await testRESTService.getSurveys(userID: uuid)
     }
 
-    func test_getSurveys_success_metadata() async throws {
+    @Test func `Get surveys success metadata`() async throws {
         let response = try await loadSurveys()
 
         #expect(response.region.name == "Puget Sound")
@@ -51,7 +53,7 @@ final class SurveyServiceTests: OBATestCase {
         #expect(response.surveys.count == 5)
     }
 
-    func test_firstSurvey_basicProperties() async throws {
+    @Test func `First survey basic properties`() async throws {
         let response = try await loadSurveys()
         let survey = response.surveys.first
 
@@ -69,7 +71,7 @@ final class SurveyServiceTests: OBATestCase {
         #expect(survey?.questions.count == 5)
     }
 
-    func test_firstSurvey_questionDecoding() async throws {
+    @Test func `First survey question decoding`() async throws {
         let response = try await loadSurveys()
         let survey = response.surveys.first!
 
@@ -98,7 +100,7 @@ final class SurveyServiceTests: OBATestCase {
         #expect(q4.content.surveyProvider == "google_forms")
     }
 
-    func test_firstSurvey_getQuestions_filtersCorrectly() async throws {
+    @Test func `First survey get questions filters correctly`() async throws {
         let response = try await loadSurveys()
         let survey = response.surveys.first!
 
@@ -112,7 +114,7 @@ final class SurveyServiceTests: OBATestCase {
 
     // MARK: - Survey Hero Question Submission
 
-    func test_submitSurvey_first_question() async throws {
+    @Test func `Submit survey first question`() async throws {
         setupMockSubmissionSuccess()
 
         let submissionModel = makeFirstQuestionSubmissionModel()
@@ -149,7 +151,7 @@ final class SurveyServiceTests: OBATestCase {
 
     // MARK: - Submit Additional Questions
 
-    func test_submitSurvey_additional_questions() async throws {
+    @Test func `Submit survey additional questions`() async throws {
         setupMockSubmissionSuccess("surveyResponseId")
 
         let additionalResponses: [QuestionAnswerSubmission] = [
@@ -170,7 +172,7 @@ final class SurveyServiceTests: OBATestCase {
 
     // MARK: - Error Scenarios
 
-    func test_get_surveys_captive_portal() async throws {
+    @Test func `Get surveys captive portal`() async throws {
         let data = Fixtures.loadData(file: "captive_portal.html")
         let url = URL(string: "https://onebusaway.co/api/v1/regions/1/surveys.json?user_id=12345-12345-12345-12345-12345")!
         let error = NSError(domain: NSCocoaErrorDomain, code: 3840, userInfo: nil)
@@ -181,11 +183,12 @@ final class SurveyServiceTests: OBATestCase {
             try await self.testRESTService.getSurveys(userID: self.uuid)
         }
         guard case .captivePortal = thrown else {
-            return XCTFail("Expected APIError.captivePortal, got \(String(describing: thrown))")
+            Issue.record("Expected APIError.captivePortal, got \(String(describing: thrown))")
+            return
         }
     }
 
-    func test_get_surveys_malformed_response_data() async throws {
+    @Test func `Get surveys malformed response data`() async throws {
         let malformedJsonResponse = Fixtures.loadData(file: "surveys_malformed_response.json")
         let url = URL(string: "https://onebusaway.co/api/v1/regions/1/surveys.json?user_id=12345-12345-12345-12345-12345")!
 
@@ -203,7 +206,7 @@ final class SurveyServiceTests: OBATestCase {
         }
     }
 
-    func test_get_surveys_internal_server_error() async throws {
+    @Test func `Get surveys internal server error`() async throws {
         let response = Data()
         let url = URL(string: "https://onebusaway.co/api/v1/regions/1/surveys.json?user_id=12345-12345-12345-12345-12345")!
 
@@ -218,7 +221,7 @@ final class SurveyServiceTests: OBATestCase {
         }
     }
 
-    func test_get_surveys_not_found_error() async throws {
+    @Test func `Get surveys not found error`() async throws {
         let response = Data()
         let url = URL(string: "https://onebusaway.co/api/v1/regions/1/surveys.json?user_id=12345-12345-12345-12345-12345")!
 
@@ -235,7 +238,7 @@ final class SurveyServiceTests: OBATestCase {
 
     // MARK: - Submit First Question Failures
 
-    func test_submit_first_question_malformed_response_data() async throws {
+    @Test func `Submit first question malformed response data`() async throws {
         let response = Fixtures.loadData(file: "survey_submission_malformed_response.json")
         let url = URL(string: "https://onebusaway.co/api/v1/survey_responses/")!
 
@@ -254,7 +257,7 @@ final class SurveyServiceTests: OBATestCase {
         }
     }
 
-    func test_submit_first_question_captive_portal() async throws {
+    @Test func `Submit first question captive portal`() async throws {
         let data = Fixtures.loadData(file: "captive_portal.html")
         let url = URL(string: "https://onebusaway.co/api/v1/survey_responses/")!
         let error = NSError(domain: NSCocoaErrorDomain, code: 3840, userInfo: nil)
@@ -271,7 +274,7 @@ final class SurveyServiceTests: OBATestCase {
         }
     }
 
-    func test_submit_first_question_internal_server_error() async throws {
+    @Test func `Submit first question internal server error`() async throws {
         let response = Data()
         let url = URL(string: "https://onebusaway.co/api/v1/survey_responses/")!
 
@@ -287,7 +290,7 @@ final class SurveyServiceTests: OBATestCase {
         }
     }
 
-    func test_submit_first_question_not_found_error() async throws {
+    @Test func `Submit first question not found error`() async throws {
         let response = Data()
         let url = URL(string: "https://onebusaway.co/api/v1/survey_responses/")!
 
@@ -305,7 +308,7 @@ final class SurveyServiceTests: OBATestCase {
 
     // MARK: - Submit Additional Question Failures
 
-    func test_submit_additional_question_malformed_response_data() async throws {
+    @Test func `Submit additional question malformed response data`() async throws {
         let response = Fixtures.loadData(file: "survey_submission_malformed_response.json")
         let url = URL(string: "https://onebusaway.co/api/v1/survey_responses/surveyResponseId")!
 
@@ -326,7 +329,7 @@ final class SurveyServiceTests: OBATestCase {
         }
     }
 
-    func test_submit_additional_question_captive_portal() async throws {
+    @Test func `Submit additional question captive portal`() async throws {
         let data = Fixtures.loadData(file: "captive_portal.html")
         let url = URL(string: "https://onebusaway.co/api/v1/survey_responses/surveyResponseId")!
         let error = NSError(domain: NSCocoaErrorDomain, code: 3840, userInfo: nil)
@@ -345,7 +348,7 @@ final class SurveyServiceTests: OBATestCase {
         }
     }
 
-    func test_submit_additional_question_internal_server_error() async throws {
+    @Test func `Submit additional question internal server error`() async throws {
         let response = Data()
         let url = URL(string: "https://onebusaway.co/api/v1/survey_responses/surveyResponseId")!
 
@@ -363,7 +366,7 @@ final class SurveyServiceTests: OBATestCase {
         }
     }
 
-    func test_submit_additional_question_not_found_error() async throws {
+    @Test func `Submit additional question not found error`() async throws {
         let response = Data()
         let url = URL(string: "https://onebusaway.co/api/v1/survey_responses/surveyResponseId")!
 
@@ -383,7 +386,7 @@ final class SurveyServiceTests: OBATestCase {
 
     // MARK: - isActive
 
-    func test_isActive_withinDateRange_returnsTrue() {
+    @Test func `Is active within date range returns true`() {
         let survey = makeSurveyForIsActive(
             startDate: Date().addingTimeInterval(-3600),
             endDate: Date().addingTimeInterval(3600)
@@ -391,7 +394,7 @@ final class SurveyServiceTests: OBATestCase {
         #expect(survey.isActive)
     }
 
-    func test_isActive_pastEndDate_returnsFalse() {
+    @Test func `Is active past end date returns false`() {
         let survey = makeSurveyForIsActive(
             startDate: Date().addingTimeInterval(-7200),
             endDate: Date().addingTimeInterval(-3600)
@@ -399,7 +402,7 @@ final class SurveyServiceTests: OBATestCase {
         #expect(!survey.isActive)
     }
 
-    func test_isActive_futureStartDate_returnsFalse() {
+    @Test func `Is active future start date returns false`() {
         let survey = makeSurveyForIsActive(
             startDate: Date().addingTimeInterval(3600),
             endDate: Date().addingTimeInterval(7200)
@@ -407,7 +410,7 @@ final class SurveyServiceTests: OBATestCase {
         #expect(!survey.isActive)
     }
 
-    func test_isActive_nilDates_returnsTrue() {
+    @Test func `Is active nil dates returns true`() {
         let survey = makeSurveyForIsActive(startDate: nil, endDate: nil)
         #expect(survey.isActive)
     }
@@ -426,7 +429,7 @@ final class SurveyServiceTests: OBATestCase {
 
     // MARK: - Issue 8: SurveySubmission encodes responses as JSON string
 
-    func test_surveySubmission_encodesResponsesToJSONString() throws {
+    @Test func `Survey submission encodes responses to JSON string`() throws {
         let submission = SurveySubmission(
             userIdentifier: "user-1",
             surveyId: 42,
@@ -456,7 +459,7 @@ final class SurveyServiceTests: OBATestCase {
 
     // MARK: - Missing Optional Fields
 
-    func test_getSurveys_missingOptionalBooleans_defaultsToFalse() async throws {
+    @Test func `Get surveys missing optional booleans defaults to false`() async throws {
         let data = Fixtures.loadData(file: "surveys_missing_optional_fields.json")
 
         mockDataLoader.mock(
@@ -473,7 +476,7 @@ final class SurveyServiceTests: OBATestCase {
 
     // MARK: - getSurveys nil region
 
-    func test_getSurveys_nilRegionIdentifier_throwsNoRegionSelected() async {
+    @Test func `Get surveys nil region identifier throws no region selected`() async {
         let config = APIServiceConfiguration(
             baseURL: baseURL,
             apiKey: apiKey,
@@ -495,7 +498,7 @@ final class SurveyServiceTests: OBATestCase {
 
     // MARK: - remainingQuestions
 
-    func test_remainingQuestions_doesNotDropQuestionsWithSamePositionAsHero() {
+    @Test func `Remaining questions does not drop questions with same position as hero`() {
         let q1 = SurveyQuestion(id: 10, position: 1, required: true, content: QuestionContent(labelText: "Hero", type: .text))
         let q2 = SurveyQuestion(id: 20, position: 1, required: false, content: QuestionContent(labelText: "Also position 1", type: .label))
         let q3 = SurveyQuestion(id: 30, position: 2, required: false, content: QuestionContent(labelText: "Position 2", type: .radio, options: ["A", "B"]))
@@ -516,22 +519,22 @@ final class SurveyServiceTests: OBATestCase {
 
     // MARK: - heroQuestionTitle
 
-    func test_heroQuestionTitle_returnsTrimmedHeroText() {
+    @Test func `Hero question title returns trimmed hero text`() {
         let survey = makeSurveyWithHero(labelText: "  Help us improve transit  ")
         #expect(survey.heroQuestionTitle == "Help us improve transit")
     }
 
-    func test_heroQuestionTitle_nilWhenHeroTextIsEmpty() {
+    @Test func `Hero question title nil when hero text is empty`() {
         let survey = makeSurveyWithHero(labelText: "")
         #expect(survey.heroQuestionTitle == nil)
     }
 
-    func test_heroQuestionTitle_nilWhenHeroTextIsWhitespaceOnly() {
+    @Test func `Hero question title nil when hero text is whitespace only`() {
         let survey = makeSurveyWithHero(labelText: "   \n\t ")
         #expect(survey.heroQuestionTitle == nil)
     }
 
-    func test_heroQuestionTitle_nilWhenNoHeroQuestion() {
+    @Test func `Hero question title nil when no hero question`() {
         // Only a non-hero (position != 1) question exists.
         let survey = makeSurveyWithHero(labelText: "Question", position: 2)
         #expect(survey.heroQuestionTitle == nil)
@@ -562,8 +565,8 @@ final class SurveyServiceTests: OBATestCase {
 
     // MARK: - SurveyService.fetchSurveys()
 
-    @MainActor
-    func test_fetchSurveys_nilApiService_setsError() async {
+    @Test @MainActor
+    func `Fetch surveys nil api service sets error`() async {
         let store = UserDefaultsStore(userDefaults: userDefaults)
         let service = SurveyService(apiService: nil, userDataStore: store)
 
@@ -580,8 +583,8 @@ final class SurveyServiceTests: OBATestCase {
         }
     }
 
-    @MainActor
-    func test_fetchSurveys_success_populatesSurveys() async {
+    @Test @MainActor
+    func `Fetch surveys success populates surveys`() async {
         let store = UserDefaultsStore(userDefaults: userDefaults)
         let data = Fixtures.loadData(file: "surveys_always_visible_one_time.json")
         let userID = store.surveyUserIdentifier
@@ -600,8 +603,8 @@ final class SurveyServiceTests: OBATestCase {
         #expect(!service.isLoading)
     }
 
-    @MainActor
-    func test_fetchSurveys_failure_clearsWhenEmpty() async {
+    @Test @MainActor
+    func `Fetch surveys failure clears when empty`() async {
         let store = UserDefaultsStore(userDefaults: userDefaults)
         let userID = store.surveyUserIdentifier
 
@@ -619,8 +622,8 @@ final class SurveyServiceTests: OBATestCase {
 
     // MARK: - Staleness / Cooldown Tests
 
-    @MainActor
-    func test_fetchSurveys_cooldownSkipsSecondFetch() async {
+    @Test @MainActor
+    func `Fetch surveys cooldown skips second fetch`() async {
         let store = UserDefaultsStore(userDefaults: userDefaults)
         let userID = store.surveyUserIdentifier
 
@@ -648,8 +651,8 @@ final class SurveyServiceTests: OBATestCase {
         #expect(service.lastError == nil)  // no error because fetch was skipped
     }
 
-    @MainActor
-    func test_fetchSurveys_forceBypassesCooldown() async {
+    @Test @MainActor
+    func `Fetch surveys force bypasses cooldown`() async {
         let store = UserDefaultsStore(userDefaults: userDefaults)
         let userID = store.surveyUserIdentifier
 
@@ -673,8 +676,8 @@ final class SurveyServiceTests: OBATestCase {
         #expect(service.lastError == nil)
     }
 
-    @MainActor
-    func test_fetchSurveys_emptySurveysBypassesCooldown() async {
+    @Test @MainActor
+    func `Fetch surveys empty surveys bypasses cooldown`() async {
         let store = UserDefaultsStore(userDefaults: userDefaults)
         let userID = store.surveyUserIdentifier
 
@@ -703,8 +706,8 @@ final class SurveyServiceTests: OBATestCase {
         #expect(service.lastError == nil)
     }
 
-    @MainActor
-    func test_fetchSurveys_failure_preservesExistingSurveys() async {
+    @Test @MainActor
+    func `Fetch surveys failure preserves existing surveys`() async {
         let store = UserDefaultsStore(userDefaults: userDefaults)
         let userID = store.surveyUserIdentifier
 

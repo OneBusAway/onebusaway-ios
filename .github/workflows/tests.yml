@@ -178,9 +178,11 @@ jobs:
     # anyone ever adds it to actions/cache, this ratchet stops being meaningful:
     # pass COMPILATION_CACHE_CAS_PATH to a scratch dir here, as
     # scripts/measure_concurrency does locally.
-    # All remaining warnings are in OBAKitTests (pinned to Swift 5, see its
-    # project.yml); every Swift 6 target is at zero and additionally locked by
-    # SWIFT_WARNINGS_AS_ERRORS_GROUPS in Apps/Shared/app_shared.yml.
+    # The baseline is 0: every target, OBAKitTests included, is at zero and
+    # additionally locked by SWIFT_WARNINGS_AS_ERRORS_GROUPS in
+    # Apps/Shared/app_shared.yml, which escalates the five concurrency
+    # diagnostic groups to errors so the compiler — not this grep — is the
+    # real gate.
     - name: Concurrency warning ratchet
       run: scripts/concurrency_ratchet xcodebuild-build.log
 
@@ -203,17 +205,29 @@ jobs:
 
     # Surface the slowest tests in the job summary so a regression in *test*
     # time (vs. infra time) is easy to spot without re-running the investigation.
-    # Parses the classic XCTest "passed (N seconds)" log format; if the suite ever
-    # moves to swift-testing/xcbeautify output the list just comes up empty.
+    #
+    # Parses both formats, because the suite spans both: swift-testing's
+    # "✔ Test <name> passed after N seconds" covers everything except
+    # PolylinePerformanceTests, which stays on XCTest (`measure` has no
+    # swift-testing equivalent) and still prints the classic
+    # "'-[OBAKitTests.Foo testBar]' passed (N seconds)".
+    #
+    # The `grep -v` drops swift-testing's run summary, "✔ Test run with N tests
+    # in M suites passed after …", which otherwise matches the same pattern and
+    # sorts to the top as the slowest "test".
     - name: Report slowest tests
       if: success() || failure()
       run: |
         {
           echo "### Slowest 20 tests"
           echo '```'
-          grep -oE "'-\[OBAKitTests\.[^]]+\]' passed \([0-9.]+ seconds\)" xcodebuild-test.log \
-            | sed -E "s/'-\[OBAKitTests\.(.+)\]' passed \(([0-9.]+) seconds\)/\2  \1/" \
-            | sort -rn | head -20
+          {
+            grep -oE "✔ Test .+ passed after [0-9.]+ seconds" xcodebuild-test.log \
+              | grep -v '✔ Test run with ' \
+              | sed -E "s/✔ Test (.+) passed after ([0-9.]+) seconds/\2  \1/"
+            grep -oE "'-\[OBAKitTests\.[^]]+\]' passed \([0-9.]+ seconds\)" xcodebuild-test.log \
+              | sed -E "s/'-\[OBAKitTests\.(.+)\]' passed \(([0-9.]+) seconds\)/\2  \1/"
+          } | sort -rn | head -20
           echo '```'
         } >> "$GITHUB_STEP_SUMMARY" || true
 

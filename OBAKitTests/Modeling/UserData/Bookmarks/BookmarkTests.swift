@@ -7,7 +7,6 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
 import Testing
 import CoreLocation
 @testable import OBAKit
@@ -15,19 +14,20 @@ import CoreLocation
 
 // swiftlint:disable force_try
 
-class BookmarkTests: OBATestCase {
+@Suite(.serialized)
+final class BookmarkTests: OBATestCase {
 
     var region: Region!
     var stops: [Stop]!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
 
         region = try! Fixtures.loadSomeRegions()[1]
         stops = try! Fixtures.loadSomeStops()
     }
 
-    func testCreation() {
+    @Test func creation() {
         let stop = stops[0]
         let bookmark = Bookmark(name: "BM 1", regionIdentifier: region.regionIdentifier, stop: stop)
         #expect(bookmark.name == "BM 1")
@@ -36,7 +36,7 @@ class BookmarkTests: OBATestCase {
         #expect(bookmark.stop == stop)
     }
 
-    func testCodableRoundtripping() {
+    @Test func `Codable roundtripping`() {
         let stop = stops[0]
         let bookmark = Bookmark(name: "BM 1", regionIdentifier: region.regionIdentifier, stop: stop)
         let roundtripped = try! Fixtures.roundtripCodable(type: Bookmark.self, model: bookmark)
@@ -46,7 +46,7 @@ class BookmarkTests: OBATestCase {
         #expect(roundtripped.stop == stop)
     }
 
-    func testUpdatingStopPropertyWithRightStop() {
+    @Test func `Updating stop property with right stop`() {
         let bookmark = Bookmark(name: "BM 1", regionIdentifier: region.regionIdentifier, stop: stops[0])
         #expect(bookmark.stop.routes.count > 1)
         let stop = stops[0]
@@ -56,7 +56,7 @@ class BookmarkTests: OBATestCase {
         #expect(bookmark.stop.routes.count == 0)
     }
 
-    func testUpdatingStopPropertyWithWrongStop() {
+    @Test func `Updating stop property with wrong stop`() {
         let bookmark = Bookmark(name: "BM 1", regionIdentifier: region.regionIdentifier, stop: stops[0])
         bookmark.stop = stops[1]
 

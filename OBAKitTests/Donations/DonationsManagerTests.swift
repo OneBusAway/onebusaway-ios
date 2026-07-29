@@ -7,7 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
+import Foundation
 import Testing
 @testable import OBAKit
 @testable import OBAKitCore
@@ -18,7 +18,9 @@ import Testing
 /// instances by path and would otherwise return a previously-created fake.
 // `Bundle` is already `@unchecked Sendable`; a subclass has to restate it or the
 // compiler warns. Mutated only from the test that owns the instance.
-private class DonationsConfigBundle: Bundle, @unchecked Sendable {
+// `nonisolated`: overrides nonisolated Bundle members, which the
+// target's main-actor default isolation would conflict with.
+private nonisolated class DonationsConfigBundle: Bundle, @unchecked Sendable {
     var donationsEnabledValue = true
 
     override func object(forInfoDictionaryKey key: String) -> Any? {
@@ -31,13 +33,14 @@ private class DonationsConfigBundle: Bundle, @unchecked Sendable {
     static func create(donationsEnabled: Bool) throws -> DonationsConfigBundle {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        let bundle = try XCTUnwrap(DonationsConfigBundle(path: dir.path))
+        let bundle = try #require(DonationsConfigBundle(path: dir.path))
         bundle.donationsEnabledValue = donationsEnabled
         return bundle
     }
 }
 
-class DonationsManagerTests: OBATestCase {
+@Suite(.serialized)
+final class DonationsManagerTests: OBATestCase {
 
     private func buildManager(appLaunchCount: Int, donationsEnabled: Bool = true) throws -> DonationsManager {
         DonationsManager(
@@ -51,47 +54,47 @@ class DonationsManagerTests: OBATestCase {
 
     // MARK: - Launch Count Gating
 
-    func test_shouldRequestDonations_firstLaunch_isFalse() throws {
+    @Test func `Should request donations first launch is false`() throws {
         let manager = try buildManager(appLaunchCount: 1)
         #expect(manager.shouldRequestDonations == false)
     }
 
-    func test_shouldRequestDonations_secondLaunch_isFalse() throws {
+    @Test func `Should request donations second launch is false`() throws {
         let manager = try buildManager(appLaunchCount: 2)
         #expect(manager.shouldRequestDonations == false)
     }
 
-    func test_shouldRequestDonations_thirdLaunch_isTrue() throws {
+    @Test func `Should request donations third launch is true`() throws {
         let manager = try buildManager(appLaunchCount: 3)
         #expect(manager.shouldRequestDonations == true)
     }
 
-    func test_shouldRequestDonations_laterLaunches_isTrue() throws {
+    @Test func `Should request donations later launches is true`() throws {
         let manager = try buildManager(appLaunchCount: 100)
         #expect(manager.shouldRequestDonations == true)
     }
 
     // MARK: - Composition with Other Gates
 
-    func test_shouldRequestDonations_thirdLaunch_dismissed_isFalse() throws {
+    @Test func `Should request donations third launch dismissed is false`() throws {
         let manager = try buildManager(appLaunchCount: 3)
         manager.dismissDonationsRequests()
         #expect(manager.shouldRequestDonations == false)
     }
 
-    func test_shouldRequestDonations_thirdLaunch_futureReminder_isFalse() throws {
+    @Test func `Should request donations third launch future reminder is false`() throws {
         let manager = try buildManager(appLaunchCount: 3)
         manager.remindUserLater()
         #expect(manager.shouldRequestDonations == false)
     }
 
-    func test_shouldRequestDonations_thirdLaunch_pastReminder_isTrue() throws {
+    @Test func `Should request donations third launch past reminder is true`() throws {
         let manager = try buildManager(appLaunchCount: 3)
         manager.donationRequestReminderDate = Date(timeIntervalSinceNow: -3600)
         #expect(manager.shouldRequestDonations == true)
     }
 
-    func test_shouldRequestDonations_donationsDisabled_isFalse() throws {
+    @Test func `Should request donations donations disabled is false`() throws {
         let manager = try buildManager(appLaunchCount: 3, donationsEnabled: false)
         #expect(manager.shouldRequestDonations == false)
     }

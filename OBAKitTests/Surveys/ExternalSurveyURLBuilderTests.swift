@@ -5,12 +5,13 @@
 //  Created by Mohamed Sliem on 19/02/2026.
 //
 
-import XCTest
+import Foundation
 import Testing
 import MapKit
 import CoreLocation
 @testable import OBAKitCore
 
+@Suite(.serialized)
 final class ExternalSurveyURLBuilderTests: OBATestCase {
 
     var userDefaultsStore: UserDefaultsStore!
@@ -21,8 +22,9 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
 
     // MARK: - Setup
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
+
         userDefaultsStore = UserDefaultsStore(userDefaults: userDefaults)
         applicationContext = MockSurveyURLApplicationContext()
 
@@ -33,28 +35,21 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
         )
     }
 
-    override func tearDown() async throws {
-        builder = nil
-        applicationContext = nil
-        userDefaultsStore = nil
-        try await super.tearDown()
-    }
-
     // MARK: - buildURL
 
-    func test_buildURL_returnsNil_whenSurveyHasNoQuestions() {
+    @Test func `Build URL returns nil when survey has no questions`() {
         let survey = SurveysTestHelpers.makeSurvey(questions: [])
         #expect(self.builder.buildURL(for: survey, stop: nil) == nil)
     }
 
-    func test_buildURL_returnsNil_whenBaseURLIsInvalid() {
+    @Test func `Build URL returns nil when base URL is invalid`() {
         let survey = SurveysTestHelpers.makeSurvey(questions: [
             SurveysTestHelpers.makeSurveyQuestion(url: "not a valid url %%")
         ])
         #expect(self.builder.buildURL(for: survey, stop: nil) == nil)
     }
 
-    func test_buildURL_returnsValidURL_whenNoEmbeddedDataFields() {
+    @Test func `Build URL returns valid URL when no embedded data fields`() {
         let survey = SurveysTestHelpers.makeSurvey(questions: [
             SurveysTestHelpers.makeSurveyQuestion(url: "https://oba.co/survey")
         ])
@@ -67,7 +62,7 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
         #expect(url?.absoluteString == "https://oba.co/survey")
     }
 
-    func test_buildURL_preservesExistingQueryItems() {
+    @Test func `Build URL preserves existing query items`() {
         let survey = SurveysTestHelpers.makeSurvey(questions: [
             SurveysTestHelpers.makeSurveyQuestion(url: "https://oba.co/survey?source=app")
         ])
@@ -79,7 +74,7 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
 
     // MARK: - user_id
 
-    func test_buildURL_appendsUserID() {
+    @Test func `Build URL appends user ID`() {
         let survey = SurveysTestHelpers.makeSurvey(questions: [makeQuestionWithFields(["user_id"])])
 
         let url = builder.buildURL(for: survey, stop: nil)
@@ -87,7 +82,7 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
         #expect(self.queryValue(in: url, for: "user_id") == testUserID)
     }
 
-    func test_buildURL_appendsEmptyUserID_whenUserIDIsEmpty() {
+    @Test func `Build URL appends empty user ID when user ID is empty`() {
         builder = ExternalSurveyURLBuilder(
             userStore: userDefaultsStore,
             userID: "",
@@ -102,7 +97,7 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
 
     // MARK: - region_id
 
-    func test_buildURL_appendsRegionID_whenRegionAvailable() {
+    @Test func `Build URL appends region ID when region available`() {
         applicationContext.currentRegionIdentifier = 1
 
         let survey = SurveysTestHelpers.makeSurvey(questions: [makeQuestionWithFields(["region_id"])])
@@ -111,7 +106,7 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
         #expect(self.queryValue(in: url, for: "region_id") == "1")
     }
 
-    func test_buildURL_omitsRegionID_whenNoCurrentRegion() {
+    @Test func `Build URL omits region ID when no current region`() {
         applicationContext.currentRegionIdentifier = nil
 
         let survey = SurveysTestHelpers.makeSurvey(questions: [makeQuestionWithFields(["region_id"])])
@@ -122,7 +117,7 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
 
     // MARK: - stop_id
 
-    func test_buildURL_appendsStopID_whenStopProvided() {
+    @Test func `Build URL appends stop ID when stop provided`() {
         let stop = SurveysTestHelpers.makeStop(id: "1_75403")
 
         let survey = SurveysTestHelpers.makeSurvey(questions: [makeQuestionWithFields(["stop_id"])])
@@ -131,7 +126,7 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
         #expect(self.queryValue(in: url, for: "stop_id") == "1_75403")
     }
 
-    func test_buildURL_omitsStopID_whenStopIsNil() {
+    @Test func `Build URL omits stop ID when stop is nil`() {
         let survey = SurveysTestHelpers.makeSurvey(questions: [makeQuestionWithFields(["stop_id"])])
 
         let url = builder.buildURL(for: survey, stop: nil)
@@ -141,7 +136,7 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
 
     // MARK: - route_id
 
-    func test_buildURL_appendsRouteIDs_whenStopHasRoutes() {
+    @Test func `Build URL appends route IDs when stop has routes`() {
         let stop = SurveysTestHelpers.makeStop(routeIDs: ["1_40", "1_44"])
 
         let survey = SurveysTestHelpers.makeSurvey(questions: [makeQuestionWithFields(["route_id"])])
@@ -150,7 +145,7 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
         #expect(self.queryValue(in: url, for: "route_id") == "1_40,1_44")
     }
 
-    func test_buildURL_appendsSingleRouteID_whenStopHasOneRoute() {
+    @Test func `Build URL appends single route ID when stop has one route`() {
         let stop = SurveysTestHelpers.makeStop(routeIDs: ["1_40"])
 
         let survey = SurveysTestHelpers.makeSurvey(questions: [makeQuestionWithFields(["route_id"])])
@@ -160,7 +155,7 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
         #expect(self.queryValue(in: url, for: "route_id")?.contains(",") == false)
     }
 
-    func test_buildURL_omitsRouteID_whenStopHasNoRoutes() {
+    @Test func `Build URL omits route ID when stop has no routes`() {
         let stop = SurveysTestHelpers.makeStop(routeIDs: [])
 
         let survey = SurveysTestHelpers.makeSurvey(questions: [makeQuestionWithFields(["route_id"])])
@@ -169,7 +164,7 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
         #expect(self.queryValue(in: url, for: "route_id") == nil)
     }
 
-    func test_buildURL_omitsRouteID_whenStopIsNil() {
+    @Test func `Build URL omits route ID when stop is nil`() {
         let survey = SurveysTestHelpers.makeSurvey(questions: [makeQuestionWithFields(["route_id"])])
 
         let url = builder.buildURL(for: survey, stop: nil)
@@ -179,7 +174,7 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
 
     // MARK: - recent_stop_ids
 
-    func test_buildURL_appendsRecentStopIDs_whenAvailable() {
+    @Test func `Build URL appends recent stop IDs when available`() {
         let region = makeRegion()
         userDefaultsStore.addRecentStop(SurveysTestHelpers.makeStop(id: "1_75403"), region: region)
         userDefaultsStore.addRecentStop(SurveysTestHelpers.makeStop(id: "1_29270"), region: region)
@@ -191,7 +186,7 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
         #expect(self.queryValue(in: url, for: "recent_stop_ids")?.contains("1_29270") == true)
     }
 
-    func test_buildURL_appendsSingleRecentStopID_whenOneStopInStore() {
+    @Test func `Build URL appends single recent stop ID when one stop in store`() {
         let region = makeRegion()
         userDefaultsStore.addRecentStop(SurveysTestHelpers.makeStop(id: "1_75403"), region: region)
 
@@ -202,7 +197,7 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
         #expect(self.queryValue(in: url, for: "recent_stop_ids")?.contains(",") == false)
     }
 
-    func test_buildURL_omitsRecentStopIDs_whenListIsEmpty() {
+    @Test func `Build URL omits recent stop IDs when list is empty`() {
         let survey = SurveysTestHelpers.makeSurvey(questions: [makeQuestionWithFields(["recent_stop_ids"])])
 
         let url = builder.buildURL(for: survey, stop: nil)
@@ -212,7 +207,7 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
 
     // MARK: - current_location
 
-    func test_buildURL_appendsCurrentLocation_whenLocationAvailable() {
+    @Test func `Build URL appends current location when location available`() {
         applicationContext.currentCoordinate = CLLocationCoordinate2D(latitude: 47.6062, longitude: -122.3321)
 
         let survey = SurveysTestHelpers.makeSurvey(questions: [makeQuestionWithFields(["current_location"])])
@@ -221,7 +216,7 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
         #expect(self.queryValue(in: url, for: "current_location") == "47.6062,-122.3321")
     }
 
-    func test_buildURL_appendsCurrentLocation_atZeroCoordinate() {
+    @Test func `Build URL appends current location at zero coordinate`() {
         applicationContext.currentCoordinate = CLLocationCoordinate2D(latitude: 0.0, longitude: 0.0)
 
         let survey = SurveysTestHelpers.makeSurvey(questions: [makeQuestionWithFields(["current_location"])])
@@ -230,7 +225,7 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
         #expect(self.queryValue(in: url, for: "current_location") == "0.0,0.0")
     }
 
-    func test_buildURL_appendsCurrentLocation_withNegativeCoordinates() {
+    @Test func `Build URL appends current location with negative coordinates`() {
         applicationContext.currentCoordinate = CLLocationCoordinate2D(latitude: -33.8688, longitude: -70.6693)
 
         let survey = SurveysTestHelpers.makeSurvey(questions: [makeQuestionWithFields(["current_location"])])
@@ -239,7 +234,7 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
         #expect(self.queryValue(in: url, for: "current_location") == "-33.8688,-70.6693")
     }
 
-    func test_buildURL_omitsCurrentLocation_whenLocationUnavailable() {
+    @Test func `Build URL omits current location when location unavailable`() {
         applicationContext.currentCoordinate = nil
 
         let survey = SurveysTestHelpers.makeSurvey(questions: [makeQuestionWithFields(["current_location"])])
@@ -250,7 +245,7 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
 
     // MARK: - Unknown Keys
 
-    func test_buildURL_ignoresUnknownEmbeddedFields() {
+    @Test func `Build URL ignores unknown embedded fields`() {
         let survey = SurveysTestHelpers.makeSurvey(questions: [makeQuestionWithFields(["unknown_key", "another_unknown"])])
 
         let url = builder.buildURL(for: survey, stop: nil)
@@ -263,7 +258,7 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
 
     // MARK: - Multiple Fields
 
-    func test_buildURL_appendsMultipleFields() {
+    @Test func `Build URL appends multiple fields`() {
         let region = makeRegion()
         applicationContext.currentRegionIdentifier = 1
         userDefaultsStore.addRecentStop(SurveysTestHelpers.makeStop(id: "1_75403"), region: region)
@@ -281,7 +276,7 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
         #expect(self.queryValue(in: url, for: "recent_stop_ids")?.contains("1_75403") == true)
     }
 
-    func test_buildURL_appendsAllSixFields_whenAllDataAvailable() {
+    @Test func `Build URL appends all six fields when all data available`() {
         let region = makeRegion()
         applicationContext.currentRegionIdentifier = 1
         applicationContext.currentCoordinate = CLLocationCoordinate2D(latitude: 47.6062, longitude: -122.3321)
@@ -304,7 +299,7 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
 
     // MARK: - Lifecycle
 
-    func test_builder_doesNotRetainApplicationContext() {
+    @Test func `Builder does not retain application context`() {
         weak var weakContext: MockSurveyURLApplicationContext?
         let localBuilder: ExternalSurveyURLBuilder = {
             let ctx = MockSurveyURLApplicationContext()

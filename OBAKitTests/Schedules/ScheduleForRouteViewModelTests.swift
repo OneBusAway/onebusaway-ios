@@ -7,25 +7,26 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
+import Foundation
 import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
 // swiftlint:disable force_cast
 
-class ScheduleForRouteViewModelTests: OBATestCase {
+@Suite(.serialized)
+final class ScheduleForRouteViewModelTests: OBATestCase {
     let routeID = "1_100223"
     var queue: OperationQueue!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
+
         queue = OperationQueue()
         queue.maxConcurrentOperationCount = 1
     }
 
-    override func tearDown() async throws {
-        try await super.tearDown()
+    isolated deinit {
         queue.cancelAllOperations()
     }
 
@@ -69,8 +70,8 @@ class ScheduleForRouteViewModelTests: OBATestCase {
 
     // MARK: - Initialization Tests
 
-    @MainActor
-    func test_init_setsRouteID() {
+    @Test @MainActor
+    func `Init sets route ID`() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForRoute(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -80,8 +81,8 @@ class ScheduleForRouteViewModelTests: OBATestCase {
         #expect(viewModel.routeID == routeID)
     }
 
-    @MainActor
-    func test_init_setsInitialDate() {
+    @Test @MainActor
+    func `Init sets initial date`() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForRoute(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -92,8 +93,8 @@ class ScheduleForRouteViewModelTests: OBATestCase {
         #expect(Calendar.current.isDate(viewModel.selectedDate, inSameDayAs: testDate))
     }
 
-    @MainActor
-    func test_init_defaultsSelectedDirectionIndexToZero() {
+    @Test @MainActor
+    func `Init defaults selected direction index to zero`() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForRoute(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -105,8 +106,8 @@ class ScheduleForRouteViewModelTests: OBATestCase {
 
     // MARK: - Route Name Tests
 
-    @MainActor
-    func test_routeName_beforeFetch_returnsRouteID() {
+    @Test @MainActor
+    func `Route name before fetch returns route ID`() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForRoute(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -117,8 +118,8 @@ class ScheduleForRouteViewModelTests: OBATestCase {
 
     // MARK: - Directions Tests
 
-    @MainActor
-    func test_directions_beforeFetch_isEmpty() {
+    @Test @MainActor
+    func `Directions before fetch is empty`() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForRoute(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -127,8 +128,8 @@ class ScheduleForRouteViewModelTests: OBATestCase {
         #expect(viewModel.directions.isEmpty)
     }
 
-    @MainActor
-    func test_currentDirection_beforeFetch_returnsNil() {
+    @Test @MainActor
+    func `Current direction before fetch returns nil`() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForRoute(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -139,8 +140,8 @@ class ScheduleForRouteViewModelTests: OBATestCase {
 
     // MARK: - Headsign Tests
 
-    @MainActor
-    func test_currentHeadsign_beforeFetch_isEmpty() {
+    @Test @MainActor
+    func `Current headsign before fetch is empty`() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForRoute(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -151,8 +152,8 @@ class ScheduleForRouteViewModelTests: OBATestCase {
 
     // MARK: - Stop Names and IDs Tests
 
-    @MainActor
-    func test_stopNames_beforeFetch_isEmpty() {
+    @Test @MainActor
+    func `Stop names before fetch is empty`() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForRoute(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -161,8 +162,8 @@ class ScheduleForRouteViewModelTests: OBATestCase {
         #expect(viewModel.stopNames.isEmpty)
     }
 
-    @MainActor
-    func test_stopIDs_beforeFetch_isEmpty() {
+    @Test @MainActor
+    func `Stop IDs before fetch is empty`() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForRoute(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -173,8 +174,8 @@ class ScheduleForRouteViewModelTests: OBATestCase {
 
     // MARK: - Departure Times Tests
 
-    @MainActor
-    func test_departureTimes_beforeFetch_isEmpty() {
+    @Test @MainActor
+    func `Departure times before fetch is empty`() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForRoute(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -183,8 +184,8 @@ class ScheduleForRouteViewModelTests: OBATestCase {
         #expect(viewModel.departureTimes.isEmpty)
     }
 
-    @MainActor
-    func test_sortedDepartureTimes_beforeFetch_isEmpty() {
+    @Test @MainActor
+    func `Sorted departure times before fetch is empty`() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForRoute(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -193,8 +194,8 @@ class ScheduleForRouteViewModelTests: OBATestCase {
         #expect(viewModel.sortedDepartureTimes.isEmpty)
     }
 
-    @MainActor
-    func test_departureTimesDisplay_beforeFetch_isEmpty() {
+    @Test @MainActor
+    func `Departure times display before fetch is empty`() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForRoute(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -205,8 +206,8 @@ class ScheduleForRouteViewModelTests: OBATestCase {
 
     // MARK: - Time Formatting Tests
 
-    @MainActor
-    func test_formatTime_withDate_returnsFormattedString() {
+    @Test @MainActor
+    func `Format time with date returns formatted string`() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForRoute(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -224,8 +225,8 @@ class ScheduleForRouteViewModelTests: OBATestCase {
         #expect(result.count == 5)
     }
 
-    @MainActor
-    func test_formatTime_midnight_returns0000() {
+    @Test @MainActor
+    func `Format time midnight returns 0000`() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForRoute(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -241,8 +242,8 @@ class ScheduleForRouteViewModelTests: OBATestCase {
         #expect(result == "00:00")
     }
 
-    @MainActor
-    func test_formatTime_noon_returns1200() {
+    @Test @MainActor
+    func `Format time noon returns 1200`() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForRoute(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -258,8 +259,8 @@ class ScheduleForRouteViewModelTests: OBATestCase {
         #expect(result == "12:00")
     }
 
-    @MainActor
-    func test_formatTime_nilDate_returnsDash() {
+    @Test @MainActor
+    func `Format time nil date returns dash`() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForRoute(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -270,8 +271,8 @@ class ScheduleForRouteViewModelTests: OBATestCase {
         #expect(result == "-")
     }
 
-    @MainActor
-    func test_formatTimeAccessible_withDate_returnsReadableTime() {
+    @Test @MainActor
+    func `Format time accessible with date returns readable time`() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForRoute(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -287,8 +288,8 @@ class ScheduleForRouteViewModelTests: OBATestCase {
         #expect(result != "-")
     }
 
-    @MainActor
-    func test_formatTimeAccessible_nilDate_returnsNoDepartureText() {
+    @Test @MainActor
+    func `Format time accessible nil date returns no departure text`() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForRoute(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -303,8 +304,8 @@ class ScheduleForRouteViewModelTests: OBATestCase {
 
     // MARK: - Loading State Tests
 
-    @MainActor
-    func test_isLoading_initiallyFalse() {
+    @Test @MainActor
+    func `Is loading initially false`() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForRoute(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -313,8 +314,8 @@ class ScheduleForRouteViewModelTests: OBATestCase {
         #expect(!viewModel.isLoading)
     }
 
-    @MainActor
-    func test_error_initiallyNil() {
+    @Test @MainActor
+    func `Error initially nil`() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForRoute(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -323,8 +324,8 @@ class ScheduleForRouteViewModelTests: OBATestCase {
         #expect(viewModel.error == nil)
     }
 
-    @MainActor
-    func test_scheduleData_initiallyNil() {
+    @Test @MainActor
+    func `Schedule data initially nil`() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForRoute(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)

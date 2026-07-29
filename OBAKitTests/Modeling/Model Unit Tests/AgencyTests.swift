@@ -7,16 +7,16 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
 import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
 // swiftlint:disable force_try
 
-class AgencyTests: OBATestCase {
+@Suite(.serialized)
+final class AgencyTests: OBATestCase {
     
-    func test_decodeValidAgency() {
+    @Test func `Decode valid agency`() {
         let agencyData: [String: Any] = [
             "id": "1",
             "name": "King County Metro",
@@ -44,7 +44,7 @@ class AgencyTests: OBATestCase {
         #expect(agency.isPrivateService == false)
     }
     
-    func test_decodeMinimalAgency() {
+    @Test func `Decode minimal agency`() {
         let minimalData: [String: Any] = [
             "id": "minimal_agency",
             "name": "Minimal Agency",
@@ -69,7 +69,7 @@ class AgencyTests: OBATestCase {
         #expect(agency.disclaimer == nil)
     }
     
-    func test_decodeWithBlankValues() {
+    @Test func `Decode with blank values`() {
         let dataWithBlanks: [String: Any] = [
             "id": "blank_agency",
             "name": "Agency With Blanks",
@@ -91,7 +91,7 @@ class AgencyTests: OBATestCase {
         #expect(agency.fareURL == nil)
     }
     
-    func test_encodeDecodeRoundTrip() {
+    @Test func `Encode decode round trip`() {
         let agencyData: [String: Any] = [
             "id": "roundtrip_test",
             "name": "Test Agency",
@@ -118,7 +118,7 @@ class AgencyTests: OBATestCase {
         #expect(roundTrippedAgency.isPrivateService == originalAgency.isPrivateService)
     }
     
-    func test_decodeFailureWhenMissingRequiredFields() {
+    @Test func `Decode failure when missing required fields`() {
         var incompleteData: [String: Any] = [
             "name": "Missing ID Agency",
             "url": "https://example.com",

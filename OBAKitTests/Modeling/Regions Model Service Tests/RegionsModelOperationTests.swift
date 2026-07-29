@@ -7,17 +7,18 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
 import CoreLocation
 import MapKit
+import Foundation
 import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
 // swiftlint:disable function_body_length force_cast
 
-class RegionsModelOperationTests: OBATestCase {
-    func testSuccessfulRequest() async throws {
+@Suite(.serialized)
+final class RegionsModelOperationTests: OBATestCase {
+    @Test func `Successful request`() async throws {
         let dataLoader = regionsAPIService.dataLoader as! MockDataLoader
         stubRegions(dataLoader: dataLoader)
 
@@ -26,7 +27,7 @@ class RegionsModelOperationTests: OBATestCase {
         let regions = response.list
         #expect(regions.count == 17)
 
-        let tampa = try XCTUnwrap(regions.first)
+        let tampa = try #require(regions.first)
 
         #expect(tampa.regionIdentifier == 0)
         #expect(tampa.name == "Tampa Bay")
@@ -57,7 +58,7 @@ class RegionsModelOperationTests: OBATestCase {
         #expect(tampa.paymentiOSAppStoreIdentifier == "1487465395")
         #expect(tampa.paymentiOSAppURLScheme == "fb313213768708402HART")
 
-        let open311 = try XCTUnwrap(tampa.open311Servers?.first)
+        let open311 = try #require(tampa.open311Servers?.first)
         #expect(open311.jurisdictionID == nil)
         #expect(open311.apiKey == "937033cad3054ec58a1a8156dcdd6ad8a416af2f")
         #expect(open311.baseURL == URL(string: "https://seeclickfix.com/open311/v2/")!)

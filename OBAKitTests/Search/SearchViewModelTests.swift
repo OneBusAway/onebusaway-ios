@@ -7,15 +7,16 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
 import MapKit
+import Foundation
 import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
 // swiftlint:disable force_try
 
-class SearchViewModelTests: OBATestCase {
+@Suite(.serialized)
+final class SearchViewModelTests: OBATestCase {
 
     // MARK: - Helpers
 
@@ -58,34 +59,34 @@ class SearchViewModelTests: OBATestCase {
 
     // MARK: - Subtitle
 
-    @MainActor
-    func test_subtitle_address_isQueryVerbatim() {
+    @Test @MainActor
+    func `Subtitle address is query verbatim`() {
         let vm = SearchViewModel(searchResponse: makeSearchResponse(searchType: .address, query: "Seattle, WA"), apiService: nil)
         #expect(vm.subtitle == "Seattle, WA")
     }
 
-    @MainActor
-    func test_subtitle_route_prefixedWithRoute() {
+    @Test @MainActor
+    func `Subtitle route prefixed with route`() {
         let vm = SearchViewModel(searchResponse: makeSearchResponse(searchType: .route, query: "44"), apiService: nil)
         #expect(vm.subtitle == "Route 44")
     }
 
-    @MainActor
-    func test_subtitle_stopNumber_prefixedWithStopNumber() {
+    @Test @MainActor
+    func `Subtitle stop number prefixed with stop number`() {
         let vm = SearchViewModel(searchResponse: makeSearchResponse(searchType: .stopNumber, query: "1234"), apiService: nil)
         #expect(vm.subtitle == "Stop number 1234")
     }
 
-    @MainActor
-    func test_subtitle_vehicleID_prefixedWithVehicleID() {
+    @Test @MainActor
+    func `Subtitle vehicle ID prefixed with vehicle ID`() {
         let vm = SearchViewModel(searchResponse: makeSearchResponse(searchType: .vehicleID, query: "XYZ"), apiService: nil)
         #expect(vm.subtitle == "Vehicle ID XYZ")
     }
 
     // MARK: - results
 
-    @MainActor
-    func test_results_matchesSearchResponseResults() throws {
+    @Test @MainActor
+    func `Results matches search response results`() throws {
         let stop = try Fixtures.loadSomeStops().first!
         let vm = SearchViewModel(searchResponse: makeSearchResponse(searchType: .stopNumber, results: [stop]), apiService: nil)
         #expect(vm.results.count == 1)
@@ -94,8 +95,8 @@ class SearchViewModelTests: OBATestCase {
 
     // MARK: - response(substituting:)
 
-    @MainActor
-    func test_responseSubstituting_singleResultIsSubstitute() throws {
+    @Test @MainActor
+    func `Response substituting single result is substitute`() throws {
         let stops = try Fixtures.loadSomeStops()
         let vm = SearchViewModel(searchResponse: makeSearchResponse(searchType: .stopNumber, results: [stops[0]]), apiService: nil)
 
@@ -105,16 +106,16 @@ class SearchViewModelTests: OBATestCase {
         #expect((substituted.results.first as? Stop) === stops[1])
     }
 
-    @MainActor
-    func test_responseSubstituting_preservesOriginalRequest() throws {
+    @Test @MainActor
+    func `Response substituting preserves original request`() throws {
         let vm = SearchViewModel(searchResponse: makeSearchResponse(searchType: .route, query: "44"), apiService: nil)
         let substituted = vm.response(substituting: "anything")
         #expect(substituted.request.query == "44")
         #expect(substituted.request.searchType == .route)
     }
 
-    @MainActor
-    func test_responseSubstituting_preservesBoundingRegion() {
+    @Test @MainActor
+    func `Response substituting preserves bounding region`() {
         let region = MKCoordinateRegion(
             center: CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3),
             span: MKCoordinateSpan(latitudeDelta: 0.1, longitudeDelta: 0.1)
@@ -129,8 +130,8 @@ class SearchViewModelTests: OBATestCase {
         #expect(substituted.boundingRegion?.center.longitude == -122.3)
     }
 
-    @MainActor
-    func test_responseSubstituting_preservesError() {
+    @Test @MainActor
+    func `Response substituting preserves error`() {
         let searchResponse = SearchResponse(request: SearchRequest(query: "test", type: .address), results: [], boundingRegion: nil, error: SearchError.noTripsAvailable)
         let vm = SearchViewModel(searchResponse: searchResponse, apiService: nil)
 
@@ -141,29 +142,29 @@ class SearchViewModelTests: OBATestCase {
 
     // MARK: - Initial State
 
-    @MainActor
-    func test_init_vehicleSearchResponseIsNil() {
+    @Test @MainActor
+    func `Init vehicle search response is nil`() {
         let vm = SearchViewModel(searchResponse: makeSearchResponse(searchType: .address), apiService: nil)
         #expect(vm.vehicleSearchResponse == nil)
     }
 
-    @MainActor
-    func test_init_vehicleErrorIsNil() {
+    @Test @MainActor
+    func `Init vehicle error is nil`() {
         let vm = SearchViewModel(searchResponse: makeSearchResponse(searchType: .address), apiService: nil)
         #expect(vm.vehicleError == nil)
     }
 
     // MARK: - selectVehicle / nil apiService
 
-    @MainActor
-    func test_selectVehicle_nilApiService_vehicleSearchResponseRemainsNil() async {
+    @Test @MainActor
+    func `Select vehicle nil api service vehicle search response remains nil`() async {
         let vm = SearchViewModel(searchResponse: makeSearchResponse(searchType: .vehicleID), apiService: nil)
         await vm.selectVehicle(vehicleID: vehicleID)
         #expect(vm.vehicleSearchResponse == nil)
     }
 
-    @MainActor
-    func test_selectVehicle_nilApiService_setsVehicleError() async {
+    @Test @MainActor
+    func `Select vehicle nil api service sets vehicle error`() async {
         // Without an API service, the call would otherwise silently no-op. Surface the
         // misconfiguration through `vehicleError` so the existing error sink can present it.
         let vm = SearchViewModel(searchResponse: makeSearchResponse(searchType: .vehicleID), apiService: nil)
@@ -173,8 +174,8 @@ class SearchViewModelTests: OBATestCase {
 
     // MARK: - selectVehicle / success
 
-    @MainActor
-    func test_selectVehicle_success_vehicleSearchResponseIsSet() async {
+    @Test @MainActor
+    func `Select vehicle success vehicle search response is set`() async {
         let vm = SearchViewModel(
             searchResponse: makeSearchResponse(searchType: .vehicleID, query: vehicleID),
             apiService: buildRESTService(dataLoader: makeSuccessLoader())
@@ -186,8 +187,8 @@ class SearchViewModelTests: OBATestCase {
         #expect(vm.vehicleError == nil)
     }
 
-    @MainActor
-    func test_selectVehicle_success_responseContainsSingleVehicleStatusResult() async {
+    @Test @MainActor
+    func `Select vehicle success response contains single vehicle status result`() async {
         let vm = SearchViewModel(
             searchResponse: makeSearchResponse(searchType: .vehicleID, query: vehicleID),
             apiService: buildRESTService(dataLoader: makeSuccessLoader())
@@ -199,8 +200,8 @@ class SearchViewModelTests: OBATestCase {
         #expect((vm.vehicleSearchResponse?.results.first as? VehicleStatus) != nil)
     }
 
-    @MainActor
-    func test_selectVehicle_success_preservesOriginalRequest() async {
+    @Test @MainActor
+    func `Select vehicle success preserves original request`() async {
         let vm = SearchViewModel(
             searchResponse: makeSearchResponse(searchType: .vehicleID, query: vehicleID),
             apiService: buildRESTService(dataLoader: makeSuccessLoader())
@@ -214,8 +215,8 @@ class SearchViewModelTests: OBATestCase {
 
     // MARK: - selectVehicle / network error
 
-    @MainActor
-    func test_selectVehicle_networkError_setsVehicleError() async {
+    @Test @MainActor
+    func `Select vehicle network error sets vehicle error`() async {
         let vm = SearchViewModel(
             searchResponse: makeSearchResponse(searchType: .vehicleID),
             apiService: buildRESTService(dataLoader: makeNetworkErrorLoader())
@@ -229,8 +230,8 @@ class SearchViewModelTests: OBATestCase {
 
     // MARK: - selectVehicle / keyNotFound → noTripsAvailable
 
-    @MainActor
-    func test_selectVehicle_keyNotFoundDecoding_setsNoTripsAvailableError() async {
+    @Test @MainActor
+    func `Select vehicle key not found decoding sets no trips available error`() async {
         let vm = SearchViewModel(
             searchResponse: makeSearchResponse(searchType: .vehicleID),
             apiService: buildRESTService(dataLoader: makeKeyNotFoundLoader())
@@ -244,8 +245,8 @@ class SearchViewModelTests: OBATestCase {
 
     // MARK: - selectVehicle / concurrent-call guard
 
-    @MainActor
-    func test_selectVehicle_guard_preventsConcurrentCalls() async {
+    @Test @MainActor
+    func `Select vehicle guard prevents concurrent calls`() async {
         let mockLoader = makeSuccessLoader()
         let countingLoader = CountingDataLoader(mockLoader)
         let config = APIServiceConfiguration(baseURL: baseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, regionIdentifier: pugetSoundRegionIdentifier, surveyBaseURL: surveyBaseURL)
@@ -266,8 +267,8 @@ class SearchViewModelTests: OBATestCase {
 
     // MARK: - selectVehicle / state transitions
 
-    @MainActor
-    func test_selectVehicle_errorThenSuccess_vehicleErrorIsCleared() async {
+    @Test @MainActor
+    func `Select vehicle error then success vehicle error is cleared`() async {
         let loader = makeNetworkErrorLoader()
         let vm = SearchViewModel(
             searchResponse: makeSearchResponse(searchType: .vehicleID, query: vehicleID),

@@ -338,6 +338,53 @@ alongside each phase (the ratchet counts tests too, via
 tooling can piggyback Swift Testing migration on files that get touched
 anyway, but don't couple the two efforts.
 
+### Phase 4 is done: the tests are Swift Testing, and the target is Swift 6 (2026-07-28)
+
+The blocker below was real and outlived Xcode 27 beta 4 — re-measured, it
+reproduced exactly. It was never going to be fixed by waiting, because it is a
+property of `XCTestCase`, not a beta-toolchain bug. **Migrating the suite to
+Swift Testing removed the inherited initializers the diagnostic was about**, and
+`OBAKitTests/project.yml` now carries no settings overrides at all: the target
+inherits Swift 6, main-actor default isolation, approachable concurrency, and
+the concurrency-groups-as-errors lock from `Apps/Shared/app_shared.yml` like
+every other target.
+
+The suite went from 1,517 XCTest tests + 11 Swift Testing tests to 1,527 Swift
+Testing tests + 1 XCTest test — 1,528 either way, which is how we know nothing
+was silently dropped. That check matters more than it sounds: Swift Testing
+discovers tests from runtime metadata, so a suite that fails to register does
+not fail, it simply disappears.
+
+Notes worth keeping:
+
+- **A suite may inherit from a plain base class.** `OBATestCase` stopped being
+  an `XCTestCase` and became an ordinary `@MainActor` class; its 109 subclasses
+  kept their declaration lines, and Swift Testing instantiates the subclass per
+  test function exactly as `setUp` used to. Verified by running it, not by
+  reading about it.
+- **One test could not move.** `measure` has no Swift Testing equivalent, so
+  `PolylinePerformanceTests` stays an `XCTestCase` — marked `nonisolated`,
+  which is load-bearing. Omitting `@MainActor` is *not* enough under
+  `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`; the class has to opt out
+  explicitly or it re-creates the blocker single-handedly.
+- **`RunLoop.current.run(until:)` stops working inside a test.** Under XCTest it
+  drained the main queue, because the test method ran directly on the main
+  thread's run loop. A Swift Testing `@MainActor` test body is itself a
+  main-queue item, so blocking inside it cannot re-entrantly drain further
+  main-queue blocks. Suspend (`Task.sleep`) instead of blocking.
+- **The flip found two real data races the old settings hid.** The test target
+  used to build with `SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated` and no
+  approachable concurrency, so `MockDataLoader` matcher closures could touch
+  main-actor state unchecked. Under Swift 6 the runtime isolation assertion
+  fires and *kills the test process* — the suite crash-looped until
+  `DeleteRecorder` and `UnsafeTaskBox` in `LiveActivityRegistryTests` were made
+  `nonisolated` (`UnsafeTaskBox` has since been replaced by the shared
+  `SendableBox` helper). `MockDataLoaderMatcher` is now `@Sendable` so the next one is a
+  build error rather than a crash; that change immediately surfaced five more
+  latent captures across the suite.
+
+The historical account of the blocker follows.
+
 ### Phase 4 status: blocked on the toolchain (2026-07-16)
 
 Every test class is `@MainActor` and the warning count is down to 39 (38 after
@@ -528,17 +575,26 @@ reproduces on both iOS 18.5 and iOS 26.2 simulators, so it's codegen, not
 the runtime. Xcode 27 beta 3 (Swift 6.4) does not emit implicit isolated
 deinits and is unaffected — and as of 2026-07-25 CI builds with it too, on the
 `xcode-27` runner image (previously pinned to Xcode 26.6, the newest
-same-generation compiler on the GA images). Watch the 11 explicit
+same-generation compiler on the GA images). Watch the explicit
 `isolated deinit` sites on iOS 18 devices regardless: they use the
 back-deploy shim compiled by whatever Xcode builds the release.
 
-Consequence of the pin worth remembering: the test target compiles in the
-Swift 5 language mode, so it does not get *full* Swift 6 enforcement. It is no
-longer unguarded, though — as of 2026-07-28 it reached zero concurrency
-warnings and dropped its `SWIFT_WARNINGS_AS_ERRORS_GROUPS` opt-out, so the five
+**That count grew from 11 to 49 on 2026-07-28**, when the Swift Testing
+migration turned every test `tearDown` that touches main-actor state into an
+`isolated deinit`. It is deliberate, and it is worth being clear-eyed about:
+the bug described above is specific to Xcode 26.2's codegen for
+main-actor-default classes, and OBAKitTests is now exactly that configuration.
+It is not a new exposure in practice — the front matter already requires
+Xcode 26.4+/27, and CI runs 27 — but the blast radius if anyone builds this
+target with 26.2 is now four times what it was.
+
+The test target used to be pinned to the Swift 5 language mode, which meant it
+never got *full* Swift 6 enforcement. **That pin is gone as of 2026-07-28**
+(see "Phase 4 is done"): the target compiles in Swift 6 like every other, and
+had already dropped its `SWIFT_WARNINGS_AS_ERRORS_GROUPS` opt-out, so the five
 concurrency diagnostic groups are escalated to errors here exactly as they are
-on every other target. A regression in a test-only helper or mock is now a
-build failure, not a ratcheted warning (verified by reintroducing one).
+elsewhere. A regression in a test-only helper or mock is a build failure, not a
+ratcheted warning (verified by reintroducing one).
 
 ## Dependency notes
 
@@ -597,16 +653,19 @@ build failure, not a ratcheted warning (verified by reintroducing one).
 | 1 | OBAKitCore (+ approachable concurrency) | 119 → 0 | Core in Swift 6 mode | ✅ done |
 | 2 | OBAKit (+ MainActor default) | 467 → 0 | OBAKit in Swift 6 mode | ✅ done |
 | 3 | App, OBAWidget, KiedyBus | 14 → 0 | whole project `SWIFT_VERSION = 6.0` | ✅ done |
-| 4 | OBAKitTests | 0* | tests in Swift 6 mode | ⛔ blocked on Xcode 27 b3 XCTest (see Phase 4 status) |
+| 4 | OBAKitTests | 0* | tests in Swift 6 mode | ✅ done (2026-07-28, via the Swift Testing migration) |
+
+**The migration is complete: every target in the project builds in the Swift 6
+language mode.**
 
 *\* The test count spiked to 596 after Phase 1 (`OBATestCase` going
 `@MainActor` surfaced autoclosure warnings), then collapsed once every
 remaining plain-`XCTestCase` class was annotated `@MainActor`.
 Ratchet baseline: 999 → 733 (Phase 1) → 57 (Phase 2) → 39 (Phase 3) → 38 →
 8 (2026-07-28, Nimble → `#expect(throws:)`) → 5 (polling sites) → **0**
-(test-local fixtures; the target is now locked with the project-wide
-`SWIFT_WARNINGS_AS_ERRORS_GROUPS`, though the Swift 6 *language mode* flip is
-still blocked on XCTest).*
+(test-local fixtures). The target is locked with the project-wide
+`SWIFT_WARNINGS_AS_ERRORS_GROUPS`, and as of 2026-07-28 it also builds in the
+Swift 6 language mode — see "Phase 4 is done".*
 
 ### Phase 1 implementation notes (2026-07-16)
 

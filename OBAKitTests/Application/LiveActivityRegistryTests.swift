@@ -7,7 +7,8 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
+import Foundation
+import Testing
 import ActivityKit
 @testable import OBAKit
 @testable import OBAKitCore
@@ -27,7 +28,8 @@ import ActivityKit
 /// 2. **A delete URL may only be forgotten once the server confirms it.** It's the only handle
 ///    the app has on the server-side subscription, so dropping it after a failed DELETE leaks
 ///    the subscription permanently.
-class LiveActivityRegistryTests: OBATestCase {
+@Suite(.serialized)
+final class LiveActivityRegistryTests: OBATestCase {
 
     private let deadActivityID = "dead-activity"
     private let liveActivityID = "live-activity"
@@ -102,7 +104,18 @@ class LiveActivityRegistryTests: OBATestCase {
     }
 
     /// Thread-safe collector for the DELETEs a registry issued.
-    private final class DeleteRecorder {
+    ///
+    /// `nonisolated` is load-bearing. The matcher closure that calls `record(_:)`
+    /// is invoked by `MockDataLoader` on whichever task issued the request, and
+    /// `reconcile()` deliberately sends its DELETEs from a detached task so they
+    /// outlive the caller's cancellation. Left on the target's main-actor default
+    /// isolation, that call tripped the runtime's isolation assertion and killed
+    /// the test process — which is exactly what happened when this target moved
+    /// to the Swift 6 language mode. `MockDataLoaderMatcher` is `@Sendable` now,
+    /// so the same mistake would be caught at build time rather than at runtime.
+    /// The lock, not the actor, is what makes this safe, so `@unchecked Sendable`
+    /// states the promise the lock already keeps.
+    private nonisolated final class DeleteRecorder: @unchecked Sendable {
         private let lock = NSLock()
         private var _urls = [URL]()
 
@@ -119,18 +132,18 @@ class LiveActivityRegistryTests: OBATestCase {
 
     /// The predicate the whole sweep turns on. `.dismissed`/`.ended` are the two states the view
     /// controllers' `activityStateUpdates` observers treat as death; everything else is alive.
-    func testOnlyDismissedAndEndedActivitiesAreConsideredDead() {
-        XCTAssertFalse(LiveActivityRegistry.isLive(.dismissed), "A dismissed activity is dead, even though ActivityKit still lists it.")
-        XCTAssertFalse(LiveActivityRegistry.isLive(.ended), "An ended activity is dead, even though ActivityKit still lists it.")
+    @Test func `Only dismissed and ended activities are considered dead`() {
+        #expect(!LiveActivityRegistry.isLive(.dismissed), "A dismissed activity is dead, even though ActivityKit still lists it.")
+        #expect(!LiveActivityRegistry.isLive(.ended), "An ended activity is dead, even though ActivityKit still lists it.")
 
-        XCTAssertTrue(LiveActivityRegistry.isLive(.active))
-        XCTAssertTrue(LiveActivityRegistry.isLive(.stale))
+        #expect(LiveActivityRegistry.isLive(.active))
+        #expect(LiveActivityRegistry.isLive(.stale))
 
         // `.pending` postdates our deployment target, hence the gate. It's also the reason
         // `isLive(_:)` is written as "not dead" rather than as an allow-list of live states: a
         // state case the app was never compiled against must not be mistaken for death.
         if #available(iOS 26.0, *) {
-            XCTAssertTrue(LiveActivityRegistry.isLive(.pending))
+            #expect(LiveActivityRegistry.isLive(.pending))
         }
     }
 
@@ -140,66 +153,66 @@ class LiveActivityRegistryTests: OBATestCase {
     /// lists it* in `Activity.activities` — with a state of `.dismissed`. The original sweep
     /// checked only for presence in that array, concluded the activity was alive, skipped it, and
     /// the server went on pushing to a dead activity forever. Presence is not life.
-    func testReconcileSweepsActivityStillListedByActivityKitButDismissed() async {
+    @Test func `Reconcile sweeps activity still listed by activity kit but dismissed`() async {
         persistDeleteURLs([deadActivityID: deadDeleteURL.absoluteString])
         let recorder = mockDeleteResponse(statusCode: 204)
 
         await buildRegistry(activityKitReports: [(deadActivityID, .dismissed)]).reconcile()
 
-        XCTAssertEqual(recorder.urls, [deadDeleteURL], "Expected reconcile() to DELETE the subscription for a dismissed activity that ActivityKit still lists.")
-        XCTAssertTrue(persistedDeleteURLs.isEmpty, "Expected a confirmed DELETE to drop the persisted delete URL.")
+        #expect(recorder.urls == [deadDeleteURL], "Expected reconcile() to DELETE the subscription for a dismissed activity that ActivityKit still lists.")
+        #expect(persistedDeleteURLs.isEmpty, "Expected a confirmed DELETE to drop the persisted delete URL.")
     }
 
     /// Same regression, other dead state: an `.ended` activity also lingers in `activities`.
-    func testReconcileSweepsActivityStillListedByActivityKitButEnded() async {
+    @Test func `Reconcile sweeps activity still listed by activity kit but ended`() async {
         persistDeleteURLs([deadActivityID: deadDeleteURL.absoluteString])
         let recorder = mockDeleteResponse(statusCode: 204)
 
         await buildRegistry(activityKitReports: [(deadActivityID, .ended)]).reconcile()
 
-        XCTAssertEqual(recorder.urls, [deadDeleteURL], "Expected reconcile() to DELETE the subscription for an ended activity that ActivityKit still lists.")
-        XCTAssertTrue(persistedDeleteURLs.isEmpty)
+        #expect(recorder.urls == [deadDeleteURL], "Expected reconcile() to DELETE the subscription for an ended activity that ActivityKit still lists.")
+        #expect(persistedDeleteURLs.isEmpty)
     }
 
     /// The user cleared a Live Activity while the app wasn't running and the system has since
     /// purged it: nothing ever observed the dismissal, so its delete URL was left behind.
-    func testReconcileDeletesSubscriptionForActivityThatNoLongerExists() async {
+    @Test func `Reconcile deletes subscription for activity that no longer exists`() async {
         persistDeleteURLs([deadActivityID: deadDeleteURL.absoluteString])
         let recorder = mockDeleteResponse(statusCode: 204)
 
         await buildRegistry(activityKitReports: []).reconcile()
 
-        XCTAssertEqual(recorder.urls, [deadDeleteURL], "Expected reconcile() to DELETE the subscription for an activity that no longer exists.")
-        XCTAssertTrue(persistedDeleteURLs.isEmpty, "Expected a confirmed DELETE to drop the persisted delete URL.")
+        #expect(recorder.urls == [deadDeleteURL], "Expected reconcile() to DELETE the subscription for an activity that no longer exists.")
+        #expect(persistedDeleteURLs.isEmpty, "Expected a confirmed DELETE to drop the persisted delete URL.")
     }
 
     /// An active activity still has (or will get) a lifecycle observer that unregisters it when
     /// it ends. Reconciliation must not touch it — sweeping it would kill the updates for a Live
     /// Activity the user is looking at right now.
-    func testReconcileLeavesActiveActivityAlone() async {
+    @Test func `Reconcile leaves active activity alone`() async {
         persistDeleteURLs([liveActivityID: liveDeleteURL.absoluteString])
         let recorder = mockDeleteResponse(statusCode: 204)
 
         await buildRegistry(activityKitReports: [(liveActivityID, .active)]).reconcile()
 
-        XCTAssertTrue(recorder.urls.isEmpty, "Expected reconcile() to make no requests for an active activity.")
-        XCTAssertEqual(persistedDeleteURLs, [liveActivityID: liveDeleteURL.absoluteString], "Expected an active activity's delete URL to be retained.")
+        #expect(recorder.urls.isEmpty, "Expected reconcile() to make no requests for an active activity.")
+        #expect(persistedDeleteURLs == [liveActivityID: liveDeleteURL.absoluteString], "Expected an active activity's delete URL to be retained.")
     }
 
     /// `.stale` means "on screen, showing old data" — the exact situation a push update is meant
     /// to fix. Sweeping it would guarantee it stays stale.
-    func testReconcileLeavesStaleActivityAlone() async {
+    @Test func `Reconcile leaves stale activity alone`() async {
         persistDeleteURLs([liveActivityID: liveDeleteURL.absoluteString])
         let recorder = mockDeleteResponse(statusCode: 204)
 
         await buildRegistry(activityKitReports: [(liveActivityID, .stale)]).reconcile()
 
-        XCTAssertTrue(recorder.urls.isEmpty, "Expected reconcile() to make no requests for a stale (but still live) activity.")
-        XCTAssertEqual(persistedDeleteURLs, [liveActivityID: liveDeleteURL.absoluteString])
+        #expect(recorder.urls.isEmpty, "Expected reconcile() to make no requests for a stale (but still live) activity.")
+        #expect(persistedDeleteURLs == [liveActivityID: liveDeleteURL.absoluteString])
     }
 
     /// Both activities are listed by ActivityKit; only their states tell them apart.
-    func testReconcileOnlySweepsTheDismissedActivityWhenBothAreListed() async {
+    @Test func `Reconcile only sweeps the dismissed activity when both are listed`() async {
         persistDeleteURLs([
             deadActivityID: deadDeleteURL.absoluteString,
             liveActivityID: liveDeleteURL.absoluteString
@@ -211,110 +224,98 @@ class LiveActivityRegistryTests: OBATestCase {
             (liveActivityID, .active)
         ]).reconcile()
 
-        XCTAssertEqual(recorder.urls, [deadDeleteURL])
-        XCTAssertEqual(persistedDeleteURLs, [liveActivityID: liveDeleteURL.absoluteString])
+        #expect(recorder.urls == [deadDeleteURL])
+        #expect(persistedDeleteURLs == [liveActivityID: liveDeleteURL.absoluteString])
     }
 
     /// The critical failure mode: if a flaky network let us forget the delete URL, the server-side
     /// subscription could never be deleted again. A transient failure must leave the entry in
     /// place so a later launch retries it.
-    func testReconcileRetainsDeleteURLWhenTheDeviceIsOffline() async {
+    @Test func `Reconcile retains delete URL when the device is offline`() async {
         persistDeleteURLs([deadActivityID: deadDeleteURL.absoluteString])
         let recorder = mockDeleteFailure(URLError(.notConnectedToInternet))
 
         await buildRegistry(liveActivityIDs: []).reconcile()
 
-        XCTAssertEqual(recorder.urls, [deadDeleteURL])
-        XCTAssertEqual(
-            persistedDeleteURLs,
-            [deadActivityID: deadDeleteURL.absoluteString],
-            "Expected a transient DELETE failure to retain the persisted delete URL for a later retry."
-        )
+        #expect(recorder.urls == [deadDeleteURL])
+        #expect(persistedDeleteURLs == [deadActivityID: deadDeleteURL.absoluteString], "Expected a transient DELETE failure to retain the persisted delete URL for a later retry.")
     }
 
-    func testReconcileRetainsDeleteURLOnServerError() async {
+    @Test func `Reconcile retains delete URL on server error`() async {
         persistDeleteURLs([deadActivityID: deadDeleteURL.absoluteString])
         mockDeleteResponse(statusCode: 500)
 
         await buildRegistry(liveActivityIDs: []).reconcile()
 
-        XCTAssertEqual(
-            persistedDeleteURLs,
-            [deadActivityID: deadDeleteURL.absoluteString],
-            "Expected a 500 to be treated as transient and retain the persisted delete URL."
-        )
+        #expect(persistedDeleteURLs == [deadActivityID: deadDeleteURL.absoluteString], "Expected a 500 to be treated as transient and retain the persisted delete URL.")
     }
 
     /// A retry that finds the row already deleted has nothing left to do, so the entry can go.
-    func testReconcileForgetsDeleteURLWhenServerReports404() async {
+    @Test func `Reconcile forgets delete URL when server reports 404`() async {
         persistDeleteURLs([deadActivityID: deadDeleteURL.absoluteString])
         mockDeleteResponse(statusCode: 404)
 
         await buildRegistry(liveActivityIDs: []).reconcile()
 
-        XCTAssertTrue(persistedDeleteURLs.isEmpty, "Expected a 404 (the subscription is already gone) to drop the persisted delete URL.")
+        #expect(persistedDeleteURLs.isEmpty, "Expected a 404 (the subscription is already gone) to drop the persisted delete URL.")
     }
 
-    func testReconcileForgetsDeleteURLWhenServerReports410() async {
+    @Test func `Reconcile forgets delete URL when server reports 410`() async {
         persistDeleteURLs([deadActivityID: deadDeleteURL.absoluteString])
         mockDeleteResponse(statusCode: 410)
 
         await buildRegistry(liveActivityIDs: []).reconcile()
 
-        XCTAssertTrue(persistedDeleteURLs.isEmpty, "Expected a 410 Gone to drop the persisted delete URL.")
+        #expect(persistedDeleteURLs.isEmpty, "Expected a 410 Gone to drop the persisted delete URL.")
     }
 
     /// A malformed entry can never produce a request, so retaining it would just fail this check
     /// forever.
-    func testReconcileDiscardsUnparseableDeleteURL() async {
+    @Test func `Reconcile discards unparseable delete URL`() async {
         persistDeleteURLs([deadActivityID: ""])
         let recorder = mockDeleteResponse(statusCode: 204)
 
         await buildRegistry(liveActivityIDs: []).reconcile()
 
-        XCTAssertTrue(recorder.urls.isEmpty)
-        XCTAssertTrue(persistedDeleteURLs.isEmpty)
+        #expect(recorder.urls.isEmpty)
+        #expect(persistedDeleteURLs.isEmpty)
     }
 
-    func testReconcileMakesNoRequestsWhenNothingIsPersisted() async {
+    @Test func `Reconcile makes no requests when nothing is persisted`() async {
         let recorder = mockDeleteResponse(statusCode: 204)
 
         await buildRegistry(liveActivityIDs: []).reconcile()
 
-        XCTAssertTrue(recorder.urls.isEmpty)
+        #expect(recorder.urls.isEmpty)
     }
 
     // MARK: - unregister()
 
-    func testUnregisterDeletesSubscriptionAndForgetsItsURL() async {
+    @Test func `Unregister deletes subscription and forgets its URL`() async {
         persistDeleteURLs([deadActivityID: deadDeleteURL.absoluteString])
         let recorder = mockDeleteResponse(statusCode: 204)
 
         await buildRegistry(liveActivityIDs: []).unregister(activityID: deadActivityID)
 
-        XCTAssertEqual(recorder.urls, [deadDeleteURL])
-        XCTAssertTrue(persistedDeleteURLs.isEmpty)
+        #expect(recorder.urls == [deadDeleteURL])
+        #expect(persistedDeleteURLs.isEmpty)
     }
 
-    func testUnregisterRetainsDeleteURLWhenTheDeviceIsOffline() async {
+    @Test func `Unregister retains delete URL when the device is offline`() async {
         persistDeleteURLs([deadActivityID: deadDeleteURL.absoluteString])
         mockDeleteFailure(URLError(.timedOut))
 
         await buildRegistry(liveActivityIDs: []).unregister(activityID: deadActivityID)
 
-        XCTAssertEqual(
-            persistedDeleteURLs,
-            [deadActivityID: deadDeleteURL.absoluteString],
-            "Expected a transient DELETE failure to retain the persisted delete URL so reconcile() can retry it."
-        )
+        #expect(persistedDeleteURLs == [deadActivityID: deadDeleteURL.absoluteString], "Expected a transient DELETE failure to retain the persisted delete URL so reconcile() can retry it.")
     }
 
-    func testUnregisterIsANoOpForAnUnknownActivity() async {
+    @Test func `Unregister is a no op for an unknown activity`() async {
         let recorder = mockDeleteResponse(statusCode: 204)
 
         await buildRegistry(liveActivityIDs: []).unregister(activityID: "never-registered")
 
-        XCTAssertTrue(recorder.urls.isEmpty)
+        #expect(recorder.urls.isEmpty)
     }
 
     // MARK: - Cancellation
@@ -328,7 +329,7 @@ class LiveActivityRegistryTests: OBATestCase {
     /// So the property under test is not "unregister sends a DELETE" (the tests above already
     /// pass with the bug present) but "unregister sends a DELETE *even from a cancelled task*".
     /// `MockDataLoader` models `URLSession`'s cancellation check, so this fails without the fix.
-    func testUnregisterIssuesItsDeleteEvenWhenTheCallingTaskIsCancelled() async {
+    @Test func `Unregister issues its delete even when the calling task is cancelled`() async {
         persistDeleteURLs([deadActivityID: deadDeleteURL.absoluteString])
         let recorder = mockDeleteResponse(statusCode: 204)
 
@@ -348,12 +349,8 @@ class LiveActivityRegistryTests: OBATestCase {
         observer.cancel()
         await observer.value
 
-        XCTAssertEqual(
-            recorder.urls,
-            [expectedURL],
-            "The unregister DELETE must reach the network even though the task that triggered it was cancelled — cancelling teardown work only ever leaks the subscription."
-        )
-        XCTAssertTrue(persistedDeleteURLs.isEmpty, "Expected the confirmed DELETE to drop the persisted delete URL.")
+        #expect(recorder.urls == [expectedURL], "The unregister DELETE must reach the network even though the task that triggered it was cancelled — cancelling teardown work only ever leaks the subscription.")
+        #expect(persistedDeleteURLs.isEmpty, "Expected the confirmed DELETE to drop the persisted delete URL.")
     }
 
     /// The same defect, one layer over: the registration POST wins its race with a dismissal, so
@@ -362,14 +359,14 @@ class LiveActivityRegistryTests: OBATestCase {
     /// is *why* `confirm()` returned false. Cancellation-honoring cleanup here orphans a row that
     /// nothing else will ever delete: the app never persisted its delete URL, so `reconcile()`
     /// can't find it either.
-    func testRegisterCleansUpTheOrphanedRowEvenWhenItsTokenTaskWasCancelledMidRegistration() async {
+    @Test func `Register cleans up the orphaned row even when its token task was cancelled mid registration`() async {
         let registry = buildRegistry(liveActivityIDs: [])
         let deleteRecorder = mockDeleteResponse(statusCode: 204)
         let activityID = deadActivityID
         let expectedURL = deadDeleteURL
 
         // Lets the mocked POST cancel the very task that issued it.
-        let tokenTask = UnsafeTaskBox()
+        let tokenTask = SendableBox<Task<Void, Never>?>(nil)
 
         let registrationBody = Data(#"{"url":"\#(deadDeleteURL.absoluteString)"}"#.utf8)
         dataLoader.mock(data: registrationBody, statusCode: 200) { request in
@@ -377,7 +374,7 @@ class LiveActivityRegistryTests: OBATestCase {
             // The production race, made deterministic: the user dismisses the Live Activity while
             // its push token registration is still in flight, so the token task is cancelled after
             // the server has already created the row.
-            tokenTask.cancel()
+            tokenTask.value?.cancel()
             return true
         }
 
@@ -400,27 +397,20 @@ class LiveActivityRegistryTests: OBATestCase {
                 confirm: { !Task.isCancelled }
             )
         }
-        tokenTask.set(task)
+        tokenTask.value = task
         gate.continuation.yield(())
         gate.continuation.finish()
         await task.value
 
-        XCTAssertEqual(
-            deleteRecorder.urls,
-            [expectedURL],
-            "The orphan-cleanup DELETE must reach the network even though the token task issuing it was cancelled."
-        )
-        XCTAssertTrue(
-            persistedDeleteURLs.isEmpty,
-            "An unconfirmed registration must not leave a persisted delete URL behind."
-        )
+        #expect(deleteRecorder.urls == [expectedURL], "The orphan-cleanup DELETE must reach the network even though the token task issuing it was cancelled.")
+        #expect(persistedDeleteURLs.isEmpty, "An unconfirmed registration must not leave a persisted delete URL behind.")
     }
 
     /// Guards the seam the two tests above lean on. They can only fail against the buggy ordering
     /// if `MockDataLoader` refuses to serve a request from a cancelled task, the way `URLSession`
     /// does. If someone "simplifies" that check away, those tests would go on passing while the
     /// device kept failing — so assert the mock's fidelity directly.
-    func testMockDataLoaderRefusesToServeRequestsFromACancelledTaskLikeURLSession() async {
+    @Test func `Mock data loader refuses to serve requests from a cancelled task like URL session`() async {
         let recorder = mockDeleteResponse(statusCode: 204)
         let service: ObacoAPIService = obacoService
         let url = deadDeleteURL
@@ -439,39 +429,20 @@ class LiveActivityRegistryTests: OBATestCase {
         task.cancel()
         let error = await task.value
 
-        XCTAssertEqual(
-            (error as? URLError)?.code,
-            .cancelled,
-            "Expected the mock to fail a request from a cancelled task with URLError.cancelled (-999), exactly as URLSession does."
-        )
-        XCTAssertTrue(recorder.urls.isEmpty, "A cancelled request is one the server never saw; the mock must not record it.")
-    }
-
-    /// Holds the task that a mocked response needs to cancel. `@unchecked Sendable` because the
-    /// matcher runs on whatever thread the request is issued from; the lock is the real guarantee.
-    private final class UnsafeTaskBox: @unchecked Sendable {
-        private let lock = NSLock()
-        private var task: Task<Void, Never>?
-
-        func set(_ task: Task<Void, Never>) {
-            lock.withLock { self.task = task }
-        }
-
-        func cancel() {
-            lock.withLock { task }?.cancel()
-        }
+        #expect((error as? URLError)?.code == .cancelled, "Expected the mock to fail a request from a cancelled task with URLError.cancelled (-999), exactly as URLSession does.")
+        #expect(recorder.urls.isEmpty, "A cancelled request is one the server never saw; the mock must not record it.")
     }
 
     // MARK: - Persistence contract
 
     /// The key and value shape are a field-persisted contract: delete URLs written by shipped
     /// builds must still be found (and cleaned up) by this code.
-    func testRegistryReadsTheLegacyUserDefaultsKeyAndShape() {
-        XCTAssertEqual(LiveActivityRegistry.deleteURLsDefaultsKey, "liveActivityDeleteURLs")
+    @Test func `Registry reads the legacy user defaults key and shape`() {
+        #expect(LiveActivityRegistry.deleteURLsDefaultsKey == "liveActivityDeleteURLs")
 
         persistDeleteURLs([deadActivityID: deadDeleteURL.absoluteString])
 
         let registry = buildRegistry(liveActivityIDs: [])
-        XCTAssertEqual(registry.deleteURL(forActivityID: deadActivityID), deadDeleteURL)
+        #expect(registry.deleteURL(forActivityID: deadActivityID) == deadDeleteURL)
     }
 }

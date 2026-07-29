@@ -7,24 +7,25 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
+import Foundation
 import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
 /// Tests for `ManageBookmarksViewModel`. Covers data access delegation, bookmark deletion
 /// (with analytics), name persistence, transit-name restoration, and reorder logic.
-class ManageBookmarksViewModelTests: OBATestCase {
+@Suite(.serialized)
+final class ManageBookmarksViewModelTests: OBATestCase {
     var queue: OperationQueue!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
+
         queue = OperationQueue()
         queue.maxConcurrentOperationCount = 1
     }
 
-    override func tearDown() async throws {
-        try await super.tearDown()
+    isolated deinit {
         queue.cancelAllOperations()
     }
 
@@ -68,13 +69,13 @@ class ManageBookmarksViewModelTests: OBATestCase {
             type: StopArrivals.self,
             fileName: "arrivals-and-departures-for-stop-1_10914.json"
         )
-        return try XCTUnwrap(stopArrivals.arrivalsAndDepartures.first)
+        return try #require(stopArrivals.arrivalsAndDepartures.first)
     }
 
     // MARK: - Data Access
 
-    @MainActor
-    func test_bookmarkGroups_reflectsDataStore() {
+    @Test @MainActor
+    func `Bookmark groups reflects data store`() {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         let vm = ManageBookmarksViewModel(application: app)
@@ -87,8 +88,8 @@ class ManageBookmarksViewModelTests: OBATestCase {
         #expect(vm.bookmarkGroups.count == 1)
     }
 
-    @MainActor
-    func test_bookmarksInGroup_returnsCorrectSubset() throws {
+    @Test @MainActor
+    func `Bookmarks in group returns correct subset`() throws {
         let stop = try makeStop()
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
@@ -107,8 +108,8 @@ class ManageBookmarksViewModelTests: OBATestCase {
         #expect(vm.bookmarksInGroup(nil).count == 1)
     }
 
-    @MainActor
-    func test_findGroup_returnsGroupByID() {
+    @Test @MainActor
+    func `Find group returns group by ID`() {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         let vm = ManageBookmarksViewModel(application: app)
@@ -120,8 +121,8 @@ class ManageBookmarksViewModelTests: OBATestCase {
         #expect(vm.findGroup(id: UUID()) == nil)
     }
 
-    @MainActor
-    func test_findBookmark_returnsByID() throws {
+    @Test @MainActor
+    func `Find bookmark returns by ID`() throws {
         let stop = try makeStop()
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
@@ -136,8 +137,8 @@ class ManageBookmarksViewModelTests: OBATestCase {
 
     // MARK: - deleteBookmark
 
-    @MainActor
-    func test_deleteBookmark_removesFromDataStore() throws {
+    @Test @MainActor
+    func `Delete bookmark removes from data store`() throws {
         let stop = try makeStop()
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
@@ -151,8 +152,8 @@ class ManageBookmarksViewModelTests: OBATestCase {
         #expect(app.userDataStore.findBookmark(id: bookmark.id) == nil)
     }
 
-    @MainActor
-    func test_deleteBookmark_reportsAnalyticsForTripBookmark() throws {
+    @Test @MainActor
+    func `Delete bookmark reports analytics for trip bookmark`() throws {
         let arrivalDep = try makeArrivalDeparture()
         let analyticsMock = AnalyticsMock()
         let dataLoader = MockDataLoader(testName: name)
@@ -174,8 +175,8 @@ class ManageBookmarksViewModelTests: OBATestCase {
         #expect((removeEvents.first?.value as? String) == expectedValue)
     }
 
-    @MainActor
-    func test_deleteBookmark_noAnalyticsForStopBookmark() throws {
+    @Test @MainActor
+    func `Delete bookmark no analytics for stop bookmark`() throws {
         let stop = try makeStop()
         let analyticsMock = AnalyticsMock()
         let dataLoader = MockDataLoader(testName: name)
@@ -192,8 +193,8 @@ class ManageBookmarksViewModelTests: OBATestCase {
 
     // MARK: - saveNameChange
 
-    @MainActor
-    func test_saveNameChange_persistsNonEmptyName() throws {
+    @Test @MainActor
+    func `Save name change persists non empty name`() throws {
         let stop = try makeStop()
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
@@ -207,8 +208,8 @@ class ManageBookmarksViewModelTests: OBATestCase {
         #expect(app.userDataStore.findBookmark(id: bookmark.id)?.name == "New Name")
     }
 
-    @MainActor
-    func test_saveNameChange_ignoresEmptyName() throws {
+    @Test @MainActor
+    func `Save name change ignores empty name`() throws {
         let stop = try makeStop()
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
@@ -224,8 +225,8 @@ class ManageBookmarksViewModelTests: OBATestCase {
 
     // MARK: - restoreTransitName
 
-    @MainActor
-    func test_restoreTransitName_restoresStopFormattedTitleForStopBookmark() throws {
+    @Test @MainActor
+    func `Restore transit name restores stop formatted title for stop bookmark`() throws {
         let stop = try makeStop()
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
@@ -240,8 +241,8 @@ class ManageBookmarksViewModelTests: OBATestCase {
         #expect(app.userDataStore.findBookmark(id: bookmark.id)?.name == expected)
     }
 
-    @MainActor
-    func test_restoreTransitName_restoresTripNameForTripBookmark() throws {
+    @Test @MainActor
+    func `Restore transit name restores trip name for trip bookmark`() throws {
         let arrivalDep = try makeArrivalDeparture()
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
@@ -258,8 +259,8 @@ class ManageBookmarksViewModelTests: OBATestCase {
 
     // MARK: - moveBookmark
 
-    @MainActor
-    func test_moveBookmark_movesBookmarkToDestinationGroup() throws {
+    @Test @MainActor
+    func `Move bookmark moves bookmark to destination group`() throws {
         let stop = try makeStop()
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
@@ -277,8 +278,8 @@ class ManageBookmarksViewModelTests: OBATestCase {
         #expect(vm.bookmarksInGroup(nil).isEmpty)
     }
 
-    @MainActor
-    func test_moveBookmark_respectsIndexParameter() throws {
+    @Test @MainActor
+    func `Move bookmark respects index parameter`() throws {
         let stop = try makeStop()
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)

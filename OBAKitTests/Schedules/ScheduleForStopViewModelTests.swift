@@ -7,25 +7,26 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
+import Foundation
 import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
 // swiftlint:disable force_cast
 
-class ScheduleForStopViewModelTests: OBATestCase {
+@Suite(.serialized)
+final class ScheduleForStopViewModelTests: OBATestCase {
     let stopID = "1_75403"
     var queue: OperationQueue!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
+
         queue = OperationQueue()
         queue.maxConcurrentOperationCount = 1
     }
 
-    override func tearDown() async throws {
-        try await super.tearDown()
+    isolated deinit {
         queue.cancelAllOperations()
     }
 
@@ -69,8 +70,8 @@ class ScheduleForStopViewModelTests: OBATestCase {
 
     // MARK: - Initialization Tests
 
-    @MainActor
-    func test_init_setsStopID() {
+    @Test @MainActor
+    func `Init sets stop ID`() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForStop(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -80,8 +81,8 @@ class ScheduleForStopViewModelTests: OBATestCase {
         #expect(viewModel.stopID == stopID)
     }
 
-    @MainActor
-    func test_init_setsInitialDate() {
+    @Test @MainActor
+    func `Init sets initial date`() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForStop(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -92,8 +93,8 @@ class ScheduleForStopViewModelTests: OBATestCase {
         #expect(Calendar.current.isDate(viewModel.selectedDate, inSameDayAs: testDate))
     }
 
-    @MainActor
-    func test_init_selectedRouteIDIsNil() {
+    @Test @MainActor
+    func `Init selected route ID is nil`() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForStop(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -105,8 +106,8 @@ class ScheduleForStopViewModelTests: OBATestCase {
 
     // MARK: - Stop Name Tests
 
-    @MainActor
-    func test_stopName_beforeFetch_returnsStopID() {
+    @Test @MainActor
+    func `Stop name before fetch returns stop ID`() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForStop(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -117,8 +118,8 @@ class ScheduleForStopViewModelTests: OBATestCase {
 
     // MARK: - Available Routes Tests
 
-    @MainActor
-    func test_availableRoutes_beforeFetch_isEmpty() {
+    @Test @MainActor
+    func `Available routes before fetch is empty`() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForStop(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -129,8 +130,8 @@ class ScheduleForStopViewModelTests: OBATestCase {
 
     // MARK: - Route Selection Tests
 
-    @MainActor
-    func test_selectRoute_updatesSelectedRouteID() {
+    @Test @MainActor
+    func `Select route updates selected route ID`() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForStop(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -142,8 +143,8 @@ class ScheduleForStopViewModelTests: OBATestCase {
         #expect(viewModel.selectedRouteID == testRouteID)
     }
 
-    @MainActor
-    func test_selectRoute_canBeCalledMultipleTimes() {
+    @Test @MainActor
+    func `Select route can be called multiple times`() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForStop(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -161,8 +162,8 @@ class ScheduleForStopViewModelTests: OBATestCase {
 
     // MARK: - Loading State Tests
 
-    @MainActor
-    func test_isLoading_initiallyFalse() {
+    @Test @MainActor
+    func `Is loading initially false`() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForStop(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -171,8 +172,8 @@ class ScheduleForStopViewModelTests: OBATestCase {
         #expect(!viewModel.isLoading)
     }
 
-    @MainActor
-    func test_error_initiallyNil() {
+    @Test @MainActor
+    func `Error initially nil`() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForStop(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -181,8 +182,8 @@ class ScheduleForStopViewModelTests: OBATestCase {
         #expect(viewModel.error == nil)
     }
 
-    @MainActor
-    func test_scheduleData_initiallyNil() {
+    @Test @MainActor
+    func `Schedule data initially nil`() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForStop(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)

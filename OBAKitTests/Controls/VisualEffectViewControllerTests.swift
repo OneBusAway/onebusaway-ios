@@ -8,45 +8,44 @@
 //
 
 import Foundation
-import XCTest
 import Testing
 import UIKit
 @testable import OBAKit
 
 @MainActor
-class VisualEffectViewControllerTests: XCTestCase {
+@Suite(.serialized)
+final class VisualEffectViewControllerTests {
     
     var viewController: VisualEffectViewController!
     
-    override func setUp() async throws {
-        try await super.setUp()
+    init() {
         viewController = VisualEffectViewController()
     }
     
-    func test_init_setsUpView() {
+    @Test func `Init sets up view`() {
         #expect(self.viewController != nil)
         #expect(self.viewController.view != nil)
     }
     
-    func test_viewDidLoad_setsUpVisualEffectView() {
+    @Test func `View did load sets up visual effect view`() {
         viewController.viewDidLoad()
         
         #expect(self.viewController.view.subviews.contains(self.viewController.visualEffectView))
         #expect(self.viewController.view.backgroundColor == UIColor.clear)
     }
     
-    func test_visualEffectView_isAccessible() {
+    @Test func `Visual effect view is accessible`() {
         let visualEffectView = viewController.visualEffectView
         #expect(type(of: visualEffectView) == UIVisualEffectView.self)
     }
     
-    func test_contentView_throughVisualEffectView() {
+    @Test func `Content view through visual effect view`() {
         // Test that visualEffectView has a content view  
         let visualEffectView = viewController.visualEffectView
         #expect(type(of: visualEffectView) == UIVisualEffectView.self)
     }
     
-    func test_addingSubviewsToContentView() {
+    @Test func `Adding subviews to content view`() {
         // Trigger viewDidLoad to ensure view is set up
         _ = viewController.view
         

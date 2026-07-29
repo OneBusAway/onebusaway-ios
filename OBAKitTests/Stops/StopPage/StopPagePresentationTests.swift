@@ -7,9 +7,9 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
 @testable import OBAKit
 @testable import OBAKitCore
+import Foundation
 import Testing
 
 /// The Stop page has two presentations: pushed onto a navigation stack (dark map header, chrome in
@@ -20,27 +20,26 @@ import Testing
 /// tests pin that down at the two seams where it could silently change — the router's default and
 /// the navigation-bar items.
 @MainActor
-class StopPagePresentationTests: OBATestCase {
+@Suite(.serialized)
+final class StopPagePresentationTests: OBATestCase {
 
     private var queue: OperationQueue!
     private var application: Application!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
+
         queue = OperationQueue()
         application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
         userDefaults.set(true, forKey: FeatureFlags.useNewStopPageKey)
     }
 
-    override func tearDown() async throws {
+    isolated deinit {
         queue.cancelAllOperations()
-        queue = nil
-        application = nil
-        try await super.tearDown()
     }
 
     private func makeStop() throws -> Stop {
-        try XCTUnwrap(Fixtures.loadSomeStops().first)
+        try #require(Fixtures.loadSomeStops().first)
     }
 
     // MARK: - Router defaults
@@ -48,7 +47,7 @@ class StopPagePresentationTests: OBATestCase {
     /// Everything that pushes — Recents, Bookmarks, the map drawer's list, transfers — calls
     /// `makeStopController` without the new argument. If the default ever flips, all of them
     /// silently acquire a bottom toolbar.
-    func test_makeStopController_defaultsToThePushedPresentation() throws {
+    @Test func `Make stop controller defaults to the pushed presentation`() throws {
         let stop = try makeStop()
 
         let byStop = application.viewRouter.makeStopController(stop: stop) as? StopPageViewController
@@ -58,7 +57,7 @@ class StopPagePresentationTests: OBATestCase {
         #expect(byID?.showsBottomToolbar == false)
     }
 
-    func test_makeStopController_optsIntoTheSheetPresentation() throws {
+    @Test func `Make stop controller opts into the sheet presentation`() throws {
         let stop = try makeStop()
 
         let byStop = application.viewRouter.makeStopController(stop: stop, showToolbarOnBottom: true) as? StopPageViewController
@@ -70,7 +69,7 @@ class StopPagePresentationTests: OBATestCase {
 
     /// The legacy screen has only the pushed layout, so the flag must be inert there rather than
     /// producing a `StopViewController` that someone later assumes has a toolbar.
-    func test_legacyScreen_ignoresTheSheetFlag() throws {
+    @Test func `Legacy screen ignores the sheet flag`() throws {
         userDefaults.set(false, forKey: FeatureFlags.useNewStopPageKey)
         let stop = try makeStop()
 
@@ -83,7 +82,7 @@ class StopPagePresentationTests: OBATestCase {
 
     /// The pushed page keeps its three right-hand bar items. This is the assertion that fails if
     /// the sheet's chrome suppression ever leaks across.
-    func test_pushedPresentation_keepsItsNavigationBarItems() throws {
+    @Test func `Pushed presentation keeps its navigation bar items`() throws {
         let controller = StopPageViewController(application: application, stop: try makeStop())
         controller.loadViewIfNeeded()
 
@@ -92,7 +91,7 @@ class StopPagePresentationTests: OBATestCase {
 
     /// The sheet installs no bar items — they would duplicate the toolbar's controls inside a
     /// navigation bar that renders as a bare grabber.
-    func test_sheetPresentation_installsNoNavigationBarItems() throws {
+    @Test func `Sheet presentation installs no navigation bar items`() throws {
         let controller = StopPageViewController(application: application, stop: try makeStop(), showToolbarOnBottom: true)
         controller.loadViewIfNeeded()
 
@@ -102,7 +101,7 @@ class StopPagePresentationTests: OBATestCase {
     // MARK: - Preview mode
 
     /// A peek is a bare glance in both presentations.
-    func test_previewMode_suppressesChromeInBothPresentations() throws {
+    @Test func `Preview mode suppresses chrome in both presentations`() throws {
         let stop = try makeStop()
 
         let pushed = StopPageViewController(application: application, stop: stop)
@@ -122,7 +121,7 @@ class StopPagePresentationTests: OBATestCase {
     }
 
     /// Leaving a preview must put the pushed page's bar items back, not leave it bare.
-    func test_exitingPreviewMode_restoresPushedNavigationBarItems() throws {
+    @Test func `Exiting preview mode restores pushed navigation bar items`() throws {
         let controller = StopPageViewController(application: application, stop: try makeStop())
         controller.loadViewIfNeeded()
 

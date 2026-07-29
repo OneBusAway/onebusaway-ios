@@ -60,3 +60,21 @@ func poll(
         sourceLocation: sourceLocation
     )
 }
+
+/// Lets queued main-actor work and in-flight animations run for `seconds`.
+///
+/// This replaced `RunLoop.current.run(until:)`, which used to work and no longer
+/// does. Under XCTest a test method ran directly on the main thread's run loop,
+/// so blocking there still drained the main queue. A Swift Testing `@MainActor`
+/// test body is itself a main-queue item, and blocking inside it cannot
+/// re-entrantly drain further main-queue blocks — UIView animation completion
+/// handlers simply never fire. Suspending releases the main actor, which is what
+/// actually lets that work run.
+///
+/// Prefer ``poll(until:timeout:interval:_:sourceLocation:)`` when there is a
+/// condition to wait on: it returns as soon as the condition holds, where this
+/// always burns the full duration. Use this only to let an animation of known
+/// length play out.
+func spin(_ seconds: TimeInterval) async {
+    try? await Task.sleep(for: .seconds(seconds))
+}

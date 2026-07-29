@@ -8,7 +8,7 @@
 //
 
 import Foundation
-import XCTest
+import Testing
 @testable import OBAKitCore
 
 /// Tests for the one-time migration of region data from UserDefaults to disk storage.
@@ -16,12 +16,14 @@ import XCTest
 /// Every user upgrading from a pre-disk-storage release runs this migration exactly once
 /// at launch, so these tests guard against losing the user's selected region, the
 /// downloaded region list, or their custom regions during an app update.
-class RegionsServiceMigrationTests: OBATestCase {
+@Suite(.serialized)
+final class RegionsServiceMigrationTests: OBATestCase {
 
     private var fileStorage: MockRegionsFileStorage!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
+
         fileStorage = MockRegionsFileStorage()
     }
 
@@ -41,127 +43,122 @@ class RegionsServiceMigrationTests: OBATestCase {
 
     // MARK: - No Legacy Data
 
-    func test_noLegacyData_isANoOp() {
+    @Test func `No legacy data is a no op`() {
         migrate()
 
-        XCTAssertNil(fileStorage.storedDefaultRegions)
-        XCTAssertTrue(fileStorage.storedCustomRegions.isEmpty)
-        XCTAssertNil(userDefaults.object(forKey: RegionsService.currentRegionIdentifierUserDefaultsKey))
+        #expect(fileStorage.storedDefaultRegions == nil)
+        #expect(fileStorage.storedCustomRegions.isEmpty)
+        #expect(userDefaults.object(forKey: RegionsService.currentRegionIdentifierUserDefaultsKey) == nil)
     }
 
     // MARK: - Default Regions
 
-    func test_defaultRegions_migratedToDiskAndLegacyKeyRemoved() {
+    @Test func `Default regions migrated to disk and legacy key removed`() {
         let regions = [Fixtures.pugetSoundRegion, Fixtures.tampaRegion]
         userDefaults.set(encode(regions), forKey: RegionsService.legacyStoredRegionsUserDefaultsKey)
 
         migrate()
 
-        XCTAssertEqual(fileStorage.storedDefaultRegions?.map(\.regionIdentifier), regions.map(\.regionIdentifier))
-        XCTAssertNil(userDefaults.data(forKey: RegionsService.legacyStoredRegionsUserDefaultsKey))
+        #expect(fileStorage.storedDefaultRegions?.map(\.regionIdentifier) == regions.map(\.regionIdentifier))
+        #expect(userDefaults.data(forKey: RegionsService.legacyStoredRegionsUserDefaultsKey) == nil)
     }
 
-    func test_defaultRegions_corruptedData_isDiscardedAndKeyRemoved() {
+    @Test func `Default regions corrupted data is discarded and key removed`() {
         userDefaults.set(Data([0x00, 0x01, 0x02]), forKey: RegionsService.legacyStoredRegionsUserDefaultsKey)
 
         migrate()
 
-        XCTAssertNil(fileStorage.storedDefaultRegions)
-        XCTAssertNil(userDefaults.data(forKey: RegionsService.legacyStoredRegionsUserDefaultsKey))
+        #expect(fileStorage.storedDefaultRegions == nil)
+        #expect(userDefaults.data(forKey: RegionsService.legacyStoredRegionsUserDefaultsKey) == nil)
     }
 
-    func test_defaultRegions_emptyList_clearsKeyWithoutWriting() {
+    @Test func `Default regions empty list clears key without writing`() {
         userDefaults.set(encode([Region]()), forKey: RegionsService.legacyStoredRegionsUserDefaultsKey)
 
         migrate()
 
-        XCTAssertNil(fileStorage.storedDefaultRegions)
-        XCTAssertNil(userDefaults.data(forKey: RegionsService.legacyStoredRegionsUserDefaultsKey))
+        #expect(fileStorage.storedDefaultRegions == nil)
+        #expect(userDefaults.data(forKey: RegionsService.legacyStoredRegionsUserDefaultsKey) == nil)
     }
 
-    func test_defaultRegions_diskWriteFails_keyIsKeptForRetry() {
+    @Test func `Default regions disk write fails key is kept for retry`() {
         let regions = [Fixtures.pugetSoundRegion]
         userDefaults.set(encode(regions), forKey: RegionsService.legacyStoredRegionsUserDefaultsKey)
         fileStorage.saveDefaultRegionsError = TestError.diskWriteFailed
 
         migrate()
 
-        XCTAssertNotNil(userDefaults.data(forKey: RegionsService.legacyStoredRegionsUserDefaultsKey),
-                        "A failed disk write must leave the legacy key intact so migration retries on next launch")
+        #expect(userDefaults.data(forKey: RegionsService.legacyStoredRegionsUserDefaultsKey) != nil, "A failed disk write must leave the legacy key intact so migration retries on next launch")
 
         // Next launch: the disk write succeeds and the key is cleared.
         fileStorage.saveDefaultRegionsError = nil
         migrate()
 
-        XCTAssertEqual(fileStorage.storedDefaultRegions?.count, 1)
-        XCTAssertNil(userDefaults.data(forKey: RegionsService.legacyStoredRegionsUserDefaultsKey))
+        #expect(fileStorage.storedDefaultRegions?.count == 1)
+        #expect(userDefaults.data(forKey: RegionsService.legacyStoredRegionsUserDefaultsKey) == nil)
     }
 
     // MARK: - Custom Regions
 
-    func test_customRegions_migratedToDiskAndLegacyKeyRemoved() {
+    @Test func `Custom regions migrated to disk and legacy key removed`() {
         let regions = [Fixtures.customMinneapolisRegion]
         userDefaults.set(encode(regions), forKey: RegionsService.legacyStoredCustomRegionsUserDefaultsKey)
 
         migrate()
 
-        XCTAssertEqual(fileStorage.storedCustomRegions.map(\.regionIdentifier), regions.map(\.regionIdentifier))
-        XCTAssertNil(userDefaults.data(forKey: RegionsService.legacyStoredCustomRegionsUserDefaultsKey))
+        #expect(fileStorage.storedCustomRegions.map(\.regionIdentifier) == regions.map(\.regionIdentifier))
+        #expect(userDefaults.data(forKey: RegionsService.legacyStoredCustomRegionsUserDefaultsKey) == nil)
     }
 
-    func test_customRegions_corruptedData_isDiscardedAndKeyRemoved() {
+    @Test func `Custom regions corrupted data is discarded and key removed`() {
         userDefaults.set(Data([0xFF]), forKey: RegionsService.legacyStoredCustomRegionsUserDefaultsKey)
 
         migrate()
 
-        XCTAssertTrue(fileStorage.storedCustomRegions.isEmpty)
-        XCTAssertNil(userDefaults.data(forKey: RegionsService.legacyStoredCustomRegionsUserDefaultsKey))
+        #expect(fileStorage.storedCustomRegions.isEmpty)
+        #expect(userDefaults.data(forKey: RegionsService.legacyStoredCustomRegionsUserDefaultsKey) == nil)
     }
 
-    func test_customRegions_saveFails_keyIsKeptForRetry() {
+    @Test func `Custom regions save fails key is kept for retry`() {
         let regions = [Fixtures.customMinneapolisRegion]
         userDefaults.set(encode(regions), forKey: RegionsService.legacyStoredCustomRegionsUserDefaultsKey)
         fileStorage.saveCustomRegionError = TestError.diskWriteFailed
 
         migrate()
 
-        XCTAssertNotNil(userDefaults.data(forKey: RegionsService.legacyStoredCustomRegionsUserDefaultsKey),
-                        "A failed save must leave the legacy key intact so migration retries on next launch")
+        #expect(userDefaults.data(forKey: RegionsService.legacyStoredCustomRegionsUserDefaultsKey) != nil, "A failed save must leave the legacy key intact so migration retries on next launch")
 
         fileStorage.saveCustomRegionError = nil
         migrate()
 
-        XCTAssertEqual(fileStorage.storedCustomRegions.count, 1)
-        XCTAssertNil(userDefaults.data(forKey: RegionsService.legacyStoredCustomRegionsUserDefaultsKey))
+        #expect(fileStorage.storedCustomRegions.count == 1)
+        #expect(userDefaults.data(forKey: RegionsService.legacyStoredCustomRegionsUserDefaultsKey) == nil)
     }
 
     // MARK: - Current Region
 
-    func test_currentRegion_convertedToIdentifierAndLegacyKeyRemoved() {
+    @Test func `Current region converted to identifier and legacy key removed`() {
         let region = Fixtures.pugetSoundRegion
         userDefaults.set(encode(region), forKey: RegionsService.legacyCurrentRegionUserDefaultsKey)
 
         migrate()
 
-        XCTAssertEqual(
-            userDefaults.object(forKey: RegionsService.currentRegionIdentifierUserDefaultsKey) as? Int,
-            region.regionIdentifier
-        )
-        XCTAssertNil(userDefaults.data(forKey: RegionsService.legacyCurrentRegionUserDefaultsKey))
+        #expect((userDefaults.object(forKey: RegionsService.currentRegionIdentifierUserDefaultsKey) as? Int) == region.regionIdentifier)
+        #expect(userDefaults.data(forKey: RegionsService.legacyCurrentRegionUserDefaultsKey) == nil)
     }
 
-    func test_currentRegion_corruptedData_isDiscardedAndKeyRemoved() {
+    @Test func `Current region corrupted data is discarded and key removed`() {
         userDefaults.set(Data([0x42]), forKey: RegionsService.legacyCurrentRegionUserDefaultsKey)
 
         migrate()
 
-        XCTAssertNil(userDefaults.object(forKey: RegionsService.currentRegionIdentifierUserDefaultsKey))
-        XCTAssertNil(userDefaults.data(forKey: RegionsService.legacyCurrentRegionUserDefaultsKey))
+        #expect(userDefaults.object(forKey: RegionsService.currentRegionIdentifierUserDefaultsKey) == nil)
+        #expect(userDefaults.data(forKey: RegionsService.legacyCurrentRegionUserDefaultsKey) == nil)
     }
 
     // MARK: - Idempotency
 
-    func test_fullMigration_isIdempotent() {
+    @Test func `Full migration is idempotent`() {
         userDefaults.set(encode([Fixtures.pugetSoundRegion]), forKey: RegionsService.legacyStoredRegionsUserDefaultsKey)
         userDefaults.set(encode([Fixtures.customMinneapolisRegion]), forKey: RegionsService.legacyStoredCustomRegionsUserDefaultsKey)
         userDefaults.set(encode(Fixtures.pugetSoundRegion), forKey: RegionsService.legacyCurrentRegionUserDefaultsKey)
@@ -172,11 +169,8 @@ class RegionsServiceMigrationTests: OBATestCase {
 
         migrate()
 
-        XCTAssertEqual(fileStorage.storedDefaultRegions?.map(\.regionIdentifier), defaultsAfterFirstRun?.map(\.regionIdentifier))
-        XCTAssertEqual(fileStorage.storedCustomRegions.map(\.regionIdentifier), customAfterFirstRun.map(\.regionIdentifier))
-        XCTAssertEqual(
-            userDefaults.object(forKey: RegionsService.currentRegionIdentifierUserDefaultsKey) as? Int,
-            Fixtures.pugetSoundRegion.regionIdentifier
-        )
+        #expect(fileStorage.storedDefaultRegions?.map(\.regionIdentifier) == defaultsAfterFirstRun?.map(\.regionIdentifier))
+        #expect(fileStorage.storedCustomRegions.map(\.regionIdentifier) == customAfterFirstRun.map(\.regionIdentifier))
+        #expect((userDefaults.object(forKey: RegionsService.currentRegionIdentifierUserDefaultsKey) as? Int) == Fixtures.pugetSoundRegion.regionIdentifier)
     }
 }

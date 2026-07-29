@@ -7,7 +7,6 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
 import Testing
 import CoreLocation
 @testable import OBAKit
@@ -15,9 +14,10 @@ import CoreLocation
 
 // swiftlint:disable force_cast
 
-class CurrentTimeModelOperationTests: OBATestCase {
+@Suite(.serialized)
+final class CurrentTimeModelOperationTests: OBATestCase {
 
-    func testCurrentTime_success() async throws {
+    @Test func `Current time success`() async throws {
         let dataLoader = (restService.dataLoader as! MockDataLoader)
 
         dataLoader.mock(

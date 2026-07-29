@@ -8,15 +8,15 @@
 //
 
 import Foundation
-import XCTest
 import Testing
 import UIKit
 @testable import OBAKit
 
 @MainActor
-class UIApplicationExtensionsTests: XCTestCase {
+@Suite(.serialized)
+final class UIApplicationExtensionsTests {
     
-    func test_keyWindowFromScene_returnsKeyWindow() {
+    @Test func `Key window from scene returns key window`() {
         // This test is limited in unit test environment since we can't easily create real scenes
         // We'll test that the property exists and returns a window when available
         let app = UIApplication.shared
@@ -32,7 +32,7 @@ class UIApplicationExtensionsTests: XCTestCase {
         }
     }
     
-    func test_activeWindows_returnsWindowArray() {
+    @Test func `Active windows returns window array`() {
         let app = UIApplication.shared
         
         // The property should exist and return an array

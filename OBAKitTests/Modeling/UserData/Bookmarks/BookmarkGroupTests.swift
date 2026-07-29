@@ -7,7 +7,6 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
 import Testing
 import CoreLocation
 @testable import OBAKit
@@ -15,14 +14,15 @@ import CoreLocation
 
 // swiftlint:disable force_try
 
-class BookmarkGroupTests: OBATestCase {
+@Suite(.serialized)
+final class BookmarkGroupTests: OBATestCase {
 
-    func testCreation() {
+    @Test func creation() {
         let group = BookmarkGroup(name: "Group 1", sortOrder: 0)
         #expect(group.name == "Group 1")
     }
 
-    func testCodableRoundtripping() {
+    @Test func `Codable roundtripping`() {
         let group = BookmarkGroup(name: "Group 1", sortOrder: 10)
         let decoded = try! Fixtures.roundtripCodable(type: BookmarkGroup.self, model: group)
 

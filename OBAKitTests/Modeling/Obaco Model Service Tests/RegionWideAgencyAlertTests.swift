@@ -7,7 +7,8 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
+import Foundation
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -20,17 +21,18 @@ import XCTest
 /// `ObacoAPIService.getAlerts` silently dropped them via `try?`. The result was that
 /// high-severity region-wide alerts never reached `AgencyAlertsStore`, so the modal
 /// `AgencyAlertBulletin` never appeared.
-class RegionWideAgencyAlertTests: OBATestCase {
+@Suite(.serialized)
+final class RegionWideAgencyAlertTests: OBATestCase {
     var queue: OperationQueue!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
+
         queue = OperationQueue()
         queue.maxConcurrentOperationCount = 1
     }
 
-    override func tearDown() async throws {
-        try await super.tearDown()
+    isolated deinit {
         queue.cancelAllOperations()
     }
 
@@ -85,20 +87,20 @@ class RegionWideAgencyAlertTests: OBATestCase {
 
     // MARK: - Model Parsing
 
-    func test_emptyAgencyID_parsesAsRegionWideAlert() throws {
+    @Test func `Empty agency ID parses as region wide alert`() throws {
         let agencies = try loadAgencies()
         let feedEntity = makeRegionWideFeedEntity()
 
         let alert = try AgencyAlert(feedEntity: feedEntity, agencies: agencies)
 
-        XCTAssertNil(alert.agency, "A region-wide alert is not affiliated with any single agency")
-        XCTAssertEqual(alert.agencyID, "")
-        XCTAssertTrue(alert.isHighSeverity)
-        XCTAssertEqual(alert.title(forLocale: enUSLocale), "Get Ready for World Cup")
-        XCTAssertEqual(alert.url(forLocale: enUSLocale)?.absoluteString, "https://www.example.com/worldcup")
+        #expect(alert.agency == nil, "A region-wide alert is not affiliated with any single agency")
+        #expect(alert.agencyID == "")
+        #expect(alert.isHighSeverity)
+        #expect(alert.title(forLocale: enUSLocale) == "Get Ready for World Cup")
+        #expect(alert.url(forLocale: enUSLocale)?.absoluteString == "https://www.example.com/worldcup")
     }
 
-    func test_unknownNonEmptyAgencyID_stillThrows() throws {
+    @Test func `Unknown non empty agency ID still throws`() throws {
         let agencies = try loadAgencies()
 
         var feedEntity = makeRegionWideFeedEntity()
@@ -106,12 +108,12 @@ class RegionWideAgencyAlertTests: OBATestCase {
         entitySelector.agencyID = "not-a-real-agency"
         feedEntity.alert.informedEntity = [entitySelector]
 
-        XCTAssertThrowsError(try AgencyAlert(feedEntity: feedEntity, agencies: agencies)) { error in
-            XCTAssertEqual(error as? AgencyAlert.AlertError, .unknownAgency)
+        #expect(throws: AgencyAlert.AlertError.unknownAgency) {
+            try AgencyAlert(feedEntity: feedEntity, agencies: agencies)
         }
     }
 
-    func test_missingAgencyID_throwsInvalidAlert() throws {
+    @Test func `Missing agency ID throws invalid alert`() throws {
         let agencies = try loadAgencies()
 
         // An `informed_entity` whose `agency_id` was never set (presence bit false),
@@ -120,14 +122,14 @@ class RegionWideAgencyAlertTests: OBATestCase {
         var feedEntity = makeRegionWideFeedEntity()
         feedEntity.alert.informedEntity = [TransitRealtime_EntitySelector()]
 
-        XCTAssertThrowsError(try AgencyAlert(feedEntity: feedEntity, agencies: agencies)) { error in
-            XCTAssertEqual(error as? AgencyAlert.AlertError, .invalidAlert)
+        #expect(throws: AgencyAlert.AlertError.invalidAlert) {
+            try AgencyAlert(feedEntity: feedEntity, agencies: agencies)
         }
     }
 
     // MARK: - Obaco Service
 
-    func test_obacoGetAlerts_includesRegionWideAlerts() async throws {
+    @Test func `Obaco get alerts includes region wide alerts`() async throws {
         let dataLoader = (obacoService.dataLoader as! MockDataLoader) // swiftlint:disable:this force_cast
         let feedData = try makeFeedData(entities: [makeRegionWideFeedEntity()])
         dataLoader.mock(data: feedData) { request in
@@ -137,15 +139,15 @@ class RegionWideAgencyAlertTests: OBATestCase {
         let agencies = try loadAgencies()
         let alerts = try await obacoService.getAlerts(agencies: agencies)
 
-        XCTAssertEqual(alerts.count, 1, "The region-wide alert must not be dropped during parsing")
+        #expect(alerts.count == 1, "The region-wide alert must not be dropped during parsing")
 
-        let alert = try XCTUnwrap(alerts.first)
-        XCTAssertNil(alert.agency)
-        XCTAssertTrue(alert.isHighSeverity)
-        XCTAssertEqual(alert.title(forLocale: enUSLocale), "Get Ready for World Cup")
+        let alert = try #require(alerts.first)
+        #expect(alert.agency == nil)
+        #expect(alert.isHighSeverity)
+        #expect(alert.title(forLocale: enUSLocale) == "Get Ready for World Cup")
     }
 
-    func test_obacoGetAlerts_oneBadEntityDoesNotDropTheRest() async throws {
+    @Test func `Obaco get alerts one bad entity does not drop the rest`() async throws {
         let dataLoader = (obacoService.dataLoader as! MockDataLoader) // swiftlint:disable:this force_cast
 
         // A feed carrying one valid region-wide alert and one malformed entity (an
@@ -166,8 +168,8 @@ class RegionWideAgencyAlertTests: OBATestCase {
         let agencies = try loadAgencies()
         let alerts = try await obacoService.getAlerts(agencies: agencies)
 
-        XCTAssertEqual(alerts.count, 1, "The valid alert must survive even when a sibling entity fails to parse")
-        XCTAssertEqual(try XCTUnwrap(alerts.first).title(forLocale: enUSLocale), "Get Ready for World Cup")
+        #expect(alerts.count == 1, "The valid alert must survive even when a sibling entity fails to parse")
+        #expect(try #require(alerts.first).title(forLocale: enUSLocale) == "Get Ready for World Cup")
     }
 
     // MARK: - Bulletin Presentation Pipeline
@@ -176,8 +178,8 @@ class RegionWideAgencyAlertTests: OBATestCase {
     /// the API services — and asserts that a fresh region-wide WARNING alert lands in
     /// `recentUnreadHighSeverityAlerts`, the exact predicate `Application.agencyAlertsUpdated()`
     /// uses to decide whether to present the modal `AgencyAlertBulletin`.
-    @MainActor
-    func test_regionWideAlert_isSurfacedForBulletinPresentation() async throws {
+    @Test @MainActor
+    func `Region wide alert is surfaced for bulletin presentation`() async throws {
         let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)
         stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
@@ -213,13 +215,10 @@ class RegionWideAgencyAlertTests: OBATestCase {
 
         try await store.update()
 
-        let alert = try XCTUnwrap(
-            store.recentUnreadHighSeverityAlerts.first,
-            "A fresh region-wide WARNING alert must qualify for bulletin presentation"
-        )
-        XCTAssertNil(alert.agency)
+        let alert = try #require(store.recentUnreadHighSeverityAlerts.first, "A fresh region-wide WARNING alert must qualify for bulletin presentation")
+        #expect(alert.agency == nil)
 
         let bulletin = AgencyAlertBulletin(agencyAlert: alert, locale: enUSLocale)
-        XCTAssertNotNil(bulletin, "The bulletin must be constructible from a region-wide alert")
+        #expect(bulletin != nil, "The bulletin must be constructible from a region-wide alert")
     }
 }
