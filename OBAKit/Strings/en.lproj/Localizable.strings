@@ -1546,7 +1546,3 @@
 
 /* VoiceOver label for the wind speed stat on the weather card. */
 "weather.stat.wind" = "Wind speed";
-
-
-/* Range filter menu option imposing no minimum range */
-"map_sheet.minimum_range_any" = "Any";
