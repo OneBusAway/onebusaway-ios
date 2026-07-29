@@ -82,6 +82,50 @@ final class RegionsEncodingTests: OBATestCase {
         expectClose(bounds[1].lonSpan, 0.3967700000000036)
     }
 
+    @Test func `OTP GraphQL fields decode and roundtrip`() {
+        let regions = try! Fixtures.loadRESTAPIPayload(type: [Region].self, fileName: "regions-v3.json")
+
+        // Puget Sound (region 1) carries both GraphQL keys in the fixture.
+        let pugetSound = regions[1]
+        #expect(pugetSound.openTripPlannerGraphQLURL == URL(string: "https://sound-transit-otp.ibi-transit.com/otp/")!)
+        #expect(pugetSound.supportsOTPGraphQLBikeshare)
+        #expect(pugetSound.isBikeshareEnabled)
+
+        // Tampa (region 0) has neither key: URL nil, flag defaults to false.
+        let tampa = regions[0]
+        #expect(tampa.openTripPlannerGraphQLURL == nil)
+        #expect(!tampa.supportsOTPGraphQLBikeshare)
+        #expect(!tampa.isBikeshareEnabled)
+
+        // Survives the plist round trip used for on-disk persistence.
+        let plist = try! PropertyListEncoder().encode(regions)
+        let roundTripped = try! PropertyListDecoder().decode([Region].self, from: plist)
+        #expect(roundTripped[1].openTripPlannerGraphQLURL == URL(string: "https://sound-transit-otp.ibi-transit.com/otp/")!)
+        #expect(roundTripped[1].supportsOTPGraphQLBikeshare)
+        #expect(roundTripped[0].openTripPlannerGraphQLURL == nil)
+        #expect(!roundTripped[0].supportsOTPGraphQLBikeshare)
+    }
+
+    @Test func `supportsOTP considers the GraphQL URL`() {
+        // A GraphQL-only region must still light up trip planning.
+        let graphQLOnly = Region(
+            name: "GraphQL Only",
+            OBABaseURL: URL(string: "http://www.example.com")!,
+            coordinateRegion: MKCoordinateRegion(
+                center: CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3),
+                latitudinalMeters: 1000,
+                longitudinalMeters: 1000
+            ),
+            contactEmail: "contact@example.com",
+            openTripPlannerGraphQLURL: URL(string: "https://otp.example.com/otp/")!
+        )
+        #expect(graphQLOnly.supportsOTP)
+        #expect(graphQLOnly.openTripPlannerURL == nil)
+
+        // Bikeshare stays off without the explicit opt-in flag.
+        #expect(!graphQLOnly.isBikeshareEnabled)
+    }
+
     @Test func `Umami analytics decoding`() {
         let regions = try! Fixtures.loadRESTAPIPayload(type: [Region].self, fileName: "regions-v3.json")
 

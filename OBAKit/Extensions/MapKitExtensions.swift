@@ -181,15 +181,20 @@ extension MapBaseType {
     var mkMapType: MKMapType {
         switch self {
         case .standard: return .mutedStandard
+        case .satellite: return .satellite
         case .hybrid: return .hybrid
         }
     }
 
-    /// Inverse of `mkMapType`. Any MapKit value other than `.hybrid` collapses
-    /// to `.standard` so a stray persisted `.satellite` (or future addition)
-    /// never boots the app into an unhandled render mode.
+    /// Inverse of `mkMapType`. Any unhandled MapKit value collapses to
+    /// `.standard` so a stray persisted future addition never boots the app
+    /// into an unhandled render mode.
     init(_ mkMapType: MKMapType) {
-        self = mkMapType == .hybrid ? .hybrid : .standard
+        switch mkMapType {
+        case .hybrid: self = .hybrid
+        case .satellite: self = .satellite
+        default: self = .standard
+        }
     }
 }
 
