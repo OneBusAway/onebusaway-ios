@@ -304,8 +304,15 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
 
     // MARK: - Heading
 
+    /// Guarded on authorization as well as availability. `isHeadingAvailable`
+    /// wraps `CLLocationManager.headingAvailable()`, which reports whether the
+    /// *device* has a magnetometer — it says nothing about whether we may use it.
+    /// Without the authorization guard, `startUpdates()` would start heading even
+    /// when starting location had just synchronously latched a `denied` error and
+    /// torn the manager down, leaving the magnetometer powered for the rest of
+    /// the process.
     public func startUpdatingHeading() {
-        guard locationManager.isHeadingAvailable else {
+        guard isLocationUseAuthorized, locationManager.isHeadingAvailable else {
             return
         }
 
@@ -336,16 +343,32 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
     /// The read is a blocking XPC call, hence off the main thread; the result is
     /// applied back on the main actor. It reconciles both directions, so a single
     /// call covers "services came back on" and "services are off."
+    /// The in-flight probe, if any.
+    ///
+    /// Probes are single-flight by cancel-and-replace. Three call sites can start
+    /// one — the authorization callback, `retryIfLocationServicesDenied()`, and
+    /// foregrounding by way of the latter — and unstructured tasks have no
+    /// ordering guarantee at the `await`, so an older read could land after a
+    /// newer one and clobber the latch with stale state. Cancelling the previous
+    /// probe makes the newest read the only one that applies.
+    private var servicesProbeTask: Task<Void, Never>?
+
     private func refreshLocationServicesEnabled() {
         // The latch is only meaningful while the app is itself authorized; when it
         // isn't, `authorizationStatus` reports the raw status directly and there is
         // nothing to reconcile.
         guard isPerAppAuthorized else { return }
 
-        Task { [weak self] in
+        servicesProbeTask?.cancel()
+        servicesProbeTask = Task { [weak self] in
             guard let self else { return }
             let enabled = await self.locationManager.locationServicesEnabled()
-            guard self.isPerAppAuthorized else { return }
+
+            // Cancellation cannot interrupt the blocking read itself, so a
+            // superseded probe resumes here with an answer it must not apply.
+            guard !Task.isCancelled, self.isPerAppAuthorized else { return }
+
+            self.servicesProbeTask = nil
             self.applyAuthorizationState(rawStatus: self.rawAuthorizationStatus, servicesDenied: !enabled)
         }
     }

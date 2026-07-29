@@ -250,6 +250,28 @@ final class LocationServiceTests {
 
     // MARK: - Denied error handling
 
+    /// `startUpdates()` starts location then heading, and starting location can
+    /// synchronously deliver the `denied` error that latches and tears both down.
+    /// Heading must not then start anyway on the way back out: `isHeadingAvailable`
+    /// is a device-capability check (`CLLocationManager.headingAvailable()`), not
+    /// an authorization one, so nothing else stops it — and a magnetometer left
+    /// powered outlives the denial for the rest of the process.
+    @Test func `Synchronous denial during startUpdates leaves heading stopped`() {
+        let (mock, service) = makeService(servicesOff: true)
+        let del = LocDelegate()
+        service.addDelegate(del)
+
+        // Synchronous throughout: no probe has run yet, so this observes the
+        // state `startUpdates()` itself leaves behind.
+        service.requestInUseAuthorization()
+
+        #expect(service.authorizationStatus == .denied)
+        #expect(!mock.locationUpdatesStarted)
+        #expect(!mock.headingUpdatesStarted)
+        #expect(service.currentHeading == nil)
+        #expect(del.heading == nil)
+    }
+
     /// A `denied` error means location is unusable even though the app's own
     /// authorization is untouched (e.g. Location Services switched off system-wide).
     /// The service should latch that, report `.denied` so the UI can explain the
@@ -381,6 +403,48 @@ final class LocationServiceTests {
         #expect(mock.headingUpdatesStarted)
     }
 
+    /// Probes are unstructured tasks with no ordering guarantee at the `await`,
+    /// and three call sites can start one. A probe that started earlier — and so
+    /// read an older system state — must not clobber the latch when it resumes
+    /// after a newer one. Cancel-and-replace is what makes the newest read win.
+    @Test func `Stale probe does not clobber a newer one`() async {
+        let (mock, service) = makeService(servicesOff: true)
+
+        // Let the authorization callback's own probe run to completion first, so
+        // the only parked probes below are the two this test starts.
+        service.requestInUseAuthorization()
+        await spin(0.05)
+        #expect(service.authorizationStatus == .denied)
+
+        mock.parksProbes = true
+
+        // Two probes in flight, started one at a time so their parked order is
+        // known: the first read the switch while it was still off, the second
+        // after the user turned it back on.
+        service.retryIfLocationServicesDenied()
+        await poll(until: { mock.pendingProbes.count == 1 },
+                   "the first probe should have parked")
+
+        service.retryIfLocationServicesDenied()
+        await poll(until: { mock.pendingProbes.count == 2 },
+                   "the second probe should have parked")
+
+        // The user turned Location Services back on between the two probes, so
+        // the newer one sees `true` and the restarted manager delivers a fix.
+        mock.simulatesLocationServicesOff = false
+
+        // Resume newest-first, so the stale answer lands last.
+        mock.answerProbe(at: 1, enabled: true)
+        await poll(until: { service.isLocationUseAuthorized },
+                   "the newer probe never cleared the latch")
+
+        mock.answerProbe(at: 0, enabled: false)
+        await spin(0.05)
+
+        #expect(service.authorizationStatus == .authorizedWhenInUse)
+        #expect(service.isLocationUseAuthorized)
+    }
+
     /// Location Services being off system-wide outlives the app process, but the
     /// per-app authorization that masks it reads as authorized on the next launch.
     /// The latch is persisted so a cold start doesn't advertise location as
@@ -411,6 +475,10 @@ final class LocationServiceTests {
 
         #expect(!service.isLocationUseAuthorized)
         #expect(!mock.locationUpdatesStarted)
+        // Heading too, not just location: revocation must power the magnetometer
+        // down as well, and `stopUpdatingHeading()`'s availability guard is a
+        // device-capability check that does not relax when authorization goes away.
+        #expect(!mock.headingUpdatesStarted)
     }
 
     /// A repeated `denied` error must not re-notify delegates — the latch only

@@ -74,9 +74,16 @@ public class LocationManagerMock: NSObject, LocationManager {
         }
     }
 
-    public var isHeadingAvailable: Bool {
-        return authorizationStatus.isAuthorized
-    }
+    /// Whether the device has a magnetometer, matching what the real
+    /// `isHeadingAvailable` reports (`CLLocationManager.headingAvailable()`).
+    ///
+    /// Stored and default-`true`, like `MockAuthorizedLocationManager`'s. It used
+    /// to derive from `authorizationStatus`, which conflated capability with
+    /// permission: revoking authorization made it flip to `false`, and since
+    /// `LocationService.stopUpdatingHeading()` guards on it, the stop was skipped
+    /// and the mock reported heading as still running. Real hardware capability
+    /// does not change with authorization, so neither does this.
+    public var isHeadingAvailable = true
 
     public func startUpdatingHeading() {
         headingUpdatesStarted = true
@@ -121,8 +128,23 @@ public class AuthorizableLocationManagerMock: LocationManagerMock {
     /// reports `false`.
     public var simulatesLocationServicesOff = false
 
+    /// When true, `locationServicesEnabled()` parks each call instead of
+    /// answering from `simulatesLocationServicesOff`. The test then resumes the
+    /// parked calls in whatever order it likes, which is the only deterministic
+    /// way to reproduce two probes completing out of order.
+    public var parksProbes = false
+
+    /// Parked `locationServicesEnabled()` calls, oldest first.
+    public private(set) var pendingProbes: [CheckedContinuation<Bool, Never>] = []
+
     public override func locationServicesEnabled() async -> Bool {
-        return !simulatesLocationServicesOff
+        guard parksProbes else { return !simulatesLocationServicesOff }
+        return await withCheckedContinuation { pendingProbes.append($0) }
+    }
+
+    /// Answers the parked probe at `index` (0 is the oldest).
+    public func answerProbe(at index: Int, enabled: Bool) {
+        pendingProbes[index].resume(returning: enabled)
     }
 
     public override func startUpdatingLocation() {
@@ -139,11 +161,20 @@ public class AuthorizableLocationManagerMock: LocationManagerMock {
         }
     }
 
+    /// Mirrors `startUpdatingLocation()`: with Location Services off system-wide,
+    /// no heading is delivered.
+    ///
+    /// `super` is still called — deliberately. Real Core Location *accepts*
+    /// `startUpdatingHeading()` with services off (there is no error return, and
+    /// the magnetometer is powered); it simply never delivers data. So
+    /// `headingUpdatesStarted` must stay a faithful record of "the call reached
+    /// the manager." Skipping `super` here would model the leak out of existence
+    /// and let a service that wrongly starts heading after latching denial pass.
     public override func startUpdatingHeading() {
         super.startUpdatingHeading()
-        if authorizationStatus.isAuthorized {
-            heading = updateHeading
-        }
+        guard authorizationStatus.isAuthorized, !simulatesLocationServicesOff else { return }
+
+        heading = updateHeading
     }
 }
 
