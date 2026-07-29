@@ -8,7 +8,7 @@
 //
 
 import XCTest
-import Nimble
+import Testing
 @testable import App
 @testable import OBAKitCore
 
@@ -27,27 +27,27 @@ final class UmamiAnalyticsTests: OBATestCase {
     // MARK: - path(from:)
 
     func testPathReduction() {
-        expect(UmamiAnalytics.path(from: "app://localhost/map")) == "/map"
-        expect(UmamiAnalytics.path(from: "app://localhost")) == "/"
-        expect(UmamiAnalytics.path(from: "app://localhost/search?q=x")) == "/search"
+        #expect(UmamiAnalytics.path(from: "app://localhost/map") == "/map")
+        #expect(UmamiAnalytics.path(from: "app://localhost") == "/")
+        #expect(UmamiAnalytics.path(from: "app://localhost/search?q=x") == "/search")
     }
 
     // MARK: - isSuccessfulIngest
 
     func testSuccessDetection() {
-        expect(UmamiAnalytics.isSuccessfulIngest(self.successBody)).to(beTrue())
-        expect(UmamiAnalytics.isSuccessfulIngest(self.beepBoopBody)).to(beFalse())
-        expect(UmamiAnalytics.isSuccessfulIngest("not json".data(using: .utf8)!)).to(beFalse())
+        #expect(UmamiAnalytics.isSuccessfulIngest(self.successBody))
+        #expect(!UmamiAnalytics.isSuccessfulIngest(self.beepBoopBody))
+        #expect(!UmamiAnalytics.isSuccessfulIngest("not json".data(using: .utf8)!))
     }
 
     // MARK: - UmamiJSONValue coercion
 
     func testJSONValueCoercion() {
-        expect(UmamiJSONValue("hi")).toNot(beNil())
-        expect(UmamiJSONValue(42)).toNot(beNil())
+        #expect(UmamiJSONValue("hi") != nil)
+        #expect(UmamiJSONValue(42) != nil)
         // Non-JSON / non-finite values are dropped (nil), never crash.
-        expect(UmamiJSONValue(Double.nan)).to(beNil())
-        expect(UmamiJSONValue(nil)).to(beNil())
+        #expect(UmamiJSONValue(Double.nan) == nil)
+        #expect(UmamiJSONValue(nil) == nil)
     }
 
     // MARK: - Request construction
@@ -64,26 +64,26 @@ final class UmamiAnalyticsTests: OBATestCase {
         await reporter.reportStopViewed(name: "Pine St", id: "1_75403", stopDistance: "near")
 
         let request = try XCTUnwrap(captured)
-        expect(request.url?.absoluteString) == "https://analytics.example.com/api/send"
-        expect(request.httpMethod) == "POST"
-        expect(request.value(forHTTPHeaderField: "Content-Type")) == "application/json"
+        #expect(request.url?.absoluteString == "https://analytics.example.com/api/send")
+        #expect(request.httpMethod == "POST")
+        #expect(request.value(forHTTPHeaderField: "Content-Type") == "application/json")
 
         // Explicit, non-bot User-Agent — full format: "OneBusAway/<version> (iOS <ver>; <model>)".
         let ua = try XCTUnwrap(request.value(forHTTPHeaderField: "User-Agent"))
-        expect(ua).to(contain("OneBusAway/"))
-        expect(ua).to(match("^OneBusAway/.+ \\(iOS .+; .+\\)$"))
+        #expect(ua.contains("OneBusAway/"))
+        #expect(NSPredicate(format: "SELF MATCHES %@", "^OneBusAway/.+ \\(iOS .+; .+\\)$").evaluate(with: ua))
 
         // Body matches the Umami contract.
         let body = try JSONSerialization.jsonObject(with: try XCTUnwrap(request.httpBody)) as! [String: Any]
-        expect(body["type"] as? String) == "event"
+        #expect((body["type"] as? String) == "event")
         let payload = body["payload"] as! [String: Any]
-        expect(payload["website"] as? String) == "site-uuid"
-        expect(payload["hostname"] as? String) == "api.example.org"
-        expect(payload["url"] as? String) == "/stop"
-        expect(payload["name"]).to(beNil())   // pageview → no name
+        #expect((payload["website"] as? String) == "site-uuid")
+        #expect((payload["hostname"] as? String) == "api.example.org")
+        #expect((payload["url"] as? String) == "/stop")
+        #expect(payload["name"] == nil)  // pageview → no name
         let data = payload["data"] as! [String: Any]
-        expect(data["id"] as? String) == "1_75403"
-        expect(data["distance"] as? String) == "near"
+        #expect((data["id"] as? String) == "1_75403")
+        #expect((data["distance"] as? String) == "near")
     }
 
     func testReportEventIncludesName() async throws {
@@ -100,8 +100,8 @@ final class UmamiAnalyticsTests: OBATestCase {
         let request = try XCTUnwrap(captured)
         let body = try JSONSerialization.jsonObject(with: try XCTUnwrap(request.httpBody)) as! [String: Any]
         let payload = body["payload"] as! [String: Any]
-        expect(payload["name"] as? String) == "Clicked MapStopIcon"
-        expect(payload["url"] as? String) == "/map"
+        #expect((payload["name"] as? String) == "Clicked MapStopIcon")
+        #expect((payload["url"] as? String) == "/map")
     }
 
     // MARK: - Fail-safe
@@ -113,7 +113,7 @@ final class UmamiAnalyticsTests: OBATestCase {
         // Double.nan is not representable; the event still emits without the value, no crash.
         await reporter.reportEvent(pageURL: "app://localhost/map", label: "x", value: Double.nan)
         // Confirm the event was still fired (unrepresentable value dropped, not the whole event).
-        expect(loader.recordedRequestURLs.count) == 1
+        #expect(loader.recordedRequestURLs.count == 1)
     }
 
     func testBeepBoopResponseIsSwallowed() async throws {
@@ -122,6 +122,6 @@ final class UmamiAnalyticsTests: OBATestCase {
         let reporter = makeReporter(loader: loader)
         // Should complete normally despite the dropped-event response.
         await reporter.reportSearchQuery("downtown")
-        expect(loader.recordedRequestURLs.count) == 1
+        #expect(loader.recordedRequestURLs.count == 1)
     }
 }

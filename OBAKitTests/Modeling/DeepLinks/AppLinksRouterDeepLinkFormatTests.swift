@@ -9,7 +9,7 @@
 
 import Foundation
 import XCTest
-import Nimble
+import Testing
 @testable import OBAKitCore
 
 /// Tests the deep link URL format for trip sharing, specifically the `destination_stop_id` parameter.
@@ -35,10 +35,10 @@ class AppLinksRouterDeepLinkFormatTests: XCTestCase {
         let url = components.url!
         let parsed = URLComponents(url: url, resolvingAgainstBaseURL: false)!
 
-        expect(parsed.queryItem(named: "destination_stop_id")?.value) == "1_431"
-        expect(parsed.queryItem(named: "trip_id")?.value) == "1_550_trip"
-        expect(parsed.queryItem(named: "service_date")?.value) == "1710273600.0"
-        expect(parsed.queryItem(named: "stop_sequence")?.value) == "12"
+        #expect(parsed.queryItem(named: "destination_stop_id")?.value == "1_431")
+        #expect(parsed.queryItem(named: "trip_id")?.value == "1_550_trip")
+        #expect(parsed.queryItem(named: "service_date")?.value == "1710273600.0")
+        #expect(parsed.queryItem(named: "stop_sequence")?.value == "12")
     }
 
     func test_urlWithoutDestinationStopID_doesNotContainQueryParam() {
@@ -53,8 +53,8 @@ class AppLinksRouterDeepLinkFormatTests: XCTestCase {
         let url = components.url!
         let parsed = URLComponents(url: url, resolvingAgainstBaseURL: false)!
 
-        expect(parsed.queryItem(named: "destination_stop_id")).to(beNil())
-        expect(parsed.queryItems?.count) == 3
+        #expect(parsed.queryItem(named: "destination_stop_id") == nil)
+        #expect(parsed.queryItems?.count == 3)
     }
 
     func test_destinationStopIDWithSpecialCharacters_encodedCorrectly() {
@@ -70,7 +70,7 @@ class AppLinksRouterDeepLinkFormatTests: XCTestCase {
         let url = components.url!
         let parsed = URLComponents(url: url, resolvingAgainstBaseURL: false)!
 
-        expect(parsed.queryItem(named: "destination_stop_id")?.value) == "Hillsborough Area Regional Transit_4712"
+        #expect(parsed.queryItem(named: "destination_stop_id")?.value == "Hillsborough Area Regional Transit_4712")
     }
 
     // MARK: - Deep Link Model from URL with destination_stop_id
@@ -87,9 +87,9 @@ class AppLinksRouterDeepLinkFormatTests: XCTestCase {
             destinationStopID: "1_431"
         )
 
-        expect(link.destinationStopID) == "1_431"
-        expect(link.stopID) == "1_75403"
-        expect(link.regionID) == 1
+        #expect(link.destinationStopID == "1_431")
+        #expect(link.stopID == "1_75403")
+        #expect(link.regionID == 1)
     }
 
     func test_deepLinkInit_withoutDestinationStopID_isNil() {
@@ -103,7 +103,7 @@ class AppLinksRouterDeepLinkFormatTests: XCTestCase {
             vehicleID: nil
         )
 
-        expect(link.destinationStopID).to(beNil())
+        #expect(link.destinationStopID == nil)
     }
 
     // MARK: - Backward Compatibility
@@ -114,9 +114,9 @@ class AppLinksRouterDeepLinkFormatTests: XCTestCase {
         let url = URL(string: urlString)!
         let components = URLComponents(url: url, resolvingAgainstBaseURL: false)!
 
-        expect(components.queryItem(named: "destination_stop_id")).to(beNil())
-        expect(components.queryItem(named: "trip_id")?.value) == "1_545_trip"
-        expect(components.queryItem(named: "stop_sequence")?.value) == "12"
+        #expect(components.queryItem(named: "destination_stop_id") == nil)
+        #expect(components.queryItem(named: "trip_id")?.value == "1_545_trip")
+        #expect(components.queryItem(named: "stop_sequence")?.value == "12")
     }
 
     func test_backwardCompatibility_newURLFormat_parsesWithDestination() {
@@ -125,8 +125,8 @@ class AppLinksRouterDeepLinkFormatTests: XCTestCase {
         let url = URL(string: urlString)!
         let components = URLComponents(url: url, resolvingAgainstBaseURL: false)!
 
-        expect(components.queryItem(named: "destination_stop_id")?.value) == "1_431"
-        expect(components.queryItem(named: "trip_id")?.value) == "1_545_trip"
+        #expect(components.queryItem(named: "destination_stop_id")?.value == "1_431")
+        #expect(components.queryItem(named: "trip_id")?.value == "1_545_trip")
     }
 }
 

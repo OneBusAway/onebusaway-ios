@@ -8,7 +8,7 @@
 //
 
 import XCTest
-import Nimble
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -29,12 +29,12 @@ class AgencyModelTests: OBATestCase {
         
         let agency = try! Fixtures.dictionaryToModel(type: Agency.self, dictionary: agencyData)
         
-        expect(agency.id) == "1"
-        expect(agency.name) == "King County Metro"
-        expect(agency.agencyURL.absoluteString) == "https://kingcounty.gov/metro"
-        expect(agency.timeZone) == "America/Los_Angeles"
-        expect(agency.language) == "en"
-        expect(agency.phone) == "206-553-3000"
-        expect(agency.isPrivateService) == false
+        #expect(agency.id == "1")
+        #expect(agency.name == "King County Metro")
+        #expect(agency.agencyURL.absoluteString == "https://kingcounty.gov/metro")
+        #expect(agency.timeZone == "America/Los_Angeles")
+        #expect(agency.language == "en")
+        #expect(agency.phone == "206-553-3000")
+        #expect(agency.isPrivateService == false)
     }
 }

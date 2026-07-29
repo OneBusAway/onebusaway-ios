@@ -8,7 +8,7 @@
 //
 
 import XCTest
-import Nimble
+import Testing
 import CoreLocation
 @testable import OBAKit
 @testable import OBAKitCore
@@ -47,6 +47,6 @@ class TripProblemModelOperationTests: OBATestCase {
 
         let report = RESTAPIService.TripProblemReport(tripID: tripID, serviceDate: serviceDate, vehicleID: vehicleID, stopID: stopID, code: code, comment: comment, userOnVehicle: userOnVehicle, location: location)
         let response = try await restService.getTripProblem(report: report)
-        expect(response.code) == 200
+        #expect(response.code == 200)
     }
 }

@@ -8,7 +8,7 @@
 //
 
 import XCTest
-import Nimble
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -118,6 +118,6 @@ class TripViewModelTests: OBATestCase {
         // Yield enough times for the cancelled task to settle.
         for _ in 0..<5 { await Task.yield() }
 
-        expect(viewModel.operationError).to(beNil())
+        #expect(viewModel.operationError == nil)
     }
 }

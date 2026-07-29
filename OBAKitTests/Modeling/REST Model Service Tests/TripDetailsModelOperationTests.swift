@@ -8,7 +8,7 @@
 //
 
 import XCTest
-import Nimble
+import Testing
 import CoreLocation
 @testable import OBAKit
 @testable import OBAKitCore
@@ -29,33 +29,31 @@ class TripDetailsModelOperationTests: OBATestCase {
     }
 
     func checkExpectations(_ tripDetails: TripDetails) {
-        expect(tripDetails).toNot(beNil())
+        #expect(tripDetails.frequency == nil)
 
-        expect(tripDetails.frequency).to(beNil())
-
-        expect(tripDetails.tripID) == self.tripID
+        #expect(tripDetails.tripID == self.tripID)
         let trip = tripDetails.trip!
-        expect(trip.headsign) == "LAKE CITY WEDGWOOD"
+        #expect(trip.headsign == "LAKE CITY WEDGWOOD")
 
-        expect(tripDetails.serviceDate) == Date.fromComponents(year: 2012, month: 07, day: 30, hour: 07, minute: 00, second: 00)
-        expect(tripDetails.timeZone) == "America/Los_Angeles"
+        #expect(tripDetails.serviceDate == Date.fromComponents(year: 2012, month: 07, day: 30, hour: 07, minute: 00, second: 00))
+        #expect(tripDetails.timeZone == "America/Los_Angeles")
 
-        expect(tripDetails.status).to(beNil())
+        #expect(tripDetails.status == nil)
 
-        expect(tripDetails.stopTimes.count) == 53
+        #expect(tripDetails.stopTimes.count == 53)
 
         let stopTime = tripDetails.stopTimes.first!
-        expect(stopTime.arrivalDate.timeIntervalSince1970) == 1343690462
-        expect(stopTime.departureDate.timeIntervalSince1970) == 1343690462
-        expect(stopTime.stopID) == "1_9610"
+        #expect(stopTime.arrivalDate.timeIntervalSince1970 == 1343690462)
+        #expect(stopTime.departureDate.timeIntervalSince1970 == 1343690462)
+        #expect(stopTime.stopID == "1_9610")
 
-        expect(tripDetails.previousTrip!.id) == "1_18196851"
-        expect(tripDetails.previousTrip!.headsign) == "UNIVERSITY DISTRICT ROOSEVELT"
+        #expect(tripDetails.previousTrip!.id == "1_18196851")
+        #expect(tripDetails.previousTrip!.headsign == "UNIVERSITY DISTRICT ROOSEVELT")
 
-        expect(tripDetails.nextTrip!.id) == "1_18196555"
-        expect(tripDetails.nextTrip!.headsign) == "UNIVERSITY DISTRICT WEDGWOOD"
+        #expect(tripDetails.nextTrip!.id == "1_18196555")
+        #expect(tripDetails.nextTrip!.headsign == "UNIVERSITY DISTRICT WEDGWOOD")
 
-        expect(tripDetails.serviceAlerts.count) == 0
+        #expect(tripDetails.serviceAlerts.count == 0)
     }
 
     func testLoading_vehicleDetails_success() async throws {

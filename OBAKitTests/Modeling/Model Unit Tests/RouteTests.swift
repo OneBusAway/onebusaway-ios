@@ -8,7 +8,7 @@
 //
 
 import XCTest
-import Nimble
+import Testing
 import UIKit
 @testable import OBAKit
 @testable import OBAKitCore
@@ -32,17 +32,17 @@ class RouteTests: OBATestCase {
         
         let route = try! Fixtures.dictionaryToModel(type: Route.self, dictionary: routeData)
         
-        expect(route.id) == "1_100002"
-        expect(route.agencyID) == "1"
-        expect(route.shortName) == "ST Express"
-        expect(route.longName) == "Bellevue TC - Northgate TC via Fremont Ave N"
-        expect(route.routeDescription) == "Express route serving Bellevue and Northgate"
-        expect(route.routeType) == .bus
-        expect(route.routeURL?.absoluteString) == "https://www.soundtransit.org/schedules/st-express-594"
-        expect(route.color).toNot(beNil())
-        expect(route.textColor).toNot(beNil())
-        expect(route.agency).to(beNil())
-        expect(route.regionIdentifier).to(beNil())
+        #expect(route.id == "1_100002")
+        #expect(route.agencyID == "1")
+        #expect(route.shortName == "ST Express")
+        #expect(route.longName == "Bellevue TC - Northgate TC via Fremont Ave N")
+        #expect(route.routeDescription == "Express route serving Bellevue and Northgate")
+        #expect(route.routeType == .bus)
+        #expect(route.routeURL?.absoluteString == "https://www.soundtransit.org/schedules/st-express-594")
+        #expect(route.color != nil)
+        #expect(route.textColor != nil)
+        #expect(route.agency == nil)
+        #expect(route.regionIdentifier == nil)
     }
     
     func test_decodeMinimalRoute() {
@@ -55,15 +55,15 @@ class RouteTests: OBATestCase {
         
         let route = try! Fixtures.dictionaryToModel(type: Route.self, dictionary: minimalData)
         
-        expect(route.id) == "minimal_route"
-        expect(route.agencyID) == "2"
-        expect(route.shortName) == "99"
-        expect(route.routeType) == .bus
-        expect(route.longName).to(beNil())
-        expect(route.routeDescription).to(beNil())
-        expect(route.color).to(beNil())
-        expect(route.textColor).to(beNil())
-        expect(route.routeURL).to(beNil())
+        #expect(route.id == "minimal_route")
+        #expect(route.agencyID == "2")
+        #expect(route.shortName == "99")
+        #expect(route.routeType == .bus)
+        #expect(route.longName == nil)
+        #expect(route.routeDescription == nil)
+        #expect(route.color == nil)
+        #expect(route.textColor == nil)
+        #expect(route.routeURL == nil)
     }
     
     func test_decodeWithBlankValues() {
@@ -81,10 +81,10 @@ class RouteTests: OBATestCase {
         let route = try! Fixtures.dictionaryToModel(type: Route.self, dictionary: dataWithBlanks)
         
         // String.nilifyBlankValue should convert empty strings to nil
-        expect(route.longName).to(beNil())
-        expect(route.routeDescription).to(beNil())
-        expect(route.color).to(beNil())
-        expect(route.textColor).to(beNil())
+        #expect(route.longName == nil)
+        #expect(route.routeDescription == nil)
+        #expect(route.color == nil)
+        #expect(route.textColor == nil)
     }
     
     func test_routeTypeDecoding() {
@@ -110,7 +110,7 @@ class RouteTests: OBATestCase {
             ]
             
             let route = try! Fixtures.dictionaryToModel(type: Route.self, dictionary: data)
-            expect(route.routeType) == expectedType
+            #expect(route.routeType == expectedType)
         }
     }
     
@@ -141,9 +141,9 @@ class RouteTests: OBATestCase {
         
         route.loadReferences(references, regionIdentifier: 123)
         
-        expect(route.agency).toNot(beNil())
-        expect(route.agency.id) == "1"
-        expect(route.regionIdentifier) == 123
+        #expect(route.agency != nil)
+        #expect(route.agency.id == "1")
+        #expect(route.regionIdentifier == 123)
     }
     
     func test_equalityAndHash() {
@@ -166,12 +166,12 @@ class RouteTests: OBATestCase {
         
         let route3 = try! Fixtures.dictionaryToModel(type: Route.self, dictionary: differentData)
         
-        expect(route1.isEqual(route2)) == true
-        expect(route1.isEqual(route3)) == false
-        expect(route1.isEqual("not a route")) == false
+        #expect(route1.isEqual(route2) == true)
+        #expect(route1.isEqual(route3) == false)
+        #expect(route1.isEqual("not a route") == false)
         
-        expect(route1.hash) == route2.hash
-        expect(route1.hash) != route3.hash
+        #expect(route1.hash == route2.hash)
+        #expect(route1.hash != route3.hash)
     }
     
     func test_encodeDecodeRoundTrip() {
@@ -188,13 +188,13 @@ class RouteTests: OBATestCase {
         let originalRoute = try! Fixtures.dictionaryToModel(type: Route.self, dictionary: routeData)
         let roundTrippedRoute = try! Fixtures.roundtripCodable(type: Route.self, model: originalRoute)
         
-        expect(roundTrippedRoute.id) == originalRoute.id
-        expect(roundTrippedRoute.agencyID) == originalRoute.agencyID
-        expect(roundTrippedRoute.shortName) == originalRoute.shortName
-        expect(roundTrippedRoute.longName) == originalRoute.longName
-        expect(roundTrippedRoute.routeDescription) == originalRoute.routeDescription
-        expect(roundTrippedRoute.routeType) == originalRoute.routeType
-        expect(roundTrippedRoute.routeURL) == originalRoute.routeURL
+        #expect(roundTrippedRoute.id == originalRoute.id)
+        #expect(roundTrippedRoute.agencyID == originalRoute.agencyID)
+        #expect(roundTrippedRoute.shortName == originalRoute.shortName)
+        #expect(roundTrippedRoute.longName == originalRoute.longName)
+        #expect(roundTrippedRoute.routeDescription == originalRoute.routeDescription)
+        #expect(roundTrippedRoute.routeType == originalRoute.routeType)
+        #expect(roundTrippedRoute.routeURL == originalRoute.routeURL)
     }
     
     func test_arrayExtensionSort() {
@@ -210,9 +210,9 @@ class RouteTests: OBATestCase {
         
         let sortedRoutes = routes.localizedCaseInsensitiveSort()
         
-        expect(sortedRoutes[0].shortName) == "A Route"
-        expect(sortedRoutes[1].shortName) == "m Route"
-        expect(sortedRoutes[2].shortName) == "z Route"
+        #expect(sortedRoutes[0].shortName == "A Route")
+        #expect(sortedRoutes[1].shortName == "m Route")
+        #expect(sortedRoutes[2].shortName == "z Route")
     }
 
     func test_arrayExtensionSort_numeric() {
@@ -225,7 +225,7 @@ class RouteTests: OBATestCase {
         let sortedRoutes = routes.localizedCaseInsensitiveSort()
         let sortedNames = sortedRoutes.map(\.shortName)
 
-        expect(sortedNames) == ["3", "10", "11", "12", "49", "Bellevue"]
+        #expect(sortedNames == ["3", "10", "11", "12", "49", "Bellevue"])
     }
 }
 
@@ -242,9 +242,9 @@ class FrequencyTests: OBATestCase {
         
         let frequency = try! Fixtures.dictionaryToModel(type: Frequency.self, dictionary: frequencyData)
         
-        expect(frequency.startTime.timeIntervalSince1970) == 1610437507200
-        expect(frequency.endTime.timeIntervalSince1970) == 1610523907200
-        expect(frequency.headway) == 600.0
+        #expect(frequency.startTime.timeIntervalSince1970 == 1610437507200)
+        #expect(frequency.endTime.timeIntervalSince1970 == 1610523907200)
+        #expect(frequency.headway == 600.0)
     }
     
     func test_frequencyEquality() {
@@ -261,10 +261,10 @@ class FrequencyTests: OBATestCase {
         differentData["headway"] = 300.0
         let frequency3 = try! Fixtures.dictionaryToModel(type: Frequency.self, dictionary: differentData)
         
-        expect(frequency1.isEqual(frequency2)) == true
-        expect(frequency1.isEqual(frequency3)) == false
-        expect(frequency1.hash) == frequency2.hash
-        expect(frequency1.hash) != frequency3.hash
+        #expect(frequency1.isEqual(frequency2) == true)
+        #expect(frequency1.isEqual(frequency3) == false)
+        #expect(frequency1.hash == frequency2.hash)
+        #expect(frequency1.hash != frequency3.hash)
     }
     
     func test_decodeFailureWhenMissingRequiredFields() {
@@ -274,8 +274,8 @@ class FrequencyTests: OBATestCase {
         ]
         // Missing startTime
         
-        expect {
+        #expect(throws: (any Error).self) {
             try Fixtures.dictionaryToModel(type: Frequency.self, dictionary: incompleteData)
-        }.to(throwError())
+        }
     }
 }

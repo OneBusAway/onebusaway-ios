@@ -6,7 +6,7 @@
 //
 
 import XCTest
-import Nimble
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -28,10 +28,10 @@ class BinarySearchTests: OBATestCase {
         let sortedByID = people.sorted { $0.id < $1.id }
         let sortedByName = people.sorted { $0.name < $1.name }
 
-        expect(sortedByID.binarySearch(sortedBy: \.id, element: "35")?.element.name).to(equal("Lob"))
-        expect(sortedByID.binarySearch(sortedBy: \.id, element: "12")?.element.name).to(equal("Job"))
+        #expect(sortedByID.binarySearch(sortedBy: \.id, element: "35")?.element.name == "Lob")
+        #expect(sortedByID.binarySearch(sortedBy: \.id, element: "12")?.element.name == "Job")
 
-        expect(sortedByName.binarySearch(sortedBy: \.name, element: "Nob")?.element.id).to(equal("49"))
-        expect(sortedByName.binarySearch(sortedBy: \.name, element: "Bob")?.element.id).to(equal("43"))
+        #expect(sortedByName.binarySearch(sortedBy: \.name, element: "Nob")?.element.id == "49")
+        #expect(sortedByName.binarySearch(sortedBy: \.name, element: "Bob")?.element.id == "43")
     }
 }

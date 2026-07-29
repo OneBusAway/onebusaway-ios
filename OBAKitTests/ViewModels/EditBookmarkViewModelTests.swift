@@ -8,7 +8,7 @@
 //
 
 import XCTest
-import Nimble
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -109,10 +109,10 @@ class EditBookmarkViewModelTests: OBATestCase {
 
         let vm = EditBookmarkViewModel(application: app, source: .stop(stop), bookmark: nil)
 
-        expect(vm.isAddMode).to(beTrue())
-        expect(vm.initialName) == Formatters.formattedTitle(stop: stop)
-        expect(vm.initialGroupID).to(beNil())
-        expect(vm.initialIsFavorite).to(beTrue())
+        #expect(vm.isAddMode)
+        #expect(vm.initialName == Formatters.formattedTitle(stop: stop))
+        #expect(vm.initialGroupID == nil)
+        #expect(vm.initialIsFavorite)
     }
 
     @MainActor
@@ -123,8 +123,8 @@ class EditBookmarkViewModelTests: OBATestCase {
 
         let vm = EditBookmarkViewModel(application: app, source: .arrivalDeparture(arrivalDep), bookmark: nil)
 
-        expect(vm.isAddMode).to(beTrue())
-        expect(vm.initialName) == arrivalDep.routeAndHeadsign
+        #expect(vm.isAddMode)
+        #expect(vm.initialName == arrivalDep.routeAndHeadsign)
     }
 
     // MARK: - Initial State (Edit Mode)
@@ -138,8 +138,8 @@ class EditBookmarkViewModelTests: OBATestCase {
         let bookmark = Bookmark(name: "My Custom Name", regionIdentifier: pugetSoundRegionIdentifier, stop: stop)
         let vm = EditBookmarkViewModel(application: app, source: .stop(stop), bookmark: bookmark)
 
-        expect(vm.isAddMode).to(beFalse())
-        expect(vm.initialName) == "My Custom Name"
+        #expect(!vm.isAddMode)
+        #expect(vm.initialName == "My Custom Name")
     }
 
     @MainActor
@@ -155,7 +155,7 @@ class EditBookmarkViewModelTests: OBATestCase {
         app.userDataStore.add(bookmark, to: group)
 
         let vm = EditBookmarkViewModel(application: app, source: .stop(stop), bookmark: bookmark)
-        expect(vm.initialGroupID) == group.id
+        #expect(vm.initialGroupID == group.id)
     }
 
     // MARK: - bookmarkGroups
@@ -168,12 +168,12 @@ class EditBookmarkViewModelTests: OBATestCase {
         let stop = try makeStop()
         let vm = EditBookmarkViewModel(application: app, source: .stop(stop), bookmark: nil)
 
-        expect(vm.bookmarkGroups).to(beEmpty())
+        #expect(vm.bookmarkGroups.isEmpty)
 
         let group = BookmarkGroup(name: "Commute", sortOrder: 0)
         app.userDataStore.upsert(bookmarkGroup: group)
 
-        expect(vm.bookmarkGroups).to(haveCount(1))
+        #expect(vm.bookmarkGroups.count == 1)
     }
 
     // MARK: - currentGroupID
@@ -186,7 +186,7 @@ class EditBookmarkViewModelTests: OBATestCase {
 
         let vm = EditBookmarkViewModel(application: app, source: .stop(stop), bookmark: nil)
 
-        expect(vm.currentGroupID()).to(beNil())
+        #expect(vm.currentGroupID() == nil)
     }
 
     @MainActor
@@ -203,7 +203,7 @@ class EditBookmarkViewModelTests: OBATestCase {
 
         let vm = EditBookmarkViewModel(application: app, source: .stop(stop), bookmark: bookmark)
 
-        expect(vm.currentGroupID()) == group.id
+        #expect(vm.currentGroupID() == group.id)
     }
 
     @MainActor
@@ -221,13 +221,13 @@ class EditBookmarkViewModelTests: OBATestCase {
         app.userDataStore.add(bookmark, to: groupA)
 
         let vm = EditBookmarkViewModel(application: app, source: .stop(stop), bookmark: bookmark)
-        expect(vm.initialGroupID) == groupA.id
+        #expect(vm.initialGroupID == groupA.id)
 
         // Simulate another screen moving the bookmark while this VM is alive.
         app.userDataStore.add(bookmark, to: groupB)
 
-        expect(vm.currentGroupID()) == groupB.id
-        expect(vm.initialGroupID) == groupA.id
+        #expect(vm.currentGroupID() == groupB.id)
+        #expect(vm.initialGroupID == groupA.id)
     }
 
     // MARK: - prepareToSave (add mode)
@@ -260,8 +260,8 @@ class EditBookmarkViewModelTests: OBATestCase {
             XCTFail("Expected .readyToSave, got \(outcome)")
             return
         }
-        expect(bookmark.name) == "My Stop"
-        expect(isNew).to(beTrue())
+        #expect(bookmark.name == "My Stop")
+        #expect(isNew)
     }
 
     @MainActor
@@ -276,7 +276,7 @@ class EditBookmarkViewModelTests: OBATestCase {
         guard case .readyToSave(let bookmark, _) = outcome else {
             XCTFail("Expected .readyToSave"); return
         }
-        expect(bookmark.name) == Formatters.formattedTitle(stop: stop)
+        #expect(bookmark.name == Formatters.formattedTitle(stop: stop))
     }
 
     @MainActor
@@ -295,7 +295,7 @@ class EditBookmarkViewModelTests: OBATestCase {
             XCTFail("Expected .duplicateRequiresConfirmation, got \(outcome)")
             return
         }
-        expect(dup.name) == "Stop"
+        #expect(dup.name == "Stop")
     }
 
     // MARK: - prepareToSave (edit mode)
@@ -317,13 +317,13 @@ class EditBookmarkViewModelTests: OBATestCase {
             XCTFail("Expected .readyToSave, got \(outcome)")
             return
         }
-        expect(saved.name) == "Original"
-        expect(saved.isFavorite).to(beTrue())
-        expect(isNew).to(beFalse())
+        #expect(saved.name == "Original")
+        #expect(saved.isFavorite)
+        #expect(!isNew)
 
         vm.persist(saved, name: "Updated Name", isFavorite: false, to: nil, isNewBookmark: isNew)
-        expect(saved.name) == "Updated Name"
-        expect(saved.isFavorite).to(beFalse())
+        #expect(saved.name == "Updated Name")
+        #expect(!saved.isFavorite)
     }
 
     @MainActor
@@ -342,7 +342,7 @@ class EditBookmarkViewModelTests: OBATestCase {
             XCTFail("Expected .readyToSave"); return
         }
         vm.persist(saved, name: "   ", isFavorite: true, to: nil, isNewBookmark: isNew)
-        expect(saved.name) == Formatters.formattedTitle(stop: stop)
+        #expect(saved.name == Formatters.formattedTitle(stop: stop))
     }
 
     @MainActor
@@ -361,7 +361,7 @@ class EditBookmarkViewModelTests: OBATestCase {
             XCTFail("Expected .readyToSave, got \(outcome)")
             return
         }
-        expect(isNew).to(beFalse())
+        #expect(!isNew)
     }
 
     // MARK: - persist
@@ -381,7 +381,7 @@ class EditBookmarkViewModelTests: OBATestCase {
 
         vm.persist(bookmark, name: "Home", isFavorite: false, to: nil, isNewBookmark: isNew)
 
-        expect(app.userDataStore.findBookmark(id: bookmark.id)).toNot(beNil())
+        #expect(app.userDataStore.findBookmark(id: bookmark.id) != nil)
     }
 
     @MainActor
@@ -403,7 +403,7 @@ class EditBookmarkViewModelTests: OBATestCase {
         vm.persist(bookmark, name: "Stop", isFavorite: true, to: group.id, isNewBookmark: isNew)
 
         let inGroup = app.userDataStore.bookmarksInGroup(group)
-        expect(inGroup).to(containElementSatisfying { $0.id == bookmark.id })
+        #expect(inGroup.contains { $0.id == bookmark.id })
     }
 
     @MainActor
@@ -429,7 +429,7 @@ class EditBookmarkViewModelTests: OBATestCase {
 
         vm.persist(saved, name: "Stop", isFavorite: true, to: groupB.id, isNewBookmark: isNew)
 
-        expect(app.userDataStore.bookmarksInGroup(groupB)).to(containElementSatisfying { $0.id == bookmark.id })
+        #expect(app.userDataStore.bookmarksInGroup(groupB).contains { $0.id == bookmark.id })
     }
 
     @MainActor
@@ -449,13 +449,13 @@ class EditBookmarkViewModelTests: OBATestCase {
         vm.persist(bookmark, name: "Route", isFavorite: true, to: nil, isNewBookmark: isNew)
 
         let addBookmarkEvents = analyticsMock.reportedEvents.filter { $0.label == AnalyticsLabels.addBookmark }
-        expect(addBookmarkEvents).to(haveCount(1))
+        #expect(addBookmarkEvents.count == 1)
         let expectedValue = AnalyticsLabels.addRemoveBookmarkValue(
             routeID: arrivalDep.routeID,
             headsign: arrivalDep.tripHeadsign,
             stopID: arrivalDep.stopID
         )
-        expect(addBookmarkEvents.first?.value as? String) == expectedValue
+        #expect((addBookmarkEvents.first?.value as? String) == expectedValue)
     }
 
     @MainActor
@@ -477,7 +477,7 @@ class EditBookmarkViewModelTests: OBATestCase {
 
         vm.persist(bookmark, name: "Updated Route", isFavorite: true, to: nil, isNewBookmark: isNew)
 
-        expect(analyticsMock.reportedEvents.filter { $0.label == AnalyticsLabels.addBookmark }).to(beEmpty())
+        #expect(analyticsMock.reportedEvents.filter { $0.label == AnalyticsLabels.addBookmark }.isEmpty)
     }
 
     @MainActor
@@ -497,6 +497,6 @@ class EditBookmarkViewModelTests: OBATestCase {
         vm.persist(bookmark, name: "Stop", isFavorite: true, to: nil, isNewBookmark: isNew)
 
         let addBookmarkEvents = analyticsMock.reportedEvents.filter { $0.label == AnalyticsLabels.addBookmark }
-        expect(addBookmarkEvents).to(beEmpty())
+        #expect(addBookmarkEvents.isEmpty)
     }
 }

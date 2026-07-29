@@ -162,12 +162,22 @@ jobs:
 
     # Swift 6 migration ratchet (docs/swift6-migration-plan.md): the number of
     # strict-concurrency warnings may only go down. Enforcing since 2026-07-16.
-    # The checked-in baseline (39) was measured on Xcode 27 beta 3, which is what
-    # the `xcode-27` image ships — so CI and local development now count the same
-    # code the same way. The baseline is still a ceiling across supported
-    # toolchains (the previously pinned Xcode 26.6 counted 37 for the same code),
-    # so don't lower it to match whatever a single toolchain reports, or builds on
-    # the others fail.
+    # The checked-in baseline (0 as of 2026-07-28) was measured on Xcode 27 beta
+    # 3, which is what the `xcode-27` image ships — so CI and local development
+    # now count the same code the same way. The baseline is still a ceiling
+    # across supported toolchains (the previously pinned Xcode 26.6 counted 37
+    # when the baseline was 39), so don't lower it to match whatever a single
+    # toolchain reports, or builds on the others fail.
+    #
+    # This step counts correctly only because the runner starts with an empty
+    # compilation cache. Cache hits replay object files WITHOUT re-emitting
+    # diagnostics, so a warm cache silently undercounts (locally: 4/12/16/17 for
+    # a tree whose true count was 38). The cache lives at
+    # COMPILATION_CACHE_CAS_PATH — a machine-global path, NOT the DerivedData
+    # directory cached above — so today it is never restored between runs. If
+    # anyone ever adds it to actions/cache, this ratchet stops being meaningful:
+    # pass COMPILATION_CACHE_CAS_PATH to a scratch dir here, as
+    # scripts/measure_concurrency does locally.
     # All remaining warnings are in OBAKitTests (pinned to Swift 5, see its
     # project.yml); every Swift 6 target is at zero and additionally locked by
     # SWIFT_WARNINGS_AS_ERRORS_GROUPS in Apps/Shared/app_shared.yml.

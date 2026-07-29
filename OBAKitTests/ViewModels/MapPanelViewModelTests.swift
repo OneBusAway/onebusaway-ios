@@ -8,7 +8,7 @@
 //
 
 import XCTest
-import Nimble
+import Testing
 import Combine
 @testable import OBAKit
 @testable import OBAKitCore
@@ -74,7 +74,7 @@ class MapPanelViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: dataLoader)
 
         let viewModel = MapPanelViewModel(application: app)
-        expect(viewModel.nearbyStops).to(beEmpty())
+        #expect(viewModel.nearbyStops.isEmpty)
 
         var emissions: [[Stop]] = []
         let cancellable = viewModel.$nearbyStops.sink { emissions.append($0) }
@@ -83,11 +83,11 @@ class MapPanelViewModelTests: OBATestCase {
         let stop = try makeStop()
         viewModel.updateNearbyStops([stop])
 
-        expect(viewModel.nearbyStops.count) == 1
-        expect(viewModel.nearbyStops.first?.id) == "1_TEST"
+        #expect(viewModel.nearbyStops.count == 1)
+        #expect(viewModel.nearbyStops.first?.id == "1_TEST")
         // Initial empty value on subscription + the update.
-        expect(emissions.count) == 2
-        expect(emissions.last?.count) == 1
+        #expect(emissions.count == 2)
+        #expect(emissions.last?.count == 1)
     }
 
     // MARK: - Alerts
@@ -103,8 +103,8 @@ class MapPanelViewModelTests: OBATestCase {
         let viewModel = MapPanelViewModel(application: app)
         viewModel.refreshAlerts()
 
-        expect(viewModel.highSeverityAlerts.count) == app.alertsStore.recentHighSeverityAlerts.count
-        expect(viewModel.highSeverityAlerts).to(beEmpty())
+        #expect(viewModel.highSeverityAlerts.count == app.alertsStore.recentHighSeverityAlerts.count)
+        #expect(viewModel.highSeverityAlerts.isEmpty)
     }
 
     /// `refreshAlerts()` reflects non-empty store state and maps every qualifying alert.
@@ -141,8 +141,8 @@ class MapPanelViewModelTests: OBATestCase {
         let viewModel = MapPanelViewModel(application: app)
         viewModel.refreshAlerts()
 
-        expect(viewModel.highSeverityAlerts.count) == 1
-        expect(viewModel.highSeverityAlerts.count) == app.alertsStore.recentHighSeverityAlerts.count
+        #expect(viewModel.highSeverityAlerts.count == 1)
+        #expect(viewModel.highSeverityAlerts.count == app.alertsStore.recentHighSeverityAlerts.count)
     }
 
     // MARK: - Search Mode → Panel Detent
@@ -154,19 +154,19 @@ class MapPanelViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: dataLoader)
 
         let viewModel = MapPanelViewModel(application: app)
-        expect(viewModel.requestedPanelDetent) == .tip  // default
+        #expect(viewModel.requestedPanelDetent == .tip)  // default
 
         var emissions: [PanelDetent] = []
         let cancellable = viewModel.$requestedPanelDetent.sink { emissions.append($0) }
         defer { cancellable.cancel() }
 
         viewModel.enterSearchMode()
-        expect(viewModel.requestedPanelDetent) == .full
+        #expect(viewModel.requestedPanelDetent == .full)
 
         viewModel.exitSearchMode()
-        expect(viewModel.requestedPanelDetent) == .tip
+        #expect(viewModel.requestedPanelDetent == .tip)
 
         // Initial .tip + .full + .tip.
-        expect(emissions) == [.tip, .full, .tip]
+        #expect(emissions == [.tip, .full, .tip])
     }
 }

@@ -8,8 +8,8 @@
 //
 
 import XCTest
-import Nimble
 import CoreLocation
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -36,7 +36,7 @@ class UserDefaultsStoreTests: OBATestCase {
         garbageDefaults.set("garbage data", forKey: "bookmarkGroups")
         let garbageStore = UserDefaultsStore(userDefaults: garbageDefaults)
 
-        expect(garbageStore.bookmarkGroups) == []
+        #expect(garbageStore.bookmarkGroups == [])
     }
 
     // MARK: - Recent Stops
@@ -46,7 +46,7 @@ class UserDefaultsStoreTests: OBATestCase {
         let stop = stops.first!
         userDefaultsStore.addRecentStop(stop, region: region)
 
-        expect(self.userDefaultsStore.recentStops) == [stop]
+        #expect(self.userDefaultsStore.recentStops == [stop])
     }
 
     func test_recentStops_uniqueStops() {
@@ -55,18 +55,18 @@ class UserDefaultsStoreTests: OBATestCase {
         userDefaultsStore.addRecentStop(stop, region: region)
         userDefaultsStore.addRecentStop(stop, region: region)
 
-        expect(self.userDefaultsStore.recentStops) == [stop]
+        #expect(self.userDefaultsStore.recentStops == [stop])
     }
 
     func test_recentStops_maxCount() {
         let stops = try! Fixtures.loadSomeStops()
-        expect(stops.count).to(beGreaterThan(userDefaultsStore.maximumRecentStopsCount))
+        #expect(stops.count > userDefaultsStore.maximumRecentStopsCount)
 
         for s in stops {
             userDefaultsStore.addRecentStop(s, region: region)
         }
 
-        expect(self.userDefaultsStore.recentStops.count) == userDefaultsStore.maximumRecentStopsCount
+        #expect(self.userDefaultsStore.recentStops.count == userDefaultsStore.maximumRecentStopsCount)
     }
 
     func test_recentStops_search() {
@@ -80,9 +80,9 @@ class UserDefaultsStoreTests: OBATestCase {
         let mungedStopName = "\r\n\(stop.name.lowercased())\r\n"
         let matches = userDefaultsStore.findRecentStops(matching: mungedStopName)
 
-        expect(matches.count) >= 1
+        #expect(matches.count >= 1)
         let filtered = matches.filter({ $0.id == stop.id })
-        expect(filtered.first!) == stop
+        #expect(filtered.first! == stop)
     }
 
     func test_recentStops_removeAll() {
@@ -92,7 +92,7 @@ class UserDefaultsStoreTests: OBATestCase {
 
         userDefaultsStore.deleteAllRecentStops()
 
-        expect(self.userDefaultsStore.recentStops.count) == 0
+        #expect(self.userDefaultsStore.recentStops.count == 0)
     }
 
     func test_recentStops_removeStop() {
@@ -105,7 +105,7 @@ class UserDefaultsStoreTests: OBATestCase {
 
         userDefaultsStore.delete(recentStop: stop)
 
-        expect(self.userDefaultsStore.recentStops.count) == (stops.count - 1)
+        #expect(self.userDefaultsStore.recentStops.count == (stops.count - 1))
     }
 
     // MARK: - Alarms
@@ -120,12 +120,12 @@ class UserDefaultsStoreTests: OBATestCase {
         userDefaultsStore.add(alarm: futureAlarm)
 
         let IDs1 = userDefaultsStore.alarms.map({ String($0.url.absoluteString.split(separator: "/").last!) }).sorted()
-        expect(IDs1) == ["1", "2"]
+        #expect(IDs1 == ["1", "2"])
 
         userDefaultsStore.deleteExpiredAlarms()
 
         let IDs2 = userDefaultsStore.alarms.map({ String($0.url.absoluteString.split(separator: "/").last!) }).sorted()
-        expect(IDs2) == ["2"]
+        #expect(IDs2 == ["2"])
 
     }
 
@@ -140,12 +140,12 @@ class UserDefaultsStoreTests: OBATestCase {
         userDefaultsStore.add(alarm: futureAlarm)
 
         let IDs1 = userDefaultsStore.alarms.map({ String($0.url.absoluteString.split(separator: "/").last!) }).sorted()
-        expect(IDs1) == ["1", "2"]
+        #expect(IDs1 == ["1", "2"])
 
         userDefaultsStore.deleteExpiredAlarms()
 
         let IDs2 = userDefaultsStore.alarms.map({ String($0.url.absoluteString.split(separator: "/").last!) }).sorted()
-        expect(IDs2) == ["2"]
+        #expect(IDs2 == ["2"])
     }
 
     /// Regression test for the `tripDate`/`alarmDate` precision-loss bug in `Alarm.isEqual`.
@@ -163,169 +163,169 @@ class UserDefaultsStoreTests: OBATestCase {
         // Force the encode → decode round-trip by going through the `alarms` getter,
         // which reads back from UserDefaults rather than returning the in-memory instance.
         let reloaded = userDefaultsStore.alarms.first { $0.url == alarm.url }
-        expect(reloaded).toNot(beNil())
-        expect(reloaded) == alarm
+        #expect(reloaded != nil)
+        #expect(reloaded == alarm)
 
         userDefaultsStore.delete(alarm: reloaded!)
 
-        expect(self.userDefaultsStore.alarms.map(\.url)).toNot(contain(alarm.url))
+        #expect(!self.userDefaultsStore.alarms.map(\.url).contains(alarm.url))
     }
 
     // MARK: - Selected Tab Index
 
     func test_selectedTabIndex_mapSelectedByDefault() {
-        expect(self.userDefaultsStore.lastSelectedView) == SelectedTab.map
+        #expect(self.userDefaultsStore.lastSelectedView == SelectedTab.map)
     }
 
     func test_selectedTabIndex_changingDefaults() {
         userDefaultsStore.lastSelectedView = .bookmarks
-        expect(self.userDefaultsStore.lastSelectedView) == SelectedTab.bookmarks
+        #expect(self.userDefaultsStore.lastSelectedView == SelectedTab.bookmarks)
     }
 
     func test_selectedTabIndex_invalidRawValueFallsBackToMap() {
         userDefaults.set(999, forKey: "UserDataStore.lastSelectedView")
-        expect(self.userDefaultsStore.lastSelectedView) == SelectedTab.map
+        #expect(self.userDefaultsStore.lastSelectedView == SelectedTab.map)
     }
 
     // MARK: - Debug Mode
 
     func test_debugMode_defaultValue() {
-        expect(self.userDefaultsStore.debugMode).to(beFalse())
+        #expect(!self.userDefaultsStore.debugMode)
     }
 
     func test_debugMode_setValue() {
         self.userDefaultsStore.debugMode = true
-        expect(self.userDefaultsStore.debugMode).to(beTrue())
+        #expect(self.userDefaultsStore.debugMode)
 
         let newStore = UserDefaultsStore(userDefaults: userDefaults)
-        expect(newStore.debugMode).to(beTrue())
+        #expect(newStore.debugMode)
     }
 
     // MARK: - Stop UI Reduced Colors
 
     func test_stopUIReducedColors_defaultValue() {
-        expect(self.userDefaultsStore.stopUIReducedColors).to(beFalse())
+        #expect(!self.userDefaultsStore.stopUIReducedColors)
     }
 
     func test_stopUIReducedColors_setValue_persistsUnderTheAppStorageKey() {
         userDefaultsStore.stopUIReducedColors = true
-        expect(self.userDefaultsStore.stopUIReducedColors).to(beTrue())
+        #expect(self.userDefaultsStore.stopUIReducedColors)
         // The @AppStorage readers and the Eureka form must see the same key,
         // and it must stay dot-free or KVO observation silently stops firing.
-        expect(UserDefaultsStore.stopUIReducedColorsKey) == "stopUIReducedColors"
-        expect(self.userDefaultsStore.userDefaults.bool(forKey: UserDefaultsStore.stopUIReducedColorsKey)).to(beTrue())
+        #expect(UserDefaultsStore.stopUIReducedColorsKey == "stopUIReducedColors")
+        #expect(self.userDefaultsStore.userDefaults.bool(forKey: UserDefaultsStore.stopUIReducedColorsKey))
     }
 
     // MARK: - Survey Properties
 
     func test_surveyUserIdentifier_generatesUUID() {
         let id = userDefaultsStore.surveyUserIdentifier
-        expect(id).toNot(beEmpty())
+        #expect(!id.isEmpty)
     }
 
     func test_surveyUserIdentifier_persistsBetweenCalls() {
         let first = userDefaultsStore.surveyUserIdentifier
         let second = userDefaultsStore.surveyUserIdentifier
-        expect(first) == second
+        #expect(first == second)
     }
 
     // MARK: - App Launch Counter
 
     func test_appLaunchCount_defaultValueIsZero() {
-        expect(self.userDefaultsStore.appLaunchCount) == 0
+        #expect(self.userDefaultsStore.appLaunchCount == 0)
     }
 
     func test_appLaunchCount_incrementsCorrectly() {
         userDefaultsStore.incrementAppLaunchCount()
-        expect(self.userDefaultsStore.appLaunchCount) == 1
+        #expect(self.userDefaultsStore.appLaunchCount == 1)
 
         userDefaultsStore.incrementAppLaunchCount()
-        expect(self.userDefaultsStore.appLaunchCount) == 2
+        #expect(self.userDefaultsStore.appLaunchCount == 2)
     }
 
     // MARK: - Survey Enabled
 
     func test_isSurveyEnabled_defaultsToTrue() {
-        expect(self.userDefaultsStore.isSurveyEnabled).to(beTrue())
+        #expect(self.userDefaultsStore.isSurveyEnabled)
     }
 
     func test_isSurveyEnabled_persistsValue() {
         userDefaultsStore.isSurveyEnabled = false
-        expect(self.userDefaultsStore.isSurveyEnabled).to(beFalse())
+        #expect(!self.userDefaultsStore.isSurveyEnabled)
 
         userDefaultsStore.isSurveyEnabled = true
-        expect(self.userDefaultsStore.isSurveyEnabled).to(beTrue())
+        #expect(self.userDefaultsStore.isSurveyEnabled)
     }
 
     // MARK: - Next Survey Reminder Date
 
     func test_nextSurveyReminderDate_defaultsToNil() {
-        expect(self.userDefaultsStore.nextSurveyReminderDate).to(beNil())
+        #expect(self.userDefaultsStore.nextSurveyReminderDate == nil)
     }
 
     func test_nextSurveyReminderDate_persistsValue() {
         let date = Date().addingTimeInterval(3600)
         userDefaultsStore.nextSurveyReminderDate = date
-        expect(self.userDefaultsStore.nextSurveyReminderDate).to(beCloseTo(date, within: 1))
+        expectClose(self.userDefaultsStore.nextSurveyReminderDate, date, within: 1)
     }
 
     // MARK: - Survey Completion Tracking
 
     func test_markSurveyCompleted_tracksCompletedSurvey() {
         userDefaultsStore.markSurveyCompleted(surveyId: 1, userIdentifier: "user1")
-        expect(self.userDefaultsStore.isSurveyCompleted(surveyId: 1, userIdentifier: "user1")).to(beTrue())
-        expect(self.userDefaultsStore.isSurveyCompleted(surveyId: 2, userIdentifier: "user1")).to(beFalse())
+        #expect(self.userDefaultsStore.isSurveyCompleted(surveyId: 1, userIdentifier: "user1"))
+        #expect(!self.userDefaultsStore.isSurveyCompleted(surveyId: 2, userIdentifier: "user1"))
     }
 
     func test_markSurveyForLater_tracksLaterSurvey() {
         userDefaultsStore.markSurveyForLater(surveyId: 1, userIdentifier: "user1")
         // Immediately after marking, shouldShowSurveyLater returns false (0 launches since marking)
-        expect(self.userDefaultsStore.shouldShowSurveyLater(surveyId: 1, userIdentifier: "user1")).to(beFalse())
+        #expect(!self.userDefaultsStore.shouldShowSurveyLater(surveyId: 1, userIdentifier: "user1"))
     }
 
     // MARK: - Walking Speed
 
     func test_walkingSpeed_defaultValue() {
-        expect(self.userDefaultsStore.walkingSpeedMetersPerSecond).to(beCloseTo(1.4))
+        expectClose(self.userDefaultsStore.walkingSpeedMetersPerSecond, 1.4)
     }
 
     func test_walkingSpeed_roundTrip() {
         userDefaultsStore.walkingSpeedMetersPerSecond = 0.9
-        expect(self.userDefaultsStore.walkingSpeedMetersPerSecond).to(beCloseTo(0.9))
+        expectClose(self.userDefaultsStore.walkingSpeedMetersPerSecond, 0.9)
 
         userDefaultsStore.walkingSpeedMetersPerSecond = 1.8
-        expect(self.userDefaultsStore.walkingSpeedMetersPerSecond).to(beCloseTo(1.8))
+        expectClose(self.userDefaultsStore.walkingSpeedMetersPerSecond, 1.8)
 
         let newStore = UserDefaultsStore(userDefaults: userDefaults)
-        expect(newStore.walkingSpeedMetersPerSecond).to(beCloseTo(1.8))
+        expectClose(newStore.walkingSpeedMetersPerSecond, 1.8)
     }
 
     func test_walkingSpeedSource_defaultValue() {
-        expect(self.userDefaultsStore.walkingSpeedSource) == .manual
+        #expect(self.userDefaultsStore.walkingSpeedSource == .manual)
     }
 
     func test_walkingSpeedSource_roundTrip() {
         userDefaultsStore.walkingSpeedSource = .healthKit
-        expect(self.userDefaultsStore.walkingSpeedSource) == .healthKit
+        #expect(self.userDefaultsStore.walkingSpeedSource == .healthKit)
 
         userDefaultsStore.walkingSpeedSource = .manual
-        expect(self.userDefaultsStore.walkingSpeedSource) == .manual
+        #expect(self.userDefaultsStore.walkingSpeedSource == .manual)
     }
 
     func test_walkingSpeedMetersPerSecond_clampsBelowRange() {
         userDefaultsStore.walkingSpeedMetersPerSecond = 0.1
-        expect(self.userDefaultsStore.walkingSpeedMetersPerSecond).to(beCloseTo(WalkingSpeed.validRange.lowerBound))
+        expectClose(self.userDefaultsStore.walkingSpeedMetersPerSecond, WalkingSpeed.validRange.lowerBound)
     }
 
     func test_walkingSpeedMetersPerSecond_clampsAboveRange() {
         userDefaultsStore.walkingSpeedMetersPerSecond = 10.0
-        expect(self.userDefaultsStore.walkingSpeedMetersPerSecond).to(beCloseTo(WalkingSpeed.validRange.upperBound))
+        expectClose(self.userDefaultsStore.walkingSpeedMetersPerSecond, WalkingSpeed.validRange.upperBound)
     }
 
     // MARK: - Default Alarm Lead Time
 
     func test_defaultAlarmLeadTime_is10Minutes() {
-        expect(self.userDefaultsStore.defaultAlarmLeadTimeMinutes) == 10
+        #expect(self.userDefaultsStore.defaultAlarmLeadTimeMinutes == 10)
     }
 
     func test_defaultAlarmLeadTime_ignoresAndClearsLegacyStoredValue() {
@@ -333,8 +333,8 @@ class UserDefaultsStoreTests: OBATestCase {
 
         let newStore = UserDefaultsStore(userDefaults: userDefaults)
 
-        expect(newStore.defaultAlarmLeadTimeMinutes) == 10
-        expect(self.userDefaults.object(forKey: "UserDataStore.defaultAlarmLeadTimeMinutes")).to(beNil())
+        #expect(newStore.defaultAlarmLeadTimeMinutes == 10)
+        #expect(self.userDefaults.object(forKey: "UserDataStore.defaultAlarmLeadTimeMinutes") == nil)
     }
 
 }

@@ -8,7 +8,7 @@
 //
 
 import XCTest
-import Nimble
+import Testing
 @testable import OBAKitCore
 
 @MainActor
@@ -21,7 +21,7 @@ class ErrorClassifierTests: XCTestCase {
         let result = ErrorClassifier.classify(error, regionName: "Puget Sound")
 
         guard let apiError = result as? APIError else {
-            fail("Expected APIError, got \(type(of: result))")
+            Issue.record("Expected APIError, got \(type(of: result))")
             return
         }
 
@@ -29,7 +29,7 @@ class ErrorClassifierTests: XCTestCase {
         case .captivePortal:
             break
         default:
-            fail("Expected .captivePortal, got \(apiError)")
+            Issue.record("Expected .captivePortal, got \(apiError)")
         }
     }
 
@@ -40,7 +40,7 @@ class ErrorClassifierTests: XCTestCase {
         let result = ErrorClassifier.classify(error, regionName: "Puget Sound")
 
         guard let apiError = result as? APIError else {
-            fail("Expected APIError, got \(type(of: result))")
+            Issue.record("Expected APIError, got \(type(of: result))")
             return
         }
 
@@ -48,7 +48,7 @@ class ErrorClassifierTests: XCTestCase {
         case .requestNotFound:
             break
         default:
-            fail("Expected .requestNotFound, got \(apiError)")
+            Issue.record("Expected .requestNotFound, got \(apiError)")
         }
     }
 
@@ -57,7 +57,7 @@ class ErrorClassifierTests: XCTestCase {
         let result = ErrorClassifier.classify(error, regionName: "Puget Sound")
 
         guard let apiError = result as? APIError else {
-            fail("Expected APIError, got \(type(of: result))")
+            Issue.record("Expected APIError, got \(type(of: result))")
             return
         }
 
@@ -65,7 +65,7 @@ class ErrorClassifierTests: XCTestCase {
         case .noResponseBody:
             break
         default:
-            fail("Expected .noResponseBody, got \(apiError)")
+            Issue.record("Expected .noResponseBody, got \(apiError)")
         }
     }
 
@@ -78,7 +78,7 @@ class ErrorClassifierTests: XCTestCase {
         let result = ErrorClassifier.classify(error, regionName: "Puget Sound")
 
         guard let apiError = result as? APIError else {
-            fail("Expected APIError, got \(type(of: result))")
+            Issue.record("Expected APIError, got \(type(of: result))")
             return
         }
 
@@ -86,7 +86,7 @@ class ErrorClassifierTests: XCTestCase {
         case .invalidContentType:
             break
         default:
-            fail("Expected .invalidContentType, got \(apiError)")
+            Issue.record("Expected .invalidContentType, got \(apiError)")
         }
     }
 
@@ -99,15 +99,15 @@ class ErrorClassifierTests: XCTestCase {
         let result = ErrorClassifier.classify(error, regionName: "Puget Sound")
 
         guard let apiError = result as? APIError else {
-            fail("Expected APIError, got \(type(of: result))")
+            Issue.record("Expected APIError, got \(type(of: result))")
             return
         }
 
         switch apiError {
         case .serverError(let regionName):
-            expect(regionName) == "Puget Sound"
+            #expect(regionName == "Puget Sound")
         default:
-            fail("Expected .serverError, got \(apiError)")
+            Issue.record("Expected .serverError, got \(apiError)")
         }
     }
 
@@ -115,8 +115,8 @@ class ErrorClassifierTests: XCTestCase {
         let error = APIError.serverError(regionName: "Puget Sound")
         let description = error.localizedDescription
 
-        expect(description).to(contain("Puget Sound"))
-        expect(description).to(contain("try again"))
+        #expect(description.contains("Puget Sound"))
+        #expect(description.contains("try again"))
     }
 
     func test_classify_requestFailure502_becomesServerUnavailable() {
@@ -126,16 +126,16 @@ class ErrorClassifierTests: XCTestCase {
         let result = ErrorClassifier.classify(error, regionName: "Puget Sound")
 
         guard let apiError = result as? APIError else {
-            fail("Expected APIError, got \(type(of: result))")
+            Issue.record("Expected APIError, got \(type(of: result))")
             return
         }
 
         switch apiError {
         case .serverUnavailable(let regionName, let statusCode):
-            expect(regionName) == "Puget Sound"
-            expect(statusCode) == 502
+            #expect(regionName == "Puget Sound")
+            #expect(statusCode == 502)
         default:
-            fail("Expected .serverUnavailable, got \(apiError)")
+            Issue.record("Expected .serverUnavailable, got \(apiError)")
         }
     }
 
@@ -146,16 +146,16 @@ class ErrorClassifierTests: XCTestCase {
         let result = ErrorClassifier.classify(error, regionName: "Tampa")
 
         guard let apiError = result as? APIError else {
-            fail("Expected APIError, got \(type(of: result))")
+            Issue.record("Expected APIError, got \(type(of: result))")
             return
         }
 
         switch apiError {
         case .serverUnavailable(let regionName, let statusCode):
-            expect(regionName) == "Tampa"
-            expect(statusCode) == 503
+            #expect(regionName == "Tampa")
+            #expect(statusCode == 503)
         default:
-            fail("Expected .serverUnavailable, got \(apiError)")
+            Issue.record("Expected .serverUnavailable, got \(apiError)")
         }
     }
 
@@ -166,15 +166,15 @@ class ErrorClassifierTests: XCTestCase {
         let result = ErrorClassifier.classify(error, regionName: "Puget Sound")
 
         guard let apiError = result as? APIError else {
-            fail("Expected APIError, got \(type(of: result))")
+            Issue.record("Expected APIError, got \(type(of: result))")
             return
         }
 
         switch apiError {
         case .requestFailure(let resp):
-            expect(resp.statusCode) == 501
+            #expect(resp.statusCode == 501)
         default:
-            fail("Expected .requestFailure for 501, got \(apiError)")
+            Issue.record("Expected .requestFailure for 501, got \(apiError)")
         }
     }
 
@@ -185,15 +185,15 @@ class ErrorClassifierTests: XCTestCase {
         let result = ErrorClassifier.classify(error, regionName: nil)
 
         guard let apiError = result as? APIError else {
-            fail("Expected APIError, got \(type(of: result))")
+            Issue.record("Expected APIError, got \(type(of: result))")
             return
         }
 
         switch apiError {
         case .requestFailure(let resp):
-            expect(resp.statusCode) == 500
+            #expect(resp.statusCode == 500)
         default:
-            fail("Expected .requestFailure to pass through when regionName is nil, got \(apiError)")
+            Issue.record("Expected .requestFailure to pass through when regionName is nil, got \(apiError)")
         }
     }
 
@@ -204,15 +204,15 @@ class ErrorClassifierTests: XCTestCase {
         let result = ErrorClassifier.classify(error, regionName: nil)
 
         guard let apiError = result as? APIError else {
-            fail("Expected APIError, got \(type(of: result))")
+            Issue.record("Expected APIError, got \(type(of: result))")
             return
         }
 
         switch apiError {
         case .requestFailure(let resp):
-            expect(resp.statusCode) == 503
+            #expect(resp.statusCode == 503)
         default:
-            fail("Expected .requestFailure to pass through when regionName is nil, got \(apiError)")
+            Issue.record("Expected .requestFailure to pass through when regionName is nil, got \(apiError)")
         }
     }
 
@@ -223,15 +223,15 @@ class ErrorClassifierTests: XCTestCase {
         let result = ErrorClassifier.classify(error, regionName: "Puget Sound")
 
         guard let apiError = result as? APIError else {
-            fail("Expected APIError, got \(type(of: result))")
+            Issue.record("Expected APIError, got \(type(of: result))")
             return
         }
 
         switch apiError {
         case .requestFailure(let resp):
-            expect(resp.statusCode) == 400
+            #expect(resp.statusCode == 400)
         default:
-            fail("Expected .requestFailure for 4xx, got \(apiError)")
+            Issue.record("Expected .requestFailure for 4xx, got \(apiError)")
         }
     }
 
@@ -242,7 +242,7 @@ class ErrorClassifierTests: XCTestCase {
         let result = ErrorClassifier.classify(error, regionName: "Puget Sound", isCellularDataRestricted: true)
 
         guard let apiError = result as? APIError else {
-            fail("Expected APIError, got \(type(of: result))")
+            Issue.record("Expected APIError, got \(type(of: result))")
             return
         }
 
@@ -250,7 +250,7 @@ class ErrorClassifierTests: XCTestCase {
         case .cellularDataRestricted:
             break
         default:
-            fail("Expected .cellularDataRestricted, got \(apiError)")
+            Issue.record("Expected .cellularDataRestricted, got \(apiError)")
         }
     }
 
@@ -259,7 +259,7 @@ class ErrorClassifierTests: XCTestCase {
         let result = ErrorClassifier.classify(error, regionName: "Puget Sound", isCellularDataRestricted: false)
 
         guard let apiError = result as? APIError else {
-            fail("Expected APIError, got \(type(of: result))")
+            Issue.record("Expected APIError, got \(type(of: result))")
             return
         }
 
@@ -267,7 +267,7 @@ class ErrorClassifierTests: XCTestCase {
         case .networkFailure:
             break
         default:
-            fail("Expected .networkFailure, got \(apiError)")
+            Issue.record("Expected .networkFailure, got \(apiError)")
         }
     }
 
@@ -276,7 +276,7 @@ class ErrorClassifierTests: XCTestCase {
         let result = ErrorClassifier.classify(urlError, regionName: "Puget Sound", isCellularDataRestricted: true)
 
         guard let apiError = result as? APIError else {
-            fail("Expected APIError, got \(type(of: result))")
+            Issue.record("Expected APIError, got \(type(of: result))")
             return
         }
 
@@ -284,7 +284,7 @@ class ErrorClassifierTests: XCTestCase {
         case .cellularDataRestricted:
             break
         default:
-            fail("Expected .cellularDataRestricted, got \(apiError)")
+            Issue.record("Expected .cellularDataRestricted, got \(apiError)")
         }
     }
 
@@ -298,16 +298,16 @@ class ErrorClassifierTests: XCTestCase {
         let result = ErrorClassifier.classify(decodingError, regionName: "San Diego")
 
         guard let apiError = result as? APIError else {
-            fail("Expected APIError, got \(type(of: result))")
+            Issue.record("Expected APIError, got \(type(of: result))")
             return
         }
 
         switch apiError {
         case .serverUnavailable(let regionName, let statusCode):
-            expect(regionName) == "San Diego"
-            expect(statusCode).to(beNil())
+            #expect(regionName == "San Diego")
+            #expect(statusCode == nil)
         default:
-            fail("Expected .serverUnavailable, got \(apiError)")
+            Issue.record("Expected .serverUnavailable, got \(apiError)")
         }
     }
 
@@ -318,8 +318,8 @@ class ErrorClassifierTests: XCTestCase {
         let result = ErrorClassifier.classify(decodingError, regionName: nil)
 
         let description = result.localizedDescription
-        expect(description).toNot(contain("couldn't be read"))
-        expect(description).to(contain("server"))
+        #expect(!description.contains("couldn't be read"))
+        #expect(description.contains("server"))
     }
 
     // MARK: - NSURLError Classification
@@ -329,15 +329,15 @@ class ErrorClassifierTests: XCTestCase {
         let result = ErrorClassifier.classify(urlError, regionName: "York Region")
 
         guard let apiError = result as? APIError else {
-            fail("Expected APIError, got \(type(of: result))")
+            Issue.record("Expected APIError, got \(type(of: result))")
             return
         }
 
         switch apiError {
         case .serverUnavailable(let regionName, _):
-            expect(regionName) == "York Region"
+            #expect(regionName == "York Region")
         default:
-            fail("Expected .serverUnavailable for timeout, got \(apiError)")
+            Issue.record("Expected .serverUnavailable for timeout, got \(apiError)")
         }
     }
 
@@ -346,15 +346,15 @@ class ErrorClassifierTests: XCTestCase {
         let result = ErrorClassifier.classify(urlError, regionName: "Tampa")
 
         guard let apiError = result as? APIError else {
-            fail("Expected APIError, got \(type(of: result))")
+            Issue.record("Expected APIError, got \(type(of: result))")
             return
         }
 
         switch apiError {
         case .serverUnavailable(let regionName, _):
-            expect(regionName) == "Tampa"
+            #expect(regionName == "Tampa")
         default:
-            fail("Expected .serverUnavailable, got \(apiError)")
+            Issue.record("Expected .serverUnavailable, got \(apiError)")
         }
     }
 
@@ -363,15 +363,15 @@ class ErrorClassifierTests: XCTestCase {
         let result = ErrorClassifier.classify(urlError, regionName: "San Diego")
 
         guard let apiError = result as? APIError else {
-            fail("Expected APIError, got \(type(of: result))")
+            Issue.record("Expected APIError, got \(type(of: result))")
             return
         }
 
         switch apiError {
         case .serverUnavailable(let regionName, _):
-            expect(regionName) == "San Diego"
+            #expect(regionName == "San Diego")
         default:
-            fail("Expected .serverUnavailable, got \(apiError)")
+            Issue.record("Expected .serverUnavailable, got \(apiError)")
         }
     }
 
@@ -380,7 +380,7 @@ class ErrorClassifierTests: XCTestCase {
         let result = ErrorClassifier.classify(urlError, regionName: nil)
 
         guard let apiError = result as? APIError else {
-            fail("Expected APIError, got \(type(of: result))")
+            Issue.record("Expected APIError, got \(type(of: result))")
             return
         }
 
@@ -388,7 +388,7 @@ class ErrorClassifierTests: XCTestCase {
         case .networkFailure:
             break
         default:
-            fail("Expected .networkFailure when regionName is nil, got \(apiError)")
+            Issue.record("Expected .networkFailure when regionName is nil, got \(apiError)")
         }
     }
 
@@ -397,7 +397,7 @@ class ErrorClassifierTests: XCTestCase {
         let result = ErrorClassifier.classify(urlError, regionName: "Puget Sound")
 
         guard let apiError = result as? APIError else {
-            fail("Expected APIError, got \(type(of: result))")
+            Issue.record("Expected APIError, got \(type(of: result))")
             return
         }
 
@@ -405,7 +405,7 @@ class ErrorClassifierTests: XCTestCase {
         case .networkFailure:
             break
         default:
-            fail("Expected .networkFailure for unknown URL error, got \(apiError)")
+            Issue.record("Expected .networkFailure for unknown URL error, got \(apiError)")
         }
     }
 
@@ -416,15 +416,15 @@ class ErrorClassifierTests: XCTestCase {
         let result = ErrorClassifier.classify(error, regionName: "Tampa")
 
         guard let apiError = result as? APIError else {
-            fail("Expected APIError, got \(type(of: result))")
+            Issue.record("Expected APIError, got \(type(of: result))")
             return
         }
 
         switch apiError {
         case .serverError(let regionName):
-            expect(regionName) == "Puget Sound"
+            #expect(regionName == "Puget Sound")
         default:
-            fail("Expected .serverError to pass through, got \(apiError)")
+            Issue.record("Expected .serverError to pass through, got \(apiError)")
         }
     }
 
@@ -433,16 +433,16 @@ class ErrorClassifierTests: XCTestCase {
         let result = ErrorClassifier.classify(error, regionName: "Tampa")
 
         guard let apiError = result as? APIError else {
-            fail("Expected APIError, got \(type(of: result))")
+            Issue.record("Expected APIError, got \(type(of: result))")
             return
         }
 
         switch apiError {
         case .serverUnavailable(let regionName, let statusCode):
-            expect(regionName) == "Puget Sound"
-            expect(statusCode) == 503
+            #expect(regionName == "Puget Sound")
+            #expect(statusCode == 503)
         default:
-            fail("Expected .serverUnavailable to pass through, got \(apiError)")
+            Issue.record("Expected .serverUnavailable to pass through, got \(apiError)")
         }
     }
 
@@ -451,7 +451,7 @@ class ErrorClassifierTests: XCTestCase {
         let result = ErrorClassifier.classify(error, regionName: "Puget Sound")
 
         guard let apiError = result as? APIError else {
-            fail("Expected APIError, got \(type(of: result))")
+            Issue.record("Expected APIError, got \(type(of: result))")
             return
         }
 
@@ -459,7 +459,7 @@ class ErrorClassifierTests: XCTestCase {
         case .cellularDataRestricted:
             break
         default:
-            fail("Expected .cellularDataRestricted to pass through, got \(apiError)")
+            Issue.record("Expected .cellularDataRestricted to pass through, got \(apiError)")
         }
     }
 
@@ -471,7 +471,7 @@ class ErrorClassifierTests: XCTestCase {
         ])
         let result = ErrorClassifier.classify(error, regionName: "Puget Sound")
 
-        expect(result.localizedDescription) == "Something unrelated happened"
+        #expect(result.localizedDescription == "Something unrelated happened")
     }
 
     // MARK: - Error Description Verification
@@ -480,16 +480,16 @@ class ErrorClassifierTests: XCTestCase {
         let error = APIError.serverUnavailable(regionName: "Puget Sound", statusCode: 502)
         let description = error.localizedDescription
 
-        expect(description).to(contain("Puget Sound"))
-        expect(description).to(contain("down"))
+        #expect(description.contains("Puget Sound"))
+        #expect(description.contains("down"))
     }
 
     func test_cellularDataRestricted_errorDescription_mentionsSettings() {
         let error = APIError.cellularDataRestricted
         let description = error.localizedDescription
 
-        expect(description).to(contain("Settings"))
-        expect(description).to(contain("Cellular"))
+        #expect(description.contains("Settings"))
+        #expect(description.contains("Cellular"))
     }
 }
 

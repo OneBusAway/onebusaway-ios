@@ -8,7 +8,7 @@
 //
 
 import XCTest
-import Nimble
+import Testing
 import CoreLocation
 @testable import OBAKit
 @testable import OBAKitCore
@@ -92,11 +92,11 @@ class VehiclesViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: MockDataLoader(testName: name))
         let viewModel = VehiclesViewModel(application: app)
 
-        expect(viewModel.vehicles).to(beEmpty())
-        expect(viewModel.feedStatuses).to(beEmpty())
-        expect(viewModel.isLoading).to(beFalse())
-        expect(viewModel.error).to(beNil())
-        expect(viewModel.lastUpdated).to(beNil())
+        #expect(viewModel.vehicles.isEmpty)
+        #expect(viewModel.feedStatuses.isEmpty)
+        #expect(!viewModel.isLoading)
+        #expect(viewModel.error == nil)
+        #expect(viewModel.lastUpdated == nil)
     }
 
     // MARK: - Fetch Guards
@@ -108,10 +108,10 @@ class VehiclesViewModelTests: OBATestCase {
 
         await viewModel.fetchVehicles()
 
-        expect(viewModel.vehicles).to(beEmpty())
-        expect(viewModel.feedStatuses).to(beEmpty())
-        expect(viewModel.lastUpdated).to(beNil())
-        expect(viewModel.isLoading).to(beFalse())
+        #expect(viewModel.vehicles.isEmpty)
+        #expect(viewModel.feedStatuses.isEmpty)
+        #expect(viewModel.lastUpdated == nil)
+        #expect(!viewModel.isLoading)
     }
 
     // MARK: - Fetch
@@ -125,12 +125,16 @@ class VehiclesViewModelTests: OBATestCase {
         await viewModel.fetchVehicles()
 
         let agencyCount = try fixtureAgencyIDs().count
-        expect(viewModel.feedStatuses.count) == agencyCount
-        expect(viewModel.feedStatuses.allSatisfy(\.isSkipped)).to(beTrue())
-        expect(viewModel.vehicles).to(beEmpty())
-        expect(viewModel.error).to(beNil())
-        expect(viewModel.lastUpdated).toNot(beNil())
-        expect(viewModel.isLoading).to(beFalse())
+        #expect(viewModel.feedStatuses.count == agencyCount)
+        // Spelled as a closure rather than `allSatisfy(\.isSkipped)`: inside the
+        // #expect expansion the key-path-as-function conversion loses its
+        // non-throwing signature, so `allSatisfy` reads as `rethrows`-that-throws
+        // and the compiler demands a `try` the call does not need.
+        #expect(viewModel.feedStatuses.allSatisfy { $0.isSkipped })
+        #expect(viewModel.vehicles.isEmpty)
+        #expect(viewModel.error == nil)
+        #expect(viewModel.lastUpdated != nil)
+        #expect(!viewModel.isLoading)
     }
 
     @MainActor
@@ -142,7 +146,7 @@ class VehiclesViewModelTests: OBATestCase {
         await viewModel.fetchVehicles()
 
         let names = viewModel.feedStatuses.map(\.agencyName)
-        expect(names) == names.sorted()
+        #expect(names == names.sorted())
     }
 
     @MainActor
@@ -153,9 +157,9 @@ class VehiclesViewModelTests: OBATestCase {
 
         await viewModel.fetchVehicles()
 
-        expect(viewModel.totalAgencyCount) == viewModel.feedStatuses.count
-        expect(viewModel.enabledAgencyCount) == 0
-        expect(viewModel.allAgenciesEnabled).to(beFalse())
+        #expect(viewModel.totalAgencyCount == viewModel.feedStatuses.count)
+        #expect(viewModel.enabledAgencyCount == 0)
+        #expect(!viewModel.allAgenciesEnabled)
     }
 
     // MARK: - Agency Filtering
@@ -166,20 +170,20 @@ class VehiclesViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: MockDataLoader(testName: name), withRegion: false)
         let viewModel = VehiclesViewModel(application: app)
 
-        expect(viewModel.isAgencyEnabled("40")).to(beTrue())
-        expect(viewModel.allAgenciesEnabled).to(beTrue())
+        #expect(viewModel.isAgencyEnabled("40"))
+        #expect(viewModel.allAgenciesEnabled)
 
         viewModel.setAgencyEnabled(false, agencyID: "40")
 
-        expect(viewModel.isAgencyEnabled("40")).to(beFalse())
-        expect(viewModel.allAgenciesEnabled).to(beFalse())
-        expect(app.userDataStore.disabledVehicleFeedAgencyIDs) == ["40"]
+        #expect(!viewModel.isAgencyEnabled("40"))
+        #expect(!viewModel.allAgenciesEnabled)
+        #expect(app.userDataStore.disabledVehicleFeedAgencyIDs == ["40"])
 
         viewModel.setAgencyEnabled(true, agencyID: "40")
 
-        expect(viewModel.isAgencyEnabled("40")).to(beTrue())
-        expect(viewModel.allAgenciesEnabled).to(beTrue())
-        expect(app.userDataStore.disabledVehicleFeedAgencyIDs).to(beEmpty())
+        #expect(viewModel.isAgencyEnabled("40"))
+        #expect(viewModel.allAgenciesEnabled)
+        #expect(app.userDataStore.disabledVehicleFeedAgencyIDs.isEmpty)
     }
 
     // MARK: - Auto-Refresh Lifecycle
@@ -192,7 +196,9 @@ class VehiclesViewModelTests: OBATestCase {
 
         viewModel.startAutoRefresh()
 
-        await expect(viewModel.lastUpdated).toEventuallyNot(beNil())
+        // `startAutoRefresh` spawns a non-terminating fetch/sleep loop, so there is
+        // no completion to await — this is the one place polling is the right tool.
+        await poll(until: { viewModel.lastUpdated != nil }, "startAutoRefresh never fetched")
 
         viewModel.stopAutoRefresh()
 

@@ -8,7 +8,7 @@
 //
 
 import XCTest
-import Nimble
+import Testing
 import CoreLocation
 @testable import OBAKit
 @testable import OBAKitCore
@@ -23,6 +23,6 @@ class RegionalAlertsModelOperationTests: OBATestCase {
 
         let agencies = try! Fixtures.loadRESTAPIPayload(type: [AgencyWithCoverage].self, fileName: "agencies_with_coverage.json")
         let alerts = await restService.getAlerts(agencies: agencies)
-        expect(alerts.count) == 20
+        #expect(alerts.count == 20)
     }
 }

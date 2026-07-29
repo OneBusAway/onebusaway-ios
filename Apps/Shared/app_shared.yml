@@ -21,8 +21,9 @@ settings:
     SWIFT_VERSION: "6.0"
     # Zero-warning lock (plan Phase 0, step 2): every Swift 6 target is at zero
     # data-race diagnostics; escalate the concurrency diagnostic groups to
-    # errors so they can't creep back in as warnings. OBAKitTests (Swift 5
-    # pin, 39 ratcheted warnings) opts out in its own project.yml.
+    # errors so they can't creep back in as warnings. Every target is now
+    # covered, including OBAKitTests, which dropped its opt-out on 2026-07-28
+    # when it reached zero warnings.
     SWIFT_WARNINGS_AS_ERRORS_GROUPS: "ActorIsolatedCall SendableClosureCaptures RegionIsolation ConformanceIsolation MutableGlobalVariable"
 
 options:

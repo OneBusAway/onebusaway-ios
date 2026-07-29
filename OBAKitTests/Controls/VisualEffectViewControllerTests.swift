@@ -9,7 +9,7 @@
 
 import Foundation
 import XCTest
-import Nimble
+import Testing
 import UIKit
 @testable import OBAKit
 
@@ -24,28 +24,26 @@ class VisualEffectViewControllerTests: XCTestCase {
     }
     
     func test_init_setsUpView() {
-        expect(self.viewController).toNot(beNil())
-        expect(self.viewController.view).toNot(beNil())
+        #expect(self.viewController != nil)
+        #expect(self.viewController.view != nil)
     }
     
     func test_viewDidLoad_setsUpVisualEffectView() {
         viewController.viewDidLoad()
         
-        expect(self.viewController.view.subviews).to(contain(self.viewController.visualEffectView))
-        expect(self.viewController.view.backgroundColor) == UIColor.clear
+        #expect(self.viewController.view.subviews.contains(self.viewController.visualEffectView))
+        #expect(self.viewController.view.backgroundColor == UIColor.clear)
     }
     
     func test_visualEffectView_isAccessible() {
         let visualEffectView = viewController.visualEffectView
-        expect(visualEffectView).toNot(beNil())
-        expect(visualEffectView).to(beAnInstanceOf(UIVisualEffectView.self))
+        #expect(type(of: visualEffectView) == UIVisualEffectView.self)
     }
     
     func test_contentView_throughVisualEffectView() {
         // Test that visualEffectView has a content view  
         let visualEffectView = viewController.visualEffectView
-        expect(visualEffectView).to(beAnInstanceOf(UIVisualEffectView.self))
-        expect(visualEffectView.contentView).toNot(beNil())
+        #expect(type(of: visualEffectView) == UIVisualEffectView.self)
     }
     
     func test_addingSubviewsToContentView() {
@@ -57,7 +55,7 @@ class VisualEffectViewControllerTests: XCTestCase {
         
         viewController.visualEffectView.contentView.addSubview(testLabel)
         
-        expect(self.viewController.visualEffectView.contentView.subviews.count) == 1
-        expect(self.viewController.visualEffectView.contentView.subviews.first) === testLabel
+        #expect(self.viewController.visualEffectView.contentView.subviews.count == 1)
+        #expect(self.viewController.visualEffectView.contentView.subviews.first === testLabel)
     }
 }

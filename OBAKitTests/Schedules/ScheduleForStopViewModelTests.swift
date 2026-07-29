@@ -8,7 +8,7 @@
 //
 
 import XCTest
-import Nimble
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -77,7 +77,7 @@ class ScheduleForStopViewModelTests: OBATestCase {
 
         let viewModel = ScheduleForStopViewModel(stopID: stopID, application: app)
 
-        expect(viewModel.stopID) == stopID
+        #expect(viewModel.stopID == stopID)
     }
 
     @MainActor
@@ -89,7 +89,7 @@ class ScheduleForStopViewModelTests: OBATestCase {
 
         let viewModel = ScheduleForStopViewModel(stopID: stopID, application: app, initialDate: testDate)
 
-        expect(Calendar.current.isDate(viewModel.selectedDate, inSameDayAs: testDate)).to(beTrue())
+        #expect(Calendar.current.isDate(viewModel.selectedDate, inSameDayAs: testDate))
     }
 
     @MainActor
@@ -100,7 +100,7 @@ class ScheduleForStopViewModelTests: OBATestCase {
 
         let viewModel = ScheduleForStopViewModel(stopID: stopID, application: app)
 
-        expect(viewModel.selectedRouteID).to(beNil())
+        #expect(viewModel.selectedRouteID == nil)
     }
 
     // MARK: - Stop Name Tests
@@ -112,7 +112,7 @@ class ScheduleForStopViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = ScheduleForStopViewModel(stopID: stopID, application: app)
 
-        expect(viewModel.stopName) == stopID
+        #expect(viewModel.stopName == stopID)
     }
 
     // MARK: - Available Routes Tests
@@ -124,7 +124,7 @@ class ScheduleForStopViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = ScheduleForStopViewModel(stopID: stopID, application: app)
 
-        expect(viewModel.availableRoutes).to(beEmpty())
+        #expect(viewModel.availableRoutes.isEmpty)
     }
 
     // MARK: - Route Selection Tests
@@ -139,7 +139,7 @@ class ScheduleForStopViewModelTests: OBATestCase {
         let testRouteID = "test_route_123"
         viewModel.selectRoute(testRouteID)
 
-        expect(viewModel.selectedRouteID) == testRouteID
+        #expect(viewModel.selectedRouteID == testRouteID)
     }
 
     @MainActor
@@ -150,13 +150,13 @@ class ScheduleForStopViewModelTests: OBATestCase {
         let viewModel = ScheduleForStopViewModel(stopID: stopID, application: app)
 
         viewModel.selectRoute("route_1")
-        expect(viewModel.selectedRouteID) == "route_1"
+        #expect(viewModel.selectedRouteID == "route_1")
 
         viewModel.selectRoute("route_2")
-        expect(viewModel.selectedRouteID) == "route_2"
+        #expect(viewModel.selectedRouteID == "route_2")
 
         viewModel.selectRoute("route_3")
-        expect(viewModel.selectedRouteID) == "route_3"
+        #expect(viewModel.selectedRouteID == "route_3")
     }
 
     // MARK: - Loading State Tests
@@ -168,7 +168,7 @@ class ScheduleForStopViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = ScheduleForStopViewModel(stopID: stopID, application: app)
 
-        expect(viewModel.isLoading).to(beFalse())
+        #expect(!viewModel.isLoading)
     }
 
     @MainActor
@@ -178,7 +178,7 @@ class ScheduleForStopViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = ScheduleForStopViewModel(stopID: stopID, application: app)
 
-        expect(viewModel.error).to(beNil())
+        #expect(viewModel.error == nil)
     }
 
     @MainActor
@@ -188,6 +188,6 @@ class ScheduleForStopViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = ScheduleForStopViewModel(stopID: stopID, application: app)
 
-        expect(viewModel.scheduleData).to(beNil())
+        #expect(viewModel.scheduleData == nil)
     }
 }

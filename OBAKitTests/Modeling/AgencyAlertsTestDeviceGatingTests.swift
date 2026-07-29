@@ -8,7 +8,7 @@
 //
 
 import XCTest
-import Nimble
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -28,39 +28,39 @@ class AgencyAlertsTestDeviceGatingTests: OBATestCase {
     func test_switchOff_noName_doesNotDisplay() {
         setDisplayTestAlerts(false)
 
-        expect(AgencyAlertsStore.shouldDisplayTestAlerts(userDefaults: self.userDefaults)) == false
+        #expect(AgencyAlertsStore.shouldDisplayTestAlerts(userDefaults: self.userDefaults) == false)
     }
 
     func test_switchOn_noName_doesNotDisplay() {
         setDisplayTestAlerts(true)
 
-        expect(AgencyAlertsStore.shouldDisplayTestAlerts(userDefaults: self.userDefaults)) == false
+        #expect(AgencyAlertsStore.shouldDisplayTestAlerts(userDefaults: self.userDefaults) == false)
     }
 
     func test_switchOn_whitespaceOnlyName_doesNotDisplay() {
         setDisplayTestAlerts(true)
         setTestDeviceName("   \n")
 
-        expect(AgencyAlertsStore.shouldDisplayTestAlerts(userDefaults: self.userDefaults)) == false
+        #expect(AgencyAlertsStore.shouldDisplayTestAlerts(userDefaults: self.userDefaults) == false)
     }
 
     func test_switchOff_withName_doesNotDisplay() {
         setDisplayTestAlerts(false)
         setTestDeviceName("Aaron's iPhone")
 
-        expect(AgencyAlertsStore.shouldDisplayTestAlerts(userDefaults: self.userDefaults)) == false
+        #expect(AgencyAlertsStore.shouldDisplayTestAlerts(userDefaults: self.userDefaults) == false)
     }
 
     func test_switchOn_withName_displays() {
         setDisplayTestAlerts(true)
         setTestDeviceName("Aaron's iPhone")
 
-        expect(AgencyAlertsStore.shouldDisplayTestAlerts(userDefaults: self.userDefaults)) == true
+        #expect(AgencyAlertsStore.shouldDisplayTestAlerts(userDefaults: self.userDefaults) == true)
     }
 
     func test_keyMatchesPushRegistrationManagersKey() {
         // The gate reads the same defaults entry that the Settings form writes and
         // PushRegistrationManager reads — if these diverge, the gate silently breaks.
-        expect(AgencyAlertsStore.UserDefaultKeys.testDeviceDescription) == PushRegistrationManager.testDeviceDescriptionDefaultsKey
+        #expect(AgencyAlertsStore.UserDefaultKeys.testDeviceDescription == PushRegistrationManager.testDeviceDescriptionDefaultsKey)
     }
 }

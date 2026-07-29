@@ -8,7 +8,7 @@
 //
 
 import XCTest
-import Nimble
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -106,8 +106,8 @@ class AgencyAlertsStoreConcurrencyTests: OBATestCase {
         store.insertAlerts(alerts)
 
         // Sanity baseline before the fanout: every seeded alert is present and unread.
-        expect(store.recentHighSeverityAlerts.count) == alerts.count
-        expect(store.recentUnreadHighSeverityAlerts.count) == alerts.count
+        #expect(store.recentHighSeverityAlerts.count == alerts.count)
+        #expect(store.recentUnreadHighSeverityAlerts.count == alerts.count)
 
         // 25 alerts × 4 task groups × ~25 inner iterations is wide enough that an
         // unsynchronized read of `alerts`/`readAlertIDs` races on a real CPU.
@@ -139,10 +139,10 @@ class AgencyAlertsStoreConcurrencyTests: OBATestCase {
 
         // After the fanout, every alert must be marked read exactly once (idempotent
         // inserts into a `Set`), and the alert set itself must be intact.
-        expect(store.recentHighSeverityAlerts.count) == alerts.count
-        expect(store.recentUnreadHighSeverityAlerts).to(beEmpty())
+        #expect(store.recentHighSeverityAlerts.count == alerts.count)
+        #expect(store.recentUnreadHighSeverityAlerts.isEmpty)
         for alert in alerts {
-            expect(store.isAlertUnread(alert)).to(beFalse())
+            #expect(!store.isAlertUnread(alert))
         }
     }
 }

@@ -9,7 +9,7 @@
 
 import Foundation
 import XCTest
-import Nimble
+import Testing
 import CoreLocation
 import MapKit
 
@@ -24,11 +24,11 @@ class NetworkHelperTests: OBATestCase {
         let qi1 = queryItems.first!
         let qi2 = queryItems.last!
 
-        expect(qi1.name) == "one"
-        expect(qi1.value) == "2"
+        #expect(qi1.name == "one")
+        #expect(qi1.value == "2")
 
-        expect(qi2.name) == "three"
-        expect(qi2.value) == "four"
+        #expect(qi2.name == "three")
+        #expect(qi2.value == "four")
     }
 
     /// Tests that Double values use period (.) as decimal separator regardless of locale.
@@ -40,7 +40,7 @@ class NetworkHelperTests: OBATestCase {
 
         // Verify the locale would format with comma (proving our test premise)
         let commaFormattedNumber = String(format: "%g", locale: germanLocale, 47.61098)
-        expect(commaFormattedNumber).to(contain(","), description: "German locale should use comma as decimal separator")
+        #expect(commaFormattedNumber.contains(","), "German locale should use comma as decimal separator")
 
         // The actual values that would be sent for stops-for-location API
         let dict: [String: Any] = [
@@ -54,20 +54,20 @@ class NetworkHelperTests: OBATestCase {
 
         // All values must use period as decimal separator for API compatibility
         for item in queryItems {
-            expect(item.value).notTo(contain(","), description: "Query param '\(item.name)' should not contain comma")
+            #expect(item.value?.contains(",") == false, "Query param '\(item.name)' should not contain comma")
 
             // Verify the actual expected values
             switch item.name {
             case "lat":
-                expect(item.value) == "47.61098"
+                #expect(item.value == "47.61098")
             case "lon":
-                expect(item.value) == "-122.33845"
+                #expect(item.value == "-122.33845")
             case "latSpan":
-                expect(item.value) == "0.005"
+                #expect(item.value == "0.005")
             case "lonSpan":
-                expect(item.value) == "0.008"
+                #expect(item.value == "0.008")
             default:
-                fail("Unexpected query item: \(item.name)")
+                Issue.record("Unexpected query item: \(item.name)")
             }
         }
     }
@@ -81,8 +81,8 @@ class NetworkHelperTests: OBATestCase {
         let queryItems = NetworkHelpers.dictionary(toQueryItems: dict)
         let item = queryItems.first!
 
-        expect(item.value).notTo(contain(","))
-        expect(item.value) == "3.14159"
+        #expect(item.value?.contains(",") == false)
+        #expect(item.value == "3.14159")
     }
 
     /// Tests the actual URL building for stops-for-location endpoint
@@ -100,16 +100,16 @@ class NetworkHelperTests: OBATestCase {
         let urlString = url.absoluteString
 
         // URL must use period as decimal separator, never comma
-        expect(urlString).notTo(contain("47,"))
-        expect(urlString).notTo(contain("-122,"))
-        expect(urlString).notTo(contain("0,005"))
-        expect(urlString).notTo(contain("0,008"))
+        #expect(!urlString.contains("47,"))
+        #expect(!urlString.contains("-122,"))
+        #expect(!urlString.contains("0,005"))
+        #expect(!urlString.contains("0,008"))
 
         // Verify correct format
-        expect(urlString).to(contain("lat=47.61098"))
-        expect(urlString).to(contain("lon=-122.33845"))
-        expect(urlString).to(contain("latSpan=0.005"))
-        expect(urlString).to(contain("lonSpan=0.008"))
+        #expect(urlString.contains("lat=47.61098"))
+        #expect(urlString.contains("lon=-122.33845"))
+        #expect(urlString.contains("latSpan=0.005"))
+        #expect(urlString.contains("lonSpan=0.008"))
     }
 
     func testDictionaryToHTTPBodyData() {
@@ -122,7 +122,7 @@ class NetworkHelperTests: OBATestCase {
         let expectedData2 = "three=four&one=2".data(using: .utf8)
         let match2 = (expectedData2 == data)
 
-        expect(match1 || match2).to(beTrue())
+        #expect((match1 || match2))
     }
 
     /// Tests that Double values in HTTP body use period as decimal separator regardless of locale
@@ -137,10 +137,10 @@ class NetworkHelperTests: OBATestCase {
 
         // Should not contain comma as decimal separator
         // The string should be like "lat=47.61098&lon=-122.33845" (order may vary)
-        expect(bodyString).notTo(contain("47,"))
-        expect(bodyString).notTo(contain("-122,"))
-        expect(bodyString).to(contain("47.61098"))
-        expect(bodyString).to(contain("-122.33845"))
+        #expect(!bodyString.contains("47,"))
+        #expect(!bodyString.contains("-122,"))
+        #expect(bodyString.contains("47.61098"))
+        #expect(bodyString.contains("-122.33845"))
     }
 
     /// Tests that REST API requests include Accept-Language header set to en-US
@@ -173,8 +173,8 @@ class NetworkHelperTests: OBATestCase {
         _ = try? await restService.getStops(coordinate: coordinate)
 
         // Verify Accept-Language header is set to en-US
-        expect(capturedRequest).notTo(beNil())
+        #expect(capturedRequest != nil)
         let acceptLanguage = capturedRequest?.value(forHTTPHeaderField: "Accept-Language")
-        expect(acceptLanguage) == "en-US"
+        #expect(acceptLanguage == "en-US")
     }
 }

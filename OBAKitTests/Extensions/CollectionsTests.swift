@@ -8,7 +8,7 @@
 //
 
 import Foundation
-import Nimble
+import Testing
 import XCTest
 @testable import OBAKit
 @testable import OBAKitCore
@@ -20,14 +20,14 @@ class CollectionsTests: XCTestCase {
         let mySet: Set = ["one", "two", "three"]
         let array = mySet.allObjects
 
-        expect(array).to(contain("one"))
-        expect(array).to(contain("two"))
-        expect(array).to(contain("three"))
+        #expect(array.contains("one"))
+        #expect(array.contains("two"))
+        #expect(array.contains("three"))
     }
 
     func testFilter() {
         let list: [Any] = [1, "two", 3, "four", 5]
         let filtered = list.filter(type: Int.self)
-        expect(filtered) == [1, 3, 5]
+        #expect(filtered == [1, 3, 5])
     }
 }

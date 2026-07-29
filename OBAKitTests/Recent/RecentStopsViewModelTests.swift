@@ -9,7 +9,7 @@
 
 import XCTest
 import CoreLocation
-import Nimble
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -67,7 +67,7 @@ class RecentStopsViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: MockDataLoader(testName: name))
         let viewModel = RecentStopsViewModel(application: app)
 
-        expect(viewModel.alarms).to(beEmpty())
+        #expect(viewModel.alarms.isEmpty)
     }
 
     @MainActor
@@ -75,7 +75,7 @@ class RecentStopsViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: MockDataLoader(testName: name))
         let viewModel = RecentStopsViewModel(application: app)
 
-        expect(viewModel.recentStops).to(beEmpty())
+        #expect(viewModel.recentStops.isEmpty)
     }
 
     // MARK: - loadData
@@ -90,7 +90,7 @@ class RecentStopsViewModelTests: OBATestCase {
 
         viewModel.loadData()
 
-        expect(viewModel.recentStops).to(contain(stop))
+        #expect(viewModel.recentStops.contains(stop))
     }
 
     @MainActor
@@ -103,7 +103,7 @@ class RecentStopsViewModelTests: OBATestCase {
 
         viewModel.loadData()
 
-        expect(viewModel.recentStops).to(beEmpty())
+        #expect(viewModel.recentStops.isEmpty)
     }
 
     @MainActor
@@ -116,7 +116,7 @@ class RecentStopsViewModelTests: OBATestCase {
 
         viewModel.loadData()
 
-        expect(viewModel.alarms.map(\.url)).to(contain(alarm.url))
+        #expect(viewModel.alarms.map(\.url).contains(alarm.url))
     }
 
     // MARK: - deleteAllRecentStops
@@ -131,11 +131,11 @@ class RecentStopsViewModelTests: OBATestCase {
         }
         let viewModel = RecentStopsViewModel(application: app)
         viewModel.loadData()
-        expect(viewModel.recentStops).toNot(beEmpty())
+        #expect(!viewModel.recentStops.isEmpty)
 
         viewModel.deleteAllRecentStops()
 
-        expect(viewModel.recentStops).to(beEmpty())
+        #expect(viewModel.recentStops.isEmpty)
     }
 
     // MARK: - delete(recentStop:)
@@ -155,8 +155,8 @@ class RecentStopsViewModelTests: OBATestCase {
 
         viewModel.delete(recentStop: stopA)
 
-        expect(viewModel.recentStops).toNot(contain(stopA))
-        expect(viewModel.recentStops).to(contain(stopB))
+        #expect(!viewModel.recentStops.contains(stopA))
+        #expect(viewModel.recentStops.contains(stopB))
     }
 
     // MARK: - delete(alarm:)
@@ -177,13 +177,13 @@ class RecentStopsViewModelTests: OBATestCase {
         app.userDataStore.add(alarm: alarm)
         let viewModel = RecentStopsViewModel(application: app)
         viewModel.loadData()
-        expect(viewModel.alarms.map(\.url)).to(contain(alarm.url))
+        #expect(viewModel.alarms.map(\.url).contains(alarm.url))
 
         // Await the returned Task so the remote DELETE completes inside the test
         // boundary — otherwise it races past tearDown.
         await viewModel.delete(alarm: alarm).value
 
-        expect(viewModel.alarms.map(\.url)).toNot(contain(alarm.url))
+        #expect(!viewModel.alarms.map(\.url).contains(alarm.url))
     }
 
     @MainActor
@@ -211,8 +211,8 @@ class RecentStopsViewModelTests: OBATestCase {
 
         await viewModel.delete(alarm: alarm).value
 
-        expect(viewModel.alarms.map(\.url)).toNot(contain(alarm.url))
-        expect(didHitRemote).to(beTrue())
+        #expect(!viewModel.alarms.map(\.url).contains(alarm.url))
+        #expect(didHitRemote)
     }
 
     @MainActor
@@ -237,7 +237,7 @@ class RecentStopsViewModelTests: OBATestCase {
         await viewModel.delete(alarm: alarm).value
 
         // Remote failure does not undo the local removal — that's the contract.
-        expect(viewModel.alarms.map(\.url)).toNot(contain(alarm.url))
+        #expect(!viewModel.alarms.map(\.url).contains(alarm.url))
     }
 
     // MARK: - loadData / nil currentRegion
@@ -281,12 +281,12 @@ class RecentStopsViewModelTests: OBATestCase {
         // Pin the precondition the test relies on: if a future stub region ever covers
         // (0,0) (e.g. a worldwide bounding box), `currentRegion` would become non-nil
         // and the assertion below would pass for the wrong reason.
-        expect(app.currentRegion).to(beNil())
+        #expect(app.currentRegion == nil)
 
         viewModel.loadData()
 
         // When currentRegion is nil, loadData() exits early and returns an empty list —
         // no accidental nil == nil matches.
-        expect(viewModel.recentStops).to(beEmpty())
+        #expect(viewModel.recentStops.isEmpty)
     }
 }

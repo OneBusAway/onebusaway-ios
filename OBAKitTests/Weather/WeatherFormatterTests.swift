@@ -8,7 +8,7 @@
 //
 
 import XCTest
-import Nimble
+import Testing
 @testable import OBAKitCore
 
 /// Tests for `WeatherFormatter`: pure-function helpers feeding both the UIKit
@@ -32,24 +32,24 @@ final class WeatherFormatterTests: XCTestCase {
             ("fog", "cloud.fog.fill")
         ]
         for c in cases {
-            expect(WeatherFormatter.systemImageName(for: c.key)) == c.symbol
+            #expect(WeatherFormatter.systemImageName(for: c.key) == c.symbol)
         }
     }
 
     func test_systemImageName_unknownKeyFallsBackToCloud() {
-        expect(WeatherFormatter.systemImageName(for: "tornado")) == "cloud.fill"
-        expect(WeatherFormatter.systemImageName(for: "")) == "cloud.fill"
+        #expect(WeatherFormatter.systemImageName(for: "tornado") == "cloud.fill")
+        #expect(WeatherFormatter.systemImageName(for: "") == "cloud.fill")
     }
 
     // MARK: - conditionText
 
     func test_conditionText_groupsDayAndNightVariants() {
-        expect(WeatherFormatter.conditionText(for: "clear-day")) == WeatherFormatter.conditionText(for: "clear-night")
-        expect(WeatherFormatter.conditionText(for: "partly-cloudy-day")) == WeatherFormatter.conditionText(for: "partly-cloudy-night")
+        #expect(WeatherFormatter.conditionText(for: "clear-day") == WeatherFormatter.conditionText(for: "clear-night"))
+        #expect(WeatherFormatter.conditionText(for: "partly-cloudy-day") == WeatherFormatter.conditionText(for: "partly-cloudy-night"))
     }
 
     func test_conditionText_unknownKeyReturnsPlaceholder() {
-        expect(WeatherFormatter.conditionText(for: "tornado")) == "—"
+        #expect(WeatherFormatter.conditionText(for: "tornado") == "—")
     }
 
     // MARK: - Metadata single-source-of-truth
@@ -65,8 +65,8 @@ final class WeatherFormatterTests: XCTestCase {
             comment: "Weather condition placeholder when the icon key is unknown."
         )
         for key in WeatherFormatter.knownIconKeys {
-            expect(WeatherFormatter.isKnownIconKey(key)) == true
-            expect(WeatherFormatter.conditionText(for: key)) != placeholder
+            #expect(WeatherFormatter.isKnownIconKey(key) == true)
+            #expect(WeatherFormatter.conditionText(for: key) != placeholder)
         }
     }
 
@@ -74,30 +74,30 @@ final class WeatherFormatterTests: XCTestCase {
 
     func test_formatTemp_usLocaleKeepsFahrenheit() {
         let result = WeatherFormatter.formatTemp(50, locale: Locale(identifier: "en_US"))
-        expect(result).to(contain("50"))
+        #expect(result.contains("50"))
     }
 
     func test_formatTemp_metricLocaleConvertsToCelsius() {
         // 50°F == 10°C
         let result = WeatherFormatter.formatTemp(50, locale: Locale(identifier: "fr_FR"))
-        expect(result).to(contain("10"))
+        #expect(result.contains("10"))
     }
 
     // MARK: - formatWindSpeed
 
     func test_formatWindSpeed_usLocaleUsesMph() {
         let result = WeatherFormatter.formatWindSpeed(16.0934, locale: Locale(identifier: "en_US"))
-        expect(result) == "10 mph"
+        #expect(result == "10 mph")
     }
 
     func test_formatWindSpeed_ukLocaleUsesMph() {
         let result = WeatherFormatter.formatWindSpeed(16.0934, locale: Locale(identifier: "en_GB"))
-        expect(result) == "10 mph"
+        #expect(result == "10 mph")
     }
 
     func test_formatWindSpeed_metricLocaleUsesKmh() {
         let result = WeatherFormatter.formatWindSpeed(10, locale: Locale(identifier: "fr_FR"))
-        expect(result) == "10 km/h"
+        #expect(result == "10 km/h")
     }
 
     // MARK: - formatTime
@@ -109,20 +109,20 @@ final class WeatherFormatterTests: XCTestCase {
         // of which hour the date lands on.
         let date = Date(timeIntervalSince1970: 1782525600)
         let result = WeatherFormatter.formatTime(date, locale: Locale(identifier: "en_US")).uppercased()
-        expect(result.contains("AM") || result.contains("PM")) == true
+        #expect((result.contains("AM") || result.contains("PM")) == true)
     }
 
     func test_formatTime_24HourLocaleHasNoAmPm() {
         let date = Date(timeIntervalSince1970: 1782525600)
         let result = WeatherFormatter.formatTime(date, locale: Locale(identifier: "fr_FR")).uppercased()
-        expect(result).toNot(contain("AM"))
-        expect(result).toNot(contain("PM"))
+        #expect(!result.contains("AM"))
+        #expect(!result.contains("PM"))
     }
 
     // MARK: - highLow
 
     func test_highLow_returnsNilForEmptyForecasts() {
-        expect(WeatherFormatter.highLow(from: [], locale: Locale(identifier: "en_US"))).to(beNil())
+        #expect(WeatherFormatter.highLow(from: [], locale: Locale(identifier: "en_US")) == nil)
     }
 
     /// `highLow` summarises whatever window it's handed — `upcomingHourly` is
@@ -167,10 +167,10 @@ final class WeatherFormatterTests: XCTestCase {
         let window = WeatherFormatter.upcomingHourly(from: hourly, now: now, calendar: calendar)
         let result = WeatherFormatter.highLow(from: window, locale: Locale(identifier: "en_US"))
 
-        expect(result).toNot(beNil())
+        #expect(result != nil)
         // 200°F would clearly show up if the cap weren't enforced.
-        expect(result?.high).toNot(contain("200"))
-        expect(result?.high).to(contain("59"))
-        expect(result?.low).to(contain("50"))
+        #expect(result?.high.contains("200") == false)
+        #expect(result?.high.contains("59") == true)
+        #expect(result?.low.contains("50") == true)
     }
 }

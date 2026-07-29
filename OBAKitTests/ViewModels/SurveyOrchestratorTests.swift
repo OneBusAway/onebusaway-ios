@@ -8,7 +8,7 @@
 //
 
 import XCTest
-import Nimble
+import Testing
 import CoreLocation
 @testable import OBAKit
 @testable import OBAKitCore
@@ -89,7 +89,7 @@ class SurveyOrchestratorTests: OBATestCase {
     @MainActor
     func test_isEligible_isFalseWhenSurveysDisabled() {
         dataStore.isSurveyEnabled = false
-        expect(self.orchestrator.isEligible()).to(beFalse())
+        #expect(!self.orchestrator.isEligible())
     }
 
     /// `alwaysShowSurveysOnStops` opens the gate regardless of launch count / reminder.
@@ -97,7 +97,7 @@ class SurveyOrchestratorTests: OBATestCase {
     func test_isEligible_isTrueWithAlwaysShowFlag() {
         dataStore.isSurveyEnabled = true
         dataStore.alwaysShowSurveysOnStops = true
-        expect(self.orchestrator.isEligible()).to(beTrue())
+        #expect(self.orchestrator.isEligible())
     }
 
     // MARK: - submitHero
@@ -119,13 +119,13 @@ class SurveyOrchestratorTests: OBATestCase {
             _ = try await throwingOrchestrator.submitHero(
                 survey: survey, answer: "yes", stopID: "1_TEST", stopLocation: nil
             )
-            fail("Expected submitHero to throw without an apiService")
+            Issue.record("Expected submitHero to throw without an apiService")
         } catch {
             // Expected — apiService is nil.
         }
 
-        expect(self.dataStore.isSurveyCompleted(surveyId: survey.id, userIdentifier: self.dataStore.surveyUserIdentifier)).to(beFalse())
-        expect(self.dataStore.nextSurveyReminderDate).to(beNil())
+        #expect(!self.dataStore.isSurveyCompleted(surveyId: survey.id, userIdentifier: self.dataStore.surveyUserIdentifier))
+        #expect(self.dataStore.nextSurveyReminderDate == nil)
         XCTAssertTrue(coordinator.canShowReviewPrompt(), "a failed submission must not start the engagement cooldown")
     }
 
@@ -149,12 +149,12 @@ class SurveyOrchestratorTests: OBATestCase {
         )
 
         guard case .completed = outcome else {
-            fail("Expected .completed; got \(outcome)")
+            Issue.record("Expected .completed; got \(outcome)")
             return
         }
         let userID = dataStore.surveyUserIdentifier
-        expect(self.dataStore.isSurveyCompleted(surveyId: survey.id, userIdentifier: userID)).to(beTrue())
-        expect(self.dataStore.nextSurveyReminderDate).toNot(beNil())
+        #expect(self.dataStore.isSurveyCompleted(surveyId: survey.id, userIdentifier: userID))
+        #expect(self.dataStore.nextSurveyReminderDate != nil)
         XCTAssertFalse(coordinator.canShowReviewPrompt(), "a successful submission is an engagement and starts the 14-day cooldown")
     }
 
@@ -181,13 +181,13 @@ class SurveyOrchestratorTests: OBATestCase {
 
         switch outcome {
         case .completed:
-            fail("Expected .needsRemainingQuestions; got .completed")
+            Issue.record("Expected .needsRemainingQuestions; got .completed")
         case .needsRemainingQuestions(let heroResponseID):
-            expect(heroResponseID).toNot(beEmpty())
+            #expect(!heroResponseID.isEmpty)
         }
         let userID = dataStore.surveyUserIdentifier
-        expect(self.dataStore.isSurveyCompleted(surveyId: survey.id, userIdentifier: userID)).to(beFalse())
-        expect(self.dataStore.nextSurveyReminderDate).toNot(beNil())
+        #expect(!self.dataStore.isSurveyCompleted(surveyId: survey.id, userIdentifier: userID))
+        #expect(self.dataStore.nextSurveyReminderDate != nil)
         XCTAssertFalse(coordinator.canShowReviewPrompt(), "a successful submission is an engagement and starts the 14-day cooldown")
     }
 
@@ -200,7 +200,7 @@ class SurveyOrchestratorTests: OBATestCase {
         let follow = Self.makeQuestion(id: 2, position: 2, type: .text)
         let survey = Self.makeSurvey(questions: [follow])
         // Sanity check the fixture: this survey genuinely has no hero.
-        expect(survey.heroQuestion).to(beNil())
+        #expect(survey.heroQuestion == nil)
         let coordinator = PromptCoordinator(userDefaults: userDefaults)
         let throwingOrchestrator = SurveyOrchestrator(surveyService: surveyService, promptCoordinator: coordinator)
 
@@ -208,17 +208,17 @@ class SurveyOrchestratorTests: OBATestCase {
             _ = try await throwingOrchestrator.submitHero(
                 survey: survey, answer: "yes", stopID: nil, stopLocation: nil
             )
-            fail("Expected submitHero to throw .missingHeroQuestion")
+            Issue.record("Expected submitHero to throw .missingHeroQuestion")
         } catch let SurveyOrchestrator.OrchestratorError.missingHeroQuestion(surveyID) {
-            expect(surveyID) == survey.id
+            #expect(surveyID == survey.id)
         } catch {
-            fail("Expected .missingHeroQuestion; got \(error)")
+            Issue.record("Expected .missingHeroQuestion; got \(error)")
         }
 
         // No bookkeeping should advance when the guard fires.
         let userID = dataStore.surveyUserIdentifier
-        expect(self.dataStore.isSurveyCompleted(surveyId: survey.id, userIdentifier: userID)).to(beFalse())
-        expect(self.dataStore.nextSurveyReminderDate).to(beNil())
+        #expect(!self.dataStore.isSurveyCompleted(surveyId: survey.id, userIdentifier: userID))
+        #expect(self.dataStore.nextSurveyReminderDate == nil)
         XCTAssertTrue(coordinator.canShowReviewPrompt(), "a guard-clause throw must not start the engagement cooldown")
     }
 
@@ -256,12 +256,12 @@ class SurveyOrchestratorTests: OBATestCase {
     func test_dismiss_setsReminderAndMarksCompleted() {
         let survey = Self.makeSurvey(questions: [Self.makeQuestion(id: 1)])
         let userID = dataStore.surveyUserIdentifier
-        expect(self.dataStore.nextSurveyReminderDate).to(beNil())
+        #expect(self.dataStore.nextSurveyReminderDate == nil)
 
         orchestrator.dismiss(survey)
 
-        expect(self.dataStore.nextSurveyReminderDate).toNot(beNil())
-        expect(self.dataStore.isSurveyCompleted(surveyId: survey.id, userIdentifier: userID)).to(beTrue())
+        #expect(self.dataStore.nextSurveyReminderDate != nil)
+        #expect(self.dataStore.isSurveyCompleted(surveyId: survey.id, userIdentifier: userID))
     }
 
     /// `dismiss(_:)` is a survey engagement, so it must start the coordinator's
@@ -288,7 +288,7 @@ class SurveyOrchestratorTests: OBATestCase {
     /// session check doesn't get short-circuited by a stale value.
     @MainActor
     func test_lastError_isNilBeforeRefresh() {
-        expect(self.orchestrator.lastError).to(beNil())
+        #expect(self.orchestrator.lastError == nil)
     }
 
     /// `lastError` proxies the underlying `SurveyService.lastError`. With
@@ -297,19 +297,19 @@ class SurveyOrchestratorTests: OBATestCase {
     /// `MapViewModel.checkForSurveyPrompt` can gate on it.
     @MainActor
     func test_lastError_reflectsUnderlyingService_afterFetchFailure() async {
-        expect(self.orchestrator.lastError).to(beNil())
+        #expect(self.orchestrator.lastError == nil)
 
         await orchestrator.refreshSurveys()
 
         guard let error = orchestrator.lastError as? APIError else {
-            fail("Expected APIError; got \(String(describing: orchestrator.lastError))")
+            Issue.record("Expected APIError; got \(String(describing: orchestrator.lastError))")
             return
         }
         switch error {
         case .surveyServiceNotConfigured:
             break  // expected
         default:
-            fail("Expected .surveyServiceNotConfigured; got \(error)")
+            Issue.record("Expected .surveyServiceNotConfigured; got \(error)")
         }
     }
 
@@ -323,10 +323,10 @@ class SurveyOrchestratorTests: OBATestCase {
         let after = Date()
 
         guard let reminder = dataStore.nextSurveyReminderDate else {
-            fail("nextSurveyReminderDate not set")
+            Issue.record("nextSurveyReminderDate not set")
             return
         }
-        expect(reminder).to(beGreaterThanOrEqualTo(before.addingTimeInterval(3 * 86400 - 60)))
-        expect(reminder).to(beLessThanOrEqualTo(after.addingTimeInterval(3 * 86400 + 60)))
+        #expect(reminder >= before.addingTimeInterval(3 * 86400 - 60))
+        #expect(reminder <= after.addingTimeInterval(3 * 86400 + 60))
     }
 }

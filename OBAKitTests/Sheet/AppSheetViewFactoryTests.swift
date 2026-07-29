@@ -9,7 +9,7 @@
 
 import XCTest
 import SwiftUI
-import Nimble
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -45,6 +45,6 @@ final class AppSheetViewFactoryTests: OBATestCase {
         // wiring itself (produces a UINavigationController wrapping
         // MoreViewController) is covered by MoreSheetHostTests — this test
         // owns the factory-to-host handoff only.
-        expect(host.application === application) == true
+        #expect(host.application === application)
     }
 }

@@ -9,7 +9,7 @@
 
 import Foundation
 import XCTest
-import Nimble
+import Testing
 import UIKit
 @testable import OBAKit
 
@@ -24,13 +24,13 @@ class ProgressHUDExtensionsTests: XCTestCase {
         ProgressHUD.showSuccessAndDismiss(message: "Test Message", dismissAfter: 0.1)
         
         // Verify the method completes without throwing
-        expect(true).to(beTrue())
+        #expect(true)
     }
     
     func test_showSuccessAndDismiss_withoutMessage() {
         ProgressHUD.showSuccessAndDismiss(dismissAfter: 0.1)
         
         // Verify the method completes without throwing
-        expect(true).to(beTrue())
+        #expect(true)
     }
 }

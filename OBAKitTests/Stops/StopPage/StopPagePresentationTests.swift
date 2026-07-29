@@ -10,7 +10,7 @@
 import XCTest
 @testable import OBAKit
 @testable import OBAKitCore
-import Nimble
+import Testing
 
 /// The Stop page has two presentations: pushed onto a navigation stack (dark map header, chrome in
 /// the navigation bar) and presented as a sheet over the map (light header, chrome in a bottom
@@ -54,8 +54,8 @@ class StopPagePresentationTests: OBATestCase {
         let byStop = application.viewRouter.makeStopController(stop: stop) as? StopPageViewController
         let byID = application.viewRouter.makeStopController(stopID: stop.id) as? StopPageViewController
 
-        expect(byStop?.showsBottomToolbar).to(beFalse())
-        expect(byID?.showsBottomToolbar).to(beFalse())
+        #expect(byStop?.showsBottomToolbar == false)
+        #expect(byID?.showsBottomToolbar == false)
     }
 
     func test_makeStopController_optsIntoTheSheetPresentation() throws {
@@ -64,8 +64,8 @@ class StopPagePresentationTests: OBATestCase {
         let byStop = application.viewRouter.makeStopController(stop: stop, showToolbarOnBottom: true) as? StopPageViewController
         let byID = application.viewRouter.makeStopController(stopID: stop.id, showToolbarOnBottom: true) as? StopPageViewController
 
-        expect(byStop?.showsBottomToolbar).to(beTrue())
-        expect(byID?.showsBottomToolbar).to(beTrue())
+        #expect(byStop?.showsBottomToolbar == true)
+        #expect(byID?.showsBottomToolbar == true)
     }
 
     /// The legacy screen has only the pushed layout, so the flag must be inert there rather than
@@ -76,7 +76,7 @@ class StopPagePresentationTests: OBATestCase {
 
         let controller = application.viewRouter.makeStopController(stop: stop, showToolbarOnBottom: true)
 
-        expect(controller).to(beAKindOf(StopViewController.self))
+        #expect(controller is StopViewController)
     }
 
     // MARK: - Navigation bar chrome
@@ -87,7 +87,7 @@ class StopPagePresentationTests: OBATestCase {
         let controller = StopPageViewController(application: application, stop: try makeStop())
         controller.loadViewIfNeeded()
 
-        expect(controller.navigationItem.rightBarButtonItems?.count).to(equal(3))
+        #expect(controller.navigationItem.rightBarButtonItems?.count == 3)
     }
 
     /// The sheet installs no bar items — they would duplicate the toolbar's controls inside a
@@ -96,7 +96,7 @@ class StopPagePresentationTests: OBATestCase {
         let controller = StopPageViewController(application: application, stop: try makeStop(), showToolbarOnBottom: true)
         controller.loadViewIfNeeded()
 
-        expect(controller.navigationItem.rightBarButtonItems).to(beNil())
+        #expect(controller.navigationItem.rightBarButtonItems == nil)
     }
 
     // MARK: - Preview mode
@@ -108,17 +108,17 @@ class StopPagePresentationTests: OBATestCase {
         let pushed = StopPageViewController(application: application, stop: stop)
         pushed.loadViewIfNeeded()
         pushed.enterPreviewMode()
-        expect(pushed.navigationItem.rightBarButtonItems).to(beNil())
+        #expect(pushed.navigationItem.rightBarButtonItems == nil)
 
         let sheet = StopPageViewController(application: application, stop: stop, showToolbarOnBottom: true)
         sheet.loadViewIfNeeded()
         sheet.enterPreviewMode()
-        expect(sheet.showsBottomToolbar).to(beFalse())
+        #expect(!sheet.showsBottomToolbar)
 
         // Committing the peek restores the toolbar, since the same instance is what gets
         // presented in the sheet.
         sheet.exitPreviewMode()
-        expect(sheet.showsBottomToolbar).to(beTrue())
+        #expect(sheet.showsBottomToolbar)
     }
 
     /// Leaving a preview must put the pushed page's bar items back, not leave it bare.
@@ -129,6 +129,6 @@ class StopPagePresentationTests: OBATestCase {
         controller.enterPreviewMode()
         controller.exitPreviewMode()
 
-        expect(controller.navigationItem.rightBarButtonItems?.count).to(equal(3))
+        #expect(controller.navigationItem.rightBarButtonItems?.count == 3)
     }
 }

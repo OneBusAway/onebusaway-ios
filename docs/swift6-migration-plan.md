@@ -340,7 +340,8 @@ anyway, but don't couple the two efforts.
 
 ### Phase 4 status: blocked on the toolchain (2026-07-16)
 
-Every test class is `@MainActor` and the warning count is down to 39, but the
+Every test class is `@MainActor` and the warning count is down to 39 (38 after
+a follow-up fixture fix; 8 after the Nimble conversion below), but the
 Swift 6 flip itself is **blocked on Xcode 27 beta 3**: its XCTest declares
 `XCTestCase`'s designated initializers nonisolated, and in the Swift 6
 language mode every `@MainActor` test class fails with "main actor-isolated
@@ -359,6 +360,161 @@ subclasses are the standard pattern everywhere else.
 `SWIFT_APPROACHABLE_CONCURRENCY: NO` (its measured, ratcheted status quo).
 Re-try the flip on the next Xcode release; if it still errors, file feedback.
 
+### Phase 4 burn-down: 38 → 8 (2026-07-28)
+
+The remaining warnings were never really "test" problems — **33 of 38 came from
+Nimble**, which is not `Sendable`-annotated and won't be (checked v14.0.0: it
+moved to `swift-tools-version:6.0` but `SyncExpectation`, `AsyncExpectation`,
+and `Matcher` are still plain unannotated structs, so there is no upstream fix
+to wait for). Each `await expect { … }.to(throwError { … })` in a `@MainActor`
+test class emits *two* diagnostics — one for the expectation, one for the
+matcher — as they cross into Nimble's nonisolated `async` `to()`.
+
+Converting those 15 async call sites (13 in `SurveyServiceTests`, 2 in
+`SurveyServiceStateTests`) to Swift Testing's `#expect(throws:)` removed exactly
+30 diagnostics: **38 → 8**, 1520 tests still green. This is a real fix, not a
+suppression — `@preconcurrency import Nimble` would also have cleared them, but
+by telling the compiler to stop looking.
+
+The load-bearing discovery: **`#expect` works inside an `XCTestCase` subclass.**
+The usual advice is that the two frameworks can't be mixed, but a Swift Testing
+expectation in an XCTest method compiles, and — verified by deliberately
+inverting an expectation — *fails the test properly*, with a better message than
+Nimble's:
+
+> `Expectation failed: expected error of type DecodingError, but ".captivePortal" of type APIError was thrown instead`
+
+That means Swift Testing can be adopted **incrementally, per assertion**, with
+no rewrite of `OBATestCase` or its fixtures. Two notes for the next conversion:
+`#expect(throws: SomeError.someCase)` requires `Equatable`, so for non-`Equatable`
+error types use `#expect(throws: SomeType.self)` and pattern-match its returned
+value; and drop the `await` on non-async bodies or you get
+`#UnnecessaryEffectMarker`.
+
+The 8 that remained were 3 Nimble polling calls plus 5 genuinely test-local
+issues: `TestData`'s statics (3 — two `static var`s that were nonisolated
+global mutable state, plus `mockHeading`, whose `OBAMockHeading` type was not
+yet `Sendable`), `DonationsConfigBundle` needing to restate `@unchecked
+Sendable` (1), and a `waitUntil` closure capture in `ApplicationTests` (1).
+These are diagnostic counts, not declaration counts. The polling calls are gone
+as of the next section, leaving those 5.
+
+### Polling: 8 → 5, and two of three sites became deterministic (2026-07-28)
+
+The three `toEventually` / `toNever` / `toEventuallyNot` calls were Nimble's
+last irreplaceable feature. They turned out to be two different problems.
+
+**Two of them didn't need polling at all.** `StopViewModel.refreshSurveys()`
+fired an *unowned* `Task`, so the test had no completion to await and had to
+poll `counter.hits` — with a second `toNever(beGreaterThan(1))` bolted on
+purely to stop `toEventually` latching onto a transient `1` on its way to `3`.
+Giving that task an owner (`private(set) var surveyRefreshTask`) collapses both
+fuzzy assertions into one exact one:
+
+```swift
+await viewModel.surveyRefreshTask?.value
+expect(counter.hits) == 1
+```
+
+Instant instead of timeout-bounded, and it rules out *both* "never fetched" and
+"fetched per refresh" — which the polled version could not. Verified
+load-bearing by deleting the `await`: `hits` is then `0` and the test fails.
+Storing the task also fixes a real (if minor) production wart — it was
+previously uncancellable; it and `liveActivityToastDismissTask` are now
+cancelled in `deinit`.
+
+**The third genuinely needs polling.** `VehiclesViewModel.startAutoRefresh()`
+spawns a non-terminating `while !Task.isCancelled { fetch; sleep }` loop, so
+there is no completion to await, and signalling from the mock wouldn't help
+(the request arriving and `lastUpdated` being set are different moments). That
+one site is served by `OBAKitTests/Helpers/Polling.swift` — a ~25-line
+`poll(until:)` built on `Issue.record`, which (like `#expect`) works correctly
+inside an `XCTestCase` subclass and reports at the call site via
+`#_sourceLocation`. Verified by making it fail deliberately.
+
+Prefer awaiting a real signal over polling: most "eventually" assertions are a
+symptom of production code firing a `Task` nobody owns.
+
+### Phase 4 reaches zero, and the target is locked (2026-07-28)
+
+The last five were test-local:
+
+- **`TestData.mockSeattleLocation` / `mockTampaLocation`** were `static var`
+  holding immediate-closure results that nothing ever assigns to — `let` clears
+  the "nonisolated global shared mutable state" diagnostic. They must stay
+  *single shared instances* rather than becoming computed properties:
+  `LocationServiceTests` compares against them with `==`, and
+  `CLLocation`/`CLHeading` inherit NSObject identity comparison, so a fresh
+  instance per access would fail those tests.
+- **`OBAMockHeading`** is now `public final` with `let` stored properties and
+  `@unchecked Sendable`. Making it `final` first is what makes the unchecked
+  promise honest — per the Phase 1 guidance, an `open` class lets a future
+  subclass add mutable state and silently inherit it. (`final` drops the
+  implicit `public` that `open` carried, so the class and its overrides need
+  explicit `public`.)
+- **`DonationsConfigBundle`** restates `@unchecked Sendable`, matching the
+  `PolicyBundle` / `FeedbackConfigBundle` precedent in 17b04d4e.
+- **`ApplicationTests`'s `waitUntil`** — Nimble again; its `done` callback is a
+  non-Sendable `() -> Void` captured by a `@Sendable` operation block. Replaced
+  with an `async` test and a `withCheckedContinuation`, which is also a more
+  honest way to say "drain the queue".
+
+With the count at zero, `OBAKitTests/project.yml` dropped its
+`SWIFT_WARNINGS_AS_ERRORS_GROUPS: ""` opt-out, so **every target in the project
+now escalates the five concurrency groups to errors.** Verified in both
+directions: the build passes clean, and reverting one fixture to `var` turns it
+straight into `error: … [#MutableGlobalVariable]`.
+
+Dropping the opt-out immediately caught two diagnostics the ratchet had never
+been able to see — see the macro-expansion blind spot under "Measurement
+gotchas". That is the clearest argument for the lock: the ratchet counts what
+it can grep, the compiler checks everything.
+
+### Is Nimble still worth it?
+
+Measured on this suite: 132 of 187 test files import Nimble and there are 2,867
+`expect(` calls — but 1,373 are the bare operator form (`expect(x) == y`), and
+the matcher histogram is dominated by `beNil` (470), `beTrue`/`beFalse` (277),
+`beEmpty` (137), `equal` (132), `contain` (75). Essentially all of it is sugar
+over equality and nil checks, which `#expect(a == b)` covers natively — the
+macro decomposes the expression and reports both operands, which is the exact
+thing matcher DSLs were invented to provide over `XCTAssertTrue(a == b)`.
+
+Nimble's one genuinely differentiated feature was **polling**, used three times
+in the whole suite. Swift Testing has no equivalent: `confirmation()` counts
+events within a scope and `.timeLimit()` is a whole-test timeout; neither polls
+a condition until it becomes true. (A third-party package,
+`dfed/swift-testing-expectation`, exists to fill this gap.) As of the polling
+section above, all three are converted and the capability lives in
+`Helpers/Polling.swift` — so **Nimble no longer does anything this suite
+cannot do without it.**
+
+What remains is volume, not capability. Removing the dependency means
+rewriting ~2,860 assertions across 132 files:
+
+| Nimble | Count | Swift Testing |
+|---|---:|---|
+| `expect(x) == y` | 1,373 | `#expect(x == y)` |
+| `.to(beNil())` / `.toNot(beNil())` | 470 | `#expect(x == nil)` / `!= nil` |
+| `.to(beTrue())` / `.to(beFalse())` | 277 | `#expect(x)` / `#expect(!x)` |
+| `.to(beEmpty())` / `.toNot(beEmpty())` | 137 | `#expect(x.isEmpty)` / `!` |
+| `fail("…")` | 133 | `Issue.record("…")` |
+| `.to(equal(y))` / `.toNot(equal(y))` | 132 | `#expect(x == y)` / `!=` |
+| **`.to(beCloseTo(y, within: t))`** | **95** | **needs a helper** |
+| `.to(contain(y))` / `.toNot(...)` | 75 | `#expect(x.contains(y))` |
+| `.to(beGreaterThan/LessThan/OrEqualTo)` | 51 | `#expect(x > y)` etc. |
+| `.to(haveCount(n))` | 13 | `#expect(x.count == n)` |
+| `.to(beAKindOf(T))` / `beIdenticalTo` | 7 | `#expect(x is T)` / `===` |
+| `.to(throwError…)` (sync remainder) | 7 | `#expect(throws:)` |
+| `waitUntil { done in }` | 3 | `confirmation` or restructure |
+
+Mostly scriptable, and landable file-by-file because `#expect` works inside
+`XCTestCase` — no test restructuring, no `OBATestCase` changes. The real risk
+is not compilation but **silently weakening an assertion**, which a green suite
+won't catch: guard it by checking that the converted `#expect` count matches
+the former `expect(` count per file, reviewing diffs in batches, and
+spot-checking with deliberate inversions.
+
 **Toolchain caveat (2026-07-16, cost two CI cycles to isolate):** building
 with **Xcode 26.2** crashes the Swift 6 test suite at runtime — a
 deterministic malloc abort in the isolated-deinit machinery
@@ -376,11 +532,13 @@ same-generation compiler on the GA images). Watch the 11 explicit
 `isolated deinit` sites on iOS 18 devices regardless: they use the
 back-deploy shim compiled by whatever Xcode builds the release.
 
-Consequence of the pin worth remembering: the test target compiles with only
-`complete`-checking warnings, not Swift 6 enforcement — concurrency
-regressions in test-only helpers and mocks (e.g. the `@unchecked Sendable`
-mocks in `OBAKitTests/Helpers/Mocks/`) won't be compiler errors until the pin
-is lifted. The ratchet still counts their warnings.
+Consequence of the pin worth remembering: the test target compiles in the
+Swift 5 language mode, so it does not get *full* Swift 6 enforcement. It is no
+longer unguarded, though — as of 2026-07-28 it reached zero concurrency
+warnings and dropped its `SWIFT_WARNINGS_AS_ERRORS_GROUPS` opt-out, so the five
+concurrency diagnostic groups are escalated to errors here exactly as they are
+on every other target. A regression in a test-only helper or mock is now a
+build failure, not a ratcheted warning (verified by reintroducing one).
 
 ## Dependency notes
 
@@ -393,6 +551,32 @@ is lifted. The ratchet still counts their warnings.
 
 ## Measurement gotchas (for whoever re-runs the numbers)
 
+- **Use `scripts/measure_concurrency`. Do not hand-roll the measurement build.**
+  Xcode's compilation cache replays cached object files *without re-emitting
+  their diagnostics*, so every cache-hit file silently contributes zero
+  warnings. A fresh `-derivedDataPath` does **not** save you: the cache lives at
+  `COMPILATION_CACHE_CAS_PATH`, which defaults to a machine-global directory
+  (`~/Library/Developer/Xcode/DerivedData/CompilationCache.noindex`) *outside*
+  derived data. Measured 2026-07-28 on a single unchanged tree, the true count
+  was **38** while warm builds variously reported **4, 12, 16, and 17** — all
+  from `xcodebuild ... -derivedDataPath <fresh dir>`. The failure mode is
+  asymmetric and nasty: a too-low baseline committed from a warm build wedges CI
+  for everyone, because CI runs cold and counts correctly (higher). Cache hits
+  are visible in the log as compile tasks that "failed with exit code 0 but
+  produced no further output"; `concurrency_ratchet --update` now warns when
+  it sees a cluster of them.
+- **The ratchet cannot see inside macro expansions.** Diagnostics raised in
+  expanded code are reported against the expansion buffer (`macro expansion
+  #expect:2:42: warning: …`), with the real file named only in a follow-up
+  "expanded code originates here" note — so `concurrency_ratchet`'s repo-path
+  anchor never matches them. Found 2026-07-28: the `#expect(throws:)`
+  conversion left two `#RegionIsolation` diagnostics inside expansions while
+  the ratchet reported **zero**. They surfaced only when OBAKitTests dropped
+  its `SWIFT_WARNINGS_AS_ERRORS_GROUPS` opt-out and they became build errors
+  (fix: `_ =` the unused result, so the macro's closure returns `Void` instead
+  of a main-actor-isolated value it would have to *send*). Now that every
+  target escalates the concurrency groups to errors, **the compiler is the real
+  gate and the ratchet is a secondary signal.**
 - Reproduce the baseline with:
   `xcodebuild build -project OBAKit.xcodeproj -scheme App -destination 'platform=iOS Simulator,name=iPhone 17 Pro' SWIFT_STRICT_CONCURRENCY=complete`
   then count `sort -u`'d `warning:` lines under the repo path. Don't pass
@@ -413,13 +597,16 @@ is lifted. The ratchet still counts their warnings.
 | 1 | OBAKitCore (+ approachable concurrency) | 119 → 0 | Core in Swift 6 mode | ✅ done |
 | 2 | OBAKit (+ MainActor default) | 467 → 0 | OBAKit in Swift 6 mode | ✅ done |
 | 3 | App, OBAWidget, KiedyBus | 14 → 0 | whole project `SWIFT_VERSION = 6.0` | ✅ done |
-| 4 | OBAKitTests | 39 remain* | tests in Swift 6 mode | ⛔ blocked on Xcode 27 b3 XCTest (see Phase 4 status) |
+| 4 | OBAKitTests | 0* | tests in Swift 6 mode | ⛔ blocked on Xcode 27 b3 XCTest (see Phase 4 status) |
 
 *\* The test count spiked to 596 after Phase 1 (`OBATestCase` going
 `@MainActor` surfaced autoclosure warnings), then collapsed once every
 remaining plain-`XCTestCase` class was annotated `@MainActor`.
-Ratchet baseline: 999 → 733 (Phase 1) → 57 (Phase 2) → 39 (Phase 3; all 39
-are in the pinned OBAKitTests target).*
+Ratchet baseline: 999 → 733 (Phase 1) → 57 (Phase 2) → 39 (Phase 3) → 38 →
+8 (2026-07-28, Nimble → `#expect(throws:)`) → 5 (polling sites) → **0**
+(test-local fixtures; the target is now locked with the project-wide
+`SWIFT_WARNINGS_AS_ERRORS_GROUPS`, though the Swift 6 *language mode* flip is
+still blocked on XCTest).*
 
 ### Phase 1 implementation notes (2026-07-16)
 

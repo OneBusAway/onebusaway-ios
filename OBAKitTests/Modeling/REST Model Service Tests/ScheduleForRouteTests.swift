@@ -8,7 +8,7 @@
 //
 
 import XCTest
-import Nimble
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -31,13 +31,13 @@ class ScheduleForRouteTests: OBATestCase {
 
     func test_urlBuilder_generatesCorrectURL() {
         let url = restService.urlBuilder.getScheduleForRoute(id: routeID)
-        expect(url.absoluteString).to(contain("/api/where/schedule-for-route/\(routeID).json"))
+        #expect(url.absoluteString.contains("/api/where/schedule-for-route/\(routeID).json"))
     }
 
     func test_urlBuilder_withDate_includesDateParameter() {
         let date = Date(timeIntervalSince1970: 1765008000) // 2025-12-06
         let url = restService.urlBuilder.getScheduleForRoute(id: routeID, date: date)
-        expect(url.absoluteString).to(contain("date="))
+        #expect(url.absoluteString.contains("date="))
     }
 
     // MARK: - Model Decoding Tests
@@ -46,10 +46,9 @@ class ScheduleForRouteTests: OBATestCase {
         let response = try await restService.getScheduleForRoute(routeID: routeID)
         let schedule = response.entry
 
-        expect(schedule.routeID) == "1_100223"
-        expect(schedule.scheduleDate).toNot(beNil())
-        expect(schedule.serviceIDs).toNot(beEmpty())
-        expect(schedule.stopTripGroupings).toNot(beEmpty())
+        #expect(schedule.routeID == "1_100223")
+        #expect(!schedule.serviceIDs.isEmpty)
+        #expect(!schedule.stopTripGroupings.isEmpty)
     }
 
     func test_stopTripGroupings_parsing() async throws {
@@ -57,11 +56,10 @@ class ScheduleForRouteTests: OBATestCase {
         let schedule = response.entry
 
         let grouping = try XCTUnwrap(schedule.stopTripGroupings.first)
-        expect(grouping.directionID).toNot(beNil())
-        expect(grouping.stopIDs).toNot(beEmpty())
-        expect(grouping.tripHeadsigns).toNot(beEmpty())
-        expect(grouping.tripIDs).toNot(beEmpty())
-        expect(grouping.tripsWithStopTimes).toNot(beEmpty())
+        #expect(!grouping.stopIDs.isEmpty)
+        #expect(!grouping.tripHeadsigns.isEmpty)
+        #expect(!grouping.tripIDs.isEmpty)
+        #expect(!grouping.tripsWithStopTimes.isEmpty)
     }
 
     func test_tripsWithStopTimes_parsing() async throws {
@@ -71,8 +69,8 @@ class ScheduleForRouteTests: OBATestCase {
         let grouping = try XCTUnwrap(schedule.stopTripGroupings.first)
         let tripWithStopTimes = try XCTUnwrap(grouping.tripsWithStopTimes.first)
 
-        expect(tripWithStopTimes.tripID).toNot(beEmpty())
-        expect(tripWithStopTimes.stopTimes).toNot(beEmpty())
+        #expect(!tripWithStopTimes.tripID.isEmpty)
+        #expect(!tripWithStopTimes.stopTimes.isEmpty)
     }
 
     func test_stopTimes_parsing() async throws {
@@ -83,13 +81,13 @@ class ScheduleForRouteTests: OBATestCase {
         let tripWithStopTimes = try XCTUnwrap(grouping.tripsWithStopTimes.first)
         let stopTime = try XCTUnwrap(tripWithStopTimes.stopTimes.first)
 
-        expect(stopTime.stopID).toNot(beEmpty())
-        expect(stopTime.tripID).toNot(beEmpty())
+        #expect(!stopTime.stopID.isEmpty)
+        #expect(!stopTime.tripID.isEmpty)
         // arrivalTime and departureTime are in seconds from midnight
-        expect(stopTime.arrivalTime).to(beGreaterThan(0))
-        expect(stopTime.departureTime).to(beGreaterThan(0))
-        expect(stopTime.arrivalEnabled).to(beTrue())
-        expect(stopTime.departureEnabled).to(beTrue())
+        #expect(stopTime.arrivalTime > 0)
+        #expect(stopTime.departureTime > 0)
+        #expect(stopTime.arrivalEnabled)
+        #expect(stopTime.departureEnabled)
     }
 
     func test_arrivalTime_isSecondsFromMidnight() async throws {
@@ -102,8 +100,8 @@ class ScheduleForRouteTests: OBATestCase {
 
         // The fixture has arrivalTime: 31500 which equals 8:45 AM (31500 / 3600 = 8.75 hours)
         // Times should be between 0 (midnight) and 86400 (next midnight) or slightly beyond for overnight routes
-        expect(stopTime.arrivalTime).to(beGreaterThanOrEqualTo(0))
-        expect(stopTime.arrivalTime).to(beLessThan(86400 * 2)) // Allow for overnight schedules
+        #expect(stopTime.arrivalTime >= 0)
+        #expect(stopTime.arrivalTime < 86400 * 2)  // Allow for overnight schedules
     }
 
     // MARK: - References Tests
@@ -111,14 +109,14 @@ class ScheduleForRouteTests: OBATestCase {
     func test_references_containsRoutes() async throws {
         let response = try await restService.getScheduleForRoute(routeID: routeID)
 
-        expect(response.references).toNot(beNil())
-        expect(response.references?.routes).toNot(beEmpty())
+        #expect(response.references != nil)
+        #expect(response.references?.routes.isEmpty == false)
     }
 
     func test_references_containsStops() async throws {
         let response = try await restService.getScheduleForRoute(routeID: routeID)
 
-        expect(response.references).toNot(beNil())
-        expect(response.references?.stops).toNot(beEmpty())
+        #expect(response.references != nil)
+        #expect(response.references?.stops.isEmpty == false)
     }
 }

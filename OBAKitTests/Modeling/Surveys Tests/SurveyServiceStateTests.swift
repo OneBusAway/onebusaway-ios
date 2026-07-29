@@ -6,7 +6,7 @@
 //
 
 import XCTest
-import Nimble
+import Testing
 @testable import OBAKitCore
 
 final class SurveyServiceStateTests: OBATestCase {
@@ -36,7 +36,7 @@ final class SurveyServiceStateTests: OBATestCase {
         setAppLaunchCount(3)
 
         let result = surveyService.shouldShowSurvey()
-        expect(result).to(beFalse())
+        #expect(!result)
     }
 
     func test_shouldShowSurvey_returnsFalse_whenAppLaunchIsZero() {
@@ -44,7 +44,7 @@ final class SurveyServiceStateTests: OBATestCase {
         setAppLaunchCount(0)
 
         let result = surveyService.shouldShowSurvey()
-        expect(result).to(beFalse())
+        #expect(!result)
     }
 
     func test_shouldShowSurvey_returnsFalse_whenLaunchCountNotMultipleOfThree() {
@@ -52,7 +52,7 @@ final class SurveyServiceStateTests: OBATestCase {
         setAppLaunchCount(4)
 
         let result = surveyService.shouldShowSurvey()
-        expect(result).to(beFalse())
+        #expect(!result)
     }
 
     func test_shouldShowSurvey_returnsTrue_whenLaunchCountIsMultipleOfThree() {
@@ -60,7 +60,7 @@ final class SurveyServiceStateTests: OBATestCase {
         setAppLaunchCount(6)
 
         let result = surveyService.shouldShowSurvey()
-        expect(result).to(beTrue())
+        #expect(result)
     }
 
     func test_shouldShowSurvey_returnsFalse_whenNextReminderDateIsInFuture() {
@@ -69,7 +69,7 @@ final class SurveyServiceStateTests: OBATestCase {
         testUserDataStore.nextSurveyReminderDate = Date().addingTimeInterval(3600)
 
         let result = surveyService.shouldShowSurvey()
-        expect(result).to(beFalse())
+        #expect(!result)
     }
 
     func test_shouldShowSurvey_returnsTrue_whenNextReminderDateIsInPast() {
@@ -78,7 +78,7 @@ final class SurveyServiceStateTests: OBATestCase {
         testUserDataStore.nextSurveyReminderDate = Date().addingTimeInterval(-300)
 
         let result = surveyService.shouldShowSurvey()
-        expect(result).to(beTrue())
+        #expect(result)
     }
 
     func test_shouldShowSurvey_returnsTrue_whenReminderDateIsNil() {
@@ -87,7 +87,7 @@ final class SurveyServiceStateTests: OBATestCase {
         testUserDataStore.nextSurveyReminderDate = nil
 
         let result = surveyService.shouldShowSurvey()
-        expect(result).to(beTrue())
+        #expect(result)
     }
 
     // MARK: - Issue 9: alwaysShowSurveysOnStops should not bypass isSurveyEnabled
@@ -98,7 +98,7 @@ final class SurveyServiceStateTests: OBATestCase {
         setAppLaunchCount(3)
 
         let result = surveyService.shouldShowSurvey()
-        expect(result).to(beFalse())
+        #expect(!result)
     }
 
     func test_shouldShowSurvey_returnsTrue_whenEnabledAndAlwaysShowIsOn() {
@@ -108,7 +108,7 @@ final class SurveyServiceStateTests: OBATestCase {
         setAppLaunchCount(1)
 
         let result = surveyService.shouldShowSurvey()
-        expect(result).to(beTrue())
+        #expect(result)
     }
 
     // MARK: - setNextReminderDate
@@ -119,10 +119,10 @@ final class SurveyServiceStateTests: OBATestCase {
         surveyService.setNextReminderDate()
 
         let storedDate = testUserDataStore.nextSurveyReminderDate
-        expect(storedDate).toNot(beNil())
+        #expect(storedDate != nil)
 
         let diff = Calendar.current.dateComponents([.day], from: now, to: storedDate!).day
-        expect(diff).to(equal(3))
+        #expect(diff == 3)
     }
 
     func test_setNextReminderDate_overwritesExistingDate() {
@@ -131,8 +131,10 @@ final class SurveyServiceStateTests: OBATestCase {
         surveyService.setNextReminderDate()
 
         let newDate = testUserDataStore.nextSurveyReminderDate
-        expect(newDate).toNot(beNil())
-        expect(newDate).to(beGreaterThan(Date()))
+        #expect(newDate != nil)
+        // `newDate` is Date?; Swift won't compare Date? to Date. `map` keeps
+        // Nimble's beGreaterThan semantics, where a nil actual is a failure.
+        #expect(newDate.map { $0 > Date() } == true)
     }
 
     // MARK: - markSurveyCompleted
@@ -142,7 +144,7 @@ final class SurveyServiceStateTests: OBATestCase {
         surveyService.markSurveyCompleted(survey)
 
         let userID = testUserDataStore.surveyUserIdentifier
-        expect(self.testUserDataStore.isSurveyCompleted(surveyId: 7, userIdentifier: userID)).to(beTrue())
+        #expect(self.testUserDataStore.isSurveyCompleted(surveyId: 7, userIdentifier: userID))
     }
 
     // MARK: - markSurveyForLater
@@ -153,7 +155,7 @@ final class SurveyServiceStateTests: OBATestCase {
 
         let userID = testUserDataStore.surveyUserIdentifier
         // Immediately after marking, shouldShowSurveyLater returns false (0 launches since marking)
-        expect(self.testUserDataStore.shouldShowSurveyLater(surveyId: 9, userIdentifier: userID)).to(beFalse())
+        #expect(!self.testUserDataStore.shouldShowSurveyLater(surveyId: 9, userIdentifier: userID))
     }
 
     // MARK: - Combined Behavior
@@ -162,31 +164,31 @@ final class SurveyServiceStateTests: OBATestCase {
         testUserDataStore.isSurveyEnabled = true
         setAppLaunchCount(3)
 
-        expect(self.surveyService.shouldShowSurvey()).to(beTrue())
+        #expect(self.surveyService.shouldShowSurvey())
     }
 
     func test_shouldShowSurvey_whenLaunchIsThirdButFeatureDisabled_returnsFalse() {
         testUserDataStore.isSurveyEnabled = false
         setAppLaunchCount(3)
 
-        expect(self.surveyService.shouldShowSurvey()).to(beFalse())
+        #expect(!self.surveyService.shouldShowSurvey())
     }
 
     // MARK: - formatCheckboxAnswer
 
     func test_formatCheckboxAnswer_normalCase() throws {
         let result = try SurveyService.formatCheckboxAnswer(["Option A", "Option B"])
-        expect(result).to(equal("[\"Option A\",\"Option B\"]"))
+        #expect(result == "[\"Option A\",\"Option B\"]")
     }
 
     func test_formatCheckboxAnswer_emptyArray() throws {
         let result = try SurveyService.formatCheckboxAnswer([])
-        expect(result).to(equal("[]"))
+        #expect(result == "[]")
     }
 
     func test_formatCheckboxAnswer_singleItem() throws {
         let result = try SurveyService.formatCheckboxAnswer(["Only"])
-        expect(result).to(equal("[\"Only\"]"))
+        #expect(result == "[\"Only\"]")
     }
 
     // MARK: - createQuestionResponse
@@ -201,10 +203,10 @@ final class SurveyServiceStateTests: OBATestCase {
 
         let response = SurveyService.createQuestionResponse(question: question, answer: "Great")
 
-        expect(response.questionId).to(equal(42))
-        expect(response.questionType).to(equal("text"))
-        expect(response.questionLabel).to(equal("How are you?"))
-        expect(response.answer).to(equal("Great"))
+        #expect(response.questionId == 42)
+        #expect(response.questionType == "text")
+        #expect(response.questionLabel == "How are you?")
+        #expect(response.answer == "Great")
     }
 
     func test_createQuestionResponse_radioType() {
@@ -217,8 +219,8 @@ final class SurveyServiceStateTests: OBATestCase {
 
         let response = SurveyService.createQuestionResponse(question: question, answer: "A")
 
-        expect(response.questionType).to(equal("radio"))
-        expect(response.questionLabel).to(equal("Pick one"))
+        #expect(response.questionType == "radio")
+        #expect(response.questionLabel == "Pick one")
     }
 
     // MARK: - Submit methods with nil apiService
@@ -230,31 +232,32 @@ final class SurveyServiceStateTests: OBATestCase {
             answer: "test"
         )
 
-        await expect {
-            try await self.surveyService.submitHeroQuestion(
+        // `_ =`: `surveyService` is @MainActor, so its return value is
+        // main-actor-isolated and can't be handed back as the macro's `sending`
+        // result. The test only cares about the thrown error.
+        let thrown = await #expect(throws: APIError.self) {
+            _ = try await self.surveyService.submitHeroQuestion(
                 survey: survey,
                 heroQuestionResponse: response
             )
-        }.to(throwError { error in
-            if case APIError.surveyServiceNotConfigured = error {
-                return
-            }
-            fail("Expected APIError.surveyServiceNotConfigured but got \(error)")
-        })
+        }
+        guard case .surveyServiceNotConfigured = thrown else {
+            Issue.record("Expected APIError.surveyServiceNotConfigured but got \(String(describing: thrown))")
+            return
+        }
     }
 
     func test_submitAdditionalQuestions_nilApiService_throws() async {
-        await expect {
-            try await self.surveyService.submitAdditionalQuestions(
+        let thrown = await #expect(throws: APIError.self) {
+            _ = try await self.surveyService.submitAdditionalQuestions(
                 responseID: "some-id",
                 additionalResponses: []
             )
-        }.to(throwError { error in
-            if case APIError.surveyServiceNotConfigured = error {
-                return
-            }
-            fail("Expected APIError.surveyServiceNotConfigured but got \(error)")
-        })
+        }
+        guard case .surveyServiceNotConfigured = thrown else {
+            Issue.record("Expected APIError.surveyServiceNotConfigured but got \(String(describing: thrown))")
+            return
+        }
     }
 
     // MARK: - visibleSurveys re-filter on state changes
@@ -263,27 +266,27 @@ final class SurveyServiceStateTests: OBATestCase {
         let service = await buildServiceWithLoadedSurveys()
         let initialVisible = service.visibleSurveys.count
 
-        expect(initialVisible).to(beGreaterThan(0))
+        #expect(initialVisible > 0)
 
         // Marking a survey completed should trigger re-filter of visibleSurveys
         let survey = service.allSurveys.first!
         service.markSurveyCompleted(survey)
 
         // visibleSurveys should be refreshed (count stays same since isActive doesn't depend on completion)
-        expect(service.visibleSurveys.count).to(equal(initialVisible))
+        #expect(service.visibleSurveys.count == initialVisible)
     }
 
     func test_markSurveyForLater_updatesVisibleSurveys() async {
         let service = await buildServiceWithLoadedSurveys()
         let initialVisible = service.visibleSurveys.count
 
-        expect(initialVisible).to(beGreaterThan(0))
+        #expect(initialVisible > 0)
 
         let survey = service.allSurveys.first!
         service.markSurveyForLater(survey)
 
         // visibleSurveys should be refreshed
-        expect(service.visibleSurveys.count).to(equal(initialVisible))
+        #expect(service.visibleSurveys.count == initialVisible)
     }
 
     // MARK: - Helpers

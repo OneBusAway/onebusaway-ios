@@ -8,7 +8,7 @@
 //
 
 import XCTest
-import Nimble
+import Testing
 import CoreLocation
 @testable import OBAKit
 @testable import OBAKitCore
@@ -25,6 +25,6 @@ class CurrentTimeModelOperationTests: OBATestCase {
             with: Fixtures.loadData(file: "current_time.json"))
 
         let response = try await restService.getCurrentTime()
-        expect(response.currentTime) == 1343587068277
+        #expect(response.currentTime == 1343587068277)
     }
 }

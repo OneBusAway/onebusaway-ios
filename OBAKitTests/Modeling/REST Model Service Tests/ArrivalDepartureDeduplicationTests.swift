@@ -8,7 +8,7 @@
 //
 
 import XCTest
-import Nimble
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -52,7 +52,7 @@ class ArrivalDepartureDeduplicationTests: OBATestCase {
     func test_filteringTerminalDuplicates_handlesEmptyArray() {
         let empty: [ArrivalDeparture] = []
         let filtered = empty.filteringTerminalDuplicates()
-        expect(filtered).to(beEmpty())
+        #expect(filtered.isEmpty)
     }
 
     /// A single-element array passes through unchanged.
@@ -61,12 +61,12 @@ class ArrivalDepartureDeduplicationTests: OBATestCase {
             id: campusParkwayStopID, minutesBefore: 5, minutesAfter: 30
         ).entry
 
-        expect(arrivals.arrivalsAndDepartures.count) == 1
+        #expect(arrivals.arrivalsAndDepartures.count == 1)
 
         let filtered = arrivals.arrivalsAndDepartures.filteringTerminalDuplicates()
-        expect(filtered.count) == 1
-        expect(filtered[0].tripID) == arrivals.arrivalsAndDepartures[0].tripID
-        expect(filtered[0].stopID) == arrivals.arrivalsAndDepartures[0].stopID
+        #expect(filtered.count == 1)
+        #expect(filtered[0].tripID == arrivals.arrivalsAndDepartures[0].tripID)
+        #expect(filtered[0].stopID == arrivals.arrivalsAndDepartures[0].stopID)
     }
 
     // MARK: - No False Positives
@@ -80,18 +80,18 @@ class ArrivalDepartureDeduplicationTests: OBATestCase {
         ).entry
 
         let arrDeps = arrivals.arrivalsAndDepartures
-        expect(arrDeps.count) == 5
+        #expect(arrDeps.count == 5)
 
         // Pre-condition: entries [0] and [1] share a vehicleID but have different tripIDs.
         // They are different trips on the same block, not terminal duplicates.
-        expect(arrDeps[0].vehicleID) == "1_4361"
-        expect(arrDeps[1].vehicleID) == "1_4361"
-        expect(arrDeps[0].tripID).toNot(equal(arrDeps[1].tripID))
+        #expect(arrDeps[0].vehicleID == "1_4361")
+        #expect(arrDeps[1].vehicleID == "1_4361")
+        #expect(arrDeps[0].tripID != arrDeps[1].tripID)
 
         let filtered = arrDeps.filteringTerminalDuplicates()
 
         // All 5 entries should be preserved because they all have unique (tripID, stopID, routeID).
-        expect(filtered.count) == arrDeps.count
+        #expect(filtered.count == arrDeps.count)
     }
 
     /// A fixture with no terminal duplicates should pass through completely unchanged.
@@ -101,11 +101,11 @@ class ArrivalDepartureDeduplicationTests: OBATestCase {
         ).entry
 
         let arrDeps = arrivals.arrivalsAndDepartures
-        expect(arrDeps.count) == 1
+        #expect(arrDeps.count == 1)
 
         let filtered = arrDeps.filteringTerminalDuplicates()
-        expect(filtered.count) == 1
-        expect(filtered[0].id) == arrDeps[0].id
+        #expect(filtered.count == 1)
+        #expect(filtered[0].id == arrDeps[0].id)
     }
 
     // MARK: - Duplicate Detection (Synthetic)
@@ -119,18 +119,18 @@ class ArrivalDepartureDeduplicationTests: OBATestCase {
         ).entry
 
         let arrDeps = arrivals.arrivalsAndDepartures
-        expect(arrDeps.count) == 1
+        #expect(arrDeps.count == 1)
 
         // Simulate a terminal duplicate: same object appended twice.
         var duplicated = arrDeps
         duplicated.append(arrDeps[0])
-        expect(duplicated.count) == 2
+        #expect(duplicated.count == 2)
 
         let filtered = duplicated.filteringTerminalDuplicates()
 
         // The duplicate should be merged, leaving only one entry.
-        expect(filtered.count) == 1
-        expect(filtered[0].tripID) == arrDeps[0].tripID
+        #expect(filtered.count == 1)
+        #expect(filtered[0].tripID == arrDeps[0].tripID)
     }
 
     /// When multiple distinct entries exist alongside a duplicate pair,
@@ -141,17 +141,17 @@ class ArrivalDepartureDeduplicationTests: OBATestCase {
         ).entry
 
         let arrDeps = arrivals.arrivalsAndDepartures
-        expect(arrDeps.count) == 5
+        #expect(arrDeps.count == 5)
 
         // Append a duplicate of entry [0] to create exactly one duplicate pair.
         var withDuplicate = arrDeps
         withDuplicate.append(arrDeps[0])
-        expect(withDuplicate.count) == 6
+        #expect(withDuplicate.count == 6)
 
         let filtered = withDuplicate.filteringTerminalDuplicates()
 
         // Only the appended duplicate should be removed; original 5 entries preserved.
-        expect(filtered.count) == 5
+        #expect(filtered.count == 5)
     }
 
     // MARK: - Ordering
@@ -172,7 +172,7 @@ class ArrivalDepartureDeduplicationTests: OBATestCase {
                 XCTFail("Filtered entry with id \(filteredID) not found in original array")
                 continue
             }
-            expect(inputIndex).to(beGreaterThan(lastInputIndex), description: "Original ordering must be preserved")
+            #expect(inputIndex > lastInputIndex, "Original ordering must be preserved")
             lastInputIndex = inputIndex
         }
     }
@@ -188,9 +188,9 @@ class ArrivalDepartureDeduplicationTests: OBATestCase {
         let once = arrivals.arrivalsAndDepartures.filteringTerminalDuplicates()
         let twice = once.filteringTerminalDuplicates()
 
-        expect(twice.count) == once.count
+        #expect(twice.count == once.count)
         for (a, b) in zip(once, twice) {
-            expect(a.id) == b.id
+            #expect(a.id == b.id)
         }
     }
 
@@ -212,15 +212,15 @@ class ArrivalDepartureDeduplicationTests: OBATestCase {
         }
 
         // This entry has predicted == true.
-        expect(entry.predicted).to(beTrue())
+        #expect(entry.predicted)
 
         // Create a pair with the same identity. Both are the same object
         // (both predicted), so the first-in should win.
         let pair = [entry, entry]
         let filtered = pair.filteringTerminalDuplicates()
 
-        expect(filtered.count) == 1
-        expect(filtered[0].predicted).to(beTrue())
-        expect(filtered[0].tripID) == entry.tripID
+        #expect(filtered.count == 1)
+        #expect(filtered[0].predicted)
+        #expect(filtered[0].tripID == entry.tripID)
     }
 }

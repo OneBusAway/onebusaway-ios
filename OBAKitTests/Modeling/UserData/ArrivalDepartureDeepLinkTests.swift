@@ -9,7 +9,7 @@
 
 import Foundation
 import XCTest
-import Nimble
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -23,15 +23,15 @@ class ArrivalDepartureDeepLinkTests: OBATestCase {
         let deepLink1 = ArrivalDepartureDeepLink(title: "Title", regionID: 1, stopID: "1234", tripID: "9876", serviceDate: Date(timeIntervalSinceReferenceDate: 0), stopSequence: 7, vehicleID: "3456")
         let deepLink2 = try! Fixtures.roundtripCodable(type: ArrivalDepartureDeepLink.self, model: deepLink1)
 
-        expect(deepLink2) == deepLink1
+        #expect(deepLink2 == deepLink1)
 
-        expect(deepLink2.title) == deepLink1.title
-        expect(deepLink2.regionID) == deepLink1.regionID
-        expect(deepLink2.stopID) == deepLink1.stopID
-        expect(deepLink2.tripID) == deepLink1.tripID
-        expect(deepLink2.serviceDate) == deepLink1.serviceDate
-        expect(deepLink2.stopSequence) == deepLink1.stopSequence
-        expect(deepLink2.vehicleID) == deepLink1.vehicleID
+        #expect(deepLink2.title == deepLink1.title)
+        #expect(deepLink2.regionID == deepLink1.regionID)
+        #expect(deepLink2.stopID == deepLink1.stopID)
+        #expect(deepLink2.tripID == deepLink1.tripID)
+        #expect(deepLink2.serviceDate == deepLink1.serviceDate)
+        #expect(deepLink2.stopSequence == deepLink1.stopSequence)
+        #expect(deepLink2.vehicleID == deepLink1.vehicleID)
     }
 
     func test_roundTripping_withDestinationStopID() {
@@ -47,15 +47,15 @@ class ArrivalDepartureDeepLinkTests: OBATestCase {
         )
         let deepLink2 = try! Fixtures.roundtripCodable(type: ArrivalDepartureDeepLink.self, model: deepLink1)
 
-        expect(deepLink2) == deepLink1
-        expect(deepLink2.destinationStopID) == "1_431"
-        expect(deepLink2.title) == "Route 550 - Bellevue"
-        expect(deepLink2.regionID) == 1
-        expect(deepLink2.stopID) == "1_75403"
-        expect(deepLink2.tripID) == "1_550_trip"
-        expect(deepLink2.serviceDate) == Date(timeIntervalSince1970: 1_710_273_600)
-        expect(deepLink2.stopSequence) == 12
-        expect(deepLink2.vehicleID) == "1_v100"
+        #expect(deepLink2 == deepLink1)
+        #expect(deepLink2.destinationStopID == "1_431")
+        #expect(deepLink2.title == "Route 550 - Bellevue")
+        #expect(deepLink2.regionID == 1)
+        #expect(deepLink2.stopID == "1_75403")
+        #expect(deepLink2.tripID == "1_550_trip")
+        #expect(deepLink2.serviceDate == Date(timeIntervalSince1970: 1_710_273_600))
+        #expect(deepLink2.stopSequence == 12)
+        #expect(deepLink2.vehicleID == "1_v100")
     }
 
     func test_roundTripping_withoutDestinationStopID_isNil() {
@@ -70,9 +70,9 @@ class ArrivalDepartureDeepLinkTests: OBATestCase {
         )
         let deepLink2 = try! Fixtures.roundtripCodable(type: ArrivalDepartureDeepLink.self, model: deepLink1)
 
-        expect(deepLink2) == deepLink1
-        expect(deepLink2.destinationStopID).to(beNil())
-        expect(deepLink2.vehicleID).to(beNil())
+        #expect(deepLink2 == deepLink1)
+        #expect(deepLink2.destinationStopID == nil)
+        #expect(deepLink2.vehicleID == nil)
     }
 
     // MARK: - Equality
@@ -88,7 +88,7 @@ class ArrivalDepartureDeepLinkTests: OBATestCase {
             serviceDate: Date(timeIntervalSince1970: 1_500_000_000),
             stopSequence: 1, vehicleID: nil, destinationStopID: "Z"
         )
-        expect(link1.isEqual(link2)) == true
+        #expect(link1.isEqual(link2) == true)
     }
 
     func test_isEqual_differentDestinationStopID() {
@@ -102,7 +102,7 @@ class ArrivalDepartureDeepLinkTests: OBATestCase {
             serviceDate: Date(timeIntervalSince1970: 1_500_000_000),
             stopSequence: 1, vehicleID: nil, destinationStopID: "Y"
         )
-        expect(link1.isEqual(link2)) == false
+        #expect(link1.isEqual(link2) == false)
     }
 
     func test_isEqual_nilVsNonNilDestinationStopID() {
@@ -116,7 +116,7 @@ class ArrivalDepartureDeepLinkTests: OBATestCase {
             serviceDate: Date(timeIntervalSince1970: 1_500_000_000),
             stopSequence: 1, vehicleID: nil, destinationStopID: "Z"
         )
-        expect(link1.isEqual(link2)) == false
+        #expect(link1.isEqual(link2) == false)
     }
 
     // MARK: - Hashing
@@ -132,7 +132,7 @@ class ArrivalDepartureDeepLinkTests: OBATestCase {
             serviceDate: Date(timeIntervalSince1970: 1_500_000_000),
             stopSequence: 1, vehicleID: nil, destinationStopID: "Y"
         )
-        expect(link1.hash) != link2.hash
+        #expect(link1.hash != link2.hash)
     }
 
     func test_hash_nilDestinationStopID_consistentWithEquality() {
@@ -146,7 +146,7 @@ class ArrivalDepartureDeepLinkTests: OBATestCase {
             serviceDate: Date(timeIntervalSince1970: 1_500_000_000),
             stopSequence: 1, vehicleID: nil
         )
-        expect(link1.isEqual(link2)) == true
-        expect(link1.hash) == link2.hash
+        #expect(link1.isEqual(link2) == true)
+        #expect(link1.hash == link2.hash)
     }
 }

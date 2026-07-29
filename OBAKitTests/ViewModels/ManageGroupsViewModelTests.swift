@@ -8,7 +8,7 @@
 //
 
 import XCTest
-import Nimble
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -66,7 +66,7 @@ class ManageGroupsViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: dataLoader)
         let vm = ManageGroupsViewModel(application: app)
 
-        expect(vm.bookmarkGroups).to(beEmpty())
+        #expect(vm.bookmarkGroups.isEmpty)
     }
 
     @MainActor
@@ -78,8 +78,8 @@ class ManageGroupsViewModelTests: OBATestCase {
         let group = BookmarkGroup(name: "Commute", sortOrder: 0)
         app.userDataStore.upsert(bookmarkGroup: group)
 
-        expect(vm.bookmarkGroups).to(haveCount(1))
-        expect(vm.bookmarkGroups.first?.name) == "Commute"
+        #expect(vm.bookmarkGroups.count == 1)
+        #expect(vm.bookmarkGroups.first?.name == "Commute")
     }
 
     // MARK: - replaceGroups
@@ -97,8 +97,10 @@ class ManageGroupsViewModelTests: OBATestCase {
         let newGroup2 = BookmarkGroup(name: "Beta", sortOrder: 1)
         vm.replaceGroups([newGroup1, newGroup2])
 
-        expect(vm.bookmarkGroups).to(haveCount(2))
-        expect(vm.bookmarkGroups.map(\.name)).to(contain("Alpha", "Beta"))
+        #expect(vm.bookmarkGroups.count == 2)
+        let groupNames = vm.bookmarkGroups.map(\.name)
+        #expect(groupNames.contains("Alpha"))
+        #expect(groupNames.contains("Beta"))
     }
 
     @MainActor
@@ -112,7 +114,7 @@ class ManageGroupsViewModelTests: OBATestCase {
 
         vm.replaceGroups([])
 
-        expect(vm.bookmarkGroups).to(beEmpty())
+        #expect(vm.bookmarkGroups.isEmpty)
     }
 
     @MainActor
@@ -128,8 +130,8 @@ class ManageGroupsViewModelTests: OBATestCase {
         let renamed = BookmarkGroup(name: "Renamed", id: existingID, sortOrder: 0)
         vm.replaceGroups([renamed])
 
-        expect(vm.bookmarkGroups.first?.id) == existingID
-        expect(vm.bookmarkGroups.first?.name) == "Renamed"
+        #expect(vm.bookmarkGroups.first?.id == existingID)
+        #expect(vm.bookmarkGroups.first?.name == "Renamed")
     }
 
     // MARK: - groups(from:)
@@ -146,11 +148,11 @@ class ManageGroupsViewModelTests: OBATestCase {
         ]
         let groups = vm.groups(from: rows)
 
-        expect(groups).to(haveCount(2))
-        expect(groups[0].name) == "Alpha"
-        expect(groups[0].sortOrder) == 0
-        expect(groups[1].name) == "Beta"
-        expect(groups[1].sortOrder) == 1
+        #expect(groups.count == 2)
+        #expect(groups[0].name == "Alpha")
+        #expect(groups[0].sortOrder == 0)
+        #expect(groups[1].name == "Beta")
+        #expect(groups[1].sortOrder == 1)
     }
 
     @MainActor
@@ -167,8 +169,8 @@ class ManageGroupsViewModelTests: OBATestCase {
         ]
         let groups = vm.groups(from: rows)
 
-        expect(groups).to(haveCount(1))
-        expect(groups[0].name) == "Valid"
+        #expect(groups.count == 1)
+        #expect(groups[0].name == "Valid")
     }
 
     @MainActor
@@ -183,8 +185,8 @@ class ManageGroupsViewModelTests: OBATestCase {
         ]
         let groups = vm.groups(from: rows)
 
-        expect(groups.first?.id) == existingID
-        expect(groups.first?.name) == "Renamed Group"
+        #expect(groups.first?.id == existingID)
+        #expect(groups.first?.name == "Renamed Group")
     }
 
     @MainActor
@@ -199,8 +201,8 @@ class ManageGroupsViewModelTests: OBATestCase {
         ]
         let groups = vm.groups(from: rows)
 
-        expect(groups).to(haveCount(2))
+        #expect(groups.count == 2)
         // IDs should be valid UUIDs (non-nil), just not the same as each other
-        expect(groups[0].id) != groups[1].id
+        #expect(groups[0].id != groups[1].id)
     }
 }

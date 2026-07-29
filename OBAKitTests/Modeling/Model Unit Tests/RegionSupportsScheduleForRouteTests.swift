@@ -8,7 +8,7 @@
 //
 
 import XCTest
-import Nimble
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -42,7 +42,7 @@ class RegionSupportsScheduleForRouteTests: OBATestCase {
 
     func test_supportsScheduleForRoute_OBA2_0_SNAPSHOT_returnsFalse() throws {
         let region = try regionWithVersionInfo("2.0.0-SNAPSHOT|2|0|0|SNAPSHOT|abc")
-        expect(region.supportsScheduleForRoute).to(beFalse())
+        #expect(!region.supportsScheduleForRoute)
     }
 
     // MARK: - OBA 2.1+ should support schedule-for-route
@@ -50,27 +50,27 @@ class RegionSupportsScheduleForRouteTests: OBATestCase {
     func test_supportsScheduleForRoute_Tampa_returnsTrue() throws {
         // Real Tampa fixture data
         let region = try regionWithVersionInfo("2.4.15-cs|2|4|15|cs|d41e1a8978da14e98a2e19d109a23018957db7cf")
-        expect(region.supportsScheduleForRoute).to(beTrue())
+        #expect(region.supportsScheduleForRoute)
     }
 
     // MARK: - Empty/unparseable version info should default to true
 
     func test_supportsScheduleForRoute_emptyString_returnsTrue() throws {
         let region = try regionWithVersionInfo("")
-        expect(region.supportsScheduleForRoute).to(beTrue())
+        #expect(region.supportsScheduleForRoute)
     }
 
     // MARK: - Custom region (hardcoded "x.y.z.custom" in init) should default to true
 
     func test_supportsScheduleForRoute_customRegion_returnsTrue() {
         let region = Fixtures.customMinneapolisRegion
-        expect(region.supportsScheduleForRoute).to(beTrue())
+        #expect(region.supportsScheduleForRoute)
     }
 
     // MARK: - No-pipe format (e.g. Mayaguez "2.1.0") should default to true
 
     func test_supportsScheduleForRoute_noPipeFormat_returnsTrue() throws {
         let region = try regionWithVersionInfo("2.1.0")
-        expect(region.supportsScheduleForRoute).to(beTrue())
+        #expect(region.supportsScheduleForRoute)
     }
 }

@@ -11,7 +11,7 @@ import Foundation
 import XCTest
 @testable import OBAKit
 @testable import OBAKitCore
-import Nimble
+import Testing
 
 // swiftlintXdisable force_try
 
@@ -51,8 +51,7 @@ class MapRegionManagerTests: OBATestCase {
         let application = Application(config: config)
         let mgr = MapRegionManager(application: application)
 
-        expect(mgr.mapView).toNot(beNil())
-        expect(mgr.mapView.showsScale).to(beTrue())
+        #expect(mgr.mapView.showsScale)
 
         // Disable traffic in the Simulator to work around a bug in Xcode 11 and 12
         // where the console spews hundreds of error messages that read:
@@ -60,9 +59,9 @@ class MapRegionManagerTests: OBATestCase {
         //
         // https://stackoverflow.com/a/63176707
         #if targetEnvironment(simulator)
-        expect(mgr.mapView.showsTraffic).to(beFalse())
+        #expect(!mgr.mapView.showsTraffic)
         #else
-        expect(mgr.mapView.showsTraffic).to(beTrue())
+        #expect(mgr.mapView.showsTraffic)
         #endif
     }
 
@@ -83,8 +82,8 @@ class MapRegionManagerTests: OBATestCase {
 
         let application = Application(config: config)
         let mgr = MapRegionManager(application: application)
-        expect(application.currentRegion).to(beNil())
-        expect(mgr.lastVisibleMapRect).to(beNil())
+        #expect(application.currentRegion == nil)
+        #expect(mgr.lastVisibleMapRect == nil)
     }
 
     // MARK: - Zoom-In Warning Threshold
@@ -94,10 +93,10 @@ class MapRegionManagerTests: OBATestCase {
     /// when the visible map rect is taller than the stop-loading threshold.
     func test_shouldShowZoomInWarning_thresholdBehavior() {
         // Comfortably above the 40,000-point threshold → warn.
-        expect(MapRegionManager.shouldShowZoomInWarning(forVisibleMapRectHeight: 100_000)) == true
+        #expect(MapRegionManager.shouldShowZoomInWarning(forVisibleMapRectHeight: 100_000) == true)
         // Comfortably below → no warning.
-        expect(MapRegionManager.shouldShowZoomInWarning(forVisibleMapRectHeight: 10_000)) == false
+        #expect(MapRegionManager.shouldShowZoomInWarning(forVisibleMapRectHeight: 10_000) == false)
         // Exactly at the threshold is not "too far out".
-        expect(MapRegionManager.shouldShowZoomInWarning(forVisibleMapRectHeight: 40_000)) == false
+        #expect(MapRegionManager.shouldShowZoomInWarning(forVisibleMapRectHeight: 40_000) == false)
     }
 }

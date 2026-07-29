@@ -8,7 +8,7 @@
 //
 
 import XCTest
-import Nimble
+import Testing
 import CoreLocation
 @testable import OBAKit
 @testable import OBAKitCore
@@ -109,8 +109,8 @@ class CurrentTripViewModelTests: OBATestCase {
             XCTFail("Expected initial state .loading, got \(viewModel.state)")
             return
         }
-        expect(viewModel.matchResults).to(beEmpty())
-        expect(viewModel.pendingNavigation).to(beNil())
+        #expect(viewModel.matchResults.isEmpty)
+        #expect(viewModel.pendingNavigation == nil)
     }
 
     // MARK: - handle(results:)
@@ -127,8 +127,8 @@ class CurrentTripViewModelTests: OBATestCase {
             XCTFail("Expected .noResults, got \(viewModel.state)")
             return
         }
-        expect(viewModel.matchResults).to(beEmpty())
-        expect(viewModel.pendingNavigation).to(beNil())
+        #expect(viewModel.matchResults.isEmpty)
+        #expect(viewModel.pendingNavigation == nil)
     }
 
     @MainActor
@@ -140,9 +140,9 @@ class CurrentTripViewModelTests: OBATestCase {
         let result = makeMatchResult()
         viewModel.handle(results: [result])
 
-        expect(viewModel.pendingNavigation).toNot(beNil())
-        expect(viewModel.pendingNavigation?.tripID) == result.arrivalDeparture.tripID
-        expect(viewModel.matchResults.count) == 1
+        #expect(viewModel.pendingNavigation != nil)
+        #expect(viewModel.pendingNavigation?.tripID == result.arrivalDeparture.tripID)
+        #expect(viewModel.matchResults.count == 1)
         // State moves to `.multipleResults` so the underlying view shows the
         // single match as a tappable row instead of a permanent spinner. The
         // consumer navigates away via `pendingNavigation`; if they dismiss the
@@ -166,7 +166,7 @@ class CurrentTripViewModelTests: OBATestCase {
 
         let result = makeMatchResult()
         viewModel.handle(results: [result])
-        expect(viewModel.pendingNavigation).toNot(beNil())
+        #expect(viewModel.pendingNavigation != nil)
 
         // Consumer acknowledges by clearing pendingNavigation (mirrors what the
         // SwiftUI `.onChange(of: pendingNavigation)` handler does).
@@ -175,8 +175,8 @@ class CurrentTripViewModelTests: OBATestCase {
         // Same trip surfaces again on the next timer tick.
         viewModel.handle(results: [result])
 
-        expect(viewModel.pendingNavigation).to(beNil())
-        expect(viewModel.matchResults.count) == 1
+        #expect(viewModel.pendingNavigation == nil)
+        #expect(viewModel.matchResults.count == 1)
     }
 
     /// A user-initiated retry (`findVehicle()` with `resetState: true`, the
@@ -190,7 +190,7 @@ class CurrentTripViewModelTests: OBATestCase {
 
         let result = makeMatchResult()
         viewModel.handle(results: [result])
-        expect(viewModel.pendingNavigation).toNot(beNil())
+        #expect(viewModel.pendingNavigation != nil)
         viewModel.pendingNavigation = nil
 
         // User taps Try Again. resetState:true (default) resets to .loading
@@ -205,8 +205,8 @@ class CurrentTripViewModelTests: OBATestCase {
         // Simulate the next find returning the same trip — pendingNavigation
         // must fire again because the latch was cleared.
         viewModel.handle(results: [result])
-        expect(viewModel.pendingNavigation).toNot(beNil())
-        expect(viewModel.pendingNavigation?.tripID) == result.arrivalDeparture.tripID
+        #expect(viewModel.pendingNavigation != nil)
+        #expect(viewModel.pendingNavigation?.tripID == result.arrivalDeparture.tripID)
     }
 
     /// A background refresh (`findVehicle(resetState: false)`) must NOT reset
@@ -252,11 +252,11 @@ class CurrentTripViewModelTests: OBATestCase {
         let errorA2 = NSError(domain: "B", code: 2, userInfo: [NSLocalizedDescriptionKey: "boom"])
         let errorB = NSError(domain: "C", code: 3, userInfo: [NSLocalizedDescriptionKey: "different"])
 
-        expect(CurrentTripViewModel.State.error(errorA1)) == CurrentTripViewModel.State.error(errorA2)
-        expect(CurrentTripViewModel.State.error(errorA1)) != CurrentTripViewModel.State.error(errorB)
+        #expect(CurrentTripViewModel.State.error(errorA1) == CurrentTripViewModel.State.error(errorA2))
+        #expect(CurrentTripViewModel.State.error(errorA1) != CurrentTripViewModel.State.error(errorB))
         // Cross-case: `.error` never equals a non-error case.
-        expect(CurrentTripViewModel.State.error(errorA1)) != CurrentTripViewModel.State.loading
-        expect(CurrentTripViewModel.State.error(errorA1)) != CurrentTripViewModel.State.multipleResults
+        #expect(CurrentTripViewModel.State.error(errorA1) != CurrentTripViewModel.State.loading)
+        #expect(CurrentTripViewModel.State.error(errorA1) != CurrentTripViewModel.State.multipleResults)
     }
 
     @MainActor
@@ -273,8 +273,8 @@ class CurrentTripViewModelTests: OBATestCase {
             XCTFail("Expected .multipleResults, got \(viewModel.state)")
             return
         }
-        expect(viewModel.matchResults.count) == 2
-        expect(viewModel.pendingNavigation).to(beNil())
+        #expect(viewModel.matchResults.count == 2)
+        #expect(viewModel.pendingNavigation == nil)
     }
 
     // MARK: - handle(error:)
@@ -306,7 +306,7 @@ class CurrentTripViewModelTests: OBATestCase {
             XCTFail("Expected .error, got \(viewModel.state)")
             return
         }
-        expect((surfaced as NSError).code) == 42
+        #expect((surfaced as NSError).code == 42)
     }
 
     /// `noStopsNearby` is a `MatchError` but not `noRealtimeData` — it must fall through
@@ -338,8 +338,8 @@ class CurrentTripViewModelTests: OBATestCase {
 
         let result = makeMatchResult()
         viewModel.handle(results: [result])
-        expect(viewModel.pendingNavigation).toNot(beNil())
-        expect(viewModel.matchResults.count) == 1
+        #expect(viewModel.pendingNavigation != nil)
+        #expect(viewModel.matchResults.count == 1)
 
         viewModel.pendingNavigationUnavailable()
 
@@ -347,9 +347,9 @@ class CurrentTripViewModelTests: OBATestCase {
             XCTFail("Expected .multipleResults, got \(viewModel.state)")
             return
         }
-        expect(viewModel.pendingNavigation).to(beNil())
+        #expect(viewModel.pendingNavigation == nil)
         // The single match must still be available so the user can tap through.
-        expect(viewModel.matchResults.count) == 1
+        #expect(viewModel.matchResults.count == 1)
     }
 
     // MARK: - Lifecycle

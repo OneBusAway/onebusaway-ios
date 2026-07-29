@@ -8,9 +8,9 @@
 //
 
 import XCTest
-import Nimble
 import CoreLocation
 import MapKit
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -24,62 +24,62 @@ class RegionsModelOperationTests: OBATestCase {
         let response = try await regionsAPIService.getRegions(apiPath: regionsAPIPath)
 
         let regions = response.list
-        expect(regions.count) == 17
+        #expect(regions.count == 17)
 
         let tampa = try XCTUnwrap(regions.first)
 
-        expect(tampa.regionIdentifier) == 0
-        expect(tampa.name) == "Tampa Bay"
-        expect(tampa.versionInfo) == "2.4.15-cs|2|4|15|cs|d41e1a8978da14e98a2e19d109a23018957db7cf"
-        expect(tampa.language) == "en_US"
+        #expect(tampa.regionIdentifier == 0)
+        #expect(tampa.name == "Tampa Bay")
+        #expect(tampa.versionInfo == "2.4.15-cs|2|4|15|cs|d41e1a8978da14e98a2e19d109a23018957db7cf")
+        #expect(tampa.language == "en_US")
 
-        expect(tampa.supportsEmbeddedSocial).to(beFalse())
-        expect(tampa.supportsOBADiscoveryAPIs).to(beTrue())
-        expect(tampa.supportsOTPBikeshare).to(beTrue())
-        expect(tampa.supportsSiriRealtimeAPIs).to(beTrue())
-        expect(tampa.isActive).to(beTrue())
-        expect(tampa.isExperimental).to(beFalse())
+        #expect(!tampa.supportsEmbeddedSocial)
+        #expect(tampa.supportsOBADiscoveryAPIs)
+        #expect(tampa.supportsOTPBikeshare)
+        #expect(tampa.supportsSiriRealtimeAPIs)
+        #expect(tampa.isActive)
+        #expect(!tampa.isExperimental)
 
-        expect(tampa.facebookURL).to(beNil())
-        expect(tampa.contactEmail) == "onebusaway@gohart.org"
-        expect(tampa.openTripPlannerContactEmail) == "otp-tampa@onebusaway.org"
-        expect(tampa.twitterURL) == URL(string: "https://mobile.twitter.com/OBA_tampa")!
+        #expect(tampa.facebookURL == nil)
+        #expect(tampa.contactEmail == "onebusaway@gohart.org")
+        #expect(tampa.openTripPlannerContactEmail == "otp-tampa@onebusaway.org")
+        #expect(tampa.twitterURL == URL(string: "https://mobile.twitter.com/OBA_tampa")!)
 
-        expect(tampa.OBABaseURL) == URL(string: "https://api.tampa.onebusaway.org/api/")!
-        expect(tampa.sidecarBaseURL) == URL(string: "https://onebusaway.co")!
-        expect(tampa.siriBaseURL) == URL(string: "https://tampa.onebusaway.org/onebusaway-api-webapp/siri/")!
-        expect(tampa.openTripPlannerURL) == URL(string: "https://otp.prod.obahart.org/otp/")!
-        expect(tampa.stopInfoURL).to(beNil())
+        #expect(tampa.OBABaseURL == URL(string: "https://api.tampa.onebusaway.org/api/")!)
+        #expect(tampa.sidecarBaseURL == URL(string: "https://onebusaway.co")!)
+        #expect(tampa.siriBaseURL == URL(string: "https://tampa.onebusaway.org/onebusaway-api-webapp/siri/")!)
+        #expect(tampa.openTripPlannerURL == URL(string: "https://otp.prod.obahart.org/otp/")!)
+        #expect(tampa.stopInfoURL == nil)
 
-        expect(tampa.paymentWarningBody).to(beNil())
-        expect(tampa.paymentWarningTitle).to(beNil())
-        expect(tampa.paymentAndroidAppID) == "co.bytemark.flamingo"
-        expect(tampa.paymentiOSAppStoreIdentifier) == "1487465395"
-        expect(tampa.paymentiOSAppURLScheme) == "fb313213768708402HART"
+        #expect(tampa.paymentWarningBody == nil)
+        #expect(tampa.paymentWarningTitle == nil)
+        #expect(tampa.paymentAndroidAppID == "co.bytemark.flamingo")
+        #expect(tampa.paymentiOSAppStoreIdentifier == "1487465395")
+        #expect(tampa.paymentiOSAppURLScheme == "fb313213768708402HART")
 
         let open311 = try XCTUnwrap(tampa.open311Servers?.first)
-        expect(open311.jurisdictionID).to(beNil())
-        expect(open311.apiKey) == "937033cad3054ec58a1a8156dcdd6ad8a416af2f"
-        expect(open311.baseURL) == URL(string: "https://seeclickfix.com/open311/v2/")!
+        #expect(open311.jurisdictionID == nil)
+        #expect(open311.apiKey == "937033cad3054ec58a1a8156dcdd6ad8a416af2f")
+        #expect(open311.baseURL == URL(string: "https://seeclickfix.com/open311/v2/")!)
 
         let serviceRect = tampa.serviceRect
-        expect(serviceRect.minX).to(beCloseTo(72439895.2211))
-        expect(serviceRect.minY).to(beCloseTo(112245249.3519))
-        expect(serviceRect.maxX).to(beCloseTo(72956527.5911))
-        expect(serviceRect.maxY).to(beCloseTo(112722187.8406))
+        expectClose(serviceRect.minX, 72439895.2211)
+        expectClose(serviceRect.minY, 112245249.3519)
+        expectClose(serviceRect.maxX, 72956527.5911)
+        expectClose(serviceRect.maxY, 112722187.8406)
 
         let pugetSound = regions[1]
 
-        expect(pugetSound.name) == "Puget Sound"
+        #expect(pugetSound.name == "Puget Sound")
 
         let mapRect = MKMapRect(x: 42206703.270115554, y: 92590980.991902918, width: 1338771.0533083975, height: 1897888.1099742353)
-        expect(pugetSound.serviceRect.minX).to(beCloseTo(mapRect.minX))
-        expect(pugetSound.serviceRect.minY).to(beCloseTo(mapRect.minY))
-        expect(pugetSound.serviceRect.maxX).to(beCloseTo(mapRect.maxX))
-        expect(pugetSound.serviceRect.maxY).to(beCloseTo(mapRect.maxY))
+        expectClose(pugetSound.serviceRect.minX, mapRect.minX)
+        expectClose(pugetSound.serviceRect.minY, mapRect.minY)
+        expectClose(pugetSound.serviceRect.maxX, mapRect.maxX)
+        expectClose(pugetSound.serviceRect.maxY, mapRect.maxY)
 
-        expect(pugetSound.centerCoordinate.latitude).to(beCloseTo(47.795091214055))
-        expect(pugetSound.centerCoordinate.longitude).to(beCloseTo(-122.49868405298474))
+        expectClose(pugetSound.centerCoordinate.latitude, 47.795091214055)
+        expectClose(pugetSound.centerCoordinate.longitude, -122.49868405298474)
     }
 
 // WIP Fix for #777
@@ -90,6 +90,6 @@ class RegionsModelOperationTests: OBATestCase {
 //        let response = try await regionsAPIService.getRegions(apiPath: regionsAPIPath)
 //
 //        let regions = response.list
-//        expect(regions.count) == 17
+//        #expect(regions.count == 17)
 //    }
 }

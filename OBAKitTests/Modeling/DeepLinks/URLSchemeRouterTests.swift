@@ -9,7 +9,7 @@
 
 import Foundation
 import XCTest
-import Nimble
+import Testing
 @testable import OBAKitCore
 
 @MainActor
@@ -28,7 +28,7 @@ class URLSchemeRouterTests: XCTestCase {
         let customRouter = URLSchemeRouter(scheme: "customscheme")
         // Test by trying to encode a URL and checking the scheme
         let url = customRouter.encodeViewStop(stopID: "123", regionID: 1)
-        expect(url.scheme) == "customscheme"
+        #expect(url.scheme == "customscheme")
     }
     
     // MARK: - View Stop URL Tests
@@ -39,13 +39,13 @@ class URLSchemeRouterTests: XCTestCase {
         
         let url = router.encodeViewStop(stopID: stopID, regionID: regionID)
         
-        expect(url.scheme) == "onebusaway"
-        expect(url.host) == "view-stop"
+        #expect(url.scheme == "onebusaway")
+        #expect(url.host == "view-stop")
         
         let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
-        expect(components?.queryItems?.count) == 2
-        expect(components?.queryItems?.contains { $0.name == "stopID" && $0.value == stopID }) == true
-        expect(components?.queryItems?.contains { $0.name == "regionID" && $0.value == String(regionID) }) == true
+        #expect(components?.queryItems?.count == 2)
+        #expect(components?.queryItems?.contains { $0.name == "stopID" && $0.value == stopID } == true)
+        #expect(components?.queryItems?.contains { $0.name == "regionID" && $0.value == String(regionID) } == true)
     }
     
     func test_decodeURLType_viewStop_decodesValidURL() {
@@ -59,10 +59,10 @@ class URLSchemeRouterTests: XCTestCase {
         
         switch result {
         case .viewStop(let data):
-            expect(data.stopID) == stopID
-            expect(data.regionID) == regionID
+            #expect(data.stopID == stopID)
+            #expect(data.regionID == regionID)
         default:
-            fail("Expected viewStop URLType")
+            Issue.record("Expected viewStop URLType")
         }
     }
     
@@ -73,12 +73,12 @@ class URLSchemeRouterTests: XCTestCase {
         components.queryItems = [URLQueryItem(name: "regionID", value: "1")]
         
         guard let url = components.url else {
-            fail("Failed to create URL")
+            Issue.record("Failed to create URL")
             return
         }
         
         let result = router.decodeURLType(from: url)
-        expect(result).to(beNil())
+        #expect(result == nil)
     }
     
     func test_decodeURLType_viewStop_returnsNilForMissingRegionID() {
@@ -88,12 +88,12 @@ class URLSchemeRouterTests: XCTestCase {
         components.queryItems = [URLQueryItem(name: "stopID", value: "12345")]
         
         guard let url = components.url else {
-            fail("Failed to create URL")
+            Issue.record("Failed to create URL")
             return
         }
         
         let result = router.decodeURLType(from: url)
-        expect(result).to(beNil())
+        #expect(result == nil)
     }
     
     func test_decodeURLType_viewStop_returnsNilForInvalidRegionID() {
@@ -106,12 +106,12 @@ class URLSchemeRouterTests: XCTestCase {
         ]
         
         guard let url = components.url else {
-            fail("Failed to create URL")
+            Issue.record("Failed to create URL")
             return
         }
         
         let result = router.decodeURLType(from: url)
-        expect(result).to(beNil())
+        #expect(result == nil)
     }
     
     // MARK: - Add Region URL Tests
@@ -127,15 +127,15 @@ class URLSchemeRouterTests: XCTestCase {
         ]
 
         guard let url = components.url else {
-            fail("Failed to create URL")
+            Issue.record("Failed to create URL")
             return
         }
 
         switch router.decodeURLType(from: url) {
         case .addRegion(let data):
-            expect(data?.regionID) == 19
+            #expect(data?.regionID == 19)
         default:
-            fail("Expected addRegion URLType")
+            Issue.record("Expected addRegion URLType")
         }
     }
 
@@ -150,16 +150,16 @@ class URLSchemeRouterTests: XCTestCase {
         ]
 
         guard let url = components.url else {
-            fail("Failed to create URL")
+            Issue.record("Failed to create URL")
             return
         }
 
         switch router.decodeURLType(from: url) {
         case .addRegion(let data):
-            expect(data).toNot(beNil())
-            expect(data?.regionID).to(beNil())
+            #expect(data != nil)
+            #expect(data?.regionID == nil)
         default:
-            fail("Expected addRegion URLType")
+            Issue.record("Expected addRegion URLType")
         }
     }
 
@@ -176,17 +176,17 @@ class URLSchemeRouterTests: XCTestCase {
         ]
 
         guard let url = components.url else {
-            fail("Failed to create URL")
+            Issue.record("Failed to create URL")
             return
         }
 
         switch router.decodeURLType(from: url) {
         case .addRegion(let data):
-            expect(data).toNot(beNil())
-            expect(data?.name) == "Test Region"
-            expect(data?.regionID).to(beNil())
+            #expect(data != nil)
+            #expect(data?.name == "Test Region")
+            #expect(data?.regionID == nil)
         default:
-            fail("Expected addRegion URLType")
+            Issue.record("Expected addRegion URLType")
         }
     }
 
@@ -201,7 +201,7 @@ class URLSchemeRouterTests: XCTestCase {
         ]
         
         guard let url = components.url else {
-            fail("Failed to create URL")
+            Issue.record("Failed to create URL")
             return
         }
         
@@ -209,12 +209,12 @@ class URLSchemeRouterTests: XCTestCase {
         
         switch result {
         case .addRegion(let data):
-            expect(data).toNot(beNil())
-            expect(data?.name) == "Test Region"
-            expect(data?.obaURL.absoluteString) == "https://oba.example.com"
-            expect(data?.otpURL?.absoluteString) == "https://otp.example.com"
+            #expect(data != nil)
+            #expect(data?.name == "Test Region")
+            #expect(data?.obaURL.absoluteString == "https://oba.example.com")
+            #expect(data?.otpURL?.absoluteString == "https://otp.example.com")
         default:
-            fail("Expected addRegion URLType")
+            Issue.record("Expected addRegion URLType")
         }
     }
     
@@ -228,7 +228,7 @@ class URLSchemeRouterTests: XCTestCase {
         ]
         
         guard let url = components.url else {
-            fail("Failed to create URL")
+            Issue.record("Failed to create URL")
             return
         }
         
@@ -236,12 +236,12 @@ class URLSchemeRouterTests: XCTestCase {
         
         switch result {
         case .addRegion(let data):
-            expect(data).toNot(beNil())
-            expect(data?.name) == "Test Region"
-            expect(data?.obaURL.absoluteString) == "https://oba.example.com"
-            expect(data?.otpURL).to(beNil())
+            #expect(data != nil)
+            #expect(data?.name == "Test Region")
+            #expect(data?.obaURL.absoluteString == "https://oba.example.com")
+            #expect(data?.otpURL == nil)
         default:
-            fail("Expected addRegion URLType")
+            Issue.record("Expected addRegion URLType")
         }
     }
     
@@ -254,7 +254,7 @@ class URLSchemeRouterTests: XCTestCase {
         ]
         
         guard let url = components.url else {
-            fail("Failed to create URL")
+            Issue.record("Failed to create URL")
             return
         }
         
@@ -262,9 +262,9 @@ class URLSchemeRouterTests: XCTestCase {
         
         switch result {
         case .addRegion(let data):
-            expect(data).to(beNil())
+            #expect(data == nil)
         default:
-            fail("Expected addRegion URLType with nil data")
+            Issue.record("Expected addRegion URLType with nil data")
         }
     }
     
@@ -277,7 +277,7 @@ class URLSchemeRouterTests: XCTestCase {
         ]
         
         guard let url = components.url else {
-            fail("Failed to create URL")
+            Issue.record("Failed to create URL")
             return
         }
         
@@ -285,9 +285,9 @@ class URLSchemeRouterTests: XCTestCase {
         
         switch result {
         case .addRegion(let data):
-            expect(data).to(beNil())
+            #expect(data == nil)
         default:
-            fail("Expected addRegion URLType with nil data")
+            Issue.record("Expected addRegion URLType with nil data")
         }
     }
     
@@ -301,7 +301,7 @@ class URLSchemeRouterTests: XCTestCase {
         ]
         
         guard let url = components.url else {
-            fail("Failed to create URL")
+            Issue.record("Failed to create URL")
             return
         }
         
@@ -309,9 +309,9 @@ class URLSchemeRouterTests: XCTestCase {
         
         switch result {
         case .addRegion(let data):
-            expect(data).to(beNil())
+            #expect(data == nil)
         default:
-            fail("Expected addRegion URLType with nil data")
+            Issue.record("Expected addRegion URLType with nil data")
         }
     }
     
@@ -326,7 +326,7 @@ class URLSchemeRouterTests: XCTestCase {
         ]
         
         guard let url = components.url else {
-            fail("Failed to create URL")
+            Issue.record("Failed to create URL")
             return
         }
         
@@ -334,12 +334,12 @@ class URLSchemeRouterTests: XCTestCase {
         
         switch result {
         case .addRegion(let data):
-            expect(data).toNot(beNil())
-            expect(data?.name) == "Test Region"
-            expect(data?.obaURL.absoluteString) == "https://oba.example.com"
-            expect(data?.otpURL).to(beNil())
+            #expect(data != nil)
+            #expect(data?.name == "Test Region")
+            #expect(data?.obaURL.absoluteString == "https://oba.example.com")
+            #expect(data?.otpURL == nil)
         default:
-            fail("Expected addRegion URLType")
+            Issue.record("Expected addRegion URLType")
         }
     }
     
@@ -352,18 +352,18 @@ class URLSchemeRouterTests: XCTestCase {
         components.queryItems = [URLQueryItem(name: "test", value: "value")]
         
         guard let url = components.url else {
-            fail("Failed to create URL")
+            Issue.record("Failed to create URL")
             return
         }
         
         let result = router.decodeURLType(from: url)
-        expect(result).to(beNil())
+        #expect(result == nil)
     }
     
     func test_decodeURLType_returnsNilForInvalidURL() {
         let url = URL(string: "not://a/valid/url")!
         let result = router.decodeURLType(from: url)
-        expect(result).to(beNil())
+        #expect(result == nil)
     }
     
     func test_decodeURLType_returnsNilForURLWithoutHost() {
@@ -372,12 +372,12 @@ class URLSchemeRouterTests: XCTestCase {
         components.path = "/some/path"
         
         guard let url = components.url else {
-            fail("Failed to create URL")
+            Issue.record("Failed to create URL")
             return
         }
         
         let result = router.decodeURLType(from: url)
-        expect(result).to(beNil())
+        #expect(result == nil)
     }
     
     // MARK: - Edge Cases
@@ -393,10 +393,10 @@ class URLSchemeRouterTests: XCTestCase {
         
         switch result {
         case .viewStop(let data):
-            expect(data.stopID) == stopID
-            expect(data.regionID) == regionID
+            #expect(data.stopID == stopID)
+            #expect(data.regionID == regionID)
         default:
-            fail("Expected viewStop URLType")
+            Issue.record("Expected viewStop URLType")
         }
     }
     
@@ -410,7 +410,7 @@ class URLSchemeRouterTests: XCTestCase {
         ]
         
         guard let url = components.url else {
-            fail("Failed to create URL")
+            Issue.record("Failed to create URL")
             return
         }
         
@@ -418,11 +418,11 @@ class URLSchemeRouterTests: XCTestCase {
         
         switch result {
         case .addRegion(let data):
-            expect(data).toNot(beNil())
-            expect(data?.name) == "Test Region with Spaces"
-            expect(data?.obaURL.absoluteString) == "https://oba.example.com/api?param=value&other=123"
+            #expect(data != nil)
+            #expect(data?.name == "Test Region with Spaces")
+            #expect(data?.obaURL.absoluteString == "https://oba.example.com/api?param=value&other=123")
         default:
-            fail("Expected addRegion URLType")
+            Issue.record("Expected addRegion URLType")
         }
     }
     
@@ -436,7 +436,7 @@ class URLSchemeRouterTests: XCTestCase {
         ]
         
         guard let url = components.url else {
-            fail("Failed to create URL")
+            Issue.record("Failed to create URL")
             return
         }
         
@@ -444,10 +444,10 @@ class URLSchemeRouterTests: XCTestCase {
         
         switch result {
         case .viewStop(let data):
-            expect(data.stopID) == ""
-            expect(data.regionID) == 1
+            #expect(data.stopID == "")
+            #expect(data.regionID == 1)
         default:
-            fail("Expected viewStop URLType")
+            Issue.record("Expected viewStop URLType")
         }
     }
     
@@ -463,7 +463,7 @@ class URLSchemeRouterTests: XCTestCase {
         ]
         
         guard let url = components.url else {
-            fail("Failed to create URL")
+            Issue.record("Failed to create URL")
             return
         }
         
@@ -471,9 +471,9 @@ class URLSchemeRouterTests: XCTestCase {
         
         switch result {
         case .addRegion(let data):
-            expect(data).to(beNil())
+            #expect(data == nil)
         default:
-            fail("Expected addRegion URLType with nil data")
+            Issue.record("Expected addRegion URLType with nil data")
         }
     }
     
@@ -487,7 +487,7 @@ class URLSchemeRouterTests: XCTestCase {
         ]
         
         guard let url = components.url else {
-            fail("Failed to create URL")
+            Issue.record("Failed to create URL")
             return
         }
         
@@ -495,9 +495,9 @@ class URLSchemeRouterTests: XCTestCase {
         
         switch result {
         case .addRegion(let data):
-            expect(data).to(beNil())
+            #expect(data == nil)
         default:
-            fail("Expected addRegion URLType with nil data")
+            Issue.record("Expected addRegion URLType with nil data")
         }
     }
     
@@ -512,7 +512,7 @@ class URLSchemeRouterTests: XCTestCase {
         ]
         
         guard let url = components.url else {
-            fail("Failed to create URL")
+            Issue.record("Failed to create URL")
             return
         }
         
@@ -520,12 +520,12 @@ class URLSchemeRouterTests: XCTestCase {
         
         switch result {
         case .addRegion(let data):
-            expect(data).toNot(beNil())
-            expect(data?.name) == "Test Region"
-            expect(data?.obaURL.absoluteString) == "https://oba.example.com"
-            expect(data?.otpURL).to(beNil()) // Invalid OTP URL should result in nil
+            #expect(data != nil)
+            #expect(data?.name == "Test Region")
+            #expect(data?.obaURL.absoluteString == "https://oba.example.com")
+            #expect(data?.otpURL == nil)  // Invalid OTP URL should result in nil
         default:
-            fail("Expected addRegion URLType")
+            Issue.record("Expected addRegion URLType")
         }
     }
     
@@ -539,7 +539,7 @@ class URLSchemeRouterTests: XCTestCase {
         ]
         
         guard let url = components.url else {
-            fail("Failed to create URL")
+            Issue.record("Failed to create URL")
             return
         }
         
@@ -547,12 +547,12 @@ class URLSchemeRouterTests: XCTestCase {
         
         switch result {
         case .addRegion(let data):
-            expect(data).toNot(beNil())
-            expect(data?.name) == "Test Region"
-            expect(data?.obaURL.absoluteString) == "/api/oba"
-            expect(data?.otpURL).to(beNil())
+            #expect(data != nil)
+            #expect(data?.name == "Test Region")
+            #expect(data?.obaURL.absoluteString == "/api/oba")
+            #expect(data?.otpURL == nil)
         default:
-            fail("Expected addRegion URLType")
+            Issue.record("Expected addRegion URLType")
         }
     }
     
@@ -567,7 +567,7 @@ class URLSchemeRouterTests: XCTestCase {
         ]
         
         guard let url = components.url else {
-            fail("Failed to create URL")
+            Issue.record("Failed to create URL")
             return
         }
         
@@ -575,12 +575,12 @@ class URLSchemeRouterTests: XCTestCase {
         
         switch result {
         case .addRegion(let data):
-            expect(data).toNot(beNil())
-            expect(data?.name) == "Test Region"
-            expect(data?.obaURL.absoluteString) == "https://oba.example.com"
-            expect(data?.otpURL?.absoluteString) == "/api/otp"
+            #expect(data != nil)
+            #expect(data?.name == "Test Region")
+            #expect(data?.obaURL.absoluteString == "https://oba.example.com")
+            #expect(data?.otpURL?.absoluteString == "/api/otp")
         default:
-            fail("Expected addRegion URLType")
+            Issue.record("Expected addRegion URLType")
         }
     }
     
@@ -595,7 +595,7 @@ class URLSchemeRouterTests: XCTestCase {
         ]
         
         guard let url = components.url else {
-            fail("Failed to create URL")
+            Issue.record("Failed to create URL")
             return
         }
         
@@ -603,12 +603,12 @@ class URLSchemeRouterTests: XCTestCase {
         
         switch result {
         case .addRegion(let data):
-            expect(data).toNot(beNil())
-            expect(data?.name) == "Test Region"
-            expect(data?.obaURL.absoluteString) == "https://api.example.com:8080/oba/api?key=abc123&format=json"
-            expect(data?.otpURL?.absoluteString) == "https://otp.example.com/otp/routers/default"
+            #expect(data != nil)
+            #expect(data?.name == "Test Region")
+            #expect(data?.obaURL.absoluteString == "https://api.example.com:8080/oba/api?key=abc123&format=json")
+            #expect(data?.otpURL?.absoluteString == "https://otp.example.com/otp/routers/default")
         default:
-            fail("Expected addRegion URLType")
+            Issue.record("Expected addRegion URLType")
         }
     }
 
@@ -620,7 +620,7 @@ class URLSchemeRouterTests: XCTestCase {
         components.host = "add-region"
         components.queryItems = queryItems
         guard let url = components.url, case .addRegion(let data)? = router.decodeURLType(from: url) else {
-            fail("Expected addRegion URLType")
+            Issue.record("Expected addRegion URLType")
             return nil
         }
         return data
@@ -635,11 +635,11 @@ class URLSchemeRouterTests: XCTestCase {
             URLQueryItem(name: "umami-id", value: "site-uuid-123")
         ])
 
-        expect(data?.sidecarURL?.absoluteString) == "https://obaco.example.com"
-        expect(data?.umamiURL?.absoluteString) == "https://analytics.example.com"
-        expect(data?.umamiID) == "site-uuid-123"
-        expect(data?.umamiAnalytics?.url.absoluteString) == "https://analytics.example.com"
-        expect(data?.umamiAnalytics?.id) == "site-uuid-123"
+        #expect(data?.sidecarURL?.absoluteString == "https://obaco.example.com")
+        #expect(data?.umamiURL?.absoluteString == "https://analytics.example.com")
+        #expect(data?.umamiID == "site-uuid-123")
+        #expect(data?.umamiAnalytics?.url.absoluteString == "https://analytics.example.com")
+        #expect(data?.umamiAnalytics?.id == "site-uuid-123")
     }
 
     func test_decodeURLType_addRegion_newParametersDefaultToNil() {
@@ -648,10 +648,10 @@ class URLSchemeRouterTests: XCTestCase {
             URLQueryItem(name: "oba-url", value: "https://oba.example.com")
         ])
 
-        expect(data?.sidecarURL).to(beNil())
-        expect(data?.umamiURL).to(beNil())
-        expect(data?.umamiID).to(beNil())
-        expect(data?.umamiAnalytics).to(beNil())
+        #expect(data?.sidecarURL == nil)
+        #expect(data?.umamiURL == nil)
+        #expect(data?.umamiID == nil)
+        #expect(data?.umamiAnalytics == nil)
     }
 
     func test_decodeURLType_addRegion_partialUmamiPairCollapsesToNilConfig() {
@@ -661,8 +661,8 @@ class URLSchemeRouterTests: XCTestCase {
             URLQueryItem(name: "oba-url", value: "https://oba.example.com"),
             URLQueryItem(name: "umami-url", value: "https://analytics.example.com")
         ])
-        expect(urlOnly?.umamiURL).toNot(beNil())
-        expect(urlOnly?.umamiAnalytics).to(beNil())
+        #expect(urlOnly?.umamiURL != nil)
+        #expect(urlOnly?.umamiAnalytics == nil)
 
         // ID without URL — the region still decodes; the dangling ID never becomes a config.
         let idOnly = decodeAddRegion([
@@ -670,8 +670,8 @@ class URLSchemeRouterTests: XCTestCase {
             URLQueryItem(name: "oba-url", value: "https://oba.example.com"),
             URLQueryItem(name: "umami-id", value: "site-uuid-123")
         ])
-        expect(idOnly?.umamiID) == "site-uuid-123"
-        expect(idOnly?.umamiAnalytics).to(beNil())
+        #expect(idOnly?.umamiID == "site-uuid-123")
+        #expect(idOnly?.umamiAnalytics == nil)
 
         // Invalid umami URL + valid ID — dangling ID, nil config.
         let invalidURL = decodeAddRegion([
@@ -680,8 +680,8 @@ class URLSchemeRouterTests: XCTestCase {
             URLQueryItem(name: "umami-url", value: "not a valid url"),
             URLQueryItem(name: "umami-id", value: "site-uuid-123")
         ])
-        expect(invalidURL?.umamiURL).to(beNil())
-        expect(invalidURL?.umamiAnalytics).to(beNil())
+        #expect(invalidURL?.umamiURL == nil)
+        #expect(invalidURL?.umamiAnalytics == nil)
     }
 
     func test_decodeURLType_addRegion_blankUmamiIDBecomesNil() {
@@ -691,8 +691,8 @@ class URLSchemeRouterTests: XCTestCase {
             URLQueryItem(name: "umami-url", value: "https://analytics.example.com"),
             URLQueryItem(name: "umami-id", value: "   ")
         ])
-        expect(data?.umamiID).to(beNil())
-        expect(data?.umamiAnalytics).to(beNil())
+        #expect(data?.umamiID == nil)
+        #expect(data?.umamiAnalytics == nil)
     }
 
     func test_decodeURLType_addRegion_invalidSidecarURLDegradesToNil() {
@@ -701,8 +701,8 @@ class URLSchemeRouterTests: XCTestCase {
             URLQueryItem(name: "oba-url", value: "https://oba.example.com"),
             URLQueryItem(name: "sidecar-url", value: "not a valid url")
         ])
-        expect(data).toNot(beNil())
-        expect(data?.sidecarURL).to(beNil())
+        #expect(data != nil)
+        #expect(data?.sidecarURL == nil)
     }
 
     // MARK: - Raw-String Decoding (percent-encoding behavior)
@@ -715,27 +715,27 @@ class URLSchemeRouterTests: XCTestCase {
         let url = URL(string: "onebusaway://add-region?name=Raw%20Region&oba-url=https%3A%2F%2Foba.example.com&sidecar-url=https%3A%2F%2Fobaco.example.com%2Fapi%3Fa%3D1%26b%3D2&umami-url=https%3A%2F%2Fanalytics.example.com&umami-id=site-uuid-123")!
 
         guard case .addRegion(let data)? = router.decodeURLType(from: url) else {
-            fail("Expected addRegion URLType")
+            Issue.record("Expected addRegion URLType")
             return
         }
 
-        expect(data?.name) == "Raw Region"
-        expect(data?.obaURL.absoluteString) == "https://oba.example.com"
-        expect(data?.sidecarURL?.absoluteString) == "https://obaco.example.com/api?a=1&b=2"
-        expect(data?.umamiAnalytics?.id) == "site-uuid-123"
+        #expect(data?.name == "Raw Region")
+        #expect(data?.obaURL.absoluteString == "https://oba.example.com")
+        #expect(data?.sidecarURL?.absoluteString == "https://obaco.example.com/api?a=1&b=2")
+        #expect(data?.umamiAnalytics?.id == "site-uuid-123")
     }
 
     func test_decodeURLType_addRegion_rawString_unencodedAmpersandTruncates() {
         let url = URL(string: "onebusaway://add-region?name=Raw&oba-url=https://oba.example.com&sidecar-url=https://obaco.example.com/api?a=1&b=2")!
 
         guard case .addRegion(let data)? = router.decodeURLType(from: url) else {
-            fail("Expected addRegion URLType")
+            Issue.record("Expected addRegion URLType")
             return
         }
 
         // The unencoded `&` ends the sidecar-url value; `b=2` parses as a separate
         // (ignored) query item. This is documented behavior, not a bug.
-        expect(data?.sidecarURL?.absoluteString) == "https://obaco.example.com/api?a=1"
+        #expect(data?.sidecarURL?.absoluteString == "https://obaco.example.com/api?a=1")
     }
 }
 

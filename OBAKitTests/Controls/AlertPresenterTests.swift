@@ -9,7 +9,7 @@
 
 import Foundation
 import XCTest
-import Nimble
+import Testing
 import UIKit
 @testable import OBAKit
 @testable import OBAKitCore
@@ -30,18 +30,18 @@ class AlertPresenterTests: XCTestCase {
         
         await AlertPresenter.show(error: error, presentingController: viewController)
         
-        expect(self.viewController.presentCallCount) == 1
-        expect(self.viewController.presentedAlert).toNot(beNil())
+        #expect(self.viewController.presentCallCount == 1)
+        #expect(self.viewController.presentedAlert != nil)
         
         guard let alertController = self.viewController.presentedAlert else {
-            fail("Expected alert to be presented")
+            Issue.record("Expected alert to be presented")
             return
         }
         
-        expect(alertController.title) == Strings.error
-        expect(alertController.message) == error.localizedDescription
-        expect(alertController.actions.count) == 1
-        expect(alertController.actions.first?.title) == Strings.dismiss
+        #expect(alertController.title == Strings.error)
+        #expect(alertController.message == error.localizedDescription)
+        #expect(alertController.actions.count == 1)
+        #expect(alertController.actions.first?.title == Strings.dismiss)
     }
     
     @MainActor
@@ -50,18 +50,18 @@ class AlertPresenterTests: XCTestCase {
         
         await AlertPresenter.show(errorMessage: errorMessage, presentingController: viewController)
         
-        expect(self.viewController.presentCallCount) == 1
-        expect(self.viewController.presentedAlert).toNot(beNil())
+        #expect(self.viewController.presentCallCount == 1)
+        #expect(self.viewController.presentedAlert != nil)
         
         guard let alertController = self.viewController.presentedAlert else {
-            fail("Expected alert to be presented")
+            Issue.record("Expected alert to be presented")
             return
         }
         
-        expect(alertController.title) == Strings.error
-        expect(alertController.message) == errorMessage
-        expect(alertController.actions.count) == 1
-        expect(alertController.actions.first?.title) == Strings.dismiss
+        #expect(alertController.title == Strings.error)
+        #expect(alertController.message == errorMessage)
+        #expect(alertController.actions.count == 1)
+        #expect(alertController.actions.first?.title == Strings.dismiss)
     }
     
     @MainActor
@@ -71,37 +71,37 @@ class AlertPresenterTests: XCTestCase {
         
         await AlertPresenter.showDismissableAlert(title: title, message: message, presentingController: viewController)
         
-        expect(self.viewController.presentCallCount) == 1
-        expect(self.viewController.presentedAlert).toNot(beNil())
+        #expect(self.viewController.presentCallCount == 1)
+        #expect(self.viewController.presentedAlert != nil)
         
         guard let alertController = self.viewController.presentedAlert else {
-            fail("Expected alert to be presented")
+            Issue.record("Expected alert to be presented")
             return
         }
         
-        expect(alertController.title) == title
-        expect(alertController.message) == message
-        expect(alertController.actions.count) == 1
-        expect(alertController.actions.first?.title) == Strings.dismiss
-        expect(alertController.preferredStyle) == UIAlertController.Style.alert
+        #expect(alertController.title == title)
+        #expect(alertController.message == message)
+        #expect(alertController.actions.count == 1)
+        #expect(alertController.actions.first?.title == Strings.dismiss)
+        #expect(alertController.preferredStyle == UIAlertController.Style.alert)
     }
     
     @MainActor
     func test_showDismissableAlert_withNilTitleAndMessage() async {
         await AlertPresenter.showDismissableAlert(title: nil, message: nil, presentingController: viewController)
         
-        expect(self.viewController.presentCallCount) == 1
-        expect(self.viewController.presentedAlert).toNot(beNil())
+        #expect(self.viewController.presentCallCount == 1)
+        #expect(self.viewController.presentedAlert != nil)
         
         guard let alertController = self.viewController.presentedAlert else {
-            fail("Expected alert to be presented")
+            Issue.record("Expected alert to be presented")
             return
         }
         
-        expect(alertController.title).to(beNil())
-        expect(alertController.message).to(beNil())
-        expect(alertController.actions.count) == 1
-        expect(alertController.actions.first?.title) == Strings.dismiss
+        #expect(alertController.title == nil)
+        #expect(alertController.message == nil)
+        #expect(alertController.actions.count == 1)
+        #expect(alertController.actions.first?.title == Strings.dismiss)
     }
 }
 

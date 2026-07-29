@@ -8,7 +8,7 @@
 //
 
 import XCTest
-import Nimble
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -45,28 +45,28 @@ class ArrivalDepartureTests: OBATestCase {
         
         let arrival = try! Fixtures.dictionaryToModel(type: ArrivalDeparture.self, dictionary: arrivalData)
         
-        expect(arrival.arrivalEnabled) == true
-        expect(arrival.blockTripSequence) == 2
-        expect(arrival.departureEnabled) == true
-        expect(arrival.distanceFromStop) == 1200.5
-        expect(arrival.lastUpdated.timeIntervalSince1970) == 2212875090
-        expect(arrival.numberOfStopsAway) == 3
-        expect(arrival.predicted) == true
-        expect(arrival.predictedArrival?.timeIntervalSince1970) == 2212875120
-        expect(arrival.predictedDeparture?.timeIntervalSince1970) == 2212875150
-        expect(arrival.routeID) == "route_44"
-        expect(arrival.scheduledArrival.timeIntervalSince1970) == 2212875100
-        expect(arrival.scheduledDeparture.timeIntervalSince1970) == 2212875130
-        expect(arrival.serviceDate.timeIntervalSince1970) == 2212819200
-        expect(arrival.situationIDs) == ["alert1", "alert2"]
-        expect(arrival.status) == "SCHEDULED"
-        expect(arrival.stopID) == "stop_12345"
-        expect(arrival.stopSequence) == 15
-        expect(arrival.totalStopsInTrip) == 25
-        expect(arrival.tripID) == "trip_789"
-        expect(arrival.vehicleID) == "vehicle_001"
-        expect(arrival.frequency).to(beNil())
-        expect(arrival.tripStatus).to(beNil())
+        #expect(arrival.arrivalEnabled == true)
+        #expect(arrival.blockTripSequence == 2)
+        #expect(arrival.departureEnabled == true)
+        #expect(arrival.distanceFromStop == 1200.5)
+        #expect(arrival.lastUpdated.timeIntervalSince1970 == 2212875090)
+        #expect(arrival.numberOfStopsAway == 3)
+        #expect(arrival.predicted == true)
+        #expect(arrival.predictedArrival?.timeIntervalSince1970 == 2212875120)
+        #expect(arrival.predictedDeparture?.timeIntervalSince1970 == 2212875150)
+        #expect(arrival.routeID == "route_44")
+        #expect(arrival.scheduledArrival.timeIntervalSince1970 == 2212875100)
+        #expect(arrival.scheduledDeparture.timeIntervalSince1970 == 2212875130)
+        #expect(arrival.serviceDate.timeIntervalSince1970 == 2212819200)
+        #expect(arrival.situationIDs == ["alert1", "alert2"])
+        #expect(arrival.status == "SCHEDULED")
+        #expect(arrival.stopID == "stop_12345")
+        #expect(arrival.stopSequence == 15)
+        #expect(arrival.totalStopsInTrip == 25)
+        #expect(arrival.tripID == "trip_789")
+        #expect(arrival.vehicleID == "vehicle_001")
+        #expect(arrival.frequency == nil)
+        #expect(arrival.tripStatus == nil)
     }
     
     func test_decodeMinimalArrivalDeparture() {
@@ -92,22 +92,22 @@ class ArrivalDepartureTests: OBATestCase {
         
         let arrival = try! Fixtures.dictionaryToModel(type: ArrivalDeparture.self, dictionary: minimalData)
         
-        expect(arrival.arrivalEnabled) == false
-        expect(arrival.blockTripSequence) == 1
-        expect(arrival.departureEnabled) == false
-        expect(arrival.distanceFromStop) == 0.0
-        expect(arrival.numberOfStopsAway) == 0
-        expect(arrival.predicted) == false
-        expect(arrival.predictedArrival).to(beNil())
-        expect(arrival.predictedDeparture).to(beNil())
-        expect(arrival.routeID) == "route_minimal"
-        expect(arrival.situationIDs) == []
-        expect(arrival.status) == "UNKNOWN"
-        expect(arrival.stopID) == "stop_minimal"
-        expect(arrival.stopSequence) == 1
-        expect(arrival.totalStopsInTrip).to(beNil())
-        expect(arrival.tripID) == "trip_minimal"
-        expect(arrival.vehicleID).to(beNil())
+        #expect(arrival.arrivalEnabled == false)
+        #expect(arrival.blockTripSequence == 1)
+        #expect(arrival.departureEnabled == false)
+        #expect(arrival.distanceFromStop == 0.0)
+        #expect(arrival.numberOfStopsAway == 0)
+        #expect(arrival.predicted == false)
+        #expect(arrival.predictedArrival == nil)
+        #expect(arrival.predictedDeparture == nil)
+        #expect(arrival.routeID == "route_minimal")
+        #expect(arrival.situationIDs == [])
+        #expect(arrival.status == "UNKNOWN")
+        #expect(arrival.stopID == "stop_minimal")
+        #expect(arrival.stopSequence == 1)
+        #expect(arrival.totalStopsInTrip == nil)
+        #expect(arrival.tripID == "trip_minimal")
+        #expect(arrival.vehicleID == nil)
     }
     
     func test_decodeArrivalDepartureWithBlankValues() {
@@ -137,7 +137,7 @@ class ArrivalDepartureTests: OBATestCase {
         let arrival = try! Fixtures.dictionaryToModel(type: ArrivalDeparture.self, dictionary: dataWithBlanks)
         
         // String.nilifyBlankValue should convert empty strings to nil
-        expect(arrival.vehicleID).to(beNil())
+        #expect(arrival.vehicleID == nil)
         // Private properties are not directly testable, but their effects should be seen in computed properties
     }
     
@@ -168,8 +168,8 @@ class ArrivalDepartureTests: OBATestCase {
         let arrival = try! Fixtures.dictionaryToModel(type: ArrivalDeparture.self, dictionary: dataWithInvalidTimes)
         
         // ModelHelpers.nilifyDate should have converted very early dates to nil
-        expect(arrival.predictedArrival).to(beNil())
-        expect(arrival.predictedDeparture).to(beNil())
+        #expect(arrival.predictedArrival == nil)
+        #expect(arrival.predictedDeparture == nil)
     }
     
     func test_hasReferencesLoadReferences() {
@@ -258,15 +258,15 @@ class ArrivalDepartureTests: OBATestCase {
         
         arrival.loadReferences(references, regionIdentifier: 777)
         
-        expect(arrival.regionIdentifier) == 777
-        expect(arrival.route).toNot(beNil())
-        expect(arrival.route.id) == "route_ref"
-        expect(arrival.stop).toNot(beNil())
-        expect(arrival.stop.id) == "stop_ref"
-        expect(arrival.trip).toNot(beNil())
-        expect(arrival.trip.id) == "trip_ref"
-        expect(arrival.serviceAlerts.count) == 2
-        expect(arrival.serviceAlerts.map { $0.id }.sorted()) == ["alert_ref_1", "alert_ref_2"]
+        #expect(arrival.regionIdentifier == 777)
+        #expect(arrival.route != nil)
+        #expect(arrival.route.id == "route_ref")
+        #expect(arrival.stop != nil)
+        #expect(arrival.stop.id == "stop_ref")
+        #expect(arrival.trip != nil)
+        #expect(arrival.trip.id == "trip_ref")
+        #expect(arrival.serviceAlerts.count == 2)
+        #expect(arrival.serviceAlerts.map { $0.id }.sorted() == ["alert_ref_1", "alert_ref_2"])
     }
     
     func test_occupancyStatusDecoding() {
@@ -294,8 +294,8 @@ class ArrivalDepartureTests: OBATestCase {
         
         let arrival = try! Fixtures.dictionaryToModel(type: ArrivalDeparture.self, dictionary: occupancyData)
         
-        expect(arrival.occupancyStatus?.rawValue) == "FULL"
-        expect(arrival.historicalOccupancyStatus?.rawValue) == "MANY_SEATS_AVAILABLE"
+        #expect(arrival.occupancyStatus?.rawValue == "FULL")
+        #expect(arrival.historicalOccupancyStatus?.rawValue == "MANY_SEATS_AVAILABLE")
     }
     
     func test_arrivalDepartureEquality() {
@@ -326,10 +326,10 @@ class ArrivalDepartureTests: OBATestCase {
         differentData["tripId"] = "different_trip"
         let arrival3 = try! Fixtures.dictionaryToModel(type: ArrivalDeparture.self, dictionary: differentData)
         
-        expect(arrival1.isEqual(arrival2)) == true
-        expect(arrival1.isEqual(arrival3)) == false
-        expect(arrival1.hash) == arrival2.hash
-        expect(arrival1.hash) != arrival3.hash
+        #expect(arrival1.isEqual(arrival2) == true)
+        #expect(arrival1.isEqual(arrival3) == false)
+        #expect(arrival1.hash == arrival2.hash)
+        #expect(arrival1.hash != arrival3.hash)
     }
     
     func test_decodeFailureWhenMissingRequiredFields() {
@@ -353,9 +353,9 @@ class ArrivalDepartureTests: OBATestCase {
         ]
         // Missing arrivalEnabled
         
-        expect {
+        #expect(throws: (any Error).self) {
             try Fixtures.dictionaryToModel(type: ArrivalDeparture.self, dictionary: incompleteData)
-        }.to(throwError())
+        }
         
         incompleteData = [
             "arrivalEnabled": true,
@@ -377,9 +377,9 @@ class ArrivalDepartureTests: OBATestCase {
         ]
         // Missing routeId
         
-        expect {
+        #expect(throws: (any Error).self) {
             try Fixtures.dictionaryToModel(type: ArrivalDeparture.self, dictionary: incompleteData)
-        }.to(throwError())
+        }
     }
 
     // MARK: - Schedule deviation
@@ -403,16 +403,16 @@ class ArrivalDepartureTests: OBATestCase {
         // layover, which would report this late trip as 7 minutes early.
         let arrival = try layoverArrivalDeparture(stopSequence: 5)
 
-        expect(arrival.arrivalDepartureStatus) == .arriving
-        expect(arrival.deviationFromScheduleInMinutes) == 3
-        expect(arrival.scheduleStatus) == .delayed
+        #expect(arrival.arrivalDepartureStatus == .arriving)
+        #expect(arrival.deviationFromScheduleInMinutes == 3)
+        #expect(arrival.scheduleStatus == .delayed)
     }
 
     func test_deviation_forDepartingTrip_measuresAgainstScheduledDeparture() throws {
         let departure = try layoverArrivalDeparture(stopSequence: 0)
 
-        expect(departure.arrivalDepartureStatus) == .departing
-        expect(departure.deviationFromScheduleInMinutes) == 3
-        expect(departure.scheduleStatus) == .delayed
+        #expect(departure.arrivalDepartureStatus == .departing)
+        #expect(departure.deviationFromScheduleInMinutes == 3)
+        #expect(departure.scheduleStatus == .delayed)
     }
 }

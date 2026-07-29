@@ -8,8 +8,8 @@
 //
 
 import XCTest
-import Nimble
 import CoreLocation
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -29,26 +29,24 @@ class ProximityAlertTests: OBATestCase {
     func test_init_setsPropertiesFromStop() {
         let alert = ProximityAlert(stop: stop)
 
-        expect(alert.stopID) == stop.id
-        expect(alert.stopName) == stop.name
-        expect(alert.latitude) == stop.location.coordinate.latitude
-        expect(alert.longitude) == stop.location.coordinate.longitude
-        expect(alert.radiusMeters) == 200.0
-        expect(alert.id).toNot(beNil())
-        expect(alert.createdAt).toNot(beNil())
+        #expect(alert.stopID == stop.id)
+        #expect(alert.stopName == stop.name)
+        #expect(alert.latitude == stop.location.coordinate.latitude)
+        #expect(alert.longitude == stop.location.coordinate.longitude)
+        #expect(alert.radiusMeters == 200.0)
     }
 
     func test_init_customRadius() {
         let alert = ProximityAlert(stop: stop, radiusMeters: 500.0)
 
-        expect(alert.radiusMeters) == 500.0
+        #expect(alert.radiusMeters == 500.0)
     }
 
     func test_coordinate_returnsCorrectValue() {
         let alert = ProximityAlert(stop: stop)
 
-        expect(alert.coordinate.latitude) == stop.location.coordinate.latitude
-        expect(alert.coordinate.longitude) == stop.location.coordinate.longitude
+        #expect(alert.coordinate.latitude == stop.location.coordinate.latitude)
+        #expect(alert.coordinate.longitude == stop.location.coordinate.longitude)
     }
 
     // MARK: - Codable Round-Trip
@@ -57,21 +55,21 @@ class ProximityAlertTests: OBATestCase {
         let alert = ProximityAlert(stop: stop, radiusMeters: 350.0)
         let roundtripped = try! Fixtures.roundtripCodable(type: ProximityAlert.self, model: alert)
 
-        expect(roundtripped.id) == alert.id
-        expect(roundtripped.stopID) == alert.stopID
-        expect(roundtripped.stopName) == alert.stopName
-        expect(roundtripped.latitude) == alert.latitude
-        expect(roundtripped.longitude) == alert.longitude
-        expect(roundtripped.radiusMeters) == 350.0
-        expect(roundtripped.createdAt.timeIntervalSince1970).to(beCloseTo(alert.createdAt.timeIntervalSince1970, within: 1.0))
+        #expect(roundtripped.id == alert.id)
+        #expect(roundtripped.stopID == alert.stopID)
+        #expect(roundtripped.stopName == alert.stopName)
+        #expect(roundtripped.latitude == alert.latitude)
+        #expect(roundtripped.longitude == alert.longitude)
+        #expect(roundtripped.radiusMeters == 350.0)
+        expectClose(roundtripped.createdAt.timeIntervalSince1970, alert.createdAt.timeIntervalSince1970, within: 1.0)
     }
 
     func test_codable_roundTrip_preservesCoordinate() {
         let alert = ProximityAlert(stop: stop)
         let roundtripped = try! Fixtures.roundtripCodable(type: ProximityAlert.self, model: alert)
 
-        expect(roundtripped.coordinate.latitude) == alert.latitude
-        expect(roundtripped.coordinate.longitude) == alert.longitude
+        #expect(roundtripped.coordinate.latitude == alert.latitude)
+        #expect(roundtripped.coordinate.longitude == alert.longitude)
     }
 
     // MARK: - Expiration
@@ -79,21 +77,21 @@ class ProximityAlertTests: OBATestCase {
     func test_isExpired_falseWhenFresh() {
         let alert = ProximityAlert(stop: stop)
 
-        expect(alert.isExpired).to(beFalse())
+        #expect(!alert.isExpired)
     }
 
     func test_isExpired_trueWhenOlderThan24Hours() {
         let expiredDate = Date().addingTimeInterval(-25 * 60 * 60)
         let alert = ProximityAlert(stop: stop, createdAt: expiredDate)
 
-        expect(alert.isExpired).to(beTrue())
+        #expect(alert.isExpired)
     }
 
     func test_isExpired_falseJustUnder24Hours() {
         let justUnderDate = Date().addingTimeInterval(-24 * 60 * 60 + 5) // 5 seconds under 24 hours
         let alert = ProximityAlert(stop: stop, createdAt: justUnderDate)
 
-        expect(alert.isExpired).to(beFalse())
+        #expect(!alert.isExpired)
     }
 
     // MARK: - Equality
@@ -101,20 +99,20 @@ class ProximityAlertTests: OBATestCase {
     func test_equality_sameID() {
         let alert = ProximityAlert(stop: stop)
 
-        expect(alert.isEqual(alert)).to(beTrue())
+        #expect(alert.isEqual(alert))
     }
 
     func test_equality_differentID() {
         let alert1 = ProximityAlert(stop: stop)
         let alert2 = ProximityAlert(stop: stop)
 
-        expect(alert1.isEqual(alert2)).to(beFalse())
+        #expect(!alert1.isEqual(alert2))
     }
 
     func test_equality_nonProximityAlertObject() {
         let alert = ProximityAlert(stop: stop)
 
-        expect(alert.isEqual("not an alert")).to(beFalse())
+        #expect(!alert.isEqual("not an alert"))
     }
 }
 
@@ -134,7 +132,7 @@ class ProximityAlertStoreTests: OBATestCase {
     // MARK: - Empty State
 
     func test_proximityAlerts_emptyByDefault() {
-        expect(self.userDefaultsStore.proximityAlerts).to(beEmpty())
+        #expect(self.userDefaultsStore.proximityAlerts.isEmpty)
     }
 
     // MARK: - Add
@@ -143,9 +141,9 @@ class ProximityAlertStoreTests: OBATestCase {
         let alert = ProximityAlert(stop: stop)
         userDefaultsStore.add(proximityAlert: alert)
 
-        expect(self.userDefaultsStore.proximityAlerts.count) == 1
-        expect(self.userDefaultsStore.proximityAlerts.first?.id) == alert.id
-        expect(self.userDefaultsStore.proximityAlerts.first?.stopID) == stop.id
+        #expect(self.userDefaultsStore.proximityAlerts.count == 1)
+        #expect(self.userDefaultsStore.proximityAlerts.first?.id == alert.id)
+        #expect(self.userDefaultsStore.proximityAlerts.first?.stopID == stop.id)
     }
 
     func test_add_multipleAlerts() {
@@ -156,7 +154,7 @@ class ProximityAlertStoreTests: OBATestCase {
         userDefaultsStore.add(proximityAlert: alert1)
         userDefaultsStore.add(proximityAlert: alert2)
 
-        expect(self.userDefaultsStore.proximityAlerts.count) == 2
+        #expect(self.userDefaultsStore.proximityAlerts.count == 2)
     }
 
     // MARK: - Delete
@@ -167,7 +165,7 @@ class ProximityAlertStoreTests: OBATestCase {
 
         userDefaultsStore.delete(proximityAlert: alert)
 
-        expect(self.userDefaultsStore.proximityAlerts).to(beEmpty())
+        #expect(self.userDefaultsStore.proximityAlerts.isEmpty)
     }
 
     func test_delete_nonexistentAlert_isNoOp() {
@@ -177,8 +175,8 @@ class ProximityAlertStoreTests: OBATestCase {
 
         userDefaultsStore.delete(proximityAlert: alert2)
 
-        expect(self.userDefaultsStore.proximityAlerts.count) == 1
-        expect(self.userDefaultsStore.proximityAlerts.first?.id) == alert1.id
+        #expect(self.userDefaultsStore.proximityAlerts.count == 1)
+        #expect(self.userDefaultsStore.proximityAlerts.first?.id == alert1.id)
     }
 
     func test_delete_onlyRemovesTargetAlert() {
@@ -191,8 +189,8 @@ class ProximityAlertStoreTests: OBATestCase {
 
         userDefaultsStore.delete(proximityAlert: alert1)
 
-        expect(self.userDefaultsStore.proximityAlerts.count) == 1
-        expect(self.userDefaultsStore.proximityAlerts.first?.id) == alert2.id
+        #expect(self.userDefaultsStore.proximityAlerts.count == 1)
+        #expect(self.userDefaultsStore.proximityAlerts.first?.id == alert2.id)
     }
 
     // MARK: - Delete All
@@ -207,7 +205,7 @@ class ProximityAlertStoreTests: OBATestCase {
 
         userDefaultsStore.deleteAllProximityAlerts()
 
-        expect(self.userDefaultsStore.proximityAlerts).to(beEmpty())
+        #expect(self.userDefaultsStore.proximityAlerts.isEmpty)
     }
 
     // MARK: - Expired Alerts
@@ -218,7 +216,7 @@ class ProximityAlertStoreTests: OBATestCase {
 
         userDefaultsStore.deleteExpiredProximityAlerts()
 
-        expect(self.userDefaultsStore.proximityAlerts.count) == 1
+        #expect(self.userDefaultsStore.proximityAlerts.count == 1)
     }
 
     func test_deleteExpired_removesExpiredAlerts() {
@@ -230,8 +228,8 @@ class ProximityAlertStoreTests: OBATestCase {
 
         userDefaultsStore.deleteExpiredProximityAlerts()
 
-        expect(self.userDefaultsStore.proximityAlerts.count) == 1
-        expect(self.userDefaultsStore.proximityAlerts.first?.id) == freshAlert.id
+        #expect(self.userDefaultsStore.proximityAlerts.count == 1)
+        #expect(self.userDefaultsStore.proximityAlerts.first?.id == freshAlert.id)
     }
 
     func test_deleteExpired_removesAllWhenAllExpired() {
@@ -244,7 +242,7 @@ class ProximityAlertStoreTests: OBATestCase {
 
         userDefaultsStore.deleteExpiredProximityAlerts()
 
-        expect(self.userDefaultsStore.proximityAlerts).to(beEmpty())
+        #expect(self.userDefaultsStore.proximityAlerts.isEmpty)
     }
 
     func test_deleteExpired_doesNotPostNotification_whenNothingExpired() {
@@ -278,13 +276,13 @@ class ProximityAlertStoreTests: OBATestCase {
 
         let newStore = UserDefaultsStore(userDefaults: userDefaults)
 
-        expect(newStore.proximityAlerts.count) == 1
-        expect(newStore.proximityAlerts.first?.id) == alert.id
-        expect(newStore.proximityAlerts.first?.stopID) == stop.id
-        expect(newStore.proximityAlerts.first?.stopName) == stop.name
-        expect(newStore.proximityAlerts.first?.latitude) == stop.location.coordinate.latitude
-        expect(newStore.proximityAlerts.first?.longitude) == stop.location.coordinate.longitude
-        expect(newStore.proximityAlerts.first?.radiusMeters) == 200.0
+        #expect(newStore.proximityAlerts.count == 1)
+        #expect(newStore.proximityAlerts.first?.id == alert.id)
+        #expect(newStore.proximityAlerts.first?.stopID == stop.id)
+        #expect(newStore.proximityAlerts.first?.stopName == stop.name)
+        #expect(newStore.proximityAlerts.first?.latitude == stop.location.coordinate.latitude)
+        #expect(newStore.proximityAlerts.first?.longitude == stop.location.coordinate.longitude)
+        #expect(newStore.proximityAlerts.first?.radiusMeters == 200.0)
     }
 
     // MARK: - Notification

@@ -8,9 +8,9 @@
 //
 
 import Foundation
-import Nimble
 import XCTest
 import CoreLocation
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -22,9 +22,9 @@ class CoreLocationTests: XCTestCase {
     func test_creation_fromMapRect() {
         let region = CLCircularRegion(mapRect: TestData.seattleMapRect)
 
-        expect(region.center.latitude).to(beCloseTo(TestData.seattleMapRectCenter.latitude))
-        expect(region.center.longitude).to(beCloseTo(TestData.seattleMapRectCenter.longitude))
-        expect(region.radius).to(beCloseTo(TestData.seattleMapRectRadius, within: 0.1))
+        expectClose(region.center.latitude, TestData.seattleMapRectCenter.latitude)
+        expectClose(region.center.longitude, TestData.seattleMapRectCenter.longitude)
+        expectClose(region.radius, TestData.seattleMapRectRadius, within: 0.1)
     }
 
     // MARK: - Distance
@@ -34,6 +34,6 @@ class CoreLocationTests: XCTestCase {
         let pt2 = CLLocationCoordinate2D(latitude: 47.632352, longitude: -122.312526)
 
         let distance = pt1.distance(from: pt2)
-        expect(distance).to(beCloseTo(967.4102, within: 0.1))
+        expectClose(distance, 967.4102, within: 0.1)
     }
 }

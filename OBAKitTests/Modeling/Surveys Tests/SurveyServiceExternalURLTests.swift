@@ -4,7 +4,7 @@
 //
 
 import XCTest
-import Nimble
+import Testing
 @testable import OBAKitCore
 
 final class SurveyServiceExternalURLTests: OBATestCase {
@@ -36,12 +36,12 @@ final class SurveyServiceExternalURLTests: OBATestCase {
         ])
 
         let url = service.externalSurveyURL(for: survey, stop: nil)
-        expect(url).toNot(beNil())
+        #expect(url != nil)
         guard let url else { return }
         let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
 
-        expect(items.first { $0.name == "user_id" }?.value).to(equal("test-user-123"))
-        expect(items.first { $0.name == "region_id" }?.value).to(equal("7"))
+        #expect(items.first { $0.name == "user_id" }?.value == "test-user-123")
+        #expect(items.first { $0.name == "region_id" }?.value == "7")
     }
 
     func test_externalSurveyURL_buildsWithoutContext_omittingOnlyContextFields() {
@@ -54,11 +54,11 @@ final class SurveyServiceExternalURLTests: OBATestCase {
         ])
 
         let url = svc.externalSurveyURL(for: survey, stop: nil)
-        expect(url).toNot(beNil())
+        #expect(url != nil)
         guard let url else { return }
         let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
 
-        expect(items.first { $0.name == "user_id" }?.value).to(equal("test-user-123"))
-        expect(items.contains { $0.name == "region_id" }).to(beFalse())
+        #expect(items.first { $0.name == "user_id" }?.value == "test-user-123")
+        #expect(!items.contains { $0.name == "region_id" })
     }
 }

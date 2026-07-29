@@ -6,7 +6,7 @@
 //
 
 import XCTest
-import Nimble
+import Testing
 @testable import OBAKitCore
 
 final class SurveyServicePrioritizationTests: OBATestCase {
@@ -72,7 +72,7 @@ final class SurveyServicePrioritizationTests: OBATestCase {
     func test_findSurveyForMap_whenEmpty_returnsNil() async {
         let service = await fetchAndReturnService(surveys: [])
         let result = service.findSurveyForMap()
-        expect(result).to(beNil())
+        #expect(result == nil)
     }
 
     func test_findSurveyForStop_whenNoQuestions_returnsNil() async {
@@ -82,7 +82,7 @@ final class SurveyServicePrioritizationTests: OBATestCase {
         ]
         let service = await fetchAndReturnService(surveys: surveys)
         let result = service.findSurveyForStop(stopID: "STOP_A", routeIDs: [])
-        expect(result).to(beNil())
+        #expect(result == nil)
     }
 
     // MARK: - Map Context
@@ -95,7 +95,7 @@ final class SurveyServicePrioritizationTests: OBATestCase {
         ]
         let service = await fetchAndReturnService(surveys: surveys)
         let result = service.findSurveyForMap()
-        expect(result?.id).to(equal(2))
+        #expect(result?.id == 2)
     }
 
     func test_findSurveyForMap_returnsFirstVisible() async {
@@ -106,7 +106,7 @@ final class SurveyServicePrioritizationTests: OBATestCase {
         ]
         let service = await fetchAndReturnService(surveys: surveys)
         let result = service.findSurveyForMap()
-        expect(result?.id).to(equal(0))
+        #expect(result?.id == 0)
     }
 
     func test_findSurveyForMap_whenNoMapVisible_returnsNil() async {
@@ -116,7 +116,7 @@ final class SurveyServicePrioritizationTests: OBATestCase {
         ]
         let service = await fetchAndReturnService(surveys: surveys)
         let result = service.findSurveyForMap()
-        expect(result).to(beNil())
+        #expect(result == nil)
     }
 
     // MARK: - Stop Context
@@ -128,7 +128,7 @@ final class SurveyServicePrioritizationTests: OBATestCase {
         ]
         let service = await fetchAndReturnService(surveys: surveys)
         let result = service.findSurveyForStop(stopID: "STOP_A", routeIDs: [])
-        expect(result?.id).to(equal(1))
+        #expect(result?.id == 1)
     }
 
     func test_findSurveyForStop_matchesStopInList() async {
@@ -138,7 +138,7 @@ final class SurveyServicePrioritizationTests: OBATestCase {
         ]
         let service = await fetchAndReturnService(surveys: surveys)
         let result = service.findSurveyForStop(stopID: "STOP_C", routeIDs: [])
-        expect(result?.id).to(equal(1))
+        #expect(result?.id == 1)
     }
 
     func test_findSurveyForStop_matchesRouteID() async {
@@ -148,7 +148,7 @@ final class SurveyServicePrioritizationTests: OBATestCase {
         ]
         let service = await fetchAndReturnService(surveys: surveys)
         let result = service.findSurveyForStop(stopID: "STOP_D", routeIDs: ["1_309", "1_315"])
-        expect(result?.id).to(equal(1))
+        #expect(result?.id == 1)
     }
 
     func test_findSurveyForStop_noMatch_returnsNil() async {
@@ -157,7 +157,7 @@ final class SurveyServicePrioritizationTests: OBATestCase {
         ]
         let service = await fetchAndReturnService(surveys: surveys)
         let result = service.findSurveyForStop(stopID: "STOP_Z", routeIDs: ["1_999"])
-        expect(result).to(beNil())
+        #expect(result == nil)
     }
 
     // MARK: - Priority: Always Visible
@@ -174,7 +174,7 @@ final class SurveyServicePrioritizationTests: OBATestCase {
         ]
         let service = await fetchAndReturnService(surveys: surveys, userDataStore: store)
         let result = service.findSurveyForMap()
-        expect(result?.id).to(equal(1))
+        #expect(result?.id == 1)
     }
 
     func test_alwaysVisible_allCompleted_returnsNil() async {
@@ -189,7 +189,7 @@ final class SurveyServicePrioritizationTests: OBATestCase {
         ]
         let service = await fetchAndReturnService(surveys: surveys, userDataStore: store)
         let result = service.findSurveyForMap()
-        expect(result).to(beNil())
+        #expect(result == nil)
     }
 
     // MARK: - Priority: Multiple Responses
@@ -206,7 +206,7 @@ final class SurveyServicePrioritizationTests: OBATestCase {
         ]
         let service = await fetchAndReturnService(surveys: surveys, userDataStore: store)
         let result = service.findSurveyForMap()
-        expect(result?.id).to(equal(1))
+        #expect(result?.id == 1)
     }
 
     // MARK: - Priority: One-Time Incomplete
@@ -219,7 +219,7 @@ final class SurveyServicePrioritizationTests: OBATestCase {
         let service = await fetchAndReturnService(surveys: surveys)
         let result = service.findSurveyForMap()
         // One-time incomplete (id:1) should be prioritized over multiple-response (id:0)
-        expect(result?.id).to(equal(1))
+        #expect(result?.id == 1)
     }
 
     func test_allCompleted_regularSurveys_returnsNil() async {
@@ -234,7 +234,7 @@ final class SurveyServicePrioritizationTests: OBATestCase {
         ]
         let service = await fetchAndReturnService(surveys: surveys, userDataStore: store)
         let result = service.findSurveyForMap()
-        expect(result).to(beNil())
+        #expect(result == nil)
     }
 
     // MARK: - Issue 1: Expired surveys should not be returned
@@ -252,7 +252,7 @@ final class SurveyServicePrioritizationTests: OBATestCase {
         let service = await fetchAndReturnService(surveys: surveys)
         // Expired survey should not be found, even though showOnStops is true
         let result = service.findSurveyForStop(stopID: "STOP_A", routeIDs: [])
-        expect(result).to(beNil())
+        #expect(result == nil)
     }
 
     func test_findSurveyForMap_expiredSurvey_returnsNil() async {
@@ -267,7 +267,7 @@ final class SurveyServicePrioritizationTests: OBATestCase {
         ]
         let service = await fetchAndReturnService(surveys: surveys)
         let result = service.findSurveyForMap()
-        expect(result).to(beNil())
+        #expect(result == nil)
     }
 
     // MARK: - Mark For Later
@@ -288,7 +288,7 @@ final class SurveyServicePrioritizationTests: OBATestCase {
         ]
         let service = await fetchAndReturnService(surveys: surveys, userDataStore: store)
         let result = service.findSurveyForMap()
-        expect(result?.id).to(equal(0))
+        #expect(result?.id == 0)
     }
 }
 

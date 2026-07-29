@@ -8,7 +8,7 @@
 //
 
 import XCTest
-import Nimble
+import Testing
 import CoreLocation
 @testable import OBAKit
 @testable import OBAKitCore
@@ -34,9 +34,9 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
     func test_bookmarkGroups_roundTripping() {
         let group = BookmarkGroup(name: "Group!", sortOrder: 0)
 
-        expect(self.userDefaultsStore.bookmarkGroups) == []
+        #expect(self.userDefaultsStore.bookmarkGroups == [])
         userDefaultsStore.upsert(bookmarkGroup: group)
-        expect(self.userDefaultsStore.bookmarkGroups) == [group]
+        #expect(self.userDefaultsStore.bookmarkGroups == [group])
     }
 
     func test_bookmarkGroups_addDuplicate() {
@@ -44,21 +44,21 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
 
         userDefaultsStore.upsert(bookmarkGroup: group)
         userDefaultsStore.upsert(bookmarkGroup: group)
-        expect(self.userDefaultsStore.bookmarkGroups) == [group]
+        #expect(self.userDefaultsStore.bookmarkGroups == [group])
     }
 
     func test_bookmarkGroups_delete() {
         let group = BookmarkGroup(name: "Group!", sortOrder: 0)
         userDefaultsStore.upsert(bookmarkGroup: group)
         userDefaultsStore.deleteGroup(group)
-        expect(self.userDefaultsStore.bookmarkGroups) == []
+        #expect(self.userDefaultsStore.bookmarkGroups == [])
     }
 
     func test_bookmarkGroups_deleteByID() {
         let group = BookmarkGroup(name: "Group!", sortOrder: 0)
         userDefaultsStore.upsert(bookmarkGroup: group)
         userDefaultsStore.deleteGroup(id: group.id)
-        expect(self.userDefaultsStore.bookmarkGroups) == []
+        #expect(self.userDefaultsStore.bookmarkGroups == [])
     }
 
     func test_bookmarkGroups_deleteNonexistent() {
@@ -66,7 +66,7 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
         let group2 = BookmarkGroup(name: "Group!", sortOrder: 2)
         userDefaultsStore.upsert(bookmarkGroup: group)
         userDefaultsStore.deleteGroup(group2)
-        expect(self.userDefaultsStore.bookmarkGroups) == [group]
+        #expect(self.userDefaultsStore.bookmarkGroups == [group])
     }
 
     func test_bookmarkGroups_findByID() {
@@ -77,7 +77,7 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
         userDefaultsStore.upsert(bookmarkGroup: group2)
 
         let found = userDefaultsStore.findGroup(id: group.id)
-        expect(found) == group
+        #expect(found == group)
     }
 
     func test_bookmarkGroups_replacement() {
@@ -94,7 +94,7 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
         let newGroup = BookmarkGroup(name: "i am new", sortOrder: 3)
 
         // Verify initial state
-        expect(self.userDefaultsStore.bookmarkGroups) == [keptGroup, renamedGroup, deletedGroup]
+        #expect(self.userDefaultsStore.bookmarkGroups == [keptGroup, renamedGroup, deletedGroup])
 
         // Mutate
         renamedGroup.name = "i have been renamed"
@@ -103,9 +103,9 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
         userDefaultsStore.replaceBookmarkGroups(with: [keptGroup, renamedGroup, newGroup])
 
         // Verify new state
-        expect(self.userDefaultsStore.bookmarkGroups) == [keptGroup, renamedGroup, newGroup]
-        expect(self.userDefaultsStore.findGroup(id: renamedGroup.id)!.name) == "i have been renamed"
-        expect(self.userDefaultsStore.findGroup(id: deletedGroup.id)).to(beNil())
+        #expect(self.userDefaultsStore.bookmarkGroups == [keptGroup, renamedGroup, newGroup])
+        #expect(self.userDefaultsStore.findGroup(id: renamedGroup.id)!.name == "i have been renamed")
+        #expect(self.userDefaultsStore.findGroup(id: deletedGroup.id) == nil)
     }
 
     // MARK: - Bookmarks
@@ -122,7 +122,7 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
         let bookmark2 = Bookmark(name: "My Bookmark 2", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
         userDefaultsStore.add(bookmark2)
 
-        expect(self.userDefaultsStore.bookmarksInGroup(nil)) == [bookmark2]
+        #expect(self.userDefaultsStore.bookmarksInGroup(nil) == [bookmark2])
     }
 
     func test_bookmarks_retrieval_inGroup() {
@@ -137,35 +137,35 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
         let bookmark2 = Bookmark(name: "My Bookmark 2", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
         userDefaultsStore.add(bookmark2)
 
-        expect(self.userDefaultsStore.bookmarksInGroup(group)) == [bookmark]
+        #expect(self.userDefaultsStore.bookmarksInGroup(group) == [bookmark])
     }
 
     func test_bookmarks_propertyRoundTripping() {
         let stop = stops[0]
         let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
         userDefaultsStore.add(bookmark)
-        expect(self.userDefaultsStore.bookmarks) == [bookmark]
+        #expect(self.userDefaultsStore.bookmarks == [bookmark])
     }
 
     func test_bookmark_findByID() {
         let stop = stops[0]
         let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
         userDefaultsStore.add(bookmark)
-        expect(self.userDefaultsStore.findBookmark(id: bookmark.id)) == bookmark
+        #expect(self.userDefaultsStore.findBookmark(id: bookmark.id) == bookmark)
     }
 
     func test_bookmark_findByStopID() {
         let stop = stops[0]
         let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
         userDefaultsStore.add(bookmark)
-        expect(self.userDefaultsStore.findBookmark(stopID: stop.id)) == bookmark
+        #expect(self.userDefaultsStore.findBookmark(stopID: stop.id) == bookmark)
     }
 
     func test_bookmark_find_noMatch() {
         let stop = stops[0]
         let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
         userDefaultsStore.add(bookmark)
-        expect(self.userDefaultsStore.findBookmark(id: UUID())).to(beNil())
+        #expect(self.userDefaultsStore.findBookmark(id: UUID()) == nil)
     }
 
     func test_bookmark_addToGroup_groupUnregistered() {
@@ -174,9 +174,9 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
         let group = BookmarkGroup(name: "My Group", sortOrder: 0)
         userDefaultsStore.add(bookmark, to: group)
 
-        expect(self.userDefaultsStore.bookmarkGroups) == [group]
-        expect(self.userDefaultsStore.bookmarks) == [bookmark]
-        expect(self.userDefaultsStore.bookmarksInGroup(group)) == [bookmark]
+        #expect(self.userDefaultsStore.bookmarkGroups == [group])
+        #expect(self.userDefaultsStore.bookmarks == [bookmark])
+        #expect(self.userDefaultsStore.bookmarksInGroup(group) == [bookmark])
     }
 
     func test_bookmark_changeGroup() {
@@ -191,10 +191,10 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
 
         userDefaultsStore.add(bookmark, to: group2)
 
-        expect(self.userDefaultsStore.bookmarkGroups) == [group, group2]
-        expect(self.userDefaultsStore.bookmarks.first!.id) == bookmark.id
-        expect(self.userDefaultsStore.bookmarksInGroup(group)) == []
-        expect(self.userDefaultsStore.bookmarksInGroup(group2).first!.id) == bookmark.id
+        #expect(self.userDefaultsStore.bookmarkGroups == [group, group2])
+        #expect(self.userDefaultsStore.bookmarks.first!.id == bookmark.id)
+        #expect(self.userDefaultsStore.bookmarksInGroup(group) == [])
+        #expect(self.userDefaultsStore.bookmarksInGroup(group2).first!.id == bookmark.id)
     }
 
     func test_bookmark_removeFromGroup() {
@@ -206,9 +206,9 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
 
         userDefaultsStore.add(bookmark, to: nil)
 
-        expect(self.userDefaultsStore.bookmarkGroups) == [group]
-        expect(self.userDefaultsStore.bookmarks.first!.id) == bookmark.id
-        expect(self.userDefaultsStore.bookmarksInGroup(group)) == []
+        #expect(self.userDefaultsStore.bookmarkGroups == [group])
+        #expect(self.userDefaultsStore.bookmarks.first!.id == bookmark.id)
+        #expect(self.userDefaultsStore.bookmarksInGroup(group) == [])
     }
 
     func test_bookmark_addToGroup_groupRegistered() {
@@ -218,9 +218,9 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
         userDefaultsStore.upsert(bookmarkGroup: group)
         userDefaultsStore.add(bookmark, to: group)
 
-        expect(self.userDefaultsStore.bookmarkGroups) == [group]
-        expect(self.userDefaultsStore.bookmarks) == [bookmark]
-        expect(self.userDefaultsStore.bookmarksInGroup(group)) == [bookmark]
+        #expect(self.userDefaultsStore.bookmarkGroups == [group])
+        #expect(self.userDefaultsStore.bookmarks == [bookmark])
+        #expect(self.userDefaultsStore.bookmarksInGroup(group) == [bookmark])
     }
 
     func test_bookmark_addDuplicate() {
@@ -230,7 +230,7 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
         userDefaultsStore.add(bookmark)
         userDefaultsStore.add(bookmark)
 
-        expect(self.userDefaultsStore.bookmarks) == [bookmark]
+        #expect(self.userDefaultsStore.bookmarks == [bookmark])
     }
 
     func test_bookmark_delete() {
@@ -240,7 +240,7 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
         userDefaultsStore.add(bookmark)
         userDefaultsStore.delete(bookmark: bookmark)
 
-        expect(self.userDefaultsStore.bookmarks) == []
+        #expect(self.userDefaultsStore.bookmarks == [])
     }
 
     func test_bookmark_deleteNonexistent() {
@@ -251,7 +251,7 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
         userDefaultsStore.add(bookmark)
         userDefaultsStore.delete(bookmark: bookmark2)
 
-        expect(self.userDefaultsStore.bookmarks) == [bookmark]
+        #expect(self.userDefaultsStore.bookmarks == [bookmark])
     }
 
     func test_bookmark_add_existingRecord() {
@@ -262,8 +262,8 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
         bookmark.name = "Changed Name"
         userDefaultsStore.add(bookmark)
 
-        expect(self.userDefaultsStore.bookmarks.count) == 1
-        expect(self.userDefaultsStore.bookmarks.first!.name) == "Changed Name"
+        #expect(self.userDefaultsStore.bookmarks.count == 1)
+        #expect(self.userDefaultsStore.bookmarks.first!.name == "Changed Name")
     }
 
     // MARK: - Bookmark Sort Order
@@ -275,33 +275,33 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
         userDefaultsStore.add(bookmark0)
 
         bookmark0 = userDefaultsStore.findBookmark(id: bookmark0.id)!
-        expect(bookmark0.sortOrder) == 0
+        #expect(bookmark0.sortOrder == 0)
 
         var bookmark1 = Bookmark(name: "Bookmark 1", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
         userDefaultsStore.add(bookmark1)
 
         bookmark1 = userDefaultsStore.findBookmark(id: bookmark1.id)!
-        expect(bookmark1.sortOrder) == 1
+        #expect(bookmark1.sortOrder == 1)
 
         var newBookmark1 = Bookmark(name: "New Bookmark 1", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
         userDefaultsStore.add(newBookmark1, to: nil, index: 1)
 
         newBookmark1 = userDefaultsStore.findBookmark(id: newBookmark1.id)!
-        expect(newBookmark1.sortOrder) == 1
+        #expect(newBookmark1.sortOrder == 1)
 
         bookmark1 = userDefaultsStore.findBookmark(id: bookmark1.id)!
-        expect(bookmark1.sortOrder) == 2
+        #expect(bookmark1.sortOrder == 2)
 
         let ids = userDefaultsStore.bookmarks.map {$0.id}
-        expect(ids) == [bookmark0.id, newBookmark1.id, bookmark1.id]
+        #expect(ids == [bookmark0.id, newBookmark1.id, bookmark1.id])
 
         userDefaultsStore.delete(bookmark: bookmark0)
 
         newBookmark1 = userDefaultsStore.findBookmark(id: newBookmark1.id)!
-        expect(newBookmark1.sortOrder) == 0
+        #expect(newBookmark1.sortOrder == 0)
 
         bookmark1 = userDefaultsStore.findBookmark(id: bookmark1.id)!
-        expect(bookmark1.sortOrder) == 1
+        #expect(bookmark1.sortOrder == 1)
     }
 
     func test_bookmark_sortOrder_inGroup() {
@@ -313,33 +313,33 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
         userDefaultsStore.add(bookmark0, to: group)
 
         bookmark0 = userDefaultsStore.findBookmark(id: bookmark0.id)!
-        expect(bookmark0.sortOrder) == 0
+        #expect(bookmark0.sortOrder == 0)
 
         var bookmark1 = Bookmark(name: "Bookmark 1", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
         userDefaultsStore.add(bookmark1, to: group)
 
         bookmark1 = userDefaultsStore.findBookmark(id: bookmark1.id)!
-        expect(bookmark1.sortOrder) == 1
+        #expect(bookmark1.sortOrder == 1)
 
         var newBookmark1 = Bookmark(name: "New Bookmark 1", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
         userDefaultsStore.add(newBookmark1, to: group, index: 1)
 
         newBookmark1 = userDefaultsStore.findBookmark(id: newBookmark1.id)!
-        expect(newBookmark1.sortOrder) == 1
+        #expect(newBookmark1.sortOrder == 1)
 
         bookmark1 = userDefaultsStore.findBookmark(id: bookmark1.id)!
-        expect(bookmark1.sortOrder) == 2
+        #expect(bookmark1.sortOrder == 2)
 
         let ids = userDefaultsStore.bookmarksInGroup(group).map {$0.id}
-        expect(ids) == [bookmark0.id, newBookmark1.id, bookmark1.id]
+        #expect(ids == [bookmark0.id, newBookmark1.id, bookmark1.id])
 
         userDefaultsStore.delete(bookmark: bookmark0)
 
         newBookmark1 = userDefaultsStore.findBookmark(id: newBookmark1.id)!
-        expect(newBookmark1.sortOrder) == 0
+        #expect(newBookmark1.sortOrder == 0)
 
         bookmark1 = userDefaultsStore.findBookmark(id: bookmark1.id)!
-        expect(bookmark1.sortOrder) == 1
+        #expect(bookmark1.sortOrder == 1)
     }
 
     func test_bookmark_sortOrder_acrossGroups() {
@@ -355,20 +355,20 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
 
         let g1b2 = Bookmark(name: "Group 1/Bookmark 2", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
         userDefaultsStore.add(g1b2, to: group1)
-        expect(g1b2.groupID).toNot(beNil())
-        expect(g1b2.groupID) == group1.id
+        #expect(g1b2.groupID != nil)
+        #expect(g1b2.groupID == group1.id)
 
         let g1b3 = Bookmark(name: "Group 1/Bookmark 3", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
         userDefaultsStore.add(g1b3, to: group1)
 
-        expect(g1b1.sortOrder) == 0
-        expect(g1b2.sortOrder) == 1
-        expect(g1b3.sortOrder) == 2
+        #expect(g1b1.sortOrder == 0)
+        #expect(g1b2.sortOrder == 1)
+        #expect(g1b3.sortOrder == 2)
 
         userDefaultsStore.add(g1b2, to: group2)
 
-        expect(self.userDefaultsStore.findBookmark(id: g1b1.id)!.sortOrder) == 0
-        expect(self.userDefaultsStore.findBookmark(id: g1b2.id)!.sortOrder) == 0
-        expect(self.userDefaultsStore.findBookmark(id: g1b3.id)!.sortOrder) == 1
+        #expect(self.userDefaultsStore.findBookmark(id: g1b1.id)!.sortOrder == 0)
+        #expect(self.userDefaultsStore.findBookmark(id: g1b2.id)!.sortOrder == 0)
+        #expect(self.userDefaultsStore.findBookmark(id: g1b3.id)!.sortOrder == 1)
     }
 }

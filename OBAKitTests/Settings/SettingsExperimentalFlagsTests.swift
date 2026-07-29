@@ -11,7 +11,7 @@ import Eureka
 import XCTest
 @testable import OBAKit
 @testable import OBAKitCore
-import Nimble
+import Testing
 
 /// The Experimental toggles are the only writers of their feature-flag defaults, and the section's
 /// footer invites you to relaunch the app the moment you flip one. So the flag has to be on disk
@@ -50,7 +50,9 @@ final class SettingsExperimentalFlagsTests: OBATestCase {
 
     func test_newStopPage_seedsOnByDefault() throws {
         let controller = makeLoadedController()
-        expect(try self.row(controller, FeatureFlags.useNewStopPageKey).value).to(beTrue())
+        // `value` is Eureka's `Bool?`; `== true` keeps Nimble's beTrue semantics,
+        // where a nil value is a failure rather than a pass.
+        #expect(try self.row(controller, FeatureFlags.useNewStopPageKey).value == true)
     }
 
     /// The failing case before this was fixed: toggle off, then kill the app to "restart to apply"
@@ -59,7 +61,7 @@ final class SettingsExperimentalFlagsTests: OBATestCase {
         let controller = makeLoadedController()
         try row(controller, FeatureFlags.useNewStopPageKey).value = false
 
-        expect(FeatureFlags.isNewStopPageEnabled(userDefaults: self.application.userDefaults)).to(beFalse())
+        #expect(!FeatureFlags.isNewStopPageEnabled(userDefaults: self.application.userDefaults))
     }
 
     func test_newStopPage_togglingBackOnPersistsImmediately() throws {
@@ -67,7 +69,7 @@ final class SettingsExperimentalFlagsTests: OBATestCase {
         let controller = makeLoadedController()
         try row(controller, FeatureFlags.useNewStopPageKey).value = true
 
-        expect(FeatureFlags.isNewStopPageEnabled(userDefaults: self.application.userDefaults)).to(beTrue())
+        #expect(FeatureFlags.isNewStopPageEnabled(userDefaults: self.application.userDefaults))
     }
 
     func test_newStopPage_stillPersistsOnDismissal() throws {
@@ -75,7 +77,7 @@ final class SettingsExperimentalFlagsTests: OBATestCase {
         try row(controller, FeatureFlags.useNewStopPageKey).value = false
         controller.viewWillDisappear(false)
 
-        expect(FeatureFlags.isNewStopPageEnabled(userDefaults: self.application.userDefaults)).to(beFalse())
+        #expect(!FeatureFlags.isNewStopPageEnabled(userDefaults: self.application.userDefaults))
     }
 
     // MARK: - Map panel
@@ -84,7 +86,7 @@ final class SettingsExperimentalFlagsTests: OBATestCase {
         let controller = makeLoadedController()
         try row(controller, FeatureFlags.useMapPanelExperienceKey).value = true
 
-        expect(self.application.userDefaults.bool(forKey: FeatureFlags.useMapPanelExperienceKey)).to(beTrue())
+        #expect(self.application.userDefaults.bool(forKey: FeatureFlags.useMapPanelExperienceKey))
     }
 
     // MARK: - Accessibility
@@ -95,11 +97,11 @@ final class SettingsExperimentalFlagsTests: OBATestCase {
         application.userDefaults.set(true, forKey: OBAFloatingPanelController.AlwaysShowFullSheetOnVoiceoverUserDefaultsKey)
         let controller = makeLoadedController()
         let switchRow = try row(controller, OBAFloatingPanelController.AlwaysShowFullSheetOnVoiceoverUserDefaultsKey)
-        expect(switchRow.value).to(beTrue())
+        #expect(switchRow.value == true)
 
         switchRow.value = false
         controller.viewWillDisappear(false)
 
-        expect(self.application.userDefaults.bool(forKey: OBAFloatingPanelController.AlwaysShowFullSheetOnVoiceoverUserDefaultsKey)).to(beFalse())
+        #expect(!self.application.userDefaults.bool(forKey: OBAFloatingPanelController.AlwaysShowFullSheetOnVoiceoverUserDefaultsKey))
     }
 }

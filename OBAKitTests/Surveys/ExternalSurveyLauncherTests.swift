@@ -4,7 +4,7 @@
 //
 
 import XCTest
-import Nimble
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -52,11 +52,11 @@ final class ExternalSurveyLauncherTests: OBATestCase {
                                         onSuccess: { succeeded = true },
                                         onFailure: { failed = true })
 
-        expect(attempted).to(beTrue())
-        expect(opened?.absoluteString).to(equal("https://oba.co/s"))
-        expect(succeeded).to(beTrue())
-        expect(failed).to(beFalse())
-        expect(self.isCompleted(1)).to(beTrue())
+        #expect(attempted)
+        #expect(opened?.absoluteString == "https://oba.co/s")
+        #expect(succeeded)
+        #expect(!failed)
+        #expect(self.isCompleted(1))
     }
 
     func test_launch_appendsStopID_whenStopProvided() {
@@ -69,7 +69,7 @@ final class ExternalSurveyLauncherTests: OBATestCase {
         launcher.launch(survey: survey, stop: stop, onSuccess: {}, onFailure: {})
 
         let items = URLComponents(url: opened!, resolvingAgainstBaseURL: false)?.queryItems ?? []
-        expect(items.first { $0.name == "stop_id" }?.value).to(equal("1_99"))
+        #expect(items.first { $0.name == "stop_id" }?.value == "1_99")
     }
 
     func test_launch_nilURL_doesNotOpen_doesNotComplete_callsOnFailure() {
@@ -83,10 +83,10 @@ final class ExternalSurveyLauncherTests: OBATestCase {
                                         onSuccess: {},
                                         onFailure: { failed = true })
 
-        expect(attempted).to(beFalse())
-        expect(openerCalled).to(beFalse())
-        expect(failed).to(beTrue())
-        expect(self.isCompleted(1)).to(beFalse())
+        #expect(!attempted)
+        #expect(!openerCalled)
+        #expect(failed)
+        #expect(!self.isCompleted(1))
     }
 
     func test_launch_openFailure_doesNotComplete_callsOnFailure() {
@@ -100,8 +100,8 @@ final class ExternalSurveyLauncherTests: OBATestCase {
                         onSuccess: { succeeded = true },
                         onFailure: { failed = true })
 
-        expect(succeeded).to(beFalse())
-        expect(failed).to(beTrue())
-        expect(self.isCompleted(1)).to(beFalse())
+        #expect(!succeeded)
+        #expect(failed)
+        #expect(!self.isCompleted(1))
     }
 }

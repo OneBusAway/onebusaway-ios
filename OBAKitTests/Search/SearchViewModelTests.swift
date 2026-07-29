@@ -9,7 +9,7 @@
 
 import XCTest
 import MapKit
-import Nimble
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -61,25 +61,25 @@ class SearchViewModelTests: OBATestCase {
     @MainActor
     func test_subtitle_address_isQueryVerbatim() {
         let vm = SearchViewModel(searchResponse: makeSearchResponse(searchType: .address, query: "Seattle, WA"), apiService: nil)
-        expect(vm.subtitle) == "Seattle, WA"
+        #expect(vm.subtitle == "Seattle, WA")
     }
 
     @MainActor
     func test_subtitle_route_prefixedWithRoute() {
         let vm = SearchViewModel(searchResponse: makeSearchResponse(searchType: .route, query: "44"), apiService: nil)
-        expect(vm.subtitle) == "Route 44"
+        #expect(vm.subtitle == "Route 44")
     }
 
     @MainActor
     func test_subtitle_stopNumber_prefixedWithStopNumber() {
         let vm = SearchViewModel(searchResponse: makeSearchResponse(searchType: .stopNumber, query: "1234"), apiService: nil)
-        expect(vm.subtitle) == "Stop number 1234"
+        #expect(vm.subtitle == "Stop number 1234")
     }
 
     @MainActor
     func test_subtitle_vehicleID_prefixedWithVehicleID() {
         let vm = SearchViewModel(searchResponse: makeSearchResponse(searchType: .vehicleID, query: "XYZ"), apiService: nil)
-        expect(vm.subtitle) == "Vehicle ID XYZ"
+        #expect(vm.subtitle == "Vehicle ID XYZ")
     }
 
     // MARK: - results
@@ -88,8 +88,8 @@ class SearchViewModelTests: OBATestCase {
     func test_results_matchesSearchResponseResults() throws {
         let stop = try Fixtures.loadSomeStops().first!
         let vm = SearchViewModel(searchResponse: makeSearchResponse(searchType: .stopNumber, results: [stop]), apiService: nil)
-        expect(vm.results.count) == 1
-        expect(vm.results.first as? Stop) === stop
+        #expect(vm.results.count == 1)
+        #expect((vm.results.first as? Stop) === stop)
     }
 
     // MARK: - response(substituting:)
@@ -101,16 +101,16 @@ class SearchViewModelTests: OBATestCase {
 
         let substituted = vm.response(substituting: stops[1])
 
-        expect(substituted.results.count) == 1
-        expect(substituted.results.first as? Stop) === stops[1]
+        #expect(substituted.results.count == 1)
+        #expect((substituted.results.first as? Stop) === stops[1])
     }
 
     @MainActor
     func test_responseSubstituting_preservesOriginalRequest() throws {
         let vm = SearchViewModel(searchResponse: makeSearchResponse(searchType: .route, query: "44"), apiService: nil)
         let substituted = vm.response(substituting: "anything")
-        expect(substituted.request.query) == "44"
-        expect(substituted.request.searchType) == .route
+        #expect(substituted.request.query == "44")
+        #expect(substituted.request.searchType == .route)
     }
 
     @MainActor
@@ -124,9 +124,9 @@ class SearchViewModelTests: OBATestCase {
 
         let substituted = vm.response(substituting: "anything")
 
-        expect(substituted.boundingRegion).toNot(beNil())
-        expect(substituted.boundingRegion?.center.latitude) == 47.6
-        expect(substituted.boundingRegion?.center.longitude) == -122.3
+        #expect(substituted.boundingRegion != nil)
+        #expect(substituted.boundingRegion?.center.latitude == 47.6)
+        #expect(substituted.boundingRegion?.center.longitude == -122.3)
     }
 
     @MainActor
@@ -136,7 +136,7 @@ class SearchViewModelTests: OBATestCase {
 
         let substituted = vm.response(substituting: "anything")
 
-        expect(substituted.error as? SearchError) == .noTripsAvailable
+        #expect((substituted.error as? SearchError) == .noTripsAvailable)
     }
 
     // MARK: - Initial State
@@ -144,13 +144,13 @@ class SearchViewModelTests: OBATestCase {
     @MainActor
     func test_init_vehicleSearchResponseIsNil() {
         let vm = SearchViewModel(searchResponse: makeSearchResponse(searchType: .address), apiService: nil)
-        expect(vm.vehicleSearchResponse).to(beNil())
+        #expect(vm.vehicleSearchResponse == nil)
     }
 
     @MainActor
     func test_init_vehicleErrorIsNil() {
         let vm = SearchViewModel(searchResponse: makeSearchResponse(searchType: .address), apiService: nil)
-        expect(vm.vehicleError).to(beNil())
+        #expect(vm.vehicleError == nil)
     }
 
     // MARK: - selectVehicle / nil apiService
@@ -159,7 +159,7 @@ class SearchViewModelTests: OBATestCase {
     func test_selectVehicle_nilApiService_vehicleSearchResponseRemainsNil() async {
         let vm = SearchViewModel(searchResponse: makeSearchResponse(searchType: .vehicleID), apiService: nil)
         await vm.selectVehicle(vehicleID: vehicleID)
-        expect(vm.vehicleSearchResponse).to(beNil())
+        #expect(vm.vehicleSearchResponse == nil)
     }
 
     @MainActor
@@ -168,7 +168,7 @@ class SearchViewModelTests: OBATestCase {
         // misconfiguration through `vehicleError` so the existing error sink can present it.
         let vm = SearchViewModel(searchResponse: makeSearchResponse(searchType: .vehicleID), apiService: nil)
         await vm.selectVehicle(vehicleID: vehicleID)
-        expect(vm.vehicleError).toNot(beNil())
+        #expect(vm.vehicleError != nil)
     }
 
     // MARK: - selectVehicle / success
@@ -182,8 +182,8 @@ class SearchViewModelTests: OBATestCase {
 
         await vm.selectVehicle(vehicleID: vehicleID)
 
-        expect(vm.vehicleSearchResponse).toNot(beNil())
-        expect(vm.vehicleError).to(beNil())
+        #expect(vm.vehicleSearchResponse != nil)
+        #expect(vm.vehicleError == nil)
     }
 
     @MainActor
@@ -195,8 +195,8 @@ class SearchViewModelTests: OBATestCase {
 
         await vm.selectVehicle(vehicleID: vehicleID)
 
-        expect(vm.vehicleSearchResponse?.results.count) == 1
-        expect(vm.vehicleSearchResponse?.results.first as? VehicleStatus).toNot(beNil())
+        #expect(vm.vehicleSearchResponse?.results.count == 1)
+        #expect((vm.vehicleSearchResponse?.results.first as? VehicleStatus) != nil)
     }
 
     @MainActor
@@ -208,8 +208,8 @@ class SearchViewModelTests: OBATestCase {
 
         await vm.selectVehicle(vehicleID: vehicleID)
 
-        expect(vm.vehicleSearchResponse?.request.query) == vehicleID
-        expect(vm.vehicleSearchResponse?.request.searchType) == .vehicleID
+        #expect(vm.vehicleSearchResponse?.request.query == vehicleID)
+        #expect(vm.vehicleSearchResponse?.request.searchType == .vehicleID)
     }
 
     // MARK: - selectVehicle / network error
@@ -223,8 +223,8 @@ class SearchViewModelTests: OBATestCase {
 
         await vm.selectVehicle(vehicleID: vehicleID)
 
-        expect(vm.vehicleError).toNot(beNil())
-        expect(vm.vehicleSearchResponse).to(beNil())
+        #expect(vm.vehicleError != nil)
+        #expect(vm.vehicleSearchResponse == nil)
     }
 
     // MARK: - selectVehicle / keyNotFound → noTripsAvailable
@@ -238,8 +238,8 @@ class SearchViewModelTests: OBATestCase {
 
         await vm.selectVehicle(vehicleID: vehicleID)
 
-        expect(vm.vehicleError as? SearchError) == .noTripsAvailable
-        expect(vm.vehicleSearchResponse).to(beNil())
+        #expect((vm.vehicleError as? SearchError) == .noTripsAvailable)
+        #expect(vm.vehicleSearchResponse == nil)
     }
 
     // MARK: - selectVehicle / concurrent-call guard
@@ -260,8 +260,8 @@ class SearchViewModelTests: OBATestCase {
         await first
         await second
 
-        expect(countingLoader.callCount) == 1
-        expect(vm.vehicleSearchResponse).toNot(beNil())
+        #expect(countingLoader.callCount == 1)
+        #expect(vm.vehicleSearchResponse != nil)
     }
 
     // MARK: - selectVehicle / state transitions
@@ -275,14 +275,14 @@ class SearchViewModelTests: OBATestCase {
         )
 
         await vm.selectVehicle(vehicleID: vehicleID)
-        expect(vm.vehicleError).toNot(beNil())
+        #expect(vm.vehicleError != nil)
 
         loader.removeMappedResponses()
         loader.mock(URLString: vehicleURLString, with: Fixtures.loadData(file: "api_where_vehicle_1_4351.json"))
 
         await vm.selectVehicle(vehicleID: vehicleID)
 
-        expect(vm.vehicleError).to(beNil())
-        expect(vm.vehicleSearchResponse).toNot(beNil())
+        #expect(vm.vehicleError == nil)
+        #expect(vm.vehicleSearchResponse != nil)
     }
 }

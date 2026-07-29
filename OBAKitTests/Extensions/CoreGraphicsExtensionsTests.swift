@@ -9,7 +9,7 @@
 
 import Foundation
 import XCTest
-import Nimble
+import Testing
 import CoreGraphics
 import UIKit
 @testable import OBAKit
@@ -24,7 +24,7 @@ class CoreGraphicsExtensionsTests: XCTestCase {
         let colorSpace = CGColorSpaceCreateDeviceRGB()
         let context = CGContext(data: nil, width: Int(size.width), height: Int(size.height), bitsPerComponent: 8, bytesPerRow: 0, space: colorSpace, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
         
-        expect(context).toNot(beNil())
+        #expect(context != nil)
         
         guard let ctx = context else { return }
         
@@ -36,14 +36,14 @@ class CoreGraphicsExtensionsTests: XCTestCase {
         ctx.pushPop {
             ctx.translateBy(x: 10, y: 10)
             let modifiedTransform = ctx.ctm
-            expect(modifiedTransform.tx) == 10.0
-            expect(modifiedTransform.ty) == 10.0
+            #expect(modifiedTransform.tx == 10.0)
+            #expect(modifiedTransform.ty == 10.0)
         }
         
         // Verify state was restored
         let restoredTransform = ctx.ctm
-        expect(restoredTransform.tx) == initialTransform.tx
-        expect(restoredTransform.ty) == initialTransform.ty
+        #expect(restoredTransform.tx == initialTransform.tx)
+        #expect(restoredTransform.ty == initialTransform.ty)
     }
     
     func test_CGContext_pushPop_nested() {
@@ -62,20 +62,20 @@ class CoreGraphicsExtensionsTests: XCTestCase {
             ctx.pushPop {
                 ctx.translateBy(x: 5, y: 5)
                 let nestedTransform = ctx.ctm
-                expect(nestedTransform.tx) == 10.0 // 5 + 5
-                expect(nestedTransform.ty) == 10.0 // 5 + 5
+                #expect(nestedTransform.tx == 10.0)  // 5 + 5
+                #expect(nestedTransform.ty == 10.0)  // 5 + 5
             }
             
             // Inner scope restored
             let middleTransform = ctx.ctm
-            expect(middleTransform.tx) == 5.0
-            expect(middleTransform.ty) == 5.0
+            #expect(middleTransform.tx == 5.0)
+            #expect(middleTransform.ty == 5.0)
         }
         
         // All state restored
         let finalTransform = ctx.ctm
-        expect(finalTransform.tx) == initialTransform.tx
-        expect(finalTransform.ty) == initialTransform.ty
+        #expect(finalTransform.tx == initialTransform.tx)
+        #expect(finalTransform.ty == initialTransform.ty)
     }
     
     func test_CGContext_pushPop_doesNotCrash() {
@@ -90,6 +90,6 @@ class CoreGraphicsExtensionsTests: XCTestCase {
             // Empty closure
         }
         
-        expect(true).to(beTrue()) // Test that it doesn't crash
+        #expect(true)  // Test that it doesn't crash
     }
 }

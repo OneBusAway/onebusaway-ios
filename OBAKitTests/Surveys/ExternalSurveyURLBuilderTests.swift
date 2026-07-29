@@ -6,7 +6,7 @@
 //
 
 import XCTest
-import Nimble
+import Testing
 import MapKit
 import CoreLocation
 @testable import OBAKitCore
@@ -44,14 +44,14 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
 
     func test_buildURL_returnsNil_whenSurveyHasNoQuestions() {
         let survey = SurveysTestHelpers.makeSurvey(questions: [])
-        expect(self.builder.buildURL(for: survey, stop: nil)).to(beNil())
+        #expect(self.builder.buildURL(for: survey, stop: nil) == nil)
     }
 
     func test_buildURL_returnsNil_whenBaseURLIsInvalid() {
         let survey = SurveysTestHelpers.makeSurvey(questions: [
             SurveysTestHelpers.makeSurveyQuestion(url: "not a valid url %%")
         ])
-        expect(self.builder.buildURL(for: survey, stop: nil)).to(beNil())
+        #expect(self.builder.buildURL(for: survey, stop: nil) == nil)
     }
 
     func test_buildURL_returnsValidURL_whenNoEmbeddedDataFields() {
@@ -61,10 +61,10 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
 
         let url = builder.buildURL(for: survey, stop: nil)
 
-        expect(url).toNot(beNil())
-        expect(url?.host).to(equal("oba.co"))
-        expect(url?.path).to(equal("/survey"))
-        expect(url?.absoluteString).to(equal("https://oba.co/survey"))
+        #expect(url != nil)
+        #expect(url?.host == "oba.co")
+        #expect(url?.path == "/survey")
+        #expect(url?.absoluteString == "https://oba.co/survey")
     }
 
     func test_buildURL_preservesExistingQueryItems() {
@@ -74,7 +74,7 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
 
         let url = builder.buildURL(for: survey, stop: nil)
 
-        expect(url?.absoluteString).to(contain("source=app"))
+        #expect(url?.absoluteString.contains("source=app") == true)
     }
 
     // MARK: - user_id
@@ -84,7 +84,7 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
 
         let url = builder.buildURL(for: survey, stop: nil)
 
-        expect(self.queryValue(in: url, for: "user_id")).to(equal(testUserID))
+        #expect(self.queryValue(in: url, for: "user_id") == testUserID)
     }
 
     func test_buildURL_appendsEmptyUserID_whenUserIDIsEmpty() {
@@ -97,7 +97,7 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
         let survey = SurveysTestHelpers.makeSurvey(questions: [makeQuestionWithFields(["user_id"])])
         let url = builder.buildURL(for: survey, stop: nil)
 
-        expect(self.queryValue(in: url, for: "user_id")).to(equal(""))
+        #expect(self.queryValue(in: url, for: "user_id") == "")
     }
 
     // MARK: - region_id
@@ -108,7 +108,7 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
         let survey = SurveysTestHelpers.makeSurvey(questions: [makeQuestionWithFields(["region_id"])])
         let url = builder.buildURL(for: survey, stop: nil)
 
-        expect(self.queryValue(in: url, for: "region_id")).to(equal("1"))
+        #expect(self.queryValue(in: url, for: "region_id") == "1")
     }
 
     func test_buildURL_omitsRegionID_whenNoCurrentRegion() {
@@ -117,7 +117,7 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
         let survey = SurveysTestHelpers.makeSurvey(questions: [makeQuestionWithFields(["region_id"])])
         let url = builder.buildURL(for: survey, stop: nil)
 
-        expect(self.queryValue(in: url, for: "region_id")).to(beNil())
+        #expect(self.queryValue(in: url, for: "region_id") == nil)
     }
 
     // MARK: - stop_id
@@ -128,7 +128,7 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
         let survey = SurveysTestHelpers.makeSurvey(questions: [makeQuestionWithFields(["stop_id"])])
         let url = builder.buildURL(for: survey, stop: stop)
 
-        expect(self.queryValue(in: url, for: "stop_id")).to(equal("1_75403"))
+        #expect(self.queryValue(in: url, for: "stop_id") == "1_75403")
     }
 
     func test_buildURL_omitsStopID_whenStopIsNil() {
@@ -136,7 +136,7 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
 
         let url = builder.buildURL(for: survey, stop: nil)
 
-        expect(self.queryValue(in: url, for: "stop_id")).to(beNil())
+        #expect(self.queryValue(in: url, for: "stop_id") == nil)
     }
 
     // MARK: - route_id
@@ -147,7 +147,7 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
         let survey = SurveysTestHelpers.makeSurvey(questions: [makeQuestionWithFields(["route_id"])])
         let url = builder.buildURL(for: survey, stop: stop)
 
-        expect(self.queryValue(in: url, for: "route_id")).to(equal("1_40,1_44"))
+        #expect(self.queryValue(in: url, for: "route_id") == "1_40,1_44")
     }
 
     func test_buildURL_appendsSingleRouteID_whenStopHasOneRoute() {
@@ -156,8 +156,8 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
         let survey = SurveysTestHelpers.makeSurvey(questions: [makeQuestionWithFields(["route_id"])])
         let url = builder.buildURL(for: survey, stop: stop)
 
-        expect(self.queryValue(in: url, for: "route_id")).to(equal("1_40"))
-        expect(self.queryValue(in: url, for: "route_id")).toNot(contain(","))
+        #expect(self.queryValue(in: url, for: "route_id") == "1_40")
+        #expect(self.queryValue(in: url, for: "route_id")?.contains(",") == false)
     }
 
     func test_buildURL_omitsRouteID_whenStopHasNoRoutes() {
@@ -166,7 +166,7 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
         let survey = SurveysTestHelpers.makeSurvey(questions: [makeQuestionWithFields(["route_id"])])
         let url = builder.buildURL(for: survey, stop: stop)
 
-        expect(self.queryValue(in: url, for: "route_id")).to(beNil())
+        #expect(self.queryValue(in: url, for: "route_id") == nil)
     }
 
     func test_buildURL_omitsRouteID_whenStopIsNil() {
@@ -174,7 +174,7 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
 
         let url = builder.buildURL(for: survey, stop: nil)
 
-        expect(self.queryValue(in: url, for: "route_id")).to(beNil())
+        #expect(self.queryValue(in: url, for: "route_id") == nil)
     }
 
     // MARK: - recent_stop_ids
@@ -187,8 +187,8 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
         let survey = SurveysTestHelpers.makeSurvey(questions: [makeQuestionWithFields(["recent_stop_ids"])])
         let url = builder.buildURL(for: survey, stop: nil)
 
-        expect(self.queryValue(in: url, for: "recent_stop_ids")).to(contain("1_75403"))
-        expect(self.queryValue(in: url, for: "recent_stop_ids")).to(contain("1_29270"))
+        #expect(self.queryValue(in: url, for: "recent_stop_ids")?.contains("1_75403") == true)
+        #expect(self.queryValue(in: url, for: "recent_stop_ids")?.contains("1_29270") == true)
     }
 
     func test_buildURL_appendsSingleRecentStopID_whenOneStopInStore() {
@@ -198,8 +198,8 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
         let survey = SurveysTestHelpers.makeSurvey(questions: [makeQuestionWithFields(["recent_stop_ids"])])
         let url = builder.buildURL(for: survey, stop: nil)
 
-        expect(self.queryValue(in: url, for: "recent_stop_ids")).to(equal("1_75403"))
-        expect(self.queryValue(in: url, for: "recent_stop_ids")).toNot(contain(","))
+        #expect(self.queryValue(in: url, for: "recent_stop_ids") == "1_75403")
+        #expect(self.queryValue(in: url, for: "recent_stop_ids")?.contains(",") == false)
     }
 
     func test_buildURL_omitsRecentStopIDs_whenListIsEmpty() {
@@ -207,7 +207,7 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
 
         let url = builder.buildURL(for: survey, stop: nil)
 
-        expect(self.queryValue(in: url, for: "recent_stop_ids")).to(beNil())
+        #expect(self.queryValue(in: url, for: "recent_stop_ids") == nil)
     }
 
     // MARK: - current_location
@@ -218,7 +218,7 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
         let survey = SurveysTestHelpers.makeSurvey(questions: [makeQuestionWithFields(["current_location"])])
         let url = builder.buildURL(for: survey, stop: nil)
 
-        expect(self.queryValue(in: url, for: "current_location")).to(equal("47.6062,-122.3321"))
+        #expect(self.queryValue(in: url, for: "current_location") == "47.6062,-122.3321")
     }
 
     func test_buildURL_appendsCurrentLocation_atZeroCoordinate() {
@@ -227,7 +227,7 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
         let survey = SurveysTestHelpers.makeSurvey(questions: [makeQuestionWithFields(["current_location"])])
         let url = builder.buildURL(for: survey, stop: nil)
 
-        expect(self.queryValue(in: url, for: "current_location")).to(equal("0.0,0.0"))
+        #expect(self.queryValue(in: url, for: "current_location") == "0.0,0.0")
     }
 
     func test_buildURL_appendsCurrentLocation_withNegativeCoordinates() {
@@ -236,7 +236,7 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
         let survey = SurveysTestHelpers.makeSurvey(questions: [makeQuestionWithFields(["current_location"])])
         let url = builder.buildURL(for: survey, stop: nil)
 
-        expect(self.queryValue(in: url, for: "current_location")).to(equal("-33.8688,-70.6693"))
+        #expect(self.queryValue(in: url, for: "current_location") == "-33.8688,-70.6693")
     }
 
     func test_buildURL_omitsCurrentLocation_whenLocationUnavailable() {
@@ -245,7 +245,7 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
         let survey = SurveysTestHelpers.makeSurvey(questions: [makeQuestionWithFields(["current_location"])])
         let url = builder.buildURL(for: survey, stop: nil)
 
-        expect(self.queryValue(in: url, for: "current_location")).to(beNil())
+        #expect(self.queryValue(in: url, for: "current_location") == nil)
     }
 
     // MARK: - Unknown Keys
@@ -257,8 +257,8 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
         let queryItemNames = URLComponents(url: url!, resolvingAgainstBaseURL: false)?
             .queryItems?.map(\.name) ?? []
 
-        expect(queryItemNames).toNot(contain("unknown_key"))
-        expect(queryItemNames).toNot(contain("another_unknown"))
+        #expect(!queryItemNames.contains("unknown_key"))
+        #expect(!queryItemNames.contains("another_unknown"))
     }
 
     // MARK: - Multiple Fields
@@ -275,10 +275,10 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
 
         let url = builder.buildURL(for: survey, stop: stop)
 
-        expect(self.queryValue(in: url, for: "user_id")).to(equal(testUserID))
-        expect(self.queryValue(in: url, for: "region_id")).to(equal("1"))
-        expect(self.queryValue(in: url, for: "stop_id")).to(equal("1_29270"))
-        expect(self.queryValue(in: url, for: "recent_stop_ids")).to(contain("1_75403"))
+        #expect(self.queryValue(in: url, for: "user_id") == testUserID)
+        #expect(self.queryValue(in: url, for: "region_id") == "1")
+        #expect(self.queryValue(in: url, for: "stop_id") == "1_29270")
+        #expect(self.queryValue(in: url, for: "recent_stop_ids")?.contains("1_75403") == true)
     }
 
     func test_buildURL_appendsAllSixFields_whenAllDataAvailable() {
@@ -294,12 +294,12 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
 
         let url = builder.buildURL(for: survey, stop: stop)
 
-        expect(self.queryValue(in: url, for: "user_id")).to(equal(testUserID))
-        expect(self.queryValue(in: url, for: "region_id")).to(equal("1"))
-        expect(self.queryValue(in: url, for: "stop_id")).to(equal("1_29270"))
-        expect(self.queryValue(in: url, for: "route_id")).to(equal("1_40,1_44"))
-        expect(self.queryValue(in: url, for: "recent_stop_ids")).to(contain("1_75403"))
-        expect(self.queryValue(in: url, for: "current_location")).to(equal("47.6062,-122.3321"))
+        #expect(self.queryValue(in: url, for: "user_id") == testUserID)
+        #expect(self.queryValue(in: url, for: "region_id") == "1")
+        #expect(self.queryValue(in: url, for: "stop_id") == "1_29270")
+        #expect(self.queryValue(in: url, for: "route_id") == "1_40,1_44")
+        #expect(self.queryValue(in: url, for: "recent_stop_ids")?.contains("1_75403") == true)
+        #expect(self.queryValue(in: url, for: "current_location") == "47.6062,-122.3321")
     }
 
     // MARK: - Lifecycle
@@ -319,13 +319,13 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
 
         // ctx is released at the end of the closure. If the builder held a strong
         // reference, weakContext would still be non-nil.
-        expect(weakContext).to(beNil())
+        #expect(weakContext == nil)
 
         // And with the context gone, region_id resolves to nil instead of crashing.
         let survey = SurveysTestHelpers.makeSurvey(questions: [
             SurveysTestHelpers.makeSurveyQuestion(url: "https://oba.co/s", embeddedDataFields: ["region_id"])
         ])
-        expect(self.queryValue(in: localBuilder.buildURL(for: survey, stop: nil), for: "region_id")).to(beNil())
+        #expect(self.queryValue(in: localBuilder.buildURL(for: survey, stop: nil), for: "region_id") == nil)
     }
 
     // MARK: - Helpers

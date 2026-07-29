@@ -9,7 +9,7 @@
 
 import Foundation
 import XCTest
-import Nimble
+import Testing
 import UIKit
 @testable import OBAKit
 
@@ -19,11 +19,11 @@ class BarButtonActivityIndicatorTests: XCTestCase {
     func test_UIActivityIndicatorView_asNavigationItem() {
         let barButtonItem = UIActivityIndicatorView.asNavigationItem()
         
-        expect(barButtonItem).to(beAnInstanceOf(UIBarButtonItem.self))
-        expect(barButtonItem.customView).to(beAnInstanceOf(UIActivityIndicatorView.self))
+        #expect(type(of: barButtonItem) == UIBarButtonItem.self)
+        #expect(barButtonItem.customView.map { type(of: $0) == UIActivityIndicatorView.self } == true)
         
         let activityIndicator = barButtonItem.customView as! UIActivityIndicatorView
-        expect(activityIndicator.style) == .medium
-        expect(activityIndicator.isAnimating) == true
+        #expect(activityIndicator.style == .medium)
+        #expect(activityIndicator.isAnimating == true)
     }
 }

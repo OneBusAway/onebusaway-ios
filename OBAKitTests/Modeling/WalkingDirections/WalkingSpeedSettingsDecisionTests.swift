@@ -8,7 +8,7 @@
 //
 
 import XCTest
-import Nimble
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -24,8 +24,8 @@ final class WalkingSpeedSettingsDecisionTests: XCTestCase {
             useHealthKit: nil,
             segmentSpeed: 0.9
         )
-        expect(decision.source) == .manual
-        expect(decision.speed).to(beCloseTo(0.9))
+        #expect(decision.source == .manual)
+        expectClose(decision.speed, 0.9)
     }
 
     func test_noToggle_noSegmentSpeed_leavesEverythingUntouched() {
@@ -35,8 +35,8 @@ final class WalkingSpeedSettingsDecisionTests: XCTestCase {
             useHealthKit: nil,
             segmentSpeed: nil
         )
-        expect(decision.source) == .healthKit
-        expect(decision.speed).to(beCloseTo(1.65))
+        #expect(decision.source == .healthKit)
+        expectClose(decision.speed, 1.65)
     }
 
     // MARK: - Toggle ON
@@ -50,8 +50,8 @@ final class WalkingSpeedSettingsDecisionTests: XCTestCase {
             useHealthKit: true,
             segmentSpeed: 1.4
         )
-        expect(decision.source) == .healthKit
-        expect(decision.speed).to(beCloseTo(1.65))
+        #expect(decision.source == .healthKit)
+        expectClose(decision.speed, 1.65)
     }
 
     // MARK: - Toggle OFF
@@ -63,8 +63,8 @@ final class WalkingSpeedSettingsDecisionTests: XCTestCase {
             useHealthKit: false,
             segmentSpeed: nil
         )
-        expect(decision.source) == .manual
-        expect(decision.speed).to(beCloseTo(WalkingSpeedPreset.fast.rawValue))
+        #expect(decision.source == .manual)
+        expectClose(decision.speed, WalkingSpeedPreset.fast.rawValue)
     }
 
     func test_toggleOff_withSegmentSpeed_prefersSegmentThenSnaps() {
@@ -76,7 +76,7 @@ final class WalkingSpeedSettingsDecisionTests: XCTestCase {
             useHealthKit: false,
             segmentSpeed: 0.9
         )
-        expect(decision.source) == .manual
-        expect(decision.speed).to(beCloseTo(WalkingSpeedPreset.slow.rawValue))
+        #expect(decision.source == .manual)
+        expectClose(decision.speed, WalkingSpeedPreset.slow.rawValue)
     }
 }

@@ -9,7 +9,7 @@
 
 import Foundation
 import XCTest
-import Nimble
+import Testing
 import UIKit
 @testable import OBAKit
 
@@ -31,6 +31,6 @@ class ModalDelegateTests: XCTestCase {
         
         delegate.dismissModalController(controller)
         
-        expect(delegate.dismissedController) === controller
+        #expect(delegate.dismissedController === controller)
     }
 }

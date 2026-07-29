@@ -8,7 +8,7 @@
 //
 
 import XCTest
-import Nimble
+import Testing
 import CoreLocation
 @testable import OBAKit
 @testable import OBAKitCore
@@ -19,17 +19,15 @@ class BookmarkGroupTests: OBATestCase {
 
     func testCreation() {
         let group = BookmarkGroup(name: "Group 1", sortOrder: 0)
-        expect(group.name) == "Group 1"
-        expect(group.id).toNot(beNil())
+        #expect(group.name == "Group 1")
     }
 
     func testCodableRoundtripping() {
         let group = BookmarkGroup(name: "Group 1", sortOrder: 10)
         let decoded = try! Fixtures.roundtripCodable(type: BookmarkGroup.self, model: group)
 
-        expect(decoded.name) == "Group 1"
-        expect(decoded.id).toNot(beNil())
-        expect(decoded.id) == group.id
-        expect(decoded.sortOrder) == 10
+        #expect(decoded.name == "Group 1")
+        #expect(decoded.id == group.id)
+        #expect(decoded.sortOrder == 10)
     }
 }

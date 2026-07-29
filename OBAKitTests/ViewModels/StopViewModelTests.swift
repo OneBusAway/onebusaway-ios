@@ -8,7 +8,7 @@
 //
 
 import XCTest
-import Nimble
+import Testing
 import Combine
 import CoreLocation
 @testable import OBAKit
@@ -201,14 +201,14 @@ class StopViewModelTests: OBATestCase {
         await viewModel.refresh()
 
         // Strictly increasing trajectory ending at the cap.
-        expect(observed).to(equal(observed.sorted()))
-        expect(observed.last) == 720
-        expect(viewModel.minutesAfter) == 720
-        expect(viewModel.isLoadMoreExhausted).to(beTrue())
+        #expect(observed == observed.sorted())
+        #expect(observed.last == 720)
+        #expect(viewModel.minutesAfter == 720)
+        #expect(viewModel.isLoadMoreExhausted)
 
         // Verify each hop made strict forward progress (no duplicates after the initial value).
         let distinctAscending = Array(NSOrderedSet(array: observed)) as! [UInt]
-        expect(distinctAscending.count) == observed.count
+        #expect(distinctAscending.count == observed.count)
     }
 
     // MARK: - Analytics fires once (issue #1)
@@ -231,8 +231,8 @@ class StopViewModelTests: OBATestCase {
         await viewModel.refresh()
         await viewModel.refresh()
 
-        expect(analytics.stopViewedCount) == 1
-        expect(analytics.lastReportedStopID) == testStopID
+        #expect(analytics.stopViewedCount == 1)
+        #expect(analytics.lastReportedStopID == testStopID)
     }
 
     // MARK: - Recents recorded once (issue #1)
@@ -250,15 +250,16 @@ class StopViewModelTests: OBATestCase {
         await viewModel.refresh()
         await viewModel.refresh()
 
-        expect(app.userDataStore.recentStops.count) == 1
-        expect(app.userDataStore.recentStops.first?.id) == testStopID
+        #expect(app.userDataStore.recentStops.count == 1)
+        #expect(app.userDataStore.recentStops.first?.id == testStopID)
     }
 
     // MARK: - Surveys fetched once
 
     /// `refreshSurveys()` runs as part of the one-shot initial-fetch block, not on every
     /// auto-refresh — so the `/surveys.json` endpoint must be hit exactly once across
-    /// multiple refreshes. The fetch happens from a detached `Task`, so assert eventually.
+    /// multiple refreshes. The fetch runs in `surveyRefreshTask`; awaiting it gives an
+    /// exact count rather than a polled one.
     @MainActor
     func test_surveys_refreshedExactlyOnceAcrossRefreshes() async {
         let dataLoader = MockDataLoader(testName: name)
@@ -272,10 +273,11 @@ class StopViewModelTests: OBATestCase {
         await viewModel.refresh()
         await viewModel.refresh()
 
-        await expect(counter.hits).toEventually(equal(1))
-        // Guard against regression to per-refresh fetching: hits must not climb past 1.
-        // Without this, `toEventually` would latch onto the transient `1` on its way to 2/3.
-        await expect(counter.hits).toNever(beGreaterThan(1))
+        // Awaiting the fetch is what makes `== 1` exact: it rules out both "never
+        // fetched" and "fetched per refresh" in a single assertion. Polling could
+        // only catch the former, and would latch onto a transient 1 on the way to 3.
+        await viewModel.surveyRefreshTask?.value
+        #expect(counter.hits == 1)
     }
 
     // MARK: - Filter invariant on initial load (issue #2)
@@ -300,11 +302,11 @@ class StopViewModelTests: OBATestCase {
         app.stopPreferencesDataStore.set(stopPreferences: prefs, stop: stub, region: region)
 
         let viewModel = StopViewModel(application: app, stopID: testStopID)
-        expect(viewModel.isListFiltered).to(beTrue())  // default ON
+        #expect(viewModel.isListFiltered)  // default ON
 
         await viewModel.refresh()
 
-        expect(viewModel.isListFiltered).to(beFalse())
+        #expect(!viewModel.isListFiltered)
     }
 
     // MARK: - $stop re-emit guard
@@ -334,7 +336,7 @@ class StopViewModelTests: OBATestCase {
         // plus the first real assignment in refresh() — so afterFirstRefresh is the
         // expected steady state. Subsequent refreshes with the same stop must not
         // increase the count.
-        expect(emissions) == afterFirstRefresh
+        #expect(emissions == afterFirstRefresh)
     }
 
     // MARK: - shouldRefresh threshold
@@ -348,13 +350,13 @@ class StopViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: dataLoader, analytics: analytics)
 
         let viewModel = StopViewModel(application: app, stopID: testStopID)
-        expect(viewModel.lastUpdated).to(beNil())
-        expect(viewModel.shouldRefresh).to(beTrue())
+        #expect(viewModel.lastUpdated == nil)
+        #expect(viewModel.shouldRefresh)
 
         await viewModel.refresh()
 
-        expect(viewModel.lastUpdated).toNot(beNil())
-        expect(viewModel.shouldRefresh).to(beFalse())  // <30 s elapsed → below threshold
+        #expect(viewModel.lastUpdated != nil)
+        #expect(!viewModel.shouldRefresh)  // <30 s elapsed → below threshold
     }
 
     // MARK: - Inline Hero Survey
@@ -367,7 +369,7 @@ class StopViewModelTests: OBATestCase {
 
         let viewModel = StopViewModel(application: app, stopID: testStopID)
 
-        expect(viewModel.currentSurvey).to(beNil())
+        #expect(viewModel.currentSurvey == nil)
     }
 
     /// `submitHeroAnswer` with no current survey is a no-op (no error emission, no
@@ -386,8 +388,8 @@ class StopViewModelTests: OBATestCase {
 
         await viewModel.submitHeroAnswer("yes", stopLocation: nil)
 
-        expect(errors).to(beEmpty())
-        expect(presented).to(beEmpty())
+        #expect(errors.isEmpty)
+        #expect(presented.isEmpty)
     }
 
     /// `dismissCurrentSurvey()` with no current survey is a no-op and does not set
@@ -398,11 +400,11 @@ class StopViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock())
 
         let viewModel = StopViewModel(application: app, stopID: testStopID)
-        expect(app.userDataStore.nextSurveyReminderDate).to(beNil())
+        #expect(app.userDataStore.nextSurveyReminderDate == nil)
 
         viewModel.dismissCurrentSurvey()
 
-        expect(app.userDataStore.nextSurveyReminderDate).to(beNil())
+        #expect(app.userDataStore.nextSurveyReminderDate == nil)
     }
 
     /// `launchExternalSurvey()` with no explicit target and no `currentSurvey`
@@ -413,7 +415,7 @@ class StopViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock())
 
         let viewModel = StopViewModel(application: app, stopID: testStopID)
-        expect(viewModel.currentSurvey).to(beNil())
+        #expect(viewModel.currentSurvey == nil)
 
         var successCount = 0
         var failureCount = 0
@@ -422,8 +424,8 @@ class StopViewModelTests: OBATestCase {
             onFailure: { failureCount += 1 }
         )
 
-        expect(successCount) == 0
-        expect(failureCount) == 0
+        #expect(successCount == 0)
+        #expect(failureCount == 0)
     }
 
     /// When an explicit target is passed but the URL cannot be built, the
@@ -467,9 +469,9 @@ class StopViewModelTests: OBATestCase {
             onFailure: { failureCount += 1 }
         )
 
-        expect(failureCount) == 1
-        expect(successCount) == 0
-        expect(app.userDataStore.isSurveyCompleted(surveyId: survey.id, userIdentifier: app.userDataStore.surveyUserIdentifier)).to(beFalse())
+        #expect(failureCount == 1)
+        #expect(successCount == 0)
+        #expect(!app.userDataStore.isSurveyCompleted(surveyId: survey.id, userIdentifier: app.userDataStore.surveyUserIdentifier))
     }
 
     // MARK: - Inline Hero Success Paths
@@ -578,7 +580,7 @@ class StopViewModelTests: OBATestCase {
         await app.surveyService.fetchSurveys()
         await viewModel.refresh()
 
-        expect(viewModel.currentSurvey?.id) == 7
+        #expect(viewModel.currentSurvey?.id == 7)
     }
 
     /// A review prompt already shown this session suppresses the inline survey
@@ -601,7 +603,7 @@ class StopViewModelTests: OBATestCase {
         await app.surveyService.fetchSurveys()
         await viewModel.refresh()
 
-        expect(viewModel.currentSurvey).to(beNil())
+        #expect(viewModel.currentSurvey == nil)
     }
 
     /// Hero-only success: submit clears `currentSurvey`, marks the survey
@@ -619,7 +621,7 @@ class StopViewModelTests: OBATestCase {
         let viewModel = StopViewModel(application: app, stopID: testStopID)
         await app.surveyService.fetchSurveys()
         await viewModel.refresh()
-        expect(viewModel.currentSurvey).toNot(beNil())
+        #expect(viewModel.currentSurvey != nil)
 
         var errors: [Error] = []
         var presented: [StopViewModel.FullSurveyPresentation] = []
@@ -630,11 +632,11 @@ class StopViewModelTests: OBATestCase {
         let coord = CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3)
         await viewModel.submitHeroAnswer("yes", stopLocation: coord)
 
-        expect(viewModel.currentSurvey).to(beNil())
-        expect(errors).to(beEmpty())
-        expect(presented).to(beEmpty())
+        #expect(viewModel.currentSurvey == nil)
+        #expect(errors.isEmpty)
+        #expect(presented.isEmpty)
         let userID = app.userDataStore.surveyUserIdentifier
-        expect(app.userDataStore.isSurveyCompleted(surveyId: 7, userIdentifier: userID)).to(beTrue())
+        #expect(app.userDataStore.isSurveyCompleted(surveyId: 7, userIdentifier: userID))
     }
 
     /// Needs-remaining outcome: card clears AND `presentFullSurvey` emits with the
@@ -652,7 +654,7 @@ class StopViewModelTests: OBATestCase {
         let viewModel = StopViewModel(application: app, stopID: testStopID)
         await app.surveyService.fetchSurveys()
         await viewModel.refresh()
-        expect(viewModel.currentSurvey).toNot(beNil())
+        #expect(viewModel.currentSurvey != nil)
 
         var errors: [Error] = []
         var presented: [StopViewModel.FullSurveyPresentation] = []
@@ -663,16 +665,16 @@ class StopViewModelTests: OBATestCase {
         let coord = CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3)
         await viewModel.submitHeroAnswer("yes", stopLocation: coord)
 
-        expect(viewModel.currentSurvey).to(beNil())
-        expect(errors).to(beEmpty())
-        expect(presented.count) == 1
-        expect(presented.first?.survey.id) == 7
-        expect(presented.first?.heroResponseID) == "808d3a515daa39f4c15a"
-        expect(presented.first?.stopLocation?.latitude) == coord.latitude
-        expect(presented.first?.stopLocation?.longitude) == coord.longitude
+        #expect(viewModel.currentSurvey == nil)
+        #expect(errors.isEmpty)
+        #expect(presented.count == 1)
+        #expect(presented.first?.survey.id == 7)
+        #expect(presented.first?.heroResponseID == "808d3a515daa39f4c15a")
+        #expect(presented.first?.stopLocation?.latitude == coord.latitude)
+        #expect(presented.first?.stopLocation?.longitude == coord.longitude)
         // Hero-only success path runs mark-completed; needs-remaining does not.
         let userID = app.userDataStore.surveyUserIdentifier
-        expect(app.userDataStore.isSurveyCompleted(surveyId: 7, userIdentifier: userID)).to(beFalse())
+        #expect(!app.userDataStore.isSurveyCompleted(surveyId: 7, userIdentifier: userID))
     }
 
     /// Submission failure path: `currentSurvey` is preserved and the error
@@ -705,7 +707,7 @@ class StopViewModelTests: OBATestCase {
         let viewModel = StopViewModel(application: app, stopID: testStopID)
         await app.surveyService.fetchSurveys()
         await viewModel.refresh()
-        expect(viewModel.currentSurvey).toNot(beNil())
+        #expect(viewModel.currentSurvey != nil)
 
         var errors: [Error] = []
         let errSub = viewModel.surveySubmissionError.sink { errors.append($0) }
@@ -713,8 +715,8 @@ class StopViewModelTests: OBATestCase {
 
         await viewModel.submitHeroAnswer("yes", stopLocation: nil)
 
-        expect(errors.count) == 1
-        expect(viewModel.currentSurvey).toNot(beNil())
+        #expect(errors.count == 1)
+        #expect(viewModel.currentSurvey != nil)
     }
 
     /// Re-entrancy guard: a second concurrent `submitHeroAnswer` is dropped while
@@ -733,7 +735,7 @@ class StopViewModelTests: OBATestCase {
         let viewModel = StopViewModel(application: app, stopID: testStopID)
         await app.surveyService.fetchSurveys()
         await viewModel.refresh()
-        expect(viewModel.currentSurvey).toNot(beNil())
+        #expect(viewModel.currentSurvey != nil)
 
         var presented: [StopViewModel.FullSurveyPresentation] = []
         let presSub = viewModel.presentFullSurvey.sink { presented.append($0) }
@@ -746,7 +748,7 @@ class StopViewModelTests: OBATestCase {
 
         // First submit clears `currentSurvey`; second submit's guard (nil currentSurvey
         // OR heroSubmitInFlight) prevents a duplicate emission.
-        expect(presented.count) == 1
+        #expect(presented.count == 1)
     }
 
     // MARK: - Router transfer fallback (final-review FIX 1)
@@ -761,16 +763,16 @@ class StopViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock())
 
         // The new-stop-page flag defaults to ON when unset.
-        expect(FeatureFlags.isNewStopPageEnabled(userDefaults: app.userDefaults)).to(beTrue())
+        #expect(FeatureFlags.isNewStopPageEnabled(userDefaults: app.userDefaults))
 
         let stop = try XCTUnwrap(try Fixtures.loadSomeStops().first)
 
         let transfer = TransferContext(arrivalTime: Date(), fromRouteShortName: "1", fromTripHeadsign: "Downtown")
         let transferController = app.viewRouter.makeStopController(stop: stop, transferContext: transfer)
-        expect(transferController).to(beAKindOf(StopViewController.self))
+        #expect(transferController is StopViewController)
 
         let plainController = app.viewRouter.makeStopController(stop: stop, transferContext: nil)
-        expect(plainController).to(beAKindOf(StopPageViewController.self))
+        #expect(plainController is StopPageViewController)
     }
 
     // MARK: - Alarm Lead Time
@@ -786,7 +788,7 @@ class StopViewModelTests: OBATestCase {
         let alarm = try Fixtures.loadAlarm()
         alarm.set(tripDate: Date(timeIntervalSinceNow: 600), alarmOffset: 8)
 
-        expect(viewModel.alarmLeadTimeMinutes(alarm)) == 8
+        #expect(viewModel.alarmLeadTimeMinutes(alarm) == 8)
     }
 
     /// With no `tripDate`/`alarmDate` to measure, the lead time falls back to the
@@ -799,10 +801,10 @@ class StopViewModelTests: OBATestCase {
 
         // A freshly decoded alarm has nil `tripDate`/`alarmDate` until `set(...)`.
         let alarm = try Fixtures.loadAlarm()
-        expect(alarm.tripDate).to(beNil())
-        expect(alarm.alarmDate).to(beNil())
+        #expect(alarm.tripDate == nil)
+        #expect(alarm.alarmDate == nil)
 
-        expect(viewModel.alarmLeadTimeMinutes(alarm)) == AlarmLeadTime.defaultMinutes
+        #expect(viewModel.alarmLeadTimeMinutes(alarm) == AlarmLeadTime.defaultMinutes)
     }
 
     // MARK: - Approach Cache (trip panel)
@@ -830,20 +832,20 @@ class StopViewModelTests: OBATestCase {
         await viewModel.refresh()
 
         let departure = try XCTUnwrap(viewModel.stopArrivals?.arrivalsAndDepartures.first)
-        expect(departure.predicted).to(beTrue())
+        #expect(departure.predicted)
 
         // Cold: nothing cached until the async path has run.
-        expect(viewModel.cachedApproachTripDetails(for: departure)).to(beNil())
+        #expect(viewModel.cachedApproachTripDetails(for: departure) == nil)
 
         let fetched = await viewModel.approachTripDetails(for: departure)
-        expect(fetched).toNot(beNil())
+        #expect(fetched != nil)
 
         // Warm: the sync accessor returns the exact cached instance.
-        expect(viewModel.cachedApproachTripDetails(for: departure)).to(beIdenticalTo(fetched))
+        #expect(viewModel.cachedApproachTripDetails(for: departure) === fetched)
 
         // Refresh clears the cache, so the accessor goes cold again.
         await viewModel.refresh()
-        expect(viewModel.cachedApproachTripDetails(for: departure)).to(beNil())
+        #expect(viewModel.cachedApproachTripDetails(for: departure) == nil)
     }
 
     /// The approach fetch varies by trip *instance* — `getTrip` takes tripID,
@@ -872,16 +874,16 @@ class StopViewModelTests: OBATestCase {
         let tomorrow = try XCTUnwrap(departures.first { $0.vehicleID == "1_9999" })
 
         // Same trip, different instance: only the service date and vehicle differ.
-        expect(today.tripID) == tomorrow.tripID
-        expect(today.serviceDate).toNot(equal(tomorrow.serviceDate))
+        #expect(today.tripID == tomorrow.tripID)
+        #expect(today.serviceDate != tomorrow.serviceDate)
 
         // Warm the cache for one instance.
         let fetched = await viewModel.approachTripDetails(for: today)
-        expect(fetched).toNot(beNil())
-        expect(viewModel.cachedApproachTripDetails(for: today)).toNot(beNil())
+        #expect(fetched != nil)
+        #expect(viewModel.cachedApproachTripDetails(for: today) != nil)
 
         // The other instance is a different request and must not read that entry.
-        expect(viewModel.cachedApproachTripDetails(for: tomorrow)).to(beNil())
+        #expect(viewModel.cachedApproachTripDetails(for: tomorrow) == nil)
     }
 
     /// The arrivals fixture with its first departure duplicated onto the next service
@@ -924,7 +926,7 @@ class StopViewModelTests: OBATestCase {
         )
 
         // Precondition: no sidecar URL means no Obaco service to delete against.
-        expect(app.obacoService).to(beNil())
+        #expect(app.obacoService == nil)
 
         let viewModel = StopViewModel(application: app, stopID: testStopID)
         await viewModel.refresh()
@@ -940,13 +942,13 @@ class StopViewModelTests: OBATestCase {
 
         // The index is rebuilt from the persisted store on each successful fetch.
         await viewModel.refresh()
-        expect(viewModel.alarm(for: departure)).toNot(beNil())
+        #expect(viewModel.alarm(for: departure) != nil)
 
         await viewModel.cancelAlarm(for: departure)
 
-        expect(viewModel.alarmError).toNot(beNil())
-        expect(viewModel.alarm(for: departure)).toNot(beNil())
-        expect(app.userDataStore.alarms).toNot(beEmpty())
+        #expect(viewModel.alarmError != nil)
+        #expect(viewModel.alarm(for: departure) != nil)
+        #expect(!app.userDataStore.alarms.isEmpty)
     }
 
     // MARK: - Review prompt success recording
@@ -955,7 +957,7 @@ class StopViewModelTests: OBATestCase {
     func test_successfulFetchWithPredictedArrival_recordsOneSuccess() async {
         let (viewModel, application) = buildViewModel(arrivalsFixture: "arrivals_and_departures_for_stop_1_10020.json")
         await viewModel.refresh()
-        expect(application.reviewPromptPolicy.successCount) == 1
+        #expect(application.reviewPromptPolicy.successCount == 1)
     }
 
     @MainActor
@@ -964,14 +966,14 @@ class StopViewModelTests: OBATestCase {
         await viewModel.refresh()
         await viewModel.refresh()
         await viewModel.refresh()
-        expect(application.reviewPromptPolicy.successCount) == 1
+        #expect(application.reviewPromptPolicy.successCount == 1)
     }
 
     @MainActor
     func test_scheduledOnlyArrivals_recordNoSuccess() async {
         let (viewModel, application) = buildViewModel(arrivalsFixture: "arrivals_and_departures_for_stop_1_10020_no_realtime.json")
         await viewModel.refresh()
-        expect(application.reviewPromptPolicy.successCount) == 0
+        #expect(application.reviewPromptPolicy.successCount == 0)
     }
 
     /// Hide every route the fixture's predicted arrivals belong to, so the rider
@@ -981,15 +983,15 @@ class StopViewModelTests: OBATestCase {
         let (viewModel, application) = buildViewModel(arrivalsFixture: "arrivals_and_departures_for_stop_1_10020.json")
         hideAllRoutes(in: viewModel)
         await viewModel.refresh()
-        expect(application.reviewPromptPolicy.successCount) == 0
+        #expect(application.reviewPromptPolicy.successCount == 0)
     }
 
     @MainActor
     func test_failedFetch_recordsNoSuccessAndFlagsError() async {
         let (viewModel, application) = buildViewModelWithFailingArrivals(statusCode: 500)
         await viewModel.refresh()
-        expect(application.reviewPromptPolicy.successCount) == 0
-        expect(application.promptCoordinator.sawErrorThisSession).to(beTrue())
+        #expect(application.reviewPromptPolicy.successCount == 0)
+        #expect(application.promptCoordinator.sawErrorThisSession)
     }
 
     /// A broken bookmark is not a failure the rider watched happen: the page says so
@@ -1000,7 +1002,7 @@ class StopViewModelTests: OBATestCase {
         let bookmark = Bookmark(name: "Broken", regionIdentifier: pugetSoundRegionIdentifier, stop: stop)
         let (viewModel, application) = buildViewModelWithFailingArrivals(statusCode: 404, bookmarkContext: bookmark)
         await viewModel.refresh()
-        expect(application.promptCoordinator.sawErrorThisSession).to(beFalse())
+        #expect(!application.promptCoordinator.sawErrorThisSession)
     }
 
     /// Without a bookmark behind it — a deep link, a search result, a map pin — the same
@@ -1009,6 +1011,6 @@ class StopViewModelTests: OBATestCase {
     func test_requestNotFound_withoutBookmarkContext_flagsError() async {
         let (viewModel, application) = buildViewModelWithFailingArrivals(statusCode: 404)
         await viewModel.refresh()
-        expect(application.promptCoordinator.sawErrorThisSession).to(beTrue())
+        #expect(application.promptCoordinator.sawErrorThisSession)
     }
 }

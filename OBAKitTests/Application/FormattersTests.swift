@@ -9,9 +9,9 @@
 
 import Foundation
 import XCTest
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
-import Nimble
 
 // swiftlint:disable force_try
 
@@ -32,7 +32,11 @@ class FormattersTests: OBATestCase {
 
         let str = formatters.explanation(from: arrDep)
 
-        expect(str).to(match("Arrived \\d+ min ago"))
+        // Deliberately stricter than what it replaced. Nimble's `match` was
+        // `range(of:options:.regularExpression)` -- an UNANCHORED substring
+        // search -- whereas `SELF MATCHES` anchors to the whole string, so this
+        // also asserts nothing surrounds the phrase. That's the intent here.
+        #expect(NSPredicate(format: "SELF MATCHES %@", "Arrived \\d+ min ago").evaluate(with: str))
     }
 
     // MARK: - Transfer-Relative Time

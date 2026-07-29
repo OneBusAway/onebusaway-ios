@@ -8,7 +8,7 @@
 //
 
 import XCTest
-import Nimble
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -21,23 +21,16 @@ class StopTests: OBATestCase {
         let data = try! PropertyListEncoder().encode(stopOne)
         let stopTwo = try! PropertyListDecoder().decode(Stop.self, from: data)
 
-        expect(stopTwo.routes).toNot(beNil())
+        // `routes` is `[Route]!`, populated by reference-reconnection rather than
+        // by decoding, so these two are real nil checks -- not the tautologies
+        // that the other `!= nil` assertions in this test were.
+        #expect(stopTwo.routes != nil)
 
-        expect(stopOne.code).toNot(beNil())
-        expect(stopOne.direction).toNot(beNil())
-        expect(stopOne.id).toNot(beNil())
-        expect(stopOne.location).toNot(beNil())
-        expect(stopOne.locationType).toNot(beNil())
-        expect(stopOne.name).toNot(beNil())
-        expect(stopOne.routeIDs).toNot(beNil())
-        expect(stopOne.routeIDs.count) == 12
-        expect(stopOne.routes).toNot(beNil())
-        expect(stopOne.routes.count) == 12
-        expect(stopOne.routeTypes).toNot(beNil())
-        expect(stopOne.prioritizedRouteTypeForDisplay).toNot(beNil())
-        expect(stopOne.wheelchairBoarding).toNot(beNil())
+        #expect(stopOne.routeIDs.count == 12)
+        #expect(stopOne.routes != nil)
+        #expect(stopOne.routes.count == 12)
 
-        expect(stopOne) == stopTwo
-        expect(stopOne.routes) == stopTwo.routes
+        #expect(stopOne == stopTwo)
+        #expect(stopOne.routes == stopTwo.routes)
     }
 }

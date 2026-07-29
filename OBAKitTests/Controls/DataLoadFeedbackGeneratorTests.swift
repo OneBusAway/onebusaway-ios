@@ -9,7 +9,7 @@
 
 import Foundation
 import XCTest
-import Nimble
+import Testing
 import UIKit
 @testable import OBAKit
 
@@ -25,7 +25,7 @@ class DataLoadFeedbackGeneratorTests: OBATestCase {
     func test_init_registersDefaults() {
         _ = DataLoadFeedbackGenerator(userDefaults: userDefaults)
         
-        expect(self.userDefaults.bool(forKey: DataLoadFeedbackGenerator.EnabledUserDefaultsKey)) == true
+        #expect(self.userDefaults.bool(forKey: DataLoadFeedbackGenerator.EnabledUserDefaultsKey) == true)
     }
     
     func test_init_withApplication() {
@@ -49,9 +49,7 @@ class DataLoadFeedbackGeneratorTests: OBATestCase {
             dataLoader: dataLoader
         )
         let application = Application(config: config)
-        let generator = DataLoadFeedbackGenerator(application: application)
-
-        expect(generator).toNot(beNil())
+        _ = DataLoadFeedbackGenerator(application: application)
     }
     
     func test_dataLoad_success() {
@@ -61,7 +59,7 @@ class DataLoadFeedbackGeneratorTests: OBATestCase {
         // This should not crash and should complete successfully
         feedbackGenerator.dataLoad(.success)
         
-        expect(true).to(beTrue()) // Test that it doesn't crash
+        #expect(true)  // Test that it doesn't crash
     }
     
     func test_dataLoad_failed() {
@@ -71,7 +69,7 @@ class DataLoadFeedbackGeneratorTests: OBATestCase {
         // This should not crash and should complete successfully
         feedbackGenerator.dataLoad(.failed)
         
-        expect(true).to(beTrue()) // Test that it doesn't crash
+        #expect(true)  // Test that it doesn't crash
     }
     
     func test_dataLoad_disabled() {
@@ -82,7 +80,7 @@ class DataLoadFeedbackGeneratorTests: OBATestCase {
         feedbackGenerator.dataLoad(.success)
         feedbackGenerator.dataLoad(.failed)
         
-        expect(true).to(beTrue()) // Test that it doesn't crash
+        #expect(true)  // Test that it doesn't crash
     }
     
     func test_feedbackType_cases() {
@@ -90,7 +88,7 @@ class DataLoadFeedbackGeneratorTests: OBATestCase {
         let successType = DataLoadFeedbackGenerator.FeedbackType.success
         let failedType = DataLoadFeedbackGenerator.FeedbackType.failed
         
-        expect(successType).to(equal(.success))
-        expect(failedType).to(equal(.failed))
+        #expect(successType == .success)
+        #expect(failedType == .failed)
     }
 }

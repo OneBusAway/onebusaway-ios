@@ -8,7 +8,7 @@
 //
 
 import XCTest
-import Nimble
+import Testing
 import CoreLocation
 @testable import OBAKit
 @testable import OBAKitCore
@@ -41,19 +41,19 @@ class NearbyStopsViewModelTests: OBATestCase {
     @MainActor
     func test_init_stopsIsEmpty() {
         let viewModel = NearbyStopsViewModel(coordinate: coordinate, apiService: nil)
-        expect(viewModel.stops).to(beEmpty())
+        #expect(viewModel.stops.isEmpty)
     }
 
     @MainActor
     func test_init_isLoadingIsFalse() {
         let viewModel = NearbyStopsViewModel(coordinate: coordinate, apiService: nil)
-        expect(viewModel.isLoading).to(beFalse())
+        #expect(!viewModel.isLoading)
     }
 
     @MainActor
     func test_init_operationErrorIsNil() {
         let viewModel = NearbyStopsViewModel(coordinate: coordinate, apiService: nil)
-        expect(viewModel.operationError).to(beNil())
+        #expect(viewModel.operationError == nil)
     }
 
     // MARK: - Guard: nil apiService
@@ -62,14 +62,14 @@ class NearbyStopsViewModelTests: OBATestCase {
     func test_loadStops_nilApiService_stopsRemainsEmpty() async {
         let viewModel = NearbyStopsViewModel(coordinate: coordinate, apiService: nil)
         await viewModel.loadStops()
-        expect(viewModel.stops).to(beEmpty())
+        #expect(viewModel.stops.isEmpty)
     }
 
     @MainActor
     func test_loadStops_nilApiService_isLoadingReturnsFalse() async {
         let viewModel = NearbyStopsViewModel(coordinate: coordinate, apiService: nil)
         await viewModel.loadStops()
-        expect(viewModel.isLoading).to(beFalse())
+        #expect(!viewModel.isLoading)
     }
 
     @MainActor
@@ -79,7 +79,7 @@ class NearbyStopsViewModelTests: OBATestCase {
         // sink can present it.
         let viewModel = NearbyStopsViewModel(coordinate: coordinate, apiService: nil)
         await viewModel.loadStops()
-        expect(viewModel.operationError).toNot(beNil())
+        #expect(viewModel.operationError != nil)
     }
 
     // MARK: - Successful load
@@ -91,8 +91,8 @@ class NearbyStopsViewModelTests: OBATestCase {
 
         await viewModel.loadStops()
 
-        expect(viewModel.stops).toNot(beEmpty())
-        expect(viewModel.operationError).to(beNil())
+        #expect(!viewModel.stops.isEmpty)
+        #expect(viewModel.operationError == nil)
     }
 
     @MainActor
@@ -102,7 +102,7 @@ class NearbyStopsViewModelTests: OBATestCase {
 
         await viewModel.loadStops()
 
-        expect(viewModel.isLoading).to(beFalse())
+        #expect(!viewModel.isLoading)
     }
 
     // MARK: - Failed load
@@ -114,7 +114,7 @@ class NearbyStopsViewModelTests: OBATestCase {
 
         await viewModel.loadStops()
 
-        expect(viewModel.operationError).toNot(beNil())
+        #expect(viewModel.operationError != nil)
     }
 
     @MainActor
@@ -124,7 +124,7 @@ class NearbyStopsViewModelTests: OBATestCase {
 
         await viewModel.loadStops()
 
-        expect(viewModel.stops).to(beEmpty())
+        #expect(viewModel.stops.isEmpty)
     }
 
     @MainActor
@@ -134,7 +134,7 @@ class NearbyStopsViewModelTests: OBATestCase {
 
         await viewModel.loadStops()
 
-        expect(viewModel.isLoading).to(beFalse())
+        #expect(!viewModel.isLoading)
     }
 
     // MARK: - Guard: prevents concurrent double-load
@@ -154,8 +154,8 @@ class NearbyStopsViewModelTests: OBATestCase {
         await first
         await second
 
-        expect(countingLoader.callCount) == 1
-        expect(viewModel.stops).toNot(beEmpty())
-        expect(viewModel.isLoading).to(beFalse())
+        #expect(countingLoader.callCount == 1)
+        #expect(!viewModel.stops.isEmpty)
+        #expect(!viewModel.isLoading)
     }
 }

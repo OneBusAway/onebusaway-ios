@@ -8,7 +8,7 @@
 //
 
 import XCTest
-import Nimble
+import Testing
 import Foundation
 @testable import OBAKit
 @testable import OBAKitCore
@@ -81,8 +81,8 @@ final class WeatherDisplayTests: XCTestCase {
 
         let window = WeatherFormatter.upcomingHourly(from: hourly, now: now, calendar: utcCalendar)
 
-        expect(window.count) == 2
-        expect(window.first?.time) == currentHour
+        #expect(window.count == 2)
+        #expect(window.first?.time == currentHour)
     }
 
     /// Even when the API ships 48 hours, the window is capped at 24.
@@ -92,7 +92,7 @@ final class WeatherDisplayTests: XCTestCase {
 
         let window = WeatherFormatter.upcomingHourly(from: hourly, now: now, calendar: utcCalendar)
 
-        expect(window.count) == 24
+        #expect(window.count == 24)
     }
 
     /// Even if the API delivers hourly entries out of chronological order, the
@@ -105,9 +105,9 @@ final class WeatherDisplayTests: XCTestCase {
 
         let window = WeatherFormatter.upcomingHourly(from: hourly, now: now, calendar: utcCalendar)
 
-        expect(window.first?.time) == currentHour
+        #expect(window.first?.time == currentHour)
         let timestamps = window.map(\.time)
-        expect(timestamps) == timestamps.sorted()
+        #expect(timestamps == timestamps.sorted())
     }
 
     /// If every entry is in the past, none survive the filter.
@@ -117,7 +117,7 @@ final class WeatherDisplayTests: XCTestCase {
 
         let window = WeatherFormatter.upcomingHourly(from: hourly, now: now, calendar: utcCalendar)
 
-        expect(window).to(beEmpty())
+        #expect(window.isEmpty)
     }
 
     /// A glitch that ships the same hour twice would otherwise give `ForEach`
@@ -131,8 +131,8 @@ final class WeatherDisplayTests: XCTestCase {
 
         let window = WeatherFormatter.upcomingHourly(from: hourly, now: now, calendar: utcCalendar)
 
-        expect(window.count) == 2
-        expect(window.map(\.time)) == [currentHour, nextHour]
+        #expect(window.count == 2)
+        #expect(window.map(\.time) == [currentHour, nextHour])
     }
 
     // MARK: - HourlyEntry.list
@@ -145,9 +145,9 @@ final class WeatherDisplayTests: XCTestCase {
 
         let entries = HourlyEntry.list(from: upcoming, locale: usLocale)
 
-        expect(entries.first?.timeLabel) == "Now"
-        expect(entries.first?.isNow) == true
-        expect(entries.dropFirst().allSatisfy { !$0.isNow }) == true
+        #expect(entries.first?.timeLabel == "Now")
+        #expect(entries.first?.isNow == true)
+        #expect(entries.dropFirst().allSatisfy { !$0.isNow } == true)
     }
 
     /// Identity is the hour timestamp, not the array index. This is what keeps
@@ -160,12 +160,12 @@ final class WeatherDisplayTests: XCTestCase {
         let entries = HourlyEntry.list(from: upcoming, locale: usLocale)
 
         let expectedIds = (0..<3).map { currentHour.addingTimeInterval(Double($0) * 3600) }
-        expect(entries.map(\.id)) == expectedIds
+        #expect(entries.map(\.id) == expectedIds)
     }
 
     func test_list_emptyUpcomingReturnsEmpty() {
         let entries = HourlyEntry.list(from: [], locale: usLocale)
-        expect(entries).to(beEmpty())
+        #expect(entries.isEmpty)
     }
 
     // MARK: - WeatherFormatter unit gaps
@@ -175,15 +175,15 @@ final class WeatherDisplayTests: XCTestCase {
     /// returned the unknown-key fallback for every key would still satisfy
     /// it. Lock down at least one concrete mapping.
     func test_conditionText_mapsKnownIconKeys() {
-        expect(WeatherFormatter.conditionText(for: "snow")) == "Snow"
-        expect(WeatherFormatter.conditionText(for: "clear-day")) == "Clear"
-        expect(WeatherFormatter.conditionText(for: "rain")) == "Rain"
+        #expect(WeatherFormatter.conditionText(for: "snow") == "Snow")
+        #expect(WeatherFormatter.conditionText(for: "clear-day") == "Clear")
+        #expect(WeatherFormatter.conditionText(for: "rain") == "Rain")
     }
 
     func test_isKnownIconKey_distinguishesMappedFromUnmapped() {
-        expect(WeatherFormatter.isKnownIconKey("clear-day")) == true
-        expect(WeatherFormatter.isKnownIconKey("partly-cloudy-night")) == true
-        expect(WeatherFormatter.isKnownIconKey("thunderstorm")) == false
+        #expect(WeatherFormatter.isKnownIconKey("clear-day") == true)
+        #expect(WeatherFormatter.isKnownIconKey("partly-cloudy-night") == true)
+        #expect(WeatherFormatter.isKnownIconKey("thunderstorm") == false)
     }
 
     /// The SwiftUI color palette in `WeatherIcon` is layered on top of
@@ -194,7 +194,7 @@ final class WeatherDisplayTests: XCTestCase {
     func test_weatherIconPalette_coversAllKnownIconKeys() {
         let paletteKeys = Set(WeatherIconPalette.colors.keys)
         let missing = WeatherFormatter.knownIconKeys.subtracting(paletteKeys)
-        expect(missing) == []
+        #expect(missing == [])
     }
 
     // MARK: - Full WeatherDisplay (fixture-driven)
@@ -220,29 +220,29 @@ final class WeatherDisplayTests: XCTestCase {
 
         // Header — derived from `current_forecast` + `region_name` + the
         // hourly window's hi/lo, not the calendar-day hi/lo.
-        expect(display.header.regionName) == "Puget Sound"
-        expect(display.header.iconName) == "clear-day"
-        expect(display.header.currentTemp) == "71°"
-        expect(display.header.chanceOfRainText) == "Chance of Rain: 0%"
-        expect(display.header.highLowText).toNot(beNil())
+        #expect(display.header.regionName == "Puget Sound")
+        #expect(display.header.iconName == "clear-day")
+        #expect(display.header.currentTemp == "71°")
+        #expect(display.header.chanceOfRainText == "Chance of Rain: 0%")
+        #expect(display.header.highLowText != nil)
 
         // Stats — current-hour wind / precip / feels-like.
-        expect(display.stats.feelsLikeText) == "71°"
-        expect(display.stats.precipText) == "0%"
-        expect(display.stats.windText).to(contain("mph"))
+        #expect(display.stats.feelsLikeText == "71°")
+        #expect(display.stats.precipText == "0%")
+        #expect(display.stats.windText.contains("mph"))
 
         // Button pill mirrors the current temperature.
-        expect(display.buttonTitle) == "71°"
+        #expect(display.buttonTitle == "71°")
 
         // Hourly strip — non-empty, first cell labelled "Now" and flagged as
         // the current hour, later cells fall through to formatted times.
-        expect(display.hourly).toNot(beEmpty())
+        #expect(!display.hourly.isEmpty)
         let firstHour = try XCTUnwrap(display.hourly.first)
-        expect(firstHour.timeLabel) == "Now"
-        expect(firstHour.isNow) == true
+        #expect(firstHour.timeLabel == "Now")
+        #expect(firstHour.isNow == true)
         if display.hourly.count > 1 {
-            expect(display.hourly[1].isNow) == false
-            expect(display.hourly[1].timeLabel) != "Now"
+            #expect(display.hourly[1].isNow == false)
+            #expect(display.hourly[1].timeLabel != "Now")
         }
     }
 
@@ -268,7 +268,7 @@ final class WeatherDisplayTests: XCTestCase {
         let stats = WeatherDisplay.Stats(forecast: hourly, locale: usLocale)
 
         // `Int(0.456 * 100)` truncates to 45 rather than rounding to 46.
-        expect(stats.precipText) == "45%"
+        #expect(stats.precipText == "45%")
     }
 
     /// Header owns the `"H:%@  L:%@"` join (the only formatting it does on
@@ -279,9 +279,9 @@ final class WeatherDisplayTests: XCTestCase {
         let display = WeatherDisplay(forecast: forecast, locale: usLocale, now: pugetSoundNow, calendar: utcCalendar)
         let highLowText = try XCTUnwrap(display.header.highLowText)
 
-        expect(highLowText).to(beginWith("H:"))
-        expect(highLowText).to(contain("  L:"))
+        #expect(highLowText.hasPrefix("H:"))
+        #expect(highLowText.contains("  L:"))
         // Two spaces between the two halves — the format is deliberately wide.
-        expect(highLowText.components(separatedBy: "  ").count) == 2
+        #expect(highLowText.components(separatedBy: "  ").count == 2)
     }
 }

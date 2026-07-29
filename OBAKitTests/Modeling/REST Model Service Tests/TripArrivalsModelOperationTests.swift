@@ -8,9 +8,9 @@
 //
 
 import XCTest
-import Nimble
 import CoreLocation
 import MapKit
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -28,58 +28,58 @@ class TripArrivalsModelOperationTests: OBATestCase {
         let response = try await restService.getTripArrivalDepartureAtStop(stopID: stopID, tripID: "trip123", serviceDate: Date(timeIntervalSince1970: 1234567890), vehicleID: "vehicle_123", stopSequence: 1)
         let arrDep = response.entry
 
-        expect(arrDep.arrivalEnabled).to(beTrue())
-        expect(arrDep.blockTripSequence) == 6
-        expect(arrDep.departureEnabled).to(beTrue())
-        expect(arrDep.distanceFromStop).to(beCloseTo(-2089.5461))
-        expect(arrDep.frequency).to(beNil())
+        #expect(arrDep.arrivalEnabled)
+        #expect(arrDep.blockTripSequence == 6)
+        #expect(arrDep.departureEnabled)
+        expectClose(arrDep.distanceFromStop, -2089.5461)
+        #expect(arrDep.frequency == nil)
 
-        expect(arrDep.lastUpdated) == Date.fromComponents(year: 2018, month: 10, day: 24, hour: 03, minute: 13, second: 42)
+        #expect(arrDep.lastUpdated == Date.fromComponents(year: 2018, month: 10, day: 24, hour: 03, minute: 13, second: 42))
 
-        expect(arrDep.numberOfStopsAway) == -4
-        expect(arrDep.predicted).to(beTrue())
+        #expect(arrDep.numberOfStopsAway == -4)
+        #expect(arrDep.predicted)
 
-        expect(arrDep.arrivalDepartureDate) == Date.fromComponents(year: 2018, month: 10, day: 24, hour: 03, minute: 10, second: 00)
+        #expect(arrDep.arrivalDepartureDate == Date.fromComponents(year: 2018, month: 10, day: 24, hour: 03, minute: 10, second: 00))
 
-        expect(arrDep.route.id) == "MTS_10"
-        expect(arrDep.route.shortName) == "10"
+        #expect(arrDep.route.id == "MTS_10")
+        #expect(arrDep.route.shortName == "10")
 
-        expect(arrDep.routeLongName) == "Old Town - University/College"
-        expect(arrDep.routeShortName) == "10"
+        #expect(arrDep.routeLongName == "Old Town - University/College")
+        #expect(arrDep.routeShortName == "10")
 
-        expect(arrDep.arrivalDepartureDate) == Date.fromComponents(year: 2018, month: 10, day: 24, hour: 03, minute: 10, second: 00)
+        #expect(arrDep.arrivalDepartureDate == Date.fromComponents(year: 2018, month: 10, day: 24, hour: 03, minute: 10, second: 00))
 
-        expect(arrDep.serviceDate) == Date.fromComponents(year: 2018, month: 10, day: 23, hour: 07, minute: 00, second: 00)
+        #expect(arrDep.serviceDate == Date.fromComponents(year: 2018, month: 10, day: 23, hour: 07, minute: 00, second: 00))
 
-        expect(arrDep.serviceAlerts.count) == 1
+        #expect(arrDep.serviceAlerts.count == 1)
 
         let situation = try XCTUnwrap(arrDep.serviceAlerts.first)
         let situationSummary = try XCTUnwrap(situation.summary)
         let firstConsequence = try XCTUnwrap(situation.consequences.first)
 
-        expect(situationSummary.value) == "Washington St. ramp from Pac Hwy Closed"
-        expect(firstConsequence.condition) == "detour"
-        expect(firstConsequence.conditionDetails?.diversionPath).toNot(beNil())
+        #expect(situationSummary.value == "Washington St. ramp from Pac Hwy Closed")
+        #expect(firstConsequence.condition == "detour")
+        #expect(firstConsequence.conditionDetails?.diversionPath != nil)
 
-        expect(arrDep.status) == "default"
+        #expect(arrDep.status == "default")
 
-        expect(arrDep.stop.id) == "MTS_11589"
-        expect(arrDep.stop.name) == "Pacific Hwy & Sports Arena Bl"
+        #expect(arrDep.stop.id == "MTS_11589")
+        #expect(arrDep.stop.name == "Pacific Hwy & Sports Arena Bl")
 
-        expect(arrDep.stopSequence) == 1
+        #expect(arrDep.stopSequence == 1)
 
-        expect(arrDep.totalStopsInTrip).to(beNil())
+        #expect(arrDep.totalStopsInTrip == nil)
 
-        expect(arrDep.tripHeadsign) == "University & College"
+        #expect(arrDep.tripHeadsign == "University & College")
 
-        expect(arrDep.trip.id) == "MTS_13405160"
-        expect(arrDep.trip.shortName).to(beNil())
+        #expect(arrDep.trip.id == "MTS_13405160")
+        #expect(arrDep.trip.shortName == nil)
 
-        expect(arrDep.tripStatus).toNot(beNil())
+        #expect(arrDep.tripStatus != nil)
         let tripStatus = try XCTUnwrap(arrDep.tripStatus)
-        expect(tripStatus.activeTrip.id) == "MTS_13405160"
+        #expect(tripStatus.activeTrip.id == "MTS_13405160")
 
-        expect(arrDep.vehicleID) == "MTS_806"
+        #expect(arrDep.vehicleID == "MTS_806")
 
     }
 }

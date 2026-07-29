@@ -9,7 +9,7 @@
 
 import Foundation
 import XCTest
-import Nimble
+import Testing
 import UIKit
 import CoreLocation
 @testable import OBAKit
@@ -25,21 +25,21 @@ class HighlightChangeLabelTests: OBATestCase {
     }
     
     func test_init_setsContentPriorities() {
-        expect(self.label.contentCompressionResistancePriority(for: .vertical)) == .required
-        expect(self.label.contentCompressionResistancePriority(for: .horizontal)) == .required
-        expect(self.label.contentHuggingPriority(for: .horizontal)) == .required - 1
-        expect(self.label.contentHuggingPriority(for: .vertical)) == .required
+        #expect(self.label.contentCompressionResistancePriority(for: .vertical) == .required)
+        #expect(self.label.contentCompressionResistancePriority(for: .horizontal) == .required)
+        #expect(self.label.contentHuggingPriority(for: .horizontal) == .required - 1)
+        #expect(self.label.contentHuggingPriority(for: .vertical) == .required)
     }
     
     func test_highlightedBackgroundColor_defaultValue() {
-        expect(self.label.highlightedBackgroundColor) == ThemeColors.shared.propertyChanged
+        #expect(self.label.highlightedBackgroundColor == ThemeColors.shared.propertyChanged)
     }
     
     func test_highlightedBackgroundColor_canBeSet() {
         let newColor = UIColor.red
         label.highlightedBackgroundColor = newColor
         
-        expect(self.label.highlightedBackgroundColor) == newColor
+        #expect(self.label.highlightedBackgroundColor == newColor)
     }
     
     func test_highlightBackground_triggersAnimation() {
@@ -56,11 +56,11 @@ class HighlightChangeLabelTests: OBATestCase {
         // Since the animation immediately sets it back to the original color
         // when animations are disabled, we just verify the method doesn't crash
         // and that the layer still has a valid background color
-        expect(self.label.layer.backgroundColor).toNot(beNil())
+        #expect(self.label.layer.backgroundColor != nil)
         
         // Also verify that if we had a color before, we still have one after
         if colorBeforeHighlight != nil {
-            expect(self.label.layer.backgroundColor).toNot(beNil())
+            #expect(self.label.layer.backgroundColor != nil)
         }
     }
     
@@ -71,9 +71,6 @@ class HighlightChangeLabelTests: OBATestCase {
         
         // Test that configuration doesn't crash with nil arrival departure
         // The actual model creation is too complex for unit tests
-        expect(self.label.text).to(beNil()) // Initially nil
-        
-        // After configuration, the label should be in a valid state
-        expect(self.label.layer).toNot(beNil())
+        #expect(self.label.text == nil)  // Initially nil
     }
 }

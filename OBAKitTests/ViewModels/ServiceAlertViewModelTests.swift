@@ -8,7 +8,7 @@
 //
 
 import XCTest
-import Nimble
+import Testing
 import Combine
 @testable import OBAKit
 @testable import OBAKitCore
@@ -85,7 +85,7 @@ final class ServiceAlertViewModelTests: OBATestCase {
         let alert = try loadServiceAlert()
 
         let viewModel = ServiceAlertViewModel(serviceAlert: alert, application: app)
-        expect(viewModel.renderedHTML).to(beNil())
+        #expect(viewModel.renderedHTML == nil)
     }
 
     @MainActor
@@ -99,11 +99,11 @@ final class ServiceAlertViewModelTests: OBATestCase {
 
         let html = await waitForRender(viewModel: viewModel)
         let rendered = try XCTUnwrap(html)
-        expect(rendered).to(contain("<html>"))
-        expect(rendered).to(contain("</html>"))
-        expect(rendered).to(contain("<h1>"))
+        #expect(rendered.contains("<html>"))
+        #expect(rendered.contains("</html>"))
+        #expect(rendered.contains("<h1>"))
         // The fixture's situation has at least one active window + an affected route.
-        expect(rendered).to(contain("In Effect"))
+        #expect(rendered.contains("In Effect"))
     }
 
     @MainActor
@@ -112,12 +112,12 @@ final class ServiceAlertViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: dataLoader)
         let alert = try loadServiceAlert()
 
-        expect(app.userDataStore.isUnread(serviceAlert: alert)).to(beTrue())
+        #expect(app.userDataStore.isUnread(serviceAlert: alert))
 
         let viewModel = ServiceAlertViewModel(serviceAlert: alert, application: app)
         viewModel.viewDidAppear()
 
-        expect(app.userDataStore.isUnread(serviceAlert: alert)).to(beFalse())
+        #expect(!app.userDataStore.isUnread(serviceAlert: alert))
     }
 
     @MainActor
@@ -134,6 +134,6 @@ final class ServiceAlertViewModelTests: OBATestCase {
         viewModel.viewDidAppear()
         // Allow a tick to confirm no re-render mutates the value to something else.
         try? await Task.sleep(nanoseconds: 100_000_000)
-        expect(viewModel.renderedHTML) == firstHTML
+        #expect(viewModel.renderedHTML == firstHTML)
     }
 }

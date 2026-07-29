@@ -8,9 +8,9 @@
 //
 
 import XCTest
-import Nimble
 import CoreLocation
 import MapKit
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -28,7 +28,7 @@ class ShapeModelOperationTests: OBATestCase {
         let response = try await restService.getShape(id: shapeID)
         let polyline = try XCTUnwrap(response.entry.polyline)
         let coordinate = polyline.coordinate
-        expect(coordinate.latitude).to(beCloseTo(47.6229))
-        expect(coordinate.longitude).to(beCloseTo(-122.3225))
+        expectClose(coordinate.latitude, 47.6229)
+        expectClose(coordinate.longitude, -122.3225)
     }
 }
