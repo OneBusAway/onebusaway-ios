@@ -28,6 +28,15 @@ extension CLAuthorizationStatus: @retroactive LosslessStringConvertible {
     }
 }
 
+public extension CLAuthorizationStatus {
+    /// Whether this status grants the app location access, foreground or always.
+    /// The single definition of the "is this authorized?" predicate that both
+    /// the per-app and effective status checks share.
+    var isAuthorized: Bool {
+        self == .authorizedWhenInUse || self == .authorizedAlways
+    }
+}
+
 public extension CLLocationDirection {
 
     /// Creates an affine transform from the specified rotation, and allows for an

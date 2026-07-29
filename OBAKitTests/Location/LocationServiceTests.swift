@@ -16,10 +16,45 @@ import Testing
 @MainActor
 @Suite(.serialized)
 final class LocationServiceTests {
+    /// Suite names handed out by `freshDefaults()`, torn down in `deinit` so the
+    /// test host doesn't accumulate a plist per run.
+    private var createdDefaultsSuites: [String] = []
+
     /// An isolated defaults suite. The denied latch is persisted, so these tests
     /// must not read or write each other's (or the standard suite's) state.
     private func freshDefaults() -> UserDefaults {
-        return UserDefaults(suiteName: "LocationServiceTests.\(UUID().uuidString)")!
+        let suiteName = "LocationServiceTests.\(UUID().uuidString)"
+        createdDefaultsSuites.append(suiteName)
+        return UserDefaults(suiteName: suiteName)!
+    }
+
+    deinit {
+        for suiteName in createdDefaultsSuites {
+            UserDefaults().removePersistentDomain(forName: suiteName)
+        }
+    }
+
+    /// Builds an authorizable mock and a service wired to it, with a fresh,
+    /// isolated defaults suite by default. Collapses the mock + service pair that
+    /// every test below would otherwise spell out.
+    ///
+    /// - Parameters:
+    ///   - defaults: An explicit suite, for tests that simulate two launches
+    ///     sharing persisted state.
+    ///   - servicesOff: Simulates Location Services being off system-wide.
+    ///   - initialStatus: The mock's authorization *before* the service is
+    ///     constructed, so the service seeds its raw status from it (as it would
+    ///     on a real relaunch).
+    private func makeService(
+        defaults: UserDefaults? = nil,
+        servicesOff: Bool = false,
+        initialStatus: CLAuthorizationStatus = .notDetermined
+    ) -> (AuthorizableLocationManagerMock, LocationService) {
+        let mock = AuthorizableLocationManagerMock(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
+        mock.simulatesLocationServicesOff = servicesOff
+        mock._authorizationStatus = initialStatus
+        let service = LocationService(userDefaults: defaults ?? freshDefaults(), locationManager: mock)
+        return (mock, service)
     }
 
     // MARK: - Authorization
@@ -144,51 +179,73 @@ final class LocationServiceTests {
     /// settles, and without it the map opens zoomed out and jumps once the fix
     /// finally arrives at the next foreground event.
     @Test func `Authorization callback starts updates when already authorized`() {
-        let locationManagerMock = AuthorizableLocationManagerMock(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
-        locationManagerMock._authorizationStatus = .authorizedWhenInUse
-        let service = LocationService(userDefaults: freshDefaults(), locationManager: locationManagerMock)
-        #expect(!locationManagerMock.locationUpdatesStarted)
+        let (mock, service) = makeService(initialStatus: .authorizedWhenInUse)
+        #expect(!mock.locationUpdatesStarted)
 
         service.locationManagerDidChangeAuthorization(CLLocationManager())
 
-        #expect(locationManagerMock.locationUpdatesStarted)
-        #expect(locationManagerMock.headingUpdatesStarted)
+        #expect(mock.locationUpdatesStarted)
+        #expect(mock.headingUpdatesStarted)
         #expect(service.currentLocation == TestData.mockSeattleLocation)
     }
 
     /// The same callback must *not* start updates when the app isn't authorized.
     @Test func `Authorization callback does not start updates when unauthorized`() {
-        let locationManagerMock = AuthorizableLocationManagerMock(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
-        locationManagerMock._authorizationStatus = .denied
-        let service = LocationService(userDefaults: freshDefaults(), locationManager: locationManagerMock)
+        let (mock, service) = makeService(initialStatus: .denied)
 
         service.locationManagerDidChangeAuthorization(CLLocationManager())
 
         #expect(!service.isLocationUseAuthorized)
-        #expect(!locationManagerMock.locationUpdatesStarted)
+        #expect(!mock.locationUpdatesStarted)
     }
 
     /// A latch seeded from the previous launch is probed at app init rather than
-    /// waiting for a foreground event, so a stale one resolves as early as possible.
-    @Test func `Seeded latch is probed on authorization callback`() {
+    /// waiting for a foreground event, so a stale one resolves as early as
+    /// possible. Recovery goes through the off-main `locationServicesEnabled`
+    /// probe, so it is asynchronous.
+    @Test func `Seeded latch is probed on authorization callback`() async {
         let userDefaults = freshDefaults()
 
-        let firstLaunchManager = AuthorizableLocationManagerMock(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
-        let firstLaunch = LocationService(userDefaults: userDefaults, locationManager: firstLaunchManager)
+        // First launch: Location Services off system-wide, so the app latches.
+        let (_, firstLaunch) = makeService(defaults: userDefaults, servicesOff: true)
         firstLaunch.requestInUseAuthorization()
-        firstLaunch.locationManager(CLLocationManager(), didFailWithError: CLError(.denied))
         #expect(!firstLaunch.isLocationUseAuthorized)
 
-        // Relaunch, with Location Services back on system-wide.
-        let secondLaunchManager = AuthorizableLocationManagerMock(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
-        secondLaunchManager._authorizationStatus = .authorizedWhenInUse
-        let secondLaunch = LocationService(userDefaults: userDefaults, locationManager: secondLaunchManager)
+        // Relaunch, with Location Services back on system-wide. The per-app
+        // authorization still reads as authorized, so the seeded latch masks it.
+        let (_, secondLaunch) = makeService(defaults: userDefaults, initialStatus: .authorizedWhenInUse)
         #expect(secondLaunch.authorizationStatus == .denied)
 
+        // The init-time authorization callback probes the seeded latch and, with
+        // services back on, clears it.
         secondLaunch.locationManagerDidChangeAuthorization(CLLocationManager())
+        await poll(until: { secondLaunch.isLocationUseAuthorized },
+                   "seeded latch was never cleared by the probe")
 
         #expect(secondLaunch.authorizationStatus == .authorizedWhenInUse)
         #expect(secondLaunch.currentLocation == TestData.mockSeattleLocation)
+    }
+
+    /// A transition that crosses *into* authorization is a fresh grant, so it
+    /// clears a stale latch synchronously — without waiting for the off-main probe.
+    @Test func `Latch cleared when authorization crosses into authorized`() {
+        let userDefaults = freshDefaults()
+
+        // Prior session latched (services off) while authorized; the latch persists.
+        let (_, firstLaunch) = makeService(defaults: userDefaults, servicesOff: true)
+        firstLaunch.requestInUseAuthorization()
+        #expect(!firstLaunch.isLocationUseAuthorized)
+
+        // Relaunch not-yet-authorized: the persisted latch is masked by the raw
+        // `.notDetermined` status.
+        let (mock, secondLaunch) = makeService(defaults: userDefaults, initialStatus: .notDetermined)
+        #expect(secondLaunch.authorizationStatus == .notDetermined)
+
+        // The user grants access. Crossing into authorization clears the stale
+        // latch right away.
+        mock._authorizationStatus = .authorizedWhenInUse
+        #expect(secondLaunch.authorizationStatus == .authorizedWhenInUse)
+        #expect(secondLaunch.isLocationUseAuthorized)
     }
 
     // MARK: - Denied error handling
@@ -198,15 +255,14 @@ final class LocationServiceTests {
     /// The service should latch that, report `.denied` so the UI can explain the
     /// situation, stop updates, and re-notify delegates.
     @Test func `Denied error marks location unavailable`() {
-        let locationManagerMock = AuthorizableLocationManagerMock(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
-        let service = LocationService(userDefaults: freshDefaults(), locationManager: locationManagerMock)
+        let (mock, service) = makeService()
         let del = LocDelegate()
         service.addDelegate(del)
 
         service.requestInUseAuthorization()
         #expect(service.isLocationUseAuthorized)
-        #expect(locationManagerMock.locationUpdatesStarted)
-        #expect(locationManagerMock.headingUpdatesStarted)
+        #expect(mock.locationUpdatesStarted)
+        #expect(mock.headingUpdatesStarted)
 
         del.status = nil
 
@@ -223,38 +279,54 @@ final class LocationServiceTests {
         // The raw error is still forwarded to delegates.
         #expect((del.error as? CLError)?.code == .denied)
         // Both location and heading updates were stopped, as Apple recommends.
-        #expect(!locationManagerMock.locationUpdatesStarted)
-        #expect(!locationManagerMock.headingUpdatesStarted)
+        #expect(!mock.locationUpdatesStarted)
+        #expect(!mock.headingUpdatesStarted)
     }
 
-    /// An authorization callback whose status actually *changed* means the user
-    /// made a fresh decision, so the latch is stale evidence and access is
-    /// re-armed optimistically.
-    @Test func `Denied error cleared by authorization status change`() {
-        let locationManagerMock = AuthorizableLocationManagerMock(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
-        let service = LocationService(userDefaults: freshDefaults(), locationManager: locationManagerMock)
+    /// A `denied` error is not latched while the app isn't itself authorized:
+    /// the effective status would mask it anyway, and persisting it there means a
+    /// grant made while the app was not running launches wrongly showing
+    /// "Location Services Off."
+    @Test func `Denied error while unauthorized is not latched`() {
+        let userDefaults = freshDefaults()
+
+        // A denied error arrives while the app is only `.notDetermined`.
+        let (_, firstLaunch) = makeService(defaults: userDefaults, initialStatus: .notDetermined)
+        firstLaunch.locationManager(CLLocationManager(), didFailWithError: CLError(.denied))
+
+        // Nothing was persisted, so a later launch that is authorized (the user
+        // granted access while the app was dead) is not masked as denied.
+        let (_, secondLaunch) = makeService(defaults: userDefaults, initialStatus: .authorizedWhenInUse)
+        #expect(secondLaunch.authorizationStatus == .authorizedWhenInUse)
+        #expect(secondLaunch.isLocationUseAuthorized)
+    }
+
+    /// An authorization callback triggers the off-main probe, which clears the
+    /// latch once Location Services are back on — even a callback that only
+    /// changes between two authorized values (WhenInUse → Always).
+    @Test func `Denied latch cleared by probe on authorization callback`() async {
+        let (mock, service) = makeService(servicesOff: true)
 
         service.requestInUseAuthorization()
-        service.locationManager(CLLocationManager(), didFailWithError: CLError(.denied))
-        #expect(!service.isLocationUseAuthorized)
-        #expect(!locationManagerMock.locationUpdatesStarted)
+        #expect(service.authorizationStatus == .denied)
+        #expect(!mock.locationUpdatesStarted)
 
         // The user re-enabled Location Services and promoted the app to Always.
-        locationManagerMock._authorizationStatus = .authorizedAlways
+        mock.simulatesLocationServicesOff = false
+        mock._authorizationStatus = .authorizedAlways
 
+        await poll(until: { service.isLocationUseAuthorized },
+                   "probe never cleared the latch after services came back on")
         #expect(service.authorizationStatus == .authorizedAlways)
-        #expect(service.isLocationUseAuthorized)
-        #expect(locationManagerMock.locationUpdatesStarted)
+        #expect(mock.locationUpdatesStarted)
     }
 
     /// Core Location fires an authorization callback whenever a delegate is
     /// assigned. One that leaves the status untouched carries no new evidence, so
     /// it must not clear the latch — doing so would re-arm location against a
     /// still-disabled subsystem and flicker the locate button and user dot.
-    @Test func `Denied error survives redundant authorization callback`() {
-        let locationManagerMock = AuthorizableLocationManagerMock(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
-        locationManagerMock.simulatesLocationServicesOff = true
-        let service = LocationService(userDefaults: freshDefaults(), locationManager: locationManagerMock)
+    @Test func `Denied error survives redundant authorization callback`() async {
+        let (mock, service) = makeService(servicesOff: true)
         let del = LocDelegate()
         service.addDelegate(del)
 
@@ -265,45 +337,48 @@ final class LocationServiceTests {
         service.locationManagerDidChangeAuthorization(CLLocationManager())
 
         // The callback probes instead of assuming. Location Services are still
-        // off, so the probe re-fails and nothing the user can see changes.
+        // off, so the probe confirms the denial and nothing the user can see
+        // changes. Let the async probe run before asserting it changed nothing.
+        await spin(0.05)
         #expect(service.authorizationStatus == .denied)
         #expect(!service.isLocationUseAuthorized)
         #expect(del.status == nil)
-        #expect(!locationManagerMock.locationUpdatesStarted)
-        #expect(!locationManagerMock.headingUpdatesStarted)
+        #expect(!mock.locationUpdatesStarted)
+        #expect(!mock.headingUpdatesStarted)
     }
 
     /// Toggling Location Services back on system-wide does not change the app's
     /// per-app authorization, so no authorization callback need arrive. The
-    /// foreground retry probes for a fix, and a successful one clears the latch.
-    @Test func `Denied error cleared by foreground retry`() {
-        let locationManagerMock = AuthorizableLocationManagerMock(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
-        locationManagerMock.simulatesLocationServicesOff = true
-        let service = LocationService(userDefaults: freshDefaults(), locationManager: locationManagerMock)
+    /// foreground retry probes the system-wide switch, and finding it back on
+    /// clears the latch.
+    @Test func `Denied error cleared by foreground retry`() async {
+        let (mock, service) = makeService(servicesOff: true)
         let del = LocDelegate()
         service.addDelegate(del)
 
         service.requestInUseAuthorization()
         #expect(service.authorizationStatus == .denied)
-        #expect(!locationManagerMock.locationUpdatesStarted)
+        #expect(!mock.locationUpdatesStarted)
 
-        // Still off: the probe re-fails, and the UI is not disturbed by it.
+        // Still off: the probe re-confirms the denial, and the UI is not disturbed.
         del.status = nil
         service.retryIfLocationServicesDenied()
+        await spin(0.05)
         #expect(service.authorizationStatus == .denied)
         #expect(del.status == nil)
-        #expect(!locationManagerMock.locationUpdatesStarted)
+        #expect(!mock.locationUpdatesStarted)
 
-        // The user turned Location Services back on; now the probe yields a fix.
-        locationManagerMock.simulatesLocationServicesOff = false
+        // The user turned Location Services back on; now the probe clears the latch.
+        mock.simulatesLocationServicesOff = false
         service.retryIfLocationServicesDenied()
 
+        await poll(until: { service.isLocationUseAuthorized },
+                   "foreground retry never cleared the latch")
         #expect(service.authorizationStatus == .authorizedWhenInUse)
-        #expect(service.isLocationUseAuthorized)
         #expect(del.status == .authorizedWhenInUse)
         #expect(service.currentLocation == TestData.mockSeattleLocation)
-        #expect(locationManagerMock.locationUpdatesStarted)
-        #expect(locationManagerMock.headingUpdatesStarted)
+        #expect(mock.locationUpdatesStarted)
+        #expect(mock.headingUpdatesStarted)
     }
 
     /// Location Services being off system-wide outlives the app process, but the
@@ -313,16 +388,12 @@ final class LocationServiceTests {
     @Test func `Denied latch persists across launches`() {
         let userDefaults = freshDefaults()
 
-        let firstLaunchManager = AuthorizableLocationManagerMock(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
-        let firstLaunch = LocationService(userDefaults: userDefaults, locationManager: firstLaunchManager)
+        let (_, firstLaunch) = makeService(defaults: userDefaults, servicesOff: true)
         firstLaunch.requestInUseAuthorization()
-        firstLaunch.locationManager(CLLocationManager(), didFailWithError: CLError(.denied))
         #expect(!firstLaunch.isLocationUseAuthorized)
 
         // Relaunch: the app is still authorized as far as Core Location is concerned.
-        let secondLaunchManager = AuthorizableLocationManagerMock(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
-        secondLaunchManager._authorizationStatus = .authorizedWhenInUse
-        let secondLaunch = LocationService(userDefaults: userDefaults, locationManager: secondLaunchManager)
+        let (_, secondLaunch) = makeService(defaults: userDefaults, initialStatus: .authorizedWhenInUse)
 
         #expect(secondLaunch.authorizationStatus == .denied)
         #expect(!secondLaunch.isLocationUseAuthorized)
@@ -331,23 +402,21 @@ final class LocationServiceTests {
     /// Revoking authorization must tear the manager down. Nothing else will, and a
     /// running `CLLocationManager` keeps the location-usage indicator lit.
     @Test func `Authorization revoked stops updates`() {
-        let locationManagerMock = AuthorizableLocationManagerMock(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
-        let service = LocationService(userDefaults: freshDefaults(), locationManager: locationManagerMock)
+        let (mock, service) = makeService()
 
         service.requestInUseAuthorization()
-        #expect(locationManagerMock.locationUpdatesStarted)
+        #expect(mock.locationUpdatesStarted)
 
-        locationManagerMock._authorizationStatus = .denied
+        mock._authorizationStatus = .denied
 
         #expect(!service.isLocationUseAuthorized)
-        #expect(!locationManagerMock.locationUpdatesStarted)
+        #expect(!mock.locationUpdatesStarted)
     }
 
     /// A repeated `denied` error must not re-notify delegates — the latch only
     /// fires on a real state transition.
     @Test func `Repeated denied error does not re-notify`() {
-        let locationManagerMock = AuthorizableLocationManagerMock(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
-        let service = LocationService(userDefaults: freshDefaults(), locationManager: locationManagerMock)
+        let (_, service) = makeService()
         let del = LocDelegate()
         service.addDelegate(del)
 
@@ -366,8 +435,7 @@ final class LocationServiceTests {
     /// Only a `denied` error latches unavailability; transient errors such as
     /// `locationUnknown` must not disable location.
     @Test func `Non-denied error does not mark unavailable`() {
-        let locationManagerMock = AuthorizableLocationManagerMock(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
-        let service = LocationService(userDefaults: freshDefaults(), locationManager: locationManagerMock)
+        let (_, service) = makeService()
 
         service.requestInUseAuthorization()
         #expect(service.isLocationUseAuthorized)

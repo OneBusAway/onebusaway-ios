@@ -42,6 +42,10 @@ public class LocationManagerMock: NSObject, LocationManager {
         return .notDetermined
     }
 
+    public func locationServicesEnabled() async -> Bool {
+        return true
+    }
+
     @available(iOS 14, *)
     public var accuracyAuthorization: CLAccuracyAuthorization {
         return .fullAccuracy
@@ -71,7 +75,7 @@ public class LocationManagerMock: NSObject, LocationManager {
     }
 
     public var isHeadingAvailable: Bool {
-        return authorizationStatus == .authorizedWhenInUse
+        return authorizationStatus.isAuthorized
     }
 
     public func startUpdatingHeading() {
@@ -113,12 +117,20 @@ public class AuthorizableLocationManagerMock: LocationManagerMock {
 
     /// Simulates Location Services being switched off system-wide: the app's own
     /// authorization is untouched, but every attempt to start updates comes back
-    /// as `CLError.denied` instead of a fix.
+    /// as `CLError.denied` instead of a fix, and `locationServicesEnabled()`
+    /// reports `false`.
     public var simulatesLocationServicesOff = false
+
+    public override func locationServicesEnabled() async -> Bool {
+        return !simulatesLocationServicesOff
+    }
 
     public override func startUpdatingLocation() {
         super.startUpdatingLocation()
-        guard authorizationStatus == .authorizedWhenInUse else { return }
+        // Guard on either authorized status, not just `.authorizedWhenInUse`, so
+        // the `.authorizedAlways` path actually delivers fixes/errors instead of
+        // returning here and letting Always-authorized tests pass vacuously.
+        guard authorizationStatus.isAuthorized else { return }
 
         if simulatesLocationServicesOff {
             delegate?.locationManager?(CLLocationManager(), didFailWithError: CLError(.denied))
@@ -129,7 +141,7 @@ public class AuthorizableLocationManagerMock: LocationManagerMock {
 
     public override func startUpdatingHeading() {
         super.startUpdatingHeading()
-        if authorizationStatus == .authorizedWhenInUse {
+        if authorizationStatus.isAuthorized {
             heading = updateHeading
         }
     }
