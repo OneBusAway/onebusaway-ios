@@ -16,7 +16,7 @@ import OTPKit
 /// all leave through the same early return — a feed that never publishes range
 /// must not be filterable into an empty map. This mirrors the convention already
 /// set by `VehicleRental.matches(formFactors:)`.
-struct RentalRangeFilter: Equatable {
+public struct RentalRangeFilter: Equatable {
 
     /// Threshold in meters. Zero means "Any" — no filtering at all.
     let minimumRangeMeters: Int

@@ -133,4 +133,9 @@ extension Notification.Name {
     /// Posted (object: the layer's `id`) when a layer is toggled on or off —
     /// drives the basemap button's active-layer count badge.
     public static let mapLayerEnabledStateDidChange = Notification.Name("OBAMapLayerEnabledStateDidChange")
+
+    /// Posted when the shared rental minimum-range filter changes. Lets
+    /// `MapViewController` push the new value into the rental coordinator without
+    /// `MapRegionManager` needing to know the coordinator exists.
+    public static let rentalRangeFilterDidChange = Notification.Name("OBARentalRangeFilterDidChange")
 }
