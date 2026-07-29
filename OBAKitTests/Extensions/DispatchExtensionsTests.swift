@@ -17,9 +17,10 @@ final class DispatchExtensionsTests {
     
     // These three genuinely wait on a dispatch callback, so — unlike the
     // handler tests elsewhere — they cannot collapse into a bare
-    // `confirmation`. `poll` is the repo's replacement for "wait until this
-    // becomes true", and it returns as soon as the condition holds rather than
-    // burning the full timeout the way `waitForExpectations` did.
+    // `confirmation`. The first two use `poll`, the repo's replacement for
+    // "wait until this becomes true", which returns as soon as the condition
+    // holds rather than burning the full timeout the way `waitForExpectations`
+    // did. The third deliberately keeps a fixed wait; see its own comment.
 
     @Test func `Debounce executes action`() async {
         var ran = false

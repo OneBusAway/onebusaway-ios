@@ -104,8 +104,9 @@ final class WeatherFormatterTests {
     // MARK: - formatTime
 
     @Test func `Format time us locale has am pm marker`() {
-        // Don't pin to a specific hour — the formatter renders in the host
-        // timezone, which varies across CI runners. The contract for en_US is
+        // Don't pin to a specific hour — the formatter renders in whatever
+        // `NSTimeZone.default` is, which OBATestCase pins to GMT for the bundle
+        // but this suite does not inherit. The contract for en_US is
         // "12-hour clock with an AM/PM marker", which we can check regardless
         // of which hour the date lands on.
         let date = Date(timeIntervalSince1970: 1782525600)

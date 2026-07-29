@@ -48,8 +48,6 @@ final class StopSheetPresenterTests {
         parent.children.compactMap { $0 as? FloatingPanelController }
     }
 
-    /// Lets an in-flight presentation or dismissal animation finish. Measuring a panel that is
-    /// still being animated into place reports whatever position that frame happened to catch.
     // MARK: - Presentation
 
     @Test func `Present adds one panel opened at the half detent`() {

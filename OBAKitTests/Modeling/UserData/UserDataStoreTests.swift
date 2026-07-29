@@ -27,9 +27,6 @@ final class UserDefaultsStoreTests: OBATestCase {
         region = try! Fixtures.loadSomeRegions()[1]
     }
 
-    isolated deinit {
-    }
-
     // MARK: - Core
 
     @Test func `Garbage data does not break app`() {

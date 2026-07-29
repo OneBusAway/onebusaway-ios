@@ -42,7 +42,7 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
         #expect(self.builder.buildURL(for: survey, stop: nil) == nil)
     }
 
-    @Test func `Build URL returns nil when base URLIs invalid`() {
+    @Test func `Build URL returns nil when base URL is invalid`() {
         let survey = SurveysTestHelpers.makeSurvey(questions: [
             SurveysTestHelpers.makeSurveyQuestion(url: "not a valid url %%")
         ])
@@ -82,7 +82,7 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
         #expect(self.queryValue(in: url, for: "user_id") == testUserID)
     }
 
-    @Test func `Build URL appends empty user ID when user IDIs empty`() {
+    @Test func `Build URL appends empty user ID when user ID is empty`() {
         builder = ExternalSurveyURLBuilder(
             userStore: userDefaultsStore,
             userID: "",

@@ -94,7 +94,7 @@ final class ScheduleForStopViewModelTests: OBATestCase {
     }
 
     @Test @MainActor
-    func `Init selected route IDIs nil`() {
+    func `Init selected route ID is nil`() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForStop(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)

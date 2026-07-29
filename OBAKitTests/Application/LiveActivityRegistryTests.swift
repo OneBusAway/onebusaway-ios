@@ -109,10 +109,12 @@ final class LiveActivityRegistryTests: OBATestCase {
     /// is invoked by `MockDataLoader` on whichever task issued the request, and
     /// `reconcile()` deliberately sends its DELETEs from a detached task so they
     /// outlive the caller's cancellation. Left on the target's main-actor default
-    /// isolation, that call trips the runtime's isolation assertion and kills the
-    /// test process — which is exactly what happened when this target moved to
-    /// the Swift 6 language mode. The lock, not the actor, is what makes this
-    /// safe, so `@unchecked Sendable` states the promise the lock already keeps.
+    /// isolation, that call tripped the runtime's isolation assertion and killed
+    /// the test process — which is exactly what happened when this target moved
+    /// to the Swift 6 language mode. `MockDataLoaderMatcher` is `@Sendable` now,
+    /// so the same mistake would be caught at build time rather than at runtime.
+    /// The lock, not the actor, is what makes this safe, so `@unchecked Sendable`
+    /// states the promise the lock already keeps.
     private nonisolated final class DeleteRecorder: @unchecked Sendable {
         private let lock = NSLock()
         private var _urls = [URL]()

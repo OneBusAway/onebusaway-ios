@@ -378,7 +378,8 @@ Notes worth keeping:
   main-actor state unchecked. Under Swift 6 the runtime isolation assertion
   fires and *kills the test process* — the suite crash-looped until
   `DeleteRecorder` and `UnsafeTaskBox` in `LiveActivityRegistryTests` were made
-  `nonisolated`. `MockDataLoaderMatcher` is now `@Sendable` so the next one is a
+  `nonisolated` (`UnsafeTaskBox` has since been replaced by the shared
+  `SendableBox` helper). `MockDataLoaderMatcher` is now `@Sendable` so the next one is a
   build error rather than a crash; that change immediately surfaced five more
   latent captures across the suite.
 
@@ -574,17 +575,26 @@ reproduces on both iOS 18.5 and iOS 26.2 simulators, so it's codegen, not
 the runtime. Xcode 27 beta 3 (Swift 6.4) does not emit implicit isolated
 deinits and is unaffected — and as of 2026-07-25 CI builds with it too, on the
 `xcode-27` runner image (previously pinned to Xcode 26.6, the newest
-same-generation compiler on the GA images). Watch the 11 explicit
+same-generation compiler on the GA images). Watch the explicit
 `isolated deinit` sites on iOS 18 devices regardless: they use the
 back-deploy shim compiled by whatever Xcode builds the release.
 
-Consequence of the pin worth remembering: the test target compiles in the
-Swift 5 language mode, so it does not get *full* Swift 6 enforcement. It is no
-longer unguarded, though — as of 2026-07-28 it reached zero concurrency
-warnings and dropped its `SWIFT_WARNINGS_AS_ERRORS_GROUPS` opt-out, so the five
+**That count grew from 11 to 49 on 2026-07-28**, when the Swift Testing
+migration turned every test `tearDown` that touches main-actor state into an
+`isolated deinit`. It is deliberate, and it is worth being clear-eyed about:
+the bug described above is specific to Xcode 26.2's codegen for
+main-actor-default classes, and OBAKitTests is now exactly that configuration.
+It is not a new exposure in practice — the front matter already requires
+Xcode 26.4+/27, and CI runs 27 — but the blast radius if anyone builds this
+target with 26.2 is now four times what it was.
+
+The test target used to be pinned to the Swift 5 language mode, which meant it
+never got *full* Swift 6 enforcement. **That pin is gone as of 2026-07-28**
+(see "Phase 4 is done"): the target compiles in Swift 6 like every other, and
+had already dropped its `SWIFT_WARNINGS_AS_ERRORS_GROUPS` opt-out, so the five
 concurrency diagnostic groups are escalated to errors here exactly as they are
-on every other target. A regression in a test-only helper or mock is now a
-build failure, not a ratcheted warning (verified by reintroducing one).
+elsewhere. A regression in a test-only helper or mock is a build failure, not a
+ratcheted warning (verified by reintroducing one).
 
 ## Dependency notes
 

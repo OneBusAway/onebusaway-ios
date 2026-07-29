@@ -139,7 +139,7 @@ final class URLSchemeRouterTests {
     }
 
     // Links generated before region-id was emitted must still add the region.
-    @Test func `Decode URL type add region region IDIs nil when absent`() {
+    @Test func `Decode URL type add region region ID is nil when absent`() {
         var components = URLComponents()
         components.scheme = "onebusaway"
         components.host = "add-region"

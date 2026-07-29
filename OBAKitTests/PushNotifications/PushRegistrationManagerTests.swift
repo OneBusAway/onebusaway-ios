@@ -53,7 +53,7 @@ final class PushRegistrationManagerTests: OBATestCase {
     }
 
     /// Mocks the `POST /push_registrations` response. Installed per-test rather than in
-    /// `setUp` because `MockDataLoader` matching is first-added-wins and the
+    /// `init()` because `MockDataLoader` matching is first-added-wins and the
     /// failure-handling test needs a non-204 answer.
     private func mockRegistrationResponse(statusCode: Int = 204) {
         dataLoader.mock(data: Data(), statusCode: statusCode) { request in

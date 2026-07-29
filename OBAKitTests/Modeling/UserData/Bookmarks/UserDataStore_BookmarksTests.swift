@@ -27,9 +27,6 @@ final class UserDefaultsStore_BookmarksTests: OBATestCase {
         stops = try! Fixtures.loadSomeStops()
     }
 
-    isolated deinit {
-    }
-
     // MARK: - Bookmark Groups
 
     @Test func `Bookmark groups round tripping`() {

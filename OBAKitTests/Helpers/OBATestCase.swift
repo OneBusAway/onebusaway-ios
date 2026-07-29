@@ -205,8 +205,10 @@ class OBATestCase {
     /// (e.g. anything that constructs a view controller which reads
     /// `application.regionsService` / stores at init time).
     ///
-    /// Test classes still own their own `queue` because a per-test queue
-    /// keeps `cancelAllOperations()` scoped to each `tearDown`.
+    /// Test suites still own their own `queue` because a per-suite queue keeps
+    /// `cancelAllOperations()` scoped to one test — Swift Testing builds a fresh
+    /// suite instance per test function and releases it afterwards, so the
+    /// cancellation lands in that instance's `deinit`.
     func buildApplication(queue: OperationQueue, dataLoader: MockDataLoader) -> Application {
         stubRegions(dataLoader: dataLoader)
         stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)

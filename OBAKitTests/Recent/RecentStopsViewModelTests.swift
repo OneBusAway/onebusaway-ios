@@ -181,7 +181,7 @@ final class RecentStopsViewModelTests: OBATestCase {
         #expect(viewModel.alarms.map(\.url).contains(alarm.url))
 
         // Await the returned Task so the remote DELETE completes inside the test
-        // boundary — otherwise it races past tearDown.
+        // boundary — otherwise it races past the end of the test.
         await viewModel.delete(alarm: alarm).value
 
         #expect(!viewModel.alarms.map(\.url).contains(alarm.url))

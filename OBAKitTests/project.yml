@@ -11,10 +11,13 @@ targets:
     # It used to pin SWIFT_VERSION to 5.0, because Swift 6 mode rejects a
     # @MainActor XCTestCase subclass: XCTestCase's designated initializers are
     # nonisolated, and the synthesized override of init(invocation:) then has
-    # mismatched isolation. There was no source-level fix — NSInvocation is
-    # unavailable in Swift, so the override cannot be written by hand. The
-    # suites are Swift Testing now, which has no such initializer to inherit,
-    # so the pin is gone. See docs/swift6-migration-plan.md, "Phase 4".
+    # mismatched isolation. There is no way to keep such a class @MainActor —
+    # init(invocation:) takes NSInvocation, which is unavailable in Swift, so
+    # the override cannot be written by hand. (A class that does not need main
+    # actor isolation can opt out with `nonisolated`; PolylinePerformanceTests
+    # does exactly that. Test suites did need it.) The suites are Swift Testing
+    # now, which has no such initializer to inherit, so the pin is gone.
+    # See docs/swift6-migration-plan.md, "Phase 4".
     dependencies:
       - target: App
     info:

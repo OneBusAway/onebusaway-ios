@@ -386,7 +386,7 @@ final class EditBookmarkViewModelTests: OBATestCase {
     }
 
     @Test @MainActor
-    func `Persist saves to group when group IDIs provided`() throws {
+    func `Persist saves to group when group ID is provided`() throws {
         let stop = try makeStop()
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)

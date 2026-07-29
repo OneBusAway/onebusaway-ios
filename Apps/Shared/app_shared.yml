@@ -8,8 +8,9 @@ settings:
   base:
     MARKETING_VERSION: 26.3.0
     # Swift 6 migration, now complete (docs/swift6-migration-plan.md): every
-    # target in the project — frameworks, apps, widget and OBAKitTests —
-    # builds in the Swift 6 language mode with main-actor default isolation.
+    # target in the project — frameworks, apps, widget, OBAKitTests and
+    # OBAKitUITests — builds in the Swift 6 language mode with main-actor
+    # default isolation.
     # Exactly one target overrides this base: OBAKitCore pins
     # SWIFT_DEFAULT_ACTOR_ISOLATION back to nonisolated, because it owns the
     # actors and the background decode. OBAKitTests used to override it too;

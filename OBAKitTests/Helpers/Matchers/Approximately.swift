@@ -17,10 +17,17 @@ let defaultDelta: Double = 0.0001
 /// Asserts that `actual` is within `delta` of `expected`.
 ///
 /// Replacement for Nimble's `beCloseTo`. The semantics are deliberately
-/// identical to Nimble's so the conversion couldn't change any test's verdict:
-/// the default tolerance is 0.0001 and the comparison is **strict** (`<`, not
-/// `<=`), matching `abs(actual - expected) < delta` in Nimble's
+/// identical to Nimble's, so *that* conversion couldn't change any test's
+/// verdict: the default tolerance is 0.0001 and the comparison is **strict**
+/// (`<`, not `<=`), matching `abs(actual - expected) < delta` in Nimble's
 /// `Matchers/BeCloseTo.swift`.
+///
+/// That strictness is worth knowing at the call sites converted from
+/// `XCTAssertEqual(_:_:accuracy:)`, which failed on `difference > accuracy` —
+/// i.e. a difference exactly equal to the tolerance passed there and fails
+/// here. No current call site sits on that boundary, and tightening was the
+/// safe direction to differ in, but a test written to sit exactly on its
+/// tolerance would need `within:` nudged.
 ///
 /// `actual` is optional so that call sites reading through an optional chain
 /// (`vehicle.location?.coordinate.latitude`) work unchanged; `nil` fails, as it
