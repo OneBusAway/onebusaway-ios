@@ -14,7 +14,7 @@ Full design rationale: `docs/superpowers/specs/2026-07-29-rental-range-filter-de
 
 Every task's requirements implicitly include this section.
 
-- **Simulator is `iPhone 17 Pro`.** iPhone 16 is not installed on this machine; `CLAUDE.md`'s destination string is stale.
+- **Simulator destination must pin the OS: `platform=iOS Simulator,OS=26.3.1,name=iPhone 17 Pro`.** iPhone 16 is not installed, so `CLAUDE.md`'s destination string is stale. Worse, the bare form `platform=iOS Simulator,name=iPhone 17 Pro` **fails to resolve on this machine** — six iOS runtimes are installed (18.5, 26.3, and four separate 27.0 builds), and `xcodebuild` responds with "Unable to find a device matching the provided destination specifier" while listing only macOS and watchOS candidates. That error looks like a missing simulator; it is actually ambiguity. Always pin `OS=26.3.1`.
 - **Run `scripts/generate_project OneBusAway` after creating ANY new source or test file.** XcodeGen discovers files from disk. A test file the project doesn't know about does not fail — it silently runs zero tests, which reads as passing.
 - **Always `set -o pipefail` before piping `xcodebuild` to `tail`.** Without it a failed build exits 0 and the failure is invisible.
 - **A failing test run stalls for ~10 minutes in `simctl diagnose`.** Once failures have printed, kill `xcodebuild` rather than waiting. Do not run two failing suites concurrently.
@@ -34,7 +34,7 @@ Build for testing (run once up front, and again after any `generate_project`):
 set -o pipefail
 scripts/generate_project OneBusAway
 xcodebuild clean build-for-testing -scheme 'App' \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' 2>&1 | tail -20
+  -destination 'platform=iOS Simulator,OS=26.3.1,name=iPhone 17 Pro' 2>&1 | tail -20
 ```
 
 Run one suite:
@@ -43,7 +43,7 @@ Run one suite:
 set -o pipefail
 xcodebuild test-without-building -only-testing:OBAKitTests/<SuiteName> \
   -project 'OBAKit.xcodeproj' -scheme 'App' \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' 2>&1 | tail -20
+  -destination 'platform=iOS Simulator,OS=26.3.1,name=iPhone 17 Pro' 2>&1 | tail -20
 ```
 
 ---
@@ -282,7 +282,7 @@ final class RentalRangeFilterTests {
 set -o pipefail
 scripts/generate_project OneBusAway
 xcodebuild clean build-for-testing -scheme 'App' \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' 2>&1 | tail -20
+  -destination 'platform=iOS Simulator,OS=26.3.1,name=iPhone 17 Pro' 2>&1 | tail -20
 ```
 
 Expected: **build FAILS** with "cannot find 'RentalRangeFilter' in scope". This is the red state — the type doesn't exist yet.
@@ -336,10 +336,10 @@ struct RentalRangeFilter: Equatable {
 set -o pipefail
 scripts/generate_project OneBusAway
 xcodebuild clean build-for-testing -scheme 'App' \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' 2>&1 | tail -20
+  -destination 'platform=iOS Simulator,OS=26.3.1,name=iPhone 17 Pro' 2>&1 | tail -20
 xcodebuild test-without-building -only-testing:OBAKitTests/RentalRangeFilterTests \
   -project 'OBAKit.xcodeproj' -scheme 'App' \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' 2>&1 | tail -20
+  -destination 'platform=iOS Simulator,OS=26.3.1,name=iPhone 17 Pro' 2>&1 | tail -20
 ```
 
 Expected: PASS, **8 tests executed**. If it reports 0 tests, `generate_project` did not pick up the new files — re-run it and rebuild.
@@ -467,7 +467,7 @@ final class RentalRangePresetTests {
 set -o pipefail
 scripts/generate_project OneBusAway
 xcodebuild clean build-for-testing -scheme 'App' \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' 2>&1 | tail -20
+  -destination 'platform=iOS Simulator,OS=26.3.1,name=iPhone 17 Pro' 2>&1 | tail -20
 ```
 
 Expected: **build FAILS** with "cannot find 'RentalRangePreset' in scope".
@@ -567,10 +567,10 @@ Append to `OBAKit/Strings/en.lproj/Localizable.strings`:
 set -o pipefail
 scripts/generate_project OneBusAway
 xcodebuild clean build-for-testing -scheme 'App' \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' 2>&1 | tail -20
+  -destination 'platform=iOS Simulator,OS=26.3.1,name=iPhone 17 Pro' 2>&1 | tail -20
 xcodebuild test-without-building -only-testing:OBAKitTests/RentalRangePresetTests \
   -project 'OBAKit.xcodeproj' -scheme 'App' \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' 2>&1 | tail -20
+  -destination 'platform=iOS Simulator,OS=26.3.1,name=iPhone 17 Pro' 2>&1 | tail -20
 ```
 
 Expected: PASS, **12 tests executed**.
@@ -694,7 +694,7 @@ final class RentalFormatTests {
 set -o pipefail
 scripts/generate_project OneBusAway
 xcodebuild clean build-for-testing -scheme 'App' \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' 2>&1 | tail -20
+  -destination 'platform=iOS Simulator,OS=26.3.1,name=iPhone 17 Pro' 2>&1 | tail -20
 ```
 
 Expected: **build FAILS** with "type 'RentalFormat' has no member 'fuelLabelText'" and "...no member 'abbreviatedDistanceFormatter'".
@@ -785,10 +785,10 @@ In `OBAKit/Mapping/Layers/RentalDetailViewController.swift`, delete the entire `
 set -o pipefail
 scripts/generate_project OneBusAway
 xcodebuild clean build-for-testing -scheme 'App' \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' 2>&1 | tail -20
+  -destination 'platform=iOS Simulator,OS=26.3.1,name=iPhone 17 Pro' 2>&1 | tail -20
 xcodebuild test-without-building -only-testing:OBAKitTests/RentalFormatTests \
   -project 'OBAKit.xcodeproj' -scheme 'App' \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' 2>&1 | tail -20
+  -destination 'platform=iOS Simulator,OS=26.3.1,name=iPhone 17 Pro' 2>&1 | tail -20
 ```
 
 Expected: PASS, **10 tests executed**.
@@ -1086,7 +1086,7 @@ final class RentalVisibilityTests {
 set -o pipefail
 scripts/generate_project OneBusAway
 xcodebuild clean build-for-testing -scheme 'App' \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' 2>&1 | tail -20
+  -destination 'platform=iOS Simulator,OS=26.3.1,name=iPhone 17 Pro' 2>&1 | tail -20
 ```
 
 Expected: **build FAILS** with "cannot find 'RentalVisibility' in scope".
@@ -1229,10 +1229,10 @@ struct RentalVisibility {
 set -o pipefail
 scripts/generate_project OneBusAway
 xcodebuild clean build-for-testing -scheme 'App' \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' 2>&1 | tail -20
+  -destination 'platform=iOS Simulator,OS=26.3.1,name=iPhone 17 Pro' 2>&1 | tail -20
 xcodebuild test-without-building -only-testing:OBAKitTests/RentalVisibilityTests \
   -project 'OBAKit.xcodeproj' -scheme 'App' \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' 2>&1 | tail -20
+  -destination 'platform=iOS Simulator,OS=26.3.1,name=iPhone 17 Pro' 2>&1 | tail -20
 ```
 
 Expected: PASS, **20 tests executed**.
@@ -1372,7 +1372,7 @@ final class MapRegionManagerRentalFilterTests: OBATestCase {
 set -o pipefail
 scripts/generate_project OneBusAway
 xcodebuild clean build-for-testing -scheme 'App' \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' 2>&1 | tail -20
+  -destination 'platform=iOS Simulator,OS=26.3.1,name=iPhone 17 Pro' 2>&1 | tail -20
 ```
 
 Expected: **build FAILS** with "value of type 'MapRegionManager' has no member 'rentalRangeFilter'".
@@ -1465,10 +1465,10 @@ Replace `resetMapLayersToDefaults()` (line ~334) with:
 set -o pipefail
 scripts/generate_project OneBusAway
 xcodebuild clean build-for-testing -scheme 'App' \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' 2>&1 | tail -20
+  -destination 'platform=iOS Simulator,OS=26.3.1,name=iPhone 17 Pro' 2>&1 | tail -20
 xcodebuild test-without-building -only-testing:OBAKitTests/MapRegionManagerRentalFilterTests \
   -project 'OBAKit.xcodeproj' -scheme 'App' \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' 2>&1 | tail -20
+  -destination 'platform=iOS Simulator,OS=26.3.1,name=iPhone 17 Pro' 2>&1 | tail -20
 ```
 
 Expected: PASS, **7 tests executed**.
@@ -1624,7 +1624,7 @@ final class RentalAnnotationViewTests {
 set -o pipefail
 scripts/generate_project OneBusAway
 xcodebuild clean build-for-testing -scheme 'App' \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' 2>&1 | tail -20
+  -destination 'platform=iOS Simulator,OS=26.3.1,name=iPhone 17 Pro' 2>&1 | tail -20
 ```
 
 Expected: **build FAILS** with "value of type 'RentalAnnotation' has no member 'showsFuelLabel'" and "...'RentalAnnotationView' has no member 'fuelLabel'".
@@ -1745,10 +1745,10 @@ Extend `prepareForReuse()`:
 set -o pipefail
 scripts/generate_project OneBusAway
 xcodebuild clean build-for-testing -scheme 'App' \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' 2>&1 | tail -20
+  -destination 'platform=iOS Simulator,OS=26.3.1,name=iPhone 17 Pro' 2>&1 | tail -20
 xcodebuild test-without-building -only-testing:OBAKitTests/RentalAnnotationViewTests \
   -project 'OBAKit.xcodeproj' -scheme 'App' \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' 2>&1 | tail -20
+  -destination 'platform=iOS Simulator,OS=26.3.1,name=iPhone 17 Pro' 2>&1 | tail -20
 ```
 
 Expected: PASS, **11 tests executed**.
@@ -1934,10 +1934,10 @@ Delete `private func pruneAnnotations(notMatching factors: Set<VehicleFormFactor
 set -o pipefail
 scripts/generate_project OneBusAway
 xcodebuild clean build-for-testing -scheme 'App' \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' 2>&1 | tail -20
+  -destination 'platform=iOS Simulator,OS=26.3.1,name=iPhone 17 Pro' 2>&1 | tail -20
 xcodebuild test-without-building -only-testing:OBAKitTests \
   -project 'OBAKit.xcodeproj' -scheme 'App' \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' 2>&1 | tail -30
+  -destination 'platform=iOS Simulator,OS=26.3.1,name=iPhone 17 Pro' 2>&1 | tail -30
 ```
 
 Expected: PASS, with no regressions. Record the total test count.
@@ -2054,7 +2054,7 @@ Append to `OBAKit/Strings/en.lproj/Localizable.strings`:
 ```bash
 set -o pipefail
 xcodebuild clean build-for-testing -scheme 'App' \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' 2>&1 | tail -20
+  -destination 'platform=iOS Simulator,OS=26.3.1,name=iPhone 17 Pro' 2>&1 | tail -20
 ```
 
 Expected: build succeeds. Then run the app on the simulator, open the Map sheet from the basemap button, and confirm: the "Minimum range" row appears under Bikes and Scooters with a trailing value of "Any"; tapping it opens a menu with Any / 1 mi / 2 mi / 5 mi / 10 mi / 15 mi; choosing a rung updates the trailing value and makes the Reset button appear.
@@ -2118,10 +2118,10 @@ In the same file, after `mapLayerStateDidChange(_:)`:
 ```bash
 set -o pipefail
 xcodebuild clean build-for-testing -scheme 'App' \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' 2>&1 | tail -20
+  -destination 'platform=iOS Simulator,OS=26.3.1,name=iPhone 17 Pro' 2>&1 | tail -20
 xcodebuild test-without-building -only-testing:OBAKitTests \
   -project 'OBAKit.xcodeproj' -scheme 'App' \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' 2>&1 | tail -30
+  -destination 'platform=iOS Simulator,OS=26.3.1,name=iPhone 17 Pro' 2>&1 | tail -30
 ```
 
 Expected: PASS, no regressions.
