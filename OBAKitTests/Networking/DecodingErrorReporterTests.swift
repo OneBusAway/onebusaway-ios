@@ -373,11 +373,6 @@ final class DecodingErrorReporterTests {
     
     // MARK: - Helper Types
 
-    final class SendableBox<T>: @unchecked Sendable {
-        var value: T
-        init(_ value: T) { self.value = value }
-    }
-    
     struct TestCodingKey: CodingKey {
         var stringValue: String
         var intValue: Int?

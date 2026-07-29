@@ -18,7 +18,9 @@ import Testing
 /// instances by path and would otherwise return a previously-created fake.
 // `Bundle` is already `@unchecked Sendable`; a subclass has to restate it or the
 // compiler warns. Mutated only from the test that owns the instance.
-private class DonationsConfigBundle: Bundle, @unchecked Sendable {
+// `nonisolated`: overrides nonisolated Bundle members, which the
+// target's main-actor default isolation would conflict with.
+private nonisolated class DonationsConfigBundle: Bundle, @unchecked Sendable {
     var donationsEnabledValue = true
 
     override func object(forInfoDictionaryKey key: String) -> Any? {

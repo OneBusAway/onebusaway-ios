@@ -372,10 +372,17 @@ final class PolylineTests {
 // MARK: - Performance
 
 /// Stays on XCTest: Swift Testing has no equivalent of `measure`, so this is the
-/// one test in this file that cannot become a `@Test`. It is deliberately *not*
-/// `@MainActor` — a main-actor XCTestCase is what blocks the Swift 6 language
-/// mode for this target (docs/swift6-migration-plan.md, "Phase 4 status").
-final class PolylinePerformanceTests: XCTestCase {
+/// one test in this file that cannot become a `@Test`.
+///
+/// `nonisolated` is load-bearing, and it is not enough to merely omit
+/// `@MainActor`. The target sets `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`, so
+/// an unannotated class is main-actor — and a main-actor XCTestCase does not
+/// compile in the Swift 6 language mode: `XCTestCase`'s designated initializers
+/// are nonisolated, and the synthesized overrides of `init()`,
+/// `init(selector:)`, and `init(invocation:)` then mismatch. Opting this one
+/// class out is what lets the whole target build in Swift 6 mode.
+/// See docs/swift6-migration-plan.md, "Phase 4".
+nonisolated final class PolylinePerformanceTests: XCTestCase {
 
     // Github Issue 8
     func testPerformances() {

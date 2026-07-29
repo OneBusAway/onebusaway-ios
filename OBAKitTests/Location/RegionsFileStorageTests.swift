@@ -137,7 +137,9 @@ final class RegionsFileStorageTests {
 
 /// A `FileManager` subclass that redirects Application Support and Documents
 /// directory lookups to a temporary directory so tests never touch the real file system.
-private class TemporaryDirectoryFileManager: FileManager {
+// `nonisolated`: overrides nonisolated FileManager members, which the target's
+// main-actor default isolation would conflict with.
+private nonisolated class TemporaryDirectoryFileManager: FileManager {
 
     private let baseURL: URL
 

@@ -88,13 +88,22 @@ scripts/extract_strings               # Extract strings for localization
 - `Apps/Shared/`: Common configuration and analytics
 
 ### Testing
-- `OBAKitTests/`: Unit tests for all frameworks
+- `OBAKitTests/`: Unit tests for all frameworks. Written with **Swift Testing**
+  (`@Suite` / `@Test` / `#expect`), not XCTest. The single exception is
+  `PolylinePerformanceTests`, which stays on XCTest because `measure` has no
+  Swift Testing equivalent — and is marked `nonisolated`, without which the
+  target cannot build in the Swift 6 language mode.
+- Suites are marked `.serialized` to preserve the one-test-at-a-time execution
+  XCTest gave them.
+- `OBATestCase` is a plain `@MainActor` base class, not an `XCTestCase`. Suites
+  that need its fixtures inherit it and override `init() async throws` (where
+  `setUp` used to go); teardown goes in `deinit`.
 
 ## Third-Party Dependencies
 
 **UI Libraries**: BulletinBoard, Eureka, FloatingPanel, MarqueeLabel
 **Networking**: CocoaLumberjack, Hyperconnectivity, SwiftProtobuf
-**Testing**: Nimble
+**Testing**: Swift Testing (first-party; Nimble was removed)
 
 ## Configuration & Deployment
 

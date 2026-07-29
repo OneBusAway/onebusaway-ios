@@ -16,7 +16,9 @@ import Testing
 /// switch and version gate are testable without the host app's Info.plist.
 // `Bundle` is already `@unchecked Sendable`; a subclass has to restate it or the
 // compiler warns. Mutated only from the test that owns the instance.
-private class PolicyBundle: Bundle, @unchecked Sendable {
+// `nonisolated`: `object(forInfoDictionaryKey:)` overrides a nonisolated
+// Bundle method, which main-actor isolation would conflict with.
+private nonisolated class PolicyBundle: Bundle, @unchecked Sendable {
     var config: [AnyHashable: Any] = [:]
     var version = "1.0"
 

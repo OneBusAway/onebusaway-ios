@@ -55,16 +55,18 @@ final class UmamiAnalyticsTests: OBATestCase {
 
     @Test func `Report stop viewed builds contract request`() async throws {
         let loader = MockDataLoader(testName: name)
-        var captured: URLRequest?
+        // Boxed: the matcher is @Sendable and runs off the main actor, so it
+        // cannot write to a main-actor-isolated local.
+        let captured = SendableBox<URLRequest?>(nil)
         loader.mock(data: successBody) { request in
-            captured = request
+            captured.value = request
             return true
         }
 
         let reporter = makeReporter(loader: loader)
         await reporter.reportStopViewed(name: "Pine St", id: "1_75403", stopDistance: "near")
 
-        let request = try #require(captured)
+        let request = try #require(captured.value)
         #expect(request.url?.absoluteString == "https://analytics.example.com/api/send")
         #expect(request.httpMethod == "POST")
         #expect(request.value(forHTTPHeaderField: "Content-Type") == "application/json")
@@ -89,16 +91,18 @@ final class UmamiAnalyticsTests: OBATestCase {
 
     @Test func `Report event includes name`() async throws {
         let loader = MockDataLoader(testName: name)
-        var captured: URLRequest?
+        // Boxed: the matcher is @Sendable and runs off the main actor, so it
+        // cannot write to a main-actor-isolated local.
+        let captured = SendableBox<URLRequest?>(nil)
         loader.mock(data: successBody) { request in
-            captured = request
+            captured.value = request
             return true
         }
 
         let reporter = makeReporter(loader: loader)
         await reporter.reportEvent(pageURL: "app://localhost/map", label: "Clicked MapStopIcon", value: nil)
 
-        let request = try #require(captured)
+        let request = try #require(captured.value)
         let body = try JSONSerialization.jsonObject(with: try #require(request.httpBody)) as! [String: Any]
         let payload = body["payload"] as! [String: Any]
         #expect((payload["name"] as? String) == "Clicked MapStopIcon")

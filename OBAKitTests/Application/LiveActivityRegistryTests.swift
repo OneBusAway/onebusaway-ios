@@ -104,7 +104,16 @@ final class LiveActivityRegistryTests: OBATestCase {
     }
 
     /// Thread-safe collector for the DELETEs a registry issued.
-    private final class DeleteRecorder {
+    ///
+    /// `nonisolated` is load-bearing. The matcher closure that calls `record(_:)`
+    /// is invoked by `MockDataLoader` on whichever task issued the request, and
+    /// `reconcile()` deliberately sends its DELETEs from a detached task so they
+    /// outlive the caller's cancellation. Left on the target's main-actor default
+    /// isolation, that call trips the runtime's isolation assertion and kills the
+    /// test process — which is exactly what happened when this target moved to
+    /// the Swift 6 language mode. The lock, not the actor, is what makes this
+    /// safe, so `@unchecked Sendable` states the promise the lock already keeps.
+    private nonisolated final class DeleteRecorder: @unchecked Sendable {
         private let lock = NSLock()
         private var _urls = [URL]()
 
@@ -424,7 +433,12 @@ final class LiveActivityRegistryTests: OBATestCase {
 
     /// Holds the task that a mocked response needs to cancel. `@unchecked Sendable` because the
     /// matcher runs on whatever thread the request is issued from; the lock is the real guarantee.
-    private final class UnsafeTaskBox: @unchecked Sendable {
+    ///
+    /// `nonisolated` for the same reason, and it has to be said explicitly: the
+    /// target defaults to main-actor isolation, so without it these methods are
+    /// main-actor and calling them from a matcher is the same runtime isolation
+    /// trap that `DeleteRecorder` hit.
+    private nonisolated final class UnsafeTaskBox: @unchecked Sendable {
         private let lock = NSLock()
         private var task: Task<Void, Never>?
 

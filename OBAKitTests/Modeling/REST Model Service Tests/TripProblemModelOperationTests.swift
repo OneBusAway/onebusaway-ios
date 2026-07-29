@@ -40,10 +40,13 @@ final class TripProblemModelOperationTests: OBATestCase {
     @Test func `Successful request`() async throws {
         let dataLoader = (restService.dataLoader as! MockDataLoader)
 
+        // Hoisted: the matcher is @Sendable, so it must not capture `self` — the
+        // suite is main-actor isolated and `expectedParams` with it.
+        let expectedParams = self.expectedParams
         dataLoader.mock(data: Fixtures.loadData(file: "report_trip_problem.json")) { request -> Bool in
             let url = request.url!
             return url.absoluteString.starts(with: "https://www.example.com/api/where/report-problem-with-trip.json")
-            && url.containsQueryParams(self.expectedParams)
+            && url.containsQueryParams(expectedParams)
         }
 
         let report = RESTAPIService.TripProblemReport(tripID: tripID, serviceDate: serviceDate, vehicleID: vehicleID, stopID: stopID, code: code, comment: comment, userOnVehicle: userOnVehicle, location: location)

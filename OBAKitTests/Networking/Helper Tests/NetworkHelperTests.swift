@@ -148,7 +148,8 @@ final class NetworkHelperTests: OBATestCase {
     /// Bug: Server returns 400 when Accept-Language is non-English because it
     /// parses lat/lon with locale-aware number parsing.
     @Test func `RESTAPI service sets accept language header`() async throws {
-        var capturedRequest: URLRequest?
+        // Boxed: the matcher is @Sendable and cannot write to a main-actor local.
+        let capturedRequest = SendableBox<URLRequest?>(nil)
 
         let mockDataLoader = MockDataLoader(testName: name)
         // Set up a matcher that captures the request for inspection
@@ -162,7 +163,7 @@ final class NetworkHelperTests: OBATestCase {
             ),
             error: nil
         ) { request in
-            capturedRequest = request
+            capturedRequest.value = request
             return request.url?.path.contains("stops-for-location") == true
         }
         mockDataLoader.mock(response: mockResponse)
@@ -173,8 +174,8 @@ final class NetworkHelperTests: OBATestCase {
         _ = try? await restService.getStops(coordinate: coordinate)
 
         // Verify Accept-Language header is set to en-US
-        #expect(capturedRequest != nil)
-        let acceptLanguage = capturedRequest?.value(forHTTPHeaderField: "Accept-Language")
+        #expect(capturedRequest.value != nil)
+        let acceptLanguage = capturedRequest.value?.value(forHTTPHeaderField: "Accept-Language")
         #expect(acceptLanguage == "en-US")
     }
 }

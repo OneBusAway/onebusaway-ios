@@ -14,7 +14,9 @@ import CoreLocation
 /// honest: every stored property is a `let`, and the class is `final` so no
 /// subclass can add mutable state and silently inherit the promise. Needed
 /// because `TestData.mockHeading` is a shared static.
-public final class OBAMockHeading: CLHeading, @unchecked Sendable {
+// `nonisolated`: overrides nonisolated CLHeading members, which the target's
+// main-actor default isolation would conflict with.
+public final nonisolated class OBAMockHeading: CLHeading, @unchecked Sendable {
 
     let _magneticHeading: CLLocationDirection
     public override var magneticHeading: CLLocationDirection {

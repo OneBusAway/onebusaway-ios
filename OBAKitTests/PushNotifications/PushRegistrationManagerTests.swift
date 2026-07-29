@@ -90,7 +90,11 @@ final class PushRegistrationManagerTests: OBATestCase {
             testDeviceProvider: { controls.testDevice },
             testDeviceDescriptionProvider: { controls.testDeviceDescription },
             currentRegionIdentifierProvider: { controls.currentRegionID },
-            authorizationStatusProvider: {
+            // Explicitly `@MainActor`: unlike the other providers, which inherit
+            // the manager's isolation, AuthorizationStatusProvider is declared
+            // `@Sendable`, so this closure is nonisolated by default and could
+            // not touch main-actor-isolated `Controls`.
+            authorizationStatusProvider: { @MainActor in
                 if controls.holdNextAuthCheck {
                     controls.holdNextAuthCheck = false
                     await withCheckedContinuation { controls.authGate = $0 }

@@ -69,8 +69,11 @@ final class AlarmModelOperationTests: OBATestCase {
         #expect(alarm != nil)
 
         let dataLoader = (obacoService.dataLoader as! MockDataLoader)
+        // Hoisted out of the closure: matchers are @Sendable and `Alarm` is not,
+        // so the closure must capture the string rather than the model.
+        let alarmURLString = alarm.url.absoluteString
         dataLoader.mock(data: Data(), statusCode: 204) { (request) -> Bool in
-            request.url!.absoluteString.starts(with: alarm.url.absoluteString) &&
+            request.url!.absoluteString.starts(with: alarmURLString) &&
             request.httpMethod == "DELETE"
         }
 
@@ -87,8 +90,11 @@ final class AlarmModelOperationTests: OBATestCase {
         let alarm = try Fixtures.loadAlarm()
 
         let dataLoader = (obacoService.dataLoader as! MockDataLoader)
+        // Hoisted out of the closure: matchers are @Sendable and `Alarm` is not,
+        // so the closure must capture the string rather than the model.
+        let alarmURLString = alarm.url.absoluteString
         dataLoader.mock(data: Data(), statusCode: 200) { (request) -> Bool in
-            request.url!.absoluteString.starts(with: alarm.url.absoluteString) &&
+            request.url!.absoluteString.starts(with: alarmURLString) &&
             request.httpMethod == "DELETE"
         }
 
@@ -102,8 +108,11 @@ final class AlarmModelOperationTests: OBATestCase {
         let alarm = try Fixtures.loadAlarm()
 
         let dataLoader = (obacoService.dataLoader as! MockDataLoader)
+        // Hoisted out of the closure: matchers are @Sendable and `Alarm` is not,
+        // so the closure must capture the string rather than the model.
+        let alarmURLString = alarm.url.absoluteString
         dataLoader.mock(data: Data(), statusCode: 404) { (request) -> Bool in
-            request.url!.absoluteString.starts(with: alarm.url.absoluteString) &&
+            request.url!.absoluteString.starts(with: alarmURLString) &&
             request.httpMethod == "DELETE"
         }
 

@@ -25,9 +25,12 @@ final class LiveActivityModelOperationTests: OBATestCase {
 
         let dataLoader = (obacoService.dataLoader as! MockDataLoader)
 
-        var capturedRequest: URLRequest?
+        // Boxed rather than a plain `var`: the matcher is @Sendable, so it cannot
+        // mutate main-actor state — which, given the target's default isolation,
+        // a local in a test body is.
+        let capturedRequest = SendableBox<URLRequest?>(nil)
         dataLoader.mock(data: data) { request in
-            capturedRequest = request
+            capturedRequest.value = request
             return request.url?.host == "alerts.example.com" &&
                 request.url?.path == "/api/v2/regions/1/live_activities" &&
                 request.httpMethod == "POST"
@@ -47,7 +50,7 @@ final class LiveActivityModelOperationTests: OBATestCase {
 
         #expect(url.absoluteString == "https://sidecar.onebusaway.org/api/v2/regions/1/live_activities/abc123")
 
-        let request = try #require(capturedRequest)
+        let request = try #require(capturedRequest.value)
         let body = try #require(request.httpBody)
         let bodyString = try #require(String(data: body, encoding: .utf8))
         let params = formParams(from: bodyString)

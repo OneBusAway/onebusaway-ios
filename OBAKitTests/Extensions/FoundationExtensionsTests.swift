@@ -174,7 +174,9 @@ final class FoundationExtensionsTests {
 /// so these tests don't depend on the host app's Info.plist.
 // `Bundle` is already `@unchecked Sendable`; a subclass has to restate it or the
 // compiler warns. Mutated only from the test that owns the instance.
-private class FeedbackConfigBundle: Bundle, @unchecked Sendable {
+// `nonisolated`: overrides nonisolated Bundle members, which the
+// target's main-actor default isolation would conflict with.
+private nonisolated class FeedbackConfigBundle: Bundle, @unchecked Sendable {
     var config: [AnyHashable: Any] = [:]
 
     override func object(forInfoDictionaryKey key: String) -> Any? {

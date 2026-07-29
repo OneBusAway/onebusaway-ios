@@ -196,10 +196,11 @@ final class RecentStopsViewModelTests: OBATestCase {
         // Track whether the remote DELETE actually hit the stub. The catch-all matcher
         // pattern from the local-only test would silently disable obaco; we want this
         // test to *fail* if the remote call is short-circuited.
-        var didHitRemote = false
+        // Boxed: the matcher is @Sendable and cannot write to a main-actor local.
+        let didHitRemote = SendableBox(false)
         dataLoader.mock(data: Data(), matcher: { req in
             if req.url?.path.contains("/alarms/") == true {
-                didHitRemote = true
+                didHitRemote.value = true
                 return true
             }
             return false
@@ -213,7 +214,7 @@ final class RecentStopsViewModelTests: OBATestCase {
         await viewModel.delete(alarm: alarm).value
 
         #expect(!viewModel.alarms.map(\.url).contains(alarm.url))
-        #expect(didHitRemote)
+        #expect(didHitRemote.value)
     }
 
     @Test @MainActor
