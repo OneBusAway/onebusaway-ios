@@ -32,7 +32,6 @@ class VisualEffectContainerViewTests: XCTestCase {
     
     func test_contentView_isEffectViewContentView() {
         let contentView = containerView.contentView
-        #expect(contentView != nil)
         
         // Verify it's the content view from the visual effect view
         let effectView = containerView.subviews.first as? UIVisualEffectView

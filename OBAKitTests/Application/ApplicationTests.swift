@@ -198,7 +198,6 @@ class ApplicationTests: OBATestCase {
 
         let app = Application(config: config)
 
-        #expect(app != nil)
         #expect(app.applicationBundle == Bundle.main)
     }
 
@@ -680,9 +679,6 @@ class ApplicationTests: OBATestCase {
 
         // Test that calling apiServicesRefreshed doesn't crash
         app.apiServicesRefreshed()
-
-        // Should update donationsManager.obacoService
-        #expect(app.donationsManager != nil)
     }
 
     // MARK: - Crash Button Tests
@@ -710,12 +706,12 @@ class ApplicationTests: OBATestCase {
         let app = Application(config: config)
 
         // Test that lazy properties can be accessed without crashing
-        #expect(app.donationsManager != nil)
-        #expect(app.stopIconFactory != nil)
-        #expect(app.mapRegionManager != nil)
-        #expect(app.searchManager != nil)
+        _ = app.donationsManager
+        _ = app.stopIconFactory
+        _ = app.mapRegionManager
+        _ = app.searchManager
         #expect(app.userActivityBuilder != nil)
-        #expect(app.features != nil)
+        _ = app.features
     }
 }
 

@@ -72,8 +72,5 @@ class HighlightChangeLabelTests: OBATestCase {
         // Test that configuration doesn't crash with nil arrival departure
         // The actual model creation is too complex for unit tests
         #expect(self.label.text == nil)  // Initially nil
-        
-        // After configuration, the label should be in a valid state
-        #expect(self.label.layer != nil)
     }
 }

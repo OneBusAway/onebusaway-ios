@@ -51,7 +51,6 @@ class MapRegionManagerTests: OBATestCase {
         let application = Application(config: config)
         let mgr = MapRegionManager(application: application)
 
-        #expect(mgr.mapView != nil)
         #expect(mgr.mapView.showsScale)
 
         // Disable traffic in the Simulator to work around a bug in Xcode 11 and 12

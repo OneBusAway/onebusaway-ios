@@ -41,7 +41,6 @@ class UIImageShadowTests: XCTestCase {
             shouldDrawCapInsets: false
         )
         
-        #expect(shadowImage != nil)
         #expect(shadowImage.size.width > 0)
         #expect(shadowImage.size.height > 0)
         
@@ -65,7 +64,6 @@ class UIImageShadowTests: XCTestCase {
             shouldDrawCapInsets: true
         )
         
-        #expect(shadowImage != nil)
         #expect(shadowImage.size.width > 0)
         #expect(shadowImage.size.height > 0)
         
@@ -92,7 +90,6 @@ class UIImageShadowTests: XCTestCase {
                 shouldDrawCapInsets: false
             )
             
-            #expect(shadowImage != nil)
             #expect(shadowImage.size.width > 0)
             #expect(shadowImage.size.height > 0)
         }
@@ -110,7 +107,6 @@ class UIImageShadowTests: XCTestCase {
             shouldDrawCapInsets: false
         )
         
-        #expect(shadowImage != nil)
         #expect(shadowImage.size.width > 0)
         #expect(shadowImage.size.height > 0)
         

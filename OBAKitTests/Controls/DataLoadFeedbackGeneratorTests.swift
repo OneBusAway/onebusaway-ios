@@ -49,9 +49,7 @@ class DataLoadFeedbackGeneratorTests: OBATestCase {
             dataLoader: dataLoader
         )
         let application = Application(config: config)
-        let generator = DataLoadFeedbackGenerator(application: application)
-
-        #expect(generator != nil)
+        _ = DataLoadFeedbackGenerator(application: application)
     }
     
     func test_dataLoad_success() {

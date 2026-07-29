@@ -47,7 +47,6 @@ class ScheduleForRouteTests: OBATestCase {
         let schedule = response.entry
 
         #expect(schedule.routeID == "1_100223")
-        #expect(schedule.scheduleDate != nil)
         #expect(!schedule.serviceIDs.isEmpty)
         #expect(!schedule.stopTripGroupings.isEmpty)
     }
@@ -57,7 +56,6 @@ class ScheduleForRouteTests: OBATestCase {
         let schedule = response.entry
 
         let grouping = try XCTUnwrap(schedule.stopTripGroupings.first)
-        #expect(grouping.directionID != nil)
         #expect(!grouping.stopIDs.isEmpty)
         #expect(!grouping.tripHeadsigns.isEmpty)
         #expect(!grouping.tripIDs.isEmpty)

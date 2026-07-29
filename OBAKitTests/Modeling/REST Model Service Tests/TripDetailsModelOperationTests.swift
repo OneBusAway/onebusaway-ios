@@ -29,8 +29,6 @@ class TripDetailsModelOperationTests: OBATestCase {
     }
 
     func checkExpectations(_ tripDetails: TripDetails) {
-        #expect(tripDetails != nil)
-
         #expect(tripDetails.frequency == nil)
 
         #expect(tripDetails.tripID == self.tripID)

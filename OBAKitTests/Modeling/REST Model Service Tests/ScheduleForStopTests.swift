@@ -47,7 +47,6 @@ class ScheduleForStopTests: OBATestCase {
         let schedule = response.entry
 
         #expect(schedule.stopID == "1_75403")
-        #expect(schedule.date != nil)
         #expect(!schedule.stopRouteSchedules.isEmpty)
     }
 
@@ -117,7 +116,6 @@ class ScheduleForStopTests: OBATestCase {
         let stopTime = try XCTUnwrap(directionSchedule.scheduleStopTimes.first)
 
         let arrivalDate = stopTime.arrivalDate
-        #expect(arrivalDate != nil)
 
         // Verify it's a valid date by checking it's after year 2000
         let year2000 = Date(timeIntervalSince1970: 946684800)

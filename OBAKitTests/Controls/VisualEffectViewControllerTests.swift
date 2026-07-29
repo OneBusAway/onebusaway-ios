@@ -37,7 +37,6 @@ class VisualEffectViewControllerTests: XCTestCase {
     
     func test_visualEffectView_isAccessible() {
         let visualEffectView = viewController.visualEffectView
-        #expect(visualEffectView != nil)
         #expect(type(of: visualEffectView) == UIVisualEffectView.self)
     }
     
@@ -45,7 +44,6 @@ class VisualEffectViewControllerTests: XCTestCase {
         // Test that visualEffectView has a content view  
         let visualEffectView = viewController.visualEffectView
         #expect(type(of: visualEffectView) == UIVisualEffectView.self)
-        #expect(visualEffectView.contentView != nil)
     }
     
     func test_addingSubviewsToContentView() {

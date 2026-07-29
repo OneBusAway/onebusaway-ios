@@ -20,7 +20,6 @@ class BookmarkGroupTests: OBATestCase {
     func testCreation() {
         let group = BookmarkGroup(name: "Group 1", sortOrder: 0)
         #expect(group.name == "Group 1")
-        #expect(group.id != nil)
     }
 
     func testCodableRoundtripping() {
@@ -28,7 +27,6 @@ class BookmarkGroupTests: OBATestCase {
         let decoded = try! Fixtures.roundtripCodable(type: BookmarkGroup.self, model: group)
 
         #expect(decoded.name == "Group 1")
-        #expect(decoded.id != nil)
         #expect(decoded.id == group.id)
         #expect(decoded.sortOrder == 10)
     }

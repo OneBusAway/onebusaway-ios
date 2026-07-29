@@ -21,21 +21,14 @@ class StopTests: OBATestCase {
         let data = try! PropertyListEncoder().encode(stopOne)
         let stopTwo = try! PropertyListDecoder().decode(Stop.self, from: data)
 
+        // `routes` is `[Route]!`, populated by reference-reconnection rather than
+        // by decoding, so these two are real nil checks -- not the tautologies
+        // that the other `!= nil` assertions in this test were.
         #expect(stopTwo.routes != nil)
 
-        #expect(stopOne.code != nil)
-        #expect(stopOne.direction != nil)
-        #expect(stopOne.id != nil)
-        #expect(stopOne.location != nil)
-        #expect(stopOne.locationType != nil)
-        #expect(stopOne.name != nil)
-        #expect(stopOne.routeIDs != nil)
         #expect(stopOne.routeIDs.count == 12)
         #expect(stopOne.routes != nil)
         #expect(stopOne.routes.count == 12)
-        #expect(stopOne.routeTypes != nil)
-        #expect(stopOne.prioritizedRouteTypeForDisplay != nil)
-        #expect(stopOne.wheelchairBoarding != nil)
 
         #expect(stopOne == stopTwo)
         #expect(stopOne.routes == stopTwo.routes)

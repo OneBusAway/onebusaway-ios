@@ -43,10 +43,4 @@ class ModelExtensionsTests: OBATestCase {
         let zeroCoordinate = CLLocationCoordinate2D(latitude: 0, longitude: 0)
         #expect(CLLocationCoordinate2DIsValid(zeroCoordinate) == true)
     }
-    
-    func test_MKAnnotation_protocol_existence() {
-        // Test that the protocol methods exist and are accessible
-        // This ensures our extensions compile properly
-        #expect(MKAnnotation.self != nil)
-    }
 }

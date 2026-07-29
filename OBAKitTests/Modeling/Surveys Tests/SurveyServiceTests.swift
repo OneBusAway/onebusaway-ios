@@ -49,7 +49,6 @@ final class SurveyServiceTests: OBATestCase {
         #expect(response.region.id == 1)
 
         #expect(response.surveys.count == 5)
-        #expect(response != nil)
     }
 
     func test_firstSurvey_basicProperties() async throws {

@@ -23,9 +23,6 @@ class WeatherOperationTests: OBATestCase {
         dataLoader.mock(URLString: "https://alerts.example.com/api/v1/regions/1/weather.json", with: data)
 
         let forecast = try await obacoService.getWeather()
-
-        #expect(forecast != nil)
-
         expectClose(forecast.location.coordinate.latitude, 47.63671875)
         expectClose(forecast.location.coordinate.longitude, -122.6953125)
 

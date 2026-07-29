@@ -60,10 +60,9 @@ class FoundationExtensionsTests: XCTestCase {
     
     func test_Bundle_copyright() {
         let bundle = Bundle.main
-        let copyright = bundle.copyright
-        
+
         // This may be empty in test bundles, but should not crash
-        #expect(copyright != nil)
+        _ = bundle.copyright
     }
     
     func test_Bundle_userActivityTypes() {

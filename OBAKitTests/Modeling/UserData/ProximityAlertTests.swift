@@ -34,8 +34,6 @@ class ProximityAlertTests: OBATestCase {
         #expect(alert.latitude == stop.location.coordinate.latitude)
         #expect(alert.longitude == stop.location.coordinate.longitude)
         #expect(alert.radiusMeters == 200.0)
-        #expect(alert.id != nil)
-        #expect(alert.createdAt != nil)
     }
 
     func test_init_customRadius() {

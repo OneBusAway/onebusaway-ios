@@ -23,10 +23,6 @@ class MapKitExtensionsTests: XCTestCase {
         
         // Test that we get a valid MKDirections object
         #expect(type(of: directions) == MKDirections.self)
-        
-        // We can't directly test the request properties since they're internal,
-        // but we can verify the method creates a directions object successfully
-        #expect(directions != nil)
     }
     
     func test_MKMapRect_mapPoints() {
