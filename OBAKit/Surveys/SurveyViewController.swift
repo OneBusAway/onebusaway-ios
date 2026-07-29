@@ -88,7 +88,10 @@ class SurveyViewController: FormViewController {
     /// submit is in flight, so a second tap can't silently be dropped by the VM's in-flight
     /// guard. Cancel button is intentionally left enabled — letting the user back out of a
     /// hung submit matches the rest of the app's modal sheets.
-    private func updateSubmitRow(isSubmitting: Bool) {
+    ///
+    /// Internal (not `private`) so `SurveyViewControllerTests` can drive the Eureka
+    /// affordance directly without standing up a live submit (#1169).
+    func updateSubmitRow(isSubmitting: Bool) {
         guard let row = form.rowBy(tag: "submit") as? ButtonRow else { return }
         row.disabled = Condition(booleanLiteral: isSubmitting)
         row.evaluateDisabled()
