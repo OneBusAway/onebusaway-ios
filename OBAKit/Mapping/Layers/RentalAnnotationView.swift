@@ -21,6 +21,35 @@ extension UIColor {
 /// Non-operative entities render gray.
 public class RentalAnnotationView: MKMarkerAnnotationView {
 
+    /// The fuel figure rendered beneath the balloon. A plain subview, so it does
+    /// not participate in MapKit's marker collision logic — `collisionMode`
+    /// interprets a frame derived from this view's own bounds, and the label is
+    /// drawn outside them. Some overlap in an unusually dense block is accepted.
+    let fuelLabel: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.textAlignment = .center
+        label.isHidden = true
+
+        // Start from a preferred font so Dynamic Type applies, then add weight.
+        let base = UIFont.preferredFont(forTextStyle: .caption1)
+        let descriptor = base.fontDescriptor.withSymbolicTraits(.traitBold) ?? base.fontDescriptor
+        label.font = UIFont(descriptor: descriptor, size: 0)
+        label.adjustsFontForContentSizeCategory = true
+
+        // A white halo keeps the text legible over satellite basemaps.
+        label.layer.shadowColor = UIColor.white.cgColor
+        label.layer.shadowRadius = 2
+        label.layer.shadowOpacity = 1
+        label.layer.shadowOffset = .zero
+
+        // The view composes its own accessibility label; a second element here
+        // would make VoiceOver announce the figure twice.
+        label.isAccessibilityElement = false
+
+        return label
+    }()
+
     public override var annotation: MKAnnotation? {
         didSet { configure() }
     }
@@ -31,6 +60,15 @@ public class RentalAnnotationView: MKMarkerAnnotationView {
         // Rentals yield to transit stops when MapKit has to choose.
         displayPriority = .defaultLow
         titleVisibility = .hidden
+
+        // The label sits outside bounds, so it must not be clipped.
+        clipsToBounds = false
+        addSubview(fuelLabel)
+        NSLayoutConstraint.activate([
+            fuelLabel.centerXAnchor.constraint(equalTo: centerXAnchor),
+            fuelLabel.topAnchor.constraint(equalTo: bottomAnchor, constant: 1)
+        ])
+
         configure()
     }
 
@@ -42,10 +80,15 @@ public class RentalAnnotationView: MKMarkerAnnotationView {
         super.prepareForReuse()
         clusteringIdentifier = "rentals"
         displayPriority = .defaultLow
+        // MKAnnotationView's default implementation does nothing, so subclass
+        // state that isn't reset here leaks into the next annotation.
+        fuelLabel.text = nil
+        fuelLabel.isHidden = true
     }
 
     private func configure() {
-        guard let rental = (annotation as? RentalAnnotation)?.rental else { return }
+        guard let rentalAnnotation = annotation as? RentalAnnotation else { return }
+        let rental = rentalAnnotation.rental
 
         markerTintColor = rental.isOperative ? .rentalPurple : .systemGray
 
@@ -62,6 +105,17 @@ public class RentalAnnotationView: MKMarkerAnnotationView {
             glyphText = nil
             glyphImage = UIImage(systemName: Self.glyphName(for: vehicle.vehicleType?.formFactor))
         }
+
+        let fuelText = RentalFormat.fuelLabelText(for: rental)
+        fuelLabel.text = fuelText
+        fuelLabel.textColor = rental.isOperative ? .rentalPurple : .systemGray
+        fuelLabel.isHidden = fuelText == nil || !rentalAnnotation.showsFuelLabel
+
+        // VoiceOver ignores the zoom gate: a visual-density rule must not cost a
+        // VoiceOver user the fuel figure.
+        accessibilityLabel = [rental.displayLabel, fuelText]
+            .compactMap { $0 }
+            .joined(separator: ", ")
     }
 
     private static func glyphName(for formFactor: VehicleFormFactor?) -> String {
