@@ -64,11 +64,7 @@ extension MapViewController {
         for layer in mapRegionManager.mapLayers {
             guard let controller = layer.detailViewController(for: annotation) else { continue }
 
-            if let sheet = controller.sheetPresentationController {
-                sheet.detents = [.medium(), .large()]
-                sheet.prefersGrabberVisible = true
-            }
-            present(controller, animated: true)
+            presentMediumSheet(controller)
             mapView.deselectAnnotation(annotation, animated: true)
 
             if annotation is RentalAnnotation || annotation is MKClusterAnnotation {
@@ -97,12 +93,15 @@ extension MapViewController {
 
     func presentMapSheet() {
         let model = MapSheetModel(mapRegionManager: mapRegionManager, mapViewModel: viewModel)
-        let hosting = UIHostingController(rootView: MapSheetView(model: model))
-        if let sheet = hosting.sheetPresentationController {
+        presentMediumSheet(UIHostingController(rootView: MapSheetView(model: model)))
+    }
+
+    private func presentMediumSheet(_ controller: UIViewController) {
+        if let sheet = controller.sheetPresentationController {
             sheet.detents = [.medium(), .large()]
             sheet.prefersGrabberVisible = true
         }
-        present(hosting, animated: true)
+        present(controller, animated: true)
     }
 
     // MARK: - First-Run Layer Nudge

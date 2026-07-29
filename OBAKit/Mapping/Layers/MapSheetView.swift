@@ -23,20 +23,20 @@ import UIKit
     private let mapRegionManager: MapRegionManager
     private let mapViewModel: MapViewModel
 
-    @Published private(set) var selectedBaseType: MapBaseType
-    @Published private var stateVersion = 0
+    /// Reads through to the view model so it can't drift while the sheet is open
+    /// (the SwiftUI panel's map-type button can change it out from under us).
+    var selectedBaseType: MapBaseType { mapViewModel.mapType }
 
     private var cancellables = Set<AnyCancellable>()
 
     init(mapRegionManager: MapRegionManager, mapViewModel: MapViewModel) {
         self.mapRegionManager = mapRegionManager
         self.mapViewModel = mapViewModel
-        self.selectedBaseType = mapViewModel.mapType
 
         NotificationCenter.default.publisher(for: .mapLayerAvailabilityDidChange)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                self?.stateVersion += 1
+                self?.objectWillChange.send()
             }
             .store(in: &cancellables)
     }
@@ -44,7 +44,7 @@ import UIKit
     // MARK: - Basemap
 
     func selectBaseType(_ type: MapBaseType) {
-        selectedBaseType = type
+        objectWillChange.send()
         mapViewModel.setMapType(type)
     }
 
@@ -61,8 +61,8 @@ import UIKit
     }
 
     func setEnabled(_ enabled: Bool, layer: MapLayer) {
+        objectWillChange.send()
         mapRegionManager.setMapLayerEnabled(enabled, id: layer.id)
-        stateVersion += 1
     }
 
     var showsResetButton: Bool {
@@ -70,8 +70,8 @@ import UIKit
     }
 
     func resetToDefaults() {
+        objectWillChange.send()
         mapRegionManager.resetMapLayersToDefaults()
-        stateVersion += 1
     }
 }
 

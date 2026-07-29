@@ -9,6 +9,7 @@
 
 import CoreLocation
 import MapKit
+import OBAKitCore
 import OTPKit
 import SwiftUI
 import UIKit
@@ -23,6 +24,31 @@ import UIKit
     /// Open a rental deep link, falling back to the operator's web page when the
     /// primary URI fails to open (e.g. custom scheme with no app installed).
     func rentalLayer(open url: URL, webFallback: URL?)
+}
+
+// MARK: - Shared Formatting
+
+/// Formatting shared by the rental detail and cluster-list surfaces, so the
+/// walk estimate, battery string, and distance formatter exist exactly once.
+enum RentalFormat {
+    /// Cached: a fresh MKDistanceFormatter per row per render is waste.
+    static let distanceFormatter = MKDistanceFormatter()
+
+    /// Straight-line walk estimate at the app's default walking speed.
+    /// Nil beyond 10 km — a "119 min walk" line is noise, not information.
+    static func walkTimeText(from userLocation: CLLocation?, to coordinate: CLLocationCoordinate2D) -> String? {
+        guard let userLocation else { return nil }
+        let target = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
+        let meters = userLocation.distance(from: target)
+        guard meters.isFinite, meters < 10_000 else { return nil }
+
+        let minutes = max(1, Int((meters / WalkingSpeed.defaultMetersPerSecond / 60).rounded()))
+        return String(format: OBALoc("rental_detail.walk_time_fmt", value: "%d min walk", comment: "Estimated walking time to a rental vehicle"), minutes)
+    }
+
+    static func batteryText(_ percent: Double) -> String {
+        "\(Int((percent * 100).rounded()))%"
+    }
 }
 
 // MARK: - Detail Sheet
@@ -139,15 +165,8 @@ struct RentalDetailView: View {
         return walk
     }
 
-    /// Straight-line walk estimate at ~1.4 m/s; a plain distance when short.
     private var walkDescription: String? {
-        guard let userLocation else { return nil }
-        let vehicleLocation = CLLocation(latitude: rental.coordinate.latitude, longitude: rental.coordinate.longitude)
-        let meters = userLocation.distance(from: vehicleLocation)
-        guard meters.isFinite, meters < 10_000 else { return nil }
-
-        let minutes = max(1, Int((meters / 1.4 / 60).rounded()))
-        return String(format: OBALoc("rental_detail.walk_time_fmt", value: "%d min walk", comment: "Estimated walking time to a rental vehicle"), minutes)
+        RentalFormat.walkTimeText(from: userLocation, to: rental.coordinate)
     }
 
     @ViewBuilder private var statsRow: some View {
@@ -159,13 +178,13 @@ struct RentalDetailView: View {
                 // when the feed actually provides it.
                 if let range = vehicle.fuel?.range {
                     stat(
-                        value: MKDistanceFormatter().string(fromDistance: CLLocationDistance(range)),
+                        value: RentalFormat.distanceFormatter.string(fromDistance: CLLocationDistance(range)),
                         label: OBALoc("rental_detail.range", value: "Range", comment: "Label for a rental vehicle's estimated remaining range")
                     )
                 }
                 if let percent = vehicle.fuel?.percent {
                     stat(
-                        value: "\(Int((percent * 100).rounded()))%",
+                        value: RentalFormat.batteryText(percent),
                         label: OBALoc("rental_detail.battery", value: "Battery", comment: "Label for a rental vehicle's battery charge")
                     )
                 }
@@ -374,20 +393,15 @@ struct RentalClusterListView: View {
 
         if case .vehicle(let vehicle) = rental {
             if let range = vehicle.fuel?.range {
-                parts.append(MKDistanceFormatter().string(fromDistance: CLLocationDistance(range)))
+                parts.append(RentalFormat.distanceFormatter.string(fromDistance: CLLocationDistance(range)))
             }
             if let percent = vehicle.fuel?.percent {
-                parts.append("\(Int((percent * 100).rounded()))%")
+                parts.append(RentalFormat.batteryText(percent))
             }
         }
 
-        if let userLocation {
-            let location = CLLocation(latitude: rental.coordinate.latitude, longitude: rental.coordinate.longitude)
-            let meters = userLocation.distance(from: location)
-            if meters.isFinite, meters < 10_000 {
-                let minutes = max(1, Int((meters / 1.4 / 60).rounded()))
-                parts.append(String(format: OBALoc("rental_detail.walk_time_fmt", value: "%d min walk", comment: "Estimated walking time to a rental vehicle"), minutes))
-            }
+        if let walkTime = RentalFormat.walkTimeText(from: userLocation, to: rental.coordinate) {
+            parts.append(walkTime)
         }
 
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
