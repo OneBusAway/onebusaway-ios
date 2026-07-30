@@ -1289,34 +1289,26 @@ extension MapRegionManager {
     /// Applies the same fudge factor, cache-save, and cache-fallback behavior as
     /// the UIKit region-change path.
     func requestStops(in region: MKCoordinateRegion) async {
-        guard let apiService = application.apiService else {
-            return
-        }
-
-        await MainActor.run {
-            notifyDelegatesDataLoadingStarted()
-        }
-
-        defer {
-            Task { @MainActor in
-                notifyDelegatesDataLoadingFinished()
-            }
-        }
-
         let mapRegion = fudgedRegion(for: region, factor: preferredLoadDataRegionFudgeFactor)
 
         do {
-            let stops = try await apiService.getStops(region: mapRegion).list
+            guard let stops = try await fetchStops(in: region) else { return }
 
             await MainActor.run {
                 // Some UI code is dependent on this being changed on Main.
                 self.setStops(stops)
             }
 
+            // Published before caching, so the pins aren't waiting on a SQLite write.
             saveStopsToCache(stops)
         } catch {
-            // Don't attempt cache fallback for cancelled tasks (e.g., user navigated away).
-            if error is CancellationError { return }
+            // A cancelled request isn't a failure. It arrives in more than one
+            // shape — Swift's `CancellationError`, or a URLSession
+            // `NSError`/`URLError` carrying `NSURLErrorCancelled` — so match
+            // `scheduleStopsRequest` and check both rather than a typed catch.
+            // Otherwise panning quickly across uncached area pops an error
+            // bulletin for a request the user themselves superseded.
+            if Task.isCancelled || error.isCancellation { return }
 
             Logger.error("API stop request failed, attempting cache fallback: \(error)")
 
@@ -1370,9 +1362,23 @@ extension MapRegionManager {
     /// directly when the cache can't (e.g. the database failed to open). Returns
     /// `nil` when no API service is configured; rethrows network errors.
     private func refreshStopCache(in region: MKCoordinateRegion) async throws -> [Stop]? {
-        // `nil` rather than `[]`: callers must be able to tell "no service, so
-        // nothing was attempted" from "the fetch succeeded and this region
-        // genuinely has no stops", because only the latter should be published.
+        guard let stops = try await fetchStops(in: region) else { return nil }
+        saveStopsToCache(stops)
+        return stops
+    }
+
+    /// Fetches stops for `region`, applying the shared fudge factor and bracketing
+    /// the call with the loading-started/finished delegate notifications.
+    ///
+    /// Neither caches nor publishes: `requestStops` publishes before writing to
+    /// SQLite so its pins don't wait on the write, while `refreshStopCache`
+    /// caches first and republishes from the cache band. Keeping that choice with
+    /// the callers is the only reason this is separate from `refreshStopCache`.
+    ///
+    /// Returns `nil` when no API service is configured — callers must be able to
+    /// tell "nothing was attempted" from "the fetch succeeded and this region
+    /// genuinely has no stops", because only the latter should be published.
+    private func fetchStops(in region: MKCoordinateRegion) async throws -> [Stop]? {
         guard let apiService = application.apiService else { return nil }
 
         await MainActor.run {
@@ -1385,9 +1391,7 @@ extension MapRegionManager {
         }
 
         let mapRegion = fudgedRegion(for: region, factor: preferredLoadDataRegionFudgeFactor)
-        let stops = try await apiService.getStops(region: mapRegion).list
-        saveStopsToCache(stops)
-        return stops
+        return try await apiService.getStops(region: mapRegion).list
     }
 
     /// Applies the network fudge-factor expansion to `region`, so the cache

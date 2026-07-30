@@ -115,7 +115,10 @@ struct MapPanelRootView: View {
                     for: bookmark.stop,
                     isBookmarked: true,
                     label: bookmark.name,
-                    accessibilityLabel: Formatters.formattedAccessibilityLabel(stop: bookmark.stop)
+                    accessibilityLabel: Formatters.formattedAccessibilityLabel(
+                        stop: bookmark.stop,
+                        bookmarkName: bookmark.name
+                    )
                 )
             }
             // Regular stops show only zoomed in; `renderStops` already excludes
