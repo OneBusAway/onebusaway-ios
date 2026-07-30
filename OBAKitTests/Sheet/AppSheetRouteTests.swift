@@ -106,10 +106,12 @@ final class AppSheetRouteTests {
         }
     }
 
-    @Test func `Stop details detent starts medium and is interactively dismissible`() {
+    @Test func `Stop details detent is pinned full height and interactively dismissible`() {
+        // The stop detail sheet is pinned to full height (`.large`) and carries
+        // its own close button, but the OS drag-down gesture stays enabled.
         let config = AppSheetRoute.stopDetails(stopID: "1").detentConfiguration
-        #expect(config.detents == [.medium, .large])
-        #expect(config.initialDetent == .medium)
+        #expect(config.detents == [.large])
+        #expect(config.initialDetent == .large)
         #expect(config.isDismissDisabled == false)
         #expect(config.fullScreenDetent == nil)
     }

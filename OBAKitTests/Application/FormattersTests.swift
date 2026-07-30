@@ -72,4 +72,34 @@ final class FormattersTests: OBATestCase {
         #expect(result.contains("10 - Capitol Hill"), "Banner should contain route display: \(result)")
         #expect(result.contains(expectedTime), "Banner should contain formatted time '\(expectedTime)': \(result)")
     }
+
+    // MARK: - Stop accessibility label
+
+    @Test func `Formatted accessibility label omits the bookmark name by default`() throws {
+        let stop = try #require(Fixtures.loadSomeStops().first)
+        let label = Formatters.formattedAccessibilityLabel(stop: stop)
+
+        #expect(label.hasPrefix(stop.name))
+    }
+
+    /// A bookmark pin shows the user's chosen name visually, so VoiceOver has to
+    /// announce it too — otherwise the pin reads identically to a regular stop.
+    @Test func `Formatted accessibility label leads with the bookmark name`() throws {
+        let stop = try #require(Fixtures.loadSomeStops().first)
+        let label = Formatters.formattedAccessibilityLabel(stop: stop, bookmarkName: "Home")
+
+        #expect(label.hasPrefix("Home; "))
+        // The stop's own details still follow, so nothing is lost by bookmarking.
+        #expect(label.contains(stop.name))
+        #expect(label.contains(stop.code))
+    }
+
+    /// Bookmarks default to the stop's own name, and hearing it twice in a row
+    /// is noise rather than information.
+    @Test func `Formatted accessibility label does not repeat a bookmark name matching the stop`() throws {
+        let stop = try #require(Fixtures.loadSomeStops().first)
+        let label = Formatters.formattedAccessibilityLabel(stop: stop, bookmarkName: stop.name)
+
+        #expect(label == Formatters.formattedAccessibilityLabel(stop: stop))
+    }
 }

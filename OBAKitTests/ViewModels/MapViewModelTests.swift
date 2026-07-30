@@ -38,10 +38,13 @@ final class MapViewModelTests: OBATestCase {
     /// Pass `bundledRegionsFixture: "regions-puget-sound-no-sidecar.json"` to swap the
     /// bundled regions file for one whose Puget Sound entry has no `sidecarBaseURL` —
     /// keeps `application.obacoService` nil and `features.obaco == .off`.
+    /// Pass `startLocationUpdates: false` to leave `locationService.currentLocation`
+    /// nil, modelling a launch before the user has granted location permission.
     private func createApplication(
         dataLoader: MockDataLoader,
         bundledRegionsFixture: String? = nil,
-        accuracyAuthorization: CLAccuracyAuthorization = .fullAccuracy
+        accuracyAuthorization: CLAccuracyAuthorization = .fullAccuracy,
+        startLocationUpdates: Bool = true
     ) -> Application {
         stubRegions(dataLoader: dataLoader)
         stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
@@ -53,7 +56,9 @@ final class MapViewModelTests: OBATestCase {
         )
         locManager.overrideAccuracyAuthorization = accuracyAuthorization
         let locationService = LocationService(userDefaults: userDefaults, locationManager: locManager)
-        locationService.startUpdates()
+        if startLocationUpdates {
+            locationService.startUpdates()
+        }
 
         let config = AppConfig(
             regionsBaseURL: regionsURL,
@@ -529,6 +534,68 @@ final class MapViewModelTests: OBATestCase {
         #expect(viewModel.zoomLevelForCurrentLocation() == 11)
     }
 
+    // MARK: - Initial Location Recenter
+
+    /// The first `locationChanged` delegate callback latches
+    /// `didReceiveInitialLocation` — the one-shot signal `MapPanelRootView`
+    /// uses to recenter the map on the user after permission is granted
+    /// post-launch. Mirrors the UIKit path's
+    /// `programmaticallyUpdateVisibleMapRegion`, which runs off the same
+    /// delegate callback and is gated by `initialMapChangeMade`.
+    @Test func `Did receive initial location latches on the first location change`() async {
+        let dataLoader = MockDataLoader(testName: name)
+        // No fix yet: this is the grant-permission-after-launch path, where the
+        // latch has to wait for the delegate callback.
+        let app = createApplication(dataLoader: dataLoader, startLocationUpdates: false)
+        let viewModel = MapViewModel(application: app)
+
+        #expect(viewModel.didReceiveInitialLocation == false)
+
+        viewModel.locationService(app.locationService, locationChanged: TestData.mockSeattleLocation)
+        for _ in 0..<5 { await Task.yield() }
+
+        #expect(viewModel.didReceiveInitialLocation == true)
+    }
+
+    /// A returning user already has a location fix by the time the map is built,
+    /// so no `locationChanged` callback will ever arrive to latch the flag. It
+    /// must therefore seed from the location the service is already holding —
+    /// otherwise the recenter never runs and the map opens parked on the whole
+    /// region, showing "Zoom in for stops" instead of the user's stops.
+    @Test func `Did receive initial location seeds from an existing fix at init`() {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader)
+        #expect(app.locationService.currentLocation != nil)
+
+        let viewModel = MapViewModel(application: app)
+
+        #expect(viewModel.didReceiveInitialLocation == true)
+    }
+
+    /// The latch fires exactly once: a second `locationChanged` after the flag
+    /// is set publishes no further change, so the view's `.onChange` recenter
+    /// stays a one-time event and doesn't yank the camera back on every
+    /// subsequent GPS update.
+    @Test func `Did receive initial location publishes only once`() async {
+        let dataLoader = MockDataLoader(testName: name)
+        // Start without a fix so the latch begins `false` and the single
+        // `false` → `true` transition is observable.
+        let app = createApplication(dataLoader: dataLoader, startLocationUpdates: false)
+        let viewModel = MapViewModel(application: app)
+
+        var observed: [Bool] = []
+        let cancellable = viewModel.$didReceiveInitialLocation.sink { observed.append($0) }
+        defer { cancellable.cancel() }
+
+        viewModel.locationService(app.locationService, locationChanged: TestData.mockSeattleLocation)
+        viewModel.locationService(app.locationService, locationChanged: TestData.mockSeattleLocation)
+        for _ in 0..<5 { await Task.yield() }
+
+        // Initial `false` plus a single `true` transition — the second callback
+        // is a no-op because the flag is already latched.
+        #expect(observed == [false, true])
+    }
+
     // MARK: - TopPillState
 
     /// Zoom warning wins over permission state so tapping the pill still routes
@@ -543,6 +610,34 @@ final class MapViewModelTests: OBATestCase {
 
         viewModel.updateZoomWarning(true)
         #expect(viewModel.topPillState == .zoomInForStops)
+    }
+
+    /// `updateZoomWarning` must not publish when the value is unchanged.
+    /// `@Published` fires `objectWillChange` even for identical assignments, and
+    /// this method runs on every camera settle; because the SwiftUI `Map`
+    /// re-emits `.onMapCameraChange(.onEnd)` on every view update, a same-value
+    /// publish here closes an infinite invalidation loop that hangs the map.
+    @Test func `Update zoom warning with the same value does not publish`() {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader)
+        let viewModel = MapViewModel(application: app)
+
+        var publishCount = 0
+        let cancellable = viewModel.objectWillChange.sink { _ in publishCount += 1 }
+        defer { cancellable.cancel() }
+
+        viewModel.updateZoomWarning(true)
+        #expect(publishCount == 1)
+
+        // Same value again: no publish — this is what breaks the camera-settle
+        // → publish → body re-eval → camera-settle feedback cycle.
+        viewModel.updateZoomWarning(true)
+        #expect(publishCount == 1)
+
+        viewModel.updateZoomWarning(false)
+        #expect(publishCount == 2)
+        viewModel.updateZoomWarning(false)
+        #expect(publishCount == 2)
     }
 
     /// With no zoom warning and full permission, the pill is hidden.

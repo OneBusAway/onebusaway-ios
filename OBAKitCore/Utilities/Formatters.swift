@@ -477,10 +477,20 @@ public class Formatters: NSObject {
     }
 
     /// Creates a string suitable for use as an accessibility label for a stop annotation view on the map.
-    /// - Parameter stop: The `Stop` object to generate an accessibility label from.
+    /// - Parameters:
+    ///   - stop: The `Stop` object to generate an accessibility label from.
+    ///   - bookmarkName: The user's name for this stop, when the pin is a bookmark.
+    ///   Led with, so VoiceOver announces the name the user chose — the same thing
+    ///   the pin's visible label shows — rather than only the stop's own name.
     /// - Returns: A localized string.
-    public class func formattedAccessibilityLabel(stop: Stop) -> String {
-        var parts = [stop.name]
+    public class func formattedAccessibilityLabel(stop: Stop, bookmarkName: String? = nil) -> String {
+        var parts: [String] = []
+
+        if let bookmarkName, !bookmarkName.isEmpty, bookmarkName != stop.name {
+            parts.append(bookmarkName)
+        }
+
+        parts.append(stop.name)
 
         if let direction = directionString(stop.direction) {
             parts.append(direction)

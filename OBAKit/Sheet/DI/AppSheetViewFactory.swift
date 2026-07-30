@@ -50,8 +50,11 @@ final class AppSheetViewFactory {
         // (the home sheet only knows how to push, not pop), otherwise the
         // route is unreachable once entered.
         case .search, .nearbyAll, .recentStopsAll, .bookmarksAll,
-             .stopDetails, .tripPlanner, .tripDetails, .transitAlert, .settings:
+             .tripPlanner, .tripDetails, .transitAlert, .settings:
             unimplementedView(for: route)
+
+        case .stopDetails(let stopID):
+            stopDetailView(stopID: stopID)
 
         case .routePicker:
             routePickerView()
@@ -72,6 +75,13 @@ final class AppSheetViewFactory {
     /// `MoreView` lands.
     func moreView() -> MoreSheetHost {
         MoreSheetHost(application: application)
+    }
+
+    /// Bridges `AppSheetRoute.stopDetails` to the existing `StopPageViewController`
+    /// via `StopDetailSheetHost`. Swap this branch's return type once a SwiftUI
+    /// stop-detail view lands.
+    func stopDetailView(stopID: Stop.ID) -> StopDetailSheetHost {
+        StopDetailSheetHost(application: application, stopID: stopID)
     }
 
     func routePickerView() -> RoutePickerView {

@@ -17,6 +17,7 @@ class StopIconFactory: NSObject {
     private let iconSize: CGFloat
 
     private let iconCache = NSCache<NSString, UIImage>()
+    private let squircleIconCache = NSCache<NSString, UIImage>()
 
     /// Initializes a `StopIconFactory`.
     /// - Parameter iconSize: The width and height of the icons that will be generated.
@@ -103,19 +104,7 @@ class StopIconFactory: NSObject {
 
     /// Draws a stop icon image with the specified properties.
     func renderIcon(routeType: Route.RouteType, direction: Direction, isBookmarked: Bool) -> UIImage {
-        let imageBounds = CGRect(x: 0, y: 0, width: iconSize, height: iconSize)
-        let rect = imageBounds.insetBy(dx: arrowTrackSize, dy: arrowTrackSize)
-
-        let renderer = UIGraphicsImageRenderer(size: CGSize(width: iconSize, height: iconSize))
-        return renderer.image { [weak self] rendererContext in
-            guard let self = self else { return }
-            let ctx = rendererContext.cgContext
-
-            if kUseDebugColors {
-                UIColor.magenta.setFill()
-                UIRectFill(imageBounds)
-            }
-
+        renderAnnotationImage(direction: direction) { rect, ctx in
             if isBookmarked {
                 self.drawBackground(color: bookmarkedStrokeColor, rect: rect, context: ctx)
                 self.drawIcon(routeType: routeType, rect: rect, context: ctx, color: .white)
@@ -126,8 +115,124 @@ class StopIconFactory: NSObject {
             }
 
             self.drawBorder(color: strokeColor, rect: rect, context: ctx)
+        }
+    }
+
+    /// Shared scaffolding for the stop-annotation icon variants: sets up the
+    /// renderer and the arrow-track inset, hands the inset rect to `drawContent`
+    /// (background, glyph, and border), then draws the directional arrow in the
+    /// outer track. Keeping the geometry here means the rounded-rect and
+    /// squircle variants can't silently diverge in layout.
+    private func renderAnnotationImage(direction: Direction, drawContent: (CGRect, CGContext) -> Void) -> UIImage {
+        let imageBounds = CGRect(x: 0, y: 0, width: iconSize, height: iconSize)
+        let rect = imageBounds.insetBy(dx: arrowTrackSize, dy: arrowTrackSize)
+
+        let renderer = UIGraphicsImageRenderer(size: imageBounds.size)
+        return renderer.image { rendererContext in
+            let ctx = rendererContext.cgContext
+
+            if kUseDebugColors {
+                UIColor.magenta.setFill()
+                UIRectFill(imageBounds)
+            }
+
+            drawContent(rect, ctx)
 
             self.drawArrowImage(direction: direction, strokeColor: strokeColor, rect: imageBounds, context: ctx)
+        }
+    }
+
+    // MARK: - Squircle map annotation icon
+
+    /// Map annotation icon: the recent-stops squircle treatment (rounded-square
+    /// gradient + transport glyph) with the stop's directional arrow drawn in the
+    /// outer track.
+    ///
+    /// Bookmarked stops get the brand-color treatment (matching the UIKit map,
+    /// where `buildIcon(isBookmarked:)` colors bookmarks with the brand); regular
+    /// stops get a neutral treatment so bookmarks stand out. Cached by
+    /// `(routeType, direction, bookmarked, appearance)`.
+    func buildSquircleIcon(for stop: Stop, isBookmarked: Bool, traits: UITraitCollection) -> UIImage {
+        renderSquircleIcon(
+            routeType: stop.prioritizedRouteTypeForDisplay,
+            direction: stop.direction,
+            isBookmarked: isBookmarked,
+            traits: traits
+        )
+    }
+
+    /// Draws a squircle stop icon with the specified route type, direction, and
+    /// bookmarked state.
+    func renderSquircleIcon(routeType: Route.RouteType, direction: Direction, isBookmarked: Bool, traits: UITraitCollection) -> UIImage {
+        // Appearance is part of the key because the gradient and arrow colors
+        // resolve differently in dark mode; without it a light-mode render would
+        // be served after the user switches appearance. `isBookmarked` is keyed
+        // because bookmarked and regular stops use different fills.
+        let appearanceStyle = traits.userInterfaceStyle == .dark ? "dark" : "light"
+        let bookmarkStyle = isBookmarked ? "bookmarked" : "plain"
+        let key = "squircle:\(routeType.rawValue):\(direction.rawValue):\(iconSize):\(bookmarkStyle):\(appearanceStyle)" as NSString
+        if let cached = squircleIconCache.object(forKey: key) {
+            return cached
+        }
+
+        // Resolve dynamic colors against the requested traits, so a color-scheme
+        // mismatch can't cache a wrong-appearance image under this key.
+        var image: UIImage!
+        traits.performAsCurrent {
+            image = renderAnnotationImage(direction: direction) { rect, ctx in
+                self.drawSquircleBackground(rect: rect, isBookmarked: isBookmarked, context: ctx)
+                let glyphColor: UIColor = isBookmarked ? .white : self.transportIconColor
+                self.drawIcon(routeType: routeType, rect: rect, context: ctx, color: glyphColor)
+                // A border keeps the neutral (non-bookmarked) squircle legible over
+                // the muted map; the brand fill of a bookmark already stands on its own.
+                if !isBookmarked {
+                    self.drawSquircleBorder(rect: rect, context: ctx)
+                }
+            }
+        }
+
+        squircleIconCache.setObject(image, forKey: key)
+        return image
+    }
+
+    /// Draws the gradient squircle background. Bookmarked stops use the brand
+    /// gradient (echoing `Icons.squircleTransportIcon`); regular stops use a
+    /// neutral fill so bookmarks read as distinct.
+    private func drawSquircleBackground(rect: CGRect, isBookmarked: Bool, context: CGContext) {
+        context.pushPop {
+            let cornerRadius = rect.width * Icons.squircleCornerRadiusRatio
+            UIBezierPath(roundedRect: rect, cornerRadius: cornerRadius).addClip()
+
+            let baseColor = isBookmarked ? themeColors.brand : fillColor
+            let colors = [
+                baseColor.blended(with: .white, amount: Icons.squircleGradientTopBlend).cgColor,
+                baseColor.blended(with: .black, amount: Icons.squircleGradientBottomBlend).cgColor
+            ]
+            let colorSpace = CGColorSpaceCreateDeviceRGB()
+            guard let gradient = CGGradient(colorsSpace: colorSpace, colors: colors as CFArray, locations: [0, 1]) else {
+                baseColor.setFill()
+                context.fill(rect)
+                return
+            }
+
+            context.drawLinearGradient(
+                gradient,
+                start: CGPoint(x: rect.midX, y: rect.minY),
+                end: CGPoint(x: rect.midX, y: rect.maxY),
+                options: []
+            )
+        }
+    }
+
+    /// Strokes the rounded-square border used by the neutral squircle treatment.
+    private func drawSquircleBorder(rect: CGRect, context: CGContext) {
+        context.pushPop {
+            let inset = borderWidth / 2.0
+            let cornerRadius = rect.width * Icons.squircleCornerRadiusRatio
+            let bezierPath = UIBezierPath(roundedRect: rect.insetBy(dx: inset, dy: inset), cornerRadius: cornerRadius)
+            bezierPath.lineWidth = borderWidth
+            context.setStrokeColor(strokeColor.cgColor)
+            bezierPath.stroke()
         }
     }
 

@@ -48,4 +48,15 @@ final class AppSheetViewFactoryTests: OBATestCase {
         // owns the factory-to-host handoff only.
         #expect(host.application === application)
     }
+
+    @Test func `Stop detail view returns a stop detail sheet host forwarding the application and stop ID`() {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+
+        let factory = AppSheetViewFactory(application: application, onPresentTrip: { _ in })
+        let host = factory.stopDetailView(stopID: "1_10914")
+
+        #expect(host.application === application)
+        #expect(host.stopID == "1_10914")
+    }
 }

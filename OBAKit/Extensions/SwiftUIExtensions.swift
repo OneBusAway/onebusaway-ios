@@ -109,3 +109,47 @@ extension View {
            )
    }
 }
+
+// MARK: - MapLabelOutline
+
+/// Wraps `content` in a `color` outline ring — a SwiftUI stand-in for a glyph
+/// stroke (which `Text` can't render), used to keep map labels legible over the
+/// muted map the way the UIKit map's `NSAttributedString` stroke does.
+///
+/// Takes a `@ViewBuilder` closure rather than a `ViewModifier` so `content` is a
+/// value we can legitimately instantiate for each offset copy — invoking a
+/// ViewBuilder closure multiple times is supported, whereas reusing a
+/// `ViewModifier.Content` proxy across a body is not. The whole ring is drawn
+/// into a single rasterized layer via `.drawingGroup()`, so a dense viewport
+/// pays one composited layer per label instead of nine.
+struct MapLabelOutline<Content: View>: View {
+    let color: Color
+    /// Outline radius, in points.
+    var width: CGFloat = 1
+    @ViewBuilder let content: () -> Content
+
+    /// Eight evenly-spaced offsets around a `width`-radius circle — enough
+    /// samples to read as a continuous ring at label point sizes.
+    private var offsets: [CGSize] {
+        (0..<8).map { i in
+            let angle = Double(i) / 8 * 2 * .pi
+            return CGSize(width: cos(angle) * width, height: sin(angle) * width)
+        }
+    }
+
+    var body: some View {
+        content()
+            .background {
+                ZStack {
+                    ForEach(offsets.indices, id: \.self) { index in
+                        // Masking (rather than recoloring) keeps every copy the
+                        // outline color regardless of the content's own style.
+                        color
+                            .mask { content() }
+                            .offset(offsets[index])
+                    }
+                }
+            }
+            .drawingGroup()
+    }
+}
