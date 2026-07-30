@@ -48,6 +48,10 @@ extension MapViewController {
         let coordinator = RentalLayerCoordinator(service: service, mapView: mapRegionManager.mapView)
         rentalLayerCoordinator = coordinator
 
+        // Apply a filter chosen in a previous session before the first fetch,
+        // rather than one notification late.
+        coordinator.setRangeFilter(mapRegionManager.rentalRangeFilter)
+
         let bikes = RentalMapLayer.bikesLayer(coordinator: coordinator)
         bikes.actionsDelegate = self
         mapRegionManager.registerMapLayer(bikes)
@@ -81,6 +85,13 @@ extension MapViewController {
 
     @objc func mapLayerStateDidChange(_ note: NSNotification) {
         updateMapLayerBadge()
+    }
+
+    /// `MapViewController` is the composition root for the rental layers, so it
+    /// carries the threshold from the Map sheet's write to the coordinator that
+    /// acts on it. `MapRegionManager` stays unaware the coordinator exists.
+    @objc func rentalRangeFilterDidChange(_ note: NSNotification) {
+        rentalLayerCoordinator?.setRangeFilter(mapRegionManager.rentalRangeFilter)
     }
 
     func updateMapLayerBadge() {
