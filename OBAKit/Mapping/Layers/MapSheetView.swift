@@ -39,6 +39,16 @@ import UIKit
                 self?.objectWillChange.send()
             }
             .store(in: &cancellables)
+
+        // Settings may mirror this same UserDefaults key while the sheet stays its
+        // owner, so an external writer must not leave an open sheet showing a stale
+        // rung.
+        NotificationCenter.default.publisher(for: .rentalRangeFilterDidChange)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
     }
 
     // MARK: - Basemap

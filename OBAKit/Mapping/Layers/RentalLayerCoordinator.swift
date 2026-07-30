@@ -15,9 +15,11 @@ import OTPKit
 ///
 /// Both layers are backed by one `VehicleRentalSource`: enabling both fetches once
 /// with the union of their form factors, and the snapshot is partitioned at
-/// annotation-creation time. All debounce, cancellation, and diffing live in the
-/// framework — this class only converts viewports, applies diffed snapshots to the
-/// map, and tracks runtime availability from fetch outcomes.
+/// annotation-creation time. Fetch debounce and cancellation live in OTPKit's
+/// `VehicleRentalSource`; this class runs delivered snapshots through a second,
+/// client-side visibility pass — `RentalVisibility`, gating on form factors and the
+/// range threshold — before converting viewports and applying the resulting diffs
+/// to the map, and it tracks runtime availability from fetch outcomes.
 @MainActor final class RentalLayerCoordinator {
 
     private let source: VehicleRentalSource
