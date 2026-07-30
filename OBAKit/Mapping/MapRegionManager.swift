@@ -354,9 +354,12 @@ public class MapRegionManager: NSObject,
     }
 
     /// True when any layer's on/off state differs from its default, or the rental
-    /// range filter is active — drives the Map sheet's Reset affordance.
+    /// range filter is active *and visible* — drives the Map sheet's Reset
+    /// affordance. The filter row only renders when a `.otherModes` layer is
+    /// registered (rental layers are region-gated), so a non-zero filter left over
+    /// from another region must not offer a Reset that changes nothing on screen.
     public var mapLayersDifferFromDefaults: Bool {
-        if rentalRangeFilter != .any { return true }
+        if rentalRangeFilter != .any, mapLayers.contains(where: { $0.group == .otherModes }) { return true }
         return mapLayers.contains { isMapLayerEnabled(id: $0.id) != $0.isEnabledByDefault }
     }
 

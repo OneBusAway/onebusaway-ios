@@ -85,12 +85,21 @@ final class RentalRangePresetTests {
     /// Titles are rendered in the caller's locale, not the process's ambient one.
     /// Without an injected locale this assertion would silently depend on the test
     /// host's system settings — the same ambient-global trap the GMT pin in
-    /// OBATestCase exists to close.
+    /// OBATestCase exists to close. `de_DE` doesn't prove this: its "km" is
+    /// byte-identical to `en_US`'s, so the assertion would still pass even if
+    /// `formatter.locale = locale` were deleted from production code. `ar` was
+    /// chosen to actually differ — measured on iPhone 17 Pro / iOS 26.3, it
+    /// keeps Western digits here (Arabic-Indic numerals turn out to be a
+    /// region-specific default, e.g. `ar_SA`, not part of the bare `ar` locale
+    /// data) but does localize the unit abbreviation ("كم"), which is enough to
+    /// make the assertion fail if the injected locale is ever dropped. "Any"
+    /// stays English because it comes from `OBALoc`, which reads the app
+    /// bundle's language, not the formatter's locale.
     @Test func titlesFollowTheProvidedLocale() {
         let titles = RentalRangePreset.presets(
             measurementSystem: .metric,
-            locale: Locale(identifier: "de_DE")
+            locale: Locale(identifier: "ar")
         ).map(\.title)
-        #expect(titles == ["Any", "2 km", "5 km", "10 km", "15 km", "25 km"])
+        #expect(titles == ["Any", "2 كم", "5 كم", "10 كم", "15 كم", "25 كم"])
     }
 }

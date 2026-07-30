@@ -66,6 +66,13 @@ public class RentalAnnotationView: MKMarkerAnnotationView {
         addSubview(fuelLabel)
         NSLayoutConstraint.activate([
             fuelLabel.centerXAnchor.constraint(equalTo: centerXAnchor),
+            // MKMarkerAnnotationView documents neither its bounds nor its default
+            // centerOffset. Measured on iPhone 17 Pro / iOS 26.3: bounds
+            // (0, 0, 31.33, 34.94), centerOffset (0, -17.47) — i.e.
+            // centerOffset.y == -bounds.height/2, so MapKit places bounds.maxY at
+            // the annotation's coordinate and the balloon tip sits there. Pinning
+            // to bottomAnchor therefore tracks the tip even as the view's height
+            // changes; the `1` below is a fixed gap, not a derived offset.
             fuelLabel.topAnchor.constraint(equalTo: bottomAnchor, constant: 1)
         ])
 

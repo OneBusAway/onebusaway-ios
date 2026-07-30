@@ -166,7 +166,10 @@ import OTPKit
     }
 
     /// Translates a visibility diff into map view operations. The only place this
-    /// class touches annotations.
+    /// class mutates the `annotations` dictionary — it must keep `Set(annotations.keys)`
+    /// equal to `RentalVisibility`'s visible-id set. Do not add an early return here:
+    /// one that skips a branch (e.g. on an empty `added`/`removed`/`updated` array)
+    /// would silently break that invariant and, with it, cache restore.
     private func apply(_ changes: RentalVisibility.Changes) {
         guard let mapView, !changes.isEmpty else { return }
 

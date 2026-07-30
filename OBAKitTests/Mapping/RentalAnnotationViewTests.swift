@@ -121,4 +121,28 @@ final class RentalAnnotationViewTests {
 
         #expect(subject.fuelLabel.isHidden == false)
     }
+
+    /// A station's glyph is its availability count, not a form-factor symbol.
+    @Test func stationWithAvailabilityShowsCountGlyph() throws {
+        let subject = view(for: try RentalFixtures.station(vehiclesAvailable: 4), showsFuelLabel: false)
+        #expect(subject.glyphText == "4")
+    }
+
+    /// When a station's feed omits an availability count, the count glyph falls
+    /// back to a form-factor image rather than rendering blank.
+    @Test func stationWithoutAvailabilityFallsBackToImageGlyph() throws {
+        let subject = view(for: try RentalFixtures.station(vehiclesAvailable: nil), showsFuelLabel: false)
+        #expect(subject.glyphText == nil)
+        #expect(subject.glyphImage != nil)
+    }
+
+    @Test func operativeVehicleTintsPurple() throws {
+        let subject = view(for: try RentalFixtures.vehicle(operative: true), showsFuelLabel: false)
+        #expect(subject.markerTintColor == .rentalPurple)
+    }
+
+    @Test func nonOperativeVehicleTintsGray() throws {
+        let subject = view(for: try RentalFixtures.vehicle(operative: false), showsFuelLabel: false)
+        #expect(subject.markerTintColor == .systemGray)
+    }
 }

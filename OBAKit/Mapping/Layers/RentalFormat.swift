@@ -15,7 +15,6 @@ import OTPKit
 /// Shared rider-facing formatting for rental entities, used by the detail sheet,
 /// the cluster list, and the map annotation's fuel label.
 enum RentalFormat {
-
     /// Cached: a fresh MKDistanceFormatter per row per render is waste.
     static let distanceFormatter = MKDistanceFormatter()
 

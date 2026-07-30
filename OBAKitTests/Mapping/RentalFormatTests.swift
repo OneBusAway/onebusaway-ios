@@ -8,6 +8,7 @@
 //
 
 import Foundation
+import MapKit
 import Testing
 import OTPKit
 @testable import OBAKit
@@ -50,11 +51,23 @@ final class RentalFormatTests {
     /// The default `MKDistanceFormatter` style spells the unit out ("3.4 miles"),
     /// which is far too long to sit under a map pin. The abbreviated style is the
     /// whole reason this formatter is separate from the detail sheet's.
+    ///
+    /// Comparing string contents against hardcoded English words ("miles") passes
+    /// vacuously under a non-English host locale, where the spelled-out and
+    /// abbreviated forms both differ from those words. Instead, build both styles
+    /// from the same (ambient) locale and require the pin label to match the
+    /// abbreviated one and differ from the spelled-out one — the second assertion
+    /// is the one that actually catches a regression to the shared formatter.
     @Test func rangeFallbackUsesAbbreviatedUnits() throws {
         let rental = try RentalFixtures.vehicle(rangeMeters: 5470, batteryPercent: nil)
         let text = try #require(RentalFormat.fuelLabelText(for: rental))
-        #expect(text.contains("miles") == false)
-        #expect(text.contains("Kilometer") == false)
+
+        let abbreviated = MKDistanceFormatter()
+        abbreviated.unitStyle = .abbreviated
+        let spelledOut = MKDistanceFormatter()
+
+        #expect(text == abbreviated.string(fromDistance: 5470))
+        #expect(text != spelledOut.string(fromDistance: 5470))
     }
 
     @Test func noFuelDataYieldsNoLabel() throws {

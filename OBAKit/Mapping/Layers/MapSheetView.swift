@@ -233,6 +233,7 @@ struct MapSheetView: View {
                 Image(systemName: "bolt")
                     .foregroundStyle(Color(uiColor: .rentalPurple))
                     .frame(width: 28)
+                    .accessibilityHidden(true)
                 Text(OBALoc("map_sheet.minimum_range", value: "Minimum range", comment: "Map sheet row label for the rental minimum-range filter"))
             }
         }
@@ -253,6 +254,7 @@ struct MapSheetView: View {
             Image(systemName: layer.iconName)
                 .foregroundStyle(Color(uiColor: layer.tintColor))
                 .frame(width: 28)
+                .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(layer.title)
