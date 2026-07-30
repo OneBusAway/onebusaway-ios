@@ -204,6 +204,51 @@ final class MapRegionManagerTests: OBATestCase {
         return Application(config: config)
     }
 
+    /// A region that genuinely has no stops must publish the empty set rather
+    /// than leaving the previous region's stops in place. `mapRegionManager.stops`
+    /// is read directly by `RoutePickerViewModel` (which skips its own API
+    /// fallback when the set is non-empty) and `CurrentTripViewModel`, so a stale
+    /// set doesn't just look wrong on the map — it feeds those two the wrong
+    /// region's stops. Distinct from a nil `apiService`, where nothing was
+    /// fetched and nothing should be published.
+    @Test func `Schedule stops request publishes an empty set for a region with no stops`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = makeSeattleApplication(dataLoader: dataLoader)
+        let mgr = MapRegionManager(application: application)
+        clearStopCache(for: application)
+
+        let populated = MKCoordinateRegion(
+            center: CLLocationCoordinate2D(latitude: 47.653, longitude: -122.308),
+            latitudinalMeters: 8000,
+            longitudinalMeters: 8000
+        )
+        await mgr.requestStops(in: populated)
+        #expect(!mgr.stops.isEmpty)
+
+        // Now answer every stops request with an empty list, as the server does
+        // for a region with no transit, and settle somewhere far from the cache.
+        // `replaceMappedResponses` swaps atomically — clearing then re-mocking
+        // would leave a window in which an in-flight request hits `fatalError`.
+        dataLoader.replaceMappedResponses { loader in
+            self.stubRegions(dataLoader: loader)
+            self.stubAgenciesWithCoverage(dataLoader: loader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
+            Fixtures.stubAllAgencyAlerts(dataLoader: loader)
+            loader.mock(data: Fixtures.loadData(file: "stops_for_location_outofrange.json")) { request in
+                request.url?.path.contains("/api/where/stops-for-location.json") ?? false
+            }
+        }
+        let empty = MKCoordinateRegion(
+            center: CLLocationCoordinate2D(latitude: 46.5, longitude: -123.5),
+            latitudinalMeters: 5000,
+            longitudinalMeters: 5000
+        )
+
+        mgr.scheduleStopsRequest(in: empty)
+
+        await poll(until: { mgr.stops.isEmpty }, "stale stops were never cleared for the empty region")
+        #expect(mgr.stops.isEmpty)
+    }
+
     /// A settle over a recently-viewed area serves persisted stops immediately
     /// (before the debounce), then the network response refreshes them — so the
     /// first delivery is the cached subset and the last is the full network set.

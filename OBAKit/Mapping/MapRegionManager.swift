@@ -1368,9 +1368,12 @@ extension MapRegionManager {
 
     /// Fetches stops, caches them, and returns the set so callers can publish it
     /// directly when the cache can't (e.g. the database failed to open). Returns
-    /// `[]` when no API service is configured; rethrows network errors.
-    private func refreshStopCache(in region: MKCoordinateRegion) async throws -> [Stop] {
-        guard let apiService = application.apiService else { return [] }
+    /// `nil` when no API service is configured; rethrows network errors.
+    private func refreshStopCache(in region: MKCoordinateRegion) async throws -> [Stop]? {
+        // `nil` rather than `[]`: callers must be able to tell "no service, so
+        // nothing was attempted" from "the fetch succeeded and this region
+        // genuinely has no stops", because only the latter should be published.
+        guard let apiService = application.apiService else { return nil }
 
         await MainActor.run {
             notifyDelegatesDataLoadingStarted()
@@ -1461,16 +1464,13 @@ extension MapRegionManager {
                 // Refresh the cache, but don't publish the raw response —
                 // publishing the narrower network region between two band
                 // publishes flickers the band's outer pins.
-                let fetched = try await self.refreshStopCache(in: region)
+                // `nil` means no API service, so nothing was fetched and there is
+                // nothing to publish — bail rather than blanking a band that
+                // already has pins. An *empty* result is different: the fetch
+                // succeeded and this region really has no stops, so it must be
+                // published so `stops` stops describing the region we left.
+                guard let fetched = try await self.refreshStopCache(in: region) else { return }
                 guard !Task.isCancelled else { return }
-
-                // An empty `fetched` is never worth publishing: it's
-                // indistinguishable from `refreshStopCache` short-circuiting on a
-                // nil `apiService` (which happens transiently during a region
-                // switch), and publishing it would blank a band that already has
-                // pins. Leaving the existing stops up matches `serveCachedStops`,
-                // which also treats "nothing to show" as a no-op.
-                guard !fetched.isEmpty else { return }
 
                 if self.application.stopCacheRepository == nil {
                     // No cache to round-trip through, so publish directly —
