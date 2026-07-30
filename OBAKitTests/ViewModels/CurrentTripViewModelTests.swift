@@ -7,8 +7,8 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
-import Nimble
+import Foundation
+import Testing
 import CoreLocation
 @testable import OBAKit
 @testable import OBAKitCore
@@ -16,20 +16,21 @@ import CoreLocation
 // swiftlint:disable force_cast force_try
 
 /// Tests for `CurrentTripViewModel`.
-class CurrentTripViewModelTests: OBATestCase {
+@Suite(.serialized)
+final class CurrentTripViewModelTests: OBATestCase {
     /// Near stop 1_10020 in the fixture (NE 55th & 37th Ave NE).
     private let userLocation = CLLocation(latitude: 47.6685, longitude: -122.2883)
 
     private var queue: OperationQueue!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
+
         queue = OperationQueue()
         queue.maxConcurrentOperationCount = 1
     }
 
-    override func tearDown() async throws {
-        try await super.tearDown()
+    isolated deinit {
         queue.cancelAllOperations()
     }
 
@@ -99,24 +100,24 @@ class CurrentTripViewModelTests: OBATestCase {
 
     // MARK: - Initial State
 
-    @MainActor
-    func test_initialState_isLoading() throws {
+    @Test @MainActor
+    func `Initial state is loading`() throws {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = CurrentTripViewModel(application: app, route: route30())
 
         guard case .loading = viewModel.state else {
-            XCTFail("Expected initial state .loading, got \(viewModel.state)")
+            Issue.record("Expected initial state .loading, got \(viewModel.state)")
             return
         }
-        expect(viewModel.matchResults).to(beEmpty())
-        expect(viewModel.pendingNavigation).to(beNil())
+        #expect(viewModel.matchResults.isEmpty)
+        #expect(viewModel.pendingNavigation == nil)
     }
 
     // MARK: - handle(results:)
 
-    @MainActor
-    func test_handleResults_empty_setsNoResults() throws {
+    @Test @MainActor
+    func `Handle results empty sets no results`() throws {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = CurrentTripViewModel(application: app, route: route30())
@@ -124,15 +125,15 @@ class CurrentTripViewModelTests: OBATestCase {
         viewModel.handle(results: [])
 
         guard case .noResults = viewModel.state else {
-            XCTFail("Expected .noResults, got \(viewModel.state)")
+            Issue.record("Expected .noResults, got \(viewModel.state)")
             return
         }
-        expect(viewModel.matchResults).to(beEmpty())
-        expect(viewModel.pendingNavigation).to(beNil())
+        #expect(viewModel.matchResults.isEmpty)
+        #expect(viewModel.pendingNavigation == nil)
     }
 
-    @MainActor
-    func test_handleResults_single_setsPendingNavigation() throws {
+    @Test @MainActor
+    func `Handle results single sets pending navigation`() throws {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = CurrentTripViewModel(application: app, route: route30())
@@ -140,15 +141,15 @@ class CurrentTripViewModelTests: OBATestCase {
         let result = makeMatchResult()
         viewModel.handle(results: [result])
 
-        expect(viewModel.pendingNavigation).toNot(beNil())
-        expect(viewModel.pendingNavigation?.tripID) == result.arrivalDeparture.tripID
-        expect(viewModel.matchResults.count) == 1
+        #expect(viewModel.pendingNavigation != nil)
+        #expect(viewModel.pendingNavigation?.tripID == result.arrivalDeparture.tripID)
+        #expect(viewModel.matchResults.count == 1)
         // State moves to `.multipleResults` so the underlying view shows the
         // single match as a tappable row instead of a permanent spinner. The
         // consumer navigates away via `pendingNavigation`; if they dismiss the
         // modal, the list is what greets them, not a frozen loading indicator.
         guard case .multipleResults = viewModel.state else {
-            XCTFail("State should move to .multipleResults for single match, got \(viewModel.state)")
+            Issue.record("State should move to .multipleResults for single match, got \(viewModel.state)")
             return
         }
     }
@@ -158,15 +159,15 @@ class CurrentTripViewModelTests: OBATestCase {
     /// `handle(results:)`) that finds the SAME trip must not re-fire
     /// `pendingNavigation` — otherwise the user is snapped back to the modal
     /// they just dismissed every 20 seconds.
-    @MainActor
-    func test_handleResults_repeatSingleMatch_doesNotRefirePendingNavigation() throws {
+    @Test @MainActor
+    func `Handle results repeat single match does not refire pending navigation`() throws {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = CurrentTripViewModel(application: app, route: route30())
 
         let result = makeMatchResult()
         viewModel.handle(results: [result])
-        expect(viewModel.pendingNavigation).toNot(beNil())
+        #expect(viewModel.pendingNavigation != nil)
 
         // Consumer acknowledges by clearing pendingNavigation (mirrors what the
         // SwiftUI `.onChange(of: pendingNavigation)` handler does).
@@ -175,22 +176,22 @@ class CurrentTripViewModelTests: OBATestCase {
         // Same trip surfaces again on the next timer tick.
         viewModel.handle(results: [result])
 
-        expect(viewModel.pendingNavigation).to(beNil())
-        expect(viewModel.matchResults.count) == 1
+        #expect(viewModel.pendingNavigation == nil)
+        #expect(viewModel.matchResults.count == 1)
     }
 
     /// A user-initiated retry (`findVehicle()` with `resetState: true`, the
     /// default) must clear the "already presented" latch — otherwise tapping
     /// Try Again after dismissing a single-match modal would silently no-op.
-    @MainActor
-    func test_findVehicle_userInitiatedRetry_clearsPresentedLatch() async throws {
+    @Test @MainActor
+    func `Find vehicle user initiated retry clears presented latch`() async throws {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader, withLocation: false)
         let viewModel = CurrentTripViewModel(application: app, route: route30())
 
         let result = makeMatchResult()
         viewModel.handle(results: [result])
-        expect(viewModel.pendingNavigation).toNot(beNil())
+        #expect(viewModel.pendingNavigation != nil)
         viewModel.pendingNavigation = nil
 
         // User taps Try Again. resetState:true (default) resets to .loading
@@ -198,22 +199,22 @@ class CurrentTripViewModelTests: OBATestCase {
         // in .noLocation before ever calling handle(results:).
         viewModel.findVehicle()
         guard case .loading = viewModel.state else {
-            XCTFail("findVehicle() should reset to .loading, got \(viewModel.state)")
+            Issue.record("findVehicle() should reset to .loading, got \(viewModel.state)")
             return
         }
 
         // Simulate the next find returning the same trip — pendingNavigation
         // must fire again because the latch was cleared.
         viewModel.handle(results: [result])
-        expect(viewModel.pendingNavigation).toNot(beNil())
-        expect(viewModel.pendingNavigation?.tripID) == result.arrivalDeparture.tripID
+        #expect(viewModel.pendingNavigation != nil)
+        #expect(viewModel.pendingNavigation?.tripID == result.arrivalDeparture.tripID)
     }
 
     /// A background refresh (`findVehicle(resetState: false)`) must NOT reset
     /// the UI to `.loading` — the whole point of splitting the two entry points
     /// is to keep the user's screen intact between the 20-second ticks.
-    @MainActor
-    func test_findVehicle_backgroundRefresh_preservesState() async throws {
+    @Test @MainActor
+    func `Find vehicle background refresh preserves state`() async throws {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader, withLocation: false)
         let viewModel = CurrentTripViewModel(application: app, route: route30())
@@ -224,7 +225,7 @@ class CurrentTripViewModelTests: OBATestCase {
         let second = makeMatchResult()
         viewModel.handle(results: [first, second])
         guard case .multipleResults = viewModel.state else {
-            XCTFail("Precondition: expected .multipleResults, got \(viewModel.state)")
+            Issue.record("Precondition: expected .multipleResults, got \(viewModel.state)")
             return
         }
 
@@ -234,7 +235,7 @@ class CurrentTripViewModelTests: OBATestCase {
         // must NOT have flipped to `.loading` before the task runs.
         viewModel.findVehicle(resetState: false)
         guard case .multipleResults = viewModel.state else {
-            XCTFail("Background refresh must preserve .multipleResults, got \(viewModel.state)")
+            Issue.record("Background refresh must preserve .multipleResults, got \(viewModel.state)")
             return
         }
 
@@ -246,21 +247,21 @@ class CurrentTripViewModelTests: OBATestCase {
     /// Two `.error` cases compare equal iff their `localizedDescription`s match
     /// — SwiftUI's `.onChange(of: state)` depends on this to decide when to
     /// fire failure haptics, so a typo here would silently break the trigger.
-    @MainActor
-    func test_stateEquality_error_comparesByLocalizedDescription() throws {
+    @Test @MainActor
+    func `State equality error compares by localized description`() throws {
         let errorA1 = NSError(domain: "A", code: 1, userInfo: [NSLocalizedDescriptionKey: "boom"])
         let errorA2 = NSError(domain: "B", code: 2, userInfo: [NSLocalizedDescriptionKey: "boom"])
         let errorB = NSError(domain: "C", code: 3, userInfo: [NSLocalizedDescriptionKey: "different"])
 
-        expect(CurrentTripViewModel.State.error(errorA1)) == CurrentTripViewModel.State.error(errorA2)
-        expect(CurrentTripViewModel.State.error(errorA1)) != CurrentTripViewModel.State.error(errorB)
+        #expect(CurrentTripViewModel.State.error(errorA1) == CurrentTripViewModel.State.error(errorA2))
+        #expect(CurrentTripViewModel.State.error(errorA1) != CurrentTripViewModel.State.error(errorB))
         // Cross-case: `.error` never equals a non-error case.
-        expect(CurrentTripViewModel.State.error(errorA1)) != CurrentTripViewModel.State.loading
-        expect(CurrentTripViewModel.State.error(errorA1)) != CurrentTripViewModel.State.multipleResults
+        #expect(CurrentTripViewModel.State.error(errorA1) != CurrentTripViewModel.State.loading)
+        #expect(CurrentTripViewModel.State.error(errorA1) != CurrentTripViewModel.State.multipleResults)
     }
 
-    @MainActor
-    func test_handleResults_multiple_setsMultipleResults() throws {
+    @Test @MainActor
+    func `Handle results multiple sets multiple results`() throws {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = CurrentTripViewModel(application: app, route: route30())
@@ -270,17 +271,17 @@ class CurrentTripViewModelTests: OBATestCase {
         viewModel.handle(results: [first, second])
 
         guard case .multipleResults = viewModel.state else {
-            XCTFail("Expected .multipleResults, got \(viewModel.state)")
+            Issue.record("Expected .multipleResults, got \(viewModel.state)")
             return
         }
-        expect(viewModel.matchResults.count) == 2
-        expect(viewModel.pendingNavigation).to(beNil())
+        #expect(viewModel.matchResults.count == 2)
+        #expect(viewModel.pendingNavigation == nil)
     }
 
     // MARK: - handle(error:)
 
-    @MainActor
-    func test_handleError_noRealtimeData_setsNoRealtime() throws {
+    @Test @MainActor
+    func `Handle error no realtime data sets no realtime`() throws {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = CurrentTripViewModel(application: app, route: route30())
@@ -288,13 +289,13 @@ class CurrentTripViewModelTests: OBATestCase {
         viewModel.handle(error: NearbyTripMatcher.MatchError.noRealtimeData)
 
         guard case .noRealtime = viewModel.state else {
-            XCTFail("Expected .noRealtime, got \(viewModel.state)")
+            Issue.record("Expected .noRealtime, got \(viewModel.state)")
             return
         }
     }
 
-    @MainActor
-    func test_handleError_genericError_setsErrorState() throws {
+    @Test @MainActor
+    func `Handle error generic error sets error state`() throws {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = CurrentTripViewModel(application: app, route: route30())
@@ -303,16 +304,16 @@ class CurrentTripViewModelTests: OBATestCase {
         viewModel.handle(error: underlying)
 
         guard case .error(let surfaced) = viewModel.state else {
-            XCTFail("Expected .error, got \(viewModel.state)")
+            Issue.record("Expected .error, got \(viewModel.state)")
             return
         }
-        expect((surfaced as NSError).code) == 42
+        #expect((surfaced as NSError).code == 42)
     }
 
     /// `noStopsNearby` is a `MatchError` but not `noRealtimeData` — it must fall through
     /// to the generic `.error` branch, not be silently mapped to `.noRealtime`.
-    @MainActor
-    func test_handleError_noStopsNearby_fallsThroughToError() throws {
+    @Test @MainActor
+    func `Handle error no stops nearby falls through to error`() throws {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = CurrentTripViewModel(application: app, route: route30())
@@ -320,7 +321,7 @@ class CurrentTripViewModelTests: OBATestCase {
         viewModel.handle(error: NearbyTripMatcher.MatchError.noStopsNearby)
 
         guard case .error = viewModel.state else {
-            XCTFail("Expected .error for .noStopsNearby, got \(viewModel.state)")
+            Issue.record("Expected .error for .noStopsNearby, got \(viewModel.state)")
             return
         }
     }
@@ -330,34 +331,34 @@ class CurrentTripViewModelTests: OBATestCase {
     /// When the UIKit consumer cannot perform single-match navigation (no embedded
     /// `UINavigationController`), the VM falls back to the disambiguation list so
     /// the user can still tap through. `matchResults` is preserved from `handle(results:)`.
-    @MainActor
-    func test_pendingNavigationUnavailable_fallsBackToMultipleResults() throws {
+    @Test @MainActor
+    func `Pending navigation unavailable falls back to multiple results`() throws {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = CurrentTripViewModel(application: app, route: route30())
 
         let result = makeMatchResult()
         viewModel.handle(results: [result])
-        expect(viewModel.pendingNavigation).toNot(beNil())
-        expect(viewModel.matchResults.count) == 1
+        #expect(viewModel.pendingNavigation != nil)
+        #expect(viewModel.matchResults.count == 1)
 
         viewModel.pendingNavigationUnavailable()
 
         guard case .multipleResults = viewModel.state else {
-            XCTFail("Expected .multipleResults, got \(viewModel.state)")
+            Issue.record("Expected .multipleResults, got \(viewModel.state)")
             return
         }
-        expect(viewModel.pendingNavigation).to(beNil())
+        #expect(viewModel.pendingNavigation == nil)
         // The single match must still be available so the user can tap through.
-        expect(viewModel.matchResults.count) == 1
+        #expect(viewModel.matchResults.count == 1)
     }
 
     // MARK: - Lifecycle
 
     /// `start()` must kick off `findVehicle()` — guards against a future refactor
     /// accidentally turning it into a no-op (e.g. only starting the timer).
-    @MainActor
-    func test_start_invokesFindVehicle() async throws {
+    @Test @MainActor
+    func `Start invokes find vehicle`() async throws {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader, withLocation: false)
         let viewModel = CurrentTripViewModel(application: app, route: route30())
@@ -366,7 +367,7 @@ class CurrentTripViewModelTests: OBATestCase {
         for _ in 0..<5 { await Task.yield() }
 
         guard case .noLocation = viewModel.state else {
-            XCTFail("Expected start() to kick findVehicle() into the no-location branch, got \(viewModel.state)")
+            Issue.record("Expected start() to kick findVehicle() into the no-location branch, got \(viewModel.state)")
             return
         }
 
@@ -375,8 +376,8 @@ class CurrentTripViewModelTests: OBATestCase {
 
     // MARK: - findVehicle()
 
-    @MainActor
-    func test_findVehicle_noLocation_setsNoLocationState() async throws {
+    @Test @MainActor
+    func `Find vehicle no location sets no location state`() async throws {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader, withLocation: false)
         let viewModel = CurrentTripViewModel(application: app, route: route30())
@@ -385,7 +386,7 @@ class CurrentTripViewModelTests: OBATestCase {
         for _ in 0..<5 { await Task.yield() }
 
         guard case .noLocation = viewModel.state else {
-            XCTFail("Expected .noLocation, got \(viewModel.state)")
+            Issue.record("Expected .noLocation, got \(viewModel.state)")
             return
         }
     }

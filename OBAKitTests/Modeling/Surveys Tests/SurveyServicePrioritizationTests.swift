@@ -5,27 +5,28 @@
 //  Created by Mohamed Sliem on 06/12/2025.
 //
 
-import XCTest
-import Nimble
+import Foundation
+import Testing
 @testable import OBAKitCore
 
+@Suite(.serialized)
 final class SurveyServicePrioritizationTests: OBATestCase {
 
     nonisolated(unsafe) private var surveyService: SurveyService!
     nonisolated(unsafe) private var testUserDefaults: UserDefaults!
     nonisolated(unsafe) private var testUserDataStore: UserDefaultsStore!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
+
         testUserDefaults = buildUserDefaults(suiteName: "\(userDefaultsSuiteName).prioritization")
         testUserDefaults.removePersistentDomain(forName: "\(userDefaultsSuiteName).prioritization")
         testUserDataStore = UserDefaultsStore(userDefaults: testUserDefaults)
         surveyService = SurveyService(apiService: nil, userDataStore: testUserDataStore)
     }
 
-    override func tearDown() async throws {
+    isolated deinit {
         testUserDefaults.removePersistentDomain(forName: "\(userDefaultsSuiteName).prioritization")
-        try await super.tearDown()
     }
 
     // MARK: - Helpers
@@ -69,25 +70,25 @@ final class SurveyServicePrioritizationTests: OBATestCase {
 
     // MARK: - Empty/No Questions
 
-    func test_findSurveyForMap_whenEmpty_returnsNil() async {
+    @Test func `Find survey for map when empty returns nil`() async {
         let service = await fetchAndReturnService(surveys: [])
         let result = service.findSurveyForMap()
-        expect(result).to(beNil())
+        #expect(result == nil)
     }
 
-    func test_findSurveyForStop_whenNoQuestions_returnsNil() async {
+    @Test func `Find survey for stop when no questions returns nil`() async {
         let surveys = [
             makeSurvey(id: 0, showOnStops: false),
             makeSurvey(id: 1, showOnMap: false),
         ]
         let service = await fetchAndReturnService(surveys: surveys)
         let result = service.findSurveyForStop(stopID: "STOP_A", routeIDs: [])
-        expect(result).to(beNil())
+        #expect(result == nil)
     }
 
     // MARK: - Map Context
 
-    func test_findSurveyForMap_returnsMapVisibleSurvey() async {
+    @Test func `Find survey for map returns map visible survey`() async {
         let surveys = [
             makeSurvey(id: 0, showOnStops: false),
             makeSurvey(id: 1, showOnMap: false),
@@ -95,10 +96,10 @@ final class SurveyServicePrioritizationTests: OBATestCase {
         ]
         let service = await fetchAndReturnService(surveys: surveys)
         let result = service.findSurveyForMap()
-        expect(result?.id).to(equal(2))
+        #expect(result?.id == 2)
     }
 
-    func test_findSurveyForMap_returnsFirstVisible() async {
+    @Test func `Find survey for map returns first visible`() async {
         let surveys = [
             makeSurvey(id: 0, showOnStops: false, questions: makeQuestions(count: 5)),
             makeSurvey(id: 1, showOnMap: false, questions: makeQuestions(count: 4)),
@@ -106,63 +107,63 @@ final class SurveyServicePrioritizationTests: OBATestCase {
         ]
         let service = await fetchAndReturnService(surveys: surveys)
         let result = service.findSurveyForMap()
-        expect(result?.id).to(equal(0))
+        #expect(result?.id == 0)
     }
 
-    func test_findSurveyForMap_whenNoMapVisible_returnsNil() async {
+    @Test func `Find survey for map when no map visible returns nil`() async {
         let surveys = [
             makeSurvey(id: 0, showOnMap: false, questions: makeQuestions()),
             makeSurvey(id: 1, showOnMap: false, questions: makeQuestions()),
         ]
         let service = await fetchAndReturnService(surveys: surveys)
         let result = service.findSurveyForMap()
-        expect(result).to(beNil())
+        #expect(result == nil)
     }
 
     // MARK: - Stop Context
 
-    func test_findSurveyForStop_returnsStopVisibleSurvey() async {
+    @Test func `Find survey for stop returns stop visible survey`() async {
         let surveys = [
             makeSurvey(id: 0, showOnStops: false, questions: makeQuestions()),
             makeSurvey(id: 1, questions: makeQuestions()),
         ]
         let service = await fetchAndReturnService(surveys: surveys)
         let result = service.findSurveyForStop(stopID: "STOP_A", routeIDs: [])
-        expect(result?.id).to(equal(1))
+        #expect(result?.id == 1)
     }
 
-    func test_findSurveyForStop_matchesStopInList() async {
+    @Test func `Find survey for stop matches stop in list`() async {
         let surveys = [
             makeSurvey(id: 0, stopList: ["STOP_A", "STOP_B"], questions: makeQuestions()),
             makeSurvey(id: 1, stopList: ["STOP_C"], questions: makeQuestions()),
         ]
         let service = await fetchAndReturnService(surveys: surveys)
         let result = service.findSurveyForStop(stopID: "STOP_C", routeIDs: [])
-        expect(result?.id).to(equal(1))
+        #expect(result?.id == 1)
     }
 
-    func test_findSurveyForStop_matchesRouteID() async {
+    @Test func `Find survey for stop matches route ID`() async {
         let surveys = [
             makeSurvey(id: 0, stopList: ["STOP_X"], routesList: ["1_300"], questions: makeQuestions()),
             makeSurvey(id: 1, stopList: ["STOP_X"], routesList: ["1_309"], questions: makeQuestions()),
         ]
         let service = await fetchAndReturnService(surveys: surveys)
         let result = service.findSurveyForStop(stopID: "STOP_D", routeIDs: ["1_309", "1_315"])
-        expect(result?.id).to(equal(1))
+        #expect(result?.id == 1)
     }
 
-    func test_findSurveyForStop_noMatch_returnsNil() async {
+    @Test func `Find survey for stop no match returns nil`() async {
         let surveys = [
             makeSurvey(id: 0, stopList: ["STOP_A"], routesList: ["1_300"], questions: makeQuestions()),
         ]
         let service = await fetchAndReturnService(surveys: surveys)
         let result = service.findSurveyForStop(stopID: "STOP_Z", routeIDs: ["1_999"])
-        expect(result).to(beNil())
+        #expect(result == nil)
     }
 
     // MARK: - Priority: Always Visible
 
-    func test_alwaysVisible_notCompleted_returnedImmediately() async {
+    @Test func `Always visible not completed returned immediately`() async {
         let store = UserDefaultsStore(userDefaults: testUserDefaults)
         let userID = store.surveyUserIdentifier
         store.markSurveyCompleted(surveyId: 0, userIdentifier: userID)
@@ -174,10 +175,10 @@ final class SurveyServicePrioritizationTests: OBATestCase {
         ]
         let service = await fetchAndReturnService(surveys: surveys, userDataStore: store)
         let result = service.findSurveyForMap()
-        expect(result?.id).to(equal(1))
+        #expect(result?.id == 1)
     }
 
-    func test_alwaysVisible_allCompleted_returnsNil() async {
+    @Test func `Always visible all completed returns nil`() async {
         let store = UserDefaultsStore(userDefaults: testUserDefaults)
         let userID = store.surveyUserIdentifier
         store.markSurveyCompleted(surveyId: 0, userIdentifier: userID)
@@ -189,12 +190,12 @@ final class SurveyServicePrioritizationTests: OBATestCase {
         ]
         let service = await fetchAndReturnService(surveys: surveys, userDataStore: store)
         let result = service.findSurveyForMap()
-        expect(result).to(beNil())
+        #expect(result == nil)
     }
 
     // MARK: - Priority: Multiple Responses
 
-    func test_multipleResponses_returnsEvenWhenCompleted() async {
+    @Test func `Multiple responses returns even when completed`() async {
         let store = UserDefaultsStore(userDefaults: testUserDefaults)
         let userID = store.surveyUserIdentifier
         store.markSurveyCompleted(surveyId: 0, userIdentifier: userID)
@@ -206,12 +207,12 @@ final class SurveyServicePrioritizationTests: OBATestCase {
         ]
         let service = await fetchAndReturnService(surveys: surveys, userDataStore: store)
         let result = service.findSurveyForMap()
-        expect(result?.id).to(equal(1))
+        #expect(result?.id == 1)
     }
 
     // MARK: - Priority: One-Time Incomplete
 
-    func test_oneTimeIncomplete_prioritizedOverMultipleResponses() async {
+    @Test func `One time incomplete prioritized over multiple responses`() async {
         let surveys = [
             makeSurvey(id: 0, multipleResponses: true, alwaysVisible: true, questions: makeQuestions()),
             makeSurvey(id: 1, questions: makeQuestions()),
@@ -219,10 +220,10 @@ final class SurveyServicePrioritizationTests: OBATestCase {
         let service = await fetchAndReturnService(surveys: surveys)
         let result = service.findSurveyForMap()
         // One-time incomplete (id:1) should be prioritized over multiple-response (id:0)
-        expect(result?.id).to(equal(1))
+        #expect(result?.id == 1)
     }
 
-    func test_allCompleted_regularSurveys_returnsNil() async {
+    @Test func `All completed regular surveys returns nil`() async {
         let store = UserDefaultsStore(userDefaults: testUserDefaults)
         let userID = store.surveyUserIdentifier
         store.markSurveyCompleted(surveyId: 0, userIdentifier: userID)
@@ -234,12 +235,12 @@ final class SurveyServicePrioritizationTests: OBATestCase {
         ]
         let service = await fetchAndReturnService(surveys: surveys, userDataStore: store)
         let result = service.findSurveyForMap()
-        expect(result).to(beNil())
+        #expect(result == nil)
     }
 
     // MARK: - Issue 1: Expired surveys should not be returned
 
-    func test_findSurveyForStop_expiredSurvey_returnsNil() async {
+    @Test func `Find survey for stop expired survey returns nil`() async {
         let surveys = [
             makeSurvey(
                 id: 0,
@@ -252,10 +253,10 @@ final class SurveyServicePrioritizationTests: OBATestCase {
         let service = await fetchAndReturnService(surveys: surveys)
         // Expired survey should not be found, even though showOnStops is true
         let result = service.findSurveyForStop(stopID: "STOP_A", routeIDs: [])
-        expect(result).to(beNil())
+        #expect(result == nil)
     }
 
-    func test_findSurveyForMap_expiredSurvey_returnsNil() async {
+    @Test func `Find survey for map expired survey returns nil`() async {
         let surveys = [
             makeSurvey(
                 id: 0,
@@ -267,12 +268,12 @@ final class SurveyServicePrioritizationTests: OBATestCase {
         ]
         let service = await fetchAndReturnService(surveys: surveys)
         let result = service.findSurveyForMap()
-        expect(result).to(beNil())
+        #expect(result == nil)
     }
 
     // MARK: - Mark For Later
 
-    func test_markedForLater_showsAgainAtCorrectLaunchCount() async {
+    @Test func `Marked for later shows again at correct launch count`() async {
         let store = UserDefaultsStore(userDefaults: testUserDefaults)
         let userID = store.surveyUserIdentifier
         store.markSurveyCompleted(surveyId: 0, userIdentifier: userID)
@@ -288,7 +289,7 @@ final class SurveyServicePrioritizationTests: OBATestCase {
         ]
         let service = await fetchAndReturnService(surveys: surveys, userDataStore: store)
         let result = service.findSurveyForMap()
-        expect(result?.id).to(equal(0))
+        #expect(result?.id == 0)
     }
 }
 

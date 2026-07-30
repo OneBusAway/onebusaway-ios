@@ -83,23 +83,37 @@ scripts/extract_strings               # Extract strings for localization
 
 ### Applications
 - `Apps/OneBusAway/`: Main OneBusAway branded app
-- `Apps/MTA/`: MTA-specific variant
 - `Apps/KiedyBus/`: Polish transit app variant
 - `Apps/Shared/`: Common configuration and analytics
 
 ### Testing
-- `OBAKitTests/`: Unit tests for all frameworks
+- `OBAKitTests/`: Unit tests for all frameworks. Written with **Swift Testing**
+  (`@Suite` / `@Test` / `#expect`), not XCTest. The single exception is
+  `PolylinePerformanceTests`, which stays on XCTest because `measure` has no
+  Swift Testing equivalent — and is marked `nonisolated`, without which the
+  target cannot build in the Swift 6 language mode.
+- Suites are marked `.serialized`, which serializes the tests *within* each
+  suite — that is the ordering XCTest gave them, and what the suites were
+  written against. It does **not** stop separate suites running concurrently,
+  so anything process-global (`NSTimeZone.default`, `UserDefaults.standard`,
+  singletons) still needs handling on its own terms; see the GMT pin in
+  `OBAKitTests/Helpers/OBATestCase.swift` for the pattern. Whole-target
+  serialization, where it holds, comes from `parallelizable: false` on the test
+  target in `Apps/Shared/app_shared.yml`.
+- `OBATestCase` is a plain `@MainActor` base class, not an `XCTestCase`. Suites
+  that need its fixtures inherit it and override `init() async throws` (where
+  `setUp` used to go); teardown goes in `deinit`.
 
 ## Third-Party Dependencies
 
 **UI Libraries**: BulletinBoard, Eureka, FloatingPanel, MarqueeLabel
 **Networking**: CocoaLumberjack, Hyperconnectivity, SwiftProtobuf
-**Testing**: Nimble
+**Testing**: Swift Testing (first-party; Nimble was removed)
 
 ## Configuration & Deployment
 
 - **Target iOS Version**: 18.0+
-- **Swift Version**: Swift 5/6 language modes, current Xcode toolchain (modern syntax like shorthand optional binding and `URL.host()` is fine — the iOS 18 deployment target exceeds their requirements)
+- **Swift Version**: every target builds in the **Swift 6 language mode** with main-actor default isolation (`Apps/Shared/app_shared.yml`); OBAKitCore is the one target that pins `SWIFT_DEFAULT_ACTOR_ISOLATION` back to `nonisolated`. The five concurrency diagnostic groups are escalated to errors, so a data-race warning fails the build. Modern syntax (shorthand optional binding, `URL.host()`) is fine — the iOS 18 deployment target exceeds their requirements.
 - **Package Manager**: Swift Package Manager
 - **Project Generation**: XcodeGen from YAML configurations
 - **Localization**: in-repo .strings files (OBAKit/Strings, OBAKitCore/Strings)

@@ -7,25 +7,26 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
-import Nimble
+import Foundation
+import Testing
 import Combine
 @testable import OBAKit
 @testable import OBAKitCore
 
 /// Tests for `MapPanelViewModel`: nearby-stops publishing, alert reads from the store,
 /// and the search-mode transitions that drive `requestedPanelDetent`.
-class MapPanelViewModelTests: OBATestCase {
+@Suite(.serialized)
+final class MapPanelViewModelTests: OBATestCase {
     var queue: OperationQueue!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
+
         queue = OperationQueue()
         queue.maxConcurrentOperationCount = 1
     }
 
-    override func tearDown() async throws {
-        try await super.tearDown()
+    isolated deinit {
         queue.cancelAllOperations()
     }
 
@@ -68,13 +69,13 @@ class MapPanelViewModelTests: OBATestCase {
     // MARK: - Nearby Stops
 
     /// `updateNearbyStops(_:)` publishes the new list on `$nearbyStops`.
-    @MainActor
-    func test_updateNearbyStops_publishes() throws {
+    @Test @MainActor
+    func `Update nearby stops publishes`() throws {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
 
         let viewModel = MapPanelViewModel(application: app)
-        expect(viewModel.nearbyStops).to(beEmpty())
+        #expect(viewModel.nearbyStops.isEmpty)
 
         var emissions: [[Stop]] = []
         let cancellable = viewModel.$nearbyStops.sink { emissions.append($0) }
@@ -83,11 +84,11 @@ class MapPanelViewModelTests: OBATestCase {
         let stop = try makeStop()
         viewModel.updateNearbyStops([stop])
 
-        expect(viewModel.nearbyStops.count) == 1
-        expect(viewModel.nearbyStops.first?.id) == "1_TEST"
+        #expect(viewModel.nearbyStops.count == 1)
+        #expect(viewModel.nearbyStops.first?.id == "1_TEST")
         // Initial empty value on subscription + the update.
-        expect(emissions.count) == 2
-        expect(emissions.last?.count) == 1
+        #expect(emissions.count == 2)
+        #expect(emissions.last?.count == 1)
     }
 
     // MARK: - Alerts
@@ -95,30 +96,30 @@ class MapPanelViewModelTests: OBATestCase {
     /// `refreshAlerts()` mirrors the alerts store's `recentHighSeverityAlerts`.
     /// With a fresh, unpopulated store both are empty — the assertion proves the VM reads
     /// through to the store rather than holding stale local state.
-    @MainActor
-    func test_refreshAlerts_readsFromStore() {
+    @Test @MainActor
+    func `Refresh alerts reads from store`() {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
 
         let viewModel = MapPanelViewModel(application: app)
         viewModel.refreshAlerts()
 
-        expect(viewModel.highSeverityAlerts.count) == app.alertsStore.recentHighSeverityAlerts.count
-        expect(viewModel.highSeverityAlerts).to(beEmpty())
+        #expect(viewModel.highSeverityAlerts.count == app.alertsStore.recentHighSeverityAlerts.count)
+        #expect(viewModel.highSeverityAlerts.isEmpty)
     }
 
     /// `refreshAlerts()` reflects non-empty store state and maps every qualifying alert.
     /// Injects a recent high-severity alert directly, bypassing the network fetch so
     /// the test is not sensitive to fixture timestamp decay.
-    @MainActor
-    func test_refreshAlerts_nonEmptyStore() throws {
+    @Test @MainActor
+    func `Refresh alerts non empty store`() throws {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
 
         // Build a high-severity alert with a start time of "now" so it passes the
         // 8-hour recency filter in `recentHighSeverityAlerts`.
         let agencies = try Fixtures.loadRESTAPIPayload(type: [AgencyWithCoverage].self, fileName: "agencies_with_coverage.json")
-        let agency = try XCTUnwrap(agencies.first)
+        let agency = try #require(agencies.first)
 
         var period = TransitRealtime_TimeRange()
         period.start = UInt64(Date().timeIntervalSince1970)
@@ -141,32 +142,32 @@ class MapPanelViewModelTests: OBATestCase {
         let viewModel = MapPanelViewModel(application: app)
         viewModel.refreshAlerts()
 
-        expect(viewModel.highSeverityAlerts.count) == 1
-        expect(viewModel.highSeverityAlerts.count) == app.alertsStore.recentHighSeverityAlerts.count
+        #expect(viewModel.highSeverityAlerts.count == 1)
+        #expect(viewModel.highSeverityAlerts.count == app.alertsStore.recentHighSeverityAlerts.count)
     }
 
     // MARK: - Search Mode → Panel Detent
 
     /// `enterSearchMode()` requests the full detent; `exitSearchMode()` returns to the tip.
-    @MainActor
-    func test_searchMode_drivesRequestedPanelDetent() {
+    @Test @MainActor
+    func `Search mode drives requested panel detent`() {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
 
         let viewModel = MapPanelViewModel(application: app)
-        expect(viewModel.requestedPanelDetent) == .tip  // default
+        #expect(viewModel.requestedPanelDetent == .tip)  // default
 
         var emissions: [PanelDetent] = []
         let cancellable = viewModel.$requestedPanelDetent.sink { emissions.append($0) }
         defer { cancellable.cancel() }
 
         viewModel.enterSearchMode()
-        expect(viewModel.requestedPanelDetent) == .full
+        #expect(viewModel.requestedPanelDetent == .full)
 
         viewModel.exitSearchMode()
-        expect(viewModel.requestedPanelDetent) == .tip
+        #expect(viewModel.requestedPanelDetent == .tip)
 
         // Initial .tip + .full + .tip.
-        expect(emissions) == [.tip, .full, .tip]
+        #expect(emissions == [.tip, .full, .tip])
     }
 }

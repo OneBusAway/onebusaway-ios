@@ -7,8 +7,8 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
-import Nimble
+import Foundation
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -21,17 +21,18 @@ import Nimble
 /// hoisting a mutation out of its critical section should surface here under Thread
 /// Sanitizer (preferred CI run) — and without TSan, an unhandled race typically
 /// still manifests as a crash or a count mismatch when the fanout is wide enough.
-class AgencyAlertsStoreConcurrencyTests: OBATestCase {
+@Suite(.serialized)
+final class AgencyAlertsStoreConcurrencyTests: OBATestCase {
     var queue: OperationQueue!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
+
         queue = OperationQueue()
         queue.maxConcurrentOperationCount = 1
     }
 
-    override func tearDown() async throws {
-        try await super.tearDown()
+    isolated deinit {
         queue.cancelAllOperations()
     }
 
@@ -69,7 +70,7 @@ class AgencyAlertsStoreConcurrencyTests: OBATestCase {
     /// the 8-hour recency filter exercised by `recentHighSeverityAlerts`.
     private func makeRecentHighSeverityAlerts(count: Int) throws -> [AgencyAlert] {
         let agencies = try Fixtures.loadRESTAPIPayload(type: [AgencyWithCoverage].self, fileName: "agencies_with_coverage.json")
-        let agency = try XCTUnwrap(agencies.first)
+        let agency = try #require(agencies.first)
 
         var period = TransitRealtime_TimeRange()
         period.start = UInt64(Date().timeIntervalSince1970)
@@ -96,8 +97,8 @@ class AgencyAlertsStoreConcurrencyTests: OBATestCase {
     /// `markAlertRead`, `isAlertUnread`, `recentHighSeverityAlerts`, and `agencyAlerts`.
     /// If the lock is missing or held inconsistently, TSan will flag the data race;
     /// without TSan, a corrupted `Set<AgencyAlert>` typically crashes the run.
-    @MainActor
-    func test_concurrentReadsAndWrites_doNotCrashOrCorruptState() async throws {
+    @Test @MainActor
+    func `Concurrent reads and writes do not crash or corrupt state`() async throws {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         let store = app.alertsStore
@@ -106,8 +107,8 @@ class AgencyAlertsStoreConcurrencyTests: OBATestCase {
         store.insertAlerts(alerts)
 
         // Sanity baseline before the fanout: every seeded alert is present and unread.
-        expect(store.recentHighSeverityAlerts.count) == alerts.count
-        expect(store.recentUnreadHighSeverityAlerts.count) == alerts.count
+        #expect(store.recentHighSeverityAlerts.count == alerts.count)
+        #expect(store.recentUnreadHighSeverityAlerts.count == alerts.count)
 
         // 25 alerts × 4 task groups × ~25 inner iterations is wide enough that an
         // unsynchronized read of `alerts`/`readAlertIDs` races on a real CPU.
@@ -139,10 +140,10 @@ class AgencyAlertsStoreConcurrencyTests: OBATestCase {
 
         // After the fanout, every alert must be marked read exactly once (idempotent
         // inserts into a `Set`), and the alert set itself must be intact.
-        expect(store.recentHighSeverityAlerts.count) == alerts.count
-        expect(store.recentUnreadHighSeverityAlerts).to(beEmpty())
+        #expect(store.recentHighSeverityAlerts.count == alerts.count)
+        #expect(store.recentUnreadHighSeverityAlerts.isEmpty)
         for alert in alerts {
-            expect(store.isAlertUnread(alert)).to(beFalse())
+            #expect(!store.isAlertUnread(alert))
         }
     }
 }

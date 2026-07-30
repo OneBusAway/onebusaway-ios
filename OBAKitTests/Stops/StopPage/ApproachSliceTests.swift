@@ -7,7 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
+import Testing
 @testable import OBAKit
 import OBAKitCore
 
@@ -21,62 +21,63 @@ private func stops(_ ids: [String]) -> [StubStop] {
 }
 
 @MainActor
-final class ApproachSliceTests: XCTestCase {
+@Suite(.serialized)
+final class ApproachSliceTests {
 
-    func test_takesFourUpstreamStopsPlusUserStop() {
+    @Test func `Takes four upstream stops plus user stop`() {
         let slice = ApproachSlice.make(stopTimes: stops(["a", "b", "c", "d", "e", "f", "user"]), userStopID: "user", closestStopID: "d")
-        XCTAssertEqual(slice?.stops.map(\.stopID), ["c", "d", "e", "f", "user"])
-        XCTAssertEqual(slice?.vehicleIndex, 1) // "d" within the slice
-        XCTAssertEqual(slice?.skippedStopCount, 0)
+        #expect(slice?.stops.map(\.stopID) == ["c", "d", "e", "f", "user"])
+        #expect(slice?.vehicleIndex == 1) // "d" within the slice
+        #expect(slice?.skippedStopCount == 0)
     }
 
-    func test_shortTrip_usesAllAvailableUpstream() {
+    @Test func `Short trip uses all available upstream`() {
         let slice = ApproachSlice.make(stopTimes: stops(["a", "user"]), userStopID: "user", closestStopID: "a")
-        XCTAssertEqual(slice?.stops.map(\.stopID), ["a", "user"])
-        XCTAssertEqual(slice?.vehicleIndex, 0)
-        XCTAssertEqual(slice?.skippedStopCount, 0)
+        #expect(slice?.stops.map(\.stopID) == ["a", "user"])
+        #expect(slice?.vehicleIndex == 0)
+        #expect(slice?.skippedStopCount == 0)
     }
 
-    func test_vehiclePastUserStop_returnsNil() {
+    @Test func `Vehicle past user stop returns nil`() {
         // Vehicle beyond the user's stop: timeline is meaningless, drop it.
         let slice = ApproachSlice.make(stopTimes: stops(["a", "user", "b"]), userStopID: "user", closestStopID: "b")
-        XCTAssertNil(slice)
+        #expect(slice == nil)
     }
 
-    func test_vehicleBeyondWindow_pinsVehicleStopAndElidesGap() {
+    @Test func `Vehicle beyond window pins vehicle stop and elides gap`() {
         // Vehicle is upstream but further back than the 4-stop window: its
         // stop pins to the top, "b"/"c" are elided, the 3 stops nearest the
         // user remain.
         let slice = ApproachSlice.make(stopTimes: stops(["a", "b", "c", "d", "e", "f", "user"]), userStopID: "user", closestStopID: "a")
-        XCTAssertEqual(slice?.stops.map(\.stopID), ["a", "d", "e", "f", "user"])
-        XCTAssertEqual(slice?.vehicleIndex, 0)
-        XCTAssertEqual(slice?.skippedStopCount, 2)
+        #expect(slice?.stops.map(\.stopID) == ["a", "d", "e", "f", "user"])
+        #expect(slice?.vehicleIndex == 0)
+        #expect(slice?.skippedStopCount == 2)
     }
 
-    func test_vehicleAtWindowEdge_hasNoGap() {
+    @Test func `Vehicle at window edge has no gap`() {
         // Vehicle exactly 4 stops upstream sits at the top of the contiguous
         // window; nothing is elided.
         let slice = ApproachSlice.make(stopTimes: stops(["a", "b", "c", "d", "e", "f", "user"]), userStopID: "user", closestStopID: "c")
-        XCTAssertEqual(slice?.stops.map(\.stopID), ["c", "d", "e", "f", "user"])
-        XCTAssertEqual(slice?.vehicleIndex, 0)
-        XCTAssertEqual(slice?.skippedStopCount, 0)
+        #expect(slice?.stops.map(\.stopID) == ["c", "d", "e", "f", "user"])
+        #expect(slice?.vehicleIndex == 0)
+        #expect(slice?.skippedStopCount == 0)
     }
 
-    func test_unknownClosestStop_hasNilVehicleIndex() {
+    @Test func `Unknown closest stop has nil vehicle index`() {
         // closestStopID not on this trip at all: show the window, no bus dot.
         let slice = ApproachSlice.make(stopTimes: stops(["a", "b", "c", "d", "e", "f", "user"]), userStopID: "user", closestStopID: "zzz")
-        XCTAssertEqual(slice?.stops.map(\.stopID), ["c", "d", "e", "f", "user"])
-        XCTAssertNil(slice?.vehicleIndex)
-        XCTAssertEqual(slice?.skippedStopCount, 0)
+        #expect(slice?.stops.map(\.stopID) == ["c", "d", "e", "f", "user"])
+        #expect(slice?.vehicleIndex == nil)
+        #expect(slice?.skippedStopCount == 0)
     }
 
-    func test_userStopMissing_returnsNil() {
-        XCTAssertNil(ApproachSlice.make(stopTimes: stops(["a", "b"]), userStopID: "user", closestStopID: "a"))
+    @Test func `User stop missing returns nil`() {
+        #expect(ApproachSlice.make(stopTimes: stops(["a", "b"]), userStopID: "user", closestStopID: "a") == nil)
     }
 
     // MARK: - Loop routes
 
-    func test_loopRoute_windowsAroundTheDeparturesOwnVisit() {
+    @Test func `Loop route windows around the departures own visit`() {
         // "user" is visited twice (indices 1 and 5). The departure is for the
         // second visit, and the vehicle is between the two — so the window must
         // lead up to index 5, not collapse onto the first visit.
@@ -86,12 +87,12 @@ final class ApproachSliceTests: XCTestCase {
             userStopSequence: 5,
             closestStopID: "c"
         )
-        XCTAssertEqual(slice?.stops.map(\.stopID), ["user", "b", "c", "d", "user"])
-        XCTAssertEqual(slice?.vehicleIndex, 2) // "c"
-        XCTAssertEqual(slice?.skippedStopCount, 0)
+        #expect(slice?.stops.map(\.stopID) == ["user", "b", "c", "d", "user"])
+        #expect(slice?.vehicleIndex == 2) // "c"
+        #expect(slice?.skippedStopCount == 0)
     }
 
-    func test_loopRoute_vehicleStopRevisited_usesOccurrenceBeforeUserStop() {
+    @Test func `Loop route vehicle stop revisited uses occurrence before user stop`() {
         // The vehicle's closest stop ("a") also appears downstream of the user's
         // stop. The upstream occurrence is the leg the vehicle is actually on.
         let slice = ApproachSlice.make(
@@ -100,11 +101,11 @@ final class ApproachSliceTests: XCTestCase {
             userStopSequence: 2,
             closestStopID: "a"
         )
-        XCTAssertEqual(slice?.stops.map(\.stopID), ["a", "b", "user"])
-        XCTAssertEqual(slice?.vehicleIndex, 0)
+        #expect(slice?.stops.map(\.stopID) == ["a", "b", "user"])
+        #expect(slice?.vehicleIndex == 0)
     }
 
-    func test_loopRoute_vehiclePastTheDeparturesVisit_returnsNil() {
+    @Test func `Loop route vehicle past the departures visit returns nil`() {
         // Every occurrence of the vehicle's stop is downstream of this visit.
         let slice = ApproachSlice.make(
             stopTimes: stops(["a", "user", "b", "user", "c"]),
@@ -112,10 +113,10 @@ final class ApproachSliceTests: XCTestCase {
             userStopSequence: 1,
             closestStopID: "b"
         )
-        XCTAssertNil(slice)
+        #expect(slice == nil)
     }
 
-    func test_staleStopSequence_fallsBackToStopIDSearch() {
+    @Test func `Stale stop sequence falls back to stop ID search`() {
         // A sequence that doesn't point at the user's stop (out of range, or a
         // feed that numbers sequences differently) falls back to the first match.
         let slice = ApproachSlice.make(
@@ -124,14 +125,14 @@ final class ApproachSliceTests: XCTestCase {
             userStopSequence: 99,
             closestStopID: "a"
         )
-        XCTAssertEqual(slice?.stops.map(\.stopID), ["a", "b", "user"])
-        XCTAssertEqual(slice?.vehicleIndex, 0)
+        #expect(slice?.stops.map(\.stopID) == ["a", "b", "user"])
+        #expect(slice?.vehicleIndex == 0)
     }
 
-    func test_nilClosestStop_stillShowsStops() {
+    @Test func `Nil closest stop still shows stops`() {
         let slice = ApproachSlice.make(stopTimes: stops(["a", "b", "user"]), userStopID: "user", closestStopID: nil)
-        XCTAssertEqual(slice?.stops.map(\.stopID), ["a", "b", "user"])
-        XCTAssertNil(slice?.vehicleIndex)
-        XCTAssertEqual(slice?.skippedStopCount, 0)
+        #expect(slice?.stops.map(\.stopID) == ["a", "b", "user"])
+        #expect(slice?.vehicleIndex == nil)
+        #expect(slice?.skippedStopCount == 0)
     }
 }

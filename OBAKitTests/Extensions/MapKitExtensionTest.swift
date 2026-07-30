@@ -9,19 +9,19 @@
 
 import Foundation
 import MapKit
-import Nimble
-import XCTest
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
 // swiftlint:disable force_try
 
-class MapKitExtensionTest: OBATestCase {
-    func testMapRectCodable_roundTripping() {
+@Suite(.serialized)
+final class MapKitExtensionTest: OBATestCase {
+    @Test func `Map rect codable round tripping`() {
         let decoded = try! Fixtures.roundtripCodable(type: MKMapRect.self, model: TestData.seattleMapRect)
-        expect(decoded.origin.x) == TestData.seattleMapRect.origin.x
-        expect(decoded.origin.y) == TestData.seattleMapRect.origin.y
-        expect(decoded.size.width) == TestData.seattleMapRect.size.width
-        expect(decoded.size.height) == TestData.seattleMapRect.size.height
+        #expect(decoded.origin.x == TestData.seattleMapRect.origin.x)
+        #expect(decoded.origin.y == TestData.seattleMapRect.origin.y)
+        #expect(decoded.size.width == TestData.seattleMapRect.size.width)
+        #expect(decoded.size.height == TestData.seattleMapRect.size.height)
     }
 }

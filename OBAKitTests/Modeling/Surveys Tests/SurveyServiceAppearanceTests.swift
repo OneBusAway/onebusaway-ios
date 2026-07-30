@@ -7,163 +7,164 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
-import Nimble
+import Foundation
+import Testing
 @testable import OBAKitCore
 
+@Suite(.serialized)
 final class SurveyServiceAppearanceTests: OBATestCase {
 
     nonisolated(unsafe) private var testUserDefaults: UserDefaults!
     nonisolated(unsafe) private var store: UserDefaultsStore!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
+
         testUserDefaults = buildUserDefaults(suiteName: "\(userDefaultsSuiteName).appearance")
         testUserDefaults.removePersistentDomain(forName: "\(userDefaultsSuiteName).appearance")
         store = UserDefaultsStore(userDefaults: testUserDefaults)
     }
 
-    override func tearDown() async throws {
+    isolated deinit {
         testUserDefaults.removePersistentDomain(forName: "\(userDefaultsSuiteName).appearance")
-        try await super.tearDown()
     }
 
     // MARK: - visibleSurveys filtering (date activity) ----------------------
 
-    func test_fetch_mixedActiveAndExpired_visibleSurveysExcludesExpired() async {
+    @Test func `Fetch mixed active and expired visible surveys excludes expired`() async {
         let service = await fetchService([
             makeSurvey(id: 1),                                   // active
             makeSurvey(id: 2, startDate: hoursAgo(2), endDate: hoursAgo(1)), // expired
             makeSurvey(id: 3, startDate: hoursFromNow(1), endDate: hoursFromNow(2)) // future
         ])
 
-        expect(service.allSurveys.count).to(equal(3))
-        expect(service.visibleSurveys.map(\.id)).to(equal([1]))
+        #expect(service.allSurveys.count == 3)
+        #expect(service.visibleSurveys.map(\.id) == [1])
     }
 
-    func test_fetch_allInactive_visibleEmpty_andFindReturnsNil() async {
+    @Test func `Fetch all inactive visible empty and find returns nil`() async {
         let service = await fetchService([
             makeSurvey(id: 1, showOnStops: true, startDate: hoursAgo(2), endDate: hoursAgo(1)),
             makeSurvey(id: 2, showOnStops: true, startDate: hoursFromNow(1), endDate: hoursFromNow(2))
         ])
 
-        expect(service.allSurveys.count).to(equal(2))
-        expect(service.visibleSurveys).to(beEmpty())
-        expect(service.findSurveyForMap()).to(beNil())
-        expect(service.findSurveyForStop(stopID: "STOP_A", routeIDs: ["R1"])).to(beNil())
+        #expect(service.allSurveys.count == 2)
+        #expect(service.visibleSurveys.isEmpty)
+        #expect(service.findSurveyForMap() == nil)
+        #expect(service.findSurveyForStop(stopID: "STOP_A", routeIDs: ["R1"]) == nil)
     }
 
-    func test_fetch_surveyWithOpenEndedDates_isActive() async {
+    @Test func `Fetch survey with open ended dates is active`() async {
         // nil start + nil end => always within range.
         let service = await fetchService([makeSurvey(id: 1, startDate: nil, endDate: nil)])
-        expect(service.findSurveyForMap()?.id).to(equal(1))
+        #expect(service.findSurveyForMap()?.id == 1)
     }
 
     // MARK: - Stop targeting matrix ----------------------------------------
 
-    func test_findSurveyForStop_nilStopList_nilRouteList_showsAtAnyStop() async {
+    @Test func `Find survey for stop nil stop list nil route list shows at any stop`() async {
         let service = await fetchService([
             makeSurvey(id: 1, showOnStops: true, stopList: nil, routesList: nil)
         ])
-        expect(service.findSurveyForStop(stopID: "ANY_STOP", routeIDs: []).map(\.id)).to(equal(1))
+        #expect(service.findSurveyForStop(stopID: "ANY_STOP", routeIDs: []).map(\.id) == 1)
     }
 
-    func test_findSurveyForStop_stopInList_shows() async {
+    @Test func `Find survey for stop stop in list shows`() async {
         let service = await fetchService([
             makeSurvey(id: 1, showOnStops: true, stopList: ["STOP_A", "STOP_B"])
         ])
-        expect(service.findSurveyForStop(stopID: "STOP_B", routeIDs: []).map(\.id)).to(equal(1))
+        #expect(service.findSurveyForStop(stopID: "STOP_B", routeIDs: []).map(\.id) == 1)
     }
 
-    func test_findSurveyForStop_stopNotInList_routeMatches_shows() async {
+    @Test func `Find survey for stop stop not in list route matches shows`() async {
         let service = await fetchService([
             makeSurvey(id: 1, showOnStops: true, stopList: ["STOP_A"], routesList: ["R9"])
         ])
         // The stop is not listed, but one of its routes is.
-        expect(service.findSurveyForStop(stopID: "STOP_Z", routeIDs: ["R9"]).map(\.id)).to(equal(1))
+        #expect(service.findSurveyForStop(stopID: "STOP_Z", routeIDs: ["R9"]).map(\.id) == 1)
     }
 
-    func test_findSurveyForStop_stopNotInList_routeNotInList_returnsNil() async {
+    @Test func `Find survey for stop stop not in list route not in list returns nil`() async {
         let service = await fetchService([
             makeSurvey(id: 1, showOnStops: true, stopList: ["STOP_A"], routesList: ["R9"])
         ])
-        expect(service.findSurveyForStop(stopID: "STOP_Z", routeIDs: ["R1"])).to(beNil())
+        #expect(service.findSurveyForStop(stopID: "STOP_Z", routeIDs: ["R1"]) == nil)
     }
 
-    func test_findSurveyForStop_showOnStopsFalse_returnsNil() async {
+    @Test func `Find survey for stop show on stops false returns nil`() async {
         let service = await fetchService([
             makeSurvey(id: 1, showOnMap: true, showOnStops: false)
         ])
-        expect(service.findSurveyForStop(stopID: "STOP_A", routeIDs: ["R1"])).to(beNil())
+        #expect(service.findSurveyForStop(stopID: "STOP_A", routeIDs: ["R1"]) == nil)
     }
 
     // An empty stop/route list means "no restriction" — identical to nil — so a
     // stops-enabled survey with both lists empty appears on every stop,
     // regardless of the stop's routes.
-    func test_findSurveyForStop_emptyStopAndRouteLists_showsAtAnyStop() async {
+    @Test func `Find survey for stop empty stop and route lists shows at any stop`() async {
         let service = await fetchService([
             makeSurvey(id: 1, showOnStops: true, stopList: [], routesList: [])
         ])
-        expect(service.findSurveyForStop(stopID: "STOP_A", routeIDs: ["R1"]).map(\.id)).to(equal(1))
-        expect(service.findSurveyForStop(stopID: "STOP_OTHER", routeIDs: []).map(\.id)).to(equal(1))
+        #expect(service.findSurveyForStop(stopID: "STOP_A", routeIDs: ["R1"]).map(\.id) == 1)
+        #expect(service.findSurveyForStop(stopID: "STOP_OTHER", routeIDs: []).map(\.id) == 1)
     }
 
     // A survey scoped to a specific stop list with no route targeting (nil/empty
     // route list) must NOT leak onto stops outside its list. A nil/empty route
     // list means "no route-based targeting" — it contributes nothing — not
     // "every route".
-    func test_findSurveyForStop_stopScoped_nilRouteList_doesNotLeakToUnlistedStop() async {
+    @Test func `Find survey for stop stop scoped nil route list does not leak to unlisted stop`() async {
         let service = await fetchService([
             makeSurvey(id: 1, showOnStops: true, stopList: ["STOP_A"], routesList: nil)
         ])
         // Listed stop: shows.
-        expect(service.findSurveyForStop(stopID: "STOP_A", routeIDs: ["R1"]).map(\.id)).to(equal(1))
+        #expect(service.findSurveyForStop(stopID: "STOP_A", routeIDs: ["R1"]).map(\.id) == 1)
         // Unlisted stop must not match, regardless of the stop's routes.
-        expect(service.findSurveyForStop(stopID: "STOP_Z", routeIDs: ["R1"])).to(beNil())
-        expect(service.findSurveyForStop(stopID: "STOP_Z", routeIDs: [])).to(beNil())
+        #expect(service.findSurveyForStop(stopID: "STOP_Z", routeIDs: ["R1"]) == nil)
+        #expect(service.findSurveyForStop(stopID: "STOP_Z", routeIDs: []) == nil)
     }
 
-    func test_findSurveyForStop_routeScoped_nilStopList_showsOnlyOnServedStops() async {
+    @Test func `Find survey for stop route scoped nil stop list shows only on served stops`() async {
         let service = await fetchService([
             makeSurvey(id: 1, showOnStops: true, stopList: nil, routesList: ["R9"])
         ])
         // Any stop served by R9 shows it...
-        expect(service.findSurveyForStop(stopID: "STOP_A", routeIDs: ["R9"]).map(\.id)).to(equal(1))
-        expect(service.findSurveyForStop(stopID: "STOP_B", routeIDs: ["R9", "R1"]).map(\.id)).to(equal(1))
+        #expect(service.findSurveyForStop(stopID: "STOP_A", routeIDs: ["R9"]).map(\.id) == 1)
+        #expect(service.findSurveyForStop(stopID: "STOP_B", routeIDs: ["R9", "R1"]).map(\.id) == 1)
         // ...stops not served by R9 do not.
-        expect(service.findSurveyForStop(stopID: "STOP_A", routeIDs: ["R1"])).to(beNil())
+        #expect(service.findSurveyForStop(stopID: "STOP_A", routeIDs: ["R1"]) == nil)
     }
 
     // MARK: - Map targeting -------------------------------------------------
 
-    func test_findSurveyForMap_showOnMapFalse_returnsNil() async {
+    @Test func `Find survey for map show on map false returns nil`() async {
         let service = await fetchService([
             makeSurvey(id: 1, showOnMap: false, showOnStops: true)
         ])
-        expect(service.findSurveyForMap()).to(beNil())
+        #expect(service.findSurveyForMap() == nil)
     }
 
-    func test_findSurveyForMap_skipsStopOnlySurvey_returnsMapSurvey() async {
+    @Test func `Find survey for map skips stop only survey returns map survey`() async {
         let service = await fetchService([
             makeSurvey(id: 1, showOnMap: false, showOnStops: true),
             makeSurvey(id: 2, showOnMap: true, showOnStops: false)
         ])
-        expect(service.findSurveyForMap()?.id).to(equal(2))
+        #expect(service.findSurveyForMap()?.id == 2)
     }
 
     // MARK: - Empty-question gating ----------------------------------------
 
-    func test_findSurvey_skipsSurveyWithNoQuestions_returnsNextValidSurvey() async {
+    @Test func `Find survey skips survey with no questions returns next valid survey`() async {
         let service = await fetchService([
             makeSurvey(id: 1, questions: []),                  // no questions -> skipped
             makeSurvey(id: 2, questions: makeQuestions())      // valid
         ])
-        expect(service.findSurveyForMap()?.id).to(equal(2))
+        #expect(service.findSurveyForMap()?.id == 2)
     }
 
-    func test_findSurvey_onlySurveyHasNoQuestions_returnsNil() async {
+    @Test func `Find survey only survey has no questions returns nil`() async {
         let service = await fetchService([makeSurvey(id: 1, questions: [])])
-        expect(service.findSurveyForMap()).to(beNil())
+        #expect(service.findSurveyForMap() == nil)
     }
 
     // MARK: - Priority ordering --------------------------------------------
@@ -171,15 +172,15 @@ final class SurveyServiceAppearanceTests: OBATestCase {
     // Always-visible single-response surveys are documented as the highest
     // priority and are returned immediately — even when an incomplete one-time
     // survey appears earlier in the list. This pins that ordering contract.
-    func test_priority_alwaysVisibleSingle_beatsEarlierOneTime() async {
+    @Test func `Priority always visible single beats earlier one time`() async {
         let service = await fetchService([
             makeSurvey(id: 1),                          // one-time, incomplete (earlier)
             makeSurvey(id: 2, alwaysVisible: true)      // always-visible single (later)
         ])
-        expect(service.findSurveyForMap()?.id).to(equal(2))
+        #expect(service.findSurveyForMap()?.id == 2)
     }
 
-    func test_priority_completedAlwaysVisibleSingle_fallsThroughToOneTime() async {
+    @Test func `Priority completed always visible single falls through to one time`() async {
         let userID = store.surveyUserIdentifier
         store.markSurveyCompleted(surveyId: 2, userIdentifier: userID)
 
@@ -188,65 +189,65 @@ final class SurveyServiceAppearanceTests: OBATestCase {
             makeSurvey(id: 2, alwaysVisible: true)      // always-visible single, completed
         ])
         // The always-visible single is exhausted, so the one-time wins.
-        expect(service.findSurveyForMap()?.id).to(equal(1))
+        #expect(service.findSurveyForMap()?.id == 1)
     }
 
-    func test_priority_oneTimeIncomplete_beatsAlwaysVisibleMulti() async {
+    @Test func `Priority one time incomplete beats always visible multi`() async {
         let service = await fetchService([
             makeSurvey(id: 1, multipleResponses: true, alwaysVisible: true), // lowest priority
             makeSurvey(id: 2)                                                 // one-time incomplete
         ])
-        expect(service.findSurveyForMap()?.id).to(equal(2))
+        #expect(service.findSurveyForMap()?.id == 2)
     }
 
     // MARK: - Completion / dismissal ---------------------------------------
 
-    func test_dismissSurvey_hidesOneTimeSurvey() async {
+    @Test func `Dismiss survey hides one time survey`() async {
         let service = await fetchService([makeSurvey(id: 1)])
-        expect(service.findSurveyForMap()?.id).to(equal(1))
+        #expect(service.findSurveyForMap()?.id == 1)
 
         service.dismissSurvey(service.allSurveys[0])
-        expect(service.findSurveyForMap()).to(beNil())
+        #expect(service.findSurveyForMap() == nil)
     }
 
-    func test_markCompleted_hidesOneTime_butMultiResponseStillShows() async {
+    @Test func `Mark completed hides one time but multi response still shows`() async {
         let service = await fetchService([
             makeSurvey(id: 1, multipleResponses: true, alwaysVisible: true)
         ])
         service.markSurveyCompleted(service.allSurveys[0])
         // Multiple-response always-visible surveys re-appear after completion.
-        expect(service.findSurveyForMap()?.id).to(equal(1))
+        #expect(service.findSurveyForMap()?.id == 1)
     }
 
     // `markSurveyForLater` is self-contained: it defers the survey at the
     // `findSurvey` level (no dependency on the global reminder gate). The
     // deferred survey is hidden until it is due to reappear.
-    func test_markSurveyForLater_hidesSurveyUntilDue() async {
+    @Test func `Mark survey for later hides survey until due`() async {
         let service = await fetchService([makeSurvey(id: 1)])
-        expect(service.findSurveyForMap()?.id).to(equal(1))
+        #expect(service.findSurveyForMap()?.id == 1)
 
         service.markSurveyForLater(service.allSurveys[0])
-        expect(service.findSurveyForMap()).to(beNil())
+        #expect(service.findSurveyForMap() == nil)
 
         // Still deferred on the next launch...
         store.incrementAppLaunchCount()
-        expect(service.findSurveyForMap()).to(beNil())
+        #expect(service.findSurveyForMap() == nil)
     }
 
-    func test_markSurveyForLater_reappearsAfterThreeLaunches() async {
+    @Test func `Mark survey for later reappears after three launches`() async {
         let service = await fetchService([makeSurvey(id: 1)])
         service.markSurveyForLater(service.allSurveys[0])
-        expect(service.findSurveyForMap()).to(beNil())
+        #expect(service.findSurveyForMap() == nil)
 
         store.incrementAppLaunchCount()
         store.incrementAppLaunchCount()
         store.incrementAppLaunchCount()
-        expect(service.findSurveyForMap()?.id).to(equal(1))
+        #expect(service.findSurveyForMap()?.id == 1)
     }
 
     // MARK: - Fetch state ---------------------------------------------------
 
-    func test_fetchSurveys_successAfterFailure_clearsLastError() async {
+    @Test func `Fetch surveys success after failure clears last error`() async {
         let userID = store.surveyUserIdentifier
         let mockLoader = MockDataLoader(testName: name)
 
@@ -261,16 +262,16 @@ final class SurveyServiceAppearanceTests: OBATestCase {
 
         let service = SurveyService(apiService: buildREST(mockLoader), userDataStore: store)
         await service.fetchSurveys()
-        expect(service.lastError).toNot(beNil())
+        #expect(service.lastError != nil)
 
         // Then a forced fetch succeeds and the error is cleared.
         mockLoader.removeMappedResponses()
         mockLoader.mock(URLString: url.absoluteString, with: encode([makeSurvey(id: 1)]))
         await service.fetchSurveys(force: true)
 
-        expect(service.lastError).to(beNil())
-        expect(service.allSurveys.map(\.id)).to(equal([1]))
-        expect(service.isLoading).to(beFalse())
+        #expect(service.lastError == nil)
+        #expect(service.allSurveys.map(\.id) == [1])
+        #expect(!service.isLoading)
     }
 
     // SUSPECTED INEFFICIENCY: an empty (but successful) response leaves
@@ -278,7 +279,7 @@ final class SurveyServiceAppearanceTests: OBATestCase {
     // subsequent `fetchSurveys()` hits the network again. Pinned as behavior:
     // a non-forced re-fetch after an empty response *does* run and can pick up
     // newly-published surveys immediately (no 5-minute wait).
-    func test_fetchSurveys_emptyResponse_doesNotEngageCooldown_characterization() async {
+    @Test func `Fetch surveys empty response does not engage cooldown characterization`() async {
         let userID = store.surveyUserIdentifier
         let mockLoader = MockDataLoader(testName: name)
         let urlString = "https://onebusaway.co/api/v1/regions/1/surveys.json?user_id=\(userID)"
@@ -286,14 +287,14 @@ final class SurveyServiceAppearanceTests: OBATestCase {
         mockLoader.mock(URLString: urlString, with: encode([]))
         let service = SurveyService(apiService: buildREST(mockLoader), userDataStore: store)
         await service.fetchSurveys()
-        expect(service.allSurveys).to(beEmpty())
+        #expect(service.allSurveys.isEmpty)
 
         // Without force, a second fetch still runs because allSurveys is empty.
         mockLoader.removeMappedResponses()
         mockLoader.mock(URLString: urlString, with: encode([makeSurvey(id: 1)]))
         await service.fetchSurveys()
 
-        expect(service.allSurveys.map(\.id)).to(equal([1]))
+        #expect(service.allSurveys.map(\.id) == [1])
     }
 
     // MARK: - Helpers -------------------------------------------------------

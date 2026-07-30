@@ -55,6 +55,20 @@ public class AnalyticsLabels: NSObject {
     /// Label used when 'show my location' button is tapped.'
     @objc public static let mapShowUserLocationButtonTapped = "Clicked My Location Button"
 
+    /// Label used when a map layer is toggled in the Map sheet. Value: "<layerID>:<on|off>".
+    @objc public static let mapLayerToggled = "Map Layer Toggled"
+
+    /// Label used when a rental vehicle or cluster annotation is tapped on the map.
+    @objc public static let rentalVehicleSelected = "Rental Vehicle Selected"
+
+    /// Label used when the rider taps "Plan a trip using this bike" — the browse
+    /// layer's conversion into trip planning.
+    @objc public static let rentalPlanTripTapped = "Rental Plan Trip Tapped"
+
+    /// Label used when the rental minimum-range filter changes. Value: the
+    /// threshold in meters, or "0" for no minimum.
+    @objc public static let rentalRangeFilterChanged = "Rental Range Filter Changed"
+
     /// Label used when 'Learn More About Donations' screen is displayed
     @objc public static let donationLearnMoreShown = "Donation Learn More Shown"
 

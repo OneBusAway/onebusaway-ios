@@ -7,7 +7,8 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
+import Foundation
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -15,7 +16,9 @@ import XCTest
 /// switch and version gate are testable without the host app's Info.plist.
 // `Bundle` is already `@unchecked Sendable`; a subclass has to restate it or the
 // compiler warns. Mutated only from the test that owns the instance.
-private class PolicyBundle: Bundle, @unchecked Sendable {
+// `nonisolated`: `object(forInfoDictionaryKey:)` overrides a nonisolated
+// Bundle method, which main-actor isolation would conflict with.
+private nonisolated class PolicyBundle: Bundle, @unchecked Sendable {
     var config: [AnyHashable: Any] = [:]
     var version = "1.0"
 
@@ -28,7 +31,7 @@ private class PolicyBundle: Bundle, @unchecked Sendable {
     static func create(enabled: Bool = true, version: String = "1.0", appStoreID: String? = "329380089") throws -> PolicyBundle {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        let bundle = try XCTUnwrap(PolicyBundle(path: dir.path))
+        let bundle = try #require(PolicyBundle(path: dir.path))
         var config: [String: Any] = ["FeedbackPromptEnabled": enabled]
         if let appStoreID { config["AppStoreID"] = appStoreID }
         bundle.config = config
@@ -37,13 +40,15 @@ private class PolicyBundle: Bundle, @unchecked Sendable {
     }
 }
 
+@Suite(.serialized)
 final class ReviewPromptPolicyTests: OBATestCase {
 
     private var clock: Date!
     private var bundle: PolicyBundle!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
+
         clock = Date(timeIntervalSince1970: 1_700_000_000)
         bundle = try PolicyBundle.create()
     }
@@ -51,9 +56,8 @@ final class ReviewPromptPolicyTests: OBATestCase {
     /// `reset()` deliberately spares this key, so nothing else clears it between tests —
     /// and since it short-circuits `isPromptPending` to `true`, a leak turns later
     /// assertions into false passes.
-    override func tearDown() async throws {
+    isolated deinit {
         userDefaults.removeObject(forKey: "ReviewPrompt.alwaysShow")
-        try await super.tearDown()
     }
 
     private func makePolicy() -> ReviewPromptPolicy {
@@ -70,16 +74,16 @@ final class ReviewPromptPolicyTests: OBATestCase {
 
     // MARK: - Threshold
 
-    func test_fourSuccesses_isNotPending() {
+    @Test func `Four successes is not pending`() {
         let policy = makePolicy()
         recordSuccesses(4, on: policy)
-        XCTAssertFalse(policy.isPromptPending)
+        #expect(!policy.isPromptPending)
     }
 
-    func test_fiveSuccesses_isPending() {
+    @Test func `Five successes is pending`() {
         let policy = makePolicy()
         recordSuccesses(5, on: policy)
-        XCTAssertTrue(policy.isPromptPending)
+        #expect(policy.isPromptPending)
     }
 
     /// A fresh policy instance built from the same defaults (as after app
@@ -93,26 +97,26 @@ final class ReviewPromptPolicyTests: OBATestCase {
     /// from `false` to `true` purely by advancing the clock with no
     /// intervening `recordSuccess()` call — no one-way edge-triggered flag
     /// could do that.
-    func test_pendingSurvivesFreshPolicyInstance() {
+    @Test func `Pending survives fresh policy instance`() {
         let first = makePolicy()
         recordSuccesses(7, on: first)
-        XCTAssertTrue(first.isPromptPending)
+        #expect(first.isPromptPending)
 
         let second = makePolicy()
-        XCTAssertTrue(second.isPromptPending)
+        #expect(second.isPromptPending)
     }
 
     // MARK: - Presentation bookkeeping
 
-    func test_presentingResetsCounterAndSetsDeferredOutcome() {
+    @Test func `Presenting resets counter and sets deferred outcome`() {
         let policy = makePolicy()
         recordSuccesses(5, on: policy)
         policy.recordPromptPresented()
 
-        XCTAssertEqual(policy.outcome, .deferred, "outcome must be written up front, before the rider answers")
-        XCTAssertFalse(policy.isPromptPending)
+        #expect(policy.outcome == .deferred, "outcome must be written up front, before the rider answers")
+        #expect(!policy.isPromptPending)
         recordSuccesses(5, on: policy)
-        XCTAssertFalse(policy.isPromptPending, "backoff should still block")
+        #expect(!policy.isPromptPending, "backoff should still block")
     }
 
     /// Calling `recordOutcome` without a preceding `recordPromptPresented()` is an
@@ -120,18 +124,18 @@ final class ReviewPromptPolicyTests: OBATestCase {
     /// `if let` in `isPromptPending` would be skipped entirely, and `successCount`
     /// was never zeroed — so the rider would stay pending and get re-prompted on
     /// every subsequent stop view, unboundedly, without ever burning an ask.
-    func test_outcomeWithoutPresentationStillConsumesTheAsk() {
+    @Test func `Outcome without presentation still consumes the ask`() {
         let policy = makePolicy()
         recordSuccesses(5, on: policy)
         // No recordPromptPresented() call.
         policy.recordOutcome(.negative)
 
-        XCTAssertFalse(policy.isPromptPending, "recording an outcome must always consume the ask")
+        #expect(!policy.isPromptPending, "recording an outcome must always consume the ask")
     }
 
     /// An alert the rider abandons (app killed mid-prompt) never gets an
     /// outcome written, so it must already be a well-defined deferral.
-    func test_abandonedAskBehavesAsDeferral() {
+    @Test func `Abandoned ask behaves as deferral`() {
         let policy = makePolicy()
         recordSuccesses(5, on: policy)
         policy.recordPromptPresented()
@@ -140,15 +144,15 @@ final class ReviewPromptPolicyTests: OBATestCase {
         bundle.version = "1.1"
         advance(days: 59)
         recordSuccesses(5, on: policy)
-        XCTAssertFalse(policy.isPromptPending, "59 days is inside the 60-day deferral")
+        #expect(!policy.isPromptPending, "59 days is inside the 60-day deferral")
 
         advance(days: 2)
-        XCTAssertTrue(policy.isPromptPending)
+        #expect(policy.isPromptPending)
     }
 
     // MARK: - Outcomes
 
-    func test_positiveSilencesPermanently() {
+    @Test func `Positive silences permanently`() {
         let policy = makePolicy()
         recordSuccesses(5, on: policy)
         policy.recordPromptPresented()
@@ -157,10 +161,10 @@ final class ReviewPromptPolicyTests: OBATestCase {
         bundle.version = "2.0"
         advance(days: 3650)
         recordSuccesses(50, on: policy)
-        XCTAssertFalse(policy.isPromptPending)
+        #expect(!policy.isPromptPending)
     }
 
-    func test_negativeBacksOff180Days() {
+    @Test func `Negative backs off 180 days`() {
         let policy = makePolicy()
         recordSuccesses(5, on: policy)
         policy.recordPromptPresented()
@@ -169,13 +173,13 @@ final class ReviewPromptPolicyTests: OBATestCase {
         bundle.version = "1.1"
         advance(days: 179)
         recordSuccesses(5, on: policy)
-        XCTAssertFalse(policy.isPromptPending)
+        #expect(!policy.isPromptPending)
 
         advance(days: 2)
-        XCTAssertTrue(policy.isPromptPending)
+        #expect(policy.isPromptPending)
     }
 
-    func test_deferredBacksOff60Days() {
+    @Test func `Deferred backs off 60 days`() {
         let policy = makePolicy()
         recordSuccesses(5, on: policy)
         policy.recordPromptPresented()
@@ -189,38 +193,38 @@ final class ReviewPromptPolicyTests: OBATestCase {
         // success count rather than on elapsed time.
         advance(days: 59)
         recordSuccesses(5, on: policy)
-        XCTAssertFalse(policy.isPromptPending, "the 60-day deferral must still be closed on day 59")
+        #expect(!policy.isPromptPending, "the 60-day deferral must still be closed on day 59")
 
         advance(days: 2)
-        XCTAssertTrue(policy.isPromptPending, "and open once it elapses")
+        #expect(policy.isPromptPending, "and open once it elapses")
     }
 
     /// A white-label target with no `AppStoreID` can't send anyone to the App Store, so
     /// it must never be asked. Shipping without this gate meant KiedyBus riders got the
     /// prompt, tapped "Yes!", went nowhere, and were recorded `.positive` — permanently
     /// silencing both branches for someone who was never really asked.
-    func test_missingAppStoreIDSuppressesThePromptEntirely() throws {
+    @Test func `Missing app store ID suppresses the prompt entirely`() throws {
         bundle = try PolicyBundle.create(appStoreID: nil)
         let policy = makePolicy()
         recordSuccesses(5, on: policy)
 
-        XCTAssertFalse(policy.isPromptPending)
+        #expect(!policy.isPromptPending)
 
         // Not even the debug override may open it — there is still nowhere to go.
         policy.alwaysShowPrompt = true
-        XCTAssertFalse(policy.isPromptPending)
+        #expect(!policy.isPromptPending)
     }
 
     /// The Settings footer promises the toggle survives a reset.
-    func test_resetPreservesTheDebugOverride() {
+    @Test func `Reset preserves the debug override`() {
         let policy = makePolicy()
         policy.alwaysShowPrompt = true
         recordSuccesses(5, on: policy)
 
         policy.reset()
 
-        XCTAssertTrue(policy.alwaysShowPrompt)
-        XCTAssertEqual(policy.successCount, 0)
+        #expect(policy.alwaysShowPrompt)
+        #expect(policy.successCount == 0)
     }
 
     /// A QA tap on "Yes!" must not write `.positive`. `recordPromptPresented()` already
@@ -231,7 +235,7 @@ final class ReviewPromptPolicyTests: OBATestCase {
     /// The install is still left in the ordinary `.deferred` state the presentation
     /// writes up front, so the organic prompt comes back on its own after the 60-day
     /// backoff rather than never.
-    func test_debugOverrideDoesNotRecordOutcomes() {
+    @Test func `Debug override does not record outcomes`() {
         let policy = makePolicy()
         recordSuccesses(5, on: policy)
         policy.alwaysShowPrompt = true
@@ -239,17 +243,17 @@ final class ReviewPromptPolicyTests: OBATestCase {
         policy.recordPromptPresented()
         policy.recordOutcome(.positive)
 
-        XCTAssertEqual(policy.outcome, .deferred, "the QA answer must not be persisted")
+        #expect(policy.outcome == .deferred, "the QA answer must not be persisted")
 
         policy.alwaysShowPrompt = false
         advance(days: 61)
         recordSuccesses(5, on: policy)
-        XCTAssertTrue(policy.isPromptPending, "a QA pass defers the organic prompt, it doesn't kill it")
+        #expect(policy.isPromptPending, "a QA pass defers the organic prompt, it doesn't kill it")
     }
 
     // MARK: - Version gate
 
-    func test_sameVersionBlocksSecondPrompt() {
+    @Test func `Same version blocks second prompt`() {
         let policy = makePolicy()
         recordSuccesses(5, on: policy)
         policy.recordPromptPresented()
@@ -257,21 +261,21 @@ final class ReviewPromptPolicyTests: OBATestCase {
 
         advance(days: 61)
         recordSuccesses(5, on: policy)
-        XCTAssertFalse(policy.isPromptPending, "same app version must not re-prompt")
+        #expect(!policy.isPromptPending, "same app version must not re-prompt")
 
         bundle.version = "1.1"
-        XCTAssertTrue(policy.isPromptPending)
+        #expect(policy.isPromptPending)
     }
 
     // MARK: - Lifetime cap
 
-    func test_thirdAskSilencesPermanently() {
+    @Test func `Third ask silences permanently`() {
         let policy = makePolicy()
         let versions = ["1.1", "1.2", "1.3"]
 
         for (index, version) in versions.enumerated() {
             recordSuccesses(5, on: policy)
-            XCTAssertTrue(policy.isPromptPending, "ask \(index + 1) should be pending")
+            #expect(policy.isPromptPending, "ask \(index + 1) should be pending")
             policy.recordPromptPresented()
             policy.recordOutcome(.deferred)
             bundle.version = version
@@ -279,11 +283,11 @@ final class ReviewPromptPolicyTests: OBATestCase {
         }
 
         recordSuccesses(5, on: policy)
-        XCTAssertFalse(policy.isPromptPending, "askCount reached 3")
+        #expect(!policy.isPromptPending, "askCount reached 3")
     }
 
     /// The cap counts asks, not deferrals, so a mixed sequence still caps.
-    func test_capCountsAsksRegardlessOfOutcome() {
+    @Test func `Cap counts asks regardless of outcome`() {
         let policy = makePolicy()
 
         recordSuccesses(5, on: policy)
@@ -299,40 +303,40 @@ final class ReviewPromptPolicyTests: OBATestCase {
         advance(days: 181)
 
         recordSuccesses(5, on: policy)
-        XCTAssertTrue(policy.isPromptPending, "third ask still allowed")
+        #expect(policy.isPromptPending, "third ask still allowed")
         policy.recordPromptPresented()
         policy.recordOutcome(.deferred)
         bundle.version = "1.3"
         advance(days: 61)
 
         recordSuccesses(5, on: policy)
-        XCTAssertFalse(policy.isPromptPending)
+        #expect(!policy.isPromptPending)
     }
 
     // MARK: - Kill switch and debug
 
-    func test_disabledBundleIsNeverPending() throws {
+    @Test func `Disabled bundle is never pending`() throws {
         bundle = try PolicyBundle.create(enabled: false)
         let policy = makePolicy()
         recordSuccesses(20, on: policy)
-        XCTAssertFalse(policy.isPromptPending)
+        #expect(!policy.isPromptPending)
     }
 
-    func test_alwaysShowBypassesGatesButNotKillSwitch() throws {
+    @Test func `Always show bypasses gates but not kill switch`() throws {
         let policy = makePolicy()
         policy.alwaysShowPrompt = true
-        XCTAssertTrue(policy.isPromptPending, "no successes recorded, but debug override is on")
+        #expect(policy.isPromptPending, "no successes recorded, but debug override is on")
 
         bundle = try PolicyBundle.create(enabled: false)
         let disabled = makePolicy()
         disabled.alwaysShowPrompt = true
-        XCTAssertFalse(disabled.isPromptPending)
+        #expect(!disabled.isPromptPending)
     }
 
     /// `alwaysShowPrompt` short-circuits `isPromptPending` ahead of the ask cap and the
     /// version gate, so presentations made under it must not spend either. Three QA taps
     /// used to silence the organic prompt on that install for good.
-    func test_alwaysShowDoesNotSpendTheLifetimeAskBudget() {
+    @Test func `Always show does not spend the lifetime ask budget`() {
         let policy = makePolicy()
         policy.alwaysShowPrompt = true
 
@@ -344,43 +348,44 @@ final class ReviewPromptPolicyTests: OBATestCase {
         policy.alwaysShowPrompt = false
         advance(days: 61)
         recordSuccesses(5, on: policy)
-        XCTAssertTrue(policy.isPromptPending, "the real prompt is still available after five debug asks")
+        #expect(policy.isPromptPending, "the real prompt is still available after five debug asks")
     }
 
     /// Everything else about `recordPromptPresented()` still runs under the toggle, so an
     /// abandoned debug alert lands in the same defined state a real one would.
-    func test_alwaysShowStillWritesTheDeferredOutcomeUpFront() {
+    @Test func `Always show still writes the deferred outcome up front`() {
         let policy = makePolicy()
         policy.alwaysShowPrompt = true
         recordSuccesses(5, on: policy)
 
         policy.recordPromptPresented()
 
-        XCTAssertEqual(policy.outcome, .deferred)
-        XCTAssertEqual(policy.successCount, 0)
+        #expect(policy.outcome == .deferred)
+        #expect(policy.successCount == 0)
     }
 
-    func test_resetClearsAllState() {
+    @Test func `Reset clears all state`() {
         let policy = makePolicy()
         recordSuccesses(5, on: policy)
         policy.recordPromptPresented()
         policy.recordOutcome(.positive)
-        XCTAssertFalse(policy.isPromptPending)
+        #expect(!policy.isPromptPending)
 
         policy.reset()
         recordSuccesses(5, on: policy)
-        XCTAssertTrue(policy.isPromptPending)
+        #expect(policy.isPromptPending)
     }
 }
 
 /// The write-review URL is the entire point of the positive branch, and it fails
 /// silently when wrong — drop `?action=write-review` and the App Store opens the
 /// ordinary product page, so the rider lands somewhere plausible and never reviews.
-final class WriteReviewURLTests: XCTestCase {
+@Suite(.serialized)
+final class WriteReviewURLTests {
 
-    @MainActor
-    func test_writeReviewURL_carriesTheWriteReviewAction() throws {
-        let url = try XCTUnwrap(FeedbackPromptPresenter.writeReviewURL(appStoreID: "329380089"))
-        XCTAssertEqual(url.absoluteString, "https://apps.apple.com/app/id329380089?action=write-review")
+    @Test @MainActor
+    func `Write review URL carries the write review action`() throws {
+        let url = try #require(FeedbackPromptPresenter.writeReviewURL(appStoreID: "329380089"))
+        #expect(url.absoluteString == "https://apps.apple.com/app/id329380089?action=write-review")
     }
 }

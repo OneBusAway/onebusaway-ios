@@ -7,10 +7,10 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
 @testable import OBAKit
 @testable import OBAKitCore
-import Nimble
+import Foundation
+import Testing
 
 /// The Stop page has two presentations: pushed onto a navigation stack (dark map header, chrome in
 /// the navigation bar) and presented as a sheet over the map (light header, chrome in a bottom
@@ -20,27 +20,26 @@ import Nimble
 /// tests pin that down at the two seams where it could silently change — the router's default and
 /// the navigation-bar items.
 @MainActor
-class StopPagePresentationTests: OBATestCase {
+@Suite(.serialized)
+final class StopPagePresentationTests: OBATestCase {
 
     private var queue: OperationQueue!
     private var application: Application!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
+
         queue = OperationQueue()
         application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
         userDefaults.set(true, forKey: FeatureFlags.useNewStopPageKey)
     }
 
-    override func tearDown() async throws {
+    isolated deinit {
         queue.cancelAllOperations()
-        queue = nil
-        application = nil
-        try await super.tearDown()
     }
 
     private func makeStop() throws -> Stop {
-        try XCTUnwrap(Fixtures.loadSomeStops().first)
+        try #require(Fixtures.loadSomeStops().first)
     }
 
     // MARK: - Router defaults
@@ -48,87 +47,87 @@ class StopPagePresentationTests: OBATestCase {
     /// Everything that pushes — Recents, Bookmarks, the map drawer's list, transfers — calls
     /// `makeStopController` without the new argument. If the default ever flips, all of them
     /// silently acquire a bottom toolbar.
-    func test_makeStopController_defaultsToThePushedPresentation() throws {
+    @Test func `Make stop controller defaults to the pushed presentation`() throws {
         let stop = try makeStop()
 
         let byStop = application.viewRouter.makeStopController(stop: stop) as? StopPageViewController
         let byID = application.viewRouter.makeStopController(stopID: stop.id) as? StopPageViewController
 
-        expect(byStop?.showsBottomToolbar).to(beFalse())
-        expect(byID?.showsBottomToolbar).to(beFalse())
+        #expect(byStop?.showsBottomToolbar == false)
+        #expect(byID?.showsBottomToolbar == false)
     }
 
-    func test_makeStopController_optsIntoTheSheetPresentation() throws {
+    @Test func `Make stop controller opts into the sheet presentation`() throws {
         let stop = try makeStop()
 
         let byStop = application.viewRouter.makeStopController(stop: stop, showToolbarOnBottom: true) as? StopPageViewController
         let byID = application.viewRouter.makeStopController(stopID: stop.id, showToolbarOnBottom: true) as? StopPageViewController
 
-        expect(byStop?.showsBottomToolbar).to(beTrue())
-        expect(byID?.showsBottomToolbar).to(beTrue())
+        #expect(byStop?.showsBottomToolbar == true)
+        #expect(byID?.showsBottomToolbar == true)
     }
 
     /// The legacy screen has only the pushed layout, so the flag must be inert there rather than
     /// producing a `StopViewController` that someone later assumes has a toolbar.
-    func test_legacyScreen_ignoresTheSheetFlag() throws {
+    @Test func `Legacy screen ignores the sheet flag`() throws {
         userDefaults.set(false, forKey: FeatureFlags.useNewStopPageKey)
         let stop = try makeStop()
 
         let controller = application.viewRouter.makeStopController(stop: stop, showToolbarOnBottom: true)
 
-        expect(controller).to(beAKindOf(StopViewController.self))
+        #expect(controller is StopViewController)
     }
 
     // MARK: - Navigation bar chrome
 
     /// The pushed page keeps its three right-hand bar items. This is the assertion that fails if
     /// the sheet's chrome suppression ever leaks across.
-    func test_pushedPresentation_keepsItsNavigationBarItems() throws {
+    @Test func `Pushed presentation keeps its navigation bar items`() throws {
         let controller = StopPageViewController(application: application, stop: try makeStop())
         controller.loadViewIfNeeded()
 
-        expect(controller.navigationItem.rightBarButtonItems?.count).to(equal(3))
+        #expect(controller.navigationItem.rightBarButtonItems?.count == 3)
     }
 
     /// The sheet installs no bar items — they would duplicate the toolbar's controls inside a
     /// navigation bar that renders as a bare grabber.
-    func test_sheetPresentation_installsNoNavigationBarItems() throws {
+    @Test func `Sheet presentation installs no navigation bar items`() throws {
         let controller = StopPageViewController(application: application, stop: try makeStop(), showToolbarOnBottom: true)
         controller.loadViewIfNeeded()
 
-        expect(controller.navigationItem.rightBarButtonItems).to(beNil())
+        #expect(controller.navigationItem.rightBarButtonItems == nil)
     }
 
     // MARK: - Preview mode
 
     /// A peek is a bare glance in both presentations.
-    func test_previewMode_suppressesChromeInBothPresentations() throws {
+    @Test func `Preview mode suppresses chrome in both presentations`() throws {
         let stop = try makeStop()
 
         let pushed = StopPageViewController(application: application, stop: stop)
         pushed.loadViewIfNeeded()
         pushed.enterPreviewMode()
-        expect(pushed.navigationItem.rightBarButtonItems).to(beNil())
+        #expect(pushed.navigationItem.rightBarButtonItems == nil)
 
         let sheet = StopPageViewController(application: application, stop: stop, showToolbarOnBottom: true)
         sheet.loadViewIfNeeded()
         sheet.enterPreviewMode()
-        expect(sheet.showsBottomToolbar).to(beFalse())
+        #expect(!sheet.showsBottomToolbar)
 
         // Committing the peek restores the toolbar, since the same instance is what gets
         // presented in the sheet.
         sheet.exitPreviewMode()
-        expect(sheet.showsBottomToolbar).to(beTrue())
+        #expect(sheet.showsBottomToolbar)
     }
 
     /// Leaving a preview must put the pushed page's bar items back, not leave it bare.
-    func test_exitingPreviewMode_restoresPushedNavigationBarItems() throws {
+    @Test func `Exiting preview mode restores pushed navigation bar items`() throws {
         let controller = StopPageViewController(application: application, stop: try makeStop())
         controller.loadViewIfNeeded()
 
         controller.enterPreviewMode()
         controller.exitPreviewMode()
 
-        expect(controller.navigationItem.rightBarButtonItems?.count).to(equal(3))
+        #expect(controller.navigationItem.rightBarButtonItems?.count == 3)
     }
 }

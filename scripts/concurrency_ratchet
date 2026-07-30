@@ -14,6 +14,29 @@
 # The log must come from a build that compiled every target the baseline was
 # computed from (build-for-testing of the App scheme). Incremental builds
 # undercount because cached files don't re-emit warnings.
+#
+# THIS UNDERCOUNTING IS WORSE THAN IT LOOKS, and a fresh `-derivedDataPath` does
+# NOT protect you. Xcode's compilation cache lives at COMPILATION_CACHE_CAS_PATH,
+# which defaults to a machine-global directory outside derived data; files served
+# from it replay object code but emit NO diagnostics. Measured 2026-07-28 on one
+# unchanged tree, the true count was 38 while warm builds reported 4, 12, 16, 17.
+# A too-low baseline committed from such a build wedges CI for everyone, since CI
+# runs cold and counts correctly (i.e. higher).
+#
+# So: do not hand-roll the measurement build. Use `scripts/measure_concurrency`,
+# which isolates both caches.
+#
+# BLIND SPOT: diagnostics raised inside a macro expansion are invisible here.
+# The compiler reports them against the expansion buffer ("macro expansion
+# #expect:2:42: warning: ...") and only mentions the real file in a follow-up
+# "expanded code originates here" note, so the repo-path anchor below never
+# matches. Found 2026-07-28: converting tests to `#expect(throws:)` put two
+# #RegionIsolation diagnostics inside expansions while this script still
+# reported zero. They surfaced only when OBAKitTests dropped its
+# SWIFT_WARNINGS_AS_ERRORS_GROUPS opt-out and they became build errors.
+# Since every target now escalates the concurrency groups to errors, the
+# compiler — not this script — is the real gate; treat this count as a
+# secondary signal rather than proof of cleanliness.
 
 set -euo pipefail
 
@@ -46,6 +69,19 @@ count_warnings() {
 CURRENT="$(count_warnings)"
 
 if [[ "$MODE" == "--update" ]]; then
+  # Cache hits show up as a compile task that "failed with exit code 0 but
+  # produced no further output" — it emitted neither object diagnostics nor an
+  # error. A handful of these are normal (script phases do it too), but a
+  # cluster attached to Swift compiles means the log is missing diagnostics and
+  # the count is fiction. Warn rather than block: the pattern is heuristic, and
+  # a false positive should not make the baseline unlowerable.
+  SILENT="$(grep -c 'failed with exit code 0 but produced no further output' "$LOG_FILE" || true)"
+  if (( SILENT > 5 )); then
+    echo "warning: $SILENT silently-skipped build tasks in this log — likely" >&2
+    echo "compilation-cache hits, which emit no diagnostics. $CURRENT is probably" >&2
+    echo "an undercount. Re-measure with scripts/measure_concurrency before" >&2
+    echo "committing this baseline." >&2
+  fi
   echo "$CURRENT" > "$BASELINE_FILE"
   echo "Baseline updated: $CURRENT concurrency warnings."
   exit 0

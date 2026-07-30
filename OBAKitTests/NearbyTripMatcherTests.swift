@@ -7,8 +7,8 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
-import Nimble
+import Foundation
+import Testing
 import CoreLocation
 @testable import OBAKit
 @testable import OBAKitCore
@@ -21,14 +21,16 @@ import CoreLocation
 /// - Stop `1_10020` serving routes `1_30`, `1_65`, `1_74`
 /// - 4 arrivals: 2 on route `1_30`, 2 on route `1_65`
 /// - All have `predicted: true` (isRealTime) and vehicle positions
-class NearbyTripMatcherTests: OBATestCase {
+@Suite(.serialized)
+final class NearbyTripMatcherTests: OBATestCase {
     /// Near stop 1_10020 in the fixture (NE 55th & 37th Ave NE).
     let userLocation = CLLocation(latitude: 47.6685, longitude: -122.2883)
 
     var dataLoader: MockDataLoader!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
+
         dataLoader = (restService.dataLoader as! MockDataLoader)
     }
 
@@ -65,7 +67,7 @@ class NearbyTripMatcherTests: OBATestCase {
 
     // MARK: - Positive Match
 
-    func test_findTrips_returnsMatchesForRoute30() async throws {
+    @Test func `Find trips returns matches for route 30`() async throws {
         let stops = stopsFromArrivalsFixture()
         stubArrivals()
 
@@ -78,13 +80,13 @@ class NearbyTripMatcherTests: OBATestCase {
         )
 
         // Fixture has 2 arrivals on route 1_30 with vehicles 1_7028 and 1_7022.
-        expect(results.count) == 2
+        #expect(results.count == 2)
         let vehicleIDs = Set(results.compactMap { $0.arrivalDeparture.vehicleID })
-        expect(vehicleIDs).to(contain("1_7028"))
-        expect(vehicleIDs).to(contain("1_7022"))
+        #expect(vehicleIDs.contains("1_7028"))
+        #expect(vehicleIDs.contains("1_7022"))
     }
 
-    func test_findTrips_returnsMatchesForRoute65() async throws {
+    @Test func `Find trips returns matches for route 65`() async throws {
         let stops = stopsFromArrivalsFixture()
         stubArrivals()
 
@@ -97,15 +99,15 @@ class NearbyTripMatcherTests: OBATestCase {
         )
 
         // Fixture has 2 arrivals on route 1_65 with vehicles 1_3691 and 1_3674.
-        expect(results.count) == 2
+        #expect(results.count == 2)
         let vehicleIDs = Set(results.compactMap { $0.arrivalDeparture.vehicleID })
-        expect(vehicleIDs).to(contain("1_3691"))
-        expect(vehicleIDs).to(contain("1_3674"))
+        #expect(vehicleIDs.contains("1_3691"))
+        #expect(vehicleIDs.contains("1_3674"))
     }
 
     // MARK: - Route Filtering
 
-    func test_findTrips_nonexistentRoute_throwsNoStopsNearby() async {
+    @Test func `Find trips nonexistent route throws no stops nearby`() async {
         let stops = stopsFromArrivalsFixture()
         stubArrivals()
 
@@ -125,17 +127,17 @@ class NearbyTripMatcherTests: OBATestCase {
                 stops: stops,
                 maxDistance: 500_000
             )
-            XCTFail("Expected MatchError.noStopsNearby")
+            Issue.record("Expected MatchError.noStopsNearby")
         } catch let error as NearbyTripMatcher.MatchError {
-            expect(error) == .noStopsNearby
+            #expect(error == .noStopsNearby)
         } catch {
-            XCTFail("Unexpected error: \(error)")
+            Issue.record("Unexpected error: \(error)")
         }
     }
 
     // MARK: - Distance Filtering
 
-    func test_findTrips_tightDistance_excludesFarVehicles() async throws {
+    @Test func `Find trips tight distance excludes far vehicles`() async throws {
         let stops = stopsFromArrivalsFixture()
         stubArrivals()
 
@@ -156,14 +158,14 @@ class NearbyTripMatcherTests: OBATestCase {
             maxDistance: 500_000
         )
 
-        expect(tightResults.count) < wideResults.count
-        expect(tightResults).to(beEmpty())
-        expect(wideResults.count) == 2
+        #expect(tightResults.count < wideResults.count)
+        #expect(tightResults.isEmpty)
+        #expect(wideResults.count == 2)
     }
 
     // MARK: - Sorting
 
-    func test_findTrips_sortsByDistanceClosestFirst() async throws {
+    @Test func `Find trips sorts by distance closest first`() async throws {
         let stops = stopsFromArrivalsFixture()
         stubArrivals()
 
@@ -175,15 +177,15 @@ class NearbyTripMatcherTests: OBATestCase {
             maxDistance: 500_000
         )
 
-        expect(results.count) >= 2
+        #expect(results.count >= 2)
         for i in 0..<(results.count - 1) {
-            expect(results[i].distanceFromUser) <= results[i + 1].distanceFromUser
+            #expect(results[i].distanceFromUser <= results[i + 1].distanceFromUser)
         }
     }
 
     // MARK: - Empty Stops
 
-    func test_findTrips_emptyStopsAndAPI_throwsNoStopsNearby() async {
+    @Test func `Find trips empty stops and API throws no stops nearby`() async {
         let data = Fixtures.loadData(file: "stops_for_location_outofrange.json")
         dataLoader.mock(data: data) { request in
             request.url?.absoluteString.contains("stops-for-location") ?? false
@@ -197,17 +199,17 @@ class NearbyTripMatcherTests: OBATestCase {
                 stops: [],
                 maxDistance: 500
             )
-            XCTFail("Expected MatchError.noStopsNearby")
+            Issue.record("Expected MatchError.noStopsNearby")
         } catch let error as NearbyTripMatcher.MatchError {
-            expect(error) == .noStopsNearby
+            #expect(error == .noStopsNearby)
         } catch {
-            XCTFail("Unexpected error: \(error)")
+            Issue.record("Unexpected error: \(error)")
         }
     }
 
     // MARK: - All Stops Fail
 
-    func test_findTrips_allStopsFail_rethrowsError() async {
+    @Test func `Find trips all stops fail rethrows error`() async {
         let stops = stopsFromArrivalsFixture()
 
         // Mock arrivals endpoint to return a 500 server error.
@@ -228,18 +230,25 @@ class NearbyTripMatcherTests: OBATestCase {
                 stops: stops,
                 maxDistance: 500_000
             )
-            XCTFail("Expected error to be rethrown when all stops fail")
+            Issue.record("Expected error to be rethrown when all stops fail")
         } catch is NearbyTripMatcher.MatchError {
-            XCTFail("Should rethrow the server error, not a MatchError")
+            Issue.record("Should rethrow the server error, not a MatchError")
         } catch {
-            // Expected: the server error is rethrown, not swallowed.
-            expect(error).toNot(beNil())
+            // Expected: the server error is rethrown, not swallowed. Reaching
+            // this branch at all *is* the assertion — the `catch is MatchError`
+            // above already rejects the failure mode under test.
+            //
+            // This previously read `expect(error).toNot(beNil())`, which was
+            // vacuous: `error` is a non-optional `any Error` here, so it could
+            // never be nil. Nimble's generic `expect()` hid that; `#expect`
+            // made the compiler say so ("comparing non-optional value of type
+            // 'any Error' to 'nil' always returns true").
         }
     }
 
     // MARK: - No Realtime Data
 
-    func test_findTrips_noRealtimeData_throwsNoRealtimeError() async {
+    @Test func `Find trips no realtime data throws no realtime error`() async {
         let stops = stopsFromArrivalsFixture()
 
         // Use the fixture where all `predicted` fields are false (no real-time data).
@@ -256,17 +265,17 @@ class NearbyTripMatcherTests: OBATestCase {
                 stops: stops,
                 maxDistance: 500_000
             )
-            XCTFail("Expected MatchError.noRealtimeData")
+            Issue.record("Expected MatchError.noRealtimeData")
         } catch let error as NearbyTripMatcher.MatchError {
-            expect(error) == .noRealtimeData
+            #expect(error == .noRealtimeData)
         } catch {
-            XCTFail("Unexpected error: \(error)")
+            Issue.record("Unexpected error: \(error)")
         }
     }
 
     // MARK: - Deduplication
 
-    func test_findTrips_deduplicatesSameVehicleAcrossStops() async throws {
+    @Test func `Find trips deduplicates same vehicle across stops`() async throws {
         // Pass the same stop twice so fetchArrivals returns duplicate arrivals.
         let stops = stopsFromArrivalsFixture()
         let duplicatedStops = stops + stops
@@ -282,20 +291,20 @@ class NearbyTripMatcherTests: OBATestCase {
 
         // Route 1_30 has 2 unique vehicles (1_7028, 1_7022).
         // Even with duplicated stops, dedup should keep only 2.
-        expect(results.count) == 2
+        #expect(results.count == 2)
         let vehicleIDs = results.compactMap { $0.arrivalDeparture.vehicleID }
-        expect(Set(vehicleIDs).count) == 2
+        #expect(Set(vehicleIDs).count == 2)
     }
 
     // MARK: - MatchError
 
-    func test_matchError_noStopsNearby_localizedDescription() {
+    @Test func `Match error no stops nearby localized description`() {
         let error = NearbyTripMatcher.MatchError.noStopsNearby
-        expect(error.localizedDescription).toNot(beEmpty())
+        #expect(!error.localizedDescription.isEmpty)
     }
 
-    func test_matchError_noRealtimeData_localizedDescription() {
+    @Test func `Match error no realtime data localized description`() {
         let error = NearbyTripMatcher.MatchError.noRealtimeData
-        expect(error.localizedDescription).toNot(beEmpty())
+        #expect(!error.localizedDescription.isEmpty)
     }
 }

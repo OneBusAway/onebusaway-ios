@@ -7,29 +7,28 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
+import Foundation
+import Testing
 @testable import OBAKitCore
 
 @MainActor
-class MoreTabConfigurationTests: XCTestCase {
+@Suite(.serialized)
+final class MoreTabConfigurationTests {
 
     // MARK: - Default Configuration
 
-    func test_defaultConfiguration_hasExpectedValues() {
+    @Test func `Default configuration has expected values`() {
         let config = MoreTabConfiguration.default
-        XCTAssertNil(config.headerSupportText)
-        XCTAssertTrue(config.showHelpOutSection)
-        XCTAssertNil(config.translateURL)
-        XCTAssertEqual(
-            config.developURL?.absoluteString,
-            "https://github.com/oneBusAway/onebusaway-ios"
-        )
-        XCTAssertTrue(config.customLinks.isEmpty)
+        #expect(config.headerSupportText == nil)
+        #expect(config.showHelpOutSection)
+        #expect(config.translateURL == nil)
+        #expect(config.developURL?.absoluteString == "https://github.com/oneBusAway/onebusaway-ios")
+        #expect(config.customLinks.isEmpty)
     }
 
     // MARK: - Parsing from Dictionary
 
-    func test_parseFromDictionary_withAllFields() {
+    @Test func `Parse from dictionary with all fields`() {
         let dict: [AnyHashable: Any] = [
             "HeaderSupportText": "Powered by TestAgency",
             "ShowHelpOutSection": false,
@@ -43,78 +42,72 @@ class MoreTabConfigurationTests: XCTestCase {
 
         let config = MoreTabConfiguration(from: dict)
 
-        XCTAssertEqual(config.headerSupportText, "Powered by TestAgency")
-        XCTAssertFalse(config.showHelpOutSection)
-        XCTAssertEqual(config.translateURL?.absoluteString, "https://example.com/translate")
-        XCTAssertEqual(config.developURL?.absoluteString, "https://example.com/develop")
-        XCTAssertEqual(config.customLinks.count, 2)
-        XCTAssertEqual(config.customLinks[0].title, "Agency Site")
-        XCTAssertEqual(config.customLinks[0].url.absoluteString, "https://example.com")
-        XCTAssertEqual(config.customLinks[1].title, "Call Us")
-        XCTAssertEqual(config.customLinks[1].url.absoluteString, "tel:+1234567890")
+        #expect(config.headerSupportText == "Powered by TestAgency")
+        #expect(!config.showHelpOutSection)
+        #expect(config.translateURL?.absoluteString == "https://example.com/translate")
+        #expect(config.developURL?.absoluteString == "https://example.com/develop")
+        #expect(config.customLinks.count == 2)
+        #expect(config.customLinks[0].title == "Agency Site")
+        #expect(config.customLinks[0].url.absoluteString == "https://example.com")
+        #expect(config.customLinks[1].title == "Call Us")
+        #expect(config.customLinks[1].url.absoluteString == "tel:+1234567890")
     }
 
-    func test_parseFromDictionary_withMinimalFields() {
+    @Test func `Parse from dictionary with minimal fields`() {
         let dict: [AnyHashable: Any] = [:]
         let config = MoreTabConfiguration(from: dict)
 
-        XCTAssertNil(config.headerSupportText)
-        XCTAssertTrue(config.showHelpOutSection)
-        XCTAssertNil(config.translateURL)
-        XCTAssertEqual(
-            config.developURL?.absoluteString,
-            "https://github.com/oneBusAway/onebusaway-ios"
-        )
-        XCTAssertTrue(config.customLinks.isEmpty)
+        #expect(config.headerSupportText == nil)
+        #expect(config.showHelpOutSection)
+        #expect(config.translateURL == nil)
+        #expect(config.developURL?.absoluteString == "https://github.com/oneBusAway/onebusaway-ios")
+        #expect(config.customLinks.isEmpty)
     }
 
-    func test_parseFromDictionary_withPartialFields() {
+    @Test func `Parse from dictionary with partial fields`() {
         let dict: [AnyHashable: Any] = [
             "ShowHelpOutSection": false,
             "TranslateURL": "https://custom-translate.com"
         ]
         let config = MoreTabConfiguration(from: dict)
 
-        XCTAssertNil(config.headerSupportText)
-        XCTAssertFalse(config.showHelpOutSection)
-        XCTAssertEqual(config.translateURL?.absoluteString, "https://custom-translate.com")
-        XCTAssertEqual(
-            config.developURL?.absoluteString,
-            "https://github.com/oneBusAway/onebusaway-ios"
-        )
-        XCTAssertTrue(config.customLinks.isEmpty)
+        #expect(config.headerSupportText == nil)
+        #expect(!config.showHelpOutSection)
+        #expect(config.translateURL?.absoluteString == "https://custom-translate.com")
+        #expect(config.developURL?.absoluteString == "https://github.com/oneBusAway/onebusaway-ios")
+        #expect(config.customLinks.isEmpty)
     }
 
     // MARK: - MoreTabLinkItem
 
-    func test_linkItem_validDictionary_succeeds() {
+    @Test func `Link item valid dictionary succeeds`() {
         let dict: [AnyHashable: Any] = [
             "Title": "Test Link",
             "URL": "https://example.com"
         ]
         let item = MoreTabLinkItem(dictionary: dict)
 
-        XCTAssertNotNil(item)
-        XCTAssertEqual(item?.title, "Test Link")
-        XCTAssertEqual(item?.url.absoluteString, "https://example.com")
+        #expect(item != nil)
+        #expect(item?.title == "Test Link")
+        #expect(item?.url.absoluteString == "https://example.com")
     }
 
-    func test_linkItem_missingTitle_returnsNil() {
+    @Test func `Link item missing title returns nil`() {
         let dict: [AnyHashable: Any] = ["URL": "https://example.com"]
-        XCTAssertNil(MoreTabLinkItem(dictionary: dict))
+        #expect(MoreTabLinkItem(dictionary: dict) == nil)
     }
 
-    func test_linkItem_missingURL_returnsNil() {
+    @Test func `Link item missing URL returns nil`() {
         let dict: [AnyHashable: Any] = ["Title": "Test"]
-        XCTAssertNil(MoreTabLinkItem(dictionary: dict))
+        #expect(MoreTabLinkItem(dictionary: dict) == nil)
     }
 
-    func test_linkItem_emptyURL_returnsNil() {
+    @Test func `Link item empty URL returns nil`() {
         let dict: [AnyHashable: Any] = ["Title": "Test", "URL": ""]
-        XCTAssertNil(MoreTabLinkItem(dictionary: dict))
+        #expect(MoreTabLinkItem(dictionary: dict) == nil)
     }
 
-    func test_linkItem_malformedLinksFiltered_inConfiguration() {
+    @Test func `Link item malformed links filtered in configuration`() {
         let dict: [AnyHashable: Any] = [
             "CustomLinks": [
                 ["Title": "Valid", "URL": "https://example.com"],
@@ -124,14 +117,14 @@ class MoreTabConfigurationTests: XCTestCase {
             ]
         ]
         let config = MoreTabConfiguration(from: dict)
-        XCTAssertEqual(config.customLinks.count, 1)
-        XCTAssertEqual(config.customLinks[0].title, "Valid")
-        XCTAssertEqual(config.customLinks[0].url.absoluteString, "https://example.com")
+        #expect(config.customLinks.count == 1)
+        #expect(config.customLinks[0].title == "Valid")
+        #expect(config.customLinks[0].url.absoluteString == "https://example.com")
     }
 
     // MARK: - Direct Initializer
 
-    func test_directInitializer_setsAllProperties() {
+    @Test func `Direct initializer sets all properties`() {
         let config = MoreTabConfiguration(
             headerSupportText: "Custom Text",
             showHelpOutSection: false,
@@ -140,10 +133,10 @@ class MoreTabConfigurationTests: XCTestCase {
             customLinks: []
         )
 
-        XCTAssertEqual(config.headerSupportText, "Custom Text")
-        XCTAssertFalse(config.showHelpOutSection)
-        XCTAssertEqual(config.translateURL?.absoluteString, "https://translate.example.com")
-        XCTAssertNil(config.developURL)
-        XCTAssertTrue(config.customLinks.isEmpty)
+        #expect(config.headerSupportText == "Custom Text")
+        #expect(!config.showHelpOutSection)
+        #expect(config.translateURL?.absoluteString == "https://translate.example.com")
+        #expect(config.developURL == nil)
+        #expect(config.customLinks.isEmpty)
     }
 }

@@ -252,7 +252,167 @@ public class MapRegionManager: NSObject,
         mapView.registerAnnotationView(StopAnnotationView.self)
         mapView.registerAnnotationView(PulsingAnnotationView.self)
         mapView.registerAnnotationView(PulsingVehicleAnnotationView.self)
+        mapView.registerAnnotationView(RentalAnnotationView.self)
+        mapView.registerAnnotationView(RentalClusterAnnotationView.self)
         mapView.register(UserPinAnnotationView.self, forAnnotationViewWithReuseIdentifier: "UserDroppedPin")
+    }
+
+    // MARK: - Map Layers
+
+    /// Registered toggleable data layers, in Map sheet order.
+    public private(set) var mapLayers: [MapLayer] = []
+
+    /// The UserDefaults key persisting a layer's on/off state.
+    public static func mapLayerDefaultsKey(id: String) -> String {
+        "mapLayer.\(id).enabled"
+    }
+
+    /// Registers a layer, registers its persistence default, and activates it when
+    /// its persisted state says on. Layers appear in the Map sheet in registration
+    /// order within their group.
+    public func registerMapLayer(_ layer: MapLayer) {
+        guard !mapLayers.contains(where: { $0.id == layer.id }) else { return }
+
+        application.userDefaults.register(defaults: [
+            Self.mapLayerDefaultsKey(id: layer.id): layer.isEnabledByDefault
+        ])
+        mapLayers.append(layer)
+
+        if isMapLayerEnabled(id: layer.id) {
+            layer.activate()
+            forwardViewport(to: layer)
+        }
+    }
+
+    /// Deactivates and removes a layer (e.g. when the region changes to one that
+    /// doesn't support it). The persisted preference is kept.
+    public func removeMapLayer(id: String) {
+        guard let index = mapLayers.firstIndex(where: { $0.id == id }) else { return }
+        let layer = mapLayers.remove(at: index)
+        if isMapLayerEnabled(id: id) {
+            layer.deactivate()
+        }
+    }
+
+    public func mapLayer(id: String) -> MapLayer? {
+        mapLayers.first { $0.id == id }
+    }
+
+    public func isMapLayerEnabled(id: String) -> Bool {
+        application.userDefaults.bool(forKey: Self.mapLayerDefaultsKey(id: id))
+    }
+
+    public func setMapLayerEnabled(_ enabled: Bool, id: String) {
+        guard isMapLayerEnabled(id: id) != enabled else { return }
+        application.userDefaults.set(enabled, forKey: Self.mapLayerDefaultsKey(id: id))
+
+        if let layer = mapLayer(id: id) {
+            if enabled {
+                layer.activate()
+                forwardViewport(to: layer)
+            } else {
+                layer.deactivate()
+            }
+        }
+
+        NotificationCenter.default.post(name: .mapLayerEnabledStateDidChange, object: id)
+        application.analytics?.reportEvent(
+            pageURL: "app://localhost/map",
+            label: AnalyticsLabels.mapLayerToggled,
+            value: "\(id):\(enabled ? "on" : "off")"
+        )
+    }
+
+    /// The UserDefaults key persisting the shared rental minimum-range threshold.
+    static let rentalMinimumRangeDefaultsKey = "mapLayer.rentals.minimumRangeMeters"
+
+    /// The minimum-range filter shared by the Bikes and Scooters layers — one
+    /// threshold, not one per layer.
+    ///
+    /// It lives here beside the per-layer enablement so `mapLayersDifferFromDefaults`
+    /// and `resetMapLayersToDefaults()` cover it, which is what makes the Map
+    /// sheet's Reset button honest. No `register(defaults:)` is needed: an unset
+    /// key reads as 0, which is exactly `.any`.
+    var rentalRangeFilter: RentalRangeFilter {
+        get {
+            RentalRangeFilter(
+                minimumRangeMeters: application.userDefaults.integer(forKey: Self.rentalMinimumRangeDefaultsKey)
+            )
+        }
+        set {
+            guard rentalRangeFilter != newValue else { return }
+            application.userDefaults.set(newValue.minimumRangeMeters, forKey: Self.rentalMinimumRangeDefaultsKey)
+
+            NotificationCenter.default.post(name: .rentalRangeFilterDidChange, object: nil)
+            application.analytics?.reportEvent(
+                pageURL: "app://localhost/map",
+                label: AnalyticsLabels.rentalRangeFilterChanged,
+                value: String(newValue.minimumRangeMeters)
+            )
+        }
+    }
+
+    /// The number of enabled, non-hidden layers — the basemap button's badge.
+    public var enabledMapLayerCount: Int {
+        mapLayers.filter { $0.availability != .unsupported && isMapLayerEnabled(id: $0.id) }.count
+    }
+
+    /// True when any layer's on/off state differs from its default, or the rental
+    /// range filter is active *and visible* — drives the Map sheet's Reset
+    /// affordance. The filter row only renders when a `.otherModes` layer is
+    /// registered (rental layers are region-gated), so a non-zero filter left over
+    /// from another region must not offer a Reset that changes nothing on screen.
+    public var mapLayersDifferFromDefaults: Bool {
+        if rentalRangeFilter != .any, mapLayers.contains(where: { $0.group == .otherModes }) { return true }
+        return mapLayers.contains { isMapLayerEnabled(id: $0.id) != $0.isEnabledByDefault }
+    }
+
+    /// Restores every registered layer to its default on/off state, and clears the
+    /// rental range filter.
+    public func resetMapLayersToDefaults() {
+        for layer in mapLayers {
+            setMapLayerEnabled(layer.isEnabledByDefault, id: layer.id)
+        }
+        rentalRangeFilter = .any
+    }
+
+    /// Whether stop annotations should render. True when no stops layer is
+    /// registered — the layer row is additive; its absence must not hide stops.
+    var isStopsLayerEnabled: Bool {
+        guard mapLayer(id: StopsMapLayer.layerID) != nil else { return true }
+        return isMapLayerEnabled(id: StopsMapLayer.layerID)
+    }
+
+    /// Called by `StopsMapLayer` when its toggle flips; re-renders stop annotations.
+    func stopsLayerVisibilityDidChange() {
+        if isStopsLayerEnabled {
+            displayUniqueStopAnnotations()
+        } else {
+            removeStopAnnotationsPreservingSelection()
+        }
+    }
+
+    /// Removes stop annotations for the layer toggle, but never a stop the rider is
+    /// actively looking at: a searched or selected stop is explicit user intent and
+    /// outranks the browse-layer preference (bookmarks get the same exemption).
+    private func removeStopAnnotationsPreservingSelection() {
+        let selectedStopIDs = Set(mapView.selectedAnnotations.compactMap { ($0 as? Stop)?.id })
+        let stopsToRemove = mapView.annotations.compactMap { $0 as? Stop }.filter { !selectedStopIDs.contains($0.id) }
+        mapView.removeAnnotations(stopsToRemove)
+    }
+
+    /// Feeds the current viewport to a layer, applying its zoom window: outside
+    /// the window the layer receives nil and removes its annotations.
+    private func forwardViewport(to layer: MapLayer) {
+        let visibleRect = mapView.visibleMapRect
+        let insideWindow = layer.zoomWindow.contains(visibleHeight: visibleRect.height)
+        layer.viewportDidChange(insideWindow ? visibleRect : nil)
+    }
+
+    private func updateMapLayers() {
+        for layer in mapLayers where isMapLayerEnabled(id: layer.id) {
+            forwardViewport(to: layer)
+        }
     }
 
     // MARK: - Data Loading
@@ -642,11 +802,13 @@ public class MapRegionManager: NSObject,
         }
         mapView.addAnnotations(Array(bookmarksToAdd))
 
-        // Re-add Stop annotations for stops that no longer have bookmarks
-        let stopsToAdd = stops.filter {
+        // Re-add Stop annotations for stops that no longer have bookmarks.
+        // With the stops layer toggled off, nothing is added — bookmarks are
+        // user content and stay visible regardless.
+        let stopsToAdd = isStopsLayerEnabled ? stops.filter {
             !bookmarksHash.keys.contains($0.id) &&
             !existingStopIDs.contains($0.id)
-        }
+        } : []
         mapView.addAnnotations(stopsToAdd)
         refreshAnnotationViews(for: Array(affectedStopIDs))
         notifyDelegatesStopsChanged()
@@ -704,6 +866,15 @@ public class MapRegionManager: NSObject,
         mapView.removeAllAnnotations()
         mapView.removeOverlays(mapView.overlays)
         reloadStopAnnotations()
+        notifyMapLayersAnnotationsCleared()
+    }
+
+    /// `removeAllAnnotations` strips layer annotations behind the layers' backs;
+    /// tell them so their bookkeeping and the map agree again.
+    private func notifyMapLayersAnnotationsCleared() {
+        for layer in mapLayers where isMapLayerEnabled(id: layer.id) {
+            layer.mapAnnotationsWereCleared()
+        }
     }
 
     private func searchResponseOverridesStopLoading() -> Bool {
@@ -770,6 +941,7 @@ public class MapRegionManager: NSObject,
 
     private func displaySearchResult(stopsForRoute: StopsForRoute) {
         mapView.removeAllAnnotations()
+        notifyMapLayersAnnotationsCleared()
 
         mapView.addOverlays(stopsForRoute.polylines)
         mapView.addAnnotations(stopsForRoute.stops)
@@ -884,8 +1056,19 @@ public class MapRegionManager: NSObject,
 
         updateZoomWarningOverlay(mapHeight: mapView.visibleMapRect.height)
 
+        // The zoom gate applies regardless of the layer toggle: `getStops` with a
+        // region-scale bounding box is exactly what the 40,000-height gate prevents.
         guard mapView.visibleMapRect.height <= MapRegionManager.requiredHeightToShowStops else {
             mapView.removeAnnotations(type: Stop.self)
+            return
+        }
+
+        guard isStopsLayerEnabled else {
+            removeStopAnnotationsPreservingSelection()
+            // Data still loads even when annotations are hidden: other surfaces
+            // (like the nearby stops list) read `stops` directly.
+            regionChangeRequestTimer?.invalidate()
+            regionChangeRequestTimer = Timer.scheduledTimer(timeInterval: 0.25, target: self, selector: #selector(requestDataForMapRegion(_:)), userInfo: nil, repeats: false)
             return
         }
 
@@ -921,6 +1104,7 @@ public class MapRegionManager: NSObject,
 
         reloadRegionAnnotations()
         reloadStopAnnotations()
+        updateMapLayers()
     }
 
     public func mapView(_ mapView: MKMapView, didSelect annotation: any MKAnnotation) {
@@ -998,6 +1182,14 @@ public class MapRegionManager: NSObject,
     }
 
     public func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
+        // Registered layers get first claim on their own annotation (and cluster)
+        // types; everything else falls through to the built-in annotation types.
+        for layer in mapLayers {
+            if let layerView = layer.annotationView(for: annotation, in: mapView) {
+                return layerView
+            }
+        }
+
         guard let reuseIdentifier = reuseIdentifier(for: annotation) else {
             return nil
         }

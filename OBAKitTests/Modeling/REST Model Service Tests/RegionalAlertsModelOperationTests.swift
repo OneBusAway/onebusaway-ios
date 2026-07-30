@@ -7,22 +7,22 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
-import Nimble
+import Testing
 import CoreLocation
 @testable import OBAKit
 @testable import OBAKitCore
 
 // swiftlint:disable force_try force_cast
 
-class RegionalAlertsModelOperationTests: OBATestCase {
-    func testSuccessfulRequest() async throws {
+@Suite(.serialized)
+final class RegionalAlertsModelOperationTests: OBATestCase {
+    @Test func `Successful request`() async throws {
         let dataLoader = (restService.dataLoader as! MockDataLoader)
         stubAgenciesWithCoverage(dataLoader: dataLoader)
         Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
 
         let agencies = try! Fixtures.loadRESTAPIPayload(type: [AgencyWithCoverage].self, fileName: "agencies_with_coverage.json")
         let alerts = await restService.getAlerts(agencies: agencies)
-        expect(alerts.count) == 20
+        #expect(alerts.count == 20)
     }
 }

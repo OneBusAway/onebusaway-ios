@@ -8,35 +8,35 @@
 //
 
 import Foundation
-import XCTest
-import Nimble
+import Testing
 import UIKit
 @testable import OBAKit
 @testable import OBAKitCore
 
 @MainActor
-class UIKitExtensionsTests: XCTestCase {
+@Suite(.serialized)
+final class UIKitExtensionsTests {
     
-    func test_UIButton_chevronButton() {
+    @Test func `UI button chevron button`() {
         let button = UIButton.chevronButton
-        expect(button.buttonType) == .detailDisclosure
-        expect(button.image(for: .normal)).toNot(beNil())
+        #expect(button.buttonType == .detailDisclosure)
+        #expect(button.image(for: .normal) != nil)
     }
     
-    func test_UIButton_buildCloseButton() {
+    @Test func `UI button build close button`() {
         let button = UIButton.buildCloseButton()
-        expect(button.translatesAutoresizingMaskIntoConstraints) == false
-        expect(button.accessibilityLabel) == Strings.close
+        #expect(button.translatesAutoresizingMaskIntoConstraints == false)
+        #expect(button.accessibilityLabel == Strings.close)
     }
     
-    func test_UITraitEnvironment_isAccessibility() {
+    @Test func `UI trait environment is accessibility`() {
         _ = UITraitCollection(preferredContentSizeCategory: .extraLarge)
         let view = UIView()
         view.overrideUserInterfaceStyle = .unspecified
         // For this test, we need to create a mock trait environment
         // Since the actual isAccessibility property depends on the trait collection
         // We'll test the logic directly by checking content size categories
-        expect(UIContentSizeCategory.extraLarge >= .extraLarge) == true
-        expect(UIContentSizeCategory.medium >= .extraLarge) == false
+        #expect(UIContentSizeCategory.extraLarge >= .extraLarge)
+        #expect(!(UIContentSizeCategory.medium >= .extraLarge))
     }
 }

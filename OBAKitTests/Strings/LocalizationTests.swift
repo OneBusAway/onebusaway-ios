@@ -7,7 +7,8 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
+import Foundation
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -16,7 +17,8 @@ import XCTest
 /// falls back to English, and a mismatched format specifier makes `String(format:)` read
 /// past its argument list.
 @MainActor
-class LocalizationTests: XCTestCase {
+@Suite(.serialized)
+final class LocalizationTests {
 
     /// Keys whose plural forms come from `Localizable.stringsdict` rather than
     /// `Localizable.strings`. Every one of these is called with `String(format:)` and a count.
@@ -56,19 +58,20 @@ class LocalizationTests: XCTestCase {
     // MARK: - Key parity
 
     /// A key missing from a locale silently renders in English. Nothing else catches it.
-    func testEveryLocaleHasSameKeysAsEnglish() {
+    @Test func `Every locale has same keys as english`() {
         for (name, bundle) in frameworks {
             guard let english = strings(in: bundle, localization: "en") else {
-                return XCTFail("\(name): no en Localizable.strings")
+                Issue.record("\(name): no en Localizable.strings")
+                return
             }
-            XCTAssertGreaterThan(english.count, 100, "\(name): en table looks truncated")
+            #expect(english.count > 100, "\(name): en table looks truncated")
 
             for localization in bundle.localizations where localization != "en" && localization != "Base" {
                 guard let translated = strings(in: bundle, localization: localization) else { continue }
                 let missing = Set(english.keys).subtracting(translated.keys)
                 let extra = Set(translated.keys).subtracting(english.keys)
-                XCTAssertTrue(missing.isEmpty, "\(name)/\(localization) is missing \(missing.count) key(s): \(missing.sorted().prefix(5))")
-                XCTAssertTrue(extra.isEmpty, "\(name)/\(localization) has \(extra.count) key(s) not in en: \(extra.sorted().prefix(5))")
+                #expect(missing.isEmpty, "\(name)/\(localization) is missing \(missing.count) key(s): \(missing.sorted().prefix(5))")
+                #expect(extra.isEmpty, "\(name)/\(localization) has \(extra.count) key(s) not in en: \(extra.sorted().prefix(5))")
             }
         }
     }
@@ -77,7 +80,7 @@ class LocalizationTests: XCTestCase {
 
     /// A translation that drops `%@` silently renders without the app name; one that *adds*
     /// a specifier makes `String(format:)` read past the end of its arguments.
-    func testEveryLocalePreservesEnglishFormatSpecifiers() {
+    @Test func `Every locale preserves english format specifiers`() {
         for (name, bundle) in frameworks {
             guard let english = strings(in: bundle, localization: "en") else { continue }
 
@@ -85,10 +88,7 @@ class LocalizationTests: XCTestCase {
                 guard let translated = strings(in: bundle, localization: localization) else { continue }
                 for (key, translation) in translated {
                     guard let source = english[key] else { continue }
-                    XCTAssertEqual(
-                        specifiers(in: source), specifiers(in: translation),
-                        "\(name)/\(localization)/\(key): format specifiers differ from English — en=\(source) \(localization)=\(translation)"
-                    )
+                    #expect(specifiers(in: source) == specifiers(in: translation), "\(name)/\(localization)/\(key): format specifiers differ from English — en=\(source) \(localization)=\(translation)")
                 }
             }
         }
@@ -98,7 +98,7 @@ class LocalizationTests: XCTestCase {
 
     /// Every locale must carry all the plural keys, with the CLDR-mandatory `other` category.
     /// A dropped entry degrades silently to the `.strings` fallback ("1 stops").
-    func testEveryLocaleStringsdictIsWellFormed() {
+    @Test func `Every locale stringsdict is well formed`() {
         let bundle = Bundle(for: DonationCell.self)
 
         for localization in bundle.localizations where localization != "Base" {
@@ -106,22 +106,22 @@ class LocalizationTests: XCTestCase {
                                        subdirectory: nil, localization: localization),
                   let dict = NSDictionary(contentsOf: url) as? [String: Any]
             else {
-                return XCTFail("\(localization): Localizable.stringsdict is missing or unparseable")
+                Issue.record("\(localization): Localizable.stringsdict is missing or unparseable")
+                return
             }
 
             let missing = Self.pluralKeys.subtracting(dict.keys)
-            XCTAssertTrue(missing.isEmpty, "\(localization)/stringsdict is missing \(missing.sorted())")
+            #expect(missing.isEmpty, "\(localization)/stringsdict is missing \(missing.sorted())")
 
             for key in Self.pluralKeys {
                 guard let entry = dict[key] as? [String: Any],
                       let variable = entry["count"] as? [String: Any]
                 else {
-                    XCTFail("\(localization)/\(key): malformed stringsdict entry")
+                    Issue.record("\(localization)/\(key): malformed stringsdict entry")
                     continue
                 }
-                XCTAssertEqual(variable["NSStringFormatSpecTypeKey"] as? String, "NSStringPluralRuleType",
-                               "\(localization)/\(key): wrong spec type")
-                XCTAssertNotNil(variable["other"], "\(localization)/\(key): missing mandatory CLDR category 'other'")
+                #expect((variable["NSStringFormatSpecTypeKey"] as? String) == "NSStringPluralRuleType", "\(localization)/\(key): wrong spec type")
+                #expect(variable["other"] != nil, "\(localization)/\(key): missing mandatory CLDR category 'other'")
             }
         }
     }
@@ -130,7 +130,7 @@ class LocalizationTests: XCTestCase {
     /// `Localizable.stringsdict`. If the stringsdict resource ever stops being bundled, lookup
     /// silently falls back to the bare `%d` form and English renders "1 stops". Assert the
     /// singular actually resolves, which only happens when the stringsdict is present.
-    func testStringsdictIsBundledSoSingularsResolve() {
+    @Test func `Stringsdict is bundled so singulars resolve`() {
         let bundle = Bundle(for: DonationCell.self)
         let expectedSingulars = [
             "stop_page.timeline.skipped_stops_fmt": "1 stop",
@@ -140,10 +140,7 @@ class LocalizationTests: XCTestCase {
 
         for (key, expected) in expectedSingulars {
             let format = bundle.localizedString(forKey: key, value: "MISSING", table: nil)
-            XCTAssertEqual(
-                String(format: format, 1), expected,
-                "\(key) did not resolve its singular — is Localizable.stringsdict bundled?"
-            )
+            #expect(String(format: format, 1) == expected, "\(key) did not resolve its singular — is Localizable.stringsdict bundled?")
         }
     }
 }

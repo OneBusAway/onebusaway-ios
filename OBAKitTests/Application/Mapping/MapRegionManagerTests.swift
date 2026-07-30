@@ -8,35 +8,32 @@
 //
 
 import Foundation
-import XCTest
 import MapKit
 import CoreLocation
 @testable import OBAKit
 @testable import OBAKitCore
-import Nimble
+import Testing
 
 // swiftlintXdisable force_try
 
-class MapRegionManagerTests: OBATestCase {
+@Suite(.serialized)
+final class MapRegionManagerTests: OBATestCase {
     var queue: OperationQueue!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
+
         queue = OperationQueue()
         queue.maxConcurrentOperationCount = 1
     }
 
-    override func tearDown() async throws {
-        try await super.tearDown()
+    isolated deinit {
         queue.cancelAllOperations()
     }
 
-    /// Polls a MainActor-isolated condition until it holds or the timeout
-    /// elapses. Used instead of Nimble's `toEventually`, whose `SyncExpectation`
-    /// is sent onto a background poll executor and trips the strict-concurrency
-    /// ratchet (`scripts/concurrency_ratchet`). Every read here stays on the
-    /// MainActor, so nothing crosses an isolation boundary.
-    @MainActor
+    /// Polls a condition until it holds or the timeout elapses. The suite is
+    /// `@MainActor`-isolated (via `OBATestCase`), so every read stays on the
+    /// MainActor and nothing crosses an isolation boundary.
     private func pollUntil(timeout: TimeInterval = 2.0, _ condition: () -> Bool) async {
         let deadline = Date().addingTimeInterval(timeout)
         while !condition() && Date() < deadline {
@@ -61,7 +58,7 @@ class MapRegionManagerTests: OBATestCase {
         )
     }
 
-    func test_init() {
+    @Test func initialization() {
         let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)
         stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
@@ -79,8 +76,7 @@ class MapRegionManagerTests: OBATestCase {
         let application = Application(config: config)
         let mgr = MapRegionManager(application: application)
 
-        expect(mgr.mapView).toNot(beNil())
-        expect(mgr.mapView.showsScale).to(beTrue())
+        #expect(mgr.mapView.showsScale)
 
         // Disable traffic in the Simulator to work around a bug in Xcode 11 and 12
         // where the console spews hundreds of error messages that read:
@@ -88,14 +84,14 @@ class MapRegionManagerTests: OBATestCase {
         //
         // https://stackoverflow.com/a/63176707
         #if targetEnvironment(simulator)
-        expect(mgr.mapView.showsTraffic).to(beFalse())
+        #expect(!mgr.mapView.showsTraffic)
         #else
-        expect(mgr.mapView.showsTraffic).to(beTrue())
+        #expect(mgr.mapView.showsTraffic)
         #endif
     }
 
     /// When `currentRegion` is nil, `visibleMapRect` also returns `nil`.
-    func test_visibleMapRect_nilRegion() {
+    @Test func `Visible map rect nil region`() {
         let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)
         stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
@@ -111,8 +107,8 @@ class MapRegionManagerTests: OBATestCase {
 
         let application = Application(config: config)
         let mgr = MapRegionManager(application: application)
-        expect(application.currentRegion).to(beNil())
-        expect(mgr.lastVisibleMapRect).to(beNil())
+        #expect(application.currentRegion == nil)
+        #expect(mgr.lastVisibleMapRect == nil)
     }
 
     // MARK: - Zoom-In Warning Threshold
@@ -120,19 +116,18 @@ class MapRegionManagerTests: OBATestCase {
     /// The shared zoom-in-warning predicate (used by both the UIKit map's
     /// `zoomInStatus` and the SwiftUI `MapPanelRootView`) shows the warning only
     /// when the visible map rect is taller than the stop-loading threshold.
-    func test_shouldShowZoomInWarning_thresholdBehavior() {
+    @Test func `Should show zoom in warning threshold behavior`() {
         // Comfortably above the 40,000-point threshold → warn.
-        expect(MapRegionManager.shouldShowZoomInWarning(forVisibleMapRectHeight: 100_000)) == true
+        #expect(MapRegionManager.shouldShowZoomInWarning(forVisibleMapRectHeight: 100_000) == true)
         // Comfortably below → no warning.
-        expect(MapRegionManager.shouldShowZoomInWarning(forVisibleMapRectHeight: 10_000)) == false
+        #expect(MapRegionManager.shouldShowZoomInWarning(forVisibleMapRectHeight: 10_000) == false)
         // Exactly at the threshold is not "too far out".
-        expect(MapRegionManager.shouldShowZoomInWarning(forVisibleMapRectHeight: 40_000)) == false
+        #expect(MapRegionManager.shouldShowZoomInWarning(forVisibleMapRectHeight: 40_000) == false)
     }
 
     // MARK: - Explicit-region stop loading
 
-    @MainActor
-    func test_requestStops_inRegion_populatesStops() async {
+    @Test func `Request stops in region populates stops`() async {
         let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)
         stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
@@ -175,11 +170,10 @@ class MapRegionManagerTests: OBATestCase {
 
         await mgr.requestStops(in: region)
 
-        expect(mgr.stops).toNot(beEmpty())
+        #expect(!mgr.stops.isEmpty)
     }
 
-    @MainActor
-    func test_scheduleStopsRequest_debouncedLoadPopulatesStops() async {
+    @Test func `Schedule stops request debounced load populates stops`() async {
         let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)
         stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
@@ -226,7 +220,7 @@ class MapRegionManagerTests: OBATestCase {
 
         // Debounce is 250ms; poll for the load to land.
         await pollUntil { !mgr.stops.isEmpty }
-        expect(mgr.stops).toNot(beEmpty())
+        #expect(!mgr.stops.isEmpty)
     }
 
     // MARK: - Cache-First Serve
@@ -277,20 +271,19 @@ class MapRegionManagerTests: OBATestCase {
     /// A settle over a recently-viewed area serves persisted stops immediately
     /// (before the debounce), then the network response refreshes them — so the
     /// first delivery is the cached subset and the last is the full network set.
-    @MainActor
-    func test_scheduleStopsRequest_servesCachedStopsBeforeNetwork() async throws {
+    @Test func `Schedule stops request serves cached stops before network`() async throws {
         let dataLoader = MockDataLoader(testName: name)
         let application = makeSeattleApplication(dataLoader: dataLoader)
         let mgr = MapRegionManager(application: application)
 
-        let regionId = try XCTUnwrap(application.currentRegion?.regionIdentifier)
+        let regionId = try #require(application.currentRegion?.regionIdentifier)
         // The cache DB is file-backed and shared across tests; start clean.
         application.stopCacheRepository?.clearCache(regionId: regionId)
 
         // Seed the cache with a distinguishable subset so the cache-served
         // delivery is tellable apart from the full network set.
         let fixtureStops = try Fixtures.loadSomeStops()
-        try XCTSkipIf(fixtureStops.count < 4, "Need at least 4 fixture stops")
+        try #require(fixtureStops.count >= 4, "Need at least 4 fixture stops")
         let cachedStops = Array(fixtureStops.prefix(3))
         application.stopCacheRepository?.saveStops(cachedStops, regionId: regionId)
 
@@ -309,25 +302,24 @@ class MapRegionManagerTests: OBATestCase {
 
         // Network eventually replaces the cache set with the full fixture.
         await pollUntil { mgr.stops.count == fixtureStops.count }
-        expect(mgr.stops.count) == fixtureStops.count
+        #expect(mgr.stops.count == fixtureStops.count)
 
         // First delivery came from the cache, before the network landed.
-        let firstDelivery = try XCTUnwrap(recorder.deliveries.first)
-        expect(Set(firstDelivery.map(\.id))) == Set(cachedStops.map(\.id))
-        expect(Set(mgr.stops.map(\.id))) == Set(fixtureStops.map(\.id))
+        let firstDelivery = try #require(recorder.deliveries.first)
+        #expect(Set(firstDelivery.map(\.id)) == Set(cachedStops.map(\.id)))
+        #expect(Set(mgr.stops.map(\.id)) == Set(fixtureStops.map(\.id)))
     }
 
     /// A cache miss is a no-op: the previously-loaded stops stay on the map until
     /// the network refresh repopulates the cache — no empty set is ever
     /// published (which would flash the map blank between the settle and the
     /// network response).
-    @MainActor
-    func test_scheduleStopsRequest_cacheMissKeepsExistingStops() async throws {
+    @Test func `Schedule stops request cache miss keeps existing stops`() async throws {
         let dataLoader = MockDataLoader(testName: name)
         let application = makeSeattleApplication(dataLoader: dataLoader)
         let mgr = MapRegionManager(application: application)
 
-        let regionId = try XCTUnwrap(application.currentRegion?.regionIdentifier)
+        let regionId = try #require(application.currentRegion?.regionIdentifier)
         application.stopCacheRepository?.clearCache(regionId: regionId)
 
         // Pre-populate stops so the map has existing pins to preserve.
@@ -338,7 +330,7 @@ class MapRegionManagerTests: OBATestCase {
             longitudinalMeters: 8000
         )
         await mgr.requestStops(in: seattleRegion)
-        expect(mgr.stops).toNot(beEmpty())
+        #expect(!mgr.stops.isEmpty)
 
         // Clear the cache so the upcoming settle is a genuine miss, while the
         // manager still holds the pre-populated stops.
@@ -353,11 +345,11 @@ class MapRegionManagerTests: OBATestCase {
         // the network refresh repopulates the cache and the band re-serve then
         // delivers the stops.
         await pollUntil { !recorder.deliveries.isEmpty }
-        expect(recorder.deliveries).toNot(beEmpty())
+        #expect(!recorder.deliveries.isEmpty)
         // No delivery in the sequence was ever an empty set: the cache miss left
         // the map's stops untouched until the refresh arrived.
-        expect(recorder.deliveries.allSatisfy { !$0.isEmpty }).to(beTrue())
-        expect(mgr.stops).toNot(beEmpty())
+        #expect(recorder.deliveries.allSatisfy { !$0.isEmpty })
+        #expect(!mgr.stops.isEmpty)
     }
 
     /// A settle whose band re-serve comes back empty even though the network
@@ -365,13 +357,12 @@ class MapRegionManagerTests: OBATestCase {
     /// production gap where `currentRegion`/`regionId` is momentarily
     /// unavailable or the cache write silently no-ops, so the fresh stops would
     /// otherwise be dropped and the map left blank despite a successful fetch.
-    @MainActor
-    func test_scheduleStopsRequest_publishesFetchedWhenCacheReserveEmpty() async throws {
+    @Test func `Schedule stops request publishes fetched stops when cache re-serve is empty`() async throws {
         let dataLoader = MockDataLoader(testName: name)
         let application = makeSeattleApplication(dataLoader: dataLoader)
         let mgr = MapRegionManager(application: application)
 
-        let regionId = try XCTUnwrap(application.currentRegion?.regionIdentifier)
+        let regionId = try #require(application.currentRegion?.regionIdentifier)
         application.stopCacheRepository?.clearCache(regionId: regionId)
 
         // The mock returns the Seattle fixture for any stops request, but this
@@ -389,20 +380,20 @@ class MapRegionManagerTests: OBATestCase {
         mgr.scheduleStopsRequest(in: farRegion)
 
         let fixtureStops = try Fixtures.loadSomeStops()
-        try XCTSkipIf(fixtureStops.isEmpty, "Need a non-empty stops fixture")
+        try #require(!fixtureStops.isEmpty, "Need a non-empty stops fixture")
         await pollUntil { mgr.stops.count == fixtureStops.count }
-        expect(mgr.stops.count) == fixtureStops.count
+        #expect(mgr.stops.count == fixtureStops.count)
     }
 
     /// The under-pin label height gate (routes served / bookmark name), shared
     /// by the UIKit `shouldHideExtraStopAnnotationData` and the SwiftUI
     /// `MapPanelRootView` — labels show only at/below the 7,000-point threshold.
-    func test_shouldShowExtraStopData_thresholdBehavior() {
+    @Test func `Should show extra stop data threshold behavior`() {
         // Zoomed in close → show labels.
-        expect(MapRegionManager.shouldShowExtraStopData(forVisibleMapRectHeight: 1_000)) == true
+        #expect(MapRegionManager.shouldShowExtraStopData(forVisibleMapRectHeight: 1_000) == true)
         // At the threshold → still show.
-        expect(MapRegionManager.shouldShowExtraStopData(forVisibleMapRectHeight: 7_000)) == true
+        #expect(MapRegionManager.shouldShowExtraStopData(forVisibleMapRectHeight: 7_000) == true)
         // Zoomed out past it → hide.
-        expect(MapRegionManager.shouldShowExtraStopData(forVisibleMapRectHeight: 7_001)) == false
+        #expect(MapRegionManager.shouldShowExtraStopData(forVisibleMapRectHeight: 7_001) == false)
     }
 }

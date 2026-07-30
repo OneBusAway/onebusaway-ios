@@ -7,7 +7,8 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
+import Foundation
+import Testing
 import UserNotifications
 @testable import OBAKit
 @testable import OBAKitCore
@@ -16,7 +17,8 @@ import UserNotifications
 /// registered with the current region's OBACloud server — deduplicated, daily-refreshed,
 /// and gated on notification authorization.
 @MainActor
-class PushRegistrationManagerTests: OBATestCase {
+@Suite(.serialized)
+final class PushRegistrationManagerTests: OBATestCase {
 
     /// Mutable state shared with the manager's injected closures. `@unchecked Sendable`
     /// because tests mutate it only between awaited calls.
@@ -40,8 +42,9 @@ class PushRegistrationManagerTests: OBATestCase {
     private var currentService: ObacoAPIService?
     private var defaults: UserDefaults!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
+
         controls = Controls()
         dataLoader = MockDataLoader(testName: name)
         currentService = buildObacoService(dataLoader: dataLoader)
@@ -50,7 +53,7 @@ class PushRegistrationManagerTests: OBATestCase {
     }
 
     /// Mocks the `POST /push_registrations` response. Installed per-test rather than in
-    /// `setUp` because `MockDataLoader` matching is first-added-wins and the
+    /// `init()` because `MockDataLoader` matching is first-added-wins and the
     /// failure-handling test needs a non-204 answer.
     private func mockRegistrationResponse(statusCode: Int = 204) {
         dataLoader.mock(data: Data(), statusCode: statusCode) { request in
@@ -87,7 +90,11 @@ class PushRegistrationManagerTests: OBATestCase {
             testDeviceProvider: { controls.testDevice },
             testDeviceDescriptionProvider: { controls.testDeviceDescription },
             currentRegionIdentifierProvider: { controls.currentRegionID },
-            authorizationStatusProvider: {
+            // Explicitly `@MainActor`: unlike the other providers, which inherit
+            // the manager's isolation, AuthorizationStatusProvider is declared
+            // `@Sendable`, so this closure is nonisolated by default and could
+            // not touch main-actor-isolated `Controls`.
+            authorizationStatusProvider: { @MainActor in
                 if controls.holdNextAuthCheck {
                     controls.holdNextAuthCheck = false
                     await withCheckedContinuation { controls.authGate = $0 }
@@ -107,69 +114,69 @@ class PushRegistrationManagerTests: OBATestCase {
 
     // MARK: - Registration
 
-    func test_registerIfNeeded_postsTokenOnce() async {
+    @Test func `Register if needed posts token once`() async {
         mockRegistrationResponse()
         let manager = makeManager()
         manager.updateDeviceToken("01abff007f")
 
         await manager.registerIfNeeded()
-        XCTAssertEqual(registrationRequestCount, 1)
+        #expect(registrationRequestCount == 1)
 
         // Nothing changed: an immediate second call must not hit the network again.
         await manager.registerIfNeeded()
-        XCTAssertEqual(registrationRequestCount, 1)
+        #expect(registrationRequestCount == 1)
     }
 
-    func test_registerIfNeeded_withoutToken_doesNothing() async {
+    @Test func `Register if needed without token does nothing`() async {
         let manager = makeManager()
         await manager.registerIfNeeded()
-        XCTAssertEqual(registrationRequestCount, 0)
+        #expect(registrationRequestCount == 0)
     }
 
-    func test_registerIfNeeded_withoutAuthorization_doesNothing() async {
+    @Test func `Register if needed without authorization does nothing`() async {
         controls.authorizationStatus = .denied
         let manager = makeManager()
         manager.updateDeviceToken("01abff007f")
 
         await manager.registerIfNeeded()
-        XCTAssertEqual(registrationRequestCount, 0)
+        #expect(registrationRequestCount == 0)
     }
 
     /// Provisionally-authorized users receive quiet notifications — they count as opted in.
-    func test_registerIfNeeded_registersWithProvisionalAuthorization() async {
+    @Test func `Register if needed registers with provisional authorization`() async {
         controls.authorizationStatus = .provisional
         mockRegistrationResponse()
         let manager = makeManager()
         manager.updateDeviceToken("01abff007f")
 
         await manager.registerIfNeeded()
-        XCTAssertEqual(registrationRequestCount, 1)
+        #expect(registrationRequestCount == 1)
     }
 
     /// `CoreApplication.refreshObacoService()` leaves the previous region's service in place
     /// when the user switches to a region without a sidecar — never register against a region
     /// the user has left.
-    func test_registerIfNeeded_skipsWhenObacoServiceRegionIsStale() async {
+    @Test func `Register if needed skips when obaco service region is stale`() async {
         controls.currentRegionID = 99
         let manager = makeManager()
         manager.updateDeviceToken("01abff007f")
 
         await manager.registerIfNeeded()
-        XCTAssertEqual(registrationRequestCount, 0)
+        #expect(registrationRequestCount == 0)
     }
 
-    func test_registerIfNeeded_withoutObacoService_doesNothing() async {
+    @Test func `Register if needed without obaco service does nothing`() async {
         currentService = nil
         let manager = makeManager()
         manager.updateDeviceToken("01abff007f")
 
         await manager.registerIfNeeded()
-        XCTAssertEqual(registrationRequestCount, 0)
+        #expect(registrationRequestCount == 0)
     }
 
     // MARK: - Re-registration triggers
 
-    func test_registerIfNeeded_repostsWhenTokenRotates() async {
+    @Test func `Register if needed reposts when token rotates`() async {
         mockRegistrationResponse()
         let manager = makeManager()
         manager.updateDeviceToken("01abff007f")
@@ -178,10 +185,10 @@ class PushRegistrationManagerTests: OBATestCase {
         manager.updateDeviceToken("cafed00d")
         await manager.registerIfNeeded()
 
-        XCTAssertEqual(registrationRequestCount, 2)
+        #expect(registrationRequestCount == 2)
     }
 
-    func test_registerIfNeeded_repostsWhenLocaleChanges() async {
+    @Test func `Register if needed reposts when locale changes`() async {
         mockRegistrationResponse()
         let manager = makeManager()
         manager.updateDeviceToken("01abff007f")
@@ -190,10 +197,10 @@ class PushRegistrationManagerTests: OBATestCase {
         controls.locale = "es-MX"
         await manager.registerIfNeeded()
 
-        XCTAssertEqual(registrationRequestCount, 2)
+        #expect(registrationRequestCount == 2)
     }
 
-    func test_registerIfNeeded_repostsWhenTestDeviceFlagChanges() async {
+    @Test func `Register if needed reposts when test device flag changes`() async {
         mockRegistrationResponse()
         let manager = makeManager()
         manager.updateDeviceToken("01abff007f")
@@ -206,13 +213,13 @@ class PushRegistrationManagerTests: OBATestCase {
         controls.testDeviceDescription = "Aarons iPhone"
         await manager.registerIfNeeded()
 
-        XCTAssertEqual(registrationRequestCount, 2)
+        #expect(registrationRequestCount == 2)
     }
 
     /// The server rejects `test_device=true` without a `description` — a test device that
     /// hasn't been named yet must register as a regular device rather than POST a
     /// guaranteed 422.
-    func test_registerIfNeeded_downgradesTestDeviceWithoutDescription() async {
+    @Test func `Register if needed downgrades test device without description`() async {
         let capture = mockRegistrationResponseCapturingBody()
         controls.testDevice = true
         controls.testDeviceDescription = nil
@@ -221,17 +228,17 @@ class PushRegistrationManagerTests: OBATestCase {
 
         await manager.registerIfNeeded()
 
-        XCTAssertEqual(registrationRequestCount, 1)
-        let body = try? XCTUnwrap(capture.bodies.first)
-        XCTAssertEqual(capture.bodies.count, 1)
-        XCTAssertTrue(body?.contains("test_device=false") ?? false, "Body: \(String(describing: body))")
-        XCTAssertFalse(body?.contains("description=") ?? true, "Body: \(String(describing: body))")
+        #expect(registrationRequestCount == 1)
+        let body = try? #require(capture.bodies.first)
+        #expect(capture.bodies.count == 1)
+        #expect(body?.contains("test_device=false") ?? false, "Body: \(String(describing: body))")
+        #expect(!(body?.contains("description=") ?? true), "Body: \(String(describing: body))")
     }
 
     /// A changed description is a real change to the wire payload (it identifies the device
     /// to admins), so it must trigger a re-POST even though token/region/locale/testDevice
     /// are unchanged.
-    func test_registerIfNeeded_repostsWhenDescriptionChanges() async {
+    @Test func `Register if needed reposts when description changes`() async {
         mockRegistrationResponse()
         controls.testDevice = true
         controls.testDeviceDescription = "A"
@@ -242,15 +249,15 @@ class PushRegistrationManagerTests: OBATestCase {
         controls.testDeviceDescription = "B"
         await manager.registerIfNeeded()
 
-        XCTAssertEqual(registrationRequestCount, 2)
+        #expect(registrationRequestCount == 2)
     }
 
-    func test_registerIfNeeded_repostsWhenRegionChanges() async {
+    @Test func `Register if needed reposts when region changes`() async {
         mockRegistrationResponse()
         let manager = makeManager()
         manager.updateDeviceToken("01abff007f")
         await manager.registerIfNeeded()
-        XCTAssertEqual(registrationRequestCount, 1)
+        #expect(registrationRequestCount == 1)
 
         // Same host, different region — mirrors CoreApplication rebuilding obacoService
         // after a region switch.
@@ -259,13 +266,13 @@ class PushRegistrationManagerTests: OBATestCase {
         controls.currentRegionID = 2
 
         await manager.registerIfNeeded()
-        XCTAssertEqual(registrationRequestCount, 2)
-        XCTAssertTrue(dataLoader.recordedRequestURLs.contains { $0.path.hasSuffix("/regions/2/push_registrations") })
+        #expect(registrationRequestCount == 2)
+        #expect(dataLoader.recordedRequestURLs.contains { $0.path.hasSuffix("/regions/2/push_registrations") })
     }
 
     /// The server prunes tokens it hasn't seen recently; an unchanged registration is
     /// therefore re-POSTed once its age exceeds the refresh interval.
-    func test_registerIfNeeded_repostsWhenStale() async {
+    @Test func `Register if needed reposts when stale`() async {
         mockRegistrationResponse()
         let manager = makeManager()
         manager.updateDeviceToken("01abff007f")
@@ -274,11 +281,11 @@ class PushRegistrationManagerTests: OBATestCase {
         controls.now = controls.now.addingTimeInterval(PushRegistrationManager.refreshInterval + 60)
         await manager.registerIfNeeded()
 
-        XCTAssertEqual(registrationRequestCount, 2)
+        #expect(registrationRequestCount == 2)
     }
 
     /// Dedupe state persists across manager instances (i.e., app launches).
-    func test_registerIfNeeded_dedupeSurvivesRelaunch() async {
+    @Test func `Register if needed dedupe survives relaunch`() async {
         mockRegistrationResponse()
         let manager = makeManager()
         manager.updateDeviceToken("01abff007f")
@@ -288,13 +295,13 @@ class PushRegistrationManagerTests: OBATestCase {
         relaunched.updateDeviceToken("01abff007f")
         await relaunched.registerIfNeeded()
 
-        XCTAssertEqual(registrationRequestCount, 1)
+        #expect(registrationRequestCount == 1)
     }
 
     // MARK: - Failure handling
 
     /// A failed POST must not be recorded as a successful registration — the next call retries.
-    func test_registerIfNeeded_doesNotPersistOnServerError() async {
+    @Test func `Register if needed does not persist on server error`() async {
         mockRegistrationResponse(statusCode: 422)
 
         let manager = makeManager()
@@ -302,7 +309,7 @@ class PushRegistrationManagerTests: OBATestCase {
         await manager.registerIfNeeded()
         await manager.registerIfNeeded()
 
-        XCTAssertEqual(registrationRequestCount, 2, "Expected a retry because the first POST failed")
+        #expect(registrationRequestCount == 2, "Expected a retry because the first POST failed")
     }
 
     // MARK: - Coalescing
@@ -310,7 +317,7 @@ class PushRegistrationManagerTests: OBATestCase {
     /// On the first foreground after a permission grant, the becomeActive trigger and the
     /// APNs token callback can both call `registerIfNeeded()` before either finishes — the
     /// second caller must coalesce into the first instead of double-POSTing.
-    func test_registerIfNeeded_coalescesConcurrentCalls() async {
+    @Test func `Register if needed coalesces concurrent calls`() async {
         mockRegistrationResponse()
         let manager = makeManager()
         manager.updateDeviceToken("01abff007f")
@@ -328,40 +335,40 @@ class PushRegistrationManagerTests: OBATestCase {
         controls.authGate = nil
         _ = await first.value
 
-        XCTAssertEqual(registrationRequestCount, 1)
+        #expect(registrationRequestCount == 1)
     }
 
     // MARK: - refreshRegistration
 
-    func test_refreshRegistration_requestsAPNsRegistrationWhenAuthorized() async {
+    @Test func `Refresh registration requests APNs registration when authorized`() async {
         let manager = makeManager()
         await manager.refreshRegistration()
-        XCTAssertEqual(controls.remoteRegistrationRequests, 1)
+        #expect(controls.remoteRegistrationRequests == 1)
     }
 
-    func test_refreshRegistration_skipsAPNsRegistrationWhenDenied() async {
+    @Test func `Refresh registration skips APNs registration when denied`() async {
         controls.authorizationStatus = .denied
         let manager = makeManager()
         await manager.refreshRegistration()
-        XCTAssertEqual(controls.remoteRegistrationRequests, 0)
-        XCTAssertEqual(registrationRequestCount, 0)
+        #expect(controls.remoteRegistrationRequests == 0)
+        #expect(registrationRequestCount == 0)
     }
 
     /// The foreground refresh must POST the already-known token itself — APNs is not
     /// guaranteed to re-deliver a token callback, so this is what keeps `last_seen_at` fresh.
-    func test_refreshRegistration_postsAlreadyKnownToken() async {
+    @Test func `Refresh registration posts already known token`() async {
         mockRegistrationResponse()
         let manager = makeManager()
         manager.updateDeviceToken("01abff007f")
 
         await manager.refreshRegistration()
 
-        XCTAssertEqual(registrationRequestCount, 1)
+        #expect(registrationRequestCount == 1)
     }
 
     /// A token that rotates while a registration is in flight must be registered by the
     /// coalescing loop's follow-up pass — and recorded, so it isn't re-POSTed again.
-    func test_registerIfNeeded_registersRotatedTokenArrivingMidFlight() async {
+    @Test func `Register if needed registers rotated token arriving mid flight`() async {
         mockRegistrationResponse()
         let manager = makeManager()
         manager.updateDeviceToken("01abff007f")
@@ -377,14 +384,14 @@ class PushRegistrationManagerTests: OBATestCase {
         controls.authGate = nil
         _ = await first.value
 
-        XCTAssertEqual(registrationRequestCount, 2, "Expected the follow-up pass to register the rotated token")
+        #expect(registrationRequestCount == 2, "Expected the follow-up pass to register the rotated token")
 
         await manager.registerIfNeeded()
-        XCTAssertEqual(registrationRequestCount, 2, "Expected the rotated token to be recorded as registered")
+        #expect(registrationRequestCount == 2, "Expected the rotated token to be recorded as registered")
     }
 
     /// Corrupted persisted state must degrade to "never registered", not crash or skip.
-    func test_registerIfNeeded_recoversFromCorruptedPersistedState() async {
+    @Test func `Register if needed recovers from corrupted persisted state`() async {
         defaults.set("not a plist blob", forKey: PushRegistrationManager.lastRegistrationUserDefaultsKey)
         mockRegistrationResponse()
         let manager = makeManager()
@@ -392,29 +399,29 @@ class PushRegistrationManagerTests: OBATestCase {
 
         await manager.registerIfNeeded()
 
-        XCTAssertEqual(registrationRequestCount, 1)
+        #expect(registrationRequestCount == 1)
     }
 
-    func test_updateDeviceToken_ignoresEmptyToken() async {
+    @Test func `Update device token ignores empty token`() async {
         mockRegistrationResponse()
         let manager = makeManager()
         manager.updateDeviceToken("")
 
         await manager.registerIfNeeded()
 
-        XCTAssertEqual(registrationRequestCount, 0)
+        #expect(registrationRequestCount == 0)
     }
 
     /// Server rejections reach the injected error reporter (Crashlytics in production);
     /// registrations are the server's only audience source, so fleet-wide failures must
     /// be observable somewhere.
-    func test_registerIfNeeded_reportsServerRejectionsToErrorReporter() async {
+    @Test func `Register if needed reports server rejections to error reporter`() async {
         mockRegistrationResponse(statusCode: 422)
         let manager = makeManager()
         manager.updateDeviceToken("01abff007f")
 
         await manager.registerIfNeeded()
 
-        XCTAssertEqual(controls.reportedErrors.count, 1)
+        #expect(controls.reportedErrors.count == 1)
     }
 }

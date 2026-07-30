@@ -8,98 +8,98 @@
 //
 
 import Foundation
-import XCTest
-import Nimble
+import Testing
 import UIKit
 @testable import OBAKitCore
 
 @MainActor
-class AutoLayoutExtensionsTests: XCTestCase {
+@Suite(.serialized)
+final class AutoLayoutExtensionsTests {
     
-    func test_UIView_layoutDirectionIsRTL() {
+    @Test func `UI view layout direction is RTL`() {
         let view = UIView()
         
         // For most locales, this should be false
         view.semanticContentAttribute = .unspecified
-        expect(view.layoutDirectionIsRTL) == false
+        #expect(view.layoutDirectionIsRTL == false)
         
         // Force RTL
         view.semanticContentAttribute = .forceRightToLeft
-        expect(view.layoutDirectionIsRTL) == true
+        #expect(view.layoutDirectionIsRTL == true)
     }
     
-    func test_UIView_layoutDirectionIsLTR() {
+    @Test func `UI view layout direction is LTR`() {
         let view = UIView()
         
         // For most locales, this should be true
         view.semanticContentAttribute = .unspecified
-        expect(view.layoutDirectionIsLTR) == true
+        #expect(view.layoutDirectionIsLTR == true)
         
         // Force RTL should make LTR false
         view.semanticContentAttribute = .forceRightToLeft
-        expect(view.layoutDirectionIsLTR) == false
+        #expect(view.layoutDirectionIsLTR == false)
         
         // Force LTR
         view.semanticContentAttribute = .forceLeftToRight
-        expect(view.layoutDirectionIsLTR) == true
+        #expect(view.layoutDirectionIsLTR == true)
     }
     
-    func test_UIView_autolayoutNew() {
+    @Test func `UI view autolayout new`() {
         let view = UIView.autolayoutNew()
         
-        expect(view.translatesAutoresizingMaskIntoConstraints) == false
-        expect(view.frame) == .zero
+        #expect(view.translatesAutoresizingMaskIntoConstraints == false)
+        #expect(view.frame == .zero)
     }
     
-    func test_UILabel_autolayoutNew() {
+    @Test func `UI label autolayout new`() {
         let label = UILabel.autolayoutNew()
         
-        expect(label.translatesAutoresizingMaskIntoConstraints) == false
-        expect(label.frame) == .zero
-        expect(label).to(beAnInstanceOf(UILabel.self))
+        #expect(label.translatesAutoresizingMaskIntoConstraints == false)
+        #expect(label.frame == .zero)
+        #expect(type(of: label) == UILabel.self)
     }
     
-    func test_UIView_spacerView() {
+    @Test func `UI view spacer view`() {
         let height: CGFloat = 20.0
         let spacer = UIView.spacerView(height: height)
         
-        expect(spacer.translatesAutoresizingMaskIntoConstraints) == false
+        #expect(spacer.translatesAutoresizingMaskIntoConstraints == false)
         
         // Check that the height constraint was applied
         let heightConstraints = spacer.constraints.filter { constraint in
             constraint.firstAttribute == .height && constraint.constant == height
         }
-        expect(heightConstraints.count) == 1
+        #expect(heightConstraints.count == 1)
     }
     
-    func test_UIView_embedInWrapperView_withConstraints() {
+    @Test func `UI view embed in wrapper view with constraints`() {
         let childView = UIView()
         let wrapper = childView.embedInWrapperView(setConstraints: true)
         
-        expect(wrapper.translatesAutoresizingMaskIntoConstraints) == false
-        expect(wrapper.subviews.count) == 1
-        expect(wrapper.subviews.first) === childView
-        expect(childView.superview) === wrapper
+        #expect(wrapper.translatesAutoresizingMaskIntoConstraints == false)
+        #expect(wrapper.subviews.count == 1)
+        #expect(wrapper.subviews.first === childView)
+        #expect(childView.superview === wrapper)
     }
     
-    func test_UIView_embedInWrapperView_withoutConstraints() {
+    @Test func `UI view embed in wrapper view without constraints`() {
         let childView = UIView()
         let wrapper = childView.embedInWrapperView(setConstraints: false)
         
-        expect(wrapper.translatesAutoresizingMaskIntoConstraints) == false
-        expect(wrapper.subviews.count) == 1
-        expect(wrapper.subviews.first) === childView
-        expect(childView.superview) === wrapper
+        #expect(wrapper.translatesAutoresizingMaskIntoConstraints == false)
+        #expect(wrapper.subviews.count == 1)
+        #expect(wrapper.subviews.first === childView)
+        #expect(childView.superview === wrapper)
     }
     
-    func test_AutoLayoutPinTarget_cases() {
-        expect(UIView.AutoLayoutPinTarget.edges.rawValue) == 0
-        expect(UIView.AutoLayoutPinTarget.layoutMargins.rawValue) == 1
-        expect(UIView.AutoLayoutPinTarget.readableContent.rawValue) == 2
-        expect(UIView.AutoLayoutPinTarget.safeArea.rawValue) == 3
+    @Test func `Auto layout pin target cases`() {
+        #expect(UIView.AutoLayoutPinTarget.edges.rawValue == 0)
+        #expect(UIView.AutoLayoutPinTarget.layoutMargins.rawValue == 1)
+        #expect(UIView.AutoLayoutPinTarget.readableContent.rawValue == 2)
+        #expect(UIView.AutoLayoutPinTarget.safeArea.rawValue == 3)
     }
     
-    func test_LayoutConstraints_struct() {
+    @Test func `Layout constraints struct`() {
         let view = UIView()
         let superview = UIView()
         superview.addSubview(view)
@@ -117,9 +117,9 @@ class AutoLayoutExtensionsTests: XCTestCase {
             trailing: trailing
         )
         
-        expect(layoutConstraints.top) === top
-        expect(layoutConstraints.bottom) === bottom
-        expect(layoutConstraints.leading) === leading
-        expect(layoutConstraints.trailing) === trailing
+        #expect(layoutConstraints.top === top)
+        #expect(layoutConstraints.bottom === bottom)
+        #expect(layoutConstraints.leading === leading)
+        #expect(layoutConstraints.trailing === trailing)
     }
 }

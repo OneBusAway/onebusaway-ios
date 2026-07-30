@@ -7,8 +7,8 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
-import Nimble
+import Foundation
+import Testing
 import Combine
 @testable import OBAKit
 @testable import OBAKitCore
@@ -16,17 +16,18 @@ import Combine
 /// Tests for `AgencyAlertsViewModel`. Verifies the share-activity helper,
 /// `collapsedSections` round-trip, and the loading flag transitions on
 /// `agencyAlertsUpdated()`.
+@Suite(.serialized)
 final class AgencyAlertsViewModelTests: OBATestCase {
     var queue: OperationQueue!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
+
         queue = OperationQueue()
         queue.maxConcurrentOperationCount = 1
     }
 
-    override func tearDown() async throws {
-        try await super.tearDown()
+    isolated deinit {
         queue.cancelAllOperations()
     }
 
@@ -60,31 +61,31 @@ final class AgencyAlertsViewModelTests: OBATestCase {
 
     // MARK: - Tests
 
-    @MainActor
-    func test_init_emptyAlerts_andNotLoading() {
+    @Test @MainActor
+    func `Init empty alerts and not loading`() {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
 
         let viewModel = AgencyAlertsViewModel(application: app)
 
-        expect(viewModel.alerts).to(beEmpty())
-        expect(viewModel.isLoading).to(beFalse())
-        expect(viewModel.collapsedSections).to(beEmpty())
+        #expect(viewModel.alerts.isEmpty)
+        #expect(!viewModel.isLoading)
+        #expect(viewModel.collapsedSections.isEmpty)
     }
 
-    @MainActor
-    func test_reloadServerData_setsIsLoadingTrue() {
+    @Test @MainActor
+    func `Reload server data sets is loading true`() {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
 
         let viewModel = AgencyAlertsViewModel(application: app)
         viewModel.reloadServerData()
 
-        expect(viewModel.isLoading).to(beTrue())
+        #expect(viewModel.isLoading)
     }
 
-    @MainActor
-    func test_agencyAlertsUpdated_clearsIsLoading() {
+    @Test @MainActor
+    func `Agency alerts updated clears is loading`() {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
 
@@ -92,11 +93,11 @@ final class AgencyAlertsViewModelTests: OBATestCase {
         viewModel.reloadServerData()
         viewModel.agencyAlertsUpdated()
 
-        expect(viewModel.isLoading).to(beFalse())
+        #expect(!viewModel.isLoading)
     }
 
-    @MainActor
-    func test_collapsedSections_survivesRefresh() {
+    @Test @MainActor
+    func `Collapsed sections survives refresh`() {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
 
@@ -107,11 +108,11 @@ final class AgencyAlertsViewModelTests: OBATestCase {
         viewModel.reloadServerData()
         viewModel.agencyAlertsUpdated()
 
-        expect(viewModel.collapsedSections) == ["agency_1", "agency_2"]
+        #expect(viewModel.collapsedSections == ["agency_1", "agency_2"])
     }
 
-    @MainActor
-    func test_displayError_clearsIsLoading() {
+    @Test @MainActor
+    func `Display error clears is loading`() {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
 
@@ -119,6 +120,6 @@ final class AgencyAlertsViewModelTests: OBATestCase {
         viewModel.reloadServerData()
         viewModel.agencyAlertsStore(app.alertsStore, displayError: URLError(.badServerResponse))
 
-        expect(viewModel.isLoading).to(beFalse())
+        #expect(!viewModel.isLoading)
     }
 }

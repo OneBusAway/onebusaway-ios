@@ -10,16 +10,27 @@
 import Foundation
 import OBAKitCore
 
-typealias MockDataLoaderMatcher = (URLRequest) -> Bool
+/// `@Sendable` on purpose. Matchers run wherever the request is issued — which,
+/// for the Live Activity cleanup paths, is a detached task — so a matcher that
+/// closes over main-actor state is a data race. Without `@Sendable` the compiler
+/// cannot see that capture, and the mistake surfaces only as a runtime isolation
+/// trap that kills the test process (it did: see DeleteRecorder in
+/// LiveActivityRegistryTests). With it, the same mistake is a build error.
+typealias MockDataLoaderMatcher = @Sendable (URLRequest) -> Bool
 
-struct MockDataResponse {
+// `nonisolated`: built and matched from `URLDataLoader`'s nonisolated methods,
+// which run on whatever task the app's background work happens to be on. The
+// test target defaults to main-actor isolation, which would be wrong here.
+nonisolated struct MockDataResponse {
     let data: Data?
     let urlResponse: URLResponse?
     let error: Error?
     let matcher: MockDataLoaderMatcher
 }
 
-class MockTask: URLSessionDataTask, @unchecked Sendable {
+// `nonisolated`: every member here overrides a nonisolated URLSessionDataTask
+// declaration, so main-actor isolation would be an isolation mismatch.
+nonisolated class MockTask: URLSessionDataTask, @unchecked Sendable {
     override var progress: Progress {
         return Progress()
     }
@@ -44,7 +55,9 @@ class MockTask: URLSessionDataTask, @unchecked Sendable {
 }
 
 // @unchecked Sendable: all mutable state is guarded by the locks below.
-class MockDataLoader: NSObject, URLDataLoader, @unchecked Sendable {
+// `nonisolated` for the same reason the locks exist — this is read concurrently
+// by background tasks, so it must not pick up the target's main-actor default.
+nonisolated class MockDataLoader: NSObject, URLDataLoader, @unchecked Sendable {
     /// Guarded by `mockResponsesLock`: tests mutate the response table from the main
     /// thread while `Application` background tasks (regions refresh, agency alerts)
     /// concurrently match requests against it.

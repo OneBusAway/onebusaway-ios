@@ -7,8 +7,8 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
-import Nimble
+import Foundation
+import Testing
 import CoreLocation
 @testable import OBAKit
 @testable import OBAKitCore
@@ -21,17 +21,18 @@ import CoreLocation
 /// the fixture. That exercises the full pipeline — stubbed agencies-with-coverage
 /// request, task group, skipped-status generation, published state transitions —
 /// without any live network traffic.
-class VehiclesViewModelTests: OBATestCase {
+@Suite(.serialized)
+final class VehiclesViewModelTests: OBATestCase {
     var queue: OperationQueue!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
+
         queue = OperationQueue()
         queue.maxConcurrentOperationCount = 1
     }
 
-    override func tearDown() async throws {
-        try await super.tearDown()
+    isolated deinit {
         queue.cancelAllOperations()
     }
 
@@ -75,7 +76,7 @@ class VehiclesViewModelTests: OBATestCase {
         let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
         let dataDict = json?["data"] as? [String: Any]
         let list = dataDict?["list"] as? [[String: Any]]
-        return try XCTUnwrap(list?.compactMap { $0["agencyId"] as? String })
+        return try #require(list?.compactMap { $0["agencyId"] as? String })
     }
 
     /// Disables every agency in the fixture so `fetchVehicles()` makes no live network calls.
@@ -87,37 +88,37 @@ class VehiclesViewModelTests: OBATestCase {
 
     // MARK: - Initial State
 
-    @MainActor
-    func test_init_hasEmptyState() {
+    @Test @MainActor
+    func `Init has empty state`() {
         let app = createApplication(dataLoader: MockDataLoader(testName: name))
         let viewModel = VehiclesViewModel(application: app)
 
-        expect(viewModel.vehicles).to(beEmpty())
-        expect(viewModel.feedStatuses).to(beEmpty())
-        expect(viewModel.isLoading).to(beFalse())
-        expect(viewModel.error).to(beNil())
-        expect(viewModel.lastUpdated).to(beNil())
+        #expect(viewModel.vehicles.isEmpty)
+        #expect(viewModel.feedStatuses.isEmpty)
+        #expect(!viewModel.isLoading)
+        #expect(viewModel.error == nil)
+        #expect(viewModel.lastUpdated == nil)
     }
 
     // MARK: - Fetch Guards
 
-    @MainActor
-    func test_fetchVehicles_withoutCurrentRegion_isANoOp() async {
+    @Test @MainActor
+    func `Fetch vehicles without current region is a no op`() async {
         let app = createApplication(dataLoader: MockDataLoader(testName: name), withRegion: false)
         let viewModel = VehiclesViewModel(application: app)
 
         await viewModel.fetchVehicles()
 
-        expect(viewModel.vehicles).to(beEmpty())
-        expect(viewModel.feedStatuses).to(beEmpty())
-        expect(viewModel.lastUpdated).to(beNil())
-        expect(viewModel.isLoading).to(beFalse())
+        #expect(viewModel.vehicles.isEmpty)
+        #expect(viewModel.feedStatuses.isEmpty)
+        #expect(viewModel.lastUpdated == nil)
+        #expect(!viewModel.isLoading)
     }
 
     // MARK: - Fetch
 
-    @MainActor
-    func test_fetchVehicles_allAgenciesDisabled_producesSkippedStatusesWithoutNetworkCalls() async throws {
+    @Test @MainActor
+    func `Fetch vehicles all agencies disabled produces skipped statuses without network calls`() async throws {
         let app = createApplication(dataLoader: MockDataLoader(testName: name))
         try disableAllAgencies(in: app)
         let viewModel = VehiclesViewModel(application: app)
@@ -125,16 +126,20 @@ class VehiclesViewModelTests: OBATestCase {
         await viewModel.fetchVehicles()
 
         let agencyCount = try fixtureAgencyIDs().count
-        expect(viewModel.feedStatuses.count) == agencyCount
-        expect(viewModel.feedStatuses.allSatisfy(\.isSkipped)).to(beTrue())
-        expect(viewModel.vehicles).to(beEmpty())
-        expect(viewModel.error).to(beNil())
-        expect(viewModel.lastUpdated).toNot(beNil())
-        expect(viewModel.isLoading).to(beFalse())
+        #expect(viewModel.feedStatuses.count == agencyCount)
+        // Spelled as a closure rather than `allSatisfy(\.isSkipped)`: inside the
+        // #expect expansion the key-path-as-function conversion loses its
+        // non-throwing signature, so `allSatisfy` reads as `rethrows`-that-throws
+        // and the compiler demands a `try` the call does not need.
+        #expect(viewModel.feedStatuses.allSatisfy { $0.isSkipped })
+        #expect(viewModel.vehicles.isEmpty)
+        #expect(viewModel.error == nil)
+        #expect(viewModel.lastUpdated != nil)
+        #expect(!viewModel.isLoading)
     }
 
-    @MainActor
-    func test_fetchVehicles_sortsFeedStatusesByAgencyName() async throws {
+    @Test @MainActor
+    func `Fetch vehicles sorts feed statuses by agency name`() async throws {
         let app = createApplication(dataLoader: MockDataLoader(testName: name))
         try disableAllAgencies(in: app)
         let viewModel = VehiclesViewModel(application: app)
@@ -142,57 +147,59 @@ class VehiclesViewModelTests: OBATestCase {
         await viewModel.fetchVehicles()
 
         let names = viewModel.feedStatuses.map(\.agencyName)
-        expect(names) == names.sorted()
+        #expect(names == names.sorted())
     }
 
-    @MainActor
-    func test_agencyCounts_reflectDisabledAgencies() async throws {
+    @Test @MainActor
+    func `Agency counts reflect disabled agencies`() async throws {
         let app = createApplication(dataLoader: MockDataLoader(testName: name))
         try disableAllAgencies(in: app)
         let viewModel = VehiclesViewModel(application: app)
 
         await viewModel.fetchVehicles()
 
-        expect(viewModel.totalAgencyCount) == viewModel.feedStatuses.count
-        expect(viewModel.enabledAgencyCount) == 0
-        expect(viewModel.allAgenciesEnabled).to(beFalse())
+        #expect(viewModel.totalAgencyCount == viewModel.feedStatuses.count)
+        #expect(viewModel.enabledAgencyCount == 0)
+        #expect(!viewModel.allAgenciesEnabled)
     }
 
     // MARK: - Agency Filtering
 
-    @MainActor
-    func test_agencyEnabled_defaultsToTrueAndPersistsChanges() {
+    @Test @MainActor
+    func `Agency enabled defaults to true and persists changes`() {
         // No-region app: the fetch spawned by setAgencyEnabled() no-ops safely.
         let app = createApplication(dataLoader: MockDataLoader(testName: name), withRegion: false)
         let viewModel = VehiclesViewModel(application: app)
 
-        expect(viewModel.isAgencyEnabled("40")).to(beTrue())
-        expect(viewModel.allAgenciesEnabled).to(beTrue())
+        #expect(viewModel.isAgencyEnabled("40"))
+        #expect(viewModel.allAgenciesEnabled)
 
         viewModel.setAgencyEnabled(false, agencyID: "40")
 
-        expect(viewModel.isAgencyEnabled("40")).to(beFalse())
-        expect(viewModel.allAgenciesEnabled).to(beFalse())
-        expect(app.userDataStore.disabledVehicleFeedAgencyIDs) == ["40"]
+        #expect(!viewModel.isAgencyEnabled("40"))
+        #expect(!viewModel.allAgenciesEnabled)
+        #expect(app.userDataStore.disabledVehicleFeedAgencyIDs == ["40"])
 
         viewModel.setAgencyEnabled(true, agencyID: "40")
 
-        expect(viewModel.isAgencyEnabled("40")).to(beTrue())
-        expect(viewModel.allAgenciesEnabled).to(beTrue())
-        expect(app.userDataStore.disabledVehicleFeedAgencyIDs).to(beEmpty())
+        #expect(viewModel.isAgencyEnabled("40"))
+        #expect(viewModel.allAgenciesEnabled)
+        #expect(app.userDataStore.disabledVehicleFeedAgencyIDs.isEmpty)
     }
 
     // MARK: - Auto-Refresh Lifecycle
 
-    @MainActor
-    func test_startAutoRefresh_triggersAFetch_andStopCancels() async throws {
+    @Test @MainActor
+    func `Start auto refresh triggers a fetch and stop cancels`() async throws {
         let app = createApplication(dataLoader: MockDataLoader(testName: name))
         try disableAllAgencies(in: app)
         let viewModel = VehiclesViewModel(application: app)
 
         viewModel.startAutoRefresh()
 
-        await expect(viewModel.lastUpdated).toEventuallyNot(beNil())
+        // `startAutoRefresh` spawns a non-terminating fetch/sleep loop, so there is
+        // no completion to await — this is the one place polling is the right tool.
+        await poll(until: { viewModel.lastUpdated != nil }, "startAutoRefresh never fetched")
 
         viewModel.stopAutoRefresh()
 
@@ -200,8 +207,8 @@ class VehiclesViewModelTests: OBATestCase {
         viewModel.stopAutoRefresh()
     }
 
-    @MainActor
-    func test_stopAutoRefresh_withoutStart_isSafe() {
+    @Test @MainActor
+    func `Stop auto refresh without start is safe`() {
         let app = createApplication(dataLoader: MockDataLoader(testName: name), withRegion: false)
         let viewModel = VehiclesViewModel(application: app)
 

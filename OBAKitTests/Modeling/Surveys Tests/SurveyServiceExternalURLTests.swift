@@ -3,10 +3,11 @@
 //  OBAKitTests
 //
 
-import XCTest
-import Nimble
+import Foundation
+import Testing
 @testable import OBAKitCore
 
+@Suite(.serialized)
 final class SurveyServiceExternalURLTests: OBATestCase {
 
     nonisolated(unsafe) private var testUserDefaults: UserDefaults!
@@ -14,8 +15,9 @@ final class SurveyServiceExternalURLTests: OBATestCase {
     nonisolated(unsafe) private var context: MockSurveyURLApplicationContext!
     nonisolated(unsafe) private var service: SurveyService!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
+
         testUserDefaults = buildUserDefaults(suiteName: "\(userDefaultsSuiteName).exturl")
         testUserDefaults.removePersistentDomain(forName: "\(userDefaultsSuiteName).exturl")
         store = UserDefaultsStore(userDefaults: testUserDefaults)
@@ -24,27 +26,26 @@ final class SurveyServiceExternalURLTests: OBATestCase {
         service = SurveyService(apiService: nil, userDataStore: store, application: context)
     }
 
-    override func tearDown() async throws {
+    isolated deinit {
         testUserDefaults.removePersistentDomain(forName: "\(userDefaultsSuiteName).exturl")
-        try await super.tearDown()
     }
 
-    func test_externalSurveyURL_wiresBuilder_appendingUserIDAndRegion() {
+    @Test func `External survey URL wires builder appending user ID and region`() {
         context.currentRegionIdentifier = 7
         let survey = SurveysTestHelpers.makeSurvey(questions: [
             SurveysTestHelpers.makeSurveyQuestion(url: "https://oba.co/s", embeddedDataFields: ["user_id", "region_id"])
         ])
 
         let url = service.externalSurveyURL(for: survey, stop: nil)
-        expect(url).toNot(beNil())
+        #expect(url != nil)
         guard let url else { return }
         let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
 
-        expect(items.first { $0.name == "user_id" }?.value).to(equal("test-user-123"))
-        expect(items.first { $0.name == "region_id" }?.value).to(equal("7"))
+        #expect(items.first { $0.name == "user_id" }?.value == "test-user-123")
+        #expect(items.first { $0.name == "region_id" }?.value == "7")
     }
 
-    func test_externalSurveyURL_buildsWithoutContext_omittingOnlyContextFields() {
+    @Test func `External survey URL builds without context omitting only context fields`() {
         // No application context: the URL still builds, but the context-dependent
         // embedded fields (region_id, current_location) are omitted while
         // non-context fields (user_id) are still appended.
@@ -54,11 +55,11 @@ final class SurveyServiceExternalURLTests: OBATestCase {
         ])
 
         let url = svc.externalSurveyURL(for: survey, stop: nil)
-        expect(url).toNot(beNil())
+        #expect(url != nil)
         guard let url else { return }
         let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
 
-        expect(items.first { $0.name == "user_id" }?.value).to(equal("test-user-123"))
-        expect(items.contains { $0.name == "region_id" }).to(beFalse())
+        #expect(items.first { $0.name == "user_id" }?.value == "test-user-123")
+        #expect(!items.contains { $0.name == "region_id" })
     }
 }

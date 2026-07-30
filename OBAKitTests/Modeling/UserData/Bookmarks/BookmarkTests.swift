@@ -7,59 +7,59 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
-import Nimble
+import Testing
 import CoreLocation
 @testable import OBAKit
 @testable import OBAKitCore
 
 // swiftlint:disable force_try
 
-class BookmarkTests: OBATestCase {
+@Suite(.serialized)
+final class BookmarkTests: OBATestCase {
 
     var region: Region!
     var stops: [Stop]!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
 
         region = try! Fixtures.loadSomeRegions()[1]
         stops = try! Fixtures.loadSomeStops()
     }
 
-    func testCreation() {
+    @Test func creation() {
         let stop = stops[0]
         let bookmark = Bookmark(name: "BM 1", regionIdentifier: region.regionIdentifier, stop: stop)
-        expect(bookmark.name) == "BM 1"
-        expect(bookmark.regionIdentifier) == region.regionIdentifier
-        expect(bookmark.stopID) == stop.id
-        expect(bookmark.stop) == stop
+        #expect(bookmark.name == "BM 1")
+        #expect(bookmark.regionIdentifier == region.regionIdentifier)
+        #expect(bookmark.stopID == stop.id)
+        #expect(bookmark.stop == stop)
     }
 
-    func testCodableRoundtripping() {
+    @Test func `Codable roundtripping`() {
         let stop = stops[0]
         let bookmark = Bookmark(name: "BM 1", regionIdentifier: region.regionIdentifier, stop: stop)
         let roundtripped = try! Fixtures.roundtripCodable(type: Bookmark.self, model: bookmark)
-        expect(roundtripped.name) == "BM 1"
-        expect(roundtripped.regionIdentifier) == region.regionIdentifier
-        expect(roundtripped.stopID) == stop.id
-        expect(roundtripped.stop) == stop
+        #expect(roundtripped.name == "BM 1")
+        #expect(roundtripped.regionIdentifier == region.regionIdentifier)
+        #expect(roundtripped.stopID == stop.id)
+        #expect(roundtripped.stop == stop)
     }
 
-    func testUpdatingStopPropertyWithRightStop() {
+    @Test func `Updating stop property with right stop`() {
         let bookmark = Bookmark(name: "BM 1", regionIdentifier: region.regionIdentifier, stop: stops[0])
-        expect(bookmark.stop.routes.count).to(beGreaterThan(1))
+        #expect(bookmark.stop.routes.count > 1)
         let stop = stops[0]
         stop.routes = []
         bookmark.stop = stop
 
-        expect(bookmark.stop.routes.count) == 0
+        #expect(bookmark.stop.routes.count == 0)
     }
 
-    func testUpdatingStopPropertyWithWrongStop() {
+    @Test func `Updating stop property with wrong stop`() {
         let bookmark = Bookmark(name: "BM 1", regionIdentifier: region.regionIdentifier, stop: stops[0])
         bookmark.stop = stops[1]
 
-        expect(bookmark.stop.id) == stops[0].id
+        #expect(bookmark.stop.id == stops[0].id)
     }
 }

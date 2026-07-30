@@ -8,19 +8,18 @@
 //
 
 import Foundation
-import XCTest
+import Testing
 @testable import OBAKitCore
 
 @MainActor
-class RegionsFileStorageTests: XCTestCase {
+@Suite(.serialized)
+final class RegionsFileStorageTests {
 
     private var temporaryDirectory: URL!
     private var fileManager: FileManager!
     private var storage: RegionsFileStorage!
 
-    override func setUp() async throws {
-        try await super.setUp()
-
+    init() {
         fileManager = .default
         temporaryDirectory = fileManager.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try! fileManager.createDirectory(at: temporaryDirectory, withIntermediateDirectories: true)
@@ -29,90 +28,89 @@ class RegionsFileStorageTests: XCTestCase {
         storage = RegionsFileStorage(fileManager: TemporaryDirectoryFileManager(temporaryDirectory: temporaryDirectory))
     }
 
-    override func tearDown() async throws {
+    isolated deinit {
         try? fileManager.removeItem(at: temporaryDirectory)
-        try await super.tearDown()
     }
 
     // MARK: - Default Regions
 
-    func test_loadDefaultRegions_returnsNilWhenNoFileExists() throws {
+    @Test func `Load default regions returns nil when no file exists`() throws {
         let result = try storage.loadDefaultRegions()
-        XCTAssertNil(result, "Expected nil when no default regions file has been written")
+        #expect(result == nil, "Expected nil when no default regions file has been written")
     }
 
-    func test_saveAndLoadDefaultRegions_roundTrip() throws {
+    @Test func `Save and load default regions round trip`() throws {
         let regions = [Fixtures.customMinneapolisRegion]
         try storage.saveDefaultRegions(regions)
 
-        let loaded = try XCTUnwrap(storage.loadDefaultRegions())
-        XCTAssertEqual(loaded.count, 1)
-        XCTAssertEqual(loaded.first?.name, regions.first?.name)
-        XCTAssertEqual(loaded.first?.regionIdentifier, regions.first?.regionIdentifier)
+        let loaded = try #require(try storage.loadDefaultRegions())
+        #expect(loaded.count == 1)
+        #expect(loaded.first?.name == regions.first?.name)
+        #expect(loaded.first?.regionIdentifier == regions.first?.regionIdentifier)
     }
 
-    func test_saveDefaultRegions_overwritesPreviousFile() throws {
+    @Test func `Save default regions overwrites previous file`() throws {
         let first = [Fixtures.customMinneapolisRegion]
         try storage.saveDefaultRegions(first)
 
-        let second = try XCTUnwrap(Fixtures.loadSomeRegions()).prefix(1).map { $0 }
+        let second = try Fixtures.loadSomeRegions().prefix(1).map { $0 }
         try storage.saveDefaultRegions(second)
 
-        let loaded = try XCTUnwrap(storage.loadDefaultRegions())
-        XCTAssertEqual(loaded.count, 1)
-        XCTAssertEqual(loaded.first?.name, second.first?.name)
+        let loaded = try #require(try storage.loadDefaultRegions())
+        #expect(loaded.count == 1)
+        #expect(loaded.first?.name == second.first?.name)
     }
 
-    func test_saveDefaultRegions_createsIntermediateDirectories() throws {
+    @Test func `Save default regions creates intermediate directories`() throws {
         // The storage should auto-create any missing parent directories.
         let regions = [Fixtures.customMinneapolisRegion]
-        XCTAssertNoThrow(try storage.saveDefaultRegions(regions))
+        #expect(throws: Never.self) { try storage.saveDefaultRegions(regions) }
         let loaded = try storage.loadDefaultRegions()
-        XCTAssertNotNil(loaded)
+        #expect(loaded != nil)
     }
 
     // MARK: - Custom Regions
 
-    func test_loadCustomRegions_returnsEmptyWhenNoFilesExist() throws {
+    @Test func `Load custom regions returns empty when no files exist`() throws {
         let result = try storage.loadCustomRegions()
-        XCTAssertTrue(result.isEmpty, "Expected empty array when no custom region files exist")
+        #expect(result.isEmpty, "Expected empty array when no custom region files exist")
     }
 
-    func test_saveAndLoadCustomRegion_roundTrip() throws {
+    @Test func `Save and load custom region round trip`() throws {
         let region = Fixtures.customMinneapolisRegion
         try storage.saveCustomRegion(region)
 
         let loaded = try storage.loadCustomRegions()
-        XCTAssertEqual(loaded.count, 1)
-        XCTAssertEqual(loaded.first?.name, region.name)
-        XCTAssertEqual(loaded.first?.regionIdentifier, region.regionIdentifier)
+        #expect(loaded.count == 1)
+        #expect(loaded.first?.name == region.name)
+        #expect(loaded.first?.regionIdentifier == region.regionIdentifier)
     }
 
-    func test_saveCustomRegion_replacesExistingRegionWithSameIdentifier() throws {
+    @Test func `Save custom region replaces existing region with same identifier`() throws {
         let region = Fixtures.customMinneapolisRegion
         try storage.saveCustomRegion(region)
-        XCTAssertEqual(try storage.loadCustomRegions().count, 1)
+        #expect(try storage.loadCustomRegions().count == 1)
 
         // Saving the same region again should overwrite the existing file, not create a second one.
         try storage.saveCustomRegion(region)
 
-        XCTAssertEqual(try storage.loadCustomRegions().count, 1, "Expected saving the same region twice to result in a single file")
+        #expect(try storage.loadCustomRegions().count == 1, "Expected saving the same region twice to result in a single file")
     }
 
-    func test_deleteCustomRegion_removesFile() throws {
+    @Test func `Delete custom region removes file`() throws {
         let region = Fixtures.customMinneapolisRegion
         try storage.saveCustomRegion(region)
-        XCTAssertEqual(try storage.loadCustomRegions().count, 1)
+        #expect(try storage.loadCustomRegions().count == 1)
 
         try storage.deleteCustomRegion(identifier: region.regionIdentifier)
-        XCTAssertTrue(try storage.loadCustomRegions().isEmpty, "Expected custom regions to be empty after deletion")
+        #expect(try storage.loadCustomRegions().isEmpty, "Expected custom regions to be empty after deletion")
     }
 
-    func test_deleteCustomRegion_doesNotThrowWhenFileDoesNotExist() {
-        XCTAssertNoThrow(try storage.deleteCustomRegion(identifier: 9999))
+    @Test func `Delete custom region does not throw when file does not exist`() {
+        #expect(throws: Never.self) { try storage.deleteCustomRegion(identifier: 9999) }
     }
 
-    func test_loadCustomRegions_skipsCorruptedFiles() throws {
+    @Test func `Load custom regions skips corrupted files`() throws {
         // Write a valid region and a corrupted JSON file side by side.
         let validRegion = Fixtures.customMinneapolisRegion
         try storage.saveCustomRegion(validRegion)
@@ -123,8 +121,8 @@ class RegionsFileStorageTests: XCTestCase {
 
         // loadCustomRegions must not throw when individual files are corrupted — it skips them and returns the rest.
         let loaded = try storage.loadCustomRegions()
-        XCTAssertEqual(loaded.count, 1, "Expected corrupted file to be skipped; only valid region should be returned")
-        XCTAssertEqual(loaded.first?.name, validRegion.name)
+        #expect(loaded.count == 1, "Expected corrupted file to be skipped; only valid region should be returned")
+        #expect(loaded.first?.name == validRegion.name)
     }
 
     // MARK: - Helpers
@@ -138,7 +136,9 @@ class RegionsFileStorageTests: XCTestCase {
 
 /// A `FileManager` subclass that redirects Application Support and Documents
 /// directory lookups to a temporary directory so tests never touch the real file system.
-private class TemporaryDirectoryFileManager: FileManager {
+// `nonisolated`: overrides nonisolated FileManager members, which the target's
+// main-actor default isolation would conflict with.
+private nonisolated class TemporaryDirectoryFileManager: FileManager {
 
     private let baseURL: URL
 

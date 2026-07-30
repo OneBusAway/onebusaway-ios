@@ -5,12 +5,13 @@
 //  Created by Alan Chu on 1/1/23.
 //
 
-import XCTest
+import Testing
 import Foundation
 @testable import OBAKit
 @testable import OBAKitCore
 
-class DataMigrator_Tests: OBATestCase {
+@Suite(.serialized)
+final class DataMigrator_Tests: OBATestCase {
 
     var dataLoader: MockDataLoader!
     var migrator: DataMigrator!
@@ -18,8 +19,8 @@ class DataMigrator_Tests: OBATestCase {
     private var dataStore: DataStore!
     private var migrationParameters: DataMigrator.MigrationParameters!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
 
         // Load user defaults from the plist fixture.
         let userDefaults = buildUserDefaults()
@@ -66,27 +67,29 @@ class DataMigrator_Tests: OBATestCase {
         dataLoader.mock(URLString: "https://api.pugetsound.onebusaway.org/api/where/arrivals-and-departures-for-stop/1_99610.json", with: Fixtures.loadData(file: "arrivals-and-departures_1_99610.json"))
     }
 
-    func testMigration_basicProperties() async throws {
+    @Test func `Migration basic properties`() async throws {
         let report = try await self.migrator.performMigration(migrationParameters, apiService: self.restService)
 
         // Check results metadata
-        XCTAssertNotNil(report.dateFinished)
-        XCTAssertTrue(report.isFinished)
+        #expect(report.dateFinished != nil)
+        #expect(report.isFinished)
 
         // Check User ID
-        let userIDMigrationResult = try XCTUnwrap(report.userIDMigrationResult)
-        XCTAssertNoThrow(try userIDMigrationResult.get(), "Expected User ID migration to be successful")
+        let userIDMigrationResult = try #require(report.userIDMigrationResult)
+        #expect(throws: Never.self, "Expected User ID migration to be successful") {
+            try userIDMigrationResult.get()
+        }
 
-        let storedUserID = try XCTUnwrap(dataStore.userID, "Expected the userID to be stored.")
-        XCTAssertEqual(storedUserID, "B72C5F1A-B8E5-4FB3-A857-CAC6EAC86DE0")
+        let storedUserID = try #require(dataStore.userID, "Expected the userID to be stored.")
+        #expect(storedUserID == "B72C5F1A-B8E5-4FB3-A857-CAC6EAC86DE0")
 
         // Check region
-        let storedRegion = try XCTUnwrap(dataStore.region, "Expected the region to be stored.")
-        XCTAssertEqual(storedRegion.name, "Puget Sound")
-        XCTAssertEqual(storedRegion.identifier, pugetSoundRegionIdentifier, "Expected the region identifier to be stored as \(pugetSoundRegionIdentifier)")
+        let storedRegion = try #require(dataStore.region, "Expected the region to be stored.")
+        #expect(storedRegion.name == "Puget Sound")
+        #expect(storedRegion.identifier == pugetSoundRegionIdentifier, "Expected the region identifier to be stored as \(pugetSoundRegionIdentifier)")
     }
 
-    func testMigration_recentStops() async throws {
+    @Test func `Migration recent stops`() async throws {
         let results = try await self.migrator.performMigration(migrationParameters, apiService: self.restService)
 
         let recentStopErrors = results.recentStopsMigrationResult.filter { key, value in
@@ -97,65 +100,62 @@ class DataMigrator_Tests: OBATestCase {
             }
         }
 
-        XCTAssertTrue(recentStopErrors.isEmpty, "Recent stops migration should have no errors")
+        #expect(recentStopErrors.isEmpty, "Recent stops migration should have no errors")
 
         // Check stops
         let stops = dataStore.recentStops.sorted(by: { $0.id > $1.id })
-        XCTAssertEqual(stops.count, 6)
+        #expect(stops.count == 6)
 
-        let firstStop = try XCTUnwrap(stops.first)
-        XCTAssertEqual(firstStop.name, "Capitol Hill Link Station")
-        XCTAssertEqual(firstStop.id, "1_99610")
-        XCTAssertEqual(firstStop.coordinate.latitude, 47.6196, accuracy: 0.0001)
-        XCTAssertEqual(firstStop.coordinate.longitude, -122.3204, accuracy: 0.0001)
-        XCTAssertEqual(firstStop.routeIDs, ["40_100479"])
-        XCTAssertEqual(firstStop.routes.count, 1)
+        let firstStop = try #require(stops.first)
+        #expect(firstStop.name == "Capitol Hill Link Station")
+        #expect(firstStop.id == "1_99610")
+        expectClose(firstStop.coordinate.latitude, 47.6196, within: 0.0001)
+        expectClose(firstStop.coordinate.longitude, -122.3204, within: 0.0001)
+        #expect(firstStop.routeIDs == ["40_100479"])
+        #expect(firstStop.routes.count == 1)
 
-        XCTAssertEqual(stops[1].name, "24th Ave E & E Galer St")
-        XCTAssertEqual(stops[2].name, "E John St & Broadway  E")
-        XCTAssertEqual(stops[3].name, "15th Ave E & E Galer St")
-        XCTAssertEqual(stops[4].name, "10th Ave E & E Galer St")
-        XCTAssertEqual(stops[5].name, "Westlake Station - Bay A")
+        #expect(stops[1].name == "24th Ave E & E Galer St")
+        #expect(stops[2].name == "E John St & Broadway  E")
+        #expect(stops[3].name == "15th Ave E & E Galer St")
+        #expect(stops[4].name == "10th Ave E & E Galer St")
+        #expect(stops[5].name == "Westlake Station - Bay A")
     }
 
-    func testMigration_bookmarkGroups() async throws {
+    @Test func `Migration bookmark groups`() async throws {
         _ = try await self.migrator.performMigration(migrationParameters, apiService: self.restService)
 
         let groups = dataStore.bookmarkGroups.sorted(by: { $1.sortOrder > $0.sortOrder })
-        XCTAssertEqual(groups.count, 3)
+        #expect(groups.count == 3)
 
-        XCTAssertEqual(groups[0].name, "Work")
-        XCTAssertEqual(groups[0].id.uuidString, "E87AFBD5-6B61-4916-947F-458476ACBF98")
-        XCTAssertEqual(groups[0].sortOrder, 1)
+        #expect(groups[0].name == "Work")
+        #expect(groups[0].id.uuidString == "E87AFBD5-6B61-4916-947F-458476ACBF98")
+        #expect(groups[0].sortOrder == 1)
 
-        XCTAssertEqual(groups[1].name, "Home")
-        XCTAssertEqual(groups[1].id.uuidString, "C8AD00F0-8C30-48B1-B194-E5167E45C80E")
-        XCTAssertEqual(groups[1].sortOrder, 2)
+        #expect(groups[1].name == "Home")
+        #expect(groups[1].id.uuidString == "C8AD00F0-8C30-48B1-B194-E5167E45C80E")
+        #expect(groups[1].sortOrder == 2)
 
-        XCTAssertEqual(groups[2].name, "Mika")
-        XCTAssertEqual(groups[2].id.uuidString, "7CFB03E7-8C74-4CF6-A415-B1EEE7259812")
-        XCTAssertEqual(groups[2].sortOrder, 3)
+        #expect(groups[2].name == "Mika")
+        #expect(groups[2].id.uuidString == "7CFB03E7-8C74-4CF6-A415-B1EEE7259812")
+        #expect(groups[2].sortOrder == 3)
     }
 
-    func testMigration_bookmarks() async throws {
+    @Test func `Migration bookmarks`() async throws {
         let report = try await self.migrator.performMigration(migrationParameters, apiService: self.restService)
 
         // MARK: Testing the graceful handling of migration failures
         // Get the failing `BookmarkMigration` object, so we can test the dictionary key.
-        let failingBookmark = try XCTUnwrap(report.bookmarksMigrationResult.keys.first { bookmark in
+        let failingBookmark = try #require(report.bookmarksMigrationResult.keys.first { bookmark in
             return bookmark.stopID == "1_99610"
         }, "Expected to find a bookmark with a Stop ID of 1_99610")
 
         // Testing the dictionary key retrieval
-        let failingBookmarkResult = try XCTUnwrap(report.bookmarksMigrationResult[failingBookmark], "Expected the migration report to contain Bookmark Migration Results for bookmark with Stop ID 1_99610")
+        let failingBookmarkResult = try #require(report.bookmarksMigrationResult[failingBookmark], "Expected the migration report to contain Bookmark Migration Results for bookmark with Stop ID 1_99610")
 
-        // Testing that the specific migration error is surfaced in the report
-        XCTAssertThrowsError(try failingBookmarkResult.get(),"The failing bookmark should have a result type of .failure") { error in
-            guard let migrationError = error as? DataMigrationBookmarkError else {
-                return XCTFail("Expected the migration error type to be a MigrationBookmarkError")
-            }
-
-            XCTAssertEqual(migrationError, .noActiveTrips, "Expected the migration to fail because there are no active trips associated with the bookmark's stop")
+        // Testing that the specific migration error is surfaced in the report.
+        // Expected to fail because the bookmark's stop has no active trips.
+        #expect(throws: DataMigrationBookmarkError.noActiveTrips) {
+            try failingBookmarkResult.get()
         }
 
         // MARK: Testing the successful bookmark migrations
@@ -168,66 +168,66 @@ class DataMigrator_Tests: OBATestCase {
             }
         }
 
-        XCTAssertEqual(bookmarks.count, 5)
-        XCTAssertNotNil(bookmarks[0].id)
-        XCTAssertEqual(bookmarks[0].groupID?.uuidString, "C8AD00F0-8C30-48B1-B194-E5167E45C80E")
-        XCTAssertEqual(bookmarks[0].name, "10 to Home")
-        XCTAssertEqual(bookmarks[0].regionIdentifier, pugetSoundRegionIdentifier)
-        XCTAssertEqual(bookmarks[0].stopID, "1_29270")
-        XCTAssertNotNil(bookmarks[0].stop)
-        XCTAssertFalse(bookmarks[0].isFavorite)
-        XCTAssertEqual(bookmarks[0].routeShortName, "10")
-        XCTAssertEqual(bookmarks[0].routeID, "1_100002")
-        XCTAssertEqual(bookmarks[0].sortOrder, Int.max)
-        XCTAssertEqual(bookmarks[0].tripHeadsign, "Capitol Hill Via 15th Ave E")
+        #expect(bookmarks.count == 5)
+        #expect(bookmarks[0].id != nil)
+        #expect(bookmarks[0].groupID?.uuidString == "C8AD00F0-8C30-48B1-B194-E5167E45C80E")
+        #expect(bookmarks[0].name == "10 to Home")
+        #expect(bookmarks[0].regionIdentifier == pugetSoundRegionIdentifier)
+        #expect(bookmarks[0].stopID == "1_29270")
+        #expect(bookmarks[0].stop != nil)
+        #expect(!bookmarks[0].isFavorite)
+        #expect(bookmarks[0].routeShortName == "10")
+        #expect(bookmarks[0].routeID == "1_100002")
+        #expect(bookmarks[0].sortOrder == Int.max)
+        #expect(bookmarks[0].tripHeadsign == "Capitol Hill Via 15th Ave E")
 
-        XCTAssertNotNil(bookmarks[1].id)
-        XCTAssertEqual(bookmarks[1].groupID?.uuidString, "E87AFBD5-6B61-4916-947F-458476ACBF98")
-        XCTAssertEqual(bookmarks[1].name, "10 to Work")
-        XCTAssertEqual(bookmarks[1].regionIdentifier, pugetSoundRegionIdentifier)
-        XCTAssertEqual(bookmarks[1].stopID, "1_11370")
-        XCTAssertNotNil(bookmarks[1].stop)
-        XCTAssertFalse(bookmarks[1].isFavorite)
-        XCTAssertEqual(bookmarks[1].routeShortName, "10")
-        XCTAssertEqual(bookmarks[1].routeID, "1_100002")
-        XCTAssertEqual(bookmarks[1].sortOrder, Int.max)
-        XCTAssertEqual(bookmarks[1].tripHeadsign, "Downtown Seattle")
+        #expect(bookmarks[1].id != nil)
+        #expect(bookmarks[1].groupID?.uuidString == "E87AFBD5-6B61-4916-947F-458476ACBF98")
+        #expect(bookmarks[1].name == "10 to Work")
+        #expect(bookmarks[1].regionIdentifier == pugetSoundRegionIdentifier)
+        #expect(bookmarks[1].stopID == "1_11370")
+        #expect(bookmarks[1].stop != nil)
+        #expect(!bookmarks[1].isFavorite)
+        #expect(bookmarks[1].routeShortName == "10")
+        #expect(bookmarks[1].routeID == "1_100002")
+        #expect(bookmarks[1].sortOrder == Int.max)
+        #expect(bookmarks[1].tripHeadsign == "Downtown Seattle")
 
-        XCTAssertNotNil(bookmarks[2].id)
-        XCTAssertEqual(bookmarks[2].groupID?.uuidString, "7CFB03E7-8C74-4CF6-A415-B1EEE7259812")
-        XCTAssertEqual(bookmarks[2].name, "48 to UW")
-        XCTAssertEqual(bookmarks[2].regionIdentifier, pugetSoundRegionIdentifier)
-        XCTAssertEqual(bookmarks[2].stopID, "1_29320")
-        XCTAssertNotNil(bookmarks[2].stop)
-        XCTAssertFalse(bookmarks[2].isFavorite)
-        XCTAssertEqual(bookmarks[2].routeShortName, "48")
-        XCTAssertEqual(bookmarks[2].routeID, "1_100228")
-        XCTAssertEqual(bookmarks[2].sortOrder, Int.max)
-        XCTAssertEqual(bookmarks[2].tripHeadsign, "University District")
+        #expect(bookmarks[2].id != nil)
+        #expect(bookmarks[2].groupID?.uuidString == "7CFB03E7-8C74-4CF6-A415-B1EEE7259812")
+        #expect(bookmarks[2].name == "48 to UW")
+        #expect(bookmarks[2].regionIdentifier == pugetSoundRegionIdentifier)
+        #expect(bookmarks[2].stopID == "1_29320")
+        #expect(bookmarks[2].stop != nil)
+        #expect(!bookmarks[2].isFavorite)
+        #expect(bookmarks[2].routeShortName == "48")
+        #expect(bookmarks[2].routeID == "1_100228")
+        #expect(bookmarks[2].sortOrder == Int.max)
+        #expect(bookmarks[2].tripHeadsign == "University District")
 
-        XCTAssertNotNil(bookmarks[3].id)
-        XCTAssertEqual(bookmarks[3].groupID?.uuidString, "7CFB03E7-8C74-4CF6-A415-B1EEE7259812")
-        XCTAssertEqual(bookmarks[3].name, "49 to UW")
-        XCTAssertEqual(bookmarks[3].regionIdentifier, pugetSoundRegionIdentifier)
-        XCTAssertEqual(bookmarks[3].stopID, "1_11250")
-        XCTAssertNotNil(bookmarks[3].stop)
-        XCTAssertFalse(bookmarks[3].isFavorite)
-        XCTAssertEqual(bookmarks[3].routeShortName, "49")
-        XCTAssertEqual(bookmarks[3].routeID, "1_100447")
-        XCTAssertEqual(bookmarks[3].sortOrder, Int.max)
-        XCTAssertEqual(bookmarks[3].tripHeadsign, "University District")
+        #expect(bookmarks[3].id != nil)
+        #expect(bookmarks[3].groupID?.uuidString == "7CFB03E7-8C74-4CF6-A415-B1EEE7259812")
+        #expect(bookmarks[3].name == "49 to UW")
+        #expect(bookmarks[3].regionIdentifier == pugetSoundRegionIdentifier)
+        #expect(bookmarks[3].stopID == "1_11250")
+        #expect(bookmarks[3].stop != nil)
+        #expect(!bookmarks[3].isFavorite)
+        #expect(bookmarks[3].routeShortName == "49")
+        #expect(bookmarks[3].routeID == "1_100447")
+        #expect(bookmarks[3].sortOrder == Int.max)
+        #expect(bookmarks[3].tripHeadsign == "University District")
 
-        XCTAssertNotNil(bookmarks[4].id)
-        XCTAssertNil(bookmarks[4].groupID)
-        XCTAssertEqual(bookmarks[4].name, "Link to CHS")
-        XCTAssertEqual(bookmarks[4].regionIdentifier, pugetSoundRegionIdentifier)
-        XCTAssertEqual(bookmarks[4].stopID, "1_1121")
-        XCTAssertNotNil(bookmarks[4].stop)
-        XCTAssertFalse(bookmarks[4].isFavorite)
-        XCTAssertEqual(bookmarks[4].routeShortName, "Link")
-        XCTAssertEqual(bookmarks[4].routeID, "40_100479")
-        XCTAssertEqual(bookmarks[4].sortOrder, Int.max)
-        XCTAssertEqual(bookmarks[4].tripHeadsign, "University Of Washington Station")
+        #expect(bookmarks[4].id != nil)
+        #expect(bookmarks[4].groupID == nil)
+        #expect(bookmarks[4].name == "Link to CHS")
+        #expect(bookmarks[4].regionIdentifier == pugetSoundRegionIdentifier)
+        #expect(bookmarks[4].stopID == "1_1121")
+        #expect(bookmarks[4].stop != nil)
+        #expect(!bookmarks[4].isFavorite)
+        #expect(bookmarks[4].routeShortName == "Link")
+        #expect(bookmarks[4].routeID == "40_100479")
+        #expect(bookmarks[4].sortOrder == Int.max)
+        #expect(bookmarks[4].tripHeadsign == "University Of Washington Station")
     }
 
     // MARK: - TestDelegate

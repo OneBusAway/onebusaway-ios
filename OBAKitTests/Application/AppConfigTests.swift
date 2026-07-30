@@ -10,16 +10,16 @@
 import UIKit
 
 import Foundation
-import XCTest
 @testable import OBAKit
 @testable import OBAKitCore
 import CoreLocation
-import Nimble
+import Testing
 
-class AppConfigTests: OBATestCase {
+@Suite(.serialized)
+final class AppConfigTests: OBATestCase {
     let regionsBaseURL = URL(string: "http://www.example.com")!
 
-    func testAppConfig_creation_propertiesWork() {
+    @Test func `App config creation properties work`() {
         let queue = OperationQueue()
 
         let locationManager = MockAuthorizedLocationManager(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
@@ -29,10 +29,10 @@ class AppConfigTests: OBATestCase {
 
         let appConfig = AppConfig(regionsBaseURL: regionsBaseURL, apiKey: apiKey, appVersion: appVersion, userDefaults: userDefaults, analytics: analytics, queue: queue, locationService: locationService, bundledRegionsFilePath: bundledRegionsPath, regionsAPIPath: regionsAPIPath, dataLoader: dataLoader)
 
-        expect(appConfig.regionsBaseURL) == regionsBaseURL
-        expect(appConfig.apiKey) == apiKey
-        expect(appConfig.appVersion) == appVersion
-        expect(appConfig.queue) == queue
-        expect(appConfig.userDefaults) == userDefaults
+        #expect(appConfig.regionsBaseURL == regionsBaseURL)
+        #expect(appConfig.apiKey == apiKey)
+        #expect(appConfig.appVersion == appVersion)
+        #expect(appConfig.queue == queue)
+        #expect(appConfig.userDefaults == userDefaults)
     }
 }

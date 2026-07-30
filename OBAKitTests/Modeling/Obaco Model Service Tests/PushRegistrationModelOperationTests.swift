@@ -7,7 +7,8 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
+import Foundation
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -15,7 +16,8 @@ import XCTest
 
 /// Tests for the OBACloud `push_registrations` API (issue #1204): registering the
 /// device's APNs token so agencies can push service alerts to opted-in riders.
-class PushRegistrationModelOperationTests: OBATestCase {
+@Suite(.serialized)
+final class PushRegistrationModelOperationTests: OBATestCase {
 
     /// Captures the body of the request the service actually put on the wire. Single
     /// request per test, written before the mock returns and read after the `await`
@@ -39,75 +41,73 @@ class PushRegistrationModelOperationTests: OBATestCase {
         return capture
     }
 
-    func testSuccessfulRegistration_sendsAllContractParams() async throws {
+    @Test func `Successful registration sends all contract params`() async throws {
         let capture = mockRegistrationPOST()
 
         try await obacoService.postPushRegistration(token: "01abff007f", locale: "es-MX", testDevice: false, description: nil)
 
-        let body = try XCTUnwrap(capture.body, "Expected postPushRegistration to send a form-encoded body")
-        XCTAssertTrue(body.contains("token=01abff007f"), "Body: \(body)")
-        XCTAssertTrue(body.contains("operating_system=ios"), "Body: \(body)")
-        XCTAssertTrue(body.contains("locale=es-MX"), "Body: \(body)")
+        let body = try #require(capture.body, "Expected postPushRegistration to send a form-encoded body")
+        #expect(body.contains("token=01abff007f"), "Body: \(body)")
+        #expect(body.contains("operating_system=ios"), "Body: \(body)")
+        #expect(body.contains("locale=es-MX"), "Body: \(body)")
         // The server upserts on every call and an omitted test_device resets the stored
         // value to false — the param's *presence* on every request is contract, not just
         // its value.
-        XCTAssertTrue(body.contains("test_device=false"), "Body: \(body)")
+        #expect(body.contains("test_device=false"), "Body: \(body)")
     }
 
-    func testRegistration_flagsTestDevices() async throws {
+    @Test func `Registration flags test devices`() async throws {
         let capture = mockRegistrationPOST()
 
         try await obacoService.postPushRegistration(token: "01abff007f", locale: "en-US", testDevice: true, description: "Aarons iPhone")
 
-        let body = try XCTUnwrap(capture.body)
-        XCTAssertTrue(body.contains("test_device=true"), "Body: \(body)")
+        let body = try #require(capture.body)
+        #expect(body.contains("test_device=true"), "Body: \(body)")
         // NetworkHelpers.dictionary(toHTTPBodyData:) percent-encodes the space as %20 —
         // CharacterSet.urlQueryAllowed doesn't include space.
-        XCTAssertTrue(body.contains("description=Aarons%20iPhone"), "Body: \(body)")
+        #expect(body.contains("description=Aarons%20iPhone"), "Body: \(body)")
     }
 
-    func testRegistration_flagsApnsSandboxInDebugBuilds() async throws {
+    @Test func `Registration flags apns sandbox in debug builds`() async throws {
         let capture = mockRegistrationPOST()
 
         try await obacoService.postPushRegistration(token: "01abff007f", locale: "en-US", testDevice: true, description: "Aarons iPhone")
 
-        let body = try XCTUnwrap(capture.body)
-        XCTAssertTrue(body.contains("apns_sandbox=1"), "Expected a debug build to flag its registration for the APNs sandbox — its token is only valid there, so an unflagged test push bounces with BadDeviceToken. Body: \(body)")
+        let body = try #require(capture.body)
+        #expect(body.contains("apns_sandbox=1"), "Expected a debug build to flag its registration for the APNs sandbox — its token is only valid there, so an unflagged test push bounces with BadDeviceToken. Body: \(body)")
     }
 
     /// A blank/omitted description must never reach the wire — the server treats an empty
     /// `description` param the same as a missing one, and `test_device=false` doesn't
     /// require one at all.
-    func testRegistration_omitsBlankDescription() async throws {
+    @Test func `Registration omits blank description`() async throws {
         let capture = mockRegistrationPOST()
 
         try await obacoService.postPushRegistration(token: "01abff007f", locale: "en-US", testDevice: false, description: nil)
 
-        let body = try XCTUnwrap(capture.body)
-        XCTAssertFalse(body.contains("description="), "Body: \(body)")
+        let body = try #require(capture.body)
+        #expect(!body.contains("description="), "Body: \(body)")
     }
 
-    func testRegistration_targetsRegionScopedURL() async throws {
+    @Test func `Registration targets region scoped URL`() async throws {
         let capture = mockRegistrationPOST()
 
         try await obacoService.postPushRegistration(token: "01abff007f", locale: "en-US", testDevice: false, description: nil)
 
-        let url = try XCTUnwrap(capture.url)
-        XCTAssertTrue(
-            url.absoluteString.starts(with: "https://alerts.example.com/api/v2/regions/1/push_registrations"),
-            "URL: \(url.absoluteString)")
+        let url = try #require(capture.url)
+        #expect(url.absoluteString.starts(with: "https://alerts.example.com/api/v2/regions/1/push_registrations"), "URL: \(url.absoluteString)")
     }
 
     /// The server answers validation failures with a 422 — that must surface as an error.
-    func testRegistrationValidationFailureThrows() async throws {
+    @Test func `Registration validation failure throws`() async throws {
         _ = mockRegistrationPOST(statusCode: 422)
 
         do {
             try await obacoService.postPushRegistration(token: "", locale: "en-US", testDevice: false, description: nil)
-            XCTFail("Expected postPushRegistration to throw APIError.requestFailure")
+            Issue.record("Expected postPushRegistration to throw APIError.requestFailure")
         } catch let error as APIError {
             guard case .requestFailure = error else {
-                XCTFail("Expected APIError.requestFailure, got \(error)")
+                Issue.record("Expected APIError.requestFailure, got \(error)")
                 return
             }
         }
@@ -124,25 +124,25 @@ class PushRegistrationModelOperationTests: OBATestCase {
         }
     }
 
-    func testSuccessfulUnregistration() async throws {
+    @Test func `Successful unregistration`() async throws {
         mockUnregistrationDELETE(statusCode: 204)
 
         let (_, response) = try await obacoService.deletePushRegistration(token: "01abff007f")
-        let httpResponse = try XCTUnwrap(response as? HTTPURLResponse)
-        XCTAssertEqual(httpResponse.statusCode, 204)
+        let httpResponse = try #require(response as? HTTPURLResponse)
+        #expect(httpResponse.statusCode == 204)
     }
 
     /// A 404 means the token was never registered — safe for callers to ignore, but the
     /// service layer still surfaces it faithfully.
-    func testUnregistrationWith404Throws() async throws {
+    @Test func `Unregistration with 404 throws`() async throws {
         mockUnregistrationDELETE(statusCode: 404)
 
         do {
             _ = try await obacoService.deletePushRegistration(token: "01abff007f")
-            XCTFail("Expected deletePushRegistration to throw APIError.requestNotFound")
+            Issue.record("Expected deletePushRegistration to throw APIError.requestNotFound")
         } catch let error as APIError {
             guard case .requestNotFound = error else {
-                XCTFail("Expected APIError.requestNotFound, got \(error)")
+                Issue.record("Expected APIError.requestNotFound, got \(error)")
                 return
             }
         }

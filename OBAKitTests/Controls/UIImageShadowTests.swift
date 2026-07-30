@@ -8,28 +8,28 @@
 //
 
 import Foundation
-import XCTest
-import Nimble
+import Testing
 import UIKit
 import CoreGraphics
 @testable import OBAKit
 
 @MainActor
-class UIImageShadowTests: XCTestCase {
+@Suite(.serialized)
+final class UIImageShadowTests {
     
-    func test_Shadow_struct() {
+    @Test func `Shadow struct`() {
         let offset = CGSize(width: 1, height: 2)
         let blur: CGFloat = 5.0
         let color = UIColor.black
         
         let shadow = Shadow(offset: offset, blur: blur, color: color)
         
-        expect(shadow.offset) == offset
-        expect(shadow.blur) == blur
-        expect(shadow.color) == color
+        #expect(shadow.offset == offset)
+        #expect(shadow.blur == blur)
+        #expect(shadow.color == color)
     }
     
-    func test_UIImage_resizableShadowImage_basic() {
+    @Test func `UI image resizable shadow image basic`() {
         let sideLength: CGFloat = 50.0
         let cornerRadius: CGFloat = 10.0
         let shadow = Shadow(offset: .zero, blur: 5.0, color: .black)
@@ -41,19 +41,18 @@ class UIImageShadowTests: XCTestCase {
             shouldDrawCapInsets: false
         )
         
-        expect(shadowImage).toNot(beNil())
-        expect(shadowImage.size.width).to(beGreaterThan(0))
-        expect(shadowImage.size.height).to(beGreaterThan(0))
+        #expect(shadowImage.size.width > 0)
+        #expect(shadowImage.size.height > 0)
         
         // Check that the image is resizable
-        expect(shadowImage.capInsets.top).to(beGreaterThan(0))
-        expect(shadowImage.capInsets.left).to(beGreaterThan(0))
-        expect(shadowImage.capInsets.bottom).to(beGreaterThan(0))
-        expect(shadowImage.capInsets.right).to(beGreaterThan(0))
-        expect(shadowImage.resizingMode) == .tile
+        #expect(shadowImage.capInsets.top > 0)
+        #expect(shadowImage.capInsets.left > 0)
+        #expect(shadowImage.capInsets.bottom > 0)
+        #expect(shadowImage.capInsets.right > 0)
+        #expect(shadowImage.resizingMode == .tile)
     }
     
-    func test_UIImage_resizableShadowImage_withCapInsets() {
+    @Test func `UI image resizable shadow image with cap insets`() {
         let sideLength: CGFloat = 40.0
         let cornerRadius: CGFloat = 8.0
         let shadow = Shadow(offset: CGSize(width: 2, height: 2), blur: 3.0, color: .gray)
@@ -65,18 +64,17 @@ class UIImageShadowTests: XCTestCase {
             shouldDrawCapInsets: true
         )
         
-        expect(shadowImage).toNot(beNil())
-        expect(shadowImage.size.width).to(beGreaterThan(0))
-        expect(shadowImage.size.height).to(beGreaterThan(0))
+        #expect(shadowImage.size.width > 0)
+        #expect(shadowImage.size.height > 0)
         
         // With debug cap insets enabled, the image should still be created successfully
-        expect(shadowImage.capInsets.top).to(beGreaterThan(0))
-        expect(shadowImage.capInsets.left).to(beGreaterThan(0))
-        expect(shadowImage.capInsets.bottom).to(beGreaterThan(0))
-        expect(shadowImage.capInsets.right).to(beGreaterThan(0))
+        #expect(shadowImage.capInsets.top > 0)
+        #expect(shadowImage.capInsets.left > 0)
+        #expect(shadowImage.capInsets.bottom > 0)
+        #expect(shadowImage.capInsets.right > 0)
     }
     
-    func test_UIImage_resizableShadowImage_differentParameters() {
+    @Test func `UI image resizable shadow image different parameters`() {
         // Test with different parameters to ensure robustness
         let shadows = [
             Shadow(offset: .zero, blur: 0.0, color: .clear),
@@ -92,13 +90,12 @@ class UIImageShadowTests: XCTestCase {
                 shouldDrawCapInsets: false
             )
             
-            expect(shadowImage).toNot(beNil())
-            expect(shadowImage.size.width).to(beGreaterThan(0))
-            expect(shadowImage.size.height).to(beGreaterThan(0))
+            #expect(shadowImage.size.width > 0)
+            #expect(shadowImage.size.height > 0)
         }
     }
     
-    func test_UIImage_resizableShadowImage_zeroCornerRadius() {
+    @Test func `UI image resizable shadow image zero corner radius`() {
         let sideLength: CGFloat = 60.0
         let cornerRadius: CGFloat = 0.0 // No rounded corners
         let shadow = Shadow(offset: CGSize(width: 1, height: 1), blur: 4.0, color: .black)
@@ -110,18 +107,17 @@ class UIImageShadowTests: XCTestCase {
             shouldDrawCapInsets: false
         )
         
-        expect(shadowImage).toNot(beNil())
-        expect(shadowImage.size.width).to(beGreaterThan(0))
-        expect(shadowImage.size.height).to(beGreaterThan(0))
+        #expect(shadowImage.size.width > 0)
+        #expect(shadowImage.size.height > 0)
         
         // Even with zero corner radius, cap insets should be set based on blur
-        expect(shadowImage.capInsets.top) == shadow.blur
-        expect(shadowImage.capInsets.left) == shadow.blur
-        expect(shadowImage.capInsets.bottom) == shadow.blur
-        expect(shadowImage.capInsets.right) == shadow.blur
+        #expect(shadowImage.capInsets.top == shadow.blur)
+        #expect(shadowImage.capInsets.left == shadow.blur)
+        #expect(shadowImage.capInsets.bottom == shadow.blur)
+        #expect(shadowImage.capInsets.right == shadow.blur)
     }
     
-    func test_UIImage_resizableShadowImage_imageSizeCalculation() {
+    @Test func `UI image resizable shadow image image size calculation`() {
         let sideLength: CGFloat = 100.0
         let cornerRadius: CGFloat = 15.0
         let blur: CGFloat = 8.0
@@ -136,14 +132,14 @@ class UIImageShadowTests: XCTestCase {
         
         // The image size should be sideLength + (blur * 2)
         let expectedSize = sideLength + (blur * 2.0)
-        expect(shadowImage.size.width) == expectedSize
-        expect(shadowImage.size.height) == expectedSize
+        #expect(shadowImage.size.width == expectedSize)
+        #expect(shadowImage.size.height == expectedSize)
         
         // Cap insets should be cornerRadius + blur
         let expectedCapInset = cornerRadius + blur
-        expect(shadowImage.capInsets.top) == expectedCapInset
-        expect(shadowImage.capInsets.left) == expectedCapInset
-        expect(shadowImage.capInsets.bottom) == expectedCapInset
-        expect(shadowImage.capInsets.right) == expectedCapInset
+        #expect(shadowImage.capInsets.top == expectedCapInset)
+        #expect(shadowImage.capInsets.left == expectedCapInset)
+        #expect(shadowImage.capInsets.bottom == expectedCapInset)
+        #expect(shadowImage.capInsets.right == expectedCapInset)
     }
 }

@@ -1,5 +1,5 @@
 //
-//  Matchers.swift
+//  Color.swift
 //  OBAKitTests
 //
 //  Copyright © Open Transit Software Foundation
@@ -8,8 +8,8 @@
 //
 
 import Foundation
-import XCTest
-import Nimble
+import UIKit
+import Testing
 
 private func haveEqualRGBValues(_ actual: UIColor?, _ expected: UIColor?) -> Bool {
     guard
@@ -32,18 +32,24 @@ private func haveEqualRGBValues(_ actual: UIColor?, _ expected: UIColor?) -> Boo
     return aR == eR && aG == eG && aB == eB && aA == eA
 }
 
-/// Whacks everything into the RGB space and does a brute-force comparison of their RGB values.
+/// Asserts that two colours have identical RGBA components.
 ///
-/// - Parameter expectedValue: The expected value of this expression.
-/// - Returns: A predicate
-public func beCloseTo(_ expectedValue: UIColor) -> Nimble.Matcher<UIColor> {
-    return Matcher.define { actualExpression in
-        let errorMessage = "be close to <\(stringify(expectedValue))>"
-        let actualValue = try actualExpression.evaluate()
-
-        return MatcherResult(
-            bool: haveEqualRGBValues(actualValue, expectedValue),
-            message: .expectedCustomValueTo(errorMessage, actual: "<\(stringify(actualValue))>")
+/// This replaces a Nimble matcher that was *named* `beCloseTo` but never
+/// compared approximately — it whacks both colours into RGB space and requires
+/// exact component equality. The name says what it does now. Direct `==` is not
+/// a substitute: `UIColor` instances built in different colour spaces (notably
+/// `UIColor(Color)` vs `UIColor.white`) compare unequal even when their RGBA
+/// components match, which is the whole reason this helper exists.
+func expectEqualRGB(
+    _ actual: UIColor?,
+    _ expected: UIColor?,
+    sourceLocation: SourceLocation = #_sourceLocation
+) {
+    guard haveEqualRGBValues(actual, expected) else {
+        Issue.record(
+            "expected RGB values of \(String(describing: actual)) to equal those of \(String(describing: expected))",
+            sourceLocation: sourceLocation
         )
+        return
     }
 }

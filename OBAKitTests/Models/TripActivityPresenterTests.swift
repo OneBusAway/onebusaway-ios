@@ -7,11 +7,13 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
+import Foundation
+import Testing
 @testable import OBAKitCore
 
 @MainActor
-class TripActivityPresenterTests: XCTestCase {
+@Suite(.serialized)
+final class TripActivityPresenterTests {
     private let presenter = TripActivityPresenter(
         formatters: Formatters(locale: Locale(identifier: "en_US"), calendar: Calendar(identifier: .gregorian), themeColors: ThemeColors.shared)
     )
@@ -30,36 +32,33 @@ class TripActivityPresenterTests: XCTestCase {
     /// just under the offset and shift the minute math down by one.
     private let now = Date(timeIntervalSince1970: 1_700_000_000)
 
-    func testMinuteTextForFutureDeparture() {
+    @Test func `Minute text for future departure`() {
         let text = presenter.minuteText(for: arrival(offsetSeconds: 300, now: now), now: now)
-        XCTAssertTrue(text.contains("5"), "expected a 5-minute chip, got \(text)")
+        #expect(text.contains("5"), "expected a 5-minute chip, got \(text)")
     }
 
-    func testColorMatchesFormattersScheduleStatusColor() {
+    @Test func `Color matches formatters schedule status color`() {
         let formatters = Formatters(locale: Locale(identifier: "en_US"), calendar: Calendar(identifier: .gregorian), themeColors: ThemeColors.shared)
-        XCTAssertEqual(
-            presenter.color(for: arrival(offsetSeconds: 300, status: .delayed, now: now)),
-            formatters.colorForScheduleStatus(.delayed)
-        )
+        #expect(presenter.color(for: arrival(offsetSeconds: 300, status: .delayed, now: now)) == formatters.colorForScheduleStatus(.delayed))
     }
 
-    func testStatusTextForUnknownStatusSaysScheduled() {
+    @Test func `Status text for unknown status says scheduled`() {
         let text = presenter.statusText(for: arrival(offsetSeconds: 300, status: .unknown, now: now), now: now)
-        XCTAssertTrue(text.contains(Strings.scheduledNotRealTime))
+        #expect(text.contains(Strings.scheduledNotRealTime))
     }
 
     /// Server-pushed deviations are raw seconds (e.g. 95s). Truncating division
     /// would report "1 min late"; the app-wide convention (see
     /// ArrivalDeparture.deviationFromScheduleInMinutes) is to round, which for
     /// 95s should report "2 min late".
-    func testStatusTextRoundsDeviationMinutes() {
+    @Test func `Status text rounds deviation minutes`() {
         let text = presenter.statusText(for: arrival(offsetSeconds: 300, status: .delayed, deviation: 95, now: now), now: now)
-        XCTAssertTrue(text.contains("2 min late"), "95s should round to 2 min late, got \(text)")
+        #expect(text.contains("2 min late"), "95s should round to 2 min late, got \(text)")
     }
 
-    func testPrimaryColorForEmptyArrivalsIsUnknownStatusColor() {
+    @Test func `Primary color for empty arrivals is unknown status color`() {
         let formatters = Formatters(locale: Locale(identifier: "en_US"), calendar: Calendar(identifier: .gregorian), themeColors: ThemeColors.shared)
         let state = TripAttributes.ContentState(arrivals: [])
-        XCTAssertEqual(presenter.primaryColor(for: state), formatters.colorForScheduleStatus(.unknown))
+        #expect(presenter.primaryColor(for: state) == formatters.colorForScheduleStatus(.unknown))
     }
 }

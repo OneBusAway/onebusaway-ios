@@ -8,27 +8,23 @@
 //
 
 import Foundation
-import XCTest
-import Nimble
+import Testing
 import SwiftUI
 @testable import OBAKit
 
-@available(iOS 14.0, *)
 @MainActor
-class SwiftUIExtensionsTests: XCTestCase {
+@Suite(.serialized)
+final class SwiftUIExtensionsTests {
     
-    func test_onFirstAppear_callsActionOnlyOnce() {
+    @Test func `On first appear calls action only once`() {
         var callCount = 0
-        let testView = Text("Test")
+        _ = Text("Test")
             .onFirstAppear {
                 callCount += 1
             }
         
-        // This test is limited since we can't easily trigger onAppear in unit tests
-        // But we can verify the modifier compiles and the view can be created
-        expect(testView).toNot(beNil())
-        
+        // This test is limited since we can't easily trigger onAppear in unit tests.
         // The action should not have been called yet since onAppear hasn't triggered
-        expect(callCount) == 0
+        #expect(callCount == 0)
     }
 }

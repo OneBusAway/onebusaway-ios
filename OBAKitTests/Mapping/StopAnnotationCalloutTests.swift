@@ -7,16 +7,17 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
 import MapKit
 @testable import OBAKit
 @testable import OBAKitCore
-import Nimble
+import Foundation
+import Testing
 
 /// Covers the gate that decides whether tapping a stop annotation shows a callout or opens the
 /// stop outright. The legacy Stop page depends on the callout — it is the only way to reach the
 /// chevron that pushes the stop — so a regression here silently breaks that screen's entry point.
-class StopAnnotationCalloutTests: OBATestCase {
+@Suite(.serialized)
+final class StopAnnotationCalloutTests: OBATestCase {
 
     /// `@MainActor` because `StopIconFactory` is: OBAKit builds with
     /// `SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor` while OBAKitTests is `nonisolated`
@@ -42,30 +43,30 @@ class StopAnnotationCalloutTests: OBATestCase {
 
     // MARK: - StopAnnotationView
 
-    func test_annotationView_withoutDelegate_showsCallout() {
+    @Test func `Annotation view without delegate shows callout`() {
         // The delegate is assigned after init, so the pre-delegate default has to be the
         // conservative one: showing a callout is recoverable, hiding one strands the legacy page.
-        expect(self.makeAnnotationView().canShowCallout).to(beTrue())
+        #expect(self.makeAnnotationView().canShowCallout)
     }
 
-    func test_annotationView_delegateAllowsCallouts_showsCallout() {
+    @Test func `Annotation view delegate allows callouts shows callout`() {
         let view = makeAnnotationView()
         view.delegate = StopAnnotationDelegateStub(showsStopAnnotationCallouts: true)
-        expect(view.canShowCallout).to(beTrue())
+        #expect(view.canShowCallout)
     }
 
-    func test_annotationView_delegateSuppressesCallouts_hidesCallout() {
+    @Test func `Annotation view delegate suppresses callouts hides callout`() {
         let view = makeAnnotationView()
         view.delegate = StopAnnotationDelegateStub(showsStopAnnotationCallouts: false)
-        expect(view.canShowCallout).to(beFalse())
+        #expect(!view.canShowCallout)
     }
 
-    func test_annotationView_delegateReassigned_recomputesCallout() {
+    @Test func `Annotation view delegate reassigned recomputes callout`() {
         // Annotation views are recycled and `viewFor` reassigns the delegate on each reuse.
         let view = makeAnnotationView()
         view.delegate = StopAnnotationDelegateStub(showsStopAnnotationCallouts: false)
         view.delegate = StopAnnotationDelegateStub(showsStopAnnotationCallouts: true)
-        expect(view.canShowCallout).to(beTrue())
+        #expect(view.canShowCallout)
     }
 
     // MARK: - MapRegionManager
@@ -76,20 +77,20 @@ class StopAnnotationCalloutTests: OBATestCase {
         return MapRegionManager(application: application)
     }
 
-    func test_regionManager_newStopPageEnabled_suppressesCallouts() {
+    @Test func `Region manager new stop page enabled suppresses callouts`() {
         userDefaults.set(true, forKey: FeatureFlags.useNewStopPageKey)
-        expect(self.makeRegionManager().showsStopAnnotationCallouts).to(beFalse())
+        #expect(!self.makeRegionManager().showsStopAnnotationCallouts)
     }
 
-    func test_regionManager_newStopPageDisabled_keepsCallouts() {
+    @Test func `Region manager new stop page disabled keeps callouts`() {
         userDefaults.set(false, forKey: FeatureFlags.useNewStopPageKey)
-        expect(self.makeRegionManager().showsStopAnnotationCallouts).to(beTrue())
+        #expect(self.makeRegionManager().showsStopAnnotationCallouts)
     }
 
-    func test_regionManager_flagUnset_suppressesCallouts() {
+    @Test func `Region manager flag unset suppresses callouts`() {
         // `isNewStopPageEnabled` defaults to true, so an untouched install gets the sheet.
         userDefaults.removeObject(forKey: FeatureFlags.useNewStopPageKey)
-        expect(self.makeRegionManager().showsStopAnnotationCallouts).to(beFalse())
+        #expect(!self.makeRegionManager().showsStopAnnotationCallouts)
     }
 
     // MARK: - End-to-end wiring
@@ -97,26 +98,26 @@ class StopAnnotationCalloutTests: OBATestCase {
     /// The delegate stubs above prove the rule; this proves the wiring. `viewFor` is the only
     /// place the real delegate gets attached, so a stop annotation that comes out of it has to
     /// carry the flag's answer.
-    @MainActor
-    func test_viewFor_flagDisabled_stopAnnotationShowsCallout() throws {
+    @Test @MainActor
+    func `View for flag disabled stop annotation shows callout`() throws {
         userDefaults.set(false, forKey: FeatureFlags.useNewStopPageKey)
         let manager = makeRegionManager()
-        let stop = try XCTUnwrap(Fixtures.loadSomeStops().first)
+        let stop = try #require(Fixtures.loadSomeStops().first)
 
         let view = manager.mapView(manager.mapView, viewFor: stop) as? StopAnnotationView
 
-        expect(view?.canShowCallout).to(beTrue())
+        #expect(view?.canShowCallout == true)
     }
 
-    @MainActor
-    func test_viewFor_flagEnabled_stopAnnotationSuppressesCallout() throws {
+    @Test @MainActor
+    func `View for flag enabled stop annotation suppresses callout`() throws {
         userDefaults.set(true, forKey: FeatureFlags.useNewStopPageKey)
         let manager = makeRegionManager()
-        let stop = try XCTUnwrap(Fixtures.loadSomeStops().first)
+        let stop = try #require(Fixtures.loadSomeStops().first)
 
         let view = manager.mapView(manager.mapView, viewFor: stop) as? StopAnnotationView
 
-        expect(view?.canShowCallout).to(beFalse())
+        #expect(view?.canShowCallout == false)
     }
 
     // MARK: - Staleness
@@ -125,41 +126,41 @@ class StopAnnotationCalloutTests: OBATestCase {
     /// starts returning the legacy Stop page again — but an annotation view already on the map
     /// answered the callout question at creation time. Left stale, the legacy page opens on the
     /// first tap with no callout, which is the new page's behavior on the old page's screen.
-    @MainActor
-    func test_annotationOnMap_flagTurnedOff_refreshRestoresCallout() throws {
+    @Test @MainActor
+    func `Annotation on map flag turned off refresh restores callout`() throws {
         userDefaults.set(true, forKey: FeatureFlags.useNewStopPageKey)
         let manager = makeRegionManager()
-        let stop = try XCTUnwrap(Fixtures.loadSomeStops().first)
-        let view = try XCTUnwrap(manager.mapView(manager.mapView, viewFor: stop) as? StopAnnotationView)
-        expect(view.canShowCallout).to(beFalse())
+        let stop = try #require(Fixtures.loadSomeStops().first)
+        let view = try #require(manager.mapView(manager.mapView, viewFor: stop) as? StopAnnotationView)
+        #expect(!view.canShowCallout)
 
         userDefaults.set(false, forKey: FeatureFlags.useNewStopPageKey)
-        expect(view.canShowCallout).to(beFalse()) // still stale...
+        #expect(!view.canShowCallout)  // still stale...
 
         view.updateCalloutVisibility()
-        expect(view.canShowCallout).to(beTrue())
+        #expect(view.canShowCallout)
     }
 
     /// MapKit's own re-display hook has to pick the change up too, for annotations that scroll
     /// back into view rather than sitting on screen across the flag change.
-    @MainActor
-    func test_annotationOnMap_flagTurnedOn_prepareForDisplaySuppressesCallout() throws {
+    @Test @MainActor
+    func `Annotation on map flag turned on prepare for display suppresses callout`() throws {
         userDefaults.set(false, forKey: FeatureFlags.useNewStopPageKey)
         let manager = makeRegionManager()
-        let stop = try XCTUnwrap(Fixtures.loadSomeStops().first)
-        let view = try XCTUnwrap(manager.mapView(manager.mapView, viewFor: stop) as? StopAnnotationView)
-        expect(view.canShowCallout).to(beTrue())
+        let stop = try #require(Fixtures.loadSomeStops().first)
+        let view = try #require(manager.mapView(manager.mapView, viewFor: stop) as? StopAnnotationView)
+        #expect(view.canShowCallout)
 
         userDefaults.set(true, forKey: FeatureFlags.useNewStopPageKey)
         view.prepareForDisplay()
 
-        expect(view.canShowCallout).to(beFalse())
+        #expect(!view.canShowCallout)
     }
 
-    @MainActor
-    func test_refreshStopAnnotationCallouts_withNoDisplayedAnnotations_isSafe() throws {
+    @Test @MainActor
+    func `Refresh stop annotation callouts with no displayed annotations is safe`() throws {
         let manager = makeRegionManager()
-        manager.mapView.addAnnotation(try XCTUnwrap(Fixtures.loadSomeStops().first))
+        manager.mapView.addAnnotation(try #require(Fixtures.loadSomeStops().first))
 
         manager.refreshStopAnnotationCallouts()
     }

@@ -7,8 +7,8 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
-import Nimble
+import Foundation
+import Testing
 import Combine
 @testable import OBAKit
 @testable import OBAKitCore
@@ -17,17 +17,18 @@ import Combine
 
 /// Tests for `ServiceAlertViewModel`. Verifies HTML build, idempotent
 /// `viewDidAppear()`, and mark-as-read side effect.
+@Suite(.serialized)
 final class ServiceAlertViewModelTests: OBATestCase {
     var queue: OperationQueue!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
+
         queue = OperationQueue()
         queue.maxConcurrentOperationCount = 1
     }
 
-    override func tearDown() async throws {
-        try await super.tearDown()
+    isolated deinit {
         queue.cancelAllOperations()
     }
 
@@ -64,7 +65,7 @@ final class ServiceAlertViewModelTests: OBATestCase {
     private func loadServiceAlert() throws -> ServiceAlert {
         let data = Fixtures.loadData(file: "arrival-and-departure-for-stop-MTS_11589.json")
         let response = try JSONDecoder.RESTDecoder().decode(RESTAPIResponse<ArrivalDeparture>.self, from: data)
-        return try XCTUnwrap(response.references?.serviceAlerts.first)
+        return try #require(response.references?.serviceAlerts.first)
     }
 
     @MainActor
@@ -78,18 +79,18 @@ final class ServiceAlertViewModelTests: OBATestCase {
 
     // MARK: - Tests
 
-    @MainActor
-    func test_renderedHTML_isNil_beforeViewDidAppear() throws {
+    @Test @MainActor
+    func `Rendered HTML is nil before view did appear`() throws {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         let alert = try loadServiceAlert()
 
         let viewModel = ServiceAlertViewModel(serviceAlert: alert, application: app)
-        expect(viewModel.renderedHTML).to(beNil())
+        #expect(viewModel.renderedHTML == nil)
     }
 
-    @MainActor
-    func test_viewDidAppear_buildsHTML_andContainsCoreSections() async throws {
+    @Test @MainActor
+    func `View did appear builds HTML and contains core sections`() async throws {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         let alert = try loadServiceAlert()
@@ -98,30 +99,30 @@ final class ServiceAlertViewModelTests: OBATestCase {
         viewModel.viewDidAppear()
 
         let html = await waitForRender(viewModel: viewModel)
-        let rendered = try XCTUnwrap(html)
-        expect(rendered).to(contain("<html>"))
-        expect(rendered).to(contain("</html>"))
-        expect(rendered).to(contain("<h1>"))
+        let rendered = try #require(html)
+        #expect(rendered.contains("<html>"))
+        #expect(rendered.contains("</html>"))
+        #expect(rendered.contains("<h1>"))
         // The fixture's situation has at least one active window + an affected route.
-        expect(rendered).to(contain("In Effect"))
+        #expect(rendered.contains("In Effect"))
     }
 
-    @MainActor
-    func test_viewDidAppear_marksAlertAsRead() async throws {
+    @Test @MainActor
+    func `View did appear marks alert as read`() async throws {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         let alert = try loadServiceAlert()
 
-        expect(app.userDataStore.isUnread(serviceAlert: alert)).to(beTrue())
+        #expect(app.userDataStore.isUnread(serviceAlert: alert))
 
         let viewModel = ServiceAlertViewModel(serviceAlert: alert, application: app)
         viewModel.viewDidAppear()
 
-        expect(app.userDataStore.isUnread(serviceAlert: alert)).to(beFalse())
+        #expect(!app.userDataStore.isUnread(serviceAlert: alert))
     }
 
-    @MainActor
-    func test_viewDidAppear_isIdempotent() async throws {
+    @Test @MainActor
+    func `View did appear is idempotent`() async throws {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         let alert = try loadServiceAlert()
@@ -134,6 +135,6 @@ final class ServiceAlertViewModelTests: OBATestCase {
         viewModel.viewDidAppear()
         // Allow a tick to confirm no re-render mutates the value to something else.
         try? await Task.sleep(nanoseconds: 100_000_000)
-        expect(viewModel.renderedHTML) == firstHTML
+        #expect(viewModel.renderedHTML == firstHTML)
     }
 }

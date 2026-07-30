@@ -7,8 +7,8 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
-import Nimble
+import Foundation
+import Testing
 import Combine
 import CoreLocation
 @testable import OBAKit
@@ -16,17 +16,18 @@ import CoreLocation
 
 /// Tests for `MapViewModel`: weather loading (success + error), map-type toggle
 /// persistence + publishing, and the location-authorization delegate callback.
-class MapViewModelTests: OBATestCase {
+@Suite(.serialized)
+final class MapViewModelTests: OBATestCase {
     var queue: OperationQueue!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
+
         queue = OperationQueue()
         queue.maxConcurrentOperationCount = 1
     }
 
-    override func tearDown() async throws {
-        try await super.tearDown()
+    isolated deinit {
         queue.cancelAllOperations()
     }
 
@@ -94,27 +95,27 @@ class MapViewModelTests: OBATestCase {
     // MARK: - Weather
 
     /// A successful weather fetch publishes a non-nil display.
-    @MainActor
-    func test_loadWeather_successPublishesDisplay() async {
+    @Test @MainActor
+    func `Load weather success publishes display`() async {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         stubWeatherSuccess(dataLoader: dataLoader)
 
         let viewModel = MapViewModel(application: app)
-        expect(viewModel.weatherDisplay).to(beNil())
+        #expect(viewModel.weatherDisplay == nil)
 
         await viewModel.loadWeather()
 
-        expect(viewModel.weatherDisplay).toNot(beNil())
-        expect(viewModel.weatherDisplay?.header.regionName) == "Puget Sound"
+        #expect(viewModel.weatherDisplay != nil)
+        #expect(viewModel.weatherDisplay?.header.regionName == "Puget Sound")
     }
 
     /// A transient weather fetch failure must NOT clear `weatherDisplay` —
     /// the floating button would otherwise vanish on every network blip even
     /// when a perfectly good last-known forecast exists. First loads
     /// successfully, then errors, then asserts the last forecast survives.
-    @MainActor
-    func test_loadWeather_errorKeepsLastForecast() async {
+    @Test @MainActor
+    func `Load weather error keeps last forecast`() async {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         stubWeatherSuccess(dataLoader: dataLoader)
@@ -122,7 +123,7 @@ class MapViewModelTests: OBATestCase {
         let viewModel = MapViewModel(application: app)
         await viewModel.loadWeather()
         let firstDisplay = viewModel.weatherDisplay
-        expect(firstDisplay).toNot(beNil())
+        #expect(firstDisplay != nil)
 
         // Swap the weather mock for an error. The swap must be atomic: the
         // Application's background tasks (regions refresh, agency alerts) may have
@@ -138,7 +139,7 @@ class MapViewModelTests: OBATestCase {
         await viewModel.loadWeather()
 
         // Same instance — error path didn't overwrite or clear.
-        expect(viewModel.weatherDisplay) == firstDisplay
+        #expect(viewModel.weatherDisplay == firstDisplay)
     }
 
     /// When `application.obacoService` is nil (region retired the sidecar, or it
@@ -147,8 +148,8 @@ class MapViewModelTests: OBATestCase {
     /// `loadWeather()` leaves `weatherDisplay` nil. This is the configuration-shaped
     /// inversion of `test_loadWeather_errorKeepsLastForecast` — out-of-region SHOULD
     /// drop the button, transient failures SHOULD NOT.
-    @MainActor
-    func test_loadWeather_clearsDisplayWhenObacoUnavailable() async {
+    @Test @MainActor
+    func `Load weather clears display when obaco unavailable`() async {
         // `RegionsService` prefers disk-stored regions over the bundled file,
         // and prior runs in the same simulator can leave a stored copy with a
         // sidecar URL. Wipe the shared on-disk default-regions file so the
@@ -174,17 +175,17 @@ class MapViewModelTests: OBATestCase {
         // Precondition: the bundled fixture has no `sidecarBaseURL`, so the
         // synchronous Obaco refresh during `Application` init leaves
         // `obacoService` nil and the feature gate stays closed.
-        expect(app.obacoService).to(beNil())
-        expect(app.features.obaco).toNot(equal(.running))
+        #expect(app.obacoService == nil)
+        #expect(app.features.obaco != .running)
 
         let viewModel = MapViewModel(application: app)
-        expect(viewModel.isWeatherFeatureAvailable) == false
-        expect(viewModel.weatherDisplay).to(beNil())
+        #expect(viewModel.isWeatherFeatureAvailable == false)
+        #expect(viewModel.weatherDisplay == nil)
 
         await viewModel.loadWeather()
 
         // Guard path took the early return; weatherDisplay stays nil.
-        expect(viewModel.weatherDisplay).to(beNil())
+        #expect(viewModel.weatherDisplay == nil)
     }
 
     // MARK: - Map Type
@@ -192,41 +193,41 @@ class MapViewModelTests: OBATestCase {
     /// `toggleMapType()` flips the published `mapType` between `.standard` and `.hybrid`
     /// and persists the selection through `MapRegionManager` so a later launch
     /// (or the UIKit path) reads the same value.
-    @MainActor
-    func test_toggleMapType_flipsAndPublishesAndPersists() {
+    @Test @MainActor
+    func `Toggle map type flips and publishes and persists`() {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
 
         let viewModel = MapViewModel(application: app)
-        expect(viewModel.mapType) == .standard
+        #expect(viewModel.mapType == .standard)
 
         var observed: [MapBaseType] = []
         let cancellable = viewModel.$mapType.sink { observed.append($0) }
         defer { cancellable.cancel() }
 
         viewModel.toggleMapType()
-        expect(viewModel.mapType) == .hybrid
-        expect(app.mapRegionManager.userSelectedMapType) == .hybrid
+        #expect(viewModel.mapType == .hybrid)
+        #expect(app.mapRegionManager.userSelectedMapType == .hybrid)
 
         viewModel.toggleMapType()
-        expect(viewModel.mapType) == .standard
-        expect(app.mapRegionManager.userSelectedMapType) == .mutedStandard
+        #expect(viewModel.mapType == .standard)
+        #expect(app.mapRegionManager.userSelectedMapType == .mutedStandard)
 
         // Initial value + two toggles.
-        expect(observed) == [.standard, .hybrid, .standard]
+        #expect(observed == [.standard, .hybrid, .standard])
     }
 
     /// An external mutation of `MapRegionManager.userSelectedMapType`
     /// propagates back into `MapViewModel.mapType`. Covers the case where the
     /// UIKit path (or a future consumer) changes the persisted value while
     /// the SwiftUI root is mounted.
-    @MainActor
-    func test_mapType_syncsFromExternalMapRegionManagerChange() async {
+    @Test @MainActor
+    func `Map type syncs from external map region manager change`() async {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
 
         let viewModel = MapViewModel(application: app)
-        expect(viewModel.mapType) == .standard
+        #expect(viewModel.mapType == .standard)
 
         // External mutation — bypasses `toggleMapType()` entirely, simulating
         // the UIKit path or an out-of-VM defaults edit.
@@ -236,26 +237,26 @@ class MapViewModelTests: OBATestCase {
         // so give the runloop a few hops to deliver.
         for _ in 0..<5 { await Task.yield() }
 
-        expect(viewModel.mapType) == .hybrid
+        #expect(viewModel.mapType == .hybrid)
     }
 
     // MARK: - Location Authorization
 
     /// The `LocationServiceDelegate` callback updates the published `locationAuthStatus`.
-    @MainActor
-    func test_locationAuthStatus_updatesViaDelegateCallback() async {
+    @Test @MainActor
+    func `Location auth status updates via delegate callback`() async {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
 
         let viewModel = MapViewModel(application: app)
-        expect(viewModel.locationAuthStatus) == .authorizedWhenInUse  // from the mock manager
+        #expect(viewModel.locationAuthStatus == .authorizedWhenInUse)  // from the mock manager
 
         viewModel.locationService(app.locationService, authorizationStatusChanged: .denied)
 
         // The callback hops to the main actor via `Task { @MainActor in ... }`.
         for _ in 0..<5 { await Task.yield() }
 
-        expect(viewModel.locationAuthStatus) == .denied
+        #expect(viewModel.locationAuthStatus == .denied)
     }
 
     // MARK: - Survey Prompt
@@ -309,8 +310,8 @@ class MapViewModelTests: OBATestCase {
     }
 
     /// When the gate is closed, `checkForSurveyPrompt` neither fetches nor emits.
-    @MainActor
-    func test_checkForSurveyPrompt_doesNothingWhenIneligible() async {
+    @Test @MainActor
+    func `Check for survey prompt does nothing when ineligible`() async {
         let dataLoader = MockDataLoader(testName: name)
         stubEmptySurveys(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -323,13 +324,13 @@ class MapViewModelTests: OBATestCase {
 
         await viewModel.checkForSurveyPrompt()
 
-        expect(received).to(beEmpty())
+        #expect(received.isEmpty)
     }
 
     /// When eligible but no survey matches the map, `surveyToPresent` does not emit
     /// and the reminder is not advanced.
-    @MainActor
-    func test_checkForSurveyPrompt_doesNotEmitWhenNoMapSurvey() async {
+    @Test @MainActor
+    func `Check for survey prompt does not emit when no map survey`() async {
         let dataLoader = MockDataLoader(testName: name)
         stubEmptySurveys(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -343,16 +344,16 @@ class MapViewModelTests: OBATestCase {
 
         await viewModel.checkForSurveyPrompt()
 
-        expect(received).to(beEmpty())
-        expect(app.userDataStore.nextSurveyReminderDate).to(beNil())
+        #expect(received.isEmpty)
+        #expect(app.userDataStore.nextSurveyReminderDate == nil)
     }
 
     /// `didPresentSurveyPrompt(_:presented:)` with `presented == true` advances the
     /// reminder. Verifies the intent contract directly rather than going through the
     /// `findSurveyForMap` integration path (orchestrator-level happy paths cover
     /// the find + submit sequence).
-    @MainActor
-    func test_didPresentSurveyPrompt_advancesReminderOnPresented() async {
+    @Test @MainActor
+    func `Did present survey prompt advances reminder on presented`() async {
         let dataLoader = MockDataLoader(testName: name)
         stubEmptySurveys(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -369,16 +370,16 @@ class MapViewModelTests: OBATestCase {
             questions: [hero]
         )
 
-        expect(app.userDataStore.nextSurveyReminderDate).to(beNil())
+        #expect(app.userDataStore.nextSurveyReminderDate == nil)
         viewModel.didPresentSurveyPrompt(survey, presented: true)
-        expect(app.userDataStore.nextSurveyReminderDate).toNot(beNil())
+        #expect(app.userDataStore.nextSurveyReminderDate != nil)
     }
 
     /// After `presented == false`, the session flag rolls back so a second
     /// `checkForSurveyPrompt()` can re-emit on `surveyToPresent`. Without the
     /// rollback the prompt would be lost for the rest of the session.
-    @MainActor
-    func test_checkForSurveyPrompt_reEmitsAfterPresentedFalseRollback() async {
+    @Test @MainActor
+    func `Check for survey prompt re emits after presented false rollback`() async {
         let dataLoader = MockDataLoader(testName: name)
         stubMapSurvey(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -391,22 +392,22 @@ class MapViewModelTests: OBATestCase {
         defer { cancellable.cancel() }
 
         await viewModel.checkForSurveyPrompt()
-        expect(received.count) == 1
+        #expect(received.count == 1)
 
         // Simulate the presenter dropping the survey.
         viewModel.didPresentSurveyPrompt(received[0], presented: false)
         // Reminder must NOT have advanced on the rollback path.
-        expect(app.userDataStore.nextSurveyReminderDate).to(beNil())
+        #expect(app.userDataStore.nextSurveyReminderDate == nil)
 
         await viewModel.checkForSurveyPrompt()
-        expect(received.count) == 2
+        #expect(received.count == 2)
     }
 
     /// `didPresentSurveyPrompt(_:presented:)` with `presented == false` does not
     /// advance the reminder — that path is the rollback for "presenter went away
     /// between emission and present."
-    @MainActor
-    func test_didPresentSurveyPrompt_doesNotAdvanceReminderWhenNotPresented() async {
+    @Test @MainActor
+    func `Did present survey prompt does not advance reminder when not presented`() async {
         let dataLoader = MockDataLoader(testName: name)
         stubEmptySurveys(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -423,9 +424,9 @@ class MapViewModelTests: OBATestCase {
             questions: [hero]
         )
 
-        expect(app.userDataStore.nextSurveyReminderDate).to(beNil())
+        #expect(app.userDataStore.nextSurveyReminderDate == nil)
         viewModel.didPresentSurveyPrompt(survey, presented: false)
-        expect(app.userDataStore.nextSurveyReminderDate).to(beNil())
+        #expect(app.userDataStore.nextSurveyReminderDate == nil)
     }
 
     /// Stubs the survey list endpoint to error so `fetchSurveys()` records
@@ -445,8 +446,8 @@ class MapViewModelTests: OBATestCase {
     /// `hasShownSurveyThisSession = true` synchronously before `send` (after the awaited
     /// refresh) so a second call racing through the post-await re-check sees the flag set
     /// and bails. This is the direct analogue of the StopViewModel re-entrancy test.
-    @MainActor
-    func test_checkForSurveyPrompt_concurrentCallsEmitOnce() async {
+    @Test @MainActor
+    func `Check for survey prompt concurrent calls emit once`() async {
         let dataLoader = MockDataLoader(testName: name)
         stubMapSurvey(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -462,15 +463,15 @@ class MapViewModelTests: OBATestCase {
         async let b: Void = viewModel.checkForSurveyPrompt()
         _ = await (a, b)
 
-        expect(received.count) == 1
+        #expect(received.count == 1)
     }
 
     /// When the refresh fails, `surveyToPresent` must not emit even if the
     /// cached survey list would otherwise resolve `findSurveyForMap()`.
     /// Prevents prompting off a stale cached survey after a transient network
     /// failure.
-    @MainActor
-    func test_checkForSurveyPrompt_doesNotEmitWhenRefreshFailed() async {
+    @Test @MainActor
+    func `Check for survey prompt does not emit when refresh failed`() async {
         let dataLoader = MockDataLoader(testName: name)
         stubSurveysError(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -488,8 +489,8 @@ class MapViewModelTests: OBATestCase {
         // `test_lastError_reflectsUnderlyingService_afterFetchFailure` which
         // verifies that the orchestrator's `lastError` accessor (the gate's
         // input) actually surfaces on a failed refresh.
-        expect(received).to(beEmpty())
-        expect(app.userDataStore.nextSurveyReminderDate).to(beNil())
+        #expect(received.isEmpty)
+        #expect(app.userDataStore.nextSurveyReminderDate == nil)
     }
 
     // MARK: - Zoom Helpers
@@ -497,35 +498,35 @@ class MapViewModelTests: OBATestCase {
     /// The zoom-in-for-stops span is a fixed constant shared with `MapStatusPill`
     /// / `MapViewController.didTapZoomInForStops` so both surfaces zoom to the
     /// same target when the user taps "Zoom in for stops."
-    @MainActor
-    func test_zoomInForStopsSpan_isSharedConstant() {
-        expect(MapViewModel.zoomInForStopsSpan) == 0.01
+    @Test @MainActor
+    func `Zoom in for stops span is shared constant`() {
+        #expect(MapViewModel.zoomInForStopsSpan == 0.01)
     }
 
     /// Full-accuracy authorization returns a tight zoom (17); reduced-accuracy
     /// backs off to a coarser zoom (11) so the ~1km fuzz cell fits in view.
     /// Mirrors the branch in `MapViewController.centerMapOnUserLocation`.
-    @MainActor
-    func test_zoomLevelForCurrentLocation_fullAccuracyReturns17() {
+    @Test @MainActor
+    func `Zoom level for current location full accuracy returns 17`() {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = MapViewModel(application: app)
 
-        expect(app.locationService.accuracyAuthorization) == .fullAccuracy
-        expect(viewModel.zoomLevelForCurrentLocation()) == 17
+        #expect(app.locationService.accuracyAuthorization == .fullAccuracy)
+        #expect(viewModel.zoomLevelForCurrentLocation() == 17)
     }
 
     /// Reduced accuracy backs off to 11 so the ~1km fuzz cell fits comfortably
     /// on screen. Companion to `_fullAccuracyReturns17` — both branches must
     /// stay covered or a future refactor could silently change one.
-    @MainActor
-    func test_zoomLevelForCurrentLocation_reducedAccuracyReturns11() {
+    @Test @MainActor
+    func `Zoom level for current location reduced accuracy returns 11`() {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader, accuracyAuthorization: .reducedAccuracy)
         let viewModel = MapViewModel(application: app)
 
-        expect(app.locationService.accuracyAuthorization) == .reducedAccuracy
-        expect(viewModel.zoomLevelForCurrentLocation()) == 11
+        #expect(app.locationService.accuracyAuthorization == .reducedAccuracy)
+        #expect(viewModel.zoomLevelForCurrentLocation() == 11)
     }
 
     // MARK: - Initial Location Recenter
@@ -536,26 +537,24 @@ class MapViewModelTests: OBATestCase {
     /// post-launch. Mirrors the UIKit path's
     /// `programmaticallyUpdateVisibleMapRegion`, which runs off the same
     /// delegate callback and is gated by `initialMapChangeMade`.
-    @MainActor
-    func test_didReceiveInitialLocation_latchesOnFirstLocationChange() async {
+    @Test func `Did receive initial location latches on the first location change`() async {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = MapViewModel(application: app)
 
-        expect(viewModel.didReceiveInitialLocation) == false
+        #expect(viewModel.didReceiveInitialLocation == false)
 
         viewModel.locationService(app.locationService, locationChanged: TestData.mockSeattleLocation)
         for _ in 0..<5 { await Task.yield() }
 
-        expect(viewModel.didReceiveInitialLocation) == true
+        #expect(viewModel.didReceiveInitialLocation == true)
     }
 
     /// The latch fires exactly once: a second `locationChanged` after the flag
     /// is set publishes no further change, so the view's `.onChange` recenter
     /// stays a one-time event and doesn't yank the camera back on every
     /// subsequent GPS update.
-    @MainActor
-    func test_didReceiveInitialLocation_publishesOnlyOnce() async {
+    @Test func `Did receive initial location publishes only once`() async {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = MapViewModel(application: app)
@@ -570,7 +569,7 @@ class MapViewModelTests: OBATestCase {
 
         // Initial `false` plus a single `true` transition — the second callback
         // is a no-op because the flag is already latched.
-        expect(observed) == [false, true]
+        #expect(observed == [false, true])
     }
 
     // MARK: - TopPillState
@@ -579,14 +578,14 @@ class MapViewModelTests: OBATestCase {
     /// to the zoom-in action even if the user is also on reduced accuracy.
     /// Mirrors `MapStatusView.configure(for:zoomInStatus:)` where `zoomInStatus`
     /// overwrites the base state.
-    @MainActor
-    func test_topPillState_zoomWarningWinsOverPermission() {
+    @Test @MainActor
+    func `Top pill state zoom warning wins over permission`() {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = MapViewModel(application: app)
 
         viewModel.updateZoomWarning(true)
-        expect(viewModel.topPillState) == .zoomInForStops
+        #expect(viewModel.topPillState == .zoomInForStops)
     }
 
     /// `updateZoomWarning` must not publish when the value is unchanged.
@@ -594,8 +593,7 @@ class MapViewModelTests: OBATestCase {
     /// this method runs on every camera settle; because the SwiftUI `Map`
     /// re-emits `.onMapCameraChange(.onEnd)` on every view update, a same-value
     /// publish here closes an infinite invalidation loop that hangs the map.
-    @MainActor
-    func test_updateZoomWarning_sameValueDoesNotPublish() {
+    @Test func `Update zoom warning with the same value does not publish`() {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = MapViewModel(application: app)
@@ -605,33 +603,33 @@ class MapViewModelTests: OBATestCase {
         defer { cancellable.cancel() }
 
         viewModel.updateZoomWarning(true)
-        expect(publishCount) == 1
+        #expect(publishCount == 1)
 
         // Same value again: no publish — this is what breaks the camera-settle
         // → publish → body re-eval → camera-settle feedback cycle.
         viewModel.updateZoomWarning(true)
-        expect(publishCount) == 1
+        #expect(publishCount == 1)
 
         viewModel.updateZoomWarning(false)
-        expect(publishCount) == 2
+        #expect(publishCount == 2)
         viewModel.updateZoomWarning(false)
-        expect(publishCount) == 2
+        #expect(publishCount == 2)
     }
 
     /// With no zoom warning and full permission, the pill is hidden.
-    @MainActor
-    func test_topPillState_hiddenWhenAuthorizedAndZoomed() {
+    @Test @MainActor
+    func `Top pill state hidden when authorized and zoomed`() {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = MapViewModel(application: app)
 
         viewModel.updateZoomWarning(false)
-        expect(viewModel.topPillState) == .hidden
+        #expect(viewModel.topPillState == .hidden)
     }
 
     /// A `.denied` auth status maps to `.locationServicesOff` when no zoom warning is active.
-    @MainActor
-    func test_topPillState_deniedMapsToLocationServicesOff() async {
+    @Test @MainActor
+    func `Top pill state denied maps to location services off`() async {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = MapViewModel(application: app)
@@ -639,15 +637,15 @@ class MapViewModelTests: OBATestCase {
         viewModel.locationService(app.locationService, authorizationStatusChanged: .denied)
         for _ in 0..<5 { await Task.yield() }
 
-        expect(viewModel.topPillState) == .locationServicesOff
+        #expect(viewModel.topPillState == .locationServicesOff)
     }
 
     /// A `.restricted` auth status maps to `.locationServicesUnavailable`, a
     /// visible-but-non-actionable pill. A restricted (MDM/parental) user can't
     /// lift the restriction in Settings, so folding it into `.locationServicesOff`
     /// — which offers a "Turn On in Settings" prompt — would be a dead end.
-    @MainActor
-    func test_topPillState_restrictedMapsToLocationServicesUnavailable() async {
+    @Test @MainActor
+    func `Top pill state restricted maps to location services unavailable`() async {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = MapViewModel(application: app)
@@ -655,12 +653,12 @@ class MapViewModelTests: OBATestCase {
         viewModel.locationService(app.locationService, authorizationStatusChanged: .restricted)
         for _ in 0..<5 { await Task.yield() }
 
-        expect(viewModel.topPillState) == .locationServicesUnavailable
+        #expect(viewModel.topPillState == .locationServicesUnavailable)
     }
 
     /// A `.notDetermined` auth status maps to `.notDetermined` when no zoom warning is active.
-    @MainActor
-    func test_topPillState_notDeterminedMapsToPill() async {
+    @Test @MainActor
+    func `Top pill state not determined maps to pill`() async {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = MapViewModel(application: app)
@@ -668,14 +666,14 @@ class MapViewModelTests: OBATestCase {
         viewModel.locationService(app.locationService, authorizationStatusChanged: .notDetermined)
         for _ in 0..<5 { await Task.yield() }
 
-        expect(viewModel.topPillState) == .notDetermined
+        #expect(viewModel.topPillState == .notDetermined)
     }
 
     /// `.authorizedWhenInUse` + `.reducedAccuracy` surfaces the imprecise-location
     /// pill so the user can raise accuracy without leaving the map. Mirrors the
     /// branch in `MapStatusView.state(for:)`.
-    @MainActor
-    func test_topPillState_authorizedReducedAccuracyMapsToImpreciseLocation() async {
+    @Test @MainActor
+    func `Top pill state authorized reduced accuracy maps to imprecise location`() async {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader, accuracyAuthorization: .reducedAccuracy)
         let viewModel = MapViewModel(application: app)
@@ -683,27 +681,27 @@ class MapViewModelTests: OBATestCase {
         viewModel.locationService(app.locationService, authorizationStatusChanged: .authorizedWhenInUse)
         for _ in 0..<5 { await Task.yield() }
 
-        expect(viewModel.topPillState) == .impreciseLocation
+        #expect(viewModel.topPillState == .impreciseLocation)
     }
 
     /// Granting full accuracy while the coarse status stays `.authorizedWhenInUse`
     /// (the "Allow Once" path) clears the imprecise-location pill. Guards the
     /// regression where `topPillState` read accuracy live from `locationService`
     /// and never re-evaluated on an accuracy-only change, leaving the pill stuck.
-    @MainActor
-    func test_topPillState_accuracyElevationClearsImprecisePill() async {
+    @Test @MainActor
+    func `Top pill state accuracy elevation clears imprecise pill`() async {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader, accuracyAuthorization: .reducedAccuracy)
         let viewModel = MapViewModel(application: app)
 
         viewModel.locationService(app.locationService, authorizationStatusChanged: .authorizedWhenInUse)
         for _ in 0..<5 { await Task.yield() }
-        expect(viewModel.topPillState) == .impreciseLocation
+        #expect(viewModel.topPillState == .impreciseLocation)
 
         // Accuracy elevates to full without the coarse status changing.
         viewModel.locationService(app.locationService, accuracyAuthorizationChanged: .fullAccuracy)
         for _ in 0..<5 { await Task.yield() }
-        expect(viewModel.topPillState) == .hidden
+        #expect(viewModel.topPillState == .hidden)
     }
 
 }

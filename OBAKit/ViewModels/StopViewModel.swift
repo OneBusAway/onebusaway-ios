@@ -138,6 +138,12 @@ class StopViewModel: ObservableObject {
     /// window — see `signalLiveActivityStarted()`.
     private var liveActivityToastDismissTask: Task<Void, Never>?
 
+    /// The in-flight one-shot survey fetch started by `refreshSurveys()`.
+    ///
+    /// Held so it can be cancelled on teardown, and so tests have a completion
+    /// to await instead of polling for its side effects.
+    private(set) var surveyRefreshTask: Task<Void, Never>?
+
     /// Departure ids with an in-flight `setAlarm`, so a double-tap can't create a
     /// duplicate alarm while the first create is suspended (MainActor-serialized,
     /// so a plain `Set` needs no further synchronization).
@@ -226,6 +232,8 @@ class StopViewModel: ObservableObject {
     isolated deinit {
         refreshTimer?.invalidate()
         statusTimer?.invalidate()
+        surveyRefreshTask?.cancel()
+        liveActivityToastDismissTask?.cancel()
     }
 
     // MARK: - Lifecycle
@@ -372,7 +380,7 @@ class StopViewModel: ObservableObject {
         // skipped — by then `applySuccessfulFetch` will have already run a
         // recompute on the current survey list, so the card state is still
         // correct.
-        Task { [weak self] in
+        surveyRefreshTask = Task { [weak self] in
             guard let self else { return }
             await self.surveyOrchestrator.refreshSurveys()
             guard self.surveyOrchestrator.lastError == nil else { return }

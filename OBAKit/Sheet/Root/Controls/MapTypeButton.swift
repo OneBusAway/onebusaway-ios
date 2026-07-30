@@ -34,7 +34,11 @@ struct MapTypeButton: View {
     }
 
     private var symbolName: String {
-        mapType == .standard ? "map" : "globe"
+        switch mapType {
+        case .standard: return "map"
+        case .satellite: return "globe.americas.fill"
+        case .hybrid: return "globe"
+        }
     }
 
     private var accessibilityValueText: String {
@@ -44,6 +48,12 @@ struct MapTypeButton: View {
                 "map_controller.map_type.standard.accessibility_value",
                 value: "standard",
                 comment: "Voiceover text indicating the current map type as the standard base map."
+            )
+        case .satellite:
+            return OBALoc(
+                "map_controller.map_type.satellite.accessibility_value",
+                value: "satellite",
+                comment: "Voiceover text indicating the current map type as the satellite base map."
             )
         case .hybrid:
             return OBALoc(

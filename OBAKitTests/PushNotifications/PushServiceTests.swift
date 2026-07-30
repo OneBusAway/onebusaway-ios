@@ -8,7 +8,7 @@
 //
 
 import Foundation
-import XCTest
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -63,14 +63,16 @@ private class PushServiceDelegateRecorder: NSObject, PushServiceDelegate {
 /// Tests for `PushService`'s routing of incoming push notification payloads:
 /// alarm (`arrival_and_departure`) payload decoding, donation prompts, and
 /// graceful handling of malformed payloads.
-class PushServiceTests: OBATestCase {
+@Suite(.serialized)
+final class PushServiceTests: OBATestCase {
 
     private var provider: RecordingPushServiceProvider!
     private var delegate: PushServiceDelegateRecorder!
     private var pushService: PushService!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
+
         provider = RecordingPushServiceProvider()
         delegate = PushServiceDelegateRecorder()
         pushService = PushService(serviceProvider: provider, delegate: delegate)
@@ -89,71 +91,71 @@ class PushServiceTests: OBATestCase {
 
     // MARK: - Wiring
 
-    func test_init_installsHandlersOnProvider() {
-        XCTAssertNotNil(provider.notificationReceivedHandler)
-        XCTAssertNotNil(provider.errorHandler)
+    @Test func `Init installs handlers on provider`() {
+        #expect(provider.notificationReceivedHandler != nil)
+        #expect(provider.errorHandler != nil)
     }
 
-    func test_start_forwardsLaunchOptionsToProvider() {
+    @Test func `Start forwards launch options to provider`() {
         pushService.start(launchOptions: ["key": "value"])
-        XCTAssertEqual(provider.startedLaunchOptions?["key"] as? String, "value")
+        #expect((provider.startedLaunchOptions?["key"] as? String) == "value")
     }
 
-    func test_passthroughProperties_reflectProvider() {
-        XCTAssertTrue(pushService.isRegisteredForRemoteNotifications)
-        XCTAssertEqual(pushService.pushUserID, "mock-token")
+    @Test func `Passthrough properties reflect provider`() {
+        #expect(pushService.isRegisteredForRemoteNotifications)
+        #expect(pushService.pushUserID == "mock-token")
 
         provider.stubbedPushUserID = nil
         provider.isRegisteredForRemoteNotifications = false
 
-        XCTAssertFalse(pushService.isRegisteredForRemoteNotifications)
-        XCTAssertNil(pushService.pushUserID)
+        #expect(!pushService.isRegisteredForRemoteNotifications)
+        #expect(pushService.pushUserID == nil)
     }
 
-    func test_pushID_asyncReturnsProviderToken() async {
+    @Test func `Push ID async returns provider token`() async {
         let token = await pushService.pushID()
-        XCTAssertEqual(token, "mock-token")
+        #expect(token == "mock-token")
     }
 
-    func test_deviceTokenUpdates_areForwardedToDelegate() {
-        XCTAssertNotNil(provider.deviceTokenUpdatedHandler, "PushService must install the token handler during init")
+    @Test func `Device token updates are forwarded to delegate`() {
+        #expect(provider.deviceTokenUpdatedHandler != nil, "PushService must install the token handler during init")
 
         provider.deviceTokenUpdatedHandler?("01abff007f")
 
-        XCTAssertEqual(delegate.receivedDeviceTokens, ["01abff007f"])
+        #expect(delegate.receivedDeviceTokens == ["01abff007f"])
     }
 
     // MARK: - Alarm Payloads
 
-    func test_alarmPayload_isDecodedAndForwardedToDelegate() {
+    @Test func `Alarm payload is decoded and forwarded to delegate`() {
         provider.notificationReceivedHandler("Your bus is arriving soon!", ["arrival_and_departure": validAlarmPayload])
 
-        XCTAssertEqual(delegate.receivedAlarms.count, 1)
+        #expect(delegate.receivedAlarms.count == 1)
 
         let alarm = delegate.receivedAlarms[0]
-        XCTAssertEqual(alarm.tripID, "1_604387101")
-        XCTAssertEqual(alarm.stopID, "1_75403")
-        XCTAssertEqual(alarm.regionID, 1)
-        XCTAssertEqual(alarm.vehicleID, "1_4361")
-        XCTAssertEqual(alarm.stopSequence, 7)
-        XCTAssertEqual(alarm.serviceDateEpochTimestamp, 1717027200000)
-        XCTAssertEqual(alarm.serviceDate, Date(timeIntervalSince1970: 1717027200))
+        #expect(alarm.tripID == "1_604387101")
+        #expect(alarm.stopID == "1_75403")
+        #expect(alarm.regionID == 1)
+        #expect(alarm.vehicleID == "1_4361")
+        #expect(alarm.stopSequence == 7)
+        #expect(alarm.serviceDateEpochTimestamp == 1717027200000)
+        #expect(alarm.serviceDate == Date(timeIntervalSince1970: 1717027200))
     }
 
-    func test_alarmPayload_withoutOptionalVehicleID_stillDecodes() {
+    @Test func `Alarm payload without optional vehicle ID still decodes`() {
         var payload = validAlarmPayload
         payload.removeValue(forKey: "vehicle_id")
 
         provider.notificationReceivedHandler("Arriving", ["arrival_and_departure": payload])
 
-        XCTAssertEqual(delegate.receivedAlarms.count, 1)
-        XCTAssertNil(delegate.receivedAlarms[0].vehicleID)
+        #expect(delegate.receivedAlarms.count == 1)
+        #expect(delegate.receivedAlarms[0].vehicleID == nil)
     }
 
-    func test_malformedAlarmPayload_doesNotCallDelegateOrCrash() {
+    @Test func `Malformed alarm payload does not call delegate or crash`() {
         provider.notificationReceivedHandler("Arriving", ["arrival_and_departure": ["trip_id": "only-this"]])
 
-        XCTAssertTrue(delegate.receivedAlarms.isEmpty)
+        #expect(delegate.receivedAlarms.isEmpty)
     }
 
     /// Real remote notifications always include `aps` alongside the custom
@@ -161,97 +163,97 @@ class PushServiceTests: OBATestCase {
     /// which forwards the entire `UNNotificationContent.userInfo`). This
     /// mirrors that wire shape to guard against regressing to a strict
     /// single-key count.
-    func test_alarmPayloadWithAPSSibling_isDecodedAndForwardedToDelegate() {
+    @Test func `Alarm payload with APS sibling is decoded and forwarded to delegate`() {
         provider.notificationReceivedHandler("Your bus is arriving soon!", [
             "aps": ["alert": ["body": "Your bus is arriving soon!"]],
             "arrival_and_departure": validAlarmPayload
         ])
 
-        XCTAssertEqual(delegate.receivedAlarms.count, 1)
+        #expect(delegate.receivedAlarms.count == 1)
 
         let alarm = delegate.receivedAlarms[0]
-        XCTAssertEqual(alarm.tripID, "1_604387101")
-        XCTAssertEqual(alarm.stopID, "1_75403")
-        XCTAssertEqual(alarm.regionID, 1)
-        XCTAssertEqual(alarm.vehicleID, "1_4361")
-        XCTAssertEqual(alarm.stopSequence, 7)
-        XCTAssertEqual(alarm.serviceDateEpochTimestamp, 1717027200000)
-        XCTAssertEqual(alarm.serviceDate, Date(timeIntervalSince1970: 1717027200))
+        #expect(alarm.tripID == "1_604387101")
+        #expect(alarm.stopID == "1_75403")
+        #expect(alarm.regionID == 1)
+        #expect(alarm.vehicleID == "1_4361")
+        #expect(alarm.stopSequence == 7)
+        #expect(alarm.serviceDateEpochTimestamp == 1717027200000)
+        #expect(alarm.serviceDate == Date(timeIntervalSince1970: 1717027200))
     }
 
     // MARK: - Donation Payloads
 
-    func test_donationPayload_forwardsTestIDToDelegate() {
+    @Test func `Donation payload forwards test ID to delegate`() {
         provider.notificationReceivedHandler("Please donate", ["donation": "experiment-42"])
 
-        XCTAssertEqual(delegate.receivedDonationPromptIDs.count, 1)
-        XCTAssertEqual(delegate.receivedDonationPromptIDs[0], "experiment-42")
+        #expect(delegate.receivedDonationPromptIDs.count == 1)
+        #expect(delegate.receivedDonationPromptIDs[0] == "experiment-42")
     }
 
-    func test_donationPayload_withNonStringValue_forwardsNilTestID() {
+    @Test func `Donation payload with non string value forwards nil test ID`() {
         provider.notificationReceivedHandler("Please donate", ["donation": 123])
 
-        XCTAssertEqual(delegate.receivedDonationPromptIDs.count, 1)
-        XCTAssertNil(delegate.receivedDonationPromptIDs[0])
+        #expect(delegate.receivedDonationPromptIDs.count == 1)
+        #expect(delegate.receivedDonationPromptIDs[0] == nil)
     }
 
     /// Real remote notifications always include `aps` alongside the custom
     /// data key. Mirrors the wire shape delivered by
     /// `OBACloudPushService.userNotificationCenter(_:didReceive:...)`.
-    func test_donationPayloadWithAPSSibling_forwardsTestIDToDelegate() {
+    @Test func `Donation payload with APS sibling forwards test ID to delegate`() {
         provider.notificationReceivedHandler("Please donate", [
             "aps": ["alert": ["body": "Please donate"]],
             "donation": "experiment-42"
         ])
 
-        XCTAssertEqual(delegate.receivedDonationPromptIDs.count, 1)
-        XCTAssertEqual(delegate.receivedDonationPromptIDs[0], "experiment-42")
+        #expect(delegate.receivedDonationPromptIDs.count == 1)
+        #expect(delegate.receivedDonationPromptIDs[0] == "experiment-42")
     }
 
     // MARK: - Fallback Paths
 
-    func test_multiKeyPayload_doesNotRouteToAlarmOrDonation() {
+    @Test func `Multi key payload does not route to alarm or donation`() {
         provider.notificationReceivedHandler("Hello", ["a": 1, "b": 2])
 
-        XCTAssertTrue(delegate.receivedAlarms.isEmpty)
-        XCTAssertTrue(delegate.receivedDonationPromptIDs.isEmpty)
+        #expect(delegate.receivedAlarms.isEmpty)
+        #expect(delegate.receivedDonationPromptIDs.isEmpty)
     }
 
-    func test_nilAdditionalData_doesNotRouteToAlarmOrDonation() {
+    @Test func `Nil additional data does not route to alarm or donation`() {
         provider.notificationReceivedHandler("Hello", nil)
 
-        XCTAssertTrue(delegate.receivedAlarms.isEmpty)
-        XCTAssertTrue(delegate.receivedDonationPromptIDs.isEmpty)
+        #expect(delegate.receivedAlarms.isEmpty)
+        #expect(delegate.receivedDonationPromptIDs.isEmpty)
     }
 
-    func test_unknownSingleKeyPayload_doesNotRouteToAlarmOrDonation() {
+    @Test func `Unknown single key payload does not route to alarm or donation`() {
         provider.notificationReceivedHandler("Hello", ["unknown_key": "whatever"])
 
-        XCTAssertTrue(delegate.receivedAlarms.isEmpty)
-        XCTAssertTrue(delegate.receivedDonationPromptIDs.isEmpty)
+        #expect(delegate.receivedAlarms.isEmpty)
+        #expect(delegate.receivedDonationPromptIDs.isEmpty)
     }
 
     /// A plain service alert notification has no custom data key at all —
     /// just the standard `aps` payload — and should fall through to display.
-    func test_apsOnlyPayload_doesNotRouteToAlarmOrDonation() {
+    @Test func `Aps only payload does not route to alarm or donation`() {
         provider.notificationReceivedHandler("Service alert", [
             "aps": ["alert": ["body": "Service alert"]]
         ])
 
-        XCTAssertTrue(delegate.receivedAlarms.isEmpty)
-        XCTAssertTrue(delegate.receivedDonationPromptIDs.isEmpty)
+        #expect(delegate.receivedAlarms.isEmpty)
+        #expect(delegate.receivedDonationPromptIDs.isEmpty)
     }
 
     /// Two custom keys alongside `aps` is an ambiguous payload; it should
     /// still fall through to display rather than guessing which key wins.
-    func test_twoCustomKeysWithAPSSibling_doesNotRouteToAlarmOrDonation() {
+    @Test func `Two custom keys with APS sibling does not route to alarm or donation`() {
         provider.notificationReceivedHandler("Hello", [
             "aps": ["alert": ["body": "Hello"]],
             "arrival_and_departure": validAlarmPayload,
             "donation": "experiment-42"
         ])
 
-        XCTAssertTrue(delegate.receivedAlarms.isEmpty)
-        XCTAssertTrue(delegate.receivedDonationPromptIDs.isEmpty)
+        #expect(delegate.receivedAlarms.isEmpty)
+        #expect(delegate.receivedDonationPromptIDs.isEmpty)
     }
 }

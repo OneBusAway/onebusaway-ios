@@ -4,12 +4,14 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
+import Foundation
+import Testing
 import OBAKitCore
 @testable import OBAKit
 
 @MainActor
-final class DepartureTimeDisplayTests: XCTestCase {
+@Suite(.serialized)
+final class DepartureTimeDisplayTests {
 
     private let formatters = Formatters(
         locale: Locale(identifier: "en_US"),
@@ -37,72 +39,69 @@ final class DepartureTimeDisplayTests: XCTestCase {
 
     // MARK: - Which time is shown
 
-    func test_noRealTime_showsScheduledTimeAloneWithNoStrikethrough() {
+    @Test func `No real time shows scheduled time alone with no strikethrough`() {
         // Without a prediction there is nothing to correct, so a struck-through
         // time would imply a change that never happened.
         let display = display(expectedOffset: 0, isRealTime: false)
 
-        XCTAssertEqual(display.expectedTimeText, formatted(0))
-        XCTAssertNil(display.scheduledTimeText)
+        #expect(display.expectedTimeText == formatted(0))
+        #expect(display.scheduledTimeText == nil)
     }
 
-    func test_late_showsPredictedTimeAndStrikesTheScheduledOne() {
+    @Test func `Late shows predicted time and strikes the scheduled one`() {
         let display = display(expectedOffset: 3 * 60)
 
-        XCTAssertEqual(display.expectedTimeText, formatted(3 * 60))
-        XCTAssertEqual(display.scheduledTimeText, formatted(0))
+        #expect(display.expectedTimeText == formatted(3 * 60))
+        #expect(display.scheduledTimeText == formatted(0))
     }
 
-    func test_early_showsPredictedTimeAndStrikesTheScheduledOne() {
+    @Test func `Early shows predicted time and strikes the scheduled one`() {
         let display = display(expectedOffset: -4 * 60)
 
-        XCTAssertEqual(display.expectedTimeText, formatted(-4 * 60))
-        XCTAssertEqual(display.scheduledTimeText, formatted(0))
+        #expect(display.expectedTimeText == formatted(-4 * 60))
+        #expect(display.scheduledTimeText == formatted(0))
     }
 
     // MARK: - The "on time" band
 
-    func test_sameMinute_showsOneTimeOnly() {
+    @Test func `Same minute shows one time only`() {
         // A 20 second deviation formats to the same clock minute; showing
         // "10:42 AM 10:42 AM" with one struck through would be nonsense.
         let display = display(expectedOffset: 20)
 
-        XCTAssertEqual(display.expectedTimeText, formatted(0))
-        XCTAssertNil(display.scheduledTimeText)
+        #expect(display.expectedTimeText == formatted(0))
+        #expect(display.scheduledTimeText == nil)
     }
 
-    func test_differentMinuteInsideOnTimeBand_stillShowsBothTimes() {
+    @Test func `Different minute inside on time band still shows both times`() {
         // scheduleStatus calls anything inside ±1.5 min "on time", but the rider
         // still needs the corrected clock time — this is the bug in issue #1214
         // that a "strike through only when late" rule would leave unfixed.
         let display = display(expectedOffset: 80)
 
-        XCTAssertEqual(display.expectedTimeText, formatted(80))
-        XCTAssertEqual(display.scheduledTimeText, formatted(0))
+        #expect(display.expectedTimeText == formatted(80))
+        #expect(display.scheduledTimeText == formatted(0))
     }
 
     // MARK: - VoiceOver
 
-    func test_accessibility_speaksBothTimesWhenTheyDiffer() {
+    @Test func `Accessibility speaks both times when they differ`() {
         // Strikethrough is invisible to VoiceOver, so the correction has to be
         // carried by words.
         let display = display(expectedOffset: 3 * 60)
 
-        XCTAssertEqual(
-            display.accessibilityTimeDescription,
-            "scheduled \(formatted(0)), now expected \(formatted(3 * 60))"
-        )
+        #expect(display.accessibilityTimeDescription == "scheduled \(formatted(0)), now expected \(formatted(3 * 60))")
     }
 
-    func test_accessibility_speaksOneTimeWhenTheyMatch() {
+    @Test func `Accessibility speaks one time when they match`() {
         let display = display(expectedOffset: 0, isRealTime: false)
 
-        XCTAssertEqual(display.accessibilityTimeDescription, "at \(formatted(0))")
+        #expect(display.accessibilityTimeDescription == "at \(formatted(0))")
     }
 
     // MARK: - Model bridge
 
-    func test_initFromArrivalDeparture_usesPredictedTimeAsExpected() throws {
+    @Test func `Init from arrival departure uses predicted time as expected`() throws {
         let arrivalDeparture = try Fixtures.arrivalDeparture(
             predictedArrival: 1_700_000_180,
             predictedDeparture: 1_700_000_180
@@ -110,11 +109,11 @@ final class DepartureTimeDisplayTests: XCTestCase {
 
         let display = DepartureTimeDisplay(arrivalDeparture: arrivalDeparture, formatters: formatters)
 
-        XCTAssertEqual(display.expectedTimeText, formatters.timeFormatter.string(from: arrivalDeparture.arrivalDepartureDate))
-        XCTAssertEqual(display.scheduledTimeText, formatters.timeFormatter.string(from: arrivalDeparture.scheduledDate))
+        #expect(display.expectedTimeText == formatters.timeFormatter.string(from: arrivalDeparture.arrivalDepartureDate))
+        #expect(display.scheduledTimeText == formatters.timeFormatter.string(from: arrivalDeparture.scheduledDate))
     }
 
-    func test_initFromArrivalDeparture_ignoresPredictionWhenFeedSaysNotPredicted() throws {
+    @Test func `Init from arrival departure ignores prediction when feed says not predicted`() throws {
         // A payload can carry predicted times while declaring `predicted: false`.
         // `arrivalDepartureDate` hands back the prediction anyway, so the display
         // has to gate on the flag or it would strike through a time the feed
@@ -127,16 +126,16 @@ final class DepartureTimeDisplayTests: XCTestCase {
 
         let display = DepartureTimeDisplay(arrivalDeparture: arrivalDeparture, formatters: formatters)
 
-        XCTAssertEqual(display.expectedTimeText, formatters.timeFormatter.string(from: arrivalDeparture.scheduledDate))
-        XCTAssertNil(display.scheduledTimeText)
+        #expect(display.expectedTimeText == formatters.timeFormatter.string(from: arrivalDeparture.scheduledDate))
+        #expect(display.scheduledTimeText == nil)
     }
 
-    func test_initFromArrivalDeparture_withoutPrediction_showsNoStrikethrough() throws {
+    @Test func `Init from arrival departure without prediction shows no strikethrough`() throws {
         let arrivalDeparture = try Fixtures.arrivalDeparture(predicted: false)
 
         let display = DepartureTimeDisplay(arrivalDeparture: arrivalDeparture, formatters: formatters)
 
-        XCTAssertEqual(display.expectedTimeText, formatters.timeFormatter.string(from: arrivalDeparture.scheduledDate))
-        XCTAssertNil(display.scheduledTimeText)
+        #expect(display.expectedTimeText == formatters.timeFormatter.string(from: arrivalDeparture.scheduledDate))
+        #expect(display.scheduledTimeText == nil)
     }
 }

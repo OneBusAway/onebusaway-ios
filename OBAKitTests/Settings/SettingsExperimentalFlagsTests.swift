@@ -8,32 +8,31 @@
 //
 
 import Eureka
-import XCTest
 @testable import OBAKit
 @testable import OBAKitCore
-import Nimble
+import Foundation
+import Testing
 
 /// The Experimental toggles are the only writers of their feature-flag defaults, and the section's
 /// footer invites you to relaunch the app the moment you flip one. So the flag has to be on disk
 /// *before* the screen goes away: these tests flip the switch and read UserDefaults back without
 /// dismissing anything.
 @MainActor
+@Suite(.serialized)
 final class SettingsExperimentalFlagsTests: OBATestCase {
 
     private var queue: OperationQueue!
     private var application: Application!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override init() async throws {
+        try await super.init()
+
         queue = OperationQueue()
         application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
     }
 
-    override func tearDown() async throws {
+    isolated deinit {
         queue.cancelAllOperations()
-        queue = nil
-        application = nil
-        try await super.tearDown()
     }
 
     private func makeLoadedController() -> SettingsViewController {
@@ -43,63 +42,65 @@ final class SettingsExperimentalFlagsTests: OBATestCase {
     }
 
     private func row(_ controller: SettingsViewController, _ tag: String) throws -> SwitchRow {
-        try XCTUnwrap(controller.form.rowBy(tag: tag) as? SwitchRow)
+        try #require(controller.form.rowBy(tag: tag) as? SwitchRow)
     }
 
     // MARK: - New stop page
 
-    func test_newStopPage_seedsOnByDefault() throws {
+    @Test func `New stop page seeds on by default`() throws {
         let controller = makeLoadedController()
-        expect(try self.row(controller, FeatureFlags.useNewStopPageKey).value).to(beTrue())
+        // `value` is Eureka's `Bool?`; `== true` keeps Nimble's beTrue semantics,
+        // where a nil value is a failure rather than a pass.
+        #expect(try self.row(controller, FeatureFlags.useNewStopPageKey).value == true)
     }
 
     /// The failing case before this was fixed: toggle off, then kill the app to "restart to apply"
     /// without ever dismissing Settings. `viewWillDisappear` never runs, so nothing was written.
-    func test_newStopPage_togglingOffPersistsImmediately() throws {
+    @Test func `New stop page toggling off persists immediately`() throws {
         let controller = makeLoadedController()
         try row(controller, FeatureFlags.useNewStopPageKey).value = false
 
-        expect(FeatureFlags.isNewStopPageEnabled(userDefaults: self.application.userDefaults)).to(beFalse())
+        #expect(!FeatureFlags.isNewStopPageEnabled(userDefaults: self.application.userDefaults))
     }
 
-    func test_newStopPage_togglingBackOnPersistsImmediately() throws {
+    @Test func `New stop page toggling back on persists immediately`() throws {
         application.userDefaults.set(false, forKey: FeatureFlags.useNewStopPageKey)
         let controller = makeLoadedController()
         try row(controller, FeatureFlags.useNewStopPageKey).value = true
 
-        expect(FeatureFlags.isNewStopPageEnabled(userDefaults: self.application.userDefaults)).to(beTrue())
+        #expect(FeatureFlags.isNewStopPageEnabled(userDefaults: self.application.userDefaults))
     }
 
-    func test_newStopPage_stillPersistsOnDismissal() throws {
+    @Test func `New stop page still persists on dismissal`() throws {
         let controller = makeLoadedController()
         try row(controller, FeatureFlags.useNewStopPageKey).value = false
         controller.viewWillDisappear(false)
 
-        expect(FeatureFlags.isNewStopPageEnabled(userDefaults: self.application.userDefaults)).to(beFalse())
+        #expect(!FeatureFlags.isNewStopPageEnabled(userDefaults: self.application.userDefaults))
     }
 
     // MARK: - Map panel
 
-    func test_mapPanel_togglingOnPersistsImmediately() throws {
+    @Test func `Map panel toggling on persists immediately`() throws {
         let controller = makeLoadedController()
         try row(controller, FeatureFlags.useMapPanelExperienceKey).value = true
 
-        expect(self.application.userDefaults.bool(forKey: FeatureFlags.useMapPanelExperienceKey)).to(beTrue())
+        #expect(self.application.userDefaults.bool(forKey: FeatureFlags.useMapPanelExperienceKey))
     }
 
     // MARK: - Accessibility
 
     /// This row was wired to neither `setValues` nor `saveFormValues`, so it always drew "off" and
     /// never wrote anything.
-    func test_voiceoverFullSheet_roundTripsThroughTheForm() throws {
+    @Test func `Voiceover full sheet round trips through the form`() throws {
         application.userDefaults.set(true, forKey: OBAFloatingPanelController.AlwaysShowFullSheetOnVoiceoverUserDefaultsKey)
         let controller = makeLoadedController()
         let switchRow = try row(controller, OBAFloatingPanelController.AlwaysShowFullSheetOnVoiceoverUserDefaultsKey)
-        expect(switchRow.value).to(beTrue())
+        #expect(switchRow.value == true)
 
         switchRow.value = false
         controller.viewWillDisappear(false)
 
-        expect(self.application.userDefaults.bool(forKey: OBAFloatingPanelController.AlwaysShowFullSheetOnVoiceoverUserDefaultsKey)).to(beFalse())
+        #expect(!self.application.userDefaults.bool(forKey: OBAFloatingPanelController.AlwaysShowFullSheetOnVoiceoverUserDefaultsKey))
     }
 }

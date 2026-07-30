@@ -7,7 +7,8 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
+import Foundation
+import Testing
 import UIKit
 import FloatingPanel
 @testable import OBAKit
@@ -17,15 +18,14 @@ import FloatingPanel
 /// verified by hand; what's tested here is the bookkeeping this app owns — that only one sheet
 /// is ever onscreen, and that each presentation's cleanup runs exactly once.
 @MainActor
-final class StopSheetPresenterTests: XCTestCase {
+@Suite(.serialized)
+final class StopSheetPresenterTests {
 
     private var window: UIWindow!
     private var parent: UIViewController!
     private var presenter: StopSheetPresenter!
 
-    override func setUp() async throws {
-        try await super.setUp()
-
+    init() {
         parent = UIViewController()
         window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
         window.rootViewController = parent
@@ -35,114 +35,107 @@ final class StopSheetPresenterTests: XCTestCase {
         presenter = StopSheetPresenter()
     }
 
-    override func tearDown() async throws {
+    // `isolated deinit` because the cleanup below touches main-actor UI state.
+    // The `= nil` assignments the old `tearDown` performed are dropped: they
+    // only mattered because XCTest holds test-case instances for the whole run,
+    // and assigning nil inside `deinit` releases nothing extra regardless.
+    isolated deinit {
         presenter.dismiss(animated: false)
-        presenter = nil
         window.isHidden = true
-        window = nil
-        parent = nil
-
-        try await super.tearDown()
     }
 
     private var panels: [FloatingPanelController] {
         parent.children.compactMap { $0 as? FloatingPanelController }
     }
 
-    /// Lets an in-flight presentation or dismissal animation finish. Measuring a panel that is
-    /// still being animated into place reports whatever position that frame happened to catch.
-    private func spin(_ seconds: TimeInterval) {
-        RunLoop.current.run(until: Date().addingTimeInterval(seconds))
-    }
-
     // MARK: - Presentation
 
-    func test_present_addsOnePanelOpenedAtTheHalfDetent() {
+    @Test func `Present adds one panel opened at the half detent`() {
         presenter.present(UIViewController(), from: parent) {}
 
-        XCTAssertTrue(presenter.isPresenting)
-        XCTAssertEqual(panels.count, 1)
-        XCTAssertEqual(panels.first?.state, .half)
+        #expect(presenter.isPresenting)
+        #expect(panels.count == 1)
+        #expect(panels.first?.state == .half)
     }
 
     /// The stop page publishes its Filter / More / Schedules chrome through `navigationItem`
     /// and pushes Trip screens through `ViewRouter`, both of which need a navigation
     /// controller. Losing this wrapper would silently drop the chrome and trip the router's
     /// `navigationController != nil` assertion.
-    func test_present_wrapsContentInANavigationController() {
+    @Test func `Present wraps content in a navigation controller`() {
         let content = UIViewController()
         presenter.present(content, from: parent) {}
 
         let navigation = panels.first?.contentViewController as? UINavigationController
-        XCTAssertNotNil(navigation)
-        XCTAssertIdentical(navigation?.viewControllers.first, content)
+        #expect(navigation != nil)
+        #expect(navigation?.viewControllers.first === content)
     }
 
     /// Swipe-to-dismiss is off: the sheet header carries an explicit close button, and with
     /// removal enabled a downward flick past `.tip` tears the sheet down instead of settling
     /// there, which costs the rider the peek-at-the-map detent.
-    func test_present_disablesSwipeToDismiss() {
+    @Test func `Present disables swipe to dismiss`() {
         presenter.present(UIViewController(), from: parent) {}
 
-        XCTAssertEqual(panels.first?.isRemovalInteractionEnabled, false)
+        #expect(panels.first?.isRemovalInteractionEnabled == false)
     }
 
     /// The tracked scroll view keeps its own content insets. FloatingPanel's default
     /// (`.always`) assigns `contentInset` outright on every layout pass, which wipes the top
     /// inset the stop page's `safeAreaInset(edge: .top)` header installs and strands the mode
     /// toggle and first departure underneath it.
-    func test_present_leavesTheTrackedScrollViewsContentInsetsAlone() {
+    @Test func `Present leaves the tracked scroll views content insets alone`() {
         presenter.present(UIViewController(), from: parent) {}
 
-        XCTAssertEqual(panels.first?.contentInsetAdjustmentBehavior, .never)
+        #expect(panels.first?.contentInsetAdjustmentBehavior == .never)
     }
 
     // MARK: - Replacement
 
     /// The HIG is explicit that one sheet shows at a time, and the map has several things
     /// competing for this space.
-    func test_presentingASecondStop_leavesExactlyOnePanel() {
+    @Test func `Presenting a second stop leaves exactly one panel`() {
         presenter.present(UIViewController(), from: parent) {}
         presenter.present(UIViewController(), from: parent) {}
 
-        XCTAssertEqual(panels.count, 1)
-        XCTAssertTrue(presenter.isPresenting)
+        #expect(panels.count == 1)
+        #expect(presenter.isPresenting)
     }
 
     /// Replacement must run the *outgoing* presentation's cleanup — the map uses it to
     /// deselect that stop's annotation, and running the incoming one instead would deselect
     /// the pin the rider just tapped.
-    func test_presentingASecondStop_runsOnlyTheOutgoingDismissHandler() {
+    @Test func `Presenting a second stop runs only the outgoing dismiss handler`() {
         var firstDismissed = 0
         var secondDismissed = 0
 
         presenter.present(UIViewController(), from: parent) { firstDismissed += 1 }
         presenter.present(UIViewController(), from: parent) { secondDismissed += 1 }
 
-        XCTAssertEqual(firstDismissed, 1)
-        XCTAssertEqual(secondDismissed, 0)
+        #expect(firstDismissed == 1)
+        #expect(secondDismissed == 0)
     }
 
     // MARK: - Dismissal
 
-    func test_dismiss_clearsStateAndRunsTheHandler() {
+    @Test func `Dismiss clears state and runs the handler`() {
         var dismissed = 0
         presenter.present(UIViewController(), from: parent) { dismissed += 1 }
 
         presenter.dismiss(animated: false)
 
-        XCTAssertFalse(presenter.isPresenting)
-        XCTAssertEqual(dismissed, 1)
+        #expect(!presenter.isPresenting)
+        #expect(dismissed == 1)
     }
 
-    func test_dismiss_isIdempotent() {
+    @Test func `Dismiss is idempotent`() {
         var dismissed = 0
         presenter.present(UIViewController(), from: parent) { dismissed += 1 }
 
         presenter.dismiss(animated: false)
         presenter.dismiss(animated: false)
 
-        XCTAssertEqual(dismissed, 1)
+        #expect(dismissed == 1)
     }
 
     /// A dismissal should look like one thing leaving: the sheet travels straight down, at the
@@ -158,81 +151,69 @@ final class StopSheetPresenterTests: XCTestCase {
     ///
     /// Measured against the panel's own view: the surface ends flush with the bottom edge, and
     /// neither it nor the page inside it changed size on the way there.
-    func test_dismiss_slidesTheSheetStraightDownAtTheSizeItHad() throws {
+    @Test func `Dismiss slides the sheet straight down at the size it had`() async throws {
         let (_, hosted) = makeTabBarHostedParent()
 
         for detent in [FloatingPanelState.full, .half, .tip] {
             let presenter = StopSheetPresenter()
             presenter.present(UIViewController(), from: hosted) {}
 
-            spin(0.5)
+            await spin(0.5)
 
-            let panel = try XCTUnwrap(panels(in: hosted).first)
+            let panel = try #require(panels(in: hosted).first)
             panel.move(to: detent, animated: false)
             hosted.view.layoutIfNeeded()
 
             let surface = panel.surfaceView
-            let contentView = try XCTUnwrap(surface.contentView)
+            let contentView = try #require(surface.contentView)
             let frameBefore = surface.frame
             let contentHeightBefore = contentView.bounds.height
 
             presenter.dismiss(animated: true)
             hosted.view.layoutIfNeeded()
 
-            XCTAssertEqual(
-                surface.frame.minY, panel.view.bounds.maxY, accuracy: 0.5,
-                "Dismissing from \(detent) left the sheet's top edge short of the bottom of the screen."
-            )
-            XCTAssertEqual(
-                surface.frame.minX, frameBefore.minX, accuracy: 0.5,
-                "Dismissing from \(detent) moved the sheet sideways."
-            )
-            XCTAssertEqual(
-                surface.frame.height, frameBefore.height, accuracy: 0.5,
-                "Dismissing from \(detent) resized the sheet instead of sliding it away."
-            )
-            XCTAssertEqual(
-                contentView.bounds.height, contentHeightBefore, accuracy: 0.5,
-                "Dismissing from \(detent) re-laid the stop page out mid-slide."
-            )
+            expectClose(surface.frame.minY, panel.view.bounds.maxY, within: 0.5, "Dismissing from \(detent) left the sheet's top edge short of the bottom of the screen.")
+            expectClose(surface.frame.minX, frameBefore.minX, within: 0.5, "Dismissing from \(detent) moved the sheet sideways.")
+            expectClose(surface.frame.height, frameBefore.height, within: 0.5, "Dismissing from \(detent) resized the sheet instead of sliding it away.")
+            expectClose(contentView.bounds.height, contentHeightBefore, within: 0.5, "Dismissing from \(detent) re-laid the stop page out mid-slide.")
 
             // Let the slide finish, so the next detent measures its own sheet rather than one
             // still on its way out.
-            spin(0.5)
-            XCTAssertEqual(panels(in: hosted).count, 0, "The \(detent) sheet never detached itself.")
+            await spin(0.5)
+            #expect(panels(in: hosted).count == 0, "The \(detent) sheet never detached itself.")
         }
     }
 
     /// The tab bar's return is what changes the safe area the `.half` anchor is measured
     /// against, so it has to wait for the sheet to be gone — but it does still have to happen.
-    func test_dismiss_animated_restoresTheHostTabBarOnceTheSheetHasGone() {
+    @Test func `Dismiss animated restores the host tab bar once the sheet has gone`() async {
         let (tabBarController, hosted) = makeTabBarHostedParent()
         presenter.present(UIViewController(), from: hosted) {}
-        spin(0.5)
+        await spin(0.5)
 
         presenter.dismiss(animated: true)
-        XCTAssertTrue(tabBarController.isTabBarHidden, "The tab bar came back while the sheet was still onscreen.")
+        #expect(tabBarController.isTabBarHidden, "The tab bar came back while the sheet was still onscreen.")
 
-        spin(0.8)
-        XCTAssertFalse(tabBarController.isTabBarHidden, "The tab bar never came back after the sheet left.")
+        await spin(0.8)
+        #expect(!tabBarController.isTabBarHidden, "The tab bar never came back after the sheet left.")
     }
 
-    func test_dismiss_withNothingPresented_isANoOp() {
+    @Test func `Dismiss with nothing presented is a no op`() {
         presenter.dismiss(animated: false)
-        XCTAssertFalse(presenter.isPresenting)
-        XCTAssertEqual(panels.count, 0)
+        #expect(!presenter.isPresenting)
+        #expect(panels.count == 0)
     }
 
     /// A swipe-away routes through `floatingPanelDidRemove` rather than `dismiss`, so it needs
     /// its own path to the same cleanup.
-    func test_swipeAwayRemoval_runsTheHandlerAndClearsState() throws {
+    @Test func `Swipe away removal runs the handler and clears state`() throws {
         var dismissed = 0
         presenter.present(UIViewController(), from: parent) { dismissed += 1 }
 
-        presenter.floatingPanelDidRemove(try XCTUnwrap(panels.first))
+        presenter.floatingPanelDidRemove(try #require(panels.first))
 
-        XCTAssertFalse(presenter.isPresenting)
-        XCTAssertEqual(dismissed, 1)
+        #expect(!presenter.isPresenting)
+        #expect(dismissed == 1)
     }
 
     // MARK: - Tab Bar
@@ -251,53 +232,53 @@ final class StopSheetPresenterTests: XCTestCase {
 
     /// The tab bar can't be beaten on z-order from inside the map, so the sheet hides it to
     /// claim the bottom edge of the screen for its own chrome.
-    func test_present_hidesTheHostTabBar() {
+    @Test func `Present hides the host tab bar`() {
         let (tabBarController, hosted) = makeTabBarHostedParent()
-        XCTAssertFalse(tabBarController.isTabBarHidden)
+        #expect(!tabBarController.isTabBarHidden)
 
         presenter.present(UIViewController(), from: hosted) {}
 
-        XCTAssertTrue(tabBarController.isTabBarHidden)
+        #expect(tabBarController.isTabBarHidden)
     }
 
-    func test_dismiss_restoresTheHostTabBar() {
+    @Test func `Dismiss restores the host tab bar`() {
         let (tabBarController, hosted) = makeTabBarHostedParent()
         presenter.present(UIViewController(), from: hosted) {}
 
         presenter.dismiss(animated: false)
 
-        XCTAssertFalse(tabBarController.isTabBarHidden)
+        #expect(!tabBarController.isTabBarHidden)
     }
 
     /// Swiping the sheet away skips `dismiss`, so the tab bar has to come back on this path too
     /// or the rider is left with no way to change tabs.
-    func test_swipeAwayRemoval_restoresTheHostTabBar() throws {
+    @Test func `Swipe away removal restores the host tab bar`() throws {
         let (tabBarController, hosted) = makeTabBarHostedParent()
         presenter.present(UIViewController(), from: hosted) {}
 
-        presenter.floatingPanelDidRemove(try XCTUnwrap(panels(in: hosted).first))
+        presenter.floatingPanelDidRemove(try #require(panels(in: hosted).first))
 
-        XCTAssertFalse(tabBarController.isTabBarHidden)
+        #expect(!tabBarController.isTabBarHidden)
     }
 
     /// Tapping a second stop tears the first sheet down, but the bar must stay hidden the whole
     /// way through — restoring it mid-swap flashes it back behind the incoming sheet.
-    func test_presentingASecondStop_keepsTheHostTabBarHidden() {
+    @Test func `Presenting a second stop keeps the host tab bar hidden`() {
         let (tabBarController, hosted) = makeTabBarHostedParent()
 
         presenter.present(UIViewController(), from: hosted) {}
         presenter.present(UIViewController(), from: hosted) {}
 
-        XCTAssertTrue(tabBarController.isTabBarHidden)
+        #expect(tabBarController.isTabBarHidden)
     }
 
     /// The map-panel experience presents the stop page outside a tab bar controller, so a nil
     /// host has to be a no-op rather than a crash.
-    func test_present_withoutAHostTabBar_stillPresents() {
+    @Test func `Present without a host tab bar still presents`() {
         presenter.present(UIViewController(), from: parent) {}
 
-        XCTAssertTrue(presenter.isPresenting)
-        XCTAssertEqual(panels.count, 1)
+        #expect(presenter.isPresenting)
+        #expect(panels.count == 1)
     }
 
     private func panels(in parent: UIViewController) -> [FloatingPanelController] {

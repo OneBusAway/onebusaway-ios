@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+#
+# Measure the Swift 6 concurrency warning count from scratch
+# (docs/swift6-migration-plan.md, Phase 0).
+#
+# Why this exists: counting warnings from an ordinary build UNDERCOUNTS, badly
+# and silently. Xcode's compilation cache replays cached object files without
+# re-emitting their diagnostics, so any file served from cache contributes zero
+# warnings to the log. scripts/_cold_build.sh explains the two isolations that
+# make the count real, and why one of them is easy to miss.
+#
+# Usage:
+#   scripts/measure_concurrency            # print the true count
+#   scripts/measure_concurrency --update   # ...and rewrite the baseline
+
+set -euo pipefail
+
+# shellcheck source=scripts/_cold_build.sh
+source "$(dirname "$0")/_cold_build.sh"
+cold_build_init
+
+LOG="$WORKDIR/xcodebuild.log"
+
+echo "==> Building cold (isolated DerivedData + isolated compilation cache)."
+echo "    Scratch: $WORKDIR"
+echo "    This takes several minutes; a warm build would be faster but wrong."
+
+set +e
+cold_build "$LOG" -quiet
+STATUS=$?
+set -e
+
+if (( STATUS != 0 )); then
+  # $LOG lives inside $WORKDIR, which the EXIT trap is about to delete. Copy it
+  # somewhere durable first, or a failure that took several minutes to produce
+  # leaves nothing behind to debug.
+  KEPT="$(mktemp -t measure_concurrency-failed)"
+  cp "$LOG" "$KEPT"
+  echo "error: cold build failed (exit $STATUS). First errors:" >&2
+  grep -E 'error:' "$KEPT" | head -40 >&2
+  echo "(full log kept at: $KEPT)" >&2
+  exit "$STATUS"
+fi
+
+echo "==> Build finished. Counting diagnostics."
+"$REPO_ROOT/scripts/concurrency_ratchet" "$LOG" "${1:-check}"
