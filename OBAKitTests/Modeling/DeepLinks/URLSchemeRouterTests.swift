@@ -217,6 +217,54 @@ final class URLSchemeRouterTests {
         }
     }
     
+    @Test func `Decode URL type add region decodes GraphQL URL and bikeshare flag`() {
+        var components = URLComponents()
+        components.scheme = "onebusaway"
+        components.host = "add-region"
+        components.queryItems = [
+            URLQueryItem(name: "name", value: "Test Region"),
+            URLQueryItem(name: "oba-url", value: "https://oba.example.com"),
+            URLQueryItem(name: "otp-graphql-url", value: "https://otp.example.com/otp/"),
+            URLQueryItem(name: "otp-graphql-bikeshare", value: "true")
+        ]
+
+        guard let url = components.url else {
+            Issue.record("Failed to create URL")
+            return
+        }
+
+        switch router.decodeURLType(from: url) {
+        case .addRegion(let data):
+            #expect(data?.otpGraphQLURL?.absoluteString == "https://otp.example.com/otp/")
+            #expect(data?.supportsOTPGraphQLBikeshare == true)
+        default:
+            Issue.record("Expected addRegion URLType")
+        }
+    }
+
+    @Test func `Add region GraphQL fields default to absent`() {
+        var components = URLComponents()
+        components.scheme = "onebusaway"
+        components.host = "add-region"
+        components.queryItems = [
+            URLQueryItem(name: "name", value: "Test Region"),
+            URLQueryItem(name: "oba-url", value: "https://oba.example.com")
+        ]
+
+        guard let url = components.url else {
+            Issue.record("Failed to create URL")
+            return
+        }
+
+        switch router.decodeURLType(from: url) {
+        case .addRegion(let data):
+            #expect(data?.otpGraphQLURL == nil)
+            #expect(data?.supportsOTPGraphQLBikeshare == false)
+        default:
+            Issue.record("Expected addRegion URLType")
+        }
+    }
+
     @Test func `Decode URL type add region decodes valid URL without OTPURL`() {
         var components = URLComponents()
         components.scheme = "onebusaway"

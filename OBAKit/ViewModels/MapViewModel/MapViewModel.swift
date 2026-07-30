@@ -15,8 +15,9 @@ import OBAKitCore
 /// The selected base map style. UIKit maps `.standard` → `MKMapType.mutedStandard`
 /// and `.hybrid` → `MKMapType.hybrid`; SwiftUI can map directly to `MapStyle`.
 /// Kept MapKit-free so this VM stays usable from both UIKit and SwiftUI hosts.
-enum MapBaseType {
+enum MapBaseType: CaseIterable {
     case standard
+    case satellite
     case hybrid
 }
 
@@ -252,8 +253,15 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
     /// sessions persist too, and both paths share one write.
     func toggleMapType() {
         let next: MapBaseType = mapType == .standard ? .hybrid : .standard
-        mapType = next
-        application.mapRegionManager.userSelectedMapType = next.mkMapType
+        setMapType(next)
+    }
+
+    /// Selects a specific base map type (the Map sheet's basemap tiles) and
+    /// persists the choice through `MapRegionManager`.
+    func setMapType(_ newType: MapBaseType) {
+        guard newType != mapType else { return }
+        mapType = newType
+        application.mapRegionManager.userSelectedMapType = newType.mkMapType
     }
 
     // MARK: - Bookmarks

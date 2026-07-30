@@ -671,6 +671,8 @@ public class Application: CoreApplication, PushServiceDelegate {
                         contactEmail: "example@example.com",
                         regionIdentifier: regionData.regionID,
                         openTripPlannerURL: regionData.otpURL,
+                        openTripPlannerGraphQLURL: regionData.otpGraphQLURL,
+                        supportsOTPGraphQLBikeshare: regionData.supportsOTPGraphQLBikeshare,
                         sidecarBaseURL: regionData.sidecarURL,
                         umamiAnalytics: regionData.umamiAnalytics)
 

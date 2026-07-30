@@ -87,6 +87,7 @@ class MapViewController: UIViewController,
         // Assign delegates
         self.application.mapRegionManager.addDelegate(self)
         self.application.locationService.addDelegate(self)
+        self.application.regionsService.addDelegate(self)
 
         self.application.notificationCenter.addObserver(self, selector: #selector(applicationDidBecomeActive(_:)), name: UIApplication.didBecomeActiveNotification, object: nil)
         self.application.notificationCenter.addObserver(self, selector: #selector(applicationWillResignActive(_:)), name: UIApplication.willResignActiveNotification, object: nil)
@@ -98,7 +99,9 @@ class MapViewController: UIViewController,
     isolated deinit {
         application.mapRegionManager.removeDelegate(self)
         application.locationService.removeDelegate(self)
+        application.regionsService.removeDelegate(self)
         application.notificationCenter.removeObserver(self)
+        NotificationCenter.default.removeObserver(self)
     }
 
     // MARK: - UIViewController
@@ -159,6 +162,10 @@ class MapViewController: UIViewController,
         longPressGesture.delegate = self
         mapView.addGestureRecognizer(longPressGesture)
 
+        configureMapLayers()
+        NotificationCenter.default.addObserver(self, selector: #selector(mapLayerStateDidChange(_:)), name: .mapLayerEnabledStateDidChange, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(mapLayerStateDidChange(_:)), name: .mapLayerAvailabilityDidChange, object: nil)
+
         bindViewModel()
     }
 
@@ -202,6 +209,7 @@ class MapViewController: UIViewController,
 
         viewModel.start()
         updateVoiceover()
+        showMapLayersNudgeIfNeeded()
         Task { @MainActor [weak viewModel] in await viewModel?.checkForSurveyPrompt() }
     }
 
@@ -516,18 +524,40 @@ class MapViewController: UIViewController,
         }
     }
 
-    private func buildTripPlanner(otpURL: URL) -> TripPlanner {
+    private func buildTripPlanner(region: Region) -> TripPlanner? {
+        // GraphQL (OTP 2.x) is the preferred trip-planning API whenever the region
+        // provides it; OTP 1.x REST is the fallback. Only the GraphQL service can
+        // support vehicle rental features.
+        let serverURL: URL
+        let apiService: OTPKit.APIService
+        if let graphQLURL = region.openTripPlannerGraphQLURL {
+            serverURL = graphQLURL
+            apiService = GraphQLAPIService(baseURL: graphQLURL)
+        } else if let restURL = region.openTripPlannerURL {
+            serverURL = restURL
+            apiService = RestAPIService(baseURL: restURL)
+        } else {
+            return nil
+        }
+
+        var enabledModes: [TransportMode] = [.transit, .walk, .bike, .car]
+        if region.isBikeshareEnabled {
+            // The capability filter in OTPKit hides these again if the service
+            // can't actually plan rental trips (e.g. the REST fallback).
+            enabledModes.append(contentsOf: [.transitBikeRental, .bikeRental])
+        }
+
         let searchRect = application.currentRegion?.serviceRect ?? mapRegionManager.mapView.visibleMapRect
 
         let config = OTPConfiguration(
-            otpServerURL: otpURL,
+            otpServerURL: serverURL,
+            enabledTransportModes: enabledModes,
             themeConfiguration: .init(
                 primaryColor: Color(uiColor: ThemeColors().brand)
             ),
             searchRegion: MKCoordinateRegion(searchRect)
         )
 
-        let apiService = RestAPIService(baseURL: otpURL)
         let mapViewProvider = MKMapViewAdapter(mapView: tripPlannerMapView)
 
         let tripPlanner = TripPlanner(
@@ -540,9 +570,16 @@ class MapViewController: UIViewController,
         return tripPlanner
     }
 
-    func showTripPlanner(destination: MKMapItem? = nil) {
+    /// Presents the trip planner.
+    /// - Parameters:
+    ///   - destination: Optional prefilled destination.
+    ///   - viaPoint: Optional coordinate every planned trip must pass through — used by
+    ///     "Plan a trip using this bike" with the vehicle's location.
+    ///   - preselectedMode: Optional transport mode to preselect, e.g. `.transitBikeRental`.
+    func showTripPlanner(destination: MKMapItem? = nil, viaPoint: CLLocationCoordinate2D? = nil, preselectedMode: TransportMode? = nil) {
         guard let currentRegion = application.regionsService.currentRegion,
-              let otpURL = currentRegion.openTripPlannerURL else {
+              currentRegion.supportsOTP,
+              application.userDataStore.isTripPlanningEnabled(for: currentRegion) else {
             return
         }
 
@@ -568,11 +605,16 @@ class MapViewController: UIViewController,
             )
         }
 
+        guard let tripPlanner = buildTripPlanner(region: currentRegion) else { return }
+
         subscribeToTripPlannerNotifications()
 
-        let tripPlanner = buildTripPlanner(otpURL: otpURL)
-
-        let tripPlannerView = tripPlanner.createTripPlannerView(origin: origin, destination: destinationLocation) { [weak self] in
+        let tripPlannerView = tripPlanner.createTripPlannerView(
+            origin: origin,
+            destination: destinationLocation,
+            viaPoint: viaPoint,
+            transportMode: preselectedMode
+        ) { [weak self] in
             guard let self else { return }
             self.dismissTripPlannerController()
         }
@@ -626,11 +668,37 @@ class MapViewController: UIViewController,
         let button = UIButton(type: .system)
         button.addTarget(self, action: #selector(toggleMapType), for: .touchUpInside)
         button.accessibilityLabel = OBALoc("map_controller.map_type.accessibility_label", value: "Map type", comment: "Voiceover text indicating that this button toggles the base map type.")
+
+        button.addSubview(mapLayerBadge)
+        NSLayoutConstraint.activate([
+            mapLayerBadge.topAnchor.constraint(equalTo: button.topAnchor, constant: 2),
+            mapLayerBadge.trailingAnchor.constraint(equalTo: button.trailingAnchor, constant: -2),
+            mapLayerBadge.widthAnchor.constraint(greaterThanOrEqualToConstant: 15),
+            mapLayerBadge.heightAnchor.constraint(equalToConstant: 15)
+        ])
+
         return button
     }()
 
+    /// The active-layer count on the basemap button — the primary discoverability
+    /// lever for the Map sheet: layer state is readable without opening anything.
+    lazy var mapLayerBadge: UILabel = {
+        let label = UILabel.autolayoutNew()
+        label.font = .systemFont(ofSize: 10, weight: .bold)
+        label.textColor = .white
+        label.textAlignment = .center
+        label.backgroundColor = ThemeColors.shared.brand
+        label.layer.cornerRadius = 7.5
+        label.layer.masksToBounds = true
+        label.isHidden = true
+        label.isUserInteractionEnabled = false
+        return label
+    }()
+
+    /// The basemap button opens the Map sheet, which absorbs the old
+    /// standard/hybrid toggle as its basemap tiles.
     @objc private func toggleMapType() {
-        viewModel.toggleMapType()
+        presentMapSheet()
     }
 
     private func setMapTypeButtonImage(_ button: UIButton, mapType: MapBaseType) {
@@ -642,6 +710,12 @@ class MapViewController: UIViewController,
             button.accessibilityValue = OBALoc("map_controller.map_type.hybrid.accessibility_value", value: "hybrid", comment: "Voiceover text indicating the current map type as the hybrid base map (satellite view with labels).")
         }
     }
+
+    // MARK: - Map Layers
+
+    var rentalLayerCoordinator: RentalLayerCoordinator?
+
+    // The layer/sheet/nudge machinery lives in MapViewController+MapLayers.swift.
 
     // MARK: - Application State
 
@@ -1036,6 +1110,12 @@ class MapViewController: UIViewController,
     // MARK: - MapRegionDelegate
 
     func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
+        // Layer-owned annotations (rental vehicles, rental clusters) present
+        // their own detail sheets.
+        if let annotation = view.annotation, presentLayerDetail(for: annotation, in: mapView) {
+            return
+        }
+
         if let region = view.annotation as? Region {
             let title = OBALoc("map_controller.change_region_alert.title", value: "Change Region?", comment: "Title of the alert that appears when the user is updating their current region manually.")
             let messageFmt = OBALoc("map_controller.change_region_alert.message_fmt", value: "Would you like to change your region to %@?", comment: "Body of the alert that appears when the user is updating their current region manually.")
