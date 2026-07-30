@@ -28,7 +28,7 @@ The bug that motivated the window path — `UISheetPresentationController` clamp
 
 **File:** `OBAKit/BLTNBoard/OBABulletinPage.swift`
 
-`BLTNItemManager.show(in:rootItem:)` branches on `UserDefaults.standard.bool(forKey: FeatureFlags.useMapPanelExperienceKey)`:
+`BLTNItemManager.show(in:rootItem:)` branches on the flag read from the app-group suite — `Bundle.main.appGroup.flatMap { UserDefaults(suiteName: $0) }?.bool(forKey: FeatureFlags.useMapPanelExperienceKey)`, see "Which `UserDefaults` here" below:
 
 - **Flag ON** — current behavior: `BulletinOverlayWindow.shared.install(in:rootItem:)` then `showBulletin(above: host)`.
 - **Flag OFF** — restore the pre-#1163 presentation: walk `keyWindowFromScene?.topViewController` and `showBulletin(above: rootVC)`. The `rootItem` parameter is unused in this branch but stays in the signature so all four call sites are untouched.
@@ -89,22 +89,18 @@ The four bulletin call sites (`AgencyAlertBulletin`, `ErrorBulletin`, `Reachabil
 
 New file: `OBAKitTests/BLTNBoard/BulletinOverlayWindowTests.swift`.
 
-Both tests are `@MainActor`. They exercise `BulletinOverlayWindow` directly against a synthesized `BLTNPageItem`; the presentation path itself is not driven — only handler management and teardown restoration.
+A `@MainActor`, `.serialized` Swift Testing suite. It exercises `BulletinOverlayWindow` directly against a synthesized `BLTNPageItem`; the presentation path itself is not driven — only handler management and teardown restoration. Synthesizing a `UIWindowScene` in the test host is fragile (`OBAKitTests` runs headless), so the tests take the fallback documented below and drive `swapDismissalHandler(on:)` / `restoreDismissalHandler()` — the same helpers `install`/`teardown` use.
 
-1. **`test_reachability_flapping_does_not_accumulate_handlers`** — the direct regression test for the item-2 bug.
-   - Create a `BLTNPageItem`. Assign a `dismissalHandler` whose closure captures a counter.
-   - Loop 5×: acquire an installable scene, call `install(in:rootItem:)`, then invoke the item's new `dismissalHandler` (simulating BLTN dispatching dismissal), which triggers `teardown()`.
-   - After the loop, invoke `dismissalHandler` one final time on a fresh install cycle.
-   - Assert the counter incremented exactly the expected number of times (1 per cycle, no compounding).
+**What the tests can and can't assert.** Counting how often the caller's `dismissalHandler` fires does *not* separate the fix from the bug it fixes. Under the pre-fix chaining, wrapper *N* wraps wrapper *N-1*, and each wrapper calls its inner handler exactly once — so the caller's handler still fires exactly once per dismissal no matter how deep the chain. The signal that differs is what the item is left holding after dismissal: chaining leaves the overlay's wrapper installed (one level deeper each presentation), snapshot-and-restore leaves exactly what the caller set. The tests therefore assert *item state after dismissal*, using an item whose handler starts `nil` so "restored to the caller's value" is observable without comparing closure identity (which Swift can't do).
 
-2. **`test_teardown_restores_original_handler`** — asserts item-state restoration.
-   - Create a `BLTNPageItem` with a known original handler.
-   - Install, then teardown.
-   - Assert `rootItem.dismissalHandler` is either the original object (via `ObjectIdentifier` if reference identity survives the round-trip) or, more robustly, invoke it and assert a spy-flag captured in the original closure fires — proving the restored handler is the pre-`install` one, not the overlay's wrapper.
+1. **`Repeated presentations leave no wrapper on a reused item`** — the direct regression test for the item-2 bug. Loop 5×: swap, assert the wrapper is installed (`dismissalHandler != nil`), fire it, assert the item is back to `nil`. Pre-fix this fails on the first pass and the item gets one level deeper on each subsequent one.
+2. **`Teardown restores the caller's handler`** — the single-cycle form of the same assertion.
+3. **`A dismissed item cannot tear down a later presentation`** — dismiss item A, present item B, fire A's handler again, assert B's presentation is untouched. A stale wrapper on A would reach back into the shared overlay and tear down B (and, under the current implementation, restore B's handler out from under it).
+4. **`The caller's handler runs once per presentation, with the item`** — pins the wrapper's forwarding behavior (count and the item passed through). Noted in the suite as holding for the pre-fix implementation too: it guards forwarding, not the fix.
 
-**Fallback:** if synthesizing a `UIWindowScene` in the test host proves fragile (`OBAKitTests` runs headless), extract the handler-management steps into a small helper on `BulletinOverlayWindow` — e.g. `internal func swapDismissalHandler(on: BLTNItem)` and `internal func restoreDismissalHandler()` — and drive those directly, sidestepping scene synthesis. The `install`/`teardown` public API keeps its current signature.
+**Fallback (taken):** extract the handler-management steps into small helpers on `BulletinOverlayWindow` — `internal func swapDismissalHandler(on: BLTNItem)` and `internal func restoreDismissalHandler()` — and drive those directly, sidestepping scene synthesis. The `install`/`teardown` public API keeps its current signature.
 
-**Flag-gating is not unit-tested.** It's a two-line branch on `UserDefaults.standard.bool(forKey:)` with no logic beyond it. Manual verification: toggle `OBAUseMapPanelExperience` in Settings, force a reachability drop, confirm classic mode gets the pre-#1163 presentation and map-panel gets the overlay window.
+**Flag-gating is not unit-tested.** It's a two-line branch on the app-group suite's `bool(forKey:)` with no logic beyond it. Manual verification: toggle `OBAUseMapPanelExperience` in Settings, force a reachability drop, confirm classic mode gets the pre-#1163 presentation and map-panel gets the overlay window.
 
 ## Acceptance criteria mapping
 
@@ -117,6 +113,6 @@ Both tests are `@MainActor`. They exercise `BulletinOverlayWindow` directly agai
 
 ## Risks
 
-- **Flag read timing.** `UserDefaults.standard.bool` reflects the current value; if a user flips the flag mid-session, the next bulletin's presentation path could switch. This matches how the flag behaves everywhere else in the app (a relaunch is expected), and both paths present a valid bulletin — the visible result is a slightly different visual/hosting behavior, not a broken state.
-- **Test-host scene availability.** If `OBAKitTests` can't synthesize a scene, the fallback helper-method approach is documented above. This is a minor implementation detail, not a design change.
-- **Item identity assumption in test 2.** `BLTN` may or may not preserve exact handler identity across reassignment — the spy-flag alternative avoids depending on identity semantics.
+- **Flag read timing.** The app-group suite's `bool(forKey:)` reflects the current value; if a user flips the flag mid-session, the next bulletin's presentation path could switch. This matches how the flag behaves everywhere else in the app (a relaunch is expected), and both paths present a valid bulletin — the visible result is a slightly different visual/hosting behavior, not a broken state.
+- **Test-host scene availability.** `OBAKitTests` can't be relied on to have a `UIWindowScene`, so the tests take the fallback helper-method approach documented above. This is a minor implementation detail, not a design change.
+- **Closure identity is not comparable in Swift.** "The restored handler is the caller's" can't be asserted by comparing closures, and a spy flag inside the caller's handler can't do it either — a chained wrapper fires that spy just the same. The tests get around this by starting from a `nil` handler, where restoration is directly observable.
