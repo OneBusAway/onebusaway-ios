@@ -6,7 +6,7 @@ name: OBAKit
 
 settings:
   base:
-    MARKETING_VERSION: 26.3.0
+    MARKETING_VERSION: 26.4.0
     # Swift 6 migration, now complete (docs/swift6-migration-plan.md): every
     # target in the project — frameworks, apps, widget, OBAKitTests and
     # OBAKitUITests — builds in the Swift 6 language mode with main-actor
