@@ -145,4 +145,30 @@ final class RentalAnnotationViewTests {
         let subject = view(for: try RentalFixtures.vehicle(operative: false), showsFuelLabel: false)
         #expect(subject.markerTintColor == .systemGray)
     }
+
+    // MARK: - setShowsFuelLabel (the narrow zoom-gate setter)
+
+    /// The coordinator calls this instead of reassigning `.annotation` to avoid a
+    /// full `configure()` on every zoom-threshold crossing; it must still show and
+    /// hide the label correctly on its own.
+    @Test func setShowsFuelLabelTogglesTheLabel() throws {
+        let subject = view(for: try RentalFixtures.vehicle(batteryPercent: 0.62), showsFuelLabel: false)
+        #expect(subject.fuelLabel.isHidden)
+
+        subject.setShowsFuelLabel(true)
+        #expect(subject.fuelLabel.isHidden == false)
+
+        subject.setShowsFuelLabel(false)
+        #expect(subject.fuelLabel.isHidden)
+    }
+
+    /// Mirrors `configure()`'s own rule: a label with no text stays hidden
+    /// regardless of the gate.
+    @Test func setShowsFuelLabelKeepsHiddenWhenThereIsNoFuelText() throws {
+        let subject = view(for: try RentalFixtures.vehicle(rangeMeters: nil, batteryPercent: nil), showsFuelLabel: false)
+        #expect(subject.fuelLabel.text == nil)
+
+        subject.setShowsFuelLabel(true)
+        #expect(subject.fuelLabel.isHidden)
+    }
 }

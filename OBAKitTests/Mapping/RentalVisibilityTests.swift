@@ -23,14 +23,6 @@ final class RentalVisibilityTests {
     private let scooters: Set<VehicleFormFactor> = [.scooter, .scooterSeated, .scooterStanding]
     private let bikes: Set<VehicleFormFactor> = [.bicycle, .cargoBicycle]
 
-    private func snapshot(
-        added: [VehicleRental] = [],
-        removed: [VehicleRental.ID] = [],
-        updated: [VehicleRental] = []
-    ) -> VehicleRentalSnapshot {
-        VehicleRentalSnapshot(added: added, removed: removed, updated: updated, fetchedAt: Date(timeIntervalSince1970: 0))
-    }
-
     // MARK: - Snapshot application
 
     @Test func addsMatchingEntities() throws {
@@ -38,7 +30,7 @@ final class RentalVisibilityTests {
         _ = visibility.setFormFactors(scooters)
 
         let scooter = try RentalFixtures.vehicle(id: "v1", formFactor: "SCOOTER")
-        let changes = visibility.apply(snapshot(added: [scooter]))
+        let changes = visibility.apply(RentalFixtures.snapshot(added: [scooter]))
 
         #expect(changes.added.map(\.id) == ["v1"])
         #expect(changes.removed.isEmpty)
@@ -49,7 +41,7 @@ final class RentalVisibilityTests {
         _ = visibility.setFormFactors(scooters)
 
         let bike = try RentalFixtures.vehicle(id: "b1", formFactor: "BICYCLE")
-        let changes = visibility.apply(snapshot(added: [bike]))
+        let changes = visibility.apply(RentalFixtures.snapshot(added: [bike]))
 
         #expect(changes.isEmpty)
     }
@@ -58,41 +50,41 @@ final class RentalVisibilityTests {
         var visibility = RentalVisibility()
         let scooter = try RentalFixtures.vehicle(id: "v1", formFactor: "SCOOTER")
 
-        #expect(visibility.apply(snapshot(added: [scooter])).isEmpty)
+        #expect(visibility.apply(RentalFixtures.snapshot(added: [scooter])).isEmpty)
     }
 
     @Test func removesEntities() throws {
         var visibility = RentalVisibility()
         _ = visibility.setFormFactors(scooters)
-        _ = visibility.apply(snapshot(added: [try RentalFixtures.vehicle(id: "v1")]))
+        _ = visibility.apply(RentalFixtures.snapshot(added: [try RentalFixtures.vehicle(id: "v1")]))
 
-        let changes = visibility.apply(snapshot(removed: ["v1"]))
+        let changes = visibility.apply(RentalFixtures.snapshot(removed: ["v1"]))
         #expect(changes.removed == ["v1"])
     }
 
     @Test func removingAnInvisibleEntityChangesNothing() throws {
         var visibility = RentalVisibility()
         _ = visibility.setFormFactors(scooters)
-        _ = visibility.apply(snapshot(added: [try RentalFixtures.vehicle(id: "b1", formFactor: "BICYCLE")]))
+        _ = visibility.apply(RentalFixtures.snapshot(added: [try RentalFixtures.vehicle(id: "b1", formFactor: "BICYCLE")]))
 
-        #expect(visibility.apply(snapshot(removed: ["b1"])).isEmpty)
+        #expect(visibility.apply(RentalFixtures.snapshot(removed: ["b1"])).isEmpty)
     }
 
     @Test func duplicateAddIsIgnored() throws {
         var visibility = RentalVisibility()
         _ = visibility.setFormFactors(scooters)
         let scooter = try RentalFixtures.vehicle(id: "v1")
-        _ = visibility.apply(snapshot(added: [scooter]))
+        _ = visibility.apply(RentalFixtures.snapshot(added: [scooter]))
 
-        #expect(visibility.apply(snapshot(added: [scooter])).isEmpty)
+        #expect(visibility.apply(RentalFixtures.snapshot(added: [scooter])).isEmpty)
     }
 
     @Test func updatesVisibleEntityInPlace() throws {
         var visibility = RentalVisibility()
         _ = visibility.setFormFactors(scooters)
-        _ = visibility.apply(snapshot(added: [try RentalFixtures.vehicle(id: "v1", rangeMeters: 10_000)]))
+        _ = visibility.apply(RentalFixtures.snapshot(added: [try RentalFixtures.vehicle(id: "v1", rangeMeters: 10_000)]))
 
-        let changes = visibility.apply(snapshot(updated: [try RentalFixtures.vehicle(id: "v1", rangeMeters: 9_000)]))
+        let changes = visibility.apply(RentalFixtures.snapshot(updated: [try RentalFixtures.vehicle(id: "v1", rangeMeters: 9_000)]))
         #expect(changes.updated.map(\.id) == ["v1"])
         #expect(changes.added.isEmpty)
         #expect(changes.removed.isEmpty)
@@ -105,10 +97,10 @@ final class RentalVisibilityTests {
     @Test func updateCrossingBelowThresholdBecomesARemoval() throws {
         var visibility = RentalVisibility()
         _ = visibility.setFormFactors(scooters)
-        _ = visibility.apply(snapshot(added: [try RentalFixtures.vehicle(id: "v1", rangeMeters: 10_000)]))
+        _ = visibility.apply(RentalFixtures.snapshot(added: [try RentalFixtures.vehicle(id: "v1", rangeMeters: 10_000)]))
         _ = visibility.setFilter(RentalRangeFilter(minimumRangeMeters: 8047))
 
-        let changes = visibility.apply(snapshot(updated: [try RentalFixtures.vehicle(id: "v1", rangeMeters: 3_000)]))
+        let changes = visibility.apply(RentalFixtures.snapshot(updated: [try RentalFixtures.vehicle(id: "v1", rangeMeters: 3_000)]))
         #expect(changes.removed == ["v1"])
         #expect(changes.updated.isEmpty)
     }
@@ -118,9 +110,9 @@ final class RentalVisibilityTests {
         var visibility = RentalVisibility()
         _ = visibility.setFormFactors(scooters)
         _ = visibility.setFilter(RentalRangeFilter(minimumRangeMeters: 8047))
-        _ = visibility.apply(snapshot(added: [try RentalFixtures.vehicle(id: "v1", rangeMeters: 3_000)]))
+        _ = visibility.apply(RentalFixtures.snapshot(added: [try RentalFixtures.vehicle(id: "v1", rangeMeters: 3_000)]))
 
-        let changes = visibility.apply(snapshot(updated: [try RentalFixtures.vehicle(id: "v1", rangeMeters: 12_000)]))
+        let changes = visibility.apply(RentalFixtures.snapshot(updated: [try RentalFixtures.vehicle(id: "v1", rangeMeters: 12_000)]))
         #expect(changes.added.map(\.id) == ["v1"])
         #expect(changes.updated.isEmpty)
     }
@@ -129,9 +121,9 @@ final class RentalVisibilityTests {
         var visibility = RentalVisibility()
         _ = visibility.setFormFactors(scooters)
         _ = visibility.setFilter(RentalRangeFilter(minimumRangeMeters: 8047))
-        _ = visibility.apply(snapshot(added: [try RentalFixtures.vehicle(id: "v1", rangeMeters: 1_000)]))
+        _ = visibility.apply(RentalFixtures.snapshot(added: [try RentalFixtures.vehicle(id: "v1", rangeMeters: 1_000)]))
 
-        #expect(visibility.apply(snapshot(updated: [try RentalFixtures.vehicle(id: "v1", rangeMeters: 2_000)])).isEmpty)
+        #expect(visibility.apply(RentalFixtures.snapshot(updated: [try RentalFixtures.vehicle(id: "v1", rangeMeters: 2_000)])).isEmpty)
     }
 
     // MARK: - Filter changes
@@ -139,7 +131,7 @@ final class RentalVisibilityTests {
     @Test func raisingTheThresholdHidesShortRangeVehicles() throws {
         var visibility = RentalVisibility()
         _ = visibility.setFormFactors(scooters)
-        _ = visibility.apply(snapshot(added: [
+        _ = visibility.apply(RentalFixtures.snapshot(added: [
             try RentalFixtures.vehicle(id: "near", rangeMeters: 3_000),
             try RentalFixtures.vehicle(id: "far", rangeMeters: 12_000)
         ]))
@@ -154,7 +146,7 @@ final class RentalVisibilityTests {
     @Test func loweringTheThresholdRestoresFromCache() throws {
         var visibility = RentalVisibility()
         _ = visibility.setFormFactors(scooters)
-        _ = visibility.apply(snapshot(added: [
+        _ = visibility.apply(RentalFixtures.snapshot(added: [
             try RentalFixtures.vehicle(id: "near", rangeMeters: 3_000),
             try RentalFixtures.vehicle(id: "far", rangeMeters: 12_000)
         ]))
@@ -168,7 +160,7 @@ final class RentalVisibilityTests {
     @Test func settingTheSameFilterChangesNothing() throws {
         var visibility = RentalVisibility()
         _ = visibility.setFormFactors(scooters)
-        _ = visibility.apply(snapshot(added: [try RentalFixtures.vehicle(id: "v1", rangeMeters: 3_000)]))
+        _ = visibility.apply(RentalFixtures.snapshot(added: [try RentalFixtures.vehicle(id: "v1", rangeMeters: 3_000)]))
         _ = visibility.setFilter(RentalRangeFilter(minimumRangeMeters: 8047))
 
         #expect(visibility.setFilter(RentalRangeFilter(minimumRangeMeters: 8047)).isEmpty)
@@ -178,7 +170,7 @@ final class RentalVisibilityTests {
     @Test func raisingTheThresholdKeepsStationsAndPedalBikes() throws {
         var visibility = RentalVisibility()
         _ = visibility.setFormFactors(bikes)
-        _ = visibility.apply(snapshot(added: [
+        _ = visibility.apply(RentalFixtures.snapshot(added: [
             try RentalFixtures.station(id: "s1"),
             try RentalFixtures.pedalBike(id: "b1")
         ]))
@@ -191,7 +183,7 @@ final class RentalVisibilityTests {
     @Test func narrowingFormFactorsPrunes() throws {
         var visibility = RentalVisibility()
         _ = visibility.setFormFactors(scooters.union(bikes))
-        _ = visibility.apply(snapshot(added: [
+        _ = visibility.apply(RentalFixtures.snapshot(added: [
             try RentalFixtures.vehicle(id: "v1", formFactor: "SCOOTER"),
             try RentalFixtures.vehicle(id: "b1", formFactor: "BICYCLE")
         ]))
@@ -203,7 +195,7 @@ final class RentalVisibilityTests {
     @Test func wideningFormFactorsRestoresFromCache() throws {
         var visibility = RentalVisibility()
         _ = visibility.setFormFactors(scooters)
-        _ = visibility.apply(snapshot(added: [
+        _ = visibility.apply(RentalFixtures.snapshot(added: [
             try RentalFixtures.vehicle(id: "v1", formFactor: "SCOOTER"),
             try RentalFixtures.vehicle(id: "b1", formFactor: "BICYCLE")
         ]))
@@ -215,7 +207,7 @@ final class RentalVisibilityTests {
     @Test func clearingFormFactorsRemovesEverything() throws {
         var visibility = RentalVisibility()
         _ = visibility.setFormFactors(scooters)
-        _ = visibility.apply(snapshot(added: [
+        _ = visibility.apply(RentalFixtures.snapshot(added: [
             try RentalFixtures.vehicle(id: "v1"),
             try RentalFixtures.vehicle(id: "v2")
         ]))
@@ -229,7 +221,7 @@ final class RentalVisibilityTests {
     @Test func wholesaleChangesAreSortedByIdentifier() throws {
         var visibility = RentalVisibility()
         _ = visibility.setFormFactors(scooters)
-        _ = visibility.apply(snapshot(added: [
+        _ = visibility.apply(RentalFixtures.snapshot(added: [
             try RentalFixtures.vehicle(id: "zebra", rangeMeters: 1_000),
             try RentalFixtures.vehicle(id: "alpha", rangeMeters: 1_000),
             try RentalFixtures.vehicle(id: "middle", rangeMeters: 1_000)

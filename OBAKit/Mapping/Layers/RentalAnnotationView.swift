@@ -127,6 +127,14 @@ public class RentalAnnotationView: MKMarkerAnnotationView {
             .joined(separator: ", ")
     }
 
+    /// Applies just the zoom gate's decision, without re-running `configure()`.
+    /// The gate flips on every crossing of the fuel-label zoom threshold, and a
+    /// full reconfigure per visible annotation would re-resolve SF Symbols and
+    /// re-run a distance formatter to change one Bool.
+    func setShowsFuelLabel(_ shows: Bool) {
+        fuelLabel.isHidden = !shows || fuelLabel.text == nil
+    }
+
     private static func glyphName(for formFactor: VehicleFormFactor?) -> String {
         guard let formFactor else { return "bicycle" }
         if formFactor.isScooter { return "scooter" }

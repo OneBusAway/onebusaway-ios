@@ -45,14 +45,6 @@ final class RentalLayerCoordinatorTests {
         return (coordinator, mapView)
     }
 
-    private func snapshot(
-        added: [VehicleRental] = [],
-        removed: [VehicleRental.ID] = [],
-        updated: [VehicleRental] = []
-    ) -> VehicleRentalSnapshot {
-        VehicleRentalSnapshot(added: added, removed: removed, updated: updated, fetchedAt: Date(timeIntervalSince1970: 0))
-    }
-
     /// `MKMapView.annotations` may include a user-location annotation, so tests must
     /// never assert on the raw count — only on rental annotations specifically.
     private func rentalAnnotations(_ mapView: MKMapView) -> [RentalAnnotation] {
@@ -65,7 +57,7 @@ final class RentalLayerCoordinatorTests {
         let (coordinator, mapView) = makeCoordinator()
         coordinator.setLayer(id: "scooters", enabled: true, formFactors: scooters)
 
-        coordinator.apply(snapshot(added: [
+        coordinator.apply(RentalFixtures.snapshot(added: [
             try RentalFixtures.vehicle(id: "near", rangeMeters: 3_000),
             try RentalFixtures.vehicle(id: "far", rangeMeters: 12_000)
         ]))
@@ -76,7 +68,7 @@ final class RentalLayerCoordinatorTests {
     @Test func raisingTheThresholdHidesTheShortRangeVehicle() throws {
         let (coordinator, mapView) = makeCoordinator()
         coordinator.setLayer(id: "scooters", enabled: true, formFactors: scooters)
-        coordinator.apply(snapshot(added: [
+        coordinator.apply(RentalFixtures.snapshot(added: [
             try RentalFixtures.vehicle(id: "near", rangeMeters: 3_000),
             try RentalFixtures.vehicle(id: "far", rangeMeters: 12_000)
         ]))
@@ -93,7 +85,7 @@ final class RentalLayerCoordinatorTests {
     @Test func loweringTheThresholdRestoresTheHiddenVehicle() throws {
         let (coordinator, mapView) = makeCoordinator()
         coordinator.setLayer(id: "scooters", enabled: true, formFactors: scooters)
-        coordinator.apply(snapshot(added: [
+        coordinator.apply(RentalFixtures.snapshot(added: [
             try RentalFixtures.vehicle(id: "near", rangeMeters: 3_000),
             try RentalFixtures.vehicle(id: "far", rangeMeters: 12_000)
         ]))
@@ -113,7 +105,7 @@ final class RentalLayerCoordinatorTests {
         coordinator.setLayer(id: "scooters", enabled: true, formFactors: scooters)
         coordinator.setRangeFilter(RentalRangeFilter(minimumRangeMeters: 8047))
 
-        coordinator.apply(snapshot(added: [
+        coordinator.apply(RentalFixtures.snapshot(added: [
             try RentalFixtures.vehicle(id: "no-range-data", rangeMeters: nil)
         ]))
 
@@ -125,7 +117,7 @@ final class RentalLayerCoordinatorTests {
     @Test func smallViewportShowsFuelLabels() throws {
         let (coordinator, mapView) = makeCoordinator()
         coordinator.setLayer(id: "scooters", enabled: true, formFactors: scooters)
-        coordinator.apply(snapshot(added: [try RentalFixtures.vehicle(id: "v1")]))
+        coordinator.apply(RentalFixtures.snapshot(added: [try RentalFixtures.vehicle(id: "v1")]))
 
         // Well under the 8,000-map-point gate.
         coordinator.viewportDidChange(TestData.seattleMapRect)
@@ -138,7 +130,7 @@ final class RentalLayerCoordinatorTests {
     @Test func largeViewportHidesFuelLabels() throws {
         let (coordinator, mapView) = makeCoordinator()
         coordinator.setLayer(id: "scooters", enabled: true, formFactors: scooters)
-        coordinator.apply(snapshot(added: [try RentalFixtures.vehicle(id: "v1")]))
+        coordinator.apply(RentalFixtures.snapshot(added: [try RentalFixtures.vehicle(id: "v1")]))
 
         var largeRect = TestData.seattleMapRect
         largeRect.size.height = 10_000 // above the 8,000-map-point gate
@@ -152,7 +144,7 @@ final class RentalLayerCoordinatorTests {
     @Test func closedZoomGateHidesFuelLabels() throws {
         let (coordinator, mapView) = makeCoordinator()
         coordinator.setLayer(id: "scooters", enabled: true, formFactors: scooters)
-        coordinator.apply(snapshot(added: [try RentalFixtures.vehicle(id: "v1")]))
+        coordinator.apply(RentalFixtures.snapshot(added: [try RentalFixtures.vehicle(id: "v1")]))
 
         // Establish the "on" state first, so a passing test here can't be an
         // artifact of `showsFuelLabels` simply defaulting to false.

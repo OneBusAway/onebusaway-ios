@@ -33,12 +33,13 @@ import OTPKit
     /// The annotations currently on the map, by entity id.
     private var annotations: [VehicleRental.ID: RentalAnnotation] = [:]
 
-    /// Visible-map-rect height (in map points) at or below which fuel labels
-    /// render. Tighter than the layer's own 20,000-point zoom window because the
-    /// labels are subviews and don't participate in MapKit's collision logic, so
-    /// they need more room than the markers do. At latitude 47.6 there are 9.9464
-    /// map points per metre, making this an 804 m-tall viewport — a few blocks.
-    private static let fuelLabelMaxVisibleHeight = 8_000.0
+    /// Fuel labels need more room than the markers do, so they gate on a tighter
+    /// window than the layer's own `zoomWindow` (20,000-point) — the labels are
+    /// subviews and don't participate in MapKit's collision logic. Same type, so
+    /// the two spellings of "is this viewport small enough" stay in sync. At
+    /// latitude 47.6 there are 9.9464 map points per metre, making 8,000 map
+    /// points (`MKMapRect` units, not metres) an 804 m-tall viewport — a few blocks.
+    private static let fuelLabelZoomWindow = MapLayerZoomWindow(maxVisibleHeight: 8_000)
 
     private var showsFuelLabels = false
 
@@ -98,7 +99,7 @@ import OTPKit
         }
 
         let factors = combinedFormFactors
-        apply(visibility.setFormFactors(factors))
+        syncMapView(with: visibility.setFormFactors(factors))
 
         let mapRect = lastMapRect
         Task {
@@ -119,7 +120,7 @@ import OTPKit
     /// Applies a new minimum-range threshold. Purely client-side: the entities are
     /// already cached, so relaxing the threshold restores vehicles with no refetch.
     func setRangeFilter(_ filter: RentalRangeFilter) {
-        apply(visibility.setFilter(filter))
+        syncMapView(with: visibility.setFilter(filter))
     }
 
     /// `mapRect` is nil when the zoom gate is closed — everything is removed.
@@ -139,16 +140,14 @@ import OTPKit
     /// Pushes the current zoom's label decision onto every annotation. Cheap: it
     /// no-ops unless the gate actually flipped.
     private func updateFuelLabelVisibility(for mapRect: MKMapRect?) {
-        let shows = mapRect.map { $0.height <= Self.fuelLabelMaxVisibleHeight } ?? false
+        let shows = mapRect.map { Self.fuelLabelZoomWindow.contains(visibleHeight: $0.height) } ?? false
         guard shows != showsFuelLabels else { return }
         showsFuelLabels = shows
 
         guard let mapView else { return }
         for annotation in annotations.values {
             annotation.showsFuelLabel = shows
-            if let view = mapView.view(for: annotation) as? RentalAnnotationView {
-                view.annotation = annotation
-            }
+            (mapView.view(for: annotation) as? RentalAnnotationView)?.setShowsFuelLabel(shows)
         }
     }
 
@@ -165,7 +164,7 @@ import OTPKit
             Logger.info("Rental fetch partial errors: \(snapshot.partialErrors.joined(separator: "; "))")
         }
 
-        apply(visibility.apply(snapshot))
+        syncMapView(with: visibility.apply(snapshot))
     }
 
     /// Translates a visibility diff into map view operations. The only place this
@@ -173,7 +172,7 @@ import OTPKit
     /// equal to `RentalVisibility`'s visible-id set. Do not add an early return here:
     /// one that skips a branch (e.g. on an empty `added`/`removed`/`updated` array)
     /// would silently break that invariant and, with it, cache restore.
-    private func apply(_ changes: RentalVisibility.Changes) {
+    private func syncMapView(with changes: RentalVisibility.Changes) {
         guard let mapView, !changes.isEmpty else { return }
 
         var removed: [RentalAnnotation] = []

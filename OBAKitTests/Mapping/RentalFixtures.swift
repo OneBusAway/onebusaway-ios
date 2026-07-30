@@ -12,11 +12,14 @@ import OTPKit
 
 /// Builds `VehicleRental` values for tests.
 ///
-/// These are decoded from JSON rather than constructed directly: OTPKit's
-/// `RentalVehicle`, `VehicleRentalStation`, `FuelInfo`, and `VehicleType` expose
-/// only internal memberwise initializers, so the sole cross-module entry point is
-/// `VehicleRental.init(from:)`. Decoding has the side benefit of exercising the
-/// same path real payloads take, including `__typename` discrimination.
+/// These are decoded rather than constructed directly: OTPKit's `RentalVehicle`,
+/// `VehicleRentalStation`, `FuelInfo`, and `VehicleType` expose only internal
+/// memberwise initializers, so the sole cross-module entry point is
+/// `VehicleRental.init(from:)`. Dictionaries are built and handed to
+/// `Fixtures.dictionaryToModel`, which round-trips them through
+/// `JSONSerialization` + `JSONDecoder` — the same convention `Fixtures.swift`
+/// uses elsewhere. Decoding has the side benefit of exercising the same path
+/// real payloads take, including `__typename` discrimination.
 enum RentalFixtures {
 
     /// A free-floating rental vehicle. Pass `rangeMeters: nil, batteryPercent: nil`
@@ -31,32 +34,32 @@ enum RentalFixtures {
         lat: Double = 47.6,
         lon: Double = -122.3
     ) throws -> VehicleRental {
-        var fuelFields: [String] = []
-        if let batteryPercent {
-            fuelFields.append("\"percent\": \(batteryPercent)")
-        }
-        if let rangeMeters {
-            fuelFields.append("\"range\": \(rangeMeters)")
-        }
-        let fuelJSON = fuelFields.isEmpty ? "null" : "{ \(fuelFields.joined(separator: ", ")) }"
-        let propulsionJSON = propulsion.map { "\"\($0)\"" } ?? "null"
+        var fuel: [String: Any] = [:]
+        if let batteryPercent { fuel["percent"] = batteryPercent }
+        if let rangeMeters { fuel["range"] = rangeMeters }
+        let fuelValue: Any = fuel.isEmpty ? NSNull() : fuel
 
-        let json = """
-        {
-          "__typename": "RentalVehicle",
-          "vehicleId": "\(id)",
-          "name": "Default vehicle type",
-          "lat": \(lat),
-          "lon": \(lon),
-          "allowPickupNow": true,
-          "operative": \(operative),
-          "rentalNetwork": { "networkId": "lime_seattle", "url": null },
-          "rentalUris": null,
-          "vehicleType": { "formFactor": "\(formFactor)", "propulsionType": \(propulsionJSON) },
-          "fuel": \(fuelJSON)
+        var vehicleType: [String: Any] = ["formFactor": formFactor]
+        if let propulsion {
+            vehicleType["propulsionType"] = propulsion
+        } else {
+            vehicleType["propulsionType"] = NSNull()
         }
-        """
-        return try JSONDecoder().decode(VehicleRental.self, from: Data(json.utf8))
+
+        let dictionary: [String: Any] = [
+            "__typename": "RentalVehicle",
+            "vehicleId": id,
+            "name": "Default vehicle type",
+            "lat": lat,
+            "lon": lon,
+            "allowPickupNow": true,
+            "operative": operative,
+            "rentalNetwork": ["networkId": "lime_seattle", "url": NSNull()] as [String: Any],
+            "rentalUris": NSNull(),
+            "vehicleType": vehicleType,
+            "fuel": fuelValue
+        ]
+        return try Fixtures.dictionaryToModel(type: VehicleRental.self, dictionary: dictionary)
     }
 
     /// A non-powered vehicle: a pedal bike, with no `fuel` object at all.
@@ -72,17 +75,29 @@ enum RentalFixtures {
         lat: Double = 47.6,
         lon: Double = -122.3
     ) throws -> VehicleRental {
-        let json = """
-        {
-          "__typename": "VehicleRentalStation",
-          "stationId": "\(id)",
-          "name": "Pine St Station",
-          "lat": \(lat),
-          "lon": \(lon),
-          "vehiclesAvailable": \(vehiclesAvailable.map(String.init) ?? "null"),
-          "operative": \(operative)
+        var dictionary: [String: Any] = [
+            "__typename": "VehicleRentalStation",
+            "stationId": id,
+            "name": "Pine St Station",
+            "lat": lat,
+            "lon": lon,
+            "operative": operative
+        ]
+        if let vehiclesAvailable {
+            dictionary["vehiclesAvailable"] = vehiclesAvailable
+        } else {
+            dictionary["vehiclesAvailable"] = NSNull()
         }
-        """
-        return try JSONDecoder().decode(VehicleRental.self, from: Data(json.utf8))
+        return try Fixtures.dictionaryToModel(type: VehicleRental.self, dictionary: dictionary)
+    }
+
+    /// A snapshot with the fixed `fetchedAt` every rental test depends on for
+    /// determinism — `Date()` is avoided deliberately.
+    static func snapshot(
+        added: [VehicleRental] = [],
+        removed: [VehicleRental.ID] = [],
+        updated: [VehicleRental] = []
+    ) -> VehicleRentalSnapshot {
+        VehicleRentalSnapshot(added: added, removed: removed, updated: updated, fetchedAt: Date(timeIntervalSince1970: 0))
     }
 }
