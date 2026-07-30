@@ -319,22 +319,57 @@ public class MapRegionManager: NSObject,
         )
     }
 
+    /// The UserDefaults key persisting the shared rental minimum-range threshold.
+    static let rentalMinimumRangeDefaultsKey = "mapLayer.rentals.minimumRangeMeters"
+
+    /// The minimum-range filter shared by the Bikes and Scooters layers — one
+    /// threshold, not one per layer.
+    ///
+    /// It lives here beside the per-layer enablement so `mapLayersDifferFromDefaults`
+    /// and `resetMapLayersToDefaults()` cover it, which is what makes the Map
+    /// sheet's Reset button honest. No `register(defaults:)` is needed: an unset
+    /// key reads as 0, which is exactly `.any`.
+    var rentalRangeFilter: RentalRangeFilter {
+        get {
+            RentalRangeFilter(
+                minimumRangeMeters: application.userDefaults.integer(forKey: Self.rentalMinimumRangeDefaultsKey)
+            )
+        }
+        set {
+            guard rentalRangeFilter != newValue else { return }
+            application.userDefaults.set(newValue.minimumRangeMeters, forKey: Self.rentalMinimumRangeDefaultsKey)
+
+            NotificationCenter.default.post(name: .rentalRangeFilterDidChange, object: nil)
+            application.analytics?.reportEvent(
+                pageURL: "app://localhost/map",
+                label: AnalyticsLabels.rentalRangeFilterChanged,
+                value: String(newValue.minimumRangeMeters)
+            )
+        }
+    }
+
     /// The number of enabled, non-hidden layers — the basemap button's badge.
     public var enabledMapLayerCount: Int {
         mapLayers.filter { $0.availability != .unsupported && isMapLayerEnabled(id: $0.id) }.count
     }
 
-    /// True when any layer's on/off state differs from its default — drives the
-    /// Map sheet's Reset affordance.
+    /// True when any layer's on/off state differs from its default, or the rental
+    /// range filter is active *and visible* — drives the Map sheet's Reset
+    /// affordance. The filter row only renders when a `.otherModes` layer is
+    /// registered (rental layers are region-gated), so a non-zero filter left over
+    /// from another region must not offer a Reset that changes nothing on screen.
     public var mapLayersDifferFromDefaults: Bool {
-        mapLayers.contains { isMapLayerEnabled(id: $0.id) != $0.isEnabledByDefault }
+        if rentalRangeFilter != .any, mapLayers.contains(where: { $0.group == .otherModes }) { return true }
+        return mapLayers.contains { isMapLayerEnabled(id: $0.id) != $0.isEnabledByDefault }
     }
 
-    /// Restores every registered layer to its default on/off state.
+    /// Restores every registered layer to its default on/off state, and clears the
+    /// rental range filter.
     public func resetMapLayersToDefaults() {
         for layer in mapLayers {
             setMapLayerEnabled(layer.isEnabledByDefault, id: layer.id)
         }
+        rentalRangeFilter = .any
     }
 
     /// Whether stop annotations should render. True when no stops layer is

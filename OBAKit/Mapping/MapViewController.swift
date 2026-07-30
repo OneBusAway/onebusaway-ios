@@ -165,6 +165,7 @@ class MapViewController: UIViewController,
         configureMapLayers()
         NotificationCenter.default.addObserver(self, selector: #selector(mapLayerStateDidChange(_:)), name: .mapLayerEnabledStateDidChange, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(mapLayerStateDidChange(_:)), name: .mapLayerAvailabilityDidChange, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(rentalRangeFilterDidChange(_:)), name: .rentalRangeFilterDidChange, object: nil)
 
         bindViewModel()
     }

@@ -26,31 +26,6 @@ import UIKit
     func rentalLayer(open url: URL, webFallback: URL?)
 }
 
-// MARK: - Shared Formatting
-
-/// Formatting shared by the rental detail and cluster-list surfaces, so the
-/// walk estimate, battery string, and distance formatter exist exactly once.
-enum RentalFormat {
-    /// Cached: a fresh MKDistanceFormatter per row per render is waste.
-    static let distanceFormatter = MKDistanceFormatter()
-
-    /// Straight-line walk estimate at the app's default walking speed.
-    /// Nil beyond 10 km — a "119 min walk" line is noise, not information.
-    static func walkTimeText(from userLocation: CLLocation?, to coordinate: CLLocationCoordinate2D) -> String? {
-        guard let userLocation else { return nil }
-        let target = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
-        let meters = userLocation.distance(from: target)
-        guard meters.isFinite, meters < 10_000 else { return nil }
-
-        let minutes = max(1, Int((meters / WalkingSpeed.defaultMetersPerSecond / 60).rounded()))
-        return String(format: OBALoc("rental_detail.walk_time_fmt", value: "%d min walk", comment: "Estimated walking time to a rental vehicle"), minutes)
-    }
-
-    static func batteryText(_ percent: Double) -> String {
-        "\(Int((percent * 100).rounded()))%"
-    }
-}
-
 // MARK: - Detail Sheet
 
 /// Bottom sheet for a single rental vehicle or station — same visual family as

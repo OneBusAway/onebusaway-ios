@@ -65,6 +65,10 @@ public class AnalyticsLabels: NSObject {
     /// layer's conversion into trip planning.
     @objc public static let rentalPlanTripTapped = "Rental Plan Trip Tapped"
 
+    /// Label used when the rental minimum-range filter changes. Value: the
+    /// threshold in meters, or "0" for no minimum.
+    @objc public static let rentalRangeFilterChanged = "Rental Range Filter Changed"
+
     /// Label used when 'Learn More About Donations' screen is displayed
     @objc public static let donationLearnMoreShown = "Donation Learn More Shown"
 

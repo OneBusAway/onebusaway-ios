@@ -34,6 +34,13 @@ public final class RentalAnnotation: NSObject, MKAnnotation {
                                      comment: "Number of rental vehicles available at a station"), available)
     }
 
+    /// Whether the view should render its fuel label.
+    ///
+    /// Set by `RentalLayerCoordinator` from the current zoom. It lives on the
+    /// annotation rather than the view because `RentalMapLayer.annotationView(for:)`
+    /// only dequeues a view and has no access to viewport state.
+    public var showsFuelLabel: Bool = false
+
     public init(rental: VehicleRental) {
         self.rental = rental
         self.coordinate = rental.coordinate
