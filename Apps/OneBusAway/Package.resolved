@@ -1,5 +1,5 @@
 {
-  "originHash": "dcbf237be397b725408870be6a00caa210933cb68672ae765af39a1c7e0f2f39",
+  "originHash": "055362610a029ddb6bc01ff381cd8b16298e6c2a80627c7b598a390adc0b1e65",
   "pins": [
     {
       "identity": "abseil-cpp-binary",
@@ -177,8 +177,8 @@
       "kind": "remoteSourceControl",
       "location": "https://github.com/OneBusAway/otpkit.git",
       "state": {
-        "revision": "b61353818b00a6d4666d52198f29fed914013b8a",
-        "version": "0.15.0"
+        "branch": "main",
+        "revision": "5d2fb5a0e39b53a98050324b6a09b4d6eb240e0a"
       }
     },
     {

@@ -135,10 +135,11 @@ packages:
         url: https://github.com/cbpowell/MarqueeLabel.git
         exactVersion: 4.5.3
     OTPKit:
-        # Tracks the bikeshare feature branch until OneBusAway/otpkit#155 merges
-        # and ships in a tagged release; switch back to a version range then.
+        # OneBusAway/otpkit#155 has merged to main but is not in a tagged
+        # release yet; track main until one ships, then switch back to a
+        # version range.
         url: https://github.com/OneBusAway/otpkit.git
-        branch: bikeshare-ui
+        branch: main
     SwiftProtobuf:
         url: https://github.com/apple/swift-protobuf.git
         minorVersion: 1.38.1
