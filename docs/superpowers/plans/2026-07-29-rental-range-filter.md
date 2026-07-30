@@ -2120,9 +2120,41 @@ git commit -m "Wire the rental range filter through to the map coordinator"
 
 ---
 
-## Deferred to implementation
+## Deferred to implementation — status at completion
 
-Two things the spec flags that can only be settled with the app running. Neither blocks a task, but both should be resolved before the branch is considered done:
+1. **The label's vertical offset** — **RESOLVED.** Measured during Task 6 on
+   iPhone 17 Pro / iOS 26.3: `bounds` (0, 0, 31.33, 34.94), `centerOffset`
+   (0, −17.47). Since `centerOffset.y == -bounds.height/2`, MapKit places
+   `bounds.maxY` at the annotation's coordinate, which is where the balloon tip
+   sits — so the plan's assumption held and `constant: 1` is correct. Pinning to
+   `bottomAnchor` tracks the tip as the view's height changes, making the constant
+   a 1pt gap rather than a derived offset. The measurement is now recorded in a
+   comment at the constraint so it needn't be re-derived.
 
-1. **The label's vertical offset** (Task 6). `MKMarkerAnnotationView.bounds` and its default `centerOffset` are undocumented. Measure, then set the constant.
-2. **VoiceOver's default derivation** (Task 9, step 5). If focusing a pin announces the vehicle name twice, MapKit is composing something of its own; the fix is to override `isAccessibilityElement` and compose the whole string rather than relying on `accessibilityLabel` replacing a derived value.
+   Caveat: measured via a hosted unit-test probe, not on a live `MKMapView`
+   (simulator UI automation is unavailable on this machine). The label has still
+   never been *seen* rendered on a map.
+
+2. **VoiceOver's default derivation** — **STILL OPEN, and it is the most
+   important thing left.** Assigning `accessibilityLabel` does not make a
+   `UIView` an accessibility element, and Apple documents neither whether
+   `MKAnnotationView` is one by default nor what it derives from the annotation's
+   `title`/`subtitle`. If it is not an element, the entire VoiceOver story here —
+   including the pre-existing behavior this feature had to preserve — is a no-op,
+   and all twelve `RentalAnnotationViewTests` still pass. No automated test can
+   close this. Focus a rental pin with VoiceOver on: expect exactly one
+   announcement carrying the vehicle name, the station occupancy where
+   applicable, and the fuel figure. If nothing is announced, add
+   `isAccessibilityElement = true`. If the name is doubled, MapKit is composing
+   its own label and the fix is to override the composition rather than append
+   to it.
+
+## Follow-up filed during the final review
+
+A ~40-line synchronous `RentalLayerCoordinator` test — stub the one-method
+`VehicleRentalService`, drop `private` from `apply(_ snapshot:)`, drive it with no
+async at all. It would close two things with **no coverage at any level**: the
+`Set(annotations.keys)` == visible-id-set invariant, and the
+`fuelLabelMaxVisibleHeight` zoom gate. Neither is a bug today; see the spec's
+Testing section for why the original "it's all behind a debounce" reasoning was
+wrong.
