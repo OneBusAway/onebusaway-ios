@@ -42,8 +42,11 @@ import OBAKitCore
     var isEnabledByDefault: Bool { true }
     var availability: MapLayerAvailability { .available }
 
-    /// Mirrors `MapRegionManager.requiredHeightToShowStops`.
-    var zoomWindow: MapLayerZoomWindow { MapLayerZoomWindow(maxVisibleHeight: 40_000) }
+    /// Shares `MapRegionManager.requiredHeightToShowStops` rather than mirroring
+    /// the literal, so this layer and both map surfaces can't drift apart.
+    var zoomWindow: MapLayerZoomWindow {
+        MapLayerZoomWindow(maxVisibleHeight: MapRegionManager.requiredHeightToShowStops)
+    }
 
     var densityBudget: Int { 250 }
     var isClusterable: Bool { false }

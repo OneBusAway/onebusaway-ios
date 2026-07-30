@@ -140,8 +140,9 @@ struct MapPanelRootView: View {
         }
         // The map-type toggle changes the label gate (labels only show on the
         // standard map), but doesn't move the camera — re-evaluate here so labels
-        // don't stay stale until the user next pans. The UIKit path re-evaluates
-        // per annotation view.
+        // don't stay stale until the user next pans. The UIKit path has no
+        // equivalent hook: it only re-applies `isHidingExtraStopAnnotationData`
+        // from `reloadStopAnnotations`, i.e. on a region change.
         .onChange(of: mapViewModel.mapType) { _, _ in
             recomputeStopLabels()
         }

@@ -33,6 +33,9 @@ final class MapStopsObserverTests: OBATestCase {
     @Test func `Observer publishes stops when the manager loads`() async {
         let dataLoader = MockDataLoader(testName: name)
         let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        // The stop cache is a shared file that outlives the test bundle; clear
+        // it so this test's stops come from its own mocked fetch.
+        clearStopCache(for: application)
 
         dataLoader.mock(data: Fixtures.loadData(file: "stops_for_location_seattle.json")) { request in
             request.url?.path.contains("/api/where/stops-for-location.json") ?? false
@@ -54,6 +57,9 @@ final class MapStopsObserverTests: OBATestCase {
     @Test func `Observer skips republish when the stop set is unchanged`() async {
         let dataLoader = MockDataLoader(testName: name)
         let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        // Both loads below must see the same cache state, so the publish count
+        // reflects the observer's dedupe and not leftover rows from elsewhere.
+        clearStopCache(for: application)
 
         dataLoader.mock(data: Fixtures.loadData(file: "stops_for_location_seattle.json")) { request in
             request.url?.path.contains("/api/where/stops-for-location.json") ?? false

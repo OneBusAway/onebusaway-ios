@@ -236,6 +236,27 @@ class OBATestCase {
         return Application(config: config)
     }
 
+    // MARK: - Stop Cache
+
+    /// Empties the stop cache for `application`'s current region.
+    ///
+    /// `Application.stopCacheRepository` is backed by a real file on disk
+    /// (`Application Support/stop_cache.sqlite`), so it is shared by every
+    /// `Application` built in the process *and* survives between runs of the
+    /// test bundle. `AppConfig` exposes no seam for injecting an
+    /// in-memory `StopCacheDatabase`, so a suite that exercises the cache has
+    /// to reset it explicitly — otherwise a test asserting "the network
+    /// populated the map" can be satisfied by rows another test left behind,
+    /// and still pass with its own code path broken.
+    ///
+    /// This is the same class of problem as the GMT pin at the top of this
+    /// file: process-global state that `.serialized` does not protect.
+    /// Call it before seeding or asserting on cached stops.
+    func clearStopCache(for application: Application) {
+        guard let regionId = application.currentRegion?.regionIdentifier else { return }
+        application.stopCacheRepository?.clearCache(regionId: regionId)
+    }
+
     // MARK: - Surveys
 
     @MainActor

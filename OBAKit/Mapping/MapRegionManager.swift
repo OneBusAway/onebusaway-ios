@@ -419,7 +419,12 @@ public class MapRegionManager: NSObject,
 
     /// Loads stops for an explicitly provided region and stores them in `stops`.
     ///
-    /// Used by SwiftUI hosts whose map view is not this manager's `mapView`.
+    /// Takes the region as a parameter rather than reading `mapView.region`, so
+    /// callers that don't own this manager's `mapView` can drive it. Publishing
+    /// goes through `setStops(_:)`, which diffs this manager's own `mapView`
+    /// annotations — SwiftUI hosts want `scheduleStopsRequest(in:)` instead,
+    /// which debounces, serves the cache first, and skips that diff.
+    ///
     /// Applies the same fudge factor, cache-save, and cache-fallback behavior as
     /// the UIKit region-change path.
     func requestStops(in region: MKCoordinateRegion) async {
@@ -568,7 +573,13 @@ public class MapRegionManager: NSObject,
         // path: while a single search result is displayed, region stop-loading
         // is suppressed so the search result isn't overwritten by a camera
         // settle.
+        //
+        // Cancel rather than merely declining to schedule: a settle from just
+        // before the search may still be sitting in its debounce, and letting
+        // it land would publish the panned region's stops over the search
+        // result — the exact outcome this guard exists to prevent.
         if searchResponseOverridesStopLoading() {
+            cancelScheduledStopsRequest()
             return
         }
 
@@ -590,6 +601,14 @@ public class MapRegionManager: NSObject,
                 // publishes flickers the band's outer pins.
                 let fetched = try await self.refreshStopCache(in: region)
                 guard !Task.isCancelled else { return }
+
+                // An empty `fetched` is never worth publishing: it's
+                // indistinguishable from `refreshStopCache` short-circuiting on a
+                // nil `apiService` (which happens transiently during a region
+                // switch), and publishing it would blank a band that already has
+                // pins. Leaving the existing stops up matches `serveCachedStops`,
+                // which also treats "nothing to show" as a no-op.
+                guard !fetched.isEmpty else { return }
 
                 if self.application.stopCacheRepository == nil {
                     // No cache to round-trip through, so publish directly —

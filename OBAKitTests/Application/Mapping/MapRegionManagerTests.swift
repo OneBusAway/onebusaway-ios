@@ -161,6 +161,9 @@ final class MapRegionManagerTests: OBATestCase {
         )
 
         let application = Application(config: config)
+        // The stop cache is a shared file; start clean so the assertion below
+        // can only be satisfied by this test's own network fetch.
+        clearStopCache(for: application)
         let mgr = MapRegionManager(application: application)
         let region = MKCoordinateRegion(
             center: TestData.mockSeattleLocation.coordinate,
@@ -205,6 +208,10 @@ final class MapRegionManagerTests: OBATestCase {
         )
 
         let application = Application(config: config)
+        // Start clean, so reaching a non-empty `stops` below proves the
+        // debounced fetch ran rather than a sibling test's leftover cache rows
+        // being served before the debounce even elapsed.
+        clearStopCache(for: application)
         let mgr = MapRegionManager(application: application)
         // Centered on the fixture stops (~2.8km north of the mock device
         // location) so the region-width cache serve actually covers them.
@@ -278,7 +285,7 @@ final class MapRegionManagerTests: OBATestCase {
 
         let regionId = try #require(application.currentRegion?.regionIdentifier)
         // The cache DB is file-backed and shared across tests; start clean.
-        application.stopCacheRepository?.clearCache(regionId: regionId)
+        clearStopCache(for: application)
 
         // Seed the cache with a distinguishable subset so the cache-served
         // delivery is tellable apart from the full network set.
@@ -319,8 +326,7 @@ final class MapRegionManagerTests: OBATestCase {
         let application = makeSeattleApplication(dataLoader: dataLoader)
         let mgr = MapRegionManager(application: application)
 
-        let regionId = try #require(application.currentRegion?.regionIdentifier)
-        application.stopCacheRepository?.clearCache(regionId: regionId)
+        clearStopCache(for: application)
 
         // Pre-populate stops so the map has existing pins to preserve.
         // Centered on the fixture stops so the region-width cache serve covers them.
@@ -334,7 +340,7 @@ final class MapRegionManagerTests: OBATestCase {
 
         // Clear the cache so the upcoming settle is a genuine miss, while the
         // manager still holds the pre-populated stops.
-        application.stopCacheRepository?.clearCache(regionId: regionId)
+        clearStopCache(for: application)
 
         let recorder = StopsRecorder()
         mgr.addDelegate(recorder)
@@ -362,8 +368,7 @@ final class MapRegionManagerTests: OBATestCase {
         let application = makeSeattleApplication(dataLoader: dataLoader)
         let mgr = MapRegionManager(application: application)
 
-        let regionId = try #require(application.currentRegion?.regionIdentifier)
-        application.stopCacheRepository?.clearCache(regionId: regionId)
+        clearStopCache(for: application)
 
         // The mock returns the Seattle fixture for any stops request, but this
         // settle is centered ~70km south of those stops. So nothing is cached in
@@ -383,6 +388,37 @@ final class MapRegionManagerTests: OBATestCase {
         try #require(!fixtureStops.isEmpty, "Need a non-empty stops fixture")
         await pollUntil { mgr.stops.count == fixtureStops.count }
         #expect(mgr.stops.count == fixtureStops.count)
+    }
+
+    /// Cancelling stops a debounced request from landing after the host has
+    /// moved on. `MapPanelRootView` relies on this when the camera settles
+    /// zoomed out past the stop threshold: the in-flight request from the
+    /// previous, zoomed-in settle must not repopulate the annotations the host
+    /// just cleared. `scheduleStopsRequest` uses the same cancellation when a
+    /// search result takes over the map.
+    @Test func `Cancel scheduled stops request keeps a debounced load from landing`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = makeSeattleApplication(dataLoader: dataLoader)
+        let mgr = MapRegionManager(application: application)
+
+        // An empty cache means the pre-debounce band serve publishes nothing,
+        // so anything that shows up in `stops` can only have come from the
+        // debounced fetch we're cancelling.
+        clearStopCache(for: application)
+
+        let region = MKCoordinateRegion(
+            center: CLLocationCoordinate2D(latitude: 47.653, longitude: -122.308),
+            latitudinalMeters: 8000,
+            longitudinalMeters: 8000
+        )
+
+        mgr.scheduleStopsRequest(in: region)
+        mgr.cancelScheduledStopsRequest()
+
+        // Well past the 250ms debounce: had the request survived, it would have
+        // fetched and published by now.
+        try await Task.sleep(for: .milliseconds(600))
+        #expect(mgr.stops.isEmpty)
     }
 
     /// The under-pin label height gate (routes served / bookmark name), shared
