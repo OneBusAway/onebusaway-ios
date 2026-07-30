@@ -154,7 +154,10 @@ import OTPKit
 
     // MARK: - Snapshot Application
 
-    private func apply(_ snapshot: VehicleRentalSnapshot) {
+    // Exposed (not `private`) so RentalLayerCoordinatorTests can feed snapshots
+    // directly and drive the synchronous filter path without going through the
+    // async `AsyncStream`/debounce plumbing.
+    func apply(_ snapshot: VehicleRentalSnapshot) {
         lastSnapshotAt = snapshot.fetchedAt
         setAvailability(.available)
 
