@@ -31,16 +31,6 @@ final class MapRegionManagerTests: OBATestCase {
         queue.cancelAllOperations()
     }
 
-    /// Polls a condition until it holds or the timeout elapses. The suite is
-    /// `@MainActor`-isolated (via `OBATestCase`), so every read stays on the
-    /// MainActor and nothing crosses an isolation boundary.
-    private func pollUntil(timeout: TimeInterval = 2.0, _ condition: () -> Bool) async {
-        let deadline = Date().addingTimeInterval(timeout)
-        while !condition() && Date() < deadline {
-            try? await Task.sleep(nanoseconds: 20_000_000) // 20ms
-        }
-    }
-
     private var regionsFilePath: String { Bundle.main.path(forResource: "regions", ofType: "json")! }
 
     private func makeConfig(locationService: LocationService, bundledRegionsPath: String, dataLoader: MockDataLoader) -> AppConfig {
@@ -129,38 +119,7 @@ final class MapRegionManagerTests: OBATestCase {
 
     @Test func `Request stops in region populates stops`() async {
         let dataLoader = MockDataLoader(testName: name)
-        stubRegions(dataLoader: dataLoader)
-        stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
-        Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
-
-        // Any stops-for-location request returns the Seattle fixture.
-        dataLoader.mock(data: Fixtures.loadData(file: "stops_for_location_seattle.json")) { request in
-            request.url?.path.contains("/api/where/stops-for-location.json") ?? false
-        }
-
-        let locManager = MockAuthorizedLocationManager(
-            updateLocation: TestData.mockSeattleLocation,
-            updateHeading: TestData.mockHeading
-        )
-        let locationService = LocationService(userDefaults: userDefaults, locationManager: locManager)
-        locationService.startUpdates()
-
-        // Inline config with fixedRegionName since this test needs a specific region
-        let config = AppConfig(
-            regionsBaseURL: regionsURL,
-            apiKey: apiKey,
-            appVersion: appVersion,
-            userDefaults: userDefaults,
-            analytics: AnalyticsMock(),
-            queue: queue,
-            locationService: locationService,
-            bundledRegionsFilePath: regionsFilePath,
-            regionsAPIPath: regionsPath,
-            dataLoader: dataLoader,
-            fixedRegionName: Fixtures.pugetSoundRegion.name
-        )
-
-        let application = Application(config: config)
+        let application = makeSeattleApplication(dataLoader: dataLoader)
         // The stop cache is a shared file; start clean so the assertion below
         // can only be satisfied by this test's own network fetch.
         clearStopCache(for: application)
@@ -178,36 +137,7 @@ final class MapRegionManagerTests: OBATestCase {
 
     @Test func `Schedule stops request debounced load populates stops`() async {
         let dataLoader = MockDataLoader(testName: name)
-        stubRegions(dataLoader: dataLoader)
-        stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
-        Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
-
-        dataLoader.mock(data: Fixtures.loadData(file: "stops_for_location_seattle.json")) { request in
-            request.url?.path.contains("/api/where/stops-for-location.json") ?? false
-        }
-
-        let locManager = MockAuthorizedLocationManager(
-            updateLocation: TestData.mockSeattleLocation,
-            updateHeading: TestData.mockHeading
-        )
-        let locationService = LocationService(userDefaults: userDefaults, locationManager: locManager)
-
-        // Inline config with fixedRegionName since this test needs a specific region
-        let config = AppConfig(
-            regionsBaseURL: regionsURL,
-            apiKey: apiKey,
-            appVersion: appVersion,
-            userDefaults: userDefaults,
-            analytics: AnalyticsMock(),
-            queue: queue,
-            locationService: locationService,
-            bundledRegionsFilePath: regionsFilePath,
-            regionsAPIPath: regionsPath,
-            dataLoader: dataLoader,
-            fixedRegionName: Fixtures.pugetSoundRegion.name
-        )
-
-        let application = Application(config: config)
+        let application = makeSeattleApplication(dataLoader: dataLoader)
         // Start clean, so reaching a non-empty `stops` below proves the
         // debounced fetch ran rather than a sibling test's leftover cache rows
         // being served before the debounce even elapsed.
@@ -225,8 +155,7 @@ final class MapRegionManagerTests: OBATestCase {
         mgr.scheduleStopsRequest(in: region)
         mgr.scheduleStopsRequest(in: region)
 
-        // Debounce is 250ms; poll for the load to land.
-        await pollUntil { !mgr.stops.isEmpty }
+        await poll(until: { !mgr.stops.isEmpty }, "debounced stop load never landed")
         #expect(!mgr.stops.isEmpty)
     }
 
@@ -308,7 +237,7 @@ final class MapRegionManagerTests: OBATestCase {
         mgr.scheduleStopsRequest(in: region)
 
         // Network eventually replaces the cache set with the full fixture.
-        await pollUntil { mgr.stops.count == fixtureStops.count }
+        await poll(until: { mgr.stops.count == fixtureStops.count }, "network refresh never replaced the cached subset")
         #expect(mgr.stops.count == fixtureStops.count)
 
         // First delivery came from the cache, before the network landed.
@@ -350,7 +279,7 @@ final class MapRegionManagerTests: OBATestCase {
         // The immediate band serve finds an empty cache and publishes nothing;
         // the network refresh repopulates the cache and the band re-serve then
         // delivers the stops.
-        await pollUntil { !recorder.deliveries.isEmpty }
+        await poll(until: { !recorder.deliveries.isEmpty }, "no stops were ever delivered after the cache miss")
         #expect(!recorder.deliveries.isEmpty)
         // No delivery in the sequence was ever an empty set: the cache miss left
         // the map's stops untouched until the refresh arrived.
@@ -386,7 +315,7 @@ final class MapRegionManagerTests: OBATestCase {
 
         let fixtureStops = try Fixtures.loadSomeStops()
         try #require(!fixtureStops.isEmpty, "Need a non-empty stops fixture")
-        await pollUntil { mgr.stops.count == fixtureStops.count }
+        await poll(until: { mgr.stops.count == fixtureStops.count }, "fetched stops were never published after the empty cache re-serve")
         #expect(mgr.stops.count == fixtureStops.count)
     }
 

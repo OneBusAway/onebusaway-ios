@@ -38,10 +38,13 @@ final class MapViewModelTests: OBATestCase {
     /// Pass `bundledRegionsFixture: "regions-puget-sound-no-sidecar.json"` to swap the
     /// bundled regions file for one whose Puget Sound entry has no `sidecarBaseURL` —
     /// keeps `application.obacoService` nil and `features.obaco == .off`.
+    /// Pass `startLocationUpdates: false` to leave `locationService.currentLocation`
+    /// nil, modelling a launch before the user has granted location permission.
     private func createApplication(
         dataLoader: MockDataLoader,
         bundledRegionsFixture: String? = nil,
-        accuracyAuthorization: CLAccuracyAuthorization = .fullAccuracy
+        accuracyAuthorization: CLAccuracyAuthorization = .fullAccuracy,
+        startLocationUpdates: Bool = true
     ) -> Application {
         stubRegions(dataLoader: dataLoader)
         stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
@@ -53,7 +56,9 @@ final class MapViewModelTests: OBATestCase {
         )
         locManager.overrideAccuracyAuthorization = accuracyAuthorization
         let locationService = LocationService(userDefaults: userDefaults, locationManager: locManager)
-        locationService.startUpdates()
+        if startLocationUpdates {
+            locationService.startUpdates()
+        }
 
         let config = AppConfig(
             regionsBaseURL: regionsURL,
@@ -539,7 +544,9 @@ final class MapViewModelTests: OBATestCase {
     /// delegate callback and is gated by `initialMapChangeMade`.
     @Test func `Did receive initial location latches on the first location change`() async {
         let dataLoader = MockDataLoader(testName: name)
-        let app = createApplication(dataLoader: dataLoader)
+        // No fix yet: this is the grant-permission-after-launch path, where the
+        // latch has to wait for the delegate callback.
+        let app = createApplication(dataLoader: dataLoader, startLocationUpdates: false)
         let viewModel = MapViewModel(application: app)
 
         #expect(viewModel.didReceiveInitialLocation == false)
@@ -550,13 +557,30 @@ final class MapViewModelTests: OBATestCase {
         #expect(viewModel.didReceiveInitialLocation == true)
     }
 
+    /// A returning user already has a location fix by the time the map is built,
+    /// so no `locationChanged` callback will ever arrive to latch the flag. It
+    /// must therefore seed from the location the service is already holding —
+    /// otherwise the recenter never runs and the map opens parked on the whole
+    /// region, showing "Zoom in for stops" instead of the user's stops.
+    @Test func `Did receive initial location seeds from an existing fix at init`() {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader)
+        #expect(app.locationService.currentLocation != nil)
+
+        let viewModel = MapViewModel(application: app)
+
+        #expect(viewModel.didReceiveInitialLocation == true)
+    }
+
     /// The latch fires exactly once: a second `locationChanged` after the flag
     /// is set publishes no further change, so the view's `.onChange` recenter
     /// stays a one-time event and doesn't yank the camera back on every
     /// subsequent GPS update.
     @Test func `Did receive initial location publishes only once`() async {
         let dataLoader = MockDataLoader(testName: name)
-        let app = createApplication(dataLoader: dataLoader)
+        // Start without a fix so the latch begins `false` and the single
+        // `false` → `true` transition is observable.
+        let app = createApplication(dataLoader: dataLoader, startLocationUpdates: false)
         let viewModel = MapViewModel(application: app)
 
         var observed: [Bool] = []

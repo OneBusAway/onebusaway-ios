@@ -63,8 +63,14 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
     /// coarse `locationAuthStatus` changing (e.g. after "Allow Once").
     @Published private(set) var accuracyAuthorization: CLAccuracyAuthorization
 
-    /// Latches `true` on the first location fix, so the map recenters on the
-    /// user exactly once — e.g. after permission is granted post-launch.
+    /// Latches `true` once a location fix is available, so the map recenters on
+    /// the user exactly once.
+    ///
+    /// Seeded at init from any fix `LocationService` is already holding, because
+    /// the two launch paths deliver it differently: granting permission
+    /// post-launch produces a `locationChanged` callback, but a returning user
+    /// who already granted permission has a fix before this view model is even
+    /// built, and no callback follows.
     @Published private(set) var didReceiveInitialLocation = false
 
     // MARK: - Survey Prompt
@@ -91,6 +97,7 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
         self.mapType = initialMapType
         self.locationAuthStatus = application.locationService.authorizationStatus
         self.accuracyAuthorization = application.locationService.accuracyAuthorization
+        self.didReceiveInitialLocation = application.locationService.currentLocation != nil
         self.surveyOrchestrator = SurveyOrchestrator(
             surveyService: application.surveyService,
             promptCoordinator: application.promptCoordinator

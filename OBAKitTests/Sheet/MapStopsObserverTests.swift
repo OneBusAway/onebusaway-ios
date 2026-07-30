@@ -142,15 +142,6 @@ final class MapStopsObserverTests: OBATestCase {
         #expect(observer.stops.isEmpty)
     }
 
-    /// Squared planar distance with longitude scaled by `cos(latitude)` —
-    /// mirrors `MapStopsObserver.squaredDistance` so the test's "nearest N"
-    /// ordering matches the count-cap eviction under review. Ordering only.
-    private func squaredDistance(_ stop: Stop, to center: CLLocationCoordinate2D) -> Double {
-        let dLat = stop.coordinate.latitude - center.latitude
-        let dLon = (stop.coordinate.longitude - center.longitude) * cos(center.latitude * .pi / 180)
-        return dLat * dLat + dLon * dLon
-    }
-
     @Test func `Observer evicts stops beyond the prune radius`() throws {
         let dataLoader = MockDataLoader(testName: name)
         let application = buildApplication(queue: queue, dataLoader: dataLoader)
@@ -160,7 +151,9 @@ final class MapStopsObserverTests: OBATestCase {
         try #require(allStops.count >= 3, "Need fixture stops")
         let anchor = try #require(allStops.first)
         let farStop = try #require(
-            allStops.max { squaredDistance($0, to: anchor.coordinate) < squaredDistance($1, to: anchor.coordinate) }
+            allStops.max {
+                observer.squaredDistance($0, to: anchor.coordinate) < observer.squaredDistance($1, to: anchor.coordinate)
+            }
         )
         try #require(farStop.id != anchor.id, "Need two fixture stops at distinct coordinates")
 
@@ -204,7 +197,9 @@ final class MapStopsObserverTests: OBATestCase {
         // The three nearest to the anchor survive (anchor itself is nearest).
         #expect(observer.stops.map(\.id).contains(anchor.id))
         let nearest3 = allStops
-            .sorted { squaredDistance($0, to: anchor.coordinate) < squaredDistance($1, to: anchor.coordinate) }
+            .sorted {
+                observer.squaredDistance($0, to: anchor.coordinate) < observer.squaredDistance($1, to: anchor.coordinate)
+            }
             .prefix(3)
             .map(\.id)
         #expect(Set(observer.stops.map(\.id)) == Set(nearest3))

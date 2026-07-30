@@ -415,247 +415,6 @@ public class MapRegionManager: NSObject,
         }
     }
 
-    // MARK: - Data Loading
-
-    /// Loads stops for an explicitly provided region and stores them in `stops`.
-    ///
-    /// Takes the region as a parameter rather than reading `mapView.region`, so
-    /// callers that don't own this manager's `mapView` can drive it. Publishing
-    /// goes through `setStops(_:)`, which diffs this manager's own `mapView`
-    /// annotations — SwiftUI hosts want `scheduleStopsRequest(in:)` instead,
-    /// which debounces, serves the cache first, and skips that diff.
-    ///
-    /// Applies the same fudge factor, cache-save, and cache-fallback behavior as
-    /// the UIKit region-change path.
-    func requestStops(in region: MKCoordinateRegion) async {
-        guard let apiService = application.apiService else {
-            return
-        }
-
-        await MainActor.run {
-            notifyDelegatesDataLoadingStarted()
-        }
-
-        defer {
-            Task { @MainActor in
-                notifyDelegatesDataLoadingFinished()
-            }
-        }
-
-        let mapRegion = fudgedRegion(for: region, factor: preferredLoadDataRegionFudgeFactor)
-
-        do {
-            let stops = try await apiService.getStops(region: mapRegion).list
-
-            await MainActor.run {
-                // Some UI code is dependent on this being changed on Main.
-                self.setStops(stops)
-            }
-
-            saveStopsToCache(stops)
-        } catch {
-            // Don't attempt cache fallback for cancelled tasks (e.g., user navigated away).
-            if error is CancellationError { return }
-
-            Logger.error("API stop request failed, attempting cache fallback: \(error)")
-
-            // On API failure, try serving from cache before showing error.
-            let cachedStops = cachedStops(in: mapRegion)
-            if !cachedStops.isEmpty {
-                await MainActor.run {
-                    self.setStops(cachedStops)
-                }
-                return
-            }
-            await self.application.displayError(error)
-        }
-    }
-
-    /// Reads cached stops for `mapRegion` (already fudge-factor expanded) from
-    /// `StopCacheRepository`, using a bounding-box query. Returns `[]` when the
-    /// repository or current region is unavailable, or nothing is cached.
-    ///
-    /// See: https://github.com/OneBusAway/onebusaway-ios/issues/62
-    private func cachedStops(in mapRegion: MKCoordinateRegion) -> [Stop] {
-        guard
-            let regionId = application.currentRegion?.regionIdentifier,
-            let repository = application.stopCacheRepository
-        else {
-            return []
-        }
-
-        let minLat = mapRegion.center.latitude - mapRegion.span.latitudeDelta / 2.0
-        let maxLat = mapRegion.center.latitude + mapRegion.span.latitudeDelta / 2.0
-        let minLon = mapRegion.center.longitude - mapRegion.span.longitudeDelta / 2.0
-        let maxLon = mapRegion.center.longitude + mapRegion.span.longitudeDelta / 2.0
-
-        return repository.stopsInRegion(
-            minLat: minLat, maxLat: maxLat,
-            minLon: minLon, maxLon: maxLon,
-            regionId: regionId
-        )
-    }
-
-    /// Persists `stops` to `StopCacheRepository` for offline use.
-    /// See: https://github.com/OneBusAway/onebusaway-ios/issues/62
-    private func saveStopsToCache(_ stops: [Stop]) {
-        if let regionId = application.currentRegion?.regionIdentifier,
-           let repository = application.stopCacheRepository {
-            repository.saveStops(stops, regionId: regionId)
-        }
-    }
-
-    /// Fetches stops, caches them, and returns the set so callers can publish it
-    /// directly when the cache can't (e.g. the database failed to open). Returns
-    /// `[]` when no API service is configured; rethrows network errors.
-    private func refreshStopCache(in region: MKCoordinateRegion) async throws -> [Stop] {
-        guard let apiService = application.apiService else { return [] }
-
-        await MainActor.run {
-            notifyDelegatesDataLoadingStarted()
-        }
-        defer {
-            Task { @MainActor in
-                notifyDelegatesDataLoadingFinished()
-            }
-        }
-
-        let mapRegion = fudgedRegion(for: region, factor: preferredLoadDataRegionFudgeFactor)
-        let stops = try await apiService.getStops(region: mapRegion).list
-        saveStopsToCache(stops)
-        return stops
-    }
-
-    /// Applies the network fudge-factor expansion to `region`, so the cache
-    /// read covers the same bounds the network fetches and saves.
-    private func fudgedRegion(for region: MKCoordinateRegion, factor: Double) -> MKCoordinateRegion {
-        var mapRegion = region
-        mapRegion.span.latitudeDelta *= factor
-        mapRegion.span.longitudeDelta *= factor
-        return mapRegion
-    }
-
-    /// Publishes cached stops for `region` immediately (instant revisits),
-    /// publishing only the latest region — neighborhood persistence lives in
-    /// `MapStopsObserver`. Returns `true` if it published a non-empty set; a
-    /// cache miss or cancelled task is a no-op that returns `false`.
-    @discardableResult
-    private func serveCachedStops(in region: MKCoordinateRegion) async -> Bool {
-        // Bail before the SQLite bounding-box query when the task is already
-        // cancelled — a settle superseded by a newer one shouldn't pay for a
-        // GRDB read whose result would be thrown away.
-        guard !Task.isCancelled else { return false }
-        let cachedStops = cachedStops(in: fudgedRegion(for: region, factor: preferredLoadDataRegionFudgeFactor))
-        guard !cachedStops.isEmpty, !Task.isCancelled else { return false }
-
-        await MainActor.run {
-            self.publishStopsToDelegates(cachedStops)
-        }
-        return true
-    }
-
-    /// UIKit entrypoint: loads stops for the manager's own `mapView` region.
-    func requestDataForMapRegion() async {
-        await requestStops(in: mapView.region)
-    }
-
-    @objc func requestDataForMapRegion(_ timer: Timer) {
-        Task(priority: .utility) {
-            await requestDataForMapRegion()
-        }
-    }
-
-    /// Debounced, fire-and-forget entrypoint for SwiftUI hosts. Coalesces rapid
-    /// camera settles (matching the UIKit 0.25s timer) and cancels any in-flight
-    /// request before loading stops for `region`.
-    func scheduleStopsRequest(in region: MKCoordinateRegion) {
-        // Mirror the guard at the top of the UIKit `reloadStopAnnotations`
-        // path: while a single search result is displayed, region stop-loading
-        // is suppressed so the search result isn't overwritten by a camera
-        // settle.
-        //
-        // Cancel rather than merely declining to schedule: a settle from just
-        // before the search may still be sitting in its debounce, and letting
-        // it land would publish the panned region's stops over the search
-        // result — the exact outcome this guard exists to prevent.
-        if searchResponseOverridesStopLoading() {
-            cancelScheduledStopsRequest()
-            return
-        }
-
-        pendingStopsRequestTask?.cancel()
-        pendingStopsRequestTask = Task { [weak self] in
-            guard let self else { return }
-
-            // Publish the band around this region immediately (before the
-            // debounce), so a settle over a recently-viewed area shows pins
-            // without waiting on the network.
-            let servedFromCache = await self.serveCachedStops(in: region)
-
-            try? await Task.sleep(for: .milliseconds(250))
-            guard !Task.isCancelled else { return }
-
-            do {
-                // Refresh the cache, but don't publish the raw response —
-                // publishing the narrower network region between two band
-                // publishes flickers the band's outer pins.
-                let fetched = try await self.refreshStopCache(in: region)
-                guard !Task.isCancelled else { return }
-
-                // An empty `fetched` is never worth publishing: it's
-                // indistinguishable from `refreshStopCache` short-circuiting on a
-                // nil `apiService` (which happens transiently during a region
-                // switch), and publishing it would blank a band that already has
-                // pins. Leaving the existing stops up matches `serveCachedStops`,
-                // which also treats "nothing to show" as a no-op.
-                guard !fetched.isEmpty else { return }
-
-                if self.application.stopCacheRepository == nil {
-                    // No cache to round-trip through, so publish directly —
-                    // otherwise the map would show no pins at all.
-                    await MainActor.run { self.publishStopsToDelegates(fetched) }
-                } else {
-                    // Re-serve the band with the fresh stops: band → band, a
-                    // clean incremental add, never band → narrow → band.
-                    let republished = await self.serveCachedStops(in: region)
-
-                    // Cache reads can be empty after a successful fetch (e.g. cache write
-                    // failure or missing cache key). Fall back to the fetched stops so the
-                    // map isn't left blank, unless the request was cancelled by a newer one.
-                    if !republished, !Task.isCancelled {
-                        await MainActor.run { self.publishStopsToDelegates(fetched) }
-                    }
-                }
-            } catch {
-                // A cancelled request isn't a failure — it's the expected
-                // outcome of a newer camera settle superseding this one, and it
-                // arrives in several shapes (Swift `CancellationError`, or a
-                // URLSession `NSError`/`URLError` with `NSURLErrorCancelled`),
-                // so lean on `Error.isCancellation` plus `Task.isCancelled`
-                // rather than a typed catch. Surfacing it would pop a modal
-                // error bulletin every time the user pans across an uncached
-                // area twice in quick succession.
-                if Task.isCancelled || error.isCancellation {
-                    return
-                }
-                Logger.error("Map panel stop refresh failed: \(error)")
-                // Surface the error only when nothing is on-screen.
-                if !servedFromCache {
-                    await self.application.displayError(error)
-                }
-            }
-        }
-    }
-
-    /// Cancels any stops request scheduled via `scheduleStopsRequest(in:)` that
-    /// hasn't fired yet. Called by SwiftUI hosts when the camera settles zoomed
-    /// out past `requiredHeightToShowStops`, so a request debounced while zoomed
-    /// in doesn't land after the host has cleared its annotations.
-    func cancelScheduledStopsRequest() {
-        pendingStopsRequestTask?.cancel()
-        pendingStopsRequestTask = nil
-    }
-
     // MARK: - Map View Delegate
 
     weak var mapViewDelegate: MapRegionMapViewDelegate?
@@ -861,6 +620,11 @@ public class MapRegionManager: NSObject,
     /// and SwiftUI hosts (via `MapPanelRootView`) gate stop loading on this value
     /// so the two surfaces agree on when stops appear.
     static let requiredHeightToShowStops = 40000.0
+
+    /// How long a camera settle is coalesced before stops are fetched. Shared by
+    /// the UIKit `regionChangeRequestTimer` and the SwiftUI `scheduleStopsRequest`
+    /// debounce so retuning one surface can't silently leave the other behind.
+    static let stopsRequestDebounceInterval: TimeInterval = 0.25
 
     /// Whether the zoom-in-for-stops warning should show for a map whose
     /// visible `MKMapRect` is `height` map points tall. Exposed so the SwiftUI
@@ -1087,7 +851,7 @@ public class MapRegionManager: NSObject,
             // Data still loads even when annotations are hidden: other surfaces
             // (like the nearby stops list) read `stops` directly.
             regionChangeRequestTimer?.invalidate()
-            regionChangeRequestTimer = Timer.scheduledTimer(timeInterval: 0.25, target: self, selector: #selector(requestDataForMapRegion(_:)), userInfo: nil, repeats: false)
+            regionChangeRequestTimer = Timer.scheduledTimer(timeInterval: Self.stopsRequestDebounceInterval, target: self, selector: #selector(requestDataForMapRegion(_:)), userInfo: nil, repeats: false)
             return
         }
 
@@ -1100,7 +864,7 @@ public class MapRegionManager: NSObject,
 
         regionChangeRequestTimer?.invalidate()
 
-        regionChangeRequestTimer = Timer.scheduledTimer(timeInterval: 0.25, target: self, selector: #selector(requestDataForMapRegion(_:)), userInfo: nil, repeats: false)
+        regionChangeRequestTimer = Timer.scheduledTimer(timeInterval: Self.stopsRequestDebounceInterval, target: self, selector: #selector(requestDataForMapRegion(_:)), userInfo: nil, repeats: false)
     }
 
     private var isHidingRegions: Bool? {
@@ -1503,6 +1267,255 @@ public class MapRegionManager: NSObject,
         // Set the annotation text
         annotation.title = titleComponents.isEmpty ? "Unknown Location" : titleComponents.joined(separator: ", ")
         annotation.subtitle = subtitleComponents.joined(separator: ", ")
+    }
+}
+
+// MARK: - Data Loading
+
+/// Stop fetching, caching, and publishing — the shared engine behind both the
+/// UIKit region-change path and the SwiftUI map panel's debounced settles.
+/// Split into an extension so the two surfaces' loading code reads as one
+/// unit rather than a slab in the middle of the UIKit map-view plumbing.
+extension MapRegionManager {
+
+    /// Loads stops for an explicitly provided region and stores them in `stops`.
+    ///
+    /// Takes the region as a parameter rather than reading `mapView.region`, so
+    /// callers that don't own this manager's `mapView` can drive it. Publishing
+    /// goes through `setStops(_:)`, which diffs this manager's own `mapView`
+    /// annotations — SwiftUI hosts want `scheduleStopsRequest(in:)` instead,
+    /// which debounces, serves the cache first, and skips that diff.
+    ///
+    /// Applies the same fudge factor, cache-save, and cache-fallback behavior as
+    /// the UIKit region-change path.
+    func requestStops(in region: MKCoordinateRegion) async {
+        guard let apiService = application.apiService else {
+            return
+        }
+
+        await MainActor.run {
+            notifyDelegatesDataLoadingStarted()
+        }
+
+        defer {
+            Task { @MainActor in
+                notifyDelegatesDataLoadingFinished()
+            }
+        }
+
+        let mapRegion = fudgedRegion(for: region, factor: preferredLoadDataRegionFudgeFactor)
+
+        do {
+            let stops = try await apiService.getStops(region: mapRegion).list
+
+            await MainActor.run {
+                // Some UI code is dependent on this being changed on Main.
+                self.setStops(stops)
+            }
+
+            saveStopsToCache(stops)
+        } catch {
+            // Don't attempt cache fallback for cancelled tasks (e.g., user navigated away).
+            if error is CancellationError { return }
+
+            Logger.error("API stop request failed, attempting cache fallback: \(error)")
+
+            // On API failure, try serving from cache before showing error.
+            let cachedStops = cachedStops(in: mapRegion)
+            if !cachedStops.isEmpty {
+                await MainActor.run {
+                    self.setStops(cachedStops)
+                }
+                return
+            }
+            await self.application.displayError(error)
+        }
+    }
+
+    /// Reads cached stops for `mapRegion` (already fudge-factor expanded) from
+    /// `StopCacheRepository`, using a bounding-box query. Returns `[]` when the
+    /// repository or current region is unavailable, or nothing is cached.
+    ///
+    /// See: https://github.com/OneBusAway/onebusaway-ios/issues/62
+    private func cachedStops(in mapRegion: MKCoordinateRegion) -> [Stop] {
+        guard
+            let regionId = application.currentRegion?.regionIdentifier,
+            let repository = application.stopCacheRepository
+        else {
+            return []
+        }
+
+        let minLat = mapRegion.center.latitude - mapRegion.span.latitudeDelta / 2.0
+        let maxLat = mapRegion.center.latitude + mapRegion.span.latitudeDelta / 2.0
+        let minLon = mapRegion.center.longitude - mapRegion.span.longitudeDelta / 2.0
+        let maxLon = mapRegion.center.longitude + mapRegion.span.longitudeDelta / 2.0
+
+        return repository.stopsInRegion(
+            minLat: minLat, maxLat: maxLat,
+            minLon: minLon, maxLon: maxLon,
+            regionId: regionId
+        )
+    }
+
+    /// Persists `stops` to `StopCacheRepository` for offline use.
+    /// See: https://github.com/OneBusAway/onebusaway-ios/issues/62
+    private func saveStopsToCache(_ stops: [Stop]) {
+        if let regionId = application.currentRegion?.regionIdentifier,
+           let repository = application.stopCacheRepository {
+            repository.saveStops(stops, regionId: regionId)
+        }
+    }
+
+    /// Fetches stops, caches them, and returns the set so callers can publish it
+    /// directly when the cache can't (e.g. the database failed to open). Returns
+    /// `[]` when no API service is configured; rethrows network errors.
+    private func refreshStopCache(in region: MKCoordinateRegion) async throws -> [Stop] {
+        guard let apiService = application.apiService else { return [] }
+
+        await MainActor.run {
+            notifyDelegatesDataLoadingStarted()
+        }
+        defer {
+            Task { @MainActor in
+                notifyDelegatesDataLoadingFinished()
+            }
+        }
+
+        let mapRegion = fudgedRegion(for: region, factor: preferredLoadDataRegionFudgeFactor)
+        let stops = try await apiService.getStops(region: mapRegion).list
+        saveStopsToCache(stops)
+        return stops
+    }
+
+    /// Applies the network fudge-factor expansion to `region`, so the cache
+    /// read covers the same bounds the network fetches and saves.
+    private func fudgedRegion(for region: MKCoordinateRegion, factor: Double) -> MKCoordinateRegion {
+        var mapRegion = region
+        mapRegion.span.latitudeDelta *= factor
+        mapRegion.span.longitudeDelta *= factor
+        return mapRegion
+    }
+
+    /// Publishes cached stops for `region` immediately (instant revisits),
+    /// publishing only the latest region — neighborhood persistence lives in
+    /// `MapStopsObserver`. Returns `true` if it published a non-empty set; a
+    /// cache miss or cancelled task is a no-op that returns `false`.
+    @discardableResult
+    private func serveCachedStops(in region: MKCoordinateRegion) async -> Bool {
+        // Bail before the SQLite bounding-box query when the task is already
+        // cancelled — a settle superseded by a newer one shouldn't pay for a
+        // GRDB read whose result would be thrown away.
+        guard !Task.isCancelled else { return false }
+        let cachedStops = cachedStops(in: fudgedRegion(for: region, factor: preferredLoadDataRegionFudgeFactor))
+        guard !cachedStops.isEmpty, !Task.isCancelled else { return false }
+
+        await MainActor.run {
+            self.publishStopsToDelegates(cachedStops)
+        }
+        return true
+    }
+
+    /// UIKit entrypoint: loads stops for the manager's own `mapView` region.
+    func requestDataForMapRegion() async {
+        await requestStops(in: mapView.region)
+    }
+
+    @objc func requestDataForMapRegion(_ timer: Timer) {
+        Task(priority: .utility) {
+            await requestDataForMapRegion()
+        }
+    }
+
+    /// Debounced, fire-and-forget entrypoint for SwiftUI hosts. Coalesces rapid
+    /// camera settles (on the shared `stopsRequestDebounceInterval`, same as the
+    /// UIKit timer) and cancels any in-flight request before loading stops for
+    /// `region`.
+    func scheduleStopsRequest(in region: MKCoordinateRegion) {
+        // Mirror the guard at the top of the UIKit `reloadStopAnnotations`
+        // path: while a single search result is displayed, region stop-loading
+        // is suppressed so the search result isn't overwritten by a camera
+        // settle.
+        //
+        // Cancel rather than merely declining to schedule: a settle from just
+        // before the search may still be sitting in its debounce, and letting
+        // it land would publish the panned region's stops over the search
+        // result — the exact outcome this guard exists to prevent.
+        if searchResponseOverridesStopLoading() {
+            cancelScheduledStopsRequest()
+            return
+        }
+
+        pendingStopsRequestTask?.cancel()
+        pendingStopsRequestTask = Task { [weak self] in
+            guard let self else { return }
+
+            // Publish the band around this region immediately (before the
+            // debounce), so a settle over a recently-viewed area shows pins
+            // without waiting on the network.
+            let servedFromCache = await self.serveCachedStops(in: region)
+
+            try? await Task.sleep(for: .seconds(Self.stopsRequestDebounceInterval))
+            guard !Task.isCancelled else { return }
+
+            do {
+                // Refresh the cache, but don't publish the raw response —
+                // publishing the narrower network region between two band
+                // publishes flickers the band's outer pins.
+                let fetched = try await self.refreshStopCache(in: region)
+                guard !Task.isCancelled else { return }
+
+                // An empty `fetched` is never worth publishing: it's
+                // indistinguishable from `refreshStopCache` short-circuiting on a
+                // nil `apiService` (which happens transiently during a region
+                // switch), and publishing it would blank a band that already has
+                // pins. Leaving the existing stops up matches `serveCachedStops`,
+                // which also treats "nothing to show" as a no-op.
+                guard !fetched.isEmpty else { return }
+
+                if self.application.stopCacheRepository == nil {
+                    // No cache to round-trip through, so publish directly —
+                    // otherwise the map would show no pins at all.
+                    await MainActor.run { self.publishStopsToDelegates(fetched) }
+                } else {
+                    // Re-serve the band with the fresh stops: band → band, a
+                    // clean incremental add, never band → narrow → band.
+                    let republished = await self.serveCachedStops(in: region)
+
+                    // Cache reads can be empty after a successful fetch (e.g. cache write
+                    // failure or missing cache key). Fall back to the fetched stops so the
+                    // map isn't left blank, unless the request was cancelled by a newer one.
+                    if !republished, !Task.isCancelled {
+                        await MainActor.run { self.publishStopsToDelegates(fetched) }
+                    }
+                }
+            } catch {
+                // A cancelled request isn't a failure — it's the expected
+                // outcome of a newer camera settle superseding this one, and it
+                // arrives in several shapes (Swift `CancellationError`, or a
+                // URLSession `NSError`/`URLError` with `NSURLErrorCancelled`),
+                // so lean on `Error.isCancellation` plus `Task.isCancelled`
+                // rather than a typed catch. Surfacing it would pop a modal
+                // error bulletin every time the user pans across an uncached
+                // area twice in quick succession.
+                if Task.isCancelled || error.isCancellation {
+                    return
+                }
+                Logger.error("Map panel stop refresh failed: \(error)")
+                // Surface the error only when nothing is on-screen.
+                if !servedFromCache {
+                    await self.application.displayError(error)
+                }
+            }
+        }
+    }
+
+    /// Cancels any stops request scheduled via `scheduleStopsRequest(in:)` that
+    /// hasn't fired yet. Called by SwiftUI hosts when the camera settles zoomed
+    /// out past `requiredHeightToShowStops`, so a request debounced while zoomed
+    /// in doesn't land after the host has cleared its annotations.
+    func cancelScheduledStopsRequest() {
+        pendingStopsRequestTask?.cancel()
+        pendingStopsRequestTask = nil
     }
 }
 

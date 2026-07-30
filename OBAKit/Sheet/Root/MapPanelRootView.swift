@@ -96,6 +96,14 @@ struct MapPanelRootView: View {
         // letting `.automatic` frame the bookmark annotations.
         let fallback: MapCameraPosition = application.currentRegion.map { .rect($0.serviceRect) } ?? .automatic
         _cameraPosition = State(initialValue: .userLocation(fallback: fallback))
+
+        // A returning user already has a fix here, so the `.onChange` below
+        // never fires — the flag is already `true` and never transitions. Seed
+        // the pending-recenter state so `attemptInitialRecenter()` still runs
+        // when the Map reports its first non-zero size; without this the map
+        // opens parked on `fallback` and the user sees no stops until they
+        // zoom in by hand.
+        _needsInitialRecenter = State(initialValue: application.locationService.currentLocation != nil)
     }
 
     var body: some View {
@@ -103,13 +111,23 @@ struct MapPanelRootView: View {
             UserAnnotation()
             // Bookmark pins render at every zoom level, like the UIKit map.
             ForEach(stopsObserver.bookmarks) { bookmark in
-                stopAnnotation(for: bookmark.stop, isBookmarked: true, label: bookmark.name)
+                stopAnnotation(
+                    for: bookmark.stop,
+                    isBookmarked: true,
+                    label: bookmark.name,
+                    accessibilityLabel: Formatters.formattedAccessibilityLabel(stop: bookmark.stop)
+                )
             }
             // Regular stops show only zoomed in; `renderStops` already excludes
             // bookmarked stops and precomputes labels.
             if isZoomedInForStops {
                 ForEach(stopsObserver.renderStops) { renderStop in
-                    stopAnnotation(for: renderStop.stop, isBookmarked: false, label: renderStop.title)
+                    stopAnnotation(
+                        for: renderStop.stop,
+                        isBookmarked: false,
+                        label: renderStop.title,
+                        accessibilityLabel: renderStop.accessibilityLabel
+                    )
                 }
             }
         }
@@ -226,14 +244,19 @@ struct MapPanelRootView: View {
     /// title suppresses MapKit's callout (a11y is on the icon); the visible
     /// label is our own view below.
     @MapContentBuilder
-    private func stopAnnotation(for stop: Stop, isBookmarked: Bool, label: String?) -> some MapContent {
+    private func stopAnnotation(
+        for stop: Stop,
+        isBookmarked: Bool,
+        label: String?,
+        accessibilityLabel: String
+    ) -> some MapContent {
         Annotation("", coordinate: stop.coordinate) {
             Image(uiImage: application.stopIconFactory.buildSquircleIcon(
                 for: stop,
                 isBookmarked: isBookmarked,
                 traits: UITraitCollection(userInterfaceStyle: colorScheme == .dark ? .dark : .light)
             ))
-            .accessibilityLabel(Formatters.formattedAccessibilityLabel(stop: stop))
+            .accessibilityLabel(accessibilityLabel)
             // Offset past the 48pt icon so the label sits below the pin.
             .overlay(alignment: .top) {
                 stopLabel(label)

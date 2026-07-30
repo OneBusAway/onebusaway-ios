@@ -21,11 +21,15 @@ import OBAKitCore
 @MainActor
 final class MapStopsObserver: NSObject, ObservableObject, MapRegionDelegate, RegionsServiceDelegate {
 
-    /// A stop with its precomputed label, so the `Map` builder needn't filter or
-    /// format per body eval.
+    /// A stop with its precomputed labels, so the `Map` builder needn't filter or
+    /// format per body eval. `body` re-runs on any state change — including the
+    /// continuous `sheetHeight` updates while the sheet is dragged — so
+    /// formatting here rather than in the annotation builder keeps hundreds of
+    /// localized-string lookups off every frame.
     struct RenderStop: Identifiable {
         let stop: Stop
         let title: String
+        let accessibilityLabel: String
         var id: StopID { stop.id }
     }
 
@@ -48,6 +52,11 @@ final class MapStopsObserver: NSObject, ObservableObject, MapRegionDelegate, Reg
     private let pruneSpanFactor: Double
 
     /// Hard cap on rendered pins (frame-rate backstop for dense metros).
+    ///
+    /// Deliberately separate from `StopsMapLayer.densityBudget`, the UIKit layer
+    /// system's equivalent: that one is advisory (declared, never enforced by the
+    /// manager), while this one actively evicts. Retune them together if the two
+    /// surfaces should ever agree on density.
     private let renderCap: Int
 
     /// Accumulated stops keyed by ID — the render set before publishing.
@@ -65,14 +74,17 @@ final class MapStopsObserver: NSObject, ObservableObject, MapRegionDelegate, Reg
         super.init()
 
         // Seed the accumulator (and published set) so a re-created observer
-        // isn't empty.
+        // isn't empty. Bookmarks load first: `stops`' `didSet` formats the whole
+        // render set, and doing that before `bookmarkedStopIDs` is populated
+        // would format once against an empty exclusion set and again right
+        // after.
+        reloadBookmarks()
         for stop in application.mapRegionManager.stops {
             accumulated[stop.id] = stop
         }
         stops = orderedStops()
         application.mapRegionManager.addDelegate(self)
 
-        reloadBookmarks()
         // Re-decode on bookmark changes so a visible pin restyles. Selector-based
         // observation is auto-removed on dealloc, so no token/deinit needed.
         NotificationCenter.default.addObserver(
@@ -199,7 +211,10 @@ final class MapStopsObserver: NSObject, ObservableObject, MapRegionDelegate, Reg
 
     /// Squared distance with longitude scaled by `cos(latitude)` so lat/lon
     /// degrees compare on a common metric scale. Ordering only — no sqrt.
-    private func squaredDistance(_ stop: Stop, to center: CLLocationCoordinate2D) -> Double {
+    ///
+    /// Internal rather than private so the cap-eviction tests can assert against
+    /// this exact ordering instead of maintaining a second copy of the formula.
+    func squaredDistance(_ stop: Stop, to center: CLLocationCoordinate2D) -> Double {
         let dLat = stop.coordinate.latitude - center.latitude
         let dLon = (stop.coordinate.longitude - center.longitude) * cos(center.latitude * .pi / 180)
         return dLat * dLat + dLon * dLon
@@ -209,12 +224,18 @@ final class MapStopsObserver: NSObject, ObservableObject, MapRegionDelegate, Reg
         accumulated.values.sorted { $0.id < $1.id }
     }
 
-    /// Rebuilds `renderStops` so the filter and title formatting run once per
-    /// change, not per body eval.
+    /// Rebuilds `renderStops` so the filter, title, and accessibility-label
+    /// formatting run once per change, not per body eval.
     private func rebuildRenderStops() {
         renderStops = stops
             .filter { !bookmarkedStopIDs.contains($0.id) }
-            .map { RenderStop(stop: $0, title: Formatters.formattedTitle(stop: $0)) }
+            .map {
+                RenderStop(
+                    stop: $0,
+                    title: Formatters.formattedTitle(stop: $0),
+                    accessibilityLabel: Formatters.formattedAccessibilityLabel(stop: $0)
+                )
+            }
     }
 
     /// Republishes the render set. Only called after a real mutation, so a
