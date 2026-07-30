@@ -389,11 +389,35 @@ isolated and unreachable from a `nonisolated` test context.
 | `RentalAnnotationViewTests` | label text and hidden state per `showsFuelLabel`, gray when non-operative, accessibility label present while the visual label is hidden |
 | `MapRegionManager` persistence | default is Any, round-trip through a scratch `UserDefaults`, `mapLayersDifferFromDefaults`, reset |
 
-`RentalLayerCoordinator` gets no suite of its own. With `RentalVisibility`
-extracted, what remains is `mapView.addAnnotations` plumbing behind a 250 ms
-debounce and an `AsyncStream` — a large amount of test scaffolding for very
-little logic, and the logic it would cover is tested directly in
-`RentalVisibilityTests`.
+`RentalLayerCoordinator` ships without a suite of its own — but the original
+justification for that was wrong, and is corrected here so the next maintainer
+isn't misled by it.
+
+The claim was that what remains is plumbing "behind a 250 ms debounce and an
+`AsyncStream`." That describes the *snapshot* path only. The **filter** path is
+fully synchronous and touches neither: sheet write → `MapRegionManager` setter →
+synchronous notification → `MapViewController` observer → `setRangeFilter` →
+`RentalVisibility.setFilter` → `apply(_ changes:)` → `MKMapView`. There is no
+`await` anywhere in it. The debounce and the stream govern only how the cache
+gets *seeded*.
+
+So a coordinator test is far cheaper than implied: stub the one-method
+`VehicleRentalService`, drop `private` from `apply(_ snapshot:)`, and drive the
+whole thing synchronously in roughly 40 lines. Two things currently have **no
+coverage at any level** and would be closed by it:
+
+1. The invariant that `Set(annotations.keys)` equals `RentalVisibility`'s visible
+   id set. It holds today only because `mapView` is never nil while the
+   coordinator lives. Any future early return in `apply(_ changes:)` — "skip
+   while a sheet is presented", "coalesce during a pan" — silently breaks cache
+   restore, with the whole suite still green, because the bug would live in the
+   translation layer rather than the value type.
+2. `updateFuelLabelVisibility` and the `fuelLabelMaxVisibleHeight` constant. A
+   wrong threshold or a flipped comparison means labels that never appear or
+   always appear, and nothing fails: `RentalAnnotationViewTests` sets
+   `showsFuelLabel` by hand, so the `MKMapRect` → gate mapping is unverified.
+
+Filed as a follow-up rather than a blocker, since neither is a bug today.
 
 `scripts/generate_project` must be re-run after adding each new source or test
 file. XcodeGen picks files up from disk, and a test file the project doesn't know
