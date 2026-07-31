@@ -144,7 +144,14 @@ final class StopPageActionPresenter: NSObject {
         // Only a host that owns a map answers this. Where the page was pushed
         // full-screen there is nothing behind it to point anywhere.
         onTripPagePush?(tripPage)
-        application.viewRouter.navigate(to: tripPage, from: host)
+        // `viewRouter.navigate(to:from:)` ends in a push, so it is only safe
+        // where a navigation stack exists. The pushed page stays on that path;
+        // the modal sheet, which has no stack of its own, gets a modal instead.
+        if host.navigationController != nil {
+            application.viewRouter.navigate(to: tripPage, from: host)
+        } else {
+            presentWrappedInNavigation(tripPage, from: host)
+        }
     }
 
     // MARK: - Schedules
@@ -196,15 +203,45 @@ final class StopPageActionPresenter: NSObject {
     // MARK: - Location
 
     func showNearbyStops(coordinate: CLLocationCoordinate2D) {
-        guard let host = presentingController() else { return }
-        let controller = NearbyStopsViewController(coordinate: coordinate, application: application)
-        application.viewRouter.navigate(to: controller, from: host)
+        pushOrPresent(NearbyStopsViewController(coordinate: coordinate, application: application))
     }
 
     func showServiceAlerts(_ alerts: [ServiceAlert]) {
+        pushOrPresent(ServiceAlertListController(application: application, serviceAlerts: alerts))
+    }
+
+    /// Pushes when the presenting controller sits in a navigation stack, and
+    /// presents modally when it does not.
+    ///
+    /// The pushed Stop page is inside a `UINavigationController`, so it pushes as
+    /// it always has. The map sheet's presenting controller is the SwiftUI
+    /// hosting controller behind `.sheet(...)`, which has no navigation stack at
+    /// all — and `ViewRouter.navigate(to:from:)` opens with
+    /// `assert(fromController.navigationController != nil)`, so routing a sheet
+    /// flow through it traps in debug and silently does nothing in release.
+    private func pushOrPresent(_ controller: UIViewController) {
         guard let host = presentingController() else { return }
-        let controller = ServiceAlertListController(application: application, serviceAlerts: alerts)
-        application.viewRouter.navigate(to: controller, from: host)
+
+        if host.navigationController != nil {
+            application.viewRouter.navigate(to: controller, from: host)
+            return
+        }
+
+        presentWrappedInNavigation(controller, from: host)
+    }
+
+    /// Wraps a would-be-pushed controller for modal presentation, giving it the
+    /// Done button it would otherwise lack — pushed controllers rely on the
+    /// navigation stack's back button, which a modal has no equivalent of.
+    private func presentWrappedInNavigation(_ controller: UIViewController, from host: UIViewController) {
+        controller.navigationItem.leftBarButtonItem = UIBarButtonItem(
+            systemItem: .done,
+            primaryAction: UIAction { [weak controller] _ in
+                controller?.dismiss(animated: true)
+            }
+        )
+        let navigation = application.viewRouter.buildNavigation(controller: controller)
+        application.viewRouter.present(navigation, from: host, isModal: true)
     }
 
     func showReportProblem(stop: Stop) {

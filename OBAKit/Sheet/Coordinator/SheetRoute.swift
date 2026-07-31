@@ -198,10 +198,22 @@ nonisolated extension AppSheetRoute {
                 backgroundInteraction: .disabled
             )
         case .stopDetails:
+            // `backgroundInteraction` must be stated explicitly here, exactly as
+            // the other `[.large]`-only routes above do. The default is
+            // `.enabled(upThrough: .medium)`, which maps to
+            // `UISheetPresentationController.largestUndimmedDetentIdentifier =
+            // .medium`. With `.medium` absent from `detents`, UIKit has no detent
+            // at which to begin dimming, so the sheet stays undimmed and
+            // non-modal and every touch falls through to the map behind it —
+            // the sheet renders but neither scrolls nor responds to taps.
+            //
+            // Routes that safely leave the default (`.tripPlanner`, `.more`, …)
+            // all carry `.medium` in their detent set.
             return SheetDetentConfiguration(
                 detents: [.large],
                 initialDetent: .large,
-                isDismissDisabled: false
+                isDismissDisabled: false,
+                backgroundInteraction: .disabled
             )
         case .tripPlanner, .tripDetails, .routePicker, .currentTrip, .transitAlert, .more, .settings:
             return SheetDetentConfiguration(
