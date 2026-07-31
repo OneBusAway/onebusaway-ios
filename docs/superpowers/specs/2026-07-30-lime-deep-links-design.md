@@ -147,6 +147,13 @@ enum RentalDeepLink {
 1. **`rentalUris.ios`, when present.** Feed data always beats a guess.
    Fallback stays `rentalNetwork.url`. This preserves today's behavior byte for
    byte on any feed that ever starts publishing deep links.
+
+   This branch must not require a `rentalNetwork` block. `rentalNetwork` and
+   `rentalUris` are independently optional, the pre-synthesis code never
+   required one, and a feed could publish a URI without a network. Only steps 2
+   and 3 need the network — step 2 to identify the operator, step 3 for the URL
+   itself. A guard placed above step 1 would silently hide the button for
+   exactly the feeds this branch exists to serve.
 2. **Synthesized, when the network is in the table.** A `.vehicle` whose
    operator has a `vehicleHost` gets the targeted URL; a `.station`, or an
    operator like Bird that cannot target, gets the bare `scheme://appHost`.
