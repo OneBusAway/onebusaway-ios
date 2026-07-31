@@ -22,7 +22,6 @@ struct CurrentTripView: View {
 
     let onPresentTrip: (ArrivalDeparture) -> Void
 
-    @State private var wasIdleTimerDisabledByUs = false
     private let feedback: DataLoadFeedbackGenerator
     private let formatters: Formatters
 
@@ -51,12 +50,10 @@ struct CurrentTripView: View {
         }
         .onAppear {
             viewModel.shouldSkipProgrammaticRefresh = { UIAccessibility.isVoiceOverRunning }
-            disableIdleTimer()
             viewModel.start()
         }
         .onDisappear {
             viewModel.deactivate()
-            reEnableIdleTimer()
         }
         .onChange(of: scenePhase) { previous, phase in
             switch phase {
@@ -65,12 +62,10 @@ struct CurrentTripView: View {
                 // (returning from Control Center / a banner / a system alert) never
                 // stopped the timer, so re-arming would issue a redundant network call.
                 if previous == .background {
-                    disableIdleTimer()
                     viewModel.start()
                 }
             case .background:
                 viewModel.deactivate()
-                reEnableIdleTimer()
             case .inactive:
                 break
             @unknown default:
@@ -94,20 +89,7 @@ struct CurrentTripView: View {
                 break
             }
         }
-    }
-
-    // MARK: - Idle Timer
-
-    private func disableIdleTimer() {
-        guard !UIApplication.shared.isIdleTimerDisabled else { return }
-        UIApplication.shared.isIdleTimerDisabled = true
-        wasIdleTimerDisabledByUs = true
-    }
-
-    private func reEnableIdleTimer() {
-        guard wasIdleTimerDisabledByUs else { return }
-        UIApplication.shared.isIdleTimerDisabled = false
-        wasIdleTimerDisabledByUs = false
+        .keepsScreenAwake()
     }
 
     // MARK: - Content
