@@ -2396,6 +2396,12 @@ import OBAKitCore
 /// action row and the sections all take plain values, so the view model's
 /// refresh and status-timer churn re-evaluates one shallow body.
 struct StopDetailsSheetView: View {
+    /// The stop this sheet was built for. Stored rather than read off the view
+    /// model because the model lives in a `@StateObject` that SwiftUI only
+    /// instantiates at render time — this is what identifies the view before
+    /// then, both in debug output and to the factory's tests.
+    let stopID: StopID
+
     @StateObject private var viewModel: StopViewModel
     @EnvironmentObject private var coordinator: SheetCoordinator<AppSheetRoute>
     @Environment(\.scenePhase) private var scenePhase
@@ -2418,12 +2424,14 @@ struct StopDetailsSheetView: View {
     @AppStorage("StopViewController.pastDeparturesCollapsed") private var pastCollapsed = true
 
     init(
+        stopID: StopID,
         viewModel: @autoclosure @escaping () -> StopViewModel,
         presenter: StopPageActionPresenter,
         feedback: DataLoadFeedbackGenerator,
         formatters: Formatters,
         userDefaults: UserDefaults
     ) {
+        self.stopID = stopID
         _viewModel = StateObject(wrappedValue: viewModel())
         self.presenter = presenter
         self.feedback = feedback
@@ -2522,7 +2530,7 @@ struct StopDetailsSheetView: View {
             )
         }
         .safeAreaInset(edge: .top, spacing: 0) {
-            chrome
+            chrome(showsLoadingState: content.showsLoadingState)
         }
         .stopPageLifecycle(
             viewModel: viewModel,
@@ -2599,7 +2607,7 @@ struct StopDetailsSheetView: View {
     // MARK: - Chrome
 
     @ViewBuilder
-    private var chrome: some View {
+    private func chrome(showsLoadingState: Bool) -> some View {
         VStack(spacing: 0) {
             StopDetailsSheetTopBar(
                 title: viewModel.stop?.name ?? "",
@@ -2610,7 +2618,7 @@ struct StopDetailsSheetView: View {
                 onClose: { coordinator.pop() }
             )
 
-            collapsibleHeader
+            collapsibleHeader(showsLoadingState: showsLoadingState)
 
             StopPageActionRow(
                 state: StopPageActionRowState(
@@ -2646,7 +2654,7 @@ struct StopDetailsSheetView: View {
     /// animating a value already driven by a continuous gesture is what makes
     /// this pattern jitter.
     @ViewBuilder
-    private var collapsibleHeader: some View {
+    private func collapsibleHeader(showsLoadingState: Bool) -> some View {
         Group {
             if let stop = viewModel.stop {
                 StopPageHeaderView(
@@ -2658,7 +2666,7 @@ struct StopDetailsSheetView: View {
                     },
                     onWalkingDirections: navigation.showWalkingDirections
                 )
-            } else if StopPageContent(viewModel: viewModel).showsLoadingState {
+            } else if showsLoadingState {
                 StopPageHeaderPlaceholderView()
             }
         }
@@ -2784,6 +2792,7 @@ Replace `stopDetailView`:
 ```swift
     func stopDetailView(stopID: Stop.ID) -> StopDetailsSheetView {
         StopDetailsSheetView(
+            stopID: stopID,
             viewModel: StopViewModel(environment: self.application, stopID: stopID),
             presenter: StopPageActionPresenter(
                 application: self.application,
@@ -2837,19 +2846,17 @@ git rm OBAKit/Sheet/Root/StopDetailSheetHost.swift \
 
 - [ ] **Step 4: Update the factory test**
 
-In `OBAKitTests/Sheet/AppSheetViewFactoryTests.swift`, replace the stop-detail test. `StopDetailsSheetView` holds its view model in a `@StateObject` that SwiftUI only instantiates on render, so assert on what the factory can be held to — that the branch returns the real view rather than falling back to the `unimplementedView` catch-all:
+In `OBAKitTests/Sheet/AppSheetViewFactoryTests.swift`, replace the stop-detail test. It asserts the factory-to-view handoff, the same thing the `StopDetailSheetHost` test asserted and the same shape as the `moreView` test beside it:
 
 ```swift
-    @Test func `Stop detail view returns the SwiftUI stop details sheet`() {
+    @Test func `Stop detail view returns the SwiftUI sheet forwarding the stop ID`() {
         let dataLoader = MockDataLoader(testName: name)
         let application = buildApplication(queue: queue, dataLoader: dataLoader)
 
         let factory = AppSheetViewFactory(application: application, onPresentTrip: { _ in })
         let view = factory.stopDetailView(stopID: "1_10914")
 
-        // The return type is the assertion: if the branch regressed to
-        // `unimplementedView`, this wouldn't compile.
-        #expect(type(of: view) == StopDetailsSheetView.self)
+        #expect(view.stopID == "1_10914")
     }
 ```
 
