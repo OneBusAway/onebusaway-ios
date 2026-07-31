@@ -51,4 +51,13 @@ public final nonisolated class OBAMockHeading: CLHeading, @unchecked Sendable {
     public override var debugDescription: String {
         return "wtf is wrong with this class?"
     }
+
+    /// `CLHeading`'s own `description` reads the raw magnetometer components
+    /// (`x`/`y`/`z`), which this mock does not implement — reaching it segfaults.
+    /// Swift Testing reflects the values in a *failing* `#expect`, so without
+    /// this override any assertion that touches a mock heading turns a clean
+    /// test failure into a crashed test run.
+    public override var description: String {
+        return "OBAMockHeading(magnetic: \(_magneticHeading), true: \(_trueHeading))"
+    }
 }

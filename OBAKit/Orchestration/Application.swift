@@ -476,6 +476,13 @@ public class Application: CoreApplication, PushServiceDelegate {
     }
 
     @MainActor @objc public func applicationDidBecomeActive(_ application: UIApplication) {
+        // The user may have re-enabled Location Services while they were away,
+        // which leaves `isLocationUseAuthorized` false until we probe for it.
+        // The probe is asynchronous, so the gate below still sees the pre-probe
+        // state — recovery is not this call's job. `LocationService` starts
+        // updates itself when the probe clears the latch.
+        locationService.retryIfLocationServicesDenied()
+
         if locationService.isLocationUseAuthorized {
             locationService.startUpdates()
         }
@@ -566,9 +573,9 @@ public class Application: CoreApplication, PushServiceDelegate {
     }
 
     @objc public func applicationWillResignActive(_ application: UIApplication) {
-        if locationService.isLocationUseAuthorized {
-            locationService.stopUpdates()
-        }
+        // Unconditional: stopping is always safe, and gating it on authorization
+        // would strand a manager we started before access was revoked.
+        locationService.stopUpdates()
 
         hyperconnectivityCancellable?.cancel()
     }

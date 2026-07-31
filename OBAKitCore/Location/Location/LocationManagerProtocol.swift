@@ -25,10 +25,18 @@ public protocol LocationManager {
     /// to try to mock class functions.
     var authorizationStatus: CLAuthorizationStatus { get }
 
-    /// Replaces the CLLocationManager class func of the same name. This is used
-    /// to facilitate easier testing on a per-instance basis instead of having
-    /// to try to mock class functions.
-    var isLocationServicesEnabled: Bool { get }
+    /// Whether Location Services are enabled system-wide.
+    ///
+    /// Wraps `CLLocationManager.locationServicesEnabled()`, which Apple documents
+    /// as a synchronous, potentially long-blocking call that must not run on the
+    /// main thread. This is `async` so the real implementation can hop the read
+    /// off-main; it is the authoritative signal for the system-wide switch, which
+    /// per-app authorization and `didFailWithError` only approximate.
+    ///
+    /// `@MainActor` because the only caller is the main-actor `LocationService`
+    /// and the mocks hold main-actor state — the off-main hop happens *inside*
+    /// the real implementation, not at this boundary.
+    @MainActor func locationServicesEnabled() async -> Bool
 
     @available(iOS 14, *)
     var accuracyAuthorization: CLAccuracyAuthorization { get }
@@ -53,8 +61,13 @@ public protocol LocationManager {
 extension CLLocationManager: LocationManager {
     // nop. CLLocationManager already implements all of the protocol methods.
 
-    public var isLocationServicesEnabled: Bool {
-        return CLLocationManager.locationServicesEnabled()
+    /// Reads the class-level `locationServicesEnabled()` off the main thread.
+    /// The call is a blocking XPC round-trip; hopping to a detached task keeps
+    /// it from hanging the main thread (the whole point of this method). The
+    /// method is `@MainActor` per the protocol, but its work runs on the
+    /// detached task, so awaiting it never blocks the main thread.
+    @MainActor public func locationServicesEnabled() async -> Bool {
+        await Task.detached { CLLocationManager.locationServicesEnabled() }.value
     }
 
     public var isHeadingAvailable: Bool {

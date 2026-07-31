@@ -42,7 +42,7 @@ public class LocationManagerMock: NSObject, LocationManager {
         return .notDetermined
     }
 
-    public var isLocationServicesEnabled: Bool {
+    public func locationServicesEnabled() async -> Bool {
         return true
     }
 
@@ -74,9 +74,16 @@ public class LocationManagerMock: NSObject, LocationManager {
         }
     }
 
-    public var isHeadingAvailable: Bool {
-        return authorizationStatus == .authorizedWhenInUse
-    }
+    /// Whether the device has a magnetometer, matching what the real
+    /// `isHeadingAvailable` reports (`CLLocationManager.headingAvailable()`).
+    ///
+    /// Stored and default-`true`, like `MockAuthorizedLocationManager`'s. It used
+    /// to derive from `authorizationStatus`, which conflated capability with
+    /// permission: revoking authorization made it flip to `false`, and since
+    /// `LocationService.stopUpdatingHeading()` guards on it, the stop was skipped
+    /// and the mock reported heading as still running. Real hardware capability
+    /// does not change with authorization, so neither does this.
+    public var isHeadingAvailable = true
 
     public func startUpdatingHeading() {
         headingUpdatesStarted = true
@@ -93,7 +100,12 @@ public class AuthorizableLocationManagerMock: LocationManagerMock {
     var updateHeading: OBAMockHeading
     public var _authorizationStatus: CLAuthorizationStatus = .notDetermined {
         didSet {
-            delegate?.locationManager?(CLLocationManager(), didChangeAuthorization: _authorizationStatus)
+            // The modern callback, not the iOS 14-deprecated
+            // `didChangeAuthorization:`. With an iOS 18 deployment target that
+            // deprecated overload is never invoked on device, so a mock that
+            // called it would exercise a path that doesn't ship. The service
+            // reads the status off this mock, so the argument is unused.
+            delegate?.locationManagerDidChangeAuthorization?(CLLocationManager())
         }
     }
 
@@ -110,18 +122,59 @@ public class AuthorizableLocationManagerMock: LocationManagerMock {
         return _authorizationStatus
     }
 
+    /// Simulates Location Services being switched off system-wide: the app's own
+    /// authorization is untouched, but every attempt to start updates comes back
+    /// as `CLError.denied` instead of a fix, and `locationServicesEnabled()`
+    /// reports `false`.
+    public var simulatesLocationServicesOff = false
+
+    /// When true, `locationServicesEnabled()` parks each call instead of
+    /// answering from `simulatesLocationServicesOff`. The test then resumes the
+    /// parked calls in whatever order it likes, which is the only deterministic
+    /// way to reproduce two probes completing out of order.
+    public var parksProbes = false
+
+    /// Parked `locationServicesEnabled()` calls, oldest first.
+    public private(set) var pendingProbes: [CheckedContinuation<Bool, Never>] = []
+
+    public override func locationServicesEnabled() async -> Bool {
+        guard parksProbes else { return !simulatesLocationServicesOff }
+        return await withCheckedContinuation { pendingProbes.append($0) }
+    }
+
+    /// Answers the parked probe at `index` (0 is the oldest).
+    public func answerProbe(at index: Int, enabled: Bool) {
+        pendingProbes[index].resume(returning: enabled)
+    }
+
     public override func startUpdatingLocation() {
         super.startUpdatingLocation()
-        if authorizationStatus == .authorizedWhenInUse {
+        // Guard on either authorized status, not just `.authorizedWhenInUse`, so
+        // the `.authorizedAlways` path actually delivers fixes/errors instead of
+        // returning here and letting Always-authorized tests pass vacuously.
+        guard authorizationStatus.isAuthorized else { return }
+
+        if simulatesLocationServicesOff {
+            delegate?.locationManager?(CLLocationManager(), didFailWithError: CLError(.denied))
+        } else {
             location = updateLocation
         }
     }
 
+    /// Mirrors `startUpdatingLocation()`: with Location Services off system-wide,
+    /// no heading is delivered.
+    ///
+    /// `super` is still called — deliberately. Real Core Location *accepts*
+    /// `startUpdatingHeading()` with services off (there is no error return, and
+    /// the magnetometer is powered); it simply never delivers data. So
+    /// `headingUpdatesStarted` must stay a faithful record of "the call reached
+    /// the manager." Skipping `super` here would model the leak out of existence
+    /// and let a service that wrongly starts heading after latching denial pass.
     public override func startUpdatingHeading() {
         super.startUpdatingHeading()
-        if authorizationStatus == .authorizedWhenInUse {
-            heading = updateHeading
-        }
+        guard authorizationStatus.isAuthorized, !simulatesLocationServicesOff else { return }
+
+        heading = updateHeading
     }
 }
 
