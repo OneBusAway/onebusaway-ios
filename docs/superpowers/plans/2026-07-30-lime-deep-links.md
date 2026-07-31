@@ -102,11 +102,7 @@ Replace the signature and the `rentalNetwork`/`rentalUris` entries in the dictio
             vehicleType["propulsionType"] = NSNull()
         }
 
-        let networkValue: Any = networkId.map { id in
-            ["networkId": id, "url": networkURL ?? NSNull()] as [String: Any]
-        } ?? NSNull()
-
-        let dictionary: [String: Any] = [
+        var dictionary: [String: Any] = [
             "__typename": "RentalVehicle",
             "vehicleId": id,
             "name": "Default vehicle type",
@@ -114,11 +110,18 @@ Replace the signature and the `rentalNetwork`/`rentalUris` entries in the dictio
             "lon": lon,
             "allowPickupNow": true,
             "operative": operative,
-            "rentalNetwork": networkValue,
             "rentalUris": rentalUris ?? NSNull(),
             "vehicleType": vehicleType,
             "fuel": fuelValue
         ]
+
+        // Conditional insertion, not a NSNull() value: `networkId: nil` must
+        // produce a payload with the key absent, which is the shape a feed takes
+        // when it publishes no network block.
+        if let networkId {
+            dictionary["rentalNetwork"] = ["networkId": networkId, "url": networkURL ?? NSNull()] as [String: Any]
+        }
+
         return try Fixtures.dictionaryToModel(type: VehicleRental.self, dictionary: dictionary)
     }
 ```
