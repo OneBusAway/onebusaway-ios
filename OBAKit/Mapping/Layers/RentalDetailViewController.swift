@@ -21,9 +21,10 @@ import UIKit
     /// the vehicle's coordinate and a rental mode preselected.
     func rentalLayer(planTripUsing rental: VehicleRental)
 
-    /// Open a rental deep link, falling back to the operator's web page when the
-    /// primary URI fails to open (e.g. custom scheme with no app installed).
-    func rentalLayer(open url: URL, webFallback: URL?)
+    /// Open a rental deep link, falling back to the operator's web page or App
+    /// Store listing when the primary URI fails to open (e.g. a synthesized
+    /// custom scheme with no app installed). `networkID` is for analytics.
+    func rentalLayer(open url: URL, webFallback: URL?, networkID: String?)
 }
 
 // MARK: - Detail Sheet
@@ -46,7 +47,7 @@ final class RentalDetailViewController: UIHostingController<RentalDetailView> {
             staleAfter: staleAfter,
             userLocation: userLocation,
             onPlanTrip: { delegate?.rentalLayer(planTripUsing: $0) },
-            onOpenURL: { delegate?.rentalLayer(open: $0, webFallback: $1) }
+            onOpenURL: { delegate?.rentalLayer(open: $0, webFallback: $1, networkID: $2) }
         ))
     }
 
@@ -63,7 +64,7 @@ struct RentalDetailView: View {
     let staleAfter: Duration?
     let userLocation: CLLocation?
     var onPlanTrip: (VehicleRental) -> Void
-    var onOpenURL: (URL, URL?) -> Void
+    var onOpenURL: (URL, URL?, String?) -> Void
 
     /// Reverse-geocoded on selection — never in bulk. Falls back to a plain
     /// distance string while loading or when geocoding fails.
@@ -90,7 +91,11 @@ struct RentalDetailView: View {
 
             if let deepLink = deepLinkURL {
                 Button {
-                    onOpenURL(deepLink.url, deepLink.webFallback)
+                    // Re-resolve at tap time: the URL carries a `generated_at`
+                    // timestamp, and a sheet left open would otherwise send a
+                    // stale one that the operator's app may reject.
+                    let target = RentalDeepLink.target(for: rental) ?? deepLink.target
+                    onOpenURL(target.url, target.storeFallback, rental.rentalNetwork?.networkId)
                 } label: {
                     Text(deepLink.title)
                         .font(.subheadline.weight(.medium))
@@ -207,20 +212,19 @@ struct RentalDetailView: View {
         }
     }
 
-    /// Deep link: the GBFS iOS URI when present, the operator's web page as
-    /// fallback, nothing (the norm on the launch feed) otherwise.
-    private var deepLinkURL: (title: String, url: URL, webFallback: URL?)? {
-        let operatorName = rental.rentalNetwork?.displayName
-        let template = OBALoc("rental_detail.open_in_fmt", value: "Open in %@", comment: "Button opening the rental operator's app or website")
-        let webURL = rental.rentalNetwork?.url.flatMap(URL.init(string:))
+    /// Where the "Open in <operator>" button goes. Feed-published URIs win;
+    /// otherwise `RentalDeepLink` synthesizes one from the operator's scheme.
+    /// Nil hides the button.
+    ///
+    /// Carries the `Target` itself rather than flattening it, so the tap-time
+    /// re-resolution above can swap in a fresher one without renaming fields.
+    private var deepLinkURL: (title: String, target: RentalDeepLink.Target)? {
+        guard let target = RentalDeepLink.target(for: rental) else { return nil }
 
-        if let ios = rental.rentalUris?.ios, let url = URL(string: ios) {
-            return (String(format: template, operatorName ?? url.host() ?? "app"), url, webURL)
-        }
-        if let webURL {
-            return (String(format: template, operatorName ?? webURL.host() ?? "web"), webURL, nil)
-        }
-        return nil
+        let template = OBALoc("rental_detail.open_in_fmt", value: "Open in %@", comment: "Button opening the rental operator's app or website")
+        let name = target.operatorName ?? target.url.host() ?? "app"
+
+        return (String(format: template, name), target)
     }
 
     /// Re-rendered every 30s so a sheet left open keeps telling the truth, and the
@@ -291,7 +295,7 @@ final class RentalClusterListViewController: UIHostingController<RentalClusterLi
             staleAfter: staleAfter,
             userLocation: userLocation,
             onPlanTrip: { delegate?.rentalLayer(planTripUsing: $0) },
-            onOpenURL: { delegate?.rentalLayer(open: $0, webFallback: $1) }
+            onOpenURL: { delegate?.rentalLayer(open: $0, webFallback: $1, networkID: $2) }
         ))
     }
 
@@ -307,7 +311,7 @@ struct RentalClusterListView: View {
     let staleAfter: Duration?
     let userLocation: CLLocation?
     var onPlanTrip: (VehicleRental) -> Void
-    var onOpenURL: (URL, URL?) -> Void
+    var onOpenURL: (URL, URL?, String?) -> Void
 
     @State private var selectedRental: VehicleRental?
 

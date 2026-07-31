@@ -207,15 +207,29 @@ extension MapViewController: RentalLayerActionsDelegate {
         }
     }
 
-    /// Opens a rental deep link. No `canOpenURL` pre-check: partner schemes can't
-    /// be enumerated in `LSApplicationQueriesSchemes` ahead of time, and most GBFS
-    /// iOS URIs are universal links anyway. When a custom-scheme URI fails to open
-    /// (operator app not installed), fall back to the operator's web page instead
-    /// of a dead button.
-    func rentalLayer(open url: URL, webFallback: URL?) {
+    /// Opens a rental deep link. No `canOpenURL` pre-check: Apple's own guidance
+    /// is to attempt the open and handle failure, and `open` — unlike
+    /// `canOpenURL` — is not constrained by `LSApplicationQueriesSchemes`.
+    ///
+    /// The URL is often synthesized from a reverse-engineered scheme rather than
+    /// published by the feed (see `RentalDeepLink`), so failure is expected and
+    /// routine: no app claims the scheme, `success` is false, and we fall back to
+    /// the operator's App Store page or web page.
+    func rentalLayer(open url: URL, webFallback: URL?, networkID: String?) {
+        application.analytics?.reportEvent(
+            pageURL: "app://localhost/bikeshare",
+            label: AnalyticsLabels.rentalDeepLinkTapped,
+            value: networkID
+        )
+
         application.open(url, options: [:]) { [weak self] success in
             guard !success else { return }
             Logger.info("Rental deep link failed to open: \(url)")
+            self?.application.analytics?.reportEvent(
+                pageURL: "app://localhost/bikeshare",
+                label: AnalyticsLabels.rentalDeepLinkFallbackFired,
+                value: networkID
+            )
             if let webFallback {
                 self?.application.open(webFallback, options: [:], completionHandler: nil)
             }

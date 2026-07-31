@@ -24,6 +24,9 @@ enum RentalFixtures {
 
     /// A free-floating rental vehicle. Pass `rangeMeters: nil, batteryPercent: nil`
     /// for a vehicle whose feed publishes no fuel data at all.
+    ///
+    /// `networkId: nil` omits `rentalNetwork` entirely — the shape a feed takes
+    /// when it publishes no network block, which deep-link resolution must survive.
     static func vehicle(
         id: String = "v1",
         formFactor: String = "SCOOTER",
@@ -32,7 +35,10 @@ enum RentalFixtures {
         batteryPercent: Double? = nil,
         operative: Bool = true,
         lat: Double = 47.6,
-        lon: Double = -122.3
+        lon: Double = -122.3,
+        networkId: String? = "lime_seattle",
+        networkURL: String? = nil,
+        rentalUris: [String: String]? = nil
     ) throws -> VehicleRental {
         var fuel: [String: Any] = [:]
         if let batteryPercent { fuel["percent"] = batteryPercent }
@@ -46,7 +52,7 @@ enum RentalFixtures {
             vehicleType["propulsionType"] = NSNull()
         }
 
-        let dictionary: [String: Any] = [
+        var dictionary: [String: Any] = [
             "__typename": "RentalVehicle",
             "vehicleId": id,
             "name": "Default vehicle type",
@@ -54,11 +60,13 @@ enum RentalFixtures {
             "lon": lon,
             "allowPickupNow": true,
             "operative": operative,
-            "rentalNetwork": ["networkId": "lime_seattle", "url": NSNull()] as [String: Any],
-            "rentalUris": NSNull(),
+            "rentalUris": rentalUris ?? NSNull(),
             "vehicleType": vehicleType,
             "fuel": fuelValue
         ]
+        if let networkId {
+            dictionary["rentalNetwork"] = ["networkId": networkId, "url": networkURL ?? NSNull()] as [String: Any]
+        }
         return try Fixtures.dictionaryToModel(type: VehicleRental.self, dictionary: dictionary)
     }
 
@@ -73,7 +81,8 @@ enum RentalFixtures {
         vehiclesAvailable: Int? = 4,
         operative: Bool = true,
         lat: Double = 47.6,
-        lon: Double = -122.3
+        lon: Double = -122.3,
+        networkId: String? = "lime_seattle"
     ) throws -> VehicleRental {
         var dictionary: [String: Any] = [
             "__typename": "VehicleRentalStation",
@@ -87,6 +96,9 @@ enum RentalFixtures {
             dictionary["vehiclesAvailable"] = vehiclesAvailable
         } else {
             dictionary["vehiclesAvailable"] = NSNull()
+        }
+        if let networkId {
+            dictionary["rentalNetwork"] = ["networkId": networkId, "url": NSNull()] as [String: Any]
         }
         return try Fixtures.dictionaryToModel(type: VehicleRental.self, dictionary: dictionary)
     }
