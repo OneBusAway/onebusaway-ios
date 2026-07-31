@@ -87,7 +87,7 @@ public final class RegionsFileStorage: RegionsFileStorageProtocol {
     public func saveDefaultRegions(_ regions: [Region]) throws {
         let url = try defaultRegionsFileURL()
         try createDirectoryIfNeeded(for: url)
-        let data = try JSONEncoder().encode(regions)
+        let data = try JSONEncoder.RESTEncoder().encode(regions)
         try data.write(to: url, options: .atomic)
     }
 
@@ -121,7 +121,7 @@ public final class RegionsFileStorage: RegionsFileStorageProtocol {
     public func saveCustomRegion(_ region: Region) throws {
         let url = try customRegionFileURL(identifier: region.regionIdentifier)
         try createDirectoryIfNeeded(for: url)
-        let data = try JSONEncoder().encode(region)
+        let data = try JSONEncoder.RESTEncoder().encode(region)
         try data.write(to: url, options: .atomic)
     }
 
