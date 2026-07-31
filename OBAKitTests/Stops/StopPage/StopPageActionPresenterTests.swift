@@ -45,12 +45,47 @@ final class StopPageActionPresenterTests: OBATestCase {
 
     private func makePresenter(host: UIViewController) -> (StopPageActionPresenter, Application) {
         let dataLoader = MockDataLoader(testName: name)
+        stubScheduleForStop(dataLoader: dataLoader)
+        stubArrivalsAndDepartures(dataLoader: dataLoader)
         let application = buildApplication(queue: queue, dataLoader: dataLoader)
         let presenter = StopPageActionPresenter(
             application: application,
             presentingController: { host }
         )
         return (presenter, application)
+    }
+
+    private func stubScheduleForStop(dataLoader: MockDataLoader) {
+        // Match any schedule-for-stop path and return fixture data (ignore query params and stop ID)
+        let scheduleData = Fixtures.loadData(file: "schedule-for-stop_1_75403.json")
+        dataLoader.mock(data: scheduleData) { request in
+            guard let path = request.url?.path else { return false }
+            return path.contains("/schedule-for-stop/") && path.hasSuffix(".json")
+        }
+    }
+
+    private func stubArrivalsAndDepartures(dataLoader: MockDataLoader) {
+        // Use mock(url:with:) which ignores query parameters (only matches host + path)
+        dataLoader.mock(
+            url: URL(string: "https://api.pugetsound.onebusaway.org/api/where/arrivals-and-departures-for-stop/1_10914.json")!,
+            with: Fixtures.loadData(file: "arrivals-and-departures-for-stop-1_10914.json")
+        )
+    }
+
+    /// Helper to create a valid ArrivalDeparture with route data (Fixtures.arrivalDeparture() is incomplete)
+    private func makeDepartureWithRoute() throws -> ArrivalDeparture {
+        // Load fixture directly from file and extract first arrival
+        let data = Fixtures.loadData(file: "arrivals-and-departures-for-stop-1_10914.json")
+        let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        let responseData = json?["data"] as? [String: Any]
+        let entry = responseData?["entry"] as? [String: Any]
+        let arrivalsArray = entry?["arrivalsAndDepartures"] as? [[String: Any]]
+        guard let firstArrivalDict = arrivalsArray?.first else {
+            throw NSError(domain: "test", code: -1, userInfo: [NSLocalizedDescriptionKey: "No departures in fixture"])
+        }
+        let arrivalData = try JSONSerialization.data(withJSONObject: firstArrivalDict)
+        let departure = try JSONDecoder().decode(ArrivalDeparture.self, from: arrivalData)
+        return departure
     }
 
     /// `present` is asynchronous; poll briefly rather than assuming one runloop
@@ -88,7 +123,7 @@ final class StopPageActionPresenterTests: OBATestCase {
     @Test func `Departure level bookmark presents the edit bookmark controller`() async throws {
         let host = makeHost()
         let (presenter, _) = makePresenter(host: host)
-        let departure = try Fixtures.arrivalDeparture()
+        let departure = try makeDepartureWithRoute()
 
         presenter.showBookmarkEditor(for: departure, stop: nil, preloadedArrivals: nil)
 
@@ -127,6 +162,8 @@ final class StopPageActionPresenterTests: OBATestCase {
     @Test func `Presenting resolves the provider at call time not at init`() async {
         let host = makeHost()
         let dataLoader = MockDataLoader(testName: name)
+        stubScheduleForStop(dataLoader: dataLoader)
+        stubArrivalsAndDepartures(dataLoader: dataLoader)
         let application = buildApplication(queue: queue, dataLoader: dataLoader)
 
         // The provider starts pointing at `host`, then moves to a modal that
