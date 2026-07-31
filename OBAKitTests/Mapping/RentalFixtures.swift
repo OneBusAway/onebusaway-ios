@@ -52,11 +52,7 @@ enum RentalFixtures {
             vehicleType["propulsionType"] = NSNull()
         }
 
-        let networkValue: Any = networkId.map { id in
-            ["networkId": id, "url": networkURL ?? NSNull()] as [String: Any]
-        } ?? NSNull()
-
-        let dictionary: [String: Any] = [
+        var dictionary: [String: Any] = [
             "__typename": "RentalVehicle",
             "vehicleId": id,
             "name": "Default vehicle type",
@@ -64,11 +60,13 @@ enum RentalFixtures {
             "lon": lon,
             "allowPickupNow": true,
             "operative": operative,
-            "rentalNetwork": networkValue,
             "rentalUris": rentalUris ?? NSNull(),
             "vehicleType": vehicleType,
             "fuel": fuelValue
         ]
+        if let networkId {
+            dictionary["rentalNetwork"] = ["networkId": networkId, "url": networkURL ?? NSNull()] as [String: Any]
+        }
         return try Fixtures.dictionaryToModel(type: VehicleRental.self, dictionary: dictionary)
     }
 
