@@ -130,28 +130,6 @@ final class StopPageContentTests: OBATestCase {
         #expect(!content.isDepartureFilterEmpty)
     }
 
-    // MARK: - Page-filling empty state
-
-    @Test func `The empty row fills the page only when no stop resolved`() throws {
-        #expect(makeContent(allDepartures: []).fillsPage)
-
-        let stop = try #require(Fixtures.loadSomeStops().first)
-        let content = StopPageContent(
-            stop: stop,
-            allDepartures: [],
-            hasLoadedArrivals: false,
-            preferences: StopPreferences(),
-            isListFiltered: false,
-            arrivalDepartureFilter: .all,
-            isLoading: false,
-            // A stop that resolved and then failed its arrivals fetch still has a
-            // header above the error row, so the row must not inflate.
-            hasError: true,
-            isBrokenBookmark: false
-        )
-        #expect(!content.fillsPage)
-    }
-
     // MARK: - Loading state
 
     @Test func `Loading state covers the first frame before any fetch`() {
@@ -199,5 +177,46 @@ final class StopPageContentTests: OBATestCase {
         if !agencies.isEmpty {
             #expect(content.attributionText.contains(agencies))
         }
+    }
+
+    // MARK: - fillsPage
+
+    @Test func `fillsPage is true when no stop is provided`() {
+        let content = makeContent(allDepartures: [], hasLoadedArrivals: false)
+        #expect(content.fillsPage)
+    }
+
+    @Test func `fillsPage is false when a stop is provided even after a fetch failed`() throws {
+        let stop = try #require(Fixtures.loadSomeStops().first)
+        let content = StopPageContent(
+            stop: stop,
+            allDepartures: [],
+            hasLoadedArrivals: false,
+            preferences: StopPreferences(),
+            isListFiltered: false,
+            arrivalDepartureFilter: .all,
+            isLoading: false,
+            hasError: true,
+            isBrokenBookmark: false
+        )
+
+        #expect(!content.fillsPage)
+    }
+
+    @Test func `fillsPage is false when a stop is provided and arrivals loaded fine`() throws {
+        let stop = try #require(Fixtures.loadSomeStops().first)
+        let content = StopPageContent(
+            stop: stop,
+            allDepartures: try departures(),
+            hasLoadedArrivals: true,
+            preferences: StopPreferences(),
+            isListFiltered: false,
+            arrivalDepartureFilter: .all,
+            isLoading: false,
+            hasError: false,
+            isBrokenBookmark: false
+        )
+
+        #expect(!content.fillsPage)
     }
 }

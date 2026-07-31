@@ -32,6 +32,7 @@ struct StopDetailsSheetView: View {
     @StateObject private var viewModel: StopViewModel
     @EnvironmentObject private var coordinator: SheetCoordinator<AppSheetRoute>
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     private let presenter: StopPageActionPresenter
     private let feedback: DataLoadFeedbackGenerator
@@ -224,6 +225,13 @@ struct StopDetailsSheetView: View {
             @unknown default:
                 break
             }
+        }
+        .onChange(of: dynamicTypeSize) { _, _ in
+            // Reset the header height when Dynamic Type size changes so the next
+            // zero-progress layout pass re-latches the correct height. Without
+            // this, the header expands to the old height until a full collapse/expand
+            // cycle happens to re-latch it.
+            headerHeight = 0
         }
         .onDisappear {
             userActivity?.invalidate()
