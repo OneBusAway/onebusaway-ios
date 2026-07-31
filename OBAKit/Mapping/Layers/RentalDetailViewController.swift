@@ -94,12 +94,8 @@ struct RentalDetailView: View {
                     // Re-resolve at tap time: the URL carries a `generated_at`
                     // timestamp, and a sheet left open would otherwise send a
                     // stale one that the operator's app may reject.
-                    let fresh = RentalDeepLink.target(for: rental)
-                    onOpenURL(
-                        fresh?.url ?? deepLink.url,
-                        fresh?.storeFallback ?? deepLink.webFallback,
-                        rental.rentalNetwork?.networkId
-                    )
+                    let target = RentalDeepLink.target(for: rental) ?? deepLink.target
+                    onOpenURL(target.url, target.storeFallback, rental.rentalNetwork?.networkId)
                 } label: {
                     Text(deepLink.title)
                         .font(.subheadline.weight(.medium))
@@ -219,13 +215,16 @@ struct RentalDetailView: View {
     /// Where the "Open in <operator>" button goes. Feed-published URIs win;
     /// otherwise `RentalDeepLink` synthesizes one from the operator's scheme.
     /// Nil hides the button.
-    private var deepLinkURL: (title: String, url: URL, webFallback: URL?)? {
+    ///
+    /// Carries the `Target` itself rather than flattening it, so the tap-time
+    /// re-resolution above can swap in a fresher one without renaming fields.
+    private var deepLinkURL: (title: String, target: RentalDeepLink.Target)? {
         guard let target = RentalDeepLink.target(for: rental) else { return nil }
 
         let template = OBALoc("rental_detail.open_in_fmt", value: "Open in %@", comment: "Button opening the rental operator's app or website")
         let name = target.operatorName ?? target.url.host() ?? "app"
 
-        return (String(format: template, name), target.url, target.storeFallback)
+        return (String(format: template, name), target)
     }
 
     /// Re-rendered every 30s so a sheet left open keeps telling the truth, and the

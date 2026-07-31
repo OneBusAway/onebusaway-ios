@@ -88,12 +88,8 @@ enum RentalDeepLink {
         // 2. Synthesize for known operators. Deliberately outranks the network
         //    URL below: a targeted app link beats an operator homepage, which is
         //    a dead end for someone standing next to a scooter.
-        if let synthesized = synthesize(for: rental, network: network, now: now) {
-            return Target(
-                url: synthesized.url,
-                storeFallback: synthesized.storeFallback,
-                operatorName: operatorName
-            )
+        if let synthesized = synthesize(for: rental, network: network, operatorName: operatorName, now: now) {
+            return synthesized
         }
 
         // 3. The operator's web page, when the feed published one.
@@ -110,9 +106,13 @@ enum RentalDeepLink {
     private static func synthesize(
         for rental: VehicleRental,
         network: RentalNetwork,
+        operatorName: String?,
         now: Date
-    ) -> (url: URL, storeFallback: URL?)? {
-        guard let op = operators[networkToken(network.networkId)] else { return nil }
+    ) -> Target? {
+        // Lowercasing OTPKit's own `displayName` rather than re-splitting the
+        // network id keeps the operator token single-sourced: `displayName` only
+        // uppercases the first character, which the lowercase folds straight back.
+        guard let op = operators[network.displayName.lowercased()] else { return nil }
 
         var components = URLComponents()
         components.scheme = op.scheme
@@ -129,6 +129,11 @@ enum RentalDeepLink {
                 // Epoch seconds is an inference: the documented format carries an
                 // untyped <timestamp>. Built as a string because "%d" via
                 // String(format:) is a 32-bit specifier.
+                //
+                // `generated_at` is Lime's, not a general rule. Bird never reaches
+                // here (no `vehicleHost`), so a shared line is honest today — but a
+                // third vehicle-targeting operator with different query quirks
+                // should move this onto `Operator` rather than branch on scheme.
                 URLQueryItem(name: "generated_at", value: String(Int(now.timeIntervalSince1970)))
             ]
         } else {
@@ -136,13 +141,11 @@ enum RentalDeepLink {
         }
 
         guard let url = components.url else { return nil }
-        return (url, URL(string: "https://apps.apple.com/app/id\(op.appStoreID)"))
-    }
-
-    /// `lime_seattle` -> `lime`, `bird-seattle-washington` -> `bird`.
-    private static func networkToken(_ networkId: String) -> String {
-        let token = networkId.split(whereSeparator: { $0 == "_" || $0 == "-" }).first
-        return (token.map(String.init) ?? networkId).lowercased()
+        return Target(
+            url: url,
+            storeFallback: URL(string: "https://apps.apple.com/app/id\(op.appStoreID)"),
+            operatorName: operatorName
+        )
     }
 
     /// OTP returns `network:id`. Strip through the first colon to recover the raw
