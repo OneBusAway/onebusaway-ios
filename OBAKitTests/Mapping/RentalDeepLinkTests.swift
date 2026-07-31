@@ -78,6 +78,7 @@ struct RentalDeepLinkTests {
         let target = try #require(RentalDeepLink.target(for: rental, now: now))
 
         #expect(target.url.scheme == "bird")
+        #expect(target.url.absoluteString == "bird:")
         #expect(query(target.url)["selected_vehicle_id"] == nil)
         #expect(target.storeFallback?.absoluteString == "https://apps.apple.com/app/id1260842311")
         #expect(target.operatorName == "Bird")

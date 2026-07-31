@@ -69,9 +69,9 @@ public class AnalyticsLabels: NSObject {
     /// Value: the network id.
     @objc public static let rentalDeepLinkTapped = "Rental Deep Link Tapped"
 
-    /// Label used when a rental deep link failed to open and the fallback URL was
-    /// used instead. Value: the network id. A fallback rate that jumps toward
-    /// 100% is the only signal that an operator changed its URL scheme.
+    /// Label used when a rental deep link failed to open. Value: the network id.
+    /// A fallback rate that jumps toward 100% is the only signal that an
+    /// operator changed its URL scheme.
     @objc public static let rentalDeepLinkFallbackFired = "Rental Deep Link Fallback Fired"
 
     /// Label used when the rental minimum-range filter changes. Value: the

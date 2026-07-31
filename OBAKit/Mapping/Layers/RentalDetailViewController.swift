@@ -91,7 +91,15 @@ struct RentalDetailView: View {
 
             if let deepLink = deepLinkURL {
                 Button {
-                    onOpenURL(deepLink.url, deepLink.webFallback, rental.rentalNetwork?.networkId)
+                    // Re-resolve at tap time: the URL carries a `generated_at`
+                    // timestamp, and a sheet left open would otherwise send a
+                    // stale one that the operator's app may reject.
+                    let fresh = RentalDeepLink.target(for: rental)
+                    onOpenURL(
+                        fresh?.url ?? deepLink.url,
+                        fresh?.storeFallback ?? deepLink.webFallback,
+                        rental.rentalNetwork?.networkId
+                    )
                 } label: {
                     Text(deepLink.title)
                         .font(.subheadline.weight(.medium))

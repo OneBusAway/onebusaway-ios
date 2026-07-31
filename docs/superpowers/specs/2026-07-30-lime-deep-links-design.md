@@ -287,6 +287,7 @@ New `OBAKitTests/Mapping/RentalDeepLinkTests.swift`:
 | ID containing `&`, `=`, a space, non-ASCII | Escaped inside the value; round-trips through `URLComponents(url:)` to the original ID |
 | Lime vehicle **with** `rentalNetwork.url` | Synthesis still wins — pins the deliberate step-2-over-step-3 ordering |
 | Vehicle with no `rentalNetwork` at all | Returns nil; no crash, no host-derived title |
+| Feed publishes `rentalUris.ios` but there is no `rentalNetwork` | Still resolves to the feed URI — the network block is not required for branch 1 |
 | Unknown network with `rentalNetwork.url` | Falls through to the web URL |
 | Unknown network, no URL | Returns nil |
 | Fixed `now` | Timestamp renders deterministically |
