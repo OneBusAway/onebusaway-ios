@@ -151,18 +151,11 @@ struct StopPageView: View {
     }
 
     @State private var expandedRouteID: RouteID?
-    @State private var didSeedMode = false
     /// Set when the user explicitly dismisses the donation card, so it disappears
     /// immediately instead of waiting for the next view-model refresh to re-read
     /// `shouldRequestDonations`.
     @State private var donationHidden = false
     @AppStorage("StopViewController.pastDeparturesCollapsed") private var pastCollapsed = true
-
-    /// Global (not per-stop) "last mode the user picked" seed. A stop the user
-    /// has never customized opens in this mode; touched in exactly two places —
-    /// read in `seedLastUsedModeIfNeeded()`, written in the toggle's `onChange`.
-    private static let lastUsedStopSortKey = "OBALastUsedStopSort"
-
 
     var body: some View {
         // Hoist the single computed walk value so the header chip, the
@@ -229,7 +222,7 @@ struct StopPageView: View {
                     withAnimation {
                         // Switching modes collapses the open route card.
                         expandedRouteID = nil
-                        userDefaults.set(newValue.rawValue, forKey: Self.lastUsedStopSortKey)
+                        userDefaults.set(newValue.rawValue, forKey: StopPageLifecycleKeys.lastUsedStopSort)
                         viewModel.updateSortType(newValue)
                     }
                 },
@@ -286,29 +279,17 @@ struct StopPageView: View {
                 toolbar
             }
         }
-        .task { await viewModel.start() }
-        .onAppear(perform: seedLastUsedModeIfNeeded)
-        .onDisappear { viewModel.deactivate() }
         .refreshable { await viewModel.refresh() }
+        .stopPageLifecycle(
+            viewModel: viewModel,
+            userDefaults: userDefaults,
+            liveActivityStarted: viewModel.liveActivityStarted
+        )
         // Reconcile the open route card against the live feed: when a refresh
         // drops the expanded route from the list, clear the stale expansion.
         .onChange(of: content.routeIDs) { _, ids in
             if let rid = expandedRouteID, !ids.contains(rid) { expandedRouteID = nil }
         }
-        .overlay(alignment: .bottom) {
-            if viewModel.liveActivityStarted {
-                Text(OBALoc("live_activity.started.title", value: "Tracking on Lock Screen", comment: "Toast shown when a Live Activity starts on the Lock Screen"))
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
-                    .background(.tint, in: Capsule())
-                    .padding(.bottom, 16)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-        }
-        .animation(.spring(duration: 0.3), value: viewModel.liveActivityStarted)
     }
 
     /// The sheet presentation's bottom chrome. Reads the view model directly — `StopPageView` is
@@ -340,20 +321,6 @@ struct StopPageView: View {
             onWalkingDirections: navigation.showWalkingDirections,
             onReportProblem: navigation.showReportProblem
         )
-    }
-
-    /// One-shot: a stop the user has never customized opens in the last mode they
-    /// picked anywhere in the app. A stop with saved preferences owns its sort
-    /// type and is left alone — including one deliberately set to Chronological,
-    /// which `stopPreferences.sortType` alone can't tell apart from the default.
-    private func seedLastUsedModeIfNeeded() {
-        guard !didSeedMode else { return }
-        didSeedMode = true
-        guard !viewModel.hasCustomizedPreferences,
-              let raw = userDefaults.string(forKey: Self.lastUsedStopSortKey),
-              let seeded = StopSort(rawValue: raw)
-        else { return }
-        viewModel.seedSortType(seeded)
     }
 
     /// Builds the shared trip-detail panel (§4.6) for an expanded departure.
