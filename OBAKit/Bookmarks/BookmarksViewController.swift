@@ -238,13 +238,28 @@ class BookmarksViewController: UIHostingController<BookmarksRootView>,
         }
 
         let attributes = TripAttributes(staticData: staticData)
+        // Prominence so the Dynamic Island switches to this Track when another
+        // trip is already live (#1189 Problem 2). Default score is 0 and equal
+        // scores keep the first-started activity.
+        let prominence = TripLiveActivityRelevance.prominenceScore()
         do {
             let activity = try Activity.request(
                 attributes: attributes,
-                content: .init(state: contentState, staleDate: nil),
+                content: TripLiveActivityRelevance.content(
+                    state: contentState,
+                    staleDate: nil,
+                    relevanceScore: prominence
+                ),
                 pushType: .token
             )
             trackLiveActivity(activity, arrivalDepartures: arrivalDepartures)
+            let activityID = activity.id
+            Task {
+                await Activity<TripAttributes>.demoteLivePeers(
+                    exceptActivityID: activityID,
+                    relativeTo: prominence
+                )
+            }
             Logger.info("Started Live Activity with ID: \(activity.id)")
             showLiveActivityStartedToast()
         } catch {
@@ -298,6 +313,10 @@ class BookmarksViewController: UIHostingController<BookmarksRootView>,
                 // `update`. Re-fetch by ID inside a detached task instead — that copy
                 // never crosses an isolation boundary.
                 let activityID = activity.id
+                // Preserve prominence — rebuilding with the default score of 0
+                // would hand the Dynamic Island back to the first-started trip
+                // after every arrivals refresh (#1189 Problem 2).
+                let relevanceScore = activity.content.relevanceScore
                 Task.detached {
                     guard let activity = Activity<TripAttributes>.activities.first(where: { $0.id == activityID }) else {
                         // The activity ended between the loop and this task; dropping
@@ -307,7 +326,11 @@ class BookmarksViewController: UIHostingController<BookmarksRootView>,
                         return
                     }
                     await activity.update(
-                        .init(state: contentState, staleDate: nil)
+                        TripLiveActivityRelevance.content(
+                            state: contentState,
+                            staleDate: nil,
+                            relevanceScore: relevanceScore
+                        )
                     )
                     Logger.info("Updated Live Activity for stop: \(staticData.stopID) route: \(staticData.routeShortName)")
                 }

@@ -472,13 +472,28 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
         }
 
         let attributes = TripAttributes(staticData: staticData)
+        // Prominence so the Dynamic Island switches to this Track when another
+        // trip is already live (#1189 Problem 2). Default score is 0 and equal
+        // scores keep the first-started activity.
+        let prominence = TripLiveActivityRelevance.prominenceScore()
         do {
             let activity = try Activity.request(
                 attributes: attributes,
-                content: .init(state: contentState, staleDate: nil),
+                content: TripLiveActivityRelevance.content(
+                    state: contentState,
+                    staleDate: nil,
+                    relevanceScore: prominence
+                ),
                 pushType: .token
             )
             application.liveActivityTracker.track(activity: activity, metadata: .init(departure))
+            let activityID = activity.id
+            Task {
+                await Activity<TripAttributes>.demoteLivePeers(
+                    exceptActivityID: activityID,
+                    relativeTo: prominence
+                )
+            }
             Logger.info("Started Live Activity with ID: \(activity.id)")
             viewModel.signalLiveActivityStarted()
         } catch {
