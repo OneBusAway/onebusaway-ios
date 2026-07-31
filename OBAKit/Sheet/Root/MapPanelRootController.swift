@@ -27,7 +27,8 @@ public final class MapPanelRootController: UIViewController {
         let bridge = TripPresentationBridge()
         let factory = AppSheetViewFactory(
             application: application,
-            onPresentTrip: { [weak bridge] arrival in bridge?.present(arrival) }
+            onPresentTrip: { [weak bridge] arrival in bridge?.present(arrival) },
+            presentingController: { [weak bridge] in bridge?.topmostController() }
         )
         let rootView = MapPanelRootView(application: application, factory: factory)
         self.host = UIHostingController(rootView: rootView)
@@ -65,6 +66,18 @@ public final class MapPanelRootController: UIViewController {
         weak var host: UIViewController?
         weak var application: Application?
 
+        /// Topmost presented controller, so modals land above the sheet stack
+        /// rather than underneath it — UIKit ignores `present` on a controller
+        /// that already has a `presentedViewController`.
+        func topmostController() -> UIViewController? {
+            guard let host else { return nil }
+            var presenter: UIViewController = host
+            while let next = presenter.presentedViewController {
+                presenter = next
+            }
+            return presenter
+        }
+
         func present(_ arrival: ArrivalDeparture) {
             guard let host, let application else {
                 Logger.error("TripPresentationBridge: dropping present for trip \(arrival.tripID) — host or application is nil")
@@ -96,10 +109,7 @@ public final class MapPanelRootController: UIViewController {
                 }
             )
             let navigation = application.viewRouter.buildNavigation(controller: trip)
-            var presenter: UIViewController = host
-            while let next = presenter.presentedViewController {
-                presenter = next
-            }
+            guard let presenter = topmostController() else { return }
             // Skip if the topmost presented controller is already a
             // `TripViewController` (or a nav rooted at one). `CurrentTripView`
             // stays mounted under the modal trip and its 20-second refresh
