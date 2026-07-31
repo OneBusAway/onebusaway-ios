@@ -399,8 +399,8 @@ final class CurrentTripViewModelTests: OBATestCase {
         }
     }
 
-    @MainActor
-    func test_findVehicle_noApiService_setsErrorState() async throws {
+    @Test @MainActor
+    func `Find vehicle no API service sets error state`() async throws {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader, withLocation: true, withRegion: false)
         let viewModel = CurrentTripViewModel(application: app, route: route30())
@@ -409,10 +409,10 @@ final class CurrentTripViewModelTests: OBATestCase {
         for _ in 0..<5 { await Task.yield() }
 
         guard case .error(let error) = viewModel.state else {
-            XCTFail("Expected .error for nil apiService, got \(viewModel.state)")
+            Issue.record("Expected .error for nil apiService, got \(viewModel.state)")
             return
         }
-        expect((error as NSError).domain) == "CurrentTripViewModel"
+        #expect((error as NSError).domain == "CurrentTripViewModel")
     }
 
 }
