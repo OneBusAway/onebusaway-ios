@@ -78,7 +78,9 @@ struct RentalDeepLinkTests {
         let target = try #require(RentalDeepLink.target(for: rental, now: now))
 
         #expect(target.url.scheme == "bird")
-        #expect(target.url.absoluteString == "bird:")
+        // Matches the `discovery_uri` Bird's own GBFS feed publishes; a bare
+        // `bird:` would be a needless divergence from it.
+        #expect(target.url.absoluteString == "bird://")
         #expect(query(target.url)["selected_vehicle_id"] == nil)
         #expect(target.storeFallback?.absoluteString == "https://apps.apple.com/app/id1260842311")
         #expect(target.operatorName == "Bird")
@@ -130,6 +132,20 @@ struct RentalDeepLinkTests {
         #expect(target.url.absoluteString == "https://lime.example/ride/abc")
         #expect(target.storeFallback == nil)
         #expect(target.operatorName == nil)
+    }
+
+    /// A feed URI with no scheme still parses into a non-nil relative `URL`, and
+    /// this branch outranks synthesis — so without the scheme check one bad feed
+    /// field would replace a working `limebike://` link with an unopenable one.
+    @Test func schemelessFeedURIFallsThroughToSynthesis() throws {
+        let rental = try RentalFixtures.vehicle(
+            id: "lime_seattle:abc",
+            rentalUris: ["ios": "lime.example/ride/abc"]
+        )
+        let target = try #require(RentalDeepLink.target(for: rental, now: now))
+
+        #expect(target.url.scheme == "limebike")
+        #expect(query(target.url)["selected_vehicle_id"] == "abc")
     }
 
     /// Pins the deliberate decision that synthesis outranks `rentalNetwork.url`.

@@ -46,6 +46,8 @@ enum RentalDeepLink {
         /// Query key carrying the vehicle id.
         let vehicleIDKey: String?
         /// Host for the plain app-launch URL: stations, untargetable operators.
+        /// Empty string for an operator whose launch URI carries no host, so the
+        /// URL keeps its `//` (`bird://`) rather than collapsing to `bird:`.
         let appHost: String?
         let appStoreID: String
     }
@@ -61,11 +63,16 @@ enum RentalDeepLink {
             appHost: "map",
             appStoreID: "1199780189"
         ),
+        // Bird cannot target an individual vehicle, so it only ever gets the
+        // app-launch form. `bird://` is the shape Bird's own GBFS
+        // `discovery_uri` publishes; LaunchServices dispatches on scheme alone,
+        // so `bird:` would likely work too, but there is no reason to differ
+        // from the operator's declared URI.
         "bird": Operator(
             scheme: "bird",
             vehicleHost: nil,
             vehicleIDKey: nil,
-            appHost: nil,
+            appHost: "",
             appStoreID: "1260842311"
         )
     ]
@@ -78,7 +85,13 @@ enum RentalDeepLink {
 
         // 1. Feed data wins, network block or not: the pre-synthesis behaviour
         //    never required one, and a feed may publish a URI without a network.
-        if let ios = rental.rentalUris?.ios, let url = URL(string: ios) {
+        //
+        //    Absolute only. `URL(string:)` happily parses a scheme-less value
+        //    like "lime.example/ride/abc" into a non-nil relative URL that
+        //    nothing can open — and because this branch outranks synthesis, one
+        //    malformed feed field would turn a working synthesized link into a
+        //    dead tap. Requiring a scheme lets it fall through instead.
+        if let ios = rental.rentalUris?.ios, let url = URL(string: ios), url.scheme != nil {
             return Target(url: url, storeFallback: webURL, operatorName: operatorName)
         }
 

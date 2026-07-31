@@ -754,7 +754,7 @@ git log --oneline origin/main..HEAD
 
 This cannot be automated — the unit tests prove we build the URL we intend, not that Lime honours it. The PR body must carry:
 
-```
+```text
 ### Manual verification (required before merge)
 - [ ] Install Lime on a device running this build
 - [ ] Open a Lime vehicle sheet, tap "Open in Lime"
