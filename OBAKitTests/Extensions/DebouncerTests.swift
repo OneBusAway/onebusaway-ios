@@ -17,9 +17,8 @@ final class DebouncerTests {
 
     // These wait on a deferred main-actor callback, so — unlike the handler
     // tests elsewhere — they cannot collapse into a bare `confirmation`.
-    // The first two use `poll`, the repo's replacement for "wait until this
-    // becomes true". The suppression test deliberately keeps a fixed wait;
-    // see its own comment.
+    // Execute tests use `poll`. Suppression / replacement tests deliberately
+    // keep a fixed wait; see each test's own comment.
 
     @Test func `Debounce executes action`() async {
         var ran = false
@@ -58,15 +57,18 @@ final class DebouncerTests {
         #expect(count == 1)
     }
 
+    /// Counts runs rather than overwriting a value: if cancellation were broken
+    /// both workers would fire and `runs` would be 2. Overwriting `value = 1`
+    /// then `value = 2` still ends at 2 whether or not the first was cancelled.
     @Test func `Throttle replaces pending action`() async throws {
-        var value = 0
+        var runs = 0
         let throttler = Throttler()
 
-        throttler.throttle(deadline: .now() + .milliseconds(150)) { value = 1 }
-        throttler.throttle(deadline: .now() + .milliseconds(150)) { value = 2 }
+        throttler.throttle(deadline: .now() + .milliseconds(150)) { runs += 1 }
+        throttler.throttle(deadline: .now() + .milliseconds(150)) { runs += 1 }
 
         try await Task.sleep(for: .milliseconds(300))
 
-        #expect(value == 2)
+        #expect(runs == 1)
     }
 }

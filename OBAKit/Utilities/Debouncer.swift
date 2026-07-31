@@ -17,10 +17,15 @@ import Foundation
 /// Replaces the old `DispatchQueue.debounce` helper (#1196). Being `@MainActor`
 /// makes misuse off the main actor a compile error, instead of a debug assert
 /// / `MainActor.assumeIsolated` trap at runtime.
+///
+/// Cleanup is a cancellable `Task` that removes bookkeeping synchronously on
+/// the main actor after `interval` — not a `DispatchWorkItem` that hops through
+/// a second `Task`. The hop pattern could delete a fresher window that landed
+/// between the work item firing and the deferred task running.
 @MainActor
 public final class Debouncer {
     private var lastCallTimes: [AnyHashable: DispatchTime] = [:]
-    private var cleanupWorkItems: [AnyHashable: DispatchWorkItem] = [:]
+    private var cleanupTasks: [AnyHashable: Task<Void, Never>] = [:]
     private let defaultContext: AnyHashable = UUID()
 
     public init() {}
@@ -49,15 +54,13 @@ public final class Debouncer {
             action()
         }
 
-        cleanupWorkItems[key]?.cancel()
-        let cleanup = DispatchWorkItem { [weak self] in
-            Task { @MainActor in
-                self?.lastCallTimes.removeValue(forKey: key)
-                self?.cleanupWorkItems.removeValue(forKey: key)
-            }
+        cleanupTasks[key]?.cancel()
+        cleanupTasks[key] = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(interval))
+            guard !Task.isCancelled else { return }
+            lastCallTimes.removeValue(forKey: key)
+            cleanupTasks.removeValue(forKey: key)
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + interval, execute: cleanup)
-        cleanupWorkItems[key] = cleanup
     }
 }
 
@@ -65,9 +68,13 @@ public final class Debouncer {
 /// a newer call with the same `context` cancels the pending one.
 ///
 /// Replaces the old `DispatchQueue.throttle` helper (#1196).
+///
+/// The pending worker is a cancellable `Task` that clears its own bookkeeping
+/// and runs `action` synchronously on the main actor — same ordering fix as
+/// ``Debouncer`` (no `DispatchWorkItem` → deferred `Task` hop).
 @MainActor
 public final class Throttler {
-    private var workItems: [AnyHashable: DispatchWorkItem] = [:]
+    private var pendingTasks: [AnyHashable: Task<Void, Never>] = [:]
     private let defaultContext: AnyHashable = UUID()
 
     public init() {}
@@ -83,16 +90,25 @@ public final class Throttler {
         action: @escaping @MainActor () -> Void
     ) {
         let key = context ?? defaultContext
-        workItems[key]?.cancel()
+        pendingTasks[key]?.cancel()
 
-        let worker = DispatchWorkItem { [weak self] in
-            Task { @MainActor in
-                self?.workItems.removeValue(forKey: key)
-                action()
+        let delayNanoseconds = Self.nanosecondsUntil(deadline)
+        pendingTasks[key] = Task { @MainActor in
+            if delayNanoseconds > 0 {
+                try? await Task.sleep(nanoseconds: delayNanoseconds)
             }
+            guard !Task.isCancelled else { return }
+            pendingTasks.removeValue(forKey: key)
+            action()
         }
+    }
 
-        DispatchQueue.main.asyncAfter(deadline: deadline, execute: worker)
-        workItems[key] = worker
+    /// Converts a `DispatchTime` deadline into a sleep duration. Past deadlines
+    /// yield `0` so the action still runs on the next main turn after cancel
+    /// checks — matching `DispatchQueue.main.asyncAfter` with a past deadline.
+    private static func nanosecondsUntil(_ deadline: DispatchTime) -> UInt64 {
+        let now = DispatchTime.now().uptimeNanoseconds
+        let target = deadline.uptimeNanoseconds
+        return target > now ? target - now : 0
     }
 }
