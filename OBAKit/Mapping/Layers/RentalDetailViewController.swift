@@ -207,20 +207,16 @@ struct RentalDetailView: View {
         }
     }
 
-    /// Deep link: the GBFS iOS URI when present, the operator's web page as
-    /// fallback, nothing (the norm on the launch feed) otherwise.
+    /// Where the "Open in <operator>" button goes. Feed-published URIs win;
+    /// otherwise `RentalDeepLink` synthesizes one from the operator's scheme.
+    /// Nil hides the button.
     private var deepLinkURL: (title: String, url: URL, webFallback: URL?)? {
-        let operatorName = rental.rentalNetwork?.displayName
-        let template = OBALoc("rental_detail.open_in_fmt", value: "Open in %@", comment: "Button opening the rental operator's app or website")
-        let webURL = rental.rentalNetwork?.url.flatMap(URL.init(string:))
+        guard let target = RentalDeepLink.target(for: rental) else { return nil }
 
-        if let ios = rental.rentalUris?.ios, let url = URL(string: ios) {
-            return (String(format: template, operatorName ?? url.host() ?? "app"), url, webURL)
-        }
-        if let webURL {
-            return (String(format: template, operatorName ?? webURL.host() ?? "web"), webURL, nil)
-        }
-        return nil
+        let template = OBALoc("rental_detail.open_in_fmt", value: "Open in %@", comment: "Button opening the rental operator's app or website")
+        let name = target.operatorName ?? target.url.host() ?? "app"
+
+        return (String(format: template, name), target.url, target.storeFallback)
     }
 
     /// Re-rendered every 30s so a sheet left open keeps telling the truth, and the
