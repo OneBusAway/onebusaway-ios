@@ -116,6 +116,21 @@ struct RentalDeepLinkTests {
         #expect(target.storeFallback?.absoluteString == "https://www.li.me/")
     }
 
+    /// A feed may publish a deep link without a network block. The pre-synthesis
+    /// code showed the button in that case and this must not regress it.
+    @Test func feedProvidedURIResolvesWithoutARentalNetwork() throws {
+        let rental = try RentalFixtures.vehicle(
+            id: "lime_seattle:abc",
+            networkId: nil,
+            rentalUris: ["ios": "https://lime.example/ride/abc"]
+        )
+        let target = try #require(RentalDeepLink.target(for: rental, now: now))
+
+        #expect(target.url.absoluteString == "https://lime.example/ride/abc")
+        #expect(target.storeFallback == nil)
+        #expect(target.operatorName == nil)
+    }
+
     /// Pins the deliberate decision that synthesis outranks `rentalNetwork.url`.
     @Test func synthesisOutranksNetworkURLForKnownOperators() throws {
         let rental = try RentalFixtures.vehicle(id: "lime_seattle:abc", networkURL: "https://www.li.me/")

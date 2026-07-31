@@ -72,16 +72,18 @@ enum RentalDeepLink {
 
     /// - Parameter now: injected so `generated_at` is deterministic in tests.
     static func target(for rental: VehicleRental, now: Date = Date()) -> Target? {
-        guard let network = rental.rentalNetwork else { return nil }
+        let network = rental.rentalNetwork
+        let operatorName = network?.displayName
+        let webURL = network?.url.flatMap(URL.init(string:))
 
-        let operatorName = network.displayName
-        let webURL = network.url.flatMap(URL.init(string:))
-
-        // 1. Feed data wins. Preserves the pre-synthesis behaviour exactly,
-        //    including the operator web page as its fallback.
+        // 1. Feed data wins, network block or not: the pre-synthesis behaviour
+        //    never required one, and a feed may publish a URI without a network.
         if let ios = rental.rentalUris?.ios, let url = URL(string: ios) {
             return Target(url: url, storeFallback: webURL, operatorName: operatorName)
         }
+
+        // Synthesis and the web-page fallback both need the network block.
+        guard let network else { return nil }
 
         // 2. Synthesize for known operators. Deliberately outranks the network
         //    URL below: a targeted app link beats an operator homepage, which is
