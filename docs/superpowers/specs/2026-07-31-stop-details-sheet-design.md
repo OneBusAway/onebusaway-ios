@@ -51,7 +51,8 @@ rendered inside a sheet. This is the stopgap being replaced.
 | Composition strategy | Extract derivation + shared sections; `StopPageView` delegates to them, the new sheet composes them directly | Avoids a third boolean flag on `StopPageView` |
 | Chrome scope | New circular action row applies to presentation 3 only | Presentation 2 keeps its bottom toolbar untouched |
 | Detent | `.large` only, unchanged | Already configured; no map peek wanted |
-| Header map | Compact map thumbnail beside the identity block | `.large` covers the map, so the reused header's "map is visible above" rationale does not hold here |
+| Header | `StopPageHeaderView` — the pushed screen's dark map card | Visual consistency with the pushed screen; `.large` covers the map, so the compact header's "map is visible above" rationale does not hold here |
+| Chrome behaviour | Collapsing header: the map card shrinks away on scroll, the action row pins | Keeps the requested order at rest and the actions reachable while scrolling |
 | Pull to refresh | Removed in presentation 3 | Refresh is the button's job here |
 | Entry point | Register in the factory only | Nothing pushes `.stopDetails` yet; map annotations are separate work |
 | iPad | Out of scope for this experience | Sheet is iPhone-only |
@@ -102,17 +103,14 @@ Owns every flow currently in `StopPageViewController`'s private extensions:
 `StopPageNavigationHandler`, so no consumer duplicates closure wiring.
 
 It also vends `makeUserActivity(stop:)` from `application.userActivityBuilder`, and
-`loadSnapshot(stop:size:)` for the header thumbnail — the async bridge over
+`loadSnapshot(size:)` for the header's map card — the async bridge over
 `MapSnapshotter` that `StopPageViewController` owns today, moved so the sheet can
-reach it without a view controller.
-
-Two details of that bridge must survive the move. `MapSnapshotter`'s internal
-`MKMapSnapshotter.start` completion is `[weak self]`, so the wrapper has to outlive
-the async render via `withExtendedLifetime` or the continuation never resumes and the
-thumbnail stays permanently blank. And unlike the pushed presentation — whose header
-is an always-dark card and therefore forces `userInterfaceStyle = .dark` — the sheet
-thumbnail sits in a light, appearance-adaptive header, so it renders in the ambient
-trait collection.
+reach it without a view controller. It moves verbatim, including the forced
+`userInterfaceStyle = .dark` (the card is always-dark by design, so the snapshot
+must be too) and the `withExtendedLifetime` around the snapshotter:
+`MapSnapshotter`'s internal `MKMapSnapshotter.start` completion is `[weak self]`, so
+without it the wrapper deallocates mid-render, the continuation never resumes, and
+the header stays permanently blank.
 
 ### Rewired: `StopPageView`
 
@@ -121,13 +119,13 @@ Keeps both current modes and both booleans. Its body becomes header selection pl
 and 2 is unchanged — this is a pure refactor they do not observe, and
 `StopPagePresentationTests` is the contract that proves it.
 
-### Rewired: `StopPageSheetHeaderView`
+### Reused unchanged: `StopPageHeaderView`
 
-Gains `onRefresh: (() -> Void)? = nil`, `isRefreshing: Bool = false` and
-`snapshotLoader: ((CGSize) async -> UIImage?)? = nil`. All three default to
-nil/false, so the FloatingPanel sheet renders exactly as it does now. The circle
-styling is lifted out of `StopSheetCloseButton` into a shared `StopSheetCircleButton`
-in the same file, so Refresh and Close match. See [UI](#header).
+The pushed screen's dark map card is reused as-is, fed by the presenter's
+`loadSnapshot(size:)`. No changes to the file.
+
+`StopPageSheetHeaderView` — the compact light header — is **not** used here and is
+not modified, so the FloatingPanel sheet is provably unaffected by this work.
 
 ### New: `stopPageLifecycle` and `keepsScreenAwake` modifiers
 
@@ -148,10 +146,26 @@ Owns `StopViewModel` as a `@StateObject` via an `@autoclosure`, matching how
 `SheetCoordinator<AppSheetRoute>` from the environment and closes via
 `coordinator.pop()`.
 
-Body: a `.plain` `List` containing `StopDeparturesSections`, with all chrome
-installed as a single top `safeAreaInset`. `safeAreaInset` rather than a `VStack`
-wrapper, for the reason `StopPageView` already documents — a wrapper resolves the
-top safe area differently across detents and lets the header droop.
+Body: a `.plain` `List` containing `StopDeparturesSections`, with all chrome —
+top bar, map card, action row — installed as a single top `safeAreaInset`.
+`safeAreaInset` rather than a `VStack` wrapper, for the reason `StopPageView` already
+documents: a wrapper resolves the top safe area differently across detents and lets
+the header droop.
+
+### New: `StopDetailsSheetTopBar` (`OBAKit/Sheet/Content/Stop/Details/`)
+
+The slim pinned strip: Refresh leading, Close trailing, and the stop name fading in
+between them as the map card collapses. Refresh is disabled and shows a spinner while
+`isRefreshing`; its VoiceOver value carries the freshness text (`statusText`), the
+same treatment `StopPageToolbar` uses so a label that rewrites itself every few
+seconds doesn't make the bar restless.
+
+### New: `StopSheetHeaderCollapse` (`OBAKit/Sheet/Content/Stop/Details/`)
+
+A pure value that maps scroll offset to a 0…1 collapse progress, extracted from the
+view so it can be unit-tested — the precedent set by
+`shouldDisableBackgroundForFullScreen`. See [Collapsing chrome](#collapsing-chrome)
+for the mechanism and the feedback-loop hazard it exists to avoid.
 
 ### New: `StopPageActionRow` (`OBAKit/Sheet/Content/Stop/Details/`)
 
@@ -169,43 +183,70 @@ pulled out of a view modifier for the same reason.
 
 ## UI
 
-Chrome order, top to bottom: header → action row → departures.
+Chrome order at rest, top to bottom: top bar → map card → action row → departures.
 
 ### Header
 
-`StopPageSheetHeaderView`, reused. It already carries the stop name, code/direction
-subtitle, tinted walk pill, route badges and a close button, and it already has a
-stop-unknown placeholder variant that keeps the close button alive when the first
-fetch fails — that is the Close half of the requirement, already built.
+`StopPageHeaderView`, the pushed screen's dark full-bleed map card, reused unchanged.
+It already carries the "Updated: …" status line, stop name, code/direction subtitle
+with inline route chips, and the walk pill that opens walking directions. The map
+snapshot comes from the presenter's `loadSnapshot(size:)`.
 
-Refresh joins it through two new optional parameters, `onRefresh: (() -> Void)? = nil`
-and `isRefreshing: Bool = false`, rendering a second circular button beside Close.
-The circle styling is lifted out of `StopSheetCloseButton` into a shared
-`StopSheetCircleButton` so the two match. Defaulting to `nil` leaves presentation 2
-rendering exactly as it does now — its Refresh already lives in the bottom toolbar,
-and this avoids showing it twice.
+It stays always-dark, as on the pushed screen. Its own `.task(id: cardWidth)` loads
+the snapshot once and keeps it, and since the collapse animates height rather than
+width, no reload is triggered while scrolling.
 
-**Map thumbnail.** A third optional parameter,
-`snapshotLoader: ((CGSize) async -> UIImage?)? = nil`, adds a rounded 56 pt map
-snapshot leading the identity block. It is present only for this sheet: presentation
-2 passes nil, because there the map really is visible above the sheet at its smaller
-detents, which is why this header omitted a snapshot in the first place. This sheet is
-`.large`-only and covers the map, so the rider otherwise gets no sense of where the
-stop is.
+`StopPageHeaderPlaceholderView` covers the loading state, as on the pushed screen. The
+sheet does not need the compact header's "always render a close button" behaviour,
+because Close lives in the pinned top bar and survives every state — including a first
+fetch that fails, where the header is absent entirely.
 
-Being a fixed size, the thumbnail needs none of the `onGeometryChange` width
-measurement `StopPageHeaderView` performs. While the snapshot loads — and when the
-stop is still unknown — the slot renders as a `secondarySystemFill` rounded rectangle,
-so the header does not reflow when the image arrives. It is decorative and hidden from
-VoiceOver; the identity block already names the stop.
-
-`isCollapsed` is not used: it exists for the FloatingPanel `.tip` detent, and this
+`isCollapsed` is not used: it belongs to the FloatingPanel `.tip` detent, and this
 route is `.large`-only.
+
+### Collapsing chrome
+
+All three pieces live in one top `safeAreaInset`. As the list scrolls, the map card's
+height and opacity scale to zero, the action row rides up to sit directly under the
+top bar, and the stop name cross-fades into the bar. Scrolling back reverses it.
+
+**The hazard.** A `safeAreaInset` whose height changes in response to scrolling can
+feed back on itself: the inset shrinks → the list's content offset shifts → the offset
+drives the inset → oscillation. The mitigation is to derive progress from a quantity
+that is invariant to inset changes. Using `onScrollGeometryChange`, the metric is
+`contentOffset.y + contentInsets.top`, not `contentOffset.y` alone — when the top
+inset shrinks by Δ the offset shifts by Δ and the sum holds steady.
+
+`StopSheetHeaderCollapse` owns that arithmetic as a pure function: it takes the
+adjusted offset and the card's collapsible height and returns progress clamped to
+0…1, returning 0 when the height is zero so a stop that never resolves can't divide by
+zero.
+
+**Height.** The collapse range is measured from the card's laid-out height via
+`onGeometryChange`, not from a constant — `StopPageHeaderView`'s height is
+`@ScaledMetric` and grows further when route chips wrap, so a hard-coded 170 would
+under- or over-collapse at most Dynamic Type sizes.
+
+**No implicit animation** on the inset height. The collapse follows the finger; adding
+`withAnimation` to a value already driven by a continuous gesture is what makes this
+pattern jitter.
+
+**Fallback.** If continuous collapse proves unstable in practice, degrade to a
+two-state cross-fade at a threshold, keeping `StopSheetHeaderCollapse` as the
+threshold test. That preserves the pinned action row, which is the point of the
+exercise, and loses only the smooth interpolation.
+
+**Accessibility.** Under Reduce Motion the behaviour is unchanged — the collapse
+tracks scrolling rather than being decorative animation, and there is no cross-fade to
+suppress beyond the title, which swaps without animation in that mode. When collapsed,
+the stop name in the top bar carries the identity for VoiceOver; the card's content is
+removed from the accessibility tree rather than left as an invisible focus target.
 
 ### Action row
 
-Below the header's existing divider, carrying its own trailing divider, so the
-sequence reads identity / actions / departures.
+Below the map card, carrying its own trailing divider, so the sequence reads identity
+/ actions / departures. It never scrolls away: once the card has collapsed it sits
+directly beneath the top bar.
 
 | Button | Action | State |
 | --- | --- | --- |
@@ -232,7 +273,7 @@ for the same reason.
 a `StopViewModel` for that stop, a `StopPageActionPresenter`, a
 `DataLoadFeedbackGenerator`, `application.formatters` and
 `application.userDefaults`. The header's `snapshotLoader` closure wraps the
-presenter's `loadSnapshot(stop:size:)`. `@StateObject` means SwiftUI instantiates the view model
+presenter's `loadSnapshot(size:)`. `@StateObject` means SwiftUI instantiates the view model
 exactly once per view identity; since the route ids as `stopDetails-<stopID>`, a
 different stop is a different identity with its own view model.
 
@@ -413,11 +454,17 @@ out of a view modifier for exactly this reason.
 suppresses both). It must pass unchanged; that suite is the contract that the
 `StopPageView` refactor is behaviour-preserving.
 
+**New — `StopSheetHeaderCollapseTests`.** The pure progress function: 0 at rest, 1 at
+and beyond full collapse, clamped outside both ends, 0 when the collapsible height is
+zero (a stop that never resolves, which would otherwise divide by zero), and monotonic
+across the range. This is the piece most likely to misbehave, and the only part of the
+collapsing chrome a unit test can reach.
+
 **Previews.** SwiftUI previews for the sheet in loading, loaded, first-load-error and
-filtered-empty states. The loading preview covers the header's thumbnail placeholder,
-which is the state a preview can show and a unit test cannot — `MapSnapshotter` wraps
-MapKit and is not worth faking, so `loadSnapshot(stop:size:)` is verified by eye
-rather than asserted.
+filtered-empty states, plus expanded and collapsed chrome. The collapse interaction
+itself, the map snapshot, and the inset feedback-loop behaviour are verified by hand
+on device — `MapSnapshotter` wraps MapKit and scroll geometry needs a real scroll
+view, so neither is worth faking.
 
 **Verification.** SwiftLint, then
 `xcodebuild test-without-building -only-testing:OBAKitTests` on iPhone 16 (iOS 26).
