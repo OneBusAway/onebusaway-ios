@@ -46,6 +46,19 @@ and liable to change without notice. Every decision below is shaped by that.
 generated server-side; we cannot mint a per-vehicle one without Lime's Branch
 key, and a bare domain hit is an interstitial, not a deep link.
 
+### Risks we are accepting
+
+- **Scheme rot.** If Lime renames or drops `limebike://`, a rider who *has* Lime
+  installed gets bounced to the App Store page of an app they already own. This
+  is the most likely real-world failure and it is not detectable client-side —
+  `open` reports false either way. Analytics (below) is the only early warning.
+- **Scheme squatting.** Any app may register `limebike://`. `open` would report
+  success into the wrong app. Not mitigable; `canOpenURL` would not help.
+- **App Store URL form.** `https://apps.apple.com/app/id<id>` is the standard
+  form Apple's own marketing tools emit, but the current Apple documentation
+  attesting it is archived (QA1633 still shows `itunes.apple.com`). Manual
+  verification step 4 is what actually confirms it.
+
 ## Decisions
 
 | Question | Decision |
@@ -53,8 +66,9 @@ key, and a bare domain hit is an interstitial, not a deep link.
 | Where the logic lives | OBAKit only — OTPKit stays spec-pure |
 | App not installed | Never gate on it; fall back to the App Store |
 | Operator coverage | Small table, seeded with Lime and Bird |
-| Feed vs. synthesized | Feed data always wins |
+| Feed vs. synthesized | Feed `rentalUris` wins; synthesis outranks `rentalNetwork.url` |
 | Stations | App-level link; never vehicle-targeted |
+| URL construction | `URLComponents`, never `String(format:)` |
 | Before merge | Manual on-device verification |
 
 ### Why host-side and not OTPKit
@@ -91,25 +105,33 @@ enum RentalDeepLink {
         let operatorName: String?
     }
 
-    /// A known operator's app-launch surface.
+    /// A known operator's app-launch surface, expressed as URL *components*
+    /// rather than a format string — see "Vehicle ID extraction" for why.
     private struct Operator {
-        /// Format string taking the raw vehicle ID and a timestamp.
-        /// Nil when the app cannot target an individual vehicle.
-        let vehicleURLFormat: String?
-        /// Plain app-launch URL, used for stations and untargetable operators.
-        let appURL: String
+        let scheme: String
+        /// Host of the vehicle-targeting URL. Nil when the app cannot target an
+        /// individual vehicle, in which case only `appHost` is ever used.
+        let vehicleHost: String?
+        /// Query key carrying the vehicle ID, e.g. `selected_vehicle_id`.
+        let vehicleIDKey: String?
+        /// Host for the plain app-launch URL: stations, untargetable operators.
+        let appHost: String?
         let appStoreID: String
     }
 
     private static let operators: [String: Operator] = [
         "lime": Operator(
-            vehicleURLFormat: "limebike://map?selected_vehicle_id=%@&generated_at=%d",
-            appURL: "limebike://map",
+            scheme: "limebike",
+            vehicleHost: "map",
+            vehicleIDKey: "selected_vehicle_id",
+            appHost: "map",
             appStoreID: "1199780189"
         ),
         "bird": Operator(
-            vehicleURLFormat: nil,
-            appURL: "bird://",
+            scheme: "bird",
+            vehicleHost: nil,
+            vehicleIDKey: nil,
+            appHost: nil,
             appStoreID: "1260842311"
         )
     ]
@@ -126,11 +148,25 @@ enum RentalDeepLink {
    Fallback stays `rentalNetwork.url`. This preserves today's behavior byte for
    byte on any feed that ever starts publishing deep links.
 2. **Synthesized, when the network is in the table.** A `.vehicle` whose
-   operator has a `vehicleURLFormat` gets the targeted URL; a `.station`, or an
-   operator like Bird that cannot target, gets `appURL`. Fallback is
-   `https://apps.apple.com/app/id<appStoreID>`.
+   operator has a `vehicleHost` gets the targeted URL; a `.station`, or an
+   operator like Bird that cannot target, gets the bare `scheme://appHost`.
+   Fallback is `https://apps.apple.com/app/id<appStoreID>`.
 3. **`rentalNetwork.url`, when present.** Today's second branch, unchanged.
 4. **Otherwise nil** — the button does not render, exactly as now.
+
+**Step 2 deliberately outranks step 3.** For a table operator that publishes
+`rentalNetwork.url` but no `rentalUris` — no Lime system does today, but a feed
+update could — the synthesized app link wins and the published web URL is never
+used. This is a real narrowing of "feed data always wins," and it is
+intentional: `rentalNetwork.url` is an operator *homepage*, and a marketing page
+is a dead end for someone standing next to a scooter, which is the same
+reasoning behind choosing the App Store over `li.me` as the fallback. A targeted
+app link serves the rider better than a generic web page.
+
+The consequence to accept: if a feed ever starts publishing a genuinely useful
+`rentalNetwork.url`, this ordering hides it, and reversing the decision means
+editing this file. A test pins the ordering so the choice can never drift
+silently.
 
 To be explicit about a distinction the decisions table compresses: whether the
 rider has the app installed never affects whether the button appears. Whether
@@ -158,13 +194,31 @@ OTP returns `vehicleId` in the form `network:id` —
 including the first `:` is stripped, leaving the raw GBFS `bike_id`. Verified:
 the UUIDs OTP returns match `free_bike_status.bike_id` exactly.
 
-An ID with no colon is used whole. The result is percent-encoded for the query
-slot — UUIDs need no escaping, but the input is a third-party string and we
-should not assume its shape.
+An ID with no colon is used whole. An ID that is *empty* after stripping (a bare
+`lime_seattle:`) is treated as untargetable: fall through to the app-launch URL
+rather than emitting `selected_vehicle_id=` with no value.
 
-`generated_at` is included as epoch seconds because the documented format
-carries it. Its purpose is unknown; omitting it risks Lime ignoring the whole
-query string, and including it costs nothing.
+**Build the URL with `URLComponents` and `URLQueryItem`, never `String(format:)`.**
+This is load-bearing, not style. The obvious encoding call,
+`addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)`, does *not*
+make a string safe as a query **value**: `urlQueryAllowed` is the set legal in
+the whole query component, so `&`, `=`, `?`, `/`, and `+` all survive unescaped.
+An ID containing `&` or `=` would inject or corrupt parameters, and `+` may be
+read as a space by the receiver. `URLComponents` escapes those correctly inside
+a value. Compounding it, on iOS 17+ `URL(string:)` silently percent-encodes
+invalid characters instead of returning nil, so a malformed construction yields
+a plausible-looking wrong URL rather than a visible failure.
+
+That is why the operator table above holds `scheme`/`host`/`key` components
+rather than a format string: the type makes the unsafe construction
+unexpressible.
+
+`generated_at` is included because the documented format carries it, and
+omitting it risks Lime ignoring the query string. **The unit is a guess.** The
+cited WoBike source documents an untyped `<timestamp>` placeholder; epoch
+seconds is our inference, not attested. Emit it as `String(Int(now.timeIntervalSince1970))` —
+using `%d` with `String(format:)` would additionally be a 32-bit specifier,
+correct for epoch seconds only until 2038 and silently wrong for milliseconds.
 
 ## Error handling
 
@@ -196,6 +250,20 @@ never shown a deep-link button.
 **No new localized strings.** `rental_detail.open_in_fmt` already covers both
 operators via `rentalNetwork.displayName`.
 
+`rentalUris.web` stays unconsulted. The model carries it
+(`VehicleRentalSupportingTypes.swift:40-44`) and `deepLinkURL` has never read
+it; this change does not alter that. Recorded so the omission reads as a
+decision rather than an oversight.
+
+### Analytics
+
+`rentalLayer(planTripUsing:)` reports an event
+(`MapViewController+MapLayers.swift:200`); `rentalLayer(open:webFallback:)`
+reports nothing. Add two: the tap, and the fallback firing. For a
+reverse-engineered scheme these counts are the only field signal that Lime
+changed something — a fallback rate that jumps from near-zero to near-total is
+exactly the scheme-rot alarm the risk register has no other way to raise.
+
 ## Testing
 
 New `OBAKitTests/Mapping/RentalDeepLinkTests.swift`:
@@ -204,17 +272,24 @@ New `OBAKitTests/Mapping/RentalDeepLinkTests.swift`:
 | --- | --- |
 | Lime vehicle, null `rentalUris` | `limebike://map?selected_vehicle_id=<uuid>&generated_at=<ts>`, App Store fallback `id1199780189` |
 | Feed publishes `rentalUris.ios` | Feed URI wins; synthesis is not consulted |
+| Feed publishes `rentalUris.ios` **and** `rentalNetwork.url` | Fallback is the web URL, not the App Store — branch 1's fallback is preserved |
 | Bird vehicle | `bird://`, store ID `1260842311`, no `selected_vehicle_id` |
 | Lime station | App-level `limebike://map` — never a station ID in `selected_vehicle_id` |
 | `vehicleId` with no colon | Whole string used as the ID |
+| `vehicleId` of `"lime_seattle:"` | Empty after stripping ⇒ app-launch URL, no empty `selected_vehicle_id=` |
+| ID containing `&`, `=`, a space, non-ASCII | Escaped inside the value; round-trips through `URLComponents(url:)` to the original ID |
+| Lime vehicle **with** `rentalNetwork.url` | Synthesis still wins — pins the deliberate step-2-over-step-3 ordering |
+| Vehicle with no `rentalNetwork` at all | Returns nil; no crash, no host-derived title |
 | Unknown network with `rentalNetwork.url` | Falls through to the web URL |
 | Unknown network, no URL | Returns nil |
 | Fixed `now` | Timestamp renders deterministically |
 
-`RentalFixtures` needs two additions: `vehicle(...)` currently hardcodes
-`networkId: "lime_seattle"` and `rentalUris: NSNull()`, so both become
-parameters with those values as defaults; `station(...)` gains `networkId:`.
-Existing call sites are unaffected.
+`RentalFixtures` needs three additions to `vehicle(...)`, which currently
+hardcodes `"rentalNetwork": ["networkId": "lime_seattle", "url": NSNull()]` and
+`"rentalUris": NSNull()` (`RentalFixtures.swift:57-58`): `networkId`,
+`networkURL`, and `rentalUris` all become parameters defaulting to today's
+values. `networkId` must accept nil to express "no rentalNetwork at all".
+`station(...)` gains `networkId:`. Existing call sites are unaffected.
 
 ### Manual verification, before merge
 
@@ -227,8 +302,12 @@ honors it. Required on a real device:
 4. Delete Lime, repeat, confirm the App Store fallback fires.
 5. Record the findings in the PR.
 
-If step 3 opens Lime but lands on a generic map, the scheme works and the
-parameter does not: keep the button, drop to `appURL`, and note it.
+If step 3 opens Lime but lands on a generic map, do **not** immediately conclude
+the parameter is useless. Because the `generated_at` unit is a guess, a stale
+timestamp could make Lime discard the targeting — indistinguishable from the
+parameter being unsupported. Before dropping to the app-launch URL, retry with
+(a) milliseconds and (b) `generated_at` omitted entirely. Only if all three fail
+does the vehicle-targeting come out.
 
 One assumption rides on this pass: that bare `limebike://map` — the station and
 fallback form — launches the app at all. It is the documented path with its
