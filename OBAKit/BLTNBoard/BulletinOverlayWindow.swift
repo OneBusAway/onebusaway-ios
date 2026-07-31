@@ -33,23 +33,35 @@ final class BulletinOverlayWindow {
 
     private var window: UIWindow?
 
+    /// The item currently being presented, held weakly so we can restore
+    /// its original `dismissalHandler` on teardown without extending its
+    /// lifetime. Items outlive this window in practice (they're stored
+    /// properties on bulletin classes like `ReachabilityBulletin`), but the
+    /// weak reference is correct regardless.
+    private weak var savedRootItem: BLTNItem?
+
+    /// The `dismissalHandler` the caller had on `rootItem` before `install`
+    /// swapped in the overlay's wrapper. Restored verbatim on teardown so
+    /// the item goes back to exactly the state we found it in — no matter
+    /// how many prior presentations occurred.
+    private var savedDismissalHandler: ((BLTNItem) -> Void)?
+
     private init() {}
 
     /// Installs the overlay window and returns its host controller for
-    /// `showBulletin(above:)`. Hooks `rootItem.dismissalHandler` to tear the
-    /// window down once the bulletin dismisses, chaining any handler the
-    /// caller already set.
+    /// `showBulletin(above:)`. Snapshots `rootItem.dismissalHandler` and
+    /// replaces it with a wrapper that dispatches to the original then
+    /// tears the window down. On teardown the original handler is restored,
+    /// so a reused item (e.g. `ReachabilityBulletin.connectivityPage` re-shown
+    /// across connectivity flaps) never accumulates nested wrappers.
     ///
     /// One bulletin at a time. Each `BLTNItemManager` already guards on
     /// `isShowingBulletin`, but those guards are per-manager; this singleton is
     /// shared across every OBA bulletin manager, so two managers can call
-    /// `install` while a third is mid-presentation. If that ever happens, the
-    /// second caller's `dismissalHandler` chain would never be installed (the
-    /// early-return path used to silently skip it) and teardown would fire on
-    /// the first dismissal, yanking the window out from under the second
-    /// bulletin. The DEBUG assert flags the violation at the point it occurs;
-    /// release builds still return the existing host so the second bulletin at
-    /// worst piggybacks on the first's window rather than crashing.
+    /// `install` while a third is mid-presentation. The DEBUG assert flags the
+    /// violation at the point it occurs; release builds still return the
+    /// existing host so the second bulletin at worst piggybacks on the first's
+    /// window rather than crashing.
     func install(in scene: UIWindowScene, rootItem: BLTNItem) -> UIViewController {
         // Single-page only: teardown rides `rootItem.dismissalHandler`, but
         // BLTN fires the dismissal handler on `currentItem` — which only
@@ -79,16 +91,35 @@ final class BulletinOverlayWindow {
 
         self.window = window
 
-        let originalDismissal = rootItem.dismissalHandler
-        rootItem.dismissalHandler = { [weak self] item in
-            originalDismissal?(item)
-            self?.teardown()
-        }
+        swapDismissalHandler(on: rootItem)
 
         return host
     }
 
+    /// Snapshots the item's current `dismissalHandler` and swaps in a wrapper
+    /// that fires the original handler then tears down. Extracted from
+    /// `install` so tests can exercise the handler-management contract without
+    /// synthesizing a `UIWindowScene`.
+    internal func swapDismissalHandler(on rootItem: BLTNItem) {
+        savedRootItem = rootItem
+        savedDismissalHandler = rootItem.dismissalHandler
+        rootItem.dismissalHandler = { [weak self] item in
+            self?.savedDismissalHandler?(item)
+            self?.teardown()
+        }
+    }
+
+    /// Restores the previously-saved `dismissalHandler` onto the tracked item
+    /// and clears the saved state. Extracted from `teardown` for testability.
+    internal func restoreDismissalHandler() {
+        savedRootItem?.dismissalHandler = savedDismissalHandler
+        savedRootItem = nil
+        savedDismissalHandler = nil
+    }
+
     private func teardown() {
+        restoreDismissalHandler()
+
         let scene = window?.windowScene
         window?.rootViewController = nil
         window?.isHidden = true

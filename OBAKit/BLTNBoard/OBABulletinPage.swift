@@ -32,36 +32,65 @@ class ThemedBulletinPage: BLTNPageItem {
 }
 
 extension BLTNItemManager {
-    /// Presents the bulletin in a dedicated overlay `UIWindow` attached to the
-    /// active scene.
+    /// Presents the bulletin in the appropriate host for the current experience.
     ///
-    /// Avoid `showBulletin(in:)` (BLTNBoard's built-in): it creates a `UIWindow`
+    /// Map-panel experience (`OBAUseMapPanelExperience` on): the SwiftUI home
+    /// sheet's hosting controller is inside a `UISheetPresentationController`
+    /// that clamps modal presentations to the current detent — presenting from
+    /// there squeezes the bulletin into the collapsed sheet's ~80pt strip. To
+    /// dodge the sheet hierarchy, we present into a dedicated `.alert`-level
+    /// `UIWindow` via `BulletinOverlayWindow`.
+    ///
+    /// Classic experience (flag off, production default): fall back to the
+    /// pre-#1163 presentation — `keyWindowFromScene?.topViewController`. The
+    /// clamping bug doesn't exist there, so the extra window path (and its
+    /// singleton lifecycle) is unnecessary.
+    ///
+    /// Avoid BLTNBoard's built-in `showBulletin(in:)`: it creates a `UIWindow`
     /// without a `windowScene`, which iOS won't display in a scene-based app.
-    /// Avoid presenting from `keyWindowFromScene?.topViewController` directly:
-    /// in the SwiftUI map-panel experience that walk lands inside the home
-    /// sheet's hosting controller, and `UISheetPresentationController` clamps
-    /// modal presentations to the sheet's current detent — the bulletin then
-    /// renders inside the collapsed sheet's ~80pt strip.
     ///
     /// `rootItem` is the item passed to `BLTNItemManager.init(rootItem:)`; it
     /// has to be supplied here because the manager keeps its reference private,
-    /// and we hook its `dismissalHandler` to retire the overlay window.
+    /// and the overlay-window path hooks its `dismissalHandler` to retire the
+    /// window. It is unused in the classic branch but stays in the signature so
+    /// all call sites are identical across experiences.
     @MainActor
     func show(in application: UIApplication, rootItem: BLTNItem) {
         // Re-entrant call while a bulletin is already up: silent no-op is the
         // intended behavior — callers (e.g. reachability flapping) lean on this.
         guard !isShowingBulletin else { return }
 
-        // No usable scene means the bulletin disappears with no UI trace,
-        // including for the error path (`Application.displayError`). Log so
-        // there's at least a diagnostic breadcrumb instead of silent loss.
-        guard let scene = application.bulletinTargetScene else {
-            Logger.error("Bulletin dropped: no foreground-active window scene available to host it.")
-            return
-        }
+        // Settings writes this flag to `application.userDefaults`, which the
+        // OBA app initializes as an app-group suite (see `AppDelegate.m` and
+        // `CoreApplicationKey.defaultValue`). `UserDefaults.standard` reads a
+        // different suite and would always see the flag as OFF. Resolve the
+        // same suite here; if it can't be resolved (unlikely outside tests),
+        // treat the flag as OFF — the classic path is the safe production
+        // default anyway.
+        let appGroupDefaults = Bundle.main.appGroup.flatMap { UserDefaults(suiteName: $0) }
+        let useMapPanelExperience = appGroupDefaults?.bool(forKey: FeatureFlags.useMapPanelExperienceKey) ?? false
 
-        let host = BulletinOverlayWindow.shared.install(in: scene, rootItem: rootItem)
-        showBulletin(above: host)
+        if useMapPanelExperience {
+            // No usable scene means the bulletin disappears with no UI trace,
+            // including for the error path (`Application.displayError`). Log so
+            // there's at least a diagnostic breadcrumb instead of silent loss.
+            guard let scene = application.bulletinTargetScene else {
+                Logger.error("Bulletin dropped: no foreground-active window scene available to host it.")
+                return
+            }
+
+            let host = BulletinOverlayWindow.shared.install(in: scene, rootItem: rootItem)
+            showBulletin(above: host)
+        } else {
+            // Classic: present above whatever's at the top of the key window.
+            // `topViewController` is defined on `UIWindow` in
+            // `OBAKitCore/Extensions/UIKitExtensions.swift`.
+            guard let topViewController = application.keyWindowFromScene?.topViewController else {
+                Logger.error("Bulletin dropped: no key window / top view controller available to host it.")
+                return
+            }
+            showBulletin(above: topViewController)
+        }
     }
 }
 
