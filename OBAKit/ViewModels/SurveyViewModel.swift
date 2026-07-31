@@ -112,10 +112,19 @@ final class SurveyViewModel: ObservableObject {
             checkboxSelections[question.id, default: []].remove(option)
         }
 
-        let selections = Array(checkboxSelections[question.id, default: []])
+        // Sort so identical selections always encode the same JSON (#1169).
+        let selections = checkboxSelections[question.id, default: []].sorted()
         // swiftlint:disable:next force_try
         let jsonAnswer = try! SurveyService.formatCheckboxAnswer(selections)
         updateAnswer(for: question, answer: jsonAnswer)
+    }
+
+    /// The currently stored answer string for `question`, if any.
+    ///
+    /// Exposed for unit tests that need to assert encoding (e.g. checkbox
+    /// JSON order) without going through a submit round-trip.
+    func storedAnswer(for question: SurveyQuestion) -> String? {
+        responses.first { $0.questionId == question.id }?.answer
     }
 
     /// User cancelled — reschedule the survey for later.
