@@ -17,6 +17,11 @@ protocol DestinationStopPickerDelegate: AnyObject {
         _ controller: DestinationStopPickerController,
         didSelectStop stopTime: TripStopTime
     )
+
+    /// Called when the trip has no stops after the boarding stop and the user
+    /// chooses to share without a destination instead.
+    func destinationStopPickerDidSkipDestination(_ controller: DestinationStopPickerController)
+
     func destinationStopPickerDidCancel(_ controller: DestinationStopPickerController)
 }
 
@@ -114,44 +119,64 @@ class DestinationStopPickerController: UIViewController, AppContext, OBAListView
 
         state = .loading
         fetchTask?.cancel()
-        fetchTask = Task { [weak self] in
-            guard let self else { return }
 
+        // Capture what the request needs up front rather than binding `self`
+        // strongly across the await — otherwise the in-flight request keeps the
+        // controller alive and `deinit`'s `fetchTask?.cancel()` can never run.
+        let tripID = arrivalDeparture.tripID
+        let vehicleID = arrivalDeparture.vehicleID
+        let serviceDate = arrivalDeparture.serviceDate
+        let boardingStopID = arrivalDeparture.stopID
+
+        fetchTask = Task { [weak self] in
             do {
                 let response = try await apiService.getTrip(
-                    tripID: self.arrivalDeparture.tripID,
-                    vehicleID: self.arrivalDeparture.vehicleID,
-                    serviceDate: self.arrivalDeparture.serviceDate
+                    tripID: tripID,
+                    vehicleID: vehicleID,
+                    serviceDate: serviceDate
                 )
 
-                let allStopTimes = response.entry.stopTimes
-                let boardingStopID = self.arrivalDeparture.stopID
-
-                guard let boardingIndex = allStopTimes.firstIndex(where: { $0.stopID == boardingStopID }) else {
-                    let error = NSError(
-                        domain: "DestinationStopPickerController",
-                        code: 1,
-                        userInfo: [NSLocalizedDescriptionKey: OBALoc(
-                            "destination_stop_picker.error_boarding_stop_not_found",
-                            value: "Couldn't determine your boarding point on this trip.",
-                            comment: "Error shown when the boarding stop cannot be found in the trip's stop list."
-                        )]
-                    )
-                    Logger.error("Boarding stop \(boardingStopID) not found in trip \(self.arrivalDeparture.tripID) stop times.")
-                    self.state = .error(error)
-                    return
-                }
-
-                let forwardStops = Array(allStopTimes.suffix(from: allStopTimes.index(after: boardingIndex)))
-                self.state = forwardStops.isEmpty ? .empty : .data(forwardStops)
+                // A cancelled task (retry or dismissal) must not overwrite
+                // state that a newer load may have already set.
+                guard let self, !Task.isCancelled else { return }
+                self.applyLoadedStopTimes(response.entry.stopTimes, boardingStopID: boardingStopID, tripID: tripID)
             } catch {
-                if error is CancellationError { return }
-                Logger.error("Failed to load trip \(self.arrivalDeparture.tripID) stop times: \(error)")
+                // `isCancellation` also matches URLError.cancelled, which is how
+                // URLSession reports a cancelled request — a plain
+                // `is CancellationError` check misses it. Same shape as
+                // TripViewModel.loadData().
+                if Task.isCancelled || error.isCancellation { return }
+                guard let self else { return }
+                Logger.error("Failed to load trip \(tripID) stop times: \(error)")
                 self.state = .error(
                     ErrorClassifier.classify(error, regionName: self.application.currentRegion?.name)
                 )
             }
         }
+    }
+
+    /// Filters `allStopTimes` down to the stops after the boarding stop and
+    /// transitions to the matching state. Fails to `.error` when the boarding
+    /// stop isn't in the trip's stop list — showing every stop instead would
+    /// let the user share a destination that is behind them.
+    private func applyLoadedStopTimes(_ allStopTimes: [TripStopTime], boardingStopID: StopID, tripID: String) {
+        guard let boardingIndex = allStopTimes.firstIndex(where: { $0.stopID == boardingStopID }) else {
+            let error = NSError(
+                domain: "DestinationStopPickerController",
+                code: 1,
+                userInfo: [NSLocalizedDescriptionKey: OBALoc(
+                    "destination_stop_picker.error_boarding_stop_not_found",
+                    value: "Couldn't determine your boarding point on this trip.",
+                    comment: "Error shown when the boarding stop cannot be found in the trip's stop list."
+                )]
+            )
+            Logger.error("Boarding stop \(boardingStopID) not found in trip \(tripID) stop times.")
+            state = .error(error)
+            return
+        }
+
+        let forwardStops = Array(allStopTimes.suffix(from: allStopTimes.index(after: boardingIndex)))
+        state = forwardStops.isEmpty ? .empty : .data(forwardStops)
     }
 
     // MARK: - Actions
@@ -199,41 +224,69 @@ class DestinationStopPickerController: UIViewController, AppContext, OBAListView
     func emptyData(for listView: OBAListView) -> OBAListView.EmptyData? {
         switch state {
         case .loading:
-            return .standard(.init(
-                title: OBALoc(
-                    "destination_stop_picker.loading_title",
-                    value: "Loading Stops",
-                    comment: "Title shown while loading the list of stops for destination selection."
-                ),
-                body: nil
-            ))
+            return .standard(loadingViewModel)
         case .empty:
-            return .standard(.init(
-                title: OBALoc(
-                    "destination_stop_picker.no_stops_title",
-                    value: "No Stops Available",
-                    comment: "Title shown when there are no stops available after the boarding stop."
-                ),
-                body: OBALoc(
-                    "destination_stop_picker.no_stops_body",
-                    value: "There are no remaining stops on this trip.",
-                    comment: "Body text shown when there are no stops available after the boarding stop."
-                )
-            ))
+            return .standard(emptyViewModel)
         case .error(let error):
-            let retryConfig = ActivityIndicatedButton.Configuration(
-                text: OBALoc(
-                    "destination_stop_picker.retry_button",
-                    value: "Try Again",
-                    comment: "Button to retry loading stops after an error."
-                ),
-                largeContentImage: nil,
-                showsActivityIndicatorOnTap: true,
-                action: { [weak self] in self?.loadStopTimes() }
-            )
-            return .standard(.init(error: error, buttonConfig: retryConfig))
+            return .standard(errorViewModel(for: error))
         case .data:
             return nil
         }
+    }
+
+    private var loadingViewModel: OBAListView.StandardEmptyDataViewModel {
+        .init(
+            title: OBALoc(
+                "destination_stop_picker.loading_title",
+                value: "Loading Stops",
+                comment: "Title shown while loading the list of stops for destination selection."
+            ),
+            body: nil
+        )
+    }
+
+    private var emptyViewModel: OBAListView.StandardEmptyDataViewModel {
+        // Without this button the empty state would be a dead end: the
+        // only exit is Cancel, with no way to share the trip at all.
+        let shareConfig = ActivityIndicatedButton.Configuration(
+            text: OBALoc(
+                "destination_stop_picker.share_without_destination_button",
+                value: "Share Without Destination",
+                comment: "Button shown when a trip has no remaining stops, letting the user share the trip without picking a destination."
+            ),
+            largeContentImage: nil,
+            showsActivityIndicatorOnTap: false,
+            action: { [weak self] in
+                guard let self else { return }
+                self.delegate?.destinationStopPickerDidSkipDestination(self)
+            }
+        )
+        return .init(
+            title: OBALoc(
+                "destination_stop_picker.no_stops_title",
+                value: "No Stops Available",
+                comment: "Title shown when there are no stops available after the boarding stop."
+            ),
+            body: OBALoc(
+                "destination_stop_picker.no_stops_body",
+                value: "There are no remaining stops on this trip.",
+                comment: "Body text shown when there are no stops available after the boarding stop."
+            ),
+            buttonConfig: shareConfig
+        )
+    }
+
+    private func errorViewModel(for error: Error) -> OBAListView.StandardEmptyDataViewModel {
+        let retryConfig = ActivityIndicatedButton.Configuration(
+            text: OBALoc(
+                "destination_stop_picker.retry_button",
+                value: "Try Again",
+                comment: "Button to retry loading stops after an error."
+            ),
+            largeContentImage: nil,
+            showsActivityIndicatorOnTap: true,
+            action: { [weak self] in self?.loadStopTimes() }
+        )
+        return .init(error: error, buttonConfig: retryConfig)
     }
 }

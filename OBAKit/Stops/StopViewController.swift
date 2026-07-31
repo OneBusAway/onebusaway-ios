@@ -1151,7 +1151,7 @@ public class StopViewController: UIViewController,
     // MARK: - Share Trip Status
     private func shareTripStatus(viewModel: ArrivalDepartureItem) {
         guard let arrivalDeparture = arrivalDeparture(forViewModel: viewModel) else {
-            Logger.error("No arrivalDeparture found for share trip status view model.")
+            Logger.error("No arrivalDeparture found for share trip status view model. arrivalDepartureID: \(viewModel.arrivalDepartureID), stopID: \(viewModel.stopID)")
             presentShareError()
             return
         }
@@ -1165,7 +1165,41 @@ public class StopViewController: UIViewController,
         )
         picker.delegate = self
         let nav = application.viewRouter.buildNavigation(controller: picker)
-        self.present(nav, animated: true)
+        application.viewRouter.present(nav, from: self, isModal: true)
+    }
+
+    /// Dismisses the destination picker, encodes the share URL (with an
+    /// optional destination stop), and presents the share sheet.
+    private func shareTrip(arrivalDeparture: ArrivalDeparture, destinationStopID: StopID?) {
+        dismiss(animated: true) { [weak self] in
+            guard let self else { return }
+            guard
+                let region = self.application.currentRegion,
+                let appLinksRouter = self.application.appLinksRouter
+            else {
+                Logger.error("Missing region or appLinksRouter for trip sharing. tripID: \(arrivalDeparture.tripID), stopID: \(arrivalDeparture.stopID)")
+                self.presentShareError()
+                return
+            }
+
+            guard let url = appLinksRouter.encode(
+                arrivalDeparture: arrivalDeparture,
+                region: region,
+                destinationStopID: destinationStopID
+            ) else {
+                Logger.error("Failed to encode trip sharing URL. tripID: \(arrivalDeparture.tripID), destinationStopID: \(destinationStopID ?? "none")")
+                self.presentShareError()
+                return
+            }
+
+            let activityController = UIActivityViewController(
+                activityItems: [self, url],
+                applicationActivities: nil
+            )
+            // Use self.present because when using application.viewRouter.present(:_),
+            // it disables UIActivityViewController's "tap anywhere to dismiss".
+            self.present(activityController, animated: true)
+        }
     }
 
     private func presentShareError() {
@@ -1425,36 +1459,11 @@ extension StopViewController: DestinationStopPickerDelegate {
         _ controller: DestinationStopPickerController,
         didSelectStop stopTime: TripStopTime
     ) {
-        let arrivalDeparture = controller.arrivalDeparture
-        dismiss(animated: true) { [weak self] in
-            guard let self else { return }
-            guard
-                let region = self.application.currentRegion,
-                let appLinksRouter = self.application.appLinksRouter
-            else {
-                Logger.error("Missing region or appLinksRouter for trip sharing.")
-                self.presentShareError()
-                return
-            }
+        shareTrip(arrivalDeparture: controller.arrivalDeparture, destinationStopID: stopTime.stopID)
+    }
 
-            guard let url = appLinksRouter.encode(
-                arrivalDeparture: arrivalDeparture,
-                region: region,
-                destinationStopID: stopTime.stopID
-            ) else {
-                Logger.error("Failed to encode trip sharing URL.")
-                self.presentShareError()
-                return
-            }
-
-            let activityController = UIActivityViewController(
-                activityItems: [self, url],
-                applicationActivities: nil
-            )
-            // Use self.present because when using application.viewRouter.present(:_),
-            // it disables UIActivityViewController's "tap anywhere to dismiss".
-            self.present(activityController, animated: true)
-        }
+    func destinationStopPickerDidSkipDestination(_ controller: DestinationStopPickerController) {
+        shareTrip(arrivalDeparture: controller.arrivalDeparture, destinationStopID: nil)
     }
 
     func destinationStopPickerDidCancel(_ controller: DestinationStopPickerController) {
