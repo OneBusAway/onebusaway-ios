@@ -511,7 +511,7 @@ xcodebuild clean build-for-testing -scheme 'App' -destination 'platform=iOS Simu
 xcodebuild test-without-building -only-testing:OBAKitTests/RentalDeepLinkTests -project 'OBAKit.xcodeproj' -scheme 'App' -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
 ```
 
-Expected: PASS, 13 tests.
+Expected: PASS, 12 tests.
 
 If `escapesReservedCharactersInTheVehicleID` fails on the `?` character, check that you used `URLQueryItem` and not manual string building — that test exists precisely to catch it.
 
