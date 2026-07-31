@@ -51,6 +51,7 @@ rendered inside a sheet. This is the stopgap being replaced.
 | Composition strategy | Extract derivation + shared sections; `StopPageView` delegates to them, the new sheet composes them directly | Avoids a third boolean flag on `StopPageView` |
 | Chrome scope | New circular action row applies to presentation 3 only | Presentation 2 keeps its bottom toolbar untouched |
 | Detent | `.large` only, unchanged | Already configured; no map peek wanted |
+| Header map | Compact map thumbnail beside the identity block | `.large` covers the map, so the reused header's "map is visible above" rationale does not hold here |
 | Pull to refresh | Removed in presentation 3 | Refresh is the button's job here |
 | Entry point | Register in the factory only | Nothing pushes `.stopDetails` yet; map annotations are separate work |
 | iPad | Out of scope for this experience | Sheet is iPhone-only |
@@ -100,7 +101,18 @@ Owns every flow currently in `StopPageViewController`'s private extensions:
 `makeNavigationHandler(viewModel:)` returning the existing
 `StopPageNavigationHandler`, so no consumer duplicates closure wiring.
 
-It also vends `makeUserActivity(stop:)` from `application.userActivityBuilder`.
+It also vends `makeUserActivity(stop:)` from `application.userActivityBuilder`, and
+`loadSnapshot(stop:size:)` for the header thumbnail — the async bridge over
+`MapSnapshotter` that `StopPageViewController` owns today, moved so the sheet can
+reach it without a view controller.
+
+Two details of that bridge must survive the move. `MapSnapshotter`'s internal
+`MKMapSnapshotter.start` completion is `[weak self]`, so the wrapper has to outlive
+the async render via `withExtendedLifetime` or the continuation never resumes and the
+thumbnail stays permanently blank. And unlike the pushed presentation — whose header
+is an always-dark card and therefore forces `userInterfaceStyle = .dark` — the sheet
+thumbnail sits in a light, appearance-adaptive header, so it renders in the ambient
+trait collection.
 
 ### Rewired: `StopPageView`
 
@@ -111,7 +123,9 @@ and 2 is unchanged — this is a pure refactor they do not observe, and
 
 ### Rewired: `StopPageSheetHeaderView`
 
-Gains `onRefresh: (() -> Void)? = nil` and `isRefreshing: Bool = false`. The circle
+Gains `onRefresh: (() -> Void)? = nil`, `isRefreshing: Bool = false` and
+`snapshotLoader: ((CGSize) async -> UIImage?)? = nil`. All three default to
+nil/false, so the FloatingPanel sheet renders exactly as it does now. The circle
 styling is lifted out of `StopSheetCloseButton` into a shared `StopSheetCircleButton`
 in the same file, so Refresh and Close match. See [UI](#header).
 
@@ -171,6 +185,20 @@ The circle styling is lifted out of `StopSheetCloseButton` into a shared
 rendering exactly as it does now — its Refresh already lives in the bottom toolbar,
 and this avoids showing it twice.
 
+**Map thumbnail.** A third optional parameter,
+`snapshotLoader: ((CGSize) async -> UIImage?)? = nil`, adds a rounded 56 pt map
+snapshot leading the identity block. It is present only for this sheet: presentation
+2 passes nil, because there the map really is visible above the sheet at its smaller
+detents, which is why this header omitted a snapshot in the first place. This sheet is
+`.large`-only and covers the map, so the rider otherwise gets no sense of where the
+stop is.
+
+Being a fixed size, the thumbnail needs none of the `onGeometryChange` width
+measurement `StopPageHeaderView` performs. While the snapshot loads — and when the
+stop is still unknown — the slot renders as a `secondarySystemFill` rounded rectangle,
+so the header does not reflow when the image arrives. It is decorative and hidden from
+VoiceOver; the identity block already names the stop.
+
 `isCollapsed` is not used: it exists for the FloatingPanel `.tip` detent, and this
 route is `.large`-only.
 
@@ -203,7 +231,8 @@ for the same reason.
 **Construction.** `AppSheetViewFactory.stopDetailView(stopID:)` builds the view with
 a `StopViewModel` for that stop, a `StopPageActionPresenter`, a
 `DataLoadFeedbackGenerator`, `application.formatters` and
-`application.userDefaults`. `@StateObject` means SwiftUI instantiates the view model
+`application.userDefaults`. The header's `snapshotLoader` closure wraps the
+presenter's `loadSnapshot(stop:size:)`. `@StateObject` means SwiftUI instantiates the view model
 exactly once per view identity; since the route ids as `stopDetails-<stopID>`, a
 different stop is a different identity with its own view model.
 
@@ -385,7 +414,10 @@ suppresses both). It must pass unchanged; that suite is the contract that the
 `StopPageView` refactor is behaviour-preserving.
 
 **Previews.** SwiftUI previews for the sheet in loading, loaded, first-load-error and
-filtered-empty states.
+filtered-empty states. The loading preview covers the header's thumbnail placeholder,
+which is the state a preview can show and a unit test cannot — `MapSnapshotter` wraps
+MapKit and is not worth faking, so `loadSnapshot(stop:size:)` is verified by eye
+rather than asserted.
 
 **Verification.** SwiftLint, then
 `xcodebuild test-without-building -only-testing:OBAKitTests` on iPhone 16 (iOS 26).
