@@ -221,9 +221,15 @@ class BookmarksViewController: UIHostingController<BookmarksRootView>,
         // Tapping Track again on a bookmark that is already tracked — or tracking
         // the same trip from the stop page — would otherwise mint a second
         // activity for one stop, leaving the user with duplicate Lock Screen
-        // cards and duplicate OBACloud push registrations.
-        if Activity<TripAttributes>.running(matching: staticData) != nil {
-            Logger.info("Live Activity already running for stop \(staticData.stopID) route \(staticData.routeShortName); not starting a duplicate.")
+        // cards and duplicate OBACloud push registrations. Re-Track still needs
+        // to promote the existing activity: after A→B the Island is on B with A
+        // demoted to 0, so tapping Track on A again must bump A (not just toast).
+        if let existing = Activity<TripAttributes>.running(matching: staticData) {
+            Logger.info("Live Activity already running for stop \(staticData.stopID) route \(staticData.routeShortName); promoting instead of duplicating.")
+            let existingID = existing.id
+            Task {
+                await Activity<TripAttributes>.promoteToDynamicIsland(activityID: existingID)
+            }
             showLiveActivityStartedToast()
             return
         }
@@ -313,10 +319,10 @@ class BookmarksViewController: UIHostingController<BookmarksRootView>,
                 // `update`. Re-fetch by ID inside a detached task instead — that copy
                 // never crosses an isolation boundary.
                 let activityID = activity.id
-                // Preserve prominence — rebuilding with the default score of 0
-                // would hand the Dynamic Island back to the first-started trip
-                // after every arrivals refresh (#1189 Problem 2).
-                let relevanceScore = activity.content.relevanceScore
+                // Preserve prominence via the shared helper — rebuilding with the
+                // default score of 0 would hand the Island back to the first-
+                // started trip after every arrivals refresh (#1189 Problem 2).
+                let existingContent = activity.content
                 Task.detached {
                     guard let activity = Activity<TripAttributes>.activities.first(where: { $0.id == activityID }) else {
                         // The activity ended between the loop and this task; dropping
@@ -326,10 +332,10 @@ class BookmarksViewController: UIHostingController<BookmarksRootView>,
                         return
                     }
                     await activity.update(
-                        TripLiveActivityRelevance.content(
+                        TripLiveActivityRelevance.contentPreservingRelevance(
                             state: contentState,
                             staleDate: nil,
-                            relevanceScore: relevanceScore
+                            existing: existingContent
                         )
                     )
                     Logger.info("Updated Live Activity for stop: \(staticData.stopID) route: \(staticData.routeShortName)")

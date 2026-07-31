@@ -458,9 +458,15 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
 
         // The same trip can be started from here and from the bookmarks list, so
         // this guard has to live on both start paths — otherwise one stop ends up
-        // with two Lock Screen cards and two OBACloud push registrations.
-        if Activity<TripAttributes>.running(matching: staticData) != nil {
-            Logger.info("Live Activity already running for stop \(staticData.stopID) route \(staticData.routeShortName); not starting a duplicate.")
+        // with two Lock Screen cards and two OBACloud push registrations. Re-Track
+        // still needs to promote the existing activity: after A→B the Island is
+        // on B with A demoted to 0, so tapping Track on A again must bump A.
+        if let existing = Activity<TripAttributes>.running(matching: staticData) {
+            Logger.info("Live Activity already running for stop \(staticData.stopID) route \(staticData.routeShortName); promoting instead of duplicating.")
+            let existingID = existing.id
+            Task {
+                await Activity<TripAttributes>.promoteToDynamicIsland(activityID: existingID)
+            }
             // Re-show the confirmation rather than appearing to do nothing.
             viewModel.signalLiveActivityStarted()
             return

@@ -50,16 +50,41 @@ final class TripLiveActivityRelevanceTests {
         #expect(content.staleDate == nil)
     }
 
-    /// Local refreshes must not wipe prominence — rebuilding with the default
-    /// score of 0 is what kept the first-started activity in the Dynamic Island
-    /// after a later Track (#1189 Problem 2).
-    @Test func `Preserved score helper keeps existing prominence on refresh`() {
-        let state = TripAttributes.ContentState(arrivals: [])
-        let refreshed = TripLiveActivityRelevance.content(
-            state: state,
+    /// Pins the refresh path used by `updateRunningLiveActivities`: the new
+    /// content state may change, but the score must come from the *existing*
+    /// content — not a literal, and not the ActivityContent default of `0`.
+    /// Building with a bare `.init(state:staleDate:)` would score `0` and fail
+    /// the second expectation, which is the regression this guards.
+    @Test func `Content preserving relevance keeps existing score across state refresh`() {
+        let previousState = TripAttributes.ContentState(arrivals: [])
+        let existing = TripLiveActivityRelevance.content(
+            state: previousState,
             staleDate: nil,
             relevanceScore: 1_700_000_050
         )
+        let refreshedState = TripAttributes.ContentState(arrivals: [
+            .init(
+                departureTime: 1_700_000_100,
+                scheduleStatus: .onTime,
+                scheduleDeviation: 0,
+                isArrival: false
+            )
+        ])
+
+        let refreshed = TripLiveActivityRelevance.contentPreservingRelevance(
+            state: refreshedState,
+            staleDate: nil,
+            existing: existing
+        )
+
+        #expect(refreshed.state == refreshedState)
+        #expect(refreshed.relevanceScore == existing.relevanceScore)
         #expect(refreshed.relevanceScore == 1_700_000_050)
+
+        // Contrast: the default ActivityContent score is 0. If the call site
+        // ever drops back to `.init(state:staleDate:)`, this is what Island gets.
+        let wiped = ActivityContent(state: refreshedState, staleDate: nil)
+        #expect(wiped.relevanceScore == 0)
+        #expect(wiped.relevanceScore != existing.relevanceScore)
     }
 }
