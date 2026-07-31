@@ -686,19 +686,7 @@ Make these five edits in `OBAKit/Mapping/Layers/RentalDetailViewController.swift
 
 Line 334 (`onOpenURL: onOpenURL`, the cluster list handing its closure to `RentalDetailView`) needs no edit — the type widens with the declarations.
 
-Then in `MapViewController+MapLayers.swift`, change the signature written in Step 2 to accept the parameter and delete the `let networkID = selectedRentalNetworkID` line:
-
-```swift
-    func rentalLayer(open url: URL, webFallback: URL?, networkID: String?) {
-        application.analytics?.reportEvent(
-            pageURL: "app://localhost/bikeshare",
-            label: AnalyticsLabels.rentalDeepLinkTapped,
-            value: networkID
-        )
-        ...
-```
-
-The rest of the method body from Step 2 is unchanged.
+`MapViewController+MapLayers.swift` needs no further edit: the method written in Step 2 already declares `networkID: String?` and uses it directly. These five edits exist to make that parameter reach it.
 
 - [ ] **Step 4: Build and test**
 
