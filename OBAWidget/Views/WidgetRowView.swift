@@ -27,12 +27,14 @@ struct WidgetRowView: View {
         bookmark?.name ?? " "
     }
 
-    private var nextDepartureLabel: String {
-        if departures != nil {
-            return updateNextDepartureLabel()
-        } else {
-            return LocalizationKeys.tapForMoreInformation
-        }
+    /// Fallback copy for the second line when there is no departure to
+    /// describe: no data yet → "tap for more information"; fetched-but-empty →
+    /// "no departures in the next hour". Only reached when `departures?.first`
+    /// is nil, so the two cases below are exhaustive.
+    private var fallbackLabel: String {
+        guard departures != nil else { return LocalizationKeys.tapForMoreInformation }
+
+        return String(format: LocalizationKeys.noDeparturesInNextNMinutes, String(Constants.minutes))
     }
 
     var body: some View {
@@ -43,11 +45,7 @@ struct WidgetRowView: View {
                     .lineLimit(1)
                     .truncationMode(.tail)
 
-                Text(nextDepartureLabel)
-                    .font(.system(size: Constants.fontSize))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
-                    .fixedSize(horizontal: false, vertical: true)
+                departureLabel
             }
             // if the badge is hidden take up the full width otherwise use constant
             .frame(maxWidth: departures?.isEmpty == false ? Constants.rowWidth : .infinity, alignment: .leading)
@@ -57,6 +55,42 @@ struct WidgetRowView: View {
             if departures?.isEmpty == false {
                 departureTimeBadges
             }
+        }
+    }
+
+    /// The second line: the corrected clock time and the schedule deviation
+    /// (the "time · status" idiom the stop page and bookmark cards use), or
+    /// `fallbackLabel` when there is no departure to describe. When a
+    /// prediction moves the trip off its timetable, the scheduled time renders
+    /// struck through ahead of the corrected one (#1225).
+    ///
+    /// Built as one concatenated `Text`, not an `HStack`: the struck-through
+    /// case can outgrow the fixed text column, and a single text run wraps to
+    /// the second line the way this label always has, where an `HStack` would
+    /// truncate the deviation — precisely the correction the line exists to
+    /// show.
+    @ViewBuilder
+    private var departureLabel: some View {
+        if let first = departures?.first {
+            let display = DepartureTimeDisplay(arrivalDeparture: first, formatters: formatters)
+            let deviation = formatters.formattedScheduleDeviation(for: first)
+
+            (DepartureTimeText.text(for: display)
+                + Text(" · ").foregroundStyle(.tertiary)
+                + Text(deviation))
+                .font(.system(size: Constants.fontSize))
+                .foregroundStyle(.secondary)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
+                // The strikethrough is inaudible, so speak the correction in
+                // words instead of letting VoiceOver read two bare times.
+                .accessibilityLabel("\(display.accessibilityTimeDescription), \(deviation)")
+        } else {
+            Text(fallbackLabel)
+                .font(.system(size: Constants.fontSize))
+                .foregroundStyle(.secondary)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -70,20 +104,6 @@ struct WidgetRowView: View {
                     formatters: formatters
                 )
             }
-        }
-    }
-
-    // MARK: - Helper Functions
-
-    private func updateNextDepartureLabel() -> String {
-        guard let departures = departures else {
-            return LocalizationKeys.tapForMoreInformation
-        }
-
-        if let firstDeparture = departures.first {
-            return formatters.formattedScheduleDeviation(for: firstDeparture)
-        } else {
-            return String(format: LocalizationKeys.noDeparturesInNextNMinutes, String(Constants.minutes))
         }
     }
 }

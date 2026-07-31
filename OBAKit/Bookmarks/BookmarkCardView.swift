@@ -124,9 +124,13 @@ struct BookmarkCardView: View {
     }
 
     private func timeText(for departure: ArrivalDeparture) -> some View {
-        Text(formatters.timeFormatter.string(from: departure.arrivalDepartureDate))
+        // Shared corrected-time component (#1225): when a prediction moves the
+        // trip off its timetable, the scheduled time renders struck through
+        // ahead of the time the rider should act on. The spoken equivalent is
+        // appended in `Formatters.accessibilityValue(for:)` — this card's label
+        // uses `children: .ignore`, so the visual view can't carry it.
+        DepartureTimeText(display: DepartureTimeDisplay(arrivalDeparture: departure, formatters: formatters))
             .font(.footnote)
-            .monospacedDigit()
             .foregroundStyle(.secondary)
     }
 

@@ -5,7 +5,6 @@
 //
 
 import SwiftUI
-import OBAKitCore
 
 /// The clock time(s) shown on a departure row. When real-time data moves a trip
 /// off its timetable the row shows both: the scheduled time struck through, then
@@ -22,16 +21,16 @@ import OBAKitCore
 /// Comparing after formatting also catches the case `ScheduleStatus` misses: a
 /// deviation inside its ±1.5 minute "on time" band still lands on a different
 /// minute, and the rider still needs the corrected time.
-struct DepartureTimeDisplay: Equatable {
+public struct DepartureTimeDisplay: Equatable {
     /// The time the rider should act on: the prediction when there is one,
     /// the timetable otherwise.
-    let expectedTimeText: String
+    public let expectedTimeText: String
 
     /// The timetable time, present only when it differs from `expectedTimeText`.
     /// Rendered struck through, ahead of the expected time.
-    let scheduledTimeText: String?
+    public let scheduledTimeText: String?
 
-    init(scheduledDate: Date, expectedDate: Date, isRealTime: Bool, formatters: Formatters) {
+    public init(scheduledDate: Date, expectedDate: Date, isRealTime: Bool, formatters: Formatters) {
         // `isRealTime` gates on the feed's own `predicted` flag rather than on the
         // two dates differing: a payload can carry a prediction while declaring
         // itself unpredicted, and `DepartureStatus` refuses to trust that too.
@@ -52,7 +51,7 @@ struct DepartureTimeDisplay: Equatable {
         self.scheduledTimeText = scheduled == expected ? nil : scheduled
     }
 
-    init(arrivalDeparture: ArrivalDeparture, formatters: Formatters) {
+    public init(arrivalDeparture: ArrivalDeparture, formatters: Formatters) {
         self.init(
             scheduledDate: arrivalDeparture.scheduledDate,
             expectedDate: arrivalDeparture.arrivalDepartureDate,
@@ -66,10 +65,10 @@ struct DepartureTimeDisplay: Equatable {
     /// Computed rather than stored: the render path never reads it, and building
     /// it eagerly would charge every row a bundle lookup for a string most
     /// people never hear.
-    var accessibilityTimeDescription: String {
+    public var accessibilityTimeDescription: String {
         guard let scheduledTimeText else {
             let fmt = OBALoc(
-                "stop_page.time.a11y_at_fmt",
+                "departure_time.a11y_at_fmt",
                 value: "at %@",
                 comment: "VoiceOver clause naming the clock time of a departure. %@ is the time."
             )
@@ -77,7 +76,7 @@ struct DepartureTimeDisplay: Equatable {
         }
 
         let fmt = OBALoc(
-            "stop_page.time.a11y_rescheduled_fmt",
+            "departure_time.a11y_rescheduled_fmt",
             value: "scheduled %1$@, now expected %2$@",
             comment: "VoiceOver clause for a departure whose real-time prediction differs from its scheduled time. %1$@ is the scheduled time, %2$@ the predicted time."
         )
@@ -92,12 +91,15 @@ struct DepartureTimeDisplay: Equatable {
 /// tint on the scheduled time — font and foreground style are inherited, so the
 /// call sites keep the type scale they already had. Concatenated `Text` rather
 /// than a stack so the pair wraps as ordinary text at large Dynamic Type sizes.
-struct DepartureTimeText: View {
-    let display: DepartureTimeDisplay
+public struct DepartureTimeText: View {
+    public let display: DepartureTimeDisplay
 
-    var body: some View {
-        time
-            .monospacedDigit()
+    public init(display: DepartureTimeDisplay) {
+        self.display = display
+    }
+
+    public var body: some View {
+        Self.text(for: display)
             // Every consumer speaks `accessibilityTimeDescription` in its own
             // combined label (those parents use `children: .ignore`, which drops
             // child labels outright), and a strikethrough is inaudible, so
@@ -105,13 +107,21 @@ struct DepartureTimeText: View {
             .accessibilityHidden(true)
     }
 
-    private var time: Text {
-        guard let scheduledTimeText = display.scheduledTimeText else {
-            return Text(display.expectedTimeText)
+    /// The concatenated `Text` this view renders, for call sites that must
+    /// splice the time into a *larger* run of wrapping text — the widget's
+    /// fixed-width column concatenates this with its deviation label so the
+    /// whole line wraps as ordinary text; composing views in an `HStack` there
+    /// would truncate instead. Callers are responsible for speaking
+    /// `accessibilityTimeDescription`, exactly as with the view form.
+    public static func text(for display: DepartureTimeDisplay) -> Text {
+        let time: Text
+        if let scheduledTimeText = display.scheduledTimeText {
+            time = Text(scheduledTimeText).strikethrough().foregroundStyle(.secondary)
+                + Text(" ")
+                + Text(display.expectedTimeText)
+        } else {
+            time = Text(display.expectedTimeText)
         }
-
-        return Text(scheduledTimeText).strikethrough().foregroundStyle(.secondary)
-            + Text(" ")
-            + Text(display.expectedTimeText)
+        return time.monospacedDigit()
     }
 }

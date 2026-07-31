@@ -7,7 +7,6 @@
 import Foundation
 import Testing
 import OBAKitCore
-@testable import OBAKit
 
 @MainActor
 @Suite(.serialized)

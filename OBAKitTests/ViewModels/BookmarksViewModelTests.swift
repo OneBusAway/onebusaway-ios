@@ -321,6 +321,78 @@ final class BookmarksViewModelTests: OBATestCase {
         #expect(row.routesSubtitle != nil)
     }
 
+    // MARK: - Accessibility value
+
+    /// The bookmark card renders the corrected time with the schedule struck
+    /// through (`DepartureTimeText`); VoiceOver can't perceive a strikethrough,
+    /// so the correction must arrive in words — appended as its own sentence,
+    /// because the base value ends with terminal punctuation. The fixture's
+    /// arrival is predicted 156 s off its timetable, which lands in a
+    /// different clock minute and therefore renders (and must speak) the
+    /// correction.
+    @Test @MainActor
+    func `Accessibility value speaks corrected time clause when prediction moves off schedule`() throws {
+        let formatters = Formatters(locale: Locale(identifier: "en_US"), calendar: Calendar(identifier: .gregorian), themeColors: ThemeColors.shared)
+        let stopArrivals = try Fixtures.loadRESTAPIPayload(
+            type: StopArrivals.self,
+            fileName: "arrivals-and-departures-for-stop-1_10914.json"
+        )
+        let arrivalDep = try #require(stopArrivals.arrivalsAndDepartures.first)
+        let bookmark = Bookmark(name: "Route 49", regionIdentifier: pugetSoundRegionIdentifier, arrivalDeparture: arrivalDep)
+        let row = BookmarkRowViewModel(bookmark: bookmark, arrivalDepartures: [arrivalDep], highlightedTripIDs: [])
+
+        let value = try #require(formatters.accessibilityValue(for: row))
+
+        let scheduled = formatters.timeFormatter.string(from: arrivalDep.scheduledDate)
+        let expected = formatters.timeFormatter.string(from: arrivalDep.arrivalDepartureDate)
+        #expect(value == formatters.accessibilityValue(for: arrivalDep) + " scheduled \(scheduled), now expected \(expected).")
+    }
+
+    /// Without a rendered correction there's nothing the strikethrough shows
+    /// that the base value doesn't already say — the clause must be absent,
+    /// not repeating the expected time. The RVTD fixture's arrival declares
+    /// `predicted: false`, so no correction ever renders.
+    @Test @MainActor
+    func `Accessibility value omits time clause without a correction`() throws {
+        let formatters = Formatters(locale: Locale(identifier: "en_US"), calendar: Calendar(identifier: .gregorian), themeColors: ThemeColors.shared)
+        let stopArrivals = try Fixtures.loadRESTAPIPayload(
+            type: StopArrivals.self,
+            fileName: "arrivals-and-departures-for-stop-1739-rvtd.json"
+        )
+        let unpredicted = try #require(stopArrivals.arrivalsAndDepartures.first)
+        let bookmark = Bookmark(name: "RVTD", regionIdentifier: pugetSoundRegionIdentifier, arrivalDeparture: unpredicted)
+        let row = BookmarkRowViewModel(bookmark: bookmark, arrivalDepartures: [unpredicted], highlightedTripIDs: [])
+
+        let value = try #require(formatters.accessibilityValue(for: row))
+
+        #expect(value == formatters.accessibilityValue(for: unpredicted))
+    }
+
+    /// With follow-up departures present, the corrected-time clause slots
+    /// between the first arrival's base value and the "Following …" sentence.
+    /// That relative order is user-facing VoiceOver output — a refactor must
+    /// not silently reorder it.
+    @Test @MainActor
+    func `Accessibility value speaks clause before followup departures`() throws {
+        let formatters = Formatters(locale: Locale(identifier: "en_US"), calendar: Calendar(identifier: .gregorian), themeColors: ThemeColors.shared)
+        let stopArrivals = try Fixtures.loadRESTAPIPayload(
+            type: StopArrivals.self,
+            fileName: "arrivals-and-departures-for-stop-1_10914-duplicates.json"
+        )
+        let arrivals = Array(stopArrivals.arrivalsAndDepartures.prefix(2))
+        let first = try #require(arrivals.first)
+        let bookmark = Bookmark(name: "Route 49", regionIdentifier: pugetSoundRegionIdentifier, arrivalDeparture: first)
+        let row = BookmarkRowViewModel(bookmark: bookmark, arrivalDepartures: arrivals, highlightedTripIDs: [])
+
+        let value = try #require(formatters.accessibilityValue(for: row))
+
+        let scheduled = formatters.timeFormatter.string(from: first.scheduledDate)
+        let expected = formatters.timeFormatter.string(from: first.arrivalDepartureDate)
+        let prefix = formatters.accessibilityValue(for: first) + " scheduled \(scheduled), now expected \(expected)."
+        #expect(value.hasPrefix(prefix), "clause must directly follow the base value: \(value)")
+        #expect(value.dropFirst(prefix.count).contains("Following"), "follow-up sentence must come after the clause: \(value)")
+    }
+
     // MARK: - lastRefreshHadError
 
     /// A failed batch sets `lastRefreshHadError` to `true`; a subsequent clean batch resets it.

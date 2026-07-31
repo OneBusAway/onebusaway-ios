@@ -1236,12 +1236,6 @@
 /* Adherence label for a departure with no real-time signal; deliberately avoids claiming the bus is on time. */
 "stop_page.status.schedule_data" = "时刻表数据";
 
-/* VoiceOver clause naming the clock time of a departure. %@ is the time. */
-"stop_page.time.a11y_at_fmt" = "时间 %@";
-
-/* VoiceOver clause for a departure whose real-time prediction differs from its scheduled time. %1$@ is the scheduled time, %2$@ the predicted time. */
-"stop_page.time.a11y_rescheduled_fmt" = "原定 %1$@，现预计 %2$@";
-
 /* Gap marker in the approach timeline. %d is the number of elided stops between the vehicle and the stops shown. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
 "stop_page.timeline.skipped_stops_fmt" = "%d个车站";
 
