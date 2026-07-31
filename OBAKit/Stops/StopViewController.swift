@@ -79,6 +79,8 @@ public class StopViewController: UIViewController,
     let viewModel: StopViewModel
     private var cancellables = Set<AnyCancellable>()
     private var firstLoad = true
+    /// Cooldown for the refresh bar-button so rapid taps don't stampede the API.
+    private let refreshDebouncer = Debouncer()
 
     // MARK: - Forwarded Properties (external API compat)
 
@@ -1180,7 +1182,7 @@ public class StopViewController: UIViewController,
 
     /// Reloads data.
     @objc private func refresh() {
-        DispatchQueue.main.debounce(interval: 1.0) { [weak self] in
+        refreshDebouncer.debounce(interval: 1.0) { [weak self] in
             guard let self else { return }
             Task(priority: .userInitiated) { await self.viewModel.refresh() }
         }
