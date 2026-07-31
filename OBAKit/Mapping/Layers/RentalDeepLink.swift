@@ -110,8 +110,13 @@ enum RentalDeepLink {
         now: Date
     ) -> Target? {
         // Lowercasing OTPKit's own `displayName` rather than re-splitting the
-        // network id keeps the operator token single-sourced: `displayName` only
-        // uppercases the first character, which the lowercase folds straight back.
+        // network id keeps the operator token single-sourced, so the button's
+        // operator and the sheet header's can't drift apart.
+        //
+        // Not a perfect round-trip: `displayName` uppercases the first character,
+        // and a few characters expand when uppercased (ß -> SS, ﬁ -> FI), which
+        // lowercasing does not undo. Harmless here — every key in `operators` is
+        // an ASCII slug, and a miss just falls through to the web-page branch.
         guard let op = operators[network.displayName.lowercased()] else { return nil }
 
         var components = URLComponents()
