@@ -42,8 +42,9 @@ struct StopDetailsSheetView: View {
     @State private var expandedDepartureID: String?
     @State private var expandedRouteID: RouteID?
     @State private var donationHidden = false
-    @State private var collapseProgress: CGFloat = 0
-    @State private var headerHeight: CGFloat = 0
+    /// How far the title has faded into the pinned bar, 0...1. Drives opacity
+    /// ONLY — never layout. See the note on `titleFadeDistance`.
+    @State private var titleProgress: CGFloat = 0
     @State private var userActivity: NSUserActivity?
     /// Gates the one-shot success haptic to the first arrivals load, matching
     /// `StopViewController.bindArrivalsSink()`; later refreshes are silent.
@@ -76,6 +77,8 @@ struct StopDetailsSheetView: View {
         let walkTime = viewModel.walkTime
 
         List {
+            headerRows(showsLoadingState: content.showsLoadingState)
+
             StopDeparturesSections(
                 content: content,
                 survey: viewModel.currentSurvey,
@@ -144,21 +147,33 @@ struct StopDetailsSheetView: View {
         // No `.refreshable`: this presentation refreshes from the top bar's
         // button only, which is why that button stays pinned.
         //
-        // The metric is `contentOffset.y + contentInsets.top`, not
-        // `contentOffset.y`. The chrome below lives in a `safeAreaInset` whose
-        // height shrinks as `collapseProgress` rises; that shrink shifts the
-        // content offset, which would feed back into progress and oscillate.
-        // The sum holds steady when the inset changes, breaking the loop.
+        // Scroll position drives the title's OPACITY and nothing else. It must
+        // never drive the height of the `safeAreaInset` below: an inset whose
+        // height depends on scroll position feeds back on itself. Measured on
+        // device, collapsing a 170pt header shifted
+        // `contentOffset.y + contentInsets.top` by exactly 170 — so the metric
+        // is not inset-invariant, and any mid-range progress oscillates
+        // (progress -> inset -> offset -> progress) until the main thread is
+        // pegged and the whole app stops responding.
         .onScrollGeometryChange(for: CGFloat.self) { geometry in
             geometry.contentOffset.y + geometry.contentInsets.top
         } action: { _, offset in
-            collapseProgress = StopSheetHeaderCollapse.progress(
+            titleProgress = StopSheetHeaderCollapse.progress(
                 scrollOffset: offset,
-                collapsibleHeight: headerHeight
+                collapsibleHeight: Self.titleFadeDistance
             )
         }
+        // Fixed height — it holds only the top bar, so nothing here resizes as
+        // the list scrolls.
         .safeAreaInset(edge: .top, spacing: 0) {
-            chrome(showsLoadingState: content.showsLoadingState)
+            StopDetailsSheetTopBar(
+                title: viewModel.stop?.name ?? "",
+                titleOpacity: Double(titleProgress),
+                statusText: viewModel.statusText,
+                isRefreshing: viewModel.isLoading,
+                onRefresh: { Task { await viewModel.refresh() } },
+                onClose: { coordinator.pop() }
+            )
         }
         .stopPageLifecycle(
             viewModel: viewModel,
@@ -226,13 +241,6 @@ struct StopDetailsSheetView: View {
                 break
             }
         }
-        .onChange(of: dynamicTypeSize) { _, _ in
-            // Reset the header height when Dynamic Type size changes so the next
-            // zero-progress layout pass re-latches the correct height. Without
-            // this, the header expands to the old height until a full collapse/expand
-            // cycle happens to re-latch it.
-            headerHeight = 0
-        }
         .onDisappear {
             userActivity?.invalidate()
             userActivity = nil
@@ -241,84 +249,67 @@ struct StopDetailsSheetView: View {
 
     // MARK: - Chrome
 
-    @ViewBuilder
-    private func chrome(showsLoadingState: Bool) -> some View {
-        VStack(spacing: 0) {
-            StopDetailsSheetTopBar(
-                title: viewModel.stop?.name ?? "",
-                titleOpacity: Double(collapseProgress),
-                statusText: viewModel.statusText,
-                isRefreshing: viewModel.isLoading,
-                onRefresh: { Task { await viewModel.refresh() } },
-                onClose: { coordinator.pop() }
-            )
+    /// Distance scrolled, in points, over which the stop name fades into the
+    /// pinned bar. A plain constant: it drives opacity only, so it never needs
+    /// to match the header's real height, and keeping it out of layout is what
+    /// makes the fade safe.
+    private static let titleFadeDistance: CGFloat = 120
 
-            collapsibleHeader(showsLoadingState: showsLoadingState)
-
-            StopPageActionRow(
-                state: StopPageActionRowState(
-                    routeCount: viewModel.stop?.routes.count ?? 0,
-                    hasHiddenRoutes: viewModel.stopPreferences.hasHiddenRoutes,
-                    isListFiltered: viewModel.isListFiltered,
-                    hasServiceAlerts: !(viewModel.stopArrivals?.serviceAlerts ?? []).isEmpty
-                ),
-                onSchedule: navigation.showScheduleForStop,
-                onSetListFiltered: { filtered in
-                    viewModel.isListFiltered = filtered
-                    // Picking "Filtered Routes" opens the picker, matching the
-                    // pushed presentation's `filterMenu()` — otherwise choosing
-                    // it on a stop with no saved hidden routes silently does
-                    // nothing.
-                    if filtered { navigation.showRouteFilter() }
-                },
-                onBookmark: { navigation.showBookmarkEditor(nil) },
-                onServiceAlerts: navigation.showServiceAlerts,
-                onNearbyStops: navigation.showNearbyStops,
-                onWalkingDirections: navigation.showWalkingDirections,
-                onReportProblem: navigation.showReportProblem
-            )
-        }
-    }
-
-    /// The pushed screen's dark map card, shrinking to nothing as the list
-    /// scrolls. Its natural height is measured rather than assumed: it is
-    /// `@ScaledMetric` and grows further when route chips wrap, so a constant
-    /// would mis-collapse at most Dynamic Type sizes.
+    /// The map card and the action row, rendered as the list's leading rows.
     ///
-    /// No implicit animation here — the collapse follows the finger, and
-    /// animating a value already driven by a continuous gesture is what makes
-    /// this pattern jitter.
+    /// They deliberately scroll with the content rather than living in the
+    /// pinned `safeAreaInset`. Pinning them meant the inset had to shrink as the
+    /// list scrolled, and an inset whose height depends on scroll position
+    /// drives an oscillation that hangs the main thread — see the note on
+    /// `onScrollGeometryChange` above.
     @ViewBuilder
-    private func collapsibleHeader(showsLoadingState: Bool) -> some View {
-        Group {
-            if let stop = viewModel.stop {
-                StopPageHeaderView(
-                    stop: stop,
-                    walkTime: viewModel.walkTime,
-                    statusText: viewModel.statusText,
-                    snapshotLoader: { size in
-                        await presenter.loadSnapshot(stop: stop, size: size, traitCollection: UITraitCollection.current)
+    private func headerRows(showsLoadingState: Bool) -> some View {
+        Section {
+            // Header and action row share ONE row so the list draws no
+            // separator between them — as two rows, a hairline cut through the
+            // middle of the action row.
+            VStack(spacing: 0) {
+                if let stop = viewModel.stop {
+                    StopPageHeaderView(
+                        stop: stop,
+                        walkTime: viewModel.walkTime,
+                        statusText: viewModel.statusText,
+                        snapshotLoader: { size in
+                            await presenter.loadSnapshot(stop: stop, size: size, traitCollection: UITraitCollection.current)
+                        },
+                        onWalkingDirections: navigation.showWalkingDirections
+                    )
+                } else if showsLoadingState {
+                    StopPageHeaderPlaceholderView()
+                }
+
+                StopPageActionRow(
+                    state: StopPageActionRowState(
+                        routeCount: viewModel.stop?.routes.count ?? 0,
+                        hasHiddenRoutes: viewModel.stopPreferences.hasHiddenRoutes,
+                        isListFiltered: viewModel.isListFiltered,
+                        hasServiceAlerts: !(viewModel.stopArrivals?.serviceAlerts ?? []).isEmpty
+                    ),
+                    onSchedule: navigation.showScheduleForStop,
+                    onSetListFiltered: { filtered in
+                        viewModel.isListFiltered = filtered
+                        // Picking "Filtered Routes" opens the picker, matching
+                        // the pushed presentation's `filterMenu()` — otherwise
+                        // choosing it on a stop with no saved hidden routes
+                        // silently does nothing.
+                        if filtered { navigation.showRouteFilter() }
                     },
-                    onWalkingDirections: navigation.showWalkingDirections
+                    onBookmark: { navigation.showBookmarkEditor(nil) },
+                    onServiceAlerts: navigation.showServiceAlerts,
+                    onNearbyStops: navigation.showNearbyStops,
+                    onWalkingDirections: navigation.showWalkingDirections,
+                    onReportProblem: navigation.showReportProblem
                 )
-            } else if showsLoadingState {
-                StopPageHeaderPlaceholderView()
             }
+            .listRowInsets(EdgeInsets())
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
         }
-        .onGeometryChange(for: CGFloat.self) { proxy in
-            proxy.size.height
-        } action: { newHeight in
-            // Only record the natural height — once collapsing starts the
-            // measured height is the scaled one, which would shrink the range
-            // toward zero and snap the header shut.
-            if collapseProgress == 0, newHeight > 0 {
-                headerHeight = newHeight
-            }
-        }
-        .frame(height: max(headerHeight * (1 - collapseProgress), 0), alignment: .top)
-        .opacity(Double(1 - collapseProgress))
-        .clipped()
-        .accessibilityHidden(collapseProgress > 0.5)
     }
 
     // MARK: - Row plumbing

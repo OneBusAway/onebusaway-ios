@@ -52,7 +52,7 @@ rendered inside a sheet. This is the stopgap being replaced.
 | Chrome scope | New circular action row applies to presentation 3 only | Presentation 2 keeps its bottom toolbar untouched |
 | Detent | `.large` only, unchanged | Already configured; no map peek wanted |
 | Header | `StopPageHeaderView` — the pushed screen's dark map card | Visual consistency with the pushed screen; `.large` covers the map, so the compact header's "map is visible above" rationale does not hold here |
-| Chrome behaviour | Collapsing header: the map card shrinks away on scroll, the action row pins | Keeps the requested order at rest and the actions reachable while scrolling |
+| Chrome behaviour | ~~Collapsing header: the map card shrinks away on scroll, the action row pins~~ **Superseded — see [Collapsing chrome](#collapsing-chrome)**: only the top bar pins; the map card and action row scroll | The collapsing version hung the app. A `safeAreaInset` whose height depends on scroll position feeds back on itself |
 | Pull to refresh | Removed in presentation 3 | Refresh is the button's job here |
 | Entry point | Register in the factory only | Nothing pushes `.stopDetails` yet; map annotations are separate work |
 | iPad | Out of scope for this experience | Sheet is iPhone-only |
@@ -206,41 +206,54 @@ route is `.large`-only.
 
 ### Collapsing chrome
 
-All three pieces live in one top `safeAreaInset`. As the list scrolls, the map card's
-height and opacity scale to zero, the action row rides up to sit directly under the
-top bar, and the stop name cross-fades into the bar. Scrolling back reverses it.
+> **Superseded on 2026-07-31 after the collapsing version shipped and hung the
+> app.** The original design is kept below the line as a record of what was
+> tried and why it fails. What ships is described here.
 
-**The hazard.** A `safeAreaInset` whose height changes in response to scrolling can
-feed back on itself: the inset shrinks → the list's content offset shifts → the offset
-drives the inset → oscillation. The mitigation is to derive progress from a quantity
-that is invariant to inset changes. Using `onScrollGeometryChange`, the metric is
-`contentOffset.y + contentInsets.top`, not `contentOffset.y` alone — when the top
-inset shrinks by Δ the offset shifts by Δ and the sum holds steady.
+**What ships.** Only `StopDetailsSheetTopBar` sits in the top `safeAreaInset`,
+at a fixed height. The map card and the action row are the list's leading rows
+and scroll away with the content. Scroll position drives one thing — the opacity
+of the stop name in the pinned bar, over a constant `titleFadeDistance` of
+120 pt — and never drives layout. Header and action row share a single list row
+so no separator is drawn between them.
 
-`StopSheetHeaderCollapse` owns that arithmetic as a pure function: it takes the
-adjusted offset and the card's collapsible height and returns progress clamped to
-0…1, returning 0 when the height is zero so a stop that never resolves can't divide by
-zero.
+Trade-off, accepted knowingly: the four actions scroll out of reach on a long
+departure list, where the pushed screen keeps them in its navigation bar. That
+is the cost of removing the hang.
 
-**Height.** The collapse range is measured from the card's laid-out height via
-`onGeometryChange`, not from a constant — `StopPageHeaderView`'s height is
-`@ScaledMetric` and grows further when route chips wrap, so a hard-coded 170 would
-under- or over-collapse at most Dynamic Type sizes.
+---
 
-**No implicit animation** on the inset height. The collapse follows the finger; adding
-`withAnimation` to a value already driven by a continuous gesture is what makes this
-pattern jitter.
+**Why the collapsing version cannot work as designed.** The original plan put
+the top bar, map card and action row in one `safeAreaInset` whose height shrank
+with a `collapseProgress` derived from scroll position, and claimed the feedback
+loop was avoided by measuring `contentOffset.y + contentInsets.top` rather than
+`contentOffset.y`, on the theory that the sum is invariant when the inset
+resizes.
 
-**Fallback.** If continuous collapse proves unstable in practice, degrade to a
-two-state cross-fade at a threshold, keeping `StopSheetHeaderCollapse` as the
-threshold test. That preserves the pinned action row, which is the point of the
-exercise, and loses only the smooth interpolation.
+**That theory is false.** Measured on an iOS 26.5 simulator with a forced
+scroll, the moment the 170 pt header collapsed:
 
-**Accessibility.** Under Reduce Motion the behaviour is unchanged — the collapse
-tracks scrolling rather than being decorative animation, and there is no cross-fade to
-suppress beyond the title, which swaps without animation in that mode. When collapsed,
-the stop name in the top bar carries the identity for VoiceOver; the card's content is
-removed from the accessibility tree rather than left as an invisible focus target.
+```
+offset=819.33  progress 1.0 -> 1.0
+offset=649.33  progress 1.0 -> 1.0     ← the metric fell by exactly 170
+```
+
+The metric shifts by precisely the inset delta. It settles only because progress
+is clamped at 1.0 at that extreme. Anywhere in the mid-range the shift changes
+progress, which resizes the inset, which shifts the metric again — an unbounded
+oscillation on the main thread. The observable symptom is the entire app
+freezing: no scrolling, no taps anywhere, including the pinned chrome.
+
+Two properties of the bug made it easy to miss. It does not reproduce at rest
+(idle body-evaluation count stays in single digits), and it does not reproduce
+when a programmatic scroll jumps straight to either extreme — only a continuous
+drag through the middle triggers it. It shipped because the manual verification
+task that would have caught it was never run.
+
+**If the collapse is ever revisited**, the fix is not a better metric — it is
+removing the feedback edge. The inset's height must not be a function of scroll
+position. Any future attempt needs on-device verification of a slow drag through
+the mid-range before it is considered working.
 
 ### Action row
 
@@ -455,10 +468,13 @@ suppresses both). It must pass unchanged; that suite is the contract that the
 `StopPageView` refactor is behaviour-preserving.
 
 **New — `StopSheetHeaderCollapseTests`.** The pure progress function: 0 at rest, 1 at
-and beyond full collapse, clamped outside both ends, 0 when the collapsible height is
-zero (a stop that never resolves, which would otherwise divide by zero), and monotonic
-across the range. This is the piece most likely to misbehave, and the only part of the
-collapsing chrome a unit test can reach.
+and beyond the full distance, clamped outside both ends, 0 when the distance is zero,
+and monotonic across the range. Still used and still valid after the collapse was
+removed — the same function now maps scroll distance to the pinned title's opacity.
+
+Note what this suite could not catch, and why the hang shipped anyway: the function
+was always correct. The defect lived in what its output was wired to — the height of
+a `safeAreaInset` — which no unit test in this codebase can observe.
 
 **Previews.** SwiftUI previews for the sheet in loading, loaded, first-load-error and
 filtered-empty states, plus expanded and collapsed chrome. The collapse interaction
