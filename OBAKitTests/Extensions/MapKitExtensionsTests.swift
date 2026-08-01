@@ -120,18 +120,56 @@ final class MapKitExtensionsTests {
     
     @Test func `MK user location is valid`() {
         let userLocation = MKUserLocation()
-        
+
         // Test with nil location
         #expect(userLocation.isValid == false)
-        
+
         // Test with zero coordinates
         let zeroLocation = CLLocation(latitude: 0, longitude: 0)
         userLocation.setValue(zeroLocation, forKey: "location")
         #expect(userLocation.isValid == false)
-        
+
         // Test with valid coordinates
         let validLocation = CLLocation(latitude: 47.6062, longitude: -122.3321)
         userLocation.setValue(validLocation, forKey: "location")
         #expect(userLocation.isValid == true)
+    }
+
+    // NOTE: do NOT try to test this through a real MKMapView + showsUserLocation.
+    // Verified empirically on the iOS 26 simulator: MapKit materializes
+    // MKUserLocation only once CoreLocation authorizes and delivers a fix, which
+    // never happens in a unit-test process. A round-trip test would fail both
+    // before AND after the fix, proving nothing. Test the predicate instead.
+
+    @Test func `The keep-user-location filter keeps exactly the user location`() {
+        let stub = StubAnnotation()
+        let user = MKUserLocation()
+
+        let doomed = MKMapView.annotationsToRemove(from: [stub, user], excludingUserLocation: true)
+
+        #expect(doomed.count == 1)
+        #expect(doomed.first === stub)
+    }
+
+    @Test func `Opting out removes the user location as well`() {
+        let stub = StubAnnotation()
+        let user = MKUserLocation()
+
+        let doomed = MKMapView.annotationsToRemove(from: [stub, user], excludingUserLocation: false)
+
+        #expect(doomed.count == 2)
+    }
+
+    @Test func `Non-user annotations are always removed`() {
+        let mapView = MKMapView()
+        mapView.addAnnotation(StubAnnotation())
+
+        mapView.removeAllAnnotations()
+
+        #expect(mapView.annotations.isEmpty)
+    }
+
+    private final class StubAnnotation: NSObject, MKAnnotation {
+        let coordinate = CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3)
     }
 }
