@@ -81,6 +81,9 @@ struct StopPageRootView: View {
     /// times through the same instance as the rest of the app instead of
     /// spinning up ad-hoc `DateFormatter`s.
     let formatters: Formatters
+    /// The map's focus channel. A plain pass-through here (see `StopPageView`'s note on
+    /// observation discipline) — only `StopPageSheetHeaderView` observes it.
+    let mapFocus: StopMapFocus
     /// `true` when the page is presented as a sheet over the map: the header goes light and
     /// compact, and the chrome moves from the navigation bar to a bottom toolbar. `false` — the
     /// pushed presentation — leaves both exactly as they were.
@@ -96,6 +99,7 @@ struct StopPageRootView: View {
             userDefaults: userDefaults,
             snapshotLoader: snapshotLoader,
             navigation: navigation,
+            mapFocus: mapFocus,
             showToolbarOnBottom: showToolbarOnBottom,
             isCollapsed: isCollapsed
         )
@@ -123,6 +127,12 @@ struct StopPageView: View {
     /// Everything that leaves the page or presents a VC-owned modal. Supplied by
     /// the hosting VC so this view stays router-free.
     let navigation: StopPageNavigationHandler
+
+    /// The map's focus channel. A plain pass-through — `StopPageSheetHeaderView` is the one view
+    /// in this subtree that observes it. Observing it here too would re-evaluate this view's
+    /// entire departures list on every refresh and every chip tap, on top of the VM churn this
+    /// view already re-evaluates for (see the type doc comment above).
+    let mapFocus: StopMapFocus
 
     /// Selects the sheet presentation's chrome: the light `StopPageSheetHeaderView` and a bottom
     /// `StopPageToolbar`. `false` keeps the pushed presentation's dark map header and leaves the
@@ -394,7 +404,7 @@ struct StopPageView: View {
         .safeAreaInset(edge: .top, spacing: 0) {
             if showToolbarOnBottom {
                 if let stop = viewModel.stop {
-                    StopPageSheetHeaderView(stop: stop, walkTime: walkTime, onWalkingDirections: navigation.showWalkingDirections, onClose: navigation.closeSheet, isCollapsed: isCollapsed)
+                    StopPageSheetHeaderView(stop: stop, walkTime: walkTime, onWalkingDirections: navigation.showWalkingDirections, onClose: navigation.closeSheet, isCollapsed: isCollapsed, mapFocus: mapFocus)
                 } else {
                     // Unconditional, unlike the pushed presentation's header: with no navigation
                     // bar behind the sheet, this strip carries the only close button, so a stop

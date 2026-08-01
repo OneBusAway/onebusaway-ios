@@ -1086,6 +1086,12 @@
 /* Button to reveal departures that leave before the rider's transfer arrival. Parameter is the count of hidden departures. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
 "stop_controller.transfer_show_earlier_departures_fmt" = "顯示 %d 班較早的離站班次";
 
+/* Spoken suffix on the currently-focused route chip. */
+"stop_header.chip.highlighted" = "在地圖上反白顯示";
+
+/* Spoken suffix on a route chip whose route has a vehicle on the map. */
+"stop_header.chip.live_tracking" = "即時追蹤";
+
 /* Error shown when a departure alarm can't be cancelled because the region's alarm service is unreachable. */
 "stop_page.alarm_cancel_unavailable" = "無法取消此提醒，因為提醒服務目前無法使用。請稍後再試。";
 

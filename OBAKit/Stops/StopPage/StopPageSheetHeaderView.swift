@@ -44,7 +44,7 @@ nonisolated enum StopSheetHeaderMetrics {
 /// line (the sheet's bottom toolbar carries freshness on its refresh item), and the walk pill is
 /// tinted rather than solid, since it no longer has to hold up against a photographic backdrop.
 ///
-/// A plain-value view — it never touches `StopViewModel`.
+/// A plain-value view except for `mapFocus` — it never touches `StopViewModel`.
 struct StopPageSheetHeaderView: View {
     let stop: Stop
     let walkTime: WalkTimeInfo?
@@ -59,6 +59,10 @@ struct StopPageSheetHeaderView: View {
     /// height to work with. See `collapsedHeight` for what has to survive that budget and why.
     var isCollapsed = false
 
+    /// Map focus state. This is the one view in the Stop page subtree that
+    /// observes it — see `StopPageView`'s note on observation discipline.
+    @ObservedObject var mapFocus: StopMapFocus
+
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     private var subtitle: String {
@@ -67,12 +71,30 @@ struct StopPageSheetHeaderView: View {
 
     /// Sorted, de-duplicated route short names for the badge row. Mirrors
     /// `Formatters.formattedRoutes`' filtering (some agencies omit short names).
+    ///
+    /// Membership and ordering are unchanged from before this feature — `stop.routes`, deduped by
+    /// short name, alphabetical, not filtered by `hiddenRoutes` — so the sheet and the pushed stop
+    /// page keep showing the same header, and the VoiceOver summary built from `stop.routes` keeps
+    /// matching what is drawn.
     private var routeBadgeNames: [String] {
         var seen = Set<String>()
         return stop.routes
             .map(\.shortName)
             .filter { !$0.isEmpty && seen.insert($0).inserted }
             .sorted { $0.localizedStandardCompare($1) == .orderedAscending }
+    }
+
+    /// Every route ID sharing each short name, so a chip whose short name collapses two `RouteID`s
+    /// can still resolve a tap to whichever of them the map is actually drawing.
+    private var routeIDsByShortName: [String: [RouteID]] {
+        Dictionary(grouping: stop.routes, by: \.shortName).mapValues { $0.map(\.id) }
+    }
+
+    private var chips: [RouteChip] {
+        RouteChip.chips(
+            forRouteShortNames: stop.routes.map(\.shortName),
+            routeIDsByShortName: routeIDsByShortName
+        )
     }
 
     /// How many lines the stop name gets. Collapsed the header has one row to spend, so a
@@ -111,6 +133,11 @@ struct StopPageSheetHeaderView: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .accessibilityElement(children: .combine)
+                    // The routes-served summary lives here rather than on the chip row below:
+                    // that row has to stay reachable chip-by-chip (see `.contain` below), so the
+                    // one-element summary VoiceOver used to read there moves onto the header's own
+                    // identity element instead.
+                    .accessibilityLabel(headerAccessibilityLabel)
 
                     StopSheetCloseButton(action: onClose)
                 }
@@ -119,20 +146,21 @@ struct StopPageSheetHeaderView: View {
                     walkPill(walkTime)
                 }
 
-                if !isCollapsed, !routeBadgeNames.isEmpty {
-                    // `FlowLayout` only ever receives `Text` here. It sizes subviews with an
-                    // unspecified proposal, which a `Button` answers with a greedy height — that
-                    // is what stretched the walk pill down the whole sheet, so the pill lives in
-                    // a plain stack above instead.
+                if !isCollapsed, !chips.isEmpty {
+                    // `FlowLayout` sizes subviews with an unspecified proposal, which a `Button`
+                    // answers with a greedy height — that is what stretched the walk pill down the
+                    // whole sheet, so the pill lives in a plain stack above instead. Chips stay
+                    // `Text`-shaped tappable views for the same reason; see `chipView(_:)`.
                     FlowLayout(hSpacing: 6, vSpacing: 6) {
-                        ForEach(routeBadgeNames, id: \.self) { name in
-                            routeBadge(name)
+                        ForEach(chips) { chip in
+                            chipView(chip)
                         }
                     }
-                    // One element reading the whole route list, so VoiceOver doesn't walk a dozen
-                    // bare numbers with no indication of what they are.
-                    .accessibilityElement(children: .ignore)
-                    .accessibilityLabel(routeListAccessibilityLabel)
+                    // `.contain`, not `.ignore`: each chip carries its own trait and label (and
+                    // needs to be individually reachable for `.onTapGesture` to work under
+                    // VoiceOver), so the row can no longer collapse to one summary element. The
+                    // summary itself moved onto the header's identity label above.
+                    .accessibilityElement(children: .contain)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -177,15 +205,72 @@ struct StopPageSheetHeaderView: View {
         .accessibilityHint(OBALoc("stop_page.header.walk_a11y_hint", value: "Opens walking directions to this stop.", comment: "VoiceOver hint on the header card's walk-time button."))
     }
 
-    private func routeBadge(_ name: String) -> some View {
-        Text(name)
-            .font(.footnote.weight(.semibold))
-            .monospacedDigit()
-            .foregroundStyle(.primary)
-            .lineLimit(1)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(Color(uiColor: .secondarySystemFill), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+    @ViewBuilder
+    private func chipView(_ chip: RouteChip) -> some View {
+        let drawn = chip.drawnRoute(in: mapFocus)
+        let isFocused = chip.focusableRouteID(in: mapFocus) == mapFocus.focusedRouteID
+            && mapFocus.focusedRouteID != nil
+        let isDimmed = mapFocus.focusedRouteID != nil && !isFocused
+
+        HStack(spacing: 5) {
+            if let drawn {
+                // The route's map-line color, so the chip and its line read as one thing.
+                Capsule()
+                    .fill(Color(uiColor: drawn.color))
+                    .frame(width: 13, height: 4)
+            }
+            Text(chip.shortName)
+                .font(.footnote.weight(.semibold))
+                .monospacedDigit()
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+            if drawn?.hasLiveVehicle == true {
+                // Only when there is a vehicle on the map to point at.
+                Circle()
+                    .fill(Color(uiColor: ThemeColors.shared.brand))
+                    .frame(width: 5, height: 5)
+            }
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(
+            RoundedRectangle(cornerRadius: 8, style: .continuous).fill(isFocused
+                ? Color(uiColor: drawn?.color ?? .clear).opacity(0.16)
+                : Color(uiColor: .secondarySystemFill))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .strokeBorder(isFocused ? Color(uiColor: drawn?.color ?? .clear) : .clear, lineWidth: 1)
+        )
+        .opacity(isDimmed ? 0.45 : 1)
+        // NOT a Button: FlowLayout proposes .unspecified, which a Button answers with a greedy
+        // height — that is what stretched the walk pill down the whole sheet. See the note above
+        // this view.
+        .contentShape(Rectangle())
+        .onTapGesture { chip.toggleFocus(in: mapFocus) }
+        .accessibilityAddTraits(chip.isInteractive(in: mapFocus) ? .isButton : [])
+        .accessibilityLabel(chipAccessibilityLabel(for: chip, drawn: drawn, isFocused: isFocused))
+    }
+
+    private func chipAccessibilityLabel(
+        for chip: RouteChip,
+        drawn: StopRouteFocusModel.DrawnRoute?,
+        isFocused: Bool
+    ) -> String {
+        var parts = [chip.shortName]
+        if drawn?.hasLiveVehicle == true { parts.append(liveTrackingLabel) }
+        if isFocused { parts.append(highlightedLabel) }
+        return parts.joined(separator: ", ")
+    }
+
+    private var liveTrackingLabel: String {
+        OBALoc("stop_header.chip.live_tracking", value: "live tracking",
+               comment: "Spoken suffix on a route chip whose route has a vehicle on the map.")
+    }
+
+    private var highlightedLabel: String {
+        OBALoc("stop_header.chip.highlighted", value: "highlighted on map",
+               comment: "Spoken suffix on the currently-focused route chip.")
     }
 
     private func walkPillText(_ info: WalkTimeInfo) -> String {
@@ -199,6 +284,64 @@ struct StopPageSheetHeaderView: View {
 
     private var routeListAccessibilityLabel: String {
         Formatters.formattedRoutes(stop.routes) ?? routeBadgeNames.joined(separator: ", ")
+    }
+
+    /// The header identity element's spoken label: name, then (uncollapsed) subtitle and the
+    /// routes-served summary that used to live on the chip row. Built explicitly rather than left
+    /// to `.accessibilityElement(children: .combine)`'s default combination because
+    /// `.accessibilityLabel` below replaces that default outright.
+    private var headerAccessibilityLabel: String {
+        var parts = [stop.name]
+        if !isCollapsed {
+            parts.append(subtitle)
+            if !chips.isEmpty {
+                parts.append(routeListAccessibilityLabel)
+            }
+        }
+        return parts.joined(separator: ", ")
+    }
+}
+
+/// One header chip. Membership and ordering are unchanged from before this
+/// feature — `stop.routes`, deduped by short name, alphabetical — so the sheet
+/// and the pushed stop page keep showing the same header for the same stop, and
+/// the VoiceOver summary built from `stop.routes` keeps matching what is drawn.
+///
+/// Carries every route ID sharing its short name, because today's dedupe is by
+/// string: two `RouteID`s with short name "40" collapse to one badge, and the tap
+/// has to resolve to whichever of them the map is actually drawing.
+struct RouteChip: Identifiable, Hashable {
+    let shortName: String
+    let routeIDs: [RouteID]
+    var id: String { shortName }
+
+    static func chips(
+        forRouteShortNames shortNames: [String],
+        routeIDsByShortName: [String: [RouteID]]
+    ) -> [RouteChip] {
+        let unique = Set(shortNames.filter { !$0.isEmpty })
+        return unique
+            .sorted { $0.localizedStandardCompare($1) == .orderedAscending }
+            .map { RouteChip(shortName: $0, routeIDs: routeIDsByShortName[$0] ?? []) }
+    }
+
+    /// The route this chip's tap should act on: the first of its IDs the map drew
+    /// with a live vehicle.
+    func focusableRouteID(in focus: StopMapFocus) -> RouteID? {
+        routeIDs.first { focus.isFocusable(routeID: $0) }
+    }
+
+    func isInteractive(in focus: StopMapFocus) -> Bool {
+        focusableRouteID(in: focus) != nil
+    }
+
+    func drawnRoute(in focus: StopMapFocus) -> StopRouteFocusModel.DrawnRoute? {
+        routeIDs.lazy.compactMap { focus.drawnRoute(for: $0) }.first
+    }
+
+    func toggleFocus(in focus: StopMapFocus) {
+        guard let routeID = focusableRouteID(in: focus) else { return }
+        focus.toggleFocus(routeID: routeID)
     }
 }
 

@@ -1086,6 +1086,12 @@
 /* Button to reveal departures that leave before the rider's transfer arrival. Parameter is the count of hidden departures. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
 "stop_controller.transfer_show_earlier_departures_fmt" = "Mostrar %d salidas anteriores";
 
+/* Spoken suffix on the currently-focused route chip. */
+"stop_header.chip.highlighted" = "resaltado en el mapa";
+
+/* Spoken suffix on a route chip whose route has a vehicle on the map. */
+"stop_header.chip.live_tracking" = "seguimiento en vivo";
+
 /* Error shown when a departure alarm can't be cancelled because the region's alarm service is unreachable. */
 "stop_page.alarm_cancel_unavailable" = "No se pudo cancelar esta alarma porque el servicio de alarmas no está disponible en este momento. Por favor inténtelo más tarde.";
 

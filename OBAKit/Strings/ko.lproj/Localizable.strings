@@ -1086,6 +1086,12 @@
 /* Button to reveal departures that leave before the rider's transfer arrival. Parameter is the count of hidden departures. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
 "stop_controller.transfer_show_earlier_departures_fmt" = "이전 출발 %d건 표시";
 
+/* Spoken suffix on the currently-focused route chip. */
+"stop_header.chip.highlighted" = "지도에서 강조 표시됨";
+
+/* Spoken suffix on a route chip whose route has a vehicle on the map. */
+"stop_header.chip.live_tracking" = "실시간 추적";
+
 /* Error shown when a departure alarm can't be cancelled because the region's alarm service is unreachable. */
 "stop_page.alarm_cancel_unavailable" = "미리 알림 서비스를 사용할 수 없어 이 미리 알림을 취소하지 못했습니다. 나중에 다시 시도해 주세요.";
 

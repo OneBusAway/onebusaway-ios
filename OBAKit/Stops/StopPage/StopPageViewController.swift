@@ -76,6 +76,23 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
     /// never migrates between presentations — so the pushed screen is unreachable from here.
     private let showToolbarOnBottom: Bool
 
+    /// The map's focus channel, when this page was presented as the map's stop
+    /// sheet. Inert for every pushed presentation.
+    ///
+    /// Stored on the controller and re-threaded through `installRootView()`,
+    /// exactly like `isAtTip` — writing `rootView.mapFocus` alone would be
+    /// silently dropped by the next `installRootView()` (e.g. from
+    /// `exitPreviewMode`).
+    private var mapFocus = StopMapFocus()
+
+    /// Attaches the map's focus channel so the sheet header's route chips can decorate
+    /// themselves from — and write into — the same object the map layer reads. Called once, by
+    /// the map view controller, immediately after creating this instance for its sheet.
+    func attach(focus: StopMapFocus) {
+        mapFocus = focus
+        installRootView()
+    }
+
     convenience init(application: Application, stop: Stop, showToolbarOnBottom: Bool = false) {
         self.init(application: application, stopID: stop.id, stop: stop, showToolbarOnBottom: showToolbarOnBottom)
     }
@@ -96,7 +113,8 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
             userDefaults: application.userDefaults,
             snapshotLoader: { _ in nil },
             navigation: Self.placeholderNavigation,
-            formatters: application.formatters
+            formatters: application.formatters,
+            mapFocus: mapFocus
         ))
 
         installRootView()
@@ -117,6 +135,7 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
             },
             navigation: makeNavigationHandler(),
             formatters: application.formatters,
+            mapFocus: mapFocus,
             showToolbarOnBottom: showsBottomToolbar,
             isCollapsed: isAtTip
         )
