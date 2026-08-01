@@ -371,6 +371,23 @@ nonisolated final class StopSheetLayout: FloatingPanelBottomLayout {
         anchors[.tip] = FloatingPanelLayoutAnchor(absoluteInset: tipInset, edge: .bottom, referenceGuide: .safeArea)
         return anchors
     }
+
+    /// Height the `.half` detent occupies, given the host's safe-area height.
+    ///
+    /// Computed rather than read off the live surface: the panel is private, and
+    /// `addPanel(toParent:animated: true)` slides in from `.hidden`, so the
+    /// surface frame is not final when the presentation begins.
+    ///
+    /// Takes the safe-area height as a parameter for two reasons. FloatingPanel's
+    /// stock `.half` anchor is `fractionalInset: 0.5, referenceGuide: .safeArea`
+    /// (`.build/checkouts/FloatingPanel/Sources/Layout.swift:37`) — half the *safe
+    /// area*, not half the screen, so screen height overshoots by roughly
+    /// (top + bottom inset) / 2. And `UIScreen` is `@MainActor` in the SDK, so a
+    /// `nonisolated` member cannot touch `UIScreen.main` at all under this
+    /// project's Swift 6 settings.
+    static func halfDetentInset(safeAreaHeight: CGFloat) -> CGFloat {
+        safeAreaHeight * 0.5
+    }
 }
 
 // MARK: - FloatingPanelControllerDelegate
