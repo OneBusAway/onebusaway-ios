@@ -261,7 +261,40 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
         view?.isSelectable = true
         view?.canShowCallout = true
         view?.annotation = annotation
+        if let departure = departureProvider?(annotation.departureID) {
+            view?.detailCalloutAccessoryView = makeCallout(for: departure, annotation: annotation)
+        }
         return view
+    }
+
+    /// Relative-time formatter for "position updated 12s ago". Held statically —
+    /// constructing one per callout is measurably wasteful and they are stateless.
+    private static let updatedFormatter: RelativeDateTimeFormatter = {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .short
+        return formatter
+    }()
+
+    private func makeCallout(for departure: ArrivalDeparture, annotation: StopVehicleAnnotation) -> UIView {
+        // `DepartureStatus`'s members are `label` and `color` — NOT statusLabel /
+        // statusColor. Verified at DepartureStatus.swift:52 and :35.
+        let status = DepartureStatus(arrivalDeparture: departure)
+        // `route` is declared `Route!` (ArrivalDeparture.swift:53) — it is populated
+        // by `loadReferences`, but reach for the non-optional `routeShortName`
+        // (:220) as the fallback rather than force-unwrapping through `route`.
+        let headsign = departure.tripHeadsign ?? departure.routeShortName
+        return VehicleCalloutView(
+            headsign: headsign,
+            vehicleLabel: annotation.id,
+            countdownText: "\(departure.arrivalDepartureMinutes)m",
+            statusText: status.label,
+            statusColor: status.color,
+            // There is no `Formatters.formattedLastUpdated`. `ArrivalDeparture`
+            // carries `lastUpdated: Date` (:35); format it here.
+            updatedText: Self.updatedFormatter.localizedString(for: departure.lastUpdated, relativeTo: Date()),
+            routeColor: annotation.routeColor,
+            onFollow: { [weak self] in self?.onFollowTrip?(departure) }
+        )
     }
 
     func detailViewController(for annotation: MKAnnotation) -> UIViewController? { nil }

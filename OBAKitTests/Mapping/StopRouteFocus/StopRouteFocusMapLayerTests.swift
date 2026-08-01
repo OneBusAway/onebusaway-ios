@@ -261,4 +261,74 @@ final class StopRouteFocusMapLayerTests {
         // not just numerically equal.
         #expect(Set(overlaysAfterSecond.map(ObjectIdentifier.init)) == Set(overlaysAfterFirst.map(ObjectIdentifier.init)))
     }
+
+    // MARK: - Vehicle callout
+
+    /// The fixture's second arrival on a different trip ("LAKE CITY WEDGWOOD"
+    /// versus the first entry's "SEATTLE CENTER UNIVERSITY DISTRICT"), used to
+    /// prove the callout tracks whichever departure `departureProvider` currently
+    /// resolves rather than one captured at `update(model:)` time.
+    private static let secondFixtureDeparture: ArrivalDeparture? = try? Fixtures.loadRESTAPIPayload(
+        type: StopArrivals.self,
+        fileName: "arrivals_and_departures_for_stop_1_10020.json"
+    ).arrivalsAndDepartures[1]
+
+    @Test func `The callout attaches to the annotation view as detailCalloutAccessoryView`() throws {
+        let mapView = MKMapView()
+        mapView.registerAnnotationView(PulsingVehicleAnnotationView.self)
+        let layer = makeLayer(mapView: mapView)
+        layer.begin(focus: StopMapFocus())
+        layer.update(model: model(routeIDs: ["H"], vehicleRouteIDs: ["H"]))
+
+        let annotation = try #require(mapView.annotations.compactMap { $0 as? StopVehicleAnnotation }.first)
+        let view = layer.annotationView(for: annotation, in: mapView)
+
+        #expect(view?.detailCalloutAccessoryView is VehicleCalloutView)
+    }
+
+    @Test func `The callout reads the departure live through departureProvider, not a stale snapshot`() throws {
+        let first = try #require(Self.fixtureDeparture)
+        let second = try #require(Self.secondFixtureDeparture)
+        #expect(first.tripHeadsign != second.tripHeadsign)
+
+        let mapView = MKMapView()
+        mapView.registerAnnotationView(PulsingVehicleAnnotationView.self)
+        let layer = makeLayer(mapView: mapView)
+        var current: ArrivalDeparture? = first
+        layer.departureProvider = { _ in current }
+        layer.begin(focus: StopMapFocus())
+        layer.update(model: model(routeIDs: ["H"], vehicleRouteIDs: ["H"]))
+
+        let annotation = try #require(mapView.annotations.compactMap { $0 as? StopVehicleAnnotation }.first)
+
+        let firstView = try #require(layer.annotationView(for: annotation, in: mapView)?.detailCalloutAccessoryView as? VehicleCalloutView)
+        #expect(firstView.accessibilityLabel?.contains(try #require(first.tripHeadsign)) == true)
+
+        // Same annotation, no `update(model:)` in between — only the provider's
+        // answer changed. If `annotationView(for:in:)` ever cached the departure
+        // it read the first time (or the model snapshot from `update`), this
+        // second call would still show the first trip's headsign.
+        current = second
+        let secondView = try #require(layer.annotationView(for: annotation, in: mapView)?.detailCalloutAccessoryView as? VehicleCalloutView)
+        #expect(secondView.accessibilityLabel?.contains(try #require(second.tripHeadsign)) == true)
+        #expect(secondView.accessibilityLabel?.contains(try #require(first.tripHeadsign)) == false)
+    }
+
+    @Test func `Following the callout invokes onFollowTrip with the departure it was built from`() throws {
+        let departure = try #require(Self.fixtureDeparture)
+        let mapView = MKMapView()
+        mapView.registerAnnotationView(PulsingVehicleAnnotationView.self)
+        let layer = makeLayer(mapView: mapView)
+        layer.departureProvider = { _ in departure }
+        var followed: ArrivalDeparture?
+        layer.onFollowTrip = { followed = $0 }
+        layer.begin(focus: StopMapFocus())
+        layer.update(model: model(routeIDs: ["H"], vehicleRouteIDs: ["H"]))
+
+        let annotation = try #require(mapView.annotations.compactMap { $0 as? StopVehicleAnnotation }.first)
+        let callout = try #require(layer.annotationView(for: annotation, in: mapView)?.detailCalloutAccessoryView as? VehicleCalloutView)
+        callout.simulateFollowTap()
+
+        #expect(followed === departure)
+    }
 }

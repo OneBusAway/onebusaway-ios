@@ -1449,6 +1449,9 @@
 /* Suggested invocation phrase for Siri Shortcut */
 "user_activity_builder.show_me_my_bus" = "내 버스 보여줘";
 
+/* Button in the live-vehicle map callout that opens the trip screen. */
+"vehicle_callout.follow_this_trip" = "이 운행 추적하기";
+
 /* The section header to a free-form comments field that the user does not have to add text to in order to submit this form. */
 "vehicle_problem_controller.comments_section.section_title" = "추가 의견 (선택 사항)";
 
