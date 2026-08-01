@@ -7,15 +7,14 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
-import Nimble
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
 // swiftlint:disable force_cast
 
-/// Tests for `ArrivalDepartureFilter` and `[ArrivalDeparture].filter(by:)`.
-class ArrivalDepartureFilterTests: OBATestCase {
+@Suite(.serialized)
+final class ArrivalDepartureFilterTests: OBATestCase {
 
     // MARK: - Fixture Setup
 
@@ -26,8 +25,8 @@ class ArrivalDepartureFilterTests: OBATestCase {
         "https://www.example.com/api/where/arrivals-and-departures-for-stop/\(stopID).json"
     }
 
-    override func setUp() {
-        super.setUp()
+    override init() async throws {
+        try await super.init()
 
         let dataLoader = (restService.dataLoader as! MockDataLoader)
 
@@ -44,208 +43,173 @@ class ArrivalDepartureFilterTests: OBATestCase {
 
     // MARK: - Empty Array
 
-    func test_filterByAll_emptyArray_returnsEmpty() {
-        let empty: [ArrivalDeparture] = []
-        let result = empty.filter(by: .all)
-        expect(result).to(beEmpty())
+    @Test func `Filter by all on empty array returns empty`() {
+        #expect([ArrivalDeparture]().filter(by: .all).isEmpty)
     }
 
-    func test_filterByEstimatedOnly_emptyArray_returnsEmpty() {
-        let empty: [ArrivalDeparture] = []
-        let result = empty.filter(by: .estimatedOnly)
-        expect(result).to(beEmpty())
+    @Test func `Filter by estimated only on empty array returns empty`() {
+        #expect([ArrivalDeparture]().filter(by: .estimatedOnly).isEmpty)
     }
 
-    func test_filterByScheduledOnly_emptyArray_returnsEmpty() {
-        let empty: [ArrivalDeparture] = []
-        let result = empty.filter(by: .scheduledOnly)
-        expect(result).to(beEmpty())
+    @Test func `Filter by scheduled only on empty array returns empty`() {
+        #expect([ArrivalDeparture]().filter(by: .scheduledOnly).isEmpty)
     }
 
     // MARK: - Filter .all
 
-    func test_filterByAll_returnsAllArrivals() async throws {
+    @Test func `Filter by all returns all arrivals`() async throws {
         let stopArrivals = try await restService.getArrivalsAndDeparturesForStop(
-            id: stopWithRealtime,
-            minutesBefore: 0,
-            minutesAfter: 60
+            id: stopWithRealtime, minutesBefore: 0, minutesAfter: 60
         ).entry
         let allArrivals = stopArrivals.arrivalsAndDepartures
 
-        let result = allArrivals.filter(by: .all)
-        expect(result.count) == allArrivals.count
+        #expect(allArrivals.filter(by: .all).count == allArrivals.count)
     }
 
     // MARK: - Filter .estimatedOnly
 
-    func test_filterByEstimatedOnly_returnsOnlyPredicted() async throws {
+    @Test func `Filter by estimated only returns only predicted`() async throws {
         let stopArrivals = try await restService.getArrivalsAndDeparturesForStop(
-            id: stopWithRealtime,
-            minutesBefore: 0,
-            minutesAfter: 60
+            id: stopWithRealtime, minutesBefore: 0, minutesAfter: 60
         ).entry
         let allArrivals = stopArrivals.arrivalsAndDepartures
-
         let result = allArrivals.filter(by: .estimatedOnly)
 
-        expect(result).toNot(beEmpty())
+        #expect(!result.isEmpty)
         for arrDep in result {
-            expect(arrDep.predicted) == true
+            #expect(arrDep.predicted)
         }
-        expect(result.count) == allArrivals.filter({ $0.predicted }).count
+        #expect(result.count == allArrivals.filter({ $0.predicted }).count)
     }
 
-    func test_filterByEstimatedOnly_noRealtimeData_returnsEmpty() async throws {
+    @Test func `Filter by estimated only with no realtime data returns empty`() async throws {
         let stopArrivals = try await restService.getArrivalsAndDeparturesForStop(
-            id: stopWithoutRealtime,
-            minutesBefore: 0,
-            minutesAfter: 60
+            id: stopWithoutRealtime, minutesBefore: 0, minutesAfter: 60
         ).entry
         let allArrivals = stopArrivals.arrivalsAndDepartures
 
-        let result = allArrivals.filter(by: .estimatedOnly)
-        expect(result).to(beEmpty())
-    }
-
-    func test_filterByScheduledOnly_noRealtimeData_returnsAll() async throws {
-        let stopArrivals = try await restService.getArrivalsAndDeparturesForStop(
-            id: stopWithoutRealtime,
-            minutesBefore: 0,
-            minutesAfter: 60
-        ).entry
-        let allArrivals = stopArrivals.arrivalsAndDepartures
-
-        expect(allArrivals).toNot(beEmpty())
-        let result = allArrivals.filter(by: .scheduledOnly)
-        expect(result.count) == allArrivals.count
-    }
-
-    func test_filterByAll_noRealtimeData_returnsAll() async throws {
-        let stopArrivals = try await restService.getArrivalsAndDeparturesForStop(
-            id: stopWithoutRealtime,
-            minutesBefore: 0,
-            minutesAfter: 60
-        ).entry
-        let allArrivals = stopArrivals.arrivalsAndDepartures
-
-        expect(allArrivals).toNot(beEmpty())
-        let result = allArrivals.filter(by: .all)
-        expect(result.count) == allArrivals.count
+        #expect(!allArrivals.isEmpty)
+        #expect(allArrivals.filter(by: .estimatedOnly).isEmpty)
     }
 
     // MARK: - Filter .scheduledOnly
 
-    func test_filterByScheduledOnly_returnsOnlyNonPredicted() async throws {
+    @Test func `Filter by scheduled only returns only non-predicted`() async throws {
         let stopArrivals = try await restService.getArrivalsAndDeparturesForStop(
-            id: stopWithRealtime,
-            minutesBefore: 0,
-            minutesAfter: 60
+            id: stopWithRealtime, minutesBefore: 0, minutesAfter: 60
         ).entry
         let allArrivals = stopArrivals.arrivalsAndDepartures
-
         let result = allArrivals.filter(by: .scheduledOnly)
 
         for arrDep in result {
-            expect(arrDep.predicted) == false
+            #expect(!arrDep.predicted)
         }
-        expect(result.count) == allArrivals.filter({ !$0.predicted }).count
+        #expect(result.count == allArrivals.filter({ !$0.predicted }).count)
+    }
+
+    @Test func `Filter by scheduled only with no realtime data returns all`() async throws {
+        let stopArrivals = try await restService.getArrivalsAndDeparturesForStop(
+            id: stopWithoutRealtime, minutesBefore: 0, minutesAfter: 60
+        ).entry
+        let allArrivals = stopArrivals.arrivalsAndDepartures
+
+        #expect(!allArrivals.isEmpty)
+        #expect(allArrivals.filter(by: .scheduledOnly).count == allArrivals.count)
+    }
+
+    @Test func `Filter by all with no realtime data returns all`() async throws {
+        let stopArrivals = try await restService.getArrivalsAndDeparturesForStop(
+            id: stopWithoutRealtime, minutesBefore: 0, minutesAfter: 60
+        ).entry
+        let allArrivals = stopArrivals.arrivalsAndDepartures
+
+        #expect(!allArrivals.isEmpty)
+        #expect(allArrivals.filter(by: .all).count == allArrivals.count)
     }
 
     // MARK: - Complementary Counts
 
-    func test_estimatedAndScheduledCountsEqualTotal() async throws {
+    @Test func `Estimated and scheduled counts equal total`() async throws {
         let stopArrivals = try await restService.getArrivalsAndDeparturesForStop(
-            id: stopWithRealtime,
-            minutesBefore: 0,
-            minutesAfter: 60
+            id: stopWithRealtime, minutesBefore: 0, minutesAfter: 60
         ).entry
         let allArrivals = stopArrivals.arrivalsAndDepartures
 
         let estimated = allArrivals.filter(by: .estimatedOnly)
         let scheduled = allArrivals.filter(by: .scheduledOnly)
 
-        expect(estimated.count + scheduled.count) == allArrivals.count
+        #expect(estimated.count + scheduled.count == allArrivals.count)
     }
 }
 
 // MARK: - ArrivalDepartureFilter Enum Tests
 
-class ArrivalDepartureFilterEnumTests: XCTestCase {
+@Suite
+struct ArrivalDepartureFilterEnumTests {
 
-    func test_rawValues() {
-        expect(ArrivalDepartureFilter.all.rawValue) == "all"
-        expect(ArrivalDepartureFilter.estimatedOnly.rawValue) == "estimatedOnly"
-        expect(ArrivalDepartureFilter.scheduledOnly.rawValue) == "scheduledOnly"
+    @Test func `Raw values are correct`() {
+        #expect(ArrivalDepartureFilter.all.rawValue == "all")
+        #expect(ArrivalDepartureFilter.estimatedOnly.rawValue == "estimatedOnly")
+        #expect(ArrivalDepartureFilter.scheduledOnly.rawValue == "scheduledOnly")
     }
 
-    func test_initFromRawValue() {
-        expect(ArrivalDepartureFilter(rawValue: "all")) == .all
-        expect(ArrivalDepartureFilter(rawValue: "estimatedOnly")) == .estimatedOnly
-        expect(ArrivalDepartureFilter(rawValue: "scheduledOnly")) == .scheduledOnly
-        expect(ArrivalDepartureFilter(rawValue: "invalid")).to(beNil())
+    @Test func `Init from raw value works`() {
+        #expect(ArrivalDepartureFilter(rawValue: "all") == .all)
+        #expect(ArrivalDepartureFilter(rawValue: "estimatedOnly") == .estimatedOnly)
+        #expect(ArrivalDepartureFilter(rawValue: "scheduledOnly") == .scheduledOnly)
+        #expect(ArrivalDepartureFilter(rawValue: "invalid") == nil)
     }
 
-    func test_caseIterable_containsAllCases() {
-        expect(ArrivalDepartureFilter.allCases.count) == 3
-        expect(ArrivalDepartureFilter.allCases).to(contain(.all, .estimatedOnly, .scheduledOnly))
+    @Test func `CaseIterable contains all cases`() {
+        #expect(ArrivalDepartureFilter.allCases.count == 3)
+        #expect(ArrivalDepartureFilter.allCases.contains(.all))
+        #expect(ArrivalDepartureFilter.allCases.contains(.estimatedOnly))
+        #expect(ArrivalDepartureFilter.allCases.contains(.scheduledOnly))
     }
 }
 
 // MARK: - UserDefaults Integration Tests
 
-class ArrivalDepartureFilterUserDefaultsTests: XCTestCase {
+@Suite(.serialized)
+struct ArrivalDepartureFilterUserDefaultsTests {
 
-    private var userDefaults: UserDefaults!
+    private let userDefaults: UserDefaults
 
-    override func setUp() {
-        super.setUp()
-        userDefaults = UserDefaults(suiteName: String(describing: self))!
-        userDefaults.removePersistentDomain(forName: String(describing: self))
+    init() {
+        userDefaults = UserDefaults(suiteName: "ArrivalDepartureFilterUserDefaultsTests")!
+        userDefaults.removePersistentDomain(forName: "ArrivalDepartureFilterUserDefaultsTests")
     }
 
-    override func tearDown() {
-        super.tearDown()
-        userDefaults.removePersistentDomain(forName: String(describing: self))
+    @Test func `No saved value is nil`() {
+        #expect(userDefaults.string(forKey: CoreAppConfig.arrivalDepartureFilterUserDefaultsKey) == nil)
     }
 
-    func test_noSavedValue_returnsNil() {
-        let saved = userDefaults.string(forKey: CoreAppConfig.arrivalDepartureFilterUserDefaultsKey)
-        expect(saved).to(beNil())
-    }
-
-    func test_savedValue_roundtrips() {
+    @Test func `Saved estimatedOnly round trips`() {
         userDefaults.set(ArrivalDepartureFilter.estimatedOnly.rawValue, forKey: CoreAppConfig.arrivalDepartureFilterUserDefaultsKey)
         let saved = userDefaults.string(forKey: CoreAppConfig.arrivalDepartureFilterUserDefaultsKey)
-        let filter = ArrivalDepartureFilter(rawValue: saved ?? "")
-        expect(filter) == .estimatedOnly
+        #expect(ArrivalDepartureFilter(rawValue: saved ?? "") == .estimatedOnly)
     }
 
-    func test_savedValue_scheduledOnly_roundtrips() {
+    @Test func `Saved scheduledOnly round trips`() {
         userDefaults.set(ArrivalDepartureFilter.scheduledOnly.rawValue, forKey: CoreAppConfig.arrivalDepartureFilterUserDefaultsKey)
         let saved = userDefaults.string(forKey: CoreAppConfig.arrivalDepartureFilterUserDefaultsKey)
-        let filter = ArrivalDepartureFilter(rawValue: saved ?? "")
-        expect(filter) == .scheduledOnly
+        #expect(ArrivalDepartureFilter(rawValue: saved ?? "") == .scheduledOnly)
     }
 
-    func test_invalidSavedValue_returnsNil() {
+    @Test func `Invalid saved value returns nil`() {
         userDefaults.set("garbage", forKey: CoreAppConfig.arrivalDepartureFilterUserDefaultsKey)
         let saved = userDefaults.string(forKey: CoreAppConfig.arrivalDepartureFilterUserDefaultsKey)
-        let filter = ArrivalDepartureFilter(rawValue: saved ?? "")
-        expect(filter).to(beNil())
+        #expect(ArrivalDepartureFilter(rawValue: saved ?? "") == nil)
     }
 
-    func test_nilValue_withConfiguredDefault_resolvesToConfiguredDefault() {
+    @Test func `Nil value with configured default resolves to default`() {
         let saved = userDefaults.string(forKey: CoreAppConfig.arrivalDepartureFilterUserDefaultsKey)
-        let configuredDefault = ArrivalDepartureFilter.scheduledOnly
-        let filter = ArrivalDepartureFilter(rawValue: saved ?? "") ?? configuredDefault
-        expect(filter) == .scheduledOnly
+        #expect(ArrivalDepartureFilter(rawValue: saved ?? "") ?? .scheduledOnly == .scheduledOnly)
     }
 
-    func test_invalidValue_withConfiguredDefault_resolvesToConfiguredDefault() {
+    @Test func `Invalid value with configured default resolves to default`() {
         userDefaults.set("garbage", forKey: CoreAppConfig.arrivalDepartureFilterUserDefaultsKey)
         let saved = userDefaults.string(forKey: CoreAppConfig.arrivalDepartureFilterUserDefaultsKey)
-        let configuredDefault = ArrivalDepartureFilter.estimatedOnly
-        let filter = ArrivalDepartureFilter(rawValue: saved ?? "") ?? configuredDefault
-        expect(filter) == .estimatedOnly
+        #expect(ArrivalDepartureFilter(rawValue: saved ?? "") ?? .estimatedOnly == .estimatedOnly)
     }
 }

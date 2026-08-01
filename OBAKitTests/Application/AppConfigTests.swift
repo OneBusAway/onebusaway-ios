@@ -36,7 +36,7 @@ final class AppConfigTests: OBATestCase {
         #expect(appConfig.userDefaults == userDefaults)
     }
 
-    func testAppConfig_defaultArrivalDepartureFilter_propagates() {
+    @Test func `Default arrival departure filter propagates through AppConfig`() {
         let queue = OperationQueue()
         let locationManager = MockAuthorizedLocationManager(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
         let locationService = LocationService(userDefaults: UserDefaults(), locationManager: locationManager)
@@ -56,6 +56,6 @@ final class AppConfigTests: OBATestCase {
             defaultArrivalDepartureFilter: .scheduledOnly
         )
 
-        expect(appConfig.defaultArrivalDepartureFilter) == .scheduledOnly
+        #expect(appConfig.defaultArrivalDepartureFilter == .scheduledOnly)
     }
 }
