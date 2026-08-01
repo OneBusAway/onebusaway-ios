@@ -854,9 +854,6 @@ class MapViewController: UIViewController,
         layer.begin(focus: focus)
 
         let viewModel = stopPageVC.viewModel
-        layer.departureProvider = { [weak viewModel] departureID in
-            viewModel?.stopArrivals?.arrivalsAndDepartures.first { $0.id == departureID }
-        }
         layer.onFollowTrip = { [weak self, weak stopPageVC] departure in
             guard let self, let stopPageVC else { return }
             self.application.viewRouter.navigateTo(arrivalDeparture: departure, from: stopPageVC)
@@ -867,18 +864,14 @@ class MapViewController: UIViewController,
         // strict concurrency. `sink(receiveValue:)` takes a plain non-Sendable
         // closure, so it inherits @MainActor and crosses no isolation boundary.
         //
-        // `@Published` fires in `willSet`, so use the closure's parameter — never
-        // re-read `viewModel.stopArrivals` here, which would still hold the OLD value.
+        // Everything the layer needs comes from the closure's parameters. Nothing
+        // here may re-read `viewModel.stopArrivals`: `@Published` fires in
+        // `willSet`, so inside this sink that property still holds the OLD value —
+        // nil on the first load. `apply` exists to make that mistake unavailable.
         viewModel.$stopArrivals
             .combineLatest(viewModel.$isListFiltered, viewModel.$stopPreferences)
             .sink { [weak layer] arrivals, isListFiltered, preferences in
-                guard let layer else { return }
-                let visible = StopRouteFocusModel.visibleDepartures(
-                    arrivals?.arrivalsAndDepartures ?? [],
-                    isListFiltered: isListFiltered,
-                    preferences: preferences
-                )
-                layer.update(model: StopRouteFocusModel.make(departures: visible, routeCap: 6))
+                layer?.apply(arrivals: arrivals, isListFiltered: isListFiltered, preferences: preferences)
             }
             .store(in: &stopFocusCancellables)
     }

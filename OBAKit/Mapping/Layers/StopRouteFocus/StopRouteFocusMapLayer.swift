@@ -146,6 +146,33 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
         removeAllContent()
     }
 
+    /// Max routes drawn for one stop. A downtown stop serves 20+ over the arrival
+    /// window; drawing all of them is both slow and unreadable.
+    static let routeCap = 6
+
+    /// Applies one arrivals emission — the departure resolver and the model, both
+    /// derived from that same value, in the order `update` needs them.
+    ///
+    /// This exists so a caller cannot source the two separately.
+    /// `MapViewController` drives it from a `@Published` sink, and `@Published`
+    /// publishes in `willSet`: reading `viewModel.stopArrivals` back from inside
+    /// that sink returns the PREVIOUS value. That put zero vehicles on the map on
+    /// first load — the previous value was nil, no departure resolved, and
+    /// `syncVehicleAnnotations` skipped every one — and left every refresh after
+    /// resolving a generation stale.
+    func apply(arrivals: StopArrivals?, isListFiltered: Bool, preferences: StopPreferences) {
+        let all = arrivals?.arrivalsAndDepartures ?? []
+        // Assigned before `update`, which consults it for every vehicle.
+        departureProvider = { departureID in all.first { $0.id == departureID } }
+
+        let visible = StopRouteFocusModel.visibleDepartures(
+            all,
+            isListFiltered: isListFiltered,
+            preferences: preferences
+        )
+        update(model: StopRouteFocusModel.make(departures: visible, routeCap: Self.routeCap))
+    }
+
     /// Called on every arrivals refresh. Guarded on `focus`: a disabled layer's
     /// `deactivate()` (→ `end()`) clears it, but the Combine sink that calls this
     /// keeps running until the sheet itself closes — without this guard, the
