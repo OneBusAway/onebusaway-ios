@@ -32,8 +32,9 @@ struct StopDetailsSheetTopBar: View {
     let onRefresh: () -> Void
     let onClose: () -> Void
 
-    /// Matches the visual diameter UIKit gives a circular navigation-bar item,
-    /// so the sheet's chrome reads at the same weight as a real nav bar.
+    /// Deliberately smaller than the action row's 44pt circles: this bar is
+    /// chrome, not a row of primary actions. The two share everything else —
+    /// glass surface and neutral palette — so they still read as one system.
     private static let buttonSize: CGFloat = 36
 
     var body: some View {
@@ -68,14 +69,18 @@ struct StopDetailsSheetTopBar: View {
                 } else {
                     Image(systemName: "arrow.clockwise")
                         .font(.body.weight(.semibold))
-                        .foregroundStyle(.secondary)
                 }
             }
+            .foregroundStyle(.primary)
             .frame(width: Self.buttonSize, height: Self.buttonSize)
-            .background(Color(uiColor: .secondarySystemFill), in: Circle())
             .contentShape(Circle())
         }
-        .buttonStyle(.plain)
+        // The same interactive Liquid Glass surface the action row's circles
+        // use, via the shared extension.
+        .liquidGlassButtonStyle(borderShape: .circle, fallbackShape: Circle())
+        // The glass style colours its content from the environment accent; the
+        // sheet's chrome is deliberately neutral.
+        .tint(.primary)
         .disabled(isRefreshing)
         .accessibilityLabel(Strings.refresh)
         .accessibilityValue(statusText)
@@ -85,12 +90,12 @@ struct StopDetailsSheetTopBar: View {
         Button(action: onClose) {
             Image(systemName: "xmark")
                 .font(.body.weight(.semibold))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.primary)
                 .frame(width: Self.buttonSize, height: Self.buttonSize)
-                .background(Color(uiColor: .secondarySystemFill), in: Circle())
                 .contentShape(Circle())
         }
-        .buttonStyle(.plain)
+        .liquidGlassButtonStyle(borderShape: .circle, fallbackShape: Circle())
+        .tint(.primary)
         .accessibilityLabel(Strings.close)
     }
 }

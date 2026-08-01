@@ -73,43 +73,79 @@ struct StopPageActionRow: View {
         .overlay(alignment: .bottom) { Divider() }
     }
 
+    /// Each column is a circular glass control with its caption underneath.
+    ///
+    /// The caption deliberately sits OUTSIDE the button. `liquidGlassButtonStyle`
+    /// turns the whole button into one glass surface, so a button wrapping both
+    /// the glyph and the text would render as an oval blob around the pair
+    /// instead of a circle around the glyph.
     @ViewBuilder
     private var items: some View {
-        button(title: Strings.schedules, systemImage: "calendar", action: onSchedule)
-
-        filterItem
-
-        button(
-            title: OBALoc("stop_page.toolbar.bookmark", value: "Bookmark", comment: "Bottom-toolbar item on the Stop page that opens the Add Bookmark screen."),
-            systemImage: "bookmark",
-            action: onBookmark
-        )
-
-        moreItem
-    }
-
-    private var filterItem: some View {
-        Menu {
-            filterChoice(
-                title: OBALoc("stops_controller.filter.all_routes", value: "All Routes", comment: "A menu item on a Stop page that toggles the visible list of transit vehicles from a filtered list to all of the list items. e.g. a stop serves routes 1, 2, and 3. The user has filtered the stop to only show route 3. Chooosing this item will show 1, 2, and 3 again."),
-                isSelected: !state.isFilterOn,
-                filtered: false
-            )
-            filterChoice(
-                title: OBALoc("stops_controller.filter.filtered_routes", value: "Filtered Routes", comment: "A menu item on a Stop page that toggles the visible list of transit vehicles from a list of all items to a filtered list. e.g. a stop serves routes 1, 2, and 3. The user wants to only view route 3. Choosing this item would show that subset of routes."),
-                isSelected: state.isFilterOn,
-                filtered: true
-            )
-        } label: {
-            label(title: Strings.filter, systemImage: state.filterSystemImage)
+        item(title: Strings.schedules) {
+            Button(action: onSchedule) { glyph("calendar") }
+                .liquidGlassButtonStyle(borderShape: .circle, fallbackShape: Circle())
+                .accessibilityLabel(Strings.schedules)
         }
-        .buttonStyle(.plain)
-        .disabled(!state.canFilter)
-        .accessibilityLabel(Strings.filter)
-        .accessibilityValue(state.isFilterOn
-            ? OBALoc("stop_page.filter.a11y_on", value: "on", comment: "VoiceOver value of the route-filter bar button when the filter is active.")
-            : OBALoc("stop_page.filter.a11y_off", value: "off", comment: "VoiceOver value of the route-filter bar button when the filter is inactive."))
+
+        item(title: Strings.filter) {
+            Menu {
+                filterChoice(
+                    title: OBALoc("stops_controller.filter.all_routes", value: "All Routes", comment: "A menu item on a Stop page that toggles the visible list of transit vehicles from a filtered list to all of the list items. e.g. a stop serves routes 1, 2, and 3. The user has filtered the stop to only show route 3. Chooosing this item will show 1, 2, and 3 again."),
+                    isSelected: !state.isFilterOn,
+                    filtered: false
+                )
+                filterChoice(
+                    title: OBALoc("stops_controller.filter.filtered_routes", value: "Filtered Routes", comment: "A menu item on a Stop page that toggles the visible list of transit vehicles from a list of all items to a filtered list. e.g. a stop serves routes 1, 2, and 3. The user wants to only view route 3. Choosing this item would show that subset of routes."),
+                    isSelected: state.isFilterOn,
+                    filtered: true
+                )
+            } label: {
+                glyph(state.filterSystemImage)
+            }
+            .liquidGlassButtonStyle(borderShape: .circle, fallbackShape: Circle())
+            .disabled(!state.canFilter)
+            .accessibilityLabel(Strings.filter)
+            .accessibilityValue(state.isFilterOn
+                ? OBALoc("stop_page.filter.a11y_on", value: "on", comment: "VoiceOver value of the route-filter bar button when the filter is active.")
+                : OBALoc("stop_page.filter.a11y_off", value: "off", comment: "VoiceOver value of the route-filter bar button when the filter is inactive."))
+        }
+
+        item(title: Self.bookmarkTitle) {
+            Button(action: onBookmark) { glyph("bookmark") }
+                .liquidGlassButtonStyle(borderShape: .circle, fallbackShape: Circle())
+                .accessibilityLabel(Self.bookmarkTitle)
+        }
+
+        item(title: Strings.more) {
+            Menu {
+                Button(action: onServiceAlerts) {
+                    Label(Strings.serviceAlerts, systemImage: "exclamationmark.circle")
+                }
+                .disabled(!state.canShowServiceAlerts)
+
+                Section {
+                    Button(action: onNearbyStops) {
+                        Label(OBALoc("stops_controller.nearby_stops", value: "Nearby Stops", comment: "Title of the row that will show stops that are near this one."), systemImage: "location")
+                    }
+                    Button(action: onWalkingDirections) {
+                        Label(OBALoc("stops_controller.walking_directions", value: "Walking Directions", comment: "Button that launches a maps app with walking directions to this stop"), systemImage: "figure.walk")
+                    }
+                }
+
+                Section {
+                    Button(action: onReportProblem) {
+                        Label(OBALoc("stops_controller.report_problem", value: "Report a Problem", comment: "Button that launches the 'Report Problem' UI."), systemImage: "exclamationmark.bubble")
+                    }
+                }
+            } label: {
+                glyph("ellipsis")
+            }
+            .liquidGlassButtonStyle(borderShape: .circle, fallbackShape: Circle())
+            .accessibilityLabel(Strings.more)
+        }
     }
+
+    private static let bookmarkTitle = OBALoc("stop_page.toolbar.bookmark", value: "Bookmark", comment: "Bottom-toolbar item on the Stop page that opens the Add Bookmark screen.")
 
     @ViewBuilder
     private func filterChoice(title: String, isSelected: Bool, filtered: Bool) -> some View {
@@ -121,52 +157,10 @@ struct StopPageActionRow: View {
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
-    private var moreItem: some View {
-        Menu {
-            Button(action: onServiceAlerts) {
-                Label(Strings.serviceAlerts, systemImage: "exclamationmark.circle")
-            }
-            .disabled(!state.canShowServiceAlerts)
-
-            Section {
-                Button(action: onNearbyStops) {
-                    Label(OBALoc("stops_controller.nearby_stops", value: "Nearby Stops", comment: "Title of the row that will show stops that are near this one."), systemImage: "location")
-                }
-                Button(action: onWalkingDirections) {
-                    Label(OBALoc("stops_controller.walking_directions", value: "Walking Directions", comment: "Button that launches a maps app with walking directions to this stop"), systemImage: "figure.walk")
-                }
-            }
-
-            Section {
-                Button(action: onReportProblem) {
-                    Label(OBALoc("stops_controller.report_problem", value: "Report a Problem", comment: "Button that launches the 'Report Problem' UI."), systemImage: "exclamationmark.bubble")
-                }
-            }
-        } label: {
-            label(title: Strings.more, systemImage: "ellipsis")
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(Strings.more)
-    }
-
-    private func button(title: String, systemImage: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            label(title: title, systemImage: systemImage)
-        }
-        // Without `.plain` the button style tints its label with the accent
-        // colour, overriding the neutral `foregroundStyle` in `label(...)`.
-        .buttonStyle(.plain)
-        .accessibilityLabel(title)
-    }
-
-    /// A glass circle with the glyph, captioned beneath.
-    private func label(title: String, systemImage: String) -> some View {
+    /// One column: the caller's glass control, captioned beneath.
+    private func item(title: String, @ViewBuilder control: () -> some View) -> some View {
         VStack(spacing: 6) {
-            Image(systemName: systemImage)
-                .font(.system(size: 18, weight: .semibold))
-                .frame(width: 44, height: 44)
-                .modifier(GlassCircleBackground())
-                .accessibilityHidden(true)
+            control()
             Text(title)
                 .font(.caption2)
                 .lineLimit(1)
@@ -176,30 +170,24 @@ struct StopPageActionRow: View {
                 .frame(maxWidth: .infinity)
         }
         // `.primary`, not `.tint`: the row reads as neutral chrome rather than
-        // four tinted calls to action. That is black in light mode, and stays
-        // legible in dark mode where a literal black would disappear against
-        // the sheet's background.
+        // four tinted calls to action. Black in light mode, and still legible in
+        // dark mode where a literal black would vanish into the sheet.
         .foregroundStyle(.primary)
+        .tint(.primary)
         .frame(maxWidth: scrollsHorizontally ? nil : .infinity)
         .frame(minWidth: scrollsHorizontally ? 84 : nil)
         .padding(.horizontal, 2)
-        .contentShape(Rectangle())
     }
-}
 
-/// The circular button backdrop: real Liquid Glass on iOS 26+, an
-/// ultra-thin-material circle with a hairline rim on earlier versions. Mirrors
-/// the treatment `GlassContainerBackground` gives the mode toggle and the
-/// Load-more capsule, which is private to `StopPageView.swift`.
-private struct GlassCircleBackground: ViewModifier {
-    func body(content: Content) -> some View {
-        if #available(iOS 26.0, *) {
-            content.glassEffect(.regular, in: Circle())
-        } else {
-            content
-                .background(.ultraThinMaterial, in: Circle())
-                .overlay(Circle().stroke(Color(uiColor: .separator).opacity(0.5), lineWidth: 0.5))
-        }
+    /// The glyph a glass control wraps. Sized so the control lands on a 44pt
+    /// tap target.
+    private func glyph(_ systemImage: String) -> some View {
+        Image(systemName: systemImage)
+            .font(.system(size: 18, weight: .semibold))
+            .foregroundStyle(.primary)
+            .frame(width: 44, height: 44)
+            .contentShape(Circle())
+            .accessibilityHidden(true)
     }
 }
 
