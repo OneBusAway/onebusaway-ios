@@ -35,7 +35,7 @@ struct StopDetailsSheetTopBar: View {
     /// Deliberately smaller than the action row's 44pt circles: this bar is
     /// chrome, not a row of primary actions. The two share everything else —
     /// glass surface and neutral palette — so they still read as one system.
-    private static let buttonSize: CGFloat = 36
+    private static let buttonSize: CGFloat = 32
 
     var body: some View {
         HStack(spacing: 12) {
@@ -57,7 +57,7 @@ struct StopDetailsSheetTopBar: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
-        .background(.bar)
+        .background(Color(uiColor: .systemBackground))
         .overlay(alignment: .bottom) { Divider() }
     }
 

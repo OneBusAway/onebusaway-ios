@@ -87,15 +87,23 @@ struct StopPageActionRow: View {
                 .accessibilityLabel(Strings.schedules)
         }
 
-        item(title: Strings.filter) {
+        item(title: Strings.filter, isEnabled: state.canFilter) {
             Menu {
                 filterChoice(
-                    title: OBALoc("stops_controller.filter.all_routes", value: "All Routes", comment: "A menu item on a Stop page that toggles the visible list of transit vehicles from a filtered list to all of the list items. e.g. a stop serves routes 1, 2, and 3. The user has filtered the stop to only show route 3. Chooosing this item will show 1, 2, and 3 again."),
+                    title: OBALoc(
+                        "stops_controller.filter.all_routes",
+                        value: "All Routes",
+                        comment: "A menu item on a Stop page that toggles the visible list of transit vehicles from a filtered list to all of the list items. e.g. a stop serves routes 1, 2, and 3. The user has filtered the stop to only show route 3. Chooosing this item will show 1, 2, and 3 again."
+                    ),
                     isSelected: !state.isFilterOn,
                     filtered: false
                 )
                 filterChoice(
-                    title: OBALoc("stops_controller.filter.filtered_routes", value: "Filtered Routes", comment: "A menu item on a Stop page that toggles the visible list of transit vehicles from a list of all items to a filtered list. e.g. a stop serves routes 1, 2, and 3. The user wants to only view route 3. Choosing this item would show that subset of routes."),
+                    title: OBALoc(
+                        "stops_controller.filter.filtered_routes",
+                        value: "Filtered Routes",
+                        comment: "A menu item on a Stop page that toggles the visible list of transit vehicles from a list of all items to a filtered list. e.g. a stop serves routes 1, 2, and 3. The user wants to only view route 3. Choosing this item would show that subset of routes."
+                    ),
                     isSelected: state.isFilterOn,
                     filtered: true
                 )
@@ -125,16 +133,37 @@ struct StopPageActionRow: View {
 
                 Section {
                     Button(action: onNearbyStops) {
-                        Label(OBALoc("stops_controller.nearby_stops", value: "Nearby Stops", comment: "Title of the row that will show stops that are near this one."), systemImage: "location")
+                        Label(
+                            OBALoc(
+                                "stops_controller.nearby_stops",
+                                value: "Nearby Stops",
+                                comment: "Title of the row that will show stops that are near this one."
+                            ),
+                            systemImage: "location"
+                        )
                     }
                     Button(action: onWalkingDirections) {
-                        Label(OBALoc("stops_controller.walking_directions", value: "Walking Directions", comment: "Button that launches a maps app with walking directions to this stop"), systemImage: "figure.walk")
+                        Label(
+                            OBALoc(
+                                "stops_controller.walking_directions",
+                                value: "Walking Directions",
+                                comment: "Button that launches a maps app with walking directions to this stop"
+                            ),
+                            systemImage: "figure.walk"
+                        )
                     }
                 }
 
                 Section {
                     Button(action: onReportProblem) {
-                        Label(OBALoc("stops_controller.report_problem", value: "Report a Problem", comment: "Button that launches the 'Report Problem' UI."), systemImage: "exclamationmark.bubble")
+                        Label(
+                            OBALoc(
+                                "stops_controller.report_problem",
+                                value: "Report a Problem",
+                                comment: "Button that launches the 'Report Problem' UI."
+                            ),
+                            systemImage: "exclamationmark.bubble"
+                        )
                     }
                 }
             } label: {
@@ -158,7 +187,13 @@ struct StopPageActionRow: View {
     }
 
     /// One column: the caller's glass control, captioned beneath.
-    private func item(title: String, @ViewBuilder control: () -> some View) -> some View {
+    ///
+    /// `isEnabled` drives the caption's colour. The glyph dims on its own — but
+    /// only because nothing here pins its `foregroundStyle`: SwiftUI greys
+    /// disabled content *through* the foreground style, so hard-coding
+    /// `.primary` anywhere above the control leaves a disabled button looking
+    /// identical to an enabled one while still refusing taps.
+    private func item(title: String, isEnabled: Bool = true, @ViewBuilder control: () -> some View) -> some View {
         VStack(spacing: 6) {
             control()
             Text(title)
@@ -168,11 +203,13 @@ struct StopPageActionRow: View {
                 .truncationMode(.tail)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity)
+                // The caption sits outside the button, so it is not covered by
+                // the control's own disabled dimming.
+                .foregroundStyle(isEnabled ? AnyShapeStyle(.primary) : AnyShapeStyle(.tertiary))
         }
-        // `.primary`, not `.tint`: the row reads as neutral chrome rather than
-        // four tinted calls to action. Black in light mode, and still legible in
-        // dark mode where a literal black would vanish into the sheet.
-        .foregroundStyle(.primary)
+        // `.tint`, not `.foregroundStyle`: the glass button style colours its
+        // content from the tint, so the row reads as neutral chrome rather than
+        // four tinted calls to action — and disabled dimming still applies.
         .tint(.primary)
         .frame(maxWidth: scrollsHorizontally ? nil : .infinity)
         .frame(minWidth: scrollsHorizontally ? 84 : nil)
@@ -184,8 +221,7 @@ struct StopPageActionRow: View {
     private func glyph(_ systemImage: String) -> some View {
         Image(systemName: systemImage)
             .font(.system(size: 18, weight: .semibold))
-            .foregroundStyle(.primary)
-            .frame(width: 44, height: 44)
+            .frame(width: 34, height: 34)
             .contentShape(Circle())
             .accessibilityHidden(true)
     }
