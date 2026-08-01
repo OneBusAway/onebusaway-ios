@@ -123,6 +123,14 @@ final class StopSheetPresenterTests {
     /// A page that supplies its own title and back affordance, like the trip page.
     private final class SelfChromedStub: UIViewController, StopSheetSelfChromedContent {
         let providesOwnSheetChrome = true
+        var sheetSurfaceColor: UIColor?
+
+        init(surfaceColor: UIColor? = nil) {
+            self.sheetSurfaceColor = surfaceColor
+            super.init(nibName: nil, bundle: nil)
+        }
+
+        required init?(coder: NSCoder) { fatalError("unused") }
     }
 
     private final class CollapsibleStub: UIViewController, StopSheetCollapsibleContent {
@@ -441,5 +449,41 @@ final class StopSheetPresenterTests {
 
         // `CollapsibleStub` is not self-chromed, so the root wants its bar back.
         #expect(!navigation.isNavigationBarHidden)
+    }
+
+    /// The navigation controller is inset by the grabber clearance, so the strip behind the
+    /// grabber is painted by the surface. A page whose background isn't `.systemBackground`
+    /// gets a white bar across the top of the sheet unless the surface follows it.
+    @Test func `Pushing a page with its own background repaints the grabber strip`() throws {
+        presenter.present(CollapsibleStub(), from: parent) {}
+        let navigation = try presentedNavigation()
+        let panel = try #require(panels.first)
+        #expect(panel.surfaceView.appearance.backgroundColor == .systemBackground)
+
+        push(SelfChromedStub(surfaceColor: .systemGroupedBackground), onto: navigation)
+
+        #expect(panel.surfaceView.appearance.backgroundColor == .systemGroupedBackground)
+    }
+
+    @Test func `Popping back restores the root's grabber strip`() throws {
+        presenter.present(CollapsibleStub(), from: parent) {}
+        let navigation = try presentedNavigation()
+        let panel = try #require(panels.first)
+        push(SelfChromedStub(surfaceColor: .systemGroupedBackground), onto: navigation)
+
+        try popBack(in: navigation)
+
+        #expect(panel.surfaceView.appearance.backgroundColor == .systemBackground)
+    }
+
+    /// A self-chromed page that doesn't ask for a color leaves the strip alone.
+    @Test func `A page with no background preference leaves the grabber strip alone`() throws {
+        presenter.present(CollapsibleStub(), from: parent) {}
+        let navigation = try presentedNavigation()
+        let panel = try #require(panels.first)
+
+        push(SelfChromedStub(), onto: navigation)
+
+        #expect(panel.surfaceView.appearance.backgroundColor == .systemBackground)
     }
 }

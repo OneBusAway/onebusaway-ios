@@ -32,6 +32,18 @@ protocol StopSheetCollapsibleContent: UIViewController {
 @MainActor
 protocol StopSheetSelfChromedContent: UIViewController {
     var providesOwnSheetChrome: Bool { get }
+
+    /// What the strip behind the grabber should be filled with.
+    ///
+    /// The navigation controller is inset by `grabberClearance`, so that strip is painted by
+    /// the surface, not by the page — and a page whose own background isn't `.systemBackground`
+    /// reads as having a stray white bar across the top of the sheet. Return the page's
+    /// background to make the strip disappear into it; `nil` keeps the default.
+    var sheetSurfaceColor: UIColor? { get }
+}
+
+extension StopSheetSelfChromedContent {
+    var sheetSurfaceColor: UIColor? { nil }
 }
 
 /// Presents the redesigned Stop page as a half-detent sheet over the map, replacing the
@@ -117,13 +129,7 @@ final class StopSheetPresenter: NSObject {
         // already handles by resizing the content view to the surface's visible bounds.
         panel.contentInsetAdjustmentBehavior = .never
 
-        let appearance = SurfaceAppearance()
-        appearance.cornerRadius = ThemeMetrics.cornerRadius
-        // Unlike the map drawer — whose content controller paints its own background — the
-        // navigation controller here is inset by `grabberClearance`, so the surface itself has
-        // to fill the strip behind the grabber.
-        appearance.backgroundColor = .systemBackground
-        panel.surfaceView.appearance = appearance
+        panel.surfaceView.appearance = Self.surfaceAppearance(backgroundColor: surfaceColor(for: contentController))
         panel.surfaceView.contentPadding = UIEdgeInsets(top: Self.grabberClearance, left: 0, bottom: 0, right: 0)
 
         self.panel = panel
@@ -355,6 +361,7 @@ extension StopSheetPresenter: UINavigationControllerDelegate {
     /// space above the stop name that no amount of SwiftUI sizing can reclaim.
     func navigationController(_ navigationController: UINavigationController, willShow viewController: UIViewController, animated: Bool) {
         navigationController.setNavigationBarHidden(hidesNavigationBar(for: viewController), animated: animated)
+        syncSurfaceColor(for: viewController)
         revealPushedContent(viewController, in: navigationController, animated: animated)
     }
 
@@ -392,6 +399,31 @@ extension StopSheetPresenter: UINavigationControllerDelegate {
     private func syncCollapsedState(for viewController: UIViewController) {
         guard let panel, let page = viewController as? StopSheetCollapsibleContent else { return }
         page.setAtTip(panel.state == .tip)
+    }
+
+    /// Unlike the map drawer — whose content controller paints its own background — the
+    /// navigation controller here is inset by `grabberClearance`, so the surface itself has to
+    /// fill the strip behind the grabber.
+    private static func surfaceAppearance(backgroundColor: UIColor) -> SurfaceAppearance {
+        let appearance = SurfaceAppearance()
+        appearance.cornerRadius = ThemeMetrics.cornerRadius
+        appearance.backgroundColor = backgroundColor
+        return appearance
+    }
+
+    private func surfaceColor(for viewController: UIViewController) -> UIColor {
+        (viewController as? StopSheetSelfChromedContent)?.sheetSurfaceColor ?? .systemBackground
+    }
+
+    /// Repaints the grabber strip to match whichever page is now on top, so pushing a page with
+    /// a different background doesn't leave a band of the previous one above it.
+    private func syncSurfaceColor(for viewController: UIViewController) {
+        guard let panel else { return }
+        let color = surfaceColor(for: viewController)
+        guard panel.surfaceView.appearance.backgroundColor != color else { return }
+        // Assigned as a whole fresh `SurfaceAppearance`, the way the initial setup does it —
+        // mutating the existing instance in place doesn't re-run the surface's own update.
+        panel.surfaceView.appearance = Self.surfaceAppearance(backgroundColor: color)
     }
 
     /// A page that draws its own header keeps the bar off; everything else in this stack —

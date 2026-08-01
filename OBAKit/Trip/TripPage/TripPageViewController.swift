@@ -42,6 +42,10 @@ final class TripPageViewController: UIHostingController<TripPageView>,
 
     let providesOwnSheetChrome = true
 
+    /// The page is grouped-gray, not `.systemBackground`, so the sheet has to paint the
+    /// strip behind its grabber to match or it reads as a white bar across the top.
+    let sheetSurfaceColor: UIColor? = .systemGroupedBackground
+
     init(application: Application, tripConvertible: TripConvertible, originTitle: String? = nil) {
         self.application = application
         self.originTitle = originTitle
