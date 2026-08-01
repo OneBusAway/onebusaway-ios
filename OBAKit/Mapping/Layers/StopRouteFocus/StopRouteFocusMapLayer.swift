@@ -176,6 +176,14 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
         shapeTasks.append(task)
     }
 
+    /// Test seam: awaits any shape fetches `update(model:)` kicked off, so a test
+    /// can assert against settled overlay state instead of guessing with a sleep.
+    /// `fetchAndDrawShape` spawns detached, unstructured work — nothing else
+    /// naturally makes it awaitable from outside the layer.
+    func awaitPendingShapeWork() async {
+        for task in shapeTasks { await task.value }
+    }
+
     private func addShape(coordinates: [CLLocationCoordinate2D], routeID: RouteID) {
         // Casing first so the colored core draws above it.
         let casing = RouteShapeOverlay.make(coordinates: coordinates, routeID: routeID, isCasing: true)
