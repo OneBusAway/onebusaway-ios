@@ -81,96 +81,115 @@ struct StopPageActionRow: View {
     /// instead of a circle around the glyph.
     @ViewBuilder
     private var items: some View {
+        scheduleItem
+        filterItem
+        bookmarkItem
+        moreItem
+    }
+
+    // MARK: - Items
+
+    private var scheduleItem: some View {
         item(title: Strings.schedules) {
             Button(action: onSchedule) { glyph("calendar") }
                 .liquidGlassButtonStyle(borderShape: .circle, fallbackShape: Circle())
                 .accessibilityLabel(Strings.schedules)
         }
+    }
 
+    private var filterItem: some View {
         item(title: Strings.filter, isEnabled: state.canFilter) {
-            Menu {
-                filterChoice(
-                    title: OBALoc(
-                        "stops_controller.filter.all_routes",
-                        value: "All Routes",
-                        comment: "A menu item on a Stop page that toggles the visible list of transit vehicles from a filtered list to all of the list items. e.g. a stop serves routes 1, 2, and 3. The user has filtered the stop to only show route 3. Chooosing this item will show 1, 2, and 3 again."
-                    ),
-                    isSelected: !state.isFilterOn,
-                    filtered: false
-                )
-                filterChoice(
-                    title: OBALoc(
-                        "stops_controller.filter.filtered_routes",
-                        value: "Filtered Routes",
-                        comment: "A menu item on a Stop page that toggles the visible list of transit vehicles from a list of all items to a filtered list. e.g. a stop serves routes 1, 2, and 3. The user wants to only view route 3. Choosing this item would show that subset of routes."
-                    ),
-                    isSelected: state.isFilterOn,
-                    filtered: true
-                )
-            } label: {
-                glyph(state.filterSystemImage)
-            }
-            .liquidGlassButtonStyle(borderShape: .circle, fallbackShape: Circle())
-            .disabled(!state.canFilter)
-            .accessibilityLabel(Strings.filter)
-            .accessibilityValue(state.isFilterOn
-                ? OBALoc("stop_page.filter.a11y_on", value: "on", comment: "VoiceOver value of the route-filter bar button when the filter is active.")
-                : OBALoc("stop_page.filter.a11y_off", value: "off", comment: "VoiceOver value of the route-filter bar button when the filter is inactive."))
+            Menu { filterMenu } label: { glyph(state.filterSystemImage) }
+                .liquidGlassButtonStyle(borderShape: .circle, fallbackShape: Circle())
+                .disabled(!state.canFilter)
+                .accessibilityLabel(Strings.filter)
+                .accessibilityValue(state.isFilterOn
+                    ? OBALoc("stop_page.filter.a11y_on", value: "on", comment: "VoiceOver value of the route-filter bar button when the filter is active.")
+                    : OBALoc("stop_page.filter.a11y_off", value: "off", comment: "VoiceOver value of the route-filter bar button when the filter is inactive."))
         }
+    }
 
+    private var bookmarkItem: some View {
         item(title: Self.bookmarkTitle) {
             Button(action: onBookmark) { glyph("bookmark") }
                 .liquidGlassButtonStyle(borderShape: .circle, fallbackShape: Circle())
                 .accessibilityLabel(Self.bookmarkTitle)
         }
+    }
 
+    private var moreItem: some View {
         item(title: Strings.more) {
-            Menu {
-                Button(action: onServiceAlerts) {
-                    Label(Strings.serviceAlerts, systemImage: "exclamationmark.circle")
-                }
-                .disabled(!state.canShowServiceAlerts)
+            Menu { moreMenu } label: { glyph("ellipsis") }
+                .liquidGlassButtonStyle(borderShape: .circle, fallbackShape: Circle())
+                .accessibilityLabel(Strings.more)
+        }
+    }
 
-                Section {
-                    Button(action: onNearbyStops) {
-                        Label(
-                            OBALoc(
-                                "stops_controller.nearby_stops",
-                                value: "Nearby Stops",
-                                comment: "Title of the row that will show stops that are near this one."
-                            ),
-                            systemImage: "location"
-                        )
-                    }
-                    Button(action: onWalkingDirections) {
-                        Label(
-                            OBALoc(
-                                "stops_controller.walking_directions",
-                                value: "Walking Directions",
-                                comment: "Button that launches a maps app with walking directions to this stop"
-                            ),
-                            systemImage: "figure.walk"
-                        )
-                    }
-                }
+    // MARK: - Menu contents
 
-                Section {
-                    Button(action: onReportProblem) {
-                        Label(
-                            OBALoc(
-                                "stops_controller.report_problem",
-                                value: "Report a Problem",
-                                comment: "Button that launches the 'Report Problem' UI."
-                            ),
-                            systemImage: "exclamationmark.bubble"
-                        )
-                    }
-                }
-            } label: {
-                glyph("ellipsis")
+    @ViewBuilder
+    private var filterMenu: some View {
+        filterChoice(
+            title: OBALoc(
+                "stops_controller.filter.all_routes",
+                value: "All Routes",
+                comment: "A menu item on a Stop page that toggles the visible list of transit vehicles from a filtered list to all of the list items. e.g. a stop serves routes 1, 2, and 3. The user has filtered the stop to only show route 3. Chooosing this item will show 1, 2, and 3 again."
+            ),
+            isSelected: !state.isFilterOn,
+            filtered: false
+        )
+        filterChoice(
+            title: OBALoc(
+                "stops_controller.filter.filtered_routes",
+                value: "Filtered Routes",
+                comment: "A menu item on a Stop page that toggles the visible list of transit vehicles from a list of all items to a filtered list. e.g. a stop serves routes 1, 2, and 3. The user wants to only view route 3. Choosing this item would show that subset of routes."
+            ),
+            isSelected: state.isFilterOn,
+            filtered: true
+        )
+    }
+
+    @ViewBuilder
+    private var moreMenu: some View {
+        Button(action: onServiceAlerts) {
+            Label(Strings.serviceAlerts, systemImage: "exclamationmark.circle")
+        }
+        .disabled(!state.canShowServiceAlerts)
+
+        Section {
+            Button(action: onNearbyStops) {
+                Label(
+                    OBALoc(
+                        "stops_controller.nearby_stops",
+                        value: "Nearby Stops",
+                        comment: "Title of the row that will show stops that are near this one."
+                    ),
+                    systemImage: "location"
+                )
             }
-            .liquidGlassButtonStyle(borderShape: .circle, fallbackShape: Circle())
-            .accessibilityLabel(Strings.more)
+            Button(action: onWalkingDirections) {
+                Label(
+                    OBALoc(
+                        "stops_controller.walking_directions",
+                        value: "Walking Directions",
+                        comment: "Button that launches a maps app with walking directions to this stop"
+                    ),
+                    systemImage: "figure.walk"
+                )
+            }
+        }
+
+        Section {
+            Button(action: onReportProblem) {
+                Label(
+                    OBALoc(
+                        "stops_controller.report_problem",
+                        value: "Report a Problem",
+                        comment: "Button that launches the 'Report Problem' UI."
+                    ),
+                    systemImage: "exclamationmark.bubble"
+                )
+            }
         }
     }
 
