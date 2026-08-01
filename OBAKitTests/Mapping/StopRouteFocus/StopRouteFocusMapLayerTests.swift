@@ -114,6 +114,110 @@ final class StopRouteFocusMapLayerTests {
         )
     }
 
+    /// Two vehicles running the same route — the case where "the tapped marker"
+    /// and "the route's first marker" are different objects.
+    private func twoVehicleModel(routeID: RouteID) -> StopRouteFocusModel {
+        StopRouteFocusModel(
+            routes: [
+                StopRouteFocusModel.DrawnRoute(
+                    routeID: routeID, shortName: routeID, color: .systemBlue,
+                    shapeID: "s_\(routeID)", hasLiveVehicle: true
+                )
+            ],
+            vehicles: (1...2).map { index in
+                StopRouteFocusModel.DrawnVehicle(
+                    id: "v\(index)_\(routeID)", routeID: routeID,
+                    coordinate: CLLocationCoordinate2D(latitude: 47.6 + Double(index) / 100.0, longitude: -122.3),
+                    orientation: 90, departureID: "d\(index)_\(routeID)"
+                )
+            }
+        )
+    }
+
+    /// Regression: tapping a vehicle marker routes into `toggleFocus`, whose
+    /// `focusedRouteID` sink opens "the route's" callout. That lookup took the
+    /// route's FIRST annotation, so tapping the second bus on a route yanked
+    /// selection over to the first one — the rider tapped one vehicle and got a
+    /// different vehicle's callout.
+    @Test func `Tapping the second vehicle on a route leaves that vehicle selected`() throws {
+        let mapView = MKMapView()
+        let layer = makeLayer(mapView: mapView)
+        layer.begin(focus: StopMapFocus())
+        layer.update(model: twoVehicleModel(routeID: "H"))
+
+        let vehicles = mapView.annotations
+            .compactMap { $0 as? StopVehicleAnnotation }
+            .sorted { $0.id < $1.id }
+        #expect(vehicles.count == 2)
+        let second = try #require(vehicles.last)
+
+        // What `MapViewController.mapView(_:didSelect:)` does on a marker tap:
+        // MapKit has already selected the tapped marker, then the controller
+        // routes the tap into focus.
+        mapView.selectAnnotation(second, animated: false)
+        layer.toggleFocus(routeID: "H")
+
+        #expect(mapView.selectedAnnotations.first === second)
+    }
+
+    /// The chip-tap half of the same code path still has to open a callout: with
+    /// nothing selected, focusing a route reveals one of its vehicles.
+    @Test func `Focusing a route with nothing selected opens one of its vehicles`() throws {
+        let mapView = MKMapView()
+        let layer = makeLayer(mapView: mapView)
+        layer.begin(focus: StopMapFocus())
+        layer.update(model: twoVehicleModel(routeID: "H"))
+
+        layer.toggleFocus(routeID: "H")
+
+        let selected = try #require(mapView.selectedAnnotations.first as? StopVehicleAnnotation)
+        #expect(selected.routeID == "H")
+    }
+
+    /// The other way a rider ends up looking at the wrong vehicle: annotation
+    /// views are recycled, `MKAnnotationView.prepareForReuse` does not clear
+    /// accessory views, and the layer used to assign the callout only when the
+    /// departure resolved. A recycled view whose new annotation resolves to
+    /// nothing then still carried the previous vehicle's callout.
+    /// A recycled view, modelled directly: MapKit's reuse queue hands back a view
+    /// that still carries the previous vehicle's callout, and
+    /// `MKAnnotationView.prepareForReuse` does not clear accessory views.
+    ///
+    /// Driving `annotationView(for:in:)` cannot reach this state — with nothing
+    /// yet recycled the queue returns a fresh view, so the assertion passes with
+    /// or without the bug. Hence `configure(_:for:)`.
+    @Test func `Configuring a recycled view drops the previous vehicle's callout`() throws {
+        let mapView = MKMapView()
+        let layer = makeLayer(mapView: mapView)
+        layer.begin(focus: StopMapFocus())
+        layer.update(model: twoVehicleModel(routeID: "H"))
+        let annotation = try #require(mapView.annotations.compactMap { $0 as? StopVehicleAnnotation }.first)
+
+        let recycled = PulsingVehicleAnnotationView(annotation: nil, reuseIdentifier: nil)
+        recycled.detailCalloutAccessoryView = UILabel() // the previous vehicle's callout
+
+        // This vehicle's departure has left the arrival set.
+        layer.departureProvider = { _ in nil }
+        layer.configure(recycled, for: annotation)
+
+        #expect(recycled.detailCalloutAccessoryView == nil)
+    }
+
+    @Test func `Configuring a recycled view installs the new vehicle's callout`() throws {
+        let mapView = MKMapView()
+        let layer = makeLayer(mapView: mapView)
+        layer.begin(focus: StopMapFocus())
+        layer.update(model: twoVehicleModel(routeID: "H"))
+        let annotation = try #require(mapView.annotations.compactMap { $0 as? StopVehicleAnnotation }.first)
+
+        let recycled = PulsingVehicleAnnotationView(annotation: nil, reuseIdentifier: nil)
+        recycled.detailCalloutAccessoryView = UILabel()
+
+        layer.configure(recycled, for: annotation)
+
+        #expect(recycled.detailCalloutAccessoryView is VehicleCalloutView)
+    }
+
     @Test func `Update adds one vehicle annotation per drawn vehicle`() {
         #expect(Self.fixtureDeparture != nil)
         let mapView = MKMapView()

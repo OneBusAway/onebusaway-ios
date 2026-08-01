@@ -196,8 +196,21 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
     /// The chip-tap half of the spec's focus behavior: focusing a route also
     /// opens its vehicle's callout. A no-op when the route has no drawn vehicle,
     /// or when focus was cleared.
+    ///
+    /// Yields to an existing selection on the same route, because this runs for
+    /// *marker* taps too: `MapViewController.mapView(_:didSelect:)` routes a tap
+    /// into `toggleFocus`, which lands here with the marker already selected. On
+    /// a route with two buses running, picking "the route's first annotation"
+    /// then dragged selection off the marker the rider actually tapped and onto
+    /// the other one — they tapped one vehicle and got a different vehicle's
+    /// callout.
     private func selectFocusedVehicleAnnotation(routeID: RouteID?) {
-        guard let routeID, let annotation = annotations.first(where: { $0.routeID == routeID }) else { return }
+        guard let routeID else { return }
+        if let selected = mapView.selectedAnnotations.first as? StopVehicleAnnotation,
+           selected.routeID == routeID {
+            return
+        }
+        guard let annotation = annotations.first(where: { $0.routeID == routeID }) else { return }
         mapView.selectAnnotation(annotation, animated: true)
     }
 
@@ -384,13 +397,28 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
             withIdentifier: MKMapView.reuseIdentifier(for: PulsingVehicleAnnotationView.self),
             for: annotation
         ) as? PulsingVehicleAnnotationView
-        view?.realTimeAnnotationColor = annotation.routeColor
-        view?.isSelectable = true
-        view?.canShowCallout = true
-        if let departure = departureProvider?(annotation.departureID) {
-            view?.detailCalloutAccessoryView = makeCallout(for: departure, annotation: annotation)
-        }
+        view.map { configure($0, for: annotation) }
         return view
+    }
+
+    /// Applies one vehicle's identity to a view that may have been recycled from a
+    /// different one.
+    ///
+    /// Split out of `annotationView(for:in:)` so a test can hand it a view still
+    /// carrying the previous vehicle's callout — the exact state MapKit's reuse
+    /// queue produces, and one a test driving `annotationView` cannot reach,
+    /// because the queue hands back a fresh view whenever nothing has been
+    /// recycled yet.
+    func configure(_ view: PulsingVehicleAnnotationView, for annotation: StopVehicleAnnotation) {
+        view.realTimeAnnotationColor = annotation.routeColor
+        view.isSelectable = true
+        view.canShowCallout = true
+        // Assigned unconditionally, including to nil. `MKAnnotationView.prepareForReuse`
+        // does not clear accessory views, so an `if let` here left the previous
+        // vehicle's callout attached whenever the new annotation's departure failed
+        // to resolve — one vehicle's callout on another vehicle's marker.
+        view.detailCalloutAccessoryView = departureProvider?(annotation.departureID)
+            .map { makeCallout(for: $0, annotation: annotation) }
     }
 
     /// Relative-time formatter for "position updated 12s ago". Held statically —
