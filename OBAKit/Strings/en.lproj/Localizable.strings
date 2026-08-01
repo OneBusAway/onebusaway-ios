@@ -1451,6 +1451,12 @@
 /* Suggested invocation phrase for Siri Shortcut */
 "user_activity_builder.show_me_my_bus" = "Show me my bus";
 
+/* Qualifies the countdown in the live-vehicle map callout, as in '1m to this stop'. */
+"vehicle_callout.to_this_stop" = "to this stop";
+
+/* Freshness line in the live-vehicle map callout. %@ is a relative time, e.g. '12s ago'. */
+"vehicle_callout.position_updated_fmt" = "Position updated %@";
+
 /* Button in the live-vehicle map callout that opens the trip screen. */
 "vehicle_callout.follow_this_trip" = "Follow this trip";
 

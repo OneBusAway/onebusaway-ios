@@ -66,6 +66,25 @@ final class StopVehicleAnnotation: VehicleAnnotation {
         self.coordinate = coordinate
     }
 
+    /// Suppresses MapKit's own callout title row.
+    ///
+    /// `VehicleAnnotation` sets `title` from `TripStatus.title` — "Vehicle ID:
+    /// 1_4359" — which the callout drew above `detailCalloutAccessoryView`,
+    /// duplicating the "Vehicle 1_4359" line inside it and pushing the whole card
+    /// off the design. The setter is swallowed rather than left alone because the
+    /// superclass rewrites `title` from every `tripStatus` assignment.
+    ///
+    /// A nil title does NOT suppress the callout itself: verified on iOS 26.3 that
+    /// a view with `canShowCallout` and a `detailCalloutAccessoryView` still
+    /// presents one, with the accessory reaching a window.
+    /// `nonisolated` for the same reason as `init()` above: under this target's
+    /// MainActor-default isolation the override would otherwise be inferred
+    /// MainActor and clash with `MKPointAnnotation`'s nonisolated declaration.
+    nonisolated override var title: String? {
+        get { nil }
+        set { }
+    }
+
     /// Mutates this annotation in place for a refresh, preserving MapKit
     /// identity so an open callout survives an arrivals refresh instead of
     /// being dismissed by a remove/re-add cycle.

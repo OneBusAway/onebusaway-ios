@@ -397,7 +397,9 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
     /// constructing one per callout is measurably wasteful and they are stateless.
     private static let updatedFormatter: RelativeDateTimeFormatter = {
         let formatter = RelativeDateTimeFormatter()
-        formatter.unitsStyle = .short
+        // `.abbreviated` ("12s ago"), not `.short` ("12 sec. ago") — the design's
+        // freshness line, and short enough not to wrap under the countdown.
+        formatter.unitsStyle = .abbreviated
         return formatter
     }()
 
@@ -418,6 +420,9 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
         // optional-chaining an implicitly-unwrapped optional never traps.
         let headsign = departure.tripHeadsign ?? departure.route?.shortName ?? ""
         return VehicleCalloutView(
+            // Same optional-chained reach as `headsign` above, and for the same
+            // reason: `ArrivalDeparture.routeShortName` force-unwraps `route`.
+            routeShortName: departure.route?.shortName ?? "",
             headsign: headsign,
             vehicleLabel: String(format: Self.vehicleLabelFormat, annotation.id),
             countdownText: formatters.shortFormattedTime(until: departure),
