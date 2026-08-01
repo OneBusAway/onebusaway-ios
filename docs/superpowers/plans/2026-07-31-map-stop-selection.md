@@ -21,10 +21,10 @@
   ```bash
   set -o pipefail
   xcodebuild build-for-testing -project OBAKit.xcodeproj -scheme App \
-    -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -5
+    -destination 'platform=iOS Simulator,name=iPhone 17e,OS=26.3.1' | tail -5
   xcodebuild test-without-building -only-testing:OBAKitTests/<SuiteName> \
     -project OBAKit.xcodeproj -scheme App \
-    -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -20
+    -destination 'platform=iOS Simulator,name=iPhone 17e,OS=26.3.1' | tail -20
   ```
   Never pipe to `tail` without `set -o pipefail` — a failed build otherwise reports success.
 - **Do not touch** the legacy `StopViewController`, the `Vehicles` screen, or `MapPanelRootView`.
@@ -94,10 +94,10 @@ struct TripShapeIDDecodingTests {
 scripts/generate_project OneBusAway
 set -o pipefail
 xcodebuild build-for-testing -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -5
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=26.3.1' | tail -5
 xcodebuild test-without-building -only-testing:OBAKitTests/TripShapeIDDecodingTests \
   -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -20
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=26.3.1' | tail -20
 ```
 
 Expected: the three non-`Present` tests FAIL — decoding throws `keyNotFound`/`valueNotFound`, and the blank case returns `""` not `nil`.
@@ -153,7 +153,7 @@ Same commands as Step 2. Expected: 4 passed. Then run the broader modeling suite
 ```bash
 xcodebuild test-without-building -only-testing:OBAKitTests \
   -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -20
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=26.3.1' | tail -20
 ```
 
 - [ ] **Step 6: Commit**
@@ -242,10 +242,10 @@ final class MapKitExtensionsTests {
 scripts/generate_project OneBusAway
 set -o pipefail
 xcodebuild build-for-testing -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -5
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=26.3.1' | tail -5
 xcodebuild test-without-building -only-testing:OBAKitTests/MapKitExtensionsTests \
   -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -20
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=26.3.1' | tail -20
 ```
 
 Expected: `removeAllAnnotations keeps the user location by default` FAILS.
@@ -421,10 +421,10 @@ leaking between suites.
 scripts/generate_project OneBusAway
 set -o pipefail
 xcodebuild build-for-testing -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -5
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=26.3.1' | tail -5
 xcodebuild test-without-building -only-testing:OBAKitTests/MapLayerRendererDispatchTests \
   -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -20
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=26.3.1' | tail -20
 ```
 
 Expected: compile failure first (`renderer(for:in:)` and `mapOverlaysWereCleared()` are not `MapLayer` members).
@@ -522,7 +522,7 @@ Same command as Step 3. Expected: 4 passed. Then run the rental-layer suites, wh
 ```bash
 xcodebuild test-without-building -only-testing:OBAKitTests/MapRegionManagerRentalFilterTests \
   -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -20
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=26.3.1' | tail -20
 ```
 
 - [ ] **Step 8: Commit**
@@ -698,7 +698,7 @@ on the decoded coordinate count.
 scripts/generate_project OneBusAway
 set -o pipefail
 xcodebuild build-for-testing -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -5
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=26.3.1' | tail -5
 ```
 
 Expected: compile failure — `ShapeCache` does not exist.
@@ -809,10 +809,10 @@ actor ShapeCache {
 scripts/generate_project OneBusAway
 set -o pipefail
 xcodebuild build-for-testing -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -5
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=26.3.1' | tail -5
 xcodebuild test-without-building -only-testing:OBAKitTests/ShapeCacheTests \
   -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -20
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=26.3.1' | tail -20
 ```
 
 Expected: 4 passed.
@@ -1016,7 +1016,7 @@ final class StopRouteFocusModelTests {
 scripts/generate_project OneBusAway
 set -o pipefail
 xcodebuild build-for-testing -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -5
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=26.3.1' | tail -5
 ```
 
 Expected: compile failure — `MapDepartureEntry` and `StopRouteFocusModel` do not exist.
@@ -1211,10 +1211,10 @@ not "fix" it back.
 scripts/generate_project OneBusAway
 set -o pipefail
 xcodebuild build-for-testing -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -5
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=26.3.1' | tail -5
 xcodebuild test-without-building -only-testing:OBAKitTests/StopRouteFocusModelTests \
   -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -20
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=26.3.1' | tail -20
 ```
 
 Expected: 11 passed.
@@ -1330,7 +1330,7 @@ final class StopMapFocusTests {
 scripts/generate_project OneBusAway
 set -o pipefail
 xcodebuild build-for-testing -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -5
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=26.3.1' | tail -5
 ```
 
 Expected: compile failure — `StopMapFocus` does not exist.
@@ -1411,10 +1411,10 @@ final class StopMapFocus: ObservableObject {
 scripts/generate_project OneBusAway
 set -o pipefail
 xcodebuild build-for-testing -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -5
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=26.3.1' | tail -5
 xcodebuild test-without-building -only-testing:OBAKitTests/StopMapFocusTests \
   -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -20
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=26.3.1' | tail -20
 ```
 
 Expected: 8 passed.
@@ -1542,7 +1542,7 @@ final class StopVehicleAnnotationTests {
 scripts/generate_project OneBusAway
 set -o pipefail
 xcodebuild build-for-testing -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -5
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=26.3.1' | tail -5
 ```
 
 Expected: compile failure — `StopVehicleAnnotation` and `isSelectable` do not exist.
@@ -1667,10 +1667,10 @@ safe despite `headingImageView` belonging to the superclass.
 scripts/generate_project OneBusAway
 set -o pipefail
 xcodebuild build-for-testing -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -5
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=26.3.1' | tail -5
 xcodebuild test-without-building -only-testing:OBAKitTests/StopVehicleAnnotationTests \
   -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -20
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=26.3.1' | tail -20
 ```
 
 Expected: 4 passed. Then run the full target — `TripViewController` uses this view.
@@ -1832,7 +1832,7 @@ final class StopRouteFocusMapLayerTests {
 scripts/generate_project OneBusAway
 set -o pipefail
 xcodebuild build-for-testing -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -5
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=26.3.1' | tail -5
 ```
 
 Expected: compile failure — `StopRouteFocusMapLayer` does not exist.
@@ -2152,10 +2152,10 @@ sed -n '15,30p' OBAKitCore/Models/REST/PolylineEntity.swift
 scripts/generate_project OneBusAway
 set -o pipefail
 xcodebuild build-for-testing -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -5
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=26.3.1' | tail -5
 xcodebuild test-without-building -only-testing:OBAKitTests/StopRouteFocusMapLayerTests \
   -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -20
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=26.3.1' | tail -20
 ```
 
 Expected: 6 passed.
@@ -2276,7 +2276,7 @@ final class StopPageChipFocusTests {
 scripts/generate_project OneBusAway
 set -o pipefail
 xcodebuild build-for-testing -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -5
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=26.3.1' | tail -5
 ```
 
 Expected: compile failure — `RouteChip` does not exist.
@@ -2479,13 +2479,13 @@ pass a fresh `StopMapFocus()`.
 scripts/generate_project OneBusAway
 set -o pipefail
 xcodebuild build-for-testing -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -5
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=26.3.1' | tail -5
 xcodebuild test-without-building -only-testing:OBAKitTests/StopPageChipFocusTests \
   -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -20
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=26.3.1' | tail -20
 xcodebuild test-without-building -only-testing:OBAKitTests/StopPageSheetHeaderLayoutTests \
   -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -20
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=26.3.1' | tail -20
 ```
 
 Expected: 5 passed, and the existing header layout suite still green — that suite
@@ -2569,7 +2569,7 @@ final class VehicleCalloutViewTests {
 scripts/generate_project OneBusAway
 set -o pipefail
 xcodebuild build-for-testing -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -5
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=26.3.1' | tail -5
 ```
 
 Expected: compile failure — `VehicleCalloutView` does not exist.
@@ -2765,10 +2765,10 @@ grep -n 'lastUpdated' OBAKitCore/Models/REST/ArrivalDeparture.swift | head -3
 scripts/generate_project OneBusAway
 set -o pipefail
 xcodebuild build-for-testing -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -5
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=26.3.1' | tail -5
 xcodebuild test-without-building -only-testing:OBAKitTests/VehicleCalloutViewTests \
   -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -20
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=26.3.1' | tail -20
 ```
 
 Expected: 2 passed.
@@ -2842,7 +2842,7 @@ things that were actually wrong.
 scripts/generate_project OneBusAway
 set -o pipefail
 xcodebuild build-for-testing -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -5
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=26.3.1' | tail -5
 ```
 
 Expected: compile failure — `halfDetentInset` does not exist.
@@ -2878,10 +2878,10 @@ Callers pass `mapView.safeAreaLayoutGuide.layoutFrame.height`.
 scripts/generate_project OneBusAway
 set -o pipefail
 xcodebuild build-for-testing -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -5
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=26.3.1' | tail -5
 xcodebuild test-without-building -only-testing:OBAKitTests/StopSheetLayoutMetricsTests \
   -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -20
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=26.3.1' | tail -20
 ```
 
 Expected: 2 passed.
@@ -3010,10 +3010,10 @@ grep -n '@Published.*isListFiltered\|@Published.*stopPreferences' OBAKit/ViewMod
 scripts/generate_project OneBusAway
 set -o pipefail
 xcodebuild build-for-testing -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -5
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=26.3.1' | tail -5
 xcodebuild test-without-building -only-testing:OBAKitTests \
   -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -30
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=26.3.1' | tail -30
 ```
 
 Expected: all suites pass, including `StopSheetPresenterTests`,
