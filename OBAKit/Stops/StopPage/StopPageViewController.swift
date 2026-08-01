@@ -41,6 +41,30 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
     /// immediately after creating this controller; no-op when `showToolbarOnBottom` is false.
     var onClose: (() -> Void)?
 
+    /// Set by a host that owns a map, so a trip opened from this page can point
+    /// that map at the trip. Left nil where this page was pushed full-screen —
+    /// there is no map behind it to focus.
+    var onTripPagePush: ((TripPageViewController) -> Void)?
+
+    /// Opens the SwiftUI trip page — the trip panel's "View full trip" and the
+    /// row context menu's "Show Trip Details".
+    ///
+    /// Both used to go through `ViewRouter.navigateTo(arrivalDeparture:from:)`,
+    /// which still builds the old `TripViewController` for the surfaces that push
+    /// full-screen with no map behind them. Routed here instead, so every way out
+    /// of this page reaches the same screen.
+    func showTripPage(for arrivalDeparture: ArrivalDeparture) {
+        let tripPage = TripPageViewController(
+            application: application,
+            arrivalDeparture: arrivalDeparture,
+            originTitle: viewModel.stop?.name
+        )
+        // Only a host that owns a map answers this. Where this page was pushed
+        // full-screen there is nothing behind it to point anywhere.
+        onTripPagePush?(tripPage)
+        application.viewRouter.navigate(to: tripPage, from: self)
+    }
+
     public var idleTimerFailsafe: Timer?
 
     private lazy var dataLoadFeedbackGenerator = DataLoadFeedbackGenerator(application: application)
@@ -233,7 +257,7 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
         StopPageNavigationHandler(
             showTrip: { [weak self] departure in
                 guard let self else { return }
-                self.application.viewRouter.navigateTo(arrivalDeparture: departure, from: self)
+                self.showTripPage(for: departure)
             },
             showScheduleForStop: { [weak self] in self?.showScheduleForStop() },
             showScheduleForRoute: { [weak self] departure in self?.showScheduleForRoute(for: departure) },

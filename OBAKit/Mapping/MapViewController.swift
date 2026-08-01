@@ -785,6 +785,12 @@ class MapViewController: UIViewController,
 
         stopPageVC.onClose = { [weak self] in self?.stopSheet.dismiss() }
 
+        // This is the map the trip page will hang over, whichever affordance
+        // opened it.
+        stopPageVC.onTripPagePush = { [weak self] tripPage in
+            self?.wireTripFocus(for: tripPage)
+        }
+
         // Only one sheet at a time: clear whatever else is occupying this space first.
         dismissExistingMapItemController()
         semiModalPanel?.removePanelFromParent(animated: false)
@@ -836,6 +842,36 @@ class MapViewController: UIViewController,
         cancelScheduledFeedbackPrompt()
     }
 
+    /// Points this map at a trip for as long as its page is on the stack.
+    ///
+    /// While the trip page is up the map shows that trip and nothing else: the
+    /// stop's own routes and vehicles stand down, and come back intact when the
+    /// rider pops out. Suppression rather than `end()` — the stop sheet
+    /// underneath is still presented.
+    private func wireTripFocus(for tripPage: TripPageViewController) {
+        tripPage.onMapFocusChanged = { [weak self] tripFocus in
+            guard let self else { return }
+
+            // Gated on the layer's own Map-sheet toggle, for the same reason
+            // `beginRouteFocus` is: annotation and overlay dispatch consults
+            // every registered layer with no enabled check, so a disabled layer
+            // that gets begun would still draw. A rider who turned this off keeps
+            // the stop's routes instead — which is why the suppression flag
+            // follows enablement rather than the push.
+            guard mapRegionManager.isMapLayerEnabled(id: TripFocusMapLayer.layerID),
+                  let tripLayer = mapRegionManager.mapLayer(id: TripFocusMapLayer.layerID) as? TripFocusMapLayer else { return }
+
+            let stopLayer = mapRegionManager.mapLayer(id: StopRouteFocusMapLayer.layerID) as? StopRouteFocusMapLayer
+            stopLayer?.setSuppressed(tripFocus != nil)
+
+            if let tripFocus {
+                tripLayer.begin(focus: tripFocus)
+            } else {
+                tripLayer.end()
+            }
+        }
+    }
+
     /// Feeds the route-focus layer from the stop page's view model, and routes
     /// "Follow this trip" into the sheet's navigation stack. Owns ONLY the
     /// focus/layer wiring — camera recentering is a separate concern, see
@@ -854,58 +890,12 @@ class MapViewController: UIViewController,
         layer.begin(focus: focus)
 
         let viewModel = stopPageVC.viewModel
-        // Pushes the SwiftUI trip page rather than going through
-        // `ViewRouter.navigateTo(arrivalDeparture:from:)`, which still builds
-        // `TripViewController` for the surfaces that push full-screen. That one
-        // owns a map and adds its own floating panel, so inside this sheet it
-        // nests a panel in a panel; this page draws no map at all. The remaining
-        // callers move over once the standalone host exists to give them one.
-        layer.onFollowTrip = { [weak self, weak stopPageVC, weak focus] departure in
-            guard let self, let stopPageVC else { return }
-
-            // Narrow the map to the trip being followed before the push, so the
-            // page arrives over its own route rather than over every route the
-            // stop serves. `focus`, not `toggleFocus`: the route may already be
-            // focused from the marker tap that opened the callout, and toggling
-            // would clear it at the moment the rider committed to it.
-            //
-            // Not restored on pop, matching the sheet's detent: where the map is
-            // pointed after the rider has been somewhere is theirs to change.
-            focus?.focus(routeID: departure.routeID)
-
-            let tripPage = TripPageViewController(
-                application: self.application,
-                arrivalDeparture: departure,
-                originTitle: stopPageVC.viewModel.stop?.name
-            )
-
-            // While the trip page is up the map shows that trip and nothing
-            // else: the stop's own routes and vehicles stand down, and come
-            // back intact when the rider pops out. Suppression rather than
-            // `end()` — the stop sheet underneath is still presented.
-            tripPage.onMapFocusChanged = { [weak self] tripFocus in
-                guard let self else { return }
-
-                // Gated on the layer's own Map-sheet toggle, for the same reason
-                // `beginRouteFocus` is: annotation and overlay dispatch consults
-                // every registered layer with no enabled check, so a disabled
-                // layer that gets begun would still draw. A rider who turned this
-                // off keeps the stop's routes instead — hence the suppression
-                // flag following enablement rather than the push.
-                guard mapRegionManager.isMapLayerEnabled(id: TripFocusMapLayer.layerID),
-                      let tripLayer = mapRegionManager.mapLayer(id: TripFocusMapLayer.layerID) as? TripFocusMapLayer else { return }
-
-                let stopLayer = mapRegionManager.mapLayer(id: StopRouteFocusMapLayer.layerID) as? StopRouteFocusMapLayer
-                stopLayer?.setSuppressed(tripFocus != nil)
-
-                if let tripFocus {
-                    tripLayer.begin(focus: tripFocus)
-                } else {
-                    tripLayer.end()
-                }
-            }
-
-            self.application.viewRouter.navigate(to: tripPage, from: stopPageVC)
+        // Routed through the stop page rather than pushing from here, so the
+        // callout's "Follow this trip" and the page's own "View full trip" and
+        // "Show Trip Details" all land on one screen by one path. `showTripPage`
+        // calls back into `onTripPagePush` below.
+        layer.onFollowTrip = { [weak stopPageVC] departure in
+            stopPageVC?.showTripPage(for: departure)
         }
 
         // Combine over a @MainActor ObservableObject from UIKit: the exact pattern
