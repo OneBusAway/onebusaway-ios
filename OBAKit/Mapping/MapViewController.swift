@@ -815,6 +815,13 @@ class MapViewController: UIViewController,
         stopPageVC.attach(focus: focus)
         beginRouteFocus(focus: focus, stopPageVC: stopPageVC)
 
+        // Camera framing is not layer content, so it must not answer to the
+        // "Route lines & vehicles" Map-sheet toggle the way `beginRouteFocus`
+        // does — a rider who turns that layer off must not also lose stop
+        // recentering. Unconditional, but still after `stopSheet.present`
+        // above for the same outgoing-teardown ordering reason.
+        beginRecentering(stopPageVC: stopPageVC)
+
         // `StopSheetPresenter.present` tears the outgoing presentation down as its first
         // statement, which runs the handler above synchronously — so a stop-to-stop swap
         // arms the prompt for a sheet that is being replaced, not dismissed. Cancelling
@@ -824,7 +831,9 @@ class MapViewController: UIViewController,
     }
 
     /// Feeds the route-focus layer from the stop page's view model, and routes
-    /// "Follow this trip" into the sheet's navigation stack.
+    /// "Follow this trip" into the sheet's navigation stack. Owns ONLY the
+    /// focus/layer wiring — camera recentering is a separate concern, see
+    /// `beginRecentering(stopPageVC:)`.
     ///
     /// Gated on the layer's Map-sheet toggle: `MapRegionManager`'s annotation
     /// and overlay dispatch deliberately consults every registered layer with
@@ -866,15 +875,22 @@ class MapViewController: UIViewController,
                 layer.update(model: StopRouteFocusModel.make(departures: visible, routeCap: 6))
             }
             .store(in: &stopFocusCancellables)
+    }
 
-        // Recenter above the sheet once the stop is available. Subscribing to
-        // `$stop` — rather than reading `viewModel.stop` once at present time —
-        // also covers `show(stopID:)` (deep links, nearby-stop rows), where the
-        // stop loads asynchronously after the sheet is already up; a one-time
-        // read there would see nil and leave the stop behind the sheet. `@Published`
-        // replays its current value to a new subscriber, so this fires immediately
-        // when the stop is already loaded, exactly like the direct call it replaces.
-        viewModel.$stop
+    /// Keeps the tapped stop visible above the sheet, independent of whether the
+    /// "Route lines & vehicles" layer is enabled — camera framing is not layer
+    /// content, so a rider who disables that layer must not also lose
+    /// recentering (the bug the spec's "Camera" section exists to fix).
+    ///
+    /// Subscribing to `$stop` — rather than reading `viewModel.stop` once at
+    /// present time — also covers `show(stopID:)` (deep links, nearby-stop
+    /// rows), where the stop loads asynchronously after the sheet is already
+    /// up; a one-time read there would see nil and leave the stop behind the
+    /// sheet. `@Published` replays its current value to a new subscriber, so
+    /// this still fires immediately when the stop is already loaded (the
+    /// `show(stop:)` path).
+    private func beginRecentering(stopPageVC: StopPageViewController) {
+        stopPageVC.viewModel.$stop
             .compactMap { $0 }
             .first()
             .sink { [weak self] stop in
