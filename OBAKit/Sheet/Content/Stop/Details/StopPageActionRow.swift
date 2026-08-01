@@ -103,6 +103,7 @@ struct StopPageActionRow: View {
         } label: {
             label(title: Strings.filter, systemImage: state.filterSystemImage)
         }
+        .buttonStyle(.plain)
         .disabled(!state.canFilter)
         .accessibilityLabel(Strings.filter)
         .accessibilityValue(state.isFilterOn
@@ -144,6 +145,7 @@ struct StopPageActionRow: View {
         } label: {
             label(title: Strings.more, systemImage: "ellipsis")
         }
+        .buttonStyle(.plain)
         .accessibilityLabel(Strings.more)
     }
 
@@ -151,16 +153,19 @@ struct StopPageActionRow: View {
         Button(action: action) {
             label(title: title, systemImage: systemImage)
         }
+        // Without `.plain` the button style tints its label with the accent
+        // colour, overriding the neutral `foregroundStyle` in `label(...)`.
+        .buttonStyle(.plain)
         .accessibilityLabel(title)
     }
 
-    /// A filled circle with the glyph, captioned beneath.
+    /// A glass circle with the glyph, captioned beneath.
     private func label(title: String, systemImage: String) -> some View {
         VStack(spacing: 6) {
             Image(systemName: systemImage)
                 .font(.system(size: 18, weight: .semibold))
                 .frame(width: 44, height: 44)
-                .background(Color(uiColor: .secondarySystemFill), in: Circle())
+                .modifier(GlassCircleBackground())
                 .accessibilityHidden(true)
             Text(title)
                 .font(.caption2)
@@ -170,11 +175,31 @@ struct StopPageActionRow: View {
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity)
         }
-        .foregroundStyle(.tint)
+        // `.primary`, not `.tint`: the row reads as neutral chrome rather than
+        // four tinted calls to action. That is black in light mode, and stays
+        // legible in dark mode where a literal black would disappear against
+        // the sheet's background.
+        .foregroundStyle(.primary)
         .frame(maxWidth: scrollsHorizontally ? nil : .infinity)
         .frame(minWidth: scrollsHorizontally ? 84 : nil)
         .padding(.horizontal, 2)
         .contentShape(Rectangle())
+    }
+}
+
+/// The circular button backdrop: real Liquid Glass on iOS 26+, an
+/// ultra-thin-material circle with a hairline rim on earlier versions. Mirrors
+/// the treatment `GlassContainerBackground` gives the mode toggle and the
+/// Load-more capsule, which is private to `StopPageView.swift`.
+private struct GlassCircleBackground: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            content.glassEffect(.regular, in: Circle())
+        } else {
+            content
+                .background(.ultraThinMaterial, in: Circle())
+                .overlay(Circle().stroke(Color(uiColor: .separator).opacity(0.5), lineWidth: 0.5))
+        }
     }
 }
 

@@ -32,24 +32,30 @@ struct StopDetailsSheetTopBar: View {
     let onRefresh: () -> Void
     let onClose: () -> Void
 
+    /// Matches the visual diameter UIKit gives a circular navigation-bar item,
+    /// so the sheet's chrome reads at the same weight as a real nav bar.
+    private static let buttonSize: CGFloat = 36
+
     var body: some View {
         HStack(spacing: 12) {
-            refreshButton
-
             Text(title)
                 .font(.headline)
                 .lineLimit(1)
                 .truncationMode(.tail)
-                .frame(maxWidth: .infinity)
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .opacity(titleOpacity)
                 // Hidden from VoiceOver while invisible; the header below names
                 // the stop in that state.
                 .accessibilityHidden(titleOpacity < 0.5)
 
-            closeButton
+            // Both controls sit together on the trailing edge.
+            HStack(spacing: 8) {
+                refreshButton
+                closeButton
+            }
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 10)
+        .padding(.vertical, 12)
         .background(.bar)
         .overlay(alignment: .bottom) { Divider() }
     }
@@ -61,11 +67,11 @@ struct StopDetailsSheetTopBar: View {
                     ProgressView().controlSize(.small)
                 } else {
                     Image(systemName: "arrow.clockwise")
-                        .font(.footnote.weight(.bold))
+                        .font(.body.weight(.semibold))
                         .foregroundStyle(.secondary)
                 }
             }
-            .frame(width: 30, height: 30)
+            .frame(width: Self.buttonSize, height: Self.buttonSize)
             .background(Color(uiColor: .secondarySystemFill), in: Circle())
             .contentShape(Circle())
         }
@@ -78,9 +84,9 @@ struct StopDetailsSheetTopBar: View {
     private var closeButton: some View {
         Button(action: onClose) {
             Image(systemName: "xmark")
-                .font(.footnote.weight(.bold))
+                .font(.body.weight(.semibold))
                 .foregroundStyle(.secondary)
-                .frame(width: 30, height: 30)
+                .frame(width: Self.buttonSize, height: Self.buttonSize)
                 .background(Color(uiColor: .secondarySystemFill), in: Circle())
                 .contentShape(Circle())
         }
