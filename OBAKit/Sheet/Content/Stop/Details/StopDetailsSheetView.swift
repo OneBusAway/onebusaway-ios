@@ -80,189 +80,253 @@ struct StopDetailsSheetView: View {
         presenter.makeNavigationHandler(viewModel: viewModel, closeSheet: { coordinator.pop() })
     }
 
+    // MARK: - Body
+
     var body: some View {
         let content = StopPageContent(viewModel: viewModel)
-        let walkTime = viewModel.walkTime
 
+        list(content: content)
+            .listStyle(.plain)
+            // No `.refreshable`: this presentation refreshes from the top bar's
+            // button only, which is why that button stays pinned.
+            //
+            // Scroll position drives the title's OPACITY and the action row's
+            // overlay position — never the height of the `safeAreaInset` below.
+            // An inset whose height depends on scroll position feeds back on
+            // itself: measured on device, collapsing a 170pt header shifted
+            // `contentOffset.y + contentInsets.top` by exactly 170, so the metric
+            // is not inset-invariant and any mid-range progress oscillates
+            // (progress -> inset -> offset -> progress) until the main thread is
+            // pegged and the whole app stops responding.
+            .onScrollGeometryChange(for: CGFloat.self) { geometry in
+                geometry.contentOffset.y + geometry.contentInsets.top
+            } action: { _, offset in
+                track(scrollOffset: offset)
+            }
+            // Fixed height — it holds only the top bar, so nothing here resizes
+            // as the list scrolls.
+            .safeAreaInset(edge: .top, spacing: 0) { topBar }
+            // The action row rides as an overlay rather than list content or a
+            // second inset. An overlay takes no part in the list's layout, so its
+            // position can track scrolling without the scroll view ever observing
+            // the result — the property the collapsing header lacked.
+            .overlay(alignment: .top) { actionRowOverlay }
+            .stopPageLifecycle(
+                viewModel: viewModel,
+                userDefaults: userDefaults,
+                liveActivityStarted: viewModel.liveActivityStarted
+            )
+            .keepsScreenAwake()
+            .defaultAppStorage(userDefaults)
+            .environment(\.obaFormatters, formatters)
+            .onChange(of: content.departureIDs) { _, ids in reconcileExpandedDeparture(against: ids) }
+            .onChange(of: content.routeIDs) { _, ids in reconcileExpandedRoute(against: ids) }
+            .onChange(of: scenePhase, handle(scenePhase:to:))
+            .onReceive(viewModel.$stop.compactMap { $0 }, perform: publishUserActivity(for:))
+            .onReceive(viewModel.$stopArrivals.compactMap { $0 }) { _ in signalFirstLoad() }
+            .onReceive(viewModel.$operationError.compactMap { $0 }) { _ in feedback.dataLoad(.failed) }
+            .onReceive(viewModel.presentFullSurvey, perform: showFullSurvey(_:))
+            .onReceive(viewModel.surveySubmissionError, perform: presenter.showError)
+            .onReceive(viewModel.$alarmError.compactMap { $0 }, perform: presenter.showError)
+            .onReceive(viewModel.$alarmPermissionDenied.dropFirst().filter { $0 }) { _ in
+                showAlarmPermissionDenied()
+            }
+            .onDisappear(perform: invalidateUserActivity)
+    }
+
+    // MARK: - Content
+
+    private func list(content: StopPageContent) -> some View {
         List {
             headerRows(showsLoadingState: content.showsLoadingState)
+            departures(content: content)
+        }
+    }
 
-            StopDeparturesSections(
-                content: content,
-                survey: viewModel.currentSurvey,
-                stopID: viewModel.stopID,
-                serviceAlerts: viewModel.stopArrivals?.serviceAlerts ?? [],
-                sortType: viewModel.stopPreferences.sortType,
-                walkMinutes: walkTime?.walkMinutes,
-                minutesAfter: viewModel.minutesAfter,
-                isBrokenBookmark: viewModel.isBrokenBookmark,
-                errorText: viewModel.operationErrorMessage,
-                showsDonation: content.hasLoadedArrivals && viewModel.shouldRequestDonations && !donationHidden,
-                isLoadMoreExhausted: viewModel.isLoadMoreExhausted,
-                isLoading: viewModel.isLoading,
-                pastCollapsed: pastCollapsed,
-                expandedDepartureID: expandedDepartureID,
-                expandedRouteID: expandedRouteID,
-                statusProvider: { DepartureStatus(arrivalDeparture: $0) },
-                alarmLookup: { viewModel.alarm(for: $0) },
-                alarmLeadTime: { viewModel.alarmLeadTimeMinutes($0) },
-                canAlarm: { viewModel.canCreateAlarm(for: $0) },
-                actionsProvider: makeActions(for:),
-                panelBuilder: makePanel(for:),
-                onSurveyNext: { answer in
-                    Task { await viewModel.submitHeroAnswer(answer, stopLocation: viewModel.stop?.coordinate) }
-                },
-                onSurveyDismiss: { viewModel.dismissCurrentSurvey() },
-                onSurveyExternal: {
-                    viewModel.launchExternalSurvey(viewModel.currentSurvey, onFailure: navigation.showExternalSurveyError)
-                },
-                onDonate: navigation.showDonation,
-                onDonationClose: { navigation.dismissDonation { donationHidden = true } },
-                onSelectAlert: navigation.showAlertDetail,
-                onChangeMode: { newValue in
-                    withAnimation {
-                        expandedDepartureID = nil
-                        expandedRouteID = nil
-                        userDefaults.set(newValue.rawValue, forKey: StopPageLifecycleKeys.lastUsedStopSort)
-                        viewModel.updateSortType(newValue)
-                    }
-                },
-                onTogglePast: { withAnimation { pastCollapsed.toggle() } },
-                onToggleExpand: { departure in
-                    withAnimation(.snappy) {
-                        expandedDepartureID = expandedDepartureID == departure.id ? nil : departure.id
-                    }
-                },
-                onToggleRoute: { routeID in
-                    withAnimation(.snappy) {
-                        expandedRouteID = expandedRouteID == routeID ? nil : routeID
-                        expandedDepartureID = nil
-                    }
-                },
-                onAlarmToggle: { departure in
-                    if viewModel.alarm(for: departure) != nil {
-                        Task { await viewModel.cancelAlarm(for: departure) }
-                    } else {
-                        navigation.showAlarmPicker(departure)
-                    }
-                },
-                onRetry: { Task { await viewModel.refresh() } },
-                onShowAllRoutes: { viewModel.isListFiltered = false },
-                onLoadMore: { Task { await viewModel.loadMoreDepartures() } }
-            )
-        }
-        .listStyle(.plain)
-        // No `.refreshable`: this presentation refreshes from the top bar's
-        // button only, which is why that button stays pinned.
-        //
-        // Scroll position drives the title's OPACITY and nothing else. It must
-        // never drive the height of the `safeAreaInset` below: an inset whose
-        // height depends on scroll position feeds back on itself. Measured on
-        // device, collapsing a 170pt header shifted
-        // `contentOffset.y + contentInsets.top` by exactly 170 — so the metric
-        // is not inset-invariant, and any mid-range progress oscillates
-        // (progress -> inset -> offset -> progress) until the main thread is
-        // pegged and the whole app stops responding.
-        .onScrollGeometryChange(for: CGFloat.self) { geometry in
-            geometry.contentOffset.y + geometry.contentInsets.top
-        } action: { _, offset in
-            scrollOffset = offset
-            titleProgress = StopSheetHeaderCollapse.progress(
-                scrollOffset: offset,
-                collapsibleHeight: Self.titleFadeDistance
-            )
-        }
-        // Fixed height — it holds only the top bar, so nothing here resizes as
-        // the list scrolls.
-        .safeAreaInset(edge: .top, spacing: 0) {
-            StopDetailsSheetTopBar(
-                title: viewModel.stop?.name ?? "",
-                titleOpacity: Double(titleProgress),
-                statusText: viewModel.statusText,
-                isRefreshing: viewModel.isLoading,
-                onRefresh: { Task { await viewModel.refresh() } },
-                onClose: { coordinator.pop() }
-            )
-            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { topBarHeight = $0 }
-        }
-        // The action row rides as an overlay rather than list content or a
-        // second inset. An overlay takes no part in the list's layout, so its
-        // position can track scrolling without the scroll view ever observing
-        // the result — the property the collapsing header lacked.
-        .overlay(alignment: .top) { actionRowOverlay }
-        .stopPageLifecycle(
-            viewModel: viewModel,
-            userDefaults: userDefaults,
-            liveActivityStarted: viewModel.liveActivityStarted
+    private func departures(content: StopPageContent) -> some View {
+        StopDeparturesSections(
+            content: content,
+            survey: viewModel.currentSurvey,
+            stopID: viewModel.stopID,
+            serviceAlerts: viewModel.stopArrivals?.serviceAlerts ?? [],
+            sortType: viewModel.stopPreferences.sortType,
+            walkMinutes: viewModel.walkTime?.walkMinutes,
+            minutesAfter: viewModel.minutesAfter,
+            isBrokenBookmark: viewModel.isBrokenBookmark,
+            errorText: viewModel.operationErrorMessage,
+            showsDonation: content.hasLoadedArrivals && viewModel.shouldRequestDonations && !donationHidden,
+            isLoadMoreExhausted: viewModel.isLoadMoreExhausted,
+            isLoading: viewModel.isLoading,
+            pastCollapsed: pastCollapsed,
+            expandedDepartureID: expandedDepartureID,
+            expandedRouteID: expandedRouteID,
+            statusProvider: { DepartureStatus(arrivalDeparture: $0) },
+            alarmLookup: { viewModel.alarm(for: $0) },
+            alarmLeadTime: { viewModel.alarmLeadTimeMinutes($0) },
+            canAlarm: { viewModel.canCreateAlarm(for: $0) },
+            actionsProvider: makeActions(for:),
+            panelBuilder: makePanel(for:),
+            onSurveyNext: submitSurveyAnswer(_:),
+            onSurveyDismiss: { viewModel.dismissCurrentSurvey() },
+            onSurveyExternal: launchExternalSurvey,
+            onDonate: navigation.showDonation,
+            onDonationClose: hideDonation,
+            onSelectAlert: navigation.showAlertDetail,
+            onChangeMode: change(sortType:),
+            onTogglePast: togglePast,
+            onToggleExpand: toggleExpanded(_:),
+            onToggleRoute: toggleExpandedRoute(_:),
+            onAlarmToggle: toggleAlarm(for:),
+            onRetry: refresh,
+            onShowAllRoutes: { viewModel.isListFiltered = false },
+            onLoadMore: loadMore
         )
-        .keepsScreenAwake()
-        .defaultAppStorage(userDefaults)
-        .environment(\.obaFormatters, formatters)
-        .onChange(of: content.departureIDs) { _, ids in
-            if let id = expandedDepartureID, !ids.contains(id) { expandedDepartureID = nil }
+    }
+
+    // MARK: - List actions
+
+    private func submitSurveyAnswer(_ answer: String) {
+        Task { await viewModel.submitHeroAnswer(answer, stopLocation: viewModel.stop?.coordinate) }
+    }
+
+    private func launchExternalSurvey() {
+        viewModel.launchExternalSurvey(viewModel.currentSurvey, onFailure: navigation.showExternalSurveyError)
+    }
+
+    private func hideDonation() {
+        navigation.dismissDonation { donationHidden = true }
+    }
+
+    /// Switching modes collapses every open accordion, then persists the choice
+    /// as the app-wide "last used" seed.
+    private func change(sortType: StopSort) {
+        withAnimation {
+            expandedDepartureID = nil
+            expandedRouteID = nil
+            userDefaults.set(sortType.rawValue, forKey: StopPageLifecycleKeys.lastUsedStopSort)
+            viewModel.updateSortType(sortType)
         }
-        .onChange(of: content.routeIDs) { _, ids in
-            if let rid = expandedRouteID, !ids.contains(rid) { expandedRouteID = nil }
+    }
+
+    private func togglePast() {
+        withAnimation { pastCollapsed.toggle() }
+    }
+
+    private func toggleExpanded(_ departure: ArrivalDeparture) {
+        withAnimation(.snappy) {
+            expandedDepartureID = expandedDepartureID == departure.id ? nil : departure.id
         }
-        .onReceive(viewModel.$stop.compactMap { $0 }) { stop in
-            userActivity?.invalidate()
-            let activity = presenter.makeUserActivity(stop: stop)
-            activity?.becomeCurrent()
-            userActivity = activity
+    }
+
+    private func toggleExpandedRoute(_ routeID: RouteID) {
+        withAnimation(.snappy) {
+            expandedRouteID = expandedRouteID == routeID ? nil : routeID
+            expandedDepartureID = nil
         }
-        .onReceive(viewModel.$stopArrivals.compactMap { $0 }) { _ in
-            guard firstLoad else { return }
-            firstLoad = false
-            feedback.dataLoad(.success)
+    }
+
+    private func toggleAlarm(for departure: ArrivalDeparture) {
+        if viewModel.alarm(for: departure) != nil {
+            Task { await viewModel.cancelAlarm(for: departure) }
+        } else {
+            navigation.showAlarmPicker(departure)
         }
-        .onReceive(viewModel.$operationError.compactMap { $0 }) { _ in
-            feedback.dataLoad(.failed)
+    }
+
+    private func refresh() {
+        Task { await viewModel.refresh() }
+    }
+
+    private func loadMore() {
+        Task { await viewModel.loadMoreDepartures() }
+    }
+
+    // MARK: - Side effects
+
+    private func track(scrollOffset offset: CGFloat) {
+        scrollOffset = offset
+        titleProgress = StopSheetHeaderCollapse.progress(
+            scrollOffset: offset,
+            collapsibleHeight: Self.titleFadeDistance
+        )
+    }
+
+    /// Clears a stale expansion when a refresh drops the departure from the feed.
+    private func reconcileExpandedDeparture(against ids: Set<String>) {
+        if let id = expandedDepartureID, !ids.contains(id) { expandedDepartureID = nil }
+    }
+
+    private func reconcileExpandedRoute(against ids: Set<RouteID>) {
+        if let rid = expandedRouteID, !ids.contains(rid) { expandedRouteID = nil }
+    }
+
+    private func publishUserActivity(for stop: Stop) {
+        userActivity?.invalidate()
+        let activity = presenter.makeUserActivity(stop: stop)
+        activity?.becomeCurrent()
+        userActivity = activity
+    }
+
+    private func invalidateUserActivity() {
+        userActivity?.invalidate()
+        userActivity = nil
+    }
+
+    /// The success haptic fires on the first arrivals load only; later refreshes
+    /// are silent.
+    private func signalFirstLoad() {
+        guard firstLoad else { return }
+        firstLoad = false
+        feedback.dataLoad(.success)
+    }
+
+    private func showFullSurvey(_ payload: StopViewModel.FullSurveyPresentation) {
+        presenter.showFullSurvey(
+            payload.survey,
+            heroResponseID: payload.heroResponseID,
+            stop: viewModel.stop,
+            stopID: viewModel.stopID
+        )
+    }
+
+    private func showAlarmPermissionDenied() {
+        presenter.showAlarmPermissionDeniedAlert {
+            // Reset so a later already-denied attempt re-fires the binding.
+            viewModel.clearAlarmPermissionDenied()
         }
-        .onReceive(viewModel.presentFullSurvey) { payload in
-            presenter.showFullSurvey(
-                payload.survey,
-                heroResponseID: payload.heroResponseID,
-                stop: viewModel.stop,
-                stopID: viewModel.stopID
-            )
-        }
-        .onReceive(viewModel.surveySubmissionError) { error in
-            presenter.showError(error)
-        }
-        .onReceive(viewModel.$alarmError.compactMap { $0 }) { error in
-            presenter.showError(error)
-        }
-        .onReceive(viewModel.$alarmPermissionDenied.dropFirst().filter { $0 }) { _ in
-            presenter.showAlarmPermissionDeniedAlert {
-                // Reset so a later already-denied attempt re-fires the binding.
-                viewModel.clearAlarmPermissionDenied()
+    }
+
+    private func handle(scenePhase previous: ScenePhase, to phase: ScenePhase) {
+        switch phase {
+        case .active:
+            // Only re-arm on the .background → .active edge. `.inactive → .active`
+            // (returning from Control Center or a banner) never stopped the timer,
+            // so re-arming would issue a redundant network call.
+            if previous == .background {
+                Task { await viewModel.start() }
             }
-        }
-        .onChange(of: scenePhase) { previous, phase in
-            switch phase {
-            case .active:
-                // Only re-arm on the .background → .active edge.
-                // `.inactive → .active` (returning from Control Center or a
-                // banner) never stopped the timer, so re-arming would issue a
-                // redundant network call.
-                if previous == .background {
-                    Task { await viewModel.start() }
-                }
-            case .background:
-                viewModel.deactivate()
-            case .inactive:
-                break
-            @unknown default:
-                break
-            }
-        }
-        .onDisappear {
-            userActivity?.invalidate()
-            userActivity = nil
+        case .background:
+            viewModel.deactivate()
+        case .inactive:
+            break
+        @unknown default:
+            break
         }
     }
 
     // MARK: - Chrome
+
+    private var topBar: some View {
+        StopDetailsSheetTopBar(
+            title: viewModel.stop?.name ?? "",
+            titleOpacity: Double(titleProgress),
+            statusText: viewModel.statusText,
+            isRefreshing: viewModel.isLoading,
+            onRefresh: refresh,
+            onClose: { coordinator.pop() }
+        )
+        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { topBarHeight = $0 }
+    }
 
     /// Distance scrolled, in points, over which the stop name fades into the
     /// pinned bar. A plain constant: it drives opacity only, so it never needs
@@ -270,13 +334,6 @@ struct StopDetailsSheetView: View {
     /// makes the fade safe.
     private static let titleFadeDistance: CGFloat = 120
 
-    /// The map card and the action row, rendered as the list's leading rows.
-    ///
-    /// They deliberately scroll with the content rather than living in the
-    /// pinned `safeAreaInset`. Pinning them meant the inset had to shrink as the
-    /// list scrolled, and an inset whose height depends on scroll position
-    /// drives an oscillation that hangs the main thread — see the note on
-    /// `onScrollGeometryChange` above.
     /// The map card, plus a spacer standing in for the action row.
     ///
     /// The action row itself is an overlay (see `actionRowOverlay`), so the list

@@ -37,28 +37,39 @@ struct StopDetailsSheetTopBar: View {
     /// glass surface and neutral palette — so they still read as one system.
     private static let buttonSize: CGFloat = 32
 
+    // MARK: - Body
+
     var body: some View {
         HStack(spacing: 12) {
-            Text(title)
-                .font(.headline)
-                .lineLimit(1)
-                .truncationMode(.tail)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .opacity(titleOpacity)
-                // Hidden from VoiceOver while invisible; the header below names
-                // the stop in that state.
-                .accessibilityHidden(titleOpacity < 0.5)
-
-            // Both controls sit together on the trailing edge.
-            HStack(spacing: 8) {
-                refreshButton
-                closeButton
-            }
+            titleLabel
+            controls
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
         .background(Color(uiColor: .systemBackground))
         .overlay(alignment: .bottom) { Divider() }
+    }
+
+    // MARK: - Subviews
+
+    private var titleLabel: some View {
+        Text(title)
+            .font(.headline)
+            .lineLimit(1)
+            .truncationMode(.tail)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .opacity(titleOpacity)
+            // Hidden from VoiceOver while invisible; the header below names the
+            // stop in that state.
+            .accessibilityHidden(titleOpacity < 0.5)
+    }
+
+    /// Both controls sit together on the trailing edge.
+    private var controls: some View {
+        HStack(spacing: 8) {
+            refreshButton
+            closeButton
+        }
     }
 
     private var refreshButton: some View {
