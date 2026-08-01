@@ -45,6 +45,14 @@ struct StopDetailsSheetView: View {
     /// How far the title has faded into the pinned bar, 0...1. Drives opacity
     /// ONLY — never layout. See the note on `titleFadeDistance`.
     @State private var titleProgress: CGFloat = 0
+    /// Distance scrolled from the top. Drives the action row's overlay position
+    /// and the title fade — never any layout the scroll view can observe.
+    @State private var scrollOffset: CGFloat = 0
+    /// Measured heights feeding the sticky-overlay arithmetic. None of them
+    /// depend on `scrollOffset`, which is what keeps the overlay acyclic.
+    @State private var topBarHeight: CGFloat = 0
+    @State private var mapCardHeight: CGFloat = 0
+    @State private var actionRowHeight: CGFloat = 0
     @State private var userActivity: NSUserActivity?
     /// Gates the one-shot success haptic to the first arrivals load, matching
     /// `StopViewController.bindArrivalsSink()`; later refreshes are silent.
@@ -158,6 +166,7 @@ struct StopDetailsSheetView: View {
         .onScrollGeometryChange(for: CGFloat.self) { geometry in
             geometry.contentOffset.y + geometry.contentInsets.top
         } action: { _, offset in
+            scrollOffset = offset
             titleProgress = StopSheetHeaderCollapse.progress(
                 scrollOffset: offset,
                 collapsibleHeight: Self.titleFadeDistance
@@ -174,7 +183,13 @@ struct StopDetailsSheetView: View {
                 onRefresh: { Task { await viewModel.refresh() } },
                 onClose: { coordinator.pop() }
             )
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { topBarHeight = $0 }
         }
+        // The action row rides as an overlay rather than list content or a
+        // second inset. An overlay takes no part in the list's layout, so its
+        // position can track scrolling without the scroll view ever observing
+        // the result — the property the collapsing header lacked.
+        .overlay(alignment: .top) { actionRowOverlay }
         .stopPageLifecycle(
             viewModel: viewModel,
             userDefaults: userDefaults,
@@ -262,13 +277,15 @@ struct StopDetailsSheetView: View {
     /// list scrolled, and an inset whose height depends on scroll position
     /// drives an oscillation that hangs the main thread — see the note on
     /// `onScrollGeometryChange` above.
+    /// The map card, plus a spacer standing in for the action row.
+    ///
+    /// The action row itself is an overlay (see `actionRowOverlay`), so the list
+    /// needs a gap of the same height here or the first departures would sit
+    /// underneath it at rest.
     @ViewBuilder
     private func headerRows(showsLoadingState: Bool) -> some View {
         Section {
-            // Header and action row share ONE row so the list draws no
-            // separator between them — as two rows, a hairline cut through the
-            // middle of the action row.
-            VStack(spacing: 0) {
+            Group {
                 if let stop = viewModel.stop {
                     StopPageHeaderView(
                         stop: stop,
@@ -282,34 +299,60 @@ struct StopDetailsSheetView: View {
                 } else if showsLoadingState {
                     StopPageHeaderPlaceholderView()
                 }
-
-                StopPageActionRow(
-                    state: StopPageActionRowState(
-                        routeCount: viewModel.stop?.routes.count ?? 0,
-                        hasHiddenRoutes: viewModel.stopPreferences.hasHiddenRoutes,
-                        isListFiltered: viewModel.isListFiltered,
-                        hasServiceAlerts: !(viewModel.stopArrivals?.serviceAlerts ?? []).isEmpty
-                    ),
-                    onSchedule: navigation.showScheduleForStop,
-                    onSetListFiltered: { filtered in
-                        viewModel.isListFiltered = filtered
-                        // Picking "Filtered Routes" opens the picker, matching
-                        // the pushed presentation's `filterMenu()` — otherwise
-                        // choosing it on a stop with no saved hidden routes
-                        // silently does nothing.
-                        if filtered { navigation.showRouteFilter() }
-                    },
-                    onBookmark: { navigation.showBookmarkEditor(nil) },
-                    onServiceAlerts: navigation.showServiceAlerts,
-                    onNearbyStops: navigation.showNearbyStops,
-                    onWalkingDirections: navigation.showWalkingDirections,
-                    onReportProblem: navigation.showReportProblem
-                )
             }
+            // Safe to measure: the card's height is a function of Dynamic Type
+            // and how many route chips wrap, never of scroll position.
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { mapCardHeight = $0 }
             .listRowInsets(EdgeInsets())
             .listRowBackground(Color.clear)
             .listRowSeparator(.hidden)
+
+            Color.clear
+                .frame(height: actionRowHeight)
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+                .accessibilityHidden(true)
         }
+    }
+
+    /// Where the action row sits, measured from the top of the sheet.
+    ///
+    /// At rest it clears the top bar and the map card, putting it directly under
+    /// the card. As the list scrolls it rises until it reaches the bar, then
+    /// stops — the card slides beneath it. Rubber-banding past the top yields a
+    /// negative `scrollOffset`, which pushes the row further down with the
+    /// stretch, which is the natural behaviour.
+    private var actionRowOffset: CGFloat {
+        topBarHeight + max(0, mapCardHeight - scrollOffset)
+    }
+
+    private var actionRowOverlay: some View {
+        StopPageActionRow(
+            state: StopPageActionRowState(
+                routeCount: viewModel.stop?.routes.count ?? 0,
+                hasHiddenRoutes: viewModel.stopPreferences.hasHiddenRoutes,
+                isListFiltered: viewModel.isListFiltered,
+                hasServiceAlerts: !(viewModel.stopArrivals?.serviceAlerts ?? []).isEmpty
+            ),
+            onSchedule: navigation.showScheduleForStop,
+            onSetListFiltered: { filtered in
+                viewModel.isListFiltered = filtered
+                // Picking "Filtered Routes" opens the picker, matching the
+                // pushed presentation's `filterMenu()` — otherwise choosing it
+                // on a stop with no saved hidden routes silently does nothing.
+                if filtered { navigation.showRouteFilter() }
+            },
+            onBookmark: { navigation.showBookmarkEditor(nil) },
+            onServiceAlerts: navigation.showServiceAlerts,
+            onNearbyStops: navigation.showNearbyStops,
+            onWalkingDirections: navigation.showWalkingDirections,
+            onReportProblem: navigation.showReportProblem
+        )
+        // Feeds the spacer above, so the two stay the same height as Dynamic
+        // Type changes.
+        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { actionRowHeight = $0 }
+        .offset(y: actionRowOffset)
     }
 
     // MARK: - Row plumbing

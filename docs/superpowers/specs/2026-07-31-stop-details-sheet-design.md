@@ -52,7 +52,7 @@ rendered inside a sheet. This is the stopgap being replaced.
 | Chrome scope | New circular action row applies to presentation 3 only | Presentation 2 keeps its bottom toolbar untouched |
 | Detent | `.large` only, unchanged | Already configured; no map peek wanted |
 | Header | `StopPageHeaderView` — the pushed screen's dark map card | Visual consistency with the pushed screen; `.large` covers the map, so the compact header's "map is visible above" rationale does not hold here |
-| Chrome behaviour | ~~Collapsing header: the map card shrinks away on scroll, the action row pins~~ **Superseded — see [Collapsing chrome](#collapsing-chrome)**: only the top bar pins; the map card and action row scroll | The collapsing version hung the app. A `safeAreaInset` whose height depends on scroll position feeds back on itself |
+| Chrome behaviour | Top bar pinned in a fixed inset; the action row pinned as a **sticky overlay**; the map card scrolls between them | Gives the requested order *and* permanently reachable actions. A collapsing `safeAreaInset` would do the same but hangs the app — see [Collapsing chrome](#collapsing-chrome) |
 | Pull to refresh | Removed in presentation 3 | Refresh is the button's job here |
 | Entry point | Register in the factory only | Nothing pushes `.stopDetails` yet; map annotations are separate work |
 | iPad | Out of scope for this experience | Sheet is iPhone-only |
@@ -210,16 +210,33 @@ route is `.large`-only.
 > app.** The original design is kept below the line as a record of what was
 > tried and why it fails. What ships is described here.
 
-**What ships.** Only `StopDetailsSheetTopBar` sits in the top `safeAreaInset`,
-at a fixed height. The map card and the action row are the list's leading rows
-and scroll away with the content. Scroll position drives one thing — the opacity
-of the stop name in the pinned bar, over a constant `titleFadeDistance` of
-120 pt — and never drives layout. Header and action row share a single list row
-so no separator is drawn between them.
+**What ships.** `StopDetailsSheetTopBar` sits alone in the top `safeAreaInset`
+at a fixed height. The map card is the list's first row. The action row is an
+**overlay** whose vertical position tracks scrolling:
 
-Trade-off, accepted knowingly: the four actions scroll out of reach on a long
-departure list, where the pushed screen keeps them in its navigation bar. That
-is the cost of removing the hang.
+```swift
+private var actionRowOffset: CGFloat {
+    topBarHeight + max(0, mapCardHeight - scrollOffset)
+}
+```
+
+At rest that puts it directly beneath the map card; as the list scrolls it rises
+until it meets the top bar and stops, with the card sliding underneath. A spacer
+row of `actionRowHeight` sits after the card so the first departures are not
+hidden beneath the overlay at rest, and both heights are measured so they track
+Dynamic Type together.
+
+**Why an overlay rather than a second inset.** An overlay takes no part in the
+list's layout, so its position can depend on scroll offset without the scroll
+view ever observing the result. That is the exact property the collapsing header
+lacked: there, scroll drove an inset's *height*, and the inset's height fed back
+into scroll offset. Here, scroll position drives only the overlay's `y` and the
+title's opacity — the list's insets never change.
+
+Verified on an iOS 26.5 simulator with six stepped scrolls through the mid-range
+(the region that hung the collapsing version): `actionRowOffset` moved 220 → 50
+→ 220 exactly as designed, the measured heights stayed constant, and the body
+evaluated 15 times in total. No oscillation.
 
 ---
 
