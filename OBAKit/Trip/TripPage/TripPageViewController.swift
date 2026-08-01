@@ -73,12 +73,22 @@ final class TripPageViewController: UIHostingController<TripPageView>,
         // eats the sheet's scarce height.
         navigationController?.setNavigationBarHidden(true, animated: false)
 
-        // The gates the action bar renders from (`canAlarm` in particular) are
-        // derived from the departure, which the 30s refresh replaces. Without
-        // this the bar would keep offering an alarm for a bus that has since
-        // come inside the one-minute floor.
+        // Everything the map draws, and the gates the action bar renders from,
+        // are derived from these three together.
+        //
+        // Combined rather than three sinks: `@Published` fires in `willSet`, so a
+        // sink that reaches back for `viewModel.tripDetails` reads the PREVIOUS
+        // value — nil on the first load. Taking all three from the closure's
+        // parameters makes that mistake unavailable. (The same trap cost this
+        // branch every vehicle on a stop's first load; see
+        // `MapViewController.beginRouteFocus`.)
         viewModel.$tripConvertible
-            .sink { [weak self] _ in self?.render() }
+            .combineLatest(viewModel.$tripDetails, viewModel.$routePolylineCoordinates)
+            .sink { [weak self] convertible, details, shape in
+                guard let self else { return }
+                publishMapFocus(convertible: convertible, details: details, shape: shape)
+                render()
+            }
             .store(in: &cancellables)
     }
 
@@ -86,12 +96,65 @@ final class TripPageViewController: UIHostingController<TripPageView>,
         super.viewWillAppear(animated)
         disableIdleTimer()
         viewModel.start()
+        onMapFocusChanged?(mapFocus)
     }
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         enableIdleTimer()
         viewModel.deactivate()
+
+        // Only on the way out of the stack. A modal presented over this page
+        // (the alarm bulletin, the bookmark editor) also fires this, and giving
+        // the map back then would drop the trip while the rider is still on it.
+        if isMovingFromParent {
+            onMapFocusChanged?(nil)
+        }
+    }
+
+    // MARK: - Map focus
+
+    /// What the map should be drawing while this page is up. The host decides
+    /// which map that is — see `onMapFocusChanged`.
+    let mapFocus = TripMapFocus()
+
+    /// Set by whoever owns a map: called with the focus when this page appears
+    /// and with `nil` when it leaves the stack.
+    var onMapFocusChanged: ((TripMapFocus?) -> Void)?
+
+    private func publishMapFocus(
+        convertible: TripConvertible,
+        details: TripDetails?,
+        shape: [CLLocationCoordinate2D]?
+    ) {
+        let status = convertible.tripStatus
+        let departure = convertible.arrivalDeparture
+
+        let stops = TripStopListModel.make(
+            stopTimes: details?.stopTimes ?? [],
+            userStopID: departure?.stopID,
+            userStopSequence: departure?.stopSequence,
+            closestStopID: status?.closestStopID
+        ).rows
+
+        mapFocus.apply(
+            TripMapFocus.Content(
+                tripID: convertible.trip.id,
+                routeColor: convertible.trip.route?.color ?? ThemeColors.shared.brand,
+                routeType: convertible.trip.route?.routeType ?? .unknown,
+                shape: shape ?? [],
+                // No status means no reported progress, so the whole shape draws
+                // as ahead rather than the map inventing a split point.
+                progress: status.flatMap {
+                    TripShapeSplit.fraction(
+                        distanceAlongTrip: $0.distanceAlongTrip,
+                        totalDistanceAlongTrip: $0.totalDistanceAlongTrip
+                    )
+                },
+                stops: stops,
+                vehicle: status
+            )
+        )
     }
 
     // MARK: - Rendering

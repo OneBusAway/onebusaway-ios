@@ -8,6 +8,7 @@
 //
 
 import Testing
+import CoreLocation
 import Foundation
 import OBAKitCore
 @testable import OBAKit
@@ -19,6 +20,7 @@ struct TripStopListModelTests {
         let stopID: StopID
         let stopName: String
         let scheduledArrival: Date?
+        var stopCoordinate: CLLocationCoordinate2D?
     }
 
     /// A plain A→E line. Times are only there to be carried through; nothing in

@@ -7,6 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
+import CoreLocation
 import Foundation
 import OBAKitCore
 
@@ -17,6 +18,13 @@ protocol TripStopListEntry {
     var stopID: StopID { get }
     var stopName: String { get }
     var scheduledArrival: Date? { get }
+    /// Where to draw this stop's dot. Optional so a feed that omits a stop's
+    /// location costs one marker rather than the whole trip.
+    ///
+    /// Named `stopCoordinate`, not `coordinate`: `TripStopTime` is already an
+    /// `MKAnnotation` and so already has a non-optional `coordinate`, which
+    /// can neither be redeclared nor witness an optional requirement.
+    var stopCoordinate: CLLocationCoordinate2D? { get }
 }
 
 /// Every stop on a trip, each tagged with what the timeline needs to draw it.
@@ -40,6 +48,7 @@ struct TripStopListModel {
         /// first time the identity format changes.
         let stopID: StopID
         let name: String
+        let coordinate: CLLocationCoordinate2D?
         /// Optional because `TripStopTime.arrivalDate` is, once it crosses the
         /// module boundary. A row with no time renders without one.
         let date: Date?
@@ -74,6 +83,7 @@ struct TripStopListModel {
                 id: "\(index)-\(stopTime.stopID)",
                 stopID: stopTime.stopID,
                 name: stopTime.stopName,
+                coordinate: stopTime.stopCoordinate,
                 date: stopTime.scheduledArrival,
                 isPassed: vehicleIndex.map { index < $0 } ?? false,
                 isVehicleHere: index == vehicleIndex,
@@ -135,4 +145,5 @@ struct TripStopListModel {
 /// omits the time.
 extension TripStopTime: TripStopListEntry {
     var scheduledArrival: Date? { arrivalDate }
+    var stopCoordinate: CLLocationCoordinate2D? { stop.location.coordinate }
 }

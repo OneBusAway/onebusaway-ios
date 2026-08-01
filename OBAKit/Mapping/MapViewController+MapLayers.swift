@@ -66,6 +66,13 @@ extension MapViewController {
         mapRegionManager.registerMapLayer(
             StopRouteFocusMapLayer(mapView: mapRegionManager.mapView, shapeCache: shapeCache, formatters: application.formatters)
         )
+
+        // Registered alongside, and torn down on the same region change: the trip
+        // layer draws shapes fetched for this region too, and a shape ID from the
+        // old region resolves to the wrong line in the new one.
+        mapRegionManager.removeMapLayer(id: TripFocusMapLayer.layerID)
+        mapRegionManager.registerMapLayer(TripFocusMapLayer(mapView: mapRegionManager.mapView))
+
         stopRouteFocusLayerRegionIdentifier = currentRegionIdentifier
     }
 

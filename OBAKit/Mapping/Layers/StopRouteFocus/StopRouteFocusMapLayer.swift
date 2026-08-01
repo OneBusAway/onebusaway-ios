@@ -148,6 +148,7 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
         cancellables.removeAll()
         focus = nil
         focusedVehicleID = nil
+        isSuppressed = false
         model = .empty
         drawnShapeIDsByRoute.removeAll()
         removeAllContent()
@@ -189,6 +190,39 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
         guard focus != nil else { return }
         self.model = model
         focus?.apply(routes: model.routes)
+
+        // The model is kept current while suppressed — the chips still read their
+        // decoration from it — but nothing is drawn, or the next arrivals tick
+        // would put the stop's routes back on top of the trip the rider is
+        // following.
+        guard !isSuppressed else { return }
+
+        syncVehicleAnnotations()
+        syncRouteOverlays()
+    }
+
+    /// Whether this layer is standing down so another can have the map.
+    private(set) var isSuppressed = false
+
+    /// Hides this layer's content without ending the presentation.
+    ///
+    /// The trip page needs the map to itself, but the stop sheet underneath it is
+    /// still presented and must come back intact on the way out — so this is not
+    /// `end()`. State is kept; only what's drawn goes away.
+    func setSuppressed(_ suppressed: Bool) {
+        guard focus != nil, isSuppressed != suppressed else { return }
+        isSuppressed = suppressed
+
+        guard !suppressed else {
+            removeAllContent()
+            // Shapes are pinned by route so a refresh doesn't redraw an unchanged
+            // line. Clearing the pins is what lets them be drawn again on the way
+            // back; the coordinates come from `ShapeCache`, so this costs no
+            // network.
+            drawnShapeIDsByRoute.removeAll()
+            return
+        }
+
         syncVehicleAnnotations()
         syncRouteOverlays()
     }

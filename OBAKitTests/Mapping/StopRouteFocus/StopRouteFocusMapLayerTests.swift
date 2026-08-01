@@ -627,4 +627,81 @@ final class StopRouteFocusMapLayerTests {
 
         #expect(followed === departure)
     }
+
+    // MARK: - Suppression (yielding the map to the trip page)
+
+    /// Suppression is not `end()`. The stop sheet is still presented underneath
+    /// the trip page, so the presentation has to survive and come back intact.
+    @Test func `Suppressing the layer takes its content off the map`() async {
+        let mapView = MKMapView()
+        let layer = makeLayer(mapView: mapView)
+        layer.begin(focus: StopMapFocus())
+        layer.update(model: model(routeIDs: ["H"], vehicleRouteIDs: ["H"]))
+        await layer.awaitPendingShapeWork()
+        #expect(!mapView.overlays.isEmpty)
+        #expect(!vehicles(on: mapView).isEmpty)
+
+        layer.setSuppressed(true)
+
+        #expect(mapView.overlays.isEmpty)
+        #expect(vehicles(on: mapView).isEmpty)
+    }
+
+    @Test func `Unsuppressing puts the stop's routes and vehicles back`() async {
+        let mapView = MKMapView()
+        let layer = makeLayer(mapView: mapView)
+        layer.begin(focus: StopMapFocus())
+        layer.update(model: model(routeIDs: ["H"], vehicleRouteIDs: ["H"]))
+        await layer.awaitPendingShapeWork()
+        layer.setSuppressed(true)
+
+        layer.setSuppressed(false)
+        await layer.awaitPendingShapeWork()
+
+        #expect(!mapView.overlays.isEmpty, "the route line should be drawn again")
+        #expect(!vehicles(on: mapView).isEmpty, "the vehicles should be back")
+    }
+
+    /// The arrivals feed keeps ticking behind the trip page. If a refresh redrew
+    /// while suppressed, the stop's routes would reappear on top of the trip the
+    /// rider is following.
+    @Test func `An arrivals refresh while suppressed draws nothing`() async {
+        let mapView = MKMapView()
+        let layer = makeLayer(mapView: mapView)
+        layer.begin(focus: StopMapFocus())
+        layer.setSuppressed(true)
+
+        layer.update(model: model(routeIDs: ["H"], vehicleRouteIDs: ["H"]))
+        await layer.awaitPendingShapeWork()
+
+        #expect(mapView.overlays.isEmpty)
+        #expect(vehicles(on: mapView).isEmpty)
+    }
+
+    /// The chips read their decoration from the model, so it has to stay current
+    /// even while nothing is drawn.
+    @Test func `A refresh while suppressed still reaches the focus object`() {
+        let layer = makeLayer(mapView: MKMapView())
+        let focus = StopMapFocus()
+        layer.begin(focus: focus)
+        layer.setSuppressed(true)
+
+        layer.update(model: model(routeIDs: ["H"], vehicleRouteIDs: ["H"]))
+
+        #expect(focus.isFocusable(routeID: "H"))
+    }
+
+    @Test func `Ending the presentation clears suppression`() async {
+        let mapView = MKMapView()
+        let layer = makeLayer(mapView: mapView)
+        layer.begin(focus: StopMapFocus())
+        layer.setSuppressed(true)
+
+        layer.end()
+        layer.begin(focus: StopMapFocus())
+        layer.update(model: model(routeIDs: ["H"], vehicleRouteIDs: ["H"]))
+        await layer.awaitPendingShapeWork()
+
+        #expect(!mapView.overlays.isEmpty, "a fresh presentation must not inherit suppression")
+    }
 }

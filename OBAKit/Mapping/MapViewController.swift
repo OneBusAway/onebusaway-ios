@@ -878,6 +878,33 @@ class MapViewController: UIViewController,
                 arrivalDeparture: departure,
                 originTitle: stopPageVC.viewModel.stop?.name
             )
+
+            // While the trip page is up the map shows that trip and nothing
+            // else: the stop's own routes and vehicles stand down, and come
+            // back intact when the rider pops out. Suppression rather than
+            // `end()` — the stop sheet underneath is still presented.
+            tripPage.onMapFocusChanged = { [weak self] tripFocus in
+                guard let self else { return }
+
+                // Gated on the layer's own Map-sheet toggle, for the same reason
+                // `beginRouteFocus` is: annotation and overlay dispatch consults
+                // every registered layer with no enabled check, so a disabled
+                // layer that gets begun would still draw. A rider who turned this
+                // off keeps the stop's routes instead — hence the suppression
+                // flag following enablement rather than the push.
+                guard mapRegionManager.isMapLayerEnabled(id: TripFocusMapLayer.layerID),
+                      let tripLayer = mapRegionManager.mapLayer(id: TripFocusMapLayer.layerID) as? TripFocusMapLayer else { return }
+
+                let stopLayer = mapRegionManager.mapLayer(id: StopRouteFocusMapLayer.layerID) as? StopRouteFocusMapLayer
+                stopLayer?.setSuppressed(tripFocus != nil)
+
+                if let tripFocus {
+                    tripLayer.begin(focus: tripFocus)
+                } else {
+                    tripLayer.end()
+                }
+            }
+
             self.application.viewRouter.navigate(to: tripPage, from: stopPageVC)
         }
 
