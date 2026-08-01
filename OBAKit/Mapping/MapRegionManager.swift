@@ -650,6 +650,7 @@ public class MapRegionManager: NSObject,
         mapView.removeOverlays(mapView.overlays)
         reloadStopAnnotations()
         notifyMapLayersAnnotationsCleared()
+        notifyMapLayersOverlaysCleared()
     }
 
     /// `removeAllAnnotations` strips layer annotations behind the layers' backs;
@@ -657,6 +658,15 @@ public class MapRegionManager: NSObject,
     private func notifyMapLayersAnnotationsCleared() {
         for layer in mapLayers where isMapLayerEnabled(id: layer.id) {
             layer.mapAnnotationsWereCleared()
+        }
+    }
+
+    /// Wholesale overlay removal strips layer overlays behind the layers' backs;
+    /// tell each enabled layer so it can re-add its own. Mirrors
+    /// `notifyMapLayersAnnotationsCleared()`.
+    private func notifyMapLayersOverlaysCleared() {
+        for layer in mapLayers where isMapLayerEnabled(id: layer.id) {
+            layer.mapOverlaysWereCleared()
         }
     }
 
@@ -1028,6 +1038,21 @@ public class MapRegionManager: NSObject,
     }
 
     public func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
+        // Layers get first claim, mirroring `viewFor annotation`. This loop MUST
+        // precede the `as? MKPolyline` branch below: a layer's overlay can be an
+        // `MKPolyline` subclass, which that branch would otherwise claim and paint
+        // as a generic 3pt brand-colored stroke.
+        //
+        // Deliberately unfiltered by enablement, exactly like the annotation path:
+        // `deactivate()` is what removes a layer's overlays. Gating here on the
+        // UserDefaults flag would leave a stale overlay falling through to the
+        // generic branch instead of its own renderer.
+        for layer in mapLayers {
+            if let layerRenderer = layer.renderer(for: overlay, in: mapView) {
+                return layerRenderer
+            }
+        }
+
         if let overlay = overlay as? MKPolyline {
             let renderer = MKPolylineRenderer(polyline: overlay)
             renderer.strokeColor = ThemeColors.shared.brand.withAlphaComponent(0.75)
@@ -1037,7 +1062,10 @@ public class MapRegionManager: NSObject,
             return renderer
         }
 
-        fatalError() // :(
+        // Previously `fatalError()`. An unexpected overlay type is not worth
+        // aborting a transit app over — log it and draw nothing.
+        Logger.error("No renderer for overlay of type \(type(of: overlay)); drawing nothing.")
+        return MKOverlayRenderer(overlay: overlay)
     }
 
     // MARK: - Regions

@@ -103,6 +103,13 @@ public enum MapLayerRefreshPolicy: Equatable {
     /// manager tries each registered layer before its own annotation types.
     func annotationView(for annotation: MKAnnotation, in mapView: MKMapView) -> MKAnnotationView?
 
+    /// Returns a configured renderer when `overlay` belongs to this layer, nil
+    /// otherwise. The manager tries each registered layer before its own overlay
+    /// types — which matters because a layer's overlay may itself be an
+    /// `MKPolyline` subclass that the manager's generic branch would otherwise
+    /// swallow.
+    func renderer(for overlay: MKOverlay, in mapView: MKMapView) -> MKOverlayRenderer?
+
     /// Returns the detail UI for one of this layer's annotations, nil when the
     /// annotation isn't this layer's or has no detail surface.
     func detailViewController(for annotation: MKAnnotation) -> UIViewController?
@@ -123,6 +130,15 @@ public enum MapLayerRefreshPolicy: Equatable {
     /// considers delivered — without this, its bookkeeping and the map disagree
     /// and diffed updates mutate annotations that are no longer displayed.
     func mapAnnotationsWereCleared()
+
+    /// Called when something removed every overlay from the map wholesale. The
+    /// layer re-adds its own. Mirrors `mapAnnotationsWereCleared()`.
+    func mapOverlaysWereCleared()
+}
+
+public extension MapLayer {
+    func renderer(for overlay: MKOverlay, in mapView: MKMapView) -> MKOverlayRenderer? { nil }
+    func mapOverlaysWereCleared() { }
 }
 
 extension Notification.Name {
