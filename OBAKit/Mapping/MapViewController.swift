@@ -801,6 +801,7 @@ class MapViewController: UIViewController,
 
             self.stopFocusCancellables.removeAll()
             (self.mapRegionManager.mapLayer(id: StopRouteFocusMapLayer.layerID) as? StopRouteFocusMapLayer)?.end()
+            self.stopSheetStopID = nil
 
             self.scheduleFeedbackPrompt()
         }
@@ -821,6 +822,11 @@ class MapViewController: UIViewController,
         // recentering. Unconditional, but still after `stopSheet.present`
         // above for the same outgoing-teardown ordering reason.
         beginRecentering(stopPageVC: stopPageVC)
+
+        // Also after `stopSheet.present`, and for the same reason: a stop-to-stop
+        // swap runs the outgoing sheet's dismiss handler inside that call, and
+        // that handler clears this.
+        stopSheetStopID = stopPageVC.viewModel.stopID
 
         // `StopSheetPresenter.present` tears the outgoing presentation down as its first
         // statement, which runs the handler above synchronously — so a stop-to-stop swap
@@ -917,6 +923,23 @@ class MapViewController: UIViewController,
 
     /// Owns the half-detent panel that shows the redesigned Stop page over the map.
     private lazy var stopSheet = StopSheetPresenter()
+
+    /// The stop whose sheet is up, or nil between presentations — the single
+    /// switch behind both of the things the map does differently while a sheet
+    /// owns the screen: the zoom pill stays down, and every stop but this one
+    /// recedes to a background dot.
+    ///
+    /// Tracked here rather than read from `stopSheet.isPresenting` because the
+    /// presenter's own flag flips at points inside `present`/`dismiss` that this
+    /// controller doesn't observe; a stop-to-stop swap in particular runs the
+    /// outgoing dismissal in the middle of the incoming presentation.
+    private var stopSheetStopID: StopID? {
+        didSet {
+            guard oldValue != stopSheetStopID else { return }
+            mapRegionManager.stopSheetSelection = stopSheetStopID
+            renderMapStatus()
+        }
+    }
 
     /// Presents the feedback prompt after a stop sheet is dismissed — a natural
     /// stopping point, and the only one available in the new stop page flow.
@@ -1541,7 +1564,14 @@ private extension MapViewController {
 
     func renderMapStatus() {
         let locationState = mapStatusView.state(for: application.locationService)
-        mapStatusView.configure(for: locationState, zoomInStatus: viewModel.showZoomWarning)
+        // "Zoom in for stops" stays down while a stop sheet is up: it would sit on
+        // top of the route lines the sheet came up to show, to tell the rider about
+        // stops they are no longer looking for. Location warnings still surface —
+        // those are actionable, and tapping the pill is how you act on them.
+        mapStatusView.configure(
+            for: locationState,
+            zoomInStatus: viewModel.showZoomWarning && stopSheetStopID == nil
+        )
         locationButton.isHidden = !application.locationService.isLocationUseAuthorized
         layoutMapMargins()
     }

@@ -254,7 +254,57 @@ public class MapRegionManager: NSObject,
         mapView.registerAnnotationView(PulsingVehicleAnnotationView.self)
         mapView.registerAnnotationView(RentalAnnotationView.self)
         mapView.registerAnnotationView(RentalClusterAnnotationView.self)
+        mapView.registerAnnotationView(BackgroundDotAnnotationView.self)
         mapView.register(UserPinAnnotationView.self, forAnnotationViewWithReuseIdentifier: "UserDroppedPin")
+    }
+
+    // MARK: - Background De-emphasis
+
+    /// The stop whose sheet currently occupies the map, or nil when no sheet is up.
+    ///
+    /// While it is set, every *other* stop, bookmark, and rental marker collapses
+    /// into a subtle gray dot that doesn't answer taps, so the selected stop's
+    /// route lines and vehicles read against a network that is still legible as
+    /// *position* but no longer competes with them. Set by `MapViewController`
+    /// when it presents and dismisses the sheet.
+    public var stopSheetSelection: StopID? {
+        didSet {
+            guard oldValue != stopSheetSelection else { return }
+            refreshBackgroundAnnotationEmphasis()
+        }
+    }
+
+    /// Whether `annotation` renders as a background dot right now.
+    ///
+    /// Stops and bookmarks are the manager's own; everything else answers through
+    /// the layer that draws it. The route-focus layer declines, so its vehicles
+    /// keep their full markers — they are what the sheet came up to show.
+    private func recedesBehindStopSheet(_ annotation: MKAnnotation) -> Bool {
+        guard let stopSheetSelection else { return false }
+        // The sheet's own stop keeps its pin: it is the anchor that everything
+        // else on screen — the route lines, the vehicles, the sheet — describes.
+        if let stop = annotation as? Stop, stop.id == stopSheetSelection { return false }
+        if let bookmark = annotation as? Bookmark, bookmark.stopID == stopSheetSelection { return false }
+        return participatesInBackgroundEmphasis(annotation)
+    }
+
+    /// A type test, deliberately blind to the current selection: a swap from one
+    /// stop's sheet to another has to refresh both the stop that stopped being
+    /// selected and the one that started.
+    private func participatesInBackgroundEmphasis(_ annotation: MKAnnotation) -> Bool {
+        if annotation is Stop || annotation is Bookmark { return true }
+        return mapLayers.contains { $0.recedesBehindStopSheet(annotation) }
+    }
+
+    /// MapKit asks `viewFor` once, when an annotation is added, so changing the
+    /// selection changes nothing for what is already on screen. Removing and
+    /// re-adding the affected annotations is the supported way to force a fresh
+    /// round trip.
+    private func refreshBackgroundAnnotationEmphasis() {
+        let affected = mapView.annotations.filter { participatesInBackgroundEmphasis($0) }
+        guard !affected.isEmpty else { return }
+        mapView.removeAnnotations(affected)
+        mapView.addAnnotations(affected)
     }
 
     // MARK: - Map Layers
@@ -975,6 +1025,15 @@ public class MapRegionManager: NSObject,
     }
 
     public func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
+        // Ahead of the layer loop: while a stop sheet is up, a receding annotation
+        // gets the shared dot instead of the view its owner would have built.
+        if recedesBehindStopSheet(annotation) {
+            return mapView.dequeueReusableAnnotationView(
+                withIdentifier: MKMapView.reuseIdentifier(for: BackgroundDotAnnotationView.self),
+                for: annotation
+            )
+        }
+
         // Registered layers get first claim on their own annotation (and cluster)
         // types; everything else falls through to the built-in annotation types.
         for layer in mapLayers {

@@ -110,6 +110,20 @@ public enum MapLayerRefreshPolicy: Equatable {
     /// swallow.
     func renderer(for overlay: MKOverlay, in mapView: MKMapView) -> MKOverlayRenderer?
 
+    /// Whether `annotation` — one this layer draws — should recede to a subtle,
+    /// untappable gray dot while a stop sheet owns the map. Default `false`.
+    ///
+    /// The manager needs this answer *without* building the layer's real view, so
+    /// it can substitute `BackgroundDotAnnotationView` instead;
+    /// `annotationView(for:in:)` can't serve double duty. A layer that answers
+    /// `true` must recognize exactly the annotations that method claims — the two
+    /// disagreeing means an annotation either renders full-size behind the sheet
+    /// or vanishes from it entirely.
+    ///
+    /// Ambient browse layers (rentals) say yes. `StopRouteFocusMapLayer` keeps
+    /// the default `false`: its vehicles *are* the selection, not the backdrop.
+    func recedesBehindStopSheet(_ annotation: MKAnnotation) -> Bool
+
     /// Returns the detail UI for one of this layer's annotations, nil when the
     /// annotation isn't this layer's or has no detail surface.
     func detailViewController(for annotation: MKAnnotation) -> UIViewController?
@@ -139,6 +153,7 @@ public enum MapLayerRefreshPolicy: Equatable {
 public extension MapLayer {
     func renderer(for overlay: MKOverlay, in mapView: MKMapView) -> MKOverlayRenderer? { nil }
     func mapOverlaysWereCleared() { }
+    func recedesBehindStopSheet(_ annotation: MKAnnotation) -> Bool { false }
 }
 
 extension Notification.Name {
