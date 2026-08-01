@@ -1158,11 +1158,11 @@
 /* Caption under the spinner shown while the stop page's departure list loads. */
 "stop_page.loading_departures" = "Đang tải chuyến khởi hành…";
 
-/* Stop page mode toggle: grouped by route */
-"stop_page.mode.by_route" = "Theo tuyến";
-
 /* Stop page mode toggle: flat time-sorted list */
-"stop_page.mode.chronological" = "Theo thời gian";
+"stop_page.mode.time" = "Giờ";
+
+/* Stop page mode toggle: grouped by route */
+"stop_page.mode.route" = "Tuyến";
 
 /* Opens the full trip screen */
 "stop_page.panel.full_trip" = "Xem toàn bộ chuyến đi";
@@ -1205,9 +1205,6 @@
 
 /* Context menu action opening the full trip screen */
 "stop_page.row.show_trip" = "Xem chi tiết chuyến đi";
-
-/* Chronological list section header */
-"stop_page.section.arrivals_departures" = "Chuyến đến và khởi hành";
 
 /* Fallback title for a service alert that has no summary text. */
 "stop_page.service_alert_fallback" = "Cảnh báo dịch vụ";

@@ -1158,11 +1158,11 @@
 /* Caption under the spinner shown while the stop page's departure list loads. */
 "stop_page.loading_departures" = "Загрузка отправлений…";
 
-/* Stop page mode toggle: grouped by route */
-"stop_page.mode.by_route" = "По маршрутам";
-
 /* Stop page mode toggle: flat time-sorted list */
-"stop_page.mode.chronological" = "По времени";
+"stop_page.mode.time" = "Время";
+
+/* Stop page mode toggle: grouped by route */
+"stop_page.mode.route" = "Маршрут";
 
 /* Opens the full trip screen */
 "stop_page.panel.full_trip" = "Показать весь рейс";
@@ -1205,9 +1205,6 @@
 
 /* Context menu action opening the full trip screen */
 "stop_page.row.show_trip" = "Показать детали рейса";
-
-/* Chronological list section header */
-"stop_page.section.arrivals_departures" = "Прибытия и отправления";
 
 /* Fallback title for a service alert that has no summary text. */
 "stop_page.service_alert_fallback" = "Сервисное оповещение";

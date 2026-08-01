@@ -218,6 +218,12 @@ struct StopPageView: View {
         let isGrouped = viewModel.stopPreferences.sortType == .route
         let routeGroups = isGrouped ? StopPageListBuilder.routeGroups(departures) : []
         let listIsEmpty = isGrouped ? routeGroups.isEmpty : departures.isEmpty
+        // Hoisted for the same reason as `walkTime`: the header row's Past count and
+        // the list's past section have to be reading the same partition.
+        let chronologicalPartition = StopPageListBuilder.chronologicalPartition(
+            departures,
+            walkMinutes: walkTime?.walkMinutes
+        )
 
         List {
             if let stop = viewModel.stop {
@@ -286,15 +292,22 @@ struct StopPageView: View {
 
             if hasLoadedArrivals {
                 Section {
-                    StopPageModeToggle(mode: viewModel.stopPreferences.sortType) { newValue in
-                        withAnimation {
-                            // Switching modes collapses every open accordion (§4.6).
-                            expandedDepartureID = nil
-                            expandedRouteID = nil
-                            userDefaults.set(newValue.rawValue, forKey: Self.lastUsedStopSortKey)
-                            viewModel.updateSortType(newValue)
+                    StopPageListHeaderRow(
+                        mode: viewModel.stopPreferences.sortType,
+                        // Grouped mode has no past partition, so it has nothing to disclose.
+                        pastCount: isGrouped ? 0 : chronologicalPartition.past.count,
+                        showPast: !pastCollapsed,
+                        onTogglePast: { withAnimation { pastCollapsed.toggle() } },
+                        onChangeMode: { newValue in
+                            withAnimation {
+                                // Switching modes collapses every open accordion (§4.6).
+                                expandedDepartureID = nil
+                                expandedRouteID = nil
+                                userDefaults.set(newValue.rawValue, forKey: Self.lastUsedStopSortKey)
+                                viewModel.updateSortType(newValue)
+                            }
                         }
-                    }
+                    )
                     .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
@@ -332,14 +345,16 @@ struct StopPageView: View {
                 }
             } else if !isGrouped {
                 ChronologicalListView(
-                    partition: StopPageListBuilder.chronologicalPartition(departures, walkMinutes: walkTime?.walkMinutes),
+                    // Same value the header row counts its Past disclosure from —
+                    // two derivations of the same partition could disagree about
+                    // whether there is anything to disclose.
+                    partition: chronologicalPartition,
                     walkMinutes: walkTime?.walkMinutes,
                     showPast: !pastCollapsed,
                     expandedDepartureID: expandedDepartureID,
                     statusProvider: { DepartureStatus(arrivalDeparture: $0) },
                     alarmLookup: { viewModel.alarm(for: $0) },
                     actionsProvider: makeActions(for:),
-                    onTogglePast: { withAnimation { pastCollapsed.toggle() } },
                     onToggleExpand: { departure in
                         withAnimation(.snappy) {
                             expandedDepartureID = expandedDepartureID == departure.id ? nil : departure.id
@@ -537,96 +552,6 @@ struct StopPageView: View {
             onShowTrip: { navigation.showTrip(departure) },
             makePreview: { navigation.makeTripPreview(departure) }
         )
-    }
-}
-
-/// The Chronological / By route switch shown above the departure list.
-/// Factored into its own `View` (per the SwiftUI structure guidance and the
-/// Task 9 interface) so `StopPageView` stays a thin composition — the mode
-/// change side effects (collapse accordions, persist) live in the caller's
-/// `onChange`.
-///
-/// A custom capsule control rather than a segmented `Picker`: taller segments,
-/// full row width (the row carries the list's standard horizontal insets), and
-/// a Liquid Glass backdrop on iOS 26+ (an ultra-thin-material capsule stands
-/// in on earlier versions). The selected pill slides between segments via
-/// `matchedGeometryEffect`; the caller's `withAnimation` drives it.
-struct StopPageModeToggle: View {
-    let mode: StopSort
-    let onChange: (StopSort) -> Void
-
-    @Namespace private var selectionNamespace
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-
-    /// At accessibility sizes the two segments stack as full-width rows (the
-    /// guide's layout) instead of splitting one line — each label gets the
-    /// whole row's width, so neither truncates.
-    private var isAccessibilitySize: Bool { dynamicTypeSize.isAccessibilitySize }
-
-    var body: some View {
-        let layout = isAccessibilitySize
-            ? AnyLayout(VStackLayout(spacing: 2))
-            : AnyLayout(HStackLayout(spacing: 2))
-        layout {
-            segment(.time, title: OBALoc("stop_page.mode.chronological", value: "Chronological", comment: "Stop page mode toggle: flat time-sorted list"), systemImage: "list.bullet")
-            segment(.route, title: OBALoc("stop_page.mode.by_route", value: "By route", comment: "Stop page mode toggle: grouped by route"), systemImage: "square.grid.2x2")
-        }
-        .padding(3)
-        .modifier(GlassContainerBackground(usesCapsule: !isAccessibilitySize))
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 4)
-    }
-
-    private func segment(_ value: StopSort, title: String, systemImage: String) -> some View {
-        Button {
-            if mode != value { onChange(value) }
-        } label: {
-            Label(title, systemImage: systemImage)
-                .labelStyle(.titleAndIcon)
-                .font(.subheadline.weight(mode == value ? .bold : .semibold))
-                .foregroundStyle(mode == value ? Color.primary : Color.secondary)
-                .frame(maxWidth: .infinity, minHeight: 38)
-                .background {
-                    if mode == value {
-                        selectionShape
-                            .fill(Color(uiColor: .systemBackground))
-                            .shadow(color: .black.opacity(0.12), radius: 4, y: 1)
-                            .matchedGeometryEffect(id: "selectedSegment", in: selectionNamespace)
-                    }
-                }
-                .contentShape(selectionShape)
-        }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(mode == value ? [.isButton, .isSelected] : [.isButton])
-    }
-
-    /// Capsule segments inside the capsule container; rounded rectangles when
-    /// the segments stack (a capsule around a multi-line label reads poorly).
-    private var selectionShape: AnyShape {
-        isAccessibilitySize
-            ? AnyShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-            : AnyShape(Capsule())
-    }
-}
-
-/// The toggle's backdrop: real Liquid Glass on iOS 26+, an ultra-thin-material
-/// shape with a hairline rim on earlier versions. Capsule by default; a
-/// rounded rectangle when the segments stack at accessibility sizes.
-private struct GlassContainerBackground: ViewModifier {
-    let usesCapsule: Bool
-
-    private var shape: AnyShape {
-        usesCapsule ? AnyShape(Capsule()) : AnyShape(RoundedRectangle(cornerRadius: 17, style: .continuous))
-    }
-
-    func body(content: Content) -> some View {
-        if #available(iOS 26.0, *) {
-            content.glassEffect(.regular, in: shape)
-        } else {
-            content
-                .background(.ultraThinMaterial, in: shape)
-                .overlay(shape.stroke(Color(uiColor: .separator).opacity(0.5), lineWidth: 0.5))
-        }
     }
 }
 

@@ -1158,11 +1158,11 @@
 /* Caption under the spinner shown while the stop page's departure list loads. */
 "stop_page.loading_departures" = "جارٍ تحميل المغادرات…";
 
-/* Stop page mode toggle: grouped by route */
-"stop_page.mode.by_route" = "حسب الخط";
-
 /* Stop page mode toggle: flat time-sorted list */
-"stop_page.mode.chronological" = "حسب الوقت";
+"stop_page.mode.time" = "الوقت";
+
+/* Stop page mode toggle: grouped by route */
+"stop_page.mode.route" = "الخط";
 
 /* Opens the full trip screen */
 "stop_page.panel.full_trip" = "عرض الرحلة كاملة";
@@ -1205,9 +1205,6 @@
 
 /* Context menu action opening the full trip screen */
 "stop_page.row.show_trip" = "عرض تفاصيل الرحلة";
-
-/* Chronological list section header */
-"stop_page.section.arrivals_departures" = "الوصول والمغادرة";
 
 /* Fallback title for a service alert that has no summary text. */
 "stop_page.service_alert_fallback" = "تنبيه خدمة";

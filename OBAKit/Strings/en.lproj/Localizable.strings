@@ -1160,11 +1160,11 @@
 /* Caption under the spinner shown while the stop page's departure list loads. */
 "stop_page.loading_departures" = "Loading departures…";
 
-/* Stop page mode toggle: grouped by route */
-"stop_page.mode.by_route" = "By route";
-
 /* Stop page mode toggle: flat time-sorted list */
-"stop_page.mode.chronological" = "Chronological";
+"stop_page.mode.time" = "Time";
+
+/* Stop page mode toggle: grouped by route */
+"stop_page.mode.route" = "Route";
 
 /* Opens the full trip screen */
 "stop_page.panel.full_trip" = "View full trip";
@@ -1207,9 +1207,6 @@
 
 /* Context menu action opening the full trip screen */
 "stop_page.row.show_trip" = "Show Trip Details";
-
-/* Chronological list section header */
-"stop_page.section.arrivals_departures" = "Arrivals & Departures";
 
 /* Fallback title for a service alert that has no summary text. */
 "stop_page.service_alert_fallback" = "Service alert";

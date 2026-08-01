@@ -142,16 +142,23 @@ struct StopPageSheetHeaderView: View {
                     StopSheetCloseButton(action: onClose)
                 }
 
-                if let walkTime, !isCollapsed {
-                    walkPill(walkTime)
-                }
-
-                if !isCollapsed, !chips.isEmpty {
-                    // `FlowLayout` sizes subviews with an unspecified proposal, which a `Button`
-                    // answers with a greedy height — that is what stretched the walk pill down the
-                    // whole sheet, so the pill lives in a plain stack above instead. Chips stay
-                    // `Text`-shaped tappable views for the same reason; see `chipView(_:)`.
+                if !isCollapsed, walkTime != nil || !chips.isEmpty {
+                    // Walk pill and chips share one flowing row, per the design — the pill
+                    // leads, a hairline separates it from the routes, and everything wraps
+                    // together.
+                    //
+                    // `FlowLayout` sizes subviews with an unspecified proposal, which a
+                    // `Button` answers with a greedy height — that is what once stretched the
+                    // walk pill down the whole sheet. So nothing in this row is a `Button`;
+                    // the pill and the chips are `Text`-shaped tappable views instead. See
+                    // `chipView(_:)`.
                     FlowLayout(hSpacing: 6, vSpacing: 6) {
+                        if let walkTime {
+                            walkPill(walkTime)
+                        }
+                        if walkTime != nil, !chips.isEmpty {
+                            rowSeparator
+                        }
                         ForEach(chips) { chip in
                             chipView(chip)
                         }
@@ -175,35 +182,54 @@ struct StopPageSheetHeaderView: View {
         .background(Color(uiColor: .systemBackground))
     }
 
+    /// The hairline between the walk pill and the route chips. Sized off the same metric the
+    /// pill and chips are, so it stays proportional as Dynamic Type grows them.
+    private var rowSeparator: some View {
+        Capsule()
+            .fill(Color(uiColor: .separator))
+            .frame(width: 1, height: pillHeight)
+            .padding(.horizontal, 3)
+            .accessibilityHidden(true)
+    }
+
     /// The walk-time pill: a tinted capsule rather than the dark card's solid green one. The
     /// foreground keeps the full-strength on-time color, which is already tuned per-appearance
     /// for legibility at small sizes (see `ThemeColors.departureOnTime`).
+    ///
+    /// Deliberately NOT a `Button`, and deliberately the same font and padding as a chip.
+    /// `FlowLayout` places its subviews top-anchored, so pill and chips must resolve to the same
+    /// height or the row reads as ragged — matching their type ramp is what holds that at every
+    /// Dynamic Type size, where a hardcoded height would not.
     private func walkPill(_ info: WalkTimeInfo) -> some View {
-        Button(action: onWalkingDirections) {
-            // An explicit `HStack` rather than a `Label`, and the no-wrap constraint sits on the
-            // `Text` rather than on the button.
-            //
-            // `.fixedSize()` on the enclosing `Button` did not hold: the pill still came out
-            // 60pt wide and 168pt tall, with "2 min walk" broken one character per line. Pinning
-            // the text itself to a single unwrappable line makes the pill's width a function of
-            // its content, which is the property that was actually missing.
-            HStack(spacing: 4) {
-                Image(systemName: "figure.walk")
-                    .accessibilityHidden(true) // the text below carries the meaning
-                Text(walkPillText(info))
-                    .lineLimit(1)
-                    .fixedSize(horizontal: true, vertical: false)
-            }
-            .font(.subheadline.weight(.semibold))
-            .foregroundStyle(Color(uiColor: ThemeColors.shared.departureOnTime))
-            .padding(.horizontal, 10)
-            .padding(.vertical, 5)
-            .background(Color(uiColor: ThemeColors.shared.departureOnTime).opacity(0.14), in: Capsule())
-            .contentShape(Capsule())
+        HStack(spacing: 4) {
+            Image(systemName: "figure.walk")
+                .accessibilityHidden(true) // the text below carries the meaning
+            // Pinning the text to one unwrappable line makes the pill's width a function of its
+            // content. Without it the pill came out 60pt wide and 168pt tall, with "2 min walk"
+            // broken one character per line.
+            Text(walkPillText(info))
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
         }
-        .buttonStyle(.plain)
+        .font(chipFont)
+        .foregroundStyle(Color(uiColor: ThemeColors.shared.departureOnTime))
+        .padding(.horizontal, chipHorizontalPadding)
+        .padding(.vertical, chipVerticalPadding)
+        .background(Color(uiColor: ThemeColors.shared.departureOnTime).opacity(0.14), in: Capsule())
+        .contentShape(Capsule())
+        .onTapGesture(perform: onWalkingDirections)
+        .accessibilityAddTraits(.isButton)
         .accessibilityHint(OBALoc("stop_page.header.walk_a11y_hint", value: "Opens walking directions to this stop.", comment: "VoiceOver hint on the header card's walk-time button."))
     }
+
+    // MARK: - Shared pill metrics
+
+    /// One type ramp for the pill and the chips — see `walkPill(_:)` on why they must match.
+    private var chipFont: Font { .footnote.weight(.semibold) }
+    private var chipHorizontalPadding: CGFloat { 10 }
+    private var chipVerticalPadding: CGFloat { 5 }
+
+    @ScaledMetric(relativeTo: .footnote) private var pillHeight: CGFloat = 20
 
     @ViewBuilder
     private func chipView(_ chip: RouteChip) -> some View {
@@ -220,27 +246,29 @@ struct StopPageSheetHeaderView: View {
                     .frame(width: 13, height: 4)
             }
             Text(chip.shortName)
-                .font(.footnote.weight(.semibold))
+                .font(chipFont)
                 .monospacedDigit()
                 .foregroundStyle(.primary)
                 .lineLimit(1)
-            if drawn?.hasLiveVehicle == true {
-                // Only when there is a vehicle on the map to point at.
+            if let drawn, drawn.hasLiveVehicle {
+                // Only when there is a vehicle on the map to point at. Route-colored, per the
+                // design, so the dot pairs with the dash on the other side of the name rather
+                // than reading as a second, unrelated status color.
                 Circle()
-                    .fill(Color(uiColor: ThemeColors.shared.brand))
+                    .fill(Color(uiColor: drawn.color))
                     .frame(width: 5, height: 5)
             }
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
+        .padding(.horizontal, chipHorizontalPadding)
+        .padding(.vertical, chipVerticalPadding)
         .background(
-            RoundedRectangle(cornerRadius: 8, style: .continuous).fill(isFocused
+            Capsule().fill(isFocused
                 ? Color(uiColor: drawn?.color ?? .clear).opacity(0.16)
                 : Color(uiColor: .secondarySystemFill))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .strokeBorder(isFocused ? Color(uiColor: drawn?.color ?? .clear) : .clear, lineWidth: 1)
+            Capsule()
+                .strokeBorder(isFocused ? Color(uiColor: drawn?.color ?? .clear) : .clear, lineWidth: 1.5)
         )
         .opacity(isDimmed ? 0.45 : 1)
         // NOT a Button: FlowLayout proposes .unspecified, which a Button answers with a greedy

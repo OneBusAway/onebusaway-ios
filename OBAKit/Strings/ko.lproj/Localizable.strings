@@ -1158,11 +1158,11 @@
 /* Caption under the spinner shown while the stop page's departure list loads. */
 "stop_page.loading_departures" = "출발 정보를 불러오는 중…";
 
-/* Stop page mode toggle: grouped by route */
-"stop_page.mode.by_route" = "노선별";
-
 /* Stop page mode toggle: flat time-sorted list */
-"stop_page.mode.chronological" = "시간순";
+"stop_page.mode.time" = "시간";
+
+/* Stop page mode toggle: grouped by route */
+"stop_page.mode.route" = "노선";
 
 /* Opens the full trip screen */
 "stop_page.panel.full_trip" = "전체 운행 보기";
@@ -1205,9 +1205,6 @@
 
 /* Context menu action opening the full trip screen */
 "stop_page.row.show_trip" = "운행 세부 정보 보기";
-
-/* Chronological list section header */
-"stop_page.section.arrivals_departures" = "도착 및 출발";
 
 /* Fallback title for a service alert that has no summary text. */
 "stop_page.service_alert_fallback" = "운행 알림";
