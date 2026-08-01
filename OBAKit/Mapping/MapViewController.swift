@@ -854,9 +854,20 @@ class MapViewController: UIViewController,
         layer.begin(focus: focus)
 
         let viewModel = stopPageVC.viewModel
+        // Pushes the SwiftUI trip page rather than going through
+        // `ViewRouter.navigateTo(arrivalDeparture:from:)`, which still builds
+        // `TripViewController` for the surfaces that push full-screen. That one
+        // owns a map and adds its own floating panel, so inside this sheet it
+        // nests a panel in a panel; this page draws no map at all. The remaining
+        // callers move over once the standalone host exists to give them one.
         layer.onFollowTrip = { [weak self, weak stopPageVC] departure in
             guard let self, let stopPageVC else { return }
-            self.application.viewRouter.navigateTo(arrivalDeparture: departure, from: stopPageVC)
+            let tripPage = TripPageViewController(
+                application: self.application,
+                arrivalDeparture: departure,
+                originTitle: stopPageVC.viewModel.stop?.name
+            )
+            self.application.viewRouter.navigate(to: tripPage, from: stopPageVC)
         }
 
         // Combine over a @MainActor ObservableObject from UIKit: the exact pattern

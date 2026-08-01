@@ -34,6 +34,11 @@ struct TripStopListModel {
         /// the same stop more than once, and `ForEach` collapses rows that share
         /// an id.
         let id: String
+        /// The stop itself. Carried rather than parsed back out of `id`: that
+        /// string is a rendering identity, and reversing it to recover data it
+        /// happens to embed is the kind of coupling that breaks silently the
+        /// first time the identity format changes.
+        let stopID: StopID
         let name: String
         /// Optional because `TripStopTime.arrivalDate` is, once it crosses the
         /// module boundary. A row with no time renders without one.
@@ -67,6 +72,7 @@ struct TripStopListModel {
         let rows = stopTimes.enumerated().map { index, stopTime in
             Row(
                 id: "\(index)-\(stopTime.stopID)",
+                stopID: stopTime.stopID,
                 name: stopTime.stopName,
                 date: stopTime.scheduledArrival,
                 isPassed: vehicleIndex.map { index < $0 } ?? false,

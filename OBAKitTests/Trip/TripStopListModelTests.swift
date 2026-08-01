@@ -67,6 +67,15 @@ struct TripStopListModelTests {
         #expect(Set(model.rows.map(\.id)).count == 3)
     }
 
+    /// Tapping a row navigates to that stop, so the row has to carry the stop's
+    /// own ID — not just the position-qualified `id`, which exists for `ForEach`
+    /// and would have to be reverse-parsed to get the stop back out.
+    @Test func `Each row carries the stop it stands for`() {
+        let model = make(line(["A", "B", "A"]))
+
+        #expect(model.rows.map(\.stopID) == ["A", "B", "A"])
+    }
+
     @Test func `The last stop is the terminal, and only the last`() {
         let model = make(line(["A", "B", "C"]))
 

@@ -82,7 +82,7 @@ struct TripPageView: View {
                             rows: rows,
                             routeColor: routeColor,
                             routeType: route?.routeType ?? .unknown,
-                            onSelect: { row in actions.onSelectStop(stopID(for: row)) }
+                            onSelect: { actions.onSelectStop($0.stopID) }
                         )
                     }
                 }
@@ -149,12 +149,6 @@ struct TripPageView: View {
             format: OBALoc("trip_page.all_stops_fmt", value: "All %d stops", comment: "Header above the trip's full stop list. %d is the number of stops. Plural forms live in Localizable.stringsdict; this value is only the not-found fallback."),
             count
         )
-    }
-
-    /// Row ids are position-qualified (`"3-1_75403"`) so a loop route's repeat
-    /// visits stay distinct; the stop ID is everything after the first hyphen.
-    private func stopID(for row: TripStopListModel.Row) -> StopID {
-        String(row.id.drop(while: { $0 != "-" }).dropFirst())
     }
 }
 
