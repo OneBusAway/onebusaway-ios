@@ -76,7 +76,11 @@ struct StopDetailsSheetTopBar: View {
         Button(action: onRefresh) {
             ZStack {
                 if isRefreshing {
-                    ProgressView().controlSize(.small)
+                    // `.regular` is `ControlSize`'s medium step — there is no
+                    // `.medium` case. Matches the glyph it replaces more closely
+                    // than `.small`, so the button does not appear to shrink
+                    // while refreshing.
+                    ProgressView().controlSize(.regular)
                 } else {
                     Image(systemName: "arrow.clockwise")
                         .font(.body.weight(.semibold))

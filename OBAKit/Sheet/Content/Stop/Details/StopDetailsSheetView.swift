@@ -57,6 +57,10 @@ struct StopDetailsSheetView: View {
     /// Gates the one-shot success haptic to the first arrivals load, matching
     /// `StopViewController.bindArrivalsSink()`; later refreshes are silent.
     @State private var firstLoad = true
+    /// Drives the top bar's spinner. Distinct from `viewModel.isLoading`, which
+    /// also flips for the ~15s background refresh — the rider did not ask for
+    /// that one, so it should not flash chrome at them.
+    @State private var isManuallyRefreshing = false
 
     @AppStorage("StopViewController.pastDeparturesCollapsed") private var pastCollapsed = true
 
@@ -233,8 +237,23 @@ struct StopDetailsSheetView: View {
         }
     }
 
+    /// A warm refresh usually resolves in well under a frame, so the spinner
+    /// would appear and vanish before the eye caught it — reading as "the button
+    /// did nothing". Hold it for a floor so the tap always has a visible result.
     private func refresh() {
-        Task { await viewModel.refresh() }
+        guard !isManuallyRefreshing else { return }
+
+        Task {
+            isManuallyRefreshing = true
+            let started = ContinuousClock.now
+            await viewModel.refresh()
+
+            let elapsed = ContinuousClock.now - started
+            if elapsed < Self.minimumSpinnerDuration {
+                try? await Task.sleep(for: Self.minimumSpinnerDuration - elapsed)
+            }
+            isManuallyRefreshing = false
+        }
     }
 
     private func loadMore() {
@@ -321,7 +340,7 @@ struct StopDetailsSheetView: View {
             title: viewModel.stop?.name ?? "",
             titleOpacity: Double(titleProgress),
             statusText: viewModel.statusText,
-            isRefreshing: viewModel.isLoading,
+            isRefreshing: isManuallyRefreshing,
             onRefresh: refresh,
             onClose: { coordinator.pop() }
         )
@@ -333,6 +352,9 @@ struct StopDetailsSheetView: View {
     /// to match the header's real height, and keeping it out of layout is what
     /// makes the fade safe.
     private static let titleFadeDistance: CGFloat = 120
+
+    /// How long the refresh spinner stays up at minimum.
+    private static let minimumSpinnerDuration: Duration = .milliseconds(600)
 
     /// The map card, plus a spacer standing in for the action row.
     ///
