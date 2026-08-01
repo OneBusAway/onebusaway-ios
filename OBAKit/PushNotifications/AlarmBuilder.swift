@@ -112,7 +112,17 @@ class AlarmBuilder: NSObject {
 
         defer {
             Task { @MainActor in
-                ProgressHUD.dismiss()
+                // The delegate owns the HUD from here: it shows a self-dismissing
+                // success message on creation, and dismisses on failure.
+                // Dismissing here too would hide "Alarm created" the instant it
+                // appeared — `showSuccessAndDismiss` schedules its own dismissal,
+                // and this ran immediately after it.
+                //
+                // The delegate is weak, so with nobody left to own it, fall back
+                // to dismissing here rather than stranding a spinner on screen.
+                if self.delegate == nil {
+                    ProgressHUD.dismiss()
+                }
                 self.bulletinManager.dismissBulletin(animated: true)
             }
         }
