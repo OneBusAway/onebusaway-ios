@@ -563,7 +563,28 @@ extension StopPageActionPresenter: AlarmBuilderDelegate {
 
     func alarmBuilder(_ alarmBuilder: AlarmBuilder, error: Error) {
         ProgressHUD.dismiss()
-        showError(error)
+
+        // Report only once the bulletin is gone.
+        //
+        // `AlarmBuilder.createAlarm` calls this delegate method *before* the
+        // `defer` that dismisses its bulletin, and `showBulletin(above:)` is a
+        // plain modal presentation — so right now the bulletin is the topmost
+        // controller and `presentingController()` resolves to it. Presenting the
+        // alert there puts two modal transitions in flight at once: the alert
+        // appears on a controller that is about to be dismissed, goes away with
+        // it, and the bulletin's view is left on screen and unresponsive.
+        Task { @MainActor in
+            await waitForBulletinDismissal(alarmBuilder)
+            showError(error)
+        }
+    }
+
+    /// Waits for the alarm bulletin to finish dismissing, bounded so a bulletin
+    /// that somehow lingers can never swallow the error entirely.
+    private func waitForBulletinDismissal(_ alarmBuilder: AlarmBuilder) async {
+        for _ in 0..<40 where alarmBuilder.bulletinManager.isShowingBulletin {
+            try? await Task.sleep(for: .milliseconds(50))
+        }
     }
 }
 
