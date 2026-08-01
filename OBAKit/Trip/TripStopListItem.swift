@@ -13,7 +13,7 @@ import OBAKitCore
 // MARK: - Temporal State
 
 /// Describes whether a trip stop is in the past, present, or future relative to the vehicle's current position.
-enum TripStopTemporalState: Hashable {
+nonisolated enum TripStopTemporalState: Hashable {
     case past
     case current
     case future
@@ -148,8 +148,10 @@ final class TripStopCell: OBAListViewCell {
         titleLabel.text = nil
         titleLabel.font = .preferredFont(forTextStyle: .body)
         titleLabel.textColor = ThemeColors.shared.label
+        titleLabel.alpha = 1.0
         timeLabel.text = nil
         timeLabel.textColor = ThemeColors.shared.secondaryLabel
+        timeLabel.alpha = 1.0
         tripSegmentView.image = nil
         tripSegmentView.adjacentTripOrder = nil
         tripSegmentView.temporalState = .future
@@ -262,21 +264,30 @@ final class TripStopCell: OBAListViewCell {
     private func applyTemporalStateStyling(_ viewModel: TripStopViewModel) {
         switch viewModel.temporalState {
         case .past:
+            // Reduced opacity supplements the secondaryLabel color so past stops
+            // remain distinguishable for low-vision users not running VoiceOver,
+            // where a color change alone would not be perceivable.
             titleLabel.font = .preferredFont(forTextStyle: .body)
             titleLabel.textColor = ThemeColors.shared.secondaryLabel
+            titleLabel.alpha = 0.7
             timeLabel.textColor = ThemeColors.shared.secondaryLabel
+            timeLabel.alpha = 0.7
 
         case .current:
             titleLabel.font = .preferredFont(forTextStyle: .headline)
             titleLabel.textColor = ThemeColors.shared.label
+            titleLabel.alpha = 1.0
             timeLabel.textColor = ThemeColors.shared.label
+            timeLabel.alpha = 1.0
 
         case .future:
             titleLabel.font = viewModel.isUserDestination
                 ? .preferredFont(forTextStyle: .headline)
                 : .preferredFont(forTextStyle: .body)
             titleLabel.textColor = ThemeColors.shared.label
+            titleLabel.alpha = 1.0
             timeLabel.textColor = ThemeColors.shared.secondaryLabel
+            timeLabel.alpha = 1.0
         }
     }
 

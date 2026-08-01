@@ -15,7 +15,7 @@ import FloatingPanel
 
 /// Testable value type encapsulating the "Stop X of Y" header data.
 /// Returns `nil` when progress data is unavailable and the header should be hidden.
-struct TripProgressViewModel {
+nonisolated struct TripProgressViewModel {
     let stopCountText: String
     let etaText: String?
     let progress: Float
@@ -54,12 +54,19 @@ struct TripProgressViewModel {
                     ),
                     minutes
                 )
-            } else {
+            } else if userStopIndex - closestStopIndex == 1 {
+                // The prediction is non-positive but the vehicle is at the adjacent
+                // stop, so "Arriving now" is justified by position alone.
                 etaText = OBALoc(
                     "trip_progress.arriving_now",
                     value: "Arriving now",
                     comment: "Shown when the vehicle is arriving at the user's stop"
                 )
+            } else {
+                // The prediction is stale (e.g. the vehicle is running late) and it is
+                // still several stops away — omit the ETA rather than show a
+                // misleading "Arriving now".
+                etaText = nil
             }
         } else {
             etaText = nil
