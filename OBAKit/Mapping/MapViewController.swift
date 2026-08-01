@@ -860,8 +860,19 @@ class MapViewController: UIViewController,
         // owns a map and adds its own floating panel, so inside this sheet it
         // nests a panel in a panel; this page draws no map at all. The remaining
         // callers move over once the standalone host exists to give them one.
-        layer.onFollowTrip = { [weak self, weak stopPageVC] departure in
+        layer.onFollowTrip = { [weak self, weak stopPageVC, weak focus] departure in
             guard let self, let stopPageVC else { return }
+
+            // Narrow the map to the trip being followed before the push, so the
+            // page arrives over its own route rather than over every route the
+            // stop serves. `focus`, not `toggleFocus`: the route may already be
+            // focused from the marker tap that opened the callout, and toggling
+            // would clear it at the moment the rider committed to it.
+            //
+            // Not restored on pop, matching the sheet's detent: where the map is
+            // pointed after the rider has been somewhere is theirs to change.
+            focus?.focus(routeID: departure.routeID)
+
             let tripPage = TripPageViewController(
                 application: self.application,
                 arrivalDeparture: departure,
