@@ -57,12 +57,16 @@ final class StopRouteFocusMapLayerTests {
         ]).encodedPolyline
     }
 
+    private static let formatters = Formatters(
+        locale: Locale(identifier: "en_US"), calendar: Calendar(identifier: .gregorian), themeColors: ThemeColors.shared
+    )
+
     private func makeLayer(
         mapView: MKMapView,
         shapeCache: ShapeCache? = nil
     ) -> StopRouteFocusMapLayer {
         let cache = shapeCache ?? ShapeCache { [encoded = encodedSeattleLine()] _ in encoded }
-        let layer = StopRouteFocusMapLayer(mapView: mapView, shapeCache: cache)
+        let layer = StopRouteFocusMapLayer(mapView: mapView, shapeCache: cache, formatters: Self.formatters)
         // REQUIRED: `syncVehicleAnnotations` builds nothing without a resolvable
         // departure, because `StopVehicleAnnotation` needs a non-nil `TripStatus`
         // (see Task 7). Backed by a fixture-loaded `ArrivalDeparture`.
@@ -130,6 +134,118 @@ final class StopRouteFocusMapLayerTests {
         layer.update(model: model(routeIDs: ["H"], vehicleRouteIDs: ["H"]))
 
         #expect(mapView.annotations.compactMap { $0 as? StopVehicleAnnotation }.count == 1)
+    }
+
+    @Test func `A surviving vehicle keeps the same annotation object across updates`() throws {
+        // Regression: `syncVehicleAnnotations()` used to remove and re-add every
+        // marker on every refresh, which dismisses any open callout on the
+        // survivor. Diffing by `DrawnVehicle.id` and mutating in place preserves
+        // MapKit identity for a vehicle that is still in the arrival set.
+        let mapView = MKMapView()
+        let layer = makeLayer(mapView: mapView)
+        layer.begin(focus: StopMapFocus())
+
+        layer.update(model: model(routeIDs: ["H", "62"], vehicleRouteIDs: ["H", "62"]))
+        let survivor = try #require(
+            mapView.annotations.compactMap { $0 as? StopVehicleAnnotation }.first { $0.routeID == "H" }
+        )
+
+        layer.update(model: model(routeIDs: ["H", "62"], vehicleRouteIDs: ["H", "62"]))
+        let afterRefresh = try #require(
+            mapView.annotations.compactMap { $0 as? StopVehicleAnnotation }.first { $0.routeID == "H" }
+        )
+
+        #expect(survivor === afterRefresh)
+        #expect(mapView.annotations.compactMap { $0 as? StopVehicleAnnotation }.count == 2)
+    }
+
+    @Test func `Update adds and removes only the delta, keeping survivors`() throws {
+        let mapView = MKMapView()
+        let layer = makeLayer(mapView: mapView)
+        layer.begin(focus: StopMapFocus())
+
+        layer.update(model: model(routeIDs: ["H", "62"], vehicleRouteIDs: ["H", "62"]))
+        let survivor = try #require(
+            mapView.annotations.compactMap { $0 as? StopVehicleAnnotation }.first { $0.routeID == "62" }
+        )
+
+        // "H" leaves the arrival set, "40" joins it; "62" stays.
+        layer.update(model: model(routeIDs: ["62", "40"], vehicleRouteIDs: ["62", "40"]))
+        let after = mapView.annotations.compactMap { $0 as? StopVehicleAnnotation }
+
+        #expect(after.count == 2)
+        #expect(after.contains { $0 === survivor })
+        #expect(!after.contains { $0.routeID == "H" })
+        #expect(after.contains { $0.routeID == "40" })
+    }
+
+    @Test func `update(model:) is a no-op once end() has cleared focus`() {
+        // A disabled layer's deactivate() -> end() clears `focus`, but the
+        // arrivals sink that calls update(model:) keeps running until the sheet
+        // itself closes. Without the `focus != nil` guard, the next refresh
+        // would silently redraw everything the toggle just turned off.
+        let mapView = MKMapView()
+        let layer = makeLayer(mapView: mapView)
+        layer.begin(focus: StopMapFocus())
+        layer.end()
+
+        layer.update(model: model(routeIDs: ["H"], vehicleRouteIDs: ["H"]))
+
+        #expect(mapView.annotations.compactMap { $0 as? StopVehicleAnnotation }.isEmpty)
+        #expect(mapView.overlays.compactMap { $0 as? RouteShapeOverlay }.isEmpty)
+    }
+
+    @Test func `invalidateShapeCache clears the cache so the next fetch is a real refetch`() async throws {
+        let counter = FetchCounter()
+        let encoded = encodedSeattleLine()
+        let cache = ShapeCache { _ in
+            await counter.increment()
+            return encoded
+        }
+        let mapView = MKMapView()
+        let layer = makeLayer(mapView: mapView, shapeCache: cache)
+        layer.begin(focus: StopMapFocus())
+        layer.update(model: model(routeIDs: ["H"], vehicleRouteIDs: [], shapeIDForRoute: { _ in "shape_A" }))
+        await layer.awaitPendingShapeWork()
+        #expect(await counter.count == 1)
+
+        await layer.invalidateShapeCache().value
+
+        _ = try? await cache.coordinates(forShapeID: "shape_A")
+        #expect(await counter.count == 2)
+    }
+
+    // MARK: - Focus wiring (marker tap / chip tap)
+
+    @Test func `toggleFocus forwards to the attached focus object`() {
+        let mapView = MKMapView()
+        let layer = makeLayer(mapView: mapView)
+        let focus = StopMapFocus()
+        layer.begin(focus: focus)
+        layer.update(model: model(routeIDs: ["H"], vehicleRouteIDs: ["H"]))
+
+        layer.toggleFocus(routeID: "H")
+        #expect(focus.focusedRouteID == "H")
+
+        layer.toggleFocus(routeID: "H")
+        #expect(focus.focusedRouteID == nil)
+    }
+
+    @Test func `Focusing a route selects its vehicle's callout`() throws {
+        // The chip-tap half of the spec's focus behavior: focusing a route also
+        // opens its vehicle's callout. `toggleFocus(routeID:)` is what a vehicle
+        // marker tap calls, and a chip tap calls `StopMapFocus.toggleFocus`
+        // directly — both converge on `focusedRouteID`, which this sink observes.
+        let mapView = MKMapView()
+        let layer = makeLayer(mapView: mapView)
+        let focus = StopMapFocus()
+        layer.begin(focus: focus)
+        layer.update(model: model(routeIDs: ["H"], vehicleRouteIDs: ["H"]))
+        let annotation = try #require(mapView.annotations.compactMap { $0 as? StopVehicleAnnotation }.first)
+
+        focus.toggleFocus(routeID: "H")
+
+        #expect(mapView.selectedAnnotations.contains { ($0 as? StopVehicleAnnotation) === annotation })
     }
 
     @Test func `Update draws a casing and a core overlay per route with a shape`() async {

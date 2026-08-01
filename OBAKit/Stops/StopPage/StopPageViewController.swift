@@ -124,7 +124,8 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
 
     /// Builds the SwiftUI root with the real navigation handler. Called again whenever
     /// `showsBottomToolbar` changes — which only happens on entering or leaving preview mode,
-    /// before the rider has interacted with the page, so the `@State` reset costs nothing.
+    /// before the rider has interacted with the page, so the `@State` reset costs nothing — and
+    /// also by `attach(focus:)`, which re-threads `mapFocus` through a fresh root the same way.
     private func installRootView() {
         rootView = StopPageRootView(
             viewModel: viewModel,

@@ -15,21 +15,21 @@ import UIKit
 /// A live vehicle arriving at the selected stop.
 ///
 /// **The `tripStatus` is mandatory, and that is the whole point of this type.**
-/// `PulsingVehicleAnnotationView`'s `annotation` observer
-/// (`PulsingVehicleAnnotationView.swift:55-64`) requires BOTH `as? VehicleAnnotation`
-/// AND a non-nil `tripStatus` before it runs `applyTripStatus`. And
-/// `applyTripStatus` is the only thing that ever sets `routeType` and `isRealTime`
-/// in a way that fires their `didSet`s — the initializer assigns them *before*
-/// `super.init()` (`:17-18`), where `didSet` does not fire. So an annotation with
-/// a nil `tripStatus` renders as a bare pulsing dot: **no bus icon, no heading
-/// arrow, no realtime state**, and no error anywhere to explain it.
+/// `PulsingVehicleAnnotationView`'s `annotation` observer requires BOTH
+/// `as? VehicleAnnotation` AND a non-nil `tripStatus` before it runs
+/// `applyTripStatus`. And `applyTripStatus` is the only thing that ever sets
+/// `routeType` and `isRealTime` in a way that fires their `didSet`s — the
+/// view's own initializer assigns them *before* calling `super.init()`, where
+/// `didSet` does not fire. So an annotation with a nil `tripStatus` renders as
+/// a bare pulsing dot: **no bus icon, no heading arrow, no realtime state**,
+/// and no error anywhere to explain it.
 ///
 /// Every vehicle in `StopRouteFocusModel` is derived from a `tripStatus`
 /// coordinate, so a non-nil status is always available at construction.
 final class StopVehicleAnnotation: VehicleAnnotation {
     let id: String
     let routeID: RouteID
-    let routeColor: UIColor
+    var routeColor: UIColor
     /// The `ArrivalDeparture` this vehicle is serving, so the callout can read
     /// headsign, countdown, and adherence without another lookup.
     let departureID: String
@@ -64,5 +64,19 @@ final class StopVehicleAnnotation: VehicleAnnotation {
         // (0, 0). Assigning here overrides that with the `position`-preferred,
         // null-island-rejecting coordinate the model already resolved.
         self.coordinate = coordinate
+    }
+
+    /// Mutates this annotation in place for a refresh, preserving MapKit
+    /// identity so an open callout survives an arrivals refresh instead of
+    /// being dismissed by a remove/re-add cycle.
+    func update(tripStatus: TripStatus, coordinate: CLLocationCoordinate2D, routeColor: UIColor) {
+        // Assign tripStatus first: its `didSet` (inherited from
+        // `VehicleAnnotation`) re-derives `coordinate` from `lastKnownLocation`,
+        // same as the initializer's `super.init(tripStatus:)` — so the
+        // position-preferred coordinate must be assigned AFTER, or it gets
+        // clobbered exactly as the initializer's comment describes.
+        self.tripStatus = tripStatus
+        self.coordinate = coordinate
+        self.routeColor = routeColor
     }
 }

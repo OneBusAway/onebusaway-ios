@@ -716,6 +716,12 @@ class MapViewController: UIViewController,
 
     var rentalLayerCoordinator: RentalLayerCoordinator?
 
+    /// The region `StopRouteFocusMapLayer` was last (re)registered for, so
+    /// `configureMapLayers()` can tell an actual region change (rebuild, with a
+    /// fresh `ShapeCache`) apart from `updatedRegionsList` firing with the same
+    /// region — which happens routinely and must not tear the layer down.
+    var stopRouteFocusLayerRegionIdentifier: Int?
+
     // The layer/sheet/nudge machinery lives in MapViewController+MapLayers.swift.
 
     // MARK: - Application State
@@ -794,7 +800,7 @@ class MapViewController: UIViewController,
             }
 
             self.stopFocusCancellables.removeAll()
-            (self.mapRegionManager.mapLayer(id: "stopRoutes") as? StopRouteFocusMapLayer)?.end()
+            (self.mapRegionManager.mapLayer(id: StopRouteFocusMapLayer.layerID) as? StopRouteFocusMapLayer)?.end()
 
             self.scheduleFeedbackPrompt()
         }
@@ -808,7 +814,6 @@ class MapViewController: UIViewController,
         let focus = StopMapFocus()
         stopPageVC.attach(focus: focus)
         beginRouteFocus(focus: focus, stopPageVC: stopPageVC)
-        centerMapAboveSheet(on: stopPageVC.viewModel.stop?.coordinate)
 
         // `StopSheetPresenter.present` tears the outgoing presentation down as its first
         // statement, which runs the handler above synchronously — so a stop-to-stop swap
@@ -820,8 +825,17 @@ class MapViewController: UIViewController,
 
     /// Feeds the route-focus layer from the stop page's view model, and routes
     /// "Follow this trip" into the sheet's navigation stack.
+    ///
+    /// Gated on the layer's Map-sheet toggle: `MapRegionManager`'s annotation
+    /// and overlay dispatch deliberately consults every registered layer with
+    /// no enabled check (mirroring the rendering path), so a disabled layer
+    /// must never be wired up to begin with — starting the arrivals sink here
+    /// would give it a live feed no toggle turns off. `update(model:)` still
+    /// carries its own `focus == nil` guard as a second line of defense, for
+    /// the case where the layer is disabled mid-presentation.
     private func beginRouteFocus(focus: StopMapFocus, stopPageVC: StopPageViewController) {
-        guard let layer = mapRegionManager.mapLayer(id: "stopRoutes") as? StopRouteFocusMapLayer else { return }
+        guard mapRegionManager.isMapLayerEnabled(id: StopRouteFocusMapLayer.layerID),
+              let layer = mapRegionManager.mapLayer(id: StopRouteFocusMapLayer.layerID) as? StopRouteFocusMapLayer else { return }
         layer.begin(focus: focus)
 
         let viewModel = stopPageVC.viewModel
@@ -852,6 +866,21 @@ class MapViewController: UIViewController,
                 layer.update(model: StopRouteFocusModel.make(departures: visible, routeCap: 6))
             }
             .store(in: &stopFocusCancellables)
+
+        // Recenter above the sheet once the stop is available. Subscribing to
+        // `$stop` — rather than reading `viewModel.stop` once at present time —
+        // also covers `show(stopID:)` (deep links, nearby-stop rows), where the
+        // stop loads asynchronously after the sheet is already up; a one-time
+        // read there would see nil and leave the stop behind the sheet. `@Published`
+        // replays its current value to a new subscriber, so this fires immediately
+        // when the stop is already loaded, exactly like the direct call it replaces.
+        viewModel.$stop
+            .compactMap { $0 }
+            .first()
+            .sink { [weak self] stop in
+                self?.centerMapAboveSheet(on: stop.coordinate)
+            }
+            .store(in: &stopFocusCancellables)
     }
 
     /// Keeps the tapped stop visible in the strip of map above the sheet. Without
@@ -863,12 +892,7 @@ class MapViewController: UIViewController,
             safeAreaHeight: mapView.safeAreaLayoutGuide.layoutFrame.height
         )
         let padding = UIEdgeInsets(top: 60, left: 20, bottom: sheetInset + 20, right: 20)
-        // A real extent, NOT a zero-size rect: `MKMapRect(x:y:width:0,height:0)` is
-        // degenerate, and fitting it slams the camera to maximum zoom (or NaN).
-        // 400 m keeps the stop and its immediate surroundings legible.
-        let rect = MKMapRect(MKCoordinateRegion(
-            center: coordinate, latitudinalMeters: 400, longitudinalMeters: 400
-        ))
+        let rect = StopSheetLayout.framingRect(around: coordinate)
         mapView.setVisibleMapRect(rect, edgePadding: padding, animated: true)
     }
 
@@ -1183,6 +1207,15 @@ class MapViewController: UIViewController,
         // Layer-owned annotations (rental vehicles, rental clusters) present
         // their own detail sheets.
         if let annotation = view.annotation, presentLayerDetail(for: annotation, in: mapView) {
+            return
+        }
+
+        if let vehicleAnnotation = view.annotation as? StopVehicleAnnotation {
+            // The spec's escape hatch: at `.tip` the chip row is hidden, so the
+            // focused marker is the only way to clear focus. Toggling (not just
+            // setting) matches "tap the same marker again to clear."
+            (mapRegionManager.mapLayer(id: StopRouteFocusMapLayer.layerID) as? StopRouteFocusMapLayer)?
+                .toggleFocus(routeID: vehicleAnnotation.routeID)
             return
         }
 

@@ -25,11 +25,11 @@ final class StopSheetLayoutMetricsTests {
 
     @Test func `Framing a stop leaves it above the sheet`() {
         // The camera fix that actually matters: a zero-size MKMapRect is degenerate
-        // and slams the camera to maximum zoom, so the rect must have real extent.
+        // and slams the camera to maximum zoom, so the rect `centerMapAboveSheet`
+        // uses must have real extent. Exercise the actual helper it calls, not a
+        // rect built ad hoc in the test — otherwise this only tests MapKit.
         let coordinate = CLLocationCoordinate2D(latitude: 47.6, longitude: -122.33)
-        let rect = MKMapRect(MKCoordinateRegion(
-            center: coordinate, latitudinalMeters: 400, longitudinalMeters: 400
-        ))
+        let rect = StopSheetLayout.framingRect(around: coordinate)
 
         #expect(rect.size.width > 0)
         #expect(rect.size.height > 0)

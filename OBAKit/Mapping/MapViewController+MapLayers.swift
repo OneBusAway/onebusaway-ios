@@ -25,19 +25,48 @@ extension MapViewController {
             mapRegionManager.registerMapLayer(StopsMapLayer(manager: mapRegionManager))
         }
 
-        if mapRegionManager.mapLayer(id: "stopRoutes") == nil {
-            let apiService = application.apiService
-            let shapeCache = ShapeCache { [weak apiService] shapeID in
-                guard let apiService else { throw CancellationError() }
-                return try await apiService.getShape(id: shapeID).entry.points
-            }
-            mapRegionManager.registerMapLayer(
-                StopRouteFocusMapLayer(mapView: mapRegionManager.mapView, shapeCache: shapeCache)
-            )
-        }
-
+        configureStopRouteFocusLayer()
         configureRentalLayers()
         updateMapLayerBadge()
+    }
+
+    /// Registers `StopRouteFocusMapLayer`, rebuilding it with a fresh
+    /// `ShapeCache` when the current region has actually changed.
+    ///
+    /// `CoreApplication.refreshRESTAPIService()` replaces `application.apiService`
+    /// on region change. The layer's `ShapeCache` closes over that service
+    /// `[weak apiService]`, so a cache built for the previous region either
+    /// resolves nil (a `CancellationError`, and no route line ever draws again
+    /// until relaunch) or keeps fetching from the old region's server. Shape IDs
+    /// are also region-scoped, so a cache carried over from the old region would
+    /// answer with the wrong region's shapes even if the service reference were
+    /// still valid.
+    ///
+    /// Gated on the region identifier actually changing, NOT on every call —
+    /// `configureMapLayers()` also runs from `updatedRegionsList`, which fires
+    /// routinely without the current region changing at all, and would
+    /// otherwise tear this layer down (dropping any open presentation) on every
+    /// such refresh.
+    private func configureStopRouteFocusLayer() {
+        let currentRegionIdentifier = application.currentRegionIdentifier
+        let isRegisteredForCurrentRegion = mapRegionManager.mapLayer(id: StopRouteFocusMapLayer.layerID) != nil
+            && stopRouteFocusLayerRegionIdentifier == currentRegionIdentifier
+        guard !isRegisteredForCurrentRegion else { return }
+
+        if let stale = mapRegionManager.mapLayer(id: StopRouteFocusMapLayer.layerID) as? StopRouteFocusMapLayer {
+            stale.invalidateShapeCache()
+            mapRegionManager.removeMapLayer(id: StopRouteFocusMapLayer.layerID)
+        }
+
+        let apiService = application.apiService
+        let shapeCache = ShapeCache { [weak apiService] shapeID in
+            guard let apiService else { throw CancellationError() }
+            return try await apiService.getShape(id: shapeID).entry.points
+        }
+        mapRegionManager.registerMapLayer(
+            StopRouteFocusMapLayer(mapView: mapRegionManager.mapView, shapeCache: shapeCache, formatters: application.formatters)
+        )
+        stopRouteFocusLayerRegionIdentifier = currentRegionIdentifier
     }
 
     private func configureRentalLayers() {

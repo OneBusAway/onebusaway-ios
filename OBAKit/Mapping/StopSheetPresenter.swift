@@ -8,6 +8,7 @@
 //
 
 import FloatingPanel
+import MapKit
 import UIKit
 import OBAKitCore
 
@@ -387,6 +388,23 @@ nonisolated final class StopSheetLayout: FloatingPanelBottomLayout {
     /// project's Swift 6 settings.
     static func halfDetentInset(safeAreaHeight: CGFloat) -> CGFloat {
         safeAreaHeight * 0.5
+    }
+
+    /// A real-extent map rect framing `coordinate`, for recentering the camera
+    /// above the sheet on stop selection.
+    ///
+    /// NOT a zero-size rect: `MKMapRect(x:y:width:0,height:0)` is degenerate,
+    /// and fitting it slams the camera to maximum zoom (or NaN). The default
+    /// 400 m keeps the stop and its immediate surroundings legible.
+    ///
+    /// `@MainActor`, overriding the type's own `nonisolated`: `MKMapRect.init(_:
+    /// MKCoordinateRegion)` is main-actor-isolated in the SDK, the same reason
+    /// `halfDetentInset` above can't touch `UIScreen.main`.
+    @MainActor
+    static func framingRect(around coordinate: CLLocationCoordinate2D, metersAcross: CLLocationDistance = 400) -> MKMapRect {
+        MKMapRect(MKCoordinateRegion(
+            center: coordinate, latitudinalMeters: metersAcross, longitudinalMeters: metersAcross
+        ))
     }
 }
 

@@ -34,9 +34,11 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
 
     // MARK: - MapLayer
 
-    let id = "stopRoutes"
+    static let layerID = "stopRoutes"
+
+    var id: String { Self.layerID }
     var title: String {
-        OBALoc("map_layer.stop_routes.title", value: "Route lines & vehicles",
+        OBALoc("map_layers.stop_routes", value: "Route lines & vehicles",
                comment: "Map sheet row for the layer drawing a selected stop's routes and live vehicles.")
     }
     let iconName = "arrow.triangle.branch"
@@ -49,12 +51,15 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
     let densityBudget = 32
     let isClusterable = false
     let refreshPolicy = MapLayerRefreshPolicy.static
-    let staleAfter: Duration? = .seconds(120)
+    /// No freshness surface — unlike the rental layers, this layer has nothing
+    /// analogous to a fetch timestamp to compare against.
+    let staleAfter: Duration? = nil
 
     // MARK: - State
 
     private let mapView: MKMapView
     private let shapeCache: ShapeCache
+    private let formatters: Formatters
 
     private var focus: StopMapFocus?
     private var cancellables = Set<AnyCancellable>()
@@ -77,30 +82,60 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
     private var presentationToken = UUID()
     private var shapeTasks: [Task<Void, Never>] = []
 
-    init(mapView: MKMapView, shapeCache: ShapeCache) {
+    init(mapView: MKMapView, shapeCache: ShapeCache, formatters: Formatters) {
         self.mapView = mapView
         self.shapeCache = shapeCache
+        self.formatters = formatters
         super.init()
+    }
+
+    /// Cancels and drops every cached shape. Called by `MapViewController` when
+    /// the current region actually changes — shape IDs are region-scoped, so a
+    /// cache built for the old region must not answer for the new one.
+    ///
+    /// Returns the spawned `Task` so tests can await completion; production
+    /// callers fire-and-forget.
+    @discardableResult
+    func invalidateShapeCache() -> Task<Void, Never> {
+        let shapeCache = shapeCache
+        return Task { await shapeCache.removeAll() }
     }
 
     // MARK: - Presentation lifecycle
 
     /// Called when a stop sheet opens. Subscribes to focus changes so chip and
     /// marker taps restyle the lines.
+    ///
+    /// Does NOT clear `departureProvider`/`onFollowTrip` — `resetPresentationState()`
+    /// is shared with `end()`, but releasing those two here would race a caller
+    /// that sets them before `begin(focus:)` (as this layer's own tests do); the
+    /// production caller sets them after, but nothing requires that ordering.
     func begin(focus: StopMapFocus) {
-        end()
+        resetPresentationState()
         self.focus = focus
         presentationToken = UUID()
 
         focus.$focusedRouteID
             .removeDuplicates()
-            .sink { [weak self] _ in self?.restyleOverlays() }
+            .sink { [weak self] routeID in
+                self?.restyleOverlays()
+                self?.selectFocusedVehicleAnnotation(routeID: routeID)
+            }
             .store(in: &cancellables)
     }
 
     /// Called when the sheet closes. Cancels in-flight shape work so a late
-    /// response can't draw onto a map that has moved on.
+    /// response can't draw onto a map that has moved on, and releases the
+    /// closures the outgoing presentation installed — they're re-supplied by
+    /// the next `begin(focus:)`, and leaving them set until then just holds
+    /// dead references to a presentation that no longer exists.
     func end() {
+        resetPresentationState()
+        departureProvider = nil
+        onFollowTrip = nil
+    }
+
+    private func resetPresentationState() {
         presentationToken = UUID()
         for task in shapeTasks { task.cancel() }
         shapeTasks.removeAll()
@@ -111,34 +146,98 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
         removeAllContent()
     }
 
-    /// Called on every arrivals refresh.
+    /// Called on every arrivals refresh. Guarded on `focus`: a disabled layer's
+    /// `deactivate()` (→ `end()`) clears it, but the Combine sink that calls this
+    /// keeps running until the sheet itself closes — without this guard, the
+    /// next arrivals tick would silently redraw everything the toggle just
+    /// turned off.
     func update(model: StopRouteFocusModel) {
+        guard focus != nil else { return }
         self.model = model
         focus?.apply(routes: model.routes)
         syncVehicleAnnotations()
         syncRouteOverlays()
     }
 
+    /// Vehicle-marker tap writes focus too — the spec's escape hatch at `.tip`,
+    /// where the chip row is hidden. `MapViewController` calls this from
+    /// `mapView(_:didSelect:)`.
+    func toggleFocus(routeID: RouteID) {
+        focus?.toggleFocus(routeID: routeID)
+    }
+
+    /// The chip-tap half of the spec's focus behavior: focusing a route also
+    /// opens its vehicle's callout. A no-op when the route has no drawn vehicle,
+    /// or when focus was cleared.
+    private func selectFocusedVehicleAnnotation(routeID: RouteID?) {
+        guard let routeID, let annotation = annotations.first(where: { $0.routeID == routeID }) else { return }
+        mapView.selectAnnotation(annotation, animated: true)
+    }
+
     // MARK: - Vehicles
 
+    /// Diffs against the previous refresh by `DrawnVehicle.id` rather than
+    /// removing and re-adding everything. Wholesale replacement dismisses any
+    /// open callout on every 15s arrivals tick — and the callout carries the
+    /// feature's primary action, "Follow this trip" — pops markers instead of
+    /// moving them, and drops the focused route's raised `zPriority` until the
+    /// next chip tap. Survivors are mutated in place; only the delta is
+    /// added/removed.
     private func syncVehicleAnnotations() {
-        mapView.removeAnnotations(annotations)
-        annotations = model.vehicles.compactMap { vehicle in
+        var survivors: [String: StopVehicleAnnotation] = [:]
+        for annotation in annotations { survivors[annotation.id] = annotation }
+
+        var next: [StopVehicleAnnotation] = []
+        var toAdd: [StopVehicleAnnotation] = []
+        var seenIDs = Set<String>()
+
+        for vehicle in model.vehicles {
             // A non-nil TripStatus is mandatory — without it the marker renders as
             // a bare dot with no icon and no heading arrow. See StopVehicleAnnotation.
             // Every modelled vehicle derived its coordinate from a TripStatus, so
             // this lookup only fails if the departure vanished between refreshes.
-            guard let tripStatus = departureProvider?(vehicle.departureID)?.tripStatus else { return nil }
-            return StopVehicleAnnotation(
-                id: vehicle.id,
-                routeID: vehicle.routeID,
-                routeColor: model.routes.first { $0.routeID == vehicle.routeID }?.color ?? tintColor,
-                departureID: vehicle.departureID,
-                tripStatus: tripStatus,
-                coordinate: vehicle.coordinate
-            )
+            guard let tripStatus = departureProvider?(vehicle.departureID)?.tripStatus else { continue }
+            seenIDs.insert(vehicle.id)
+
+            if let existing = survivors[vehicle.id] {
+                let routeColor = model.routes.first { $0.routeID == vehicle.routeID }?.color ?? tintColor
+                existing.update(tripStatus: tripStatus, coordinate: vehicle.coordinate, routeColor: routeColor)
+                if let view = mapView.view(for: existing) as? PulsingVehicleAnnotationView {
+                    view.realTimeAnnotationColor = routeColor
+                    view.applyTripStatus(tripStatus)
+                }
+                next.append(existing)
+            } else {
+                let annotation = StopVehicleAnnotation(
+                    id: vehicle.id,
+                    routeID: vehicle.routeID,
+                    routeColor: model.routes.first { $0.routeID == vehicle.routeID }?.color ?? tintColor,
+                    departureID: vehicle.departureID,
+                    tripStatus: tripStatus,
+                    coordinate: vehicle.coordinate
+                )
+                next.append(annotation)
+                toAdd.append(annotation)
+            }
         }
-        mapView.addAnnotations(annotations)
+
+        let toRemove = annotations.filter { !seenIDs.contains($0.id) }
+        if !toRemove.isEmpty { mapView.removeAnnotations(toRemove) }
+        if !toAdd.isEmpty { mapView.addAnnotations(toAdd) }
+        annotations = next
+
+        applyVehicleZPriority()
+    }
+
+    /// Raises the focused route's marker above the rest. Applied both here
+    /// (so a vehicle added or updated mid-refresh gets the right priority
+    /// immediately) and from `restyleOverlays()` (so a chip/marker tap re-styles
+    /// markers already on the map).
+    private func applyVehicleZPriority() {
+        for annotation in annotations {
+            guard let view = mapView.view(for: annotation) as? PulsingVehicleAnnotationView else { continue }
+            view.zPriority = (annotation.routeID == focus?.focusedRouteID) ? .max : .defaultUnselected
+        }
     }
 
     // MARK: - Shapes
@@ -200,23 +299,26 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
         // not in a window. Re-adding forces a fresh `rendererFor` round trip, which
         // picks up the new focus state. Without this fallback a chip tap silently
         // does nothing for the lines that happen to be off-screen.
-        var needsReadd: [RouteShapeOverlay] = []
+        var routesNeedingReadd = Set<RouteID>()
         for overlay in overlays {
             if let renderer = mapView.renderer(for: overlay) as? MKPolylineRenderer {
                 apply(style: overlay, to: renderer)
                 renderer.setNeedsDisplay()
             } else {
-                needsReadd.append(overlay)
+                routesNeedingReadd.insert(overlay.routeID)
             }
         }
-        if !needsReadd.isEmpty {
+        if !routesNeedingReadd.isEmpty {
+            // Re-add a route's casing AND core together, in their original
+            // casing-first order — even when only one half actually needed a
+            // fresh `rendererFor` round trip. Re-adding just one half would move
+            // only it to the top of the overlay stack and invert the pair's
+            // z-order.
+            let needsReadd = overlays.filter { routesNeedingReadd.contains($0.routeID) }
             mapView.removeOverlays(needsReadd)
             mapView.addOverlays(needsReadd, level: .aboveRoads)
         }
-        for annotation in annotations {
-            guard let view = mapView.view(for: annotation) as? PulsingVehicleAnnotationView else { continue }
-            view.zPriority = (annotation.routeID == focus?.focusedRouteID) ? .max : .defaultUnselected
-        }
+        applyVehicleZPriority()
     }
 
     private func apply(style overlay: RouteShapeOverlay, to renderer: MKPolylineRenderer) {
@@ -255,12 +357,9 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
             withIdentifier: MKMapView.reuseIdentifier(for: PulsingVehicleAnnotationView.self),
             for: annotation
         ) as? PulsingVehicleAnnotationView
-        // Set the color BEFORE the annotation, or the didSet chain applies the
-        // previous route's color — see PulsingVehicleAnnotationView.
         view?.realTimeAnnotationColor = annotation.routeColor
         view?.isSelectable = true
         view?.canShowCallout = true
-        view?.annotation = annotation
         if let departure = departureProvider?(annotation.departureID) {
             view?.detailCalloutAccessoryView = makeCallout(for: departure, annotation: annotation)
         }
@@ -275,18 +374,26 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
         return formatter
     }()
 
+    /// "Vehicle NNNN" — see the spec's callout content list.
+    private static let vehicleLabelFormat = OBALoc(
+        "vehicle_callout.vehicle_label_fmt",
+        value: "Vehicle %@",
+        comment: "Label identifying a vehicle by its ID in the map's vehicle callout, e.g. 'Vehicle 1234'."
+    )
+
     private func makeCallout(for departure: ArrivalDeparture, annotation: StopVehicleAnnotation) -> UIView {
         // `DepartureStatus`'s members are `label` and `color` — NOT statusLabel /
         // statusColor. Verified at DepartureStatus.swift:52 and :35.
         let status = DepartureStatus(arrivalDeparture: departure)
-        // `route` is declared `Route!` (ArrivalDeparture.swift:53) — it is populated
-        // by `loadReferences`, but reach for the non-optional `routeShortName`
-        // (:220) as the fallback rather than force-unwrapping through `route`.
-        let headsign = departure.tripHeadsign ?? departure.routeShortName
+        // `route` is declared `Route!` (ArrivalDeparture.swift:53). `routeShortName`
+        // (:220) still force-unwraps through it when `_routeShortName` is nil, so
+        // reach for `route?` directly here rather than through that property —
+        // optional-chaining an implicitly-unwrapped optional never traps.
+        let headsign = departure.tripHeadsign ?? departure.route?.shortName ?? ""
         return VehicleCalloutView(
             headsign: headsign,
-            vehicleLabel: annotation.id,
-            countdownText: "\(departure.arrivalDepartureMinutes)m",
+            vehicleLabel: String(format: Self.vehicleLabelFormat, annotation.id),
+            countdownText: formatters.shortFormattedTime(until: departure),
             statusText: status.label,
             statusColor: status.color,
             // There is no `Formatters.formattedLastUpdated`. `ArrivalDeparture`

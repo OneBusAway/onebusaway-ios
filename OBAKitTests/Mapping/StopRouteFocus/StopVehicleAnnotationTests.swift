@@ -41,9 +41,9 @@ final class StopVehicleAnnotationTests {
 
     @Test func `Assigning the annotation gives the view its bus icon`() throws {
         // The real risk: PulsingVehicleAnnotationView's `annotation` didSet
-        // (:55-64) requires a NON-NIL tripStatus, and `applyTripStatus` is the only
+        // requires a NON-NIL tripStatus, and `applyTripStatus` is the only
         // thing that ever fires `routeType`'s didSet — the initializer assigns it
-        // before super.init (:17), where didSet does not fire. A nil tripStatus
+        // before super.init, where didSet does not fire. A nil tripStatus
         // therefore yields a bare dot with no icon and no arrow, silently.
         // `image` being non-nil is the observable proof that chain ran.
         let annotation = StopVehicleAnnotation(
@@ -86,6 +86,28 @@ final class StopVehicleAnnotationTests {
         view.realTimeAnnotationColor = .systemGreen
 
         #expect(view.annotationColor == .systemGreen)
+    }
+
+    @Test func `update(tripStatus:coordinate:routeColor:) preserves identity and applies the new coordinate`() throws {
+        // Regression for the refresh-mutates-in-place fix: `tripStatus`'s didSet
+        // (inherited from VehicleAnnotation) re-derives `coordinate` from
+        // `lastKnownLocation`, same as the initializer — so the position-preferred
+        // coordinate passed to `update` must win, not get clobbered by that didSet.
+        let annotation = StopVehicleAnnotation(
+            id: "6821", routeID: "H", routeColor: .systemRed, departureID: "dep1",
+            tripStatus: try makeTripStatus(),
+            coordinate: CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3)
+        )
+
+        annotation.update(
+            tripStatus: try makeTripStatus(),
+            coordinate: CLLocationCoordinate2D(latitude: 48.1, longitude: -121.9),
+            routeColor: .systemGreen
+        )
+
+        #expect(annotation.coordinate.latitude == 48.1)
+        #expect(annotation.coordinate.longitude == -121.9)
+        #expect(annotation.routeColor == .systemGreen)
     }
 
     @Test func `Markers are not selectable by default, preserving the trip screen`() {
