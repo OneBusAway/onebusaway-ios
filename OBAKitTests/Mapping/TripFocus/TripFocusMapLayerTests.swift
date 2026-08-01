@@ -47,7 +47,8 @@ final class TripFocusMapLayerTests {
     private func content(
         shape: [CLLocationCoordinate2D],
         progress: Double?,
-        stops: [TripStopListModel.Row] = []
+        stops: [TripStopListModel.Row] = [],
+        vehicle: TripStatus? = nil
     ) -> TripMapFocus.Content {
         TripMapFocus.Content(
             tripID: "trip_1",
@@ -56,8 +57,18 @@ final class TripFocusMapLayerTests {
             shape: shape,
             progress: progress,
             stops: stops,
-            vehicle: nil
+            vehicle: vehicle
         )
+    }
+
+    /// A real `TripStatus`, which only decodes from JSON — see
+    /// `StopVehicleAnnotationTests.makeTripStatus` for why this fixture and why
+    /// the reference-loading step matters.
+    private func vehicle() throws -> TripStatus {
+        try Fixtures.loadRESTAPIPayload(
+            type: VehicleStatus.self,
+            fileName: "api_where_vehicle_1_4351.json"
+        ).tripStatus
     }
 
     /// Held for the length of the test. The layer's subscription to the focus
@@ -158,6 +169,46 @@ final class TripFocusMapLayerTests {
 
         #expect(stopAnnotations.count == 1)
         #expect(stopAnnotations.allSatisfy { !$0.coordinate.isNullIsland })
+    }
+
+    // MARK: - Camera
+
+    /// The bus is what the rider opened the page for. Framing the whole line
+    /// instead — several miles of it — shrinks the bus to a speck, which is the
+    /// behaviour this replaced.
+    @Test func `A trip with a live vehicle frames the bus, not the whole line`() throws {
+        let status = try vehicle()
+        let line = shape()
+
+        focus(content(shape: line, progress: 0.5, vehicle: status))
+
+        #expect(mapView.visibleMapRect.contains(MKMapPoint(status.coordinate)))
+        #expect(!mapView.visibleMapRect.contains(MKMapPoint(line[0])))
+    }
+
+    /// No reported position, so there's nothing better to frame than where the
+    /// trip is going.
+    @Test func `A trip with no vehicle position frames the part still ahead`() {
+        let line = shape()
+
+        focus(content(shape: line, progress: 0.5))
+
+        #expect(mapView.visibleMapRect.contains(MKMapPoint(line[4])))
+        #expect(!mapView.visibleMapRect.contains(MKMapPoint(line[0])))
+    }
+
+    /// Framing is once per trip. The position refreshes every 30s, and a camera
+    /// that re-framed on each tick would snatch the map back from a rider who
+    /// had panned away to look at something else.
+    @Test func `A refresh leaves the camera where the rider put it`() throws {
+        let focus = focus(content(shape: shape(), progress: 0.5, vehicle: try vehicle()))
+
+        let panned = MKMapRect(origin: MKMapPoint(CLLocationCoordinate2D(latitude: 40, longitude: -80)),
+                               size: MKMapSize(width: 10000, height: 10000))
+        mapView.visibleMapRect = panned
+        focus.apply(content(shape: shape(), progress: 0.6, vehicle: try vehicle()))
+
+        #expect(!mapView.visibleMapRect.contains(MKMapPoint(try vehicle().coordinate)))
     }
 
     // MARK: - Lifecycle

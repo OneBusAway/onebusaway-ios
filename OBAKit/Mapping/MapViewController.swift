@@ -865,6 +865,9 @@ class MapViewController: UIViewController,
             stopLayer?.setSuppressed(tripFocus != nil)
 
             if let tripFocus {
+                // Evaluated when the layer frames, not now: the sheet is still
+                // animating up at this point.
+                tripLayer.cameraInsets = { [weak self] in self?.sheetCameraInsets() ?? .zero }
                 tripLayer.begin(focus: tripFocus)
             } else {
                 tripLayer.end()
@@ -935,19 +938,6 @@ class MapViewController: UIViewController,
                 self?.centerMapAboveSheet(on: stop.coordinate)
             }
             .store(in: &stopFocusCancellables)
-    }
-
-    /// Keeps the tapped stop visible in the strip of map above the sheet. Without
-    /// this the pin can end up behind the sheet — nothing recenters today.
-    private func centerMapAboveSheet(on coordinate: CLLocationCoordinate2D?) {
-        guard let coordinate else { return }
-        let mapView = mapRegionManager.mapView
-        let sheetInset = StopSheetLayout.halfDetentInset(
-            safeAreaHeight: mapView.safeAreaLayoutGuide.layoutFrame.height
-        )
-        let padding = UIEdgeInsets(top: 60, left: 20, bottom: sheetInset + 20, right: 20)
-        let rect = StopSheetLayout.framingRect(around: coordinate)
-        mapView.setVisibleMapRect(rect, edgePadding: padding, animated: true)
     }
 
     /// Torn down alongside the layer when the sheet closes.

@@ -114,21 +114,25 @@ final class TripFocusMapLayer: NSObject, MapLayer {
 
         guard let content else { return }
 
-        drawShape(content)
+        // Split once: the drawing and the camera have to agree about which half
+        // of the shape is still ahead of the bus.
+        let split = Self.split(content)
+
+        drawShape(split)
         drawStops(content)
         drawVehicle(content)
-        frameCameraIfNeeded(content)
+        frameCameraIfNeeded(content, split: split)
     }
 
-    private func drawShape(_ content: TripMapFocus.Content) {
-        guard content.shape.count >= 2 else { return }
-
-        // No reported progress means nothing is known to have been travelled, so
-        // the whole shape draws as ahead rather than guessing at a split.
-        let split = content.progress.map {
+    /// No reported progress means nothing is known to have been travelled, so the
+    /// whole shape counts as ahead rather than guessing at a split.
+    private static func split(_ content: TripMapFocus.Content) -> TripShapeSplit.Result {
+        content.progress.map {
             TripShapeSplit.split(coordinates: content.shape, atFraction: $0)
         } ?? TripShapeSplit.Result(spent: [], ahead: content.shape)
+    }
 
+    private func drawShape(_ split: TripShapeSplit.Result) {
         // Spent first, then ahead, so where the two meet the live half wins the
         // z-order. Casing before core within each, for the same reason.
         add(coordinates: split.spent, isSpent: true)
@@ -155,42 +159,64 @@ final class TripFocusMapLayer: NSObject, MapLayer {
     }
 
     private func drawVehicle(_ content: TripMapFocus.Content) {
-        guard let status = content.vehicle, !status.coordinate.isNullIsland else { return }
+        guard let status = content.vehicle, Self.vehicleCoordinate(content) != nil else { return }
 
         let annotation = VehicleAnnotation(tripStatus: status)
         vehicleAnnotation = annotation
         mapView.addAnnotation(annotation)
     }
 
-    /// Frames the part of the trip that hasn't happened yet — where the bus is
-    /// going, not where it has been. Falls back to the whole shape on a trip with
-    /// no reported progress, and to the stops when there is no shape at all.
-    private func frameCameraIfNeeded(_ content: TripMapFocus.Content) {
-        guard framedTripID != content.tripID else { return }
+    /// The part of the map this layer may frame into — everything the host isn't
+    /// covering with a sheet or a toolbar. Supplied by the host because only the
+    /// host knows its own chrome; see `MapViewController.tripCameraInsets()`.
+    /// Unset, the framing respects the safe area and nothing else.
+    var cameraInsets: (() -> UIEdgeInsets)?
 
-        let overlaysToFit = shapeOverlays.filter { !$0.isSpent && !$0.isCasing }
-        let rect: MKMapRect
-
-        if let first = overlaysToFit.first {
-            rect = overlaysToFit.dropFirst().reduce(first.boundingMapRect) { $0.union($1.boundingMapRect) }
-        } else if !stopAnnotations.isEmpty {
-            rect = stopAnnotations.reduce(MKMapRect.null) {
-                $0.union(MKMapRect(origin: MKMapPoint($1.coordinate), size: MKMapSize()))
-            }
-        } else {
-            return
-        }
-
-        guard !rect.isNull else { return }
+    /// Frames the bus and the rider together, which is the comparison the page
+    /// exists to support, plus the path between them where that fits. Falls back
+    /// to the part of the trip still ahead when no vehicle position has been
+    /// reported, and to the stops when there is no shape at all.
+    private func frameCameraIfNeeded(_ content: TripMapFocus.Content, split: TripShapeSplit.Result) {
+        guard framedTripID != content.tripID, let rect = framingRect(content, split: split) else { return }
 
         framedTripID = content.tripID
-        mapView.setVisibleMapRect(
-            rect,
-            // Generous at the bottom: the sheet covers the lower half of the map,
-            // and framing into the covered area would put the trip behind it.
-            edgePadding: UIEdgeInsets(top: 60, left: 40, bottom: 220, right: 40),
-            animated: true
-        )
+        mapView.setVisibleMapRect(rect, edgePadding: framingInsets(), animated: true)
+    }
+
+    private func framingRect(_ content: TripMapFocus.Content, split: TripShapeSplit.Result) -> MKMapRect? {
+        let rider = userCoordinate
+
+        if let rect = TripCameraFraming.rect(
+            vehicle: Self.vehicleCoordinate(content),
+            userLocation: rider,
+            corridor: TripCameraFraming.corridor(ahead: split.ahead, userLocation: rider)
+        ) {
+            return rect
+        }
+
+        // A one-point shape frames to nothing useful, so it falls through to the
+        // stops the same way an empty one does.
+        if split.ahead.count >= 2 {
+            return TripCameraFraming.rect(of: split.ahead)
+        }
+
+        return TripCameraFraming.rect(of: stopAnnotations.map(\.coordinate))
+    }
+
+    private func framingInsets() -> UIEdgeInsets {
+        cameraInsets?() ?? MapCameraInsets.insets(mapSize: mapView.bounds.size, safeArea: mapView.safeAreaInsets)
+    }
+
+    /// The blue dot, when there is one. Gated on `showsUserLocation` so a rider
+    /// who has location off doesn't get the camera framed around a stale fix.
+    private var userCoordinate: CLLocationCoordinate2D? {
+        guard mapView.showsUserLocation else { return nil }
+        return mapView.userLocation.location?.coordinate
+    }
+
+    private static func vehicleCoordinate(_ content: TripMapFocus.Content) -> CLLocationCoordinate2D? {
+        guard let status = content.vehicle, !status.coordinate.isNullIsland else { return nil }
+        return status.coordinate
     }
 
     private func removeAllContent() {
