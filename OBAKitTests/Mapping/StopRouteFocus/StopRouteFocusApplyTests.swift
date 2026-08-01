@@ -32,20 +32,100 @@ final class StopRouteFocusApplyTests {
         themeColors: ThemeColors.shared
     )
 
-    private func makeLayer() -> StopRouteFocusMapLayer {
+    private func makeLayer(mapView: MKMapView = MKMapView()) -> StopRouteFocusMapLayer {
         StopRouteFocusMapLayer(
-            mapView: MKMapView(),
+            mapView: mapView,
             shapeCache: ShapeCache { _ in "" },
             formatters: Self.formatters
         )
     }
 
-    private func loadArrivals() throws -> StopArrivals {
-        try Fixtures.loadRESTAPIPayload(
-            type: StopArrivals.self,
-            fileName: "arrivals_and_departures_for_stop_1_10020.json"
-        )
+    private func vehicles(on mapView: MKMapView) -> [StopVehicleAnnotation] {
+        mapView.annotations.compactMap { $0 as? StopVehicleAnnotation }
     }
+
+    private static let fixtureName = "arrivals_and_departures_for_stop_1_10020.json"
+
+    private func loadArrivals() throws -> StopArrivals {
+        try Fixtures.loadRESTAPIPayload(type: StopArrivals.self, fileName: Self.fixtureName)
+    }
+
+    /// The same fixture with its arrival and departure times moved into the near
+    /// future.
+    ///
+    /// Necessary because `StopRouteFocusModel.make` drops anything whose
+    /// `temporalState` is `.past`, and the fixture's timestamps are fixed at 2019.
+    /// Loaded as-is it yields zero routes and zero vehicles, so a test built on it
+    /// would assert an empty map and pass no matter what the layer did.
+    ///
+    /// The four time keys are rewritten in place and the payload re-decoded through
+    /// the same `RESTAPIResponse` path `Fixtures.loadRESTAPIPayload` uses, so
+    /// `references` — and therefore each `TripStatus.activeTrip` — still resolve.
+    private func upcomingArrivals() throws -> StopArrivals {
+        var payload = try #require(
+            try JSONSerialization.jsonObject(with: Fixtures.loadData(file: Self.fixtureName)) as? [String: Any]
+        )
+        var data = try #require(payload["data"] as? [String: Any])
+        var entry = try #require(data["entry"] as? [String: Any])
+        var departures = try #require(entry["arrivalsAndDepartures"] as? [[String: Any]])
+
+        for index in departures.indices {
+            // Minutes apart so `make`'s soonest-per-route ordering stays meaningful.
+            let millis = Int((Date().timeIntervalSince1970 + Double((index + 2) * 60)) * 1000)
+            for key in ["predictedArrivalTime", "scheduledArrivalTime", "predictedDepartureTime", "scheduledDepartureTime"] {
+                departures[index][key] = millis
+            }
+        }
+
+        entry["arrivalsAndDepartures"] = departures
+        data["entry"] = entry
+        payload["data"] = data
+
+        let rewritten = try JSONSerialization.data(withJSONObject: payload)
+        return try JSONDecoder.RESTDecoder().decode(RESTAPIResponse<StopArrivals>.self, from: rewritten).list
+    }
+
+    // MARK: - The symptom
+
+    /// The bug as the rider saw it: route lines, no buses. One emission — the
+    /// layer's very first, with no prior state anywhere — has to be enough to put
+    /// markers on the map.
+    @Test func `The first emission alone puts vehicle markers on the map`() throws {
+        let mapView = MKMapView()
+        let layer = makeLayer(mapView: mapView)
+        layer.begin(focus: StopMapFocus())
+
+        layer.apply(arrivals: try upcomingArrivals(), isListFiltered: false, preferences: StopPreferences())
+
+        // The fixture carries four departures, each with a distinct vehicle ID and
+        // a `tripStatus.position`.
+        #expect(vehicles(on: mapView).count == 4)
+    }
+
+    /// Pins the actual failure mechanism, in isolation from how the resolver gets
+    /// installed: a resolver that cannot answer silently costs every vehicle, with
+    /// no error and no empty state. This is what the shipped code did on first
+    /// load, and it is why the map drew lines with nothing on them.
+    @Test func `A resolver that answers nothing costs every vehicle, silently`() throws {
+        let mapView = MKMapView()
+        let layer = makeLayer(mapView: mapView)
+        layer.begin(focus: StopMapFocus())
+
+        layer.apply(arrivals: try upcomingArrivals(), isListFiltered: false, preferences: StopPreferences())
+        #expect(vehicles(on: mapView).count == 4)
+
+        // Re-apply the same arrivals, but with the resolver knocked out the way a
+        // stale read knocked it out.
+        layer.departureProvider = { _ in nil }
+        layer.update(model: StopRouteFocusModel.make(
+            departures: try upcomingArrivals().arrivalsAndDepartures,
+            routeCap: StopRouteFocusMapLayer.routeCap
+        ))
+
+        #expect(vehicles(on: mapView).isEmpty)
+    }
+
+    // MARK: - The resolver
 
     /// The regression: the resolver has to answer from the emission it was handed,
     /// with no help from any other state. Nothing in this test writes the arrivals
