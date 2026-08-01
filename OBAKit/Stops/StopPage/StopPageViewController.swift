@@ -30,7 +30,8 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
     BookmarkEditorDelegate,
     Idleable,
     StopPreferencesViewDelegate,
-    Previewable {
+    Previewable,
+    StopSheetCollapsibleContent {
 
     let application: Application
     let viewModel: StopViewModel

@@ -12,6 +12,17 @@ import MapKit
 import UIKit
 import OBAKitCore
 
+/// The one thing the sheet needs from the page at its root: somewhere to report that the
+/// sheet is peeking, so the page can render its collapsed form.
+///
+/// A protocol rather than a `StopPageViewController` cast, for the same reason the dismissal
+/// handler is a closure — it holds the presenter to what it actually uses, and keeps this
+/// behavior testable without building a whole stop page.
+@MainActor
+protocol StopSheetCollapsibleContent: UIViewController {
+    func setAtTip(_ isAtTip: Bool)
+}
+
 /// Presents the redesigned Stop page as a half-detent sheet over the map, replacing the
 /// push that the legacy `StopViewController` still uses.
 ///
@@ -333,10 +344,43 @@ extension StopSheetPresenter: UINavigationControllerDelegate {
     /// space above the stop name that no amount of SwiftUI sizing can reclaim.
     func navigationController(_ navigationController: UINavigationController, willShow viewController: UIViewController, animated: Bool) {
         navigationController.setNavigationBarHidden(hidesNavigationBar(for: viewController), animated: animated)
+        revealPushedContent(viewController, in: navigationController, animated: animated)
     }
 
     func navigationController(_ navigationController: UINavigationController, didShow viewController: UIViewController, animated: Bool) {
         trackScrollView(in: viewController)
+        syncCollapsedState(for: viewController)
+    }
+
+    /// Raises a sheet sitting at `.tip` when something is pushed over the stop page.
+    ///
+    /// `.tip` shows a sliver — the collapsed stop header and nothing else. That is a
+    /// deliberate peek-at-the-map detent for the *stop page*, which has a collapsed form
+    /// built for it; a pushed screen has none, so it arrives entirely below the fold and the
+    /// tap that pushed it reads as having done nothing. `.half` is where the sheet opens,
+    /// so it's the detent the rider already associates with "this is on screen now."
+    ///
+    /// Only from `.tip`: at `.half` or `.full` the pushed screen is already visible, and
+    /// moving the sheet under the rider would be its own surprise. Popping back doesn't
+    /// restore `.tip` either — after the raise, where the sheet sits is the rider's to
+    /// choose again.
+    private func revealPushedContent(_ viewController: UIViewController, in navigationController: UINavigationController, animated: Bool) {
+        guard let panel, panel.state == .tip,
+              viewController !== navigationController.viewControllers.first else { return }
+
+        panel.move(to: .half, animated: animated)
+    }
+
+    /// Re-syncs the stop page's collapsed rendering with the sheet's detent when it comes back
+    /// to the top of the stack.
+    ///
+    /// `floatingPanelDidChangeState` only speaks to the *top* controller, so every detent
+    /// change that happens while something is pushed over the stop page passes it by —
+    /// including the one `revealPushedContent` just made. Without this the page would return
+    /// from a pushed screen still drawing its collapsed header at the `.half` detent.
+    private func syncCollapsedState(for viewController: UIViewController) {
+        guard let panel, let page = viewController as? StopSheetCollapsibleContent else { return }
+        page.setAtTip(panel.state == .tip)
     }
 
     /// Only the sheet-configured stop page hides the bar. Anything else in this stack — including
@@ -428,8 +472,7 @@ extension StopSheetPresenter: FloatingPanelControllerDelegate {
     /// Fires on every detent transition. Notifies the stop page so it can hide its bottom
     /// toolbar when the sheet is at `.tip` (nearly offscreen).
     func floatingPanelDidChangeState(_ fpc: FloatingPanelController) {
-        guard fpc === panel,
-              let stopVC = navigation?.topViewController as? StopPageViewController else { return }
-        stopVC.setAtTip(fpc.state == .tip)
+        guard fpc === panel, let topViewController = navigation?.topViewController else { return }
+        syncCollapsedState(for: topViewController)
     }
 }

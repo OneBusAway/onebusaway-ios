@@ -116,6 +116,121 @@ final class StopSheetPresenterTests {
         #expect(secondDismissed == 0)
     }
 
+    // MARK: - Pushed content
+
+    /// Stands in for the stop page: the only thing the presenter asks of it is where the
+    /// sheet is sitting.
+    private final class CollapsibleStub: UIViewController, StopSheetCollapsibleContent {
+        private(set) var atTipHistory: [Bool] = []
+        func setAtTip(_ isAtTip: Bool) { atTipHistory.append(isAtTip) }
+    }
+
+    private func presentedNavigation() throws -> UINavigationController {
+        try #require(panels.first?.contentViewController as? UINavigationController)
+    }
+
+    /// Pushes onto the sheet's stack, then hands the presenter the delegate callbacks that go
+    /// with the push.
+    ///
+    /// The callbacks are invoked rather than awaited: a navigation controller that has never
+    /// really been on screen doesn't run the transition machinery UIKit drives them from, so
+    /// headlessly `pushViewController` alone produces neither. Verified, not assumed — the
+    /// callbacks stay silent through a spun runloop. `present` already works around the same
+    /// gap for the root controller, seeding the bar state itself rather than waiting for
+    /// `willShow`. The push itself is real so the root-identity check has a real stack.
+    private func push(_ viewController: UIViewController, onto navigation: UINavigationController) {
+        navigation.pushViewController(viewController, animated: false)
+        presenter.navigationController(navigation, willShow: viewController, animated: false)
+        presenter.navigationController(navigation, didShow: viewController, animated: false)
+    }
+
+    /// Puts the sheet at a starting detent and confirms it got there.
+    ///
+    /// FloatingPanel swallows a `move` issued immediately after a push — it is still
+    /// settling the layout the push invalidated. Real riders drag the sheet a frame or two
+    /// later; a test driving the delegate by hand arrives inside that window. Laying out and
+    /// re-issuing keeps a test that means to start at `.tip` from quietly measuring `.half`.
+    private func settle(_ panel: FloatingPanelController, at state: FloatingPanelState) {
+        panel.move(to: state, animated: false)
+        parent.view.layoutIfNeeded()
+        if panel.state != state {
+            panel.move(to: state, animated: false)
+        }
+        #expect(panel.state == state, "the sheet never reached \(state)")
+    }
+
+    private func popBack(in navigation: UINavigationController) throws {
+        navigation.popViewController(animated: false)
+        #expect(navigation.viewControllers.count == 1, "the pop didn't take")
+        let top = try #require(navigation.topViewController)
+        presenter.navigationController(navigation, willShow: top, animated: false)
+        presenter.navigationController(navigation, didShow: top, animated: false)
+    }
+
+    /// A screen pushed while the sheet peeks at `.tip` lands entirely below the fold — the
+    /// rider taps "Follow this trip", a trip screen is pushed, and nothing visibly happens.
+    @Test func `Pushing over the stop page raises a tip sheet to half`() throws {
+        presenter.present(CollapsibleStub(), from: parent) {}
+        let panel = try #require(panels.first)
+        settle(panel, at: .tip)
+
+        push(UIViewController(), onto: try presentedNavigation())
+
+        #expect(panel.state == .half)
+    }
+
+    /// Only `.tip` is broken. Anywhere else the pushed screen is already on screen, and moving
+    /// the sheet under the rider would be its own surprise — a rider who expanded to `.full`
+    /// must not be dropped to `.half` by a push.
+    @Test func `Pushing leaves a sheet the rider already expanded alone`() throws {
+        for detent in [FloatingPanelState.half, .full] {
+            // Replaces the previous iteration's sheet, so `panels` stays at one.
+            presenter.present(CollapsibleStub(), from: parent) {}
+            let panel = try #require(panels.first)
+            settle(panel, at: detent)
+
+            push(UIViewController(), onto: try presentedNavigation())
+
+            #expect(panel.state == detent)
+        }
+    }
+
+    /// Coming back is not a push: a rider who dragged the sheet down while reading a pushed
+    /// screen means to keep peeking at the map.
+    @Test func `Popping back to the stop page leaves a tip sheet where it is`() throws {
+        presenter.present(CollapsibleStub(), from: parent) {}
+        let panel = try #require(panels.first)
+        let navigation = try presentedNavigation()
+        push(UIViewController(), onto: navigation)
+        settle(panel, at: .tip)
+
+        try popBack(in: navigation)
+
+        #expect(panel.state == .tip)
+    }
+
+    /// `floatingPanelDidChangeState` only speaks to the top of the stack, so every detent
+    /// change made while something is pushed over the stop page passes it by — including the
+    /// raise above. Without a re-sync on the way back, the page returns to a `.half` sheet
+    /// still drawing the collapsed header built for `.tip`.
+    @Test func `Returning to the stop page re-syncs its collapsed state`() throws {
+        let page = CollapsibleStub()
+        presenter.present(page, from: parent) {}
+        let panel = try #require(panels.first)
+        settle(panel, at: .tip)
+        #expect(page.atTipHistory.last == true)
+
+        let navigation = try presentedNavigation()
+        push(UIViewController(), onto: navigation)
+        // The push raised the sheet, but the page was not on top to hear about it.
+        #expect(panel.state == .half)
+        #expect(page.atTipHistory.last == true)
+
+        try popBack(in: navigation)
+
+        #expect(page.atTipHistory.last == false)
+    }
+
     // MARK: - Dismissal
 
     @Test func `Dismiss clears state and runs the handler`() {
