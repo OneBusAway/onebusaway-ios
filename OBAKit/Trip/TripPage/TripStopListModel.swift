@@ -134,8 +134,7 @@ struct TripStopListModel {
     }
 }
 
-/// Adapts the real REST model. `stopName` comes from the `ApproachTimelineStop`
-/// conformance in `ApproachSlice.swift`.
+/// Adapts the real REST model.
 ///
 /// `scheduledArrival` exists rather than the protocol just requiring
 /// `arrivalDate`: that property is declared `Date!`, which other modules see as
@@ -144,6 +143,10 @@ struct TripStopListModel {
 /// instead of hiding it behind an implicit unwrap that traps on a feed that
 /// omits the time.
 extension TripStopTime: TripStopListEntry {
+    /// Reads through the resolved `stop` reference, which `loadReferences`
+    /// populates before any of this renders — the same access `TripStopListItem`
+    /// uses.
+    var stopName: String { stop.name }
     var scheduledArrival: Date? { arrivalDate }
     var stopCoordinate: CLLocationCoordinate2D? { stop.location.coordinate }
 }

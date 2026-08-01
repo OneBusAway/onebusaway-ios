@@ -17,12 +17,10 @@ struct ChronologicalListView: View {
     let partition: StopPageListBuilder.ChronologicalPartition<ArrivalDeparture>
     let walkMinutes: Int?
     let showPast: Bool
-    let expandedDepartureID: String?
     let statusProvider: (ArrivalDeparture) -> DepartureStatus
     let alarmLookup: (ArrivalDeparture) -> Alarm?
     let actionsProvider: (ArrivalDeparture) -> DepartureRowActions
-    let onToggleExpand: (ArrivalDeparture) -> Void
-    let panelBuilder: (ArrivalDeparture) -> TripDetailPanelView
+    let onSelectDeparture: (ArrivalDeparture) -> Void
 
     var body: some View {
         // Headerless: the "Arrivals & Departures" title and the Past disclosure
@@ -65,15 +63,9 @@ struct ChronologicalListView: View {
                 canAlarm: actions.canAlarm,
                 onAlarmToggle: actions.onAlarmToggle,
                 style: style,
-                onTap: { onToggleExpand(departure) }
+                onTap: { onSelectDeparture(departure) }
             )
             .departureRowActions(actions)
-
-            // Accordion: the panel is an INSERTED SIBLING ROW, keyed off the
-            // expanded id — List animates insert/remove smoothly.
-            if expandedDepartureID == departure.id {
-                panelBuilder(departure)
-            }
         }
     }
 }

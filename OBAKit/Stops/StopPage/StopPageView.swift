@@ -147,7 +147,6 @@ struct StopPageView: View {
         showToolbarOnBottom && !isCollapsed
     }
 
-    @State private var expandedDepartureID: String?
     @State private var expandedRouteID: RouteID?
     @State private var didSeedMode = false
     /// Set when the user explicitly dismisses the donation card, so it disappears
@@ -300,8 +299,7 @@ struct StopPageView: View {
                         onTogglePast: { withAnimation { pastCollapsed.toggle() } },
                         onChangeMode: { newValue in
                             withAnimation {
-                                // Switching modes collapses every open accordion (§4.6).
-                                expandedDepartureID = nil
+                                // Switching modes collapses the open route card.
                                 expandedRouteID = nil
                                 userDefaults.set(newValue.rawValue, forKey: Self.lastUsedStopSortKey)
                                 viewModel.updateSortType(newValue)
@@ -351,22 +349,15 @@ struct StopPageView: View {
                     partition: chronologicalPartition,
                     walkMinutes: walkTime?.walkMinutes,
                     showPast: !pastCollapsed,
-                    expandedDepartureID: expandedDepartureID,
                     statusProvider: { DepartureStatus(arrivalDeparture: $0) },
                     alarmLookup: { viewModel.alarm(for: $0) },
                     actionsProvider: makeActions(for:),
-                    onToggleExpand: { departure in
-                        withAnimation(.snappy) {
-                            expandedDepartureID = expandedDepartureID == departure.id ? nil : departure.id
-                        }
-                    },
-                    panelBuilder: makePanel(for:)
+                    onSelectDeparture: { navigation.showTrip($0) }
                 )
             } else {
                 GroupedListView(
                     groups: routeGroups,
                     expandedRouteID: expandedRouteID,
-                    openTripDepartureID: expandedDepartureID,
                     statusProvider: { DepartureStatus(arrivalDeparture: $0) },
                     alarmLookup: { viewModel.alarm(for: $0) },
                     alarmLeadTime: { viewModel.alarmLeadTimeMinutes($0) },
@@ -374,14 +365,9 @@ struct StopPageView: View {
                     onToggleRoute: { routeID in
                         withAnimation(.snappy) {
                             expandedRouteID = expandedRouteID == routeID ? nil : routeID
-                            expandedDepartureID = nil
                         }
                     },
-                    onToggleTrip: { departure in
-                        withAnimation(.snappy) {
-                            expandedDepartureID = expandedDepartureID == departure.id ? nil : departure.id
-                        }
-                    },
+                    onSelectDeparture: { navigation.showTrip($0) },
                     onAlarmToggle: { departure in
                         if viewModel.alarm(for: departure) != nil {
                             Task { await viewModel.cancelAlarm(for: departure) }
@@ -389,7 +375,6 @@ struct StopPageView: View {
                             navigation.showAlarmPicker(departure)
                         }
                     },
-                    panelBuilder: makePanel(for:)
                 )
             }
 
@@ -439,12 +424,8 @@ struct StopPageView: View {
         .onAppear(perform: seedLastUsedModeIfNeeded)
         .onDisappear { viewModel.deactivate() }
         .refreshable { await viewModel.refresh() }
-        // Reconcile the open accordions against the live feed: when a refresh
-        // drops the expanded departure (or its whole route) from the list,
-        // clear the stale expansion so no orphaned panel lingers.
-        .onChange(of: departureIDs) { _, ids in
-            if let id = expandedDepartureID, !ids.contains(id) { expandedDepartureID = nil }
-        }
+        // Reconcile the open route card against the live feed: when a refresh
+        // drops the expanded route from the list, clear the stale expansion.
         .onChange(of: routeIDs) { _, ids in
             if let rid = expandedRouteID, !ids.contains(rid) { expandedRouteID = nil }
         }
@@ -511,30 +492,6 @@ struct StopPageView: View {
     /// `StopPageView` is the only view that touches the VM, so the panel receives
     /// plain values plus closures — the `approachLoader` closure wraps the cached,
     /// live-only VM fetch; the alarm closures route through the single alarm index.
-    private func makePanel(for departure: ArrivalDeparture) -> TripDetailPanelView {
-        let status = DepartureStatus(arrivalDeparture: departure)
-        return TripDetailPanelView(
-            departure: departure,
-            status: status,
-            alarm: nil,
-            alarmLeadTimeMinutes: 0,
-            canAlarm: ActivityAuthorizationInfo().areActivitiesEnabled,
-            // Bumps on every successful refresh so the panel re-fetches its
-            // approach timeline while it stays open (scheduled→live flips and
-            // failed first fetches retry on the next refresh).
-            refreshToken: viewModel.lastUpdated,
-            cachedTripDetails: viewModel.cachedApproachTripDetails(for: departure),
-            approachLoader: { await viewModel.approachTripDetails(for: departure) },
-            onSetAlarm: { navigation.startLiveActivity(departure) },
-            onCancelAlarm: {},
-            onChangeAlarm: {},
-            canSchedule: navigation.canScheduleForRoute,
-            onSchedule: { navigation.showScheduleForRoute(departure) },
-            onBookmark: { navigation.showBookmarkEditor(departure) },
-            onViewFullTrip: { navigation.showTrip(departure) }
-        )
-    }
-
     private func makeActions(for departure: ArrivalDeparture) -> DepartureRowActions {
         DepartureRowActions(
             canAlarm: viewModel.canCreateAlarm(for: departure),
