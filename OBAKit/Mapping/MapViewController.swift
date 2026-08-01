@@ -1243,11 +1243,11 @@ class MapViewController: UIViewController,
         }
 
         if let vehicleAnnotation = view.annotation as? StopVehicleAnnotation {
-            // The spec's escape hatch: at `.tip` the chip row is hidden, so the
-            // focused marker is the only way to clear focus. Toggling (not just
-            // setting) matches "tap the same marker again to clear."
+            // The layer decides what a marker tap means — focus the route, or
+            // clear it. Which one depends on whether this is the marker focus is
+            // already standing on, so it needs the annotation, not just its route.
             (mapRegionManager.mapLayer(id: StopRouteFocusMapLayer.layerID) as? StopRouteFocusMapLayer)?
-                .toggleFocus(routeID: vehicleAnnotation.routeID)
+                .didSelectVehicle(vehicleAnnotation)
             return
         }
 

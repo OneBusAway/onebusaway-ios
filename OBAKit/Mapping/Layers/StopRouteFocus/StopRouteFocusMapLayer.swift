@@ -68,6 +68,12 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
     private var annotations: [StopVehicleAnnotation] = []
     private var model: StopRouteFocusModel = .empty
 
+    /// Which vehicle the focused route is currently standing on — the one whose
+    /// callout is open. Focus itself is per-route; this is what lets a second tap
+    /// on *that* marker clear focus without a tap on a sibling marker doing the
+    /// same. See `didSelectVehicle(_:)`.
+    private var focusedVehicleID: String?
+
     /// Shapes already drawn, so a refresh doesn't redraw an unchanged line.
     private var drawnShapeIDsByRoute: [RouteID: String] = [:]
 
@@ -141,6 +147,7 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
         shapeTasks.removeAll()
         cancellables.removeAll()
         focus = nil
+        focusedVehicleID = nil
         model = .empty
         drawnShapeIDsByRoute.removeAll()
         removeAllContent()
@@ -186,11 +193,25 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
         syncRouteOverlays()
     }
 
-    /// Vehicle-marker tap writes focus too — the spec's escape hatch at `.tip`,
-    /// where the chip row is hidden. `MapViewController` calls this from
-    /// `mapView(_:didSelect:)`.
-    func toggleFocus(routeID: RouteID) {
-        focus?.toggleFocus(routeID: routeID)
+    /// A vehicle marker tap. `MapViewController` calls this from
+    /// `mapView(_:didSelect:)`, with MapKit having already selected the marker.
+    ///
+    /// Focus is per-route, but the gesture is per-vehicle, and a route can have
+    /// two buses running it. Tapping the marker that already represents the
+    /// focused route clears focus — the spec's escape hatch at `.tip`, where the
+    /// chip row is hidden and the marker is the only way out. Tapping any other
+    /// marker focuses its route; on a route already focused that keeps the line
+    /// highlighted and just moves the callout to the bus the rider asked about,
+    /// where a plain toggle would have unfocused the route out from under them.
+    func didSelectVehicle(_ annotation: StopVehicleAnnotation) {
+        guard let focus else { return }
+
+        if focus.focusedRouteID == annotation.routeID, focusedVehicleID == annotation.id {
+            focus.clearFocus()
+        } else {
+            focusedVehicleID = annotation.id
+            focus.focus(routeID: annotation.routeID)
+        }
     }
 
     /// The chip-tap half of the spec's focus behavior: focusing a route also
@@ -199,18 +220,27 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
     ///
     /// Yields to an existing selection on the same route, because this runs for
     /// *marker* taps too: `MapViewController.mapView(_:didSelect:)` routes a tap
-    /// into `toggleFocus`, which lands here with the marker already selected. On
-    /// a route with two buses running, picking "the route's first annotation"
-    /// then dragged selection off the marker the rider actually tapped and onto
-    /// the other one — they tapped one vehicle and got a different vehicle's
-    /// callout.
+    /// into `didSelectVehicle(_:)`, which lands here with the marker already
+    /// selected. On a route with two buses running, picking "the route's first
+    /// annotation" then dragged selection off the marker the rider actually
+    /// tapped and onto the other one — they tapped one vehicle and got a
+    /// different vehicle's callout.
+    ///
+    /// Also the one place `focusedVehicleID` is settled, whichever surface wrote
+    /// focus: a chip tap picks a vehicle here, and a marker tap confirms the one
+    /// MapKit already selected.
     private func selectFocusedVehicleAnnotation(routeID: RouteID?) {
-        guard let routeID else { return }
+        guard let routeID else {
+            focusedVehicleID = nil
+            return
+        }
         if let selected = mapView.selectedAnnotations.first as? StopVehicleAnnotation,
            selected.routeID == routeID {
+            focusedVehicleID = selected.id
             return
         }
         guard let annotation = annotations.first(where: { $0.routeID == routeID }) else { return }
+        focusedVehicleID = annotation.id
         mapView.selectAnnotation(annotation, animated: true)
     }
 

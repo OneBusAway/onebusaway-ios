@@ -134,7 +134,23 @@ final class StopRouteFocusMapLayerTests {
         )
     }
 
-    /// Regression: tapping a vehicle marker routes into `toggleFocus`, whose
+    /// The two vehicles of `twoVehicleModel`, ordered by ID so "first" and
+    /// "second" mean the same thing to every test.
+    private func vehicles(on mapView: MKMapView) -> [StopVehicleAnnotation] {
+        mapView.annotations
+            .compactMap { $0 as? StopVehicleAnnotation }
+            .sorted { $0.id < $1.id }
+    }
+
+    /// What `MapViewController.mapView(_:didSelect:)` does on a marker tap:
+    /// MapKit has already selected the tapped marker, then the controller routes
+    /// the tap into the layer.
+    private func tap(_ annotation: StopVehicleAnnotation, on mapView: MKMapView, in layer: StopRouteFocusMapLayer) {
+        mapView.selectAnnotation(annotation, animated: false)
+        layer.didSelectVehicle(annotation)
+    }
+
+    /// Regression: tapping a vehicle marker routes into the layer, whose
     /// `focusedRouteID` sink opens "the route's" callout. That lookup took the
     /// route's FIRST annotation, so tapping the second bus on a route yanked
     /// selection over to the first one — the rider tapped one vehicle and got a
@@ -145,19 +161,79 @@ final class StopRouteFocusMapLayerTests {
         layer.begin(focus: StopMapFocus())
         layer.update(model: twoVehicleModel(routeID: "H"))
 
-        let vehicles = mapView.annotations
-            .compactMap { $0 as? StopVehicleAnnotation }
-            .sorted { $0.id < $1.id }
-        #expect(vehicles.count == 2)
-        let second = try #require(vehicles.last)
+        let onMap = vehicles(on: mapView)
+        #expect(onMap.count == 2)
+        let second = try #require(onMap.last)
 
-        // What `MapViewController.mapView(_:didSelect:)` does on a marker tap:
-        // MapKit has already selected the tapped marker, then the controller
-        // routes the tap into focus.
-        mapView.selectAnnotation(second, animated: false)
-        layer.toggleFocus(routeID: "H")
+        tap(second, on: mapView, in: layer)
 
         #expect(mapView.selectedAnnotations.first === second)
+    }
+
+    /// Regression: focus is per-route but the gesture is per-vehicle, and the
+    /// marker tap used to call `toggleFocus`. Tapping the second bus on a route
+    /// the rider was already following therefore unfocused it — right callout,
+    /// but the route line stopped being highlighted.
+    @Test func `Tapping a second vehicle on a focused route keeps the route focused`() throws {
+        let mapView = MKMapView()
+        let layer = makeLayer(mapView: mapView)
+        let focus = StopMapFocus()
+        layer.begin(focus: focus)
+        layer.update(model: twoVehicleModel(routeID: "H"))
+
+        let onMap = vehicles(on: mapView)
+        let first = try #require(onMap.first)
+        let second = try #require(onMap.last)
+
+        tap(first, on: mapView, in: layer)
+        #expect(focus.focusedRouteID == "H")
+
+        tap(second, on: mapView, in: layer)
+
+        #expect(focus.focusedRouteID == "H")
+        #expect(mapView.selectedAnnotations.first === second)
+    }
+
+    /// The escape hatch this must not cost us: at `.tip` the chip row is hidden,
+    /// so tapping the focused marker again is the only way to clear focus. A tap
+    /// lands here only after the marker has been deselected (tapping an already
+    /// selected annotation doesn't re-fire selection), which is why the test
+    /// deselects between taps.
+    @Test func `Tapping the focused vehicle again clears focus`() throws {
+        let mapView = MKMapView()
+        let layer = makeLayer(mapView: mapView)
+        let focus = StopMapFocus()
+        layer.begin(focus: focus)
+        layer.update(model: twoVehicleModel(routeID: "H"))
+        let first = try #require(vehicles(on: mapView).first)
+
+        tap(first, on: mapView, in: layer)
+        #expect(focus.focusedRouteID == "H")
+
+        mapView.deselectAnnotation(first, animated: false)
+        tap(first, on: mapView, in: layer)
+
+        #expect(focus.focusedRouteID == nil)
+    }
+
+    /// Focus follows the tap across routes, rather than requiring a clear first.
+    @Test func `Tapping a vehicle on another route moves focus to it`() throws {
+        let mapView = MKMapView()
+        let layer = makeLayer(mapView: mapView)
+        let focus = StopMapFocus()
+        layer.begin(focus: focus)
+        layer.update(model: model(routeIDs: ["H", "62"], vehicleRouteIDs: ["H", "62"]))
+
+        let onMap = vehicles(on: mapView)
+        let onH = try #require(onMap.first { $0.routeID == "H" })
+        let on62 = try #require(onMap.first { $0.routeID == "62" })
+
+        tap(onH, on: mapView, in: layer)
+        #expect(focus.focusedRouteID == "H")
+
+        tap(on62, on: mapView, in: layer)
+
+        #expect(focus.focusedRouteID == "62")
     }
 
     /// The chip-tap half of the same code path still has to open a callout: with
@@ -165,10 +241,11 @@ final class StopRouteFocusMapLayerTests {
     @Test func `Focusing a route with nothing selected opens one of its vehicles`() throws {
         let mapView = MKMapView()
         let layer = makeLayer(mapView: mapView)
-        layer.begin(focus: StopMapFocus())
+        let focus = StopMapFocus()
+        layer.begin(focus: focus)
         layer.update(model: twoVehicleModel(routeID: "H"))
 
-        layer.toggleFocus(routeID: "H")
+        focus.toggleFocus(routeID: "H")
 
         let selected = try #require(mapView.selectedAnnotations.first as? StopVehicleAnnotation)
         #expect(selected.routeID == "H")
@@ -321,18 +398,17 @@ final class StopRouteFocusMapLayerTests {
 
     // MARK: - Focus wiring (marker tap / chip tap)
 
-    @Test func `toggleFocus forwards to the attached focus object`() {
+    @Test func `A marker tap forwards to the attached focus object`() throws {
         let mapView = MKMapView()
         let layer = makeLayer(mapView: mapView)
         let focus = StopMapFocus()
         layer.begin(focus: focus)
         layer.update(model: model(routeIDs: ["H"], vehicleRouteIDs: ["H"]))
+        let annotation = try #require(mapView.annotations.compactMap { $0 as? StopVehicleAnnotation }.first)
 
-        layer.toggleFocus(routeID: "H")
+        layer.didSelectVehicle(annotation)
+
         #expect(focus.focusedRouteID == "H")
-
-        layer.toggleFocus(routeID: "H")
-        #expect(focus.focusedRouteID == nil)
     }
 
     @Test func `Focusing a route selects its vehicle's callout`() throws {

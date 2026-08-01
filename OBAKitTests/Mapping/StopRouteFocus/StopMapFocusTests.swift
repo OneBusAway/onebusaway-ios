@@ -50,6 +50,22 @@ final class StopMapFocusTests {
         #expect(focus.focusedRouteID == "H")
     }
 
+    @Test func `Focusing an already-focused route leaves it focused`() {
+        let focus = StopMapFocus()
+        focus.apply(routes: [route("H", live: true)])
+        focus.focus(routeID: "H")
+        focus.focus(routeID: "H")
+        #expect(focus.focusedRouteID == "H")
+    }
+
+    @Test func `Focusing a route with no live vehicle is a no-op`() {
+        let focus = StopMapFocus()
+        focus.apply(routes: [route("H", live: true), route("40", live: false)])
+        focus.focus(routeID: "H")
+        focus.focus(routeID: "40")
+        #expect(focus.focusedRouteID == "H")
+    }
+
     @Test func `Focus drops when its route leaves the arrival set`() {
         let focus = StopMapFocus()
         focus.apply(routes: [route("H", live: true), route("62", live: true)])

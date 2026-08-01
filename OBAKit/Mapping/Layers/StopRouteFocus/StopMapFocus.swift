@@ -45,8 +45,18 @@ final class StopMapFocus: ObservableObject {
     /// vehicle is deliberately a no-op rather than an error: there is nothing to
     /// point at, and an error would be noise.
     func toggleFocus(routeID: RouteID) {
-        guard routes.contains(where: { $0.routeID == routeID && $0.hasLiveVehicle }) else { return }
+        guard isFocusable(routeID: routeID) else { return }
         focusedRouteID = (focusedRouteID == routeID) ? nil : routeID
+    }
+
+    /// Focus a route outright, never clearing it.
+    ///
+    /// Marker taps need this rather than `toggleFocus`: two buses can be running
+    /// the same route, and tapping the second one is a request to look at that
+    /// bus — not to unfocus the route the rider is already following.
+    func focus(routeID: RouteID) {
+        guard isFocusable(routeID: routeID) else { return }
+        focusedRouteID = routeID
     }
 
     func clearFocus() {
