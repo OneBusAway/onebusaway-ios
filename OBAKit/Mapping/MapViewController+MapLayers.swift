@@ -25,6 +25,17 @@ extension MapViewController {
             mapRegionManager.registerMapLayer(StopsMapLayer(manager: mapRegionManager))
         }
 
+        if mapRegionManager.mapLayer(id: "stopRoutes") == nil {
+            let apiService = application.apiService
+            let shapeCache = ShapeCache { [weak apiService] shapeID in
+                guard let apiService else { throw CancellationError() }
+                return try await apiService.getShape(id: shapeID).entry.points
+            }
+            mapRegionManager.registerMapLayer(
+                StopRouteFocusMapLayer(mapView: mapRegionManager.mapView, shapeCache: shapeCache)
+            )
+        }
+
         configureRentalLayers()
         updateMapLayerBadge()
     }
