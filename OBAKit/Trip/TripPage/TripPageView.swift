@@ -72,11 +72,7 @@ struct TripPageView: View {
 
                     let rows = stopList.rows
                     if !rows.isEmpty {
-                        Text(stopCountTitle(rows.count))
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                            .textCase(.uppercase)
-                            .padding(.leading, 4)
+                        sectionHeader(stopCountTitle(rows.count))
 
                         TripStopListView(
                             rows: rows,
@@ -84,6 +80,18 @@ struct TripPageView: View {
                             routeType: route?.routeType ?? .unknown,
                             onSelect: { actions.onSelectStop($0.stopID) }
                         )
+                    } else {
+                        // Never render the absence as blank space. The stop list is
+                        // most of this page, and a silent gap where it should be
+                        // reads as a broken screen rather than one still working.
+                        sectionHeader(stopsSectionPlaceholderTitle)
+
+                        Text(stopsUnavailableMessage)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(14)
+                            .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 12))
                     }
                 }
                 .padding(.horizontal, 16)
@@ -143,6 +151,27 @@ struct TripPageView: View {
         formatter.unitsStyle = .abbreviated
         return formatter
     }()
+
+    private func sectionHeader(_ title: String) -> some View {
+        Text(title)
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(.secondary)
+            .textCase(.uppercase)
+            .padding(.leading, 4)
+    }
+
+    private var stopsSectionPlaceholderTitle: String {
+        OBALoc("trip_page.stops_header", value: "Stops", comment: "Header above the trip's stop list before the stops are known.")
+    }
+
+    /// Deliberately distinguishes "still loading" from "we asked and got nothing":
+    /// the second is a real answer and the rider shouldn't sit waiting on it.
+    private var stopsUnavailableMessage: String {
+        if viewModel.isLoading {
+            return OBALoc("trip_page.stops_loading", value: "Loading this trip's stops…", comment: "Shown while the trip's stop list is being fetched.")
+        }
+        return OBALoc("trip_page.stops_unavailable", value: "This trip's stop list isn't available right now.", comment: "Shown when the trip's stop list could not be loaded.")
+    }
 
     private func stopCountTitle(_ count: Int) -> String {
         String(

@@ -120,6 +120,11 @@ final class StopSheetPresenterTests {
 
     /// Stands in for the stop page: the only thing the presenter asks of it is where the
     /// sheet is sitting.
+    /// A page that supplies its own title and back affordance, like the trip page.
+    private final class SelfChromedStub: UIViewController, StopSheetSelfChromedContent {
+        let providesOwnSheetChrome = true
+    }
+
     private final class CollapsibleStub: UIViewController, StopSheetCollapsibleContent {
         private(set) var atTipHistory: [Bool] = []
         func setAtTip(_ isAtTip: Bool) { atTipHistory.append(isAtTip) }
@@ -398,5 +403,43 @@ final class StopSheetPresenterTests {
 
     private func panels(in parent: UIViewController) -> [FloatingPanelController] {
         parent.children.compactMap { $0 as? FloatingPanelController }
+    }
+
+    // MARK: - Navigation bar
+
+    /// A pushed page that draws its own back affordance must not also get a bar:
+    /// the result is two back buttons and a strip of empty chrome above the
+    /// page's own header.
+    @Test func `A page that draws its own header is pushed without a navigation bar`() throws {
+        presenter.present(CollapsibleStub(), from: parent) {}
+        let navigation = try presentedNavigation()
+
+        push(SelfChromedStub(), onto: navigation)
+
+        #expect(navigation.isNavigationBarHidden)
+    }
+
+    /// The rule is asked of the page, not assumed for everything pushed — an
+    /// ordinary screen still needs its bar to be navigable.
+    @Test func `A page with no header of its own keeps the navigation bar`() throws {
+        presenter.present(CollapsibleStub(), from: parent) {}
+        let navigation = try presentedNavigation()
+
+        push(UIViewController(), onto: navigation)
+
+        #expect(!navigation.isNavigationBarHidden)
+    }
+
+    /// Popping back to the sheet's root restores the root's own answer, rather
+    /// than leaving the pushed page's behind.
+    @Test func `Popping back from a self-chromed page restores the root's bar state`() throws {
+        presenter.present(CollapsibleStub(), from: parent) {}
+        let navigation = try presentedNavigation()
+        push(SelfChromedStub(), onto: navigation)
+
+        try popBack(in: navigation)
+
+        // `CollapsibleStub` is not self-chromed, so the root wants its bar back.
+        #expect(!navigation.isNavigationBarHidden)
     }
 }

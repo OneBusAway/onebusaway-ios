@@ -23,6 +23,17 @@ protocol StopSheetCollapsibleContent: UIViewController {
     func setAtTip(_ isAtTip: Bool)
 }
 
+/// A page in the sheet's stack that supplies its own title and way back, and so must not
+/// also be given a navigation bar.
+///
+/// The sheet's root has no bar because one would impose a top safe area on the hosting
+/// controller, spending the sheet's scarce height on empty space above the title. Pages
+/// pushed onto it that follow the same pattern say so here.
+@MainActor
+protocol StopSheetSelfChromedContent: UIViewController {
+    var providesOwnSheetChrome: Bool { get }
+}
+
 /// Presents the redesigned Stop page as a half-detent sheet over the map, replacing the
 /// push that the legacy `StopViewController` still uses.
 ///
@@ -383,10 +394,15 @@ extension StopSheetPresenter: UINavigationControllerDelegate {
         page.setAtTip(panel.state == .tip)
     }
 
-    /// Only the sheet-configured stop page hides the bar. Anything else in this stack — including
-    /// a stop page pushed from a nearby-stops list, which keeps its navigation-bar chrome — needs it.
+    /// A page that draws its own header keeps the bar off; everything else in this stack —
+    /// including a stop page pushed from a nearby-stops list, which keeps its navigation-bar
+    /// chrome — gets one.
+    ///
+    /// Asked of the page rather than decided from a list of concrete types here, for the same
+    /// reason `StopSheetCollapsibleContent` is a protocol: a bar the page didn't ask for isn't
+    /// just redundant chrome, it's a second back button beside the page's own.
     private func hidesNavigationBar(for viewController: UIViewController) -> Bool {
-        (viewController as? StopPageViewController)?.showsBottomToolbar ?? false
+        (viewController as? StopSheetSelfChromedContent)?.providesOwnSheetChrome ?? false
     }
 }
 

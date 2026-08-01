@@ -31,7 +31,8 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
     Idleable,
     StopPreferencesViewDelegate,
     Previewable,
-    StopSheetCollapsibleContent {
+    StopSheetCollapsibleContent,
+    StopSheetSelfChromedContent {
 
     let application: Application
     let viewModel: StopViewModel
@@ -45,6 +46,10 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
     /// that map at the trip. Left nil where this page was pushed full-screen —
     /// there is no map behind it to focus.
     var onTripPagePush: ((TripPageViewController) -> Void)?
+
+    /// Only the sheet-configured page draws its own header; the pushed variant keeps its
+    /// navigation-bar chrome.
+    var providesOwnSheetChrome: Bool { showsBottomToolbar }
 
     /// Opens the SwiftUI trip page — the trip panel's "View full trip" and the
     /// row context menu's "Show Trip Details".

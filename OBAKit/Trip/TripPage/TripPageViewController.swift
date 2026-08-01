@@ -24,7 +24,8 @@ final class TripPageViewController: UIHostingController<TripPageView>,
     AppContext,
     AlarmBuilderDelegate,
     BookmarkEditorDelegate,
-    Idleable {
+    Idleable,
+    StopSheetSelfChromedContent {
 
     public let application: Application
     let viewModel: TripViewModel
@@ -38,6 +39,8 @@ final class TripPageViewController: UIHostingController<TripPageView>,
     private var isTrackingLiveActivity = false
 
     public var idleTimerFailsafe: Timer?
+
+    let providesOwnSheetChrome = true
 
     init(application: Application, tripConvertible: TripConvertible, originTitle: String? = nil) {
         self.application = application
@@ -71,6 +74,11 @@ final class TripPageViewController: UIHostingController<TripPageView>,
         // The page draws its own back row, so a navigation bar here would be a
         // second one — and inside the sheet it would impose a top safe area that
         // eats the sheet's scarce height.
+        //
+        // Set here for hosts that don't manage the bar themselves, and answered
+        // again through `providesOwnSheetChrome` for the stop sheet, whose
+        // presenter re-decides it on every push and would otherwise put the bar
+        // straight back.
         navigationController?.setNavigationBarHidden(true, animated: false)
 
         // Everything the map draws, and the gates the action bar renders from,
