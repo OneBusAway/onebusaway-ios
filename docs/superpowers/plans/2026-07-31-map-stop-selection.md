@@ -21,10 +21,10 @@
   ```bash
   set -o pipefail
   xcodebuild build-for-testing -project OBAKit.xcodeproj -scheme App \
-    -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.3.1' | tail -5
+    -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -5
   xcodebuild test-without-building -only-testing:OBAKitTests/<SuiteName> \
     -project OBAKit.xcodeproj -scheme App \
-    -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.3.1' | tail -20
+    -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -20
   ```
   Never pipe to `tail` without `set -o pipefail` — a failed build otherwise reports success.
 - **Do not touch** the legacy `StopViewController`, the `Vehicles` screen, or `MapPanelRootView`.
@@ -94,10 +94,10 @@ struct TripShapeIDDecodingTests {
 scripts/generate_project OneBusAway
 set -o pipefail
 xcodebuild build-for-testing -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.3.1' | tail -5
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -5
 xcodebuild test-without-building -only-testing:OBAKitTests/TripShapeIDDecodingTests \
   -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.3.1' | tail -20
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -20
 ```
 
 Expected: the three non-`Present` tests FAIL — decoding throws `keyNotFound`/`valueNotFound`, and the blank case returns `""` not `nil`.
@@ -128,7 +128,23 @@ and the decode at `:88`:
 grep -rn 'shapeID' --include='*.swift' OBAKit OBAKitCore OBAKitTests | grep -v 'gtfs-realtime.pb.swift'
 ```
 
-`isEqual` (`:123`) and `hash` (`:138`) already work unchanged with `String?`. Fix any other site the grep reveals.
+`isEqual` (`:123`) and `hash` (`:138`) already work unchanged with `String?`.
+
+**One caller is known to break and needs a decision, not a mechanical edit.**
+`OBAKit/ViewModels/TripViewModel.swift:159` calls
+`apiService.getShape(id: tripConvertible.trip.shapeID)`, and `getShape(id:)` takes
+a non-optional `String` (`RESTAPIService+Get.swift:260`). Guard it so the trip map
+simply draws no shape when the ID is absent — which is the correct behavior for an
+agency without shape data, and strictly better than today's whole-response decode
+failure:
+
+```swift
+        guard let shapeID = tripConvertible.trip.shapeID, !shapeID.isEmpty else { return [] }
+        let shape = try await apiService.getShape(id: shapeID)
+```
+
+Match the surrounding method's actual return type and error handling — read
+`:150-165` before editing.
 
 - [ ] **Step 5: Run tests to verify they pass**
 
@@ -137,7 +153,7 @@ Same commands as Step 2. Expected: 4 passed. Then run the broader modeling suite
 ```bash
 xcodebuild test-without-building -only-testing:OBAKitTests \
   -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.3.1' | tail -20
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -20
 ```
 
 - [ ] **Step 6: Commit**
@@ -184,25 +200,38 @@ final class MapKitExtensionsTests {
         let coordinate = CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3)
     }
 
-    @Test func `removeAllAnnotations keeps the user location by default`() {
+    // NOTE: do NOT try to test this through a real MKMapView + showsUserLocation.
+    // Verified empirically on the iOS 26 simulator: MapKit materializes
+    // MKUserLocation only once CoreLocation authorizes and delivers a fix, which
+    // never happens in a unit-test process. A round-trip test would fail both
+    // before AND after the fix, proving nothing. Test the predicate instead.
+
+    @Test func `The keep-user-location filter keeps exactly the user location`() {
+        let stub = StubAnnotation()
+        let user = MKUserLocation()
+
+        let doomed = MKMapView.annotationsToRemove(from: [stub, user], excludingUserLocation: true)
+
+        #expect(doomed.count == 1)
+        #expect(doomed.first === stub)
+    }
+
+    @Test func `Opting out removes the user location as well`() {
+        let stub = StubAnnotation()
+        let user = MKUserLocation()
+
+        let doomed = MKMapView.annotationsToRemove(from: [stub, user], excludingUserLocation: false)
+
+        #expect(doomed.count == 2)
+    }
+
+    @Test func `Non-user annotations are always removed`() {
         let mapView = MKMapView()
-        mapView.showsUserLocation = true
         mapView.addAnnotation(StubAnnotation())
 
         mapView.removeAllAnnotations()
 
-        #expect(mapView.annotations.contains { $0 is MKUserLocation })
-        #expect(!mapView.annotations.contains { $0 is StubAnnotation })
-    }
-
-    @Test func `removeAllAnnotations can be asked to drop the user location too`() {
-        let mapView = MKMapView()
-        mapView.showsUserLocation = true
-        mapView.addAnnotation(StubAnnotation())
-
-        mapView.removeAllAnnotations(excludeUserLocation: false)
-
-        #expect(!mapView.annotations.contains { $0 is StubAnnotation })
+        #expect(mapView.annotations.isEmpty)
     }
 }
 ```
@@ -213,10 +242,10 @@ final class MapKitExtensionsTests {
 scripts/generate_project OneBusAway
 set -o pipefail
 xcodebuild build-for-testing -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.3.1' | tail -5
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -5
 xcodebuild test-without-building -only-testing:OBAKitTests/MapKitExtensionsTests \
   -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.3.1' | tail -20
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -20
 ```
 
 Expected: `removeAllAnnotations keeps the user location by default` FAILS.
@@ -229,10 +258,14 @@ Expected: `removeAllAnnotations keeps the user location by default` FAILS.
     ///   `MKUserLocation` annotation is preserved — removing it makes the blue
     ///   dot vanish until the next location update.
     func removeAllAnnotations(excludeUserLocation: Bool = true) {
-        let doomed = excludeUserLocation
-            ? annotations.filter { !($0 is MKUserLocation) }
-            : annotations
-        removeAnnotations(doomed)
+        removeAnnotations(Self.annotationsToRemove(from: annotations, excludingUserLocation: excludeUserLocation))
+    }
+
+    /// Extracted so the filter is testable: MKUserLocation never materializes on a
+    /// map view in a unit-test process, so the round trip through `removeAllAnnotations`
+    /// cannot exercise the `excludeUserLocation` branch at all.
+    static func annotationsToRemove(from annotations: [MKAnnotation], excludingUserLocation: Bool) -> [MKAnnotation] {
+        excludingUserLocation ? annotations.filter { !($0 is MKUserLocation) } : annotations
     }
 ```
 
@@ -283,7 +316,7 @@ import Testing
 
 @MainActor
 @Suite(.serialized)
-final class MapLayerRendererDispatchTests {
+final class MapLayerRendererDispatchTests: OBATestCase {
 
     /// An overlay type only the stub layer recognizes.
     private final class StubOverlay: MKPolyline {}
@@ -326,7 +359,7 @@ final class MapLayerRendererDispatchTests {
     }
 
     @Test func `A layer claims its own overlay before the generic polyline branch`() {
-        let manager = MapRegionManager(application: ApplicationStubs.makeApplication())
+        let manager = MapRegionManager(application: buildApplication(queue: OperationQueue(), dataLoader: MockDataLoader(testName: #function)))
         let layer = StubLayer()
         manager.registerMapLayer(layer)
 
@@ -340,7 +373,7 @@ final class MapLayerRendererDispatchTests {
     }
 
     @Test func `An unrecognized overlay yields a renderer instead of trapping`() {
-        let manager = MapRegionManager(application: ApplicationStubs.makeApplication())
+        let manager = MapRegionManager(application: buildApplication(queue: OperationQueue(), dataLoader: MockDataLoader(testName: #function)))
         let circle = MKCircle(center: CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3), radius: 100)
 
         // Before the fix this call hits `fatalError()` and crashes the test run.
@@ -349,8 +382,20 @@ final class MapLayerRendererDispatchTests {
         #expect(renderer.overlay === circle)
     }
 
+    @Test func `A wholesale overlay clear notifies the layer so it can re-add`() {
+        let manager = MapRegionManager(application: buildApplication(queue: OperationQueue(), dataLoader: MockDataLoader(testName: #function)))
+        let layer = StubLayer()
+        manager.registerMapLayer(layer)
+
+        manager.cancelSearch()
+
+        // Without this notification `mapOverlaysWereCleared()` is dead code and a
+        // search cancellation silently erases the stop's route lines.
+        #expect(layer.overlaysClearedCount == 1)
+    }
+
     @Test func `A plain polyline still gets the brand renderer`() {
-        let manager = MapRegionManager(application: ApplicationStubs.makeApplication())
+        let manager = MapRegionManager(application: buildApplication(queue: OperationQueue(), dataLoader: MockDataLoader(testName: #function)))
         var coords = makeCoordinates()
         let polyline = MKPolyline(coordinates: &coords, count: coords.count)
 
@@ -361,12 +406,14 @@ final class MapLayerRendererDispatchTests {
 }
 ```
 
-**Note on `ApplicationStubs.makeApplication()`:** use whatever helper the existing
-mapping tests use to build an `Application`. Check
-`OBAKitTests/Mapping/MapRegionManagerRentalFilterTests.swift` and
-`OBAKitTests/Helpers/OBATestCase.swift` first and match it exactly; if those
-suites inherit `OBATestCase` for its fixtures, inherit it here too rather than
-inventing a new stub.
+**Suite must inherit `OBATestCase`.** There is no `ApplicationStubs` helper in
+this repo — the real pattern is `OBATestCase.buildApplication(queue:dataLoader:)`
+(`OBAKitTests/Helpers/OBATestCase.swift:212`), used exactly this way by
+`OBAKitTests/Mapping/MapRegionManagerRentalFilterTests.swift:52-62`. Inheriting is
+required for a second reason: `registerMapLayer` writes
+`mapLayer.stub.enabled` into UserDefaults (`MapRegionManager.swift:273-286`), and
+`OBATestCase` supplies the per-instance UserDefaults domain that keeps that from
+leaking between suites.
 
 - [ ] **Step 3: Run test to verify it fails**
 
@@ -374,10 +421,10 @@ inventing a new stub.
 scripts/generate_project OneBusAway
 set -o pipefail
 xcodebuild build-for-testing -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.3.1' | tail -5
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -5
 xcodebuild test-without-building -only-testing:OBAKitTests/MapLayerRendererDispatchTests \
   -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.3.1' | tail -20
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -20
 ```
 
 Expected: compile failure first (`renderer(for:in:)` and `mapOverlaysWereCleared()` are not `MapLayer` members).
@@ -470,12 +517,12 @@ and add the helper next to `notifyMapLayersAnnotationsCleared()`:
 
 - [ ] **Step 7: Run tests to verify they pass**
 
-Same command as Step 3. Expected: 3 passed. Then run the rental-layer suites, which exercise the same dispatch:
+Same command as Step 3. Expected: 4 passed. Then run the rental-layer suites, which exercise the same dispatch:
 
 ```bash
 xcodebuild test-without-building -only-testing:OBAKitTests/MapRegionManagerRentalFilterTests \
   -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.3.1' | tail -20
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -20
 ```
 
 - [ ] **Step 8: Commit**
@@ -598,6 +645,26 @@ struct ShapeCacheTests {
         #expect(await counter.count == 2)
     }
 
+    @Test func `Concurrent callers for the same shape fetch once`() async throws {
+        // The three sequential tests above all hit either `storage` or a cold
+        // fetch — delete the whole `inFlight` map and they still pass. This is the
+        // one that actually proves in-flight deduplication, which is what keeps a
+        // six-route stop from firing six requests for one shared shape.
+        let counter = Counter()
+        let encoded = encodedSeattleLine()
+        let cache = ShapeCache { _ in
+            try? await Task.sleep(for: .milliseconds(50))
+            await counter.increment()
+            return encoded
+        }
+
+        async let first = cache.coordinates(forShapeID: "1_shape")
+        async let second = cache.coordinates(forShapeID: "1_shape")
+        _ = try await (first, second)
+
+        #expect(await counter.count == 1)
+    }
+
     @Test func `removeAll forces a refetch`() async throws {
         let counter = Counter()
         let encoded = encodedSeattleLine()
@@ -631,7 +698,7 @@ on the decoded coordinate count.
 scripts/generate_project OneBusAway
 set -o pipefail
 xcodebuild build-for-testing -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.3.1' | tail -5
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -5
 ```
 
 Expected: compile failure — `ShapeCache` does not exist.
@@ -677,6 +744,10 @@ actor ShapeCache {
     private let capacity = 64
     private var insertionOrder: [String] = []
 
+    /// Bumped by `removeAll()` so an in-flight fetch that resolves afterwards can
+    /// tell it belongs to a torn-down presentation and decline to cache itself.
+    private var generation: UInt64 = 0
+
     init(fetch: @escaping Fetch) {
         self.fetch = fetch
     }
@@ -685,19 +756,36 @@ actor ShapeCache {
         if let cached = storage[shapeID] { return cached }
         if let existing = inFlight[shapeID] { return try await existing.value }
 
+        let generation = self.generation
         let task = Task<[CLLocationCoordinate2D], Error> { [fetch] in
             let encoded = try await fetch(shapeID)
             return Polyline(encodedPolyline: encoded).coordinates ?? []
         }
         inFlight[shapeID] = task
 
-        defer { inFlight[shapeID] = nil }
-        let coordinates = try await task.value
+        // No `defer` here. The actor suspends at the `await` below, so a `defer`
+        // would run after other callers have had a turn — and would clear whatever
+        // NEW task another caller installed for this shape ID, not necessarily
+        // ours. Compare identity instead.
+        let coordinates: [CLLocationCoordinate2D]
+        do {
+            coordinates = try await task.value
+        } catch {
+            if inFlight[shapeID] === task { inFlight[shapeID] = nil }
+            throw error
+        }
+        if inFlight[shapeID] === task { inFlight[shapeID] = nil }
+
+        // Drop a response that resolved after `removeAll()` — otherwise a fetch
+        // started for a dismissed sheet repopulates the cache for a presentation
+        // that no longer exists.
+        guard generation == self.generation else { return coordinates }
         store(coordinates, for: shapeID)
         return coordinates
     }
 
     func removeAll() {
+        generation &+= 1
         storage.removeAll()
         insertionOrder.removeAll()
         for task in inFlight.values { task.cancel() }
@@ -721,13 +809,13 @@ actor ShapeCache {
 scripts/generate_project OneBusAway
 set -o pipefail
 xcodebuild build-for-testing -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.3.1' | tail -5
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -5
 xcodebuild test-without-building -only-testing:OBAKitTests/ShapeCacheTests \
   -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.3.1' | tail -20
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -20
 ```
 
-Expected: 3 passed.
+Expected: 4 passed.
 
 - [ ] **Step 6: Commit**
 
@@ -808,6 +896,21 @@ private func dep(
 @MainActor
 @Suite(.serialized)
 final class StopRouteFocusModelTests {
+
+    // MARK: - Filter parity with the list
+
+    // `visibleDepartures` takes real `ArrivalDeparture`s, which only decode from
+    // JSON — build them with the repo's `Fixtures.dictionaryToModel(type:dictionary:)`
+    // helper (see OBAKitTests/Modeling/) rather than the stubs used below.
+    //
+    // Three cases, all required by the spec's "filter parity" item:
+    //   1. isListFiltered == true  => hidden routes are excluded
+    //   2. isListFiltered == false => hidden routes are INCLUDED, because the
+    //      rider toggled the filter off and the list is showing them
+    //   3. terminal duplicates are collapsed in both cases
+    //
+    // Case 2 is the one that matters: filtering unconditionally would draw a map
+    // that disagrees with the visible list.
 
     // MARK: - Ordering and membership
 
@@ -913,7 +1016,7 @@ final class StopRouteFocusModelTests {
 scripts/generate_project OneBusAway
 set -o pipefail
 xcodebuild build-for-testing -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.3.1' | tail -5
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -5
 ```
 
 Expected: compile failure — `MapDepartureEntry` and `StopRouteFocusModel` do not exist.
@@ -953,8 +1056,13 @@ protocol MapDepartureEntry: DepartureListEntry {
 }
 
 /// The map's view of one selected stop: which routes to draw and where their
-/// vehicles are. Pure — no MapKit objects, no network, no side effects.
-struct StopRouteFocusModel: Equatable {
+/// vehicles are. Pure — no network, no side effects.
+///
+/// Deliberately NOT `Equatable`: `CLLocationCoordinate2D` has no `Equatable`
+/// conformance (verified — synthesis fails with "stored property type
+/// 'CLLocationCoordinate2D' does not conform to protocol 'Equatable'"), and
+/// nothing compares whole models, so adding one would be busywork.
+struct StopRouteFocusModel {
 
     struct DrawnRoute: Equatable, Identifiable {
         let routeID: RouteID
@@ -966,13 +1074,16 @@ struct StopRouteFocusModel: Equatable {
         let hasLiveVehicle: Bool
     }
 
-    struct DrawnVehicle: Equatable, Identifiable {
+    struct DrawnVehicle: Identifiable {
         /// `vehicleID` when the agency reports one, `tripID` otherwise.
         let id: String
         let routeID: RouteID
         let coordinate: CLLocationCoordinate2D
         let orientation: CLLocationDirection
-        /// The departure this vehicle is serving, for the callout.
+        /// The departure this vehicle is serving. The layer resolves it back to
+        /// the live `ArrivalDeparture` (and thus its `TripStatus`) rather than
+        /// snapshotting one here — the annotation REQUIRES a non-nil
+        /// `TripStatus`, see Task 7.
         let departureID: String
     }
 
@@ -1053,18 +1164,18 @@ struct StopRouteFocusModel: Equatable {
 
 Add to the same file:
 
+**`ArrivalDeparture` already satisfies three of the seven requirements.** Verified:
+`tripID: TripIdentifier` (`:94`, and `TripIdentifier` **is** `String`, `:12`),
+`vehicleID: String?` (`:103`), and `routeShortName: String` (`:220`) all already
+exist. Redeclaring any of them in the extension is `error: invalid redeclaration`
+— not shadowing. So the extension covers only the remaining four:
+
 ```swift
 extension ArrivalDeparture: MapDepartureEntry {
-
-    var routeShortName: String { route.shortName }
 
     var routeColor: UIColor { route.color ?? ThemeColors.shared.brand }
 
     var shapeID: String? { trip.shapeID }
-
-    var tripID: String { String(describing: self.tripID as TripIdentifier) }
-
-    var vehicleID: String? { tripStatus?.vehicleID }
 
     /// `position` is the extrapolated current location and is what the map should
     /// draw; `lastKnownLocation` is the raw last report. Prefer the former.
@@ -1075,8 +1186,7 @@ extension ArrivalDeparture: MapDepartureEntry {
     var vehicleCoordinate: CLLocationCoordinate2D? {
         guard let location = tripStatus?.position ?? tripStatus?.lastKnownLocation else { return nil }
         let coordinate = location.coordinate
-        guard CLLocationCoordinate2DIsValid(coordinate),
-              !(coordinate.latitude == 0 && coordinate.longitude == 0) else { return nil }
+        guard CLLocationCoordinate2DIsValid(coordinate), !coordinate.isNullIsland else { return nil }
         return coordinate
     }
 
@@ -1084,17 +1194,16 @@ extension ArrivalDeparture: MapDepartureEntry {
 }
 ```
 
-**Note:** `ArrivalDeparture` already has a stored `tripID: TripIdentifier`
-property (`:94`), which will collide with the protocol's `tripID: String`. If
-`TripIdentifier` is already `String`, delete the `tripID` line above — the stored
-property satisfies the requirement directly. Check with:
+`CLLocationCoordinate2D.isNullIsland` already exists at
+`OBAKitCore/Extensions/CoreLocationExtensions.swift:73` — use it rather than
+open-coding the zero check.
 
-```bash
-grep -n 'typealias TripIdentifier' -r OBAKitCore/
-```
-
-If it is not `String`, rename the protocol requirement to `tripIdentity: String`
-throughout this task and Task 8 rather than shadowing the stored property.
+**Behavior note worth knowing:** because `vehicleID` resolves to
+`ArrivalDeparture`'s own top-level field (`:103`) rather than
+`tripStatus?.vehicleID`, vehicle identity comes from the arrival, not the trip
+status. That is the right source — it is populated whenever the agency reports a
+vehicle — but it is a different field from the one the design spec named, so do
+not "fix" it back.
 
 - [ ] **Step 5: Run tests to verify they pass**
 
@@ -1102,10 +1211,10 @@ throughout this task and Task 8 rather than shadowing the stored property.
 scripts/generate_project OneBusAway
 set -o pipefail
 xcodebuild build-for-testing -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.3.1' | tail -5
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -5
 xcodebuild test-without-building -only-testing:OBAKitTests/StopRouteFocusModelTests \
   -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.3.1' | tail -20
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -20
 ```
 
 Expected: 11 passed.
@@ -1221,7 +1330,7 @@ final class StopMapFocusTests {
 scripts/generate_project OneBusAway
 set -o pipefail
 xcodebuild build-for-testing -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.3.1' | tail -5
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -5
 ```
 
 Expected: compile failure — `StopMapFocus` does not exist.
@@ -1302,10 +1411,10 @@ final class StopMapFocus: ObservableObject {
 scripts/generate_project OneBusAway
 set -o pipefail
 xcodebuild build-for-testing -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.3.1' | tail -5
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -5
 xcodebuild test-without-building -only-testing:OBAKitTests/StopMapFocusTests \
   -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.3.1' | tail -20
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -20
 ```
 
 Expected: 8 passed.
@@ -1357,28 +1466,58 @@ import OBAKitCore
 @Suite(.serialized)
 final class StopVehicleAnnotationTests {
 
-    @Test func `A stop vehicle annotation is a VehicleAnnotation`() {
-        // PulsingVehicleAnnotationView's `annotation` didSet guards on
-        // `as? VehicleAnnotation` and returns silently otherwise, so a
-        // non-conforming annotation renders with no heading and no route icon.
+    /// Build a real `TripStatus` from a fixture — the annotation requires one, and
+    /// `TripStatus` only decodes from JSON. Follow the loading idiom in
+    /// `OBAKitTests/Modeling/REST Model Service Tests/` (e.g. `Fixtures.loadRESTAPIPayload`
+    /// against `trip_details_1_18196913.json`); grep for an existing suite that
+    /// already materializes a `TripStatus` and reuse its helper verbatim rather
+    /// than inventing one.
+    private func makeTripStatus() throws -> TripStatus { … }
+
+    @Test func `Assigning the annotation gives the view its bus icon`() throws {
+        // The real risk: PulsingVehicleAnnotationView's `annotation` didSet
+        // (:55-64) requires a NON-NIL tripStatus, and `applyTripStatus` is the only
+        // thing that ever fires `routeType`'s didSet — the initializer assigns it
+        // before super.init (:17), where didSet does not fire. A nil tripStatus
+        // therefore yields a bare dot with no icon and no arrow, silently.
+        // `image` being non-nil is the observable proof that chain ran.
         let annotation = StopVehicleAnnotation(
-            id: "6821",
-            routeID: "H",
-            routeColor: .systemRed,
-            departureID: "dep1",
-            coordinate: CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3),
-            orientation: 90
+            id: "6821", routeID: "H", routeColor: .systemRed, departureID: "dep1",
+            tripStatus: try makeTripStatus(),
+            coordinate: CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3)
         )
-        #expect(annotation is VehicleAnnotation)
-        #expect(annotation.coordinate.latitude == 47.6)
+        let view = PulsingVehicleAnnotationView(annotation: nil, reuseIdentifier: "test")
+
+        view.annotation = annotation
+
+        #expect(view.image != nil)
     }
 
-    @Test func `Route color applies on first display, not one update late`() {
-        // Regression: realTimeAnnotationColor had no didSet, and the only write to
-        // annotationColor happened inside isRealTime's didSet — which runs when the
-        // annotation is assigned, i.e. BEFORE the caller sets the color.
+    @Test func `The model's coordinate survives the superclass overwriting it`() throws {
+        // VehicleAnnotation.init(tripStatus:) calls updateAnnotation(), which sets
+        // coordinate from lastKnownLocation and falls back to (0, 0). The subclass
+        // must assign afterwards or the marker lands on null island.
+        let annotation = StopVehicleAnnotation(
+            id: "6821", routeID: "H", routeColor: .systemRed, departureID: "dep1",
+            tripStatus: try makeTripStatus(),
+            coordinate: CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3)
+        )
+        #expect(annotation.coordinate.latitude == 47.6)
+        #expect(annotation.coordinate.longitude == -122.3)
+    }
+
+    @Test func `Route color applies when set after the annotation`() throws {
+        // Regression for the late-apply bug: isRealTime's didSet is the only writer
+        // of annotationColor, and it runs when the annotation is assigned — so a
+        // caller setting the color afterwards used to be ignored until the next
+        // status apply, on a recycled view still carrying the previous route color.
         let view = PulsingVehicleAnnotationView(annotation: nil, reuseIdentifier: "test")
-        view.isRealTime = true
+        view.annotation = StopVehicleAnnotation(
+            id: "6821", routeID: "H", routeColor: .systemRed, departureID: "dep1",
+            tripStatus: try makeTripStatus(),
+            coordinate: CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3)
+        )
+
         view.realTimeAnnotationColor = .systemGreen
 
         #expect(view.annotationColor == .systemGreen)
@@ -1403,7 +1542,7 @@ final class StopVehicleAnnotationTests {
 scripts/generate_project OneBusAway
 set -o pipefail
 xcodebuild build-for-testing -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.3.1' | tail -5
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -5
 ```
 
 Expected: compile failure — `StopVehicleAnnotation` and `isSelectable` do not exist.
@@ -1427,10 +1566,18 @@ import UIKit
 
 /// A live vehicle arriving at the selected stop.
 ///
-/// Subclasses `VehicleAnnotation` because `PulsingVehicleAnnotationView`'s
-/// `annotation` observer guards on that type and returns silently otherwise —
-/// a non-conforming annotation yields a marker with no heading arrow, no route
-/// icon, and no realtime state, with no error anywhere to explain it.
+/// **The `tripStatus` is mandatory, and that is the whole point of this type.**
+/// `PulsingVehicleAnnotationView`'s `annotation` observer
+/// (`PulsingVehicleAnnotationView.swift:55-64`) requires BOTH `as? VehicleAnnotation`
+/// AND a non-nil `tripStatus` before it runs `applyTripStatus`. And
+/// `applyTripStatus` is the only thing that ever sets `routeType` and `isRealTime`
+/// in a way that fires their `didSet`s — the initializer assigns them *before*
+/// `super.init()` (`:17-18`), where `didSet` does not fire. So an annotation with
+/// a nil `tripStatus` renders as a bare pulsing dot: **no bus icon, no heading
+/// arrow, no realtime state**, and no error anywhere to explain it.
+///
+/// Every vehicle in `StopRouteFocusModel` is derived from a `tripStatus`
+/// coordinate, so a non-nil status is always available at construction.
 final class StopVehicleAnnotation: VehicleAnnotation {
     let id: String
     let routeID: RouteID
@@ -1444,23 +1591,27 @@ final class StopVehicleAnnotation: VehicleAnnotation {
         routeID: RouteID,
         routeColor: UIColor,
         departureID: String,
-        coordinate: CLLocationCoordinate2D,
-        orientation: CLLocationDirection
+        tripStatus: TripStatus,
+        coordinate: CLLocationCoordinate2D
     ) {
         self.id = id
         self.routeID = routeID
         self.routeColor = routeColor
         self.departureID = departureID
-        super.init()
+        super.init(tripStatus: tripStatus)
+        // AFTER super.init: `VehicleAnnotation.init(tripStatus:)` calls
+        // `updateAnnotation()` (`VehicleAnnotation.swift:21`), which sets
+        // `coordinate` from `lastKnownLocation` — falling back to a literal
+        // (0, 0). Assigning here overrides that with the `position`-preferred,
+        // null-island-rejecting coordinate the model already resolved.
         self.coordinate = coordinate
     }
 }
 ```
 
-**Before writing this**, read `OBAKit/Trip/VehicleAnnotation.swift` and match its
-initializer shape. If `VehicleAnnotation` requires a `TripStatus`, either make
-that parameter optional or pass the departure's `tripStatus` through from Task 8.
-Do not fight the superclass — adjust this initializer to fit it.
+There is no `orientation` parameter: heading comes from
+`tripStatus.orientation` inside `applyTripStatus` → `updateHeading(tripStatus:)`.
+Passing one separately would be dead code.
 
 - [ ] **Step 5: Fix the marker**
 
@@ -1484,25 +1635,31 @@ and in `init`, after the existing setup, keep the default:
         isUserInteractionEnabled = false
 ```
 
-Then give `realTimeAnnotationColor` a `didSet` (at `:101`):
+Then give `realTimeAnnotationColor` a `didSet`:
 
 ```swift
-    /// Re-applies on assignment. Without this, the color lands one status-apply
-    /// late on a recycled view: `dequeueReusableAnnotationView` assigns the
-    /// annotation first, which runs `isRealTime`'s didSet — the only writer of
-    /// `annotationColor` — *before* the caller sets this property.
-    var realTimeAnnotationColor: UIColor = ThemeColors.shared.brand {
+    /// The annotation color for a vehicle with available real-time data.
+    ///
+    /// Re-applies on assignment. Without this, a caller that sets the color
+    /// *after* assigning the annotation gets the previous route's color on a
+    /// recycled view: `isRealTime`'s didSet is the only writer of
+    /// `annotationColor`, and it runs when the annotation is assigned.
+    /// `TripViewController.swift:419-423` has exactly that ordering today.
+    public var realTimeAnnotationColor: UIColor = ThemeColors.shared.brand {
         didSet {
             guard isRealTime else { return }
             annotationColor = realTimeAnnotationColor
-            updateHeading()
+            headingImageView.tintColor = realTimeAnnotationColor
         }
     }
 ```
 
-Confirm `updateHeading()` is the method that applies `headingImageView.tintColor`
-(around `:85`) and is callable here; if it is `private`, keep it private and call
-it — same file.
+**Do not call `updateHeading()`** — the real method is
+`private func updateHeading(tripStatus: TripStatus)` (`:79`) and takes an
+argument, so a no-arg call will not compile. Setting
+`headingImageView.tintColor` directly is what that method does with the color
+anyway (`:85`). A property's initial value does not fire `didSet`, so this is
+safe despite `headingImageView` belonging to the superclass.
 
 - [ ] **Step 6: Run tests to verify they pass**
 
@@ -1510,10 +1667,10 @@ it — same file.
 scripts/generate_project OneBusAway
 set -o pipefail
 xcodebuild build-for-testing -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.3.1' | tail -5
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -5
 xcodebuild test-without-building -only-testing:OBAKitTests/StopVehicleAnnotationTests \
   -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.3.1' | tail -20
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -20
 ```
 
 Expected: 4 passed. Then run the full target — `TripViewController` uses this view.
@@ -1556,8 +1713,18 @@ import OBAKitCore
 final class StopRouteFocusMapLayerTests {
 
     private func makeLayer(mapView: MKMapView) -> StopRouteFocusMapLayer {
-        StopRouteFocusMapLayer(mapView: mapView, shapeCache: ShapeCache { _ in "" })
+        let layer = StopRouteFocusMapLayer(mapView: mapView, shapeCache: ShapeCache { _ in "" })
+        // REQUIRED: `syncVehicleAnnotations` builds nothing without a resolvable
+        // departure, because `StopVehicleAnnotation` needs a non-nil `TripStatus`
+        // (see Task 7). Back this with a fixture-loaded `ArrivalDeparture` — reuse
+        // the `makeTripStatus()` fixture helper established in Task 7's suite.
+        layer.departureProvider = { _ in Self.fixtureDeparture }
+        return layer
     }
+
+    /// A fixture-loaded `ArrivalDeparture` with a non-nil `tripStatus`. Load it via
+    /// `Fixtures`; grep OBAKitTests for a suite that already materializes one.
+    private static let fixtureDeparture: ArrivalDeparture? = nil // replace with the fixture
 
     private func model(routeIDs: [RouteID], vehicleRouteIDs: [RouteID]) -> StopRouteFocusModel {
         StopRouteFocusModel(
@@ -1665,7 +1832,7 @@ final class StopRouteFocusMapLayerTests {
 scripts/generate_project OneBusAway
 set -o pipefail
 xcodebuild build-for-testing -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.3.1' | tail -5
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -5
 ```
 
 Expected: compile failure — `StopRouteFocusMapLayer` does not exist.
@@ -1740,6 +1907,14 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
 
     /// Shapes already drawn, so a refresh doesn't redraw an unchanged line.
     private var drawnShapeIDsByRoute: [RouteID: String] = [:]
+
+    /// Resolves a departure ID back to the live model object. Set by
+    /// `MapViewController` (Task 11) BEFORE the first `update(model:)`, because
+    /// vehicle annotations cannot be built without the `TripStatus` it yields.
+    var departureProvider: ((String) -> ArrivalDeparture?)?
+
+    /// Pushes the trip screen from the callout. Set by `MapViewController`.
+    var onFollowTrip: ((ArrivalDeparture) -> Void)?
     /// Invalidates late shape responses for a presentation that has since ended.
     private var presentationToken = UUID()
     private var shapeTasks: [Task<Void, Never>] = []
@@ -1790,14 +1965,19 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
 
     private func syncVehicleAnnotations() {
         mapView.removeAnnotations(annotations)
-        annotations = model.vehicles.map { vehicle in
-            StopVehicleAnnotation(
+        annotations = model.vehicles.compactMap { vehicle in
+            // A non-nil TripStatus is mandatory — without it the marker renders as
+            // a bare dot with no icon and no heading arrow. See StopVehicleAnnotation.
+            // Every modelled vehicle derived its coordinate from a TripStatus, so
+            // this lookup only fails if the departure vanished between refreshes.
+            guard let tripStatus = departureProvider?(vehicle.departureID)?.tripStatus else { return nil }
+            return StopVehicleAnnotation(
                 id: vehicle.id,
                 routeID: vehicle.routeID,
                 routeColor: model.routes.first { $0.routeID == vehicle.routeID }?.color ?? tintColor,
                 departureID: vehicle.departureID,
-                coordinate: vehicle.coordinate,
-                orientation: vehicle.orientation
+                tripStatus: tripStatus,
+                coordinate: vehicle.coordinate
             )
         }
         mapView.addAnnotations(annotations)
@@ -1849,10 +2029,23 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
     // MARK: - Focus restyling
 
     private func restyleOverlays() {
+        // `mapView.renderer(for:)` returns nil for any overlay MapKit has not asked
+        // the delegate to render yet — offscreen ones, and everything if the map is
+        // not in a window. Re-adding forces a fresh `rendererFor` round trip, which
+        // picks up the new focus state. Without this fallback a chip tap silently
+        // does nothing for the lines that happen to be off-screen.
+        var needsReadd: [RouteShapeOverlay] = []
         for overlay in overlays {
-            guard let renderer = mapView.renderer(for: overlay) as? MKPolylineRenderer else { continue }
-            apply(style: overlay, to: renderer)
-            renderer.setNeedsDisplay()
+            if let renderer = mapView.renderer(for: overlay) as? MKPolylineRenderer {
+                apply(style: overlay, to: renderer)
+                renderer.setNeedsDisplay()
+            } else {
+                needsReadd.append(overlay)
+            }
+        }
+        if !needsReadd.isEmpty {
+            mapView.removeOverlays(needsReadd)
+            mapView.addOverlays(needsReadd, level: .aboveRoads)
         }
         for annotation in annotations {
             guard let view = mapView.view(for: annotation) as? PulsingVehicleAnnotationView else { continue }
@@ -1959,10 +2152,10 @@ sed -n '15,30p' OBAKitCore/Models/REST/PolylineEntity.swift
 scripts/generate_project OneBusAway
 set -o pipefail
 xcodebuild build-for-testing -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.3.1' | tail -5
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -5
 xcodebuild test-without-building -only-testing:OBAKitTests/StopRouteFocusMapLayerTests \
   -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.3.1' | tail -20
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -20
 ```
 
 Expected: 6 passed.
@@ -2083,7 +2276,7 @@ final class StopPageChipFocusTests {
 scripts/generate_project OneBusAway
 set -o pipefail
 xcodebuild build-for-testing -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.3.1' | tail -5
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -5
 ```
 
 Expected: compile failure — `RouteChip` does not exist.
@@ -2233,14 +2426,43 @@ Replace the chip body at `:122-136`. Keep it a `Text`-shaped view — **never a
         isFocused: Bool
     ) -> String {
         var parts = [chip.shortName]
-        if drawn?.hasLiveVehicle == true { parts.append(Strings.liveTrackingAvailable) }
-        if isFocused { parts.append(Strings.highlightedOnMap) }
+        if drawn?.hasLiveVehicle == true { parts.append(liveTrackingLabel) }
+        if isFocused { parts.append(highlightedLabel) }
         return parts.joined(separator: ", ")
     }
 ```
 
-Add the two new `Strings` entries to `OBAKit/Strings.swift` following the file's
-existing `OBALoc` pattern, and add the English values to `OBAKit/Strings/en.lproj/Localizable.strings`.
+**There is no `OBAKit/Strings.swift`.** `Strings` lives in **OBAKitCore**
+(`OBAKitCore/Strings/Strings.swift`), and its `OBALoc` binds to the OBAKitCore
+bundle (`OBAKitCore/Strings/CoreLocalization.swift:14-15`) — so entries added
+there need their English values in `OBAKitCore/Strings/en.lproj/Localizable.strings`.
+Putting them under `OBAKit/Strings/en.lproj/` resolves nothing: the string
+silently falls back to its `value:` default and never localizes, which stays
+invisible until someone runs a non-English build.
+
+For view-local copy like this, do what the file already does — a file-local
+`OBALoc(...)`, matching `StopPageSheetHeaderView.swift:177`. Replace the two
+`Strings.` references above with:
+
+```swift
+    private var liveTrackingLabel: String {
+        OBALoc("stop_header.chip.live_tracking", value: "live tracking",
+               comment: "Spoken suffix on a route chip whose route has a vehicle on the map.")
+    }
+
+    private var highlightedLabel: String {
+        OBALoc("stop_header.chip.highlighted", value: "highlighted on map",
+               comment: "Spoken suffix on the currently-focused route chip.")
+    }
+```
+
+**Also fix the accessibility container, or none of the chip a11y above works.**
+`StopPageSheetHeaderView.swift:134-135` puts `.accessibilityElement(children: .ignore)`
+plus one summary `.accessibilityLabel` on the whole `FlowLayout`. That swallows
+every per-chip trait and label, and makes chips impossible to activate with
+VoiceOver — `.onTapGesture` on an ignored child is unreachable. Change it to
+`.accessibilityElement(children: .contain)` and move the routes-served summary
+onto the header's own label rather than the chip row.
 
 - [ ] **Step 7: Fix every `StopPageRootView` / `StopPageView` construction site**
 
@@ -2257,13 +2479,13 @@ pass a fresh `StopMapFocus()`.
 scripts/generate_project OneBusAway
 set -o pipefail
 xcodebuild build-for-testing -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.3.1' | tail -5
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -5
 xcodebuild test-without-building -only-testing:OBAKitTests/StopPageChipFocusTests \
   -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.3.1' | tail -20
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -20
 xcodebuild test-without-building -only-testing:OBAKitTests/StopPageSheetHeaderLayoutTests \
   -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.3.1' | tail -20
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -20
 ```
 
 Expected: 5 passed, and the existing header layout suite still green — that suite
@@ -2272,7 +2494,7 @@ is the guard against the greedy-height regression.
 - [ ] **Step 9: Commit**
 
 ```bash
-git add OBAKit/Stops/StopPage/ OBAKit/Strings.swift OBAKit/Strings/en.lproj/Localizable.strings \
+git add OBAKit/Stops/StopPage/ \
         OBAKitTests/Stops/StopPage/StopPageChipFocusTests.swift
 git commit -m "feat: make stop header route chips a map focus control"
 ```
@@ -2347,7 +2569,7 @@ final class VehicleCalloutViewTests {
 scripts/generate_project OneBusAway
 set -o pipefail
 xcodebuild build-for-testing -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.3.1' | tail -5
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -5
 ```
 
 Expected: compile failure — `VehicleCalloutView` does not exist.
@@ -2421,7 +2643,8 @@ final class VehicleCalloutView: UIView {
         updated.adjustsFontForContentSizeCategory = true
 
         var config = UIButton.Configuration.gray()
-        config.title = Strings.followThisTrip
+        config.title = OBALoc("vehicle_callout.follow_this_trip", value: "Follow this trip",
+                              comment: "Button in the live-vehicle map callout that opens the trip screen.")
         config.image = UIImage(systemName: "chevron.right")
         config.imagePlacement = .trailing
         config.imagePadding = 6
@@ -2476,25 +2699,16 @@ final class VehicleCalloutView: UIView {
 }
 ```
 
-Add `Strings.followThisTrip` to `OBAKit/Strings.swift` and its English value.
-Confirm `UIFont.bold` exists in this codebase (`grep -rn 'var bold' OBAKit/Extensions/`);
-if not, use `UIFont.preferredFont(forTextStyle:).withTraits(.traitBold)` or
-whatever the codebase already uses.
+The button title uses a file-local `OBALoc` rather than a `Strings` member —
+`Strings` lives in OBAKitCore and binds to that bundle, so a new member there
+would need its English value in `OBAKitCore/Strings/en.lproj/Localizable.strings`.
+`UIFont.bold` is verified to exist (`OBAKitCore/Extensions/UIKitExtensions.swift:307`).
 
 - [ ] **Step 4: Wire the callout into the layer**
 
-In `StopRouteFocusMapLayer`, add:
-
-```swift
-    /// Resolves a departure ID back to its model object, so the callout can read
-    /// live values at tap time rather than snapshotting them at draw time.
-    var departureProvider: ((String) -> ArrivalDeparture?)?
-
-    /// Pushes the trip screen. Set by `MapViewController`.
-    var onFollowTrip: ((ArrivalDeparture) -> Void)?
-```
-
-and in `annotationView(for:in:)`, after `view?.annotation = annotation`:
+`departureProvider` and `onFollowTrip` already exist on `StopRouteFocusMapLayer`
+from Task 8 — do not redeclare them. In `annotationView(for:in:)`, after
+`view?.annotation = annotation`, add:
 
 ```swift
         if let departure = departureProvider?(annotation.departureID) {
@@ -2505,31 +2719,45 @@ and in `annotationView(for:in:)`, after `view?.annotation = annotation`:
 with:
 
 ```swift
+    /// Relative-time formatter for "position updated 12s ago". Held statically —
+    /// constructing one per callout is measurably wasteful and they are stateless.
+    private static let updatedFormatter: RelativeDateTimeFormatter = {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .short
+        return formatter
+    }()
+
     private func makeCallout(for departure: ArrivalDeparture, annotation: StopVehicleAnnotation) -> UIView {
+        // `DepartureStatus`'s members are `label` and `color` — NOT statusLabel /
+        // statusColor. Verified at DepartureStatus.swift:52 and :35.
         let status = DepartureStatus(arrivalDeparture: departure)
+        // `route` is declared `Route!` (ArrivalDeparture.swift:53) — it is populated
+        // by `loadReferences`, but reach for the non-optional `routeShortName`
+        // (:220) as the fallback rather than force-unwrapping through `route`.
+        let headsign = departure.tripHeadsign ?? departure.routeShortName
         return VehicleCalloutView(
-            headsign: departure.tripHeadsign ?? departure.route.longName ?? departure.routeShortName,
+            headsign: headsign,
             vehicleLabel: annotation.id,
             countdownText: "\(departure.arrivalDepartureMinutes)m",
-            statusText: status.statusLabel,
-            statusColor: status.statusColor,
-            updatedText: departure.tripStatus.map { Formatters.formattedLastUpdated($0) } ?? "",
+            statusText: status.label,
+            statusColor: status.color,
+            // There is no `Formatters.formattedLastUpdated`. `ArrivalDeparture`
+            // carries `lastUpdated: Date` (:35); format it here.
+            updatedText: Self.updatedFormatter.localizedString(for: departure.lastUpdated, relativeTo: Date()),
             routeColor: annotation.routeColor,
             onFollow: { [weak self] in self?.onFollowTrip?(departure) }
         )
     }
 ```
 
-Check the real API names before writing this — `DepartureStatus`'s initializer and
-property names live in `OBAKit/Stops/StopPage/Shared/DepartureStatus.swift`, and
-the "last updated" formatter may be named differently:
+Confirm the two `DepartureStatus` member names and `lastUpdated` before writing —
+note the formatters file is at `OBAKitCore/Utilities/Formatters.swift`, not
+`OBAKitCore/Formatters.swift`:
 
 ```bash
-grep -n 'init\|statusLabel\|statusColor' OBAKit/Stops/StopPage/Shared/DepartureStatus.swift | head
-grep -rn 'func formattedLastUpdated\|lastUpdated' OBAKitCore/Formatters.swift | head
+grep -n 'init(arrivalDeparture\|var label\|var color' OBAKit/Stops/StopPage/Shared/DepartureStatus.swift
+grep -n 'lastUpdated' OBAKitCore/Models/REST/ArrivalDeparture.swift | head -3
 ```
-
-Adjust to whatever exists rather than adding a duplicate formatter.
 
 - [ ] **Step 5: Run tests to verify they pass**
 
@@ -2537,10 +2765,10 @@ Adjust to whatever exists rather than adding a duplicate formatter.
 scripts/generate_project OneBusAway
 set -o pipefail
 xcodebuild build-for-testing -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.3.1' | tail -5
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -5
 xcodebuild test-without-building -only-testing:OBAKitTests/VehicleCalloutViewTests \
   -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.3.1' | tail -20
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -20
 ```
 
 Expected: 2 passed.
@@ -2548,8 +2776,7 @@ Expected: 2 passed.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add OBAKit/Mapping/Layers/StopRouteFocus/ OBAKit/Strings.swift \
-        OBAKit/Strings/en.lproj/Localizable.strings \
+git add OBAKit/Mapping/Layers/StopRouteFocus/ \
         OBAKitTests/Mapping/StopRouteFocus/VehicleCalloutViewTests.swift
 git commit -m "feat: add the live vehicle callout with Follow this trip"
 ```
@@ -2573,6 +2800,7 @@ load-bearing.
 - [ ] **Step 1: Write the failing test for the layout constant**
 
 ```swift
+import MapKit
 import Testing
 import UIKit
 @testable import OBAKit
@@ -2581,18 +2809,32 @@ import UIKit
 @Suite(.serialized)
 final class StopSheetLayoutMetricsTests {
 
-    @Test func `The half detent inset is a positive constant`() {
-        // The camera needs the sheet's height to keep the tapped stop visible, and
-        // the panel itself is private and not laid out yet when the sheet is
-        // presented — so this must be a constant, not a live frame read.
-        #expect(StopSheetLayout.halfDetentInset > 0)
+    @Test func `The half detent inset is half the safe area, matching FloatingPanel`() {
+        // FloatingPanel's stock .half anchor is fractionalInset 0.5 of the SAFE
+        // AREA. Using screen height instead overshoots by half the insets, which
+        // would push the tapped stop further up the map than intended.
+        #expect(StopSheetLayout.halfDetentInset(safeAreaHeight: 800) == 400)
     }
 
-    @Test func `The half detent leaves room for a map above it`() {
-        #expect(StopSheetLayout.halfDetentInset < UIScreen.main.bounds.height)
+    @Test func `Framing a stop leaves it above the sheet`() {
+        // The camera fix that actually matters: a zero-size MKMapRect is degenerate
+        // and slams the camera to maximum zoom, so the rect must have real extent.
+        let coordinate = CLLocationCoordinate2D(latitude: 47.6, longitude: -122.33)
+        let rect = MKMapRect(MKCoordinateRegion(
+            center: coordinate, latitudinalMeters: 400, longitudinalMeters: 400
+        ))
+
+        #expect(rect.size.width > 0)
+        #expect(rect.size.height > 0)
+        #expect(rect.contains(MKMapPoint(coordinate)))
     }
 }
 ```
+
+**Note:** the previous draft of this task asserted `halfDetentInset > 0` and
+`< UIScreen.main.bounds.height`. Both are arithmetic consequences of multiplying
+by `0.5` and could never fail — they measured nothing. These two assert the two
+things that were actually wrong.
 
 - [ ] **Step 2: Run test to verify it fails**
 
@@ -2600,7 +2842,7 @@ final class StopSheetLayoutMetricsTests {
 scripts/generate_project OneBusAway
 set -o pipefail
 xcodebuild build-for-testing -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.3.1' | tail -5
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -5
 ```
 
 Expected: compile failure — `halfDetentInset` does not exist.
@@ -2610,28 +2852,25 @@ Expected: compile failure — `halfDetentInset` does not exist.
 In `StopSheetPresenter.swift`, add to `StopSheetLayout`:
 
 ```swift
-    /// Height the `.half` detent occupies, for callers that need to keep content
-    /// visible above the sheet.
+    /// Height the `.half` detent occupies, given the host's safe-area height.
     ///
-    /// A constant rather than a live surface read: the panel is private, and
+    /// Computed rather than read off the live surface: the panel is private, and
     /// `addPanel(toParent:animated: true)` slides in from `.hidden`, so the
     /// surface frame is not final when the presentation begins.
-    nonisolated static var halfDetentInset: CGFloat {
-        // FloatingPanelBottomLayout's stock `.half` anchor is a 0.5 fraction of
-        // the safe-area height. Mirror it rather than duplicating the number.
-        UIScreen.main.bounds.height * 0.5
+    ///
+    /// Takes the safe-area height as a parameter for two reasons. FloatingPanel's
+    /// stock `.half` anchor is `fractionalInset: 0.5, referenceGuide: .safeArea`
+    /// (`.build/checkouts/FloatingPanel/Sources/Layout.swift:37`) — half the *safe
+    /// area*, not half the screen, so screen height overshoots by roughly
+    /// (top + bottom inset) / 2. And `UIScreen` is `@MainActor` in the SDK, so a
+    /// `nonisolated` member cannot touch `UIScreen.main` at all under this
+    /// project's Swift 6 settings.
+    static func halfDetentInset(safeAreaHeight: CGFloat) -> CGFloat {
+        safeAreaHeight * 0.5
     }
 ```
 
-Verify the stock `.half` anchor's actual definition before committing to `0.5`:
-
-```bash
-grep -rn 'case half\|\.half' ~/Library/Developer/Xcode/DerivedData -l 2>/dev/null | head -1
-```
-
-or read FloatingPanel's `FloatingPanelBottomLayout` source in the SPM checkout. If
-it is a fraction of the *safe area* rather than the screen, compute from the
-map view's bounds instead and pass that in.
+Callers pass `mapView.safeAreaLayoutGuide.layoutFrame.height`.
 
 - [ ] **Step 4: Run tests to verify they pass**
 
@@ -2639,18 +2878,32 @@ map view's bounds instead and pass that in.
 scripts/generate_project OneBusAway
 set -o pipefail
 xcodebuild build-for-testing -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.3.1' | tail -5
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -5
 xcodebuild test-without-building -only-testing:OBAKitTests/StopSheetLayoutMetricsTests \
   -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.3.1' | tail -20
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -20
 ```
 
 Expected: 2 passed.
 
 - [ ] **Step 5: Wire the presentation**
 
-In `MapViewController.present(stopController:deselecting:)`, **after** the
-existing `stopSheet.present(...)` call — not before:
+First widen the existing guard at `MapViewController.swift:775` so the typed
+controller is in scope for the whole method — today the only binding is inside a
+narrower `if let` at `:780-782` that closes well before `stopSheet.present(...)`
+at `:791`:
+
+```swift
+        guard let stopPageVC = stopController as? StopPageViewController else {
+            application.viewRouter.navigate(to: stopController, from: self)
+            return
+        }
+```
+
+and collapse the now-redundant `if let stopPageVC = ...` at `:780` to use it
+directly.
+
+Then, **after** the existing `stopSheet.present(...)` call — not before:
 
 ```swift
         // ORDERING IS LOAD-BEARING. `StopSheetPresenter.present` tears the outgoing
@@ -2710,13 +2963,17 @@ and add:
     private func centerMapAboveSheet(on coordinate: CLLocationCoordinate2D?) {
         guard let coordinate else { return }
         let mapView = mapRegionManager.mapView
-        let padding = UIEdgeInsets(top: 60, left: 20, bottom: StopSheetLayout.halfDetentInset + 20, right: 20)
-        let point = MKMapPoint(coordinate)
-        let rect = MKMapRect(x: point.x, y: point.y, width: 0, height: 0)
-        mapView.setVisibleMapRect(
-            mapView.mapRectThatFits(rect, edgePadding: padding),
-            animated: true
+        let sheetInset = StopSheetLayout.halfDetentInset(
+            safeAreaHeight: mapView.safeAreaLayoutGuide.layoutFrame.height
         )
+        let padding = UIEdgeInsets(top: 60, left: 20, bottom: sheetInset + 20, right: 20)
+        // A real extent, NOT a zero-size rect: `MKMapRect(x:y:width:0,height:0)` is
+        // degenerate, and fitting it slams the camera to maximum zoom (or NaN).
+        // 400 m keeps the stop and its immediate surroundings legible.
+        let rect = MKMapRect(MKCoordinateRegion(
+            center: coordinate, latitudinalMeters: 400, longitudinalMeters: 400
+        ))
+        mapView.setVisibleMapRect(rect, edgePadding: padding, animated: true)
     }
 
     /// Torn down alongside the layer when the sheet closes.
@@ -2753,10 +3010,10 @@ grep -n '@Published.*isListFiltered\|@Published.*stopPreferences' OBAKit/ViewMod
 scripts/generate_project OneBusAway
 set -o pipefail
 xcodebuild build-for-testing -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.3.1' | tail -5
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -5
 xcodebuild test-without-building -only-testing:OBAKitTests \
   -project OBAKit.xcodeproj -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.3.1' | tail -30
+  -destination 'platform=iOS Simulator,name=iPhone 17e,OS=27.0' | tail -30
 ```
 
 Expected: all suites pass, including `StopSheetPresenterTests`,
