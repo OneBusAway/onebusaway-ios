@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+# Checks tooling needed to generate and open the OneBusAway iOS project,
+# then runs scripts/generate_project. See README.markdown Quick Start (#326).
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
+
+APP="${1:-OneBusAway}"
+MISSING=0
+
+say() { printf '%s\n' "$*"; }
+ok() { say "  ✓ $*"; }
+fail() { say "  ✗ $*"; MISSING=1; }
+
+say "Checking setup dependencies…"
+
+if command -v xcodebuild >/dev/null 2>&1; then
+  ok "Xcode / xcodebuild: $(xcodebuild -version 2>/dev/null | head -1)"
+else
+  fail "Xcode is not installed (or xcode-select path is wrong). Install Xcode from the App Store, then: sudo xcode-select -s /Applications/Xcode.app"
+fi
+
+if xcodebuild -checkFirstLaunchStatus >/dev/null 2>&1; then
+  ok "Xcode first-launch / license looks accepted"
+else
+  # -checkFirstLaunchStatus returns non-zero when setup is incomplete.
+  say "  ! If builds fail with license errors, open Xcode once or run: sudo xcodebuild -license accept"
+fi
+
+if command -v xcodegen >/dev/null 2>&1; then
+  ok "XcodeGen: $(xcodegen --version 2>/dev/null | head -1)"
+else
+  fail "XcodeGen missing. Install with: brew install xcodegen"
+fi
+
+if command -v brew >/dev/null 2>&1; then
+  ok "Homebrew available"
+else
+  say "  ! Homebrew not found (optional, but easiest way to install XcodeGen)"
+fi
+
+if [[ -f "Apps/${APP}/project.yml" ]]; then
+  ok "App config present: Apps/${APP}/project.yml"
+else
+  fail "Missing Apps/${APP}/project.yml — pass a valid app name (OneBusAway, KiedyBus, …)"
+fi
+
+if [[ -f "Apps/${APP}/local.yml" ]]; then
+  ok "Local overrides: Apps/${APP}/local.yml (gitignored)"
+else
+  say "  · No Apps/${APP}/local.yml yet. Copy Apps/${APP}/local.yml.example to override DEVELOPMENT_TEAM / bundle ID without editing the shared project.yml."
+fi
+
+say ""
+if [[ "$MISSING" -ne 0 ]]; then
+  say "Fix the items marked ✗, then re-run: scripts/setup ${APP}"
+  exit 1
+fi
+
+say "Generating Xcode project for ${APP}…"
+./scripts/generate_project "$APP"
+
+say ""
+say "Next steps:"
+say "  1. Open OBAKit.xcodeproj in Xcode (do not commit the generated .xcodeproj)."
+say "  2. If signing fails, set DEVELOPMENT_TEAM in Apps/${APP}/local.yml (see local.yml.example) and re-run this script,"
+say "     or change the team in Xcode for your local build only."
+say "  3. Product → Test (scheme App) to verify the toolchain."

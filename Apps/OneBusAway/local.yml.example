@@ -1,0 +1,17 @@
+# Copy to Apps/OneBusAway/local.yml (gitignored) and adjust for your Apple team.
+# Regenerated into the Xcode project via `scripts/setup` / `scripts/generate_project`.
+#
+# XcodeGen merges this file over the shared project.yml, so you can develop
+# without belonging to the OneBusAway organization team.
+
+targets:
+  App:
+    settings:
+      base:
+        DEVELOPMENT_TEAM: YOUR_TEAM_ID
+        # PRODUCT_BUNDLE_IDENTIFIER: com.example.onebusaway
+  OBAWidget:
+    settings:
+      base:
+        DEVELOPMENT_TEAM: YOUR_TEAM_ID
+        # PRODUCT_BUNDLE_IDENTIFIER: com.example.onebusaway.widget

@@ -37,9 +37,24 @@ BEGIN {
   def generate_project(app)
     `rm -rf OBAKit.xcodeproj`
     `cp #{project_yml_path(app)} .`
+    append_local_overrides(app)
     puts `xcodegen`
     `mkdir -p OBAKit.xcodeproj/project.xcworkspace/xcshareddata/swiftpm`
     `cp #{package_resolved_path(app)} OBAKit.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/`
+  end
+
+  # XcodeGen's `optional: true` include still errors when the file is absent, so
+  # we only wire Apps/<App>/local.yml when the contributor created it (#326).
+  def append_local_overrides(app)
+    local = "Apps/#{app}/local.yml"
+    return unless File.exist?(local)
+
+    File.open("project.yml", "a") do |f|
+      f.puts ""
+      f.puts "include:"
+      f.puts "  - path: #{local}"
+    end
+    puts "Applying local overrides from #{local}"
   end
 
   def project_yml_path(app)

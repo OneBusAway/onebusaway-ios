@@ -62,3 +62,7 @@ OBAKitTests.xcresult
 
 # Review artifacts (e.g. /aaron-pr-review)
 pr-*.md
+
+# Personal XcodeGen overrides (team ID / bundle ID). See Apps/*/local.yml.example.
+Apps/*/local.yml
+

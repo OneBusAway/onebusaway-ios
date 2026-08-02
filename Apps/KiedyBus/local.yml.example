@@ -1,0 +1,12 @@
+# Copy to Apps/KiedyBus/local.yml (gitignored) and adjust for your Apple team.
+# See Apps/OneBusAway/local.yml.example for notes.
+
+targets:
+  App:
+    settings:
+      base:
+        DEVELOPMENT_TEAM: YOUR_TEAM_ID
+  OBAWidget:
+    settings:
+      base:
+        DEVELOPMENT_TEAM: YOUR_TEAM_ID
