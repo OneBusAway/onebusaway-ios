@@ -13,8 +13,8 @@ import Combine
 @testable import OBAKit
 @testable import OBAKitCore
 
-/// Tests for `AgenciesViewModel`. Verifies the success path sorts by name,
-/// and that loading state resets to `false` after completion.
+/// Tests for `AgenciesViewModel`. Covers the success path in `loadData()` (agencies sorted by name)
+/// and the nil-`apiService` error path.
 @Suite(.serialized)
 final class AgenciesViewModelTests: OBATestCase {
     var queue: OperationQueue!
@@ -30,16 +30,19 @@ final class AgenciesViewModelTests: OBATestCase {
         queue.cancelAllOperations()
     }
 
-    private func createApplication(dataLoader: MockDataLoader) -> Application {
+    private func createApplication(
+        dataLoader: MockDataLoader,
+        locationManager: LocationManager = MockAuthorizedLocationManager(
+            updateLocation: TestData.mockSeattleLocation,
+            updateHeading: TestData.mockHeading
+        ),
+        fixedRegionName: String? = Fixtures.pugetSoundRegion.name
+    ) -> Application {
         stubRegions(dataLoader: dataLoader)
         stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
         Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
 
-        let locManager = MockAuthorizedLocationManager(
-            updateLocation: TestData.mockSeattleLocation,
-            updateHeading: TestData.mockHeading
-        )
-        let locationService = LocationService(userDefaults: userDefaults, locationManager: locManager)
+        let locationService = LocationService(userDefaults: userDefaults, locationManager: locationManager)
 
         let config = AppConfig(
             regionsBaseURL: regionsURL,
@@ -52,7 +55,7 @@ final class AgenciesViewModelTests: OBATestCase {
             bundledRegionsFilePath: bundledRegionsPath,
             regionsAPIPath: regionsAPIPath,
             dataLoader: dataLoader,
-            fixedRegionName: Fixtures.pugetSoundRegion.name
+            fixedRegionName: fixedRegionName
         )
 
         return Application(config: config)
@@ -69,7 +72,7 @@ final class AgenciesViewModelTests: OBATestCase {
     }
 
     @Test @MainActor
-    func `Load data success populates agencies sorted by name`() async {
+    func `Load data success populates agencies sorted by name`() async throws {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
 
@@ -79,11 +82,31 @@ final class AgenciesViewModelTests: OBATestCase {
         }
 
         let viewModel = AgenciesViewModel(application: app)
-        _ = try? await viewModel.loadData()
+        _ = try await viewModel.loadData()
 
         #expect(!viewModel.agencies.isEmpty)
 
         let names = viewModel.agencies.map { $0.agency.name }
         #expect(names == names.sorted())
+    }
+
+    @Test @MainActor
+    func `Load data with nil API service throws`() async {
+        let dataLoader = MockDataLoader(testName: name)
+        // LocationManagerMock is unauthorized and provides no location, so
+        // regionsService.currentRegion stays nil and apiService is never set.
+        let app = createApplication(
+            dataLoader: dataLoader,
+            locationManager: LocationManagerMock(),
+            fixedRegionName: nil
+        )
+        #expect(app.apiService == nil)
+
+        let viewModel = AgenciesViewModel(application: app)
+
+        let thrown = await #expect(throws: UnstructuredError.self) {
+            try await viewModel.loadData()
+        }
+        #expect(thrown?.errorDescription == "No API Service")
     }
 }
