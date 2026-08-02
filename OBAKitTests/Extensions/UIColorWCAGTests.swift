@@ -79,4 +79,17 @@ struct UIColorWCAGTests {
         let midGray = UIColor(red: 127.0/255.0, green: 127.0/255.0, blue: 127.0/255.0, alpha: 1.0)
         #expect(midGray.badgeTextColor(preferring: .white, minimumRatio: 7.0) == UIColor.black)
     }
+
+    // MARK: - ThemeColors on-time green (#599)
+
+    /// Light-mode `departureOnTime` (#007300) must clear WCAG AA (4.5:1) against
+    /// white — the solid capsule and tinted walk-pill both put white or green
+    /// text on this color. Identity checks on `DepartureStatus` would pass for
+    /// any ThemeColors value; this locks the actual contrast.
+    @Test func `On time color meets WCAG AA in light mode`() {
+        let light = ThemeColors.shared.departureOnTime.resolvedColor(
+            with: UITraitCollection(userInterfaceStyle: .light)
+        )
+        #expect(light.wcagContrastRatio(against: .white) >= 4.5)
+    }
 }
