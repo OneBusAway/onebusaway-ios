@@ -178,6 +178,10 @@ public class BookmarkDataLoader: NSObject {
 
                     self.delegate?.dataLoaderDidUpdate(self)
                 }
+            } catch APIError.requestNotFound {
+                // A bookmarked stop that no longer resolves in the current region is
+                // not a failure the rider watched happen — mirror StopViewModel's 404
+                // handling: no bulletin, no batch-error flag.
             } catch {
                 // Same staleness gate as the success path: if cancelUpdates() retired
                 // the batch (or a newer batch started) while this fetch was in flight,
