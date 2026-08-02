@@ -430,11 +430,24 @@ public class MapRegionManager: NSObject,
         }
     }
 
+    /// Stop IDs the rider is actively looking at — from either a `Stop` or `Bookmark`
+    /// annotation selection. Used to preserve callouts when annotations reload.
+    private var selectedStopIDs: Set<StopID> {
+        Set(mapView.selectedAnnotations.compactMap { annotation -> StopID? in
+            if let stop = annotation as? Stop {
+                return stop.id
+            }
+            if let bookmark = annotation as? Bookmark {
+                return bookmark.stopID
+            }
+            return nil
+        })
+    }
+
     /// Removes stop annotations for the layer toggle, but never a stop the rider is
     /// actively looking at: a searched or selected stop is explicit user intent and
     /// outranks the browse-layer preference (bookmarks get the same exemption).
     private func removeStopAnnotationsPreservingSelection() {
-        let selectedStopIDs = Set(mapView.selectedAnnotations.compactMap { ($0 as? Stop)?.id })
         let stopsToRemove = mapView.annotations.compactMap { $0 as? Stop }.filter { !selectedStopIDs.contains($0.id) }
         mapView.removeAnnotations(stopsToRemove)
     }
@@ -626,6 +639,12 @@ public class MapRegionManager: NSObject,
             !existingStopIDs.contains($0.id)
         } : []
         mapView.addAnnotations(stopsToAdd)
+
+        // Removing a sibling Stop for a bookmarked stopID shouldn't refresh a
+        // selected Bookmark — rebinding its view dismisses an open callout.
+        let selectedBookmarkStopIDs = Set(mapView.selectedAnnotations.compactMap { ($0 as? Bookmark)?.stopID })
+        affectedStopIDs.subtract(selectedBookmarkStopIDs)
+
         refreshAnnotationViews(for: Array(affectedStopIDs))
         notifyDelegatesStopsChanged()
     }
@@ -645,6 +664,12 @@ public class MapRegionManager: NSObject,
                   let view = mapView.view(for: annotation) as? StopAnnotationView else {
                 continue
             }
+
+            // Rebinding a selected annotation dismisses its callout; skip it.
+            guard !mapView.selectedAnnotations.contains(where: { $0 === annotation }) else {
+                continue
+            }
+
             view.prepareForReuse()
             view.annotation = annotation
             view.delegate = self
@@ -893,9 +918,13 @@ public class MapRegionManager: NSObject,
             return
         }
 
-        let visibleStops = mapView.annotations(in: mapView.visibleMapRect).filter(type: Stop.self)
-        for s in visibleStops {
-            if let stopView = mapView.view(for: s) as? StopAnnotationView {
+        for stop in mapView.annotations(in: mapView.visibleMapRect).filter(type: Stop.self) {
+            if let stopView = mapView.view(for: stop) as? StopAnnotationView {
+                stopView.isHidingExtraStopAnnotationData = shouldHideExtraStopAnnotationData
+            }
+        }
+        for bookmark in mapView.annotations(in: mapView.visibleMapRect).filter(type: Bookmark.self) {
+            if let stopView = mapView.view(for: bookmark) as? StopAnnotationView {
                 stopView.isHidingExtraStopAnnotationData = shouldHideExtraStopAnnotationData
             }
         }
