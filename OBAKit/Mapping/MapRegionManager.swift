@@ -688,7 +688,7 @@ public class MapRegionManager: NSObject,
         MapRegionManager.shouldShowZoomInWarning(forVisibleMapRectHeight: mapView.visibleMapRect.height)
     }
 
-    private func updateZoomWarningOverlay(mapHeight: Double) {
+    private func updateZoomWarningOverlay() {
         notifyDelegatesZoomInStatus(status: zoomInStatus)
     }
 
@@ -893,11 +893,18 @@ public class MapRegionManager: NSObject,
     // MARK: - Map View Delegate
 
     private func reloadStopAnnotations() {
+        // Ahead of every early return below, including the search-result guard.
+        // The pill states something about the current zoom, so it has to be
+        // re-derived on every settle — and a route search suppresses stop
+        // reloading without ever clearing `searchResponse` on its own, so a
+        // warning updated after that guard freezes until the search is
+        // cancelled. Mirrors the ordering `MapPanelRootView.onMapCameraChange`
+        // already uses.
+        updateZoomWarningOverlay()
+
         if searchResponseOverridesStopLoading() {
             return
         }
-
-        updateZoomWarningOverlay(mapHeight: mapView.visibleMapRect.height)
 
         // The zoom gate applies regardless of the layer toggle: `getStops` with a
         // region-scale bounding box is exactly what the 40,000-height gate prevents.
