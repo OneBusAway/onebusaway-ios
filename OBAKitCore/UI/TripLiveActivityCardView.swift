@@ -91,8 +91,10 @@ public struct TripLiveActivityCardView: View {
 
     @ViewBuilder
     private func countdownBadge(for arrival: TripAttributes.ContentState.ArrivalInfo, now: Date) -> some View {
-        CountdownView(
-            minutes: Int(arrival.departureDate.timeIntervalSince(now) / 60.0),
+        // `.timer` ticks without a push; static minute strings only moved on
+        // keepalive updates (#1187).
+        LiveActivityCountdownView(
+            departureDate: arrival.departureDate,
             isRealTime: arrival.scheduleStatus != .unknown,
             color: Color(uiColor: presenter.color(for: arrival))
         )
@@ -119,10 +121,13 @@ public struct TripLiveActivityCardView: View {
     @ViewBuilder
     private func departurePill(for arrival: TripAttributes.ContentState.ArrivalInfo, now: Date) -> some View {
         let color = Color(uiColor: presenter.color(for: arrival))
-        let minutes = max(0, Int(arrival.departureDate.timeIntervalSince(now) / 60.0))
-        Text(minutes == 0
-             ? OBALoc("stop_page.countdown.now", value: "NOW", comment: "Shown in place of the minutes countdown when the vehicle is departing now")
-             : "\(minutes)m")
+        Group {
+            if LiveActivityCountdown.shouldShowNow(departureDate: arrival.departureDate, now: now) {
+                Text(OBALoc("stop_page.countdown.now", value: "NOW", comment: "Shown in place of the minutes countdown when the vehicle is departing now"))
+            } else {
+                Text(arrival.departureDate, style: .timer)
+            }
+        }
             .font(.caption.weight(.heavy))
             .monospacedDigit()
             .foregroundStyle(color)
