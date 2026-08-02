@@ -53,6 +53,12 @@ struct StopDetailsSheetView: View {
     @State private var topBarHeight: CGFloat = 0
     @State private var mapCardHeight: CGFloat = 0
     @State private var actionRowHeight: CGFloat = 0
+    /// The scroll view's container height, used to decide when the rider has
+    /// scrolled far enough to offer a way back. Read-only, like `scrollOffset` —
+    /// nothing derived from it affects layout.
+    @State private var viewportHeight: CGFloat = 0
+    /// Drives the programmatic scroll back to the top.
+    @State private var scrollPosition = ScrollPosition()
     @State private var userActivity: NSUserActivity?
     /// Gates the one-shot success haptic to the first arrivals load, matching
     /// `StopViewController.bindArrivalsSink()`; later refreshes are silent.
@@ -107,6 +113,15 @@ struct StopDetailsSheetView: View {
             } action: { _, offset in
                 track(scrollOffset: offset)
             }
+            // A second, separate observation so each stays single-purpose. Like
+            // the offset above it is read-only: it feeds a predicate and an
+            // overlay, never layout.
+            .onScrollGeometryChange(for: CGFloat.self) { geometry in
+                geometry.containerSize.height
+            } action: { _, height in
+                viewportHeight = height
+            }
+            .scrollPosition($scrollPosition)
             // Fixed height — it holds only the top bar, so nothing here resizes
             // as the list scrolls.
             .safeAreaInset(edge: .top, spacing: 0) { topBar }
@@ -115,6 +130,14 @@ struct StopDetailsSheetView: View {
             // position can track scrolling without the scroll view ever observing
             // the result — the property the collapsing header lacked.
             .overlay(alignment: .top) { actionRowOverlay }
+            // Bottom-trailing overlay, for the same reason the action row is an
+            // overlay: it takes no part in the list's layout, so it cannot feed
+            // back into scroll geometry.
+            .overlay(alignment: .bottomTrailing) { scrollToTopOverlay }
+            // A CONSTANT margin so the button never permanently covers the
+            // footer's attribution line. It must not depend on the button's
+            // visibility — layout driven by scroll position is what hung the app.
+            .contentMargins(.bottom, Self.scrollToTopClearance, for: .scrollContent)
             .stopPageLifecycle(
                 viewModel: viewModel,
                 userDefaults: userDefaults,
@@ -258,6 +281,12 @@ struct StopDetailsSheetView: View {
 
     private func loadMore() {
         Task { await viewModel.loadMoreDepartures() }
+    }
+
+    private func scrollToTop() {
+        withAnimation {
+            scrollPosition.scrollTo(edge: .top)
+        }
     }
 
     // MARK: - Side effects
@@ -432,6 +461,21 @@ struct StopDetailsSheetView: View {
         // Type changes.
         .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { actionRowHeight = $0 }
         .offset(y: actionRowOffset)
+    }
+
+    /// Space reserved at the end of the list so the floating button does not sit
+    /// permanently on top of the attribution line. Constant by design.
+    private static let scrollToTopClearance: CGFloat = 72
+
+    private var showsScrollToTop: Bool {
+        ScrollToTopVisibility.shouldShow(scrollOffset: scrollOffset, viewportHeight: viewportHeight)
+    }
+
+    private var scrollToTopOverlay: some View {
+        ScrollToTopButton(isVisible: showsScrollToTop, action: scrollToTop)
+            .padding(.trailing, 16)
+            .padding(.bottom, 24)
+            .animation(.snappy(duration: 0.2), value: showsScrollToTop)
     }
 
     // MARK: - Row plumbing
