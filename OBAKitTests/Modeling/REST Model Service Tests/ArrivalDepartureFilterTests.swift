@@ -11,8 +11,6 @@ import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
-// swiftlint:disable force_cast
-
 @Suite(.serialized)
 final class ArrivalDepartureFilterTests: OBATestCase {
 
@@ -28,7 +26,7 @@ final class ArrivalDepartureFilterTests: OBATestCase {
     override init() async throws {
         try await super.init()
 
-        let dataLoader = (restService.dataLoader as! MockDataLoader)
+        let dataLoader = try #require(restService.dataLoader as? MockDataLoader)
 
         dataLoader.mock(
             URLString: makeUrlString(stopID: stopWithRealtime),
@@ -168,48 +166,72 @@ struct ArrivalDepartureFilterEnumTests {
     }
 }
 
-// MARK: - UserDefaults Integration Tests
+// MARK: - Config-Default Fallback Tests
 
+/// Asserts the white-label default through the production resolution API
+/// (`CoreApplication.effectiveArrivalDepartureFilter`, reached via a real
+/// `Application`), so a regression back to a hardcoded `.all` fallback fails
+/// these tests instead of slipping past a tautological UserDefaults check.
 @Suite(.serialized)
-struct ArrivalDepartureFilterUserDefaultsTests {
+final class ArrivalDepartureFilterFallbackTests: OBATestCase {
 
-    private let userDefaults: UserDefaults
+    private func createApplication(defaultFilter: ArrivalDepartureFilter) -> Application {
+        let dataLoader = MockDataLoader(testName: name)
+        stubRegions(dataLoader: dataLoader)
+        stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
+        Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
 
-    init() {
-        userDefaults = UserDefaults(suiteName: "ArrivalDepartureFilterUserDefaultsTests")!
-        userDefaults.removePersistentDomain(forName: "ArrivalDepartureFilterUserDefaultsTests")
+        let locManager = MockAuthorizedLocationManager(
+            updateLocation: TestData.mockSeattleLocation,
+            updateHeading: TestData.mockHeading
+        )
+        let locationService = LocationService(userDefaults: userDefaults, locationManager: locManager)
+
+        let config = AppConfig(
+            regionsBaseURL: regionsURL,
+            apiKey: apiKey,
+            appVersion: appVersion,
+            userDefaults: userDefaults,
+            analytics: nil,
+            queue: OperationQueue(),
+            locationService: locationService,
+            bundledRegionsFilePath: bundledRegionsPath,
+            regionsAPIPath: regionsAPIPath,
+            dataLoader: dataLoader,
+            fixedRegionName: Fixtures.pugetSoundRegion.name,
+            defaultArrivalDepartureFilter: defaultFilter
+        )
+
+        return Application(config: config)
     }
 
-    @Test func `No saved value is nil`() {
+    @Test func `Configured default propagates through CoreApplication`() {
+        let app = createApplication(defaultFilter: .scheduledOnly)
+        #expect(app.defaultArrivalDepartureFilter == .scheduledOnly)
+    }
+
+    @Test func `Missing saved value resolves to the configured default`() {
+        let app = createApplication(defaultFilter: .scheduledOnly)
         #expect(userDefaults.string(forKey: CoreAppConfig.arrivalDepartureFilterUserDefaultsKey) == nil)
+        #expect(app.effectiveArrivalDepartureFilter == .scheduledOnly)
     }
 
-    @Test func `Saved estimatedOnly round trips`() {
-        userDefaults.set(ArrivalDepartureFilter.estimatedOnly.rawValue, forKey: CoreAppConfig.arrivalDepartureFilterUserDefaultsKey)
-        let saved = userDefaults.string(forKey: CoreAppConfig.arrivalDepartureFilterUserDefaultsKey)
-        #expect(ArrivalDepartureFilter(rawValue: saved ?? "") == .estimatedOnly)
-    }
-
-    @Test func `Saved scheduledOnly round trips`() {
-        userDefaults.set(ArrivalDepartureFilter.scheduledOnly.rawValue, forKey: CoreAppConfig.arrivalDepartureFilterUserDefaultsKey)
-        let saved = userDefaults.string(forKey: CoreAppConfig.arrivalDepartureFilterUserDefaultsKey)
-        #expect(ArrivalDepartureFilter(rawValue: saved ?? "") == .scheduledOnly)
-    }
-
-    @Test func `Invalid saved value returns nil`() {
+    @Test func `Invalid saved value resolves to the configured default`() {
+        let app = createApplication(defaultFilter: .estimatedOnly)
         userDefaults.set("garbage", forKey: CoreAppConfig.arrivalDepartureFilterUserDefaultsKey)
-        let saved = userDefaults.string(forKey: CoreAppConfig.arrivalDepartureFilterUserDefaultsKey)
-        #expect(ArrivalDepartureFilter(rawValue: saved ?? "") == nil)
+        #expect(app.effectiveArrivalDepartureFilter == .estimatedOnly)
     }
 
-    @Test func `Nil value with configured default resolves to default`() {
-        let saved = userDefaults.string(forKey: CoreAppConfig.arrivalDepartureFilterUserDefaultsKey)
-        #expect(ArrivalDepartureFilter(rawValue: saved ?? "") ?? .scheduledOnly == .scheduledOnly)
+    @Test func `Saved value wins over the configured default`() {
+        let app = createApplication(defaultFilter: .scheduledOnly)
+        app.setArrivalDepartureFilter(.estimatedOnly)
+        #expect(app.effectiveArrivalDepartureFilter == .estimatedOnly)
     }
 
-    @Test func `Invalid value with configured default resolves to default`() {
-        userDefaults.set("garbage", forKey: CoreAppConfig.arrivalDepartureFilterUserDefaultsKey)
-        let saved = userDefaults.string(forKey: CoreAppConfig.arrivalDepartureFilterUserDefaultsKey)
-        #expect(ArrivalDepartureFilter(rawValue: saved ?? "") ?? .estimatedOnly == .estimatedOnly)
+    @Test func `Set filter persists under the stable raw-value key`() {
+        let app = createApplication(defaultFilter: .all)
+        app.setArrivalDepartureFilter(.scheduledOnly)
+        #expect(userDefaults.string(forKey: CoreAppConfig.arrivalDepartureFilterUserDefaultsKey) == "scheduledOnly")
+        #expect(app.effectiveArrivalDepartureFilter == .scheduledOnly)
     }
 }

@@ -442,12 +442,10 @@ public class StopViewController: UIViewController,
         return UIMenu(title: sortMenuTitle, image: Icons.sort, children: [sortByTime, sortByRoute])
     }
 
+    /// The active Departure Type filter, read from the shared view model so the
+    /// legacy and SwiftUI stop pages agree on one persisted value.
     private var activeArrivalDepartureFilter: ArrivalDepartureFilter {
-        if let saved = application.userDefaults.string(forKey: CoreAppConfig.arrivalDepartureFilterUserDefaultsKey),
-           let filter = ArrivalDepartureFilter(rawValue: saved) {
-            return filter
-        }
-        return application.defaultArrivalDepartureFilter
+        viewModel.arrivalDepartureFilter
     }
 
     fileprivate func arrivalDepartureFilterMenu() -> UIMenu {
@@ -455,7 +453,7 @@ public class StopViewController: UIViewController,
         let actions = ArrivalDepartureFilter.allCases.map { filter -> UIAction in
             let action = UIAction(title: filter.displayTitle) { [weak self] _ in
                 guard let self else { return }
-                self.application.userDefaults.set(filter.rawValue, forKey: CoreAppConfig.arrivalDepartureFilterUserDefaultsKey)
+                self.viewModel.updateArrivalDepartureFilter(filter)
                 self.dataDidReload()
             }
             if filter == currentFilter { action.image = Icons.checkmark }
@@ -717,16 +715,22 @@ public class StopViewController: UIViewController,
         if stopPreferences.sortType == .time {
             var arrDeps = stopArrivals.arrivalsAndDepartures
             if isListFiltered { arrDeps = arrDeps.filter(preferences: stopPreferences) }
-            arrDeps = arrDeps.filter(by: activeArrivalDepartureFilter).filteringTerminalDuplicates()
+            // `arrDeps` before the Departure Type filter decides whether that
+            // filter — rather than genuinely empty service — emptied the list.
+            let filtered = arrDeps.filter(by: activeArrivalDepartureFilter).filteringTerminalDuplicates()
 
-            let pastDeps = arrDeps.filter { $0.arrivalDepartureMinutes < 0 }
-            let upcomingDeps = arrDeps.filter { $0.arrivalDepartureMinutes >= 0 }
+            if filtered.isEmpty, !arrDeps.isEmpty, activeArrivalDepartureFilter != .all {
+                sections.append(arrivalFilterNoResultsSection())
+            } else {
+                let pastDeps = filtered.filter { $0.arrivalDepartureMinutes < 0 }
+                let upcomingDeps = filtered.filter { $0.arrivalDepartureMinutes >= 0 }
 
-            if !pastDeps.isEmpty {
-                sections.append(sectionForPastDepartures(groupRoute: nil, arrDeps: pastDeps))
+                if !pastDeps.isEmpty {
+                    sections.append(sectionForPastDepartures(groupRoute: nil, arrDeps: pastDeps))
+                }
+                // Always append upcoming section (even if empty) to display load more and walk times
+                sections.append(sectionForGroup(groupRoute: nil, arrDeps: upcomingDeps))
             }
-            // Always append upcoming section (even if empty) to display load more and walk times
-            sections.append(sectionForGroup(groupRoute: nil, arrDeps: upcomingDeps))
 
         } else {
             let groups = stopArrivals.arrivalsAndDepartures
@@ -734,18 +738,13 @@ public class StopViewController: UIViewController,
                 .group(preferences: stopPreferences, filter: isListFiltered)
                 .localizedStandardCompare()
 
-            if groups.isEmpty, activeArrivalDepartureFilter != .all {
-                let noResultsItem = EmptyDataSetItem(
-                    id: "arrival_filter_no_results",
-                    alignment: .top,
-                    title: nil,
-                    body: OBALoc(
-                        "stop_controller.arrival_filter.no_results",
-                        value: "No departures match the current filter. Change the Departure Type in the ⋯ menu.",
-                        comment: "Message shown when the arrival type filter hides all departures in route-sorted mode"
-                    )
-                )
-                sections.append(listViewSection(for: .emptyData, title: nil, items: [noResultsItem]))
+            // Blame the Departure Type filter only when dropping it would bring
+            // groups back — an all-routes-hidden route filter also produces zero
+            // groups, and pointing the user at Departure Type there is wrong.
+            // Short-circuiting keeps the second grouping pass off the common path.
+            if groups.isEmpty, activeArrivalDepartureFilter != .all,
+               !stopArrivals.arrivalsAndDepartures.group(preferences: stopPreferences, filter: isListFiltered).isEmpty {
+                sections.append(arrivalFilterNoResultsSection())
             } else {
                 sections = groups.flatMap { group -> [OBAListViewSection] in
                     var groupSections: [OBAListViewSection] = []
@@ -765,6 +764,22 @@ public class StopViewController: UIViewController,
         }
 
         return sections
+    }
+
+    /// The empty state for a Departure Type filter that hid every departure,
+    /// shared by the time-sorted and route-sorted paths.
+    private func arrivalFilterNoResultsSection() -> OBAListViewSection {
+        let noResultsItem = EmptyDataSetItem(
+            id: "arrival_filter_no_results",
+            alignment: .top,
+            title: nil,
+            body: OBALoc(
+                "stop_controller.arrival_filter.no_results",
+                value: "No departures match the current filter. Change the Departure Type in the ⋯ menu.",
+                comment: "Message shown when the Departure Type filter hides every departure at a stop"
+            )
+        )
+        return listViewSection(for: .emptyData, title: nil, items: [noResultsItem])
     }
 
     private func arrivalDepartureItem(for arrivalDeparture: ArrivalDeparture) -> ArrivalDepartureItem {

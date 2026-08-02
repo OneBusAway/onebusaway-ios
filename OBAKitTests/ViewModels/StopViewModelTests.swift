@@ -48,7 +48,8 @@ final class StopViewModelTests: OBATestCase {
         arrivalsFixture: String = "arrivals_and_departures_empty.json",
         arrivalsData: Data? = nil,
         arrivalsFailureStatusCode: Int? = nil,
-        bundledRegionsFixture: String? = nil
+        bundledRegionsFixture: String? = nil,
+        defaultArrivalDepartureFilter: ArrivalDepartureFilter = .all
     ) -> Application {
         stubRegions(dataLoader: dataLoader)
         stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
@@ -91,7 +92,8 @@ final class StopViewModelTests: OBATestCase {
             bundledRegionsFilePath: bundledRegionsFixture.map { Fixtures.path(to: $0) } ?? bundledRegionsPath,
             regionsAPIPath: regionsAPIPath,
             dataLoader: dataLoader,
-            fixedRegionName: Fixtures.pugetSoundRegion.name
+            fixedRegionName: Fixtures.pugetSoundRegion.name,
+            defaultArrivalDepartureFilter: defaultArrivalDepartureFilter
         )
 
         return Application(config: config)
@@ -308,6 +310,41 @@ final class StopViewModelTests: OBATestCase {
         await viewModel.refresh()
 
         #expect(!viewModel.isListFiltered)
+    }
+
+    // MARK: - Departure Type filter
+
+    /// The view model must seed its published filter from the effective value —
+    /// which honors the white-label default — since the SwiftUI stop page reads
+    /// only the view model, never `UserDefaults`.
+    @Test @MainActor
+    func `Arrival departure filter seeds from the configured default`() {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(
+            dataLoader: dataLoader,
+            analytics: AnalyticsMock(),
+            defaultArrivalDepartureFilter: .scheduledOnly
+        )
+
+        let viewModel = StopViewModel(application: app, stopID: testStopID)
+
+        #expect(viewModel.arrivalDepartureFilter == .scheduledOnly)
+    }
+
+    /// Updating through the view model persists app-wide, so the legacy page,
+    /// the SwiftUI page, and Settings all observe the change.
+    @Test @MainActor
+    func `Updating the arrival departure filter persists it`() {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock())
+
+        let viewModel = StopViewModel(application: app, stopID: testStopID)
+        #expect(viewModel.arrivalDepartureFilter == .all)
+
+        viewModel.updateArrivalDepartureFilter(.estimatedOnly)
+
+        #expect(viewModel.arrivalDepartureFilter == .estimatedOnly)
+        #expect(app.effectiveArrivalDepartureFilter == .estimatedOnly)
     }
 
     // MARK: - $stop re-emit guard

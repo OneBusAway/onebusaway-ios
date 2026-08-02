@@ -119,7 +119,7 @@ class SettingsViewController: FormViewController {
         }
 
         if let filter = values[arrivalFilterTag] as? ArrivalDepartureFilter {
-            application.userDefaults.set(filter.rawValue, forKey: CoreAppConfig.arrivalDepartureFilterUserDefaultsKey)
+            application.setArrivalDepartureFilter(filter)
         }
 
         saveWalkingSpeedValues(values)
@@ -175,11 +175,6 @@ class SettingsViewController: FormViewController {
 
     private let arrivalFilterTag = "arrivalDepartureFilter"
 
-    private func currentArrivalFilter() -> ArrivalDepartureFilter {
-        let saved = application.userDefaults.string(forKey: CoreAppConfig.arrivalDepartureFilterUserDefaultsKey)
-        return ArrivalDepartureFilter(rawValue: saved ?? "") ?? application.defaultArrivalDepartureFilter
-    }
-
     private lazy var arrivalDisplaySection: Section = {
         let section = Section(
             OBALoc("settings_controller.arrival_display_section.title", value: "Arrival Display", comment: "Settings section title for controlling which arrivals/departures are shown")
@@ -191,7 +186,7 @@ class SettingsViewController: FormViewController {
             $0.selectorTitle = OBALoc("settings_controller.arrival_filter.selector_title", value: "Show Departures", comment: "Title for the departure filter selection alert")
             $0.options = Array(ArrivalDepartureFilter.allCases)
             $0.displayValueFor = { $0?.displayTitle }
-            $0.value = self.currentArrivalFilter()
+            $0.value = self.application.effectiveArrivalDepartureFilter
         }
 
         return section

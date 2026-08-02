@@ -106,6 +106,12 @@ class StopViewModel: ObservableObject {
     /// `true` when the arrival list should be filtered to the user's preferences.
     @Published var isListFiltered: Bool = true
 
+    /// The app-wide arrival/departure data-type filter (real-time only,
+    /// scheduled only, or everything). Seeded from the persisted preference —
+    /// which falls back to the white-label default — and written back through
+    /// `updateArrivalDepartureFilter(_:)`.
+    @Published private(set) var arrivalDepartureFilter: ArrivalDepartureFilter
+
     /// How many minutes of past arrivals to load.
     let minutesBefore: UInt = 5
 
@@ -201,6 +207,7 @@ class StopViewModel: ObservableObject {
         self.bookmarkContext = bookmarkContext
         self.transferContext = transferContext
         self.minutesAfter = StopViewModel.defaultMinutesAfter
+        self.arrivalDepartureFilter = environment.effectiveArrivalDepartureFilter
         self.surveyOrchestrator = SurveyOrchestrator(
             surveyService: environment.surveyService,
             promptCoordinator: environment.promptCoordinator
@@ -497,6 +504,14 @@ class StopViewModel: ObservableObject {
         var prefs = stopPreferences
         prefs.sortType = sortType
         updateStopPreferences(prefs)
+    }
+
+    /// Persists a new arrival/departure filter and republishes it so both stop
+    /// page implementations re-render their departure lists.
+    func updateArrivalDepartureFilter(_ filter: ArrivalDepartureFilter) {
+        guard filter != arrivalDepartureFilter else { return }
+        arrivalDepartureFilter = filter
+        environment.setArrivalDepartureFilter(filter)
     }
 
     /// `true` when the user has never saved preferences for this stop, so the

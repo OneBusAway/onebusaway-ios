@@ -39,7 +39,8 @@ public class AppConfig: CoreAppConfig {
             regionsAPIPath: appBundle.regionsServerAPIPath,
             dataLoader: URLSession.shared,
             fixedRegionName: appBundle.fixedRegionName,
-            fixedRegionOBABaseURL: appBundle.fixedRegionOBABaseURL
+            fixedRegionOBABaseURL: appBundle.fixedRegionOBABaseURL,
+            defaultArrivalDepartureFilter: appBundle.defaultArrivalDepartureFilter
         )
     }
 

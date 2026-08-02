@@ -61,7 +61,7 @@ open class CoreAppConfig: NSObject {
             dataLoader: URLSession.shared,
             fixedRegionName: appBundle.fixedRegionName,
             fixedRegionOBABaseURL: appBundle.fixedRegionOBABaseURL,
-            defaultArrivalDepartureFilter: .all
+            defaultArrivalDepartureFilter: appBundle.defaultArrivalDepartureFilter
         )
     }
 
