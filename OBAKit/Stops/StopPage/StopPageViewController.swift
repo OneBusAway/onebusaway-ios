@@ -458,9 +458,15 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
 
         // The same trip can be started from here and from the bookmarks list, so
         // this guard has to live on both start paths — otherwise one stop ends up
-        // with two Lock Screen cards and two OBACloud push registrations.
-        if Activity<TripAttributes>.running(matching: staticData) != nil {
-            Logger.info("Live Activity already running for stop \(staticData.stopID) route \(staticData.routeShortName); not starting a duplicate.")
+        // with two Lock Screen cards and two OBACloud push registrations. Re-Track
+        // still needs to promote the existing activity: after A→B the Island is
+        // on B with A demoted to 0, so tapping Track on A again must bump A.
+        if let existing = Activity<TripAttributes>.running(matching: staticData) {
+            Logger.info("Live Activity already running for stop \(staticData.stopID) route \(staticData.routeShortName); promoting instead of duplicating.")
+            let existingID = existing.id
+            Task {
+                await Activity<TripAttributes>.promoteToDynamicIsland(activityID: existingID)
+            }
             // Re-show the confirmation rather than appearing to do nothing.
             viewModel.signalLiveActivityStarted()
             return
@@ -472,13 +478,28 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
         }
 
         let attributes = TripAttributes(staticData: staticData)
+        // Prominence so the Dynamic Island switches to this Track when another
+        // trip is already live (#1189 Problem 2). Default score is 0 and equal
+        // scores keep the first-started activity.
+        let prominence = TripLiveActivityRelevance.prominenceScore()
         do {
             let activity = try Activity.request(
                 attributes: attributes,
-                content: .init(state: contentState, staleDate: nil),
+                content: TripLiveActivityRelevance.content(
+                    state: contentState,
+                    staleDate: nil,
+                    relevanceScore: prominence
+                ),
                 pushType: .token
             )
             application.liveActivityTracker.track(activity: activity, metadata: .init(departure))
+            let activityID = activity.id
+            Task {
+                await Activity<TripAttributes>.demoteLivePeers(
+                    exceptActivityID: activityID,
+                    relativeTo: prominence
+                )
+            }
             Logger.info("Started Live Activity with ID: \(activity.id)")
             viewModel.signalLiveActivityStarted()
         } catch {
