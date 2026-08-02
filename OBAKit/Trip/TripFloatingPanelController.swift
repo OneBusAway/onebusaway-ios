@@ -38,6 +38,9 @@ class TripFloatingPanelController: UIViewController,
 
     weak var parentTripViewController: TripViewController?
 
+    /// Delays the post-scroll `blink` until scrolling has hopefully settled.
+    private let scrollBlinkThrottler = Throttler()
+
     // MARK: - Init/Deinit
 
     /// Initializes the `TripDetailsController` with an OBA application object.
@@ -109,7 +112,7 @@ class TripFloatingPanelController: UIViewController,
             // There's no completionHandler for scrollToItem, so just wait 3/4 of
             // a second for scrolling to hopefully finish.
             // Note: If 750ms passes, but the cell is still not visible, then the `blink` won't appear.
-            DispatchQueue.main.throttle(deadline: .now() + .milliseconds(750)) { [weak self] in
+            scrollBlinkThrottler.throttle(deadline: .now() + .milliseconds(750)) { [weak self] in
                 (self?.listView.cellForItem(at: matchingIndexPath) as? OBAListViewCell)?.blink()
             }
         }
