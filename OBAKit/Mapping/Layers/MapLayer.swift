@@ -138,4 +138,10 @@ extension Notification.Name {
     /// `MapViewController` push the new value into the rental coordinator without
     /// `MapRegionManager` needing to know the coordinator exists.
     public static let rentalRangeFilterDidChange = Notification.Name("OBARentalRangeFilterDidChange")
+
+    /// Posted when Points of Interest visibility changes. Lets an open Map sheet
+    /// refresh if Settings (or another writer) flips the same preference.
+    public static let mapPointsOfInterestVisibilityDidChange = Notification.Name(
+        "OBAMapPointsOfInterestVisibilityDidChange"
+    )
 }

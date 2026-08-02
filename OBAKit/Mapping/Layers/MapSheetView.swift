@@ -49,6 +49,13 @@ import UIKit
                 self?.objectWillChange.send()
             }
             .store(in: &cancellables)
+
+        NotificationCenter.default.publisher(for: .mapPointsOfInterestVisibilityDidChange)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
     }
 
     // MARK: - Basemap
@@ -104,6 +111,17 @@ import UIKit
         objectWillChange.send()
         mapRegionManager.rentalRangeFilter = RentalRangeFilter(minimumRangeMeters: id)
     }
+
+    // MARK: - Points of Interest
+
+    var showsPointsOfInterest: Bool {
+        mapRegionManager.mapViewShowsPointsOfInterest
+    }
+
+    func setShowsPointsOfInterest(_ shows: Bool) {
+        objectWillChange.send()
+        mapRegionManager.mapViewShowsPointsOfInterest = shows
+    }
 }
 
 struct MapSheetView: View {
@@ -114,6 +132,8 @@ struct MapSheetView: View {
         NavigationStack {
             List {
                 basemapSection
+
+                mapDisplaySection
 
                 layerSection(
                     title: OBALoc("map_sheet.transit_group", value: "Transit", comment: "Map sheet group header for transit layers"),
@@ -194,6 +214,32 @@ struct MapSheetView: View {
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    // MARK: - Map Display
+
+    /// MapKit chrome that isn't a stackable layer — currently just Points of
+    /// Interest. Lives under the basemap tiles so it's always reachable, even
+    /// in regions with no rental layers.
+    private var mapDisplaySection: some View {
+        Section(OBALoc("map_sheet.display_group", value: "Map display", comment: "Map sheet section for display options like Points of Interest")) {
+            Toggle(isOn: Binding(
+                get: { model.showsPointsOfInterest },
+                set: { model.setShowsPointsOfInterest($0) }
+            )) {
+                HStack(spacing: 12) {
+                    Image(systemName: "mappin.and.ellipse")
+                        .foregroundStyle(Color.accentColor)
+                        .frame(width: 28)
+                        .accessibilityHidden(true)
+                    Text(OBALoc(
+                        "map_sheet.shows_points_of_interest",
+                        value: "Points of Interest",
+                        comment: "Map sheet toggle for Apple MapKit Points of Interest (restaurants, shops, etc.)"
+                    ))
+                }
+            }
+        }
     }
 
     // MARK: - Layer Rows

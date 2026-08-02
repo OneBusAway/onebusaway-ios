@@ -90,7 +90,8 @@ public class MapRegionManager: NSObject,
         mapView.mapType = .mutedStandard
         mapView.showsUserLocation = true
         mapView.isRotateEnabled = false
-        mapView.selectableMapFeatures = [.physicalFeatures, .pointsOfInterest]
+        // `pointOfInterestFilter` / `selectableMapFeatures` are applied in
+        // `applyPointsOfInterestVisibility()` once UserDefaults is registered.
 
         return mapView
     }()
@@ -148,6 +149,38 @@ public class MapRegionManager: NSObject,
     }
     private let mapViewShowsHeadingKey = "mapRegionManager.mapViewShowsHeadingKey"
 
+    /// Whether Apple MapKit Points of Interest (restaurants, shops, etc.) appear
+    /// on the browse map. Riders complained about clutter; this is the Map sheet
+    /// / Settings preference that turns them off (#1246).
+    ///
+    /// `true` by default — matches MapKit's stock appearance.
+    public var mapViewShowsPointsOfInterest: Bool {
+        get { application.userDefaults.bool(forKey: Self.mapViewShowsPointsOfInterestKey) }
+        set {
+            guard mapViewShowsPointsOfInterest != newValue else { return }
+            application.userDefaults.set(newValue, forKey: Self.mapViewShowsPointsOfInterestKey)
+            applyPointsOfInterestVisibility()
+            NotificationCenter.default.post(name: .mapPointsOfInterestVisibilityDidChange, object: nil)
+        }
+    }
+
+    /// UserDefaults key for ``mapViewShowsPointsOfInterest``. Public so Settings
+    /// and tests can address the same store the Map sheet writes.
+    public static let mapViewShowsPointsOfInterestKey = "mapRegionManager.mapViewShowsPointsOfInterest"
+
+    /// Applies the current POI preference to `mapView`. Also drops
+    /// `.pointsOfInterest` from `selectableMapFeatures` when hidden so riders
+    /// can't still tap ghosts that aren't drawn.
+    func applyPointsOfInterestVisibility() {
+        if mapViewShowsPointsOfInterest {
+            mapView.pointOfInterestFilter = .includingAll
+            mapView.selectableMapFeatures = [.physicalFeatures, .pointsOfInterest]
+        } else {
+            mapView.pointOfInterestFilter = .excludingAll
+            mapView.selectableMapFeatures = [.physicalFeatures]
+        }
+    }
+
     /// Provides storage for the last visible map rect of the map view.
     ///
     /// In the event that this value is unavailable, the getter will try to offer up an alternative,
@@ -203,6 +236,7 @@ public class MapRegionManager: NSObject,
             mapViewShowsHeadingKey: true,
             mapViewMapTypeKey: MKMapType.mutedStandard.rawValue,
             MapRegionManager.mapViewShowsStopAnnotationLabelsDefaultsKey: true,
+            MapRegionManager.mapViewShowsPointsOfInterestKey: true,
         ])
 
         super.init()
@@ -214,6 +248,7 @@ public class MapRegionManager: NSObject,
         mapView.showsScale = mapViewShowsScale
         mapView.showsTraffic = mapViewShowsTraffic
         mapView.mapType = userSelectedMapType
+        applyPointsOfInterestVisibility()
 
         registerAnnotationViews(mapView: mapView)
 
@@ -357,23 +392,26 @@ public class MapRegionManager: NSObject,
         mapLayers.filter { $0.availability != .unsupported && isMapLayerEnabled(id: $0.id) }.count
     }
 
-    /// True when any layer's on/off state differs from its default, or the rental
-    /// range filter is active *and visible* — drives the Map sheet's Reset
-    /// affordance. The filter row only renders when a `.otherModes` layer is
-    /// registered (rental layers are region-gated), so a non-zero filter left over
-    /// from another region must not offer a Reset that changes nothing on screen.
+    /// True when any layer's on/off state differs from its default, the rental
+    /// range filter is active *and visible*, or Points of Interest are hidden —
+    /// drives the Map sheet's Reset affordance. The filter row only renders when
+    /// a `.otherModes` layer is registered (rental layers are region-gated), so a
+    /// non-zero filter left over from another region must not offer a Reset that
+    /// changes nothing on screen.
     public var mapLayersDifferFromDefaults: Bool {
+        if !mapViewShowsPointsOfInterest { return true }
         if rentalRangeFilter != .any, mapLayers.contains(where: { $0.group == .otherModes }) { return true }
         return mapLayers.contains { isMapLayerEnabled(id: $0.id) != $0.isEnabledByDefault }
     }
 
-    /// Restores every registered layer to its default on/off state, and clears the
-    /// rental range filter.
+    /// Restores every registered layer to its default on/off state, clears the
+    /// rental range filter, and shows Points of Interest again.
     public func resetMapLayersToDefaults() {
         for layer in mapLayers {
             setMapLayerEnabled(layer.isEnabledByDefault, id: layer.id)
         }
         rentalRangeFilter = .any
+        mapViewShowsPointsOfInterest = true
     }
 
     /// Whether stop annotations should render. True when no stops layer is
