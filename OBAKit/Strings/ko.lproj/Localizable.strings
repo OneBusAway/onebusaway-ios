@@ -982,7 +982,7 @@
 "settings_controller.alerts_section.display_test_alerts" = "테스트 알림 표시";
 
 /* Settings section title for controlling which arrivals/departures are shown */
-"settings_controller.arrival_display_section.title" = "도착 정보 표시";
+"settings_controller.arrival_display_section.title" = "도착·출발 정보 표시";
 
 /* Title for the departure filter selection alert */
 "settings_controller.arrival_filter.selector_title" = "출발 표시";

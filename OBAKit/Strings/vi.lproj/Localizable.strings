@@ -982,7 +982,7 @@
 "settings_controller.alerts_section.display_test_alerts" = "Hiển thị cảnh báo thử nghiệm";
 
 /* Settings section title for controlling which arrivals/departures are shown */
-"settings_controller.arrival_display_section.title" = "Hiển thị giờ đến";
+"settings_controller.arrival_display_section.title" = "Hiển thị giờ đến và khởi hành";
 
 /* Title for the departure filter selection alert */
 "settings_controller.arrival_filter.selector_title" = "Hiển thị chuyến khởi hành";

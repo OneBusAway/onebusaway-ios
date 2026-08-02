@@ -982,7 +982,7 @@
 "settings_controller.alerts_section.display_test_alerts" = "Ipakita ang mga test alert";
 
 /* Settings section title for controlling which arrivals/departures are shown */
-"settings_controller.arrival_display_section.title" = "Display ng Pagdating";
+"settings_controller.arrival_display_section.title" = "Display ng Pagdating at Pag-alis";
 
 /* Title for the departure filter selection alert */
 "settings_controller.arrival_filter.selector_title" = "Ipakita ang mga Pag-alis";
