@@ -46,6 +46,8 @@ nonisolated enum StopSheetHeaderMetrics {
 ///
 /// A plain-value view — it never touches `StopViewModel`.
 struct StopPageSheetHeaderView: View {
+    @Environment(\.colorScheme) private var colorScheme
+
     let stop: Stop
     let walkTime: WalkTimeInfo?
     /// Opens walking directions to the stop (VC-owned; disambiguates between maps apps when more
@@ -167,10 +169,10 @@ struct StopPageSheetHeaderView: View {
                     .fixedSize(horizontal: true, vertical: false)
             }
             .font(.subheadline.weight(.semibold))
-            .foregroundStyle(Color(uiColor: ThemeColors.shared.departureOnTime))
+            .foregroundStyle(ThemeSwiftUI.departureOnTime(colorScheme))
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
-            .background(Color(uiColor: ThemeColors.shared.departureOnTime).opacity(0.14), in: Capsule())
+            .background(ThemeSwiftUI.departureOnTime(colorScheme).opacity(0.14), in: Capsule())
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)

@@ -35,6 +35,7 @@ struct DepartureRowView: View {
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.obaFormatters) private var formatters
+    @Environment(\.colorScheme) private var colorScheme
     @ScaledMetric(relativeTo: .body) private var alarmCircleSize: CGFloat = 34
     @AppStorage(UserDefaultsStore.stopUIReducedColorsKey) private var reducedColors = false
 
@@ -125,7 +126,7 @@ struct DepartureRowView: View {
     private var statusText: some View {
         Text(status.label)
             .font(.footnote.weight(.semibold))
-            .foregroundStyle(Color(uiColor: status.color))
+            .foregroundStyle(ThemeSwiftUI.departureStatus(status, colorScheme))
     }
 
     @ViewBuilder
@@ -135,7 +136,7 @@ struct DepartureRowView: View {
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(hasAlarm ? Color.white : Color.secondary)
                 .frame(width: alarmCircleSize, height: alarmCircleSize)
-                .background(hasAlarm ? Color(uiColor: ThemeColors.shared.departureOnTime) : Color.clear, in: Circle())
+                .background(hasAlarm ? ThemeSwiftUI.departureOnTime(colorScheme) : Color.clear, in: Circle())
                 .overlay(Circle().strokeBorder(Color(uiColor: .separator), lineWidth: hasAlarm ? 0 : 1.5))
                 // Use onTapGesture, not Button: inner gestures beat the outer
                 // .onTapGesture(perform: onTap) on the row VStack, so tapping the
@@ -157,7 +158,7 @@ struct DepartureRowView: View {
         CountdownView(
             minutes: departure.arrivalDepartureMinutes,
             isRealTime: status.isRealTime,
-            color: dimmed ? Color(uiColor: .tertiaryLabel) : Color(uiColor: status.color)
+            color: dimmed ? Color(uiColor: .tertiaryLabel) : ThemeSwiftUI.departureStatus(status, colorScheme)
         )
     }
 

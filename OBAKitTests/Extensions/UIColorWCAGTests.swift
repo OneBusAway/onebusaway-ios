@@ -79,4 +79,28 @@ struct UIColorWCAGTests {
         let midGray = UIColor(red: 127.0/255.0, green: 127.0/255.0, blue: 127.0/255.0, alpha: 1.0)
         #expect(midGray.badgeTextColor(preferring: .white, minimumRatio: 7.0) == UIColor.black)
     }
+
+    // MARK: - departureOnTime trait resolution (#1255)
+
+    @Test func departureOnTimeForDarkStyleMatchesSystemGreen() {
+        let themes = ThemeColors()
+        let resolved = themes.departureOnTime(for: .dark)
+        let expected = UIColor.systemGreen.resolvedColor(with: UITraitCollection(userInterfaceStyle: .dark))
+        #expect(colorsMatch(resolved, expected))
+    }
+
+    @Test func departureOnTimeForLightStyleIsNotSystemGreen() {
+        let themes = ThemeColors()
+        let resolved = themes.departureOnTime(for: .light)
+        let systemGreenLight = UIColor.systemGreen.resolvedColor(with: UITraitCollection(userInterfaceStyle: .light))
+        #expect(!colorsMatch(resolved, systemGreenLight))
+    }
+
+    private func colorsMatch(_ a: UIColor, _ b: UIColor) -> Bool {
+        var ar: CGFloat = 0, ag: CGFloat = 0, ab: CGFloat = 0, aa: CGFloat = 0
+        var br: CGFloat = 0, bg: CGFloat = 0, bb: CGFloat = 0, ba: CGFloat = 0
+        a.getRed(&ar, green: &ag, blue: &ab, alpha: &aa)
+        b.getRed(&br, green: &bg, blue: &bb, alpha: &ba)
+        return abs(ar - br) < 0.01 && abs(ag - bg) < 0.01 && abs(ab - bb) < 0.01 && abs(aa - ba) < 0.01
+    }
 }

@@ -171,4 +171,14 @@ public final class ThemeColors: NSObject, @unchecked Sendable {
         lightText = .white
         errorColor = .systemRed
     }
+
+    /// Resolves `departureOnTime` against an explicit interface style.
+    ///
+    /// SwiftUI's `Color(uiColor:)` can keep the light provider when the hosting
+    /// environment doesn't push a dark trait collection into UIKit (#1255).
+    /// Call sites that already know the SwiftUI `colorScheme` should use this
+    /// so dark mode gets `.systemGreen` instead of the light hex green.
+    public func departureOnTime(for userInterfaceStyle: UIUserInterfaceStyle) -> UIColor {
+        departureOnTime.resolvedColor(with: UITraitCollection(userInterfaceStyle: userInterfaceStyle))
+    }
 }

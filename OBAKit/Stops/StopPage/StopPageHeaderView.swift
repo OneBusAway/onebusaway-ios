@@ -36,6 +36,7 @@ struct StopPageHeaderView: View {
     @State private var cardWidth: CGFloat = 0
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.colorScheme) private var colorScheme
 
     /// Minimum card height; the card grows beyond it when the identity block
     /// needs more room (wrapped chips, Dynamic Type). Scales with Dynamic Type
@@ -90,7 +91,7 @@ struct StopPageHeaderView: View {
                         .font(.footnote.weight(.heavy))
                         .foregroundStyle(.white)
                         .padding(.horizontal, 12).padding(.vertical, 6)
-                        .background(Color(uiColor: ThemeColors.shared.departureOnTime), in: Capsule())
+                        .background(ThemeSwiftUI.departureOnTime(colorScheme), in: Capsule())
                         .contentShape(Capsule())
                 }
                 .buttonStyle(.plain)
@@ -218,12 +219,13 @@ private struct HeaderStatusLine: View {
     let statusText: String
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.colorScheme) private var colorScheme
     @State private var pulsing = false
 
     var body: some View {
         HStack(spacing: 6) {
             Circle()
-                .fill(Color(uiColor: ThemeColors.shared.departureOnTime))
+                .fill(ThemeSwiftUI.departureOnTime(colorScheme))
                 .frame(width: 7, height: 7)
                 .opacity(reduceMotion ? 1 : (pulsing ? 1 : 0.35))
             Text(statusText)
