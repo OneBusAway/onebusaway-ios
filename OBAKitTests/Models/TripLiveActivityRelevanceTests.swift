@@ -50,6 +50,25 @@ final class TripLiveActivityRelevanceTests {
         #expect(content.staleDate == nil)
     }
 
+    /// Pins the score-only touch pattern `promoteToDynamicIsland` and
+    /// `demoteLivePeers` share: rebuilding content to change the score must
+    /// carry the existing `staleDate` through — clearing it would strip the
+    /// push-set stale marker from a card whose content didn't change
+    /// (#1243 review follow-up).
+    @Test func `Content carries the supplied stale date through a score change`() {
+        let state = TripAttributes.ContentState(arrivals: [])
+        let staleDate = Date(timeIntervalSince1970: 1_700_000_200)
+
+        let promoted = TripLiveActivityRelevance.content(
+            state: state,
+            staleDate: staleDate,
+            relevanceScore: 7
+        )
+
+        #expect(promoted.staleDate == staleDate)
+        #expect(promoted.relevanceScore == 7)
+    }
+
     /// Pins the refresh path used by `updateRunningLiveActivities`: the new
     /// content state may change, but the score must come from the *existing*
     /// content — not a literal, and not the ActivityContent default of `0`.

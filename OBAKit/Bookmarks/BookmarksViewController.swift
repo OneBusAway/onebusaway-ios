@@ -319,10 +319,6 @@ class BookmarksViewController: UIHostingController<BookmarksRootView>,
                 // `update`. Re-fetch by ID inside a detached task instead — that copy
                 // never crosses an isolation boundary.
                 let activityID = activity.id
-                // Preserve prominence via the shared helper — rebuilding with the
-                // default score of 0 would hand the Island back to the first-
-                // started trip after every arrivals refresh (#1189 Problem 2).
-                let existingContent = activity.content
                 Task.detached {
                     guard let activity = Activity<TripAttributes>.activities.first(where: { $0.id == activityID }) else {
                         // The activity ended between the loop and this task; dropping
@@ -331,11 +327,22 @@ class BookmarksViewController: UIHostingController<BookmarksRootView>,
                         Logger.info("Live Activity \(activityID) is no longer running; skipping update.")
                         return
                     }
+                    // Preserve prominence via the shared helper, reading the score
+                    // off this freshly re-fetched activity — not a snapshot taken
+                    // before the hop, which can predate a concurrent
+                    // promote/demote and would silently write the stale score
+                    // back, undoing it (#1243 review follow-up).
+                    //
+                    // `staleDate` stays nil here on purpose: unlike the
+                    // score-only promote/demote touches (which must carry the
+                    // push-set marker through), this update installs fresh local
+                    // content, and carrying a possibly-past stale-date forward
+                    // could mark it stale on arrival. The next push re-arms it.
                     await activity.update(
                         TripLiveActivityRelevance.contentPreservingRelevance(
                             state: contentState,
                             staleDate: nil,
-                            existing: existingContent
+                            existing: activity.content
                         )
                     )
                     Logger.info("Updated Live Activity for stop: \(staticData.stopID) route: \(staticData.routeShortName)")
