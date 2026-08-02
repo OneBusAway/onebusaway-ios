@@ -34,6 +34,9 @@ struct StopPageNavigationHandler {
     /// Opens the bookmark editor: `nil` for a stop-level bookmark, an
     /// `ArrivalDeparture` for a trip-level bookmark (row swipe/menu).
     let showBookmarkEditor: (ArrivalDeparture?) -> Void
+    /// Starts the trip-sharing flow for a departure (row context menu):
+    /// destination stop picker, then the system share sheet.
+    let shareTrip: (ArrivalDeparture) -> Void
     /// Presents the alarm lead-time picker bulletin for a departure (the trip
     /// panel's Set-an-alarm button), reusing `AlarmBuilder` from the legacy
     /// stop screen.
@@ -525,6 +528,7 @@ struct StopPageView: View {
             onSchedule: { navigation.showScheduleForRoute(departure) },
             onBookmark: { navigation.showBookmarkEditor(departure) },
             onShowTrip: { navigation.showTrip(departure) },
+            onShareTrip: { navigation.shareTrip(departure) },
             makePreview: { navigation.makeTripPreview(departure) }
         )
     }

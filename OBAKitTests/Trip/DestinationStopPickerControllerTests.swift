@@ -60,6 +60,13 @@ final class DestinationStopPickerControllerTests: OBATestCase {
         return try #require(stopArrivals.arrivalsAndDepartures.first)
     }
 
+    /// Builds a trip stop list that honors the fixture arrival's `stopSequence`
+    /// of 3: the controller locates the boarding stop by sequence index, so it
+    /// must sit at index 3, preceded by three placeholder stops.
+    private func stopIDsWithBoarding(_ boardingStopID: String, forward: [String]) -> [String] {
+        ["1_before_1", "1_before_2", "1_before_3", boardingStopID] + forward
+    }
+
     /// Returns a minimal `RESTAPIResponse<TripDetails>` JSON payload.
     /// `stopIDs` maps directly to `schedule.stopTimes`; all stops are included in `references`.
     private func makeTripDetailsData(stopIDs: [String], tripID: String = "1_40984902") throws -> Data {
@@ -161,7 +168,7 @@ final class DestinationStopPickerControllerTests: OBATestCase {
         let forwardStopIDs = ["1_10915", "1_10916"]
 
         let dataLoader = MockDataLoader(testName: name)
-        dataLoader.mock(data: try makeTripDetailsData(stopIDs: [arrivalDeparture.stopID] + forwardStopIDs)) {
+        dataLoader.mock(data: try makeTripDetailsData(stopIDs: stopIDsWithBoarding(arrivalDeparture.stopID, forward: forwardStopIDs))) {
             $0.url?.path.contains("/api/where/trip-details") ?? false
         }
         let app = createApplication(dataLoader: dataLoader)
@@ -191,7 +198,7 @@ final class DestinationStopPickerControllerTests: OBATestCase {
         let arrivalDeparture = try makeArrivalDeparture()  // stopID = "1_10914"
 
         let dataLoader = MockDataLoader(testName: name)
-        dataLoader.mock(data: try makeTripDetailsData(stopIDs: [arrivalDeparture.stopID, "1_10915", "1_10916"])) {
+        dataLoader.mock(data: try makeTripDetailsData(stopIDs: stopIDsWithBoarding(arrivalDeparture.stopID, forward: ["1_10915", "1_10916"]))) {
             $0.url?.path.contains("/api/where/trip-details") ?? false
         }
         let app = createApplication(dataLoader: dataLoader)
@@ -223,7 +230,7 @@ final class DestinationStopPickerControllerTests: OBATestCase {
         let arrivalDeparture = try makeArrivalDeparture()
 
         let dataLoader = MockDataLoader(testName: name)
-        dataLoader.mock(data: try makeTripDetailsData(stopIDs: [arrivalDeparture.stopID])) {
+        dataLoader.mock(data: try makeTripDetailsData(stopIDs: stopIDsWithBoarding(arrivalDeparture.stopID, forward: []))) {
             $0.url?.path.contains("/api/where/trip-details") ?? false
         }
         let app = createApplication(dataLoader: dataLoader)
@@ -253,7 +260,7 @@ final class DestinationStopPickerControllerTests: OBATestCase {
         let arrivalDeparture = try makeArrivalDeparture()
 
         let dataLoader = MockDataLoader(testName: name)
-        dataLoader.mock(data: try makeTripDetailsData(stopIDs: [arrivalDeparture.stopID])) {
+        dataLoader.mock(data: try makeTripDetailsData(stopIDs: stopIDsWithBoarding(arrivalDeparture.stopID, forward: []))) {
             $0.url?.path.contains("/api/where/trip-details") ?? false
         }
         let app = createApplication(dataLoader: dataLoader)
@@ -277,16 +284,16 @@ final class DestinationStopPickerControllerTests: OBATestCase {
         #expect(!recorder.didCancel)
     }
 
-    /// When the boarding stop ID isn't present in the trip's stop times, the controller
-    /// must fail to an error — not silently show all stops, which would let a user
-    /// generate a link with a behind-them destination.
+    /// When the stop at the arrival's `stopSequence` isn't the boarding stop, the
+    /// controller must fail to an error — not silently show all stops, which would
+    /// let a user generate a link with a behind-them destination.
     @Test @MainActor
     func `Missing boarding stop fails to an error instead of showing all stops`() async throws {
-        let arrivalDeparture = try makeArrivalDeparture()  // stopID = "1_10914"
+        let arrivalDeparture = try makeArrivalDeparture()  // stopID = "1_10914", stopSequence = 3
 
         let dataLoader = MockDataLoader(testName: name)
-        // Trip whose stop list does NOT contain the boarding stop
-        dataLoader.mock(data: try makeTripDetailsData(stopIDs: ["1_other_a", "1_other_b"])) {
+        // Index 3 exists but holds a different stop — the in-bounds mismatch case.
+        dataLoader.mock(data: try makeTripDetailsData(stopIDs: ["1_other_a", "1_other_b", "1_other_c", "1_other_d", "1_other_e"])) {
             $0.url?.path.contains("/api/where/trip-details") ?? false
         }
         let app = createApplication(dataLoader: dataLoader)
@@ -303,6 +310,65 @@ final class DestinationStopPickerControllerTests: OBATestCase {
         #expect(controller.items(for: listView).isEmpty, "No stop list may be shown when the boarding stop is unknown")
         let viewModel = try #require(standardEmptyData(controller, listView))
         #expect(viewModel.buttonConfig?.text == "Try Again", "Retry button should be offered on error")
+    }
+
+    /// A stop list shorter than the arrival's `stopSequence` must fail closed to
+    /// an error — the out-of-bounds direction of the boarding-point guard. The
+    /// boarding stop's ID is present in the list, so an ID search would have
+    /// (wrongly) succeeded here.
+    @Test @MainActor
+    func `Stop list shorter than the boarding sequence fails to an error`() async throws {
+        let arrivalDeparture = try makeArrivalDeparture()  // stopID = "1_10914", stopSequence = 3
+
+        let dataLoader = MockDataLoader(testName: name)
+        dataLoader.mock(data: try makeTripDetailsData(stopIDs: ["1_x", arrivalDeparture.stopID])) {
+            $0.url?.path.contains("/api/where/trip-details") ?? false
+        }
+        let app = createApplication(dataLoader: dataLoader)
+
+        let controller = DestinationStopPickerController(application: app, arrivalDeparture: arrivalDeparture)
+        controller.loadViewIfNeeded()
+
+        let listView = OBAListView()
+        await poll(
+            until: { self.standardEmptyData(controller, listView)?.body == "Couldn't determine your boarding point on this trip." },
+            "picker never entered the error state"
+        )
+        #expect(controller.items(for: listView).isEmpty, "No stop list may be shown when the sequence is out of bounds")
+    }
+
+    /// On a loop trip the boarding stop's ID appears more than once in the stop
+    /// list. The controller must anchor on `stopSequence` — matching the first
+    /// ID occurrence would offer stops the rider has already passed.
+    @Test @MainActor
+    func `Loop trip anchors on stopSequence, not the first matching stop ID`() async throws {
+        let arrivalDeparture = try makeArrivalDeparture()  // stopID = "1_10914", stopSequence = 3
+        let boarding = arrivalDeparture.stopID
+
+        let dataLoader = MockDataLoader(testName: name)
+        // The boarding stop ID also appears at index 1; the real boarding point is index 3.
+        dataLoader.mock(data: try makeTripDetailsData(stopIDs: ["1_x", boarding, "1_y", boarding, "1_z"])) {
+            $0.url?.path.contains("/api/where/trip-details") ?? false
+        }
+        let app = createApplication(dataLoader: dataLoader)
+
+        let controller = DestinationStopPickerController(application: app, arrivalDeparture: arrivalDeparture)
+        let recorder = PickerDelegateRecorder()
+        controller.delegate = recorder
+        controller.loadViewIfNeeded()
+
+        let listView = OBAListView()
+        await poll(
+            until: { !controller.items(for: listView).isEmpty },
+            "picker never entered the data state"
+        )
+
+        let rows = try #require(controller.items(for: listView).first?.contents)
+        #expect(rows.count == 1, "Only the one stop after the sequence-3 boarding point may be offered")
+
+        let firstRow = try #require(rows.first)
+        firstRow.onSelectAction?(firstRow)
+        #expect(recorder.selectedStopTime?.stopID == "1_z", "The offered stop must be the one after the rider's actual boarding point")
     }
 
     /// A network error should transition to `.error` state and surface a retry button.
@@ -361,7 +427,7 @@ final class DestinationStopPickerControllerTests: OBATestCase {
         )
         let retryConfig = try #require(standardEmptyData(controller, listView)?.buttonConfig)
 
-        let successData = try makeTripDetailsData(stopIDs: [arrivalDeparture.stopID] + forwardStopIDs)
+        let successData = try makeTripDetailsData(stopIDs: stopIDsWithBoarding(arrivalDeparture.stopID, forward: forwardStopIDs))
         dataLoader.replaceMappedResponses { loader in
             self.registerBaseStubs(on: loader)
             loader.mock(data: successData) { $0.url?.path.contains("/api/where/trip-details") ?? false }

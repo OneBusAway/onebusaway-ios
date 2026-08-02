@@ -102,6 +102,10 @@ class DestinationStopPickerController: UIViewController, AppContext, OBAListView
     // MARK: - Data Loading
 
     private func loadStopTimes() {
+        // Cancel before any early return: if the service guard below fails, a
+        // prior in-flight fetch must not survive to overwrite the `.error` state.
+        fetchTask?.cancel()
+
         guard let apiService = application.apiService else {
             let error = NSError(
                 domain: "DestinationStopPickerController",
@@ -118,7 +122,6 @@ class DestinationStopPickerController: UIViewController, AppContext, OBAListView
         }
 
         state = .loading
-        fetchTask?.cancel()
 
         // Capture what the request needs up front rather than binding `self`
         // strongly across the await — otherwise the in-flight request keeps the
@@ -127,6 +130,7 @@ class DestinationStopPickerController: UIViewController, AppContext, OBAListView
         let vehicleID = arrivalDeparture.vehicleID
         let serviceDate = arrivalDeparture.serviceDate
         let boardingStopID = arrivalDeparture.stopID
+        let boardingSequence = arrivalDeparture.stopSequence
 
         fetchTask = Task { [weak self] in
             do {
@@ -139,7 +143,12 @@ class DestinationStopPickerController: UIViewController, AppContext, OBAListView
                 // A cancelled task (retry or dismissal) must not overwrite
                 // state that a newer load may have already set.
                 guard let self, !Task.isCancelled else { return }
-                self.applyLoadedStopTimes(response.entry.stopTimes, boardingStopID: boardingStopID, tripID: tripID)
+                self.applyLoadedStopTimes(
+                    response.entry.stopTimes,
+                    boardingStopID: boardingStopID,
+                    boardingSequence: boardingSequence,
+                    tripID: tripID
+                )
             } catch {
                 // `isCancellation` also matches URLError.cancelled, which is how
                 // URLSession reports a cancelled request — a plain
@@ -156,11 +165,20 @@ class DestinationStopPickerController: UIViewController, AppContext, OBAListView
     }
 
     /// Filters `allStopTimes` down to the stops after the boarding stop and
-    /// transitions to the matching state. Fails to `.error` when the boarding
-    /// stop isn't in the trip's stop list — showing every stop instead would
-    /// let the user share a destination that is behind them.
-    private func applyLoadedStopTimes(_ allStopTimes: [TripStopTime], boardingStopID: StopID, tripID: String) {
-        guard let boardingIndex = allStopTimes.firstIndex(where: { $0.stopID == boardingStopID }) else {
+    /// transitions to the matching state.
+    ///
+    /// The boarding stop is located by `boardingSequence`
+    /// (`ArrivalDeparture.stopSequence`, the index of the stop within the trip's
+    /// stop sequence) rather than by searching for `boardingStopID`: on a loop
+    /// trip that visits the same stop twice, an ID search matches the first
+    /// occurrence and would offer stops the rider has already passed. The stopID
+    /// cross-check fails closed to `.error` if the sequence and the stop list
+    /// disagree — showing every stop instead would let the user share a
+    /// destination that is behind them.
+    private func applyLoadedStopTimes(_ allStopTimes: [TripStopTime], boardingStopID: StopID, boardingSequence: Int, tripID: String) {
+        guard boardingSequence >= 0,
+              boardingSequence < allStopTimes.count,
+              allStopTimes[boardingSequence].stopID == boardingStopID else {
             let error = NSError(
                 domain: "DestinationStopPickerController",
                 code: 1,
@@ -170,12 +188,12 @@ class DestinationStopPickerController: UIViewController, AppContext, OBAListView
                     comment: "Error shown when the boarding stop cannot be found in the trip's stop list."
                 )]
             )
-            Logger.error("Boarding stop \(boardingStopID) not found in trip \(tripID) stop times.")
+            Logger.error("Boarding stop \(boardingStopID) at sequence \(boardingSequence) not found in trip \(tripID) stop times (count: \(allStopTimes.count)).")
             state = .error(error)
             return
         }
 
-        let forwardStops = Array(allStopTimes.suffix(from: allStopTimes.index(after: boardingIndex)))
+        let forwardStops = Array(allStopTimes.suffix(from: allStopTimes.index(after: boardingSequence)))
         state = forwardStops.isEmpty ? .empty : .data(forwardStops)
     }
 

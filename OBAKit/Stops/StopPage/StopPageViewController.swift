@@ -195,6 +195,7 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
         showWalkingDirections: {},
         showAlertDetail: { _ in },
         showBookmarkEditor: { _ in },
+        shareTrip: { _ in },
         showAlarmPicker: { _ in },
         startLiveActivity: { _ in },
         showExternalSurveyError: {},
@@ -207,6 +208,10 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
         showReportProblem: {},
         closeSheet: {}
     )
+
+    /// Owns the picker → share-sheet trip-sharing flow. Holds `self` weakly,
+    /// so retaining it for the controller's lifetime creates no cycle.
+    private lazy var tripSharingCoordinator = TripSharingCoordinator(application: application, presenter: self)
 
     private func makeNavigationHandler() -> StopPageNavigationHandler {
         StopPageNavigationHandler(
@@ -223,6 +228,7 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
                 self.application.viewRouter.navigateTo(alert: alert, from: self)
             },
             showBookmarkEditor: { [weak self] departure in self?.showBookmarkEditor(for: departure) },
+            shareTrip: { [weak self] departure in self?.tripSharingCoordinator.start(arrivalDeparture: departure) },
             showAlarmPicker: { [weak self] departure in self?.showAlarmPicker(for: departure) },
             startLiveActivity: { [weak self] departure in self?.startLiveActivity(for: departure) },
             showExternalSurveyError: { [weak self] in self?.showExternalSurveyError() },

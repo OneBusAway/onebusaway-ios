@@ -203,6 +203,7 @@ struct DepartureRowActions {
     let onSchedule: () -> Void
     let onBookmark: () -> Void
     let onShowTrip: () -> Void
+    let onShareTrip: () -> Void
     /// Lazily builds the long-press preview (a `TripViewController` embedded via a
     /// representable). Built by the hosting VC so `Application`/UIKit stay out of
     /// the view layer; `AnyView` is acceptable here because it lives inside the
@@ -229,6 +230,9 @@ extension View {
                 }
                 Button(action: actions.onBookmark) {
                     Label(Strings.addBookmark, systemImage: "bookmark")
+                }
+                Button(action: actions.onShareTrip) {
+                    Label(OBALoc("stop_page.row.share_trip", value: "Share Trip", comment: "Context menu action that shares the trip after choosing a destination stop"), systemImage: "square.and.arrow.up")
                 }
             }, preview: {
                 actions.makePreview()
