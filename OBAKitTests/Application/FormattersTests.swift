@@ -102,4 +102,32 @@ final class FormattersTests: OBATestCase {
 
         #expect(label == Formatters.formattedAccessibilityLabel(stop: stop))
     }
+
+    // MARK: - Route overflow labels (#514)
+
+    @Test func `Formatted routes within the limit lists every route`() throws {
+        let routes = try makeRoutes(shortNames: ["10", "20", "30"])
+        let label = try #require(Formatters.formattedRoutes(routes, limit: 3))
+        #expect(label == "Routes: 10, 20, 30")
+        #expect(!label.contains("..."))
+        #expect(!label.contains("more"))
+    }
+
+    @Test func `Formatted routes over the limit appends ellipsis`() throws {
+        let routes = try makeRoutes(shortNames: ["10", "20", "30", "40", "50"])
+        let label = try #require(Formatters.formattedRoutes(routes, limit: 3))
+        #expect(label == "Routes: 10, 20, 30...")
+        #expect(!label.contains("more"))
+    }
+
+    private func makeRoutes(shortNames: [String]) throws -> [Route] {
+        try shortNames.enumerated().map { index, shortName in
+            try Fixtures.dictionaryToModel(type: Route.self, dictionary: [
+                "agencyId": "test_agency",
+                "id": "route_\(index)",
+                "shortName": shortName,
+                "type": 3
+            ])
+        }
+    }
 }

@@ -597,14 +597,15 @@ public class Formatters: NSObject {
             return nil
         }
 
+        // When the list overflows the limit (map pins use 3), append "..." rather
+        // than "+ N more". Callers were inconsistent — some labels truncated to
+        // "+..." while others showed a count — and #514 asks for a single "...".
+        let fmt = OBALoc("formatters.routes_label_fmt", value: "Routes: %@", comment: "A format string used to denote the list of routes served by this stop. e.g. 'Routes: 10, 12, 49'")
         if routeNames.count > limit {
-            let fmt = OBALoc("formatters.routes_label_plus_more_fmt", value: "Routes: %@, + %d more", comment: "A format string used to denote the overflowing list of routes served by this stop. e.g. 'Routes: 10, 12, 49, + 3 more")
             let shortList = routeNames.prefix(limit).joined(separator: ", ")
-            let overflowCount = routeNames.count - limit
-            return String(format: fmt, shortList, overflowCount)
+            return String(format: fmt, shortList) + "..."
         }
         else {
-            let fmt = OBALoc("formatters.routes_label_fmt", value: "Routes: %@", comment: "A format string used to denote the list of routes served by this stop. e.g. 'Routes: 10, 12, 49'")
             return String(format: fmt, routeNames.joined(separator: ", "))
         }
     }
