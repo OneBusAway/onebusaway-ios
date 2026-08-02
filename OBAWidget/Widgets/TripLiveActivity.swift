@@ -57,11 +57,12 @@ struct TripLiveActivity: Widget {
                 }
                 DynamicIslandExpandedRegion(.trailing) {
                     if let primary {
-                        let primaryMinuteText = presenter.minuteText(for: primary)
-                        Text(primaryMinuteText)
+                        // System-driven `.timer` so the Island ticks without
+                        // keepalive pushes (#1187).
+                        liveTimerText(for: primary)
                             .font(.system(size: 32, weight: .bold, design: .rounded))
                             .foregroundColor(Color(presenter.color(for: primary)))
-                            .contentTransition(.numericText(value: Double(primaryMinuteText.filter("0123456789".contains)) ?? 0))
+                            .monospacedDigit()
                             .padding(.trailing, 6)
                     }
                 }
@@ -96,10 +97,11 @@ struct TripLiveActivity: Widget {
                             VStack(alignment: .trailing, spacing: 4) {
                                 let nextDepartures = upcoming.dropFirst().prefix(2)
                                 ForEach(Array(nextDepartures.enumerated()), id: \.offset) { _, arrivalInfo in
-                                    Text(presenter.minuteText(for: arrivalInfo))
+                                    liveTimerText(for: arrivalInfo)
                                         .font(.system(.callout, design: .rounded))
                                         .fontWeight(.bold)
                                         .foregroundColor(Color(presenter.color(for: arrivalInfo)))
+                                        .monospacedDigit()
                                 }
                             }
                             .padding(.trailing, 6)
@@ -115,20 +117,31 @@ struct TripLiveActivity: Widget {
                     .padding(.leading, 4)
             } compactTrailing: {
                 if let primary {
-                    Text(presenter.minuteText(for: primary))
+                    liveTimerText(for: primary)
                         .font(.system(.body, design: .rounded))
                         .fontWeight(.bold)
                         .foregroundColor(Color(presenter.color(for: primary)))
+                        .monospacedDigit()
                         .frame(minWidth: 20)
                 }
             } minimal: {
                 if let primary {
-                    Text(presenter.minuteText(for: primary))
+                    liveTimerText(for: primary)
                         .font(.system(.callout, design: .rounded))
                         .fontWeight(.heavy)
                         .foregroundColor(Color(presenter.color(for: primary)))
+                        .monospacedDigit()
                 }
             }
+        }
+    }
+
+    @ViewBuilder
+    private func liveTimerText(for arrival: TripAttributes.ContentState.ArrivalInfo) -> some View {
+        if LiveActivityCountdown.shouldShowNow(departureDate: arrival.departureDate) {
+            Text(OBALoc("stop_page.countdown.now", value: "NOW", comment: "Shown in place of the minutes countdown when the vehicle is departing now"))
+        } else {
+            Text(arrival.departureDate, style: .timer)
         }
     }
 }
