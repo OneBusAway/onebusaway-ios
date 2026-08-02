@@ -64,6 +64,59 @@ final class BookmarksViewModelTests: OBATestCase {
         return Application(config: config)
     }
 
+    @MainActor
+    private final class DisplayErrorSpyApplication: Application {
+        private(set) var displayErrorCallCount = 0
+
+        override func displayError(_ error: Error) async {
+            displayErrorCallCount += 1
+        }
+    }
+
+    private func createSpyApplication(dataLoader: MockDataLoader) -> DisplayErrorSpyApplication {
+        stubRegions(dataLoader: dataLoader)
+        stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
+        Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
+
+        let locManager = MockAuthorizedLocationManager(
+            updateLocation: TestData.mockSeattleLocation,
+            updateHeading: TestData.mockHeading
+        )
+        let locationService = LocationService(userDefaults: userDefaults, locationManager: locManager)
+        locationService.startUpdates()
+
+        let config = AppConfig(
+            regionsBaseURL: regionsURL,
+            apiKey: apiKey,
+            appVersion: appVersion,
+            userDefaults: userDefaults,
+            analytics: AnalyticsMock(),
+            queue: queue,
+            locationService: locationService,
+            bundledRegionsFilePath: bundledRegionsPath,
+            regionsAPIPath: regionsAPIPath,
+            dataLoader: dataLoader,
+            fixedRegionName: Fixtures.pugetSoundRegion.name
+        )
+
+        return DisplayErrorSpyApplication(config: config)
+    }
+
+    private func addTripBookmark(to app: Application) throws -> Bookmark {
+        let stopArrivals = try Fixtures.loadRESTAPIPayload(
+            type: StopArrivals.self,
+            fileName: "arrivals-and-departures-for-stop-1_10914.json"
+        )
+        let arrivalDep = try #require(stopArrivals.arrivalsAndDepartures.first)
+        let bookmark = Bookmark(
+            name: "Route 49",
+            regionIdentifier: pugetSoundRegionIdentifier,
+            arrivalDeparture: arrivalDep
+        )
+        app.userDataStore.add(bookmark, to: nil)
+        return bookmark
+    }
+
     // MARK: - Tests
 
     /// `init` defaults to `true` (set via `register(defaults:)`) on a clean UserDefaults.
@@ -469,5 +522,68 @@ final class BookmarksViewModelTests: OBATestCase {
         await poll(until: { cleanBatchDone }, timeout: .seconds(10), "clean batch never finished")
 
         #expect(!viewModel.lastRefreshHadError)
+    }
+
+    // MARK: - Request not found (404)
+
+    /// A 404 on a bookmarked stop must not surface a bulletin — the stop simply
+    /// no longer resolves in the current region (e.g. after switching to San Diego).
+    /// Mirrors StopViewModel's non-fatal 404 handling.
+    @Test @MainActor
+    func `Request not found does not call display error`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createSpyApplication(dataLoader: dataLoader)
+        _ = try addTripBookmark(to: app)
+
+        dataLoader.mock(data: Data(), statusCode: 404) {
+            $0.url?.path.contains("/api/where/arrivals-and-departures-for-stop") ?? false
+        }
+
+        let viewModel = BookmarksViewModel(application: app)
+        #expect(app.displayErrorCallCount == 0)
+
+        var batchDone = false
+        var seenLoading = false
+        var cancellables = Set<AnyCancellable>()
+        viewModel.$isLoading.sink { isLoading in
+            if isLoading { seenLoading = true }
+            if seenLoading && !isLoading { batchDone = true }
+        }.store(in: &cancellables)
+
+        viewModel.refresh()
+        await poll(until: { batchDone }, timeout: .seconds(10), "404 batch never finished")
+        cancellables.removeAll()
+
+        #expect(app.displayErrorCallCount == 0)
+        #expect(!viewModel.lastRefreshHadError)
+    }
+
+    /// Non-404 fetch failures must still surface via `displayError`.
+    @Test @MainActor
+    func `Server error still calls display error`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createSpyApplication(dataLoader: dataLoader)
+        _ = try addTripBookmark(to: app)
+
+        dataLoader.mock(data: Data(), statusCode: 500) {
+            $0.url?.path.contains("/api/where/arrivals-and-departures-for-stop") ?? false
+        }
+
+        let viewModel = BookmarksViewModel(application: app)
+
+        var batchDone = false
+        var seenLoading = false
+        var cancellables = Set<AnyCancellable>()
+        viewModel.$isLoading.sink { isLoading in
+            if isLoading { seenLoading = true }
+            if seenLoading && !isLoading { batchDone = true }
+        }.store(in: &cancellables)
+
+        viewModel.refresh()
+        await poll(until: { batchDone }, timeout: .seconds(10), "500 batch never finished")
+        cancellables.removeAll()
+
+        #expect(app.displayErrorCallCount == 1)
+        #expect(viewModel.lastRefreshHadError)
     }
 }
