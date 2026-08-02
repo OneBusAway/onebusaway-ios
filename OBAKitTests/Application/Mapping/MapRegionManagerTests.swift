@@ -497,4 +497,58 @@ final class MapRegionManagerTests: OBATestCase {
         // Zoomed out past it → hide.
         #expect(MapRegionManager.shouldShowExtraStopData(forVisibleMapRectHeight: 7_001) == false)
     }
+
+    // MARK: - Bookmark selection preservation
+
+    private func makeBookmarkManager() -> MapRegionManager {
+        let queue = OperationQueue()
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        return MapRegionManager(application: application)
+    }
+
+    /// When stop annotations reload, a sibling `Stop` for a bookmarked stopID is
+    /// removed but the selected `Bookmark` must stay selected — rebinding its view
+    /// dismisses the callout (#782).
+    @Test @MainActor
+    func `Display unique stop annotations preserves selected bookmark`() throws {
+        let mgr = makeBookmarkManager()
+        let stop = try #require(Fixtures.loadSomeStops().first)
+        let bookmark = Bookmark(name: "Home", regionIdentifier: pugetSoundRegionIdentifier, stop: stop)
+
+        mgr.mapView.addAnnotations([stop, bookmark])
+        mgr.bookmarks = [bookmark]
+        mgr.mapView.selectAnnotation(bookmark, animated: false)
+        _ = mgr.mapView(mgr.mapView, viewFor: bookmark)
+
+        // Simulate a stale sibling Stop lingering after a stops reload.
+        mgr.mapView.addAnnotation(stop)
+        mgr.bookmarks = [bookmark]
+
+        #expect(mgr.mapView.selectedAnnotations.contains { $0 === bookmark })
+        #expect(mgr.mapView.annotations.contains { $0 === bookmark })
+        #expect(!mgr.mapView.annotations.contains { ($0 as? Stop)?.id == stop.id })
+    }
+
+    /// Disabling the stops layer removes browse stops but must not deselect a
+    /// bookmark the rider is actively previewing.
+    @Test @MainActor
+    func `Remove stop annotations preserving selection keeps selected bookmark`() throws {
+        let mgr = makeBookmarkManager()
+        mgr.registerMapLayer(StopsMapLayer(manager: mgr))
+
+        let stops = try Fixtures.loadSomeStops()
+        let stop = try #require(stops.first)
+        let otherStop = try #require(stops.dropFirst().first)
+        let bookmark = Bookmark(name: "Work", regionIdentifier: pugetSoundRegionIdentifier, stop: stop)
+
+        mgr.bookmarks = [bookmark]
+        mgr.mapView.addAnnotation(otherStop)
+        mgr.mapView.selectAnnotation(bookmark, animated: false)
+
+        mgr.setMapLayerEnabled(false, id: StopsMapLayer.layerID)
+
+        #expect(mgr.mapView.selectedAnnotations.contains { $0 === bookmark })
+        #expect(mgr.mapView.annotations.contains { $0 === bookmark })
+    }
 }
