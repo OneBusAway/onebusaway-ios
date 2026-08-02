@@ -838,7 +838,7 @@ public class MapRegionManager: NSObject,
 
     /// Above this visible-map-rect height (map points), stop pins are too
     /// zoomed-out for their under-pin label. Shared with `MapPanelRootView`.
-    public static let requiredHeightToShowExtraStopData = 7000.0
+    public static let requiredHeightToShowExtraStopData = 5000.0
 
     /// Height half of the under-pin label gate. Callers combine it with the
     /// standard-map-type and "show labels" default checks.
@@ -893,9 +893,18 @@ public class MapRegionManager: NSObject,
             return
         }
 
-        let visibleStops = mapView.annotations(in: mapView.visibleMapRect).filter(type: Stop.self)
-        for s in visibleStops {
-            if let stopView = mapView.view(for: s) as? StopAnnotationView {
+        // Stop and Bookmark pins share `StopAnnotationView`; both need the zoom gate
+        // refreshed on every region change (bookmarks were previously skipped).
+        let visibleRect = mapView.visibleMapRect
+        let visibleStopAnnotations = mapView.annotations(in: visibleRect).filter(type: Stop.self)
+        let visibleBookmarkAnnotations = mapView.annotations(in: visibleRect).filter(type: Bookmark.self)
+        for stop in visibleStopAnnotations {
+            if let stopView = mapView.view(for: stop) as? StopAnnotationView {
+                stopView.isHidingExtraStopAnnotationData = shouldHideExtraStopAnnotationData
+            }
+        }
+        for bookmark in visibleBookmarkAnnotations {
+            if let stopView = mapView.view(for: bookmark) as? StopAnnotationView {
                 stopView.isHidingExtraStopAnnotationData = shouldHideExtraStopAnnotationData
             }
         }
