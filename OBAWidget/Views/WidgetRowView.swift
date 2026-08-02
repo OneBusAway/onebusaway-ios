@@ -58,9 +58,10 @@ struct WidgetRowView: View {
         }
     }
 
-    /// The second line: the corrected clock time and the schedule deviation
-    /// (the "time · status" idiom the stop page and bookmark cards use), or
-    /// `fallbackLabel` when there is no departure to describe. When a
+    /// The second line: the corrected clock time and the schedule status —
+    /// the deviation phrase, or "Scheduled/not real-time" for schedule-only
+    /// trips — in the "time · status" idiom the stop page and bookmark cards
+    /// use, or `fallbackLabel` when there is no departure to describe. When a
     /// prediction moves the trip off its timetable, the scheduled time renders
     /// struck through ahead of the corrected one (#1225).
     ///
@@ -72,16 +73,24 @@ struct WidgetRowView: View {
     @ViewBuilder
     private var departureLabel: some View {
         if let first = departures?.first {
+            // `deviationLabel`, not `formattedScheduleDeviation`: a schedule-only
+            // trip has zero deviation by definition, and pairing "departs on
+            // time" with a concrete clock time reads as a real-time claim the
+            // data can't back. Schedule-only trips say "Scheduled/not real-time".
             let display = DepartureTimeDisplay(arrivalDeparture: first, formatters: formatters)
-            let deviation = formatters.formattedScheduleDeviation(for: first)
+            let deviation = formatters.deviationLabel(for: first)
 
             (DepartureTimeText.text(for: display)
                 + Text(" · ").foregroundStyle(.tertiary)
                 + Text(deviation))
                 .font(.system(size: Constants.fontSize))
                 .foregroundStyle(.secondary)
+                // No `fixedSize`: the label wraps to its two lines whenever the
+                // row has room, but under `.systemLarge` height pressure (seven
+                // rows, several of them wrapping) it compresses to a truncated
+                // line instead of forcing its full height and pushing whole
+                // rows off the bottom of the widget canvas.
                 .lineLimit(2)
-                .fixedSize(horizontal: false, vertical: true)
                 // The strikethrough is inaudible, so speak the correction in
                 // words instead of letting VoiceOver read two bare times.
                 .accessibilityLabel("\(display.accessibilityTimeDescription), \(deviation)")
@@ -90,7 +99,6 @@ struct WidgetRowView: View {
                 .font(.system(size: Constants.fontSize))
                 .foregroundStyle(.secondary)
                 .lineLimit(2)
-                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
