@@ -13,9 +13,10 @@ struct WalkLineDivider: View {
     let walkMinutes: Int
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.colorScheme) private var colorScheme
 
     /// Matches the walk pill on the header card (§4.5).
-    private let lineColor = Color(uiColor: ThemeColors.shared.departureOnTime)
+    private var lineColor: Color { ThemeSwiftUI.departureOnTime(colorScheme) }
 
     private var text: String {
         let fmt = OBALoc("stop_page.walk_divider_fmt", value: "%d MIN WALK — CATCH BELOW", comment: "Divider between departures you'd miss on foot and ones you can still catch. %d is the walk time in minutes.")
