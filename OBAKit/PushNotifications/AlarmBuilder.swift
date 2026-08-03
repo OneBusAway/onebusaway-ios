@@ -132,7 +132,11 @@ class AlarmBuilder: NSObject {
         do {
             alarm = try await modelService.postAlarm(minutesBefore: minutes, arrivalDeparture: arrivalDeparture, userPushID: userPushID)
         } catch {
-            self.delegate?.alarmBuilder(self, error: AlarmBuilderErrors.creationFailed)
+            if let delegate {
+                await MainActor.run {
+                    delegate.alarmBuilder(self, error: AlarmBuilderErrors.creationFailed)
+                }
+            }
             return
         }
 
