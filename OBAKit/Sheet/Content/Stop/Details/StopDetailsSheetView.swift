@@ -57,8 +57,6 @@ struct StopDetailsSheetView: View {
     /// scrolled far enough to offer a way back. Read-only, like `scrollOffset` —
     /// nothing derived from it affects layout.
     @State private var viewportHeight: CGFloat = 0
-    /// Drives the programmatic scroll back to the top.
-    @State private var scrollPosition = ScrollPosition()
     @State private var userActivity: NSUserActivity?
     /// Gates the one-shot success haptic to the first arrivals load, matching
     /// `StopViewController.bindArrivalsSink()`; later refreshes are silent.
@@ -93,9 +91,18 @@ struct StopDetailsSheetView: View {
     // MARK: - Body
 
     var body: some View {
+        // `ScrollViewReader` is a passthrough container: it hands out a proxy and
+        // takes no part in layout, so it cannot feed scroll geometry back into
+        // the list.
+        ScrollViewReader { proxy in
+            sheetBody(proxy: proxy)
+        }
+    }
+
+    private func sheetBody(proxy: ScrollViewProxy) -> some View {
         let content = StopPageContent(viewModel: viewModel)
 
-        list(content: content)
+        return list(content: content)
             .listStyle(.plain)
             // No `.refreshable`: this presentation refreshes from the top bar's
             // button only, which is why that button stays pinned.
@@ -121,7 +128,6 @@ struct StopDetailsSheetView: View {
             } action: { _, height in
                 viewportHeight = height
             }
-            .scrollPosition($scrollPosition)
             // Fixed height — it holds only the top bar, so nothing here resizes
             // as the list scrolls.
             .safeAreaInset(edge: .top, spacing: 0) { topBar }
@@ -133,7 +139,7 @@ struct StopDetailsSheetView: View {
             // Bottom-trailing overlay, for the same reason the action row is an
             // overlay: it takes no part in the list's layout, so it cannot feed
             // back into scroll geometry.
-            .overlay(alignment: .bottomTrailing) { scrollToTopOverlay }
+            .overlay(alignment: .bottomTrailing) { scrollToTopOverlay(proxy: proxy) }
             // A CONSTANT margin so the button never permanently covers the
             // footer's attribution line. It must not depend on the button's
             // visibility — layout driven by scroll position is what hung the app.
@@ -283,9 +289,9 @@ struct StopDetailsSheetView: View {
         Task { await viewModel.loadMoreDepartures() }
     }
 
-    private func scrollToTop() {
+    private func scrollToTop(proxy: ScrollViewProxy) {
         withAnimation {
-            scrollPosition.scrollTo(edge: .top)
+            proxy.scrollTo(Self.topRowID, anchor: .top)
         }
     }
 
@@ -422,6 +428,11 @@ struct StopDetailsSheetView: View {
                 .listRowSeparator(.hidden)
                 .accessibilityHidden(true)
         }
+        // The scroll-to-top target. The id belongs on the Section: a row-level id
+        // does not resolve for `ScrollViewReader` in this List. It rides the
+        // existing header rather than a zero-height sentinel row, which would pick
+        // up the List's minimum row height and leave a visible gap.
+        .id(Self.topRowID)
     }
 
     /// Where the action row sits, measured from the top of the sheet.
@@ -467,12 +478,15 @@ struct StopDetailsSheetView: View {
     /// permanently on top of the attribution line. Constant by design.
     private static let scrollToTopClearance: CGFloat = 72
 
+    /// Identifies the header section so `ScrollViewReader` can scroll back to it.
+    private static let topRowID = "stop-details-top"
+
     private var showsScrollToTop: Bool {
         ScrollToTopVisibility.shouldShow(scrollOffset: scrollOffset, viewportHeight: viewportHeight)
     }
 
-    private var scrollToTopOverlay: some View {
-        ScrollToTopButton(isVisible: showsScrollToTop, action: scrollToTop)
+    private func scrollToTopOverlay(proxy: ScrollViewProxy) -> some View {
+        ScrollToTopButton(isVisible: showsScrollToTop) { scrollToTop(proxy: proxy) }
             .padding(.trailing, 16)
             .padding(.bottom, 24)
             .animation(.snappy(duration: 0.2), value: showsScrollToTop)
