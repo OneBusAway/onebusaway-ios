@@ -19,13 +19,11 @@ import OBAKitCore
 /// A plain-value view: it takes its visibility and its action from the caller and
 /// owns no state.
 struct ScrollToTopButton: View {
+
     let isVisible: Bool
     let action: () -> Void
 
-    /// 44pt — the HIG minimum tap target. Larger than the top bar's 32pt circles
-    /// and the action row's 34pt, because this one floats over moving content
-    /// rather than sitting in fixed chrome.
-    private static let buttonSize: CGFloat = 44
+    private static let buttonSize: CGFloat = 34
 
     var body: some View {
         Button(action: action) {
