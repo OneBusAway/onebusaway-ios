@@ -11,12 +11,10 @@ import UIKit
 import BLTNBoard
 import OBAKitCore
 
+/// The `AlarmBuilder` shows the loading HUD itself when it begins its request;
+/// the delegate takes ownership of it from the moment either method below is
+/// called, replacing it with a success message or dismissing it on failure.
 protocol AlarmBuilderDelegate: NSObjectProtocol {
-
-    /// Delegate method that gets called when the `AlarmBuilder` begins its request to create an `Alarm`.
-    /// A perfect opportunity to display a loading indicator.
-    /// - Parameter alarmBuilder: The `AlarmBuilder` object.
-    func alarmBuilderStartedRequest(_ alarmBuilder: AlarmBuilder)
 
     /// Delegate method that gets called when the `AlarmBuilder` has successfully created an `Alarm`.
     /// - Parameter alarmBuilder: The `AlarmBuilder` object.

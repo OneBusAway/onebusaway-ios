@@ -1153,10 +1153,6 @@ public class StopViewController: UIViewController,
         alarmBuilder?.showBulletin(above: self)
     }
 
-    func alarmBuilderStartedRequest(_ alarmBuilder: AlarmBuilder) {
-        ProgressHUD.show()
-    }
-
     func alarmBuilder(_ alarmBuilder: AlarmBuilder, alarmCreated alarm: Alarm) {
         viewModel.recordAlarmCreated(alarm)
 

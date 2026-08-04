@@ -642,10 +642,6 @@ final class StopPageActionPresenter: NSObject {
 // MARK: - AlarmBuilderDelegate
 
 extension StopPageActionPresenter: AlarmBuilderDelegate {
-    func alarmBuilderStartedRequest(_ alarmBuilder: AlarmBuilder) {
-        ProgressHUD.show()
-    }
-
     func alarmBuilder(_ alarmBuilder: AlarmBuilder, alarmCreated alarm: Alarm) {
         // `alarmFlow` is set as a unit in `showAlarmPicker`, so a builder
         // reporting success always has one — unless the view model has since
