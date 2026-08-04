@@ -28,9 +28,9 @@ class CurrentTripViewModel: ObservableObject {
     /// single match has just produced a `pendingNavigation` event.
     @Published private(set) var matchResults: [NearbyTripMatcher.MatchResult] = []
 
-    /// Set when exactly one match is found. UIKit consumers sink this and perform
-    /// the navigation push; SwiftUI consumers observe it via `.navigationDestination(item:)`.
-    /// Call `clearPendingNavigation()` after acting on it.
+    /// Set when exactly one match is found. UIKit consumers subscribe to it and
+    /// SwiftUI consumers observe it with `onChange`. Call `clearPendingNavigation()`
+    /// after acting on the value.
     @Published private(set) var pendingNavigation: ArrivalDeparture?
 
     // MARK: - Configuration

@@ -179,7 +179,7 @@ final class CurrentTripViewModelTests: OBATestCase {
 
         // Consumer acknowledges by clearing pendingNavigation (mirrors what the
         // SwiftUI `.onChange(of: pendingNavigation)` handler does).
-        viewModel.pendingNavigation = nil
+        viewModel.clearPendingNavigation()
 
         // Same trip surfaces again on the next timer tick.
         viewModel.handle(results: [result])
@@ -200,7 +200,7 @@ final class CurrentTripViewModelTests: OBATestCase {
         let result = makeMatchResult()
         viewModel.handle(results: [result])
         #expect(viewModel.pendingNavigation != nil)
-        viewModel.pendingNavigation = nil
+        viewModel.clearPendingNavigation()
 
         // User taps Try Again. resetState:true (default) resets to .loading
         // and clears the latch; because there's no location, the task terminates
@@ -406,7 +406,9 @@ final class CurrentTripViewModelTests: OBATestCase {
         let viewModel = CurrentTripViewModel(application: app, route: route30())
 
         viewModel.findVehicle()
-        for _ in 0..<5 { await Task.yield() }
+        await poll(until: {
+            if case .error = viewModel.state { true } else { false }
+        }, "Expected .error for nil apiService, got \(viewModel.state)")
 
         guard case .error(let error) = viewModel.state else {
             Issue.record("Expected .error for nil apiService, got \(viewModel.state)")
