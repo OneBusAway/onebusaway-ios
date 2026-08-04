@@ -79,7 +79,10 @@ public final class MapPanelRootController: UIViewController {
         }
 
         func present(_ arrival: ArrivalDeparture) {
-            guard let host, let application else {
+            // `topmostController()` is nil exactly when `host` is, so this one
+            // guard covers both — and folds in the resolution that used to
+            // return silently further down.
+            guard let application, let presenter = topmostController() else {
                 Logger.error("TripPresentationBridge: dropping present for trip \(arrival.tripID) — host or application is nil")
                 return
             }
@@ -109,7 +112,6 @@ public final class MapPanelRootController: UIViewController {
                 }
             )
             let navigation = application.viewRouter.buildNavigation(controller: trip)
-            guard let presenter = topmostController() else { return }
             // Skip if the topmost presented controller is already a
             // `TripViewController` (or a nav rooted at one). `CurrentTripView`
             // stays mounted under the modal trip and its 20-second refresh

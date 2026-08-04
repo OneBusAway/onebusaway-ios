@@ -132,22 +132,19 @@ class AlarmBuilder: NSObject {
         do {
             alarm = try await modelService.postAlarm(minutesBefore: minutes, arrivalDeparture: arrivalDeparture, userPushID: userPushID)
         } catch {
-            if let delegate {
-                await MainActor.run {
-                    delegate.alarmBuilder(self, error: AlarmBuilderErrors.creationFailed)
-                }
-            }
+            // No actor hop needed: OBAKit builds with
+            // `SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor`, so this type, this
+            // method and `AlarmBuilderDelegate` are all already main-actor
+            // isolated. When the delegate has gone, the `defer` above sees the
+            // same nil and dismisses the HUD itself.
+            delegate?.alarmBuilder(self, error: AlarmBuilderErrors.creationFailed)
             return
         }
 
         alarm.deepLink = ArrivalDepartureDeepLink(arrivalDeparture: self.arrivalDeparture, regionID: currentRegion.regionIdentifier)
         alarm.set(tripDate: self.arrivalDeparture.arrivalDepartureDate, alarmOffset: minutes)
 
-        if let delegate {
-            await MainActor.run {
-                delegate.alarmBuilder(self, alarmCreated: alarm)
-            }
-        }
+        delegate?.alarmBuilder(self, alarmCreated: alarm)
     }
 
     public enum AlarmBuilderErrors: Error {

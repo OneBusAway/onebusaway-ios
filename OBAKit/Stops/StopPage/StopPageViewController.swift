@@ -356,7 +356,7 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
     }
 
     private func presentAlarmPermissionDeniedAlert() {
-        actionPresenter.showAlarmPermissionDeniedAlert(onDismiss: { [weak self] in
+        actionPresenter.showAlarmPermissionDeniedAlert(onPresented: { [weak self] in
             self?.viewModel.clearAlarmPermissionDenied()
         })
     }

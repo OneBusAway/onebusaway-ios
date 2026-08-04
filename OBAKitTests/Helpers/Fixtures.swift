@@ -57,8 +57,17 @@ class Fixtures {
     }
 
     /// Builds an `ArrivalDeparture` from timestamps, defaulting the ~15 keys of
-    /// decoder boilerplate that no test cares about. Times are seconds since the
-    /// epoch; pass the predicted ones as `nil` to model a schedule-only trip.
+    /// decoder boilerplate that no test cares about. Pass the predicted times as
+    /// `nil` to model a schedule-only trip.
+    ///
+    /// - Note: `dictionaryToModel` uses a plain `JSONDecoder`, so these are
+    ///   `.deferredToDate` values — **seconds since Date's 2001 reference
+    ///   date**, not since the epoch, and not the `.millisecondsSince1970` that
+    ///   `JSONDecoder.RESTDecoder()` applies to real API payloads. The default
+    ///   below therefore lands in the 2050s, which is why fixtures built with it
+    ///   read as upcoming departures. Tests that care whether a departure is
+    ///   past or future should derive their values from
+    ///   `Date.timeIntervalSinceReferenceDate` rather than hard-coding one.
     ///
     /// `stopSequence` selects `arrivalDepartureStatus`: 0 is `.departing`,
     /// anything else `.arriving`.

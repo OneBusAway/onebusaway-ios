@@ -33,19 +33,46 @@ final class StopPageActionPresenter: NSObject {
         super.init()
     }
 
-    /// `application.canOpenURL` is an XPC round-trip and Google Maps can't be
-    /// installed or removed within a screen's lifetime, so resolve availability
-    /// once instead of on every chrome rebuild.
-    private lazy var googleMapsAvailable: Bool = {
-        guard let coordinate = lastKnownCoordinate,
-              let url = AppInterop.googleMapsWalkingDirectionsURL(coordinate: coordinate)
-        else { return false }
-        return application.canOpenURL(url)
-    }()
+    /// Resolves the controller to present from, logging when it cannot.
+    ///
+    /// Every flow here is gated on this, so an unresolvable controller turns the
+    /// whole Stop page into dead buttons: Schedule, Bookmark, Filter, Report a
+    /// Problem, walking directions, alarms, surveys and donations all return
+    /// early with nothing on screen. Left silent, that is indistinguishable from
+    /// a UI bug. `TripPresentationBridge.present` logs the same condition, so
+    /// the two halves of the sheet system report failures the same way.
+    ///
+    /// - Parameter action: what was being attempted, for the log line.
+    private func presentationHost(for action: String) -> UIViewController? {
+        guard let controller = presentingController() else {
+            Logger.error("StopPageActionPresenter: dropping \(action) — no presenting controller resolved.")
+            return nil
+        }
+        return controller
+    }
 
-    /// Set whenever a flow is invoked with a stop, so `googleMapsAvailable` has
-    /// a coordinate to probe with.
-    private var lastKnownCoordinate: CLLocationCoordinate2D?
+    /// Memoized answer to "is Google Maps installed?".
+    ///
+    /// `application.canOpenURL` is an XPC round-trip and Google Maps can't be
+    /// installed or removed within a screen's lifetime, so resolve it once. The
+    /// coordinate is a parameter rather than stored state: as a `lazy var` reading
+    /// a property that only one caller happened to set first, the answer would
+    /// cache as `false` forever if anything ever asked before that caller ran.
+    private var cachedGoogleMapsAvailable: Bool?
+
+    private func googleMapsAvailable(coordinate: CLLocationCoordinate2D) -> Bool {
+        if let cachedGoogleMapsAvailable { return cachedGoogleMapsAvailable }
+
+        guard let url = AppInterop.googleMapsWalkingDirectionsURL(coordinate: coordinate) else {
+            // No URL for this coordinate says nothing about whether the app is
+            // installed, so don't memoize it.
+            return false
+        }
+
+        let available = application.canOpenURL(url)
+        cachedGoogleMapsAvailable = available
+        return available
+    }
 
     /// Set by a host that owns a map, so a trip opened from the Stop page can
     /// point that map at the trip. Left nil where the page was pushed
@@ -56,11 +83,52 @@ final class StopPageActionPresenter: NSObject {
 
     /// Builds the handler the SwiftUI layer consumes. `closeSheet` is a no-op
     /// for the pushed presentation, which leaves via the navigation bar.
+    ///
+    /// Assembled from three grouped factories below rather than as one literal,
+    /// which keeps each body short enough to read (and inside
+    /// `function_body_length`).
     func makeNavigationHandler(
         viewModel: StopViewModel,
         closeSheet: @escaping () -> Void = {}
     ) -> StopPageNavigationHandler {
-        StopPageNavigationHandler(
+        let trip = makeTripClosures(viewModel: viewModel)
+        let alarms = makeAlarmClosures(viewModel: viewModel)
+        let stop = makeStopClosures(viewModel: viewModel)
+
+        return StopPageNavigationHandler(
+            showTrip: trip.showTrip,
+            showScheduleForStop: trip.showScheduleForStop,
+            showScheduleForRoute: trip.showScheduleForRoute,
+            canScheduleForRoute: application.currentRegion?.supportsScheduleForRoute ?? true,
+            showWalkingDirections: stop.showWalkingDirections,
+            showAlertDetail: stop.showAlertDetail,
+            showBookmarkEditor: stop.showBookmarkEditor,
+            showAlarmPicker: alarms.showAlarmPicker,
+            startLiveActivity: alarms.startLiveActivity,
+            showExternalSurveyError: { [weak self] in self?.showExternalSurveyError() },
+            showDonation: { [weak self] in self?.showDonation() },
+            dismissDonation: { [weak self] onHide in self?.showDonationDismiss(onHide: onHide) },
+            makeTripPreview: trip.makeTripPreview,
+            showRouteFilter: stop.showRouteFilter,
+            showServiceAlerts: stop.showServiceAlerts,
+            showNearbyStops: stop.showNearbyStops,
+            showReportProblem: stop.showReportProblem,
+            closeSheet: closeSheet
+        )
+    }
+
+    // MARK: - Navigation Handler Factories
+
+    /// Everything scoped to one departure's trip.
+    private struct TripClosures {
+        let showTrip: (ArrivalDeparture) -> Void
+        let showScheduleForStop: () -> Void
+        let showScheduleForRoute: (ArrivalDeparture) -> Void
+        let makeTripPreview: (ArrivalDeparture) -> AnyView
+    }
+
+    private func makeTripClosures(viewModel: StopViewModel) -> TripClosures {
+        TripClosures(
             showTrip: { [weak self] departure in
                 self?.showTripPage(for: departure, originTitle: viewModel.stop?.name)
             },
@@ -70,13 +138,53 @@ final class StopPageActionPresenter: NSObject {
             showScheduleForRoute: { [weak self] departure in
                 self?.showScheduleForRoute(departure)
             },
-            canScheduleForRoute: application.currentRegion?.supportsScheduleForRoute ?? true,
+            makeTripPreview: { [weak self] departure in
+                guard let self else { return AnyView(EmptyView()) }
+                return AnyView(
+                    TripViewControllerPreview(departure: departure, application: self.application)
+                        .frame(width: 320, height: 400)
+                )
+            }
+        )
+    }
+
+    /// The two alarm affordances, which both need the view model itself rather
+    /// than a value read off it.
+    private struct AlarmClosures {
+        let showAlarmPicker: (ArrivalDeparture) -> Void
+        let startLiveActivity: (ArrivalDeparture) -> Void
+    }
+
+    private func makeAlarmClosures(viewModel: StopViewModel) -> AlarmClosures {
+        AlarmClosures(
+            showAlarmPicker: { [weak self] departure in
+                self?.showAlarmPicker(for: departure, viewModel: viewModel)
+            },
+            startLiveActivity: { [weak self] departure in
+                self?.startLiveActivity(for: departure, viewModel: viewModel)
+            }
+        )
+    }
+
+    /// Everything scoped to the stop as a whole.
+    private struct StopClosures {
+        let showWalkingDirections: () -> Void
+        let showAlertDetail: (ServiceAlert) -> Void
+        let showBookmarkEditor: (ArrivalDeparture?) -> Void
+        let showRouteFilter: () -> Void
+        let showServiceAlerts: () -> Void
+        let showNearbyStops: () -> Void
+        let showReportProblem: () -> Void
+    }
+
+    private func makeStopClosures(viewModel: StopViewModel) -> StopClosures {
+        StopClosures(
             showWalkingDirections: { [weak self] in
                 guard let coordinate = viewModel.stop?.coordinate else { return }
                 self?.showWalkingDirections(coordinate: coordinate)
             },
             showAlertDetail: { [weak self] alert in
-                guard let self, let host = self.presentingController() else { return }
+                guard let self, let host = self.presentationHost(for: "alert detail") else { return }
                 self.application.viewRouter.navigateTo(alert: alert, from: host)
             },
             showBookmarkEditor: { [weak self] departure in
@@ -84,22 +192,6 @@ final class StopPageActionPresenter: NSObject {
                     for: departure,
                     stop: viewModel.stop,
                     preloadedArrivals: viewModel.stopArrivals?.arrivalsAndDepartures
-                )
-            },
-            showAlarmPicker: { [weak self] departure in
-                self?.showAlarmPicker(for: departure, viewModel: viewModel)
-            },
-            startLiveActivity: { [weak self] departure in
-                self?.startLiveActivity(for: departure, viewModel: viewModel)
-            },
-            showExternalSurveyError: { [weak self] in self?.showExternalSurveyError() },
-            showDonation: { [weak self] in self?.showDonation() },
-            dismissDonation: { [weak self] onHide in self?.showDonationDismiss(onHide: onHide) },
-            makeTripPreview: { [weak self] departure in
-                guard let self else { return AnyView(EmptyView()) }
-                return AnyView(
-                    TripViewControllerPreview(departure: departure, application: self.application)
-                        .frame(width: 320, height: 400)
                 )
             },
             showRouteFilter: { [weak self] in
@@ -120,8 +212,7 @@ final class StopPageActionPresenter: NSObject {
             showReportProblem: { [weak self] in
                 guard let stop = viewModel.stop else { return }
                 self?.showReportProblem(stop: stop)
-            },
-            closeSheet: closeSheet
+            }
         )
     }
 
@@ -135,7 +226,7 @@ final class StopPageActionPresenter: NSObject {
     /// full-screen with no map behind them. Routed here instead, so every way out
     /// of the Stop page reaches the same screen.
     func showTripPage(for arrivalDeparture: ArrivalDeparture, originTitle: String?) {
-        guard let host = presentingController() else { return }
+        guard let host = presentationHost(for: "trip") else { return }
         let tripPage = TripPageViewController(
             application: application,
             arrivalDeparture: arrivalDeparture,
@@ -158,12 +249,12 @@ final class StopPageActionPresenter: NSObject {
 
     func showScheduleForStop(stopID: StopID) {
         let controller = ScheduleForStopViewController(stopID: stopID, application: application)
-        presentingController()?.present(controller, animated: true)
+        presentationHost(for: "schedule for stop")?.present(controller, animated: true)
     }
 
     func showScheduleForRoute(_ arrivalDeparture: ArrivalDeparture) {
         let controller = ScheduleForRouteViewController(routeID: arrivalDeparture.routeID, application: application)
-        presentingController()?.present(controller, animated: true)
+        presentationHost(for: "schedule for route")?.present(controller, animated: true)
     }
 
     // MARK: - Bookmarks
@@ -175,7 +266,7 @@ final class StopPageActionPresenter: NSObject {
         stop: Stop?,
         preloadedArrivals: [ArrivalDeparture]?
     ) {
-        guard let host = presentingController() else { return }
+        guard let host = presentationHost(for: "bookmark editor") else { return }
 
         if let arrivalDeparture {
             let controller = EditBookmarkViewController(application: application, arrivalDeparture: arrivalDeparture, bookmark: nil, delegate: self)
@@ -195,7 +286,7 @@ final class StopPageActionPresenter: NSObject {
         stopPreferencesUpdate = onUpdate
         let view = StopPreferencesWrappedView(stop, initialHiddenRoutes: hiddenRoutes, delegate: self)
             .environment(\.coreApplication, application)
-        presentingController()?.present(UIHostingController(rootView: view), animated: true)
+        presentationHost(for: "route filter")?.present(UIHostingController(rootView: view), animated: true)
     }
 
     private var stopPreferencesUpdate: ((StopPreferences) -> Void)?
@@ -220,7 +311,7 @@ final class StopPageActionPresenter: NSObject {
     /// `assert(fromController.navigationController != nil)`, so routing a sheet
     /// flow through it traps in debug and silently does nothing in release.
     private func pushOrPresent(_ controller: UIViewController) {
-        guard let host = presentingController() else { return }
+        guard let host = presentationHost(for: "\(type(of: controller))") else { return }
 
         if host.navigationController != nil {
             application.viewRouter.navigate(to: controller, from: host)
@@ -245,7 +336,7 @@ final class StopPageActionPresenter: NSObject {
     }
 
     func showReportProblem(stop: Stop) {
-        guard let host = presentingController() else { return }
+        guard let host = presentationHost(for: "report a problem") else { return }
         let controller = ReportProblemViewController(application: application, stop: stop)
         let navigation = application.viewRouter.buildNavigation(controller: controller)
         application.viewRouter.present(navigation, from: host, isModal: true)
@@ -254,8 +345,6 @@ final class StopPageActionPresenter: NSObject {
     /// One available maps app opens directly; more than one presents an action
     /// sheet to disambiguate.
     func showWalkingDirections(coordinate: CLLocationCoordinate2D) {
-        lastKnownCoordinate = coordinate
-
         var options: [(title: String, url: URL)] = []
 
         if let appleMapsURL = AppInterop.appleMapsWalkingDirectionsURL(coordinate: coordinate) {
@@ -266,7 +355,8 @@ final class StopPageActionPresenter: NSObject {
         }
 
         #if !targetEnvironment(simulator)
-        if let googleMapsURL = AppInterop.googleMapsWalkingDirectionsURL(coordinate: coordinate), googleMapsAvailable {
+        if let googleMapsURL = AppInterop.googleMapsWalkingDirectionsURL(coordinate: coordinate),
+           googleMapsAvailable(coordinate: coordinate) {
             options.append((
                 OBALoc("stops_controller.walking_directions_google", value: "Walking Directions (Google Maps)", comment: "Button that launches Google Maps with walking directions to this stop"),
                 googleMapsURL
@@ -299,7 +389,7 @@ final class StopPageActionPresenter: NSObject {
     /// The sheet presentation is iPhone-only, but the pushed presentation is
     /// not, and both come through here.
     private func present(actionSheet: UIAlertController) {
-        guard let host = presentingController() else { return }
+        guard let host = presentationHost(for: "action sheet") else { return }
         if let popover = actionSheet.popoverPresentationController {
             popover.sourceView = host.view
             popover.sourceRect = CGRect(origin: host.view.center, size: .zero)
@@ -318,7 +408,7 @@ final class StopPageActionPresenter: NSObject {
             stopLocation: stop?.coordinate,
             heroResponseID: heroResponseID
         )
-        presentingController()?.present(UINavigationController(rootViewController: controller), animated: true)
+        presentationHost(for: "full survey")?.present(UINavigationController(rootViewController: controller), animated: true)
     }
 
     func showExternalSurveyError() {
@@ -328,7 +418,7 @@ final class StopPageActionPresenter: NSObject {
             preferredStyle: .alert
         )
         alert.addAction(UIAlertAction(title: Strings.ok, style: .default))
-        presentingController()?.present(alert, animated: true)
+        presentationHost(for: "external survey error")?.present(alert, animated: true)
     }
 
     // MARK: - Donations
@@ -343,7 +433,7 @@ final class StopPageActionPresenter: NSObject {
             .environmentObject(donationModel)
             .environmentObject(AnalyticsModel(application.analytics))
 
-        presentingController()?.present(UIHostingController(rootView: view), animated: true)
+        presentationHost(for: "donation")?.present(UIHostingController(rootView: view), animated: true)
     }
 
     /// `onHide` fires only when the user actually hides the card (dismiss or
@@ -370,31 +460,44 @@ final class StopPageActionPresenter: NSObject {
 
     // MARK: - Alarms
 
-    private var alarmBuilder: AlarmBuilder?
-    private var alarmBuilderDeparture: ArrivalDeparture?
-    private weak var alarmViewModel: StopViewModel?
+    /// The in-flight alarm flow: the builder driving the bulletin, the departure
+    /// it was opened for, and the view model to record the result on. Set
+    /// together in `showAlarmPicker` and cleared together when the flow ends, so
+    /// a finished flow stops holding the bulletin manager and its
+    /// `ArrivalDeparture` alive for the rest of the presenter's life.
+    private struct AlarmFlow {
+        let builder: AlarmBuilder
+        let departure: ArrivalDeparture
+        weak var viewModel: StopViewModel?
+    }
+
+    private var alarmFlow: AlarmFlow?
 
     func showAlarmPicker(for arrivalDeparture: ArrivalDeparture, viewModel: StopViewModel) {
         // The SwiftUI alarm affordances are gated on `canCreateAlarm`, but that
         // gate is only re-evaluated on the refresh tick — a departure can slip
         // inside the one-minute floor while the row still offers the button.
         guard viewModel.canCreateAlarm(for: arrivalDeparture),
-              let host = presentingController()
+              let host = presentationHost(for: "alarm picker")
         else { return }
 
-        alarmBuilderDeparture = arrivalDeparture
-        alarmViewModel = viewModel
         let existingAlarm = viewModel.alarm(for: arrivalDeparture)
-        alarmBuilder = AlarmBuilder(
+        let builder = AlarmBuilder(
             arrivalDeparture: arrivalDeparture,
             application: application,
             initialMinutes: existingAlarm.map { viewModel.alarmLeadTimeMinutes($0) },
             delegate: self
         )
-        alarmBuilder?.showBulletin(above: host)
+        alarmFlow = AlarmFlow(builder: builder, departure: arrivalDeparture, viewModel: viewModel)
+        builder.showBulletin(above: host)
     }
 
-    func showAlarmPermissionDeniedAlert(onDismiss: @escaping () -> Void) {
+    /// - Parameter onPresented: runs as soon as the alert is on its way up, not
+    ///   when it is dismissed. Callers use it to clear the view-model flag that
+    ///   triggered this, so a later already-denied attempt re-fires the binding;
+    ///   waiting for dismissal would leave the flag latched and swallow the
+    ///   second attempt.
+    func showAlarmPermissionDeniedAlert(onPresented: @escaping () -> Void) {
         let alert = UIAlertController(
             title: OBALoc("stop_page.alarm_permission_denied.title", value: "Notifications Are Off", comment: "Title of the alert shown when the user tries to set a departure alarm but notifications are denied in Settings."),
             message: String(
@@ -411,12 +514,12 @@ final class StopPageActionPresenter: NSObject {
             guard let self, let url = URL(string: UIApplication.openSettingsURLString) else { return }
             self.application.open(url, options: [:], completionHandler: nil)
         })
-        presentingController()?.present(alert, animated: true)
-        onDismiss()
+        presentationHost(for: "alarm permission alert")?.present(alert, animated: true)
+        onPresented()
     }
 
     func showError(_ error: Error) {
-        guard let host = presentingController() else { return }
+        guard let host = presentationHost(for: "error alert") else { return }
         Task { @MainActor in
             await AlertPresenter.show(error: error, presentingController: host)
         }
@@ -482,7 +585,7 @@ final class StopPageActionPresenter: NSObject {
             viewModel.signalLiveActivityStarted()
         } catch {
             Logger.error("Failed to start Live Activity: \(error)")
-            presentingController()?.showLiveActivityErrorAlert()
+            presentationHost(for: "live activity error")?.showLiveActivityErrorAlert()
         }
     }
 
@@ -544,21 +647,23 @@ extension StopPageActionPresenter: AlarmBuilderDelegate {
     }
 
     func alarmBuilder(_ alarmBuilder: AlarmBuilder, alarmCreated alarm: Alarm) {
-        if let departure = alarmBuilderDeparture, let viewModel = alarmViewModel {
+        // `alarmFlow` is set as a unit in `showAlarmPicker`, so a builder
+        // reporting success always has one — unless the view model has since
+        // been released, in which case there is nothing left to record on.
+        if let flow = alarmFlow, let viewModel = flow.viewModel {
             // `replaceAlarm` indexes the new alarm synchronously and no-ops the
             // delete when the departure had no prior alarm, so it serves both
             // the create and change flows.
-            Task { await viewModel.replaceAlarm(with: alarm, for: departure) }
+            Task { await viewModel.replaceAlarm(with: alarm, for: flow.departure) }
 
             if alarmBuilder.trackOnLockScreen {
-                startLiveActivity(for: departure, viewModel: viewModel)
+                startLiveActivity(for: flow.departure, viewModel: viewModel)
             }
-        } else {
-            alarmViewModel?.recordAlarmCreated(alarm)
         }
 
         let message = OBALoc("stop_controller.alarm_created_message", value: "Alarm created", comment: "A message that appears when a user's alarm is created.")
         ProgressHUD.showSuccessAndDismiss(message: message)
+        alarmFlow = nil
     }
 
     func alarmBuilder(_ alarmBuilder: AlarmBuilder, error: Error) {
@@ -577,13 +682,19 @@ extension StopPageActionPresenter: AlarmBuilderDelegate {
             await waitForBulletinDismissal(alarmBuilder)
             showError(error)
         }
+        alarmFlow = nil
     }
 
-    /// Waits for the alarm bulletin to finish dismissing, bounded so a bulletin
-    /// that somehow lingers can never swallow the error entirely.
+    /// How long to wait for the alarm bulletin to finish dismissing before
+    /// reporting anyway. Bounded so a bulletin that somehow lingers can never
+    /// swallow the error entirely.
+    private static let bulletinDismissalTimeout: Duration = .seconds(2)
+    private static let bulletinDismissalPollInterval: Duration = .milliseconds(50)
+
     private func waitForBulletinDismissal(_ alarmBuilder: AlarmBuilder) async {
-        for _ in 0..<40 where alarmBuilder.bulletinManager.isShowingBulletin {
-            try? await Task.sleep(for: .milliseconds(50))
+        let deadline = ContinuousClock.now + Self.bulletinDismissalTimeout
+        while alarmBuilder.bulletinManager.isShowingBulletin, ContinuousClock.now < deadline {
+            try? await Task.sleep(for: Self.bulletinDismissalPollInterval)
         }
     }
 }

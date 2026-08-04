@@ -8,6 +8,7 @@
 //
 
 import UIKit
+import CoreLocation
 import Testing
 @testable import OBAKit
 @testable import OBAKitCore
@@ -47,6 +48,7 @@ final class StopPageActionPresenterTests: OBATestCase {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForStop(dataLoader: dataLoader)
         stubArrivalsAndDepartures(dataLoader: dataLoader)
+        stubStopsForLocation(dataLoader: dataLoader)
         let application = buildApplication(queue: queue, dataLoader: dataLoader)
         let presenter = StopPageActionPresenter(
             application: application,
@@ -62,6 +64,16 @@ final class StopPageActionPresenterTests: OBATestCase {
             guard let path = request.url?.path else { return false }
             return path.contains("/schedule-for-stop/") && path.hasSuffix(".json")
         }
+    }
+
+    /// `NearbyStopsViewController` fetches as soon as it loads, and
+    /// `MockDataLoader` fatal-errors on an unmocked URL — so the nearby-stops
+    /// tests have to stub this even though they only assert on presentation.
+    private func stubStopsForLocation(dataLoader: MockDataLoader) {
+        dataLoader.mock(
+            url: URL(string: "https://api.pugetsound.onebusaway.org/api/where/stops-for-location.json")!,
+            with: Fixtures.loadData(file: "stops_for_location_seattle.json")
+        )
     }
 
     private func stubArrivalsAndDepartures(dataLoader: MockDataLoader) {
@@ -159,6 +171,55 @@ final class StopPageActionPresenterTests: OBATestCase {
     /// and in the sheet system the host always does — so a provider that
     /// returns the topmost controller must be honoured, or the modal silently
     /// never appears.
+    /// `pushOrPresent` is the reason the presenter exists in this shape. The
+    /// pushed Stop page sits in a navigation stack and pushes as it always has;
+    /// the map sheet's host has no stack at all, and `ViewRouter.navigate(to:from:)`
+    /// opens with `assert(fromController.navigationController != nil)` — so
+    /// routing a sheet flow through it traps in debug and silently does nothing
+    /// in release.
+    @Test func `Nearby stops presents modally when the host has no navigation stack`() async {
+        let host = makeHost()
+        let (presenter, _) = makePresenter(host: host)
+
+        presenter.showNearbyStops(coordinate: CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3))
+
+        let presented = await waitForPresentation(on: host)
+        let navigation = try? #require(presented as? UINavigationController)
+        #expect(navigation?.viewControllers.first is NearbyStopsViewController)
+        // Presented modally, so it needs the Done button a pushed controller
+        // would get from the stack's back button.
+        #expect(navigation?.viewControllers.first?.navigationItem.leftBarButtonItem != nil)
+    }
+
+    /// The other side of the same fork: a host inside a navigation controller
+    /// pushes, and nothing is presented modally at all.
+    @Test func `Nearby stops pushes when the host is in a navigation stack`() async throws {
+        let root = UIViewController()
+        let navigation = UINavigationController(rootViewController: root)
+        window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        window.rootViewController = navigation
+        window.isHidden = false
+
+        let dataLoader = MockDataLoader(testName: name)
+        stubArrivalsAndDepartures(dataLoader: dataLoader)
+        stubStopsForLocation(dataLoader: dataLoader)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let presenter = StopPageActionPresenter(
+            application: application,
+            presentingController: { root }
+        )
+
+        presenter.showNearbyStops(coordinate: CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3))
+
+        for _ in 0..<20 where navigation.viewControllers.count < 2 {
+            try? await Task.sleep(for: .milliseconds(50))
+        }
+
+        #expect(navigation.viewControllers.count == 2)
+        #expect(navigation.viewControllers.last is NearbyStopsViewController)
+        #expect(root.presentedViewController == nil)
+    }
+
     @Test func `Presenting resolves the provider at call time not at init`() async {
         let host = makeHost()
         let dataLoader = MockDataLoader(testName: name)

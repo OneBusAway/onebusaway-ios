@@ -13,21 +13,26 @@ import CoreGraphics
 /// 0 (fully expanded) through 1 (gone).
 ///
 /// A pure function rather than logic inside the view, both so it can be tested
-/// and so the feedback-loop hazard has one obvious home. The chrome lives in a
-/// `safeAreaInset` whose height shrinks as this value rises; if progress were
-/// derived from `contentOffset.y` alone, shrinking the inset would shift the
-/// offset, which would change progress, which would resize the inset again.
-/// Callers pass `contentOffset.y + contentInsets.top`, a sum that holds steady
-/// when the inset changes, which breaks the loop.
+/// and so the feedback-loop hazard has one obvious home.
+///
+/// The sheet's chrome deliberately does **not** resize with this value: the top
+/// bar is a fixed-height `safeAreaInset` and the action row is an overlay. An
+/// earlier design shrank the inset as progress rose, and that oscillated — the
+/// inset shifted the offset, which changed progress, which resized the inset —
+/// until the main thread was pegged. Two things keep it broken today: callers
+/// pass `contentOffset.y + contentInsets.top`, a sum that holds steady when the
+/// inset changes, and nothing downstream of this value touches layout. See the
+/// note in `StopDetailsSheetView.sheetBody(proxy:)`.
 nonisolated enum StopSheetHeaderCollapse {
 
     /// - Parameters:
     ///   - scrollOffset: `contentOffset.y + contentInsets.top` — distance
     ///     scrolled from the top, invariant to inset changes.
-    ///   - collapsibleHeight: the header's laid-out height, measured rather
-    ///     than assumed: it is `@ScaledMetric` and grows further when route
-    ///     chips wrap, so a hard-coded constant would mis-collapse at most
-    ///     Dynamic Type sizes.
+    ///   - collapsibleHeight: the distance over which the collapse completes.
+    ///     A measured height where the result drives something that must line
+    ///     up with real geometry; a plain constant is fine — and is what
+    ///     `StopDetailsSheetView.titleFadeDistance` passes — where it only
+    ///     drives opacity, since a fade has nothing to stay registered with.
     /// - Returns: progress clamped to `0...1`; `0` when there is nothing to
     ///   collapse.
     static func progress(scrollOffset: CGFloat, collapsibleHeight: CGFloat) -> CGFloat {

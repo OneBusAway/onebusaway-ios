@@ -188,63 +188,7 @@ struct StopPageView: View {
                 }
             }
 
-            StopDeparturesSections(
-                content: content,
-                survey: viewModel.currentSurvey,
-                stopID: viewModel.stopID,
-                serviceAlerts: viewModel.stopArrivals?.serviceAlerts ?? [],
-                sortType: viewModel.stopPreferences.sortType,
-                walkMinutes: walkTime?.walkMinutes,
-                minutesAfter: viewModel.minutesAfter,
-                isBrokenBookmark: viewModel.isBrokenBookmark,
-                errorText: viewModel.operationErrorMessage,
-                showsDonation: content.hasLoadedArrivals && viewModel.shouldRequestDonations && !donationHidden,
-                isLoadMoreExhausted: viewModel.isLoadMoreExhausted,
-                isLoading: viewModel.isLoading,
-                pastCollapsed: pastCollapsed,
-                expandedRouteID: expandedRouteID,
-                statusProvider: { DepartureStatus(arrivalDeparture: $0) },
-                alarmLookup: { viewModel.alarm(for: $0) },
-                alarmLeadTime: { viewModel.alarmLeadTimeMinutes($0) },
-                canAlarm: { viewModel.canCreateAlarm(for: $0) },
-                actionsProvider: makeActions(for:),
-                onSurveyNext: { answer in
-                    Task { await viewModel.submitHeroAnswer(answer, stopLocation: viewModel.stop?.coordinate) }
-                },
-                onSurveyDismiss: { viewModel.dismissCurrentSurvey() },
-                onSurveyExternal: {
-                    viewModel.launchExternalSurvey(viewModel.currentSurvey, onFailure: navigation.showExternalSurveyError)
-                },
-                onDonate: navigation.showDonation,
-                onDonationClose: { navigation.dismissDonation { donationHidden = true } },
-                onSelectAlert: navigation.showAlertDetail,
-                onChangeMode: { newValue in
-                    withAnimation {
-                        // Switching modes collapses the open route card.
-                        expandedRouteID = nil
-                        userDefaults.set(newValue.rawValue, forKey: StopPageLifecycleKeys.lastUsedStopSort)
-                        viewModel.updateSortType(newValue)
-                    }
-                },
-                onTogglePast: { withAnimation { pastCollapsed.toggle() } },
-                onToggleRoute: { routeID in
-                    withAnimation(.snappy) {
-                        expandedRouteID = expandedRouteID == routeID ? nil : routeID
-                    }
-                },
-                onSelectDeparture: { navigation.showTrip($0) },
-                onAlarmToggle: { departure in
-                    if viewModel.alarm(for: departure) != nil {
-                        Task { await viewModel.cancelAlarm(for: departure) }
-                    } else {
-                        navigation.showAlarmPicker(departure)
-                    }
-                },
-                onRetry: { Task { await viewModel.refresh() } },
-                onShowAllRoutes: { viewModel.isListFiltered = false },
-                onShowAllDepartureTypes: { viewModel.updateArrivalDepartureFilter(.all) },
-                onLoadMore: { Task { await viewModel.loadMoreDepartures() } }
-            )
+            departuresBuilder.sections(content: content, walkTime: walkTime)
         }
         // `.plain` (rather than `.insetGrouped`) so sections have no horizontal
         // card margin insetting them from the screen edges. That margin is
@@ -323,27 +267,18 @@ struct StopPageView: View {
         )
     }
 
-    /// Builds the shared trip-detail panel (§4.6) for an expanded departure.
-    /// `StopPageView` is the only view that touches the VM, so the panel receives
-    /// plain values plus closures — the `approachLoader` closure wraps the cached,
-    /// live-only VM fetch; the alarm closures route through the single alarm index.
-    private func makeActions(for departure: ArrivalDeparture) -> DepartureRowActions {
-        DepartureRowActions(
-            canAlarm: viewModel.canCreateAlarm(for: departure),
-            canSchedule: navigation.canScheduleForRoute,
-            hasAlarm: viewModel.alarm(for: departure) != nil,
-            onAlarmToggle: {
-                if viewModel.alarm(for: departure) != nil {
-                    Task { await viewModel.cancelAlarm(for: departure) }
-                } else {
-                    navigation.showAlarmPicker(departure)
-                }
-            },
-            onSchedule: { navigation.showScheduleForRoute(departure) },
-            onBookmark: { navigation.showBookmarkEditor(departure) },
-            onShowTrip: { navigation.showTrip(departure) },
-            onShareTrip: { navigation.shareTrip(departure) },
-            makePreview: { navigation.makeTripPreview(departure) }
+    /// The shared assembly of the departures list. Identical to the one the map
+    /// sheet builds apart from `onRetry`: this presentation offers
+    /// pull-to-refresh, so a retry is just a refresh.
+    private var departuresBuilder: StopDeparturesBuilder {
+        StopDeparturesBuilder(
+            viewModel: viewModel,
+            navigation: navigation,
+            userDefaults: userDefaults,
+            onRetry: { Task { await viewModel.refresh() } },
+            expandedRouteID: $expandedRouteID,
+            donationHidden: $donationHidden,
+            pastCollapsed: $pastCollapsed
         )
     }
 }

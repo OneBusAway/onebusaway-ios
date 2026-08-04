@@ -17,6 +17,19 @@ import Testing
 @Suite(.serialized)
 final class StopPageContentTests: OBATestCase {
 
+    /// A timestamp `minutes` from now, in the units `Fixtures.arrivalDeparture`
+    /// actually wants.
+    ///
+    /// `Fixtures.dictionaryToModel` decodes with a plain `JSONDecoder`, whose
+    /// default date strategy is `.deferredToDate` — seconds since Date's 2001
+    /// reference date, *not* the epoch, and not the `.millisecondsSince1970` the
+    /// real `RESTDecoder` uses. Anchoring to the current time is what lets these
+    /// tests say "past" or "upcoming" and mean it, since `temporalState` is
+    /// relative to now.
+    private static func timestamp(minutesFromNow minutes: Int) -> Int {
+        Int(Date().addingTimeInterval(TimeInterval(minutes * 60)).timeIntervalSinceReferenceDate)
+    }
+
     private func departures() throws -> [ArrivalDeparture] {
         [
             try Fixtures.arrivalDeparture(routeID: "route_1", tripID: "trip_1"),
@@ -67,6 +80,52 @@ final class StopPageContentTests: OBATestCase {
         #expect(unfiltered.departures.count == 3)
     }
 
+    // MARK: - Terminal duplicates
+
+    /// The API emits a separate arrival and departure row for one vehicle visit
+    /// at a terminal or loop stop. `StopPageContent` collapses them, and without
+    /// that the rider sees the same bus twice with two different countdowns —
+    /// the parity `StopViewController` established.
+    @Test func `A terminal's arrival and departure pair collapses to one row`() throws {
+        let arrival = try Fixtures.arrivalDeparture(
+            scheduledArrival: Self.timestamp(minutesFromNow: 10),
+            scheduledDeparture: Self.timestamp(minutesFromNow: 14),
+            routeID: "route_1",
+            tripID: "trip_1"
+        )
+        let departure = try Fixtures.arrivalDeparture(
+            scheduledArrival: Self.timestamp(minutesFromNow: 10),
+            scheduledDeparture: Self.timestamp(minutesFromNow: 14),
+            routeID: "route_1",
+            tripID: "trip_1"
+        )
+
+        let content = makeContent(allDepartures: [arrival, departure])
+
+        #expect(content.departures.count == 1)
+    }
+
+    /// Deduplication keys on the vehicle visit, so two genuinely different trips
+    /// on the same route must both survive.
+    @Test func `Two trips on one route both survive deduplication`() throws {
+        let first = try Fixtures.arrivalDeparture(
+            scheduledArrival: Self.timestamp(minutesFromNow: 10),
+            scheduledDeparture: Self.timestamp(minutesFromNow: 10),
+            routeID: "route_1",
+            tripID: "trip_1"
+        )
+        let second = try Fixtures.arrivalDeparture(
+            scheduledArrival: Self.timestamp(minutesFromNow: 25),
+            scheduledDeparture: Self.timestamp(minutesFromNow: 25),
+            routeID: "route_1",
+            tripID: "trip_2"
+        )
+
+        let content = makeContent(allDepartures: [first, second])
+
+        #expect(content.departures.count == 2)
+    }
+
     // MARK: - Grouping
 
     @Test func `Grouped mode builds one group per route`() throws {
@@ -88,6 +147,51 @@ final class StopPageContentTests: OBATestCase {
     @Test func `Empty departures produce an empty list`() {
         let content = makeContent(allDepartures: [])
         #expect(content.listIsEmpty)
+    }
+
+    /// Grouped mode drops past departures, so it can have nothing to render
+    /// while `departures` is still non-empty — the last bus of the evening has
+    /// left. Emptiness has to follow the groups, or the page renders a void
+    /// instead of the empty state.
+    @Test func `Grouped mode is empty once every departure is in the past`() throws {
+        let past = [
+            try Fixtures.arrivalDeparture(
+                scheduledArrival: Self.timestamp(minutesFromNow: -40),
+                scheduledDeparture: Self.timestamp(minutesFromNow: -40),
+                routeID: "route_1",
+                tripID: "trip_1"
+            ),
+            try Fixtures.arrivalDeparture(
+                scheduledArrival: Self.timestamp(minutesFromNow: -20),
+                scheduledDeparture: Self.timestamp(minutesFromNow: -20),
+                routeID: "route_2",
+                tripID: "trip_2"
+            )
+        ]
+        let prefs = StopPreferences(sortType: .route, hiddenRoutes: [])
+        let content = makeContent(allDepartures: past, preferences: prefs)
+
+        // The departures are still there — only the grouped projection is empty.
+        #expect(content.departures.count == 2)
+        #expect(content.routeGroups.isEmpty)
+        #expect(content.listIsEmpty)
+    }
+
+    /// The same feed in chronological mode is *not* empty: that mode keeps past
+    /// departures behind the collapsed "past" section.
+    @Test func `Chronological mode is not empty for the same past departures`() throws {
+        let past = [
+            try Fixtures.arrivalDeparture(
+                scheduledArrival: Self.timestamp(minutesFromNow: -40),
+                scheduledDeparture: Self.timestamp(minutesFromNow: -40),
+                routeID: "route_1",
+                tripID: "trip_1"
+            )
+        ]
+        let content = makeContent(allDepartures: past)
+
+        #expect(!content.isGrouped)
+        #expect(!content.listIsEmpty)
     }
 
     @Test func `Filtered empty is true only when the filter emptied a non-empty feed`() throws {

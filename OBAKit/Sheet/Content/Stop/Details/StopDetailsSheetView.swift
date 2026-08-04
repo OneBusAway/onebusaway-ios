@@ -32,14 +32,12 @@ struct StopDetailsSheetView: View {
     @StateObject private var viewModel: StopViewModel
     @EnvironmentObject private var coordinator: SheetCoordinator<AppSheetRoute>
     @Environment(\.scenePhase) private var scenePhase
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     private let presenter: StopPageActionPresenter
     private let feedback: DataLoadFeedbackGenerator
     private let formatters: Formatters
     private let userDefaults: UserDefaults
 
-    @State private var expandedDepartureID: String?
     @State private var expandedRouteID: RouteID?
     @State private var donationHidden = false
     /// How far the title has faded into the pinned bar, 0...1. Drives opacity
@@ -152,7 +150,6 @@ struct StopDetailsSheetView: View {
             .keepsScreenAwake()
             .defaultAppStorage(userDefaults)
             .environment(\.obaFormatters, formatters)
-            .onChange(of: content.departureIDs) { _, ids in reconcileExpandedDeparture(against: ids) }
             .onChange(of: content.routeIDs) { _, ids in reconcileExpandedRoute(against: ids) }
             .onChange(of: scenePhase, handle(scenePhase:to:))
             .onReceive(viewModel.$stop.compactMap { $0 }, perform: publishUserActivity(for:))
@@ -176,104 +173,42 @@ struct StopDetailsSheetView: View {
         }
     }
 
-    private func departures(content: StopPageContent) -> some View {
-        StopDeparturesSections(
-            content: content,
-            survey: viewModel.currentSurvey,
-            stopID: viewModel.stopID,
-            serviceAlerts: viewModel.stopArrivals?.serviceAlerts ?? [],
-            sortType: viewModel.stopPreferences.sortType,
-            walkMinutes: viewModel.walkTime?.walkMinutes,
-            minutesAfter: viewModel.minutesAfter,
-            isBrokenBookmark: viewModel.isBrokenBookmark,
-            errorText: viewModel.operationErrorMessage,
-            showsDonation: content.hasLoadedArrivals && viewModel.shouldRequestDonations && !donationHidden,
-            isLoadMoreExhausted: viewModel.isLoadMoreExhausted,
-            isLoading: viewModel.isLoading,
-            pastCollapsed: pastCollapsed,
-            expandedDepartureID: expandedDepartureID,
-            expandedRouteID: expandedRouteID,
-            statusProvider: { DepartureStatus(arrivalDeparture: $0) },
-            alarmLookup: { viewModel.alarm(for: $0) },
-            alarmLeadTime: { viewModel.alarmLeadTimeMinutes($0) },
-            canAlarm: { viewModel.canCreateAlarm(for: $0) },
-            actionsProvider: makeActions(for:),
-            panelBuilder: makePanel(for:),
-            onSurveyNext: submitSurveyAnswer(_:),
-            onSurveyDismiss: { viewModel.dismissCurrentSurvey() },
-            onSurveyExternal: launchExternalSurvey,
-            onDonate: navigation.showDonation,
-            onDonationClose: hideDonation,
-            onSelectAlert: navigation.showAlertDetail,
-            onChangeMode: change(sortType:),
-            onTogglePast: togglePast,
-            onToggleExpand: toggleExpanded(_:),
-            onToggleRoute: toggleExpandedRoute(_:),
-            onAlarmToggle: toggleAlarm(for:),
+    /// The shared assembly of the departures list. Identical to the one the
+    /// pushed page builds apart from `onRetry`: this presentation has no
+    /// pull-to-refresh, so a retry goes through the same spinner-floored path as
+    /// the top bar's button.
+    private var departuresBuilder: StopDeparturesBuilder {
+        StopDeparturesBuilder(
+            viewModel: viewModel,
+            navigation: navigation,
+            userDefaults: userDefaults,
             onRetry: refresh,
-            onShowAllRoutes: { viewModel.isListFiltered = false },
-            onLoadMore: loadMore
+            expandedRouteID: $expandedRouteID,
+            donationHidden: $donationHidden,
+            pastCollapsed: $pastCollapsed
         )
     }
 
+    private func departures(content: StopPageContent) -> some View {
+        departuresBuilder.sections(content: content, walkTime: viewModel.walkTime)
+    }
+
     // MARK: - List actions
-
-    private func submitSurveyAnswer(_ answer: String) {
-        Task { await viewModel.submitHeroAnswer(answer, stopLocation: viewModel.stop?.coordinate) }
-    }
-
-    private func launchExternalSurvey() {
-        viewModel.launchExternalSurvey(viewModel.currentSurvey, onFailure: navigation.showExternalSurveyError)
-    }
-
-    private func hideDonation() {
-        navigation.dismissDonation { donationHidden = true }
-    }
-
-    /// Switching modes collapses every open accordion, then persists the choice
-    /// as the app-wide "last used" seed.
-    private func change(sortType: StopSort) {
-        withAnimation {
-            expandedDepartureID = nil
-            expandedRouteID = nil
-            userDefaults.set(sortType.rawValue, forKey: StopPageLifecycleKeys.lastUsedStopSort)
-            viewModel.updateSortType(sortType)
-        }
-    }
-
-    private func togglePast() {
-        withAnimation { pastCollapsed.toggle() }
-    }
-
-    private func toggleExpanded(_ departure: ArrivalDeparture) {
-        withAnimation(.snappy) {
-            expandedDepartureID = expandedDepartureID == departure.id ? nil : departure.id
-        }
-    }
-
-    private func toggleExpandedRoute(_ routeID: RouteID) {
-        withAnimation(.snappy) {
-            expandedRouteID = expandedRouteID == routeID ? nil : routeID
-            expandedDepartureID = nil
-        }
-    }
-
-    private func toggleAlarm(for departure: ArrivalDeparture) {
-        if viewModel.alarm(for: departure) != nil {
-            Task { await viewModel.cancelAlarm(for: departure) }
-        } else {
-            navigation.showAlarmPicker(departure)
-        }
-    }
 
     /// A warm refresh usually resolves in well under a frame, so the spinner
     /// would appear and vanish before the eye caught it — reading as "the button
     /// did nothing". Hold it for a floor so the tap always has a visible result.
     private func refresh() {
         guard !isManuallyRefreshing else { return }
+        // Set before the `Task`, not inside it. The guard reads synchronously
+        // but the task body resumes after a hop, so two taps landing in the
+        // same runloop turn would both clear a guard neither had set yet —
+        // two refreshes, two spinner floors, racing to reset one flag.
+        // `.disabled(isRefreshing)` narrows that window but does not close it:
+        // SwiftUI has not re-rendered the button yet.
+        isManuallyRefreshing = true
 
         Task {
-            isManuallyRefreshing = true
             let started = ContinuousClock.now
             await viewModel.refresh()
 
@@ -283,10 +218,6 @@ struct StopDetailsSheetView: View {
             }
             isManuallyRefreshing = false
         }
-    }
-
-    private func loadMore() {
-        Task { await viewModel.loadMoreDepartures() }
     }
 
     private func scrollToTop(proxy: ScrollViewProxy) {
@@ -303,11 +234,6 @@ struct StopDetailsSheetView: View {
             scrollOffset: offset,
             collapsibleHeight: Self.titleFadeDistance
         )
-    }
-
-    /// Clears a stale expansion when a refresh drops the departure from the feed.
-    private func reconcileExpandedDeparture(against ids: Set<String>) {
-        if let id = expandedDepartureID, !ids.contains(id) { expandedDepartureID = nil }
     }
 
     private func reconcileExpandedRoute(against ids: Set<RouteID>) {
@@ -490,46 +416,5 @@ struct StopDetailsSheetView: View {
             .padding(.trailing, 16)
             .padding(.bottom, 24)
             .animation(.snappy(duration: 0.2), value: showsScrollToTop)
-    }
-
-    // MARK: - Row plumbing
-
-    private func makePanel(for departure: ArrivalDeparture) -> TripDetailPanelView {
-        TripDetailPanelView(
-            departure: departure,
-            status: DepartureStatus(arrivalDeparture: departure),
-            alarm: nil,
-            alarmLeadTimeMinutes: 0,
-            canAlarm: ActivityAuthorizationInfo().areActivitiesEnabled,
-            refreshToken: viewModel.lastUpdated,
-            cachedTripDetails: viewModel.cachedApproachTripDetails(for: departure),
-            approachLoader: { await viewModel.approachTripDetails(for: departure) },
-            onSetAlarm: { navigation.startLiveActivity(departure) },
-            onCancelAlarm: {},
-            onChangeAlarm: {},
-            canSchedule: navigation.canScheduleForRoute,
-            onSchedule: { navigation.showScheduleForRoute(departure) },
-            onBookmark: { navigation.showBookmarkEditor(departure) },
-            onViewFullTrip: { navigation.showTrip(departure) }
-        )
-    }
-
-    private func makeActions(for departure: ArrivalDeparture) -> DepartureRowActions {
-        DepartureRowActions(
-            canAlarm: viewModel.canCreateAlarm(for: departure),
-            canSchedule: navigation.canScheduleForRoute,
-            hasAlarm: viewModel.alarm(for: departure) != nil,
-            onAlarmToggle: {
-                if viewModel.alarm(for: departure) != nil {
-                    Task { await viewModel.cancelAlarm(for: departure) }
-                } else {
-                    navigation.showAlarmPicker(departure)
-                }
-            },
-            onSchedule: { navigation.showScheduleForRoute(departure) },
-            onBookmark: { navigation.showBookmarkEditor(departure) },
-            onShowTrip: { navigation.showTrip(departure) },
-            makePreview: { navigation.makeTripPreview(departure) }
-        )
     }
 }

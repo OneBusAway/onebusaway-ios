@@ -33,10 +33,15 @@ final class AppSheetViewFactory {
     /// `TripPresentationBridge` does.
     let presentingController: () -> UIViewController?
 
+    /// `presentingController` has no default on purpose. Every stop-sheet action
+    /// — schedules, bookmarks, the route filter, report-a-problem, the alarm
+    /// picker — resolves through it, so a call site that omitted it would build
+    /// a factory whose sheet renders correctly and then silently ignores every
+    /// button on it.
     init(
         application: Application,
         onPresentTrip: @escaping (ArrivalDeparture) -> Void,
-        presentingController: @escaping () -> UIViewController? = { nil }
+        presentingController: @escaping () -> UIViewController?
     ) {
         self.application = application
         self.onPresentTrip = onPresentTrip
