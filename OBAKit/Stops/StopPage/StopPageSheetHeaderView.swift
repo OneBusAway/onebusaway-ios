@@ -218,6 +218,14 @@ struct StopPageSheetHeaderView: View {
         .background(Color(uiColor: ThemeColors.shared.departureOnTime).opacity(0.14), in: Capsule())
         .contentShape(Capsule())
         .onTapGesture(perform: onWalkingDirections)
+        // `.accessibilityHidden(true)` on the glyph above is not enough on its own:
+        // adding a trait to this container re-materialises its descendants as
+        // elements, and the walk glyph came back as a second, sibling stop — a
+        // 10x16pt target whose whole spoken content was the symbol's stock name,
+        // "Walk". An explicit label collapses the subtree, the same way
+        // `chipView(_:)` does below.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(walkPillText(info))
         .accessibilityAddTraits(.isButton)
         .accessibilityHint(OBALoc("stop_page.header.walk_a11y_hint", value: "Opens walking directions to this stop.", comment: "VoiceOver hint on the header card's walk-time button."))
     }

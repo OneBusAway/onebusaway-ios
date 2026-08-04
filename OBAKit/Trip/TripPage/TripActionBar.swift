@@ -31,17 +31,46 @@ struct TripActionBar: View {
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
+    /// Ceiling on the bar's height at accessibility sizes, past which it scrolls.
+    ///
+    /// The bar is pinned as a bottom `safeAreaInset`, so every point it takes is a point the trip's
+    /// stop list doesn't get. Left to size itself it reaches 496 pt at AX3 and 746 pt at AX5 — on
+    /// an 874 pt screen that is 57% and 85% of the sheet, for a page whose whole purpose is the
+    /// list above it. 300 pt is a little under half the shortest screen this app supports (the SE's
+    /// 667 pt), which leaves the list the larger share at every size.
+    private static let accessibilityMaxHeight: CGFloat = 300
+
     var body: some View {
-        VStack(spacing: 10) {
+        content
+            .padding(.horizontal, 16)
+            .padding(.top, 10)
+            .padding(.bottom, 6)
+            .background(.bar)
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        let stack = VStack(spacing: 10) {
             if canStartLiveActivity {
                 liveActivityButton
             }
             secondaryActions
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 10)
-        .padding(.bottom, 6)
-        .background(.bar)
+
+        if dynamicTypeSize.isAccessibilitySize {
+            // Capped and scrollable rather than truncated or shrunk: at these sizes the buttons
+            // stack full-width (see `secondaryActions`), and every one of them has to stay
+            // reachable at its full label size. Scrolling gives up nothing — it just stops the bar
+            // from swallowing the page.
+            ScrollView(.vertical) { stack }
+                .frame(maxHeight: Self.accessibilityMaxHeight)
+                // The bar is one of two scrollable regions stacked vertically, which is
+                // ambiguous to drag. Bouncing only when it actually overflows keeps the
+                // gesture predictable at the sizes where the content already fits.
+                .scrollBounceBehavior(.basedOnSize)
+        } else {
+            stack
+        }
     }
 
     private var liveActivityButton: some View {

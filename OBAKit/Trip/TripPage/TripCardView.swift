@@ -73,6 +73,51 @@ struct TripCardView: View {
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14))
+        // The card is one fact about one vehicle, so it is one VoiceOver stop —
+        // and it has to be, because `RouteBadgeView`, `CountdownView` and
+        // `DepartureTimeText` each mark themselves `.accessibilityHidden(true)`
+        // on the contract that whatever composes them re-speaks their content.
+        // `DepartureRowView` upholds that; this card did not, so the route
+        // number, the countdown and the departure time — the three things the
+        // page exists to tell you — reached VoiceOver from nowhere at all.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityText)
+    }
+
+    /// Mirrors `DepartureRowView.accessibilityText`: identity first, then when it
+    /// arrives, then the qualifiers. The clock time follows the countdown because
+    /// VoiceOver can't perceive the strikethrough that carries a delay on screen.
+    private var accessibilityText: String {
+        var clauses: [String] = []
+
+        if let departure, let status {
+            let fmt = OBALoc(
+                "trip_page.card.a11y_fmt",
+                value: "Route %@ to %@, arrives in %d minutes, %@",
+                comment: "VoiceOver label for the trip page's header card: route, headsign, minutes until arrival, status."
+            )
+            clauses.append(String(format: fmt, routeShortName, headsign, departure.arrivalDepartureMinutes, status.accessibilityStatusDescription))
+            clauses.append(DepartureTimeDisplay(arrivalDeparture: departure, formatters: formatters).accessibilityTimeDescription)
+
+            if status.showsOccupancy, let occupancy = departure.occupancyStatus, occupancy != .unknown {
+                clauses.append(OccupancyBadge.localizedDescription(occupancy))
+            }
+        } else {
+            // Reached from vehicle search: no stop, so no arrival to count down to.
+            // Route and headsign are all there is to say.
+            let fmt = OBALoc(
+                "trip_page.card.a11y_no_arrival_fmt",
+                value: "Route %@ to %@",
+                comment: "VoiceOver label for the trip page's header card when the trip was reached without a stop, so there is no arrival time."
+            )
+            clauses.append(String(format: fmt, routeShortName, headsign))
+        }
+
+        if let provenance {
+            clauses.append(provenance)
+        }
+
+        return clauses.joined(separator: ", ")
     }
 
     private var badge: some View {
