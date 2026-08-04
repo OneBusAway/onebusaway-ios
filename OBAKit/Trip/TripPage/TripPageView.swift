@@ -99,6 +99,18 @@ struct TripPageView: View {
             }
         }
         .background(Color(uiColor: .systemGroupedBackground))
+        // On the VStack, NOT on the ScrollView inside it. Inset here shortens the
+        // scroll view to the bar's top edge, so the list ends above the bar and no
+        // row can ever slide under it.
+        //
+        // Insetting the ScrollView instead — the arrangement that would let rows
+        // pass beneath the bar's blur — does not survive this page's host. The
+        // sheet is a FloatingPanel, and `StopSheetPresenter` sets
+        // `contentInsetAdjustmentBehavior = .never` on whatever scroll view the
+        // panel tracks (see the note above `configureNavigationBar`). A
+        // `safeAreaInset` reserves its space *through* the safe area, so that
+        // setting discards the reservation: the bar still draws, but the last
+        // stops sit permanently underneath it with no way to scroll them clear.
         .safeAreaInset(edge: .bottom, spacing: 0) {
             TripActionBar(
                 canStartLiveActivity: actions.canStartLiveActivity,

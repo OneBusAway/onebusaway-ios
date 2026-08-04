@@ -102,8 +102,8 @@ struct TripActionBar: View {
                     .minimumScaleFactor(0.8)
             }
             .frame(maxWidth: .infinity, minHeight: 44)
+            .padding(.vertical, 5)
         }
-        .buttonStyle(.bordered)
-        .tint(Color(uiColor: .label))
+        .buttonStyle(FrostedActionButtonStyle())
     }
 }
