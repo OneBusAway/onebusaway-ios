@@ -60,6 +60,12 @@ struct StopPageModeToggle: View {
                 .font(.subheadline.weight(mode == value ? .bold : .semibold))
                 .foregroundStyle(mode == value ? Color.primary : Color.secondary)
                 .lineLimit(1)
+                // The label reports its full width no matter what the row proposes,
+                // so a segment can never answer a tight proposal by truncating to
+                // "Ro…". When the row genuinely can't hold both controls side by
+                // side, `StopPageListHeaderRow`'s `ViewThatFits` stacks them
+                // instead — a wider row rather than a clipped word.
+                .fixedSize(horizontal: true, vertical: false)
                 // A floor rather than a fixed width, so the two segments come out
                 // near-equal (the HIG's "keep segment size consistent") without
                 // clipping a longer localization of either noun.
@@ -110,32 +116,74 @@ struct StopPageListHeaderRow: View {
     private var isAccessibilitySize: Bool { dynamicTypeSize.isAccessibilitySize }
 
     var body: some View {
-        // Stacked at accessibility sizes: the toggle already goes full-width and
-        // two-line there, so keeping the Past control beside it would leave it a
-        // sliver.
-        let layout = isAccessibilitySize
-            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8))
-            : AnyLayout(HStackLayout(spacing: 12))
-        layout {
-            if pastCount > 0 {
-                pastButton
+        Group {
+            // Stacked at accessibility sizes: the toggle already goes full-width and
+            // two-line there, so keeping the Past control beside it would leave it a
+            // sliver.
+            if isAccessibilitySize {
+                stacked
+            } else {
+                // Neither control may truncate (both are one-word-ish tokens that
+                // stop meaning anything clipped), so when the two can't share a
+                // line — a long localization, a narrow device, a large-but-not-yet-
+                // accessibility type size — they get a line each instead.
+                ViewThatFits(in: .horizontal) {
+                    sideBySide
+                    stacked
+                }
             }
-            if !isAccessibilitySize {
-                Spacer(minLength: 0)
-            }
-            StopPageModeToggle(mode: mode, onChange: onChangeMode)
         }
         .padding(.vertical, 4)
     }
 
+    private var sideBySide: some View {
+        HStack(spacing: 12) {
+            if pastCount > 0 {
+                pastButton
+            }
+            Spacer(minLength: 0)
+            StopPageModeToggle(mode: mode, onChange: onChangeMode)
+        }
+    }
+
+    private var stacked: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if pastCount > 0 {
+                pastButton
+            }
+            StopPageModeToggle(mode: mode, onChange: onChangeMode)
+        }
+    }
+
+    /// A tinted capsule with a chevron, not bare bold text. As a label alone it
+    /// read as a section heading — nothing about "Past · 1" said it would open
+    /// anything — so it borrows the header's chip vocabulary for its shape and the
+    /// app tint for its color, and the chevron flips to point at the rows it just
+    /// revealed.
     private var pastButton: some View {
         Button(action: onTogglePast) {
-            Text(showPast
-                 ? OBALoc("stop_page.past_toggle_hide", value: "Hide past", comment: "Button hiding recently departed trips")
-                 : String(format: OBALoc("stop_page.past_toggle_fmt", value: "Past · %d", comment: "Button revealing recently departed trips. %d is the count."), pastCount))
-                .font(.subheadline.weight(.bold))
-                .lineLimit(1)
+            HStack(spacing: 5) {
+                Text(showPast
+                     ? OBALoc("stop_page.past_toggle_hide", value: "Hide past", comment: "Button hiding recently departed trips")
+                     : String(format: OBALoc("stop_page.past_toggle_fmt", value: "Past · %d", comment: "Button revealing recently departed trips. %d is the count."), pastCount))
+                    .font(.subheadline.weight(.semibold))
+                    .lineLimit(1)
+                    // Same reason as the toggle's segments: the count and the verb
+                    // are the whole message, so the row grows or wraps rather than
+                    // clipping either.
+                    .fixedSize(horizontal: true, vertical: false)
+                Image(systemName: "chevron.down")
+                    .font(.caption2.weight(.bold))
+                    .rotationEffect(.degrees(showPast ? 180 : 0))
+                    .accessibilityHidden(true) // decorative; the label carries the state
+            }
+            .foregroundStyle(Color.accentColor)
+            .padding(.horizontal, 12)
+            .frame(minHeight: 34)
+            .background(Color(uiColor: .secondarySystemFill), in: Capsule())
+            .contentShape(Capsule())
         }
+        .buttonStyle(.plain)
         // The visible "Past · 3" is a glanceable token; spoken aloud it needs to
         // say what activating actually does.
         .accessibilityLabel(showPast
