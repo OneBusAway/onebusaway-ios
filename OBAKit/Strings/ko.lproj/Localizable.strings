@@ -1110,6 +1110,12 @@
 /* Button to reveal departures that leave before the rider's transfer arrival. Parameter is the count of hidden departures. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
 "stop_controller.transfer_show_earlier_departures_fmt" = "이전 출발 %d건 표시";
 
+/* Spoken suffix on the currently-focused route chip. */
+"stop_header.chip.highlighted" = "지도에서 강조 표시됨";
+
+/* Spoken suffix on a route chip whose route has a vehicle on the map. */
+"stop_header.chip.live_tracking" = "실시간 추적";
+
 /* Error shown when a departure alarm can't be cancelled because the region's alarm service is unreachable. */
 "stop_page.alarm_cancel_unavailable" = "미리 알림 서비스를 사용할 수 없어 이 미리 알림을 취소하지 못했습니다. 나중에 다시 시도해 주세요.";
 
@@ -1182,11 +1188,11 @@
 /* Caption under the spinner shown while the stop page's departure list loads. */
 "stop_page.loading_departures" = "출발 정보를 불러오는 중…";
 
-/* Stop page mode toggle: grouped by route */
-"stop_page.mode.by_route" = "노선별";
-
 /* Stop page mode toggle: flat time-sorted list */
-"stop_page.mode.chronological" = "시간순";
+"stop_page.mode.time" = "시간";
+
+/* Stop page mode toggle: grouped by route */
+"stop_page.mode.route" = "노선";
 
 /* Opens the full trip screen */
 "stop_page.panel.full_trip" = "전체 운행 보기";
@@ -1229,9 +1235,6 @@
 
 /* Context menu action opening the full trip screen */
 "stop_page.row.show_trip" = "운행 세부 정보 보기";
-
-/* Chronological list section header */
-"stop_page.section.arrivals_departures" = "도착 및 출발";
 
 /* Fallback title for a service alert that has no summary text. */
 "stop_page.service_alert_fallback" = "운행 알림";
@@ -1472,6 +1475,18 @@
 
 /* Suggested invocation phrase for Siri Shortcut */
 "user_activity_builder.show_me_my_bus" = "내 버스 보여줘";
+
+/* Qualifies the countdown in the live-vehicle map callout, as in '1m to this stop'. */
+"vehicle_callout.to_this_stop" = "이 정류장까지";
+
+/* Freshness line in the live-vehicle map callout. %@ is a relative time, e.g. '12s ago'. */
+"vehicle_callout.position_updated_fmt" = "위치 업데이트 %@";
+
+/* Button in the live-vehicle map callout that opens the trip screen. */
+"vehicle_callout.follow_this_trip" = "이 운행 추적하기";
+
+/* Label identifying a vehicle by its ID in the map's vehicle callout, e.g. 'Vehicle 1234'. */
+"vehicle_callout.vehicle_label_fmt" = "차량 %@";
 
 /* The section header to a free-form comments field that the user does not have to add text to in order to submit this form. */
 "vehicle_problem_controller.comments_section.section_title" = "추가 의견 (선택 사항)";

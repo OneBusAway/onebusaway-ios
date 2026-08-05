@@ -30,7 +30,9 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
     BookmarkEditorDelegate,
     Idleable,
     StopPreferencesViewDelegate,
-    Previewable {
+    Previewable,
+    StopSheetCollapsibleContent,
+    StopSheetSelfChromedContent {
 
     let application: Application
     let viewModel: StopViewModel
@@ -39,6 +41,34 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
     /// Called when the user taps the sheet's close button. Set by the map view controller
     /// immediately after creating this controller; no-op when `showToolbarOnBottom` is false.
     var onClose: (() -> Void)?
+
+    /// Set by a host that owns a map, so a trip opened from this page can point
+    /// that map at the trip. Left nil where this page was pushed full-screen —
+    /// there is no map behind it to focus.
+    var onTripPagePush: ((TripPageViewController) -> Void)?
+
+    /// Only the sheet-configured page draws its own header; the pushed variant keeps its
+    /// navigation-bar chrome.
+    var providesOwnSheetChrome: Bool { showsBottomToolbar }
+
+    /// Opens the SwiftUI trip page — the trip panel's "View full trip" and the
+    /// row context menu's "Show Trip Details".
+    ///
+    /// Both used to go through `ViewRouter.navigateTo(arrivalDeparture:from:)`,
+    /// which still builds the old `TripViewController` for the surfaces that push
+    /// full-screen with no map behind them. Routed here instead, so every way out
+    /// of this page reaches the same screen.
+    func showTripPage(for arrivalDeparture: ArrivalDeparture) {
+        let tripPage = TripPageViewController(
+            application: application,
+            arrivalDeparture: arrivalDeparture,
+            originTitle: viewModel.stop?.name
+        )
+        // Only a host that owns a map answers this. Where this page was pushed
+        // full-screen there is nothing behind it to point anywhere.
+        onTripPagePush?(tripPage)
+        application.viewRouter.navigate(to: tripPage, from: self)
+    }
 
     public var idleTimerFailsafe: Timer?
 
@@ -76,6 +106,23 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
     /// never migrates between presentations — so the pushed screen is unreachable from here.
     private let showToolbarOnBottom: Bool
 
+    /// The map's focus channel, when this page was presented as the map's stop
+    /// sheet. Inert for every pushed presentation.
+    ///
+    /// Stored on the controller and re-threaded through `installRootView()`,
+    /// exactly like `isAtTip` — writing `rootView.mapFocus` alone would be
+    /// silently dropped by the next `installRootView()` (e.g. from
+    /// `exitPreviewMode`).
+    private var mapFocus = StopMapFocus()
+
+    /// Attaches the map's focus channel so the sheet header's route chips can decorate
+    /// themselves from — and write into — the same object the map layer reads. Called once, by
+    /// the map view controller, immediately after creating this instance for its sheet.
+    func attach(focus: StopMapFocus) {
+        mapFocus = focus
+        installRootView()
+    }
+
     convenience init(application: Application, stop: Stop, showToolbarOnBottom: Bool = false) {
         self.init(application: application, stopID: stop.id, stop: stop, showToolbarOnBottom: showToolbarOnBottom)
     }
@@ -96,7 +143,8 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
             userDefaults: application.userDefaults,
             snapshotLoader: { _ in nil },
             navigation: Self.placeholderNavigation,
-            formatters: application.formatters
+            formatters: application.formatters,
+            mapFocus: mapFocus
         ))
 
         installRootView()
@@ -106,7 +154,8 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
 
     /// Builds the SwiftUI root with the real navigation handler. Called again whenever
     /// `showsBottomToolbar` changes — which only happens on entering or leaving preview mode,
-    /// before the rider has interacted with the page, so the `@State` reset costs nothing.
+    /// before the rider has interacted with the page, so the `@State` reset costs nothing — and
+    /// also by `attach(focus:)`, which re-threads `mapFocus` through a fresh root the same way.
     private func installRootView() {
         rootView = StopPageRootView(
             viewModel: viewModel,
@@ -117,6 +166,7 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
             },
             navigation: makeNavigationHandler(),
             formatters: application.formatters,
+            mapFocus: mapFocus,
             showToolbarOnBottom: showsBottomToolbar,
             isCollapsed: isAtTip
         )
@@ -195,6 +245,7 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
         showWalkingDirections: {},
         showAlertDetail: { _ in },
         showBookmarkEditor: { _ in },
+        shareTrip: { _ in },
         showAlarmPicker: { _ in },
         startLiveActivity: { _ in },
         showExternalSurveyError: {},
@@ -208,11 +259,15 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
         closeSheet: {}
     )
 
+    /// Owns the picker → share-sheet trip-sharing flow. Holds `self` weakly,
+    /// so retaining it for the controller's lifetime creates no cycle.
+    private lazy var tripSharingCoordinator = TripSharingCoordinator(application: application, presenter: self)
+
     private func makeNavigationHandler() -> StopPageNavigationHandler {
         StopPageNavigationHandler(
             showTrip: { [weak self] departure in
                 guard let self else { return }
-                self.application.viewRouter.navigateTo(arrivalDeparture: departure, from: self)
+                self.showTripPage(for: departure)
             },
             showScheduleForStop: { [weak self] in self?.showScheduleForStop() },
             showScheduleForRoute: { [weak self] departure in self?.showScheduleForRoute(for: departure) },
@@ -223,6 +278,7 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
                 self.application.viewRouter.navigateTo(alert: alert, from: self)
             },
             showBookmarkEditor: { [weak self] departure in self?.showBookmarkEditor(for: departure) },
+            shareTrip: { [weak self] departure in self?.tripSharingCoordinator.start(arrivalDeparture: departure) },
             showAlarmPicker: { [weak self] departure in self?.showAlarmPicker(for: departure) },
             startLiveActivity: { [weak self] departure in self?.startLiveActivity(for: departure) },
             showExternalSurveyError: { [weak self] in self?.showExternalSurveyError() },
@@ -463,9 +519,15 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
 
         // The same trip can be started from here and from the bookmarks list, so
         // this guard has to live on both start paths — otherwise one stop ends up
-        // with two Lock Screen cards and two OBACloud push registrations.
-        if Activity<TripAttributes>.running(matching: staticData) != nil {
-            Logger.info("Live Activity already running for stop \(staticData.stopID) route \(staticData.routeShortName); not starting a duplicate.")
+        // with two Lock Screen cards and two OBACloud push registrations. Re-Track
+        // still needs to promote the existing activity: after A→B the Island is
+        // on B with A demoted to 0, so tapping Track on A again must bump A.
+        if let existing = Activity<TripAttributes>.running(matching: staticData) {
+            Logger.info("Live Activity already running for stop \(staticData.stopID) route \(staticData.routeShortName); promoting instead of duplicating.")
+            let existingID = existing.id
+            Task {
+                await Activity<TripAttributes>.promoteToDynamicIsland(activityID: existingID)
+            }
             // Re-show the confirmation rather than appearing to do nothing.
             viewModel.signalLiveActivityStarted()
             return
@@ -477,13 +539,28 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
         }
 
         let attributes = TripAttributes(staticData: staticData)
+        // Prominence so the Dynamic Island switches to this Track when another
+        // trip is already live (#1189 Problem 2). Default score is 0 and equal
+        // scores keep the first-started activity.
+        let prominence = TripLiveActivityRelevance.prominenceScore()
         do {
             let activity = try Activity.request(
                 attributes: attributes,
-                content: .init(state: contentState, staleDate: nil),
+                content: TripLiveActivityRelevance.content(
+                    state: contentState,
+                    staleDate: nil,
+                    relevanceScore: prominence
+                ),
                 pushType: .token
             )
             application.liveActivityTracker.track(activity: activity, metadata: .init(departure))
+            let activityID = activity.id
+            Task {
+                await Activity<TripAttributes>.demoteLivePeers(
+                    exceptActivityID: activityID,
+                    relativeTo: prominence
+                )
+            }
             Logger.info("Started Live Activity with ID: \(activity.id)")
             viewModel.signalLiveActivityStarted()
         } catch {

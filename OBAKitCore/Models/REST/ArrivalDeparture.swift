@@ -250,6 +250,15 @@ public final class ArrivalDeparture: NSObject, Identifiable, Decodable, HasRefer
         return stopSequence == totalStopsInTrip - 1
     }
 
+    /// The earliest date considered plausible for display. Matches the threshold used by
+    /// `ModelHelpers.nilifyDate` when nullifying predicted times during decode.
+    public static let earliestPlausibleDate = Date(timeIntervalSinceReferenceDate: 1.0)
+
+    /// Whether `arrivalDepartureDate` is after the epoch/null sentinel threshold.
+    public var hasPlausibleArrivalDepartureDate: Bool {
+        arrivalDepartureDate >= Self.earliestPlausibleDate
+    }
+
     /// A singluar value that can be displayed in the UI to represent the best date for this trip.
     public var arrivalDepartureDate: Date {
         switch arrivalDepartureStatus {

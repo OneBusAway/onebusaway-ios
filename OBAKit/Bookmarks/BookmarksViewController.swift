@@ -221,9 +221,15 @@ class BookmarksViewController: UIHostingController<BookmarksRootView>,
         // Tapping Track again on a bookmark that is already tracked — or tracking
         // the same trip from the stop page — would otherwise mint a second
         // activity for one stop, leaving the user with duplicate Lock Screen
-        // cards and duplicate OBACloud push registrations.
-        if Activity<TripAttributes>.running(matching: staticData) != nil {
-            Logger.info("Live Activity already running for stop \(staticData.stopID) route \(staticData.routeShortName); not starting a duplicate.")
+        // cards and duplicate OBACloud push registrations. Re-Track still needs
+        // to promote the existing activity: after A→B the Island is on B with A
+        // demoted to 0, so tapping Track on A again must bump A (not just toast).
+        if let existing = Activity<TripAttributes>.running(matching: staticData) {
+            Logger.info("Live Activity already running for stop \(staticData.stopID) route \(staticData.routeShortName); promoting instead of duplicating.")
+            let existingID = existing.id
+            Task {
+                await Activity<TripAttributes>.promoteToDynamicIsland(activityID: existingID)
+            }
             showLiveActivityStartedToast()
             return
         }
@@ -238,13 +244,28 @@ class BookmarksViewController: UIHostingController<BookmarksRootView>,
         }
 
         let attributes = TripAttributes(staticData: staticData)
+        // Prominence so the Dynamic Island switches to this Track when another
+        // trip is already live (#1189 Problem 2). Default score is 0 and equal
+        // scores keep the first-started activity.
+        let prominence = TripLiveActivityRelevance.prominenceScore()
         do {
             let activity = try Activity.request(
                 attributes: attributes,
-                content: .init(state: contentState, staleDate: nil),
+                content: TripLiveActivityRelevance.content(
+                    state: contentState,
+                    staleDate: nil,
+                    relevanceScore: prominence
+                ),
                 pushType: .token
             )
             trackLiveActivity(activity, arrivalDepartures: arrivalDepartures)
+            let activityID = activity.id
+            Task {
+                await Activity<TripAttributes>.demoteLivePeers(
+                    exceptActivityID: activityID,
+                    relativeTo: prominence
+                )
+            }
             Logger.info("Started Live Activity with ID: \(activity.id)")
             showLiveActivityStartedToast()
         } catch {
@@ -306,8 +327,23 @@ class BookmarksViewController: UIHostingController<BookmarksRootView>,
                         Logger.info("Live Activity \(activityID) is no longer running; skipping update.")
                         return
                     }
+                    // Preserve prominence via the shared helper, reading the score
+                    // off this freshly re-fetched activity — not a snapshot taken
+                    // before the hop, which can predate a concurrent
+                    // promote/demote and would silently write the stale score
+                    // back, undoing it (#1243 review follow-up).
+                    //
+                    // `staleDate` stays nil here on purpose: unlike the
+                    // score-only promote/demote touches (which must carry the
+                    // push-set marker through), this update installs fresh local
+                    // content, and carrying a possibly-past stale-date forward
+                    // could mark it stale on arrival. The next push re-arms it.
                     await activity.update(
-                        .init(state: contentState, staleDate: nil)
+                        TripLiveActivityRelevance.contentPreservingRelevance(
+                            state: contentState,
+                            staleDate: nil,
+                            existing: activity.content
+                        )
                     )
                     Logger.info("Updated Live Activity for stop: \(staticData.stopID) route: \(staticData.routeShortName)")
                 }

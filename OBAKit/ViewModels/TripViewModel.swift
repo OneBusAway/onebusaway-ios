@@ -156,7 +156,11 @@ class TripViewModel: ObservableObject {
         guard let apiService = application.apiService,
               routePolylineCoordinates == nil else { return nil }
 
-        let response = try await apiService.getShape(id: tripConvertible.trip.shapeID)
+        // No shape ID means the agency doesn't publish shape data for this trip.
+        // Degrade quietly: the trip map simply draws no route line.
+        guard let shapeID = tripConvertible.trip.shapeID, !shapeID.isEmpty else { return nil }
+
+        let response = try await apiService.getShape(id: shapeID)
         return Polyline(encodedPolyline: response.entry.points).coordinates
     }
 

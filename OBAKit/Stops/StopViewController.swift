@@ -79,6 +79,8 @@ public class StopViewController: UIViewController,
     let viewModel: StopViewModel
     private var cancellables = Set<AnyCancellable>()
     private var firstLoad = true
+    /// Cooldown for the refresh bar-button so rapid taps don't stampede the API.
+    private let refreshDebouncer = Debouncer()
 
     // MARK: - Forwarded Properties (external API compat)
 
@@ -713,7 +715,7 @@ public class StopViewController: UIViewController,
         var sections: [OBAListViewSection] = []
 
         if stopPreferences.sortType == .time {
-            var arrDeps = stopArrivals.arrivalsAndDepartures
+            var arrDeps = stopArrivals.arrivalsAndDepartures.filteringImplausibleDates()
             if isListFiltered { arrDeps = arrDeps.filter(preferences: stopPreferences) }
             // `arrDeps` before the Departure Type filter decides whether that
             // filter — rather than genuinely empty service — emptied the list.
@@ -733,7 +735,8 @@ public class StopViewController: UIViewController,
             }
 
         } else {
-            let groups = stopArrivals.arrivalsAndDepartures
+            let plausible = stopArrivals.arrivalsAndDepartures.filteringImplausibleDates()
+            let groups = plausible
                 .filter(by: activeArrivalDepartureFilter)
                 .group(preferences: stopPreferences, filter: isListFiltered)
                 .localizedStandardCompare()
@@ -742,8 +745,10 @@ public class StopViewController: UIViewController,
             // groups back — an all-routes-hidden route filter also produces zero
             // groups, and pointing the user at Departure Type there is wrong.
             // Short-circuiting keeps the second grouping pass off the common path.
+            // Both passes start from `plausible` so the comparison isn't skewed
+            // by rows only one of them would have dropped.
             if groups.isEmpty, activeArrivalDepartureFilter != .all,
-               !stopArrivals.arrivalsAndDepartures.group(preferences: stopPreferences, filter: isListFiltered).isEmpty {
+               !plausible.group(preferences: stopPreferences, filter: isListFiltered).isEmpty {
                 sections.append(arrivalFilterNoResultsSection())
             } else {
                 sections = groups.flatMap { group -> [OBAListViewSection] in
@@ -922,6 +927,11 @@ public class StopViewController: UIViewController,
                 }
                 actions.append(schedule)
             }
+
+            let shareTrip = UIAction(title: OBALoc("stop_controller.share_trip", value: "Share Trip", comment: "Context menu button that allows the user to share their trip status."), image: Icons.share) { [weak self] _ in
+                self?.shareTripStatus(viewModel: viewModel)
+            }
+            actions.append(shareTrip)
 
             // Create and return a UIMenu with all of the actions as children
             return UIMenu(title: viewModel.name, children: actions)
@@ -1188,26 +1198,18 @@ public class StopViewController: UIViewController,
     }
 
     // MARK: - Share Trip Status
-    func shareTripStatus(viewModel: ArrivalDepartureItem) {
-        guard let arrivalDeparture = arrivalDeparture(forViewModel: viewModel) else { return }
-        shareTripStatus(arrivalDeparture: arrivalDeparture)
-    }
 
-    func shareTripStatus(arrivalDeparture: ArrivalDeparture) {
-        guard
-            let region = application.currentRegion,
-            let appLinksRouter = application.appLinksRouter
-        else {
+    /// Owns the picker → share-sheet flow. Holds `self` weakly, so retaining it
+    /// for the controller's lifetime creates no cycle.
+    private lazy var tripSharingCoordinator = TripSharingCoordinator(application: application, presenter: self)
+
+    private func shareTripStatus(viewModel: ArrivalDepartureItem) {
+        guard let arrivalDeparture = arrivalDeparture(forViewModel: viewModel) else {
+            Logger.error("No arrivalDeparture found for share trip status view model. arrivalDepartureID: \(viewModel.arrivalDepartureID), stopID: \(viewModel.stopID)")
+            tripSharingCoordinator.presentShareError()
             return
         }
-
-        let url = appLinksRouter.encode(arrivalDeparture: arrivalDeparture, region: region) as Any
-
-        let activityController = UIActivityViewController(activityItems: [self, url], applicationActivities: nil)
-
-        // Use self.presnt because when using application.viewRouter.present(:_),
-        // it disables UIActivityViewController's "tap anywhere to dismiss".
-        self.present(activityController, animated: true)
+        tripSharingCoordinator.start(arrivalDeparture: arrivalDeparture)
     }
 
     // MARK: - Schedules
@@ -1226,7 +1228,7 @@ public class StopViewController: UIViewController,
 
     /// Reloads data.
     @objc private func refresh() {
-        DispatchQueue.main.debounce(interval: 1.0) { [weak self] in
+        refreshDebouncer.debounce(interval: 1.0) { [weak self] in
             guard let self else { return }
             Task(priority: .userInitiated) { await self.viewModel.refresh() }
         }

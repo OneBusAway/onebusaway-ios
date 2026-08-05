@@ -132,6 +132,20 @@ import OTPKit
         return nil
     }
 
+    /// Rentals are ambient context: while a stop sheet is up they recede to gray
+    /// dots so the selected stop's route lines stay legible.
+    ///
+    /// Recognizes exactly what `annotationView(for:in:)` above claims — the two
+    /// must agree, or a rental either keeps its full marker behind the sheet or
+    /// disappears from the map instead of receding.
+    func recedesBehindStopSheet(_ annotation: MKAnnotation) -> Bool {
+        if annotation is RentalAnnotation { return true }
+        if let cluster = annotation as? MKClusterAnnotation {
+            return cluster.memberAnnotations.first is RentalAnnotation
+        }
+        return false
+    }
+
     func detailViewController(for annotation: MKAnnotation) -> UIViewController? {
         if let rentalAnnotation = annotation as? RentalAnnotation {
             return RentalDetailViewController(

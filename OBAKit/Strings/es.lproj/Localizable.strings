@@ -1110,6 +1110,12 @@
 /* Button to reveal departures that leave before the rider's transfer arrival. Parameter is the count of hidden departures. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
 "stop_controller.transfer_show_earlier_departures_fmt" = "Mostrar %d salidas anteriores";
 
+/* Spoken suffix on the currently-focused route chip. */
+"stop_header.chip.highlighted" = "resaltado en el mapa";
+
+/* Spoken suffix on a route chip whose route has a vehicle on the map. */
+"stop_header.chip.live_tracking" = "seguimiento en vivo";
+
 /* Error shown when a departure alarm can't be cancelled because the region's alarm service is unreachable. */
 "stop_page.alarm_cancel_unavailable" = "No se pudo cancelar esta alarma porque el servicio de alarmas no está disponible en este momento. Por favor inténtelo más tarde.";
 
@@ -1182,11 +1188,11 @@
 /* Caption under the spinner shown while the stop page's departure list loads. */
 "stop_page.loading_departures" = "Cargando salidas…";
 
-/* Stop page mode toggle: grouped by route */
-"stop_page.mode.by_route" = "Por ruta";
-
 /* Stop page mode toggle: flat time-sorted list */
-"stop_page.mode.chronological" = "Cronológico";
+"stop_page.mode.time" = "Hora";
+
+/* Stop page mode toggle: grouped by route */
+"stop_page.mode.route" = "Ruta";
 
 /* Opens the full trip screen */
 "stop_page.panel.full_trip" = "Ver viaje completo";
@@ -1229,9 +1235,6 @@
 
 /* Context menu action opening the full trip screen */
 "stop_page.row.show_trip" = "Ver Detalles del Viaje";
-
-/* Chronological list section header */
-"stop_page.section.arrivals_departures" = "Llegadas y salidas";
 
 /* Fallback title for a service alert that has no summary text. */
 "stop_page.service_alert_fallback" = "Alerta de Servicio";
@@ -1472,6 +1475,18 @@
 
 /* Suggested invocation phrase for Siri Shortcut */
 "user_activity_builder.show_me_my_bus" = "Mostrar mi vehículo";
+
+/* Qualifies the countdown in the live-vehicle map callout, as in '1m to this stop'. */
+"vehicle_callout.to_this_stop" = "a esta parada";
+
+/* Freshness line in the live-vehicle map callout. %@ is a relative time, e.g. '12s ago'. */
+"vehicle_callout.position_updated_fmt" = "Posición actualizada %@";
+
+/* Button in the live-vehicle map callout that opens the trip screen. */
+"vehicle_callout.follow_this_trip" = "Seguir este viaje";
+
+/* Label identifying a vehicle by its ID in the map's vehicle callout, e.g. 'Vehicle 1234'. */
+"vehicle_callout.vehicle_label_fmt" = "Vehículo %@";
 
 /* The section header to a free-form comments field that the user does not have to add text to in order to submit this form. */
 "vehicle_problem_controller.comments_section.section_title" = "Comentarios adicionales (Opcional)";

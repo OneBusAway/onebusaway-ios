@@ -71,6 +71,7 @@ public class MoreViewController: UIViewController,
             donateSection,
             updatesAndAlertsSection,
             myLocationSection,
+            agencyContactSection,
             helpOutSection,
             customLinksSection,
             aboutSection
@@ -296,6 +297,57 @@ public class MoreViewController: UIViewController,
 
         guard !contents.isEmpty else { return nil }
         return OBAListViewSection(id: "help_out", title: header, contents: contents)
+    }
+
+    // MARK: - Agency contact (tutorial / phone / text) — #614
+    var agencyContactSection: OBAListViewSection? {
+        let config = application.applicationBundle.moreTabConfiguration
+        var contents: [AnyOBAListViewItem] = []
+
+        if let tutorialURL = config.tutorialURL {
+            contents.append(OBAListRowView.DefaultViewModel(
+                title: OBALoc(
+                    "more_controller.tutorials",
+                    value: "Tutorials",
+                    comment: "Opens the agency's tutorial or user-manual page from the More tab."),
+                onSelectAction: { [weak self] _ in
+                    self?.application.open(tutorialURL, options: [:], completionHandler: nil)
+                }
+            ).typeErased)
+        }
+
+        if let phoneURL = config.phoneURL {
+            contents.append(OBAListRowView.DefaultViewModel(
+                title: OBALoc(
+                    "more_controller.call_agency",
+                    value: "Call Agency",
+                    comment: "Opens a tel: link to call the transit agency from the More tab."),
+                onSelectAction: { [weak self] _ in
+                    self?.application.open(phoneURL, options: [:], completionHandler: nil)
+                }
+            ).typeErased)
+        }
+
+        if let textURL = config.textURL {
+            contents.append(OBAListRowView.DefaultViewModel(
+                title: OBALoc(
+                    "more_controller.text_agency",
+                    value: "Text Agency",
+                    comment: "Opens an sms: (or web) link for the agency's text information service."),
+                onSelectAction: { [weak self] _ in
+                    self?.application.open(textURL, options: [:], completionHandler: nil)
+                }
+            ).typeErased)
+        }
+
+        guard !contents.isEmpty else { return nil }
+
+        let header = OBALoc(
+            "more_controller.agency_contact.header",
+            value: "Contact & Help",
+            comment: "Header for More-tab rows that open tutorial, phone, or text links configured by the agency."
+        )
+        return OBAListViewSection(id: "agency_contact", title: header, contents: contents)
     }
 
     // MARK: - Custom Links section

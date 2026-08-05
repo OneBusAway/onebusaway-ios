@@ -170,6 +170,73 @@ final class ArrivalDepartureTests: OBATestCase {
         // ModelHelpers.nilifyDate should have converted very early dates to nil
         #expect(arrival.predictedArrival == nil)
         #expect(arrival.predictedDeparture == nil)
+        #expect(arrival.hasPlausibleArrivalDepartureDate == true)
+    }
+
+    @Test func `Epoch scheduled times are implausible`() {
+        let data: [String: Any] = [
+            "arrivalEnabled": true,
+            "blockTripSequence": 1,
+            "departureEnabled": true,
+            "distanceFromStop": 100.0,
+            "lastUpdateTime": 1234567890,
+            "numberOfStopsAway": 1,
+            "predicted": false,
+            "routeId": "route_epoch",
+            "scheduledArrivalTime": 0,
+            "scheduledDepartureTime": 0,
+            "serviceDate": 1234512000,
+            "situationIds": [],
+            "status": "SCHEDULED",
+            "stopId": "stop_epoch",
+            "stopSequence": 5,
+            "tripId": "trip_epoch",
+            "vehicleId": "vehicle_epoch"
+        ]
+
+        let arrival = try! Fixtures.dictionaryToModel(type: ArrivalDeparture.self, dictionary: data)
+
+        #expect(arrival.hasPlausibleArrivalDepartureDate == false)
+    }
+
+    @Test func `Valid scheduled times are plausible`() throws {
+        let arrival = try Fixtures.arrivalDeparture(
+            predicted: false,
+            scheduledArrival: 1_700_000_000,
+            scheduledDeparture: 1_700_000_600
+        )
+
+        #expect(arrival.hasPlausibleArrivalDepartureDate == true)
+    }
+
+    @Test func `Nilified predicted time with valid scheduled remains plausible`() {
+        let data: [String: Any] = [
+            "arrivalEnabled": true,
+            "blockTripSequence": 1,
+            "departureEnabled": true,
+            "distanceFromStop": 100.0,
+            "lastUpdateTime": 1234567890,
+            "numberOfStopsAway": 1,
+            "predicted": true,
+            "predictedArrivalTime": 0,
+            "predictedDepartureTime": 0,
+            "routeId": "route_fallback",
+            "scheduledArrivalTime": 1234567900,
+            "scheduledDepartureTime": 1234567930,
+            "serviceDate": 1234512000,
+            "situationIds": [],
+            "status": "SCHEDULED",
+            "stopId": "stop_fallback",
+            "stopSequence": 5,
+            "tripId": "trip_fallback",
+            "vehicleId": "vehicle_fallback"
+        ]
+
+        let arrival = try! Fixtures.dictionaryToModel(type: ArrivalDeparture.self, dictionary: data)
+
+        #expect(arrival.predictedArrival == nil)
+        #expect(arrival.predictedDeparture == nil)
+        #expect(arrival.hasPlausibleArrivalDepartureDate == true)
     }
     
     @Test func `Has references load references`() {

@@ -34,6 +34,9 @@ struct StopPageNavigationHandler {
     /// Opens the bookmark editor: `nil` for a stop-level bookmark, an
     /// `ArrivalDeparture` for a trip-level bookmark (row swipe/menu).
     let showBookmarkEditor: (ArrivalDeparture?) -> Void
+    /// Starts the trip-sharing flow for a departure (row context menu):
+    /// destination stop picker, then the system share sheet.
+    let shareTrip: (ArrivalDeparture) -> Void
     /// Presents the alarm lead-time picker bulletin for a departure (the trip
     /// panel's Set-an-alarm button), reusing `AlarmBuilder` from the legacy
     /// stop screen.
@@ -81,6 +84,9 @@ struct StopPageRootView: View {
     /// times through the same instance as the rest of the app instead of
     /// spinning up ad-hoc `DateFormatter`s.
     let formatters: Formatters
+    /// The map's focus channel. A plain pass-through here (see `StopPageView`'s note on
+    /// observation discipline) — only `StopPageSheetHeaderView` observes it.
+    let mapFocus: StopMapFocus
     /// `true` when the page is presented as a sheet over the map: the header goes light and
     /// compact, and the chrome moves from the navigation bar to a bottom toolbar. `false` — the
     /// pushed presentation — leaves both exactly as they were.
@@ -96,6 +102,7 @@ struct StopPageRootView: View {
             userDefaults: userDefaults,
             snapshotLoader: snapshotLoader,
             navigation: navigation,
+            mapFocus: mapFocus,
             showToolbarOnBottom: showToolbarOnBottom,
             isCollapsed: isCollapsed
         )
@@ -124,6 +131,12 @@ struct StopPageView: View {
     /// the hosting VC so this view stays router-free.
     let navigation: StopPageNavigationHandler
 
+    /// The map's focus channel. A plain pass-through — `StopPageSheetHeaderView` is the one view
+    /// in this subtree that observes it. Observing it here too would re-evaluate this view's
+    /// entire departures list on every refresh and every chip tap, on top of the VM churn this
+    /// view already re-evaluates for (see the type doc comment above).
+    let mapFocus: StopMapFocus
+
     /// Selects the sheet presentation's chrome: the light `StopPageSheetHeaderView` and a bottom
     /// `StopPageToolbar`. `false` keeps the pushed presentation's dark map header and leaves the
     /// chrome in the navigation bar, where `configureBarButtons()` puts it.
@@ -137,7 +150,6 @@ struct StopPageView: View {
         showToolbarOnBottom && !isCollapsed
     }
 
-    @State private var expandedDepartureID: String?
     @State private var expandedRouteID: RouteID?
     @State private var didSeedMode = false
     /// Set when the user explicitly dismisses the donation card, so it disappears
@@ -178,7 +190,10 @@ struct StopPageView: View {
     /// the Departure Type filter emptied the page.
     private var routeVisibleDepartures: [ArrivalDeparture] {
         let all = viewModel.stopArrivals?.arrivalsAndDepartures ?? []
-        return viewModel.isListFiltered ? all.filter(preferences: viewModel.stopPreferences) : all
+        let visible = viewModel.isListFiltered ? all.filter(preferences: viewModel.stopPreferences) : all
+        // Terminal dedup deliberately runs downstream, after the Departure Type
+        // filter — see the ordering note at the `departures` binding below.
+        return visible.filteringImplausibleDates()
     }
 
     private var attributionText: String {
@@ -215,6 +230,12 @@ struct StopPageView: View {
         let isGrouped = viewModel.stopPreferences.sortType == .route
         let routeGroups = isGrouped ? StopPageListBuilder.routeGroups(departures) : []
         let listIsEmpty = isGrouped ? routeGroups.isEmpty : departures.isEmpty
+        // Hoisted for the same reason as `walkTime`: the header row's Past count and
+        // the list's past section have to be reading the same partition.
+        let chronologicalPartition = StopPageListBuilder.chronologicalPartition(
+            departures,
+            walkMinutes: walkTime?.walkMinutes
+        )
 
         List {
             if let stop = viewModel.stop {
@@ -283,15 +304,21 @@ struct StopPageView: View {
 
             if hasLoadedArrivals {
                 Section {
-                    StopPageModeToggle(mode: viewModel.stopPreferences.sortType) { newValue in
-                        withAnimation {
-                            // Switching modes collapses every open accordion (§4.6).
-                            expandedDepartureID = nil
-                            expandedRouteID = nil
-                            userDefaults.set(newValue.rawValue, forKey: Self.lastUsedStopSortKey)
-                            viewModel.updateSortType(newValue)
+                    StopPageListHeaderRow(
+                        mode: viewModel.stopPreferences.sortType,
+                        // Grouped mode has no past partition, so it has nothing to disclose.
+                        pastCount: isGrouped ? 0 : chronologicalPartition.past.count,
+                        showPast: !pastCollapsed,
+                        onTogglePast: { withAnimation { pastCollapsed.toggle() } },
+                        onChangeMode: { newValue in
+                            withAnimation {
+                                // Switching modes collapses the open route card.
+                                expandedRouteID = nil
+                                userDefaults.set(newValue.rawValue, forKey: Self.lastUsedStopSortKey)
+                                viewModel.updateSortType(newValue)
+                            }
                         }
-                    }
+                    )
                     .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
@@ -337,26 +364,21 @@ struct StopPageView: View {
                 }
             } else if !isGrouped {
                 ChronologicalListView(
-                    partition: StopPageListBuilder.chronologicalPartition(departures, walkMinutes: walkTime?.walkMinutes),
+                    // Same value the header row counts its Past disclosure from —
+                    // two derivations of the same partition could disagree about
+                    // whether there is anything to disclose.
+                    partition: chronologicalPartition,
                     walkMinutes: walkTime?.walkMinutes,
                     showPast: !pastCollapsed,
-                    expandedDepartureID: expandedDepartureID,
                     statusProvider: { DepartureStatus(arrivalDeparture: $0) },
                     alarmLookup: { viewModel.alarm(for: $0) },
                     actionsProvider: makeActions(for:),
-                    onTogglePast: { withAnimation { pastCollapsed.toggle() } },
-                    onToggleExpand: { departure in
-                        withAnimation(.snappy) {
-                            expandedDepartureID = expandedDepartureID == departure.id ? nil : departure.id
-                        }
-                    },
-                    panelBuilder: makePanel(for:)
+                    onSelectDeparture: { navigation.showTrip($0) }
                 )
             } else {
                 GroupedListView(
                     groups: routeGroups,
                     expandedRouteID: expandedRouteID,
-                    openTripDepartureID: expandedDepartureID,
                     statusProvider: { DepartureStatus(arrivalDeparture: $0) },
                     alarmLookup: { viewModel.alarm(for: $0) },
                     alarmLeadTime: { viewModel.alarmLeadTimeMinutes($0) },
@@ -364,14 +386,9 @@ struct StopPageView: View {
                     onToggleRoute: { routeID in
                         withAnimation(.snappy) {
                             expandedRouteID = expandedRouteID == routeID ? nil : routeID
-                            expandedDepartureID = nil
                         }
                     },
-                    onToggleTrip: { departure in
-                        withAnimation(.snappy) {
-                            expandedDepartureID = expandedDepartureID == departure.id ? nil : departure.id
-                        }
-                    },
+                    onSelectDeparture: { navigation.showTrip($0) },
                     onAlarmToggle: { departure in
                         if viewModel.alarm(for: departure) != nil {
                             Task { await viewModel.cancelAlarm(for: departure) }
@@ -379,7 +396,6 @@ struct StopPageView: View {
                             navigation.showAlarmPicker(departure)
                         }
                     },
-                    panelBuilder: makePanel(for:)
                 )
             }
 
@@ -409,7 +425,7 @@ struct StopPageView: View {
         .safeAreaInset(edge: .top, spacing: 0) {
             if showToolbarOnBottom {
                 if let stop = viewModel.stop {
-                    StopPageSheetHeaderView(stop: stop, walkTime: walkTime, onWalkingDirections: navigation.showWalkingDirections, onClose: navigation.closeSheet, isCollapsed: isCollapsed)
+                    StopPageSheetHeaderView(stop: stop, walkTime: walkTime, onWalkingDirections: navigation.showWalkingDirections, onClose: navigation.closeSheet, isCollapsed: isCollapsed, mapFocus: mapFocus)
                 } else {
                     // Unconditional, unlike the pushed presentation's header: with no navigation
                     // bar behind the sheet, this strip carries the only close button, so a stop
@@ -429,12 +445,8 @@ struct StopPageView: View {
         .onAppear(perform: seedLastUsedModeIfNeeded)
         .onDisappear { viewModel.deactivate() }
         .refreshable { await viewModel.refresh() }
-        // Reconcile the open accordions against the live feed: when a refresh
-        // drops the expanded departure (or its whole route) from the list,
-        // clear the stale expansion so no orphaned panel lingers.
-        .onChange(of: departureIDs) { _, ids in
-            if let id = expandedDepartureID, !ids.contains(id) { expandedDepartureID = nil }
-        }
+        // Reconcile the open route card against the live feed: when a refresh
+        // drops the expanded route from the list, clear the stale expansion.
         .onChange(of: routeIDs) { _, ids in
             if let rid = expandedRouteID, !ids.contains(rid) { expandedRouteID = nil }
         }
@@ -503,30 +515,6 @@ struct StopPageView: View {
     /// `StopPageView` is the only view that touches the VM, so the panel receives
     /// plain values plus closures — the `approachLoader` closure wraps the cached,
     /// live-only VM fetch; the alarm closures route through the single alarm index.
-    private func makePanel(for departure: ArrivalDeparture) -> TripDetailPanelView {
-        let status = DepartureStatus(arrivalDeparture: departure)
-        return TripDetailPanelView(
-            departure: departure,
-            status: status,
-            alarm: nil,
-            alarmLeadTimeMinutes: 0,
-            canAlarm: ActivityAuthorizationInfo().areActivitiesEnabled,
-            // Bumps on every successful refresh so the panel re-fetches its
-            // approach timeline while it stays open (scheduled→live flips and
-            // failed first fetches retry on the next refresh).
-            refreshToken: viewModel.lastUpdated,
-            cachedTripDetails: viewModel.cachedApproachTripDetails(for: departure),
-            approachLoader: { await viewModel.approachTripDetails(for: departure) },
-            onSetAlarm: { navigation.startLiveActivity(departure) },
-            onCancelAlarm: {},
-            onChangeAlarm: {},
-            canSchedule: navigation.canScheduleForRoute,
-            onSchedule: { navigation.showScheduleForRoute(departure) },
-            onBookmark: { navigation.showBookmarkEditor(departure) },
-            onViewFullTrip: { navigation.showTrip(departure) }
-        )
-    }
-
     private func makeActions(for departure: ArrivalDeparture) -> DepartureRowActions {
         DepartureRowActions(
             canAlarm: viewModel.canCreateAlarm(for: departure),
@@ -542,98 +530,9 @@ struct StopPageView: View {
             onSchedule: { navigation.showScheduleForRoute(departure) },
             onBookmark: { navigation.showBookmarkEditor(departure) },
             onShowTrip: { navigation.showTrip(departure) },
+            onShareTrip: { navigation.shareTrip(departure) },
             makePreview: { navigation.makeTripPreview(departure) }
         )
-    }
-}
-
-/// The Chronological / By route switch shown above the departure list.
-/// Factored into its own `View` (per the SwiftUI structure guidance and the
-/// Task 9 interface) so `StopPageView` stays a thin composition — the mode
-/// change side effects (collapse accordions, persist) live in the caller's
-/// `onChange`.
-///
-/// A custom capsule control rather than a segmented `Picker`: taller segments,
-/// full row width (the row carries the list's standard horizontal insets), and
-/// a Liquid Glass backdrop on iOS 26+ (an ultra-thin-material capsule stands
-/// in on earlier versions). The selected pill slides between segments via
-/// `matchedGeometryEffect`; the caller's `withAnimation` drives it.
-struct StopPageModeToggle: View {
-    let mode: StopSort
-    let onChange: (StopSort) -> Void
-
-    @Namespace private var selectionNamespace
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-
-    /// At accessibility sizes the two segments stack as full-width rows (the
-    /// guide's layout) instead of splitting one line — each label gets the
-    /// whole row's width, so neither truncates.
-    private var isAccessibilitySize: Bool { dynamicTypeSize.isAccessibilitySize }
-
-    var body: some View {
-        let layout = isAccessibilitySize
-            ? AnyLayout(VStackLayout(spacing: 2))
-            : AnyLayout(HStackLayout(spacing: 2))
-        layout {
-            segment(.time, title: OBALoc("stop_page.mode.chronological", value: "Chronological", comment: "Stop page mode toggle: flat time-sorted list"), systemImage: "list.bullet")
-            segment(.route, title: OBALoc("stop_page.mode.by_route", value: "By route", comment: "Stop page mode toggle: grouped by route"), systemImage: "square.grid.2x2")
-        }
-        .padding(3)
-        .modifier(GlassContainerBackground(usesCapsule: !isAccessibilitySize))
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 4)
-    }
-
-    private func segment(_ value: StopSort, title: String, systemImage: String) -> some View {
-        Button {
-            if mode != value { onChange(value) }
-        } label: {
-            Label(title, systemImage: systemImage)
-                .labelStyle(.titleAndIcon)
-                .font(.subheadline.weight(mode == value ? .bold : .semibold))
-                .foregroundStyle(mode == value ? Color.primary : Color.secondary)
-                .frame(maxWidth: .infinity, minHeight: 38)
-                .background {
-                    if mode == value {
-                        selectionShape
-                            .fill(Color(uiColor: .systemBackground))
-                            .shadow(color: .black.opacity(0.12), radius: 4, y: 1)
-                            .matchedGeometryEffect(id: "selectedSegment", in: selectionNamespace)
-                    }
-                }
-                .contentShape(selectionShape)
-        }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(mode == value ? [.isButton, .isSelected] : [.isButton])
-    }
-
-    /// Capsule segments inside the capsule container; rounded rectangles when
-    /// the segments stack (a capsule around a multi-line label reads poorly).
-    private var selectionShape: AnyShape {
-        isAccessibilitySize
-            ? AnyShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-            : AnyShape(Capsule())
-    }
-}
-
-/// The toggle's backdrop: real Liquid Glass on iOS 26+, an ultra-thin-material
-/// shape with a hairline rim on earlier versions. Capsule by default; a
-/// rounded rectangle when the segments stack at accessibility sizes.
-private struct GlassContainerBackground: ViewModifier {
-    let usesCapsule: Bool
-
-    private var shape: AnyShape {
-        usesCapsule ? AnyShape(Capsule()) : AnyShape(RoundedRectangle(cornerRadius: 17, style: .continuous))
-    }
-
-    func body(content: Content) -> some View {
-        if #available(iOS 26.0, *) {
-            content.glassEffect(.regular, in: shape)
-        } else {
-            content
-                .background(.ultraThinMaterial, in: shape)
-                .overlay(shape.stroke(Color(uiColor: .separator).opacity(0.5), lineWidth: 0.5))
-        }
     }
 }
 

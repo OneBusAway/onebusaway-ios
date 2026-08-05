@@ -1110,6 +1110,12 @@
 /* Button to reveal departures that leave before the rider's transfer arrival. Parameter is the count of hidden departures. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
 "stop_controller.transfer_show_earlier_departures_fmt" = "顯示 %d 班較早的離站班次";
 
+/* Spoken suffix on the currently-focused route chip. */
+"stop_header.chip.highlighted" = "在地圖上反白顯示";
+
+/* Spoken suffix on a route chip whose route has a vehicle on the map. */
+"stop_header.chip.live_tracking" = "即時追蹤";
+
 /* Error shown when a departure alarm can't be cancelled because the region's alarm service is unreachable. */
 "stop_page.alarm_cancel_unavailable" = "無法取消此提醒，因為提醒服務目前無法使用。請稍後再試。";
 
@@ -1182,11 +1188,11 @@
 /* Caption under the spinner shown while the stop page's departure list loads. */
 "stop_page.loading_departures" = "正在載入離站班次…";
 
-/* Stop page mode toggle: grouped by route */
-"stop_page.mode.by_route" = "依路線";
-
 /* Stop page mode toggle: flat time-sorted list */
-"stop_page.mode.chronological" = "依時間";
+"stop_page.mode.time" = "時間";
+
+/* Stop page mode toggle: grouped by route */
+"stop_page.mode.route" = "路線";
 
 /* Opens the full trip screen */
 "stop_page.panel.full_trip" = "檢視完整班次";
@@ -1229,9 +1235,6 @@
 
 /* Context menu action opening the full trip screen */
 "stop_page.row.show_trip" = "顯示班次詳細資訊";
-
-/* Chronological list section header */
-"stop_page.section.arrivals_departures" = "到站與離站";
 
 /* Fallback title for a service alert that has no summary text. */
 "stop_page.service_alert_fallback" = "服務警示";
@@ -1472,6 +1475,18 @@
 
 /* Suggested invocation phrase for Siri Shortcut */
 "user_activity_builder.show_me_my_bus" = "顯示我的公車";
+
+/* Qualifies the countdown in the live-vehicle map callout, as in '1m to this stop'. */
+"vehicle_callout.to_this_stop" = "到本站";
+
+/* Freshness line in the live-vehicle map callout. %@ is a relative time, e.g. '12s ago'. */
+"vehicle_callout.position_updated_fmt" = "位置更新於 %@";
+
+/* Button in the live-vehicle map callout that opens the trip screen. */
+"vehicle_callout.follow_this_trip" = "追蹤此行程";
+
+/* Label identifying a vehicle by its ID in the map's vehicle callout, e.g. 'Vehicle 1234'. */
+"vehicle_callout.vehicle_label_fmt" = "車輛 %@";
 
 /* The section header to a free-form comments field that the user does not have to add text to in order to submit this form. */
 "vehicle_problem_controller.comments_section.section_title" = "其他意見（選填）";
