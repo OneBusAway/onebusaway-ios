@@ -841,7 +841,7 @@
 "report_problem_controller.stop_problem.header" = "مشكلة في الموقف";
 
 /* A table header in the 'Report Problem' view controller. */
-"report_problem_controller.vehicle_problem.header" = "مشكلة في مركبة عند الموقف";
+"report_problem_controller.trip_problem.header" = "مشكلة في رحلة";
 
 /* Error when location is unavailable in the route picker. */
 "route_picker.error_no_location" = "الموقع غير متاح. يُرجى تفعيل خدمات الموقع للعثور على الخطوط القريبة.";
