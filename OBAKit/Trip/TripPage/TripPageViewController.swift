@@ -279,8 +279,9 @@ final class TripPageViewController: UIHostingController<TripPageView>,
                 // `submit` is `async throws`, and `GhostBusReportView.performSubmit` reads a
                 // plain return as success and dismisses the sheet. A guard failure has to
                 // throw, not return, or the rider is told their report went out when it
-                // never did. `obacoService` going nil is reachable while the sheet is up:
-                // a region switch rebuilds it.
+                // never did. (Today `obacoService` is never nil once set — a region switch
+                // replaces it or leaves the old one — so this guard is defense against
+                // `self` deallocating and against that invariant changing, not a live path.)
                 guard let self, let obacoService = self.application.obacoService else {
                     throw GhostBusReportSubmissionError.serviceUnavailable
                 }
@@ -310,8 +311,8 @@ final class TripPageViewController: UIHostingController<TripPageView>,
     /// Surfaced through `GhostBusReportView`'s error alert, same as a network failure —
     /// see the `submit` closure in `showGhostBusReport()`.
     enum GhostBusReportSubmissionError: LocalizedError {
-        /// No Obaco service for the current region (e.g. a region switch rebuilding it
-        /// while the sheet is still up), so the report can't be sent.
+        /// The submit closure couldn't reach an Obaco service — the presenting
+        /// controller deallocated, or `obacoService` was unexpectedly absent.
         case serviceUnavailable
 
         var errorDescription: String? {
