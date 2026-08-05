@@ -8,6 +8,7 @@
 //
 
 import ActivityKit
+import CoreLocation
 import Combine
 import SwiftUI
 import OBAKitCore
