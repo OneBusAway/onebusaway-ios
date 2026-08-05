@@ -20,6 +20,16 @@ import Testing
 final class MapRegionManagerTests: OBATestCase {
     var queue: OperationQueue!
 
+    @MainActor
+    private final class PrepareForReuseCountingStopAnnotationView: StopAnnotationView {
+        var prepareForReuseCount = 0
+
+        override func prepareForReuse() {
+            prepareForReuseCount += 1
+            super.prepareForReuse()
+        }
+    }
+
     override init() async throws {
         try await super.init()
 
@@ -513,21 +523,26 @@ final class MapRegionManagerTests: OBATestCase {
     @Test @MainActor
     func `Display unique stop annotations preserves selected bookmark`() throws {
         let mgr = makeBookmarkManager()
+        mgr.mapView.register(
+            PrepareForReuseCountingStopAnnotationView.self,
+            forAnnotationViewWithReuseIdentifier: MKMapView.reuseIdentifier(for: StopAnnotationView.self)
+        )
         let stop = try #require(Fixtures.loadSomeStops().first)
         let bookmark = Bookmark(name: "Home", regionIdentifier: pugetSoundRegionIdentifier, stop: stop)
 
         mgr.mapView.addAnnotations([stop, bookmark])
-        mgr.bookmarks = [bookmark]
         mgr.mapView.selectAnnotation(bookmark, animated: false)
-        _ = mgr.mapView(mgr.mapView, viewFor: bookmark)
+        let bookmarkView = try #require(
+            mgr.mapView(mgr.mapView, viewFor: bookmark) as? PrepareForReuseCountingStopAnnotationView
+        )
 
         // Simulate a stale sibling Stop lingering after a stops reload.
-        mgr.mapView.addAnnotation(stop)
         mgr.bookmarks = [bookmark]
 
         #expect(mgr.mapView.selectedAnnotations.contains { $0 === bookmark })
         #expect(mgr.mapView.annotations.contains { $0 === bookmark })
         #expect(!mgr.mapView.annotations.contains { ($0 as? Stop)?.id == stop.id })
+        #expect(bookmarkView.prepareForReuseCount == 0)
     }
 
     /// Disabling the stops layer removes browse stops but must not deselect a
@@ -543,6 +558,7 @@ final class MapRegionManagerTests: OBATestCase {
         let bookmark = Bookmark(name: "Work", regionIdentifier: pugetSoundRegionIdentifier, stop: stop)
 
         mgr.bookmarks = [bookmark]
+        mgr.mapView.addAnnotation(stop)
         mgr.mapView.addAnnotation(otherStop)
         mgr.mapView.selectAnnotation(bookmark, animated: false)
 
@@ -550,5 +566,6 @@ final class MapRegionManagerTests: OBATestCase {
 
         #expect(mgr.mapView.selectedAnnotations.contains { $0 === bookmark })
         #expect(mgr.mapView.annotations.contains { $0 === bookmark })
+        #expect(mgr.mapView.annotations.contains { ($0 as? Stop)?.id == stop.id })
     }
 }
