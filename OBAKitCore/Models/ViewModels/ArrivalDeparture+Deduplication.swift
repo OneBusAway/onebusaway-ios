@@ -24,6 +24,14 @@ private struct VisitIdentity: Hashable {
 
 extension Sequence where Element == ArrivalDeparture {
 
+    /// Drops entries whose best available arrival/departure time is before
+    /// `ArrivalDeparture.earliestPlausibleDate` — typically Unix epoch sentinels
+    /// with no usable predicted time. Without this filter such entries sort to the
+    /// top of departure lists as millions of minutes early.
+    public func filteringImplausibleDates() -> [ArrivalDeparture] {
+        filter(\.hasPlausibleArrivalDepartureDate)
+    }
+
     /// Collapses entries that describe the same arrival/departure — identical `id`
     /// (stop, trip, route, service date, stop sequence, and arrival/departure status) —
     /// into a single entry, keeping the most recently updated report.

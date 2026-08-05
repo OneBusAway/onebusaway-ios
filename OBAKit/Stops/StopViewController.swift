@@ -698,9 +698,11 @@ public class StopViewController: UIViewController,
             if isListFiltered {
                 arrDeps = stopArrivals.arrivalsAndDepartures
                     .filter(preferences: stopPreferences)
+                    .filteringImplausibleDates()
                     .filteringTerminalDuplicates()
             } else {
                 arrDeps = stopArrivals.arrivalsAndDepartures
+                    .filteringImplausibleDates()
                     .filteringTerminalDuplicates()
             }
 
@@ -720,7 +722,9 @@ public class StopViewController: UIViewController,
 
             sections = groups.flatMap { group -> [OBAListViewSection] in
                 var groupSections: [OBAListViewSection] = []
-                let filtered = group.arrivalDepartures.filteringTerminalDuplicates()
+                let filtered = group.arrivalDepartures
+                    .filteringImplausibleDates()
+                    .filteringTerminalDuplicates()
                 let pastDeps = filtered.filter { $0.arrivalDepartureMinutes < 0 }
                 let upcomingDeps = filtered.filter { $0.arrivalDepartureMinutes >= 0 }
 

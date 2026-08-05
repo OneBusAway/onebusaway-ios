@@ -68,7 +68,11 @@ public class StopArrivals: NSObject, Identifiable, Decodable, HasReferences {
         // Some real-time feeds briefly assign two vehicles to one trip, which makes the
         // server emit two entries for a single trip visit. Collapse those at ingestion so
         // every consumer sees one entry per visit (see `filteringDuplicateVehicleReports`).
-        arrivalsAndDepartures = try container.decode([ArrivalDeparture].self, forKey: .arrivalsAndDepartures).filteringDuplicateVehicleReports()
+        // Also drop epoch-sentinel times that would sort to the top as millions of minutes
+        // early (see `filteringImplausibleDates`).
+        arrivalsAndDepartures = try container.decode([ArrivalDeparture].self, forKey: .arrivalsAndDepartures)
+            .filteringDuplicateVehicleReports()
+            .filteringImplausibleDates()
         nearbyStopIDs = try container.decode([StopID].self, forKey: .nearbyStopIDs)
         situationIDs = try container.decode([String].self, forKey: .situationIDs)
         stopID = try container.decode(StopID.self, forKey: .stopID)

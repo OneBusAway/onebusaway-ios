@@ -343,7 +343,8 @@ class StopViewModel: ObservableObject {
         guard !hasRecordedReviewSuccess else { return }
 
         let visible = arrivals.arrivalsAndDepartures.filter { arrival in
-            !isListFiltered || !stopPreferences.isRouteIDHidden(arrival.routeID)
+            arrival.hasPlausibleArrivalDepartureDate
+                && (!isListFiltered || !stopPreferences.isRouteIDHidden(arrival.routeID))
         }
         guard visible.contains(where: \.predicted) else { return }
 

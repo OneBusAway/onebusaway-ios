@@ -188,7 +188,9 @@ struct StopPageView: View {
     private var filteredDepartures: [ArrivalDeparture] {
         let all = viewModel.stopArrivals?.arrivalsAndDepartures ?? []
         let visible = viewModel.isListFiltered ? all.filter(preferences: viewModel.stopPreferences) : all
-        return visible.filteringTerminalDuplicates()
+        return visible
+            .filteringImplausibleDates()
+            .filteringTerminalDuplicates()
     }
 
     private var attributionText: String {
