@@ -1453,7 +1453,7 @@
 "vehicle_callout.position_updated_fmt" = "位置更新于 %@";
 
 /* Button in the live-vehicle map callout that opens the trip screen. */
-"vehicle_callout.follow_this_trip" = "跟踪此行程";
+"vehicle_callout.follow_this_trip" = "追踪此行程";
 
 /* Label identifying a vehicle by its ID in the map's vehicle callout, e.g. 'Vehicle 1234'. */
 "vehicle_callout.vehicle_label_fmt" = "车辆 %@";

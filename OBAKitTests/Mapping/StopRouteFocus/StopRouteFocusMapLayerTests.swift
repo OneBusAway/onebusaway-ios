@@ -558,6 +558,36 @@ final class StopRouteFocusMapLayerTests {
         #expect(Set(overlaysAfterSecond.map(ObjectIdentifier.init)) == Set(overlaysAfterFirst.map(ObjectIdentifier.init)))
     }
 
+    /// The pin `syncRouteOverlays` writes before the fetch starts is what makes
+    /// every later refresh skip the route. Left behind after a failure — a
+    /// dropped request, or a shape that decodes to a single point — one transient
+    /// error costs the route its line for the whole presentation.
+    @Test func `A failed shape fetch is unpinned so the next refresh retries it`() async {
+        let counter = FetchCounter()
+        let encoded = encodedSeattleLine()
+        // Fails once, then succeeds: the transient-network case.
+        let cache = ShapeCache { _ in
+            await counter.increment()
+            guard await counter.count > 1 else { throw CancellationError() }
+            return encoded
+        }
+        let mapView = MKMapView()
+        let layer = makeLayer(mapView: mapView, shapeCache: cache)
+        layer.begin(focus: StopMapFocus())
+
+        layer.update(model: model(routeIDs: ["H"], vehicleRouteIDs: [], shapeIDForRoute: { _ in "shape_A" }))
+        await layer.awaitPendingShapeWork()
+        #expect(await counter.count == 1)
+        #expect(mapView.overlays.compactMap { $0 as? RouteShapeOverlay }.isEmpty, "a failed fetch draws nothing")
+
+        // The next arrivals tick, same shape ID. Retried, not skipped.
+        layer.update(model: model(routeIDs: ["H"], vehicleRouteIDs: [], shapeIDForRoute: { _ in "shape_A" }))
+        await layer.awaitPendingShapeWork()
+
+        #expect(await counter.count == 2)
+        #expect(mapView.overlays.compactMap { $0 as? RouteShapeOverlay }.count == 2)
+    }
+
     // MARK: - Vehicle callout
 
     /// The fixture's second arrival on a different trip ("LAKE CITY WEDGWOOD"

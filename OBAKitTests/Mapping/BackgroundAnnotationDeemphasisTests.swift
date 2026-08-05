@@ -215,4 +215,53 @@ final class BackgroundAnnotationDeemphasisTests: OBATestCase {
         #expect(manager.mapView(manager.mapView, viewFor: stops.selected) is BackgroundDotAnnotationView)
         #expect(manager.mapView(manager.mapView, viewFor: stops.other) is StopAnnotationView)
     }
+
+    /// A stop-to-stop swap changes how exactly two markers draw. Refreshing the
+    /// rest — up to 500 rental annotations plus every stop on screen — hands each
+    /// one back the view it already had, on the main thread, during the sheet
+    /// transition. Asserted on the affected set rather than on `MKMapView`, which
+    /// gives a test no way to see a remove/re-add that lands on the same object.
+    @Test func `Swapping the selection refreshes only the two stops involved`() throws {
+        let manager = makeManager()
+        let stops = try twoStops()
+        let bystanders = (0..<5).map { _ in MKPointAnnotation() }
+        manager.registerMapLayer(StubLayer(recedes: true))
+        manager.mapView.addAnnotations([stops.selected, stops.other] + bystanders)
+
+        let affected = manager.annotationsNeedingEmphasisRefresh(from: stops.selected.id, to: stops.other.id)
+
+        #expect(affected.count == 2)
+        #expect(affected.contains { $0 === stops.selected })
+        #expect(affected.contains { $0 === stops.other })
+    }
+
+    /// The other side of the same coin: opening a sheet genuinely does flip
+    /// everything but the selected stop, and all of it has to be refreshed.
+    @Test func `Opening a sheet refreshes every participating annotation but the selected stop`() throws {
+        let manager = makeManager()
+        let stops = try twoStops()
+        let receding = MKPointAnnotation()
+        manager.registerMapLayer(StubLayer(recedes: true))
+        manager.mapView.addAnnotations([stops.selected, stops.other, receding])
+
+        let affected = manager.annotationsNeedingEmphasisRefresh(from: nil, to: stops.selected.id)
+
+        #expect(affected.count == 2)
+        #expect(affected.contains { $0 === stops.other })
+        #expect(affected.contains { $0 === receding })
+        #expect(affected.contains { $0 === stops.selected } == false)
+    }
+
+    /// An annotation no layer claims — a search pin, the user location — never
+    /// recedes under any selection, so it must never be churned.
+    @Test func `An annotation nothing claims is never refreshed`() throws {
+        let manager = makeManager()
+        let stops = try twoStops()
+        let unclaimed = MKPointAnnotation()
+        manager.mapView.addAnnotations([stops.selected, unclaimed])
+
+        let affected = manager.annotationsNeedingEmphasisRefresh(from: nil, to: stops.selected.id)
+
+        #expect(affected.contains { $0 === unclaimed } == false)
+    }
 }

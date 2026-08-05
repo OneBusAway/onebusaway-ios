@@ -371,9 +371,21 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
     private func fetchAndDrawShape(shapeID: String, route: StopRouteFocusModel.DrawnRoute) {
         let token = presentationToken
         let task = Task { [weak self, shapeCache] in
-            guard let coordinates = try? await shapeCache.coordinates(forShapeID: shapeID),
-                  coordinates.count > 1 else { return }
+            let fetched = try? await shapeCache.coordinates(forShapeID: shapeID)
             guard let self, self.presentationToken == token else { return }
+
+            // `syncRouteOverlays` pinned this shape before the fetch started, and
+            // that pin is what makes it skip the route on every later refresh.
+            // Leaving it in place after a failure — a dropped request, a shape
+            // the server decodes to a single point — costs the route its line for
+            // the rest of the presentation. Unpin so the next arrivals tick
+            // retries.
+            guard let coordinates = fetched, coordinates.count > 1 else {
+                if self.drawnShapeIDsByRoute[route.routeID] == shapeID {
+                    self.drawnShapeIDsByRoute[route.routeID] = nil
+                }
+                return
+            }
             self.addShape(coordinates: coordinates, routeID: route.routeID)
         }
         shapeTasks.append(task)

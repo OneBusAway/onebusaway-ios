@@ -262,11 +262,26 @@ From that sorted, filtered list:
 - **`hasLiveVehicle`** per route — true iff that route contributed ≥ 1 vehicle. This lights the chip's green dot, so the dot means "there is something on the map to point at."
 
 **Shape cache** lives on `StopRouteFocusMapLayer`, which registers once with
-`MapRegionManager` (`:273-287`) and outlives any single presentation. It must be a
-**bounded `NSCache`**, invalidated on region change (shape IDs are region-scoped).
-In-flight fetches carry a presentation token so a late response for a dismissed
-sheet is dropped rather than drawn. There is no existing shape or polyline cache
-in the app to reuse.
+`MapRegionManager` (`:273-287`) and outlives any single presentation. It must be
+**bounded**, invalidated on region change (shape IDs are region-scoped), and it
+must coalesce concurrent requests for the same shape ID — a stop whose routes
+share a trip pattern otherwise fetches the same line several times over.
+
+`NSCache` is the obvious reach and the wrong one here: its eviction is opaque and
+untestable, and it has nothing to say about the in-flight coalescing, which is
+the harder half. Use an `actor` owning a dictionary plus an insertion-order list
+for bounded eviction, and a small reference-typed box per in-flight `Task` so a
+resolving fetch can tell whether the entry it installed is still the installed
+one (`Task` is a struct; `===` cannot compare two `Task` values). A generation
+counter, bumped on invalidation, drops a response that resolves after the cache
+was cleared.
+
+Late responses are dropped on *two* levels, and they answer different questions:
+the cache's generation counter decides whether a response may be *stored*, while
+a presentation token on the layer decides whether it may be *drawn*. A sheet can
+close without the region changing, so neither subsumes the other.
+
+There is no existing shape or polyline cache in the app to reuse.
 
 ## Rendering
 

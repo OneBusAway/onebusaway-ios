@@ -224,6 +224,17 @@ extension MapViewController {
 
 extension MapViewController: RegionsServiceDelegate {
     public func regionsService(_ service: RegionsService, updatedRegion region: Region) {
+        // The stop the sheet is showing belongs to the region we just left, and
+        // `configureMapLayers()` is about to throw away the route-focus layer
+        // driving it. Leaving the sheet up would strand it: its arrivals sink
+        // would feed a layer no longer on the map, so the lines and vehicles
+        // would never come back, and `stopSheetSelection` would stay set — every
+        // other marker held down as a gray dot for the rest of the session.
+        // Re-attaching the presentation to the rebuilt layer isn't the fix
+        // either: shape IDs are region-scoped, so the new region's server would
+        // answer this stop's IDs with the wrong lines.
+        dismissStopSheetForReplacement()
+
         // Rebuild region-scoped layers: a new region may gain or lose bikeshare.
         configureMapLayers()
     }

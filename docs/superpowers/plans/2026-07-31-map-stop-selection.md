@@ -734,10 +734,23 @@ actor ShapeCache {
     /// passes a closure over `RESTAPIService.getShape(id:)`.
     typealias Fetch = @Sendable (String) async throws -> String
 
+    /// `Task` is a struct with no identity of its own, so `===` can't compare
+    /// two `Task` values directly. This box gives each in-flight fetch a
+    /// reference identity to compare against, which is what lets us tell "my
+    /// task is still the installed one" apart from "someone else's newer task
+    /// replaced mine" without using `defer` (see the comment in
+    /// `coordinates(forShapeID:)`).
+    private final class InFlightBox {
+        let task: Task<[CLLocationCoordinate2D], Error>
+        init(task: Task<[CLLocationCoordinate2D], Error>) {
+            self.task = task
+        }
+    }
+
     private let fetch: Fetch
     private var storage: [String: [CLLocationCoordinate2D]] = [:]
     /// In-flight requests, so two routes sharing a shape don't both fetch.
-    private var inFlight: [String: Task<[CLLocationCoordinate2D], Error>] = [:]
+    private var inFlight: [String: InFlightBox] = [:]
 
     /// Beyond this, the least-recently-inserted entries are dropped. Shapes are
     /// a few KB each; this bounds a long session at a few hundred KB.
@@ -754,14 +767,15 @@ actor ShapeCache {
 
     func coordinates(forShapeID shapeID: String) async throws -> [CLLocationCoordinate2D] {
         if let cached = storage[shapeID] { return cached }
-        if let existing = inFlight[shapeID] { return try await existing.value }
+        if let existing = inFlight[shapeID] { return try await existing.task.value }
 
         let generation = self.generation
         let task = Task<[CLLocationCoordinate2D], Error> { [fetch] in
             let encoded = try await fetch(shapeID)
             return Polyline(encodedPolyline: encoded).coordinates ?? []
         }
-        inFlight[shapeID] = task
+        let box = InFlightBox(task: task)
+        inFlight[shapeID] = box
 
         // No `defer` here. The actor suspends at the `await` below, so a `defer`
         // would run after other callers have had a turn — and would clear whatever
@@ -771,10 +785,10 @@ actor ShapeCache {
         do {
             coordinates = try await task.value
         } catch {
-            if inFlight[shapeID] === task { inFlight[shapeID] = nil }
+            if inFlight[shapeID] === box { inFlight[shapeID] = nil }
             throw error
         }
-        if inFlight[shapeID] === task { inFlight[shapeID] = nil }
+        if inFlight[shapeID] === box { inFlight[shapeID] = nil }
 
         // Drop a response that resolved after `removeAll()` — otherwise a fetch
         // started for a dismissed sheet repopulates the cache for a presentation
@@ -788,7 +802,7 @@ actor ShapeCache {
         generation &+= 1
         storage.removeAll()
         insertionOrder.removeAll()
-        for task in inFlight.values { task.cancel() }
+        for box in inFlight.values { box.task.cancel() }
         inFlight.removeAll()
     }
 

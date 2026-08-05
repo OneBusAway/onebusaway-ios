@@ -1000,12 +1000,14 @@ class MapViewController: UIViewController,
         feedbackPromptWorkItem = nil
     }
 
-    /// Clears the stop sheet because something else is about to occupy its space.
+    /// Clears the stop sheet because something else is about to occupy its space —
+    /// another panel, a search result, or a region change that invalidates the stop
+    /// the sheet is showing.
     ///
     /// The dismissal runs the sheet's handler synchronously, which arms the prompt — so the
     /// cancel has to follow it, not precede it. The two belong together at every call site,
     /// which is why they live here rather than being spelled out at each one.
-    private func dismissStopSheetForReplacement() {
+    func dismissStopSheetForReplacement() {
         stopSheet.dismiss(animated: false)
         cancelScheduledFeedbackPrompt()
     }
