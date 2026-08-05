@@ -35,10 +35,21 @@ class NetworkHelpers: NSObject {
                 .replacingOccurrences(of: "/", with: "%2F")
     }
 
+    /// RFC 3986 "unreserved" characters. Form values must be escaped against this set, not
+    /// `.urlQueryAllowed` — the latter leaves `&`, `+`, `;`, and `=` raw, which truncates a
+    /// free-text value at the first `&`, turns `+` into a space server-side, and injects
+    /// bogus params from a stray `=`. Rider-authored ghost-bus comments, trip headsigns
+    /// ("15th Ave & Broadway"), and device descriptions all carry those characters.
+    private static let formUnreservedCharacters: CharacterSet = {
+        var unreserved = CharacterSet.alphanumerics
+        unreserved.insert(charactersIn: "-._~")
+        return unreserved
+    }()
+
     public class func dictionary(toHTTPBodyData dict: [String: Any]) -> Data {
         return dict.map { (k, v) -> String in
-            let keyStr = k.addingPercentEncoding(withAllowedCharacters: CharacterSet.urlQueryAllowed)!
-            let valueStr = "\(v)".addingPercentEncoding(withAllowedCharacters: CharacterSet.urlQueryAllowed)!
+            let keyStr = k.addingPercentEncoding(withAllowedCharacters: formUnreservedCharacters) ?? k
+            let valueStr = "\(v)".addingPercentEncoding(withAllowedCharacters: formUnreservedCharacters) ?? "\(v)"
             return "\(keyStr)=\(valueStr)"
         }.joined(separator: "&").data(using: .utf8)!
     }
