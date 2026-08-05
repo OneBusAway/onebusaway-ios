@@ -963,11 +963,13 @@ public class MapRegionManager: NSObject,
 
         // Bookmark pins are user content, so their label gate must refresh even
         // when stop loading is suppressed by search, zoom, or a disabled layer.
-        let visibleRect = mapView.visibleMapRect
-        let visibleBookmarkAnnotations = mapView.annotations(in: visibleRect).filter(type: Bookmark.self)
-        for bookmark in visibleBookmarkAnnotations {
-            if let stopView = mapView.view(for: bookmark) as? StopAnnotationView {
-                stopView.isHidingExtraStopAnnotationData = shouldHideExtraStopAnnotationData
+        // Walk every bookmark on the map (not only `annotations(in:)`): a search
+        // can leave the camera on a result while bookmarks sit elsewhere, and
+        // headless tests attach views that `annotations(in:)` may not return.
+        let hideExtra = shouldHideExtraStopAnnotationData
+        for annotation in mapView.annotations where annotation is Bookmark {
+            if let stopView = mapView.view(for: annotation) as? StopAnnotationView {
+                stopView.isHidingExtraStopAnnotationData = hideExtra
             }
         }
 
@@ -993,7 +995,7 @@ public class MapRegionManager: NSObject,
 
         // Stop pins only exist while the browse layer is active, so refresh
         // them after the loading guards.
-        let visibleStopAnnotations = mapView.annotations(in: visibleRect).filter(type: Stop.self)
+        let visibleStopAnnotations = mapView.annotations(in: mapView.visibleMapRect).filter(type: Stop.self)
         for stop in visibleStopAnnotations {
             if let stopView = mapView.view(for: stop) as? StopAnnotationView {
                 stopView.isHidingExtraStopAnnotationData = shouldHideExtraStopAnnotationData

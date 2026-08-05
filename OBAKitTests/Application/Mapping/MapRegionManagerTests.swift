@@ -214,14 +214,29 @@ final class MapRegionManagerTests: OBATestCase {
         let stop = try #require(Fixtures.loadSomeStops().first)
         let bookmark = Bookmark(name: "Home", regionIdentifier: pugetSoundRegionIdentifier, stop: stop)
         manager.mapView.addAnnotation(bookmark)
-        let view = try #require(manager.mapView(manager.mapView, viewFor: bookmark) as? StopAnnotationView)
+        // `dequeue…(for:)` attaches the view to the annotation; calling the
+        // delegate `viewFor` alone does not, so `mapView.view(for:)` would be
+        // nil and the production refresh would no-op in CI.
+        let view = try #require(
+            manager.mapView.dequeueReusableAnnotationView(
+                withIdentifier: MKMapView.reuseIdentifier(for: StopAnnotationView.self),
+                for: bookmark
+            ) as? StopAnnotationView
+        )
         view.isHidingExtraStopAnnotationData = false
-        manager.mapView.visibleMapRect = .world
+
+        // Zoomed far out past the under-pin label threshold.
+        let point = MKMapPoint(stop.coordinate)
+        manager.mapView.visibleMapRect = MKMapRect(
+            origin: MKMapPoint(x: point.x - 250_000, y: point.y - 250_000),
+            size: MKMapSize(width: 500_000, height: 500_000)
+        )
         displaySingleSearchResult(on: manager)
 
         manager.mapView(manager.mapView, regionDidChangeAnimated: false)
 
         #expect(view.isHidingExtraStopAnnotationData)
+        #expect(manager.shouldHideExtraStopAnnotationData)
     }
 
     // MARK: - Explicit-region stop loading
