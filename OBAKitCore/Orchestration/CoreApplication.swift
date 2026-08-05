@@ -42,6 +42,29 @@ open class CoreApplication: NSObject,
         return userDefaultsStore
     }
 
+    /// The default arrival/departure filter configured by the white-label app.
+    public var defaultArrivalDepartureFilter: ArrivalDepartureFilter {
+        return config.defaultArrivalDepartureFilter
+    }
+
+    /// The arrival/departure filter currently in effect: the rider's saved
+    /// choice when one exists, or `defaultArrivalDepartureFilter` when nothing
+    /// valid is saved. The single resolution point for every consumer — the
+    /// stop pages and Settings must not re-derive this from `UserDefaults`.
+    public var effectiveArrivalDepartureFilter: ArrivalDepartureFilter {
+        if let saved = userDefaults.string(forKey: CoreAppConfig.arrivalDepartureFilterUserDefaultsKey),
+           let filter = ArrivalDepartureFilter(rawValue: saved) {
+            return filter
+        }
+        return defaultArrivalDepartureFilter
+    }
+
+    /// Persists the rider's arrival/departure filter choice, the write half of
+    /// `effectiveArrivalDepartureFilter`.
+    public func setArrivalDepartureFilter(_ filter: ArrivalDepartureFilter) {
+        userDefaults.set(filter.rawValue, forKey: CoreAppConfig.arrivalDepartureFilterUserDefaultsKey)
+    }
+
     @objc public let notificationCenter: NotificationCenter
 
     /// Provides access to the user's location and heading.

@@ -8,8 +8,43 @@
 //
 
 import FloatingPanel
+import MapKit
 import UIKit
 import OBAKitCore
+
+/// The one thing the sheet needs from the page at its root: somewhere to report that the
+/// sheet is peeking, so the page can render its collapsed form.
+///
+/// A protocol rather than a `StopPageViewController` cast, for the same reason the dismissal
+/// handler is a closure — it holds the presenter to what it actually uses, and keeps this
+/// behavior testable without building a whole stop page.
+@MainActor
+protocol StopSheetCollapsibleContent: UIViewController {
+    func setAtTip(_ isAtTip: Bool)
+}
+
+/// A page in the sheet's stack that supplies its own title and way back, and so must not
+/// also be given a navigation bar.
+///
+/// The sheet's root has no bar because one would impose a top safe area on the hosting
+/// controller, spending the sheet's scarce height on empty space above the title. Pages
+/// pushed onto it that follow the same pattern say so here.
+@MainActor
+protocol StopSheetSelfChromedContent: UIViewController {
+    var providesOwnSheetChrome: Bool { get }
+
+    /// What the strip behind the grabber should be filled with.
+    ///
+    /// The navigation controller is inset by `grabberClearance`, so that strip is painted by
+    /// the surface, not by the page — and a page whose own background isn't `.systemBackground`
+    /// reads as having a stray white bar across the top of the sheet. Return the page's
+    /// background to make the strip disappear into it; `nil` keeps the default.
+    var sheetSurfaceColor: UIColor? { get }
+}
+
+extension StopSheetSelfChromedContent {
+    var sheetSurfaceColor: UIColor? { nil }
+}
 
 /// Presents the redesigned Stop page as a half-detent sheet over the map, replacing the
 /// push that the legacy `StopViewController` still uses.
@@ -94,13 +129,7 @@ final class StopSheetPresenter: NSObject {
         // already handles by resizing the content view to the surface's visible bounds.
         panel.contentInsetAdjustmentBehavior = .never
 
-        let appearance = SurfaceAppearance()
-        appearance.cornerRadius = ThemeMetrics.cornerRadius
-        // Unlike the map drawer — whose content controller paints its own background — the
-        // navigation controller here is inset by `grabberClearance`, so the surface itself has
-        // to fill the strip behind the grabber.
-        appearance.backgroundColor = .systemBackground
-        panel.surfaceView.appearance = appearance
+        panel.surfaceView.appearance = Self.surfaceAppearance(backgroundColor: surfaceColor(for: contentController))
         panel.surfaceView.contentPadding = UIEdgeInsets(top: Self.grabberClearance, left: 0, bottom: 0, right: 0)
 
         self.panel = panel
@@ -332,16 +361,80 @@ extension StopSheetPresenter: UINavigationControllerDelegate {
     /// space above the stop name that no amount of SwiftUI sizing can reclaim.
     func navigationController(_ navigationController: UINavigationController, willShow viewController: UIViewController, animated: Bool) {
         navigationController.setNavigationBarHidden(hidesNavigationBar(for: viewController), animated: animated)
+        syncSurfaceColor(for: viewController)
+        revealPushedContent(viewController, in: navigationController, animated: animated)
     }
 
     func navigationController(_ navigationController: UINavigationController, didShow viewController: UIViewController, animated: Bool) {
         trackScrollView(in: viewController)
+        syncCollapsedState(for: viewController)
     }
 
-    /// Only the sheet-configured stop page hides the bar. Anything else in this stack — including
-    /// a stop page pushed from a nearby-stops list, which keeps its navigation-bar chrome — needs it.
+    /// Raises a sheet sitting at `.tip` when something is pushed over the stop page.
+    ///
+    /// `.tip` shows a sliver — the collapsed stop header and nothing else. That is a
+    /// deliberate peek-at-the-map detent for the *stop page*, which has a collapsed form
+    /// built for it; a pushed screen has none, so it arrives entirely below the fold and the
+    /// tap that pushed it reads as having done nothing. `.half` is where the sheet opens,
+    /// so it's the detent the rider already associates with "this is on screen now."
+    ///
+    /// Only from `.tip`: at `.half` or `.full` the pushed screen is already visible, and
+    /// moving the sheet under the rider would be its own surprise. Popping back doesn't
+    /// restore `.tip` either — after the raise, where the sheet sits is the rider's to
+    /// choose again.
+    private func revealPushedContent(_ viewController: UIViewController, in navigationController: UINavigationController, animated: Bool) {
+        guard let panel, panel.state == .tip,
+              viewController !== navigationController.viewControllers.first else { return }
+
+        panel.move(to: .half, animated: animated)
+    }
+
+    /// Re-syncs the stop page's collapsed rendering with the sheet's detent when it comes back
+    /// to the top of the stack.
+    ///
+    /// `floatingPanelDidChangeState` only speaks to the *top* controller, so every detent
+    /// change that happens while something is pushed over the stop page passes it by —
+    /// including the one `revealPushedContent` just made. Without this the page would return
+    /// from a pushed screen still drawing its collapsed header at the `.half` detent.
+    private func syncCollapsedState(for viewController: UIViewController) {
+        guard let panel, let page = viewController as? StopSheetCollapsibleContent else { return }
+        page.setAtTip(panel.state == .tip)
+    }
+
+    /// Unlike the map drawer — whose content controller paints its own background — the
+    /// navigation controller here is inset by `grabberClearance`, so the surface itself has to
+    /// fill the strip behind the grabber.
+    private static func surfaceAppearance(backgroundColor: UIColor) -> SurfaceAppearance {
+        let appearance = SurfaceAppearance()
+        appearance.cornerRadius = ThemeMetrics.cornerRadius
+        appearance.backgroundColor = backgroundColor
+        return appearance
+    }
+
+    private func surfaceColor(for viewController: UIViewController) -> UIColor {
+        (viewController as? StopSheetSelfChromedContent)?.sheetSurfaceColor ?? .systemBackground
+    }
+
+    /// Repaints the grabber strip to match whichever page is now on top, so pushing a page with
+    /// a different background doesn't leave a band of the previous one above it.
+    private func syncSurfaceColor(for viewController: UIViewController) {
+        guard let panel else { return }
+        let color = surfaceColor(for: viewController)
+        guard panel.surfaceView.appearance.backgroundColor != color else { return }
+        // Assigned as a whole fresh `SurfaceAppearance`, the way the initial setup does it —
+        // mutating the existing instance in place doesn't re-run the surface's own update.
+        panel.surfaceView.appearance = Self.surfaceAppearance(backgroundColor: color)
+    }
+
+    /// A page that draws its own header keeps the bar off; everything else in this stack —
+    /// including a stop page pushed from a nearby-stops list, which keeps its navigation-bar
+    /// chrome — gets one.
+    ///
+    /// Asked of the page rather than decided from a list of concrete types here, for the same
+    /// reason `StopSheetCollapsibleContent` is a protocol: a bar the page didn't ask for isn't
+    /// just redundant chrome, it's a second back button beside the page's own.
     private func hidesNavigationBar(for viewController: UIViewController) -> Bool {
-        (viewController as? StopPageViewController)?.showsBottomToolbar ?? false
+        (viewController as? StopSheetSelfChromedContent)?.providesOwnSheetChrome ?? false
     }
 }
 
@@ -371,6 +464,40 @@ nonisolated final class StopSheetLayout: FloatingPanelBottomLayout {
         anchors[.tip] = FloatingPanelLayoutAnchor(absoluteInset: tipInset, edge: .bottom, referenceGuide: .safeArea)
         return anchors
     }
+
+    /// Height the `.half` detent occupies, given the host's safe-area height.
+    ///
+    /// Computed rather than read off the live surface: the panel is private, and
+    /// `addPanel(toParent:animated: true)` slides in from `.hidden`, so the
+    /// surface frame is not final when the presentation begins.
+    ///
+    /// Takes the safe-area height as a parameter for two reasons. FloatingPanel's
+    /// stock `.half` anchor is `fractionalInset: 0.5, referenceGuide: .safeArea`
+    /// (`.build/checkouts/FloatingPanel/Sources/Layout.swift:37`) — half the *safe
+    /// area*, not half the screen, so screen height overshoots by roughly
+    /// (top + bottom inset) / 2. And `UIScreen` is `@MainActor` in the SDK, so a
+    /// `nonisolated` member cannot touch `UIScreen.main` at all under this
+    /// project's Swift 6 settings.
+    static func halfDetentInset(safeAreaHeight: CGFloat) -> CGFloat {
+        safeAreaHeight * 0.5
+    }
+
+    /// A real-extent map rect framing `coordinate`, for recentering the camera
+    /// above the sheet on stop selection.
+    ///
+    /// NOT a zero-size rect: `MKMapRect(x:y:width:0,height:0)` is degenerate,
+    /// and fitting it slams the camera to maximum zoom (or NaN). The default
+    /// 400 m keeps the stop and its immediate surroundings legible.
+    ///
+    /// `@MainActor`, overriding the type's own `nonisolated`: `MKMapRect.init(_:
+    /// MKCoordinateRegion)` is main-actor-isolated in the SDK, the same reason
+    /// `halfDetentInset` above can't touch `UIScreen.main`.
+    @MainActor
+    static func framingRect(around coordinate: CLLocationCoordinate2D, metersAcross: CLLocationDistance = 400) -> MKMapRect {
+        MKMapRect(MKCoordinateRegion(
+            center: coordinate, latitudinalMeters: metersAcross, longitudinalMeters: metersAcross
+        ))
+    }
 }
 
 // MARK: - FloatingPanelControllerDelegate
@@ -393,8 +520,7 @@ extension StopSheetPresenter: FloatingPanelControllerDelegate {
     /// Fires on every detent transition. Notifies the stop page so it can hide its bottom
     /// toolbar when the sheet is at `.tip` (nearly offscreen).
     func floatingPanelDidChangeState(_ fpc: FloatingPanelController) {
-        guard fpc === panel,
-              let stopVC = navigation?.topViewController as? StopPageViewController else { return }
-        stopVC.setAtTip(fpc.state == .tip)
+        guard fpc === panel, let topViewController = navigation?.topViewController else { return }
+        syncCollapsedState(for: topViewController)
     }
 }

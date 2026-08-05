@@ -34,11 +34,14 @@ struct StopPageToolbar: View {
     /// `false` for a single-route stop, where filtering can't do anything useful.
     let canFilter: Bool
     let isListFiltered: Bool
+    /// The active Departure Type filter, checked in the More menu's submenu.
+    let activeDepartureFilter: ArrivalDepartureFilter
     let hasServiceAlerts: Bool
 
     let onRefresh: () -> Void
     /// `true` applies the saved route filter, `false` shows all routes.
     let onSetListFiltered: (Bool) -> Void
+    let onSetDepartureFilter: (ArrivalDepartureFilter) -> Void
     let onBookmark: () -> Void
     let onSchedule: () -> Void
     let onServiceAlerts: () -> Void
@@ -56,15 +59,16 @@ struct StopPageToolbar: View {
         Group {
             if scrollsHorizontally {
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(alignment: .top, spacing: 4) { items }
-                        .padding(.horizontal, 8)
+                    HStack(alignment: .top, spacing: 8) { items }
+                        .padding(.horizontal, 16)
                 }
             } else {
-                HStack(alignment: .top, spacing: 0) { items }
+                HStack(alignment: .top, spacing: 8) { items }
+                    .padding(.horizontal, 16)
             }
         }
-        .padding(.top, 8)
-        .padding(.bottom, 4)
+        .padding(.top, 10)
+        .padding(.bottom, 6)
         .background(.bar)
         .overlay(alignment: .top) { Divider() }
     }
@@ -129,6 +133,26 @@ struct StopPageToolbar: View {
             }
             .disabled(!canFilter)
 
+            Menu {
+                ForEach(ArrivalDepartureFilter.allCases, id: \.self) { filter in
+                    Button {
+                        onSetDepartureFilter(filter)
+                    } label: {
+                        if filter == activeDepartureFilter {
+                            Label(filter.displayTitle, systemImage: "checkmark")
+                        } else {
+                            Text(filter.displayTitle)
+                        }
+                    }
+                    .accessibilityAddTraits(filter == activeDepartureFilter ? .isSelected : [])
+                }
+            } label: {
+                Label(
+                    OBALoc("stop_controller.arrival_filter.menu_title", value: "Departure Type", comment: "Title for the menu that filters departures by data type"),
+                    systemImage: "antenna.radiowaves.left.and.right"
+                )
+            }
+
             Button(action: onServiceAlerts) {
                 Label(Strings.serviceAlerts, systemImage: "exclamationmark.circle")
             }
@@ -149,7 +173,12 @@ struct StopPageToolbar: View {
                 }
             }
         } label: {
+            // Forgoes the pressed dimming the real buttons get; a menu opening over
+            // the tap is its own feedback. See `FrostedCapsuleBackground` for why a
+            // `Menu` can't take the button style.
             label(title: Strings.more, systemImage: "ellipsis")
+                .foregroundStyle(Color(uiColor: .label))
+                .modifier(FrostedCapsuleBackground())
         }
         .accessibilityLabel(Strings.more)
     }
@@ -166,6 +195,7 @@ struct StopPageToolbar: View {
         Button(action: action) {
             label(title: title, systemImage: systemImage)
         }
+        .buttonStyle(FrostedActionButtonStyle())
         .accessibilityLabel(accessibilityLabel ?? title)
         .accessibilityValue(accessibilityValue ?? "")
     }
@@ -173,6 +203,8 @@ struct StopPageToolbar: View {
     /// Icon above label, the shape the mockup calls for and the shape a tab-bar-adjacent strip
     /// reads as. `UIToolbar` can't do this without custom item views, which is part of why this
     /// bar is built in SwiftUI rather than handed to the wrapping navigation controller.
+    ///
+    /// Carries no colour of its own — `FrostedActionButtonStyle` owns that.
     private func label(title: String, systemImage: String) -> some View {
         VStack(spacing: 3) {
             Image(systemName: systemImage)
@@ -180,22 +212,25 @@ struct StopPageToolbar: View {
                 .frame(height: 22)
                 .accessibilityHidden(true)
             Text(title)
+                // Shrink and truncate inside the slot rather than letting the label size the
+                // item — an unbounded label overflows into its neighbours, since the VStack
+                // centers text wider than its frame. Four items share the row here, so the
+                // slots are narrower than the Trip page's three and the type ramp is one step
+                // smaller to match.
                 .font(.caption2)
-                // The freshness label changes width as time passes. Shrink and truncate inside
-                // the slot rather than letting it size the item — an unbounded label overflows
-                // into its neighbours, since the VStack centers text wider than its frame.
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
                 .truncationMode(.tail)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity)
         }
-        .foregroundStyle(.tint)
-        .frame(maxWidth: scrollsHorizontally ? nil : .infinity)
-        .frame(minWidth: scrollsHorizontally ? 84 : nil)
-        .padding(.vertical, 4)
-        .padding(.horizontal, 2)
-        .contentShape(Rectangle())
+        .frame(
+            minWidth: scrollsHorizontally ? 84 : nil,
+            maxWidth: scrollsHorizontally ? nil : .infinity,
+            minHeight: 44
+        )
+        .padding(.vertical, 5)
+        .padding(.horizontal, 6)
     }
 }
 
@@ -208,8 +243,10 @@ struct StopPageToolbar: View {
             isFilterOn: false,
             canFilter: true,
             isListFiltered: false,
+            activeDepartureFilter: .all,
             hasServiceAlerts: true,
-            onRefresh: {}, onSetListFiltered: { _ in }, onBookmark: {}, onSchedule: {},
+            onRefresh: {}, onSetListFiltered: { _ in }, onSetDepartureFilter: { _ in },
+            onBookmark: {}, onSchedule: {},
             onServiceAlerts: {}, onNearbyStops: {}, onWalkingDirections: {}, onReportProblem: {}
         )
     }

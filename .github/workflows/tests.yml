@@ -31,9 +31,9 @@ jobs:
       contents: read
 
     steps:
-    - uses: actions/checkout@v7
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-    - uses: actions/cache@v6
+    - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: .build
         key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
@@ -44,7 +44,7 @@ jobs:
     # resolved dependency graph, the XcodeGen project specs, or this workflow
     # change. The previous `**/*.yml` glob also matched vendored yml under
     # .build/checkouts and caused needless cache misses (→ full rebuilds).
-    - uses: actions/cache@v6
+    - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       id: deriveddata-cache
       with:
         path: DerivedData
@@ -75,7 +75,7 @@ jobs:
     # (see a1244c48). The trade-off is that the toolchain is no longer pinned, so a
     # new beta landing in the image can move the concurrency warning count below.
     - name: Setup Xcode
-      uses: maxim-lobanov/setup-xcode@v1
+      uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1.7.0
       with:
         xcode-version: 'latest'
 
@@ -238,7 +238,7 @@ jobs:
     # writes a lighter summary to $GITHUB_STEP_SUMMARY instead. If test-retry flags
     # are ever added, broaden this to `always()` so flaky-but-passing runs still
     # surface which tests retried.
-    - uses: slidoapp/xcresulttool@v3.1.1
+    - uses: slidoapp/xcresulttool@0930e06ae335d8c5e2d2f311ee98d495889a6103 # v3.1.1
       continue-on-error: true
       if: failure()
       with:

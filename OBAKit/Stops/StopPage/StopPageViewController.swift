@@ -30,7 +30,9 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
     BookmarkEditorDelegate,
     Idleable,
     StopPreferencesViewDelegate,
-    Previewable {
+    Previewable,
+    StopSheetCollapsibleContent,
+    StopSheetSelfChromedContent {
 
     let application: Application
     let viewModel: StopViewModel
@@ -39,6 +41,34 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
     /// Called when the user taps the sheet's close button. Set by the map view controller
     /// immediately after creating this controller; no-op when `showToolbarOnBottom` is false.
     var onClose: (() -> Void)?
+
+    /// Set by a host that owns a map, so a trip opened from this page can point
+    /// that map at the trip. Left nil where this page was pushed full-screen —
+    /// there is no map behind it to focus.
+    var onTripPagePush: ((TripPageViewController) -> Void)?
+
+    /// Only the sheet-configured page draws its own header; the pushed variant keeps its
+    /// navigation-bar chrome.
+    var providesOwnSheetChrome: Bool { showsBottomToolbar }
+
+    /// Opens the SwiftUI trip page — the trip panel's "View full trip" and the
+    /// row context menu's "Show Trip Details".
+    ///
+    /// Both used to go through `ViewRouter.navigateTo(arrivalDeparture:from:)`,
+    /// which still builds the old `TripViewController` for the surfaces that push
+    /// full-screen with no map behind them. Routed here instead, so every way out
+    /// of this page reaches the same screen.
+    func showTripPage(for arrivalDeparture: ArrivalDeparture) {
+        let tripPage = TripPageViewController(
+            application: application,
+            arrivalDeparture: arrivalDeparture,
+            originTitle: viewModel.stop?.name
+        )
+        // Only a host that owns a map answers this. Where this page was pushed
+        // full-screen there is nothing behind it to point anywhere.
+        onTripPagePush?(tripPage)
+        application.viewRouter.navigate(to: tripPage, from: self)
+    }
 
     public var idleTimerFailsafe: Timer?
 
@@ -76,6 +106,23 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
     /// never migrates between presentations — so the pushed screen is unreachable from here.
     private let showToolbarOnBottom: Bool
 
+    /// The map's focus channel, when this page was presented as the map's stop
+    /// sheet. Inert for every pushed presentation.
+    ///
+    /// Stored on the controller and re-threaded through `installRootView()`,
+    /// exactly like `isAtTip` — writing `rootView.mapFocus` alone would be
+    /// silently dropped by the next `installRootView()` (e.g. from
+    /// `exitPreviewMode`).
+    private var mapFocus = StopMapFocus()
+
+    /// Attaches the map's focus channel so the sheet header's route chips can decorate
+    /// themselves from — and write into — the same object the map layer reads. Called once, by
+    /// the map view controller, immediately after creating this instance for its sheet.
+    func attach(focus: StopMapFocus) {
+        mapFocus = focus
+        installRootView()
+    }
+
     convenience init(application: Application, stop: Stop, showToolbarOnBottom: Bool = false) {
         self.init(application: application, stopID: stop.id, stop: stop, showToolbarOnBottom: showToolbarOnBottom)
     }
@@ -96,7 +143,8 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
             userDefaults: application.userDefaults,
             snapshotLoader: { _ in nil },
             navigation: Self.placeholderNavigation,
-            formatters: application.formatters
+            formatters: application.formatters,
+            mapFocus: mapFocus
         ))
 
         installRootView()
@@ -106,7 +154,8 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
 
     /// Builds the SwiftUI root with the real navigation handler. Called again whenever
     /// `showsBottomToolbar` changes — which only happens on entering or leaving preview mode,
-    /// before the rider has interacted with the page, so the `@State` reset costs nothing.
+    /// before the rider has interacted with the page, so the `@State` reset costs nothing — and
+    /// also by `attach(focus:)`, which re-threads `mapFocus` through a fresh root the same way.
     private func installRootView() {
         rootView = StopPageRootView(
             viewModel: viewModel,
@@ -117,6 +166,7 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
             },
             navigation: makeNavigationHandler(),
             formatters: application.formatters,
+            mapFocus: mapFocus,
             showToolbarOnBottom: showsBottomToolbar,
             isCollapsed: isAtTip
         )
@@ -195,6 +245,7 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
         showWalkingDirections: {},
         showAlertDetail: { _ in },
         showBookmarkEditor: { _ in },
+        shareTrip: { _ in },
         showAlarmPicker: { _ in },
         startLiveActivity: { _ in },
         showExternalSurveyError: {},
@@ -208,11 +259,15 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
         closeSheet: {}
     )
 
+    /// Owns the picker → share-sheet trip-sharing flow. Holds `self` weakly,
+    /// so retaining it for the controller's lifetime creates no cycle.
+    private lazy var tripSharingCoordinator = TripSharingCoordinator(application: application, presenter: self)
+
     private func makeNavigationHandler() -> StopPageNavigationHandler {
         StopPageNavigationHandler(
             showTrip: { [weak self] departure in
                 guard let self else { return }
-                self.application.viewRouter.navigateTo(arrivalDeparture: departure, from: self)
+                self.showTripPage(for: departure)
             },
             showScheduleForStop: { [weak self] in self?.showScheduleForStop() },
             showScheduleForRoute: { [weak self] departure in self?.showScheduleForRoute(for: departure) },
@@ -223,6 +278,7 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
                 self.application.viewRouter.navigateTo(alert: alert, from: self)
             },
             showBookmarkEditor: { [weak self] departure in self?.showBookmarkEditor(for: departure) },
+            shareTrip: { [weak self] departure in self?.tripSharingCoordinator.start(arrivalDeparture: departure) },
             showAlarmPicker: { [weak self] departure in self?.showAlarmPicker(for: departure) },
             startLiveActivity: { [weak self] departure in self?.startLiveActivity(for: departure) },
             showExternalSurveyError: { [weak self] in self?.showExternalSurveyError() },
@@ -274,6 +330,11 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
             .store(in: &cancellables)
 
         viewModel.$isListFiltered
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.configureBarButtons() }
+            .store(in: &cancellables)
+
+        viewModel.$arrivalDepartureFilter
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in self?.configureBarButtons() }
             .store(in: &cancellables)
@@ -599,8 +660,10 @@ private extension StopPageViewController {
         // The titles double as the VoiceOver labels for these image-only bar
         // buttons, so they must be localized, human-readable strings — the
         // filter's on/off state rides in `accessibilityValue` rather than
-        // being baked into the label.
-        let filterIsOn = viewModel.stopPreferences.hasHiddenRoutes && viewModel.isListFiltered
+        // being baked into the label. The glyph fills for either filter: hidden
+        // routes or a non-default Departure Type both mean rows are being held back.
+        let filterIsOn = (viewModel.stopPreferences.hasHiddenRoutes && viewModel.isListFiltered)
+            || viewModel.arrivalDepartureFilter != .all
         let filterButtonImage = UIImage(systemName: filterIsOn ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
 
         let filterMenuButton = UIBarButtonItem(title: Strings.filter, image: filterButtonImage, menu: filterMenu())
@@ -635,23 +698,41 @@ private extension StopPageViewController {
             self.filter()
         }
 
-        guard let stop = viewModel.stop else {
-            return UIMenu(children: [showAll, showFiltered])
-        }
+        var routeChildren = [showAll]
 
-        var children = [showAll]
+        if let stop = viewModel.stop {
+            if stop.routes.count > 1 {
+                if viewModel.isListFiltered && viewModel.stopPreferences.hasHiddenRoutes {
+                    showFiltered.image = UIImage(systemName: "checkmark")
+                } else {
+                    showAll.image = UIImage(systemName: "checkmark")
+                }
 
-        if stop.routes.count > 1 {
-            if viewModel.isListFiltered && viewModel.stopPreferences.hasHiddenRoutes {
-                showFiltered.image = UIImage(systemName: "checkmark")
-            } else {
-                showAll.image = UIImage(systemName: "checkmark")
+                routeChildren.append(showFiltered)
             }
-
-            children.append(showFiltered)
+        } else {
+            routeChildren.append(showFiltered)
         }
 
-        return UIMenu(children: children)
+        let routesSection = UIMenu(options: .displayInline, children: routeChildren)
+        return UIMenu(children: [routesSection, departureFilterMenu()])
+    }
+
+    /// The Departure Type submenu: everything, real-time only, or scheduled
+    /// only. The same choices as the legacy page's `arrivalDepartureFilterMenu()`,
+    /// persisted app-wide through the shared view model.
+    func departureFilterMenu() -> UIMenu {
+        let currentFilter = viewModel.arrivalDepartureFilter
+        let actions = ArrivalDepartureFilter.allCases.map { filter -> UIAction in
+            let action = UIAction(title: filter.displayTitle) { [unowned self] _ in
+                self.viewModel.updateArrivalDepartureFilter(filter)
+            }
+            if filter == currentFilter { action.image = UIImage(systemName: "checkmark") }
+            return action
+        }
+
+        let menuTitle = OBALoc("stop_controller.arrival_filter.menu_title", value: "Departure Type", comment: "Title for the menu that filters departures by data type")
+        return UIMenu(title: menuTitle, image: UIImage(systemName: "antenna.radiowaves.left.and.right"), children: actions)
     }
 
     func fileMenu() -> UIMenu {

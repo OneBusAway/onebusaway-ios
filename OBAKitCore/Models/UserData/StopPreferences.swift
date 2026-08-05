@@ -13,6 +13,13 @@ public enum StopSort: String, Codable {
     case time, route
 }
 
+/// Controls which arrivals/departures are displayed based on real-time data availability.
+public enum ArrivalDepartureFilter: String, Codable, CaseIterable {
+    case all
+    case estimatedOnly
+    case scheduledOnly
+}
+
 /// A model that represents the user's preferences for a particular `Stop`. These preferences are for things like sort order and hidden routes.
 public struct StopPreferences: Codable {
     public var sortType: StopSort

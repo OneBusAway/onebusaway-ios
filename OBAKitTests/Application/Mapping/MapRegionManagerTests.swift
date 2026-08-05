@@ -115,6 +115,97 @@ final class MapRegionManagerTests: OBATestCase {
         #expect(MapRegionManager.shouldShowZoomInWarning(forVisibleMapRectHeight: 40_000) == false)
     }
 
+    // MARK: - Zoom-In Warning Delivery
+
+    /// Records what the map told its delegates about the zoom warning.
+    @MainActor
+    private final class ZoomStatusRecorder: NSObject, MapRegionDelegate {
+        var statuses: [Bool] = []
+        func mapRegionManagerShowZoomInStatus(_ manager: MapRegionManager, showStatus: Bool) {
+            statuses.append(showStatus)
+        }
+    }
+
+    /// A manager whose map is a real size — `visibleMapRect` is meaningless on a
+    /// zero-frame map view.
+    private func makeSizedManager() -> MapRegionManager {
+        let dataLoader = MockDataLoader(testName: name)
+        stubRegions(dataLoader: dataLoader)
+        stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
+        Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
+
+        let locManager = AuthorizableLocationManagerMock(
+            updateLocation: TestData.mockSeattleLocation,
+            updateHeading: TestData.mockHeading
+        )
+        let locationService = LocationService(userDefaults: UserDefaults(), locationManager: locManager)
+        let config = makeConfig(locationService: locationService, bundledRegionsPath: regionsFilePath, dataLoader: dataLoader)
+
+        let manager = MapRegionManager(application: Application(config: config))
+        manager.mapView.frame = CGRect(x: 0, y: 0, width: 390, height: 700)
+        return manager
+    }
+
+    /// Puts the manager into the state a route search leaves it in: exactly one
+    /// result, which suppresses stop reloading. A bare object rather than a real
+    /// `StopsForRoute` — every concrete result type either moves the camera or
+    /// clears `searchResponse` on the next run loop, and neither is what this
+    /// test is about. The `results.count == 1` shape is the whole trigger.
+    private func displaySingleSearchResult(on manager: MapRegionManager) {
+        manager.searchResponse = SearchResponse(
+            request: SearchRequest(query: "10", type: .route),
+            results: [NSObject()],
+            boundingRegion: nil,
+            error: nil
+        )
+    }
+
+    /// The pill states something about the current zoom, so it has to be
+    /// re-derived on every camera settle — including while a search result is
+    /// displayed.
+    ///
+    /// A route search suppresses stop reloading and never clears
+    /// `searchResponse` on its own (unlike the stop and map-item cases, which
+    /// clear it on the next run loop). So a warning updated *after* that
+    /// suppression guard freezes at whatever it was when the search began, and
+    /// "Zoom in for stops" sits over a fully zoomed-in map showing the route's
+    /// own stops. The SwiftUI map already orders this correctly; see
+    /// `MapPanelRootView.onMapCameraChange`.
+    @MainActor
+    @Test func `A camera settle updates the zoom warning even while a search result is displayed`() {
+        let manager = makeSizedManager()
+        let recorder = ZoomStatusRecorder()
+        manager.addDelegate(recorder)
+        displaySingleSearchResult(on: manager)
+
+        // Zoomed in far enough that stops load: the warning must come down.
+        manager.mapView.visibleMapRect = MKMapRect(
+            origin: MKMapPoint(TestData.mockSeattleLocation.coordinate),
+            size: MKMapSize(width: 10_000, height: 10_000)
+        )
+        manager.mapView(manager.mapView, regionDidChangeAnimated: false)
+
+        #expect(recorder.statuses.last == false)
+    }
+
+    /// The same ordering in the other direction: panning out to region scale
+    /// while a search result is up must still raise the warning.
+    @MainActor
+    @Test func `A settle past the threshold raises the zoom warning while a search result is displayed`() {
+        let manager = makeSizedManager()
+        let recorder = ZoomStatusRecorder()
+        manager.addDelegate(recorder)
+        displaySingleSearchResult(on: manager)
+
+        manager.mapView.visibleMapRect = MKMapRect(
+            origin: MKMapPoint(TestData.mockSeattleLocation.coordinate),
+            size: MKMapSize(width: 500_000, height: 500_000)
+        )
+        manager.mapView(manager.mapView, regionDidChangeAnimated: false)
+
+        #expect(recorder.statuses.last == true)
+    }
+
     // MARK: - Explicit-region stop loading
 
     @Test func `Request stops in region populates stops`() async {

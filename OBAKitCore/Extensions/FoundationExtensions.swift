@@ -141,6 +141,15 @@ public extension Bundle {
         return URL(string: str)
     }
 
+    /// The brand's default arrival/departure filter, from
+    /// `OBAKitConfig.DefaultArrivalDepartureFilter` (`all`, `estimatedOnly`, or
+    /// `scheduledOnly`). Absent or unrecognized values degrade to `.all`, which
+    /// preserves the historical behavior of showing every departure.
+    var defaultArrivalDepartureFilter: ArrivalDepartureFilter {
+        guard let raw = OBAKitConfig?["DefaultArrivalDepartureFilter"] as? String else { return .all }
+        return ArrivalDepartureFilter(rawValue: raw) ?? .all
+    }
+
     // MARK: - More Tab Configuration
 
     /// Returns the More tab configuration from OBAKitConfig.MoreTab, or defaults.
