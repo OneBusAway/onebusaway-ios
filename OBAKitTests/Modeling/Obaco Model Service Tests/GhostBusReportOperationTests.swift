@@ -88,4 +88,38 @@ final class GhostBusReportOperationTests: OBATestCase {
         #expect(!body.contains("predicted"))
         #expect(!body.contains("user_latitude"))
     }
+
+    @Test func `Comment with form-special characters is strictly escaped, not corrupted`() async throws {
+        let data = Fixtures.loadData(file: "create_ghost_bus_report.json")
+        let capture = RequestCapture()
+        let dataLoader = (obacoService.dataLoader as! MockDataLoader)
+        dataLoader.mock(data: data) { request in
+            capture.body = request.httpBody.flatMap { String(data: $0, encoding: .utf8) }
+            return request.httpMethod == "POST"
+        }
+
+        var draft = makeDraft()
+        draft.comment = "Sat 20+ min & it vanished = gone; really"
+        _ = try await obacoService.postGhostBusReport(draft, userID: "device-uuid-1")
+
+        let body = try #require(capture.body)
+
+        // `.urlQueryAllowed` (the bug) leaves &, +, ;, and = unescaped, which would
+        // truncate the comment param at the first & and turn + into a space server-side.
+        // A strictly-escaped comment value must contain none of those raw characters.
+        let commentParam = try #require(body.components(separatedBy: "&").first { $0.hasPrefix("comment=") })
+        let commentValue = String(commentParam.dropFirst("comment=".count))
+        #expect(!commentValue.contains("&"))
+        #expect(!commentValue.contains("+"))
+        #expect(!commentValue.contains("="))
+        #expect(!commentValue.contains(";"))
+
+        // Percent-decoding the escaped value recovers the original comment exactly.
+        let decoded = commentValue.removingPercentEncoding
+        #expect(decoded == "Sat 20+ min & it vanished = gone; really")
+
+        // Other params must still be intact and unaffected by the comment's encoding.
+        #expect(body.contains("user_identifier=device-uuid-1"))
+        #expect(body.contains("trip_identifier=1_604825"))
+    }
 }
