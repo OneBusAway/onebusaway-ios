@@ -20,7 +20,6 @@ import OBAKitCore
 struct GroupedListView: View {
     let groups: [StopPageListBuilder.RouteGroup<ArrivalDeparture>]
     let expandedRouteID: RouteID?
-    let openTripDepartureID: String?
     let statusProvider: (ArrivalDeparture) -> DepartureStatus
     let alarmLookup: (ArrivalDeparture) -> Alarm?
     let alarmLeadTime: (Alarm) -> Int
@@ -30,9 +29,8 @@ struct GroupedListView: View {
     /// showing it for a departure that already has one, so it can be cancelled.
     let canAlarm: (ArrivalDeparture) -> Bool
     let onToggleRoute: (RouteID) -> Void
-    let onToggleTrip: (ArrivalDeparture) -> Void
+    let onSelectDeparture: (ArrivalDeparture) -> Void
     let onAlarmToggle: (ArrivalDeparture) -> Void
-    let panelBuilder: (ArrivalDeparture) -> TripDetailPanelView
 
     /// The compact alarm circle in an expanded row. `@ScaledMetric` so the badge
     /// grows with Dynamic Type the same way the 48pt route badge does inside
@@ -296,10 +294,10 @@ struct GroupedListView: View {
                 }
             }
             .contentShape(Rectangle())
-            .onTapGesture { onToggleTrip(departure) }
+            .onTapGesture { onSelectDeparture(departure) }
             .listRowBackground(Color(uiColor: .secondarySystemGroupedBackground))
             // Make the whole expanded row a single VoiceOver activation target
-            // that opens the trip panel, mirroring the card
+            // that opens the trip screen, mirroring the card
             // header (`children: .ignore` + explicit label + `.isButton`). The
             // combined element swallows the inner alarm Button, so it's re-exposed
             // as a custom action just like the header's alarm pill.
@@ -313,20 +311,14 @@ struct GroupedListView: View {
                     }
                 }
             }
-
-            // Accordion: the trip panel is an INSERTED SIBLING ROW keyed off the
-            // open id — List animates the insert/remove.
-            if openTripDepartureID == departure.id {
-                panelBuilder(departure)
-                    .listRowBackground(Color(uiColor: .secondarySystemGroupedBackground))
-            }
         }
     }
 
+    /// Points forward, not down: the row opens the trip screen now rather than
+    /// expanding in place.
     private func tripChevron(_ departure: ArrivalDeparture) -> some View {
-        Image(systemName: "chevron.down")
+        Image(systemName: "chevron.forward")
             .font(.caption.weight(.bold)).foregroundStyle(.tertiary)
-            .rotationEffect(.degrees(openTripDepartureID == departure.id ? 180 : 0))
     }
 
     @ViewBuilder
@@ -349,16 +341,12 @@ struct GroupedListView: View {
     /// headsign, minutes, live/scheduled status, and occupancy when present.
     private func expandedRowAccessibilityLabel(_ departure: ArrivalDeparture, status: DepartureStatus) -> String {
         let fmt = OBALoc("stop_page.grouped.expanded_row.a11y_fmt", value: "Route %@ to %@, departs in %d minutes, %@", comment: "VoiceOver label for one expanded departure row inside a grouped route card: route, headsign, minutes, status.")
-        // Same clause list as `DepartureRowView.accessibilityText`; the clock
-        // time is spoken because the strikethrough carrying it is inaudible.
-        var clauses = [
-            String(format: fmt, departure.routeShortName, departure.tripHeadsign ?? "", departure.arrivalDepartureMinutes, status.accessibilityStatusDescription),
-            timeDisplay(departure).accessibilityTimeDescription
-        ]
-        if status.showsOccupancy, let occupancy = departure.occupancyStatus, occupancy != .unknown {
-            clauses.append(OccupancyBadge.localizedDescription(occupancy))
-        }
-        return clauses.joined(separator: ", ")
+        return DepartureAccessibility.label(
+            identity: String(format: fmt, departure.routeShortName, departure.tripHeadsign ?? "", departure.arrivalDepartureMinutes, status.accessibilityStatusDescription),
+            departure: departure,
+            status: status,
+            timeDisplay: timeDisplay(departure)
+        )
     }
 
     private func groupAccessibilityLabel(_ group: StopPageListBuilder.RouteGroup<ArrivalDeparture>, status: DepartureStatus) -> String {

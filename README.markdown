@@ -20,6 +20,19 @@ See [wiki/Get-Started](https://github.com/OneBusAway/onebusaway-ios/wiki/Get-Sta
 
 The iOS codebase is a white-label product, read more about white-labeling at [wiki/White-Label](https://github.com/OneBusAway/onebusaway-ios/wiki/White-Label).
 
+### More tab contact links
+
+Under `OBAKitConfig.MoreTab` in your app's `project.yml` / Info.plist you can add:
+
+| Key | Example | More-tab row |
+|-----|---------|--------------|
+| `TutorialURL` | `https://example.com/help` | Tutorials |
+| `PhoneURL` | `tel:+12065551212` | Call Agency |
+| `TextURL` | `sms:+12065551212` | Text Agency |
+| `CustomLinks` | `[{Title, URL}, …]` | Resources (any extra links) |
+
+Rows only appear when their URL is set. `tel:` / `sms:` open the system Phone / Messages apps.
+
 ### Custom Regions
 
 You can quickly add a custom region to the app by creating a specially formed link and then tapping on it in Mobile Safari:

@@ -23,6 +23,9 @@ final class MoreTabConfigurationTests {
         #expect(config.showHelpOutSection)
         #expect(config.translateURL == nil)
         #expect(config.developURL?.absoluteString == "https://github.com/oneBusAway/onebusaway-ios")
+        #expect(config.tutorialURL == nil)
+        #expect(config.phoneURL == nil)
+        #expect(config.textURL == nil)
         #expect(config.customLinks.isEmpty)
     }
 
@@ -34,6 +37,9 @@ final class MoreTabConfigurationTests {
             "ShowHelpOutSection": false,
             "TranslateURL": "https://example.com/translate",
             "DevelopURL": "https://example.com/develop",
+            "TutorialURL": "https://example.com/tutorials",
+            "PhoneURL": "tel:+1234567890",
+            "TextURL": "sms:+1234567890",
             "CustomLinks": [
                 ["Title": "Agency Site", "URL": "https://example.com"],
                 ["Title": "Call Us", "URL": "tel:+1234567890"]
@@ -46,11 +52,26 @@ final class MoreTabConfigurationTests {
         #expect(!config.showHelpOutSection)
         #expect(config.translateURL?.absoluteString == "https://example.com/translate")
         #expect(config.developURL?.absoluteString == "https://example.com/develop")
+        #expect(config.tutorialURL?.absoluteString == "https://example.com/tutorials")
+        #expect(config.phoneURL?.absoluteString == "tel:+1234567890")
+        #expect(config.textURL?.absoluteString == "sms:+1234567890")
         #expect(config.customLinks.count == 2)
         #expect(config.customLinks[0].title == "Agency Site")
         #expect(config.customLinks[0].url.absoluteString == "https://example.com")
         #expect(config.customLinks[1].title == "Call Us")
         #expect(config.customLinks[1].url.absoluteString == "tel:+1234567890")
+    }
+
+    @Test func `Parse ignores empty agency contact URLs`() {
+        let dict: [AnyHashable: Any] = [
+            "TutorialURL": "",
+            "PhoneURL": "",
+            "TextURL": ""
+        ]
+        let config = MoreTabConfiguration(from: dict)
+        #expect(config.tutorialURL == nil)
+        #expect(config.phoneURL == nil)
+        #expect(config.textURL == nil)
     }
 
     @Test func `Parse from dictionary with minimal fields`() {

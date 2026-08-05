@@ -716,6 +716,12 @@ class MapViewController: UIViewController,
 
     var rentalLayerCoordinator: RentalLayerCoordinator?
 
+    /// The region `StopRouteFocusMapLayer` was last (re)registered for, so
+    /// `configureMapLayers()` can tell an actual region change (rebuild, with a
+    /// fresh `ShapeCache`) apart from `updatedRegionsList` firing with the same
+    /// region — which happens routinely and must not tear the layer down.
+    var stopRouteFocusLayerRegionIdentifier: Int?
+
     // The layer/sheet/nudge machinery lives in MapViewController+MapLayers.swift.
 
     // MARK: - Application State
@@ -772,13 +778,17 @@ class MapViewController: UIViewController,
     /// would eventually disagree with it and drop `StopViewController` into a panel it was
     /// never built for.
     private func present(stopController: UIViewController, deselecting annotation: MKAnnotation? = nil) {
-        guard stopController is StopPageViewController else {
+        guard let stopPageVC = stopController as? StopPageViewController else {
             application.viewRouter.navigate(to: stopController, from: self)
             return
         }
 
-        if let stopPageVC = stopController as? StopPageViewController {
-            stopPageVC.onClose = { [weak self] in self?.stopSheet.dismiss() }
+        stopPageVC.onClose = { [weak self] in self?.stopSheet.dismiss() }
+
+        // This is the map the trip page will hang over, whichever affordance
+        // opened it.
+        stopPageVC.onTripPagePush = { [weak self] tripPage in
+            self?.wireTripFocus(for: tripPage)
         }
 
         // Only one sheet at a time: clear whatever else is occupying this space first.
@@ -788,15 +798,41 @@ class MapViewController: UIViewController,
 
         floatingPanel.move(to: .tip, animated: true)
 
-        stopSheet.present(stopController, from: self) { [weak self] in
+        stopSheet.present(stopPageVC, from: self) { [weak self] in
             guard let self else { return }
 
             if let annotation {
                 self.mapRegionManager.mapView.deselectAnnotation(annotation, animated: true)
             }
 
+            self.stopFocusCancellables.removeAll()
+            (self.mapRegionManager.mapLayer(id: StopRouteFocusMapLayer.layerID) as? StopRouteFocusMapLayer)?.end()
+            self.stopSheetStopID = nil
+
             self.scheduleFeedbackPrompt()
         }
+
+        // ORDERING IS LOAD-BEARING. `StopSheetPresenter.present` tears the outgoing
+        // presentation down as its FIRST statement, which synchronously runs the
+        // outgoing dismiss handler — and that handler ends the layer. Building and
+        // activating the new focus before this call would have the outgoing handler
+        // immediately tear down what we just set up: a blank map on every
+        // stop-to-stop tap.
+        let focus = StopMapFocus()
+        stopPageVC.attach(focus: focus)
+        beginRouteFocus(focus: focus, stopPageVC: stopPageVC)
+
+        // Camera framing is not layer content, so it must not answer to the
+        // "Route lines & vehicles" Map-sheet toggle the way `beginRouteFocus`
+        // does — a rider who turns that layer off must not also lose stop
+        // recentering. Unconditional, but still after `stopSheet.present`
+        // above for the same outgoing-teardown ordering reason.
+        beginRecentering(stopPageVC: stopPageVC)
+
+        // Also after `stopSheet.present`, and for the same reason: a stop-to-stop
+        // swap runs the outgoing sheet's dismiss handler inside that call, and
+        // that handler clears this.
+        stopSheetStopID = stopPageVC.viewModel.stopID
 
         // `StopSheetPresenter.present` tears the outgoing presentation down as its first
         // statement, which runs the handler above synchronously — so a stop-to-stop swap
@@ -806,8 +842,126 @@ class MapViewController: UIViewController,
         cancelScheduledFeedbackPrompt()
     }
 
+    /// Points this map at a trip for as long as its page is on the stack.
+    ///
+    /// While the trip page is up the map shows that trip and nothing else: the
+    /// stop's own routes and vehicles stand down, and come back intact when the
+    /// rider pops out. Suppression rather than `end()` — the stop sheet
+    /// underneath is still presented.
+    private func wireTripFocus(for tripPage: TripPageViewController) {
+        tripPage.onMapFocusChanged = { [weak self] tripFocus in
+            guard let self else { return }
+
+            // Gated on the layer's own Map-sheet toggle, for the same reason
+            // `beginRouteFocus` is: annotation and overlay dispatch consults
+            // every registered layer with no enabled check, so a disabled layer
+            // that gets begun would still draw. A rider who turned this off keeps
+            // the stop's routes instead — which is why the suppression flag
+            // follows enablement rather than the push.
+            guard mapRegionManager.isMapLayerEnabled(id: TripFocusMapLayer.layerID),
+                  let tripLayer = mapRegionManager.mapLayer(id: TripFocusMapLayer.layerID) as? TripFocusMapLayer else { return }
+
+            let stopLayer = mapRegionManager.mapLayer(id: StopRouteFocusMapLayer.layerID) as? StopRouteFocusMapLayer
+            stopLayer?.setSuppressed(tripFocus != nil)
+
+            if let tripFocus {
+                // Evaluated when the layer frames, not now: the sheet is still
+                // animating up at this point.
+                tripLayer.cameraInsets = { [weak self] in self?.sheetCameraInsets() ?? .zero }
+                tripLayer.begin(focus: tripFocus)
+            } else {
+                tripLayer.end()
+            }
+        }
+    }
+
+    /// Feeds the route-focus layer from the stop page's view model, and routes
+    /// "Follow this trip" into the sheet's navigation stack. Owns ONLY the
+    /// focus/layer wiring — camera recentering is a separate concern, see
+    /// `beginRecentering(stopPageVC:)`.
+    ///
+    /// Gated on the layer's Map-sheet toggle: `MapRegionManager`'s annotation
+    /// and overlay dispatch deliberately consults every registered layer with
+    /// no enabled check (mirroring the rendering path), so a disabled layer
+    /// must never be wired up to begin with — starting the arrivals sink here
+    /// would give it a live feed no toggle turns off. `update(model:)` still
+    /// carries its own `focus == nil` guard as a second line of defense, for
+    /// the case where the layer is disabled mid-presentation.
+    private func beginRouteFocus(focus: StopMapFocus, stopPageVC: StopPageViewController) {
+        guard mapRegionManager.isMapLayerEnabled(id: StopRouteFocusMapLayer.layerID),
+              let layer = mapRegionManager.mapLayer(id: StopRouteFocusMapLayer.layerID) as? StopRouteFocusMapLayer else { return }
+        layer.begin(focus: focus)
+
+        let viewModel = stopPageVC.viewModel
+        // Routed through the stop page rather than pushing from here, so the
+        // callout's "Follow this trip" and the page's own "View full trip" and
+        // "Show Trip Details" all land on one screen by one path. `showTripPage`
+        // calls back into `onTripPagePush` below.
+        layer.onFollowTrip = { [weak stopPageVC] departure in
+            stopPageVC?.showTripPage(for: departure)
+        }
+
+        // Combine over a @MainActor ObservableObject from UIKit: the exact pattern
+        // `StopViewController.bindArrivalsSink()` already ships under Swift 6
+        // strict concurrency. `sink(receiveValue:)` takes a plain non-Sendable
+        // closure, so it inherits @MainActor and crosses no isolation boundary.
+        //
+        // Everything the layer needs comes from the closure's parameters. Nothing
+        // here may re-read `viewModel.stopArrivals`: `@Published` fires in
+        // `willSet`, so inside this sink that property still holds the OLD value —
+        // nil on the first load. `apply` exists to make that mistake unavailable.
+        viewModel.$stopArrivals
+            .combineLatest(viewModel.$isListFiltered, viewModel.$stopPreferences)
+            .sink { [weak layer] arrivals, isListFiltered, preferences in
+                layer?.apply(arrivals: arrivals, isListFiltered: isListFiltered, preferences: preferences)
+            }
+            .store(in: &stopFocusCancellables)
+    }
+
+    /// Keeps the tapped stop visible above the sheet, independent of whether the
+    /// "Route lines & vehicles" layer is enabled — camera framing is not layer
+    /// content, so a rider who disables that layer must not also lose
+    /// recentering (the bug the spec's "Camera" section exists to fix).
+    ///
+    /// Subscribing to `$stop` — rather than reading `viewModel.stop` once at
+    /// present time — also covers `show(stopID:)` (deep links, nearby-stop
+    /// rows), where the stop loads asynchronously after the sheet is already
+    /// up; a one-time read there would see nil and leave the stop behind the
+    /// sheet. `@Published` replays its current value to a new subscriber, so
+    /// this still fires immediately when the stop is already loaded (the
+    /// `show(stop:)` path).
+    private func beginRecentering(stopPageVC: StopPageViewController) {
+        stopPageVC.viewModel.$stop
+            .compactMap { $0 }
+            .first()
+            .sink { [weak self] stop in
+                self?.centerMapAboveSheet(on: stop.coordinate)
+            }
+            .store(in: &stopFocusCancellables)
+    }
+
+    /// Torn down alongside the layer when the sheet closes.
+    private var stopFocusCancellables = Set<AnyCancellable>()
+
     /// Owns the half-detent panel that shows the redesigned Stop page over the map.
     private lazy var stopSheet = StopSheetPresenter()
+
+    /// The stop whose sheet is up, or nil between presentations — the single
+    /// switch behind both of the things the map does differently while a sheet
+    /// owns the screen: the zoom pill stays down, and every stop but this one
+    /// recedes to a background dot.
+    ///
+    /// Tracked here rather than read from `stopSheet.isPresenting` because the
+    /// presenter's own flag flips at points inside `present`/`dismiss` that this
+    /// controller doesn't observe; a stop-to-stop swap in particular runs the
+    /// outgoing dismissal in the middle of the incoming presentation.
+    private var stopSheetStopID: StopID? {
+        didSet {
+            guard oldValue != stopSheetStopID else { return }
+            mapRegionManager.stopSheetSelection = stopSheetStopID
+            renderMapStatus()
+        }
+    }
 
     /// Presents the feedback prompt after a stop sheet is dismissed — a natural
     /// stopping point, and the only one available in the new stop page flow.
@@ -846,12 +1000,14 @@ class MapViewController: UIViewController,
         feedbackPromptWorkItem = nil
     }
 
-    /// Clears the stop sheet because something else is about to occupy its space.
+    /// Clears the stop sheet because something else is about to occupy its space —
+    /// another panel, a search result, or a region change that invalidates the stop
+    /// the sheet is showing.
     ///
     /// The dismissal runs the sheet's handler synchronously, which arms the prompt — so the
     /// cancel has to follow it, not precede it. The two belong together at every call site,
     /// which is why they live here rather than being spelled out at each one.
-    private func dismissStopSheetForReplacement() {
+    func dismissStopSheetForReplacement() {
         stopSheet.dismiss(animated: false)
         cancelScheduledFeedbackPrompt()
     }
@@ -1114,6 +1270,15 @@ class MapViewController: UIViewController,
         // Layer-owned annotations (rental vehicles, rental clusters) present
         // their own detail sheets.
         if let annotation = view.annotation, presentLayerDetail(for: annotation, in: mapView) {
+            return
+        }
+
+        if let vehicleAnnotation = view.annotation as? StopVehicleAnnotation {
+            // The layer decides what a marker tap means — focus the route, or
+            // clear it. Which one depends on whether this is the marker focus is
+            // already standing on, so it needs the annotation, not just its route.
+            (mapRegionManager.mapLayer(id: StopRouteFocusMapLayer.layerID) as? StopRouteFocusMapLayer)?
+                .didSelectVehicle(vehicleAnnotation)
             return
         }
 
@@ -1423,7 +1588,14 @@ private extension MapViewController {
 
     func renderMapStatus() {
         let locationState = mapStatusView.state(for: application.locationService)
-        mapStatusView.configure(for: locationState, zoomInStatus: viewModel.showZoomWarning)
+        // "Zoom in for stops" stays down while a stop sheet is up: it would sit on
+        // top of the route lines the sheet came up to show, to tell the rider about
+        // stops they are no longer looking for. Location warnings still surface —
+        // those are actionable, and tapping the pill is how you act on them.
+        mapStatusView.configure(
+            for: locationState,
+            zoomInStatus: viewModel.showZoomWarning && stopSheetStopID == nil
+        )
         locationButton.isHidden = !application.locationService.isLocationUseAuthorized
         layoutMapMargins()
     }

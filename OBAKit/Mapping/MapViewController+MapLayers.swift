@@ -25,8 +25,55 @@ extension MapViewController {
             mapRegionManager.registerMapLayer(StopsMapLayer(manager: mapRegionManager))
         }
 
+        configureStopRouteFocusLayer()
         configureRentalLayers()
         updateMapLayerBadge()
+    }
+
+    /// Registers `StopRouteFocusMapLayer`, rebuilding it with a fresh
+    /// `ShapeCache` when the current region has actually changed.
+    ///
+    /// `CoreApplication.refreshRESTAPIService()` replaces `application.apiService`
+    /// on region change. The layer's `ShapeCache` closes over that service
+    /// `[weak apiService]`, so a cache built for the previous region either
+    /// resolves nil (a `CancellationError`, and no route line ever draws again
+    /// until relaunch) or keeps fetching from the old region's server. Shape IDs
+    /// are also region-scoped, so a cache carried over from the old region would
+    /// answer with the wrong region's shapes even if the service reference were
+    /// still valid.
+    ///
+    /// Gated on the region identifier actually changing, NOT on every call —
+    /// `configureMapLayers()` also runs from `updatedRegionsList`, which fires
+    /// routinely without the current region changing at all, and would
+    /// otherwise tear this layer down (dropping any open presentation) on every
+    /// such refresh.
+    private func configureStopRouteFocusLayer() {
+        let currentRegionIdentifier = application.currentRegionIdentifier
+        let isRegisteredForCurrentRegion = mapRegionManager.mapLayer(id: StopRouteFocusMapLayer.layerID) != nil
+            && stopRouteFocusLayerRegionIdentifier == currentRegionIdentifier
+        guard !isRegisteredForCurrentRegion else { return }
+
+        if let stale = mapRegionManager.mapLayer(id: StopRouteFocusMapLayer.layerID) as? StopRouteFocusMapLayer {
+            stale.invalidateShapeCache()
+            mapRegionManager.removeMapLayer(id: StopRouteFocusMapLayer.layerID)
+        }
+
+        let apiService = application.apiService
+        let shapeCache = ShapeCache { [weak apiService] shapeID in
+            guard let apiService else { throw CancellationError() }
+            return try await apiService.getShape(id: shapeID).entry.points
+        }
+        mapRegionManager.registerMapLayer(
+            StopRouteFocusMapLayer(mapView: mapRegionManager.mapView, shapeCache: shapeCache, formatters: application.formatters)
+        )
+
+        // Registered alongside, and torn down on the same region change: the trip
+        // layer draws shapes fetched for this region too, and a shape ID from the
+        // old region resolves to the wrong line in the new one.
+        mapRegionManager.removeMapLayer(id: TripFocusMapLayer.layerID)
+        mapRegionManager.registerMapLayer(TripFocusMapLayer(mapView: mapRegionManager.mapView))
+
+        stopRouteFocusLayerRegionIdentifier = currentRegionIdentifier
     }
 
     private func configureRentalLayers() {
@@ -177,6 +224,17 @@ extension MapViewController {
 
 extension MapViewController: RegionsServiceDelegate {
     public func regionsService(_ service: RegionsService, updatedRegion region: Region) {
+        // The stop the sheet is showing belongs to the region we just left, and
+        // `configureMapLayers()` is about to throw away the route-focus layer
+        // driving it. Leaving the sheet up would strand it: its arrivals sink
+        // would feed a layer no longer on the map, so the lines and vehicles
+        // would never come back, and `stopSheetSelection` would stay set — every
+        // other marker held down as a gray dot for the rest of the session.
+        // Re-attaching the presentation to the rebuilt layer isn't the fix
+        // either: shape IDs are region-scoped, so the new region's server would
+        // answer this stop's IDs with the wrong lines.
+        dismissStopSheetForReplacement()
+
         // Rebuild region-scoped layers: a new region may gain or lose bikeshare.
         configureMapLayers()
     }

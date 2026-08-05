@@ -49,6 +49,15 @@
 /* Placeholder shown in release builds when a sheet route is pushed but has no view registered. */
 "app_sheet.unimplemented_route.placeholder" = "이 화면은 곧 제공될 예정입니다.";
 
+/* Filter option to show all departures regardless of real-time data availability */
+"arrival_departure_filter.all_departures" = "모든 출발";
+
+/* Filter option to show only departures with real-time estimated data */
+"arrival_departure_filter.real_time_only" = "실시간만";
+
+/* Filter option to show only departures with scheduled data and no real-time information */
+"arrival_departure_filter.scheduled_only" = "시간표 기준만";
+
 /* Action to start a Live Activity for a specific bookmark */
 "bookmarks_controller.context_menu.track_live_activity" = "추적";
 
@@ -972,6 +981,15 @@
 /* Settings > Debug section > Display test alerts */
 "settings_controller.alerts_section.display_test_alerts" = "테스트 알림 표시";
 
+/* Settings section title for controlling which arrivals/departures are shown */
+"settings_controller.arrival_display_section.title" = "도착·출발 정보 표시";
+
+/* Title for the departure filter selection alert */
+"settings_controller.arrival_filter.selector_title" = "출발 표시";
+
+/* Title for the departure filter setting row */
+"settings_controller.arrival_filter.title" = "출발 표시";
+
 /* Settings > Debug section > Refresh regions on every launch */
 "settings_controller.debug_section.always_refresh_regions" = "실행할 때마다 지역 새로고침";
 
@@ -1056,6 +1074,12 @@
 /* A header for the arrivals and departures section of the stop controller. */
 "stop_controller.arrival_departure_header" = "도착 및 출발";
 
+/* Title for the menu that filters departures by data type */
+"stop_controller.arrival_filter.menu_title" = "출발 유형";
+
+/* Message shown when the Departure Type filter hides every departure at a stop */
+"stop_controller.arrival_filter.no_results" = "현재 필터와 일치하는 출발이 없습니다. ⋯ 메뉴에서 출발 유형을 변경하세요.";
+
 /* An error message displayed when a stop is shown by tapping on a bookmark—and the bookmark doesn't seem to point to a valid stop any longer. This problem will occur when a transit agency changes its stop IDs, perhaps as part of an annual transit system realignment. */
 "stop_controller.bad_bookmark_error_message" = "이 즐겨찾기는 더 이상 작동하지 않을 수 있습니다. 운영 기관에서 무언가를 변경했나요? 즐겨찾기를 삭제하고 다시 만들어 주세요.";
 
@@ -1086,6 +1110,12 @@
 /* Button to reveal departures that leave before the rider's transfer arrival. Parameter is the count of hidden departures. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
 "stop_controller.transfer_show_earlier_departures_fmt" = "이전 출발 %d건 표시";
 
+/* Spoken suffix on the currently-focused route chip. */
+"stop_header.chip.highlighted" = "지도에서 강조 표시됨";
+
+/* Spoken suffix on a route chip whose route has a vehicle on the map. */
+"stop_header.chip.live_tracking" = "실시간 추적";
+
 /* Error shown when a departure alarm can't be cancelled because the region's alarm service is unreachable. */
 "stop_page.alarm_cancel_unavailable" = "미리 알림 서비스를 사용할 수 없어 이 미리 알림을 취소하지 못했습니다. 나중에 다시 시도해 주세요.";
 
@@ -1104,11 +1134,17 @@
 /* Empty state shown when every route at the stop is hidden by the user's filter. */
 "stop_page.empty.all_filtered" = "이 정류장의 모든 노선이 필터링되었습니다";
 
+/* Empty state shown when the Departure Type filter (real-time only / scheduled only) hides every departure at the stop. */
+"stop_page.empty.departure_filter" = "현재 출발 유형 필터와 일치하는 출발이 없습니다";
+
 /* Empty state shown when the stop has no upcoming departures within the loaded time window. %d is the number of minutes. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
 "stop_page.empty.no_departures_fmt" = "앞으로 %d분 내에 예정된 출발이 없습니다";
 
 /* Button that retries loading departures after an error. */
 "stop_page.empty.retry" = "다시 시도";
+
+/* Button that resets the Departure Type filter so every departure is shown. */
+"stop_page.empty.show_all_departure_types" = "모든 출발 유형 표시";
 
 /* Button that clears the route filter so all routes are shown. */
 "stop_page.empty.show_all_routes" = "모든 노선 표시";
@@ -1152,11 +1188,11 @@
 /* Caption under the spinner shown while the stop page's departure list loads. */
 "stop_page.loading_departures" = "출발 정보를 불러오는 중…";
 
-/* Stop page mode toggle: grouped by route */
-"stop_page.mode.by_route" = "노선별";
-
 /* Stop page mode toggle: flat time-sorted list */
-"stop_page.mode.chronological" = "시간순";
+"stop_page.mode.time" = "시간";
+
+/* Stop page mode toggle: grouped by route */
+"stop_page.mode.route" = "노선";
 
 /* Opens the full trip screen */
 "stop_page.panel.full_trip" = "전체 운행 보기";
@@ -1199,9 +1235,6 @@
 
 /* Context menu action opening the full trip screen */
 "stop_page.row.show_trip" = "운행 세부 정보 보기";
-
-/* Chronological list section header */
-"stop_page.section.arrivals_departures" = "도착 및 출발";
 
 /* Fallback title for a service alert that has no summary text. */
 "stop_page.service_alert_fallback" = "운행 알림";
@@ -1442,6 +1475,18 @@
 
 /* Suggested invocation phrase for Siri Shortcut */
 "user_activity_builder.show_me_my_bus" = "내 버스 보여줘";
+
+/* Qualifies the countdown in the live-vehicle map callout, as in '1m to this stop'. */
+"vehicle_callout.to_this_stop" = "이 정류장까지";
+
+/* Freshness line in the live-vehicle map callout. %@ is a relative time, e.g. '12s ago'. */
+"vehicle_callout.position_updated_fmt" = "위치 업데이트 %@";
+
+/* Button in the live-vehicle map callout that opens the trip screen. */
+"vehicle_callout.follow_this_trip" = "이 운행 추적하기";
+
+/* Label identifying a vehicle by its ID in the map's vehicle callout, e.g. 'Vehicle 1234'. */
+"vehicle_callout.vehicle_label_fmt" = "차량 %@";
 
 /* The section header to a free-form comments field that the user does not have to add text to in order to submit this form. */
 "vehicle_problem_controller.comments_section.section_title" = "추가 의견 (선택 사항)";

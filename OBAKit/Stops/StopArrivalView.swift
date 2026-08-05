@@ -287,12 +287,7 @@ class StopArrivalView: UIView {
 
         accessibilityTimeLabel.text = formatters.timeFormatter.string(from: arrivalDeparture.arrivalDepartureDate)
 
-        if arrivalDeparture.scheduleStatus == .unknown {
-            accessibilityScheduleDeviationLabel.text = Strings.scheduledNotRealTime
-        }
-        else {
-            accessibilityScheduleDeviationLabel.text = formatters.formattedScheduleDeviation(for: arrivalDeparture)
-        }
+        accessibilityScheduleDeviationLabel.text = formatters.deviationLabel(for: arrivalDeparture)
 
         accessibilityScheduleDeviationLabel.textColor = formatters.colorForScheduleStatus(arrivalDeparture.scheduleStatus)
         accessibilityRelativeTimeBadge.configure(with: arrivalDeparture, formatters: formatters)

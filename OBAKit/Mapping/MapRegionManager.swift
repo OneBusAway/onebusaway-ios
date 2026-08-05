@@ -289,7 +289,78 @@ public class MapRegionManager: NSObject,
         mapView.registerAnnotationView(PulsingVehicleAnnotationView.self)
         mapView.registerAnnotationView(RentalAnnotationView.self)
         mapView.registerAnnotationView(RentalClusterAnnotationView.self)
+        mapView.registerAnnotationView(BackgroundDotAnnotationView.self)
         mapView.register(UserPinAnnotationView.self, forAnnotationViewWithReuseIdentifier: "UserDroppedPin")
+    }
+
+    // MARK: - Background De-emphasis
+
+    /// The stop whose sheet currently occupies the map, or nil when no sheet is up.
+    ///
+    /// While it is set, every *other* stop, bookmark, and rental marker collapses
+    /// into a subtle gray dot that doesn't answer taps, so the selected stop's
+    /// route lines and vehicles read against a network that is still legible as
+    /// *position* but no longer competes with them. Set by `MapViewController`
+    /// when it presents and dismisses the sheet.
+    public var stopSheetSelection: StopID? {
+        didSet {
+            guard oldValue != stopSheetSelection else { return }
+            refreshBackgroundAnnotationEmphasis(previousSelection: oldValue)
+        }
+    }
+
+    /// Whether `annotation` renders as a background dot under `selection`.
+    ///
+    /// Stops and bookmarks are the manager's own; everything else answers through
+    /// the layer that draws it. The route-focus layer declines, so its vehicles
+    /// keep their full markers — they are what the sheet came up to show.
+    ///
+    /// Takes the selection rather than reading `stopSheetSelection`, so the
+    /// refresh below can ask the same question of the outgoing selection and the
+    /// incoming one.
+    private func recedesBehindStopSheet(_ annotation: MKAnnotation, selection: StopID?) -> Bool {
+        guard let selection else { return false }
+        // The sheet's own stop keeps its pin: it is the anchor that everything
+        // else on screen — the route lines, the vehicles, the sheet — describes.
+        if let stop = annotation as? Stop, stop.id == selection { return false }
+        if let bookmark = annotation as? Bookmark, bookmark.stopID == selection { return false }
+        return participatesInBackgroundEmphasis(annotation)
+    }
+
+    /// A type test, deliberately blind to the current selection: whether this
+    /// annotation is one whose emphasis a stop sheet can change at all.
+    private func participatesInBackgroundEmphasis(_ annotation: MKAnnotation) -> Bool {
+        if annotation is Stop || annotation is Bookmark { return true }
+        return mapLayers.contains { $0.recedesBehindStopSheet(annotation) }
+    }
+
+    /// The annotations on the map that would draw differently under `next` than
+    /// they do under `previous` — exactly the set the refresh below churns.
+    ///
+    /// Opening or closing a sheet flips nearly everything, and there is no
+    /// avoiding that. A stop-to-stop swap — tapping a second pin while the first
+    /// one's sheet is up — flips exactly the two stops involved, and re-adding
+    /// the other several hundred markers (`RentalMapLayer.densityBudget` alone
+    /// is 500) to hand each one back the view it already had is work the sheet
+    /// transition can feel.
+    ///
+    /// Split out and left internal because the churn itself happens inside
+    /// `MKMapView`, which offers nothing to observe it by; this is the seam a
+    /// test can assert against.
+    func annotationsNeedingEmphasisRefresh(from previous: StopID?, to next: StopID?) -> [MKAnnotation] {
+        mapView.annotations.filter {
+            recedesBehindStopSheet($0, selection: previous) != recedesBehindStopSheet($0, selection: next)
+        }
+    }
+
+    /// MapKit asks `viewFor` once, when an annotation is added, so changing the
+    /// selection changes nothing for what is already on screen. Removing and
+    /// re-adding an annotation is the supported way to force a fresh round trip.
+    private func refreshBackgroundAnnotationEmphasis(previousSelection: StopID?) {
+        let affected = annotationsNeedingEmphasisRefresh(from: previousSelection, to: stopSheetSelection)
+        guard !affected.isEmpty else { return }
+        mapView.removeAnnotations(affected)
+        mapView.addAnnotations(affected)
     }
 
     // MARK: - Map Layers
@@ -676,7 +747,7 @@ public class MapRegionManager: NSObject,
         MapRegionManager.shouldShowZoomInWarning(forVisibleMapRectHeight: mapView.visibleMapRect.height)
     }
 
-    private func updateZoomWarningOverlay(mapHeight: Double) {
+    private func updateZoomWarningOverlay() {
         notifyDelegatesZoomInStatus(status: zoomInStatus)
     }
 
@@ -688,6 +759,7 @@ public class MapRegionManager: NSObject,
         mapView.removeOverlays(mapView.overlays)
         reloadStopAnnotations()
         notifyMapLayersAnnotationsCleared()
+        notifyMapLayersOverlaysCleared()
     }
 
     /// `removeAllAnnotations` strips layer annotations behind the layers' backs;
@@ -695,6 +767,15 @@ public class MapRegionManager: NSObject,
     private func notifyMapLayersAnnotationsCleared() {
         for layer in mapLayers where isMapLayerEnabled(id: layer.id) {
             layer.mapAnnotationsWereCleared()
+        }
+    }
+
+    /// Wholesale overlay removal strips layer overlays behind the layers' backs;
+    /// tell each enabled layer so it can re-add its own. Mirrors
+    /// `notifyMapLayersAnnotationsCleared()`.
+    private func notifyMapLayersOverlaysCleared() {
+        for layer in mapLayers where isMapLayerEnabled(id: layer.id) {
+            layer.mapOverlaysWereCleared()
         }
     }
 
@@ -871,11 +952,18 @@ public class MapRegionManager: NSObject,
     // MARK: - Map View Delegate
 
     private func reloadStopAnnotations() {
+        // Ahead of every early return below, including the search-result guard.
+        // The pill states something about the current zoom, so it has to be
+        // re-derived on every settle — and a route search suppresses stop
+        // reloading without ever clearing `searchResponse` on its own, so a
+        // warning updated after that guard freezes until the search is
+        // cancelled. Mirrors the ordering `MapPanelRootView.onMapCameraChange`
+        // already uses.
+        updateZoomWarningOverlay()
+
         if searchResponseOverridesStopLoading() {
             return
         }
-
-        updateZoomWarningOverlay(mapHeight: mapView.visibleMapRect.height)
 
         // The zoom gate applies regardless of the layer toggle: `getStops` with a
         // region-scale bounding box is exactly what the 40,000-height gate prevents.
@@ -1003,6 +1091,15 @@ public class MapRegionManager: NSObject,
     }
 
     public func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
+        // Ahead of the layer loop: while a stop sheet is up, a receding annotation
+        // gets the shared dot instead of the view its owner would have built.
+        if recedesBehindStopSheet(annotation, selection: stopSheetSelection) {
+            return mapView.dequeueReusableAnnotationView(
+                withIdentifier: MKMapView.reuseIdentifier(for: BackgroundDotAnnotationView.self),
+                for: annotation
+            )
+        }
+
         // Registered layers get first claim on their own annotation (and cluster)
         // types; everything else falls through to the built-in annotation types.
         for layer in mapLayers {
@@ -1066,6 +1163,21 @@ public class MapRegionManager: NSObject,
     }
 
     public func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
+        // Layers get first claim, mirroring `viewFor annotation`. This loop MUST
+        // precede the `as? MKPolyline` branch below: a layer's overlay can be an
+        // `MKPolyline` subclass, which that branch would otherwise claim and paint
+        // as a generic 3pt brand-colored stroke.
+        //
+        // Deliberately unfiltered by enablement, exactly like the annotation path:
+        // `deactivate()` is what removes a layer's overlays. Gating here on the
+        // UserDefaults flag would leave a stale overlay falling through to the
+        // generic branch instead of its own renderer.
+        for layer in mapLayers {
+            if let layerRenderer = layer.renderer(for: overlay, in: mapView) {
+                return layerRenderer
+            }
+        }
+
         if let overlay = overlay as? MKPolyline {
             let renderer = MKPolylineRenderer(polyline: overlay)
             renderer.strokeColor = ThemeColors.shared.brand.withAlphaComponent(0.75)
@@ -1075,7 +1187,10 @@ public class MapRegionManager: NSObject,
             return renderer
         }
 
-        fatalError() // :(
+        // Previously `fatalError()`. An unexpected overlay type is not worth
+        // aborting a transit app over — log it and draw nothing.
+        Logger.error("No renderer for overlay of type \(type(of: overlay)); drawing nothing.")
+        return MKOverlayRenderer(overlay: overlay)
     }
 
     // MARK: - Regions

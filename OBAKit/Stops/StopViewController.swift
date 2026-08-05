@@ -323,7 +323,7 @@ public class StopViewController: UIViewController,
     }
 
     fileprivate func pulldownMenu() -> UIMenu {
-        return UIMenu(children: [fileMenu(), locationMenu(), sortMenu(), helpMenu()])
+        return UIMenu(children: [fileMenu(), locationMenu(), sortMenu(), arrivalDepartureFilterMenu(), helpMenu()])
     }
 
     func filterMenu() -> UIMenu {
@@ -436,13 +436,34 @@ public class StopViewController: UIViewController,
         }
 
         switch currentSort {
-        case .time:  sortByTime.image =  UIImage(systemName: "checkmark")
-        case .route: sortByRoute.image = UIImage(systemName: "checkmark")
+        case .time:  sortByTime.image =  Icons.checkmark
+        case .route: sortByRoute.image = Icons.checkmark
         }
 
         let sortMenuTitle = OBALoc("stop_preferences_controller.sorting_section.header_title", value: "Sort By", comment: "Title of the Sorting section")
-        let sortMenuImage = UIImage(systemName: "arrow.up.arrow.down")
-        return UIMenu(title: sortMenuTitle, image: sortMenuImage, children: [sortByTime, sortByRoute])
+        return UIMenu(title: sortMenuTitle, image: Icons.sort, children: [sortByTime, sortByRoute])
+    }
+
+    /// The active Departure Type filter, read from the shared view model so the
+    /// legacy and SwiftUI stop pages agree on one persisted value.
+    private var activeArrivalDepartureFilter: ArrivalDepartureFilter {
+        viewModel.arrivalDepartureFilter
+    }
+
+    fileprivate func arrivalDepartureFilterMenu() -> UIMenu {
+        let currentFilter = activeArrivalDepartureFilter
+        let actions = ArrivalDepartureFilter.allCases.map { filter -> UIAction in
+            let action = UIAction(title: filter.displayTitle) { [weak self] _ in
+                guard let self else { return }
+                self.viewModel.updateArrivalDepartureFilter(filter)
+                self.dataDidReload()
+            }
+            if filter == currentFilter { action.image = Icons.checkmark }
+            return action
+        }
+
+        let menuTitle = OBALoc("stop_controller.arrival_filter.menu_title", value: "Departure Type", comment: "Title for the menu that filters departures by data type")
+        return UIMenu(title: menuTitle, image: Icons.departureType, children: actions)
     }
 
     fileprivate func helpMenu() -> UIMenu {
@@ -694,48 +715,76 @@ public class StopViewController: UIViewController,
         var sections: [OBAListViewSection] = []
 
         if stopPreferences.sortType == .time {
-            let arrDeps: [ArrivalDeparture]
-            if isListFiltered {
-                arrDeps = stopArrivals.arrivalsAndDepartures
-                    .filter(preferences: stopPreferences)
-                    .filteringTerminalDuplicates()
+            var arrDeps = stopArrivals.arrivalsAndDepartures.filteringImplausibleDates()
+            if isListFiltered { arrDeps = arrDeps.filter(preferences: stopPreferences) }
+            // `arrDeps` before the Departure Type filter decides whether that
+            // filter — rather than genuinely empty service — emptied the list.
+            let filtered = arrDeps.filter(by: activeArrivalDepartureFilter).filteringTerminalDuplicates()
+
+            if filtered.isEmpty, !arrDeps.isEmpty, activeArrivalDepartureFilter != .all {
+                sections.append(arrivalFilterNoResultsSection())
             } else {
-                arrDeps = stopArrivals.arrivalsAndDepartures
-                    .filteringTerminalDuplicates()
-            }
-
-            let pastDeps = arrDeps.filter { $0.arrivalDepartureMinutes < 0 }
-            let upcomingDeps = arrDeps.filter { $0.arrivalDepartureMinutes >= 0 }
-
-            if !pastDeps.isEmpty {
-                sections.append(sectionForPastDepartures(groupRoute: nil, arrDeps: pastDeps))
-            }
-            // Always append upcoming section (even if empty) to display load more and walk times
-            sections.append(sectionForGroup(groupRoute: nil, arrDeps: upcomingDeps))
-
-        } else {
-            let groups = stopArrivals.arrivalsAndDepartures
-                .group(preferences: stopPreferences, filter: isListFiltered)
-                .localizedStandardCompare()
-
-            sections = groups.flatMap { group -> [OBAListViewSection] in
-                var groupSections: [OBAListViewSection] = []
-                let filtered = group.arrivalDepartures.filteringTerminalDuplicates()
                 let pastDeps = filtered.filter { $0.arrivalDepartureMinutes < 0 }
                 let upcomingDeps = filtered.filter { $0.arrivalDepartureMinutes >= 0 }
 
                 if !pastDeps.isEmpty {
-                    groupSections.append(sectionForPastDepartures(groupRoute: group.route, arrDeps: pastDeps))
+                    sections.append(sectionForPastDepartures(groupRoute: nil, arrDeps: pastDeps))
                 }
+                // Always append upcoming section (even if empty) to display load more and walk times
+                sections.append(sectionForGroup(groupRoute: nil, arrDeps: upcomingDeps))
+            }
 
-                // Always append upcoming section to keep the main route header visible
-                groupSections.append(sectionForGroup(groupRoute: group.route, arrDeps: upcomingDeps))
+        } else {
+            let plausible = stopArrivals.arrivalsAndDepartures.filteringImplausibleDates()
+            let groups = plausible
+                .filter(by: activeArrivalDepartureFilter)
+                .group(preferences: stopPreferences, filter: isListFiltered)
+                .localizedStandardCompare()
 
-                return groupSections
+            // Blame the Departure Type filter only when dropping it would bring
+            // groups back — an all-routes-hidden route filter also produces zero
+            // groups, and pointing the user at Departure Type there is wrong.
+            // Short-circuiting keeps the second grouping pass off the common path.
+            // Both passes start from `plausible` so the comparison isn't skewed
+            // by rows only one of them would have dropped.
+            if groups.isEmpty, activeArrivalDepartureFilter != .all,
+               !plausible.group(preferences: stopPreferences, filter: isListFiltered).isEmpty {
+                sections.append(arrivalFilterNoResultsSection())
+            } else {
+                sections = groups.flatMap { group -> [OBAListViewSection] in
+                    var groupSections: [OBAListViewSection] = []
+                    let filtered = group.arrivalDepartures.filteringTerminalDuplicates()
+                    let pastDeps = filtered.filter { $0.arrivalDepartureMinutes < 0 }
+                    let upcomingDeps = filtered.filter { $0.arrivalDepartureMinutes >= 0 }
+
+                    if !pastDeps.isEmpty {
+                        groupSections.append(sectionForPastDepartures(groupRoute: group.route, arrDeps: pastDeps))
+                    }
+
+                    // Always append upcoming section to keep the main route header visible
+                    groupSections.append(sectionForGroup(groupRoute: group.route, arrDeps: upcomingDeps))
+                    return groupSections
+                }
             }
         }
 
         return sections
+    }
+
+    /// The empty state for a Departure Type filter that hid every departure,
+    /// shared by the time-sorted and route-sorted paths.
+    private func arrivalFilterNoResultsSection() -> OBAListViewSection {
+        let noResultsItem = EmptyDataSetItem(
+            id: "arrival_filter_no_results",
+            alignment: .top,
+            title: nil,
+            body: OBALoc(
+                "stop_controller.arrival_filter.no_results",
+                value: "No departures match the current filter. Change the Departure Type in the ⋯ menu.",
+                comment: "Message shown when the Departure Type filter hides every departure at a stop"
+            )
+        )
+        return listViewSection(for: .emptyData, title: nil, items: [noResultsItem])
     }
 
     private func arrivalDepartureItem(for arrivalDeparture: ArrivalDeparture) -> ArrivalDepartureItem {
@@ -878,6 +927,11 @@ public class StopViewController: UIViewController,
                 }
                 actions.append(schedule)
             }
+
+            let shareTrip = UIAction(title: OBALoc("stop_controller.share_trip", value: "Share Trip", comment: "Context menu button that allows the user to share their trip status."), image: Icons.share) { [weak self] _ in
+                self?.shareTripStatus(viewModel: viewModel)
+            }
+            actions.append(shareTrip)
 
             // Create and return a UIMenu with all of the actions as children
             return UIMenu(title: viewModel.name, children: actions)
@@ -1144,26 +1198,18 @@ public class StopViewController: UIViewController,
     }
 
     // MARK: - Share Trip Status
-    func shareTripStatus(viewModel: ArrivalDepartureItem) {
-        guard let arrivalDeparture = arrivalDeparture(forViewModel: viewModel) else { return }
-        shareTripStatus(arrivalDeparture: arrivalDeparture)
-    }
 
-    func shareTripStatus(arrivalDeparture: ArrivalDeparture) {
-        guard
-            let region = application.currentRegion,
-            let appLinksRouter = application.appLinksRouter
-        else {
+    /// Owns the picker → share-sheet flow. Holds `self` weakly, so retaining it
+    /// for the controller's lifetime creates no cycle.
+    private lazy var tripSharingCoordinator = TripSharingCoordinator(application: application, presenter: self)
+
+    private func shareTripStatus(viewModel: ArrivalDepartureItem) {
+        guard let arrivalDeparture = arrivalDeparture(forViewModel: viewModel) else {
+            Logger.error("No arrivalDeparture found for share trip status view model. arrivalDepartureID: \(viewModel.arrivalDepartureID), stopID: \(viewModel.stopID)")
+            tripSharingCoordinator.presentShareError()
             return
         }
-
-        let url = appLinksRouter.encode(arrivalDeparture: arrivalDeparture, region: region) as Any
-
-        let activityController = UIActivityViewController(activityItems: [self, url], applicationActivities: nil)
-
-        // Use self.presnt because when using application.viewRouter.present(:_),
-        // it disables UIActivityViewController's "tap anywhere to dismiss".
-        self.present(activityController, animated: true)
+        tripSharingCoordinator.start(arrivalDeparture: arrivalDeparture)
     }
 
     // MARK: - Schedules

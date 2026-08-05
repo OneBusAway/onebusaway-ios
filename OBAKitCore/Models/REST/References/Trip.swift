@@ -44,7 +44,11 @@ public class Trip: NSObject, Identifiable, Decodable, HasReferences {
 
     /// The shape_id field contains an ID that defines a shape for the trip.
     /// This value is referenced from the shapes API.
-    public let shapeID: String
+    ///
+    /// Optional and blank-nilified: agencies without shape data omit it, and OBA
+    /// emits `""` for absent string fields. Decoding it strictly used to throw out
+    /// of `References.init`, failing an entire arrivals response over one trip.
+    public let shapeID: String?
 
     public let timeZone: String?
 
@@ -85,7 +89,7 @@ public class Trip: NSObject, Identifiable, Decodable, HasReferences {
         routeID = try container.decode(String.self, forKey: .routeID)
         routeShortName = String.nilifyBlankValue(try container.decode(String.self, forKey: .routeShortName))
         serviceID = try container.decode(String.self, forKey: .serviceID)
-        shapeID = try container.decode(String.self, forKey: .shapeID)
+        shapeID = String.nilifyBlankValue(try container.decodeIfPresent(String.self, forKey: .shapeID))
         shortName = String.nilifyBlankValue(try container.decode(String.self, forKey: .shortName))
         timeZone = String.nilifyBlankValue(try container.decode(String.self, forKey: .timeZone))
     }
