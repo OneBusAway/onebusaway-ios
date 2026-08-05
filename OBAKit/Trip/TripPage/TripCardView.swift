@@ -36,6 +36,13 @@ struct TripCardView: View {
         departure.map { DepartureStatus(arrivalDeparture: $0) }
     }
 
+    /// Built once and shared by the visible time and the spoken label — each
+    /// construction runs `DateFormatter` work, which is the most expensive thing
+    /// in this body. Mirrors `DepartureRowView.timeDisplay`.
+    private var timeDisplay: DepartureTimeDisplay? {
+        departure.map { DepartureTimeDisplay(arrivalDeparture: $0, formatters: formatters) }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             if dynamicTypeSize.isAccessibilitySize {
@@ -84,25 +91,10 @@ struct TripCardView: View {
         .accessibilityLabel(accessibilityText)
     }
 
-    /// Mirrors `DepartureRowView.accessibilityText`: identity first, then when it
-    /// arrives, then the qualifiers. The clock time follows the countdown because
-    /// VoiceOver can't perceive the strikethrough that carries a delay on screen.
+    /// "Arrives" rather than the departure list's "departs": this card is the one
+    /// place the rider is tracking a specific vehicle toward their own stop.
     private var accessibilityText: String {
-        var clauses: [String] = []
-
-        if let departure, let status {
-            let fmt = OBALoc(
-                "trip_page.card.a11y_fmt",
-                value: "Route %@ to %@, arrives in %d minutes, %@",
-                comment: "VoiceOver label for the trip page's header card: route, headsign, minutes until arrival, status."
-            )
-            clauses.append(String(format: fmt, routeShortName, headsign, departure.arrivalDepartureMinutes, status.accessibilityStatusDescription))
-            clauses.append(DepartureTimeDisplay(arrivalDeparture: departure, formatters: formatters).accessibilityTimeDescription)
-
-            if status.showsOccupancy, let occupancy = departure.occupancyStatus, occupancy != .unknown {
-                clauses.append(OccupancyBadge.localizedDescription(occupancy))
-            }
-        } else {
+        guard let departure, let status, let timeDisplay else {
             // Reached from vehicle search: no stop, so no arrival to count down to.
             // Route and headsign are all there is to say.
             let fmt = OBALoc(
@@ -110,14 +102,23 @@ struct TripCardView: View {
                 value: "Route %@ to %@",
                 comment: "VoiceOver label for the trip page's header card when the trip was reached without a stop, so there is no arrival time."
             )
-            clauses.append(String(format: fmt, routeShortName, headsign))
+            return [String(format: fmt, routeShortName, headsign), provenance]
+                .compactMap { $0 }
+                .joined(separator: ", ")
         }
 
-        if let provenance {
-            clauses.append(provenance)
-        }
-
-        return clauses.joined(separator: ", ")
+        let fmt = OBALoc(
+            "trip_page.card.a11y_fmt",
+            value: "Route %@ to %@, arrives in %d minutes, %@",
+            comment: "VoiceOver label for the trip page's header card: route, headsign, minutes until arrival, status."
+        )
+        return DepartureAccessibility.label(
+            identity: String(format: fmt, routeShortName, headsign, departure.arrivalDepartureMinutes, status.accessibilityStatusDescription),
+            departure: departure,
+            status: status,
+            timeDisplay: timeDisplay,
+            extraClauses: [provenance].compactMap { $0 }
+        )
     }
 
     private var badge: some View {
@@ -137,9 +138,9 @@ struct TripCardView: View {
 
     @ViewBuilder
     private var timeAndStatus: some View {
-        if let departure, let status {
+        if let status, let timeDisplay {
             HStack(spacing: 6) {
-                DepartureTimeText(display: DepartureTimeDisplay(arrivalDeparture: departure, formatters: formatters))
+                DepartureTimeText(display: timeDisplay)
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                 Text("·").foregroundStyle(.tertiary)

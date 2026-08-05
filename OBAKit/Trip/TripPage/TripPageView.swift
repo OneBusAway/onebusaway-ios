@@ -45,6 +45,14 @@ struct TripPageView: View {
     var hasAlarm = false
     var isTrackingLiveActivity = false
 
+    /// The page's laid-out height, which is the sheet detent's — not the screen's. Feeds the
+    /// action bar's ceiling at accessibility sizes; see `TripActionBar.maxHeight`.
+    @State private var pageHeight: CGFloat = 0
+
+    /// The largest share of the page the pinned action bar may take before it starts scrolling.
+    /// Under half, so the stop list always keeps the bigger half of whatever detent it is in.
+    private static let actionBarHeightShare: CGFloat = 0.45
+
     private var convertible: TripConvertible { viewModel.tripConvertible }
     private var departure: ArrivalDeparture? { convertible.arrivalDeparture }
     private var route: Route? { convertible.trip.route }
@@ -103,14 +111,14 @@ struct TripPageView: View {
         // scroll view to the bar's top edge, so the list ends above the bar and no
         // row can ever slide under it.
         //
-        // Insetting the ScrollView instead — the arrangement that would let rows
-        // pass beneath the bar's blur — does not survive this page's host. The
-        // sheet is a FloatingPanel, and `StopSheetPresenter` sets
-        // `contentInsetAdjustmentBehavior = .never` on whatever scroll view the
-        // panel tracks (see the note above `configureNavigationBar`). A
-        // `safeAreaInset` reserves its space *through* the safe area, so that
-        // setting discards the reservation: the bar still draws, but the last
-        // stops sit permanently underneath it with no way to scroll them clear.
+        // Moving it to the ScrollView — the arrangement that would let rows pass
+        // beneath the bar — was measured on device to strand the last stops
+        // underneath it with no way to scroll them clear. The mechanism is not
+        // understood: `StopPageView` puts `safeAreaInset(edge: .bottom)` directly
+        // on its `List`, which is the scroll view this same FloatingPanel tracks,
+        // and there the inset is honoured. So it is not simply that the panel
+        // discards the reservation. Until someone can explain the difference,
+        // this stays where it is empirically correct.
         .safeAreaInset(edge: .bottom, spacing: 0) {
             TripActionBar(
                 canStartLiveActivity: actions.canStartLiveActivity,
@@ -118,11 +126,19 @@ struct TripPageView: View {
                 canSchedule: actions.canSchedule,
                 canAlarm: actions.canAlarm,
                 hasAlarm: hasAlarm,
+                maxHeight: pageHeight > 0 ? pageHeight * Self.actionBarHeightShare : nil,
                 onLiveActivity: actions.onLiveActivity,
                 onBookmark: actions.onBookmark,
                 onSchedule: actions.onSchedule,
                 onAlarm: actions.onAlarm
             )
+        }
+        // The page's height is imposed by the host (the sheet detent), not derived from this
+        // content, so feeding it back in to bound the bar converges instead of looping.
+        .onGeometryChange(for: CGFloat.self) { proxy in
+            proxy.size.height
+        } action: { newHeight in
+            pageHeight = newHeight
         }
     }
 

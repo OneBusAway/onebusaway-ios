@@ -150,9 +150,9 @@ struct StopPageToolbar: View {
                 }
             }
         } label: {
-            // `Menu` takes no `ButtonStyle`, so this one wears the capsule directly.
-            // It forgoes the pressed dimming the real buttons get; a menu opening
-            // over the tap is its own feedback.
+            // Forgoes the pressed dimming the real buttons get; a menu opening over
+            // the tap is its own feedback. See `FrostedCapsuleBackground` for why a
+            // `Menu` can't take the button style.
             label(title: Strings.more, systemImage: "ellipsis")
                 .foregroundStyle(Color(uiColor: .label))
                 .modifier(FrostedCapsuleBackground())
@@ -181,10 +181,7 @@ struct StopPageToolbar: View {
     /// reads as. `UIToolbar` can't do this without custom item views, which is part of why this
     /// bar is built in SwiftUI rather than handed to the wrapping navigation controller.
     ///
-    /// The items carry no colour of their own. They used to be tinted glyphs sitting straight on
-    /// the bar, which put the app's green on a near-white strip and left the whole toolbar easy
-    /// to miss; `FrostedActionButtonStyle` gives each one a capsule to sit in and full-strength
-    /// label ink, matching the Trip page's action bar.
+    /// Carries no colour of its own — `FrostedActionButtonStyle` owns that.
     private func label(title: String, systemImage: String) -> some View {
         VStack(spacing: 3) {
             Image(systemName: systemImage)
@@ -204,8 +201,11 @@ struct StopPageToolbar: View {
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity)
         }
-        .frame(maxWidth: scrollsHorizontally ? nil : .infinity)
-        .frame(minWidth: scrollsHorizontally ? 84 : nil, minHeight: 44)
+        .frame(
+            minWidth: scrollsHorizontally ? 84 : nil,
+            maxWidth: scrollsHorizontally ? nil : .infinity,
+            minHeight: 44
+        )
         .padding(.vertical, 5)
         .padding(.horizontal, 6)
     }

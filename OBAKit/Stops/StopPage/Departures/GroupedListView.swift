@@ -341,16 +341,12 @@ struct GroupedListView: View {
     /// headsign, minutes, live/scheduled status, and occupancy when present.
     private func expandedRowAccessibilityLabel(_ departure: ArrivalDeparture, status: DepartureStatus) -> String {
         let fmt = OBALoc("stop_page.grouped.expanded_row.a11y_fmt", value: "Route %@ to %@, departs in %d minutes, %@", comment: "VoiceOver label for one expanded departure row inside a grouped route card: route, headsign, minutes, status.")
-        // Same clause list as `DepartureRowView.accessibilityText`; the clock
-        // time is spoken because the strikethrough carrying it is inaudible.
-        var clauses = [
-            String(format: fmt, departure.routeShortName, departure.tripHeadsign ?? "", departure.arrivalDepartureMinutes, status.accessibilityStatusDescription),
-            timeDisplay(departure).accessibilityTimeDescription
-        ]
-        if status.showsOccupancy, let occupancy = departure.occupancyStatus, occupancy != .unknown {
-            clauses.append(OccupancyBadge.localizedDescription(occupancy))
-        }
-        return clauses.joined(separator: ", ")
+        return DepartureAccessibility.label(
+            identity: String(format: fmt, departure.routeShortName, departure.tripHeadsign ?? "", departure.arrivalDepartureMinutes, status.accessibilityStatusDescription),
+            departure: departure,
+            status: status,
+            timeDisplay: timeDisplay(departure)
+        )
     }
 
     private func groupAccessibilityLabel(_ group: StopPageListBuilder.RouteGroup<ArrivalDeparture>, status: DepartureStatus) -> String {

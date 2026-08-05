@@ -201,13 +201,14 @@ struct StopPageSheetHeaderView: View {
     /// height or the row reads as ragged — matching their type ramp is what holds that at every
     /// Dynamic Type size, where a hardcoded height would not.
     private func walkPill(_ info: WalkTimeInfo) -> some View {
-        HStack(spacing: 4) {
+        let text = walkPillText(info)
+        return HStack(spacing: 4) {
             Image(systemName: "figure.walk")
                 .accessibilityHidden(true) // the text below carries the meaning
             // Pinning the text to one unwrappable line makes the pill's width a function of its
             // content. Without it the pill came out 60pt wide and 168pt tall, with "2 min walk"
             // broken one character per line.
-            Text(walkPillText(info))
+            Text(text)
                 .lineLimit(1)
                 .fixedSize(horizontal: true, vertical: false)
         }
@@ -225,7 +226,7 @@ struct StopPageSheetHeaderView: View {
         // "Walk". An explicit label collapses the subtree, the same way
         // `chipView(_:)` does below.
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(walkPillText(info))
+        .accessibilityLabel(text)
         .accessibilityAddTraits(.isButton)
         .accessibilityHint(OBALoc("stop_page.header.walk_a11y_hint", value: "Opens walking directions to this stop.", comment: "VoiceOver hint on the header card's walk-time button."))
     }

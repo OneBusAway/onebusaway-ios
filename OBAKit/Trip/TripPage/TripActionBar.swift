@@ -24,6 +24,21 @@ struct TripActionBar: View {
     let canSchedule: Bool
     let canAlarm: Bool
     let hasAlarm: Bool
+
+    /// Ceiling on the bar's height at accessibility sizes, past which it scrolls. Supplied by the
+    /// page, because the page is the only thing that knows how much room there actually is.
+    ///
+    /// The bar is pinned as a bottom `safeAreaInset`, so every point it takes is a point the trip's
+    /// stop list doesn't get. Left to size itself it reaches 496 pt at AX3 and 746 pt at AX5 —
+    /// measured — which on an 874 pt screen is 57% and 85% of the page, for a page whose whole
+    /// purpose is the list above it.
+    ///
+    /// A constant can't express the limit: this page is pushed into a sheet, and
+    /// `StopSheetLayout.halfDetentInset` makes the `.half` detent half the safe-area height. On the
+    /// shortest supported device that detent is roughly 330 pt, so any fixed cap generous enough to
+    /// be useful at `.full` is nearly the whole sheet at `.half`.
+    var maxHeight: CGFloat?
+
     let onLiveActivity: () -> Void
     let onBookmark: () -> Void
     let onSchedule: () -> Void
@@ -31,14 +46,8 @@ struct TripActionBar: View {
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
-    /// Ceiling on the bar's height at accessibility sizes, past which it scrolls.
-    ///
-    /// The bar is pinned as a bottom `safeAreaInset`, so every point it takes is a point the trip's
-    /// stop list doesn't get. Left to size itself it reaches 496 pt at AX3 and 746 pt at AX5 — on
-    /// an 874 pt screen that is 57% and 85% of the sheet, for a page whose whole purpose is the
-    /// list above it. 300 pt is a little under half the shortest screen this app supports (the SE's
-    /// 667 pt), which leaves the list the larger share at every size.
-    private static let accessibilityMaxHeight: CGFloat = 300
+    /// Used until the page's first geometry reading lands, and if it ever reads zero.
+    private static let fallbackMaxHeight: CGFloat = 300
 
     var body: some View {
         content
@@ -48,22 +57,24 @@ struct TripActionBar: View {
             .background(.bar)
     }
 
-    @ViewBuilder
-    private var content: some View {
-        let stack = VStack(spacing: 10) {
+    private var stack: some View {
+        VStack(spacing: 10) {
             if canStartLiveActivity {
                 liveActivityButton
             }
             secondaryActions
         }
+    }
 
+    @ViewBuilder
+    private var content: some View {
         if dynamicTypeSize.isAccessibilitySize {
             // Capped and scrollable rather than truncated or shrunk: at these sizes the buttons
             // stack full-width (see `secondaryActions`), and every one of them has to stay
             // reachable at its full label size. Scrolling gives up nothing — it just stops the bar
             // from swallowing the page.
             ScrollView(.vertical) { stack }
-                .frame(maxHeight: Self.accessibilityMaxHeight)
+                .frame(maxHeight: resolvedMaxHeight)
                 // The bar is one of two scrollable regions stacked vertically, which is
                 // ambiguous to drag. Bouncing only when it actually overflows keeps the
                 // gesture predictable at the sizes where the content already fits.
@@ -71,6 +82,12 @@ struct TripActionBar: View {
         } else {
             stack
         }
+    }
+
+    /// Never more than the page's share, never less than something usable.
+    private var resolvedMaxHeight: CGFloat {
+        guard let maxHeight, maxHeight > 0 else { return Self.fallbackMaxHeight }
+        return maxHeight
     }
 
     private var liveActivityButton: some View {
