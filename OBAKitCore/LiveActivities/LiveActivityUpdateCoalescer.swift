@@ -15,28 +15,28 @@ import Foundation
 /// `BookmarksViewController.updateRunningLiveActivities` used to spawn an
 /// unbounded `Task.detached` per activity on every poll. Two rapid cycles could
 /// apply an older `ContentState` after a newer one. This coalescer keeps only
-/// the latest pending state per ID and drains them one at a time.
-///
-/// Relevance is always read from the **re-fetched** `Activity.content` inside
-/// the detached work — not a snapshot captured on the main actor before the
-/// hop — so a prominence change that landed between enqueue and apply is kept.
+/// the latest pending state per ID and applies states for that ID serially.
 public actor LiveActivityUpdateCoalescer {
+    public typealias Apply = @Sendable (String, TripAttributes.ContentState) async -> Void
+
     public static let shared = LiveActivityUpdateCoalescer()
 
     private var mailbox = LiveActivityUpdateMailbox()
     private var draining: Set<String> = []
+    private let applyState: Apply
 
-    public init() {}
+    public init() {
+        applyState = Self.applyToActivity
+    }
+
+    public init(apply: @escaping Apply) {
+        applyState = apply
+    }
 
     /// Enqueue a content refresh. Only the latest state per `activityID` is kept.
     public func schedule(activityID: String, state: TripAttributes.ContentState) {
         mailbox.enqueue(activityID: activityID, state: state)
         Task { await drain(activityID: activityID) }
-    }
-
-    /// Test seam: current pending count for an ID (0 or 1 after coalescing).
-    public func pendingCount(for activityID: String) -> Int {
-        mailbox.pending[activityID] == nil ? 0 : 1
     }
 
     private func drain(activityID: String) async {
@@ -45,14 +45,13 @@ public actor LiveActivityUpdateCoalescer {
         defer { draining.remove(activityID) }
 
         while let state = mailbox.take(activityID: activityID) {
-            await Self.apply(activityID: activityID, state: state)
+            await applyState(activityID, state)
         }
     }
 
     /// Re-fetches the activity by ID, preserves its current relevance score, and
-    /// applies `state`. Isolated as `static` so the actor isn't held across the
-    /// ActivityKit `update` await.
-    nonisolated private static func apply(
+    /// applies `state`.
+    nonisolated private static func applyToActivity(
         activityID: String,
         state: TripAttributes.ContentState
     ) async {
@@ -62,10 +61,11 @@ public actor LiveActivityUpdateCoalescer {
         }
 
         let existing = activity.content
-        Logger.info(
-            "Updating Live Activity \(activityID) stop=\(activity.attributes.staticData.stopID) route=\(activity.attributes.staticData.routeShortName) relevanceScore=\(existing.relevanceScore)"
-        )
-
+        // `staleDate` stays nil here on purpose: unlike the score-only
+        // promote/demote touches (which must carry the push-set marker
+        // through), this installs fresh local content. Carrying a possibly
+        // past stale date forward could mark it stale on arrival; the next
+        // push re-arms it.
         await activity.update(
             TripLiveActivityRelevance.contentPreservingRelevance(
                 state: state,
@@ -73,11 +73,13 @@ public actor LiveActivityUpdateCoalescer {
                 existing: existing
             )
         )
+        Logger.info(
+            "Updated Live Activity \(activityID) stop=\(activity.attributes.staticData.stopID) route=\(activity.attributes.staticData.routeShortName) relevanceScore=\(existing.relevanceScore)"
+        )
     }
 }
 
-/// Pure pending-state map used by ``LiveActivityUpdateCoalescer`` so coalescing
-/// rules can be unit-tested without ActivityKit (#1197).
+/// Pending content state keyed by Live Activity ID.
 public struct LiveActivityUpdateMailbox: Sendable {
     public private(set) var pending: [String: TripAttributes.ContentState] = [:]
 
