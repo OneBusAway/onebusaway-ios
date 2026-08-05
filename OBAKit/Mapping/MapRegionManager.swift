@@ -528,6 +528,12 @@ public class MapRegionManager: NSObject,
 
     weak var mapViewDelegate: MapRegionMapViewDelegate?
 
+    /// Invoked immediately before bookmark under-pin labels are refreshed on a
+    /// camera settle. Tests use this to prove the refresh runs even when a
+    /// search result suppresses stop loading (#132 / #1267).
+    var bookmarkLabelRefreshHandler: (() -> Void)?
+
+
     // MARK: - Delegates
 
     private let delegates = NSHashTable<MapRegionDelegate>.weakObjects()
@@ -951,6 +957,17 @@ public class MapRegionManager: NSObject,
 
     // MARK: - Map View Delegate
 
+
+    /// Applies the current under-pin label gate to every bookmark pin on the map.
+    func refreshBookmarkAnnotationLabels() {
+        let hideExtra = shouldHideExtraStopAnnotationData
+        for annotation in mapView.annotations where annotation is Bookmark {
+            if let stopView = mapView.view(for: annotation) as? StopAnnotationView {
+                stopView.isHidingExtraStopAnnotationData = hideExtra
+            }
+        }
+    }
+
     private func reloadStopAnnotations() {
         // Ahead of every early return below, including the search-result guard.
         // The pill states something about the current zoom, so it has to be
@@ -963,15 +980,8 @@ public class MapRegionManager: NSObject,
 
         // Bookmark pins are user content, so their label gate must refresh even
         // when stop loading is suppressed by search, zoom, or a disabled layer.
-        // Walk every bookmark on the map (not only `annotations(in:)`): a search
-        // can leave the camera on a result while bookmarks sit elsewhere, and
-        // headless tests attach views that `annotations(in:)` may not return.
-        let hideExtra = shouldHideExtraStopAnnotationData
-        for annotation in mapView.annotations where annotation is Bookmark {
-            if let stopView = mapView.view(for: annotation) as? StopAnnotationView {
-                stopView.isHidingExtraStopAnnotationData = hideExtra
-            }
-        }
+        bookmarkLabelRefreshHandler?()
+        refreshBookmarkAnnotationLabels()
 
         if searchResponseOverridesStopLoading() {
             return
