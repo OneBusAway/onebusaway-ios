@@ -184,16 +184,16 @@ struct StopPageView: View {
         viewModel.isLoading || (!hasLoadedArrivals && viewModel.operationError == nil && !viewModel.isBrokenBookmark)
     }
 
-    /// The departures both modes project. `filteringTerminalDuplicates()` collapses
-    /// the arrival/departure pair the API emits for a single vehicle visit at a
-    /// terminal or loop stop — without it the rider sees the same bus twice, with
-    /// two different countdowns (parity with `StopViewController`).
-    private var filteredDepartures: [ArrivalDeparture] {
+    /// The departures that survive the route filter, before the Departure Type
+    /// filter and terminal dedup are applied. Kept separate from the fully
+    /// filtered list so the empty state can tell whether the route filter or
+    /// the Departure Type filter emptied the page.
+    private var routeVisibleDepartures: [ArrivalDeparture] {
         let all = viewModel.stopArrivals?.arrivalsAndDepartures ?? []
         let visible = viewModel.isListFiltered ? all.filter(preferences: viewModel.stopPreferences) : all
-        return visible
-            .filteringImplausibleDates()
-            .filteringTerminalDuplicates()
+        // Terminal dedup deliberately runs downstream, after the Departure Type
+        // filter — see the ordering note at the `departures` binding below.
+        return visible.filteringImplausibleDates()
     }
 
     private var attributionText: String {
@@ -212,7 +212,15 @@ struct StopPageView: View {
         // Hoist the single computed walk value so the header chip, the
         // chronological partition, and the divider all read one snapshot of it.
         let walkTime = viewModel.walkTime
-        let departures = filteredDepartures
+        // Route filter, then Departure Type filter, then terminal dedup — the
+        // type filter must run before `filteringTerminalDuplicates()`: dedup
+        // prefers the predicted half of an arrival/departure pair, so filtering
+        // afterward could drop a scheduled row whose predicted twin had already
+        // been consumed (same ordering as `StopViewController`).
+        let routeVisible = routeVisibleDepartures
+        let departures = routeVisible
+            .filter(by: viewModel.arrivalDepartureFilter)
+            .filteringTerminalDuplicates()
         let departureIDs = Set(departures.map(\.id))
         let routeIDs = Set(departures.map(\.routeID))
         // Grouped mode drops past departures, so it can have nothing to render
@@ -327,13 +335,20 @@ struct StopPageView: View {
                         StopPageEmptyStateRow(
                             isBrokenBookmark: viewModel.isBrokenBookmark,
                             errorText: viewModel.operationErrorMessage,
-                            // Only when the route filter is what emptied the list.
-                            // Grouped mode can be empty while `departures` isn't
-                            // (every departure is in the past); that's a no-service
-                            // state, not a filtered-out one.
+                            // Only when the route filter is what emptied the list:
+                            // the stop has departures but none survive the route
+                            // preferences. Grouped mode can be empty while
+                            // `departures` isn't (every departure is in the past);
+                            // that's a no-service state, not a filtered-out one.
                             isFilteredEmpty: viewModel.isListFiltered
-                                && departures.isEmpty
+                                && routeVisible.isEmpty
                                 && !(viewModel.stopArrivals?.arrivalsAndDepartures.isEmpty ?? true),
+                            // Only when the Departure Type filter is what emptied
+                            // it: rows survived the route filter and then the
+                            // type filter removed every one of them.
+                            isDepartureFilterEmpty: viewModel.arrivalDepartureFilter != .all
+                                && departures.isEmpty
+                                && !routeVisible.isEmpty,
                             minutesAfter: viewModel.minutesAfter,
                             // With no header card above it (first fetch failed
                             // before the stop resolved), the row is the whole
@@ -342,7 +357,8 @@ struct StopPageView: View {
                             // stranded under the nav bar.
                             fillsPage: viewModel.stop == nil,
                             onRetry: { Task { await viewModel.refresh() } },
-                            onShowAllRoutes: { viewModel.isListFiltered = false }
+                            onShowAllRoutes: { viewModel.isListFiltered = false },
+                            onShowAllDepartureTypes: { viewModel.updateArrivalDepartureFilter(.all) }
                         )
                     }
                 }
@@ -461,6 +477,7 @@ struct StopPageView: View {
             // A single-route stop has nothing to filter down to.
             canFilter: (viewModel.stop?.routes.count ?? 0) > 1,
             isListFiltered: viewModel.isListFiltered,
+            activeDepartureFilter: viewModel.arrivalDepartureFilter,
             hasServiceAlerts: !(viewModel.stopArrivals?.serviceAlerts ?? []).isEmpty,
             onRefresh: { Task { await viewModel.refresh() } },
             onSetListFiltered: { filtered in
@@ -470,6 +487,7 @@ struct StopPageView: View {
                 // saved hidden routes silently does nothing.
                 if filtered { navigation.showRouteFilter() }
             },
+            onSetDepartureFilter: { viewModel.updateArrivalDepartureFilter($0) },
             onBookmark: { navigation.showBookmarkEditor(nil) },
             onSchedule: navigation.showScheduleForStop,
             onServiceAlerts: navigation.showServiceAlerts,
@@ -582,8 +600,10 @@ struct StopPageView: View {
             isFilterOn: false,
             canFilter: true,
             isListFiltered: false,
+            activeDepartureFilter: .all,
             hasServiceAlerts: false,
-            onRefresh: {}, onSetListFiltered: { _ in }, onBookmark: {}, onSchedule: {},
+            onRefresh: {}, onSetListFiltered: { _ in }, onSetDepartureFilter: { _ in },
+            onBookmark: {}, onSchedule: {},
             onServiceAlerts: {}, onNearbyStops: {}, onWalkingDirections: {}, onReportProblem: {}
         )
     }
@@ -676,6 +696,9 @@ struct StopPageEmptyStateRow: View {
     var isBrokenBookmark: Bool = false
     let errorText: String?
     let isFilteredEmpty: Bool
+    /// The Departure Type filter (real-time only / scheduled only) removed
+    /// every departure the route filter let through.
+    var isDepartureFilterEmpty: Bool = false
     let minutesAfter: UInt
     /// `true` when the row is the page's only content (no header card above
     /// it): the row claims most of the list's height so its message sits
@@ -683,6 +706,7 @@ struct StopPageEmptyStateRow: View {
     var fillsPage: Bool = false
     let onRetry: () -> Void
     let onShowAllRoutes: () -> Void
+    var onShowAllDepartureTypes: () -> Void = {}
 
     var body: some View {
         VStack(spacing: 12) {
@@ -710,6 +734,7 @@ struct StopPageEmptyStateRow: View {
         if isBrokenBookmark { return "bookmark.slash.fill" }
         if errorText != nil { return "exclamationmark.icloud" }
         if isFilteredEmpty { return "line.3.horizontal.decrease.circle" }
+        if isDepartureFilterEmpty { return "antenna.radiowaves.left.and.right" }
         return "clock.badge.xmark"
     }
 
@@ -720,6 +745,9 @@ struct StopPageEmptyStateRow: View {
         if let errorText { return errorText }
         if isFilteredEmpty {
             return OBALoc("stop_page.empty.all_filtered", value: "All routes at this stop are filtered", comment: "Empty state shown when every route at the stop is hidden by the user's filter.")
+        }
+        if isDepartureFilterEmpty {
+            return OBALoc("stop_page.empty.departure_filter", value: "No departures match the current Departure Type filter", comment: "Empty state shown when the Departure Type filter (real-time only / scheduled only) hides every departure at the stop.")
         }
         let fmt = OBALoc("stop_page.empty.no_departures_fmt", value: "No departures in the next %d minutes", comment: "Empty state shown when the stop has no upcoming departures within the loaded time window. %d is the number of minutes. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback.")
         return String(format: fmt, minutesAfter)
@@ -735,6 +763,9 @@ struct StopPageEmptyStateRow: View {
         if isFilteredEmpty {
             return OBALoc("stop_page.empty.show_all_routes", value: "Show all routes", comment: "Button that clears the route filter so all routes are shown.")
         }
+        if isDepartureFilterEmpty {
+            return OBALoc("stop_page.empty.show_all_departure_types", value: "Show all departure types", comment: "Button that resets the Departure Type filter so every departure is shown.")
+        }
         return nil
     }
 
@@ -743,6 +774,8 @@ struct StopPageEmptyStateRow: View {
             onRetry()
         } else if isFilteredEmpty {
             onShowAllRoutes()
+        } else if isDepartureFilterEmpty {
+            onShowAllDepartureTypes()
         }
     }
 }

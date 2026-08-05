@@ -39,7 +39,8 @@ public class AppConfig: CoreAppConfig {
             regionsAPIPath: appBundle.regionsServerAPIPath,
             dataLoader: URLSession.shared,
             fixedRegionName: appBundle.fixedRegionName,
-            fixedRegionOBABaseURL: appBundle.fixedRegionOBABaseURL
+            fixedRegionOBABaseURL: appBundle.fixedRegionOBABaseURL,
+            defaultArrivalDepartureFilter: appBundle.defaultArrivalDepartureFilter
         )
     }
 
@@ -65,7 +66,8 @@ public class AppConfig: CoreAppConfig {
         regionsAPIPath: String?,
         dataLoader: URLDataLoader,
         fixedRegionName: String? = nil,
-        fixedRegionOBABaseURL: URL? = nil
+        fixedRegionOBABaseURL: URL? = nil,
+        defaultArrivalDepartureFilter: ArrivalDepartureFilter = .all
     ) {
         self.analytics = analytics
         super.init(
@@ -79,7 +81,8 @@ public class AppConfig: CoreAppConfig {
             regionsAPIPath: regionsAPIPath,
             dataLoader: dataLoader,
             fixedRegionName: fixedRegionName,
-            fixedRegionOBABaseURL: fixedRegionOBABaseURL
+            fixedRegionOBABaseURL: fixedRegionOBABaseURL,
+            defaultArrivalDepartureFilter: defaultArrivalDepartureFilter
         )
     }
 }

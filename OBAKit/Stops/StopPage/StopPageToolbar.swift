@@ -34,11 +34,14 @@ struct StopPageToolbar: View {
     /// `false` for a single-route stop, where filtering can't do anything useful.
     let canFilter: Bool
     let isListFiltered: Bool
+    /// The active Departure Type filter, checked in the More menu's submenu.
+    let activeDepartureFilter: ArrivalDepartureFilter
     let hasServiceAlerts: Bool
 
     let onRefresh: () -> Void
     /// `true` applies the saved route filter, `false` shows all routes.
     let onSetListFiltered: (Bool) -> Void
+    let onSetDepartureFilter: (ArrivalDepartureFilter) -> Void
     let onBookmark: () -> Void
     let onSchedule: () -> Void
     let onServiceAlerts: () -> Void
@@ -130,6 +133,26 @@ struct StopPageToolbar: View {
             }
             .disabled(!canFilter)
 
+            Menu {
+                ForEach(ArrivalDepartureFilter.allCases, id: \.self) { filter in
+                    Button {
+                        onSetDepartureFilter(filter)
+                    } label: {
+                        if filter == activeDepartureFilter {
+                            Label(filter.displayTitle, systemImage: "checkmark")
+                        } else {
+                            Text(filter.displayTitle)
+                        }
+                    }
+                    .accessibilityAddTraits(filter == activeDepartureFilter ? .isSelected : [])
+                }
+            } label: {
+                Label(
+                    OBALoc("stop_controller.arrival_filter.menu_title", value: "Departure Type", comment: "Title for the menu that filters departures by data type"),
+                    systemImage: "antenna.radiowaves.left.and.right"
+                )
+            }
+
             Button(action: onServiceAlerts) {
                 Label(Strings.serviceAlerts, systemImage: "exclamationmark.circle")
             }
@@ -220,8 +243,10 @@ struct StopPageToolbar: View {
             isFilterOn: false,
             canFilter: true,
             isListFiltered: false,
+            activeDepartureFilter: .all,
             hasServiceAlerts: true,
-            onRefresh: {}, onSetListFiltered: { _ in }, onBookmark: {}, onSchedule: {},
+            onRefresh: {}, onSetListFiltered: { _ in }, onSetDepartureFilter: { _ in },
+            onBookmark: {}, onSchedule: {},
             onServiceAlerts: {}, onNearbyStops: {}, onWalkingDirections: {}, onReportProblem: {}
         )
     }

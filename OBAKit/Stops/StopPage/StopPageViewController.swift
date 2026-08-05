@@ -333,6 +333,11 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in self?.configureBarButtons() }
             .store(in: &cancellables)
+
+        viewModel.$arrivalDepartureFilter
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.configureBarButtons() }
+            .store(in: &cancellables)
     }
 
     /// Haptic feedback for data loads, ported from `StopViewController`: a
@@ -655,8 +660,10 @@ private extension StopPageViewController {
         // The titles double as the VoiceOver labels for these image-only bar
         // buttons, so they must be localized, human-readable strings — the
         // filter's on/off state rides in `accessibilityValue` rather than
-        // being baked into the label.
-        let filterIsOn = viewModel.stopPreferences.hasHiddenRoutes && viewModel.isListFiltered
+        // being baked into the label. The glyph fills for either filter: hidden
+        // routes or a non-default Departure Type both mean rows are being held back.
+        let filterIsOn = (viewModel.stopPreferences.hasHiddenRoutes && viewModel.isListFiltered)
+            || viewModel.arrivalDepartureFilter != .all
         let filterButtonImage = UIImage(systemName: filterIsOn ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
 
         let filterMenuButton = UIBarButtonItem(title: Strings.filter, image: filterButtonImage, menu: filterMenu())
@@ -691,23 +698,41 @@ private extension StopPageViewController {
             self.filter()
         }
 
-        guard let stop = viewModel.stop else {
-            return UIMenu(children: [showAll, showFiltered])
-        }
+        var routeChildren = [showAll]
 
-        var children = [showAll]
+        if let stop = viewModel.stop {
+            if stop.routes.count > 1 {
+                if viewModel.isListFiltered && viewModel.stopPreferences.hasHiddenRoutes {
+                    showFiltered.image = UIImage(systemName: "checkmark")
+                } else {
+                    showAll.image = UIImage(systemName: "checkmark")
+                }
 
-        if stop.routes.count > 1 {
-            if viewModel.isListFiltered && viewModel.stopPreferences.hasHiddenRoutes {
-                showFiltered.image = UIImage(systemName: "checkmark")
-            } else {
-                showAll.image = UIImage(systemName: "checkmark")
+                routeChildren.append(showFiltered)
             }
-
-            children.append(showFiltered)
+        } else {
+            routeChildren.append(showFiltered)
         }
 
-        return UIMenu(children: children)
+        let routesSection = UIMenu(options: .displayInline, children: routeChildren)
+        return UIMenu(children: [routesSection, departureFilterMenu()])
+    }
+
+    /// The Departure Type submenu: everything, real-time only, or scheduled
+    /// only. The same choices as the legacy page's `arrivalDepartureFilterMenu()`,
+    /// persisted app-wide through the shared view model.
+    func departureFilterMenu() -> UIMenu {
+        let currentFilter = viewModel.arrivalDepartureFilter
+        let actions = ArrivalDepartureFilter.allCases.map { filter -> UIAction in
+            let action = UIAction(title: filter.displayTitle) { [unowned self] _ in
+                self.viewModel.updateArrivalDepartureFilter(filter)
+            }
+            if filter == currentFilter { action.image = UIImage(systemName: "checkmark") }
+            return action
+        }
+
+        let menuTitle = OBALoc("stop_controller.arrival_filter.menu_title", value: "Departure Type", comment: "Title for the menu that filters departures by data type")
+        return UIMenu(title: menuTitle, image: UIImage(systemName: "antenna.radiowaves.left.and.right"), children: actions)
     }
 
     func fileMenu() -> UIMenu {
