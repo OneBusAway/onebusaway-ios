@@ -528,6 +528,12 @@ public class MapRegionManager: NSObject,
 
     weak var mapViewDelegate: MapRegionMapViewDelegate?
 
+    /// Invoked immediately before bookmark under-pin labels are refreshed on a
+    /// camera settle. Tests use this to prove the refresh runs even when a
+    /// search result suppresses stop loading (#132 / #1267).
+    var bookmarkLabelRefreshHandler: (() -> Void)?
+
+
     // MARK: - Delegates
 
     private let delegates = NSHashTable<MapRegionDelegate>.weakObjects()
@@ -919,7 +925,7 @@ public class MapRegionManager: NSObject,
 
     /// Above this visible-map-rect height (map points), stop pins are too
     /// zoomed-out for their under-pin label. Shared with `MapPanelRootView`.
-    public static let requiredHeightToShowExtraStopData = 7000.0
+    public static let requiredHeightToShowExtraStopData = 5000.0
 
     /// Height half of the under-pin label gate. Callers combine it with the
     /// standard-map-type and "show labels" default checks.
@@ -951,6 +957,17 @@ public class MapRegionManager: NSObject,
 
     // MARK: - Map View Delegate
 
+
+    /// Applies the current under-pin label gate to every bookmark pin on the map.
+    func refreshBookmarkAnnotationLabels() {
+        let hideExtra = shouldHideExtraStopAnnotationData
+        for annotation in mapView.annotations where annotation is Bookmark {
+            if let stopView = mapView.view(for: annotation) as? StopAnnotationView {
+                stopView.isHidingExtraStopAnnotationData = hideExtra
+            }
+        }
+    }
+
     private func reloadStopAnnotations() {
         // Ahead of every early return below, including the search-result guard.
         // The pill states something about the current zoom, so it has to be
@@ -960,6 +977,11 @@ public class MapRegionManager: NSObject,
         // cancelled. Mirrors the ordering `MapPanelRootView.onMapCameraChange`
         // already uses.
         updateZoomWarningOverlay()
+
+        // Bookmark pins are user content, so their label gate must refresh even
+        // when stop loading is suppressed by search, zoom, or a disabled layer.
+        bookmarkLabelRefreshHandler?()
+        refreshBookmarkAnnotationLabels()
 
         if searchResponseOverridesStopLoading() {
             return
@@ -981,9 +1003,11 @@ public class MapRegionManager: NSObject,
             return
         }
 
-        let visibleStops = mapView.annotations(in: mapView.visibleMapRect).filter(type: Stop.self)
-        for s in visibleStops {
-            if let stopView = mapView.view(for: s) as? StopAnnotationView {
+        // Stop pins only exist while the browse layer is active, so refresh
+        // them after the loading guards.
+        let visibleStopAnnotations = mapView.annotations(in: mapView.visibleMapRect).filter(type: Stop.self)
+        for stop in visibleStopAnnotations {
+            if let stopView = mapView.view(for: stop) as? StopAnnotationView {
                 stopView.isHidingExtraStopAnnotationData = shouldHideExtraStopAnnotationData
             }
         }

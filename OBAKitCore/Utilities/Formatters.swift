@@ -589,15 +589,9 @@ public class Formatters: NSObject {
 
     // MARK: - Routes
 
-    /// Generates a formatted, human readable list of routes.
-    ///
-    /// For example: "Routes: 10, 12, 49, + 3 more".
-    ///
-    /// - Parameter routes: An array of `Route`s from which the string will be generated.
-    /// - Parameter limit: The number of `Route`s that be displayed in the returned string. By default, this is `Int.max`.
-    /// - Returns: A human-readable list of the passed-in `Route`s.
-    public class func formattedRoutes(_ routes: [Route], limit: Int = .max) -> String? {
-        guard routes.count > 0 else { return nil }
+    /// Sorted short names (or route-type labels when short names are absent) for display.
+    private class func sortedRouteDisplayNames(from routes: [Route]) -> [String] {
+        guard routes.count > 0 else { return [] }
 
         var routeNames = routes
             .map { $0.shortName }
@@ -609,6 +603,40 @@ public class Formatters: NSObject {
             routeNames = routes.map { $0.routeType }.uniqued.compactMap { routeTypeToString($0) }.sorted { $0.localizedStandardCompare($1) == .orderedAscending }
         }
 
+        return routeNames
+    }
+
+    /// Compact route list for map pin labels under stop icons.
+    ///
+    /// For example: "10, 12, 49…" — no "Routes:" prefix, and an explicit ellipsis when the
+    /// list overflows so UIKit truncation doesn't silently drop the overflow hint (#132).
+    ///
+    /// - Parameter routes: An array of `Route`s from which the string will be generated.
+    /// - Parameter limit: The number of route names shown before appending an ellipsis.
+    /// - Returns: A comma-separated list of route short names, or `nil` when none are available.
+    public class func formattedMapRoutes(_ routes: [Route], limit: Int = 3) -> String? {
+        let routeNames = sortedRouteDisplayNames(from: routes)
+        guard !routeNames.isEmpty else {
+            return nil
+        }
+
+        if routeNames.count > limit {
+            return routeNames.prefix(limit).joined(separator: ", ") + "…"
+        }
+        else {
+            return routeNames.joined(separator: ", ")
+        }
+    }
+
+    /// Generates a formatted, human readable list of routes.
+    ///
+    /// For example: "Routes: 10, 12, 49, + 3 more".
+    ///
+    /// - Parameter routes: An array of `Route`s from which the string will be generated.
+    /// - Parameter limit: The number of `Route`s that be displayed in the returned string. By default, this is `Int.max`.
+    /// - Returns: A human-readable list of the passed-in `Route`s.
+    public class func formattedRoutes(_ routes: [Route], limit: Int = .max) -> String? {
+        let routeNames = sortedRouteDisplayNames(from: routes)
         guard !routeNames.isEmpty else {
             return nil
         }

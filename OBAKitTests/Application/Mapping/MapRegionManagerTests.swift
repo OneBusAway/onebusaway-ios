@@ -206,6 +206,26 @@ final class MapRegionManagerTests: OBATestCase {
         #expect(recorder.statuses.last == true)
     }
 
+    /// Bookmark pins use the same label gate as ordinary stops. A route search
+    /// skips stop loading, but must not skip this visual refresh — the handler
+    /// fires *before* the search early-return. (Asserting via MapKit
+    /// `view(for:)` is unreliable in headless CI.)
+    @Test @MainActor
+    func `A camera settle updates a bookmark label while a search result is displayed`() {
+        let manager = makeSizedManager()
+        var refreshed = false
+        manager.bookmarkLabelRefreshHandler = { refreshed = true }
+
+        displaySingleSearchResult(on: manager)
+        manager.mapView.visibleMapRect = MKMapRect(
+            origin: MKMapPoint(TestData.mockSeattleLocation.coordinate),
+            size: MKMapSize(width: 500_000, height: 500_000)
+        )
+        manager.mapView(manager.mapView, regionDidChangeAnimated: false)
+
+        #expect(refreshed)
+    }
+
     // MARK: - Explicit-region stop loading
 
     @Test func `Request stops in region populates stops`() async {
@@ -488,13 +508,13 @@ final class MapRegionManagerTests: OBATestCase {
 
     /// The under-pin label height gate (routes served / bookmark name), shared
     /// by the UIKit `shouldHideExtraStopAnnotationData` and the SwiftUI
-    /// `MapPanelRootView` — labels show only at/below the 7,000-point threshold.
+    /// `MapPanelRootView` — labels show only at/below the 5,000-point threshold.
     @Test func `Should show extra stop data threshold behavior`() {
         // Zoomed in close → show labels.
         #expect(MapRegionManager.shouldShowExtraStopData(forVisibleMapRectHeight: 1_000) == true)
         // At the threshold → still show.
-        #expect(MapRegionManager.shouldShowExtraStopData(forVisibleMapRectHeight: 7_000) == true)
+        #expect(MapRegionManager.shouldShowExtraStopData(forVisibleMapRectHeight: 5_000) == true)
         // Zoomed out past it → hide.
-        #expect(MapRegionManager.shouldShowExtraStopData(forVisibleMapRectHeight: 7_001) == false)
+        #expect(MapRegionManager.shouldShowExtraStopData(forVisibleMapRectHeight: 5_001) == false)
     }
 }

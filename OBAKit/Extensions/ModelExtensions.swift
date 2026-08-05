@@ -57,7 +57,7 @@ nonisolated extension Stop: @retroactive MKAnnotation {
     }
 
     public var mapTitle: String? {
-        return Formatters.formattedRoutes(routes, limit: 3)
+        Formatters.formattedMapRoutes(routes)
     }
 }
 
