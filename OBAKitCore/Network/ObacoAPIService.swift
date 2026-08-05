@@ -189,32 +189,10 @@ public actor ObacoAPIService: @preconcurrency APIService {
         if let lat = draft.userLatitude { params["user_latitude"] = lat }
         if let lon = draft.userLongitude { params["user_longitude"] = lon }
 
-        urlRequest.httpBody = Self.strictlyFormEncoded(params)
+        urlRequest.httpBody = NetworkHelpers.dictionary(toHTTPBodyData: params)
 
         let (data, _) = try await data(for: urlRequest as URLRequest)
         return try JSONDecoder.obacoServiceDecoder.decode(GhostBusReport.self, from: data)
-    }
-
-    /// Form-encodes `params` for `postGhostBusReport` using RFC 3986's "unreserved" character
-    /// set (alphanumerics plus `-._~`) rather than `NetworkHelpers.dictionary(toHTTPBodyData:)`'s
-    /// `.urlQueryAllowed`, which leaves `&`, `+`, `;`, and `=` unescaped. Free-text rider
-    /// comments routinely contain those characters (e.g. "Sat 20+ min & it vanished = gone;
-    /// really"), and `.urlQueryAllowed` would truncate the comment at `&`, turn `+` into a
-    /// literal space on the server, and inject bogus extra params from a stray `=`.
-    ///
-    /// This is scoped to this one call site so the alarm/push-registration callers of
-    /// `NetworkHelpers.dictionary(toHTTPBodyData:)` are untouched.
-    private static func strictlyFormEncoded(_ params: [String: Any]) -> Data {
-        var unreserved = CharacterSet.alphanumerics
-        unreserved.insert(charactersIn: "-._~")
-
-        let pairs = params.map { key, value -> String in
-            let keyStr = key.addingPercentEncoding(withAllowedCharacters: unreserved) ?? key
-            let valueStr = "\(value)".addingPercentEncoding(withAllowedCharacters: unreserved) ?? "\(value)"
-            return "\(keyStr)=\(valueStr)"
-        }.joined(separator: "&")
-
-        return pairs.data(using: .utf8)!
     }
 
     // MARK: - APNs Environment

@@ -327,10 +327,7 @@ final class TripPageViewController: UIHostingController<TripPageView>,
                 // throw, not return, or the rider is told their report went out when it
                 // never did. `obacoService` going nil is reachable while the sheet is up:
                 // a region switch rebuilds it.
-                guard let self else {
-                    throw GhostBusReportSubmissionError.serviceUnavailable
-                }
-                guard let obacoService = self.application.obacoService else {
+                guard let self, let obacoService = self.application.obacoService else {
                     throw GhostBusReportSubmissionError.serviceUnavailable
                 }
                 self.application.userDefaults.set(shareLocation, forKey: shareLocationKey)
