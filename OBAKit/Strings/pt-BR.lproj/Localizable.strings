@@ -841,7 +841,7 @@
 "report_problem_controller.stop_problem.header" = "Problema com a Parada";
 
 /* A table header in the 'Report Problem' view controller. */
-"report_problem_controller.vehicle_problem.header" = "Problema com um Veículo na Parada";
+"report_problem_controller.trip_problem.header" = "Problema com uma Viagem";
 
 /* Error when location is unavailable in the route picker. */
 "route_picker.error_no_location" = "Localização indisponível. Ative os serviços de localização para encontrar linhas próximas.";

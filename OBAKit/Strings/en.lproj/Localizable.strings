@@ -837,11 +837,11 @@
 /* Report a problem with the stop at {Stop Name} */
 "report_problem_controller.report_stop_problem_fmt" = "Report a problem with the stop at %@";
 
-/* A table header in the 'Report Problem' view controller. */
+/* Section header for reporting incorrect stop names, numbers, locations, or missing routes or trips, not app bugs. */
 "report_problem_controller.stop_problem.header" = "Problem with the Stop";
 
-/* A table header in the 'Report Problem' view controller. */
-"report_problem_controller.vehicle_problem.header" = "Problem with a Vehicle at the Stop";
+/* Section header for reporting a problem with a specific trip service, not app bugs. */
+"report_problem_controller.trip_problem.header" = "Problem with a Trip";
 
 /* Error when location is unavailable in the route picker. */
 "route_picker.error_no_location" = "Location unavailable. Please enable location services to find nearby routes.";
