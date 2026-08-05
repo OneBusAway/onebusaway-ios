@@ -27,6 +27,18 @@ public struct TripActivityPresenter {
         return formatters.shortFormattedTime(untilMinutes: minutes, temporalState: temporalState(minutes: minutes))
     }
 
+    /// Localized, expanded countdown text for assistive technologies.
+    public func countdownAccessibilityLabel(
+        for arrival: TripAttributes.ContentState.ArrivalInfo,
+        now: Date = Date()
+    ) -> String {
+        let minutes = Int(arrival.departureDate.timeIntervalSince(now) / 60.0)
+        return formatters.formattedTimeUntilArrivalDeparture(
+            arrivalDepartureMinutes: minutes,
+            temporalState: temporalState(minutes: minutes)
+        )
+    }
+
     public func color(for arrival: TripAttributes.ContentState.ArrivalInfo) -> UIColor {
         formatters.colorForScheduleStatus(arrival.scheduleStatus.scheduleStatus)
     }

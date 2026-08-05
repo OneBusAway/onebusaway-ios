@@ -57,11 +57,15 @@ struct TripLiveActivity: Widget {
                 }
                 DynamicIslandExpandedRegion(.trailing) {
                     if let primary {
-                        let primaryMinuteText = presenter.minuteText(for: primary)
-                        Text(primaryMinuteText)
+                        // System-driven `.timer` so the Island ticks without
+                        // keepalive pushes (#1187).
+                        liveTimerText(for: primary)
                             .font(.system(size: 32, weight: .bold, design: .rounded))
                             .foregroundColor(Color(presenter.color(for: primary)))
-                            .contentTransition(.numericText(value: Double(primaryMinuteText.filter("0123456789".contains)) ?? 0))
+                            .monospacedDigit()
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                            .frame(maxWidth: 112, alignment: .trailing)
                             .padding(.trailing, 6)
                     }
                 }
@@ -96,10 +100,14 @@ struct TripLiveActivity: Widget {
                             VStack(alignment: .trailing, spacing: 4) {
                                 let nextDepartures = upcoming.dropFirst().prefix(2)
                                 ForEach(Array(nextDepartures.enumerated()), id: \.offset) { _, arrivalInfo in
-                                    Text(presenter.minuteText(for: arrivalInfo))
+                                    liveTimerText(for: arrivalInfo)
                                         .font(.system(.callout, design: .rounded))
                                         .fontWeight(.bold)
                                         .foregroundColor(Color(presenter.color(for: arrivalInfo)))
+                                        .monospacedDigit()
+                                        .lineLimit(1)
+                                        .minimumScaleFactor(0.7)
+                                        .frame(maxWidth: 64, alignment: .trailing)
                                 }
                             }
                             .padding(.trailing, 6)
@@ -115,20 +123,37 @@ struct TripLiveActivity: Widget {
                     .padding(.leading, 4)
             } compactTrailing: {
                 if let primary {
-                    Text(presenter.minuteText(for: primary))
+                    liveTimerText(for: primary)
                         .font(.system(.body, design: .rounded))
                         .fontWeight(.bold)
                         .foregroundColor(Color(presenter.color(for: primary)))
-                        .frame(minWidth: 20)
+                        .monospacedDigit()
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                        .frame(minWidth: 20, maxWidth: 56, alignment: .trailing)
                 }
             } minimal: {
                 if let primary {
-                    Text(presenter.minuteText(for: primary))
+                    liveTimerText(for: primary)
                         .font(.system(.callout, design: .rounded))
                         .fontWeight(.heavy)
                         .foregroundColor(Color(presenter.color(for: primary)))
+                        .monospacedDigit()
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                        .frame(maxWidth: 48, alignment: .trailing)
                 }
             }
         }
+    }
+
+    private func liveTimerText(for arrival: TripAttributes.ContentState.ArrivalInfo) -> some View {
+        Text(
+            timerInterval: LiveActivityCountdown.boundedTimerInterval(departureDate: arrival.departureDate),
+            pauseTime: arrival.departureDate,
+            countsDown: true,
+            showsHours: false
+        )
+        .accessibilityLabel(presenter.countdownAccessibilityLabel(for: arrival))
     }
 }
