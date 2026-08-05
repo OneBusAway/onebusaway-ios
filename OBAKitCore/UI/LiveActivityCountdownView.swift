@@ -9,7 +9,7 @@
 
 import SwiftUI
 
-/// Live Activity countdown that ticks on its own via `Text(_:style: .timer)`.
+/// Live Activity countdown that ticks on its own via a bounded timer interval.
 ///
 /// Unlike `CountdownView`'s static `"\(minutes)m"` string (which only changes when
 /// a push or local `Activity.update` arrives), the system redraws `.timer` text
@@ -42,21 +42,24 @@ public struct LiveActivityCountdownView: View {
         .accessibilityHidden(true)
     }
 
-    @ViewBuilder
     private var countdownLabel: some View {
-        if LiveActivityCountdown.shouldShowNow(departureDate: departureDate) {
-            Text(OBALoc("stop_page.countdown.now", value: "NOW", comment: "Shown in place of the minutes countdown when the vehicle is departing now"))
-        } else {
-            Text(departureDate, style: .timer)
-        }
+        Text(
+            timerInterval: LiveActivityCountdown.boundedTimerInterval(departureDate: departureDate),
+            pauseTime: departureDate,
+            countsDown: true,
+            showsHours: false
+        )
     }
 }
 
 /// Pure helpers for Live Activity countdown presentation (#1187).
 public enum LiveActivityCountdown {
-    /// When the departure is at or before `now`, show "NOW" instead of a timer
-    /// that would start counting up.
-    public static func shouldShowNow(departureDate: Date, now: Date = Date()) -> Bool {
-        departureDate.timeIntervalSince(now) <= 0
+    /// Returns a countdown interval that reaches zero at `departureDate` and
+    /// never becomes an elapsed-time counter after that instant.
+    public static func boundedTimerInterval(
+        departureDate: Date,
+        now: Date = Date()
+    ) -> ClosedRange<Date> {
+        min(now, departureDate)...departureDate
     }
 }

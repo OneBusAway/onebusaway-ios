@@ -12,17 +12,19 @@ struct LiveActivityCountdownTests {
 
     private let now = Date(timeIntervalSince1970: 1_700_000_000)
 
-    @Test func futureDepartureUsesTimerNotNow() {
+    @Test func boundedTimerIntervalCountsDownToDeparture() {
         let departure = now.addingTimeInterval(300)
-        #expect(!LiveActivityCountdown.shouldShowNow(departureDate: departure, now: now))
+        let interval = LiveActivityCountdown.boundedTimerInterval(departureDate: departure, now: now)
+
+        #expect(interval.lowerBound == now)
+        #expect(interval.upperBound == departure)
     }
 
-    @Test func presentDepartureShowsNow() {
-        #expect(LiveActivityCountdown.shouldShowNow(departureDate: now, now: now))
-    }
-
-    @Test func pastDepartureShowsNow() {
+    @Test func boundedTimerIntervalClampsPastDepartureToZero() {
         let departure = now.addingTimeInterval(-60)
-        #expect(LiveActivityCountdown.shouldShowNow(departureDate: departure, now: now))
+        let interval = LiveActivityCountdown.boundedTimerInterval(departureDate: departure, now: now)
+
+        #expect(interval.lowerBound == departure)
+        #expect(interval.upperBound == departure)
     }
 }
