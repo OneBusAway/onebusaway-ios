@@ -108,6 +108,12 @@ private struct TripStopRow: View {
                 .font(.subheadline)
                 .foregroundStyle(isBehind ? Color(uiColor: .tertiaryLabel) : .secondary)
                 .monospacedDigit()
+                // At accessibility sizes the row runs out of width and the HStack
+                // was breaking this column mid-token — "6:04 PM" set as "6:04 P"
+                // over "M". A clock time is one indivisible glyph run, so it takes
+                // its intrinsic width and the stop name (which has two lines and
+                // wraps on word boundaries) absorbs the shortfall instead.
+                .fixedSize(horizontal: true, vertical: false)
         }
     }
 

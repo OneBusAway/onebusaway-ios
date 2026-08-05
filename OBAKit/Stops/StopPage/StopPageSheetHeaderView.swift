@@ -219,12 +219,12 @@ struct StopPageSheetHeaderView: View {
         .background(Color(uiColor: ThemeColors.shared.departureOnTime).opacity(0.14), in: Capsule())
         .contentShape(Capsule())
         .onTapGesture(perform: onWalkingDirections)
-        // `.accessibilityHidden(true)` on the glyph above is not enough on its own:
-        // adding a trait to this container re-materialises its descendants as
-        // elements, and the walk glyph came back as a second, sibling stop — a
-        // 10x16pt target whose whole spoken content was the symbol's stock name,
-        // "Walk". An explicit label collapses the subtree, the same way
-        // `chipView(_:)` does below.
+        // `.accessibilityHidden(true)` on the glyph above was not enough on its
+        // own: this view adds a trait but named no element, and the walk glyph
+        // surfaced as a second, sibling stop — a 10x16pt target whose whole spoken
+        // content was the symbol's stock name, "Walk". Naming the element is what
+        // collapses the subtree. `chipView(_:)` below never had the bug because it
+        // has always set an explicit `.accessibilityLabel`.
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(text)
         .accessibilityAddTraits(.isButton)

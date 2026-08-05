@@ -36,9 +36,10 @@ struct TripCardView: View {
         departure.map { DepartureStatus(arrivalDeparture: $0) }
     }
 
-    /// Built once and shared by the visible time and the spoken label — each
-    /// construction runs `DateFormatter` work, which is the most expensive thing
-    /// in this body. Mirrors `DepartureRowView.timeDisplay`.
+    /// One construction site for the visible time and the spoken label, so the
+    /// two can't drift apart in how they format. Being computed it still runs per
+    /// access — this centralises the call, it does not cache it. Mirrors
+    /// `DepartureRowView.timeDisplay`.
     private var timeDisplay: DepartureTimeDisplay? {
         departure.map { DepartureTimeDisplay(arrivalDeparture: $0, formatters: formatters) }
     }
@@ -107,13 +108,27 @@ struct TripCardView: View {
                 .joined(separator: ", ")
         }
 
-        let fmt = OBALoc(
-            "trip_page.card.a11y_fmt",
-            value: "Route %@ to %@, arrives in %d minutes, %@",
-            comment: "VoiceOver label for the trip page's header card: route, headsign, minutes until arrival, status."
-        )
+        // A past departure's `arrivalDepartureMinutes` is negative, and past rows
+        // are tappable — `ChronologicalListView` gives them the same `onTap` as
+        // reachable ones — so this card is reached for buses that have already
+        // gone. Without the branch it announced "arrives in -4 minutes". Reuses
+        // the departure list's past sentence rather than adding a fourth key
+        // saying the same thing.
+        let identity: String
+        if departure.arrivalDepartureMinutes < 0 {
+            let fmt = OBALoc("stop_page.row.a11y_past_fmt", value: "Route %@ to %@, departed %d minutes ago, %@", comment: "VoiceOver label for a departure row that has already departed: route, headsign, minutes ago, status.")
+            identity = String(format: fmt, routeShortName, headsign, abs(departure.arrivalDepartureMinutes), status.accessibilityStatusDescription)
+        } else {
+            let fmt = OBALoc(
+                "trip_page.card.a11y_fmt",
+                value: "Route %@ to %@, arrives in %d minutes, %@",
+                comment: "VoiceOver label for the trip page's header card: route, headsign, minutes until arrival, status."
+            )
+            identity = String(format: fmt, routeShortName, headsign, departure.arrivalDepartureMinutes, status.accessibilityStatusDescription)
+        }
+
         return DepartureAccessibility.label(
-            identity: String(format: fmt, routeShortName, headsign, departure.arrivalDepartureMinutes, status.accessibilityStatusDescription),
+            identity: identity,
             departure: departure,
             status: status,
             timeDisplay: timeDisplay,

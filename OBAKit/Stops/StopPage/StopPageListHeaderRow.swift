@@ -65,7 +65,13 @@ struct StopPageModeToggle: View {
                 // "Ro…". When the row genuinely can't hold both controls side by
                 // side, `StopPageListHeaderRow`'s `ViewThatFits` stacks them
                 // instead — a wider row rather than a clipped word.
-                .fixedSize(horizontal: true, vertical: false)
+                //
+                // Only where that fallback exists. The accessibility branch bypasses
+                // `ViewThatFits` entirely, and the segments there already get the
+                // whole row's width from the `maxWidth: .infinity` below, so
+                // fixing the size would buy nothing and would take away truncation
+                // as the last resort for an over-long localization.
+                .fixedSize(horizontal: !isAccessibilitySize, vertical: false)
                 // A floor rather than a fixed width, so the two segments come out
                 // near-equal (the HIG's "keep segment size consistent") without
                 // clipping a longer localization of either noun.
@@ -155,11 +161,14 @@ struct StopPageListHeaderRow: View {
         }
     }
 
-    /// A tinted capsule with a chevron, not bare bold text. As a label alone it
-    /// read as a section heading — nothing about "Past · 1" said it would open
-    /// anything — so it borrows the header's chip vocabulary for its shape and the
-    /// app tint for its color, and the chevron flips to point at the rows it just
-    /// revealed.
+    /// A capsule with a chevron, not bare bold text. As a label alone it read as a
+    /// section heading — nothing about "Past · 1" said it would open anything — so
+    /// it borrows the header's chip vocabulary for its shape and the app tint for
+    /// its content. The fill stays neutral (`secondarySystemFill`); only the text
+    /// and chevron take the tint.
+    ///
+    /// The chevron follows the conventional disclosure direction — down closed, up
+    /// open — rather than pointing at the disclosed rows, which are below.
     private var pastButton: some View {
         Button(action: onTogglePast) {
             HStack(spacing: 5) {

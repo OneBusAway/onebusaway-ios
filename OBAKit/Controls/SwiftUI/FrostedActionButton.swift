@@ -26,13 +26,14 @@ import SwiftUI
 /// directly. Buttons should use `FrostedActionButtonStyle` instead, which adds
 /// the pressed and disabled states on top of this.
 ///
-/// Deliberately `Material` and not `regularGlassEffectIfAvailable(in:)`, which is
-/// otherwise this codebase's default capsule backdrop (see
-/// `GlassContainerBackground`). These two bars were specified as a plain frosted
-/// visual-effect surface, so on iOS 26 they stay flat material while the Stop
-/// page's mode toggle and "Load more" chip above them render as Liquid Glass.
-/// That split is intentional; the measured contrast figures above were taken
-/// against material and would need retaking if this ever moves to glass.
+/// Deliberately flat `Material` rather than Liquid Glass. The rest of this app's
+/// capsules go through `GlassContainerBackground` or
+/// `regularGlassEffectIfAvailable(in:)`, both of which use `glassEffect` on
+/// iOS 26+; these two bars were specified as a plain frosted visual-effect
+/// surface instead, so on iOS 26 they stay flat while the Stop page's mode
+/// toggle and "Load more" chip above them render as glass. That split is
+/// intentional. The measured contrast figures above were taken against material
+/// and would need retaking if this ever moves to glass.
 struct FrostedCapsuleBackground: ViewModifier {
     func body(content: Content) -> some View {
         content

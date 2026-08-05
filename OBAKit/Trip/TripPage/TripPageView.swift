@@ -50,8 +50,12 @@ struct TripPageView: View {
     @State private var pageHeight: CGFloat = 0
 
     /// The largest share of the page the pinned action bar may take before it starts scrolling.
-    /// Under half, so the stop list always keeps the bigger half of whatever detent it is in.
-    private static let actionBarHeightShare: CGFloat = 0.45
+    ///
+    /// `pageHeight` is the whole page, so the list gets what's left after both the bar *and* the
+    /// fixed back row — not `1 - share`. At 0.45 that arithmetic turns against the list on the
+    /// short detent: on the ~330 pt `.half` the bar could take 149 pt against the list's 133 pt.
+    /// 0.4 keeps the list ahead there (132 vs 150) and everywhere larger.
+    private static let actionBarHeightShare: CGFloat = 0.4
 
     private var convertible: TripConvertible { viewModel.tripConvertible }
     private var departure: ArrivalDeparture? { convertible.arrivalDeparture }

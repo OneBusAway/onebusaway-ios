@@ -33,10 +33,11 @@ struct TripActionBar: View {
     /// measured — which on an 874 pt screen is 57% and 85% of the page, for a page whose whole
     /// purpose is the list above it.
     ///
-    /// A constant can't express the limit: this page is pushed into a sheet, and
-    /// `StopSheetLayout.halfDetentInset` makes the `.half` detent half the safe-area height. On the
-    /// shortest supported device that detent is roughly 330 pt, so any fixed cap generous enough to
-    /// be useful at `.full` is nearly the whole sheet at `.half`.
+    /// A constant can't express the limit: this page is pushed into a sheet whose `.half` detent is
+    /// half the safe-area height (FloatingPanel's stock `fractionalInset`, which
+    /// `StopSheetLayout.halfDetentInset` reports for callers that can't read the live surface). On
+    /// the shortest supported device that detent is roughly 330 pt, so any fixed cap generous
+    /// enough to be useful at `.full` is nearly the whole sheet at `.half`.
     var maxHeight: CGFloat?
 
     let onLiveActivity: () -> Void

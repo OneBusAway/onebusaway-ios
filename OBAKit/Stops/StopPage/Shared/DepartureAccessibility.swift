@@ -10,7 +10,8 @@
 import Foundation
 import OBAKitCore
 
-/// The one place that assembles a departure's spoken description.
+/// Assembles the spoken description of a departure *row* — the Stop page's flat
+/// and grouped lists, and the Trip page's header card.
 ///
 /// `RouteBadgeView`, `CountdownView` and `DepartureTimeText` all mark themselves
 /// `.accessibilityHidden(true)`, on the contract that whatever composes them
@@ -19,10 +20,16 @@ import OBAKitCore
 /// all, so a VoiceOver user could not reach the route number, the countdown or
 /// the departure time — the three facts the trip page exists to convey.
 ///
-/// Three call sites had independently written the same clause list, each with
-/// its own copy of the comment explaining the ordering rule. This owns the order
-/// and the optional clauses; callers supply only the leading sentence, which is
-/// the one part that genuinely differs between them.
+/// `DepartureRowView` and `GroupedListView` had each written this clause list
+/// out longhand, with their own copy of the comment explaining the ordering
+/// rule. This owns the order and the optional clauses; callers supply only the
+/// leading sentence, which is the part that genuinely differs between them.
+///
+/// Deliberately not the *only* builder of departure speech in the app:
+/// `GroupedListView.groupAccessibilityLabel` summarises a whole route group,
+/// and `Formatters+BookmarkArrival`, `TripLiveActivityCardView` and the widget's
+/// `WidgetRowView` each speak a departure in a context with different rules.
+/// Those are separate sentences, not call sites this should absorb.
 enum DepartureAccessibility {
 
     /// - Parameters:
