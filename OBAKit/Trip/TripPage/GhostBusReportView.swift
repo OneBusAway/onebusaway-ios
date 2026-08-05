@@ -32,9 +32,22 @@ struct GhostBusReportView: View {
 
     @State private var waitDurationMinutes = 15
     @State private var comment = ""
-    @State private var shareLocation = true
+    @State private var shareLocation: Bool
     @State private var isSubmitting = false
     @State private var errorMessage: String?
+
+    init(
+        context: GhostBusReportContext,
+        defaultShareLocation: Bool,
+        submit: @escaping (_ waitDurationMinutes: Int, _ comment: String?, _ shareLocation: Bool) async throws -> Void,
+        onDismiss: @escaping () -> Void
+    ) {
+        self.context = context
+        self.defaultShareLocation = defaultShareLocation
+        self.submit = submit
+        self.onDismiss = onDismiss
+        self._shareLocation = State(initialValue: defaultShareLocation)
+    }
 
     var body: some View {
         NavigationStack {
@@ -127,7 +140,6 @@ struct GhostBusReportView: View {
             } message: {
                 Text(errorMessage ?? "")
             }
-            .onAppear { shareLocation = defaultShareLocation }
             .interactiveDismissDisabled(isSubmitting)
         }
     }
