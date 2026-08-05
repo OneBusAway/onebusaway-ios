@@ -43,6 +43,15 @@ public struct MoreTabConfiguration: Sendable {
     /// Custom URL for "Help Develop" link. nil = hide the row.
     public let developURL: URL?
 
+    /// Optional tutorial / user-manual page. Shown as "Tutorials" when set (#614).
+    public let tutorialURL: URL?
+
+    /// Optional `tel:` (or https) URL to call the agency. Shown as "Call Agency" when set (#614).
+    public let phoneURL: URL?
+
+    /// Optional `sms:` (or https) URL for an agency text service. Shown as "Text Agency" when set (#614).
+    public let textURL: URL?
+
     /// Additional custom link items displayed in a "Resources" section.
     public let customLinks: [MoreTabLinkItem]
 
@@ -54,6 +63,9 @@ public struct MoreTabConfiguration: Sendable {
         showHelpOutSection: true,
         translateURL: nil,
         developURL: URL(string: "https://github.com/oneBusAway/onebusaway-ios"),
+        tutorialURL: nil,
+        phoneURL: nil,
+        textURL: nil,
         customLinks: []
     )
 
@@ -75,6 +87,10 @@ public struct MoreTabConfiguration: Sendable {
             self.developURL = MoreTabConfiguration.default.developURL
         }
 
+        self.tutorialURL = Self.url(from: dictionary, key: "TutorialURL")
+        self.phoneURL = Self.url(from: dictionary, key: "PhoneURL")
+        self.textURL = Self.url(from: dictionary, key: "TextURL")
+
         if let linksArray = dictionary["CustomLinks"] as? [[AnyHashable: Any]] {
             self.customLinks = linksArray.compactMap { MoreTabLinkItem(dictionary: $0) }
         } else {
@@ -87,12 +103,25 @@ public struct MoreTabConfiguration: Sendable {
         showHelpOutSection: Bool,
         translateURL: URL?,
         developURL: URL?,
+        tutorialURL: URL? = nil,
+        phoneURL: URL? = nil,
+        textURL: URL? = nil,
         customLinks: [MoreTabLinkItem]
     ) {
         self.headerSupportText = headerSupportText
         self.showHelpOutSection = showHelpOutSection
         self.translateURL = translateURL
         self.developURL = developURL
+        self.tutorialURL = tutorialURL
+        self.phoneURL = phoneURL
+        self.textURL = textURL
         self.customLinks = customLinks
+    }
+
+    private static func url(from dictionary: [AnyHashable: Any], key: String) -> URL? {
+        guard let urlString = dictionary[key] as? String, !urlString.isEmpty else {
+            return nil
+        }
+        return URL(string: urlString)
     }
 }
