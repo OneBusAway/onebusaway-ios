@@ -18,12 +18,14 @@ struct TripPageActions {
     var canSchedule = false
     var canAlarm = false
     var canStartLiveActivity = false
+    var canReportGhostBus = false
     var onBack: () -> Void = {}
     var onSelectStop: (StopID) -> Void = { _ in }
     var onLiveActivity: () -> Void = {}
     var onBookmark: () -> Void = {}
     var onSchedule: () -> Void = {}
     var onAlarm: () -> Void = {}
+    var onReportGhostBus: () -> Void = {}
 }
 
 /// The trip page: which vehicle, when it gets to you, and every stop on its way.
@@ -145,11 +147,13 @@ struct TripPageView: View {
                     canSchedule: actions.canSchedule,
                     canAlarm: actions.canAlarm,
                     hasAlarm: hasAlarm,
+                    canReportGhostBus: actions.canReportGhostBus,
                     maxHeight: pageHeight > 0 ? pageHeight * Self.actionBarHeightShare : nil,
                     onLiveActivity: actions.onLiveActivity,
                     onBookmark: actions.onBookmark,
                     onSchedule: actions.onSchedule,
-                    onAlarm: actions.onAlarm
+                    onAlarm: actions.onAlarm,
+                    onReportGhostBus: actions.onReportGhostBus
                 )
             }
         }
