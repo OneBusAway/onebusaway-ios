@@ -251,8 +251,10 @@ final class TripPageViewController: UIHostingController<TripPageView>,
             draft.scheduleDeviationMinutes = departure.deviationFromScheduleInMinutes
             draft.predictionLastUpdatedAt = departure.lastUpdated
         } else {
-            // TripConvertible.serviceDate is safe here: the trip page always loads
-            // trip details. Without a departure there is no stop-level context.
+            // TripConvertible's initializers guarantee exactly one of arrivalDeparture,
+            // vehicleStatus, or tripDetails is set, so `serviceDate` always has a
+            // non-departure source to resolve from here. Without a departure there is
+            // no stop-level context.
             draft = GhostBusReportDraft(tripID: trip.id, serviceDate: convertible.serviceDate)
             draft.routeID = trip.routeID
             draft.vehicleID = convertible.vehicleID
@@ -274,7 +276,17 @@ final class TripPageViewController: UIHostingController<TripPageView>,
             context: context,
             defaultShareLocation: application.userDefaults.bool(forKey: shareLocationKey),
             submit: { [weak self] waitDurationMinutes, comment, shareLocation in
-                guard let self, let obacoService = self.application.obacoService else { return }
+                // `submit` is `async throws`, and `GhostBusReportView.performSubmit` reads a
+                // plain return as success and dismisses the sheet. A guard failure has to
+                // throw, not return, or the rider is told their report went out when it
+                // never did. `obacoService` going nil is reachable while the sheet is up:
+                // a region switch rebuilds it.
+                guard let self else {
+                    throw GhostBusReportSubmissionError.serviceUnavailable
+                }
+                guard let obacoService = self.application.obacoService else {
+                    throw GhostBusReportSubmissionError.serviceUnavailable
+                }
                 self.application.userDefaults.set(shareLocation, forKey: shareLocationKey)
 
                 var submitted = draft
@@ -295,6 +307,23 @@ final class TripPageViewController: UIHostingController<TripPageView>,
             sheet.prefersGrabberVisible = true
         }
         present(host, animated: true)
+    }
+
+    /// Why a ghost bus report couldn't be submitted before ever reaching the network.
+    /// Surfaced through `GhostBusReportView`'s error alert, same as a network failure —
+    /// see the `submit` closure in `showGhostBusReport()`.
+    enum GhostBusReportSubmissionError: LocalizedError {
+        /// No Obaco service for the current region (e.g. a region switch rebuilding it
+        /// while the sheet is still up), so the report can't be sent.
+        case serviceUnavailable
+
+        var errorDescription: String? {
+            OBALoc(
+                "trip_page.ghost_bus_report_unavailable",
+                value: "This report couldn't be submitted because the reporting service isn't available right now. Please try again later.",
+                comment: "Error shown when a ghost bus report can't be submitted because the region's Obaco service is unreachable."
+            )
+        }
     }
 
     private func showBookmarkEditor() {
