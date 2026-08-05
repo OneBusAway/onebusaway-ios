@@ -24,6 +24,7 @@ struct TripActionBar: View {
     let canSchedule: Bool
     let canAlarm: Bool
     let hasAlarm: Bool
+    let canReportGhostBus: Bool
 
     /// Ceiling on the bar's height at accessibility sizes, past which it scrolls. Supplied by the
     /// page, because the page is the only thing that knows how much room there actually is.
@@ -44,6 +45,7 @@ struct TripActionBar: View {
     let onBookmark: () -> Void
     let onSchedule: () -> Void
     let onAlarm: () -> Void
+    let onReportGhostBus: () -> Void
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
@@ -136,21 +138,54 @@ struct TripActionBar: View {
                     action: onAlarm
                 )
             }
+
+            if canReportGhostBus {
+                moreMenu
+            }
         }
+    }
+
+    /// Modeled on `StopPageToolbar.moreItem`, including its documented workaround: a `Menu` can't
+    /// take `FrostedActionButtonStyle`, so the label is styled directly.
+    private var moreMenu: some View {
+        Menu {
+            Section {
+                Button(action: onReportGhostBus) {
+                    Label(
+                        OBALoc("trip_page.report_ghost_bus", value: "Report Ghost Bus", comment: "Trip page menu item for reporting a scheduled vehicle that never arrived."),
+                        systemImage: "clock.badge.questionmark"
+                    )
+                }
+            }
+        } label: {
+            // Forgoes the pressed dimming the real buttons get; a menu opening over
+            // the tap is its own feedback. See `FrostedCapsuleBackground` for why a
+            // `Menu` can't take the button style.
+            actionLabel(title: Strings.more, systemImage: "ellipsis")
+                .foregroundStyle(Color(uiColor: .label))
+                .modifier(FrostedCapsuleBackground())
+        }
+        .accessibilityLabel(Strings.more)
     }
 
     private func secondaryButton(title: String, systemImage: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            VStack(spacing: 4) {
-                Image(systemName: systemImage)
-                Text(title)
-                    .font(.caption)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
-            }
-            .frame(maxWidth: .infinity, minHeight: 44)
-            .padding(.vertical, 5)
+            actionLabel(title: title, systemImage: systemImage)
         }
         .buttonStyle(FrostedActionButtonStyle())
+    }
+
+    /// The shared icon-over-caption layout for everything in the bar's secondary row —
+    /// plain buttons and the More menu's label alike.
+    private func actionLabel(title: String, systemImage: String) -> some View {
+        VStack(spacing: 4) {
+            Image(systemName: systemImage)
+            Text(title)
+                .font(.caption)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+        }
+        .frame(maxWidth: .infinity, minHeight: 44)
+        .padding(.vertical, 5)
     }
 }
