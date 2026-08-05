@@ -556,6 +556,11 @@ final class BookmarksViewModelTests: OBATestCase {
 
         #expect(app.displayErrorCallCount == 0)
         #expect(!viewModel.lastRefreshHadError)
+
+        // 404 is a terminal empty result, not perpetual loading (#1181 review).
+        let rows = viewModel.sections.flatMap(\.rows)
+        let row = try #require(rows.first)
+        #expect(row.hasLoadedArrivalData)
     }
 
     /// Non-404 fetch failures must still surface via `displayError`.
