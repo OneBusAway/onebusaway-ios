@@ -883,6 +883,11 @@ public class StopViewController: UIViewController,
                 actions.append(schedule)
             }
 
+            let shareTrip = UIAction(title: OBALoc("stop_controller.share_trip", value: "Share Trip", comment: "Context menu button that allows the user to share their trip status."), image: Icons.share) { [weak self] _ in
+                self?.shareTripStatus(viewModel: viewModel)
+            }
+            actions.append(shareTrip)
+
             // Create and return a UIMenu with all of the actions as children
             return UIMenu(title: viewModel.name, children: actions)
         }
@@ -1148,26 +1153,18 @@ public class StopViewController: UIViewController,
     }
 
     // MARK: - Share Trip Status
-    func shareTripStatus(viewModel: ArrivalDepartureItem) {
-        guard let arrivalDeparture = arrivalDeparture(forViewModel: viewModel) else { return }
-        shareTripStatus(arrivalDeparture: arrivalDeparture)
-    }
 
-    func shareTripStatus(arrivalDeparture: ArrivalDeparture) {
-        guard
-            let region = application.currentRegion,
-            let appLinksRouter = application.appLinksRouter
-        else {
+    /// Owns the picker → share-sheet flow. Holds `self` weakly, so retaining it
+    /// for the controller's lifetime creates no cycle.
+    private lazy var tripSharingCoordinator = TripSharingCoordinator(application: application, presenter: self)
+
+    private func shareTripStatus(viewModel: ArrivalDepartureItem) {
+        guard let arrivalDeparture = arrivalDeparture(forViewModel: viewModel) else {
+            Logger.error("No arrivalDeparture found for share trip status view model. arrivalDepartureID: \(viewModel.arrivalDepartureID), stopID: \(viewModel.stopID)")
+            tripSharingCoordinator.presentShareError()
             return
         }
-
-        let url = appLinksRouter.encode(arrivalDeparture: arrivalDeparture, region: region) as Any
-
-        let activityController = UIActivityViewController(activityItems: [self, url], applicationActivities: nil)
-
-        // Use self.presnt because when using application.viewRouter.present(:_),
-        // it disables UIActivityViewController's "tap anywhere to dismiss".
-        self.present(activityController, animated: true)
+        tripSharingCoordinator.start(arrivalDeparture: arrivalDeparture)
     }
 
     // MARK: - Schedules
