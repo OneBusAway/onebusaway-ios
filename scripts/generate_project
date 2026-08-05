@@ -1,5 +1,7 @@
 #!/usr/bin/env ruby
 
+require "yaml"
+
 app = ARGV[0]
 
 if app.nil?
@@ -38,23 +40,54 @@ BEGIN {
     `rm -rf OBAKit.xcodeproj`
     `cp #{project_yml_path(app)} .`
     append_local_overrides(app)
-    puts `xcodegen`
+    system("xcodegen")
+    abort "XcodeGen failed; OBAKit.xcodeproj was not generated." unless $?.success?
     `mkdir -p OBAKit.xcodeproj/project.xcworkspace/xcshareddata/swiftpm`
     `cp #{package_resolved_path(app)} OBAKit.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/`
   end
 
   # XcodeGen's `optional: true` include still errors when the file is absent, so
   # we only wire Apps/<App>/local.yml when the contributor created it (#326).
+  #
+  # The including project.yml takes precedence over includes, so DEVELOPMENT_TEAM
+  # must also be copied into its target settings for local.yml to be authoritative.
   def append_local_overrides(app)
     local = "Apps/#{app}/local.yml"
     return unless File.exist?(local)
 
-    File.open("project.yml", "a") do |f|
-      f.puts ""
-      f.puts "include:"
-      f.puts "  - path: #{local}"
+    local_settings = YAML.load_file(local)
+    project = File.read("project.yml")
+    project = splice_include(project, local)
+
+    local_settings.fetch("targets", {}).each do |target, target_settings|
+      team = target_settings.dig("settings", "base", "DEVELOPMENT_TEAM")
+      next unless team
+
+      project = replace_development_team(project, target, team)
     end
+
+    File.write("project.yml", project)
     puts "Applying local overrides from #{local}"
+  end
+
+  def splice_include(project, local)
+    include = project.index(/^include:\s*$/)
+    abort "Could not find include list in project.yml." unless include
+
+    line_end = project.index("\n", include)
+    project.insert(line_end + 1, "  - path: #{local}\n")
+  end
+
+  def replace_development_team(project, target, team)
+    target_start = project.index(/^  #{Regexp.escape(target)}:\s*$/)
+    abort "Could not find target #{target} in project.yml." unless target_start
+
+    next_target = project.index(/^  \S/, target_start + 1) || project.length
+    target_spec = project[target_start...next_target]
+    replacement_count = target_spec.sub!(/^(\s{8}DEVELOPMENT_TEAM:\s*).+$/, "\\1#{team}")
+    abort "Could not find DEVELOPMENT_TEAM for target #{target} in project.yml." unless replacement_count
+
+    project[0...target_start] + target_spec + project[next_target..]
   end
 
   def project_yml_path(app)
