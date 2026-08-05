@@ -30,6 +30,14 @@ struct GhostBusReportView: View {
 
     static let waitChoices = [5, 10, 15, 20, 30]
 
+    /// Mirrors the server's `GhostBusReport::COMMENT_MAX_LENGTH` (obacloud
+    /// `app/models/ghost_bus_report.rb`). The submit alert can't distinguish a
+    /// too-long-comment 422 from a duplicate-report 422 (`APIError` carries no
+    /// response body), so the comment field must never be able to produce the
+    /// former — keeping this cap in sync with the server keeps that alert copy
+    /// truthful.
+    static let commentMaxLength = 1_000
+
     @State private var waitDurationMinutes = 15
     @State private var comment = ""
     @State private var shareLocation: Bool
@@ -102,6 +110,11 @@ struct GhostBusReportView: View {
                         axis: .vertical
                     )
                     .lineLimit(3...6)
+                    .onChange(of: comment) { _, newValue in
+                        if newValue.count > Self.commentMaxLength {
+                            comment = String(newValue.prefix(Self.commentMaxLength))
+                        }
+                    }
 
                     Toggle(
                         OBALoc("ghost_bus_report.share_location", value: "Share my location", comment: "Toggle on the ghost bus form for including the rider's location with the report."),
