@@ -180,13 +180,12 @@ class EditBookmarkViewController: FormViewController, AddGroupAlertDelegate {
         let rawSelectedGroupID = selectedBookmarkGroupSection.selectedRows().first?.value ?? ""
         let selectedGroupID = UUID(optionalUUIDString: rawSelectedGroupID)
 
-        let commit: (Bookmark, Bool) -> Void = { [weak self] bookmark, isNew in
+        let notifyEdited: (Bookmark, Bool) -> Void = { [weak self] bookmark, isNew in
             guard let self else { return }
-            self.viewModel.persist(bookmark, name: rawName, isFavorite: isFavorite, to: selectedGroupID, isNewBookmark: isNew)
             self.delegate?.bookmarkEditor(self, editedBookmark: bookmark, isNewBookmark: isNew)
         }
 
-        switch viewModel.prepareToSave(name: rawName, isFavorite: isFavorite) {
+        switch viewModel.prepareToSave(name: rawName) {
         case .regionUnavailable:
             let alert = UIAlertController(
                 title: OBALoc("edit_bookmark_controller.region_error.title", value: "Unable to Save", comment: "Title of an alert shown when a bookmark cannot be saved because the current region is unavailable."),
@@ -196,17 +195,31 @@ class EditBookmarkViewController: FormViewController, AddGroupAlertDelegate {
             alert.addAction(UIAlertAction(title: Strings.ok, style: .default, handler: nil))
             present(alert, animated: true, completion: nil)
 
-        case .readyToSave(let bookmark, let isNew):
-            commit(bookmark, isNew)
+        case .readyToSaveNew(let bookmark):
+            viewModel.persistNew(bookmark, name: rawName, isFavorite: isFavorite, to: selectedGroupID)
+            notifyEdited(bookmark, true)
+
+        case .readyToSaveExisting(let bookmark):
+            viewModel.persistExisting(bookmark, name: rawName, isFavorite: isFavorite, to: selectedGroupID)
+            notifyEdited(bookmark, false)
 
         case .duplicateRequiresConfirmation(let bookmark):
             let alert = UIAlertController(
                 title: OBALoc("edit_bookmark_controller.duplicate_alert.title", value: "Duplicate Bookmark", comment: "The title of an alert telling the user that they have already bookmarked this thing. Noun form of 'duplicate', not the verb."),
                 message: OBALoc("edit_bookmark_controller.duplicate_alert.body", value: "You already have this bookmarked. Did you mean to create a duplicate?", comment: "Body of an alert telling the user they have already bookmarked this thing."), preferredStyle: .alert
             )
-            alert.addAction(UIAlertAction(title: Strings.cancel, style: .cancel, handler: nil))
-            alert.addAction(UIAlertAction(title: OBALoc("edit_bookmark_controller.duplicate_alert.affirmative_button", value: "Create Duplicate", comment: "Indicates that the user wants to create a duplicate bookmark."), style: .default, handler: { _ in
-                commit(bookmark, true)
+            alert.addAction(UIAlertAction(title: Strings.cancel, style: .cancel, handler: { [weak self] _ in
+                self?.viewModel.resolveDuplicate(.cancelled, name: rawName, isFavorite: isFavorite, to: selectedGroupID)
+            }))
+            alert.addAction(UIAlertAction(title: OBALoc("edit_bookmark_controller.duplicate_alert.affirmative_button", value: "Create Duplicate", comment: "Indicates that the user wants to create a duplicate bookmark."), style: .default, handler: { [weak self] _ in
+                guard let self else { return }
+                self.viewModel.resolveDuplicate(
+                    .createDuplicate(bookmark),
+                    name: rawName,
+                    isFavorite: isFavorite,
+                    to: selectedGroupID
+                )
+                notifyEdited(bookmark, true)
             }))
             present(alert, animated: true, completion: nil)
         }

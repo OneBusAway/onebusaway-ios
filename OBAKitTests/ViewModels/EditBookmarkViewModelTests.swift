@@ -240,7 +240,7 @@ final class EditBookmarkViewModelTests: OBATestCase {
         let app = createApplicationWithoutRegion(dataLoader: dataLoader)
 
         let vm = EditBookmarkViewModel(application: app, source: .stop(stop), bookmark: nil)
-        let outcome = vm.prepareToSave(name: "My Stop", isFavorite: true)
+        let outcome = vm.prepareToSave(name: "My Stop")
 
         guard case .regionUnavailable = outcome else {
             Issue.record("Expected .regionUnavailable, got \(outcome)")
@@ -255,14 +255,13 @@ final class EditBookmarkViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: dataLoader)
 
         let vm = EditBookmarkViewModel(application: app, source: .stop(stop), bookmark: nil)
-        let outcome = vm.prepareToSave(name: "My Stop", isFavorite: true)
+        let outcome = vm.prepareToSave(name: "My Stop")
 
-        guard case .readyToSave(let bookmark, let isNew) = outcome else {
-            Issue.record("Expected .readyToSave, got \(outcome)")
+        guard case .readyToSaveNew(let bookmark) = outcome else {
+            Issue.record("Expected .readyToSaveNew, got \(outcome)")
             return
         }
         #expect(bookmark.name == "My Stop")
-        #expect(isNew)
     }
 
     @Test @MainActor
@@ -272,10 +271,10 @@ final class EditBookmarkViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: dataLoader)
 
         let vm = EditBookmarkViewModel(application: app, source: .stop(stop), bookmark: nil)
-        let outcome = vm.prepareToSave(name: "   ", isFavorite: true)
+        let outcome = vm.prepareToSave(name: "   ")
 
-        guard case .readyToSave(let bookmark, _) = outcome else {
-            Issue.record("Expected .readyToSave"); return
+        guard case .readyToSaveNew(let bookmark) = outcome else {
+            Issue.record("Expected .readyToSaveNew"); return
         }
         #expect(bookmark.name == Formatters.formattedTitle(stop: stop))
     }
@@ -290,7 +289,7 @@ final class EditBookmarkViewModelTests: OBATestCase {
         app.userDataStore.add(existing, to: nil)
 
         let vm = EditBookmarkViewModel(application: app, source: .stop(stop), bookmark: nil)
-        let outcome = vm.prepareToSave(name: "Stop", isFavorite: true)
+        let outcome = vm.prepareToSave(name: "Stop")
 
         guard case .duplicateRequiresConfirmation(let dup) = outcome else {
             Issue.record("Expected .duplicateRequiresConfirmation, got \(outcome)")
@@ -312,17 +311,16 @@ final class EditBookmarkViewModelTests: OBATestCase {
         app.userDataStore.add(bookmark, to: nil)
 
         let vm = EditBookmarkViewModel(application: app, source: .stop(stop), bookmark: bookmark)
-        let outcome = vm.prepareToSave(name: "Updated Name", isFavorite: false)
+        let outcome = vm.prepareToSave(name: "Updated Name")
 
-        guard case .readyToSave(let saved, let isNew) = outcome else {
-            Issue.record("Expected .readyToSave, got \(outcome)")
+        guard case .readyToSaveExisting(let saved) = outcome else {
+            Issue.record("Expected .readyToSaveExisting, got \(outcome)")
             return
         }
         #expect(saved.name == "Original")
         #expect(saved.isFavorite)
-        #expect(!isNew)
 
-        vm.persist(saved, name: "Updated Name", isFavorite: false, to: nil, isNewBookmark: isNew)
+        vm.persistExisting(saved, name: "Updated Name", isFavorite: false, to: nil)
         #expect(saved.name == "Updated Name")
         #expect(!saved.isFavorite)
     }
@@ -337,12 +335,12 @@ final class EditBookmarkViewModelTests: OBATestCase {
         app.userDataStore.add(bookmark, to: nil)
 
         let vm = EditBookmarkViewModel(application: app, source: .stop(stop), bookmark: bookmark)
-        let outcome = vm.prepareToSave(name: "   ", isFavorite: true)
+        let outcome = vm.prepareToSave(name: "   ")
 
-        guard case .readyToSave(let saved, let isNew) = outcome else {
-            Issue.record("Expected .readyToSave"); return
+        guard case .readyToSaveExisting(let saved) = outcome else {
+            Issue.record("Expected .readyToSaveExisting"); return
         }
-        vm.persist(saved, name: "   ", isFavorite: true, to: nil, isNewBookmark: isNew)
+        vm.persistExisting(saved, name: "   ", isFavorite: true, to: nil)
         #expect(saved.name == Formatters.formattedTitle(stop: stop))
     }
 
@@ -356,13 +354,12 @@ final class EditBookmarkViewModelTests: OBATestCase {
         app.userDataStore.add(bookmark, to: nil)
 
         let vm = EditBookmarkViewModel(application: app, source: .stop(stop), bookmark: bookmark)
-        let outcome = vm.prepareToSave(name: "Stop", isFavorite: true)
+        let outcome = vm.prepareToSave(name: "Stop")
 
-        guard case .readyToSave(_, let isNew) = outcome else {
-            Issue.record("Expected .readyToSave, got \(outcome)")
+        guard case .readyToSaveExisting = outcome else {
+            Issue.record("Expected .readyToSaveExisting, got \(outcome)")
             return
         }
-        #expect(!isNew)
     }
 
     // MARK: - persist
@@ -374,13 +371,13 @@ final class EditBookmarkViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: dataLoader)
 
         let vm = EditBookmarkViewModel(application: app, source: .stop(stop), bookmark: nil)
-        let outcome = vm.prepareToSave(name: "Home", isFavorite: false)
+        let outcome = vm.prepareToSave(name: "Home")
 
-        guard case .readyToSave(let bookmark, let isNew) = outcome else {
-            Issue.record("Expected .readyToSave"); return
+        guard case .readyToSaveNew(let bookmark) = outcome else {
+            Issue.record("Expected .readyToSaveNew"); return
         }
 
-        vm.persist(bookmark, name: "Home", isFavorite: false, to: nil, isNewBookmark: isNew)
+        vm.persistNew(bookmark, name: "Home", isFavorite: false, to: nil)
 
         #expect(app.userDataStore.findBookmark(id: bookmark.id) != nil)
     }
@@ -395,13 +392,13 @@ final class EditBookmarkViewModelTests: OBATestCase {
         app.userDataStore.upsert(bookmarkGroup: group)
 
         let vm = EditBookmarkViewModel(application: app, source: .stop(stop), bookmark: nil)
-        let outcome = vm.prepareToSave(name: "Stop", isFavorite: true)
+        let outcome = vm.prepareToSave(name: "Stop")
 
-        guard case .readyToSave(let bookmark, let isNew) = outcome else {
-            Issue.record("Expected .readyToSave"); return
+        guard case .readyToSaveNew(let bookmark) = outcome else {
+            Issue.record("Expected .readyToSaveNew"); return
         }
 
-        vm.persist(bookmark, name: "Stop", isFavorite: true, to: group.id, isNewBookmark: isNew)
+        vm.persistNew(bookmark, name: "Stop", isFavorite: true, to: group.id)
 
         let inGroup = app.userDataStore.bookmarksInGroup(group)
         #expect(inGroup.contains { $0.id == bookmark.id })
@@ -422,13 +419,13 @@ final class EditBookmarkViewModelTests: OBATestCase {
         app.userDataStore.add(bookmark, to: groupA)
 
         let vm = EditBookmarkViewModel(application: app, source: .stop(stop), bookmark: bookmark)
-        let outcome = vm.prepareToSave(name: "Stop", isFavorite: true)
+        let outcome = vm.prepareToSave(name: "Stop")
 
-        guard case .readyToSave(let saved, let isNew) = outcome else {
-            Issue.record("Expected .readyToSave"); return
+        guard case .readyToSaveExisting(let saved) = outcome else {
+            Issue.record("Expected .readyToSaveExisting"); return
         }
 
-        vm.persist(saved, name: "Stop", isFavorite: true, to: groupB.id, isNewBookmark: isNew)
+        vm.persistExisting(saved, name: "Stop", isFavorite: true, to: groupB.id)
 
         #expect(app.userDataStore.bookmarksInGroup(groupB).contains { $0.id == bookmark.id })
     }
@@ -441,13 +438,13 @@ final class EditBookmarkViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: dataLoader, analytics: analyticsMock)
 
         let vm = EditBookmarkViewModel(application: app, source: .arrivalDeparture(arrivalDep), bookmark: nil)
-        let outcome = vm.prepareToSave(name: "Route", isFavorite: true)
+        let outcome = vm.prepareToSave(name: "Route")
 
-        guard case .readyToSave(let bookmark, let isNew) = outcome else {
-            Issue.record("Expected .readyToSave"); return
+        guard case .readyToSaveNew(let bookmark) = outcome else {
+            Issue.record("Expected .readyToSaveNew"); return
         }
 
-        vm.persist(bookmark, name: "Route", isFavorite: true, to: nil, isNewBookmark: isNew)
+        vm.persistNew(bookmark, name: "Route", isFavorite: true, to: nil)
 
         let addBookmarkEvents = analyticsMock.reportedEvents.filter { $0.label == AnalyticsLabels.addBookmark }
         #expect(addBookmarkEvents.count == 1)
@@ -470,13 +467,13 @@ final class EditBookmarkViewModelTests: OBATestCase {
         app.userDataStore.add(existing, to: nil)
 
         let vm = EditBookmarkViewModel(application: app, source: .arrivalDeparture(arrivalDep), bookmark: existing)
-        let outcome = vm.prepareToSave(name: "Updated Route", isFavorite: true)
+        let outcome = vm.prepareToSave(name: "Updated Route")
 
-        guard case .readyToSave(let bookmark, let isNew) = outcome else {
-            Issue.record("Expected .readyToSave"); return
+        guard case .readyToSaveExisting(let bookmark) = outcome else {
+            Issue.record("Expected .readyToSaveExisting"); return
         }
 
-        vm.persist(bookmark, name: "Updated Route", isFavorite: true, to: nil, isNewBookmark: isNew)
+        vm.persistExisting(bookmark, name: "Updated Route", isFavorite: true, to: nil)
 
         #expect(analyticsMock.reportedEvents.filter { $0.label == AnalyticsLabels.addBookmark }.isEmpty)
     }
@@ -489,15 +486,38 @@ final class EditBookmarkViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: dataLoader, analytics: analyticsMock)
 
         let vm = EditBookmarkViewModel(application: app, source: .stop(stop), bookmark: nil)
-        let outcome = vm.prepareToSave(name: "Stop", isFavorite: true)
+        let outcome = vm.prepareToSave(name: "Stop")
 
-        guard case .readyToSave(let bookmark, let isNew) = outcome else {
-            Issue.record("Expected .readyToSave"); return
+        guard case .readyToSaveNew(let bookmark) = outcome else {
+            Issue.record("Expected .readyToSaveNew"); return
         }
 
-        vm.persist(bookmark, name: "Stop", isFavorite: true, to: nil, isNewBookmark: isNew)
+        vm.persistNew(bookmark, name: "Stop", isFavorite: true, to: nil)
 
         let addBookmarkEvents = analyticsMock.reportedEvents.filter { $0.label == AnalyticsLabels.addBookmark }
         #expect(addBookmarkEvents.isEmpty)
+    }
+
+    @Test @MainActor
+    func `Confirming duplicate persists and reports analytics for trip bookmark`() throws {
+        let arrivalDep = try makeArrivalDeparture()
+        let analyticsMock = AnalyticsMock()
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader, analytics: analyticsMock)
+
+        let existing = Bookmark(name: "Route", regionIdentifier: pugetSoundRegionIdentifier, arrivalDeparture: arrivalDep)
+        app.userDataStore.add(existing, to: nil)
+
+        let vm = EditBookmarkViewModel(application: app, source: .arrivalDeparture(arrivalDep), bookmark: nil)
+        guard case .duplicateRequiresConfirmation(let dup) = vm.prepareToSave(name: "Route") else {
+            Issue.record("Expected .duplicateRequiresConfirmation")
+            return
+        }
+
+        vm.resolveDuplicate(.createDuplicate(dup), name: "Route", isFavorite: true, to: nil)
+
+        #expect(app.userDataStore.findBookmark(id: dup.id) != nil)
+        #expect(app.userDataStore.bookmarks.count == 2)
+        #expect(analyticsMock.reportedEvents.filter { $0.label == AnalyticsLabels.addBookmark }.count == 1)
     }
 }

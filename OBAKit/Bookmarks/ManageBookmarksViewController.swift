@@ -184,10 +184,9 @@ class ManageBookmarksViewController: FormViewController {
                 let trimmed = nameRow.value?.trimmingCharacters(in: .whitespaces) ?? ""
                 guard trimmed.isEmpty else { continue }
 
-                guard
-                    let bookmarkID = UUID(optionalUUIDString: nameRow.tag),
-                    let bookmark = viewModel.findBookmark(id: bookmarkID)
-                else {
+                guard let bookmarkID = UUID(optionalUUIDString: nameRow.tag) else { continue }
+                guard let bookmark = viewModel.findBookmark(id: bookmarkID) else {
+                    Logger.warn("restoreEmptyBookmarkNames: bookmark \(bookmarkID) not found in data store; skipping name restore")
                     continue
                 }
 
