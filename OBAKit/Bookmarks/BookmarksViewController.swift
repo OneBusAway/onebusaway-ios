@@ -314,38 +314,15 @@ class BookmarksViewController: UIHostingController<BookmarksRootView>,
                 if !application.liveActivityTracker.isForwardingPushToken(activityID: activity.id) {
                     trackLiveActivity(activity, arrivalDepartures: arrivalDepartures)
                 }
-                // `Activity` is not Sendable and this loop's instance lives in the
-                // main-actor region, so it can't be sent to ActivityKit's @concurrent
-                // `update`. Re-fetch by ID inside a detached task instead — that copy
-                // never crosses an isolation boundary.
+                // Coalesce per activity ID. The worker re-fetches the activity
+                // before applying content, so its current relevance score is
+                // preserved across the asynchronous hop (#1197).
                 let activityID = activity.id
-                Task.detached {
-                    guard let activity = Activity<TripAttributes>.activities.first(where: { $0.id == activityID }) else {
-                        // The activity ended between the loop and this task; dropping
-                        // the update is correct, but log it so a stale Lock Screen is
-                        // diagnosable.
-                        Logger.info("Live Activity \(activityID) is no longer running; skipping update.")
-                        return
-                    }
-                    // Preserve prominence via the shared helper, reading the score
-                    // off this freshly re-fetched activity — not a snapshot taken
-                    // before the hop, which can predate a concurrent
-                    // promote/demote and would silently write the stale score
-                    // back, undoing it (#1243 review follow-up).
-                    //
-                    // `staleDate` stays nil here on purpose: unlike the
-                    // score-only promote/demote touches (which must carry the
-                    // push-set marker through), this update installs fresh local
-                    // content, and carrying a possibly-past stale-date forward
-                    // could mark it stale on arrival. The next push re-arms it.
-                    await activity.update(
-                        TripLiveActivityRelevance.contentPreservingRelevance(
-                            state: contentState,
-                            staleDate: nil,
-                            existing: activity.content
-                        )
+                Task {
+                    await LiveActivityUpdateCoalescer.shared.schedule(
+                        activityID: activityID,
+                        state: contentState
                     )
-                    Logger.info("Updated Live Activity for stop: \(staticData.stopID) route: \(staticData.routeShortName)")
                 }
             } else if !application.liveActivityTracker.isTracking(activityID: activity.id) {
                 // No bookmark/arrival data to register push updates with, but the activity is
