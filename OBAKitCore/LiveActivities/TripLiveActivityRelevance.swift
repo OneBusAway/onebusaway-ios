@@ -67,10 +67,14 @@ extension Activity where Attributes == TripAttributes {
             return
         }
         let prominence = TripLiveActivityRelevance.prominenceScore()
+        // A promotion only touches the score; the content is unchanged, so the
+        // push-set stale marker must survive it — the server always sends
+        // `stale-date`, and clearing it here left a re-Tracked card unmarked as
+        // stale until the next push arrived. Mirrors `demoteLivePeers`.
         await activity.update(
             TripLiveActivityRelevance.content(
                 state: activity.content.state,
-                staleDate: nil,
+                staleDate: activity.content.staleDate,
                 relevanceScore: prominence
             )
         )

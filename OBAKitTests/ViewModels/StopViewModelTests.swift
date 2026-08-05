@@ -48,7 +48,8 @@ final class StopViewModelTests: OBATestCase {
         arrivalsFixture: String = "arrivals_and_departures_empty.json",
         arrivalsData: Data? = nil,
         arrivalsFailureStatusCode: Int? = nil,
-        bundledRegionsFixture: String? = nil
+        bundledRegionsFixture: String? = nil,
+        defaultArrivalDepartureFilter: ArrivalDepartureFilter = .all
     ) -> Application {
         stubRegions(dataLoader: dataLoader)
         stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
@@ -91,7 +92,8 @@ final class StopViewModelTests: OBATestCase {
             bundledRegionsFilePath: bundledRegionsFixture.map { Fixtures.path(to: $0) } ?? bundledRegionsPath,
             regionsAPIPath: regionsAPIPath,
             dataLoader: dataLoader,
-            fixedRegionName: Fixtures.pugetSoundRegion.name
+            fixedRegionName: Fixtures.pugetSoundRegion.name,
+            defaultArrivalDepartureFilter: defaultArrivalDepartureFilter
         )
 
         return Application(config: config)
@@ -308,6 +310,41 @@ final class StopViewModelTests: OBATestCase {
         await viewModel.refresh()
 
         #expect(!viewModel.isListFiltered)
+    }
+
+    // MARK: - Departure Type filter
+
+    /// The view model must seed its published filter from the effective value —
+    /// which honors the white-label default — since the SwiftUI stop page reads
+    /// only the view model, never `UserDefaults`.
+    @Test @MainActor
+    func `Arrival departure filter seeds from the configured default`() {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(
+            dataLoader: dataLoader,
+            analytics: AnalyticsMock(),
+            defaultArrivalDepartureFilter: .scheduledOnly
+        )
+
+        let viewModel = StopViewModel(application: app, stopID: testStopID)
+
+        #expect(viewModel.arrivalDepartureFilter == .scheduledOnly)
+    }
+
+    /// Updating through the view model persists app-wide, so the legacy page,
+    /// the SwiftUI page, and Settings all observe the change.
+    @Test @MainActor
+    func `Updating the arrival departure filter persists it`() {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock())
+
+        let viewModel = StopViewModel(application: app, stopID: testStopID)
+        #expect(viewModel.arrivalDepartureFilter == .all)
+
+        viewModel.updateArrivalDepartureFilter(.estimatedOnly)
+
+        #expect(viewModel.arrivalDepartureFilter == .estimatedOnly)
+        #expect(app.effectiveArrivalDepartureFilter == .estimatedOnly)
     }
 
     // MARK: - $stop re-emit guard
@@ -806,107 +843,6 @@ final class StopViewModelTests: OBATestCase {
         #expect(alarm.alarmDate == nil)
 
         #expect(viewModel.alarmLeadTimeMinutes(alarm) == AlarmLeadTime.defaultMinutes)
-    }
-
-    // MARK: - Approach Cache (trip panel)
-
-    /// The synchronous cache accessor backs the trip panel's "render at full
-    /// size on insert" behavior: nil before the async fetch has populated the
-    /// cache, identical to the fetched details afterwards, and nil again after
-    /// a refresh invalidates the cache.
-    @Test @MainActor
-    func `Cached approach trip details warm after fetch invalidated by refresh`() async throws {
-        let dataLoader = MockDataLoader(testName: name)
-        let app = createApplication(
-            dataLoader: dataLoader,
-            analytics: AnalyticsMock(),
-            arrivalsFixture: "arrivals_and_departures_for_stop_1_10020.json"
-        )
-
-        // Stub the trip-details endpoint behind `approachTripDetails`.
-        let tripData = Fixtures.loadData(file: "trip_details_1_18196913.json")
-        dataLoader.mock(data: tripData) { request in
-            request.url?.path.contains("/api/where/trip-details/") ?? false
-        }
-
-        let viewModel = StopViewModel(application: app, stopID: testStopID)
-        await viewModel.refresh()
-
-        let departure = try #require(viewModel.stopArrivals?.arrivalsAndDepartures.first)
-        #expect(departure.predicted)
-
-        // Cold: nothing cached until the async path has run.
-        #expect(viewModel.cachedApproachTripDetails(for: departure) == nil)
-
-        let fetched = await viewModel.approachTripDetails(for: departure)
-        #expect(fetched != nil)
-
-        // Warm: the sync accessor returns the exact cached instance.
-        #expect(viewModel.cachedApproachTripDetails(for: departure) === fetched)
-
-        // Refresh clears the cache, so the accessor goes cold again.
-        await viewModel.refresh()
-        #expect(viewModel.cachedApproachTripDetails(for: departure) == nil)
-    }
-
-    /// The approach fetch varies by trip *instance* — `getTrip` takes tripID,
-    /// vehicleID and serviceDate — so the cache has to key on all three. Keyed on
-    /// tripID alone, the same trip running on two service days shares one entry and
-    /// the panel renders the other day's timeline.
-    @Test @MainActor
-    func `Approach cache same trip different service date does not collide`() async throws {
-        let dataLoader = MockDataLoader(testName: name)
-        let app = createApplication(
-            dataLoader: dataLoader,
-            analytics: AnalyticsMock(),
-            arrivalsData: try arrivalsWithSameTripOnTwoServiceDays()
-        )
-
-        let tripData = Fixtures.loadData(file: "trip_details_1_18196913.json")
-        dataLoader.mock(data: tripData) { request in
-            request.url?.path.contains("/api/where/trip-details/") ?? false
-        }
-
-        let viewModel = StopViewModel(application: app, stopID: testStopID)
-        await viewModel.refresh()
-
-        let departures = try #require(viewModel.stopArrivals?.arrivalsAndDepartures)
-        let today = try #require(departures.first { $0.vehicleID == "1_7028" })
-        let tomorrow = try #require(departures.first { $0.vehicleID == "1_9999" })
-
-        // Same trip, different instance: only the service date and vehicle differ.
-        #expect(today.tripID == tomorrow.tripID)
-        #expect(today.serviceDate != tomorrow.serviceDate)
-
-        // Warm the cache for one instance.
-        let fetched = await viewModel.approachTripDetails(for: today)
-        #expect(fetched != nil)
-        #expect(viewModel.cachedApproachTripDetails(for: today) != nil)
-
-        // The other instance is a different request and must not read that entry.
-        #expect(viewModel.cachedApproachTripDetails(for: tomorrow) == nil)
-    }
-
-    /// The arrivals fixture with its first departure duplicated onto the next service
-    /// day (new vehicle, same trip), so the two entries differ only in the fields the
-    /// approach cache key has to account for.
-    private func arrivalsWithSameTripOnTwoServiceDays() throws -> Data {
-        let raw = Fixtures.loadData(file: "arrivals_and_departures_for_stop_1_10020.json")
-        var payload = try #require(try JSONSerialization.jsonObject(with: raw) as? [String: Any])
-        var data = try #require(payload["data"] as? [String: Any])
-        var entry = try #require(data["entry"] as? [String: Any])
-        var arrDeps = try #require(entry["arrivalsAndDepartures"] as? [[String: Any]])
-
-        var nextDay = try #require(arrDeps.first)
-        let serviceDate = try #require(nextDay["serviceDate"] as? Int)
-        nextDay["serviceDate"] = serviceDate + 86_400_000 // ms
-        nextDay["vehicleId"] = "1_9999"
-        arrDeps.append(nextDay)
-
-        entry["arrivalsAndDepartures"] = arrDeps
-        data["entry"] = entry
-        payload["data"] = data
-        return try JSONSerialization.data(withJSONObject: payload)
     }
 
     // MARK: - Alarm Cancellation

@@ -281,6 +281,22 @@ public class Formatters: NSObject {
         return formattedScheduleDeviation(temporalState: arrivalDeparture.temporalState, arrivalDepartureStatus: arrivalDeparture.arrivalDepartureStatus, scheduleDeviation: arrivalDeparture.deviationFromScheduleInMinutes)
     }
 
+    /// The schedule-adherence half of a "time · status" line: the deviation phrase
+    /// (e.g. `"departs 3 min late"`) when a real-time prediction exists, or
+    /// `Strings.scheduledNotRealTime` when the trip is schedule-only.
+    ///
+    /// Prefer this over `formattedScheduleDeviation(for:)` anywhere the string
+    /// stands alone as a status: a schedule-only trip has a deviation of zero by
+    /// definition, so the raw deviation phrase would falsely claim the trip is
+    /// "on time" when no vehicle has reported at all. Mirrors the gate
+    /// `TripActivityPresenter.deviationLabel(for:now:)` applies for Live
+    /// Activity content states.
+    public func deviationLabel(for arrivalDeparture: ArrivalDeparture) -> String {
+        guard arrivalDeparture.predicted else { return Strings.scheduledNotRealTime }
+
+        return formattedScheduleDeviation(for: arrivalDeparture)
+    }
+
     public func formattedScheduleDeviation(temporalState: TemporalState, arrivalDepartureStatus: ArrivalDepartureStatus, scheduleDeviation: Int) -> String {
         switch (temporalState, arrivalDepartureStatus) {
         case (.past, .arriving):
@@ -592,11 +608,11 @@ public class Formatters: NSObject {
 
     /// Compact route list for map pin labels under stop icons.
     ///
-    /// For example: "10, 12, 49..." — no "Routes:" prefix, and an explicit "..." when the
+    /// For example: "10, 12, 49…" — no "Routes:" prefix, and an explicit ellipsis when the
     /// list overflows so UIKit truncation doesn't silently drop the overflow hint (#132).
     ///
     /// - Parameter routes: An array of `Route`s from which the string will be generated.
-    /// - Parameter limit: The number of route names shown before appending "...".
+    /// - Parameter limit: The number of route names shown before appending an ellipsis.
     /// - Returns: A comma-separated list of route short names, or `nil` when none are available.
     public class func formattedMapRoutes(_ routes: [Route], limit: Int = 3) -> String? {
         let routeNames = sortedRouteDisplayNames(from: routes)
@@ -605,7 +621,7 @@ public class Formatters: NSObject {
         }
 
         if routeNames.count > limit {
-            return routeNames.prefix(limit).joined(separator: ", ") + "..."
+            return routeNames.prefix(limit).joined(separator: ", ") + "…"
         }
         else {
             return routeNames.joined(separator: ", ")

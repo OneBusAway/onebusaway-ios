@@ -250,6 +250,15 @@ public final class ArrivalDeparture: NSObject, Identifiable, Decodable, HasRefer
         return stopSequence == totalStopsInTrip - 1
     }
 
+    /// The earliest date considered plausible for display. Matches the threshold used by
+    /// `ModelHelpers.nilifyDate` when nullifying predicted times during decode.
+    public static let earliestPlausibleDate = Date(timeIntervalSinceReferenceDate: 1.0)
+
+    /// Whether `arrivalDepartureDate` is after the epoch/null sentinel threshold.
+    public var hasPlausibleArrivalDepartureDate: Bool {
+        arrivalDepartureDate >= Self.earliestPlausibleDate
+    }
+
     /// A singluar value that can be displayed in the UI to represent the best date for this trip.
     public var arrivalDepartureDate: Date {
         switch arrivalDepartureStatus {
@@ -478,6 +487,19 @@ public extension Sequence where Element == ArrivalDeparture {
     /// - Parameter preferences: The `StopPreferences` object that will be used to hide `ArrivalDeparture`s.
     func filter(preferences: StopPreferences) -> [ArrivalDeparture] {
         filter { !preferences.isRouteIDHidden($0.routeID) }
+    }
+
+    /// Filters arrivals/departures based on real-time data availability.
+    /// - Parameter arrivalDepartureFilter: Controls whether to show all, only estimated, or only scheduled arrivals.
+    func filter(by arrivalDepartureFilter: ArrivalDepartureFilter) -> [ArrivalDeparture] {
+        switch arrivalDepartureFilter {
+        case .all:
+            return Array(self)
+        case .estimatedOnly:
+            return filter { $0.predicted }
+        case .scheduledOnly:
+            return filter { !$0.predicted }
+        }
     }
 
     /// Filters out `Route`s that are marked as hidden by `preferences`, and then groups the remaining `ArrivalDeparture`s by `Route`.

@@ -26,13 +26,23 @@ class PulsingVehicleAnnotationView: PulsingAnnotationView {
         imageView.frame = bounds.insetBy(dx: 8.0, dy: 8.0)
 
         canShowCallout = true
-        isUserInteractionEnabled = false
 
         imageView.tintColor = .white
         headingImage = Icons.templateHeading
+
+        isUserInteractionEnabled = false
     }
 
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    /// Whether this marker can be tapped to select it.
+    ///
+    /// Off by default: the trip screen only ever *displays* these markers, and
+    /// turning selection on there would start showing a title-only callout it was
+    /// never designed for. The stop-route-focus layer opts in.
+    var isSelectable: Bool = false {
+        didSet { isUserInteractionEnabled = isSelectable }
+    }
 
     public var routeType: Route.RouteType {
         didSet {
@@ -98,7 +108,19 @@ class PulsingVehicleAnnotationView: PulsingAnnotationView {
     // MARK: - Appearance
 
     /// The annotation color for a vehicle with available real-time data.
-    public var realTimeAnnotationColor: UIColor = ThemeColors.shared.brand
+    ///
+    /// Re-applies on assignment. Without this, a caller that sets the color
+    /// *after* assigning the annotation gets the previous route's color on a
+    /// recycled view: `isRealTime`'s didSet is the only writer of
+    /// `annotationColor`, and it runs when the annotation is assigned.
+    /// `TripViewController.swift:419-423` has exactly that ordering today.
+    public var realTimeAnnotationColor: UIColor = ThemeColors.shared.brand {
+        didSet {
+            guard isRealTime else { return }
+            annotationColor = realTimeAnnotationColor
+            headingImageView.tintColor = realTimeAnnotationColor
+        }
+    }
 
     /// The annotation color for a vehicle without available real-time data.
     public var scheduledAnnotationColor: UIColor = ThemeColors.shared.gray

@@ -42,6 +42,14 @@ protocol StopViewModelEnvironment: AnyObject {
     func setStopPreferences(_ prefs: StopPreferences, stop: Stop, region: Region)
     func hasStopPreferences(stopID: StopID, region: Region) -> Bool
 
+    // MARK: - Arrival/departure filter (app-wide, not per-stop)
+
+    /// The arrival/departure filter in effect: the rider's saved choice, or the
+    /// white-label default when nothing valid is saved.
+    var effectiveArrivalDepartureFilter: ArrivalDepartureFilter { get }
+    /// Persists the rider's arrival/departure filter choice.
+    func setArrivalDepartureFilter(_ filter: ArrivalDepartureFilter)
+
     // MARK: - Scalar extractions (avoid concrete service types in the protocol)
 
     /// `locationService.currentLocation`
@@ -139,6 +147,11 @@ final class PreviewStopViewModelEnvironment: StopViewModelEnvironment {
     func stopPreferences(stopID: StopID, region: Region) -> StopPreferences { .init() }
     func setStopPreferences(_ prefs: StopPreferences, stop: Stop, region: Region) {}
     func hasStopPreferences(stopID: StopID, region: Region) -> Bool { false }
+
+    var effectiveArrivalDepartureFilter: ArrivalDepartureFilter = .all
+    func setArrivalDepartureFilter(_ filter: ArrivalDepartureFilter) {
+        effectiveArrivalDepartureFilter = filter
+    }
 
     var currentUserLocation: CLLocation? { nil }
     var shouldRequestDonations: Bool { false }

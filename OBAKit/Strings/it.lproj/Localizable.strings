@@ -49,6 +49,15 @@
 /* Placeholder shown in release builds when a sheet route is pushed but has no view registered. */
 "app_sheet.unimplemented_route.placeholder" = "Questa schermata sarà presto disponibile.";
 
+/* Filter option to show all departures regardless of real-time data availability */
+"arrival_departure_filter.all_departures" = "Tutte le partenze";
+
+/* Filter option to show only departures with real-time estimated data */
+"arrival_departure_filter.real_time_only" = "Solo in tempo reale";
+
+/* Filter option to show only departures with scheduled data and no real-time information */
+"arrival_departure_filter.scheduled_only" = "Solo orario previsto";
+
 /* Action to start a Live Activity for a specific bookmark */
 "bookmarks_controller.context_menu.track_live_activity" = "Traccia";
 
@@ -972,6 +981,15 @@
 /* Settings > Debug section > Display test alerts */
 "settings_controller.alerts_section.display_test_alerts" = "Mostra avvisi di test";
 
+/* Settings section title for controlling which arrivals/departures are shown */
+"settings_controller.arrival_display_section.title" = "Visualizzazione di arrivi e partenze";
+
+/* Title for the departure filter selection alert */
+"settings_controller.arrival_filter.selector_title" = "Mostra partenze";
+
+/* Title for the departure filter setting row */
+"settings_controller.arrival_filter.title" = "Mostra partenze";
+
 /* Settings > Debug section > Refresh regions on every launch */
 "settings_controller.debug_section.always_refresh_regions" = "Aggiorna area a ogni avvio";
 
@@ -1056,6 +1074,12 @@
 /* A header for the arrivals and departures section of the stop controller. */
 "stop_controller.arrival_departure_header" = "Arrivi e partenze";
 
+/* Title for the menu that filters departures by data type */
+"stop_controller.arrival_filter.menu_title" = "Tipo di partenza";
+
+/* Message shown when the Departure Type filter hides every departure at a stop */
+"stop_controller.arrival_filter.no_results" = "Nessuna partenza corrisponde al filtro attuale. Cambia il tipo di partenza nel menu ⋯.";
+
 /* An error message displayed when a stop is shown by tapping on a bookmark—and the bookmark doesn't seem to point to a valid stop any longer. This problem will occur when a transit agency changes its stop IDs, perhaps as part of an annual transit system realignment. */
 "stop_controller.bad_bookmark_error_message" = "Questo segnalibro potrebbe non essere più in funzione. È possibile che 'agenzia di transito abbia operato delle modifiche. Si prega di eliminare il segnalibro e crearlo nuovamente.";
 
@@ -1086,6 +1110,12 @@
 /* Button to reveal departures that leave before the rider's transfer arrival. Parameter is the count of hidden departures. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
 "stop_controller.transfer_show_earlier_departures_fmt" = "Mostra %d partenze precedenti";
 
+/* Spoken suffix on the currently-focused route chip. */
+"stop_header.chip.highlighted" = "evidenziato sulla mappa";
+
+/* Spoken suffix on a route chip whose route has a vehicle on the map. */
+"stop_header.chip.live_tracking" = "monitoraggio in tempo reale";
+
 /* Error shown when a departure alarm can't be cancelled because the region's alarm service is unreachable. */
 "stop_page.alarm_cancel_unavailable" = "Non è stato possibile annullare la sveglia perché il servizio sveglie non è disponibile al momento. Riprova più tardi.";
 
@@ -1104,11 +1134,17 @@
 /* Empty state shown when every route at the stop is hidden by the user's filter. */
 "stop_page.empty.all_filtered" = "Tutte le linee di questa fermata sono filtrate";
 
+/* Empty state shown when the Departure Type filter (real-time only / scheduled only) hides every departure at the stop. */
+"stop_page.empty.departure_filter" = "Nessuna partenza corrisponde al filtro Tipo di partenza attuale";
+
 /* Empty state shown when the stop has no upcoming departures within the loaded time window. %d is the number of minutes. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
 "stop_page.empty.no_departures_fmt" = "Nessuna partenza nei prossimi %d minuti";
 
 /* Button that retries loading departures after an error. */
 "stop_page.empty.retry" = "Riprova";
+
+/* Button that resets the Departure Type filter so every departure is shown. */
+"stop_page.empty.show_all_departure_types" = "Mostra tutti i tipi di partenza";
 
 /* Button that clears the route filter so all routes are shown. */
 "stop_page.empty.show_all_routes" = "Mostra tutte le linee";
@@ -1152,11 +1188,11 @@
 /* Caption under the spinner shown while the stop page's departure list loads. */
 "stop_page.loading_departures" = "Caricamento delle partenze…";
 
-/* Stop page mode toggle: grouped by route */
-"stop_page.mode.by_route" = "Per linea";
-
 /* Stop page mode toggle: flat time-sorted list */
-"stop_page.mode.chronological" = "Cronologico";
+"stop_page.mode.time" = "Orario";
+
+/* Stop page mode toggle: grouped by route */
+"stop_page.mode.route" = "Linea";
 
 /* Opens the full trip screen */
 "stop_page.panel.full_trip" = "Vedi itinerario completo";
@@ -1199,9 +1235,6 @@
 
 /* Context menu action opening the full trip screen */
 "stop_page.row.show_trip" = "Mostra dettagli itinerario";
-
-/* Chronological list section header */
-"stop_page.section.arrivals_departures" = "Arrivi e partenze";
 
 /* Fallback title for a service alert that has no summary text. */
 "stop_page.service_alert_fallback" = "Avviso di servizio";
@@ -1442,6 +1475,18 @@
 
 /* Suggested invocation phrase for Siri Shortcut */
 "user_activity_builder.show_me_my_bus" = "Dov'è il mio autobus?";
+
+/* Qualifies the countdown in the live-vehicle map callout, as in '1m to this stop'. */
+"vehicle_callout.to_this_stop" = "a questa fermata";
+
+/* Freshness line in the live-vehicle map callout. %@ is a relative time, e.g. '12s ago'. */
+"vehicle_callout.position_updated_fmt" = "Posizione aggiornata %@";
+
+/* Button in the live-vehicle map callout that opens the trip screen. */
+"vehicle_callout.follow_this_trip" = "Segui questa corsa";
+
+/* Label identifying a vehicle by its ID in the map's vehicle callout, e.g. 'Vehicle 1234'. */
+"vehicle_callout.vehicle_label_fmt" = "Veicolo %@";
 
 /* The section header to a free-form comments field that the user does not have to add text to in order to submit this form. */
 "vehicle_problem_controller.comments_section.section_title" = "Altri commenti (facoltativo)";

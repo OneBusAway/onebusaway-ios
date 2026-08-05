@@ -49,6 +49,15 @@
 /* Placeholder shown in release builds when a sheet route is pushed but has no view registered. */
 "app_sheet.unimplemented_route.placeholder" = "Màn hình này sắp ra mắt.";
 
+/* Filter option to show all departures regardless of real-time data availability */
+"arrival_departure_filter.all_departures" = "Tất cả chuyến khởi hành";
+
+/* Filter option to show only departures with real-time estimated data */
+"arrival_departure_filter.real_time_only" = "Chỉ thời gian thực";
+
+/* Filter option to show only departures with scheduled data and no real-time information */
+"arrival_departure_filter.scheduled_only" = "Chỉ theo lịch trình";
+
 /* Action to start a Live Activity for a specific bookmark */
 "bookmarks_controller.context_menu.track_live_activity" = "Theo dõi";
 
@@ -972,6 +981,15 @@
 /* Settings > Debug section > Display test alerts */
 "settings_controller.alerts_section.display_test_alerts" = "Hiển thị cảnh báo thử nghiệm";
 
+/* Settings section title for controlling which arrivals/departures are shown */
+"settings_controller.arrival_display_section.title" = "Hiển thị giờ đến và khởi hành";
+
+/* Title for the departure filter selection alert */
+"settings_controller.arrival_filter.selector_title" = "Hiển thị chuyến khởi hành";
+
+/* Title for the departure filter setting row */
+"settings_controller.arrival_filter.title" = "Hiển thị chuyến khởi hành";
+
 /* Settings > Debug section > Refresh regions on every launch */
 "settings_controller.debug_section.always_refresh_regions" = "Làm mới khu vực mỗi lần khởi chạy";
 
@@ -1056,6 +1074,12 @@
 /* A header for the arrivals and departures section of the stop controller. */
 "stop_controller.arrival_departure_header" = "Chuyến đến và khởi hành";
 
+/* Title for the menu that filters departures by data type */
+"stop_controller.arrival_filter.menu_title" = "Loại khởi hành";
+
+/* Message shown when the Departure Type filter hides every departure at a stop */
+"stop_controller.arrival_filter.no_results" = "Không có chuyến khởi hành nào khớp với bộ lọc hiện tại. Hãy thay đổi Loại khởi hành trong menu ⋯.";
+
 /* An error message displayed when a stop is shown by tapping on a bookmark—and the bookmark doesn't seem to point to a valid stop any longer. This problem will occur when a transit agency changes its stop IDs, perhaps as part of an annual transit system realignment. */
 "stop_controller.bad_bookmark_error_message" = "Dấu trang này có thể không còn hoạt động. Có phải đơn vị vận tải của bạn đã thay đổi gì đó? Vui lòng xóa và tạo lại dấu trang.";
 
@@ -1086,6 +1110,12 @@
 /* Button to reveal departures that leave before the rider's transfer arrival. Parameter is the count of hidden departures. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
 "stop_controller.transfer_show_earlier_departures_fmt" = "Hiện %d chuyến khởi hành sớm hơn";
 
+/* Spoken suffix on the currently-focused route chip. */
+"stop_header.chip.highlighted" = "được đánh dấu trên bản đồ";
+
+/* Spoken suffix on a route chip whose route has a vehicle on the map. */
+"stop_header.chip.live_tracking" = "theo dõi trực tiếp";
+
 /* Error shown when a departure alarm can't be cancelled because the region's alarm service is unreachable. */
 "stop_page.alarm_cancel_unavailable" = "Không thể hủy lời nhắc này vì dịch vụ lời nhắc hiện không khả dụng. Vui lòng thử lại sau.";
 
@@ -1104,11 +1134,17 @@
 /* Empty state shown when every route at the stop is hidden by the user's filter. */
 "stop_page.empty.all_filtered" = "Tất cả tuyến tại điểm dừng này đã bị lọc";
 
+/* Empty state shown when the Departure Type filter (real-time only / scheduled only) hides every departure at the stop. */
+"stop_page.empty.departure_filter" = "Không có chuyến khởi hành nào khớp với bộ lọc Loại khởi hành hiện tại";
+
 /* Empty state shown when the stop has no upcoming departures within the loaded time window. %d is the number of minutes. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
 "stop_page.empty.no_departures_fmt" = "Không có chuyến khởi hành trong %d phút tới";
 
 /* Button that retries loading departures after an error. */
 "stop_page.empty.retry" = "Thử lại";
+
+/* Button that resets the Departure Type filter so every departure is shown. */
+"stop_page.empty.show_all_departure_types" = "Hiện tất cả loại khởi hành";
 
 /* Button that clears the route filter so all routes are shown. */
 "stop_page.empty.show_all_routes" = "Hiện tất cả tuyến";
@@ -1152,11 +1188,11 @@
 /* Caption under the spinner shown while the stop page's departure list loads. */
 "stop_page.loading_departures" = "Đang tải chuyến khởi hành…";
 
-/* Stop page mode toggle: grouped by route */
-"stop_page.mode.by_route" = "Theo tuyến";
-
 /* Stop page mode toggle: flat time-sorted list */
-"stop_page.mode.chronological" = "Theo thời gian";
+"stop_page.mode.time" = "Giờ";
+
+/* Stop page mode toggle: grouped by route */
+"stop_page.mode.route" = "Tuyến";
 
 /* Opens the full trip screen */
 "stop_page.panel.full_trip" = "Xem toàn bộ chuyến đi";
@@ -1199,9 +1235,6 @@
 
 /* Context menu action opening the full trip screen */
 "stop_page.row.show_trip" = "Xem chi tiết chuyến đi";
-
-/* Chronological list section header */
-"stop_page.section.arrivals_departures" = "Chuyến đến và khởi hành";
 
 /* Fallback title for a service alert that has no summary text. */
 "stop_page.service_alert_fallback" = "Cảnh báo dịch vụ";
@@ -1442,6 +1475,18 @@
 
 /* Suggested invocation phrase for Siri Shortcut */
 "user_activity_builder.show_me_my_bus" = "Cho tôi xem xe buýt của tôi";
+
+/* Qualifies the countdown in the live-vehicle map callout, as in '1m to this stop'. */
+"vehicle_callout.to_this_stop" = "đến trạm này";
+
+/* Freshness line in the live-vehicle map callout. %@ is a relative time, e.g. '12s ago'. */
+"vehicle_callout.position_updated_fmt" = "Vị trí đã cập nhật %@";
+
+/* Button in the live-vehicle map callout that opens the trip screen. */
+"vehicle_callout.follow_this_trip" = "Theo dõi chuyến đi này";
+
+/* Label identifying a vehicle by its ID in the map's vehicle callout, e.g. 'Vehicle 1234'. */
+"vehicle_callout.vehicle_label_fmt" = "Xe %@";
 
 /* The section header to a free-form comments field that the user does not have to add text to in order to submit this form. */
 "vehicle_problem_controller.comments_section.section_title" = "Nhận xét bổ sung (không bắt buộc)";

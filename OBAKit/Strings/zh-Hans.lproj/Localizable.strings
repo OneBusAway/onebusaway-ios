@@ -49,6 +49,15 @@
 /* Placeholder shown in release builds when a sheet route is pushed but has no view registered. */
 "app_sheet.unimplemented_route.placeholder" = "此页面即将推出。";
 
+/* Filter option to show all departures regardless of real-time data availability */
+"arrival_departure_filter.all_departures" = "所有班次";
+
+/* Filter option to show only departures with real-time estimated data */
+"arrival_departure_filter.real_time_only" = "仅实时";
+
+/* Filter option to show only departures with scheduled data and no real-time information */
+"arrival_departure_filter.scheduled_only" = "仅时刻表";
+
 /* Action to start a Live Activity for a specific bookmark */
 "bookmarks_controller.context_menu.track_live_activity" = "追踪";
 
@@ -972,6 +981,15 @@
 /* Settings > Debug section > Display test alerts */
 "settings_controller.alerts_section.display_test_alerts" = "显示测试通知";
 
+/* Settings section title for controlling which arrivals/departures are shown */
+"settings_controller.arrival_display_section.title" = "到站与离站信息显示";
+
+/* Title for the departure filter selection alert */
+"settings_controller.arrival_filter.selector_title" = "显示班次";
+
+/* Title for the departure filter setting row */
+"settings_controller.arrival_filter.title" = "显示班次";
+
 /* Settings > Debug section > Refresh regions on every launch */
 "settings_controller.debug_section.always_refresh_regions" = "启动应用时刷新地区信息";
 
@@ -1056,6 +1074,12 @@
 /* A header for the arrivals and departures section of the stop controller. */
 "stop_controller.arrival_departure_header" = "到达与离站";
 
+/* Title for the menu that filters departures by data type */
+"stop_controller.arrival_filter.menu_title" = "班次类型";
+
+/* Message shown when the Departure Type filter hides every departure at a stop */
+"stop_controller.arrival_filter.no_results" = "没有符合当前筛选条件的班次。请在 ⋯ 菜单中更改班次类型。";
+
 /* An error message displayed when a stop is shown by tapping on a bookmark—and the bookmark doesn't seem to point to a valid stop any longer. This problem will occur when a transit agency changes its stop IDs, perhaps as part of an annual transit system realignment. */
 "stop_controller.bad_bookmark_error_message" = "此书签已失效。公交公司或许对线路做出了调整。请尝试删除此书签后重新创建一个书签。";
 
@@ -1086,6 +1110,12 @@
 /* Button to reveal departures that leave before the rider's transfer arrival. Parameter is the count of hidden departures. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
 "stop_controller.transfer_show_earlier_departures_fmt" = "显示%d个更早的班次";
 
+/* Spoken suffix on the currently-focused route chip. */
+"stop_header.chip.highlighted" = "在地图上高亮显示";
+
+/* Spoken suffix on a route chip whose route has a vehicle on the map. */
+"stop_header.chip.live_tracking" = "实时跟踪";
+
 /* Error shown when a departure alarm can't be cancelled because the region's alarm service is unreachable. */
 "stop_page.alarm_cancel_unavailable" = "闹钟服务当前不可用，无法取消此闹钟。请稍后重试。";
 
@@ -1104,11 +1134,17 @@
 /* Empty state shown when every route at the stop is hidden by the user's filter. */
 "stop_page.empty.all_filtered" = "此车站的所有线路均已被筛选隐藏";
 
+/* Empty state shown when the Departure Type filter (real-time only / scheduled only) hides every departure at the stop. */
+"stop_page.empty.departure_filter" = "没有符合当前班次类型筛选条件的班次";
+
 /* Empty state shown when the stop has no upcoming departures within the loaded time window. %d is the number of minutes. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
 "stop_page.empty.no_departures_fmt" = "未来%d分钟内没有离站班次";
 
 /* Button that retries loading departures after an error. */
 "stop_page.empty.retry" = "重试";
+
+/* Button that resets the Departure Type filter so every departure is shown. */
+"stop_page.empty.show_all_departure_types" = "显示所有班次类型";
 
 /* Button that clears the route filter so all routes are shown. */
 "stop_page.empty.show_all_routes" = "显示所有线路";
@@ -1152,11 +1188,11 @@
 /* Caption under the spinner shown while the stop page's departure list loads. */
 "stop_page.loading_departures" = "正在加载班次……";
 
-/* Stop page mode toggle: grouped by route */
-"stop_page.mode.by_route" = "按线路";
-
 /* Stop page mode toggle: flat time-sorted list */
-"stop_page.mode.chronological" = "按时间";
+"stop_page.mode.time" = "时间";
+
+/* Stop page mode toggle: grouped by route */
+"stop_page.mode.route" = "线路";
 
 /* Opens the full trip screen */
 "stop_page.panel.full_trip" = "查看完整车程";
@@ -1199,9 +1235,6 @@
 
 /* Context menu action opening the full trip screen */
 "stop_page.row.show_trip" = "查看车程详情";
-
-/* Chronological list section header */
-"stop_page.section.arrivals_departures" = "到达与离站";
 
 /* Fallback title for a service alert that has no summary text. */
 "stop_page.service_alert_fallback" = "服务通知";
@@ -1442,6 +1475,18 @@
 
 /* Suggested invocation phrase for Siri Shortcut */
 "user_activity_builder.show_me_my_bus" = "显示我的公交车";
+
+/* Qualifies the countdown in the live-vehicle map callout, as in '1m to this stop'. */
+"vehicle_callout.to_this_stop" = "到本站";
+
+/* Freshness line in the live-vehicle map callout. %@ is a relative time, e.g. '12s ago'. */
+"vehicle_callout.position_updated_fmt" = "位置更新于 %@";
+
+/* Button in the live-vehicle map callout that opens the trip screen. */
+"vehicle_callout.follow_this_trip" = "追踪此行程";
+
+/* Label identifying a vehicle by its ID in the map's vehicle callout, e.g. 'Vehicle 1234'. */
+"vehicle_callout.vehicle_label_fmt" = "车辆 %@";
 
 /* The section header to a free-form comments field that the user does not have to add text to in order to submit this form. */
 "vehicle_problem_controller.comments_section.section_title" = "更多意见（非必填）";

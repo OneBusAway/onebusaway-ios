@@ -132,14 +132,15 @@ public final class ThemeColors: NSObject, @unchecked Sendable {
         departureEarly = .systemRed
         departureEarlyBackground = .systemRed
 
-        // Hex #129900 is better visibility for small text in light mode.
+        // Hex #007300 (red: 0.00, green: 0.45, blue: 0.00) has a 6.1:1 contrast ratio against white in
+        // light mode, clearing the WCAG AA minimum of 4.5:1 for normal-size text.
         // UIColor.systemGreen is better visibility for small text in dark mode.
-        // See #506 and #508 for user feedback.
+        // See #506, #508, and #599 for user feedback.
         let departureOnTimeColor = UIColor { traitCollection in
             if traitCollection.userInterfaceStyle == .dark {
                 return UIColor.systemGreen
             } else {
-                return UIColor(red: 0.07, green: 0.60, blue: 0.00, alpha: 1.00)
+                return UIColor(red: 0.00, green: 0.45, blue: 0.00, alpha: 1.00)
             }
         }
         departureOnTime = departureOnTimeColor
