@@ -7,15 +7,34 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
+import Foundation
 import MapKit
 @testable import OBAKit
+@testable import OBAKitCore
 import Testing
 
 @Suite(.serialized)
-final class TripMapAnnotationPolicyTests {
+final class TripMapAnnotationPolicyTests: OBATestCase {
 
-    @Test func `Trip map suppresses stop callouts`() {
-        #expect(!TripMapAnnotationPolicy.showsStopCallout)
+    @Test @MainActor
+    func `Trip controller applies the no-callout policy to stop views`() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: OperationQueue(), dataLoader: dataLoader)
+        let tripDetails = try JSONDecoder.RESTDecoder().decode(
+            RESTAPIResponse<TripDetails>.self,
+            from: Fixtures.loadData(file: "trip_details_1_18196913.json")
+        ).entry
+        let controller = TripViewController(
+            application: application,
+            tripConvertible: TripConvertible(tripDetails: tripDetails)
+        )
+        let mapView = MKMapView()
+        mapView.registerAnnotationView(MinimalStopAnnotationView.self)
+        let stopTime = try #require(tripDetails.stopTimes.first)
+
+        let view = try #require(controller.mapView(mapView, viewFor: stopTime) as? MinimalStopAnnotationView)
+
+        #expect(!view.canShowCallout)
     }
 
     @Test @MainActor
