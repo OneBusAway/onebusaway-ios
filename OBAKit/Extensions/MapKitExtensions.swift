@@ -261,8 +261,14 @@ extension MKMapView {
     /// Removes all annotations from the map view, with the possible exception of the user's location annotation if available.
     /// - Parameter excludeUserLocation: Set this to `true` to keep the user location annotation visible on the map.
     func removeAllAnnotations(excludeUserLocation: Bool = true) {
-        let allAnnotations = excludeUserLocation ? annotations : annotations.filter { !($0 is MKUserLocation) }
-        removeAnnotations(allAnnotations)
+        removeAnnotations(Self.annotationsToRemove(from: annotations, excludingUserLocation: excludeUserLocation))
+    }
+
+    /// Extracted so the filter is testable: MKUserLocation never materializes on a
+    /// map view in a unit-test process, so the round trip through `removeAllAnnotations`
+    /// cannot exercise the `excludeUserLocation` branch at all.
+    static func annotationsToRemove(from annotations: [MKAnnotation], excludingUserLocation: Bool) -> [MKAnnotation] {
+        excludingUserLocation ? annotations.filter { !($0 is MKUserLocation) } : annotations
     }
 
     /// Removes all `MKAnnotation`s of a particular type `T` from the map.

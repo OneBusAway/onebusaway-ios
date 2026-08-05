@@ -162,23 +162,23 @@ struct DepartureRowView: View {
     }
 
     private var accessibilityText: String {
-        // The clock time follows the countdown: VoiceOver can't perceive the
-        // strikethrough that carries this on screen.
-        var clauses = [baseAccessibilityText, timeDisplay.accessibilityTimeDescription]
-
-        if status.showsOccupancy, let occupancy = departure.occupancyStatus, occupancy != .unknown {
-            clauses.append(OccupancyBadge.localizedDescription(occupancy))
-        }
+        var extras: [String] = []
 
         if style == .missed {
-            clauses.append(OBALoc("stop_page.row.a11y_missed", value: "likely missed — departs sooner than your walk to the stop", comment: "VoiceOver clause appended to a departure row that's upcoming but not reachable on foot before it leaves."))
+            extras.append(OBALoc("stop_page.row.a11y_missed", value: "likely missed — departs sooner than your walk to the stop", comment: "VoiceOver clause appended to a departure row that's upcoming but not reachable on foot before it leaves."))
         }
 
         if hasAlarm {
-            clauses.append(OBALoc("stop_page.row.a11y_alarm_set", value: "alarm set", comment: "VoiceOver suffix indicating a departure alarm is active"))
+            extras.append(OBALoc("stop_page.row.a11y_alarm_set", value: "alarm set", comment: "VoiceOver suffix indicating a departure alarm is active"))
         }
 
-        return clauses.joined(separator: ", ")
+        return DepartureAccessibility.label(
+            identity: baseAccessibilityText,
+            departure: departure,
+            status: status,
+            timeDisplay: timeDisplay,
+            extraClauses: extras
+        )
     }
 
     private var baseAccessibilityText: String {

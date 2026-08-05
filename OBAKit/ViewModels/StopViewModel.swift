@@ -150,7 +150,6 @@ class StopViewModel: ObservableObject {
     private var alarmSetsInFlight: Set<String> = []
 
     /// Cache for trip-panel approach timelines, invalidated on each refresh.
-    private var approachCache: [String: TripDetails] = [:]
 
     private var alarmFiredCancellable: AnyCancellable?
 
@@ -326,7 +325,6 @@ class StopViewModel: ObservableObject {
             self.stop = stop
         }
         stopArrivals = arrivals
-        approachCache.removeAll()
         rebuildAlarmIndex()
         recomputeCurrentSurvey()
         recordReviewSuccessIfNeeded(arrivals: arrivals)
@@ -886,40 +884,5 @@ class StopViewModel: ObservableObject {
             self.serviceDate = deepLink.serviceDate
             self.stopSequence = deepLink.stopSequence
         }
-    }
-
-    // MARK: - Stop Page: Approach Timeline
-
-    /// Synchronous read of the approach-details cache. The async
-    /// `approachTripDetails` path always resolves after the accordion row is
-    /// inserted, which resizes the panel without animation; this accessor lets
-    /// the panel seed a warm timeline at full size on the frame it's built.
-    func cachedApproachTripDetails(for arrivalDeparture: ArrivalDeparture) -> TripDetails? {
-        approachCache[approachCacheKey(for: arrivalDeparture)]
-    }
-
-    /// Trip details backing the trip panel's approach timeline. Fetched on
-    /// panel open, cached until the next refresh, live trips only (§4.1).
-    func approachTripDetails(for arrivalDeparture: ArrivalDeparture) async -> TripDetails? {
-        guard arrivalDeparture.predicted, let apiService = environment.apiService else { return nil }
-        if let cached = cachedApproachTripDetails(for: arrivalDeparture) { return cached }
-        do {
-            let details = try await apiService.getTrip(
-                tripID: arrivalDeparture.tripID,
-                vehicleID: arrivalDeparture.vehicleID,
-                serviceDate: arrivalDeparture.serviceDate
-            ).entry
-            approachCache[approachCacheKey(for: arrivalDeparture)] = details
-            return details
-        } catch {
-            return nil // panel silently omits the timeline on failure
-        }
-    }
-
-    /// The full identity of the `getTrip` request, so two instances of the same trip
-    /// — a different vehicle, or the same run on the next service day — don't share
-    /// a cache entry and render each other's timeline.
-    private func approachCacheKey(for arrivalDeparture: ArrivalDeparture) -> String {
-        "\(arrivalDeparture.tripID)|\(arrivalDeparture.vehicleID ?? "")|\(arrivalDeparture.serviceDate.timeIntervalSince1970)"
     }
 }

@@ -1086,6 +1086,12 @@
 /* Button to reveal departures that leave before the rider's transfer arrival. Parameter is the count of hidden departures. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
 "stop_controller.transfer_show_earlier_departures_fmt" = "Показать более ранние отправления (%d)";
 
+/* Spoken suffix on the currently-focused route chip. */
+"stop_header.chip.highlighted" = "выделено на карте";
+
+/* Spoken suffix on a route chip whose route has a vehicle on the map. */
+"stop_header.chip.live_tracking" = "отслеживание в реальном времени";
+
 /* Error shown when a departure alarm can't be cancelled because the region's alarm service is unreachable. */
 "stop_page.alarm_cancel_unavailable" = "Не удалось отменить напоминание: сервис напоминаний сейчас недоступен. Повторите попытку позже.";
 
@@ -1152,11 +1158,11 @@
 /* Caption under the spinner shown while the stop page's departure list loads. */
 "stop_page.loading_departures" = "Загрузка отправлений…";
 
-/* Stop page mode toggle: grouped by route */
-"stop_page.mode.by_route" = "По маршрутам";
-
 /* Stop page mode toggle: flat time-sorted list */
-"stop_page.mode.chronological" = "По времени";
+"stop_page.mode.time" = "Время";
+
+/* Stop page mode toggle: grouped by route */
+"stop_page.mode.route" = "Маршрут";
 
 /* Opens the full trip screen */
 "stop_page.panel.full_trip" = "Показать весь рейс";
@@ -1199,9 +1205,6 @@
 
 /* Context menu action opening the full trip screen */
 "stop_page.row.show_trip" = "Показать детали рейса";
-
-/* Chronological list section header */
-"stop_page.section.arrivals_departures" = "Прибытия и отправления";
 
 /* Fallback title for a service alert that has no summary text. */
 "stop_page.service_alert_fallback" = "Сервисное оповещение";
@@ -1442,6 +1445,18 @@
 
 /* Suggested invocation phrase for Siri Shortcut */
 "user_activity_builder.show_me_my_bus" = "Покажи мой автобус";
+
+/* Qualifies the countdown in the live-vehicle map callout, as in '1m to this stop'. */
+"vehicle_callout.to_this_stop" = "до этой остановки";
+
+/* Freshness line in the live-vehicle map callout. %@ is a relative time, e.g. '12s ago'. */
+"vehicle_callout.position_updated_fmt" = "Местоположение обновлено %@";
+
+/* Button in the live-vehicle map callout that opens the trip screen. */
+"vehicle_callout.follow_this_trip" = "Отслеживать эту поездку";
+
+/* Label identifying a vehicle by its ID in the map's vehicle callout, e.g. 'Vehicle 1234'. */
+"vehicle_callout.vehicle_label_fmt" = "Транспорт %@";
 
 /* The section header to a free-form comments field that the user does not have to add text to in order to submit this form. */
 "vehicle_problem_controller.comments_section.section_title" = "Дополнительные комментарии (необязательно)";

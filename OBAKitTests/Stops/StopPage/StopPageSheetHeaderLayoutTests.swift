@@ -75,7 +75,8 @@ final class StopPageSheetHeaderLayoutTests {
                     walkTime: nil,
                     onWalkingDirections: {},
                     onClose: {},
-                    isCollapsed: isCollapsed
+                    isCollapsed: isCollapsed,
+                    mapFocus: StopMapFocus()
                 )
                 .background(
                     GeometryReader { geo in
