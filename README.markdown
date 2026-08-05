@@ -25,17 +25,17 @@ brew install xcodegen          # required to generate OBAKit.xcodeproj
 open OBAKit.xcodeproj
 ```
 
-`scripts/setup` verifies `xcodebuild` + XcodeGen, reminds you about signing, and calls `scripts/generate_project`. The generated `OBAKit.xcodeproj` is gitignored — always regenerate after pulling.
+`scripts/setup` verifies `xcodebuild` + XcodeGen, reminds you about signing, and calls `scripts/generate_project`. The generated `OBAKit.xcodeproj` is gitignored — always regenerate after pulling. Xcode resolves the project's Swift Package Manager dependencies when you open it.
 
 ### Signing / bundle IDs for contributors outside the OBA org
 
 Shared `Apps/OneBusAway/project.yml` points at the Open Transit Software Foundation team. For a personal build:
 
 1. `cp Apps/OneBusAway/local.yml.example Apps/OneBusAway/local.yml`
-2. Put your 10-character Team ID in `DEVELOPMENT_TEAM` (optional: change `PRODUCT_BUNDLE_IDENTIFIER`)
+2. Put your 10-character Team ID in `DEVELOPMENT_TEAM`
 3. Re-run `./scripts/setup`
 
-`Apps/*/local.yml` is gitignored. More detail: [wiki/Get-Started](https://github.com/OneBusAway/onebusaway-ios/wiki/Get-Started).
+`Apps/*/local.yml` is gitignored and is copied into the generated project, so it overrides the shared development team. `PRODUCT_BUNDLE_IDENTIFIER` is not a self-contained local override: app groups, associated domains, Apple Pay, URL schemes, and user-activity identifiers are still branded for the official apps. Change those identifiers together in a white-label configuration before using a different bundle ID on a device. More detail: [wiki/Get-Started](https://github.com/OneBusAway/onebusaway-ios/wiki/Get-Started).
 
 ## White Labeling
 
