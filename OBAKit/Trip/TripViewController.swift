@@ -343,6 +343,11 @@ class TripViewController: UIViewController,
         defer { skipNextStopTimeHighlight = false }
         guard !skipNextStopTimeHighlight else { return }
 
+        guard view.canShowCallout else {
+            openStop(stopTime)
+            return
+        }
+
         func mapViewAnnotationSelectionComplete() {
             self.tripDetailsController.highlightStopInList(stopTime.stop)
         }
@@ -367,7 +372,10 @@ class TripViewController: UIViewController,
 
     public func mapView(_ mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl) {
         guard let stopTime = view.annotation as? TripStopTime else { return }
+        openStop(stopTime)
+    }
 
+    private func openStop(_ stopTime: TripStopTime) {
         var transferContext: TransferContext?
         if let arrivalDeparture = tripConvertible.arrivalDeparture,
            stopTime.stopID != arrivalDeparture.stopID {
