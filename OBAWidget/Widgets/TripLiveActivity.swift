@@ -63,6 +63,9 @@ struct TripLiveActivity: Widget {
                             .font(.system(size: 32, weight: .bold, design: .rounded))
                             .foregroundColor(Color(presenter.color(for: primary)))
                             .monospacedDigit()
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                            .frame(maxWidth: 112, alignment: .trailing)
                             .padding(.trailing, 6)
                     }
                 }
@@ -102,6 +105,9 @@ struct TripLiveActivity: Widget {
                                         .fontWeight(.bold)
                                         .foregroundColor(Color(presenter.color(for: arrivalInfo)))
                                         .monospacedDigit()
+                                        .lineLimit(1)
+                                        .minimumScaleFactor(0.7)
+                                        .frame(maxWidth: 64, alignment: .trailing)
                                 }
                             }
                             .padding(.trailing, 6)
@@ -122,7 +128,9 @@ struct TripLiveActivity: Widget {
                         .fontWeight(.bold)
                         .foregroundColor(Color(presenter.color(for: primary)))
                         .monospacedDigit()
-                        .frame(minWidth: 20)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                        .frame(minWidth: 20, maxWidth: 56, alignment: .trailing)
                 }
             } minimal: {
                 if let primary {
@@ -131,17 +139,21 @@ struct TripLiveActivity: Widget {
                         .fontWeight(.heavy)
                         .foregroundColor(Color(presenter.color(for: primary)))
                         .monospacedDigit()
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                        .frame(maxWidth: 48, alignment: .trailing)
                 }
             }
         }
     }
 
-    @ViewBuilder
     private func liveTimerText(for arrival: TripAttributes.ContentState.ArrivalInfo) -> some View {
-        if LiveActivityCountdown.shouldShowNow(departureDate: arrival.departureDate) {
-            Text(OBALoc("stop_page.countdown.now", value: "NOW", comment: "Shown in place of the minutes countdown when the vehicle is departing now"))
-        } else {
-            Text(arrival.departureDate, style: .timer)
-        }
+        Text(
+            timerInterval: LiveActivityCountdown.boundedTimerInterval(departureDate: arrival.departureDate),
+            pauseTime: arrival.departureDate,
+            countsDown: true,
+            showsHours: false
+        )
+        .accessibilityLabel(presenter.countdownAccessibilityLabel(for: arrival))
     }
 }

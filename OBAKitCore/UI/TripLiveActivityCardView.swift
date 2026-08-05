@@ -59,7 +59,7 @@ public struct TripLiveActivityCardView: View {
             }
             Spacer(minLength: 8)
             if let primary {
-                countdownBadge(for: primary, now: now)
+                countdownBadge(for: primary)
             }
         }
     }
@@ -90,9 +90,11 @@ public struct TripLiveActivityCardView: View {
     }
 
     @ViewBuilder
-    private func countdownBadge(for arrival: TripAttributes.ContentState.ArrivalInfo, now: Date) -> some View {
-        // `.timer` ticks without a push; static minute strings only moved on
-        // keepalive updates (#1187).
+    private func countdownBadge(for arrival: TripAttributes.ContentState.ArrivalInfo) -> some View {
+        // The countdown ticks without a push; static minute strings only moved
+        // on keepalive updates (#1187). The adjacent deviation remains a
+        // content-snapshot value: deriving live adherence from a ticking timer
+        // requires a separate card redesign and is intentionally out of scope.
         LiveActivityCountdownView(
             departureDate: arrival.departureDate,
             isRealTime: arrival.scheduleStatus != .unknown,
@@ -121,13 +123,15 @@ public struct TripLiveActivityCardView: View {
     @ViewBuilder
     private func departurePill(for arrival: TripAttributes.ContentState.ArrivalInfo, now: Date) -> some View {
         let color = Color(uiColor: presenter.color(for: arrival))
-        Group {
-            if LiveActivityCountdown.shouldShowNow(departureDate: arrival.departureDate, now: now) {
-                Text(OBALoc("stop_page.countdown.now", value: "NOW", comment: "Shown in place of the minutes countdown when the vehicle is departing now"))
-            } else {
-                Text(arrival.departureDate, style: .timer)
-            }
-        }
+        Text(
+            timerInterval: LiveActivityCountdown.boundedTimerInterval(
+                departureDate: arrival.departureDate,
+                now: now
+            ),
+            pauseTime: arrival.departureDate,
+            countsDown: true,
+            showsHours: false
+        )
             .font(.caption.weight(.heavy))
             .monospacedDigit()
             .foregroundStyle(color)
