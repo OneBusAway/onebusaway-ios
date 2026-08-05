@@ -82,7 +82,7 @@ struct CurrentTripView: View {
             feedback.dataLoad(.success)
             onPresentTrip(arrival)
             // Re-arm so a second single-match (e.g., user retries) can fire.
-            viewModel.pendingNavigation = nil
+            viewModel.clearPendingNavigation()
         }
         .onChange(of: viewModel.state) { _, newState in
             // Pattern-match because `.error` carries an associated value —
