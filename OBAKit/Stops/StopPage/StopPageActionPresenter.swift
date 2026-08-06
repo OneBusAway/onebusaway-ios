@@ -60,7 +60,7 @@ final class StopPageActionPresenter: NSObject {
     /// cache as `false` forever if anything ever asked before that caller ran.
     private var cachedGoogleMapsAvailable: Bool?
 
-    private func googleMapsAvailable(coordinate: CLLocationCoordinate2D) -> Bool {
+    func googleMapsAvailable(coordinate: CLLocationCoordinate2D) -> Bool {
         if let cachedGoogleMapsAvailable { return cachedGoogleMapsAvailable }
 
         guard let url = AppInterop.googleMapsWalkingDirectionsURL(coordinate: coordinate) else {
