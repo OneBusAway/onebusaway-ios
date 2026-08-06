@@ -18,7 +18,6 @@ import OBAKitCore
 struct CurrentTripView: View {
     @StateObject private var viewModel: CurrentTripViewModel
     @EnvironmentObject var coordinator: SheetCoordinator<AppSheetRoute>
-    @Environment(\.scenePhase) private var scenePhase
 
     let onPresentTrip: (ArrivalDeparture) -> Void
 
@@ -55,23 +54,10 @@ struct CurrentTripView: View {
         .onDisappear {
             viewModel.deactivate()
         }
-        .onChange(of: scenePhase) { previous, phase in
-            switch phase {
-            case .active:
-                // Only re-arm on the .background → .active edge. `.inactive → .active`
-                // (returning from Control Center / a banner / a system alert) never
-                // stopped the timer, so re-arming would issue a redundant network call.
-                if previous == .background {
-                    viewModel.start()
-                }
-            case .background:
-                viewModel.deactivate()
-            case .inactive:
-                break
-            @unknown default:
-                break
-            }
-        }
+        .refreshesOnForeground(
+            onForeground: { viewModel.start() },
+            onBackground: { viewModel.deactivate() }
+        )
         .onChange(of: viewModel.pendingNavigation) { _, arrival in
             guard let arrival else { return }
             feedback.dataLoad(.success)

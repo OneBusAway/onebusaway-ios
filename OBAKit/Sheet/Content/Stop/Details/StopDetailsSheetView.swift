@@ -133,7 +133,7 @@ struct StopDetailsSheetView: View {
             // second inset. An overlay takes no part in the list's layout, so its
             // position can track scrolling without the scroll view ever observing
             // the result — the property the collapsing header lacked.
-            .overlay(alignment: .top) { actionRowOverlay }
+            .overlay(alignment: .top) { actionRowOverlay(navigation: navigation) }
             // Bottom-trailing overlay, for the same reason the action row is an
             // overlay: it takes no part in the list's layout, so it cannot feed
             // back into scroll geometry.
@@ -148,10 +148,12 @@ struct StopDetailsSheetView: View {
                 liveActivityStarted: viewModel.liveActivityStarted
             )
             .keepsScreenAwake()
-            .defaultAppStorage(userDefaults)
             .environment(\.obaFormatters, formatters)
             .onChange(of: content.routeIDs) { _, ids in reconcileExpandedRoute(against: ids) }
-            .onChange(of: scenePhase, handle(scenePhase:to:))
+            .refreshesOnForeground(
+                onForeground: { Task { await viewModel.start() } },
+                onBackground: { viewModel.deactivate() }
+            )
             .onReceive(viewModel.$stop.compactMap { $0 }, perform: publishUserActivity(for:))
             .onReceive(viewModel.$stopArrivals.compactMap { $0 }) { _ in signalFirstLoad() }
             .onReceive(viewModel.$operationError.compactMap { $0 }) { _ in feedback.dataLoad(.failed) }
@@ -166,10 +168,10 @@ struct StopDetailsSheetView: View {
 
     // MARK: - Content
 
-    private func list(content: StopPageContent) -> some View {
+    private func list(content: StopPageContent, navigation: StopPageNavigationHandler) -> some View {
         List {
-            headerRows(showsLoadingState: content.showsLoadingState)
-            departures(content: content)
+            headerRows(showsLoadingState: content.showsLoadingState, navigation: navigation)
+            departures(content: content, navigation: navigation)
         }
     }
 
@@ -177,7 +179,7 @@ struct StopDetailsSheetView: View {
     /// pushed page builds apart from `onRetry`: this presentation has no
     /// pull-to-refresh, so a retry goes through the same spinner-floored path as
     /// the top bar's button.
-    private var departuresBuilder: StopDeparturesBuilder {
+    private func departuresBuilder(navigation: StopPageNavigationHandler) -> StopDeparturesBuilder {
         StopDeparturesBuilder(
             viewModel: viewModel,
             navigation: navigation,
@@ -189,8 +191,8 @@ struct StopDetailsSheetView: View {
         )
     }
 
-    private func departures(content: StopPageContent) -> some View {
-        departuresBuilder.sections(content: content, walkTime: viewModel.walkTime)
+    private func departures(content: StopPageContent, navigation: StopPageNavigationHandler) -> some View {
+        departuresBuilder(navigation: navigation).sections(content: content, walkTime: viewModel.walkTime)
     }
 
     // MARK: - List actions
@@ -273,24 +275,6 @@ struct StopDetailsSheetView: View {
         presenter.showAlarmPermissionDeniedAlert {
             // Reset so a later already-denied attempt re-fires the binding.
             viewModel.clearAlarmPermissionDenied()
-        }
-    }
-
-    private func handle(scenePhase previous: ScenePhase, to phase: ScenePhase) {
-        switch phase {
-        case .active:
-            // Only re-arm on the .background → .active edge. `.inactive → .active`
-            // (returning from Control Center or a banner) never stopped the timer,
-            // so re-arming would issue a redundant network call.
-            if previous == .background {
-                Task { await viewModel.start() }
-            }
-        case .background:
-            viewModel.deactivate()
-        case .inactive:
-            break
-        @unknown default:
-            break
         }
     }
 
