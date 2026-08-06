@@ -11,8 +11,7 @@ import SwiftUI
 import UIKit
 import OBAKitCore
 
-/// Arbitrates the idle timer between every SwiftUI screen that wants it held
-/// off — the SwiftUI counterpart of `Idleable`, including its failsafe.
+/// Arbitrates the idle timer between every screen that wants it held off.
 ///
 /// A shared lease count rather than a per-view latch. A per-view latch cannot
 /// survive two live screens overlapping: SwiftUI routinely runs the incoming
@@ -20,13 +19,19 @@ import OBAKitCore
 /// screen sees the timer already disabled, declines to latch, and the outgoing
 /// screen then re-enables the timer out from under it. Counting leases instead
 /// means the timer is restored exactly once, when the last screen goes away.
+///
+/// `Idleable` routes through here too, rather than writing
+/// `isIdleTimerDisabled` itself. Two arbiters over one global cannot stay
+/// consistent across the UIKit/SwiftUI boundary: a pushed `Idleable` screen
+/// dismissed over a SwiftUI screen holding a lease used to switch the timer
+/// straight back on, and the reverse ordering left it disabled with nothing
+/// holding it and no failsafe armed.
 @MainActor
 final class ScreenAwakeCoordinator {
     static let shared = ScreenAwakeCoordinator()
 
-    /// Matches `Idleable`'s interval. The idle timer is a global the app can
-    /// only leave switched off by mistake, so both implementations cap how long
-    /// a mistake can last.
+    /// The idle timer is a global the app can only leave switched off by
+    /// mistake, so cap how long a mistake can last.
     static let failsafeInterval: TimeInterval = 600
 
     private var leaseCount = 0
@@ -34,12 +39,33 @@ final class ScreenAwakeCoordinator {
     /// last lease cannot switch off a hold some other subsystem placed.
     private var stateBeforeFirstLease = false
     private var failsafe: Timer?
+    /// Owners currently holding an owner-keyed lease. Lets
+    /// `acquire(owner:)`/`release(owner:)` be idempotent, which the raw
+    /// counting API cannot be: a view controller that sees `viewWillAppear`
+    /// twice without an intervening `viewWillDisappear` would otherwise leak a
+    /// lease and strand the timer disabled for the rest of the session.
+    private var owners: Set<ObjectIdentifier> = []
 
     private init() {}
 
     /// Test seam: the lease count, so the pairing can be asserted without
     /// driving a real view hierarchy.
     var activeLeases: Int { leaseCount }
+
+    /// Takes a lease on behalf of `owner`, at most one at a time. Used by
+    /// `Idleable`, whose appear/disappear callbacks UIKit does not guarantee to
+    /// deliver in strict alternation.
+    func acquire(owner: ObjectIdentifier) {
+        guard owners.insert(owner).inserted else { return }
+        acquire()
+    }
+
+    /// Returns `owner`'s lease, if it holds one. A release without a matching
+    /// acquire is a no-op rather than an unbalanced decrement.
+    func release(owner: ObjectIdentifier) {
+        guard owners.remove(owner) != nil else { return }
+        release()
+    }
 
     func acquire() {
         if leaseCount == 0 {
@@ -99,13 +125,35 @@ final class ScreenAwakeCoordinator {
 /// The lease is taken on appear and returned on disappear, and `holdsLease`
 /// keeps that pairing exact — SwiftUI can run `onAppear` more than once for one
 /// logical appearance, and a double acquire would never be released.
+///
+/// The hold is also dropped for the duration of a backgrounding and re-taken on
+/// the `.background → .active` edge. Neither `onAppear` nor `onDisappear` fires
+/// when the app backgrounds with the screen still mounted, so without this a
+/// rider who pockets the phone for longer than `failsafeInterval` comes back to
+/// a screen whose failsafe has already expired and which nothing will ever
+/// re-arm — the display sleeps mid-trip for the rest of that screen's life.
 private struct KeepsScreenAwakeModifier: ViewModifier {
+    @Environment(\.scenePhase) private var scenePhase
     @State private var holdsLease = false
 
     func body(content: Content) -> some View {
         content
             .onAppear(perform: acquire)
             .onDisappear(perform: release)
+            .onChange(of: scenePhase) { _, phase in
+                switch phase {
+                case .active:
+                    acquire()
+                case .background:
+                    release()
+                case .inactive:
+                    // Control Center, a banner, the app switcher: the screen is
+                    // still the rider's, so the hold stays.
+                    break
+                @unknown default:
+                    break
+                }
+            }
     }
 
     private func acquire() {
