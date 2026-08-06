@@ -453,7 +453,12 @@ final class StopPageActionPresenter: NSObject {
             .environmentObject(donationModel)
             .environmentObject(AnalyticsModel(application.analytics))
 
-        presentationHost(for: "donation")?.present(UIHostingController(rootView: view), animated: true)
+        // Not a bare `present`: `presentDonationModal` charges
+        // `PromptCoordinator` for the session's one interruption *in the
+        // presentation completion*, which is the whole reason it exists. Skipping
+        // it would let a rider shown this modal still get the App Store review
+        // prompt in the same session.
+        presentationHost(for: "donation")?.presentDonationModal(view, coordinator: application.promptCoordinator)
     }
 
     /// `onHide` fires only when the user actually hides the card (dismiss or
