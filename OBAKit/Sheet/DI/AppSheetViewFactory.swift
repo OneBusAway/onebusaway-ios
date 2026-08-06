@@ -101,14 +101,16 @@ final class AppSheetViewFactory {
     /// `StopDeparturesSections` — but replaces the navigation bar with a pinned
     /// Refresh/Close strip and a row of circular actions, and collapses the map
     /// header away as the list scrolls so the actions stay reachable.
-    func stopDetailView(stopID: Stop.ID) -> StopDetailsSheetView {
-        StopDetailsSheetView(
+    func stopDetailView(stopID: Stop.ID) -> StopDetailsSheetRootView {
+        StopDetailsSheetRootView(
             stopID: stopID,
-            viewModel: StopViewModel(environment: self.application, stopID: stopID),
-            presenter: StopPageActionPresenter(
-                application: self.application,
-                presentingController: self.presentingController
-            ),
+            makeViewModel: { StopViewModel(environment: self.application, stopID: stopID) },
+            makePresenter: {
+                StopPageActionPresenter(
+                    application: self.application,
+                    presentingController: self.presentingController
+                )
+            },
             feedback: DataLoadFeedbackGenerator(application: self.application),
             formatters: self.application.formatters,
             userDefaults: self.application.userDefaults

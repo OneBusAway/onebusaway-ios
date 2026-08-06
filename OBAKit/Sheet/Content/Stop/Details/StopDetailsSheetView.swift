@@ -12,6 +12,46 @@ import UIKit
 import OBAKitCore
 import ActivityKit
 
+/// Thin hosting wrapper for `StopDetailsSheetView`. Its only job is to apply
+/// `.defaultAppStorage` so the sheet's `@AppStorage` reads and writes the
+/// app-group suite (matching the pushed page and the view model) rather than
+/// `UserDefaults.standard` — the same job `StopPageRootView` does for the pushed
+/// presentation.
+///
+/// It has to be a separate view. `.defaultAppStorage(_:)` only reaches
+/// `AppStorage` instances *below* the view it modifies; a view's own property
+/// wrappers resolve against the environment it was handed, so the sheet applying
+/// it inside its own body would leave its own `pastCollapsed` bound to
+/// `UserDefaults.standard`. Expanding past departures on the map sheet would not
+/// carry over to the pushed Stop page, and vice versa.
+///
+/// It deliberately does NOT observe `StopViewModel` — `StopDetailsSheetView`
+/// remains the sole observer, and owns the `@StateObject`/`@State` that give the
+/// view model and the presenter their lifetimes.
+struct StopDetailsSheetRootView: View {
+    /// Forwarded so the route this view was built for stays readable without
+    /// instantiating the sheet, both in debug output and to the factory's tests.
+    let stopID: StopID
+
+    let makeViewModel: () -> StopViewModel
+    let makePresenter: () -> StopPageActionPresenter
+    let feedback: DataLoadFeedbackGenerator
+    let formatters: Formatters
+    let userDefaults: UserDefaults
+
+    var body: some View {
+        StopDetailsSheetView(
+            stopID: stopID,
+            viewModel: makeViewModel(),
+            presenter: makePresenter(),
+            feedback: feedback,
+            formatters: formatters,
+            userDefaults: userDefaults
+        )
+        .defaultAppStorage(userDefaults)
+    }
+}
+
 /// The Stop page as a native SwiftUI sheet over the map panel.
 ///
 /// It renders the same departures as the pushed screen — through the shared
@@ -31,9 +71,24 @@ struct StopDetailsSheetView: View {
 
     @StateObject private var viewModel: StopViewModel
     @EnvironmentObject private var coordinator: SheetCoordinator<AppSheetRoute>
-    @Environment(\.scenePhase) private var scenePhase
+    /// Feeds `snapshotTraits`. `UITraitCollection.current` is only guaranteed to
+    /// be the view's own traits inside `traitCollectionDidChange`,
+    /// `layoutSubviews` or `draw(_:)`; the header's snapshot is loaded from a
+    /// `.task`, outside any UIKit update pass, where reading it can hand
+    /// `MapSnapshotter` a `displayScale` of 1.0 on a 3x device and render a
+    /// visibly soft map card.
+    @Environment(\.displayScale) private var displayScale
 
-    private let presenter: StopPageActionPresenter
+    /// `@State`, not a plain `let`, for the same reason `viewModel` is a
+    /// `@StateObject`: `MapPanelRootView.body` re-evaluates on every map camera
+    /// update, annotation change and detent write-back, and each pass rebuilds
+    /// this view from the factory. Every modal the presenter opens holds it
+    /// **weakly** (`StopPreferencesWrappedView`, `AddBookmarkViewController`,
+    /// `EditBookmarkViewController`, `AlarmBuilder`), so a presenter replaced
+    /// mid-flow takes Save on the route filter, Cancel on the bookmark editor
+    /// and the alarm confirmation down with it. `@State` keeps the first one for
+    /// the life of the sheet.
+    @State private var presenter: StopPageActionPresenter
     private let feedback: DataLoadFeedbackGenerator
     private let formatters: Formatters
     private let userDefaults: UserDefaults
@@ -69,20 +124,27 @@ struct StopDetailsSheetView: View {
     init(
         stopID: StopID,
         viewModel: @autoclosure @escaping () -> StopViewModel,
-        presenter: StopPageActionPresenter,
+        presenter: @autoclosure () -> StopPageActionPresenter,
         feedback: DataLoadFeedbackGenerator,
         formatters: Formatters,
         userDefaults: UserDefaults
     ) {
         self.stopID = stopID
         _viewModel = StateObject(wrappedValue: viewModel())
-        self.presenter = presenter
+        _presenter = State(wrappedValue: presenter())
         self.feedback = feedback
         self.formatters = formatters
         self.userDefaults = userDefaults
     }
 
-    private var navigation: StopPageNavigationHandler {
+    /// Built once per body evaluation and threaded down, rather than computed.
+    ///
+    /// The handler is a 17-field struct of freshly-allocated closures wrapping
+    /// three more closure structs. As a computed property the chrome, the header
+    /// and the departures list rebuilt it ten times per pass — on a screen the
+    /// view model republishes on a per-second status timer — and every closure
+    /// identity changed each time, so nothing downstream could diff as equal.
+    private func makeNavigation() -> StopPageNavigationHandler {
         presenter.makeNavigationHandler(viewModel: viewModel, closeSheet: { coordinator.pop() })
     }
 
@@ -99,8 +161,9 @@ struct StopDetailsSheetView: View {
 
     private func sheetBody(proxy: ScrollViewProxy) -> some View {
         let content = StopPageContent(viewModel: viewModel)
+        let navigation = makeNavigation()
 
-        return list(content: content)
+        return list(content: content, navigation: navigation)
             .listStyle(.plain)
             // No `.refreshable`: this presentation refreshes from the top bar's
             // button only, which is why that button stays pinned.
@@ -307,7 +370,7 @@ struct StopDetailsSheetView: View {
     /// needs a gap of the same height here or the first departures would sit
     /// underneath it at rest.
     @ViewBuilder
-    private func headerRows(showsLoadingState: Bool) -> some View {
+    private func headerRows(showsLoadingState: Bool, navigation: StopPageNavigationHandler) -> some View {
         Section {
             Group {
                 if let stop = viewModel.stop {
@@ -316,7 +379,7 @@ struct StopDetailsSheetView: View {
                         walkTime: viewModel.walkTime,
                         statusText: viewModel.statusText,
                         snapshotLoader: { size in
-                            await presenter.loadSnapshot(stop: stop, size: size, traitCollection: UITraitCollection.current)
+                            await presenter.loadSnapshot(stop: stop, size: size, traitCollection: snapshotTraits)
                         },
                         onWalkingDirections: navigation.showWalkingDirections
                     )
@@ -345,6 +408,19 @@ struct StopDetailsSheetView: View {
         .id(Self.topRowID)
     }
 
+    /// The traits the header's map snapshot renders at.
+    ///
+    /// `displayScale` is the one that matters: `MapSnapshotter` hands it to
+    /// `MKMapSnapshotter.Options` and to the stop-icon factory, so getting it
+    /// wrong is the difference between a crisp card and a blurry one. The
+    /// interface style is not derived here — `loadSnapshot` forces dark, because
+    /// the header is always-dark by design.
+    private var snapshotTraits: UITraitCollection {
+        UITraitCollection { traits in
+            traits.displayScale = displayScale
+        }
+    }
+
     /// Where the action row sits, measured from the top of the sheet.
     ///
     /// At rest it clears the top bar and the map card, putting it directly under
@@ -356,7 +432,7 @@ struct StopDetailsSheetView: View {
         topBarHeight + max(0, mapCardHeight - scrollOffset)
     }
 
-    private var actionRowOverlay: some View {
+    private func actionRowOverlay(navigation: StopPageNavigationHandler) -> some View {
         StopPageActionRow(
             state: StopPageActionRowState(
                 routeCount: viewModel.stop?.routes.count ?? 0,
