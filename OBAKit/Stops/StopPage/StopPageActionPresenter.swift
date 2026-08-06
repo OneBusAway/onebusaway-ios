@@ -678,7 +678,21 @@ extension StopPageActionPresenter: AlarmBuilderDelegate {
             Task { await viewModel.replaceAlarm(with: alarm, for: flow.departure) }
 
             if alarmBuilder.trackOnLockScreen {
-                startLiveActivity(for: flow.departure, viewModel: viewModel)
+                // Deferred for the same reason the failure path below is.
+                // `AlarmBuilder.createAlarm` calls this delegate method *before*
+                // the `defer` that dismisses its bulletin, so the bulletin is
+                // still the topmost controller and `presentationHost` resolves to
+                // it. `startLiveActivity` presents an error alert when
+                // `Activity.request` throws — activities disabled mid-flow, quota,
+                // a push-token failure — and an alert raised on a controller that
+                // is about to be dismissed either flashes away with it or collides
+                // with its transition, leaving the bulletin's view on screen and
+                // unresponsive.
+                let departure = flow.departure
+                Task { @MainActor in
+                    await waitForBulletinDismissal(alarmBuilder)
+                    startLiveActivity(for: departure, viewModel: viewModel)
+                }
             }
         }
 
