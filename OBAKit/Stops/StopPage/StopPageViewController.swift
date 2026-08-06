@@ -234,10 +234,6 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
         closeSheet: {}
     )
 
-    /// Owns the picker → share-sheet trip-sharing flow. Holds `self` weakly,
-    /// so retaining it for the controller's lifetime creates no cycle.
-    private lazy var tripSharingCoordinator = TripSharingCoordinator(application: application, presenter: self)
-
     private func makeNavigationHandler() -> StopPageNavigationHandler {
         actionPresenter.makeNavigationHandler(viewModel: viewModel, closeSheet: { [weak self] in
             self?.onClose?()

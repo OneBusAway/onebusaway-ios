@@ -213,9 +213,9 @@ final class StopPageContentTests: OBATestCase {
     }
 
     @Test func `Departure filter empty is true only when the type filter emptied the routes' departures`() throws {
-        // The fixtures carry no real-time prediction, so `.estimatedOnly` removes
-        // every row the route filter let through.
-        let content = makeContent(allDepartures: try departures(), arrivalDepartureFilter: .estimatedOnly)
+        // The fixtures are all predicted, so `.scheduledOnly` removes every row
+        // the route filter let through.
+        let content = makeContent(allDepartures: try departures(), arrivalDepartureFilter: .scheduledOnly)
 
         #expect(content.departures.isEmpty)
         #expect(!content.routeVisibleDepartures.isEmpty)
@@ -225,7 +225,7 @@ final class StopPageContentTests: OBATestCase {
     }
 
     @Test func `Departure filter empty is false when the feed itself is empty`() {
-        let content = makeContent(allDepartures: [], arrivalDepartureFilter: .estimatedOnly)
+        let content = makeContent(allDepartures: [], arrivalDepartureFilter: .scheduledOnly)
         #expect(!content.isDepartureFilterEmpty)
     }
 

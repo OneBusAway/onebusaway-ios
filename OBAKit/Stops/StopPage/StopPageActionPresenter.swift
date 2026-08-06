@@ -103,6 +103,7 @@ final class StopPageActionPresenter: NSObject {
             showWalkingDirections: stop.showWalkingDirections,
             showAlertDetail: stop.showAlertDetail,
             showBookmarkEditor: stop.showBookmarkEditor,
+            shareTrip: trip.shareTrip,
             showAlarmPicker: alarms.showAlarmPicker,
             startLiveActivity: alarms.startLiveActivity,
             showExternalSurveyError: { [weak self] in self?.showExternalSurveyError() },
@@ -124,6 +125,7 @@ final class StopPageActionPresenter: NSObject {
         let showTrip: (ArrivalDeparture) -> Void
         let showScheduleForStop: () -> Void
         let showScheduleForRoute: (ArrivalDeparture) -> Void
+        let shareTrip: (ArrivalDeparture) -> Void
         let makeTripPreview: (ArrivalDeparture) -> AnyView
     }
 
@@ -137,6 +139,9 @@ final class StopPageActionPresenter: NSObject {
             },
             showScheduleForRoute: { [weak self] departure in
                 self?.showScheduleForRoute(departure)
+            },
+            shareTrip: { [weak self] departure in
+                self?.shareTrip(departure)
             },
             makeTripPreview: { [weak self] departure in
                 guard let self else { return AnyView(EmptyView()) }
@@ -244,6 +249,21 @@ final class StopPageActionPresenter: NSObject {
             presentWrappedInNavigation(tripPage, from: host)
         }
     }
+
+    /// Starts the destination-picker → share-sheet flow for a departure.
+    func shareTrip(_ arrivalDeparture: ArrivalDeparture) {
+        guard let host = presentationHost(for: "share trip") else { return }
+        // Rebuilt per share rather than stored once: the coordinator binds to a
+        // single presenting controller, and the sheet's topmost controller is
+        // resolved fresh at every call. Retained until the next share so the
+        // picker's delegate callbacks survive the flow; it holds its presenter
+        // weakly, so this creates no cycle.
+        let coordinator = TripSharingCoordinator(application: application, presenter: host)
+        tripSharingCoordinator = coordinator
+        coordinator.start(arrivalDeparture: arrivalDeparture)
+    }
+
+    private var tripSharingCoordinator: TripSharingCoordinator?
 
     // MARK: - Schedules
 
