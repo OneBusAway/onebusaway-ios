@@ -103,14 +103,10 @@ struct StopDetailsSheetView: View {
     /// How far the title has faded into the pinned bar, 0...1. Drives opacity
     /// ONLY — never layout. See the note on `titleFadeDistance`.
     @State private var titleProgress: CGFloat = 0
-    /// Distance scrolled from the top. Drives the action row's overlay position
-    /// and the title fade — never any layout the scroll view can observe.
+    /// Distance scrolled from the top. Drives the title fade and the
+    /// scroll-to-top button's visibility — never any layout the scroll view can
+    /// observe.
     @State private var scrollOffset: CGFloat = 0
-    /// Measured heights feeding the sticky-overlay arithmetic. None of them
-    /// depend on `scrollOffset`, which is what keeps the overlay acyclic.
-    @State private var topBarHeight: CGFloat = 0
-    @State private var mapCardHeight: CGFloat = 0
-    @State private var actionRowHeight: CGFloat = 0
     /// The scroll view's container height, used to decide when the rider has
     /// scrolled far enough to offer a way back. Read-only, like `scrollOffset` —
     /// nothing derived from it affects layout.
@@ -197,19 +193,17 @@ struct StopDetailsSheetView: View {
             // Fixed height — it holds only the top bar, so nothing here resizes
             // as the list scrolls.
             .safeAreaInset(edge: .top, spacing: 0) { topBar }
-            // The action row rides as an overlay rather than list content or a
-            // second inset. An overlay takes no part in the list's layout, so its
-            // position can track scrolling without the scroll view ever observing
-            // the result — the property the collapsing header lacked.
-            .overlay(alignment: .top) { actionRowOverlay(navigation: navigation) }
+            // Fixed height, like the top bar above it. An inset whose height
+            // tracked scroll position is what pegged the main thread here once;
+            // a constant one has no such loop, and it means the list reserves
+            // the capsule's room itself — so the last departure cannot hide
+            // underneath it and no hand-tuned bottom margin has to be kept in
+            // sync with the capsule's height.
+            .safeAreaInset(edge: .bottom, spacing: 0) { actionRow(navigation: navigation) }
             // Bottom-trailing overlay, for the same reason the action row is an
             // overlay: it takes no part in the list's layout, so it cannot feed
             // back into scroll geometry.
             .overlay(alignment: .bottomTrailing) { scrollToTopOverlay(proxy: proxy) }
-            // A CONSTANT margin so the button never permanently covers the
-            // footer's attribution line. It must not depend on the button's
-            // visibility — layout driven by scroll position is what hung the app.
-            .contentMargins(.bottom, Self.scrollToTopClearance, for: .scrollContent)
             .stopPageLifecycle(
                 viewModel: viewModel,
                 userDefaults: userDefaults,
@@ -357,7 +351,6 @@ struct StopDetailsSheetView: View {
             onRefresh: refresh,
             onClose: { coordinator.pop() }
         )
-        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { topBarHeight = $0 }
     }
 
     /// Distance scrolled, in points, over which the stop name fades into the
@@ -369,11 +362,8 @@ struct StopDetailsSheetView: View {
     /// How long the refresh spinner stays up at minimum.
     private static let minimumSpinnerDuration: Duration = .milliseconds(600)
 
-    /// The map card, plus a spacer standing in for the action row.
-    ///
-    /// The action row itself is an overlay (see `actionRowOverlay`), so the list
-    /// needs a gap of the same height here or the first departures would sit
-    /// underneath it at rest.
+    /// The map card. Scrolls with the list — there is no sticky chrome below the
+    /// top bar for it to collide with.
     @ViewBuilder
     private func headerRows(showsLoadingState: Bool, navigation: StopPageNavigationHandler) -> some View {
         Section {
@@ -392,19 +382,9 @@ struct StopDetailsSheetView: View {
                     StopPageHeaderPlaceholderView()
                 }
             }
-            // Safe to measure: the card's height is a function of Dynamic Type
-            // and how many route chips wrap, never of scroll position.
-            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { mapCardHeight = $0 }
             .listRowInsets(EdgeInsets())
             .listRowBackground(Color.clear)
             .listRowSeparator(.hidden)
-
-            Color.clear
-                .frame(height: actionRowHeight)
-                .listRowInsets(EdgeInsets())
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
-                .accessibilityHidden(true)
         }
         // The scroll-to-top target. The id belongs on the Section: a row-level id
         // does not resolve for `ScrollViewReader` in this List. It rides the
@@ -426,18 +406,7 @@ struct StopDetailsSheetView: View {
         }
     }
 
-    /// Where the action row sits, measured from the top of the sheet.
-    ///
-    /// At rest it clears the top bar and the map card, putting it directly under
-    /// the card. As the list scrolls it rises until it reaches the bar, then
-    /// stops — the card slides beneath it. Rubber-banding past the top yields a
-    /// negative `scrollOffset`, which pushes the row further down with the
-    /// stretch, which is the natural behaviour.
-    private var actionRowOffset: CGFloat {
-        topBarHeight + max(0, mapCardHeight - scrollOffset)
-    }
-
-    private func actionRowOverlay(navigation: StopPageNavigationHandler) -> some View {
+    private func actionRow(navigation: StopPageNavigationHandler) -> some View {
         StopPageActionRow(
             state: StopPageActionRowState(
                 hasStop: viewModel.stop != nil,
@@ -460,15 +429,7 @@ struct StopDetailsSheetView: View {
             onWalkingDirections: navigation.showWalkingDirections,
             onReportProblem: navigation.showReportProblem
         )
-        // Feeds the spacer above, so the two stay the same height as Dynamic
-        // Type changes.
-        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { actionRowHeight = $0 }
-        .offset(y: actionRowOffset)
     }
-
-    /// Space reserved at the end of the list so the floating button does not sit
-    /// permanently on top of the attribution line. Constant by design.
-    private static let scrollToTopClearance: CGFloat = 72
 
     /// Identifies the header section so `ScrollViewReader` can scroll back to it.
     private static let topRowID = "stop-details-top"
@@ -477,6 +438,11 @@ struct StopDetailsSheetView: View {
         ScrollToTopVisibility.shouldShow(scrollOffset: scrollOffset, viewportHeight: viewportHeight)
     }
 
+    /// The floating "back to top" control, above the action capsule.
+    ///
+    /// The capsule is a bottom safe-area inset, so this overlay's bottom edge
+    /// already sits above it and the padding below is clearance from the
+    /// capsule, not from the sheet's edge.
     private func scrollToTopOverlay(proxy: ScrollViewProxy) -> some View {
         ScrollToTopButton(isVisible: showsScrollToTop) { scrollToTop(proxy: proxy) }
             .padding(.trailing, 16)

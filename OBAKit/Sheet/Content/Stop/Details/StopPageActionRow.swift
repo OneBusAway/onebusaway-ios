@@ -42,8 +42,8 @@ nonisolated struct StopPageActionRowState {
     var canShowServiceAlerts: Bool { hasServiceAlerts }
 }
 
-/// Schedule, Filter, Bookmark and More, as circular buttons under the stop
-/// sheet's map header.
+/// Schedule, Filter, Bookmark and More, as circular buttons in a glass capsule
+/// fixed at the bottom of the stop sheet.
 ///
 /// Filter is promoted out of the More menu into its own button, so More carries
 /// only the four remaining actions. A plain-value view: every action is a
@@ -79,8 +79,14 @@ struct StopPageActionRow: View {
             }
         }
         .padding(.vertical, 10)
-        .background(Color(uiColor: .systemBackground))
-        .overlay(alignment: .bottom) { Divider() }
+        // Clipped before the surface so the accessibility-size horizontal
+        // scroll cannot run out past the pill's rounded ends.
+        .clipShape(Capsule())
+        .regularGlassEffectIfAvailable(in: Capsule())
+        // Outside the surface, so this is the gap between the capsule and the
+        // sheet's edges rather than internal padding.
+        .padding(.horizontal, 12)
+        .padding(.bottom, 8)
     }
 
     /// Each column is a circular glass control with its caption underneath.
