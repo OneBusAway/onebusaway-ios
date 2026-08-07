@@ -55,6 +55,11 @@ struct StopPageSheetHeaderView: View {
     /// sheet's root has no bar (see `StopSheetPresenter`), because a bar would impose a top safe
     /// area on the hosting controller that this header would absorb as dead space above the name.
     let onClose: () -> Void
+    /// `false` where something else already offers a way out — the map sheet's
+    /// pinned top bar carries its own Close, and two ✕ a few points apart read
+    /// as a mistake. Defaults to showing it: the pushed sheet presentation has
+    /// no navigation bar behind it, so this is that presentation's only way out.
+    var showsCloseButton = true
     /// `true` at the sheet's `.tip` detent, where the header has roughly one row's worth of
     /// height to work with. See `collapsedHeight` for what has to survive that budget and why.
     var isCollapsed = false
@@ -139,7 +144,9 @@ struct StopPageSheetHeaderView: View {
                     // identity element instead.
                     .accessibilityLabel(headerAccessibilityLabel)
 
-                    StopSheetCloseButton(action: onClose)
+                    if showsCloseButton {
+                        StopSheetCloseButton(action: onClose)
+                    }
                 }
 
                 if !isCollapsed, walkTime != nil || !chips.isEmpty {
@@ -415,6 +422,9 @@ struct StopPageSheetHeaderPlaceholderView: View {
     /// `false` once a first fetch has failed; the centered error row below owns the screen.
     var showsSkeleton = true
     let onClose: () -> Void
+    /// See `StopPageSheetHeaderView.showsCloseButton`. Suppressed on the map
+    /// sheet, whose top bar carries Close even while the stop is unknown.
+    var showsCloseButton = true
     /// `true` at the sheet's `.tip` detent. Trims the skeleton to its name line so the strip
     /// costs the same height the real collapsed header does.
     var isCollapsed = false
@@ -433,7 +443,9 @@ struct StopPageSheetHeaderPlaceholderView: View {
                 Spacer(minLength: 0)
             }
 
-            StopSheetCloseButton(action: onClose)
+            if showsCloseButton {
+                StopSheetCloseButton(action: onClose)
+            }
         }
         .padding(.horizontal, 16)
         .padding(.top, StopSheetHeaderMetrics.topPadding)
