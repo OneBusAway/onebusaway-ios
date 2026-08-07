@@ -9,6 +9,7 @@
 
 import ActivityKit
 import Combine
+import CoreLocation
 import SwiftUI
 import OBAKitCore
 
@@ -37,8 +38,6 @@ final class TripPageViewController: UIHostingController<TripPageView>,
     private var alarmBuilder: AlarmBuilder?
     private var alarmBuilderDeparture: ArrivalDeparture?
     private var isTrackingLiveActivity = false
-
-    public var idleTimerFailsafe: Timer?
 
     let providesOwnSheetChrome = true
 
@@ -186,6 +185,32 @@ final class TripPageViewController: UIHostingController<TripPageView>,
         )
     }
 
+    // MARK: - Back
+
+    /// Which way out this presentation has. See `TripPageBackBehavior`.
+    var backBehavior: TripPageBackBehavior {
+        TripPageBackBehavior.forStackDepth(navigationController?.viewControllers.count ?? 0)
+    }
+
+    /// Back, resolved against the stack rather than assumed.
+    ///
+    /// The page is pushed from the Stop page and presented from the map sheet,
+    /// and `popViewController` only works for the first — as the root of its own
+    /// navigation controller it returns nil and leaves the rider pressing a
+    /// button that does nothing.
+    private func goBack() {
+        switch backBehavior {
+        case .pop:
+            navigationController?.popViewController(animated: true)
+        case .dismiss:
+            // UIKit forwards this up to whoever did the presenting, so it takes
+            // the wrapping navigation controller with it. The Done button
+            // `StopPageActionPresenter.presentWrappedInNavigation` installs
+            // dismisses the same way.
+            dismiss(animated: true)
+        }
+    }
+
     private func makeActions() -> TripPageActions {
         var actions = TripPageActions()
 
@@ -195,10 +220,7 @@ final class TripPageViewController: UIHostingController<TripPageView>,
         // there is no stop and nothing to count down to.
         actions.canStartLiveActivity = departure != nil && ActivityAuthorizationInfo().areActivitiesEnabled
 
-        actions.onBack = { [weak self] in
-            guard let self else { return }
-            navigationController?.popViewController(animated: true)
-        }
+        actions.onBack = { [weak self] in self?.goBack() }
         actions.onSelectStop = { [weak self] stopID in
             guard let self else { return }
             application.viewRouter.navigateTo(stopID: stopID, from: self)

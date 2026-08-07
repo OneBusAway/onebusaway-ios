@@ -18,11 +18,9 @@ import OBAKitCore
 struct CurrentTripView: View {
     @StateObject private var viewModel: CurrentTripViewModel
     @EnvironmentObject var coordinator: SheetCoordinator<AppSheetRoute>
-    @Environment(\.scenePhase) private var scenePhase
 
     let onPresentTrip: (ArrivalDeparture) -> Void
 
-    @State private var wasIdleTimerDisabledByUs = false
     private let feedback: DataLoadFeedbackGenerator
     private let formatters: Formatters
 
@@ -51,32 +49,15 @@ struct CurrentTripView: View {
         }
         .onAppear {
             viewModel.shouldSkipProgrammaticRefresh = { UIAccessibility.isVoiceOverRunning }
-            disableIdleTimer()
             viewModel.start()
         }
         .onDisappear {
             viewModel.deactivate()
-            reEnableIdleTimer()
         }
-        .onChange(of: scenePhase) { previous, phase in
-            switch phase {
-            case .active:
-                // Only re-arm on the .background → .active edge. `.inactive → .active`
-                // (returning from Control Center / a banner / a system alert) never
-                // stopped the timer, so re-arming would issue a redundant network call.
-                if previous == .background {
-                    disableIdleTimer()
-                    viewModel.start()
-                }
-            case .background:
-                viewModel.deactivate()
-                reEnableIdleTimer()
-            case .inactive:
-                break
-            @unknown default:
-                break
-            }
-        }
+        .refreshesOnForeground(
+            onForeground: { viewModel.start() },
+            onBackground: { viewModel.deactivate() }
+        )
         .onChange(of: viewModel.pendingNavigation) { _, arrival in
             guard let arrival else { return }
             feedback.dataLoad(.success)
@@ -94,20 +75,7 @@ struct CurrentTripView: View {
                 break
             }
         }
-    }
-
-    // MARK: - Idle Timer
-
-    private func disableIdleTimer() {
-        guard !UIApplication.shared.isIdleTimerDisabled else { return }
-        UIApplication.shared.isIdleTimerDisabled = true
-        wasIdleTimerDisabledByUs = true
-    }
-
-    private func reEnableIdleTimer() {
-        guard wasIdleTimerDisabledByUs else { return }
-        UIApplication.shared.isIdleTimerDisabled = false
-        wasIdleTimerDisabledByUs = false
+        .keepsScreenAwake()
     }
 
     // MARK: - Content

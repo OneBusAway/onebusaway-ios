@@ -153,10 +153,6 @@ class TripViewController: UIViewController,
         tripDetailsController.listView.applyData()
     }
 
-    // MARK: - Idle Timer
-
-    public var idleTimerFailsafe: Timer?
-
     // MARK: - Title View
 
     private let titleView = StackedMarqueeTitleView(width: 178.0)

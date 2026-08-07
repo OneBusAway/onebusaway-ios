@@ -73,10 +73,6 @@ class CurrentTripViewController: UIViewController,
         viewModel.deactivate()
     }
 
-    // MARK: - Idle Timer
-
-    public var idleTimerFailsafe: Timer?
-
     // MARK: - View Model Binding
 
     private func bindViewModel() {

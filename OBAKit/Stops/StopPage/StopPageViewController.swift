@@ -26,10 +26,7 @@ import OBAKitCore
 /// layer stays router-free and holds no `Application` reference.
 class StopPageViewController: UIHostingController<StopPageRootView>,
     AppContext,
-    AlarmBuilderDelegate,
-    BookmarkEditorDelegate,
     Idleable,
-    StopPreferencesViewDelegate,
     Previewable,
     StopSheetCollapsibleContent,
     StopSheetSelfChromedContent {
@@ -38,58 +35,38 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
     let viewModel: StopViewModel
     private var cancellables = Set<AnyCancellable>()
 
+    private lazy var actionPresenter = StopPageActionPresenter(
+        application: application,
+        presentingController: { [weak self] in self }
+    )
+
     /// Called when the user taps the sheet's close button. Set by the map view controller
     /// immediately after creating this controller; no-op when `showToolbarOnBottom` is false.
     var onClose: (() -> Void)?
 
     /// Set by a host that owns a map, so a trip opened from this page can point
     /// that map at the trip. Left nil where this page was pushed full-screen —
-    /// there is no map behind it to focus.
-    var onTripPagePush: ((TripPageViewController) -> Void)?
+    /// there is no map behind it to focus. Stored on the presenter, which is what
+    /// actually pushes the trip page for both presentations.
+    var onTripPagePush: ((TripPageViewController) -> Void)? {
+        get { actionPresenter.onTripPagePush }
+        set { actionPresenter.onTripPagePush = newValue }
+    }
 
     /// Only the sheet-configured page draws its own header; the pushed variant keeps its
     /// navigation-bar chrome.
     var providesOwnSheetChrome: Bool { showsBottomToolbar }
 
-    /// Opens the SwiftUI trip page — the trip panel's "View full trip" and the
-    /// row context menu's "Show Trip Details".
-    ///
-    /// Both used to go through `ViewRouter.navigateTo(arrivalDeparture:from:)`,
-    /// which still builds the old `TripViewController` for the surfaces that push
-    /// full-screen with no map behind them. Routed here instead, so every way out
-    /// of this page reaches the same screen.
+    /// Opens the SwiftUI trip page — the row context menu's "Show Trip Details".
     func showTripPage(for arrivalDeparture: ArrivalDeparture) {
-        let tripPage = TripPageViewController(
-            application: application,
-            arrivalDeparture: arrivalDeparture,
-            originTitle: viewModel.stop?.name
-        )
-        // Only a host that owns a map answers this. Where this page was pushed
-        // full-screen there is nothing behind it to point anywhere.
-        onTripPagePush?(tripPage)
-        application.viewRouter.navigate(to: tripPage, from: self)
+        actionPresenter.showTripPage(for: arrivalDeparture, originTitle: viewModel.stop?.name)
     }
-
-    public var idleTimerFailsafe: Timer?
 
     private lazy var dataLoadFeedbackGenerator = DataLoadFeedbackGenerator(application: application)
 
     /// Gates the one-shot success haptic to the first arrivals load, matching
     /// `StopViewController.bindArrivalsSink()`; later refreshes are silent.
     private var firstLoad = true
-
-    #if !targetEnvironment(simulator)
-    /// `application.canOpenURL` is an XPC round-trip and Google Maps can't be
-    /// installed or removed within a screen's lifetime, so resolve availability
-    /// once instead of on every ~15s chrome rebuild. Evaluated lazily on the
-    /// first `locationMenu()` build, by which point `viewModel.stop` is set.
-    private lazy var googleMapsAvailable: Bool = {
-        guard let coordinate = viewModel.stop?.coordinate,
-              let url = AppInterop.googleMapsWalkingDirectionsURL(coordinate: coordinate)
-        else { return false }
-        return application.canOpenURL(url)
-    }()
-    #endif
 
     var bookmarkContext: Bookmark? {
         get { viewModel.bookmarkContext }
@@ -225,12 +202,8 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
     /// Ports `StopViewController.beginUserActivity()`; called on appearance and
     /// whenever the stop resolves.
     private func beginUserActivity() {
-        guard let stop = viewModel.stop,
-              let region = application.regionsService.currentRegion,
-              let userActivityBuilder = application.userActivityBuilder
-        else { return }
-
-        self.userActivity = userActivityBuilder.userActivity(for: stop, region: region)
+        guard let stop = viewModel.stop else { return }
+        self.userActivity = actionPresenter.makeUserActivity(stop: stop)
     }
 
     // MARK: - Navigation Handler
@@ -259,44 +232,10 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
         closeSheet: {}
     )
 
-    /// Owns the picker → share-sheet trip-sharing flow. Holds `self` weakly,
-    /// so retaining it for the controller's lifetime creates no cycle.
-    private lazy var tripSharingCoordinator = TripSharingCoordinator(application: application, presenter: self)
-
     private func makeNavigationHandler() -> StopPageNavigationHandler {
-        StopPageNavigationHandler(
-            showTrip: { [weak self] departure in
-                guard let self else { return }
-                self.showTripPage(for: departure)
-            },
-            showScheduleForStop: { [weak self] in self?.showScheduleForStop() },
-            showScheduleForRoute: { [weak self] departure in self?.showScheduleForRoute(for: departure) },
-            canScheduleForRoute: application.currentRegion?.supportsScheduleForRoute ?? true,
-            showWalkingDirections: { [weak self] in self?.showWalkingDirections() },
-            showAlertDetail: { [weak self] alert in
-                guard let self else { return }
-                self.application.viewRouter.navigateTo(alert: alert, from: self)
-            },
-            showBookmarkEditor: { [weak self] departure in self?.showBookmarkEditor(for: departure) },
-            shareTrip: { [weak self] departure in self?.tripSharingCoordinator.start(arrivalDeparture: departure) },
-            showAlarmPicker: { [weak self] departure in self?.showAlarmPicker(for: departure) },
-            startLiveActivity: { [weak self] departure in self?.startLiveActivity(for: departure) },
-            showExternalSurveyError: { [weak self] in self?.showExternalSurveyError() },
-            showDonation: { [weak self] in self?.showDonationUI() },
-            dismissDonation: { [weak self] onHide in self?.showDonationDismissUI(onHide: onHide) },
-            makeTripPreview: { [weak self] departure in
-                guard let self else { return AnyView(EmptyView()) }
-                return AnyView(
-                    TripViewControllerPreview(departure: departure, application: self.application)
-                        .frame(width: 320, height: 400)
-                )
-            },
-            showRouteFilter: { [weak self] in self?.filter() },
-            showServiceAlerts: { [weak self] in self?.showServiceAlerts() },
-            showNearbyStops: { [weak self] in self?.showNearbyStops() },
-            showReportProblem: { [weak self] in self?.showReportProblem() },
-            closeSheet: { [weak self] in self?.onClose?() }
-        )
+        actionPresenter.makeNavigationHandler(viewModel: viewModel, closeSheet: { [weak self] in
+            self?.onClose?()
+        })
     }
 
     // MARK: - Combine Bindings
@@ -411,206 +350,30 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
     }
 
     private func presentAlarmPermissionDeniedAlert() {
-        let alert = UIAlertController(
-            title: OBALoc(
-                "stop_page.alarm_permission_denied.title",
-                value: "Notifications Are Off",
-                comment: "Title of the alert shown when the user tries to set a departure alarm but notifications are denied in Settings."
-            ),
-            message: String(
-                format: OBALoc(
-                    "stop_page.alarm_permission_denied.message",
-                    value: "To get departure alarms, allow notifications for %@ in Settings.",
-                    comment: "Body of the alert shown when the user tries to set a departure alarm but notifications are denied in Settings. %@ is the app name."
-                ),
-                Bundle.main.appName
-            ),
-            preferredStyle: .alert
-        )
-        alert.addAction(UIAlertAction(title: Strings.cancel, style: .cancel))
-        alert.addAction(UIAlertAction(
-            title: OBALoc(
-                "stop_page.alarm_permission_denied.open_settings",
-                value: "Open Settings",
-                comment: "Button that opens the system Settings app so the user can enable notifications."
-            ),
-            style: .default
-        ) { [weak self] _ in
-            guard let self, let url = URL(string: UIApplication.openSettingsURLString) else { return }
-            self.application.open(url, options: [:], completionHandler: nil)
+        actionPresenter.showAlarmPermissionDeniedAlert(onPresented: { [weak self] in
+            self?.viewModel.clearAlarmPermissionDenied()
         })
-        present(alert, animated: true)
-        // Reset so a later already-denied attempt re-fires the binding.
-        viewModel.clearAlarmPermissionDenied()
     }
 
     // MARK: - Alarm Picker
 
-    private var alarmBuilder: AlarmBuilder?
-    /// The departure the open bulletin is for, so `alarmCreated` can index the
-    /// alarm under it (the delegate callback doesn't carry the departure).
-    private var alarmBuilderDeparture: ArrivalDeparture?
-
-    /// Presents the same lead-time picker bulletin as
-    /// `StopViewController.addAlarm(arrivalDeparture:)`; `AlarmBuilder` owns the
-    /// picker UI and the create request. Also serves the Change flow: when the
-    /// departure already has an alarm, the picker opens pre-selected to its
-    /// current lead time and the created alarm replaces the old one.
     private func showAlarmPicker(for arrivalDeparture: ArrivalDeparture) {
-        // The SwiftUI alarm affordances are gated on `canCreateAlarm`, but that
-        // gate is only re-evaluated on the ~15s refresh — a departure can slip
-        // inside the one-minute floor while the row (or an open trip panel) still
-        // offers the button. Re-check here so the picker never opens with no
-        // selectable lead time.
-        guard viewModel.canCreateAlarm(for: arrivalDeparture) else { return }
-
-        alarmBuilderDeparture = arrivalDeparture
-        let existingAlarm = viewModel.alarm(for: arrivalDeparture)
-        alarmBuilder = AlarmBuilder(
-            arrivalDeparture: arrivalDeparture,
-            application: application,
-            initialMinutes: existingAlarm.map { viewModel.alarmLeadTimeMinutes($0) },
-            delegate: self)
-        alarmBuilder?.showBulletin(above: self)
-    }
-
-    func alarmBuilderStartedRequest(_ alarmBuilder: AlarmBuilder) {
-        ProgressHUD.show()
-    }
-
-    func alarmBuilder(_ alarmBuilder: AlarmBuilder, alarmCreated alarm: Alarm) {
-        if let departure = alarmBuilderDeparture {
-            // `replaceAlarm` indexes the new alarm synchronously and no-ops the
-            // delete when the departure had no prior alarm, so it serves both
-            // the create and change flows.
-            Task { await viewModel.replaceAlarm(with: alarm, for: departure) }
-
-            if alarmBuilder.trackOnLockScreen {
-                startLiveActivity(for: departure)
-            }
-        } else {
-            viewModel.recordAlarmCreated(alarm)
-        }
-
-        let message = OBALoc("stop_controller.alarm_created_message", value: "Alarm created", comment: "A message that appears when a user's alarm is created.")
-        ProgressHUD.showSuccessAndDismiss(message: message)
-    }
-
-    func alarmBuilder(_ alarmBuilder: AlarmBuilder, error: Error) {
-        ProgressHUD.dismiss()
-        Task { @MainActor in
-            await AlertPresenter.show(error: error, presentingController: self)
-        }
+        actionPresenter.showAlarmPicker(for: arrivalDeparture, viewModel: viewModel)
     }
 
     // MARK: - Live Activity
 
-    func startLiveActivity(for departure: ArrivalDeparture) {
-        guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
-
-        let routeColorHex = departure.route.color?.toHex()
-        let staticData = TripAttributes.StaticData(
-            routeShortName: departure.routeShortName,
-            routeHeadsign: departure.tripHeadsign ?? "",
-            stopID: departure.stopID,
-            routeColorHex: routeColorHex,
-            regionID: application.currentRegion?.regionIdentifier ?? 0
-        )
-
-        // The same trip can be started from here and from the bookmarks list, so
-        // this guard has to live on both start paths — otherwise one stop ends up
-        // with two Lock Screen cards and two OBACloud push registrations. Re-Track
-        // still needs to promote the existing activity: after A→B the Island is
-        // on B with A demoted to 0, so tapping Track on A again must bump A.
-        if let existing = Activity<TripAttributes>.running(matching: staticData) {
-            Logger.info("Live Activity already running for stop \(staticData.stopID) route \(staticData.routeShortName); promoting instead of duplicating.")
-            let existingID = existing.id
-            Task {
-                await Activity<TripAttributes>.promoteToDynamicIsland(activityID: existingID)
-            }
-            // Re-show the confirmation rather than appearing to do nothing.
-            viewModel.signalLiveActivityStarted()
-            return
-        }
-
-        guard let contentState = buildLiveActivityContentState(for: departure) else {
-            Logger.error("Failed to build content state for Live Activity")
-            return
-        }
-
-        let attributes = TripAttributes(staticData: staticData)
-        // Prominence so the Dynamic Island switches to this Track when another
-        // trip is already live (#1189 Problem 2). Default score is 0 and equal
-        // scores keep the first-started activity.
-        let prominence = TripLiveActivityRelevance.prominenceScore()
-        do {
-            let activity = try Activity.request(
-                attributes: attributes,
-                content: TripLiveActivityRelevance.content(
-                    state: contentState,
-                    staleDate: nil,
-                    relevanceScore: prominence
-                ),
-                pushType: .token
-            )
-            application.liveActivityTracker.track(activity: activity, metadata: .init(departure))
-            let activityID = activity.id
-            Task {
-                await Activity<TripAttributes>.demoteLivePeers(
-                    exceptActivityID: activityID,
-                    relativeTo: prominence
-                )
-            }
-            Logger.info("Started Live Activity with ID: \(activity.id)")
-            viewModel.signalLiveActivityStarted()
-        } catch {
-            Logger.error("Failed to start Live Activity: \(error)")
-            showLiveActivityErrorAlert()
-        }
-    }
-
-    private func buildLiveActivityContentState(for departure: ArrivalDeparture) -> TripAttributes.ContentState? {
-        let allArrivals = viewModel.stopArrivals?.arrivalsAndDepartures ?? [departure]
-        let sameRoute = allArrivals.filter { $0.routeID == departure.routeID }
-        let upcoming = sameRoute.isEmpty ? [departure] : Array(sameRoute.prefix(3))
-        let arrivals = upcoming.map { arrDep in
-            TripAttributes.ContentState.ArrivalInfo(
-                departureTime: Int(arrDep.arrivalDepartureDate.timeIntervalSince1970),
-                scheduleStatus: .init(arrDep.scheduleStatus),
-                scheduleDeviation: arrDep.deviationFromScheduleInMinutes * 60,
-                isArrival: arrDep.arrivalDepartureStatus == .arriving
-            )
-        }
-        return TripAttributes.ContentState(arrivals: arrivals)
+    private func startLiveActivity(for departure: ArrivalDeparture) {
+        actionPresenter.startLiveActivity(for: departure, viewModel: viewModel)
     }
 
     // MARK: - Snapshot
 
     /// Bridges the callback-based `MapSnapshotter` into async/await for the
-    /// SwiftUI header. Mirrors `StopHeaderView`'s configuration (stop
-    /// annotation, zoom, muted map) from `StopHeaderController.swift`.
+    /// SwiftUI header.
     private func loadSnapshot(size: CGSize) async -> UIImage? {
-        guard let stop = viewModel.stop, size.width > 0, size.height > 0 else { return nil }
-        let factory = application.stopIconFactory
-        // The header design is always-dark (white identity text over a dark
-        // scrim), so render the map snapshot in dark style regardless of the
-        // system appearance.
-        let traits = traitCollection.modifyingTraits { $0.userInterfaceStyle = .dark }
-        return await withCheckedContinuation { continuation in
-            let snapshotter = MapSnapshotter(size: size, stopIconFactory: factory)
-            snapshotter.snapshot(stop: stop, traitCollection: traits) { image in
-                // `MapSnapshotter`'s internal `MKMapSnapshotter.start` completion is
-                // `[weak self]`, so the wrapper must outlive the async render or the
-                // completion early-returns and this continuation never resumes —
-                // leaving the header permanently blank. The legacy `StopHeaderView`
-                // avoids this by retaining the snapshotter in a stored property; here
-                // there's no `self` to hold it, so extend its lifetime through the
-                // callback explicitly.
-                withExtendedLifetime(snapshotter) {
-                    continuation.resume(returning: image)
-                }
-            }
-        }
+        guard let stop = viewModel.stop else { return nil }
+        return await actionPresenter.loadSnapshot(stop: stop, size: size, traitCollection: traitCollection)
     }
 
     // MARK: - Previewable
@@ -770,7 +533,7 @@ private extension StopPageViewController {
             #if !targetEnvironment(simulator)
             // Display Google Maps app link, only if Google Maps is installed.
             if let googleMapsURL = AppInterop.googleMapsWalkingDirectionsURL(coordinate: stop.coordinate),
-               self.googleMapsAvailable {
+               self.actionPresenter.googleMapsAvailable(coordinate: stop.coordinate) {
                 let googleMaps = UIAction(title: OBALoc("stops_controller.walking_directions_google", value: "Walking Directions (Google Maps)", comment: "Button that launches Google Maps with walking directions to this stop")) { [unowned self] _ in
                     self.application.open(googleMapsURL, options: [:], completionHandler: nil)
                 }
@@ -806,219 +569,73 @@ private extension StopPageViewController {
 
 private extension StopPageViewController {
     @objc func showScheduleForStop() {
-        let scheduleVC = ScheduleForStopViewController(stopID: viewModel.stopID, application: application)
-        present(scheduleVC, animated: true)
+        actionPresenter.showScheduleForStop(stopID: viewModel.stopID)
     }
 
     func showScheduleForRoute(for arrivalDeparture: ArrivalDeparture) {
-        let scheduleVC = ScheduleForRouteViewController(routeID: arrivalDeparture.routeID, application: application)
-        present(scheduleVC, animated: true)
+        actionPresenter.showScheduleForRoute(arrivalDeparture)
     }
 
     /// Opens the bookmark editor. `nil` starts the stop-level "Add Bookmark"
-    /// workflow; a departure jumps straight into editing a trip bookmark. Ports
-    /// `StopViewController.addBookmark(sender:)` and `addBookmark(arrivalDeparture:)`.
+    /// workflow; a departure jumps straight into editing a trip bookmark.
     func showBookmarkEditor(for arrivalDeparture: ArrivalDeparture?) {
-        if let arrivalDeparture {
-            let bookmarkController = EditBookmarkViewController(application: application, arrivalDeparture: arrivalDeparture, bookmark: nil, delegate: self)
-            let navigation = UINavigationController(rootViewController: bookmarkController)
-            application.viewRouter.present(navigation, from: self)
-        } else {
-            guard let stop = viewModel.stop else { return }
-            let bookmarkController = AddBookmarkViewController(application: application, stop: stop, preloadedArrivals: viewModel.stopArrivals?.arrivalsAndDepartures, delegate: self)
-            let navigation = application.viewRouter.buildNavigation(controller: bookmarkController)
-            application.viewRouter.present(navigation, from: self, isModal: true)
-        }
+        actionPresenter.showBookmarkEditor(
+            for: arrivalDeparture,
+            stop: viewModel.stop,
+            preloadedArrivals: viewModel.stopArrivals?.arrivalsAndDepartures
+        )
     }
 
-    /// Route Filter workflow. Presents the SwiftUI `StopPreferencesWrappedView` in
-    /// a `UIHostingController` (ported from `StopViewController.filter()`).
+    /// Route Filter workflow.
     func filter() {
         guard let stop = viewModel.stop else { return }
-
-        let hiddenRoutes = Set(viewModel.stopPreferences.hiddenRoutes)
-        let stopPreferencesView = StopPreferencesWrappedView(stop, initialHiddenRoutes: hiddenRoutes, delegate: self)
-            .environment(\.coreApplication, application)
-        present(UIHostingController(rootView: stopPreferencesView), animated: true)
+        actionPresenter.showRouteFilter(
+            stop: stop,
+            hiddenRoutes: Set(viewModel.stopPreferences.hiddenRoutes),
+            onUpdate: { [weak self] prefs in self?.viewModel.updateStopPreferences(prefs) }
+        )
     }
 
-    /// Opens walking directions to the stop from the header's walk pill. Reuses
-    /// the `locationMenu()` availability logic: Apple Maps always, Google Maps
-    /// only when installed. One available app opens directly; more than one
-    /// presents an action sheet to disambiguate.
+    /// Opens walking directions to the stop.
     func showWalkingDirections() {
         guard let coordinate = viewModel.stop?.coordinate else { return }
-
-        var options: [(title: String, url: URL)] = []
-
-        if let appleMapsURL = AppInterop.appleMapsWalkingDirectionsURL(coordinate: coordinate) {
-            options.append((
-                OBALoc("stops_controller.walking_directions_apple", value: "Walking Directions (Apple Maps)", comment: "Button that launches Apple's maps.app with walking directions to this stop"),
-                appleMapsURL
-            ))
-        }
-
-        #if !targetEnvironment(simulator)
-        if let googleMapsURL = AppInterop.googleMapsWalkingDirectionsURL(coordinate: coordinate), googleMapsAvailable {
-            options.append((
-                OBALoc("stops_controller.walking_directions_google", value: "Walking Directions (Google Maps)", comment: "Button that launches Google Maps with walking directions to this stop"),
-                googleMapsURL
-            ))
-        }
-        #endif
-
-        guard let first = options.first else { return }
-
-        if options.count == 1 {
-            application.open(first.url, options: [:], completionHandler: nil)
-            return
-        }
-
-        let sheet = UIAlertController(
-            title: OBALoc("stops_controller.walking_directions", value: "Walking Directions", comment: "Button that launches a maps app with walking directions to this stop"),
-            message: nil,
-            preferredStyle: .actionSheet
-        )
-        for option in options {
-            sheet.addAction(UIAlertAction(title: option.title, style: .default) { [weak self] _ in
-                self?.application.open(option.url, options: [:], completionHandler: nil)
-            })
-        }
-        sheet.addAction(UIAlertAction(title: Strings.cancel, style: .cancel))
-        if let popover = sheet.popoverPresentationController {
-            popover.sourceView = view
-            popover.sourceRect = CGRect(origin: view.center, size: .zero)
-        }
-        present(sheet, animated: true)
+        actionPresenter.showWalkingDirections(coordinate: coordinate)
     }
 
-    /// Pushes the service-alert list. Shared by the More menu (pushed presentation) and the
-    /// bottom toolbar's More menu (sheet presentation) so the two can't drift apart.
+    /// Pushes the service-alert list.
     func showServiceAlerts() {
-        let controller = ServiceAlertListController(application: application, serviceAlerts: viewModel.stopArrivals?.serviceAlerts ?? [])
-        application.viewRouter.navigate(to: controller, from: self)
+        actionPresenter.showServiceAlerts(viewModel.stopArrivals?.serviceAlerts ?? [])
     }
 
-    /// Pushes the nearby-stops list. Shared by both presentations' More menus.
+    /// Pushes the nearby-stops list.
     func showNearbyStops() {
         guard let coordinate = viewModel.stop?.coordinate else { return }
-        let nearbyController = NearbyStopsViewController(coordinate: coordinate, application: application)
-        application.viewRouter.navigate(to: nearbyController, from: self)
+        actionPresenter.showNearbyStops(coordinate: coordinate)
     }
 
     func showReportProblem() {
         guard let stop = viewModel.stop else { return }
-
-        let reportProblemController = ReportProblemViewController(application: application, stop: stop)
-        let navigation = application.viewRouter.buildNavigation(controller: reportProblemController)
-        application.viewRouter.present(navigation, from: self, isModal: true)
+        actionPresenter.showReportProblem(stop: stop)
     }
 
     // MARK: - Surveys
 
     func showFullSurvey(_ survey: Survey, heroResponseID: String? = nil) {
-        let surveyVC = SurveyViewController(
-            survey: survey,
-            surveyService: application.surveyService,
-            stop: viewModel.stop,
-            stopID: viewModel.stopID,
-            stopLocation: viewModel.stop?.coordinate,
-            heroResponseID: heroResponseID
-        )
-        let nav = UINavigationController(rootViewController: surveyVC)
-        present(nav, animated: true)
+        actionPresenter.showFullSurvey(survey, heroResponseID: heroResponseID, stop: viewModel.stop, stopID: viewModel.stopID)
     }
 
     func showExternalSurveyError() {
-        let alert = UIAlertController(
-            title: OBALoc("stop_controller.external_survey_error.title", value: "Can't Open Survey", comment: "Title shown when an external survey link cannot be opened"),
-            message: OBALoc("stop_controller.external_survey_error.message", value: "This survey link couldn't be opened. Please try again later.", comment: "Message shown when an external survey link cannot be opened"),
-            preferredStyle: .alert
-        )
-        alert.addAction(UIAlertAction(title: Strings.ok, style: .default))
-        present(alert, animated: true)
+        actionPresenter.showExternalSurveyError()
     }
 
     // MARK: - Donations
 
     func showDonationUI() {
-        guard
-            application.donationsManager.donationsEnabled,
-            let donationModel = application.donationsManager.buildObservableDonationModel()
-        else {
-            return
-        }
-
-        let learnMoreView = DonationLearnMoreView()
-            .environmentObject(donationModel)
-            .environmentObject(AnalyticsModel(application.analytics))
-
-        presentDonationModal(learnMoreView, coordinator: application.promptCoordinator)
+        actionPresenter.showDonation()
     }
 
-    /// Presents the "please don't dismiss" action sheet. `onHide` is invoked only
-    /// when the user actually hides the card (dismiss or remind-later), so the
-    /// SwiftUI page can drop the donation section immediately. Ports
-    /// `StopViewController.showDonationDismissUI()` (whose `refresh()` re-render is
-    /// replaced by the `onHide` callback).
+    /// Presents the "please don't dismiss" action sheet.
     func showDonationDismissUI(onHide: @escaping () -> Void) {
-        let alertController = UIAlertController(
-            title: Strings.donationsDismissAlertTitle,
-            message: Strings.donationsDismissAlertMessage,
-            preferredStyle: .actionSheet
-        )
-
-        alertController.addAction(
-            title: Strings.donationsDismissAlertButtonDismiss,
-            style: .destructive
-        ) { [weak self] _ in
-            self?.application.donationsManager.dismissDonationsRequests()
-            onHide()
-        }
-
-        alertController.addAction(
-            title: Strings.donationsDismissAlertButtonRemindLater,
-            style: .default
-        ) { [weak self] _ in
-            self?.application.donationsManager.remindUserLater()
-            onHide()
-        }
-
-        alertController.addAction(title: Strings.cancel, style: .cancel, handler: nil)
-
-        // An unanchored action sheet is a hard crash on iPad. The donation card has no
-        // stable UIKit source view (it lives inside the SwiftUI list), so anchor to the
-        // middle of the page, as `showWalkingDirections()` does.
-        if let popover = alertController.popoverPresentationController {
-            popover.sourceView = view
-            popover.sourceRect = CGRect(origin: view.center, size: .zero)
-        }
-
-        present(alertController, animated: true)
-    }
-}
-
-// MARK: - BookmarkEditorDelegate
-
-extension StopPageViewController {
-    func bookmarkEditorCancelled(_ viewController: UIViewController) {
-        viewController.dismiss(animated: true, completion: nil)
-    }
-
-    func bookmarkEditor(_ viewController: UIViewController, editedBookmark bookmark: Bookmark, isNewBookmark: Bool) {
-        viewController.dismiss(animated: true) {
-            let msg = isNewBookmark
-                ? OBALoc("stops_controller.created_new_bookmark", value: "Added Bookmark", comment: "Message displayed when a new bookmark is created.")
-                : OBALoc("stops_controller.updated_bookmark", value: "Updated Bookmark", comment: "Message displayed an existing bookmark is updated.")
-            ProgressHUD.showSuccessAndDismiss(message: msg, dismissAfter: 1.0)
-        }
-    }
-}
-
-// MARK: - StopPreferencesViewDelegate
-
-extension StopPageViewController {
-    func stopPreferences(stopID: StopID, updated stopPreferences: StopPreferences) {
-        viewModel.updateStopPreferences(stopPreferences)
+        actionPresenter.showDonationDismiss(onHide: onHide)
     }
 }
