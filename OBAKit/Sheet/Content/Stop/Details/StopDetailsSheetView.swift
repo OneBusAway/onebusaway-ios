@@ -300,9 +300,9 @@ struct StopDetailsSheetView: View {
 
     private func track(scrollOffset offset: CGFloat) {
         scrollOffset = offset
-        titleProgress = StopSheetHeaderCollapse.progress(
+        titleProgress = StopSheetTitleFade.progress(
             scrollOffset: offset,
-            collapsibleHeight: Self.titleFadeDistance
+            fadeDistance: Self.titleFadeDistance
         )
     }
 
