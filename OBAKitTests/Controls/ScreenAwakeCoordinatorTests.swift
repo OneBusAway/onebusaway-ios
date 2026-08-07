@@ -27,8 +27,27 @@ import Testing
 @Suite(.serialized)
 struct ScreenAwakeCoordinatorTests {
 
-    private func reset() {
-        ScreenAwakeCoordinator.shared.resetForTesting()
+    private func reset(failsafeInterval: TimeInterval = ScreenAwakeCoordinator.defaultFailsafeInterval) {
+        ScreenAwakeCoordinator.shared.resetForTesting(failsafeInterval: failsafeInterval)
+    }
+
+    /// How long the failsafe tests let a millisecond-scale timer run before
+    /// giving up. Generous relative to the intervals they set, so a loaded CI
+    /// machine cannot fail them, and still far short of a hang.
+    private static let expiryTimeout: Duration = .seconds(2)
+
+    /// Polls `condition` until it holds or the deadline passes, reporting which.
+    ///
+    /// The failsafe fires from a real `Timer` on the main run loop, so a test
+    /// waiting on it has to suspend rather than block — blocking the main actor
+    /// would stop the very run loop the timer needs.
+    private func waitUntil(_ condition: () -> Bool) async -> Bool {
+        let deadline = ContinuousClock.now + Self.expiryTimeout
+        while ContinuousClock.now < deadline {
+            if condition() { return true }
+            try? await Task.sleep(for: .milliseconds(10))
+        }
+        return condition()
     }
 
     @Test func `One lease disables the timer and returning it restores`() {
@@ -85,10 +104,111 @@ struct ScreenAwakeCoordinatorTests {
         reset()
     }
 
-    /// Without it an abandoned screen holds the display awake until the battery
-    /// runs down.
-    @Test func `The failsafe caps a hold at ten minutes`() {
-        #expect(ScreenAwakeCoordinator.failsafeInterval == 600)
+    // MARK: - Failsafe
+    //
+    // Without it an abandoned screen holds the display awake until the battery
+    // runs down. The interval is an instance property so these can drive a real
+    // expiry in milliseconds; asserting the 600 alone restates the declaration
+    // and would keep passing with `armFailsafe()` deleted outright.
+
+    @Test func `The shipped coordinator caps a hold at ten minutes`() {
+        reset()
+        #expect(ScreenAwakeCoordinator.defaultFailsafeInterval == 600)
+        // Also that a test's short interval is not left behind on the singleton.
+        #expect(ScreenAwakeCoordinator.shared.failsafeInterval == 600)
+    }
+
+    @Test func `Taking a lease arms the failsafe and returning the last one cancels it`() {
+        reset()
+        let screen = NSObject()
+        let owner = ObjectIdentifier(screen)
+
+        ScreenAwakeCoordinator.shared.acquire(owner: owner)
+        #expect(ScreenAwakeCoordinator.shared.armedFailsafe?.isValid == true)
+
+        ScreenAwakeCoordinator.shared.release(owner: owner)
+        #expect(ScreenAwakeCoordinator.shared.armedFailsafe == nil)
+
+        reset()
+    }
+
+    /// The failsafe is re-armed on every acquire. Two live screens must leave
+    /// one timer running, not two racing to expire.
+    @Test func `Arming replaces the previous failsafe rather than stacking`() {
+        reset()
+        let first = NSObject()
+        let second = NSObject()
+
+        ScreenAwakeCoordinator.shared.acquire(owner: ObjectIdentifier(first))
+        let firstTimer = ScreenAwakeCoordinator.shared.armedFailsafe
+
+        ScreenAwakeCoordinator.shared.acquire(owner: ObjectIdentifier(second))
+        let secondTimer = ScreenAwakeCoordinator.shared.armedFailsafe
+
+        #expect(secondTimer !== firstTimer)
+        #expect(firstTimer?.isValid == false)
+        #expect(secondTimer?.isValid == true)
+
+        reset()
+    }
+
+    /// The behaviour the cap exists for: a lease nobody returns must not hold
+    /// the display awake forever.
+    @Test func `An expired failsafe lets the display sleep under an outstanding lease`() async {
+        reset(failsafeInterval: 0.1)
+        let screen = NSObject()
+        let owner = ObjectIdentifier(screen)
+
+        ScreenAwakeCoordinator.shared.acquire(owner: owner)
+        #expect(UIApplication.shared.isIdleTimerDisabled)
+
+        let slept = await waitUntil { !UIApplication.shared.isIdleTimerDisabled }
+        #expect(slept)
+        // The lease is deliberately left counted: it is still real, so the
+        // eventual release has to stay balanced rather than read as unbalanced.
+        #expect(ScreenAwakeCoordinator.shared.activeLeases == 1)
+        #expect(ScreenAwakeCoordinator.shared.armedFailsafe == nil)
+
+        ScreenAwakeCoordinator.shared.release(owner: owner)
+        #expect(ScreenAwakeCoordinator.shared.activeLeases == 0)
+
+        reset()
+    }
+
+    /// Expiry caps the hold; it does not put the coordinator out of service.
+    @Test func `A lease taken after expiry disables the timer and re-arms`() async {
+        reset(failsafeInterval: 0.1)
+        let abandoned = NSObject()
+        let arriving = NSObject()
+
+        ScreenAwakeCoordinator.shared.acquire(owner: ObjectIdentifier(abandoned))
+        let slept = await waitUntil { !UIApplication.shared.isIdleTimerDisabled }
+        #expect(slept)
+
+        // A new screen appears while the leaked lease is still counted.
+        ScreenAwakeCoordinator.shared.acquire(owner: ObjectIdentifier(arriving))
+        #expect(UIApplication.shared.isIdleTimerDisabled)
+        #expect(ScreenAwakeCoordinator.shared.armedFailsafe?.isValid == true)
+        #expect(ScreenAwakeCoordinator.shared.activeLeases == 2)
+
+        reset()
+    }
+
+    /// `expireFailsafe`'s `leaseCount > 0` guard. Releasing the last lease
+    /// already cancels the timer, so this is only reachable directly — but
+    /// without the guard it would write `stateBeforeFirstLease` over a hold the
+    /// coordinator does not own.
+    @Test func `Firing the failsafe with no leases leaves an outside hold alone`() {
+        reset()
+        // Something outside the coordinator is holding the timer off.
+        UIApplication.shared.isIdleTimerDisabled = true
+
+        ScreenAwakeCoordinator.shared.expireFailsafeForTesting()
+
+        #expect(UIApplication.shared.isIdleTimerDisabled)
+        #expect(ScreenAwakeCoordinator.shared.activeLeases == 0)
+
+        reset()
     }
 
     // MARK: - Idempotence

@@ -35,7 +35,18 @@ final class ScreenAwakeCoordinator {
 
     /// The idle timer is a global the app can only leave switched off by
     /// mistake, so cap how long a mistake can last.
-    static let failsafeInterval: TimeInterval = 600
+    static let defaultFailsafeInterval: TimeInterval = 600
+
+    /// How long a hold may last before `expireFailsafe()` lets the display sleep
+    /// again.
+    ///
+    /// An instance property rather than a constant purely so the tests can drive
+    /// a real expiry in milliseconds instead of ten minutes — asserting the
+    /// number alone restates the declaration and would keep passing with
+    /// `armFailsafe()` deleted. Production never writes it, and
+    /// `resetForTesting` puts it back, so a test that sets a short one cannot
+    /// leak it into another suite.
+    private(set) var failsafeInterval: TimeInterval = ScreenAwakeCoordinator.defaultFailsafeInterval
 
     private var leaseCount = 0
     /// What the idle timer was before we first touched it, so releasing the
@@ -55,19 +66,37 @@ final class ScreenAwakeCoordinator {
     /// driving a real view hierarchy.
     var activeLeases: Int { leaseCount }
 
-    /// Test seam: drops every lease and forgets every owner.
+    /// Test seam: the failsafe currently armed, if any. Lets a test assert that
+    /// arming and cancelling actually happen, rather than inferring it from a
+    /// timer it would have to wait ten minutes for.
+    var armedFailsafe: Timer? { failsafe }
+
+    /// Test seam: drops every lease, forgets every owner, and restores the
+    /// shipped `failsafeInterval` unless one is given.
     ///
-    /// Both halves matter. Releasing until `leaseCount` reaches zero leaves
+    /// Every part matters. Releasing until `leaseCount` reaches zero leaves
     /// `owners` populated, and `ObjectIdentifier` is only an address — the next
     /// test's owner object can land on a freed one and have its `acquire` seen
     /// as a repeat and silently dropped. The singleton outlives each test, so a
-    /// test that fails partway through has to leave nothing behind.
-    func resetForTesting() {
+    /// test that fails partway through has to leave nothing behind — including
+    /// a millisecond `failsafeInterval`, which would otherwise expire under a
+    /// suite running concurrently with this one.
+    func resetForTesting(failsafeInterval: TimeInterval = ScreenAwakeCoordinator.defaultFailsafeInterval) {
         owners.removeAll()
         leaseCount = 0
         cancelFailsafe()
         stateBeforeFirstLease = false
+        self.failsafeInterval = failsafeInterval
         UIApplication.shared.isIdleTimerDisabled = false
+    }
+
+    /// Test seam: fires the failsafe now, without waiting for its timer.
+    ///
+    /// Only for the no-lease case: nothing cancels the timer between the last
+    /// release and its own `invalidate()`, so `expireFailsafe`'s guard is
+    /// unreachable from the outside and there is no scheduling to wait on.
+    func expireFailsafeForTesting() {
+        expireFailsafe()
     }
 
     /// Takes a lease on behalf of `owner`, at most one at a time.
@@ -120,9 +149,13 @@ final class ScreenAwakeCoordinator {
 
     private func armFailsafe() {
         cancelFailsafe()
-        failsafe = Timer.scheduledTimer(withTimeInterval: Self.failsafeInterval, repeats: false) { _ in
+        // `self`, not `Self.shared`: the two are the same object today, but a
+        // timer that reaches past its own instance is a trap for whoever makes
+        // this non-singleton. The retain is bounded — the timer does not repeat,
+        // and `cancelFailsafe()` invalidates it.
+        failsafe = Timer.scheduledTimer(withTimeInterval: failsafeInterval, repeats: false) { _ in
             Task { @MainActor in
-                Self.shared.expireFailsafe()
+                self.expireFailsafe()
             }
         }
     }
@@ -142,7 +175,7 @@ final class ScreenAwakeCoordinator {
         // Error, not info: reaching here means a lease was never returned, which
         // is a bug by definition — and one whose only symptom, the display
         // sleeping mid-trip, is otherwise invisible in production diagnostics.
-        Logger.error("ScreenAwakeCoordinator: failsafe expired after \(Int(Self.failsafeInterval))s with \(leaseCount) lease(s) outstanding; letting the screen sleep.")
+        Logger.error("ScreenAwakeCoordinator: failsafe expired after \(Int(failsafeInterval))s with \(leaseCount) lease(s) outstanding; letting the screen sleep.")
         UIApplication.shared.isIdleTimerDisabled = stateBeforeFirstLease
     }
 }
@@ -205,7 +238,7 @@ private struct KeepsScreenAwakeModifier: ViewModifier {
 extension View {
     /// Keeps the display awake while this view is on screen, yielding to any
     /// other screen that wants the same thing and capping the hold at
-    /// `ScreenAwakeCoordinator.failsafeInterval`.
+    /// `ScreenAwakeCoordinator.defaultFailsafeInterval`.
     func keepsScreenAwake() -> some View {
         modifier(KeepsScreenAwakeModifier())
     }
