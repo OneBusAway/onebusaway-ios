@@ -14,6 +14,11 @@ import OBAKitCore
 /// tested without inspecting a view — the precedent set by
 /// `SheetDetentConfiguration.shouldDisableBackgroundForFullScreen`.
 nonisolated struct StopPageActionRowState {
+    /// Whether the stop itself has loaded. Every action but Filter needs the
+    /// `Stop` to do anything at all, and when the first fetch fails they would
+    /// otherwise render enabled and silently do nothing — indistinguishable, to
+    /// the rider, from the app being broken.
+    let hasStop: Bool
     let routeCount: Int
     let hasHiddenRoutes: Bool
     let isListFiltered: Bool
@@ -21,6 +26,11 @@ nonisolated struct StopPageActionRowState {
 
     /// A single-route stop has nothing to filter down to.
     var canFilter: Bool { routeCount > 1 }
+
+    /// Gates Bookmark, Nearby Stops, Walking Directions and Report a Problem,
+    /// which all resolve against the loaded `Stop`. Schedule is not among them:
+    /// it goes through `stopID`, which is known before the first fetch returns.
+    var canActOnStop: Bool { hasStop }
 
     /// Saved hidden routes only count while the filter is actually applied.
     var isFilterOn: Bool { hasHiddenRoutes && isListFiltered }
@@ -92,7 +102,7 @@ struct StopPageActionRow: View {
     private var scheduleItem: some View {
         item(title: Strings.schedules) {
             Button(action: onSchedule) { glyph("calendar") }
-                .liquidGlassButtonStyle(borderShape: .circle, fallbackShape: Circle())
+                .glassCircleSurface()
                 .accessibilityLabel(Strings.schedules)
         }
     }
@@ -100,7 +110,7 @@ struct StopPageActionRow: View {
     private var filterItem: some View {
         item(title: Strings.filter, isEnabled: state.canFilter) {
             Menu { filterMenu } label: { glyph(state.filterSystemImage) }
-                .liquidGlassButtonStyle(borderShape: .circle, fallbackShape: Circle())
+                .glassCircleSurface()
                 .disabled(!state.canFilter)
                 .accessibilityLabel(Strings.filter)
                 .accessibilityValue(state.isFilterOn
@@ -110,17 +120,21 @@ struct StopPageActionRow: View {
     }
 
     private var bookmarkItem: some View {
-        item(title: Self.bookmarkTitle) {
+        item(title: Self.bookmarkTitle, isEnabled: state.canActOnStop) {
             Button(action: onBookmark) { glyph("bookmark") }
-                .liquidGlassButtonStyle(borderShape: .circle, fallbackShape: Circle())
+                .glassCircleSurface()
+                .disabled(!state.canActOnStop)
                 .accessibilityLabel(Self.bookmarkTitle)
         }
     }
 
+    /// More stays tappable even before the stop loads: Service Alerts already
+    /// carries its own gate, and a menu whose every item is disabled still tells
+    /// the rider more than a button that refuses to open.
     private var moreItem: some View {
         item(title: Strings.more) {
             Menu { moreMenu } label: { glyph("ellipsis") }
-                .liquidGlassButtonStyle(borderShape: .circle, fallbackShape: Circle())
+                .glassCircleSurface()
                 .accessibilityLabel(Strings.more)
         }
     }
@@ -167,6 +181,8 @@ struct StopPageActionRow: View {
                     systemImage: "location"
                 )
             }
+            .disabled(!state.canActOnStop)
+
             Button(action: onWalkingDirections) {
                 Label(
                     OBALoc(
@@ -177,6 +193,7 @@ struct StopPageActionRow: View {
                     systemImage: "figure.walk"
                 )
             }
+            .disabled(!state.canActOnStop)
         }
 
         Section {
@@ -190,6 +207,7 @@ struct StopPageActionRow: View {
                     systemImage: "exclamationmark.bubble"
                 )
             }
+            .disabled(!state.canActOnStop)
         }
     }
 
@@ -226,29 +244,37 @@ struct StopPageActionRow: View {
                 // the control's own disabled dimming.
                 .foregroundStyle(isEnabled ? AnyShapeStyle(.primary) : AnyShapeStyle(.tertiary))
         }
-        // `.tint`, not `.foregroundStyle`: the glass button style colours its
-        // content from the tint, so the row reads as neutral chrome rather than
-        // four tinted calls to action — and disabled dimming still applies.
-        .tint(.primary)
         .frame(maxWidth: scrollsHorizontally ? nil : .infinity)
         .frame(minWidth: scrollsHorizontally ? 84 : nil)
         .padding(.horizontal, 2)
     }
 
-    /// The glyph a glass control wraps. Sized so the control lands on a 44pt
-    /// tap target.
+    /// The glyph a glass control wraps. `glassCircleLabel` draws it at
+    /// `glyphSize` while claiming a 44pt hit region, which the columns have
+    /// room for at either layout.
     private func glyph(_ systemImage: String) -> some View {
         Image(systemName: systemImage)
             .font(.system(size: 18, weight: .semibold))
-            .frame(width: 34, height: 34)
-            .contentShape(Circle())
+            .glassCircleLabel(diameter: Self.glyphSize)
             .accessibilityHidden(true)
     }
+
+    private static let glyphSize: CGFloat = 34
 }
 
 #Preview("Action row") {
     StopPageActionRow(
-        state: StopPageActionRowState(routeCount: 4, hasHiddenRoutes: true, isListFiltered: true, hasServiceAlerts: true),
+        state: StopPageActionRowState(hasStop: true, routeCount: 4, hasHiddenRoutes: true, isListFiltered: true, hasServiceAlerts: true),
+        onSchedule: {}, onSetListFiltered: { _ in }, onBookmark: {},
+        onServiceAlerts: {}, onNearbyStops: {}, onWalkingDirections: {}, onReportProblem: {}
+    )
+}
+
+/// The first fetch failed: everything that needs the `Stop` dims, Schedule and
+/// More stay live.
+#Preview("Action row — stop not loaded") {
+    StopPageActionRow(
+        state: StopPageActionRowState(hasStop: false, routeCount: 0, hasHiddenRoutes: false, isListFiltered: false, hasServiceAlerts: false),
         onSchedule: {}, onSetListFiltered: { _ in }, onBookmark: {},
         onServiceAlerts: {}, onNearbyStops: {}, onWalkingDirections: {}, onReportProblem: {}
     )

@@ -79,16 +79,21 @@ struct StopDetailsSheetView: View {
     /// visibly soft map card.
     @Environment(\.displayScale) private var displayScale
 
-    /// `@State`, not a plain `let`, for the same reason `viewModel` is a
-    /// `@StateObject`: `MapPanelRootView.body` re-evaluates on every map camera
-    /// update, annotation change and detent write-back, and each pass rebuilds
-    /// this view from the factory. Every modal the presenter opens holds it
-    /// **weakly** (`StopPreferencesWrappedView`, `AddBookmarkViewController`,
+    /// `@StateObject`, not a plain `let`, for the same reason `viewModel` is
+    /// one: `MapPanelRootView.body` re-evaluates on every map camera update,
+    /// annotation change and detent write-back, and each pass rebuilds this view
+    /// from the factory. Every modal the presenter opens holds it **weakly**
+    /// (`StopPreferencesWrappedView`, `AddBookmarkViewController`,
     /// `EditBookmarkViewController`, `AlarmBuilder`), so a presenter replaced
     /// mid-flow takes Save on the route filter, Cancel on the bookmark editor
-    /// and the alarm confirmation down with it. `@State` keeps the first one for
-    /// the life of the sheet.
-    @State private var presenter: StopPageActionPresenter
+    /// and the alarm confirmation down with it. This keeps the first one for the
+    /// life of the sheet.
+    ///
+    /// `@StateObject` rather than `@State` because only its `wrappedValue` is an
+    /// autoclosure. `State(wrappedValue:)` takes a plain value, so the factory
+    /// ran eagerly in `init` on every one of those parent passes and the result
+    /// was thrown away — correct, but wasted allocation on a hot path.
+    @StateObject private var presenter: StopPageActionPresenter
     private let feedback: DataLoadFeedbackGenerator
     private let formatters: Formatters
     private let userDefaults: UserDefaults
@@ -124,14 +129,14 @@ struct StopDetailsSheetView: View {
     init(
         stopID: StopID,
         viewModel: @autoclosure @escaping () -> StopViewModel,
-        presenter: @autoclosure () -> StopPageActionPresenter,
+        presenter: @autoclosure @escaping () -> StopPageActionPresenter,
         feedback: DataLoadFeedbackGenerator,
         formatters: Formatters,
         userDefaults: UserDefaults
     ) {
         self.stopID = stopID
         _viewModel = StateObject(wrappedValue: viewModel())
-        _presenter = State(wrappedValue: presenter())
+        _presenter = StateObject(wrappedValue: presenter())
         self.feedback = feedback
         self.formatters = formatters
         self.userDefaults = userDefaults
@@ -435,6 +440,7 @@ struct StopDetailsSheetView: View {
     private func actionRowOverlay(navigation: StopPageNavigationHandler) -> some View {
         StopPageActionRow(
             state: StopPageActionRowState(
+                hasStop: viewModel.stop != nil,
                 routeCount: viewModel.stop?.routes.count ?? 0,
                 hasHiddenRoutes: viewModel.stopPreferences.hasHiddenRoutes,
                 isListFiltered: viewModel.isListFiltered,

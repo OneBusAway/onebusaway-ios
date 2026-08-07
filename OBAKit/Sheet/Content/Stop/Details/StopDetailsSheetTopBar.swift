@@ -32,9 +32,10 @@ struct StopDetailsSheetTopBar: View {
     let onRefresh: () -> Void
     let onClose: () -> Void
 
-    /// Deliberately smaller than the action row's 44pt circles: this bar is
+    /// Deliberately smaller than the action row's 34pt circles: this bar is
     /// chrome, not a row of primary actions. The two share everything else —
-    /// glass surface and neutral palette — so they still read as one system.
+    /// glass surface, neutral palette and a 44pt hit region — so they still
+    /// read as one system without either being hard to hit.
     private static let buttonSize: CGFloat = 32
 
     // MARK: - Body
@@ -65,8 +66,12 @@ struct StopDetailsSheetTopBar: View {
     }
 
     /// Both controls sit together on the trailing edge.
+    ///
+    /// The spacing is the gap the 44pt hit regions need, not a visual choice:
+    /// each 32pt circle claims 6pt beyond its own edge, so anything under 12
+    /// would have Close quietly eating the right-hand side of Refresh.
     private var controls: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 12) {
             refreshButton
             closeButton
         }
@@ -87,15 +92,11 @@ struct StopDetailsSheetTopBar: View {
                 }
             }
             .foregroundStyle(.primary)
-            .frame(width: Self.buttonSize, height: Self.buttonSize)
-            .contentShape(Circle())
+            .glassCircleLabel(diameter: Self.buttonSize)
         }
         // The same interactive Liquid Glass surface the action row's circles
         // use, via the shared extension.
-        .liquidGlassButtonStyle(borderShape: .circle, fallbackShape: Circle())
-        // The glass style colours its content from the environment accent; the
-        // sheet's chrome is deliberately neutral.
-        .tint(.primary)
+        .glassCircleSurface()
         .disabled(isRefreshing)
         .accessibilityLabel(Strings.refresh)
         .accessibilityValue(statusText)
@@ -106,11 +107,9 @@ struct StopDetailsSheetTopBar: View {
             Image(systemName: "xmark")
                 .font(.body.weight(.semibold))
                 .foregroundStyle(.primary)
-                .frame(width: Self.buttonSize, height: Self.buttonSize)
-                .contentShape(Circle())
+                .glassCircleLabel(diameter: Self.buttonSize)
         }
-        .liquidGlassButtonStyle(borderShape: .circle, fallbackShape: Circle())
-        .tint(.primary)
+        .glassCircleSurface()
         .accessibilityLabel(Strings.close)
     }
 }

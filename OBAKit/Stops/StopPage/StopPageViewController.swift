@@ -62,8 +62,6 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
         actionPresenter.showTripPage(for: arrivalDeparture, originTitle: viewModel.stop?.name)
     }
 
-    public var idleTimerFailsafe: Timer?
-
     private lazy var dataLoadFeedbackGenerator = DataLoadFeedbackGenerator(application: application)
 
     /// Gates the one-shot success haptic to the first arrivals load, matching

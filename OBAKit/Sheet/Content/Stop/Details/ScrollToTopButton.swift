@@ -30,13 +30,9 @@ struct ScrollToTopButton: View {
             Image(systemName: "chevron.up")
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundStyle(.primary)
-                .frame(width: Self.buttonSize, height: Self.buttonSize)
-                .contentShape(Circle())
+                .glassCircleLabel(diameter: Self.buttonSize)
         }
-        .liquidGlassButtonStyle(borderShape: .circle, fallbackShape: Circle())
-        // The glass style colours its content from the environment accent; the
-        // sheet's chrome is deliberately neutral.
-        .tint(.primary)
+        .glassCircleSurface()
         .accessibilityLabel(OBALoc(
             "stop_page.scroll_to_top",
             value: "Scroll to top",

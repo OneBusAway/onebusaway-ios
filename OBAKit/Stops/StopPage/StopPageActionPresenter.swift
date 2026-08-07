@@ -22,9 +22,17 @@ import OBAKitCore
 /// `AppSheetViewFactory`, which walks to the topmost presented controller so
 /// modals land above the sheet stack instead of underneath it.
 @MainActor
-final class StopPageActionPresenter: NSObject {
+/// `ObservableObject` carries no published state — it is what lets
+/// `StopDetailsSheetView` hold this in a `@StateObject`, whose `wrappedValue`
+/// is an autoclosure and so only ever built once. `@State(wrappedValue:)` takes
+/// a plain value, so the parent's every body pass allocated a presenter (and
+/// every modal's weak reference to it) only to discard it.
+final class StopPageActionPresenter: NSObject, ObservableObject {
 
-    private let application: Application
+    /// Not `private`: `AppSheetViewFactoryTests` asserts the factory forwards
+    /// its own `Application` here rather than building a second one, the same
+    /// handoff it checks on `MoreSheetHost`.
+    let application: Application
     private let presentingController: () -> UIViewController?
 
     init(application: Application, presentingController: @escaping () -> UIViewController?) {
@@ -730,6 +738,14 @@ extension StopPageActionPresenter: AlarmBuilderDelegate {
         let deadline = ContinuousClock.now + Self.bulletinDismissalTimeout
         while alarmBuilder.bulletinManager.isShowingBulletin, ContinuousClock.now < deadline {
             try? await Task.sleep(for: Self.bulletinDismissalPollInterval)
+        }
+
+        // Falling through on the deadline is deliberate — better a stacked alert
+        // than a swallowed one — but the two outcomes are indistinguishable on
+        // screen, and only this one leaves the rider looking at an error alert
+        // over a bulletin that never went away.
+        if alarmBuilder.bulletinManager.isShowingBulletin {
+            Logger.error("StopPageActionPresenter: alarm bulletin still showing after \(Self.bulletinDismissalTimeout); reporting over it.")
         }
     }
 }

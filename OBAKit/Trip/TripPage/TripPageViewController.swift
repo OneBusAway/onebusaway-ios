@@ -39,8 +39,6 @@ final class TripPageViewController: UIHostingController<TripPageView>,
     private var alarmBuilderDeparture: ArrivalDeparture?
     private var isTrackingLiveActivity = false
 
-    public var idleTimerFailsafe: Timer?
-
     let providesOwnSheetChrome = true
 
     /// The page is grouped-gray, not `.systemBackground`, so the sheet has to paint the

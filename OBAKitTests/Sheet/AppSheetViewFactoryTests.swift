@@ -59,4 +59,26 @@ final class AppSheetViewFactoryTests: OBATestCase {
 
         #expect(view.stopID == "1_10914")
     }
+
+    /// The stop sheet takes its dependencies as factory closures rather than as
+    /// built objects, because SwiftUI decides when they are instantiated. That
+    /// moves the handoff `More view returns more sheet host forwarding
+    /// application` checks by reference into the closures, so this asserts it
+    /// there instead: both must resolve against the factory's own `Application`,
+    /// not a second one.
+    @Test @MainActor
+    func `Stop detail view's factories resolve against the factory's application`() {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+
+        let factory = AppSheetViewFactory(application: application, onPresentTrip: { _ in }, presentingController: { nil })
+        let view = factory.stopDetailView(stopID: "1_10914")
+
+        #expect(view.makePresenter().application === application)
+        #expect(view.makeViewModel().stopID == "1_10914")
+        // The remaining dependencies are handed over already built, so they can
+        // be compared directly.
+        #expect(view.formatters === application.formatters)
+        #expect(view.userDefaults === application.userDefaults)
+    }
 }

@@ -17,10 +17,6 @@ protocol AppContext where Self: UIViewController {
 /// Describes a class that can disable and reenable the UIApplication idle timer.
 @MainActor
 public protocol Idleable: NSObjectProtocol {
-    /// Unused. `ScreenAwakeCoordinator` owns the failsafe now, so that one clock
-    /// caps every hold on the idle timer; nothing writes this.
-    var idleTimerFailsafe: Timer? { get set }
-
     /// The OBA application object, which is used to retrieve the `UIApplication`.
     var application: Application { get }
 
