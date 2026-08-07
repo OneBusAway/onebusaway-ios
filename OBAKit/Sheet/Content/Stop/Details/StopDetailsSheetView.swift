@@ -71,13 +71,6 @@ struct StopDetailsSheetView: View {
 
     @StateObject private var viewModel: StopViewModel
     @EnvironmentObject private var coordinator: SheetCoordinator<AppSheetRoute>
-    /// Feeds `snapshotTraits`. `UITraitCollection.current` is only guaranteed to
-    /// be the view's own traits inside `traitCollectionDidChange`,
-    /// `layoutSubviews` or `draw(_:)`; the header's snapshot is loaded from a
-    /// `.task`, outside any UIKit update pass, where reading it can hand
-    /// `MapSnapshotter` a `displayScale` of 1.0 on a 3x device and render a
-    /// visibly soft map card.
-    @Environment(\.displayScale) private var displayScale
 
     /// `@StateObject`, not a plain `let`, for the same reason `viewModel` is
     /// one: `MapPanelRootView.body` re-evaluates on every map camera update,
@@ -94,6 +87,19 @@ struct StopDetailsSheetView: View {
     /// ran eagerly in `init` on every one of those parent passes and the result
     /// was thrown away — correct, but wasted allocation on a hot path.
     @StateObject private var presenter: StopPageActionPresenter
+
+    /// The header's route chips decorate themselves from map focus — route
+    /// colour, live-vehicle dot, tap-to-highlight. That channel is wired only
+    /// through the UIKit `MapViewController`; this sheet sits over the SwiftUI
+    /// map panel, which has none. An unwired instance is a supported mode: every
+    /// route reports unfocusable, so the chips render plain, carry no button
+    /// trait, and their tap gesture is a no-op. See `StopMapFocus`.
+    ///
+    /// `@StateObject` so it is one instance for the life of the sheet rather
+    /// than a fresh object per body pass. It never publishes, so observing it
+    /// costs nothing.
+    @StateObject private var mapFocus = StopMapFocus()
+
     private let feedback: DataLoadFeedbackGenerator
     private let formatters: Formatters
     private let userDefaults: UserDefaults
@@ -362,24 +368,32 @@ struct StopDetailsSheetView: View {
     /// How long the refresh spinner stays up at minimum.
     private static let minimumSpinnerDuration: Duration = .milliseconds(600)
 
-    /// The map card. Scrolls with the list — there is no sticky chrome below the
-    /// top bar for it to collide with.
+    /// The stop's identity block. Scrolls with the list — there is no sticky
+    /// chrome below the top bar for it to collide with.
+    ///
+    /// The map-free header, not `StopPageHeaderView`'s dark map card: this sheet
+    /// sits over a live map, so a map thumbnail inside it spends the sheet's
+    /// scarce height showing the rider something they can see by looking up.
+    /// Close is suppressed because the pinned top bar carries one.
     @ViewBuilder
     private func headerRows(showsLoadingState: Bool, navigation: StopPageNavigationHandler) -> some View {
         Section {
             Group {
                 if let stop = viewModel.stop {
-                    StopPageHeaderView(
+                    StopPageSheetHeaderView(
                         stop: stop,
                         walkTime: viewModel.walkTime,
-                        statusText: viewModel.statusText,
-                        snapshotLoader: { size in
-                            await presenter.loadSnapshot(stop: stop, size: size, traitCollection: snapshotTraits)
-                        },
-                        onWalkingDirections: navigation.showWalkingDirections
+                        onWalkingDirections: navigation.showWalkingDirections,
+                        onClose: { coordinator.pop() },
+                        showsCloseButton: false,
+                        mapFocus: mapFocus
                     )
                 } else if showsLoadingState {
-                    StopPageHeaderPlaceholderView()
+                    StopPageSheetHeaderPlaceholderView(
+                        showsSkeleton: true,
+                        onClose: { coordinator.pop() },
+                        showsCloseButton: false
+                    )
                 }
             }
             .listRowInsets(EdgeInsets())
@@ -391,19 +405,6 @@ struct StopDetailsSheetView: View {
         // existing header rather than a zero-height sentinel row, which would pick
         // up the List's minimum row height and leave a visible gap.
         .id(Self.topRowID)
-    }
-
-    /// The traits the header's map snapshot renders at.
-    ///
-    /// `displayScale` is the one that matters: `MapSnapshotter` hands it to
-    /// `MKMapSnapshotter.Options` and to the stop-icon factory, so getting it
-    /// wrong is the difference between a crisp card and a blurry one. The
-    /// interface style is not derived here — `loadSnapshot` forces dark, because
-    /// the header is always-dark by design.
-    private var snapshotTraits: UITraitCollection {
-        UITraitCollection { traits in
-            traits.displayScale = displayScale
-        }
     }
 
     private func actionRow(navigation: StopPageNavigationHandler) -> some View {
