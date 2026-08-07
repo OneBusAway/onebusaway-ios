@@ -60,41 +60,48 @@ struct StopPageActionRow: View {
     let onWalkingDirections: () -> Void
     let onReportProblem: () -> Void
 
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-
-    /// At accessibility sizes four icon-and-label items can't share one line
-    /// legibly, so the row scrolls instead of shrinking the labels into
-    /// illegibility — the accommodation `StopPageToolbar` makes.
-    private var scrollsHorizontally: Bool { dynamicTypeSize.isAccessibilitySize }
-
+    /// No horizontal scrolling accommodation, unlike `StopPageToolbar`: that
+    /// exists because captions grow with Dynamic Type until four of them stop
+    /// fitting on one line. These glyphs are a fixed 34pt on a fixed 44pt hit
+    /// region and do not scale, so four always fit on the narrowest device.
     var body: some View {
-        Group {
-            if scrollsHorizontally {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(alignment: .top, spacing: 8) { items }
-                        .padding(.horizontal, 12)
-                }
-            } else {
-                HStack(alignment: .top, spacing: 0) { items }
-            }
-        }
-        .padding(.vertical, 10)
-        // Clipped before the surface so the accessibility-size horizontal
-        // scroll cannot run out past the pill's rounded ends.
-        .clipShape(Capsule())
-        .regularGlassEffectIfAvailable(in: Capsule())
-        // Outside the surface, so this is the gap between the capsule and the
-        // sheet's edges rather than internal padding.
-        .padding(.horizontal, 12)
-        .padding(.bottom, 8)
+        HStack(spacing: 0) { items }
+            .padding(.vertical, Self.verticalPadding)
+            .regularGlassEffectIfAvailable(in: Capsule())
+            // Outside the surface, so this is the gap between the capsule and
+            // the sheet's edges rather than internal padding.
+            .padding(.horizontal, 12)
+            .padding(.bottom, Self.bottomInset)
     }
 
-    /// Each column is a circular glass control with its caption underneath.
+    // MARK: - Metrics
+
+    private static let verticalPadding: CGFloat = 8
+
+    /// Gap between the capsule and the bottom of the sheet. Rides on top of the
+    /// device's own bottom safe area, which the enclosing `safeAreaInset`
+    /// already accounts for — this is breathing room above the home indicator,
+    /// not clearance of it.
+    private static let bottomInset: CGFloat = 20
+
+    /// Everything this view occupies at the bottom of the sheet, including the
+    /// gap beneath it.
     ///
-    /// The caption deliberately sits OUTSIDE the button. `liquidGlassButtonStyle`
-    /// turns the whole button into one glass surface, so a button wrapping both
-    /// the glyph and the text would render as an oval blob around the pair
-    /// instead of a circle around the glyph.
+    /// Published because the scroll-to-top button has to clear it and cannot
+    /// discover it: that button is an `.overlay(alignment: .bottomTrailing)`
+    /// applied *after* the `safeAreaInset` this view is mounted in, so it aligns
+    /// to the sheet's full frame and would otherwise land directly on top of the
+    /// capsule. A constant rather than a measured height on purpose — nothing
+    /// here depends on scroll position, and measuring it back into a position is
+    /// how this screen once fed geometry into itself and pegged the main thread.
+    static var occupiedHeight: CGFloat { glyphSize + verticalPadding * 2 + bottomInset }
+
+    /// Four circular glass controls, evenly spread.
+    ///
+    /// Uncaptioned by design: the capsule floats over the departures it acts on,
+    /// so every point of height it takes is a departure the rider cannot see.
+    /// Each control names itself to VoiceOver through `.accessibilityLabel`, so
+    /// dropping the visible text costs nothing to a screen reader.
     @ViewBuilder
     private var items: some View {
         scheduleItem
@@ -106,7 +113,7 @@ struct StopPageActionRow: View {
     // MARK: - Items
 
     private var scheduleItem: some View {
-        item(title: Strings.schedules) {
+        item {
             Button(action: onSchedule) { glyph("calendar") }
                 .glassCircleSurface()
                 .accessibilityLabel(Strings.schedules)
@@ -114,7 +121,7 @@ struct StopPageActionRow: View {
     }
 
     private var filterItem: some View {
-        item(title: Strings.filter, isEnabled: state.canFilter) {
+        item {
             Menu { filterMenu } label: { glyph(state.filterSystemImage) }
                 .glassCircleSurface()
                 .disabled(!state.canFilter)
@@ -126,7 +133,7 @@ struct StopPageActionRow: View {
     }
 
     private var bookmarkItem: some View {
-        item(title: Self.bookmarkTitle, isEnabled: state.canActOnStop) {
+        item {
             Button(action: onBookmark) { glyph("bookmark") }
                 .glassCircleSurface()
                 .disabled(!state.canActOnStop)
@@ -138,7 +145,7 @@ struct StopPageActionRow: View {
     /// carries its own gate, and a menu whose every item is disabled still tells
     /// the rider more than a button that refuses to open.
     private var moreItem: some View {
-        item(title: Strings.more) {
+        item {
             Menu { moreMenu } label: { glyph("ellipsis") }
                 .glassCircleSurface()
                 .accessibilityLabel(Strings.more)
@@ -229,35 +236,21 @@ struct StopPageActionRow: View {
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
-    /// One column: the caller's glass control, captioned beneath.
+    /// One slot: the caller's glass control, given an equal share of the width.
     ///
-    /// `isEnabled` drives the caption's colour. The glyph dims on its own — but
-    /// only because nothing here pins its `foregroundStyle`: SwiftUI greys
-    /// disabled content *through* the foreground style, so hard-coding
-    /// `.primary` anywhere above the control leaves a disabled button looking
-    /// identical to an enabled one while still refusing taps.
-    private func item(title: String, isEnabled: Bool = true, @ViewBuilder control: () -> some View) -> some View {
-        VStack(spacing: 6) {
-            control()
-            Text(title)
-                .font(.caption2)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-                .truncationMode(.tail)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: .infinity)
-                // The caption sits outside the button, so it is not covered by
-                // the control's own disabled dimming.
-                .foregroundStyle(isEnabled ? AnyShapeStyle(.primary) : AnyShapeStyle(.tertiary))
-        }
-        .frame(maxWidth: scrollsHorizontally ? nil : .infinity)
-        .frame(minWidth: scrollsHorizontally ? 84 : nil)
-        .padding(.horizontal, 2)
+    /// A disabled control dims itself, but only because nothing here pins its
+    /// `foregroundStyle`: SwiftUI greys disabled content *through* the
+    /// foreground style, so hard-coding `.primary` anywhere above the control
+    /// would leave a disabled button looking identical to an enabled one while
+    /// still refusing taps. With the captions gone this dimming is the only
+    /// signal that an action is unavailable, so it must not be defeated.
+    private func item(@ViewBuilder control: () -> some View) -> some View {
+        control()
+            .frame(maxWidth: .infinity)
     }
 
     /// The glyph a glass control wraps. `glassCircleLabel` draws it at
-    /// `glyphSize` while claiming a 44pt hit region, which the columns have
-    /// room for at either layout.
+    /// `glyphSize` while claiming a 44pt hit region.
     private func glyph(_ systemImage: String) -> some View {
         Image(systemName: systemImage)
             .font(.system(size: 18, weight: .semibold))

@@ -444,10 +444,20 @@ struct StopDetailsSheetView: View {
     /// The capsule is a bottom safe-area inset, so this overlay's bottom edge
     /// already sits above it and the padding below is clearance from the
     /// capsule, not from the sheet's edge.
+    /// Clearance above the action capsule.
+    ///
+    /// The button is an `.overlay(alignment: .bottomTrailing)` applied *after*
+    /// the `safeAreaInset` the capsule is mounted in, so it aligns to the
+    /// sheet's whole frame — the inset does not push it up, and without this it
+    /// sits directly on the capsule. Derived from the capsule's own metric
+    /// rather than measured, so the two cannot drift apart and no geometry
+    /// feeds back into layout.
+    private static let scrollToTopClearance: CGFloat = StopPageActionRow.occupiedHeight + 24
+
     private func scrollToTopOverlay(proxy: ScrollViewProxy) -> some View {
         ScrollToTopButton(isVisible: showsScrollToTop) { scrollToTop(proxy: proxy) }
             .padding(.trailing, 16)
-            .padding(.bottom, 24)
+            .padding(.bottom, Self.scrollToTopClearance)
             .animation(.snappy(duration: 0.2), value: showsScrollToTop)
     }
 }
