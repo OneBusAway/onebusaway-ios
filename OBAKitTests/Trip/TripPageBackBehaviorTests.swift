@@ -37,6 +37,13 @@ struct TripPageBackBehaviorTests {
     @Test func `A page with no navigation stack dismisses`() {
         #expect(TripPageBackBehavior.forStackDepth(0) == .dismiss)
     }
+
+    /// The glyph has to promise what the button does. A chevron on the modal
+    /// presentation offered to go "back" to a screen that was never there.
+    @Test func `Popping wears a chevron and dismissing wears a close`() {
+        #expect(TripPageBackBehavior.pop.systemImage == "chevron.backward")
+        #expect(TripPageBackBehavior.dismiss.systemImage == "xmark")
+    }
 }
 
 /// The wiring: that `TripPageViewController` actually resolves its Back row

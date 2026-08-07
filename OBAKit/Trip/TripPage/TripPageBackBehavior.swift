@@ -38,4 +38,15 @@ nonisolated enum TripPageBackBehavior: Equatable {
     static func forStackDepth(_ navigationStackDepth: Int) -> TripPageBackBehavior {
         navigationStackDepth > 1 ? .pop : .dismiss
     }
+
+    /// The glyph the back row wears, so the control looks like what it does: a
+    /// chevron promises the screen underneath, an ✕ promises the sheet goes
+    /// away. Shipping the chevron for both had the modal presentation offering
+    /// to go "back" to a screen that was never there.
+    var systemImage: String {
+        switch self {
+        case .pop: "chevron.backward"
+        case .dismiss: "xmark"
+        }
+    }
 }

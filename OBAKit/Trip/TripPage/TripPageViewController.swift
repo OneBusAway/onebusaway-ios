@@ -84,6 +84,12 @@ final class TripPageViewController: UIHostingController<TripPageView>,
         // straight back.
         navigationController?.setNavigationBarHidden(true, animated: false)
 
+        // Re-render now that there is a `navigationController` to ask. `init`
+        // runs before this page is on anyone's stack, so the back row's glyph
+        // was built from an unanswerable question — and a modal would have come
+        // up wearing a chevron for the first frame.
+        render()
+
         // Everything the map draws, and the gates the action bar renders from,
         // are derived from these three together.
         //
@@ -180,6 +186,7 @@ final class TripPageViewController: UIHostingController<TripPageView>,
             viewModel: viewModel,
             originTitle: originTitle,
             actions: makeActions(),
+            backBehavior: backBehavior,
             hasAlarm: false,
             isTrackingLiveActivity: isTrackingLiveActivity
         )
