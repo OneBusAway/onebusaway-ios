@@ -88,9 +88,11 @@ final class AppSheetViewFactory {
         // (the home sheet only knows how to push, not pop), otherwise the
         // route is unreachable once entered.
         case .search, .nearbyAll, .recentStopsAll, .bookmarksAll,
-             .tripPlanner, .tripDetails, .transitAlert, .settings,
-             .searchResults:
+             .tripPlanner, .tripDetails, .transitAlert, .settings:
             unimplementedView(for: route)
+
+        case .searchResults(let response):
+            searchResultsView(response: response)
 
         case .routeStops(let stopsForRoute):
             routeStopsView(stopsForRoute: stopsForRoute)
@@ -172,6 +174,10 @@ final class AppSheetViewFactory {
 
     func routeStopsView(stopsForRoute: StopsForRoute) -> RouteStopsSheetView {
         RouteStopsSheetView(stopsForRoute: stopsForRoute, displayModel: searchDisplayModel)
+    }
+
+    func searchResultsView(response: SearchResponse) -> SearchResultsSheetView {
+        SearchResultsSheetView(application: application, response: response, router: searchResultRouter)
     }
 
     /// Placeholder until each route gets its own real view. In debug builds we

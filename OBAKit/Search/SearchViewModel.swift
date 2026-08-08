@@ -15,13 +15,16 @@ final class SearchViewModel: ObservableObject {
 
     @Published private(set) var vehicleSearchResponse: SearchResponse?
     @Published private(set) var vehicleError: Error?
+    /// The vehicle whose details are being fetched, or `nil` when idle. Published so
+    /// the results sheet can show progress on the tapped row — the UIKit controller
+    /// showed none at all.
+    @Published private(set) var loadingVehicleID: String?
 
     let subtitle: String
     let results: [Any]
 
     private let searchResponse: SearchResponse
     private let apiService: RESTAPIService?
-    private var isLoading = false
 
     convenience init(searchResponse: SearchResponse, application: Application) {
         self.init(searchResponse: searchResponse, apiService: application.apiService)
@@ -39,7 +42,7 @@ final class SearchViewModel: ObservableObject {
     }
 
     func selectVehicle(vehicleID: String) async {
-        guard !isLoading else { return }
+        guard loadingVehicleID == nil else { return }
         guard let apiService else {
             // Misconfiguration (no API service available). Surface it through the same
             // error channel as a request failure so the screen doesn't silently no-op.
@@ -50,10 +53,10 @@ final class SearchViewModel: ObservableObject {
             ))
             return
         }
-        isLoading = true
+        loadingVehicleID = vehicleID
         vehicleError = nil
         vehicleSearchResponse = nil
-        defer { isLoading = false }
+        defer { loadingVehicleID = nil }
         do {
             let vehicle = try await apiService.getVehicle(vehicleID: vehicleID).entry
             vehicleSearchResponse = SearchResponse(response: searchResponse, substituteResult: vehicle)

@@ -286,4 +286,40 @@ final class SearchViewModelTests: OBATestCase {
         #expect(vm.vehicleError == nil)
         #expect(vm.vehicleSearchResponse != nil)
     }
+
+    // MARK: - Row-level loading state
+
+    @Test @MainActor
+    func `Loading vehicle id is nil before any request`() {
+        let vm = SearchViewModel(searchResponse: makeSearchResponse(searchType: .vehicleID), apiService: nil)
+        #expect(vm.loadingVehicleID == nil)
+    }
+
+    /// The results sheet shows progress on the tapped row, so the id has to be
+    /// observable while the request is in flight and cleared afterwards.
+    @Test @MainActor
+    func `Loading vehicle id is cleared once the request finishes`() async {
+        let vm = SearchViewModel(
+            searchResponse: makeSearchResponse(searchType: .vehicleID, query: vehicleID),
+            apiService: buildRESTService(dataLoader: makeSuccessLoader())
+        )
+
+        await vm.selectVehicle(vehicleID: vehicleID)
+
+        #expect(vm.loadingVehicleID == nil)
+        #expect(vm.vehicleSearchResponse != nil)
+    }
+
+    @Test @MainActor
+    func `Loading vehicle id is cleared after a failure`() async {
+        let vm = SearchViewModel(
+            searchResponse: makeSearchResponse(searchType: .vehicleID, query: vehicleID),
+            apiService: buildRESTService(dataLoader: makeNetworkErrorLoader())
+        )
+
+        await vm.selectVehicle(vehicleID: vehicleID)
+
+        #expect(vm.loadingVehicleID == nil)
+        #expect(vm.vehicleError != nil)
+    }
 }
