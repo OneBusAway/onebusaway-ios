@@ -100,7 +100,17 @@ final class SearchManagerTests: OBATestCase {
     @Test @MainActor
     func `Route search queries the recorded viewport`() async throws {
         let dataLoader = MockDataLoader(testName: name)
-        stubRoutesForLocation(dataLoader: dataLoader)
+        let capturedRequest = SendableBox<URLRequest?>(nil)
+
+        let data = Fixtures.loadData(file: "routes_for_location_query.json")
+        dataLoader.mock(data: data) { request in
+            if request.url?.path.contains("/api/where/routes-for-location.json") ?? false {
+                capturedRequest.value = request
+                return true
+            }
+            return false
+        }
+
         let application = buildApplication(queue: queue, dataLoader: dataLoader)
 
         // A small rect near Seattle; the request's lat/lon must land inside it.
@@ -114,7 +124,7 @@ final class SearchManagerTests: OBATestCase {
         let manager = SearchManager(application: application)
         _ = try await manager.fetchResults(for: SearchRequest(query: "44", type: .route))
 
-        let sent = try #require(dataLoader.requests.first { $0.url?.path.contains("routes-for-location") ?? false })
+        let sent = try #require(capturedRequest.value)
         let url = try #require(sent.url)
         let components = try #require(URLComponents(url: url, resolvingAgainstBaseURL: false))
         let lat = try #require(components.queryItems?.first { $0.name == "lat" }?.value.flatMap(Double.init))
