@@ -20,6 +20,7 @@ import UIKit
 struct MapPanelRootView: View {
 
     @StateObject private var coordinator: SheetCoordinator<AppSheetRoute>
+    @ObservedObject private var searchDisplay: MapSearchDisplayModel
     @StateObject private var mapViewModel: MapViewModel
     @StateObject private var stopsObserver: MapStopsObserver
 
@@ -85,8 +86,14 @@ struct MapPanelRootView: View {
     private let factory: AppSheetViewFactory
     private let viewportRecorder: MapViewportRecorder
 
-    init(application: Application, factory: AppSheetViewFactory) {
-        _coordinator = StateObject(wrappedValue: SheetCoordinator<AppSheetRoute>(root: .home))
+    init(
+        application: Application,
+        factory: AppSheetViewFactory,
+        coordinator: SheetCoordinator<AppSheetRoute>,
+        searchDisplayModel: MapSearchDisplayModel
+    ) {
+        _coordinator = StateObject(wrappedValue: coordinator)
+        _searchDisplay = ObservedObject(wrappedValue: searchDisplayModel)
         _stopsObserver = StateObject(wrappedValue: MapStopsObserver(application: application))
         let initialMapType = MapBaseType(application.mapRegionManager.userSelectedMapType)
         _mapViewModel = StateObject(wrappedValue: MapViewModel(application: application, initialMapType: initialMapType))
@@ -125,7 +132,7 @@ struct MapPanelRootView: View {
             }
             // Regular stops show only zoomed in; `renderStops` already excludes
             // bookmarked stops and precomputes labels.
-            if isZoomedInForStops {
+            if isZoomedInForStops, !searchDisplay.suppressesAmbientStops {
                 ForEach(stopsObserver.renderStops) { renderStop in
                     stopAnnotation(
                         for: renderStop.stop,
@@ -135,6 +142,7 @@ struct MapPanelRootView: View {
                     )
                 }
             }
+            searchResultMapContent(for: searchDisplay.display)
         }
         .onMapCameraChange(frequency: .onEnd) { context in
             viewportRecorder.record(context.rect)
@@ -160,6 +168,7 @@ struct MapPanelRootView: View {
             }
             recomputeStopLabels()
             stopsObserver.updateViewport(context.region)
+            guard !searchDisplay.suppressesAmbientStops else { return }
             application.mapRegionManager.scheduleStopsRequest(in: context.region)
         }
         // The map-type toggle changes the label gate (labels only show on the
@@ -174,6 +183,25 @@ struct MapPanelRootView: View {
             guard let id else { return }
             coordinator.push(.stopDetails(stopID: id))
             selectedStopID = nil
+        }
+        .onChange(of: searchDisplay.cameraTarget) { _, target in
+            guard let target else { return }
+            switch target {
+            case .coordinate(let coordinate, let animated):
+                let region = MKCoordinateRegion(
+                    centeredOn: coordinate,
+                    zoomLevel: 16,
+                    mapSize: mapSize
+                )
+                if animated {
+                    withAnimation { cameraPosition = .region(region) }
+                } else {
+                    cameraPosition = .region(region)
+                }
+            case .rect(let rect):
+                withAnimation { cameraPosition = .rect(rect) }
+            }
+            searchDisplay.consumeCameraTarget()
         }
         .mapStyle(mapViewModel.mapType == .standard ? .standard(emphasis: .muted) : .hybrid)
         .safeAreaPadding(.bottom, 180)

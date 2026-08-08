@@ -100,6 +100,12 @@ final class MapSearchDisplayModel: ObservableObject {
         ))
     }
 
+    /// Moves the camera without changing what's displayed — used when the user picks
+    /// a stop out of a route's list and the polyline should stay on screen.
+    func focus(coordinate: CLLocationCoordinate2D) {
+        cameraTarget = .coordinate(coordinate, animated: true)
+    }
+
     /// Applies-and-forgets the pending camera move. Called by the view once it has
     /// moved the camera.
     func consumeCameraTarget() {

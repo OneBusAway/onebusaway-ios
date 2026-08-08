@@ -90,7 +90,7 @@ final class MapItemSheetViewTests: OBATestCase {
     @Test @MainActor
     func `Factory builds a map item sheet for the route`() {
         let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
-        let factory = AppSheetViewFactory(application: application, onPresentTrip: { _ in })
+        let factory = AppSheetViewFactory(application: application, onPresentTrip: { _ in }, presentingController: { nil })
         let item = MKMapItem(placemark: MKPlacemark(coordinate: CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3)))
 
         let view = factory.mapItemView(mapItem: item)
@@ -102,7 +102,7 @@ final class MapItemSheetViewTests: OBATestCase {
     @Test @MainActor
     func `Factory builds a nearby stops host for the route`() {
         let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
-        let factory = AppSheetViewFactory(application: application, onPresentTrip: { _ in })
+        let factory = AppSheetViewFactory(application: application, onPresentTrip: { _ in }, presentingController: { nil })
         let coordinate = CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3)
 
         let host = factory.nearbyStopsView(coordinate: coordinate)

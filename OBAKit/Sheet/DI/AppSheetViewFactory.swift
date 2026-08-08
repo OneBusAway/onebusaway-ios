@@ -34,6 +34,10 @@ final class AppSheetViewFactory {
     /// `TripPresentationBridge` does.
     let presentingController: () -> UIViewController?
 
+    let onPresentVehicleTrip: (VehicleStatus) -> Void
+    let coordinator: SheetCoordinator<AppSheetRoute>
+    let searchDisplayModel: MapSearchDisplayModel
+
     /// `presentingController` has no default on purpose. Every stop-sheet action
     /// — schedules, bookmarks, the route filter, report-a-problem, the alarm
     /// picker — resolves through it, so a call site that omitted it would build
@@ -42,12 +46,27 @@ final class AppSheetViewFactory {
     init(
         application: Application,
         onPresentTrip: @escaping (ArrivalDeparture) -> Void,
-        presentingController: @escaping () -> UIViewController?
+        onPresentVehicleTrip: @escaping (VehicleStatus) -> Void = { _ in },
+        presentingController: @escaping () -> UIViewController?,
+        coordinator: SheetCoordinator<AppSheetRoute> = SheetCoordinator(root: .home),
+        searchDisplayModel: MapSearchDisplayModel = MapSearchDisplayModel()
     ) {
         self.application = application
         self.onPresentTrip = onPresentTrip
+        self.onPresentVehicleTrip = onPresentVehicleTrip
         self.presentingController = presentingController
+        self.coordinator = coordinator
+        self.searchDisplayModel = searchDisplayModel
     }
+
+    /// Built once and shared: the search sheet and the results sheet must route a
+    /// picked result the same way, and both need the same coordinator instance.
+    private(set) lazy var searchResultRouter = SearchResultRouter(
+        application: application,
+        coordinator: coordinator,
+        displayModel: searchDisplayModel,
+        onPresentVehicleTrip: onPresentVehicleTrip
+    )
 
     // MARK: - Dispatcher
 
@@ -70,8 +89,11 @@ final class AppSheetViewFactory {
         // route is unreachable once entered.
         case .search, .nearbyAll, .recentStopsAll, .bookmarksAll,
              .tripPlanner, .tripDetails, .transitAlert, .settings,
-             .searchResults, .routeStops:
+             .searchResults:
             unimplementedView(for: route)
+
+        case .routeStops(let stopsForRoute):
+            routeStopsView(stopsForRoute: stopsForRoute)
 
         case .mapItem(let mapItem):
             mapItemView(mapItem: mapItem)
@@ -146,6 +168,10 @@ final class AppSheetViewFactory {
     /// Swap this branch's return type once a SwiftUI nearby-stops list lands.
     func nearbyStopsView(coordinate: CLLocationCoordinate2D) -> NearbyStopsSheetHost {
         NearbyStopsSheetHost(application: application, coordinate: coordinate)
+    }
+
+    func routeStopsView(stopsForRoute: StopsForRoute) -> RouteStopsSheetView {
+        RouteStopsSheetView(stopsForRoute: stopsForRoute, displayModel: searchDisplayModel)
     }
 
     /// Placeholder until each route gets its own real view. In debug builds we
