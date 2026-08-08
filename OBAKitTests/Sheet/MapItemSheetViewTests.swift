@@ -32,7 +32,19 @@ final class MapItemSheetViewTests: OBATestCase {
     }
 
     @MainActor
-    private func makeViewModel(actions: MapItemActions) -> MapItemViewModel {
+    private func makeFactory(application: Application, displayModel: MapSearchDisplayModel = MapSearchDisplayModel()) -> AppSheetViewFactory {
+        AppSheetViewFactory(
+            application: application,
+            onPresentTrip: { _ in },
+            onPresentVehicleTrip: { _ in },
+            presentingController: { nil },
+            coordinator: SheetCoordinator(root: .home),
+            searchDisplayModel: displayModel
+        )
+    }
+
+    @MainActor
+    private func makeViewModel(actions: MapItemActions, planTripHandler: (() -> Void)? = {}) -> MapItemViewModel {
         let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
         let placemark = MKPlacemark(coordinate: CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3))
         let mapItem = MKMapItem(placemark: placemark)
@@ -42,9 +54,11 @@ final class MapItemSheetViewTests: OBATestCase {
             application: application,
             actions: actions,
             removePinHandler: nil,
-            planTripHandler: {}
+            planTripHandler: planTripHandler
         )
     }
+
+    private static let noopActions = MapItemActions(openWebsite: { _ in }, showNearbyStops: { _ in }, dismiss: { })
 
     @Test @MainActor
     func `Dismissing routes through the injected action`() {
@@ -87,22 +101,49 @@ final class MapItemSheetViewTests: OBATestCase {
         #expect(url.absoluteString.contains("47.6"))
     }
 
+    /// The sheet has no trip-planner destination to hand off to, so it passes a `nil`
+    /// handler — which must hide the button rather than render one that no-ops.
+    @Test @MainActor
+    func `A nil plan trip handler hides the plan trip button`() {
+        let viewModel = makeViewModel(actions: Self.noopActions, planTripHandler: nil)
+
+        #expect(viewModel.showPlanTripButton == false)
+
+        // Tapping it anyway (the button is gone, but the method is reachable) must
+        // not trap on a force-unwrapped handler.
+        viewModel.planTrip()
+    }
+
+    @Test @MainActor
+    func `A supplied plan trip handler is invoked`() {
+        var planned = false
+        let viewModel = makeViewModel(actions: Self.noopActions, planTripHandler: { planned = true })
+
+        viewModel.planTrip()
+
+        #expect(planned == true)
+    }
+
     @Test @MainActor
     func `Factory builds a map item sheet for the route`() {
         let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
-        let factory = AppSheetViewFactory(application: application, onPresentTrip: { _ in }, presentingController: { nil })
+        let displayModel = MapSearchDisplayModel()
+        let factory = makeFactory(application: application, displayModel: displayModel)
         let item = MKMapItem(placemark: MKPlacemark(coordinate: CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3)))
 
         let view = factory.mapItemView(mapItem: item)
 
         #expect(view.application === application)
         #expect(view.mapItem === item)
+        // The sheet clears the map marker when it goes away, so it needs the same
+        // display model the map renders.
+        #expect(view.displayModel === displayModel)
     }
 
     @Test @MainActor
     func `Factory builds a nearby stops host for the route`() {
         let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
-        let factory = AppSheetViewFactory(application: application, onPresentTrip: { _ in }, presentingController: { nil })
+        let factory = makeFactory(application: application)
         let coordinate = CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3)
 
         let host = factory.nearbyStopsView(coordinate: coordinate)

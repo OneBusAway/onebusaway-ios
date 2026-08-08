@@ -76,7 +76,6 @@ struct RouteStopsSheetView: View {
                 .buttonStyle(.plain)
             }
             .listStyle(.plain)
-            .navigationTitle(stopsForRoute.route?.shortName ?? "")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .principal) {
@@ -95,6 +94,12 @@ struct RouteStopsSheetView: View {
                 }
             }
         }
+        // The route polyline belongs to this sheet. `MapSearchDisplayModel.display`
+        // also gates the ambient stop layer, so leaving it set after the sheet goes
+        // away would strand the map with a dismissed route drawn on it and no stop
+        // pins at all. Pushing `.stopDetails` from a row *stacks* over this sheet
+        // rather than dismissing it, so this only fires on a real exit.
+        .onDisappear { displayModel.clear() }
     }
 
     private var routeSubtitle: String? {

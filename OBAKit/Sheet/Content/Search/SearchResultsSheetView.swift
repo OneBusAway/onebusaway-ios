@@ -15,7 +15,6 @@ import OBAKitCore
 /// the search sheet stays alive beneath with its query intact.
 struct SearchResultsSheetView: View {
     let application: Application
-    let response: SearchResponse
     let router: SearchResultRouter
 
     @StateObject private var viewModel: SearchViewModel
@@ -24,7 +23,6 @@ struct SearchResultsSheetView: View {
 
     init(application: Application, response: SearchResponse, router: SearchResultRouter) {
         self.application = application
-        self.response = response
         self.router = router
         _viewModel = StateObject(wrappedValue: SearchViewModel(searchResponse: response, application: application))
     }
@@ -81,7 +79,14 @@ struct SearchResultsSheetView: View {
                         SearchListRowView(row: SearchListRow(
                             kind: .error(error.localizedDescription, systemImage: "exclamationmark.triangle"),
                             title: error.localizedDescription,
-                            icon: .system("exclamationmark.triangle")
+                            subtitle: Strings.retry,
+                            icon: .system("exclamationmark.triangle"),
+                            // `SearchListRowView.errorRow` renders a retry badge and
+                            // enables the row only when there's an action, so a
+                            // failure the user can re-attempt isn't a dead end.
+                            action: viewModel.failedVehicleID.map { vehicleID in
+                                { Task { await viewModel.selectVehicle(vehicleID: vehicleID) } }
+                            }
                         ))
                     }
                 }
@@ -94,7 +99,7 @@ struct SearchResultsSheetView: View {
         let format = OBALoc(
             "search_results_sheet.result_count_fmt",
             value: "%d results",
-            comment: "Header showing how many results a search matched, e.g. '12 results'."
+            comment: "Header showing how many results a search matched, e.g. '12 results'. %d is the number of results. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback."
         )
         return String(format: format, viewModel.results.count)
     }

@@ -82,4 +82,44 @@ final class SearchResultRowTests: OBATestCase {
 
         #expect(selected == true)
     }
+
+    // MARK: - Row identity
+
+    /// The disambiguation list renders through `ForEach`, so ids have to be unique.
+    /// Stop names are not: the two directions of a corner share one, and the Seattle
+    /// fixture has six such pairs among 26 stops. Deriving ids from titles collided
+    /// in exactly the case this list exists to handle.
+    @Test @MainActor
+    func `Stops sharing a name still get distinct row ids`() throws {
+        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+        let stops = try Fixtures.loadSomeStops()
+
+        let duplicatedName = try #require(
+            Dictionary(grouping: stops, by: \.name).first { $0.value.count > 1 }?.value,
+            "Fixture no longer contains two stops sharing a name; pick another fixture."
+        )
+
+        let rows = duplicatedName.compactMap {
+            SearchResultRow.row(for: $0, application: application, onSelect: { })
+        }
+
+        #expect(rows.count == duplicatedName.count)
+        #expect(Set(rows.map(\.id)).count == rows.count)
+    }
+
+    @Test @MainActor
+    func `Routes sharing a short name still get distinct row ids`() throws {
+        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+        // Two agencies can both run a route called "1".
+        let first = try Fixtures.createRoute(id: "1_44")
+        let second = try Fixtures.createRoute(id: "2_44")
+
+        let rows = [first, second].compactMap {
+            SearchResultRow.row(for: $0, application: application, onSelect: { })
+        }
+
+        #expect(rows.count == 2)
+        #expect(rows[0].title == rows[1].title)
+        #expect(rows[0].id != rows[1].id)
+    }
 }

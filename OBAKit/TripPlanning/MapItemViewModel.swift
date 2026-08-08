@@ -92,7 +92,10 @@ public class MapItemViewModel {
     /// The OBA application instance for accessing services and navigation
     let application: Application
 
-    let planTripHandler: () -> Void
+    /// `nil` on surfaces that have no trip-planner destination to hand off to.
+    /// Gates `showPlanTripButton`, so those surfaces don't render a button that
+    /// does nothing when tapped.
+    let planTripHandler: (() -> Void)?
 
     /// Optional handler for removing a user-dropped pin
     let removePinHandler: (() -> Void)?
@@ -141,8 +144,9 @@ public class MapItemViewModel {
     ///   - application: The OBA application instance
     ///   - actions: Injected actions for presentation-dependent operations
     ///   - removePinHandler: Optional handler called when user wants to remove a dropped pin
-    ///   - planTripHandler: Handler called when user wants to plan a trip
-    public init(mapItem: MKMapItem, application: Application, actions: MapItemActions, removePinHandler: (() -> Void)? = nil, planTripHandler: @escaping () -> Void) {
+    ///   - planTripHandler: Handler called when user wants to plan a trip, or `nil`
+    ///     to hide the Plan Trip button entirely
+    public init(mapItem: MKMapItem, application: Application, actions: MapItemActions, removePinHandler: (() -> Void)? = nil, planTripHandler: (() -> Void)?) {
         self.mapItem = mapItem
         self.application = application
         self.actions = actions
@@ -155,7 +159,7 @@ public class MapItemViewModel {
             self.formattedAddress = CNPostalAddressFormatter.string(from: address, style: .mailingAddress)
         }
 
-        self.showPlanTripButton = application.features.tripPlanning == .running
+        self.showPlanTripButton = application.features.tripPlanning == .running && planTripHandler != nil
         self.phoneNumber = mapItem.phoneNumber
         self.url = mapItem.url
 
@@ -206,7 +210,6 @@ public class MapItemViewModel {
         }
     }
 
-
     /// Opens the location in the Maps app.
     ///
     /// This launches the system Maps application and displays the location.
@@ -237,7 +240,7 @@ public class MapItemViewModel {
     /// Plans a trip from/to this location.
     ///
     func planTrip() {
-        planTripHandler()
+        planTripHandler?()
     }
 
     /// Removes the user-dropped pin and dismisses the view.

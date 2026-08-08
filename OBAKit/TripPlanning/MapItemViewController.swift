@@ -19,19 +19,33 @@ import OBAKitCore
 /// and provides a link to view nearby transit stops.
 ///
 class MapItemViewController: UIViewController, AppContext {
-    private let makeViewModel: (MapItemViewController) -> MapItemViewModel
-    private var viewModel: MapItemViewModel!
+    let application: Application
 
-    var application: Application { viewModel.application }
+    private let mapItem: MKMapItem
+    private weak var modalDelegate: ModalDelegate?
+    private let removePinHandler: (() -> Void)?
+    private let planTripHandler: () -> Void
 
     /// The hosting controller that embeds the SwiftUI view
     private var hostingController: UIHostingController<AnyView>?
 
-    /// The view model needs `MapItemActions` bound to *this* controller as their
-    /// presenter, which doesn't exist until after `super.init`. The caller supplies
-    /// a builder instead of a finished view model, and it runs in `viewDidLoad`.
-    init(makeViewModel: @escaping (MapItemViewController) -> MapItemViewModel) {
-        self.makeViewModel = makeViewModel
+    /// The view model, built in `viewDidLoad` because `MapItemActions.uiKit` needs
+    /// this controller as its presenter — which isn't available until after
+    /// `super.init`.
+    private var viewModel: MapItemViewModel?
+
+    init(
+        application: Application,
+        mapItem: MKMapItem,
+        delegate: ModalDelegate?,
+        removePinHandler: (() -> Void)? = nil,
+        planTripHandler: @escaping () -> Void
+    ) {
+        self.application = application
+        self.mapItem = mapItem
+        self.modalDelegate = delegate
+        self.removePinHandler = removePinHandler
+        self.planTripHandler = planTripHandler
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -40,7 +54,14 @@ class MapItemViewController: UIViewController, AppContext {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        viewModel = makeViewModel(self)
+        let viewModel = MapItemViewModel(
+            mapItem: mapItem,
+            application: application,
+            actions: .uiKit(presenter: self, delegate: modalDelegate, application: application),
+            removePinHandler: removePinHandler,
+            planTripHandler: planTripHandler
+        )
+        self.viewModel = viewModel
 
         view.backgroundColor = .clear
 
@@ -52,7 +73,7 @@ class MapItemViewController: UIViewController, AppContext {
         background.pinToSuperview(.edges)
 
         let mapItemView = MapItemView(viewModel: viewModel, showsShareButton: true)
-            .environment(\.coreApplication, viewModel.application)
+            .environment(\.coreApplication, application)
 
         let hostingController = UIHostingController(rootView: AnyView(mapItemView))
         hostingController.view.backgroundColor = .clear

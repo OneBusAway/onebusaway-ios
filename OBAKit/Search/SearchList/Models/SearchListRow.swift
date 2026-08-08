@@ -20,6 +20,12 @@ struct SearchListRow: Identifiable {
         case recentStop
         case bookmark
         case placemark(MKMapItem)
+        /// A row in a disambiguation list. Carries the underlying model's id
+        /// because titles are not identity — two stops on opposite sides of the
+        /// same corner share a name, and two agencies can both run a route "1".
+        /// Deriving the row id from the title alone collides in exactly the case
+        /// a disambiguation list exists to handle.
+        case searchResult(id: String)
         case clearRecents
         case loading
         case noResults
@@ -41,6 +47,8 @@ struct SearchListRow: Identifiable {
             case .placemark(let item):
                 let coord = item.placemark.coordinate
                 return "placemark-\(coord.latitude)-\(coord.longitude)"
+            case .searchResult(let id):
+                return "searchResult-\(id)"
             case .clearRecents:
                 return "clearRecents"
             case .loading:

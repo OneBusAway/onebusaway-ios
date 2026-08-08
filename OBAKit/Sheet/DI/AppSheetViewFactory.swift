@@ -38,18 +38,25 @@ final class AppSheetViewFactory {
     let coordinator: SheetCoordinator<AppSheetRoute>
     let searchDisplayModel: MapSearchDisplayModel
 
-    /// `presentingController` has no default on purpose. Every stop-sheet action
-    /// — schedules, bookmarks, the route filter, report-a-problem, the alarm
-    /// picker — resolves through it, so a call site that omitted it would build
-    /// a factory whose sheet renders correctly and then silently ignores every
-    /// button on it.
+    /// Nothing here is defaulted, on purpose, and for two separate reasons.
+    ///
+    /// `presentingController`: every stop-sheet action — schedules, bookmarks,
+    /// the route filter, report-a-problem, the alarm picker — resolves through
+    /// it, so a call site that omitted it would build a factory whose sheet
+    /// renders correctly and then silently ignores every button on it.
+    ///
+    /// `coordinator` and `searchDisplayModel`: they must be the same instances the
+    /// hosting `MapPanelRootView` observes. A factory built with its own private
+    /// copies would push routes onto a coordinator nobody is watching and draw into
+    /// a display model nobody renders — silently, with the search sheet simply
+    /// appearing to do nothing.
     init(
         application: Application,
         onPresentTrip: @escaping (ArrivalDeparture) -> Void,
-        onPresentVehicleTrip: @escaping (VehicleStatus) -> Void = { _ in },
+        onPresentVehicleTrip: @escaping (VehicleStatus) -> Void,
         presentingController: @escaping () -> UIViewController?,
-        coordinator: SheetCoordinator<AppSheetRoute> = SheetCoordinator(root: .home),
-        searchDisplayModel: MapSearchDisplayModel = MapSearchDisplayModel()
+        coordinator: SheetCoordinator<AppSheetRoute>,
+        searchDisplayModel: MapSearchDisplayModel
     ) {
         self.application = application
         self.onPresentTrip = onPresentTrip
@@ -162,7 +169,7 @@ final class AppSheetViewFactory {
     }
 
     func mapItemView(mapItem: MKMapItem) -> MapItemSheetView {
-        MapItemSheetView(application: application, mapItem: mapItem)
+        MapItemSheetView(application: application, mapItem: mapItem, displayModel: searchDisplayModel)
     }
 
     /// Bridges `AppSheetRoute.nearbyStops` to the existing `NearbyStopsViewController`.
@@ -186,7 +193,7 @@ final class AppSheetViewFactory {
                 coordinator: self.coordinator,
                 router: self.searchResultRouter
             ),
-            placeholder: HomeSheetViewModel(application: self.application).searchPlaceholder
+            placeholder: SearchPlaceholder.text(for: self.application)
         )
     }
 

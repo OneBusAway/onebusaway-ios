@@ -19,7 +19,7 @@ enum SearchResultRow {
         switch result {
         case let stop as Stop:
             return SearchListRow(
-                kind: .recentStop,
+                kind: .searchResult(id: stop.id),
                 title: stop.name,
                 subtitle: stopSubtitle(application, stop),
                 icon: .uiImage(Icons.stop),
@@ -29,7 +29,7 @@ enum SearchResultRow {
 
         case let route as Route:
             return SearchListRow(
-                kind: .quickSearch(.route),
+                kind: .searchResult(id: route.id),
                 title: route.shortName,
                 subtitle: route.longName ?? route.agency.name,
                 icon: .uiImage(Icons.route),
@@ -51,7 +51,7 @@ enum SearchResultRow {
         case let vehicle as AgencyVehicle:
             guard let vehicleID = vehicle.vehicleID else { return nil }
             return SearchListRow(
-                kind: .quickSearch(.vehicleID),
+                kind: .searchResult(id: vehicleID),
                 title: vehicleID,
                 subtitle: vehicle.agencyName,
                 icon: .uiImage(Icons.busTransport),

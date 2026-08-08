@@ -85,6 +85,35 @@ final class SearchSheetViewModel: NSObject, ObservableObject, SearchDelegate {
         }
     }
 
+    /// What a finished `fetchResults` call means for the screen.
+    ///
+    /// Split out as a pure function because the interesting distinction —
+    /// `nil` (the search never ran) versus an empty result set (it ran and matched
+    /// nothing) — isn't reachable through the test `Application`, which always has a
+    /// region, an API service, and an Obaco service.
+    enum SearchOutcome: Equatable {
+        /// No API service, no Obaco service, or no map rect. The query was never sent.
+        case unavailable
+        /// The search ran and matched nothing.
+        case noResults
+        case single(SearchResponse)
+        case disambiguate(SearchResponse)
+
+        init(response: SearchResponse?) {
+            guard let response else {
+                self = .unavailable
+                return
+            }
+            if response.results.isEmpty {
+                self = .noResults
+            } else if response.results.count == 1 {
+                self = .single(response)
+            } else {
+                self = .disambiguate(response)
+            }
+        }
+    }
+
     /// The awaitable body of `performSearch`, so tests don't have to poll a
     /// fire-and-forget task.
     func performSearchAndWait(request: SearchRequest) async {
@@ -103,22 +132,26 @@ final class SearchSheetViewModel: NSObject, ObservableObject, SearchDelegate {
             return
         }
 
-        guard let response, !response.results.isEmpty else {
+        switch SearchOutcome(response: response) {
+        case .unavailable:
+            // The query was never sent. Saying "no results" would send the user off
+            // rewording a search that never left the device.
+            errorMessage = APIError.noRegionSelected.localizedDescription
+
+        case .noResults:
             showsNoResults = true
-            return
-        }
 
-        guard response.results.count == 1 else {
+        case .disambiguate(let response):
             coordinator.push(.searchResults(response))
-            return
-        }
 
-        // Leave search before opening the result, so Close on the detail sheet lands
-        // back on home rather than on a stale search screen.
-        coordinator.pop()
-        _ = await router.presentSingleResult(from: response)
-        if let error = router.lastError {
-            errorMessage = error.localizedDescription
+        case .single(let response):
+            // Leave search before opening the result, so Close on the detail sheet
+            // lands back on home rather than on a stale search screen.
+            coordinator.pop()
+            _ = await router.presentSingleResult(from: response)
+            if let error = router.lastError {
+                errorMessage = error.localizedDescription
+            }
         }
     }
 

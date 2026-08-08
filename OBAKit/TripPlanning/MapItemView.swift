@@ -41,63 +41,63 @@ public struct MapItemView: View {
 
     public var body: some View {
         VStack(spacing: 0) {
-                headerView
-                    .padding(.top, 20)
-                    .padding(.horizontal)
+            headerView
+                .padding(.top, 20)
+                .padding(.horizontal)
 
-                ScrollView {
-                     VStack(spacing: 20) {
-                        // Action Buttons and Nearby Stops
-                        VStack(spacing: 12) {
-                            actionButtonsRow
-                                .padding(.horizontal)
+            ScrollView {
+                VStack(spacing: 20) {
+                    // Action Buttons and Nearby Stops
+                    VStack(spacing: 12) {
+                        actionButtonsRow
+                            .padding(.horizontal)
 
-                            // Nearby Stops Button - show as full-width only when call/website buttons exist
-                            if viewModel.phoneNumber != nil || viewModel.url != nil {
-                                Button(
-                                    action: {
-                                        viewModel.showNearbyStops()
-                                    },
-                                    label: {
-                                        HStack {
-                                            Text(OBALoc("map_item_controller.nearby_stops", value: "Nearby Stops", comment: "Button to view nearby stops"))
-                                                .bold()
-                                            Spacer()
-                                            Image(systemName: "chevron.right")
-                                                .font(.caption)
-                                                .bold()
-                                        }
-                                        .padding()
-                                        .background(Color(uiColor: .secondarySystemBackground))
-                                        .clipShape(.rect(cornerRadius: 12))
+                        // Nearby Stops Button - show as full-width only when call/website buttons exist
+                        if viewModel.phoneNumber != nil || viewModel.url != nil {
+                            Button(
+                                action: {
+                                    viewModel.showNearbyStops()
+                                },
+                                label: {
+                                    HStack {
+                                        Text(OBALoc("map_item_controller.nearby_stops", value: "Nearby Stops", comment: "Button to view nearby stops"))
+                                            .bold()
+                                        Spacer()
+                                        Image(systemName: "chevron.right")
+                                            .font(.caption)
+                                            .bold()
                                     }
-                                )
-                                .padding(.horizontal)
-                                .foregroundStyle(.primary)
-                                .accessibilityLabel(OBALoc("map_item_controller.nearby_stops_accessibility", value: "View nearby transit stops", comment: "Accessibility label for nearby stops button"))
-                            }
+                                    .padding()
+                                    .background(Color(uiColor: .secondarySystemBackground))
+                                    .clipShape(.rect(cornerRadius: 12))
+                                }
+                            )
+                            .padding(.horizontal)
+                            .foregroundStyle(.primary)
+                            .accessibilityLabel(OBALoc("map_item_controller.nearby_stops_accessibility", value: "View nearby transit stops", comment: "Accessibility label for nearby stops button"))
                         }
-
-                        if let scene = viewModel.lookAroundScene {
-                            lookAroundSection(scene: scene)
-                        }
-
-                        if viewModel.hasAboutContent {
-                            aboutSection
-                                .padding(.horizontal)
-                        }
-
-                        // Remove Pin button for user-dropped pins
-                        if viewModel.canRemovePin {
-                            removePinSection
-                                .padding(.horizontal)
-                        }
-
-                        Spacer(minLength: 40)
                     }
-                    .padding(.top)
+
+                    if let scene = viewModel.lookAroundScene {
+                        lookAroundSection(scene: scene)
+                    }
+
+                    if viewModel.hasAboutContent {
+                        aboutSection
+                            .padding(.horizontal)
+                    }
+
+                    // Remove Pin button for user-dropped pins
+                    if viewModel.canRemovePin {
+                        removePinSection
+                            .padding(.horizontal)
+                    }
+
+                    Spacer(minLength: 40)
                 }
+                .padding(.top)
             }
+        }
         .lookAroundViewer(
             isPresented: $showLookAroundViewer,
             initialScene: viewModel.lookAroundScene

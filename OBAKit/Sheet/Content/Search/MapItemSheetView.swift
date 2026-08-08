@@ -20,53 +20,69 @@ import OBAKitCore
 struct MapItemSheetView: View {
     let application: Application
     let mapItem: MKMapItem
+    let displayModel: MapSearchDisplayModel
 
     @EnvironmentObject var coordinator: SheetCoordinator<AppSheetRoute>
     @Environment(\.dismiss) private var dismiss
 
-    @State private var websiteURL: URL?
+    @State private var website: WebsiteLink?
     @State private var viewModel: MapItemViewModel?
 
     var body: some View {
         Group {
             if let viewModel {
-                VStack(spacing: 0) {
-                    MapItemView(viewModel: viewModel, showsShareButton: false)
-                }
-                .overlay(alignment: .topTrailing) {
-                    if let shareURL = viewModel.shareURL {
-                        ShareLink(item: shareURL)
-                            .labelStyle(.iconOnly)
-                            .padding()
+                MapItemView(viewModel: viewModel, showsShareButton: false)
+                    // Top-*leading*, matching where `MapItemView` puts Share in the
+                    // UIKit host. `.topTrailing` would land on top of that view's
+                    // own Close button and swallow its taps.
+                    .overlay(alignment: .topLeading) {
+                        if let shareURL = viewModel.shareURL {
+                            ShareLink(item: shareURL)
+                                .labelStyle(.iconOnly)
+                                .padding()
+                        }
                     }
-                }
             } else {
                 Color.clear
             }
         }
+        // Built here rather than in `init`: `MapItemViewModel.init` kicks off a Look
+        // Around scene request, and `@State`'s initial value would be re-evaluated on
+        // every body pass of the sheet container — one network request per detent
+        // drag frame.
         .onAppear {
             guard viewModel == nil else { return }
             viewModel = MapItemViewModel(
                 mapItem: mapItem,
                 application: application,
                 actions: MapItemActions(
-                    openWebsite: { websiteURL = $0 },
+                    openWebsite: { website = WebsiteLink(url: $0) },
                     showNearbyStops: { coordinator.push(.nearbyStops(coordinate: $0)) },
                     dismiss: { dismiss() }
                 ),
                 removePinHandler: nil,
-                // Trip planning has no SwiftUI route yet: the button renders for
-                // layout parity and does nothing. Wire this up when the trip
-                // planner lands on this surface.
-                planTripHandler: { }
+                // No trip-planner route on this surface yet. `nil` hides the button
+                // rather than rendering one that does nothing; wire it up when the
+                // trip planner lands here.
+                planTripHandler: nil
             )
         }
-        .sheet(item: $websiteURL) { url in
-            SafariSheetView(url: url)
+        // The searched place marker belongs to this sheet. Pushing `.nearbyStops`
+        // from a row *stacks* over this sheet rather than dismissing it, so this
+        // only fires on a real exit.
+        .onDisappear { displayModel.clear() }
+        .sheet(item: $website) { link in
+            SafariSheetView(url: link.url)
         }
     }
 }
 
-extension URL: @retroactive Identifiable {
-    public var id: String { absoluteString }
+/// `.sheet(item:)` needs an `Identifiable` payload. A local wrapper rather than a
+/// retroactive `Identifiable` conformance on `URL` — protocol conformances aren't
+/// access-controlled, so conforming a Foundation type here would make it OBAKit's
+/// answer for every consumer of the framework and collide with any other module
+/// (or a future Foundation version) that declares the same thing.
+private struct WebsiteLink: Identifiable {
+    let url: URL
+    var id: String { url.absoluteString }
 }

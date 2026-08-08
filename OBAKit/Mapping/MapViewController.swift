@@ -1210,23 +1210,18 @@ class MapViewController: UIViewController,
 
         self.floatingPanel.move(to: .tip, animated: true)
 
-        let mapItemController = MapItemViewController { [weak self] controller in
-            guard let self else {
-                fatalError("MapItemViewController outlived its presenting MapViewController")
+        let mapItemController = MapItemViewController(
+            application: application,
+            mapItem: mapItem,
+            delegate: self,
+            removePinHandler: removePinHandler,
+            planTripHandler: { [weak self] in
+                guard let self else { return }
+                self.dismissExistingMapItemController(animated: true)
+                self.showTripPlanner(destination: mapItem)
+                self.semiModalPanel?.move(to: .tip, animated: false)
             }
-            return MapItemViewModel(
-                mapItem: mapItem,
-                application: self.application,
-                actions: .uiKit(presenter: controller, delegate: self, application: self.application),
-                removePinHandler: removePinHandler,
-                planTripHandler: { [weak self] in
-                    guard let self else { return }
-                    self.dismissExistingMapItemController(animated: true)
-                    self.showTripPlanner(destination: mapItem)
-                    self.semiModalPanel?.move(to: .tip, animated: false)
-                }
-            )
-        }
+        )
         let semiModal = createSemiModalPanel(childController: mapItemController)
         semiModal.addPanel(toParent: self)
         self.semiModalMapItemController = semiModal

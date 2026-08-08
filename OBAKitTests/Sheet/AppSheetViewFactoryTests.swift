@@ -33,13 +33,30 @@ final class AppSheetViewFactoryTests: OBATestCase {
         queue.cancelAllOperations()
     }
 
+    /// The coordinator and display model are required dependencies, so every test
+    /// builds the factory the same way the app does.
+    @MainActor
+    private func makeFactory(
+        application: Application,
+        coordinator: SheetCoordinator<AppSheetRoute> = SheetCoordinator(root: .home),
+        displayModel: MapSearchDisplayModel = MapSearchDisplayModel()
+    ) -> AppSheetViewFactory {
+        AppSheetViewFactory(
+            application: application,
+            onPresentTrip: { _ in },
+            onPresentVehicleTrip: { _ in },
+            presentingController: { nil },
+            coordinator: coordinator,
+            searchDisplayModel: displayModel
+        )
+    }
+
     @Test @MainActor
     func `More view returns more sheet host forwarding application`() {
         let dataLoader = MockDataLoader(testName: name)
         let application = buildApplication(queue: queue, dataLoader: dataLoader)
 
-        let factory = AppSheetViewFactory(application: application, onPresentTrip: { _ in }, presentingController: { nil })
-        let host = factory.moreView()
+        let host = makeFactory(application: application).moreView()
 
         // Reference identity: the factory must forward its own `Application`
         // into the host, not construct a new one or drop it. `MoreSheetHost`'s
@@ -54,8 +71,7 @@ final class AppSheetViewFactoryTests: OBATestCase {
         let dataLoader = MockDataLoader(testName: name)
         let application = buildApplication(queue: queue, dataLoader: dataLoader)
 
-        let factory = AppSheetViewFactory(application: application, onPresentTrip: { _ in }, presentingController: { nil })
-        let view = factory.stopDetailView(stopID: "1_10914")
+        let view = makeFactory(application: application).stopDetailView(stopID: "1_10914")
 
         #expect(view.stopID == "1_10914")
     }
@@ -71,8 +87,7 @@ final class AppSheetViewFactoryTests: OBATestCase {
         let dataLoader = MockDataLoader(testName: name)
         let application = buildApplication(queue: queue, dataLoader: dataLoader)
 
-        let factory = AppSheetViewFactory(application: application, onPresentTrip: { _ in }, presentingController: { nil })
-        let view = factory.stopDetailView(stopID: "1_10914")
+        let view = makeFactory(application: application).stopDetailView(stopID: "1_10914")
 
         #expect(view.makePresenter().application === application)
         #expect(view.makeViewModel().stopID == "1_10914")
@@ -83,40 +98,55 @@ final class AppSheetViewFactoryTests: OBATestCase {
     }
 
     @Test @MainActor
-    func `Route stops view returns route stops sheet view forwarding the stops for route`() {
+    func `Route stops view returns route stops sheet view forwarding the stops for route`() throws {
         let dataLoader = MockDataLoader(testName: name)
         let application = buildApplication(queue: queue, dataLoader: dataLoader)
-        let stopsForRoute = try! Fixtures.loadRESTAPIPayload(type: StopsForRoute.self, fileName: "stops_for_route_1_44.json")
+        let stopsForRoute = try Fixtures.loadRESTAPIPayload(type: StopsForRoute.self, fileName: "stops_for_route_1_44.json")
 
-        let factory = AppSheetViewFactory(application: application, onPresentTrip: { _ in })
-        let view = factory.routeStopsView(stopsForRoute: stopsForRoute)
+        let view = makeFactory(application: application).routeStopsView(stopsForRoute: stopsForRoute)
 
         #expect(view.stopsForRoute.route.id == stopsForRoute.route.id)
     }
 
+    /// The route-stops sheet clears the map on dismissal, so it has to be handed the
+    /// same display model the map renders — not a private one.
     @Test @MainActor
-    func `Search results view returns search results sheet view forwarding the response`() {
+    func `Route stops view forwards the shared display model`() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let displayModel = MapSearchDisplayModel()
+        let stopsForRoute = try Fixtures.loadRESTAPIPayload(type: StopsForRoute.self, fileName: "stops_for_route_1_44.json")
+
+        let factory = makeFactory(application: application, displayModel: displayModel)
+        let view = factory.routeStopsView(stopsForRoute: stopsForRoute)
+
+        #expect(view.displayModel === displayModel)
+    }
+
+    /// Both search surfaces have to route a picked result through the *same* router,
+    /// or the two screens can drift on what "opening a result" means.
+    @Test @MainActor
+    func `Search results view is handed the factory's shared router`() {
         let dataLoader = MockDataLoader(testName: name)
         let application = buildApplication(queue: queue, dataLoader: dataLoader)
         let request = SearchRequest(query: "test", type: .stopNumber)
         let response = SearchResponse(request: request, results: [], boundingRegion: nil, error: nil)
 
-        let factory = AppSheetViewFactory(application: application, onPresentTrip: { _ in })
+        let factory = makeFactory(application: application)
         let view = factory.searchResultsView(response: response)
 
-        #expect(view.response.request.query == response.request.query)
+        #expect(view.router === factory.searchResultRouter)
+        #expect(view.application === application)
     }
 
     @Test @MainActor
-    func `Search view returns search sheet view forwarding the application`() {
+    func `Search view returns search sheet view forwarding the placeholder`() {
         let dataLoader = MockDataLoader(testName: name)
         let application = buildApplication(queue: queue, dataLoader: dataLoader)
 
-        let factory = AppSheetViewFactory(application: application, onPresentTrip: { _ in })
-        let view = factory.searchView()
+        let view = makeFactory(application: application).searchView()
 
-        // SearchSheetView's viewModel is internal state via @StateObject, so we verify
-        // indirectly by checking that the view rendered successfully with the placeholder
+        #expect(view.placeholder == SearchPlaceholder.text(for: application))
         #expect(!view.placeholder.isEmpty)
     }
 }

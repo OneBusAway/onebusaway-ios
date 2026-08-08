@@ -88,7 +88,14 @@ final class SearchResultRouter {
     /// A `Route` carries no geometry. Resolve it into `StopsForRoute` — the polyline
     /// and stop list — before anything can be drawn or listed.
     private func presentRoute(_ route: Route) async {
-        guard let apiService = application.apiService else { return }
+        guard let apiService = application.apiService else {
+            // Every other failure here records `lastError` so the presenting screen
+            // can say something. Returning silently would leave the caller reading
+            // "succeeded, nothing happened" and the tapped row doing nothing.
+            Logger.error("SearchResultRouter: no API service; cannot resolve route \(route.id).")
+            lastError = APIError.noRegionSelected
+            return
+        }
 
         do {
             let stopsForRoute = try await apiService.getStopsForRoute(routeID: route.id).entry

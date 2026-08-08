@@ -142,7 +142,13 @@ struct MapPanelRootView: View {
                     )
                 }
             }
-            searchResultMapContent(for: searchDisplay.display)
+            searchResultMapContent(for: searchDisplay.display) { stop in
+                application.stopIconFactory.buildSquircleIcon(
+                    for: stop,
+                    isBookmarked: false,
+                    traits: UITraitCollection(userInterfaceStyle: colorScheme == .dark ? .dark : .light)
+                )
+            }
         }
         .onMapCameraChange(frequency: .onEnd) { context in
             viewportRecorder.record(context.rect)

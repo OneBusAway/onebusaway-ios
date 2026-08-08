@@ -20,6 +20,10 @@ final class SearchViewModel: ObservableObject {
     /// showed none at all.
     @Published private(set) var loadingVehicleID: String?
 
+    /// The vehicle whose lookup produced `vehicleError`, so the inline error row can
+    /// offer a retry rather than dead-ending the user.
+    @Published private(set) var failedVehicleID: String?
+
     let subtitle: String
     let results: [Any]
 
@@ -46,6 +50,7 @@ final class SearchViewModel: ObservableObject {
         guard let apiService else {
             // Misconfiguration (no API service available). Surface it through the same
             // error channel as a request failure so the screen doesn't silently no-op.
+            failedVehicleID = vehicleID
             vehicleError = UnstructuredError(OBALoc(
                 "search_results_controller.no_api_service_error",
                 value: "No transit data service is available. Please choose a region in Settings.",
@@ -55,6 +60,7 @@ final class SearchViewModel: ObservableObject {
         }
         loadingVehicleID = vehicleID
         vehicleError = nil
+        failedVehicleID = nil
         vehicleSearchResponse = nil
         defer { loadingVehicleID = nil }
         do {
@@ -64,9 +70,11 @@ final class SearchViewModel: ObservableObject {
             // VehicleStatus requires `tripId`; its absence means the vehicle isn't on
             // any trip right now. Any *other* missing key signals a real decode failure
             // (renamed field, malformed payload) and should surface as-is.
+            failedVehicleID = vehicleID
             vehicleError = SearchError.noTripsAvailable
         } catch {
             Logger.error("selectVehicle decode failure: \(error)")
+            failedVehicleID = vehicleID
             vehicleError = error
         }
     }

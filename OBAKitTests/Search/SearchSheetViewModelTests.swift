@@ -113,4 +113,43 @@ final class SearchSheetViewModelTests: OBATestCase {
         #expect(viewModel.showsNoResults == true)
         #expect(coordinator.stackedRoutes.isEmpty)
     }
+
+    // MARK: - Outcome classification
+
+    /// A `nil` response means the search never ran (no API service, no Obaco service,
+    /// no map rect) — a different thing from a query that ran and matched nothing.
+    /// Reporting the first as "no results" would send the user off rewording a query
+    /// that never left the device.
+    ///
+    /// Asserted against the pure classifier because the `nil` case can't be produced
+    /// through the test `Application`, which always has a region, an API service, and
+    /// an Obaco service.
+    @Test @MainActor
+    func `A nil response is unavailable rather than no results`() {
+        #expect(SearchSheetViewModel.SearchOutcome(response: nil) == .unavailable)
+    }
+
+    @Test @MainActor
+    func `An empty response is no results`() {
+        let response = SearchResponse(
+            request: SearchRequest(query: "zzzz", type: .route),
+            results: [],
+            boundingRegion: nil,
+            error: nil
+        )
+
+        #expect(SearchSheetViewModel.SearchOutcome(response: response) == .noResults)
+    }
+
+    @Test @MainActor
+    func `One result routes straight through and several disambiguate`() throws {
+        let stops = try Fixtures.loadSomeStops()
+        let request = SearchRequest(query: "1", type: .stopNumber)
+
+        let one = SearchResponse(request: request, results: Array(stops.prefix(1)), boundingRegion: nil, error: nil)
+        let many = SearchResponse(request: request, results: Array(stops.prefix(3)), boundingRegion: nil, error: nil)
+
+        #expect(SearchSheetViewModel.SearchOutcome(response: one) == .single(one))
+        #expect(SearchSheetViewModel.SearchOutcome(response: many) == .disambiguate(many))
+    }
 }
