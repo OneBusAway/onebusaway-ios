@@ -71,6 +71,7 @@ final class AppSheetViewFactory {
     // MARK: - Dispatcher
 
     @ViewBuilder
+    // swiftlint:disable:next cyclomatic_complexity
     func view(for route: AppSheetRoute) -> some View {
         switch route {
         case .home:
@@ -79,15 +80,13 @@ final class AppSheetViewFactory {
         case .more:
             moreView()
 
+        case .search:
+            searchView()
+
         // Wiring a push for one of these routes before its view exists will
         // trip the debug assertion in `unimplementedView(for:)` — register the
         // view here before reaching for `SheetCoordinator.push(...)`.
-        //
-        // TODO: `.search` is base-layer and has `isDismissDisabled: true`
-        // — its real view needs to wire up an explicit back affordance
-        // (the home sheet only knows how to push, not pop), otherwise the
-        // route is unreachable once entered.
-        case .search, .nearbyAll, .recentStopsAll, .bookmarksAll,
+        case .nearbyAll, .recentStopsAll, .bookmarksAll,
              .tripPlanner, .tripDetails, .transitAlert, .settings:
             unimplementedView(for: route)
 
@@ -117,7 +116,7 @@ final class AppSheetViewFactory {
     // MARK: - Per-route view builders
 
     func homeView() -> HomeSheetView {
-        HomeSheetView(viewModel: HomeSheetViewModel())
+        HomeSheetView(viewModel: HomeSheetViewModel(application: self.application))
     }
 
     /// Bridges `AppSheetRoute.more` to the existing UIKit `MoreViewController`
@@ -178,6 +177,17 @@ final class AppSheetViewFactory {
 
     func searchResultsView(response: SearchResponse) -> SearchResultsSheetView {
         SearchResultsSheetView(application: application, response: response, router: searchResultRouter)
+    }
+
+    func searchView() -> SearchSheetView {
+        SearchSheetView(
+            viewModel: SearchSheetViewModel(
+                application: self.application,
+                coordinator: self.coordinator,
+                router: self.searchResultRouter
+            ),
+            placeholder: HomeSheetViewModel(application: self.application).searchPlaceholder
+        )
     }
 
     /// Placeholder until each route gets its own real view. In debug builds we

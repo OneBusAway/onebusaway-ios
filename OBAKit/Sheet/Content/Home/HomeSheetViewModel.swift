@@ -21,4 +21,23 @@ final class HomeSheetViewModel: ObservableObject {
     // TODO: Populate from `RESTAPIService` / `LocationService` once the
     // home sheet renders nearby stops.
     @Published private(set) var nearbyStops: [Stop] = []
+
+    private let application: Application
+
+    init(application: Application) {
+        self.application = application
+    }
+
+    /// Mirrors `MapFloatingPanelController.updateSearchBarPlaceholderText()`.
+    var searchPlaceholder: String {
+        guard let region = application.regionsService.currentRegion else { return "" }
+        if application.features.tripPlanning == .running {
+            return OBALoc(
+                "map_floating_panel.where_are_you_going",
+                value: "Where are you going?",
+                comment: "Search bar placeholder on the map floating panel when the trip planner is enabled."
+            )
+        }
+        return Formatters.searchPlaceholderText(region: region)
+    }
 }
