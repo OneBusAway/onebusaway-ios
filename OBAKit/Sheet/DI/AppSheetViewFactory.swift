@@ -68,7 +68,8 @@ final class AppSheetViewFactory {
         // (the home sheet only knows how to push, not pop), otherwise the
         // route is unreachable once entered.
         case .search, .nearbyAll, .recentStopsAll, .bookmarksAll,
-             .tripPlanner, .tripDetails, .transitAlert, .settings:
+             .tripPlanner, .tripDetails, .transitAlert, .settings,
+             .searchResults, .mapItem, .routeStops, .nearbyStops:
             unimplementedView(for: route)
 
         case .stopDetails(let stopID):
