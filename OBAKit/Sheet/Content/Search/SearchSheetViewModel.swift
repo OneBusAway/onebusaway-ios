@@ -11,6 +11,24 @@ import Foundation
 import MapKit
 import OBAKitCore
 
+/// A one-shot search outcome, surfaced by the view as an alert.
+///
+/// Identity is fresh per message, so two identical failures in a row are two
+/// distinct values. A plain `String?` or `Bool` would coalesce when the reset and
+/// the re-set land in the same update pass, silently swallowing the second alert.
+struct SearchSheetMessage: Identifiable, Equatable {
+    enum Kind: Equatable {
+        /// The search ran and matched nothing.
+        case noResults
+        /// The search failed, or could not be attempted.
+        case error
+    }
+
+    let id = UUID()
+    let kind: Kind
+    let text: String
+}
+
 /// Owns a search session: the query, the `SearchInteractor` that turns it into
 /// sections, and the `SearchDelegate` callbacks those sections fire.
 ///
@@ -22,12 +40,7 @@ final class SearchSheetViewModel: NSObject, ObservableObject, SearchDelegate {
 
     @Published var query: String = ""
 
-    /// Set when a search returns nothing, so the sheet can say so in place rather
-    /// than popping the alert the UIKit path shows.
-    @Published private(set) var showsNoResults = false
-
-    /// Set when resolving a result fails, rendered inline for the same reason.
-    @Published private(set) var errorMessage: String?
+    @Published private(set) var message: SearchSheetMessage?
 
     @Published private(set) var isSearching = false
 
@@ -64,9 +77,14 @@ final class SearchSheetViewModel: NSObject, ObservableObject, SearchDelegate {
 
     func updateQuery(_ text: String) {
         query = text
-        showsNoResults = false
-        errorMessage = nil
+        message = nil
         searchInteractor.searchModeObjects(text: text)
+    }
+
+    /// Called when the view dismisses the alert, so a repeat of the same failing
+    /// search presents again rather than being swallowed as "no change".
+    func dismissMessage() {
+        message = nil
     }
 
     /// Leaves search and returns the base sheet to home.
@@ -120,15 +138,14 @@ final class SearchSheetViewModel: NSObject, ObservableObject, SearchDelegate {
         application.analytics?.reportSearchQuery(request.query)
 
         isSearching = true
-        showsNoResults = false
-        errorMessage = nil
+        message = nil
         defer { isSearching = false }
 
         let response: SearchResponse?
         do {
             response = try await application.searchManager.fetchResults(for: request)
         } catch {
-            errorMessage = error.localizedDescription
+            message = SearchSheetMessage(kind: .error, text: error.localizedDescription)
             return
         }
 
@@ -136,10 +153,10 @@ final class SearchSheetViewModel: NSObject, ObservableObject, SearchDelegate {
         case .unavailable:
             // The query was never sent. Saying "no results" would send the user off
             // rewording a search that never left the device.
-            errorMessage = APIError.noRegionSelected.localizedDescription
+            message = SearchSheetMessage(kind: .error, text: APIError.noRegionSelected.localizedDescription)
 
         case .noResults:
-            showsNoResults = true
+            message = SearchSheetMessage(kind: .noResults, text: Self.noResultsText)
 
         case .disambiguate(let response):
             coordinator.push(.searchResults(response))
@@ -150,10 +167,16 @@ final class SearchSheetViewModel: NSObject, ObservableObject, SearchDelegate {
             coordinator.pop()
             _ = await router.presentSingleResult(from: response)
             if let error = router.lastError {
-                errorMessage = error.localizedDescription
+                message = SearchSheetMessage(kind: .error, text: error.localizedDescription)
             }
         }
     }
+
+    static let noResultsText = OBALoc(
+        "map_controller.no_search_results_found",
+        value: "No search results were found.",
+        comment: "A generic message shown when the user's search query produces no search results."
+    )
 
     /// The in-flight `router.present(...)` kicked off by a delegate callback.
     /// `SearchDelegate`'s methods are synchronous, so presentation has to be

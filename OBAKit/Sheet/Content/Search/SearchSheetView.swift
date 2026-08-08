@@ -23,15 +23,46 @@ struct SearchSheetView: View {
         self.placeholder = placeholder
     }
 
+    /// Mirrors `AlertPresenter.show(errorMessage:)`, which the UIKit map uses for
+    /// both search failures and the no-results case: `Strings.error` as the title,
+    /// the message as the body, one dismiss button.
+    private var messageAlert: Binding<Bool> {
+        Binding(
+            get: { viewModel.message != nil },
+            set: { if !$0 { viewModel.dismissMessage() } }
+        )
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             searchField
-            statusBanner
             SearchListView(searchInteractor: viewModel.searchInteractor)
         }
+        .searchSheetBackground()
         .onAppear {
             viewModel.reportSearchOpened()
             isFieldFocused = true
+        }
+        // The app-wide HUD rather than a spinner of our own: it centres itself over
+        // everything, which is what the rest of the app does for an in-flight
+        // request, and it's already what `SearchManager` shows on the UIKit path.
+        .onChange(of: viewModel.isSearching) { _, isSearching in
+            if isSearching {
+                ProgressHUD.show()
+            } else {
+                ProgressHUD.dismiss()
+            }
+        }
+        // The HUD lives in its own window, so leaving search mid-request would
+        // otherwise strand it on screen with nothing left to dismiss it.
+        .onDisappear { ProgressHUD.dismiss() }
+        // Outcomes go to an alert rather than a banner above the list: the banner
+        // pushed the list down on every failed search, and it sat in the one place
+        // the user is looking while typing.
+        .alert(Strings.error, isPresented: messageAlert, presenting: viewModel.message) { _ in
+            Button(Strings.dismiss, role: .cancel) { }
+        } message: { message in
+            Text(message.text)
         }
         .alert(
             Strings.clearRecentSearchesConfirmation,
@@ -66,8 +97,14 @@ struct SearchSheetView: View {
                         viewModel.updateQuery("")
                     } label: {
                         Image(systemName: "xmark.circle.fill")
-                            .foregroundStyle(.secondary)
+                            // `Color.secondary`, not the `.secondary` shape style:
+                            // inside a `Button` the latter resolves against the
+                            // button's tint, which rendered a washed-out accent
+                            // colour rather than grey. `.plain` keeps the tint off
+                            // the label for good measure.
+                            .foregroundStyle(Color.secondary)
                     }
+                    .buttonStyle(.plain)
                     .accessibilityLabel(OBALoc(
                         "search_sheet.clear_query",
                         value: "Clear",
@@ -88,28 +125,4 @@ struct SearchSheetView: View {
         .padding(.top, 16)
     }
 
-    @ViewBuilder
-    private var statusBanner: some View {
-        if viewModel.isSearching {
-            ProgressView()
-                .padding(.top, 12)
-        } else if let errorMessage = viewModel.errorMessage {
-            Label(errorMessage, systemImage: "exclamationmark.triangle")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-                .padding(.top, 12)
-        } else if viewModel.showsNoResults {
-            Label(
-                OBALoc(
-                    "map_controller.no_search_results_found",
-                    value: "No search results were found.",
-                    comment: "A generic message shown when the user's search query produces no search results."
-                ),
-                systemImage: "magnifyingglass"
-            )
-            .font(.footnote)
-            .foregroundStyle(.secondary)
-            .padding(.top, 12)
-        }
-    }
 }

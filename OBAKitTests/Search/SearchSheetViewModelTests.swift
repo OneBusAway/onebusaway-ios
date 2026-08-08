@@ -99,9 +99,10 @@ final class SearchSheetViewModelTests: OBATestCase {
         #expect(application.userDataStore.recentMapItems.isEmpty)
     }
 
-    /// A search that matches nothing reports inline rather than popping an alert.
+    /// A search that matches nothing raises a message, which the view turns into the
+    /// same alert the UIKit path shows.
     @Test @MainActor
-    func `A search with no results sets the no results message`() async throws {
+    func `A search with no results raises a no results message`() async throws {
         let dataLoader = MockDataLoader(testName: name)
         dataLoader.mock(data: Fixtures.loadData(file: "routes_for_location_outofrange.json")) { request in
             request.url?.path.contains("/api/where/routes-for-location.json") ?? false
@@ -110,8 +111,47 @@ final class SearchSheetViewModelTests: OBATestCase {
 
         await viewModel.performSearchAndWait(request: SearchRequest(query: "zzzz", type: .route))
 
-        #expect(viewModel.showsNoResults == true)
+        #expect(viewModel.message?.kind == .noResults)
         #expect(coordinator.stackedRoutes.isEmpty)
+    }
+
+    /// The message carries a fresh identity per occurrence, so repeating a search
+    /// that fails the same way twice raises two distinct values — otherwise, once
+    /// the alert had been dismissed, the second failure would look like no change
+    /// and never present.
+    @Test @MainActor
+    func `Repeating a failed search raises a distinct message each time`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        dataLoader.mock(data: Fixtures.loadData(file: "routes_for_location_outofrange.json")) { request in
+            request.url?.path.contains("/api/where/routes-for-location.json") ?? false
+        }
+        let (viewModel, _, _) = makeViewModel(dataLoader: dataLoader)
+        let request = SearchRequest(query: "zzzz", type: .route)
+
+        await viewModel.performSearchAndWait(request: request)
+        let first = try #require(viewModel.message)
+
+        await viewModel.performSearchAndWait(request: request)
+        let second = try #require(viewModel.message)
+
+        #expect(first.text == second.text)
+        #expect(first != second)
+    }
+
+    @Test @MainActor
+    func `Typing clears a pending message`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        dataLoader.mock(data: Fixtures.loadData(file: "routes_for_location_outofrange.json")) { request in
+            request.url?.path.contains("/api/where/routes-for-location.json") ?? false
+        }
+        let (viewModel, _, _) = makeViewModel(dataLoader: dataLoader)
+
+        await viewModel.performSearchAndWait(request: SearchRequest(query: "zzzz", type: .route))
+        #expect(viewModel.message != nil)
+
+        viewModel.updateQuery("cap hill")
+
+        #expect(viewModel.message == nil)
     }
 
     // MARK: - Outcome classification

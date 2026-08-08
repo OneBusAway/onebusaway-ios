@@ -75,7 +75,7 @@ struct RouteStopsSheetView: View {
                 }
                 .buttonStyle(.plain)
             }
-            .listStyle(.plain)
+            .searchListChrome()
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .principal) {
@@ -94,6 +94,7 @@ struct RouteStopsSheetView: View {
                 }
             }
         }
+        .searchSheetBackground()
         // The route polyline belongs to this sheet. `MapSearchDisplayModel.display`
         // also gates the ambient stop layer, so leaving it set after the sheet goes
         // away would strand the map with a dismissed route drawn on it and no stop

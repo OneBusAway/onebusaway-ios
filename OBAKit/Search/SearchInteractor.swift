@@ -108,7 +108,7 @@ class SearchInteractor: NSObject {
     // MARK: - Recent Stops
     private func buildRecentStopsSection(searchText: String) -> SearchListSection? {
         let recentStops = userDataStore.findRecentStops(matching: searchText).map { stop in
-            SearchListRow(kind: .recentStop, title: stop.name, accessory: .disclosureIndicator) { [weak self] in
+            SearchListRow(kind: .recentStop(id: stop.id), title: stop.name, accessory: .disclosureIndicator) { [weak self] in
                 guard let self else { return }
                 self.delegate?.searchInteractor(self, showStop: stop)
             }

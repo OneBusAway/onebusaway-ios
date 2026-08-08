@@ -24,6 +24,40 @@ struct SearchListView: View {
     }
 }
 
+// MARK: - Shared list chrome
+
+extension View {
+    /// The list treatment shared by every search surface: inset-grouped cards on no
+    /// background of the list's own.
+    ///
+    /// Pairs with `searchSheetBackground()` on the enclosing sheet — hiding the
+    /// list's background only works if something behind it supplies the contrast the
+    /// cards need.
+    func searchListChrome() -> some View {
+        self
+            .listStyle(.insetGrouped)
+            .scrollDismissesKeyboard(.interactively)
+            .scrollContentBackground(.hidden)
+            .contentMargins(.horizontal, 8, for: .scrollContent)
+            .background(.clear)
+    }
+
+    /// Grouped background for a sheet hosting a search list.
+    ///
+    /// Sheets default to `systemBackground`, and `insetGrouped` rows are filled with
+    /// `secondarySystemGroupedBackground` — the same colour in light mode. The cards
+    /// are drawn, but they're white on white, so the rows read as plain text with no
+    /// list edges at all. Painting the sheet with `systemGroupedBackground` is what
+    /// a grouped list normally sits on and gives the cards their contrast back.
+    ///
+    /// Applied to the whole sheet rather than left to the `List`'s own background so
+    /// the colour runs edge to edge, instead of starting below the search field and
+    /// leaving the header two-tone.
+    func searchSheetBackground() -> some View {
+        presentationBackground(Color(.systemGroupedBackground))
+    }
+}
+
 // MARK: - SearchListContentView
 
 private struct SearchListContentView: View {
@@ -43,11 +77,7 @@ private struct SearchListContentView: View {
                 }
             }
         }
-        .listStyle(.insetGrouped)
-        .scrollDismissesKeyboard(.interactively)
-        .scrollContentBackground(.hidden)
-        .contentMargins(.horizontal, 8, for: .scrollContent)
-        .background(.clear)
+        .searchListChrome()
     }
 }
 

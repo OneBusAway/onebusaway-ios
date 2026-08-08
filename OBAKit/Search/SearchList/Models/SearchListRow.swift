@@ -17,7 +17,10 @@ struct SearchListRow: Identifiable {
 
     enum Kind {
         case quickSearch(SearchType)
-        case recentStop
+        /// Carries the stop's id for the same reason `searchResult` does: recent
+        /// stops are rendered in a `ForEach`, and two stops on opposite sides of a
+        /// corner share a name.
+        case recentStop(id: String)
         case bookmark
         case placemark(MKMapItem)
         /// A row in a disambiguation list. Carries the underlying model's id
@@ -40,8 +43,8 @@ struct SearchListRow: Identifiable {
             switch self {
             case .quickSearch(let type):
                 return "quickSearch-\(type.rawValue)"
-            case .recentStop:
-                return "recentStop"
+            case .recentStop(let id):
+                return "recentStop-\(id)"
             case .bookmark:
                 return "bookmark"
             case .placemark(let item):
