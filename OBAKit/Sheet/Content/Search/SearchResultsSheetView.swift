@@ -15,6 +15,7 @@ import OBAKitCore
 /// the search sheet stays alive beneath with its query intact.
 struct SearchResultsSheetView: View {
     let application: Application
+    let response: SearchResponse
     let router: SearchResultRouter
 
     @StateObject private var viewModel: SearchViewModel
@@ -23,6 +24,7 @@ struct SearchResultsSheetView: View {
 
     init(application: Application, response: SearchResponse, router: SearchResultRouter) {
         self.application = application
+        self.response = response
         self.router = router
         _viewModel = StateObject(wrappedValue: SearchViewModel(searchResponse: response, application: application))
     }
