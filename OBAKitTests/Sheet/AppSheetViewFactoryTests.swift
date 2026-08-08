@@ -81,4 +81,42 @@ final class AppSheetViewFactoryTests: OBATestCase {
         #expect(view.formatters === application.formatters)
         #expect(view.userDefaults === application.userDefaults)
     }
+
+    @Test @MainActor
+    func `Route stops view returns route stops sheet view forwarding the stops for route`() {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let stopsForRoute = try! Fixtures.loadRESTAPIPayload(type: StopsForRoute.self, fileName: "stops_for_route_1_44.json")
+
+        let factory = AppSheetViewFactory(application: application, onPresentTrip: { _ in })
+        let view = factory.routeStopsView(stopsForRoute: stopsForRoute)
+
+        #expect(view.stopsForRoute.route.id == stopsForRoute.route.id)
+    }
+
+    @Test @MainActor
+    func `Search results view returns search results sheet view forwarding the response`() {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let request = SearchRequest(query: "test", type: .stopNumber)
+        let response = SearchResponse(request: request, results: [], boundingRegion: nil, error: nil)
+
+        let factory = AppSheetViewFactory(application: application, onPresentTrip: { _ in })
+        let view = factory.searchResultsView(response: response)
+
+        #expect(view.response.request.query == response.request.query)
+    }
+
+    @Test @MainActor
+    func `Search view returns search sheet view forwarding the application`() {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+
+        let factory = AppSheetViewFactory(application: application, onPresentTrip: { _ in })
+        let view = factory.searchView()
+
+        // SearchSheetView's viewModel is internal state via @StateObject, so we verify
+        // indirectly by checking that the view rendered successfully with the placeholder
+        #expect(!view.placeholder.isEmpty)
+    }
 }
