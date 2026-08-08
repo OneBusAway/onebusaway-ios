@@ -83,6 +83,7 @@ struct MapPanelRootView: View {
 
     private let application: Application
     private let factory: AppSheetViewFactory
+    private let viewportRecorder: MapViewportRecorder
 
     init(application: Application, factory: AppSheetViewFactory) {
         _coordinator = StateObject(wrappedValue: SheetCoordinator<AppSheetRoute>(root: .home))
@@ -91,6 +92,7 @@ struct MapPanelRootView: View {
         _mapViewModel = StateObject(wrappedValue: MapViewModel(application: application, initialMapType: initialMapType))
         self.application = application
         self.factory = factory
+        self.viewportRecorder = MapViewportRecorder(application: application)
 
         // With no location fix, frame the current transit region rather than
         // letting `.automatic` frame the bookmark annotations.
@@ -135,6 +137,7 @@ struct MapPanelRootView: View {
             }
         }
         .onMapCameraChange(frequency: .onEnd) { context in
+            viewportRecorder.record(context.rect)
             visibleRegion = context.region
             visibleMapRectHeight = context.rect.height
             // Keep the "Zoom in for stops" pill in sync with the stop-loading
@@ -431,6 +434,10 @@ extension MapPanelRootView {
             zoomLevel: mapViewModel.zoomLevelForCurrentLocation(),
             mapSize: mapSize
         )
+        // Seed the viewport before the camera animates: `.onMapCameraChange` only
+        // fires on settle, so a search run between launch and the first settle would
+        // otherwise be scoped to a stale rect.
+        viewportRecorder.record(MKMapRect(region))
         withAnimation {
             cameraPosition = .region(region)
         }
