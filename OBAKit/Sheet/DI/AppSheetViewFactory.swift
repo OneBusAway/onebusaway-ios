@@ -8,6 +8,7 @@
 //
 
 import SwiftUI
+import MapKit
 import OBAKitCore
 
 // MARK: - AppSheetViewFactory
@@ -69,8 +70,14 @@ final class AppSheetViewFactory {
         // route is unreachable once entered.
         case .search, .nearbyAll, .recentStopsAll, .bookmarksAll,
              .tripPlanner, .tripDetails, .transitAlert, .settings,
-             .searchResults, .mapItem, .routeStops, .nearbyStops:
+             .searchResults, .routeStops:
             unimplementedView(for: route)
+
+        case .mapItem(let mapItem):
+            mapItemView(mapItem: mapItem)
+
+        case .nearbyStops(let coordinate):
+            nearbyStopsView(coordinate: coordinate)
 
         case .stopDetails(let stopID):
             stopDetailView(stopID: stopID)
@@ -129,6 +136,16 @@ final class AppSheetViewFactory {
             formatters: self.application.formatters,
             onPresentTrip: onPresentTrip
         )
+    }
+
+    func mapItemView(mapItem: MKMapItem) -> MapItemSheetView {
+        MapItemSheetView(application: application, mapItem: mapItem)
+    }
+
+    /// Bridges `AppSheetRoute.nearbyStops` to the existing `NearbyStopsViewController`.
+    /// Swap this branch's return type once a SwiftUI nearby-stops list lands.
+    func nearbyStopsView(coordinate: CLLocationCoordinate2D) -> NearbyStopsSheetHost {
+        NearbyStopsSheetHost(application: application, coordinate: coordinate)
     }
 
     /// Placeholder until each route gets its own real view. In debug builds we

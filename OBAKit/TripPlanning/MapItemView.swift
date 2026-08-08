@@ -24,23 +24,23 @@ public struct MapItemView: View {
     /// The view model that manages the data and business logic
     private var viewModel: MapItemViewModel
 
+    /// Whether to show the Share button; the UIKit host shows it, the sheet uses a native ShareLink
+    private let showsShareButton: Bool
+
     /// State for controlling the Look Around viewer presentation
     @State private var showLookAroundViewer = false
 
     /// Initializes a new map item view.
     ///
     /// - Parameter viewModel: The view model containing the map item data and handling user actions
-    public init(viewModel: MapItemViewModel) {
+    /// - Parameter showsShareButton: Whether to show the Share button (default: true for UIKit host)
+    public init(viewModel: MapItemViewModel, showsShareButton: Bool = true) {
         self.viewModel = viewModel
+        self.showsShareButton = showsShareButton
     }
 
     public var body: some View {
-        ZStack {
-            Color.clear
-                .background(.ultraThinMaterial)
-                .ignoresSafeArea(.all)
-
-            VStack(spacing: 0) {
+        VStack(spacing: 0) {
                 headerView
                     .padding(.top, 20)
                     .padding(.horizontal)
@@ -98,7 +98,6 @@ public struct MapItemView: View {
                     .padding(.top)
                 }
             }
-        }
         .lookAroundViewer(
             isPresented: $showLookAroundViewer,
             initialScene: viewModel.lookAroundScene
@@ -130,17 +129,19 @@ public struct MapItemView: View {
 
             HStack(alignment: .top) {
                 // Share Button
-                Button("Share", systemImage: "square.and.arrow.up") {
-                    viewModel.shareLocation()
+                if showsShareButton {
+                    Button("Share", systemImage: "square.and.arrow.up") {
+                        viewModel.shareLocation()
+                    }
+                    .labelStyle(.iconOnly)
+                    .font(.title3)
+                    .foregroundStyle(.primary)
+                    .frame(width: 44, height: 44)
+                    .contentShape(.circle)
+                    .background(.regularMaterial)
+                    .clipShape(.circle)
+                    .accessibilityLabel(OBALoc("map_item_controller.share_button", value: "Share Location", comment: "Accessibility label for share button"))
                 }
-                .labelStyle(.iconOnly)
-                .font(.title3)
-                .foregroundStyle(.primary)
-                .frame(width: 44, height: 44)
-                .contentShape(.circle)
-                .background(.regularMaterial)
-                .clipShape(.circle)
-                .accessibilityLabel(OBALoc("map_item_controller.share_button", value: "Share Location", comment: "Accessibility label for share button"))
 
                 Spacer()
 

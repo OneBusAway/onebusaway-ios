@@ -19,18 +19,19 @@ import OBAKitCore
 /// and provides a link to view nearby transit stops.
 ///
 class MapItemViewController: UIViewController, AppContext {
-    var application: Application {
-        viewModel.application
-    }
+    private let makeViewModel: (MapItemViewController) -> MapItemViewModel
+    private var viewModel: MapItemViewModel!
+
+    var application: Application { viewModel.application }
 
     /// The hosting controller that embeds the SwiftUI view
     private var hostingController: UIHostingController<AnyView>?
 
-    /// The view model that manages the business logic
-    private let viewModel: MapItemViewModel
-
-    init(_ viewModel: MapItemViewModel) {
-        self.viewModel = viewModel
+    /// The view model needs `MapItemActions` bound to *this* controller as their
+    /// presenter, which doesn't exist until after `super.init`. The caller supplies
+    /// a builder instead of a finished view model, and it runs in `viewDidLoad`.
+    init(makeViewModel: @escaping (MapItemViewController) -> MapItemViewModel) {
+        self.makeViewModel = makeViewModel
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -39,11 +40,18 @@ class MapItemViewController: UIViewController, AppContext {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        viewModel = makeViewModel(self)
+
         view.backgroundColor = .clear
 
-        viewModel.setPresentingViewController(self)
+        // The blurred surface used to live inside `MapItemView`. It's panel chrome,
+        // not content — and inside a SwiftUI sheet it fights the sheet's own
+        // material — so the UIKit host owns it now.
+        let background = UIVisualEffectView(effect: UIBlurEffect(style: .systemUltraThinMaterial))
+        view.addSubview(background)
+        background.pinToSuperview(.edges)
 
-        let mapItemView = MapItemView(viewModel: viewModel)
+        let mapItemView = MapItemView(viewModel: viewModel, showsShareButton: true)
             .environment(\.coreApplication, viewModel.application)
 
         let hostingController = UIHostingController(rootView: AnyView(mapItemView))
