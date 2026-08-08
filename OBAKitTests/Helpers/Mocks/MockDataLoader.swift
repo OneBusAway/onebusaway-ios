@@ -70,13 +70,22 @@ nonisolated class MockDataLoader: NSObject, URLDataLoader, @unchecked Sendable {
     /// `recordedRequestURLsLock` because real callers fan out across multiple
     /// concurrent tasks (e.g. `AgencyAlertsStore.update()`'s alerts task group).
     private var _recordedRequestURLs = [URL]()
+    private var _recordedRequests = [URLRequest]()
     private let recordedRequestURLsLock = NSLock()
     var recordedRequestURLs: [URL] {
         recordedRequestURLsLock.withLock { _recordedRequestURLs }
     }
-    private func recordRequest(_ url: URL?) {
+    var requests: [URLRequest] {
+        recordedRequestURLsLock.withLock { _recordedRequests }
+    }
+    private func recordRequest(_ url: URL?, request: URLRequest? = nil) {
         guard let url else { return }
-        recordedRequestURLsLock.withLock { _recordedRequestURLs.append(url) }
+        recordedRequestURLsLock.withLock {
+            _recordedRequestURLs.append(url)
+            if let request {
+                _recordedRequests.append(request)
+            }
+        }
     }
 
     /// Clears recorded request URLs. Useful in tests that need to ignore the
@@ -93,7 +102,7 @@ nonisolated class MockDataLoader: NSObject, URLDataLoader, @unchecked Sendable {
     }
 
     func dataTask(with request: URLRequest, completionHandler: @escaping (Data?, URLResponse?, Error?) -> Void) -> URLSessionDataTask {
-        recordRequest(request.url)
+        recordRequest(request.url, request: request)
         guard let response = matchResponse(to: request) else {
             fatalError("\(testName): Missing response to URL: \(request.url!)")
         }
@@ -121,7 +130,7 @@ nonisolated class MockDataLoader: NSObject, URLDataLoader, @unchecked Sendable {
             throw URLError(.cancelled)
         }
 
-        recordRequest(request.url)
+        recordRequest(request.url, request: request)
         guard let response = matchResponse(to: request) else {
             fatalError("\(testName): Missing response to URL: \(request.url!)")
         }

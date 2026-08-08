@@ -84,119 +84,114 @@ public class SearchManager: NSObject {
         self.application = application
     }
 
+    // MARK: - Publishing entry point (UIKit)
+
+    /// Performs `request` and publishes the result through `MapRegionManager`, which
+    /// fans out to `MapRegionDelegate`. Error handling deliberately differs per
+    /// search type — that asymmetry is pre-existing behavior the UIKit map depends
+    /// on, not an oversight:
+    ///   - `.address` publishes an error response and shows no alert.
+    ///   - `.stopNumber` shows an alert *and* publishes an error response.
+    ///   - `.route` / `.vehicleID` show an alert only; publishing an empty response
+    ///     would additionally trigger the "No search results were found" alert via
+    ///     `notifyDelegatesNoSearchResults`, double-alerting the user.
     public func search(request: SearchRequest) async {
+        if request.searchType == .vehicleID {
+            ProgressHUD.show()
+        }
+        defer {
+            if request.searchType == .vehicleID {
+                ProgressHUD.dismiss()
+            }
+        }
+
+        do {
+            guard let response = try await fetchResults(for: request) else { return }
+            application.mapRegionManager.searchResponse = response
+        } catch {
+            switch request.searchType {
+            case .address:
+                application.mapRegionManager.searchResponse = SearchResponse(request: request, results: [], boundingRegion: nil, error: error)
+            case .stopNumber:
+                await application.displayError(error)
+                application.mapRegionManager.searchResponse = SearchResponse(request: request, results: [], boundingRegion: nil, error: error)
+            case .route, .vehicleID:
+                await application.displayError(error)
+            }
+        }
+    }
+
+    // MARK: - Returning entry point (SwiftUI)
+
+    /// Performs `request` and returns the response instead of publishing it.
+    ///
+    /// Returns `nil` when the search could not run at all — no API service, no
+    /// Obaco service, or no map rect — mirroring the `guard … else { return }`
+    /// bail-outs the publishing path has always had.
+    func fetchResults(for request: SearchRequest) async throws -> SearchResponse? {
         switch request.searchType {
-        case .address:    await searchAddress(request: request)
-        case .route:      await searchRoute(request: request)
-        case .stopNumber: searchStopNumber(request: request)
-        case .vehicleID:  await searchVehicleID(request: request)
+        case .address:    return try await fetchAddress(request: request)
+        case .route:      return try await fetchRoute(request: request)
+        case .stopNumber: return try await fetchStopNumber(request: request)
+        case .vehicleID:  return try await fetchVehicleID(request: request)
         }
     }
 
-    private func searchAddress(request: SearchRequest) async {
+    private func fetchAddress(request: SearchRequest) async throws -> SearchResponse? {
         guard
             let apiService = application.apiService,
             let mapRect = application.mapRegionManager.lastVisibleMapRect
-        else {
-            return
-        }
+        else { return nil }
 
-        let searchResponse: SearchResponse
-        do {
-            let results = try await apiService.getPlacemarks(query: request.query, region: MKCoordinateRegion(mapRect))
-            searchResponse = SearchResponse(request: request, results: results.mapItems, boundingRegion: results.boundingRegion, error: nil)
-        } catch {
-            searchResponse = SearchResponse(request: request, results: [], boundingRegion: nil, error: error)
-        }
-
-        await MainActor.run {
-            self.application.mapRegionManager.searchResponse = searchResponse
-        }
+        let results = try await apiService.getPlacemarks(query: request.query, region: MKCoordinateRegion(mapRect))
+        return SearchResponse(request: request, results: results.mapItems, boundingRegion: results.boundingRegion, error: nil)
     }
 
-    private func searchRoute(request: SearchRequest) async {
+    private func fetchRoute(request: SearchRequest) async throws -> SearchResponse? {
         guard
             let apiService = application.apiService,
             let mapRect = application.mapRegionManager.lastVisibleMapRect
-        else {
-            return
-        }
+        else { return nil }
 
-        do {
-            let response = try await apiService.getRoute(query: request.query, region: CLCircularRegion(mapRect: mapRect))
-            await MainActor.run {
-                self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: response.list, boundingRegion: nil, error: nil)
-            }
-        } catch {
-            await self.application.displayError(error)
-        }
+        let response = try await apiService.getRoute(query: request.query, region: CLCircularRegion(mapRect: mapRect))
+        return SearchResponse(request: request, results: response.list, boundingRegion: nil, error: nil)
     }
 
-    private func searchStopNumber(request: SearchRequest) {
-        guard let apiService = application.apiService else {
-            return
-        }
+    private func fetchStopNumber(request: SearchRequest) async throws -> SearchResponse? {
+        guard
+            let apiService = application.apiService,
+            let serviceRect = application.regionsService.currentRegion?.serviceRect
+        else { return nil }
 
-        let region = CLCircularRegion(mapRect: application.regionsService.currentRegion!.serviceRect)
-
-        Task(priority: .userInitiated) {
-            do {
-                let stops = try await apiService.getStops(circularRegion: region, query: request.query).list
-                await MainActor.run {
-                    self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: stops, boundingRegion: nil, error: nil)
-                }
-            } catch {
-                await self.application.displayError(error)
-                await MainActor.run {
-                    self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: [], boundingRegion: nil, error: error)
-                }
-            }
-        }
+        let stops = try await apiService.getStops(circularRegion: CLCircularRegion(mapRect: serviceRect), query: request.query).list
+        return SearchResponse(request: request, results: stops, boundingRegion: nil, error: nil)
     }
 
-    private func searchVehicleID(request: SearchRequest) async {
-        guard let obacoService = application.obacoService else { return }
+    private func fetchVehicleID(request: SearchRequest) async throws -> SearchResponse? {
+        guard let obacoService = application.obacoService else { return nil }
 
-        ProgressHUD.show()
+        let matchingVehicles = try await obacoService.getVehicles(matching: request.query)
 
-        do {
-            let vehicles = try await obacoService.getVehicles(matching: request.query)
-            self.processSearchResults(request: request, matchingVehicles: vehicles)
-        } catch {
-            await self.application.displayError(error)
-        }
-
-        ProgressHUD.dismiss()
-    }
-
-    private func processSearchResults(request: SearchRequest, matchingVehicles: [AgencyVehicle]) {
-        guard let apiService = application.apiService else { return }
+        guard let apiService = application.apiService else { return nil }
 
         if matchingVehicles.count > 1 {
-            // Show a disambiguation UI.
-            application.mapRegionManager.searchResponse = SearchResponse(request: request, results: matchingVehicles, boundingRegion: nil, error: nil)
-            return
+            return SearchResponse(request: request, results: matchingVehicles, boundingRegion: nil, error: nil)
         }
 
-        if matchingVehicles.count == 1, let vehicleID = matchingVehicles.first?.vehicleID {
-            // One result. Find that vehicle and show it.
-            Task(priority: .userInitiated) {
-                do {
-                    let vehicle = try await apiService.getVehicle(vehicleID: vehicleID).entry
-                    await MainActor.run {
-                        self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: [vehicle], boundingRegion: nil, error: nil)
-                    }
-                } catch {
-                    await self.application.displayError(error)
-                    await MainActor.run {
-                        self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: [], boundingRegion: nil, error: error)
-                    }
-                }
+        guard matchingVehicles.count == 1, let vehicleID = matchingVehicles.first?.vehicleID else {
+            return SearchResponse(request: request, results: [], boundingRegion: nil, error: nil)
+        }
 
-            }
-        } else {
-            // No results :(
-            self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: [], boundingRegion: nil, error: nil)
+        do {
+            let vehicle = try await apiService.getVehicle(vehicleID: vehicleID).entry
+            return SearchResponse(request: request, results: [vehicle], boundingRegion: nil, error: nil)
+        } catch {
+            // Preserved from `processSearchResults`: this inner failure alerted and
+            // published an empty error response rather than propagating. Kept as-is
+            // so the UIKit path is unchanged; revisit when the SwiftUI panel is the
+            // only surface.
+            await application.displayError(error)
+            return SearchResponse(request: request, results: [], boundingRegion: nil, error: error)
         }
     }
 }
