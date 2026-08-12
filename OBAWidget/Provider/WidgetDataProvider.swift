@@ -88,6 +88,7 @@ class WidgetDataProvider: NSObject, ObservableObject {
                     }
                 } else {
                     stopArrDepDic[bookmark.stopID] = stopArrivals.arrivalsAndDepartures
+                        .filter { $0.temporalState != .past }
                         .sorted { $0.arrivalDepartureDate < $1.arrivalDepartureDate }
                 }
             }

@@ -28,10 +28,6 @@ struct WidgetRowView: View {
         bookmark?.name ?? " "
     }
 
-    private var isStopBookmark: Bool {
-        bookmark?.isTripBookmark == false
-    }
-
     private var nextDepartureLabel: String {
         if departures != nil {
             return updateNextDepartureLabel()
@@ -41,22 +37,26 @@ struct WidgetRowView: View {
     }
 
     var body: some View {
-        if isStopBookmark {
-            stopBookmarkView
-        } else {
+        if bookmark?.isTripBookmark == true {
             tripBookmarkView
+        } else {
+            stopBookmarkView
         }
     }
 
-    // MARK: - Trip Bookmark Layout (existing)
+    private var titleText: some View {
+        Text(bookmarkTitle)
+            .font(.system(size: Constants.fontSize, weight: .semibold))
+            .lineLimit(1)
+            .truncationMode(.tail)
+    }
+
+    // MARK: - Trip Bookmark Layout
 
     private var tripBookmarkView: some View {
         HStack {
             VStack(alignment: .leading) {
-                Text(bookmarkTitle)
-                    .font(.system(size: Constants.fontSize, weight: .semibold))
-                    .lineLimit(1)
-                    .truncationMode(.tail)
+                titleText
 
                 Text(nextDepartureLabel)
                     .font(.system(size: Constants.fontSize))
@@ -79,12 +79,9 @@ struct WidgetRowView: View {
 
     private var stopBookmarkView: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(bookmarkTitle)
-                .font(.system(size: Constants.fontSize, weight: .semibold))
-                .lineLimit(1)
-                .truncationMode(.tail)
+            titleText
 
-            if let departures {
+            if let departures, !departures.isEmpty {
                 ForEach(departures.prefix(Constants.maxStopDeparturesToShow), id: \.self) { departure in
                     HStack {
                         Text(departure.routeAndHeadsign)
@@ -98,6 +95,12 @@ struct WidgetRowView: View {
                             .foregroundStyle(Color(formatters.backgroundColorForScheduleStatus(departure.scheduleStatus)))
                     }
                 }
+            } else {
+                Text(nextDepartureLabel)
+                    .font(.system(size: Constants.fontSize))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
     }
