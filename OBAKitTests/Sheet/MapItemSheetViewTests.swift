@@ -32,14 +32,14 @@ final class MapItemSheetViewTests: OBATestCase {
     }
 
     @MainActor
-    private func makeFactory(application: Application, displayModel: MapSearchDisplayModel = MapSearchDisplayModel()) -> AppSheetViewFactory {
+    private func makeFactory(application: Application) -> AppSheetViewFactory {
         AppSheetViewFactory(
             application: application,
             onPresentTrip: { _ in },
             onPresentVehicleTrip: { _ in },
             presentingController: { nil },
             coordinator: SheetCoordinator(root: .home),
-            searchDisplayModel: displayModel
+            searchDisplayModel: MapSearchDisplayModel()
         )
     }
 
@@ -127,17 +127,13 @@ final class MapItemSheetViewTests: OBATestCase {
     @Test @MainActor
     func `Factory builds a map item sheet for the route`() {
         let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
-        let displayModel = MapSearchDisplayModel()
-        let factory = makeFactory(application: application, displayModel: displayModel)
+        let factory = makeFactory(application: application)
         let item = MKMapItem(placemark: MKPlacemark(coordinate: CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3)))
 
         let view = factory.mapItemView(mapItem: item)
 
         #expect(view.application === application)
         #expect(view.mapItem === item)
-        // The sheet clears the map marker when it goes away, so it needs the same
-        // display model the map renders.
-        #expect(view.displayModel === displayModel)
     }
 
     @Test @MainActor

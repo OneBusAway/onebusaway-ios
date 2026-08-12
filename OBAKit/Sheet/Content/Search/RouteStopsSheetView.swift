@@ -38,8 +38,15 @@ struct RouteStopsRow: Identifiable {
 /// `AppSheetRoute.routeStops` — the stop list for a searched route, opening at the
 /// medium detent so the polyline stays on screen. Native replacement for
 /// `RouteStopsViewController`.
+///
+/// The polyline itself is drawn by `MapPanelRootView` and dropped when this route
+/// leaves the sheet stack — the sheet doesn't clear the map on its own way out. See
+/// `MapSearchDisplayModel.owner`.
 struct RouteStopsSheetView: View {
     let stopsForRoute: StopsForRoute
+
+    /// Only used to pan the map alongside the list; the drawn route's lifetime is
+    /// not this view's business.
     let displayModel: MapSearchDisplayModel
 
     @EnvironmentObject var coordinator: SheetCoordinator<AppSheetRoute>
@@ -95,12 +102,6 @@ struct RouteStopsSheetView: View {
             }
         }
         .searchSheetBackground()
-        // The route polyline belongs to this sheet. `MapSearchDisplayModel.display`
-        // also gates the ambient stop layer, so leaving it set after the sheet goes
-        // away would strand the map with a dismissed route drawn on it and no stop
-        // pins at all. Pushing `.stopDetails` from a row *stacks* over this sheet
-        // rather than dismissing it, so this only fires on a real exit.
-        .onDisappear { displayModel.clear() }
     }
 
     private var routeSubtitle: String? {

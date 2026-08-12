@@ -90,6 +90,37 @@ final class SearchResultRouterTests: OBATestCase {
         #expect(router.lastError == nil)
     }
 
+    /// The map display is cleared when its owning route leaves the sheet stack, so
+    /// the route recorded as the owner has to be the very one that got pushed. If
+    /// the two drift, the display is either wiped while its sheet is still up or
+    /// stranded on the map after it goes away.
+    @Test @MainActor
+    func `The recorded display owner is the route that was pushed`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        dataLoader.mock(data: Fixtures.loadData(file: "stops_for_route_1_44.json")) { request in
+            request.url?.path.contains("/api/where/stops-for-route") ?? false
+        }
+        let (router, coordinator, displayModel) = makeRouter(dataLoader: dataLoader)
+        let route = try Fixtures.createRoute(id: "1_44")
+
+        await router.present(result: route)
+
+        #expect(displayModel.owner == coordinator.stackedRoutes.last)
+    }
+
+    /// Stops and map items own their displays too — the map-item sheet no longer
+    /// clears the marker from its own `onDisappear`.
+    @Test @MainActor
+    func `A map item result owns its display`() async {
+        let (router, coordinator, displayModel) = makeRouter(dataLoader: MockDataLoader(testName: name))
+        let item = MKMapItem(placemark: MKPlacemark(coordinate: CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3)))
+
+        await router.present(result: item)
+
+        #expect(displayModel.owner == .mapItem(item))
+        #expect(displayModel.owner == coordinator.stackedRoutes.last)
+    }
+
     @Test @MainActor
     func `A failed route resolution records the error and pushes nothing`() async throws {
         let dataLoader = MockDataLoader(testName: name)
@@ -105,8 +136,66 @@ final class SearchResultRouterTests: OBATestCase {
         #expect(router.lastError != nil)
     }
 
+    // MARK: - Resolve / present split
+
+    /// Resolving performs the network work but touches nothing on screen, so callers
+    /// can keep their own UI up (and report a failure there) before committing to the
+    /// navigation.
     @Test @MainActor
-    func `Presenting a single result returns false when the response holds several`() async throws {
+    func `Resolving leaves the sheet stack and the map untouched`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        dataLoader.mock(data: Fixtures.loadData(file: "stops_for_route_1_44.json")) { request in
+            request.url?.path.contains("/api/where/stops-for-route") ?? false
+        }
+        let (router, coordinator, displayModel) = makeRouter(dataLoader: dataLoader)
+        let route = try Fixtures.createRoute(id: "1_44")
+
+        let resolved = await router.resolve(result: route)
+
+        #expect(resolved != nil)
+        #expect(coordinator.stackedRoutes.isEmpty)
+        #expect(displayModel.owner == nil)
+        if case .none = displayModel.display {} else {
+            Issue.record("Resolving must not draw anything, got \(displayModel.display)")
+        }
+    }
+
+    /// Drawing and pushing happen in one synchronous step, so the stacked layer never
+    /// sits empty between them.
+    @Test @MainActor
+    func `Presenting a resolution draws it and pushes its sheet together`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        dataLoader.mock(data: Fixtures.loadData(file: "stops_for_route_1_44.json")) { request in
+            request.url?.path.contains("/api/where/stops-for-route") ?? false
+        }
+        let (router, coordinator, displayModel) = makeRouter(dataLoader: dataLoader)
+        let route = try Fixtures.createRoute(id: "1_44")
+        let resolved = try #require(await router.resolve(result: route))
+
+        router.present(resolved)
+
+        #expect(displayModel.suppressesAmbientStops == true)
+        #expect(displayModel.owner == coordinator.stackedRoutes.last)
+    }
+
+    @Test @MainActor
+    func `A failed resolution yields nothing and records the error`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        dataLoader.mock(data: "not json".data(using: .utf8)!) { request in
+            request.url?.path.contains("/api/where/stops-for-route") ?? false
+        }
+        let (router, coordinator, _) = makeRouter(dataLoader: dataLoader)
+        let route = try Fixtures.createRoute(id: "1_44")
+
+        let resolved = await router.resolve(result: route)
+
+        #expect(resolved == nil)
+        #expect(router.lastError != nil)
+        #expect(coordinator.stackedRoutes.isEmpty)
+    }
+
+    @Test @MainActor
+    func `Resolving a single result returns nil when the response holds several`() async throws {
         let (router, coordinator, _) = makeRouter(dataLoader: MockDataLoader(testName: name))
         let stops = try Fixtures.loadSomeStops()
         let response = SearchResponse(
@@ -116,9 +205,9 @@ final class SearchResultRouterTests: OBATestCase {
             error: nil
         )
 
-        let handled = await router.presentSingleResult(from: response)
+        let resolved = await router.resolveSingleResult(from: response)
 
-        #expect(handled == false)
+        #expect(resolved == nil)
         #expect(coordinator.stackedRoutes.isEmpty)
     }
 }

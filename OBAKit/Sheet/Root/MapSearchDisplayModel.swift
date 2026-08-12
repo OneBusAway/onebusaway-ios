@@ -62,6 +62,20 @@ final class MapSearchDisplayModel: ObservableObject {
     @Published private(set) var display: Display = .none
     @Published private(set) var cameraTarget: CameraTarget?
 
+    /// The sheet route this display belongs to, and the thing that decides how long
+    /// it stays on the map.
+    ///
+    /// Lifetime is keyed to the route stack rather than to the owning sheet view's
+    /// `onDisappear`, which is what this originally used. `onDisappear` reads like a
+    /// dismissal signal but isn't one: the floating-sheet system rebuilds a sheet's
+    /// content view for reasons that have nothing to do with the user leaving —
+    /// stacked layers being re-presented, the base sheet's content swapping
+    /// underneath — and each rebuild fired a `clear()` that wiped a route off the map
+    /// seconds after it was drawn, while its sheet sat there still visible.
+    ///
+    /// The route stack is the actual record of what's on screen, so ask it.
+    @Published private(set) var owner: AppSheetRoute?
+
     /// While a route is drawn, the ambient stop pins are hidden and stop loading is
     /// skipped so the route's own stops are the only ones on the map — the SwiftUI
     /// counterpart of the UIKit path's `removeAllAnnotations()` plus
@@ -71,17 +85,20 @@ final class MapSearchDisplayModel: ObservableObject {
         return false
     }
 
-    func show(mapItem: MKMapItem, animated: Bool) {
+    func show(mapItem: MKMapItem, animated: Bool, owner: AppSheetRoute) {
+        self.owner = owner
         display = .mapItem(mapItem)
         cameraTarget = .coordinate(mapItem.placemark.coordinate, animated: animated)
     }
 
-    func show(stop: Stop) {
+    func show(stop: Stop, owner: AppSheetRoute) {
+        self.owner = owner
         display = .stop(stop)
         cameraTarget = .coordinate(stop.coordinate, animated: true)
     }
 
-    func show(stopsForRoute: StopsForRoute) {
+    func show(stopsForRoute: StopsForRoute, owner: AppSheetRoute) {
+        self.owner = owner
         let color = stopsForRoute.route.map { Color(uiColor: $0.color ?? ThemeColors.shared.brand) }
             ?? Color(uiColor: ThemeColors.shared.brand)
 
@@ -112,7 +129,22 @@ final class MapSearchDisplayModel: ObservableObject {
         cameraTarget = nil
     }
 
+    /// Drops the display once the route that owns it is no longer anywhere in the
+    /// sheet stack. Called on every change to that stack.
+    ///
+    /// Deriving the decision from the stack, rather than acting on a dismissal event,
+    /// makes this self-correcting: a route that is popped and immediately re-pushed
+    /// (what a search does while it resolves a result) is still present when this
+    /// runs, so nothing is wiped in the gap.
+    ///
+    /// - Parameter routes: Every route currently on screen — both sheet layers.
+    func clearIfOwnerAbsent(from routes: [AppSheetRoute]) {
+        guard let owner, !routes.contains(owner) else { return }
+        clear()
+    }
+
     func clear() {
+        owner = nil
         display = .none
         cameraTarget = nil
     }

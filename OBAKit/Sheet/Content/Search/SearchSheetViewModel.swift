@@ -162,13 +162,20 @@ final class SearchSheetViewModel: NSObject, ObservableObject, SearchDelegate {
             coordinator.push(.searchResults(response))
 
         case .single(let response):
+            // Resolve first, leave search second. Popping before the result was
+            // resolved tore this view — and the alert it hosts — down mid-request, so
+            // a failure had nowhere to surface and the user landed on home with no
+            // explanation. It also left the stacked sheet layer empty across the call.
+            guard let resolved = await router.resolveSingleResult(from: response) else {
+                if let error = router.lastError {
+                    message = SearchSheetMessage(kind: .error, text: error.localizedDescription)
+                }
+                return
+            }
             // Leave search before opening the result, so Close on the detail sheet
             // lands back on home rather than on a stale search screen.
             coordinator.pop()
-            _ = await router.presentSingleResult(from: response)
-            if let error = router.lastError {
-                message = SearchSheetMessage(kind: .error, text: error.localizedDescription)
-            }
+            router.present(resolved)
         }
     }
 
@@ -185,13 +192,24 @@ final class SearchSheetViewModel: NSObject, ObservableObject, SearchDelegate {
 
     func showMapItem(_ mapItem: MKMapItem) {
         application.userDataStore.addRecentMapItem(mapItem)
-        coordinator.pop()
-        pendingPresentation = Task { [router] in await router.present(result: mapItem) }
+        pendingPresentation = Task { [weak self] in await self?.leaveSearchAndPresent(mapItem) }
     }
 
     func searchInteractor(_ searchInteractor: SearchInteractor, showStop stop: Stop) {
+        pendingPresentation = Task { [weak self] in await self?.leaveSearchAndPresent(stop) }
+    }
+
+    /// Same order as the single-result path: resolve, then unwind, then present — so
+    /// search is only left once there's something to show.
+    private func leaveSearchAndPresent(_ result: Any) async {
+        guard let resolved = await router.resolve(result: result) else {
+            if let error = router.lastError {
+                message = SearchSheetMessage(kind: .error, text: error.localizedDescription)
+            }
+            return
+        }
         coordinator.pop()
-        pendingPresentation = Task { [router] in await router.present(result: stop) }
+        router.present(resolved)
     }
 
     /// The interactor asks; the view presents the confirmation and calls

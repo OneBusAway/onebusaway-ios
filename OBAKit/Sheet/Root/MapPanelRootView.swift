@@ -190,6 +190,15 @@ struct MapPanelRootView: View {
             coordinator.push(.stopDetails(stopID: id))
             selectedStopID = nil
         }
+        // A searched result stays drawn for exactly as long as the sheet that owns it
+        // is on the stack. Watching the stack — rather than clearing from the owning
+        // sheet's `onDisappear` — keeps the drawing alive across the content
+        // teardowns the sheet system performs without dismissing anything, and still
+        // clears on a real exit, including the drag-down the OS routes through
+        // `truncateStacked`.
+        .onChange(of: coordinator.stackedRoutes) { _, _ in
+            searchDisplay.clearIfOwnerAbsent(from: coordinator.routeStack + coordinator.stackedRoutes)
+        }
         .onChange(of: searchDisplay.cameraTarget) { _, target in
             guard let target else { return }
             switch target {

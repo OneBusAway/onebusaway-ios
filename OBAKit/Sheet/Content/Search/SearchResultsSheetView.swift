@@ -124,8 +124,12 @@ struct SearchResultsSheetView: View {
         }
     }
 
-    /// Unwinds back to home before opening the result — the SwiftUI equivalent of
-    /// the UIKit path's `exitSearchMode()`.
+    /// Unwinds back to home and opens the result — the SwiftUI equivalent of the UIKit
+    /// path's `exitSearchMode()`.
+    ///
+    /// Resolution comes first so this sheet stays up while the request runs: a failure
+    /// leaves the user on their results rather than dropping them on home, and the
+    /// stacked layer isn't emptied and refilled around a network call.
     ///
     /// `popToRoot()` rather than `dismiss()` + `pop()`: two layers have to come off
     /// (this stacked sheet and the `.search` route beneath it), and `pop()` acts on
@@ -133,7 +137,8 @@ struct SearchResultsSheetView: View {
     /// binding write that `dismiss()` triggers. `popToRoot()` clears both
     /// deterministically in one step.
     private func select(_ result: Any) async {
+        guard let resolved = await router.resolve(result: result) else { return }
         coordinator.popToRoot()
-        await router.present(result: result)
+        router.present(resolved)
     }
 }

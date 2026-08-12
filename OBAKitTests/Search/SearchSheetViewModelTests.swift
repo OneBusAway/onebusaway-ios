@@ -154,6 +154,53 @@ final class SearchSheetViewModelTests: OBATestCase {
         #expect(viewModel.message == nil)
     }
 
+    // MARK: - Single-result sequencing
+
+    /// A single result is resolved *before* search is left, so the sheet stack never
+    /// sits empty across the network call and the user isn't dropped on home while a
+    /// request is still in flight.
+    @Test @MainActor
+    func `A single result leaves search only once it resolves`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        dataLoader.mock(data: Fixtures.loadData(file: "routes-for-location-10.json")) { request in
+            request.url?.path.contains("/api/where/routes-for-location.json") ?? false
+        }
+        dataLoader.mock(data: Fixtures.loadData(file: "stops-for-route-1_100002.json")) { request in
+            request.url?.path.contains("/api/where/stops-for-route") ?? false
+        }
+        let (viewModel, _, coordinator) = makeViewModel(dataLoader: dataLoader)
+        coordinator.push(.search)
+
+        await viewModel.performSearchAndWait(request: SearchRequest(query: "10", type: .route))
+
+        #expect(viewModel.message == nil)
+        #expect(coordinator.currentRoute == .home)
+        #expect(coordinator.stackedRoutes.contains { if case .routeStops = $0 { return true } else { return false } })
+    }
+
+    /// The regression: search used to be popped *before* the route was resolved, so a
+    /// failure set `message` on a view model whose view — and whose alert — had
+    /// already been torn down. The user landed on home with no explanation. Search has
+    /// to stay up so it can report the failure.
+    @Test @MainActor
+    func `A single result that fails to resolve keeps search up and reports the error`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        dataLoader.mock(data: Fixtures.loadData(file: "routes-for-location-10.json")) { request in
+            request.url?.path.contains("/api/where/routes-for-location.json") ?? false
+        }
+        dataLoader.mock(data: "not json".data(using: .utf8)!) { request in
+            request.url?.path.contains("/api/where/stops-for-route") ?? false
+        }
+        let (viewModel, _, coordinator) = makeViewModel(dataLoader: dataLoader)
+        coordinator.push(.search)
+
+        await viewModel.performSearchAndWait(request: SearchRequest(query: "10", type: .route))
+
+        #expect(viewModel.message?.kind == .error)
+        #expect(coordinator.currentRoute == .search, "Search must stay up to show the failure")
+        #expect(coordinator.stackedRoutes.isEmpty)
+    }
+
     // MARK: - Outcome classification
 
     /// A `nil` response means the search never ran (no API service, no Obaco service,

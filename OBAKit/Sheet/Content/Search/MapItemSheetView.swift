@@ -17,10 +17,13 @@ import OBAKitCore
 /// Wraps the shared `MapItemView` with sheet-native actions: Close pops the stacked
 /// sheet, Nearby Stops pushes its own route, and the website opens in a local Safari
 /// sheet rather than being presented from a view controller.
+///
+/// The searched place marker is drawn by `MapPanelRootView`, which drops it when this
+/// route leaves the sheet stack — the sheet doesn't clear the map itself. See
+/// `MapSearchDisplayModel.owner`.
 struct MapItemSheetView: View {
     let application: Application
     let mapItem: MKMapItem
-    let displayModel: MapSearchDisplayModel
 
     @EnvironmentObject var coordinator: SheetCoordinator<AppSheetRoute>
     @Environment(\.dismiss) private var dismiss
@@ -67,10 +70,6 @@ struct MapItemSheetView: View {
                 planTripHandler: nil
             )
         }
-        // The searched place marker belongs to this sheet. Pushing `.nearbyStops`
-        // from a row *stacks* over this sheet rather than dismissing it, so this
-        // only fires on a real exit.
-        .onDisappear { displayModel.clear() }
         .sheet(item: $website) { link in
             SafariSheetView(url: link.url)
         }

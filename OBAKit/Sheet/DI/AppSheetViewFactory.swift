@@ -169,7 +169,7 @@ final class AppSheetViewFactory {
     }
 
     func mapItemView(mapItem: MKMapItem) -> MapItemSheetView {
-        MapItemSheetView(application: application, mapItem: mapItem, displayModel: searchDisplayModel)
+        MapItemSheetView(application: application, mapItem: mapItem)
     }
 
     /// Bridges `AppSheetRoute.nearbyStops` to the existing `NearbyStopsViewController`.
