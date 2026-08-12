@@ -11,6 +11,7 @@ import ActivityKit
 import Combine
 import SwiftUI
 import OBAKitCore
+import CoreLocation
 
 /// Hosts `TripPageView` and owns every reach into `Application` the page needs —
 /// navigation, alarms, bookmarks, schedules, Live Activities.
