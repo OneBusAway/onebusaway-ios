@@ -92,6 +92,9 @@ public extension Strings {
 
     // MARK: - Shared Section Titles
 
+    // nonisolated: OBAKit defaults to @MainActor isolation. These constants are accessed from nonisolated
+    // contexts (e.g., `NearbyStopsListViewController.Section`, which is `nonisolated`), so they must be
+    // explicitly marked to remain reachable.
     nonisolated static let nearbyStops = OBALoc(
         "nearby_stops_controller.title",
         value: "Nearby Stops",
