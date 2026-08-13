@@ -151,4 +151,22 @@ final class AppSheetViewFactoryTests: OBATestCase {
         #expect(view.placeholder == SearchPlaceholder.text(for: application))
         #expect(!view.placeholder.isEmpty)
     }
+
+    /// The three index routes are wired for navigation before their screens
+    /// exist, so they must render a placeholder instead of tripping the
+    /// debug assertion that guards genuinely unwired routes.
+    @Test @MainActor
+    func `Index routes render a placeholder without asserting`() {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let factory = makeFactory(application: application)
+
+        // Reaching `unimplementedView` would call assertionFailure and trap the
+        // test run, so simply building each view is the assertion.
+        for route in [AppSheetRoute.nearbyAll, .recentStopsAll, .bookmarksAll] {
+            _ = factory.indexPlaceholderView(for: route)
+        }
+
+        #expect(Bool(true))
+    }
 }

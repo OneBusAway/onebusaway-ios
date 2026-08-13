@@ -94,11 +94,13 @@ final class AppSheetViewFactory {
         case .search:
             searchView()
 
+        case .nearbyAll, .recentStopsAll, .bookmarksAll:
+            indexPlaceholderView(for: route)
+
         // Wiring a push for one of these routes before its view exists will
         // trip the debug assertion in `unimplementedView(for:)` — register the
         // view here before reaching for `SheetCoordinator.push(...)`.
-        case .nearbyAll, .recentStopsAll, .bookmarksAll,
-             .tripPlanner, .tripDetails, .transitAlert, .settings:
+        case .tripPlanner, .tripDetails, .transitAlert, .settings:
             unimplementedView(for: route)
 
         case .searchResults(let response):
@@ -199,6 +201,27 @@ final class AppSheetViewFactory {
             ),
             placeholder: SearchPlaceholder.text(for: self.application)
         )
+    }
+
+    /// The home sheet's section headers navigate to these three routes before
+    /// their index screens exist, so they render the "coming soon" placeholder
+    /// in every configuration rather than asserting. `unimplementedView` stays
+    /// armed for routes nobody has wired a push for yet — remove a route from
+    /// here once its real view is registered above.
+    func indexPlaceholderView(for route: AppSheetRoute) -> some View {
+        VStack(spacing: 4) {
+            Text(OBALoc(
+                "app_sheet.unimplemented_route.placeholder",
+                value: "This screen is coming soon.",
+                comment: "Placeholder shown in release builds when a sheet route is pushed but has no view registered."
+            ))
+            .font(.headline)
+            .foregroundStyle(.secondary)
+            Text(route.id)
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+        }
+        .padding()
     }
 
     /// Placeholder until each route gets its own real view. In debug builds we
