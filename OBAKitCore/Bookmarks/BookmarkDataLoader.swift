@@ -64,17 +64,46 @@ public class BookmarkDataLoader: NSObject {
         fetchedStopIDs.contains(stopID)
     }
 
-    public init(application: CoreApplication, delegate: BookmarkDataDelegate) {
+    /// When set, supplies the bookmarks a batch should fetch instead of every
+    /// bookmark in the current region. Lets a caller that only displays a few
+    /// bookmarks — the home sheet's preview section — reuse this loader without
+    /// paying for the whole set.
+    private let bookmarkProvider: (@MainActor () -> [Bookmark])?
+
+    /// When `false`, `startRefreshTimer()` is a no-op, so the loader fetches
+    /// only when explicitly asked. Callers that display a handful of bookmarks
+    /// outside a dedicated screen don't want a background 30-second cycle.
+    private let autoRefreshes: Bool
+
+    public init(
+        application: CoreApplication,
+        delegate: BookmarkDataDelegate,
+        bookmarkProvider: (@MainActor () -> [Bookmark])? = nil,
+        autoRefreshes: Bool = true
+    ) {
         self.application = application
         self.delegate = delegate
+        self.bookmarkProvider = bookmarkProvider
+        self.autoRefreshes = autoRefreshes
     }
 
     public func startRefreshTimer() {
         timer?.invalidate()
 
+        guard autoRefreshes else {
+            timer = nil
+            return
+        }
+
         timer = Timer.scheduledMainActorTimer(withTimeInterval: refreshInterval, repeats: true) { [weak self] in
             self?.loadData()
         }
+    }
+
+    /// Whether a repeating refresh is currently armed. Exposed so callers that
+    /// opted out of auto-refresh can assert they really did.
+    @MainActor public var hasScheduledRefresh: Bool {
+        timer?.isValid ?? false
     }
 
     public func cancelUpdates() {
@@ -125,7 +154,10 @@ public class BookmarkDataLoader: NSObject {
     }
 
     private func eligibleBookmarks() -> [Bookmark] {
-        application.userDataStore.bookmarks.filter {
+        if let bookmarkProvider {
+            return bookmarkProvider()
+        }
+        return application.userDataStore.bookmarks.filter {
             $0.regionIdentifier == application.regionsService.currentRegion?.id
         }
     }
