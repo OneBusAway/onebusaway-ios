@@ -13,7 +13,7 @@ import GRDB
 
 /// Provides read/write access to the cached stops database.
 /// See: https://github.com/OneBusAway/onebusaway-ios/issues/62
-public final class StopCacheRepository: @unchecked Sendable {
+public final class StopCacheRepository: Sendable {
 
     private let database: StopCacheDatabase
 

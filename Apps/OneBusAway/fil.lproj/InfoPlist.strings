@@ -1,0 +1,6 @@
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "Makikita kung nasaan ka kaugnay ng transit, at matutulungan kang mag-navigate nang mas madali.";
+"NSLocationWhenInUseUsageDescription" = "Makikita kung nasaan ka kaugnay ng transit, at matutulungan kang mag-navigate nang mas madali.";
+
+/* Purpose string shown when the app requests HealthKit access to your walking speed. */
+"NSHealthShareUsageDescription" = "Ginagamit ang bilis ng paglalakad mo mula sa Health app para bigyan ka ng mas tumpak na tantiya ng oras ng pagdating.";
+"NSHealthUpdateUsageDescription" = "Ginagamit ang bilis ng paglalakad mo mula sa Health app para bigyan ka ng mas tumpak na tantiya ng oras ng pagdating.";

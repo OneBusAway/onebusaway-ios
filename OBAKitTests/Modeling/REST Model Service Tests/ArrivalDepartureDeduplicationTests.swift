@@ -7,8 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
-import Nimble
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -19,7 +18,8 @@ import Nimble
 /// Validates the deduplication logic that removes visually identical
 /// arrival/departure rows caused by terminal stops returning both an arrival
 /// and a departure entry for the same trip at the same stop.
-class ArrivalDepartureDeduplicationTests: OBATestCase {
+@Suite(.serialized)
+final class ArrivalDepartureDeduplicationTests: OBATestCase {
 
     // MARK: - Fixture Setup
 
@@ -30,8 +30,8 @@ class ArrivalDepartureDeduplicationTests: OBATestCase {
         "https://www.example.com/api/where/arrivals-and-departures-for-stop/\(stopID).json"
     }
 
-    override func setUp() {
-        super.setUp()
+    override init() async throws {
+        try await super.init()
 
         let dataLoader = (restService.dataLoader as! MockDataLoader)
 
@@ -49,24 +49,24 @@ class ArrivalDepartureDeduplicationTests: OBATestCase {
     // MARK: - Basic Behavior
 
     /// An empty array returns an empty array without crashing.
-    func test_filteringTerminalDuplicates_handlesEmptyArray() {
+    @Test func `Filtering terminal duplicates handles empty array`() {
         let empty: [ArrivalDeparture] = []
         let filtered = empty.filteringTerminalDuplicates()
-        expect(filtered).to(beEmpty())
+        #expect(filtered.isEmpty)
     }
 
     /// A single-element array passes through unchanged.
-    func test_filteringTerminalDuplicates_handlesSingleElement() async throws {
+    @Test func `Filtering terminal duplicates handles single element`() async throws {
         let arrivals = try await restService.getArrivalsAndDeparturesForStop(
             id: campusParkwayStopID, minutesBefore: 5, minutesAfter: 30
         ).entry
 
-        expect(arrivals.arrivalsAndDepartures.count) == 1
+        #expect(arrivals.arrivalsAndDepartures.count == 1)
 
         let filtered = arrivals.arrivalsAndDepartures.filteringTerminalDuplicates()
-        expect(filtered.count) == 1
-        expect(filtered[0].tripID) == arrivals.arrivalsAndDepartures[0].tripID
-        expect(filtered[0].stopID) == arrivals.arrivalsAndDepartures[0].stopID
+        #expect(filtered.count == 1)
+        #expect(filtered[0].tripID == arrivals.arrivalsAndDepartures[0].tripID)
+        #expect(filtered[0].stopID == arrivals.arrivalsAndDepartures[0].stopID)
     }
 
     // MARK: - No False Positives
@@ -74,38 +74,38 @@ class ArrivalDepartureDeduplicationTests: OBATestCase {
     /// The Galer fixture has entries that share a vehicleID but have different tripIDs.
     /// These are different trips on the same vehicle block — NOT terminal duplicates.
     /// The filter must preserve all of them.
-    func test_filteringTerminalDuplicates_preservesDifferentTripsOnSameVehicle() async throws {
+    @Test func `Filtering terminal duplicates preserves different trips on same vehicle`() async throws {
         let arrivals = try await restService.getArrivalsAndDeparturesForStop(
             id: galerStopID, minutesBefore: 5, minutesAfter: 30
         ).entry
 
         let arrDeps = arrivals.arrivalsAndDepartures
-        expect(arrDeps.count) == 5
+        #expect(arrDeps.count == 5)
 
         // Pre-condition: entries [0] and [1] share a vehicleID but have different tripIDs.
         // They are different trips on the same block, not terminal duplicates.
-        expect(arrDeps[0].vehicleID) == "1_4361"
-        expect(arrDeps[1].vehicleID) == "1_4361"
-        expect(arrDeps[0].tripID).toNot(equal(arrDeps[1].tripID))
+        #expect(arrDeps[0].vehicleID == "1_4361")
+        #expect(arrDeps[1].vehicleID == "1_4361")
+        #expect(arrDeps[0].tripID != arrDeps[1].tripID)
 
         let filtered = arrDeps.filteringTerminalDuplicates()
 
         // All 5 entries should be preserved because they all have unique (tripID, stopID, routeID).
-        expect(filtered.count) == arrDeps.count
+        #expect(filtered.count == arrDeps.count)
     }
 
     /// A fixture with no terminal duplicates should pass through completely unchanged.
-    func test_filteringTerminalDuplicates_noFalsePositivesOnCleanData() async throws {
+    @Test func `Filtering terminal duplicates no false positives on clean data`() async throws {
         let arrivals = try await restService.getArrivalsAndDeparturesForStop(
             id: campusParkwayStopID, minutesBefore: 5, minutesAfter: 30
         ).entry
 
         let arrDeps = arrivals.arrivalsAndDepartures
-        expect(arrDeps.count) == 1
+        #expect(arrDeps.count == 1)
 
         let filtered = arrDeps.filteringTerminalDuplicates()
-        expect(filtered.count) == 1
-        expect(filtered[0].id) == arrDeps[0].id
+        #expect(filtered.count == 1)
+        #expect(filtered[0].id == arrDeps[0].id)
     }
 
     // MARK: - Duplicate Detection (Synthetic)
@@ -113,51 +113,51 @@ class ArrivalDepartureDeduplicationTests: OBATestCase {
     /// When two entries share the exact same (tripID, stopID, routeID),
     /// only one should survive. This simulates the terminal duplicate scenario
     /// by appending the same ArrivalDeparture entry to the array.
-    func test_filteringTerminalDuplicates_removesDuplicateVisits() async throws {
+    @Test func `Filtering terminal duplicates removes duplicate visits`() async throws {
         let arrivals = try await restService.getArrivalsAndDeparturesForStop(
             id: campusParkwayStopID, minutesBefore: 5, minutesAfter: 30
         ).entry
 
         let arrDeps = arrivals.arrivalsAndDepartures
-        expect(arrDeps.count) == 1
+        #expect(arrDeps.count == 1)
 
         // Simulate a terminal duplicate: same object appended twice.
         var duplicated = arrDeps
         duplicated.append(arrDeps[0])
-        expect(duplicated.count) == 2
+        #expect(duplicated.count == 2)
 
         let filtered = duplicated.filteringTerminalDuplicates()
 
         // The duplicate should be merged, leaving only one entry.
-        expect(filtered.count) == 1
-        expect(filtered[0].tripID) == arrDeps[0].tripID
+        #expect(filtered.count == 1)
+        #expect(filtered[0].tripID == arrDeps[0].tripID)
     }
 
     /// When multiple distinct entries exist alongside a duplicate pair,
     /// only the duplicate pair is merged. All other entries are preserved.
-    func test_filteringTerminalDuplicates_mergesOnlyDuplicatesAmongDistinctEntries() async throws {
+    @Test func `Filtering terminal duplicates merges only duplicates among distinct entries`() async throws {
         let arrivals = try await restService.getArrivalsAndDeparturesForStop(
             id: galerStopID, minutesBefore: 5, minutesAfter: 30
         ).entry
 
         let arrDeps = arrivals.arrivalsAndDepartures
-        expect(arrDeps.count) == 5
+        #expect(arrDeps.count == 5)
 
         // Append a duplicate of entry [0] to create exactly one duplicate pair.
         var withDuplicate = arrDeps
         withDuplicate.append(arrDeps[0])
-        expect(withDuplicate.count) == 6
+        #expect(withDuplicate.count == 6)
 
         let filtered = withDuplicate.filteringTerminalDuplicates()
 
         // Only the appended duplicate should be removed; original 5 entries preserved.
-        expect(filtered.count) == 5
+        #expect(filtered.count == 5)
     }
 
     // MARK: - Ordering
 
     /// The relative order of entries is preserved after filtering.
-    func test_filteringTerminalDuplicates_preservesOriginalOrder() async throws {
+    @Test func `Filtering terminal duplicates preserves original order`() async throws {
         let arrivals = try await restService.getArrivalsAndDeparturesForStop(
             id: galerStopID, minutesBefore: 5, minutesAfter: 30
         ).entry
@@ -169,10 +169,10 @@ class ArrivalDepartureDeduplicationTests: OBATestCase {
         var lastInputIndex = -1
         for filteredID in filteredIDs {
             guard let inputIndex = arrDeps.firstIndex(where: { $0.id == filteredID }) else {
-                XCTFail("Filtered entry with id \(filteredID) not found in original array")
+                Issue.record("Filtered entry with id \(filteredID) not found in original array")
                 continue
             }
-            expect(inputIndex).to(beGreaterThan(lastInputIndex), description: "Original ordering must be preserved")
+            #expect(inputIndex > lastInputIndex, "Original ordering must be preserved")
             lastInputIndex = inputIndex
         }
     }
@@ -180,7 +180,7 @@ class ArrivalDepartureDeduplicationTests: OBATestCase {
     // MARK: - Idempotency
 
     /// Applying the filter twice produces the same result as applying it once.
-    func test_filteringTerminalDuplicates_isIdempotent() async throws {
+    @Test func `Filtering terminal duplicates is idempotent`() async throws {
         let arrivals = try await restService.getArrivalsAndDeparturesForStop(
             id: galerStopID, minutesBefore: 5, minutesAfter: 30
         ).entry
@@ -188,9 +188,9 @@ class ArrivalDepartureDeduplicationTests: OBATestCase {
         let once = arrivals.arrivalsAndDepartures.filteringTerminalDuplicates()
         let twice = once.filteringTerminalDuplicates()
 
-        expect(twice.count) == once.count
+        #expect(twice.count == once.count)
         for (a, b) in zip(once, twice) {
-            expect(a.id) == b.id
+            #expect(a.id == b.id)
         }
     }
 
@@ -200,27 +200,27 @@ class ArrivalDepartureDeduplicationTests: OBATestCase {
     /// The real-time vs scheduled preference path isn't exercised here because
     /// ArrivalDeparture properties are immutable — testing that would require
     /// a fixture with both predicted and non-predicted entries for the same trip.
-    func test_filteringTerminalDuplicates_mergesIdenticalDuplicates() async throws {
+    @Test func `Filtering terminal duplicates merges identical duplicates`() async throws {
         let arrivals = try await restService.getArrivalsAndDeparturesForStop(
             id: campusParkwayStopID, minutesBefore: 5, minutesAfter: 30
         ).entry
 
         let arrDeps = arrivals.arrivalsAndDepartures
         guard let entry = arrDeps.first else {
-            XCTFail("Fixture must contain at least one ArrivalDeparture")
+            Issue.record("Fixture must contain at least one ArrivalDeparture")
             return
         }
 
         // This entry has predicted == true.
-        expect(entry.predicted).to(beTrue())
+        #expect(entry.predicted)
 
         // Create a pair with the same identity. Both are the same object
         // (both predicted), so the first-in should win.
         let pair = [entry, entry]
         let filtered = pair.filteringTerminalDuplicates()
 
-        expect(filtered.count) == 1
-        expect(filtered[0].predicted).to(beTrue())
-        expect(filtered[0].tripID) == entry.tripID
+        #expect(filtered.count == 1)
+        #expect(filtered[0].predicted)
+        #expect(filtered[0].tripID == entry.tripID)
     }
 }

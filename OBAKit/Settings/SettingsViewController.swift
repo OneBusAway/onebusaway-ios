@@ -9,6 +9,7 @@
 
 import Eureka
 import Foundation
+import HealthKit
 import OBAKitCore
 import UIKit
 
@@ -36,9 +37,12 @@ class SettingsViewController: FormViewController {
 
         form
             +++ mapSection
-            +++ alertsSection
+            +++ arrivalDisplaySection
+            +++ experimentalSection
             +++ accessibilitySection
+            +++ walkingSpeedSection
             +++ surveySection
+            +++ feedbackSection
             +++ debugSection
 
         if application.analytics != nil {
@@ -52,13 +56,21 @@ class SettingsViewController: FormViewController {
             mapSectionShowsScale: application.mapRegionManager.mapViewShowsScale,
             mapSectionShowsTraffic: application.mapRegionManager.mapViewShowsTraffic,
             mapSectionShowsHeading: application.mapRegionManager.mapViewShowsHeading,
+            mapSectionShowsPointsOfInterest: application.mapRegionManager.mapViewShowsPointsOfInterest,
+            FeatureFlags.useMapPanelExperienceKey: application.userDefaults.bool(forKey: FeatureFlags.useMapPanelExperienceKey),
+            FeatureFlags.useNewStopPageKey: FeatureFlags.isNewStopPageEnabled(userDefaults: application.userDefaults),
             privacySectionReportingEnabled: application.analytics?.reportingEnabled() ?? false,
             DataLoadFeedbackGenerator.EnabledUserDefaultsKey: application.userDefaults.bool(forKey: DataLoadFeedbackGenerator.EnabledUserDefaultsKey),
+            OBAFloatingPanelController.AlwaysShowFullSheetOnVoiceoverUserDefaultsKey: application.userDefaults.bool(forKey: OBAFloatingPanelController.AlwaysShowFullSheetOnVoiceoverUserDefaultsKey),
             AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts: application.userDefaults.bool(forKey: AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts),
             RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey: application.userDefaults.bool(forKey: RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey),
             MapRegionManager.mapViewShowsStopAnnotationLabelsDefaultsKey: application.userDefaults.bool(forKey: MapRegionManager.mapViewShowsStopAnnotationLabelsDefaultsKey),
             debugModeEnabled: application.userDataStore.debugMode,
-            alwaysShowSurveysOnStops: application.userDataStore.alwaysShowSurveysOnStops
+            alwaysShowSurveysOnStops: application.userDataStore.alwaysShowSurveysOnStops,
+            walkingSpeedMetersPerSecondKey: snapToPreset(application.userDataStore.walkingSpeedMetersPerSecond),
+            walkingSpeedUseHealthKitKey: application.userDataStore.walkingSpeedSource == .healthKit,
+            stopUIReducedColorsTag: application.userDataStore.stopUIReducedColors,
+            alwaysShowFeedbackPrompt: application.reviewPromptPolicy.alwaysShowPrompt
         ])
     }
 
@@ -85,17 +97,13 @@ class SettingsViewController: FormViewController {
             application.mapRegionManager.mapViewShowsHeading = heading
         }
 
-        if let hapticFeedbackOnDataLoad = values[DataLoadFeedbackGenerator.EnabledUserDefaultsKey] as? Bool {
-            application.userDefaults.set(hapticFeedbackOnDataLoad, forKey: DataLoadFeedbackGenerator.EnabledUserDefaultsKey)
+        if let showsPOIs = values[mapSectionShowsPointsOfInterest] as? Bool {
+            application.mapRegionManager.mapViewShowsPointsOfInterest = showsPOIs
         }
 
-        if let mapViewShowsStopAnnotationLabels = values[MapRegionManager.mapViewShowsStopAnnotationLabelsDefaultsKey] as? Bool {
-            application.userDefaults.set(mapViewShowsStopAnnotationLabels, forKey: MapRegionManager.mapViewShowsStopAnnotationLabelsDefaultsKey)
-        }
-
-        if let testAlerts = values[AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts] as? Bool {
-            application.userDefaults.set(testAlerts, forKey: AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts)
-        }
+        saveAccessibilityValues(values)
+        saveExperimentalValues(values)
+        saveAlertsValues(values)
 
         if let reportingEnabled = values[privacySectionReportingEnabled] as? Bool {
             application.analytics?.setReportingEnabled(reportingEnabled)
@@ -114,13 +122,87 @@ class SettingsViewController: FormViewController {
         } else {
             application.userDefaults.set(false, forKey: RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey)
         }
+
+        if let filter = values[arrivalFilterTag] as? ArrivalDepartureFilter {
+            application.setArrivalDepartureFilter(filter)
+        }
+
+        saveWalkingSpeedValues(values)
     }
+
+    private func saveAccessibilityValues(_ values: [String: Any?]) {
+        if let hapticFeedbackOnDataLoad = values[DataLoadFeedbackGenerator.EnabledUserDefaultsKey] as? Bool {
+            application.userDefaults.set(hapticFeedbackOnDataLoad, forKey: DataLoadFeedbackGenerator.EnabledUserDefaultsKey)
+        }
+
+        if let alwaysShowFullSheetOnVoiceover = values[OBAFloatingPanelController.AlwaysShowFullSheetOnVoiceoverUserDefaultsKey] as? Bool {
+            application.userDefaults.set(alwaysShowFullSheetOnVoiceover, forKey: OBAFloatingPanelController.AlwaysShowFullSheetOnVoiceoverUserDefaultsKey)
+        }
+
+        if let mapViewShowsStopAnnotationLabels = values[MapRegionManager.mapViewShowsStopAnnotationLabelsDefaultsKey] as? Bool {
+            application.userDefaults.set(mapViewShowsStopAnnotationLabels, forKey: MapRegionManager.mapViewShowsStopAnnotationLabelsDefaultsKey)
+        }
+
+        if let reducedColors = values[stopUIReducedColorsTag] as? Bool {
+            application.userDataStore.stopUIReducedColors = reducedColors
+        }
+    }
+
+    private func saveExperimentalValues(_ values: [String: Any?]) {
+        if let useMapPanel = values[FeatureFlags.useMapPanelExperienceKey] as? Bool {
+            application.userDefaults.set(useMapPanel, forKey: FeatureFlags.useMapPanelExperienceKey)
+        }
+
+        if let useNewStopPage = values[FeatureFlags.useNewStopPageKey] as? Bool {
+            application.userDefaults.set(useNewStopPage, forKey: FeatureFlags.useNewStopPageKey)
+        }
+    }
+
+    private func saveAlertsValues(_ values: [String: Any?]) {
+        if let testAlerts = values[AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts] as? Bool {
+            application.userDefaults.set(testAlerts, forKey: AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts)
+        }
+    }
+
+    private func saveWalkingSpeedValues(_ values: [String: Any?]) {
+        let store = application.userDataStore
+        let decision = WalkingSpeedSettingsDecision.compute(
+            currentSource: store.walkingSpeedSource,
+            currentSpeed: store.walkingSpeedMetersPerSecond,
+            useHealthKit: values[walkingSpeedUseHealthKitKey] as? Bool,
+            segmentSpeed: values[walkingSpeedMetersPerSecondKey] as? Double
+        )
+        store.walkingSpeedSource = decision.source
+        store.walkingSpeedMetersPerSecond = decision.speed
+    }
+
+    // MARK: - Arrival Display Section
+
+    private let arrivalFilterTag = "arrivalDepartureFilter"
+
+    private lazy var arrivalDisplaySection: Section = {
+        let section = Section(
+            OBALoc("settings_controller.arrival_display_section.title", value: "Arrival Display", comment: "Settings section title for controlling which arrivals/departures are shown")
+        )
+
+        section <<< AlertRow<ArrivalDepartureFilter> {
+            $0.tag = arrivalFilterTag
+            $0.title = OBALoc("settings_controller.arrival_filter.title", value: "Show Departures", comment: "Title for the departure filter setting row")
+            $0.selectorTitle = OBALoc("settings_controller.arrival_filter.selector_title", value: "Show Departures", comment: "Title for the departure filter selection alert")
+            $0.options = Array(ArrivalDepartureFilter.allCases)
+            $0.displayValueFor = { $0?.displayTitle }
+            $0.value = self.application.effectiveArrivalDepartureFilter
+        }
+
+        return section
+    }()
 
     // MARK: - Map Section
 
     private let mapSectionShowsScale = "mapSectionShowsScale"
     private let mapSectionShowsTraffic = "mapSectionShowsTraffic"
     private let mapSectionShowsHeading = "mapSectionShowsHeading"
+    private let mapSectionShowsPointsOfInterest = "mapSectionShowsPointsOfInterest"
 
     private lazy var mapSection: Section = {
         let section = Section(OBALoc("settings_controller.map_section.title", value: "Map", comment: "Settings > Map section title"))
@@ -138,6 +220,64 @@ class SettingsViewController: FormViewController {
         section <<< SwitchRow {
             $0.tag = mapSectionShowsHeading
             $0.title = OBALoc("settings_controller.map_section.shows_heading", value: "Show my current heading", comment: "Settings > Map section > Show my current heading")
+        }
+
+        // Mirrors the Map sheet's Points of Interest toggle (#1246). Same
+        // UserDefaults key; the Map sheet remains the canonical control.
+        section <<< SwitchRow {
+            $0.tag = mapSectionShowsPointsOfInterest
+            $0.title = OBALoc(
+                "settings_controller.map_section.shows_points_of_interest",
+                value: "Points of Interest",
+                comment: "Settings > Map section > Show Apple MapKit Points of Interest"
+            )
+        }
+
+        // Map layer switches mirror the Map sheet: same UserDefaults keys, written
+        // through MapRegionManager immediately. The Map sheet is canonical;
+        // Settings does not own this state.
+        for layer in application.mapRegionManager.mapLayers where layer.availability != .unsupported {
+            section <<< SwitchRow { [weak self] in
+                $0.tag = MapRegionManager.mapLayerDefaultsKey(id: layer.id)
+                $0.title = layer.title
+                $0.value = self?.application.mapRegionManager.isMapLayerEnabled(id: layer.id) ?? layer.isEnabledByDefault
+                $0.onChange { [weak self] row in
+                    guard let self, let value = row.value else { return }
+                    application.mapRegionManager.setMapLayerEnabled(value, id: layer.id)
+                }
+            }
+        }
+
+        return section
+    }()
+
+    // MARK: - Experimental Section
+
+    private lazy var experimentalSection: Section = {
+        let section = Section(
+            header: OBALoc("settings_controller.experimental_section.title", value: "Experimental", comment: "Settings > Experimental section title"),
+            footer: OBALoc("settings_controller.experimental_section.map_panel.footer", value: "Restart the app to apply.", comment: "Settings > Experimental section > Footer indicating changes apply on relaunch")
+        )
+
+        // These two write on change instead of waiting for `saveFormValues()`. The section's own
+        // footer tells you to restart the app, and the natural way to do that — kill the app right
+        // where you're standing — never runs `viewWillDisappear`, so a deferred write is lost.
+        section <<< SwitchRow {
+            $0.tag = FeatureFlags.useMapPanelExperienceKey
+            $0.title = OBALoc("settings_controller.experimental_section.map_panel", value: "Use map panel experience", comment: "Settings > Experimental section > Map panel toggle")
+            $0.onChange { [weak self] row in
+                guard let self, let value = row.value else { return }
+                application.userDefaults.set(value, forKey: FeatureFlags.useMapPanelExperienceKey)
+            }
+        }
+
+        section <<< SwitchRow {
+            $0.tag = FeatureFlags.useNewStopPageKey
+            $0.title = OBALoc("settings_controller.experimental_section.new_stop_page", value: "Use new stop page", comment: "Settings > Experimental section > New stop page toggle")
+            $0.onChange { [weak self] row in
+                guard let self, let value = row.value else { return }
+                application.userDefaults.set(value, forKey: FeatureFlags.useNewStopPageKey)
+            }
         }
 
         return section
@@ -161,17 +301,77 @@ class SettingsViewController: FormViewController {
             $0.title = OBALoc("settings_controller.accessibility_section.show_stop_annotation_labels", value: "Show route labels on the map", comment: "Settings > Accessibility section > Show route labels on the map")
         }
 
+        section <<< SwitchRow {
+            $0.tag = stopUIReducedColorsTag
+            $0.title = OBALoc("settings_controller.accessibility_section.reduce_stop_colors", value: "Reduce colors on stop page", comment: "Settings > Accessibility section > Toggle that renders stop page route badges as a thin color bar beside plain text instead of a colored square")
+        }
+
         return section
     }()
 
-    // MARK: - Agency Alerts
+    // MARK: - Walking Speed
 
-    private lazy var alertsSection: Section = {
-        let section = Section(OBALoc("settings_controller.alerts_section.title", value: "Agency Alerts", comment: "Settings > Alerts section title"))
+    private let walkingSpeedMetersPerSecondKey = "walkingSpeedMetersPerSecond"
+    private let walkingSpeedUseHealthKitKey = "walkingSpeedUseHealthKit"
+    private let stopUIReducedColorsTag = UserDefaultsStore.stopUIReducedColorsKey
 
-        section <<< SwitchRow {
-            $0.tag = AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts
-            $0.title = OBALoc("settings_controller.alerts_section.display_test_alerts", value: "Display test alerts", comment: "Settings > Alerts section > Display test alerts")
+    private func snapToPreset(_ speed: Double) -> Double {
+        WalkingSpeedPreset.nearest(to: speed).rawValue
+    }
+
+    private lazy var walkingSpeedSection: Section = {
+        let section = Section(OBALoc("settings_controller.walking_speed_section.title", value: "Walking Speed", comment: "Settings > Walking Speed section title"))
+
+        section <<< SegmentedRow<Double> {
+            $0.tag = walkingSpeedMetersPerSecondKey
+            $0.title = OBALoc("settings_controller.walking_speed.title",
+                              value: "Walking speed",
+                              comment: "Settings > Walking Speed section > Speed picker")
+            $0.options = WalkingSpeedPreset.allCases.map { $0.rawValue }
+            $0.displayValueFor = { speed in
+                WalkingSpeedPreset.nearest(to: speed ?? WalkingSpeed.defaultMetersPerSecond).localizedTitle
+            }
+            $0.disabled = Condition.function([walkingSpeedUseHealthKitKey], { [weak self] form in
+                guard let self = self else { return false }
+                return (form.rowBy(tag: self.walkingSpeedUseHealthKitKey) as? SwitchRow)?.value ?? false
+            })
+        }
+
+        if HKHealthStore.isHealthDataAvailable() {
+            section <<< SwitchRow {
+                $0.tag = walkingSpeedUseHealthKitKey
+                $0.title = OBALoc("settings_controller.walking_speed.use_healthkit",
+                                  value: "Use Health app data",
+                                  comment: "Settings > Walking Speed section > HealthKit toggle")
+                $0.onChange { [weak self] row in
+                    guard let self, row.value == true else { return }
+                    // Eureka's onChange closure is nonisolated (pre-concurrency
+                    // library), so `row` can't cross into the main-actor task;
+                    // re-fetch it by tag inside instead.
+                    Task { @MainActor in
+                        let granted = await self.application.walkingSpeedManager.requestHealthKitAuthorizationAndSync()
+                        if !granted {
+                            if let row: SwitchRow = self.form.rowBy(tag: self.walkingSpeedUseHealthKitKey) {
+                                row.value = false
+                                row.reload()
+                            } else {
+                                // Should be unreachable (the row is created with this tag
+                                // above); if it ever fires, the toggle stays on and the
+                                // HealthKit source would be persisted despite the denial.
+                                Logger.error("HealthKit toggle row not found by tag; cannot revert after authorization failure.")
+                            }
+                            self.showErrorToast(
+                                OBALoc(
+                                    "settings_controller.walking_speed.healthkit_unavailable",
+                                    value: "Couldn't sync walking speed from Health. Check Settings > Privacy & Security > Health to allow access.",
+                                    comment: "Settings > Walking Speed > HealthKit denial or no-data toast"
+                                ),
+                                using: self.application.toastManager
+                            )
+                        }
+                    }
+                }
+            }
         }
 
         return section
@@ -207,38 +407,110 @@ class SettingsViewController: FormViewController {
         return section
     }()
 
+    // MARK: - Feedback Section
+
+    private let alwaysShowFeedbackPrompt = "alwaysShowFeedbackPrompt"
+
+    private lazy var feedbackSection: Section = {
+        let section = Section(
+            header: OBALoc("settings_controller.feedback_section.title", value: "Feedback", comment: "Settings > Feedback section title"),
+            footer: OBALoc(
+                "settings_controller.feedback_section.footer",
+                value: "Resetting clears the saved prompt state but leaves this toggle turned on.",
+                comment: "Settings > Feedback section > Footer noting that resetting the prompt state does not turn the debug toggle off"
+            )
+        )
+
+        // Developer controls, not rider-facing ones — hidden with the rest of the
+        // debug affordances. Gated at the section so the header and the footer's
+        // implementation detail go with them.
+        section.hidden = Self.hiddenUnlessDebugMode(debugModeEnabled)
+
+        // Writes on change instead of waiting for `saveFormValues()`, matching the
+        // Experimental section's precedent: a tester who kills the app to relaunch
+        // never triggers `viewWillDisappear`, so a deferred write would be lost.
+        section <<< SwitchRow {
+            $0.tag = alwaysShowFeedbackPrompt
+            $0.title = OBALoc("settings_controller.feedback_section.always_show", value: "Always show feedback prompt", comment: "Settings > Feedback section > Debug toggle that bypasses the prompt's gating")
+            $0.onChange { [weak self] row in
+                guard let self, let value = row.value else { return }
+                application.reviewPromptPolicy.alwaysShowPrompt = value
+            }
+        }
+
+        section <<< ButtonRow {
+            $0.title = OBALoc("settings_controller.feedback_section.reset", value: "Reset feedback prompt state", comment: "Settings > Feedback section > Clears all feedback prompt bookkeeping")
+            $0.onCellSelection { [weak self] _, _ in
+                guard let self else { return }
+                application.reviewPromptPolicy.reset()
+                // Also clear the coordinator's 14-day engagement cooldown, or a
+                // reset leaves QA blocked for two weeks.
+                application.promptCoordinator.reset()
+            }
+        }
+
+        return section
+    }()
+
     // MARK: - Debug Section
 
     private let debugModeEnabled = "debugModeEnabled"
+
+    /// Hides a row unless the Debug Mode switch is on.
+    ///
+    /// Captures only the tag string: a `Condition` is stored on its row for the lifetime
+    /// of the form the controller owns, so capturing `self` in one retains the controller
+    /// in a cycle and it never deallocates after dismissal.
+    private static func hiddenUnlessDebugMode(_ debugModeTag: String) -> Condition {
+        Condition.function([debugModeTag]) { form in
+            !((form.rowBy(tag: debugModeTag) as? SwitchRow)?.value ?? false)
+        }
+    }
     private let crashAppKey = "crashAppKey"
     private let pushIDKey = "pushIDKey"
+    private let testDeviceDescriptionKey = "testDeviceDescriptionKey"
 
-    private lazy var debugSection: Section = {
+    private lazy var debugSection: Section = makeDebugSection()
+
+    // swiftlint:disable:next function_body_length
+    private func makeDebugSection() -> Section {
         let section = Section(OBALoc("settings_controller.debug_section.title", value: "Debug", comment: "Settings > Debug section title"))
 
         section <<< SwitchRow {
             $0.tag = debugModeEnabled
             $0.title = OBALoc("settings_controller.debug_section.debug_mode", value: "Debug Mode", comment: "Settings > Debug section > Debug mode")
             $0.onChange { [weak self] row in
-                guard let self, let refreshRegionsRow = form.rowBy(tag: RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey) as? SwitchRow, let value = row.value, value == false else { return }
+                guard let self, let value = row.value, value == false else { return }
 
-                refreshRegionsRow.value = false
+                // Turning Debug Mode off also turns off the debug-only behaviors it exposed.
+                if let refreshRegionsRow = form.rowBy(tag: RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey) as? SwitchRow {
+                    refreshRegionsRow.value = false
+                }
+                if let testAlertsRow = form.rowBy(tag: AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts) as? SwitchRow {
+                    testAlertsRow.value = false
+                }
+                // The override outlives its own UI otherwise: the row hides with the
+                // section, but the persisted flag keeps bypassing every prompt gate on
+                // what now looks like an ordinary install. Written directly as well as
+                // through the row, so it holds whether or not the row has been built.
+                if let alwaysShowRow = form.rowBy(tag: alwaysShowFeedbackPrompt) as? SwitchRow {
+                    alwaysShowRow.value = false
+                }
+                application.reviewPromptPolicy.alwaysShowPrompt = false
             }
         }
 
         section <<< SwitchRow {
             $0.tag = RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey
             $0.title = OBALoc("settings_controller.debug_section.always_refresh_regions", value: "Refresh regions on every launch", comment: "Settings > Debug section > Refresh regions on every launch")
-            $0.hidden = Condition.function([debugModeEnabled], { form in
-                return !((form.rowBy(tag: self.debugModeEnabled) as? SwitchRow)?.value ?? false)
-            })
+            $0.hidden = Self.hiddenUnlessDebugMode(debugModeEnabled)
         }
 
         section <<< LabelRow {
             $0.tag = crashAppKey
             $0.title = OBALoc("more_controller.debug_section.crash_row", value: "Crash the app", comment: "Title for a button that will crash the app.")
-            $0.hidden = Condition.function([debugModeEnabled], { form in
-                return !((form.rowBy(tag: self.debugModeEnabled) as? SwitchRow)?.value ?? false) && self.application.shouldShowCrashButton
+            $0.hidden = Condition.function([debugModeEnabled], { [debugModeEnabled, application] form in
+                return !((form.rowBy(tag: debugModeEnabled) as? SwitchRow)?.value ?? false) && application.shouldShowCrashButton
             })
             $0.onCellSelection { [weak self] _, _ in
                 guard let self else { return }
@@ -254,9 +526,7 @@ class SettingsViewController: FormViewController {
             $0.tag = pushIDKey
             $0.title = OBALoc("more_controller.debug_section.push_id.title", value: "Push ID", comment: "Title for the Push Notification ID row in the More Controller")
             $0.value = application.pushService?.pushUserID ?? OBALoc("more_controller.debug_section.push_id.not_available", value: "Not available", comment: "This is displayed instead of the user's push ID if the value is not available.")
-            $0.hidden = Condition.function([debugModeEnabled], { form in
-                return !((form.rowBy(tag: self.debugModeEnabled) as? SwitchRow)?.value ?? false)
-            })
+            $0.hidden = Self.hiddenUnlessDebugMode(debugModeEnabled)
             $0.disabled = true
             $0.onCellSelection { [weak self] _, row in
                 guard let self, let pushUserID = application.pushService?.pushUserID else { return }
@@ -266,8 +536,8 @@ class SettingsViewController: FormViewController {
                 row.value = OBALoc("clipboard.copied_text_confirmation", value: "Copied to clipboard", comment: "This is displayed to confirm that something has been copied to clipboard.")
                 row.reload()
 
-                Task {
-                    try await Task.sleep(for: .seconds(2))
+                Task { @MainActor in
+                    try? await Task.sleep(for: .seconds(2))
                     row.value = self.application.pushService?.pushUserID ?? OBALoc("more_controller.debug_section.push_id.not_available", value: "Not available", comment: "This is displayed instead of the user's push ID if the value is not available.")
                     row.reload()
                 }
@@ -277,8 +547,38 @@ class SettingsViewController: FormViewController {
             }
         }
 
+        section <<< TextRow {
+            $0.tag = testDeviceDescriptionKey
+            $0.title = OBALoc("settings_controller.debug_section.test_device_description", value: "Test Device Name", comment: "Settings > Debug section > Name identifying this device for test push notifications")
+            $0.placeholder = OBALoc("settings_controller.debug_section.test_device_description.placeholder", value: "e.g. Aaron's iPhone", comment: "Placeholder example for the test device name field")
+            $0.value = application.userDefaults.string(forKey: PushRegistrationManager.testDeviceDescriptionDefaultsKey)
+            $0.hidden = Self.hiddenUnlessDebugMode(debugModeEnabled)
+            $0.onChange { [weak self] row in
+                guard let self else { return }
+                application.userDefaults.set(row.value, forKey: PushRegistrationManager.testDeviceDescriptionDefaultsKey)
+
+                // Clearing the name revokes test-device status, so test alerts go with it.
+                let trimmed = row.value?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                if trimmed.isEmpty, let testAlertsRow = form.rowBy(tag: AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts) as? SwitchRow {
+                    testAlertsRow.value = false
+                }
+            }
+        }
+
+        section <<< SwitchRow {
+            $0.tag = AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts
+            $0.title = OBALoc("settings_controller.alerts_section.display_test_alerts", value: "Display test alerts", comment: "Settings > Debug section > Display test alerts")
+            $0.hidden = Self.hiddenUnlessDebugMode(debugModeEnabled)
+            // Test alerts only display for a named test device (see
+            // AgencyAlertsStore.shouldDisplayTestAlerts), so the switch is inert without a name.
+            $0.disabled = Condition.function([testDeviceDescriptionKey], { [testDeviceDescriptionKey] form in
+                let name = (form.rowBy(tag: testDeviceDescriptionKey) as? TextRow)?.value?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                return name.isEmpty
+            })
+        }
+
         return section
-    }()
+    }
 
     // MARK: - Migrate Data Section
 
@@ -293,9 +593,7 @@ class SettingsViewController: FormViewController {
             }
         }
 
-        section.hidden = application.hasDataToMigrate ? false : Condition.function([debugModeEnabled], { form in
-            return !((form.rowBy(tag: self.debugModeEnabled) as? SwitchRow)?.value ?? false)
-        })
+        section.hidden = application.hasDataToMigrate ? false : Self.hiddenUnlessDebugMode(debugModeEnabled)
 
         return section
     }()

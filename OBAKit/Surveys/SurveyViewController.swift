@@ -7,6 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
+import Combine
 import CoreLocation
 import UIKit
 import Eureka
@@ -14,22 +15,30 @@ import OBAKitCore
 
 class SurveyViewController: FormViewController {
 
-    private let survey: Survey
-    private let surveyService: SurveyService
-    private let stopID: String?
-    private let stopLocation: CLLocationCoordinate2D?
+    private let viewModel: SurveyViewModel
+    private var cancellables = Set<AnyCancellable>()
 
-    private var responses: [SurveyQuestionResponse] = []
-    private var heroResponseID: String?
-    private var checkboxSelections: [Int: Set<String>] = [:]
-
-    init(survey: Survey, surveyService: SurveyService, stopID: String? = nil, stopLocation: CLLocationCoordinate2D? = nil, heroResponseID: String? = nil) {
-        self.survey = survey
-        self.surveyService = surveyService
-        self.stopID = stopID
-        self.stopLocation = stopLocation
-        self.heroResponseID = heroResponseID
+    init(viewModel: SurveyViewModel) {
+        self.viewModel = viewModel
         super.init(nibName: nil, bundle: nil)
+    }
+
+    convenience init(
+        survey: Survey,
+        surveyService: SurveyService,
+        stop: Stop? = nil,
+        stopID: String? = nil,
+        stopLocation: CLLocationCoordinate2D? = nil,
+        heroResponseID: String? = nil
+    ) {
+        self.init(viewModel: SurveyViewModel(
+            survey: survey,
+            surveyService: surveyService,
+            stop: stop,
+            stopID: stopID,
+            stopLocation: stopLocation,
+            heroResponseID: heroResponseID
+        ))
     }
 
     required init?(coder: NSCoder) {
@@ -40,20 +49,63 @@ class SurveyViewController: FormViewController {
         super.viewDidLoad()
         setupNavigationBar()
         setupForm()
+        bindViewModel()
     }
 
     private func setupNavigationBar() {
-        title = survey.name
+        title = viewModel.survey.name
         navigationItem.leftBarButtonItem = UIBarButtonItem(
             barButtonSystemItem: .close, target: self, action: #selector(cancelTapped)
         )
+    }
+
+    private func bindViewModel() {
+        viewModel.submissionResult
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] result in
+                switch result {
+                case .success:
+                    self?.dismiss(animated: true)
+                case .failure(.validationFailed):
+                    self?.showValidationError()
+                case .failure(.malformedSurveyData):
+                    self?.showMalformedSurveyError()
+                case .failure(.submissionFailed(let error)):
+                    self?.showSubmissionError(error)
+                }
+            }
+            .store(in: &cancellables)
+
+        viewModel.$isSubmitting
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isSubmitting in
+                self?.updateSubmitRow(isSubmitting: isSubmitting)
+            }
+            .store(in: &cancellables)
+    }
+
+    /// Disables the submit row and swaps its title to a "submitting" affordance while a
+    /// submit is in flight, so a second tap can't silently be dropped by the VM's in-flight
+    /// guard. Cancel button is intentionally left enabled — letting the user back out of a
+    /// hung submit matches the rest of the app's modal sheets.
+    ///
+    /// Internal (not `private`) so `SurveyViewControllerTests` can drive the Eureka
+    /// affordance directly without standing up a live submit (#1169).
+    func updateSubmitRow(isSubmitting: Bool) {
+        guard let row = form.rowBy(tag: "submit") as? ButtonRow else { return }
+        row.disabled = Condition(booleanLiteral: isSubmitting)
+        row.evaluateDisabled()
+        row.title = isSubmitting
+            ? OBALoc("survey_vc.submitting_button", value: "Submitting…", comment: "Submit button title while a survey submission is in flight")
+            : OBALoc("survey_vc.submit_button", value: "Submit Survey", comment: "Button to submit the survey")
+        row.updateCell()
     }
 
     private func setupForm() {
         // Header section with survey info
         form +++ Section()
         <<< LabelRow("survey_header") { row in
-            row.title = survey.study.description
+            row.title = viewModel.survey.study.description
             row.cell.textLabel?.numberOfLines = 0
         }
 
@@ -61,10 +113,7 @@ class SurveyViewController: FormViewController {
         let questionsSection = Section(OBALoc("survey_vc.questions_section_title", value: "Questions", comment: "Section header for survey questions"))
         form +++ questionsSection
 
-        // Skip hero question if already answered
-        let questionsToShow = heroResponseID != nil ? survey.remainingQuestions : survey.questions
-
-        for question in questionsToShow {
+        for question in viewModel.questionsToShow {
             addQuestionRow(question, to: questionsSection)
         }
 
@@ -80,193 +129,115 @@ class SurveyViewController: FormViewController {
 
     private func addQuestionRow(_ question: SurveyQuestion, to section: Section) {
         let questionTag = "question_\(question.id)"
-
         switch question.content.type {
-        case .label:
-            section <<< LabelRow(questionTag) { row in
-                row.title = question.content.labelText
-                row.cell.textLabel?.numberOfLines = 0
-            }
+        case .label:         addLabelQuestionRow(question, to: section, tag: questionTag)
+        case .radio:         addRadioQuestionRows(question, to: section, tag: questionTag)
+        case .checkbox:      addCheckboxQuestionRows(question, to: section, tag: questionTag)
+        case .text:          addTextQuestionRows(question, to: section, tag: questionTag)
+        case .externalSurvey: addExternalSurveyQuestionRows(question, to: section, tag: questionTag)
+        }
+    }
 
-        case .radio:
-            let options = question.content.options ?? []
-            // Add question label
-            section <<< LabelRow("\(questionTag)_label") { row in
-                row.title = question.content.labelText
-                row.cell.textLabel?.numberOfLines = 0
-                row.cell.textLabel?.font = .boldSystemFont(ofSize: 16)
-            }
+    private func addLabelQuestionRow(_ question: SurveyQuestion, to section: Section, tag: String) {
+        section <<< LabelRow(tag) { row in
+            row.title = question.content.labelText
+            row.cell.textLabel?.numberOfLines = 0
+        }
+    }
 
-            // Use SegmentedRow for inline options instead of ActionSheetRow
-            if options.count <= 3 {
-                section <<< SegmentedRow<String>(questionTag) { row in
-                    row.options = options
-                    row.value = nil
-                }.onChange { [weak self] row in
-                    if let value = row.value {
-                        self?.updateResponse(for: question, answer: value)
-                    }
-                }
-            } else {
-                for (index, option) in options.enumerated() {
-                    let optionTag = "\(questionTag)_option_\(index)"
-                    section <<< CheckRow(optionTag) { row in
-                        row.title = option
-                        row.value = false
-                    }.onChange { [weak self] row in
-                        guard let self = self else { return }
-
-                        if row.value == true {
-                            for (otherIndex, _) in options.enumerated() {
-                                if otherIndex != index {
-                                    let otherTag = "\(questionTag)_option_\(otherIndex)"
-                                    if let otherRow = self.form.rowBy(tag: otherTag) as? CheckRow {
-                                        otherRow.value = false
-                                        otherRow.updateCell()
-                                    }
-                                }
-                            }
-                            self.updateResponse(for: question, answer: option)
-                        }
-                    }
+    private func addRadioQuestionRows(_ question: SurveyQuestion, to section: Section, tag: String) {
+        let options = question.content.options ?? []
+        section <<< LabelRow("\(tag)_label") { row in
+            row.title = question.content.labelText
+            row.cell.textLabel?.numberOfLines = 0
+            row.cell.textLabel?.font = .boldSystemFont(ofSize: 16)
+        }
+        if options.count <= 3 {
+            section <<< SegmentedRow<String>(tag) { row in
+                row.options = options
+                row.value = nil
+            }.onChange { [weak self] row in
+                if let value = row.value {
+                    self?.viewModel.updateAnswer(for: question, answer: value)
                 }
             }
-
-        case .checkbox:
-            let options = question.content.options ?? []
-            // Add question label
-            section <<< LabelRow("\(questionTag)_label") { row in
-                row.title = question.content.labelText
-                row.cell.textLabel?.numberOfLines = 0
-                row.cell.textLabel?.font = .boldSystemFont(ofSize: 16)
-            }
-
-            // Add individual checkbox options
-            checkboxSelections[question.id] = []
+        } else {
             for (index, option) in options.enumerated() {
-                let optionTag = "\(questionTag)_checkbox_\(index)"
+                let optionTag = "\(tag)_option_\(index)"
                 section <<< CheckRow(optionTag) { row in
                     row.title = option
                     row.value = false
                 }.onChange { [weak self] row in
-                    guard let self = self else { return }
-
+                    guard let self else { return }
                     if row.value == true {
-                        self.checkboxSelections[question.id, default: []].insert(option)
-                    } else {
-                        self.checkboxSelections[question.id, default: []].remove(option)
-                    }
-
-                    let selections = Array(self.checkboxSelections[question.id, default: []])
-                    if let jsonAnswer = try? SurveyService.formatCheckboxAnswer(selections) {
-                        self.updateResponse(for: question, answer: jsonAnswer)
+                        for otherIndex in options.indices where otherIndex != index {
+                            let otherTag = "\(tag)_option_\(otherIndex)"
+                            if let otherRow = self.form.rowBy(tag: otherTag) as? CheckRow {
+                                otherRow.value = false
+                                otherRow.updateCell()
+                            }
+                        }
+                        self.viewModel.updateAnswer(for: question, answer: option)
                     }
                 }
-            }
-
-        case .text:
-            // Add question label first
-            section <<< LabelRow("\(questionTag)_label") { row in
-                row.title = question.content.labelText
-                row.cell.textLabel?.numberOfLines = 0
-                row.cell.textLabel?.font = .boldSystemFont(ofSize: 16)
-            }
-
-            // Then add the text input
-            section <<< TextAreaRow(questionTag) { row in
-                row.placeholder = OBALoc("survey_vc.text_placeholder", value: "Enter your answer...", comment: "Placeholder for text answer field")
-                row.textAreaHeight = .dynamic(initialTextViewHeight: 60)
-            }.onChange { [weak self] row in
-                if let value = row.value {
-                    self?.updateResponse(for: question, answer: value)
-                }
-            }
-
-        case .externalSurvey:
-            section <<< LabelRow(questionTag) { row in
-                row.title = question.content.labelText
-                row.cell.textLabel?.numberOfLines = 0
             }
         }
     }
 
-    private func updateResponse(for question: SurveyQuestion, answer: String) {
-        // Remove existing response for this question
-        responses.removeAll { $0.questionId == question.id }
+    private func addCheckboxQuestionRows(_ question: SurveyQuestion, to section: Section, tag: String) {
+        let options = question.content.options ?? []
+        section <<< LabelRow("\(tag)_label") { row in
+            row.title = question.content.labelText
+            row.cell.textLabel?.numberOfLines = 0
+            row.cell.textLabel?.font = .boldSystemFont(ofSize: 16)
+        }
+        for (index, option) in options.enumerated() {
+            let optionTag = "\(tag)_checkbox_\(index)"
+            section <<< CheckRow(optionTag) { row in
+                row.title = option
+                row.value = false
+            }.onChange { [weak self] row in
+                self?.viewModel.toggleCheckbox(option: option, selected: row.value == true, for: question)
+            }
+        }
+    }
 
-        // Add new response
-        let response = SurveyService.createQuestionResponse(question: question, answer: answer)
-        responses.append(response)
+    private func addTextQuestionRows(_ question: SurveyQuestion, to section: Section, tag: String) {
+        section <<< LabelRow("\(tag)_label") { row in
+            row.title = question.content.labelText
+            row.cell.textLabel?.numberOfLines = 0
+            row.cell.textLabel?.font = .boldSystemFont(ofSize: 16)
+        }
+        section <<< TextAreaRow(tag) { row in
+            row.placeholder = OBALoc("survey_vc.text_placeholder", value: "Enter your answer...", comment: "Placeholder for text answer field")
+            row.textAreaHeight = .dynamic(initialTextViewHeight: 60)
+        }.onChange { [weak self] row in
+            if let value = row.value {
+                self?.viewModel.updateAnswer(for: question, answer: value)
+            }
+        }
+    }
+
+    private func addExternalSurveyQuestionRows(_ question: SurveyQuestion, to section: Section, tag: String) {
+        section <<< LabelRow("\(tag)_label") { row in
+            row.title = question.content.labelText
+            row.cell.textLabel?.numberOfLines = 0
+        }
+        section <<< ButtonRow(tag) { row in
+            row.title = OBALoc("survey_vc.open_external_survey_button", value: "Open Survey", comment: "Button that opens an external survey in the browser")
+            row.onCellSelection { [weak self] _, _ in
+                self?.openExternalSurvey()
+            }
+        }
     }
 
     @objc private func cancelTapped() {
-        surveyService.markSurveyForLater(survey)
-        surveyService.setNextReminderDate()
+        viewModel.cancel()
         dismiss(animated: true)
     }
 
     @objc private func submitTapped() {
-        Task {
-            await submitSurvey()
-        }
-    }
-
-    private func submitSurvey() async {
-        // Validate required questions
-        guard validateResponses() else {
-            showValidationError()
-            return
-        }
-
-        do {
-            if let heroResponseID = heroResponseID {
-                // Submit additional questions
-                _ = try await surveyService.submitAdditionalQuestions(
-                    responseID: heroResponseID,
-                    additionalResponses: responses
-                )
-            } else {
-                // Submit complete survey
-                guard let heroQuestion = survey.heroQuestion,
-                      let heroResponse = responses.first(where: { $0.questionId == heroQuestion.id }) else {
-                    showValidationError()
-                    return
-                }
-
-                let submissionResponse = try await surveyService.submitHeroQuestion(
-                    survey: survey,
-                    heroQuestionResponse: heroResponse,
-                    stopID: stopID,
-                    stopLocation: stopLocation
-                )
-
-                // Save hero response ID so retry skips re-submitting the hero
-                self.heroResponseID = submissionResponse.id
-
-                // Submit remaining questions if any
-                let remainingResponses = responses.filter { $0.questionId != heroQuestion.id }
-                if !remainingResponses.isEmpty {
-                    _ = try await surveyService.submitAdditionalQuestions(
-                        responseID: submissionResponse.id,
-                        additionalResponses: remainingResponses
-                    )
-                }
-            }
-
-            surveyService.markSurveyCompleted(survey)
-            dismiss(animated: true)
-
-        } catch {
-            showSubmissionError(error)
-        }
-    }
-
-    private func validateResponses() -> Bool {
-        let answeredQuestionIDs = Set(responses.map { $0.questionId })
-        let questionsToValidate = heroResponseID != nil ? survey.remainingQuestions : survey.questions
-        return questionsToValidate
-            .filter { $0.required }
-            .allSatisfy { answeredQuestionIDs.contains($0.id) }
+        Task { await viewModel.submit() }
     }
 
     private func showValidationError() {
@@ -279,11 +250,40 @@ class SurveyViewController: FormViewController {
         present(alert, animated: true)
     }
 
+    private func showMalformedSurveyError() {
+        Logger.error("Survey \(viewModel.survey.id) is malformed (no answerable hero question on the fresh path).")
+        let alert = UIAlertController(
+            title: OBALoc("survey_vc.malformed_error.title", value: "Survey Unavailable", comment: "Title for malformed survey alert"),
+            message: OBALoc("survey_vc.malformed_error.message", value: "This survey can't be submitted right now. Please try again later.", comment: "Message when the survey data itself is malformed (no answerable hero question)."),
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: OBALoc("survey_vc.ok_button", value: "OK", comment: "OK button on survey alerts"), style: .default))
+        present(alert, animated: true)
+    }
+
     private func showSubmissionError(_ error: Error) {
-        Logger.error("Survey \(survey.id) submission failed: \(error)")
         let alert = UIAlertController(
             title: OBALoc("survey_vc.submission_error.title", value: "Submission Error", comment: "Title for survey submission error alert"),
             message: error.localizedDescription,
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: OBALoc("survey_vc.ok_button", value: "OK", comment: "OK button on survey alerts"), style: .default))
+        present(alert, animated: true)
+    }
+
+    private func openExternalSurvey() {
+        viewModel.launchExternalSurvey(
+            onSuccess: { [weak self] in self?.dismiss(animated: true) },
+            // On failure, keep the form on screen so the rider can retry; the
+            // launcher does not mark the survey completed unless the open succeeds.
+            onFailure: { [weak self] in self?.showExternalSurveyError() }
+        )
+    }
+
+    private func showExternalSurveyError() {
+        let alert = UIAlertController(
+            title: OBALoc("survey_vc.external_survey_error.title", value: "Can't Open Survey", comment: "Title shown when an external survey link cannot be opened"),
+            message: OBALoc("survey_vc.external_survey_error.message", value: "This survey link couldn't be opened. Please try again later.", comment: "Message shown when an external survey link cannot be opened"),
             preferredStyle: .alert
         )
         alert.addAction(UIAlertAction(title: OBALoc("survey_vc.ok_button", value: "OK", comment: "OK button on survey alerts"), style: .default))

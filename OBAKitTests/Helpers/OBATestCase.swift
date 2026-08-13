@@ -7,17 +7,40 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
+import Foundation
+import Testing
 import OBAKit
 @testable import OBAKitCore
 
-open class OBATestCase: XCTestCase {
+/// Pins the process to GMT once, for the lifetime of the test bundle.
+///
+/// This used to be set in `setUp` and undone in `tearDown`. `NSTimeZone.default`
+/// is process-global, so under Swift Testing — which may run suites
+/// concurrently — one suite's teardown could reset the zone out from under
+/// another suite's running test. Setting it once and never resetting it removes
+/// the race entirely, and is behaviourally identical for these tests: every
+/// suite that inherited `OBATestCase` wanted GMT, and no test reads the
+/// system zone (the Weather tests set their own calendar's zone explicitly).
+private let pinnedToGMT: Void = {
+    NSTimeZone.default = NSTimeZone(forSecondsFromGMT: 0) as TimeZone
+}()
+
+// Main-actor-isolated (inherited by every test suite that uses it): the
+// frameworks under test are largely @MainActor, and this annotation makes the
+// async initializer and any async test methods hop to main.
+//
+// This is a plain base class, not a suite in its own right — it declares no
+// `@Test` methods. Swift Testing instantiates the *subclass* fresh for each of
+// its test functions, so `init` runs per test exactly as `setUp` used to.
+@MainActor
+class OBATestCase {
 
     var userDefaults: UserDefaults!
 
-    open override func setUp() {
-        super.setUp()
-        NSTimeZone.default = NSTimeZone(forSecondsFromGMT: 0) as TimeZone
+    /// Replaces `setUp`. Swift Testing calls this once per test function.
+    init() async throws {
+        _ = pinnedToGMT
+
         userDefaults = buildUserDefaults()
         userDefaults.removePersistentDomain(forName: userDefaultsSuiteName)
 
@@ -28,10 +51,19 @@ open class OBATestCase: XCTestCase {
         restService = buildRESTService()
     }
 
-    open override func tearDown() {
-        super.tearDown()
-        NSTimeZone.resetSystemTimeZone()
-        userDefaults.removePersistentDomain(forName: userDefaultsSuiteName)
+    /// Replaces `tearDown`. Deliberately `nonisolated` and reading only
+    /// `nonisolated` stored state, so it needs no `isolated deinit`.
+    deinit {
+        UserDefaults.standard.removePersistentDomain(forName: userDefaultsSuiteName)
+    }
+
+    // MARK: - Test identity
+
+    /// The running test's name. Stands in for `XCTestCase.name`, which the many
+    /// `MockDataLoader(testName: name)` call sites used to get a label for
+    /// unmocked-URL failure messages.
+    nonisolated var name: String {
+        Test.current?.name ?? "OBAKitTests"
     }
 
     // MARK: - User Defaults
@@ -40,9 +72,16 @@ open class OBATestCase: XCTestCase {
         UserDefaults(suiteName: suiteName ?? userDefaultsSuiteName)!
     }
 
-    var userDefaultsSuiteName: String {
-        return String(describing: self)
-    }
+    /// A defaults domain unique to this instance — and therefore, since Swift
+    /// Testing builds a fresh instance per test, unique to each test.
+    ///
+    /// It was previously `String(describing: self)`, i.e. one domain shared by
+    /// every test in a class. That was safe only because XCTest ran them one at
+    /// a time; a per-instance domain holds regardless of how tests are
+    /// scheduled. Suites that derive their own domains from this one (the
+    /// Survey tests append `.state`, `.prioritization`, …) keep working, since
+    /// this is a stored constant rather than a freshly computed value.
+    nonisolated let userDefaultsSuiteName = "OBAKitTests.\(UUID().uuidString)"
 
     // MARK: - API Service Data
 
@@ -157,6 +196,65 @@ open class OBATestCase: XCTestCase {
 
     var regionsAPIPath: String {
         "/regions-v3.json"
+    }
+
+    // MARK: - Application
+
+    /// Builds a fully-wired `Application` against stubbed regions +
+    /// agencies-with-coverage for tests that need the real object graph
+    /// (e.g. anything that constructs a view controller which reads
+    /// `application.regionsService` / stores at init time).
+    ///
+    /// Test suites still own their own `queue` because a per-suite queue keeps
+    /// `cancelAllOperations()` scoped to one test — Swift Testing builds a fresh
+    /// suite instance per test function and releases it afterwards, so the
+    /// cancellation lands in that instance's `deinit`.
+    func buildApplication(queue: OperationQueue, dataLoader: MockDataLoader) -> Application {
+        stubRegions(dataLoader: dataLoader)
+        stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
+
+        let locManager = MockAuthorizedLocationManager(
+            updateLocation: TestData.mockSeattleLocation,
+            updateHeading: TestData.mockHeading
+        )
+        let locationService = LocationService(userDefaults: userDefaults, locationManager: locManager)
+
+        let config = AppConfig(
+            regionsBaseURL: regionsURL,
+            apiKey: apiKey,
+            appVersion: appVersion,
+            userDefaults: userDefaults,
+            analytics: AnalyticsMock(),
+            queue: queue,
+            locationService: locationService,
+            bundledRegionsFilePath: bundledRegionsPath,
+            regionsAPIPath: regionsAPIPath,
+            dataLoader: dataLoader,
+            fixedRegionName: Fixtures.pugetSoundRegion.name
+        )
+
+        return Application(config: config)
+    }
+
+    // MARK: - Stop Cache
+
+    /// Empties the stop cache for `application`'s current region.
+    ///
+    /// `Application.stopCacheRepository` is backed by a real file on disk
+    /// (`Application Support/stop_cache.sqlite`), so it is shared by every
+    /// `Application` built in the process *and* survives between runs of the
+    /// test bundle. `AppConfig` exposes no seam for injecting an
+    /// in-memory `StopCacheDatabase`, so a suite that exercises the cache has
+    /// to reset it explicitly — otherwise a test asserting "the network
+    /// populated the map" can be satisfied by rows another test left behind,
+    /// and still pass with its own code path broken.
+    ///
+    /// This is the same class of problem as the GMT pin at the top of this
+    /// file: process-global state that `.serialized` does not protect.
+    /// Call it before seeding or asserting on cached stops.
+    func clearStopCache(for application: Application) {
+        guard let regionId = application.currentRegion?.regionIdentifier else { return }
+        application.stopCacheRepository?.clearCache(regionId: regionId)
     }
 
     // MARK: - Surveys

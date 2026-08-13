@@ -10,8 +10,9 @@
 import FloatingPanel
 import UIKit
 
+// nonisolated: overrides members of FloatingPanel's nonisolated layout classes.
 /// A layout object used with `FloatingPanel` on `MapViewController`.
-final class MapPanelLayout: FloatingPanelBottomLayout {
+nonisolated final class MapPanelLayout: FloatingPanelBottomLayout {
     static let EstimatedDrawerTipStateHeight: CGFloat = 72
 
     override var initialState: FloatingPanelState {
@@ -25,7 +26,7 @@ final class MapPanelLayout: FloatingPanelBottomLayout {
 }
 
 /// A layout object used with `FloatingPanel` on `MapViewController`.
-final class MapPanelLandscapeLayout: FloatingPanelLayout {
+nonisolated final class MapPanelLandscapeLayout: FloatingPanelLayout {
     static let WidthSize: CGFloat = 291
 
     var position: FloatingPanelPosition = .bottom
@@ -44,10 +45,14 @@ final class MapPanelLandscapeLayout: FloatingPanelLayout {
     }
 
     func prepareLayout(surfaceView: UIView, in view: UIView) -> [NSLayoutConstraint] {
-        return [
-            surfaceView.leftAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leftAnchor, constant: 8.0),
-            surfaceView.widthAnchor.constraint(equalToConstant: MapPanelLandscapeLayout.WidthSize)
-        ]
+        // FloatingPanel invokes layout callbacks on the main thread; the protocol
+        // requirement is nonisolated only because the library predates concurrency.
+        MainActor.assumeIsolated {
+            [
+                surfaceView.leftAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leftAnchor, constant: 8.0),
+                surfaceView.widthAnchor.constraint(equalToConstant: MapPanelLandscapeLayout.WidthSize)
+            ]
+        }
     }
 
     func backdropAlpha(for state: FloatingPanelState) -> CGFloat {

@@ -8,7 +8,7 @@
 import UIKit
 import OBAKitCore
 
-struct ErrorCaptionItem: OBAListViewItem {
+nonisolated struct ErrorCaptionItem: OBAListViewItem {
     var configuration: OBAListViewItemConfiguration {
         var config = UIListContentConfiguration.cell()
         config.textProperties.font = .preferredFont(forTextStyle: .body)

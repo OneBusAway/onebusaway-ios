@@ -55,10 +55,8 @@ class RegionMismatchBulletin: NSObject {
         }
     }
 
+    @MainActor
     func show(in app: UIApplication) {
-        guard !bulletinManager.isShowingBulletin else {
-            return
-        }
-        bulletinManager.showBulletin(in: app)
+        bulletinManager.show(in: app, rootItem: page)
     }
 }

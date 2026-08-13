@@ -18,7 +18,7 @@ public protocol APIService {
     init(_ configuration: APIServiceConfiguration, dataLoader: URLDataLoader)
 }
 
-public struct APIServiceConfiguration {
+public struct APIServiceConfiguration: Sendable {
     let baseURL: URL
     let apiKey: String
     let uuid: String

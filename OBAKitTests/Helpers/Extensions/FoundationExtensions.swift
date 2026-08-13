@@ -11,7 +11,8 @@ import Foundation
 
 // MARK: - Date
 
-public extension Date {
+// `nonisolated`: pure value helpers, called from @Sendable matchers.
+public nonisolated extension Date {
     static func fromComponents(year: Int, month: Int, day: Int, hour: Int, minute: Int, second: Int) -> Date {
         let timeZone = TimeZone(secondsFromGMT: 0)
         let components = DateComponents(calendar: Calendar(identifier: .gregorian), timeZone: timeZone, era: nil, year: year, month: month, day: day, hour: hour, minute: minute, second: second, nanosecond: nil, weekday: nil, weekdayOrdinal: nil, quarter: nil, weekOfMonth: nil, weekOfYear: nil, yearForWeekOfYear: nil)
@@ -21,7 +22,8 @@ public extension Date {
 
 // MARK: - URL
 
-public extension URL {
+// `nonisolated`: pure value helpers, called from @Sendable matchers.
+public nonisolated extension URL {
     func containsQueryParams(_ params: [String: String?]) -> Bool {
         guard
             let comps = URLComponents(url: self, resolvingAgainstBaseURL: true),

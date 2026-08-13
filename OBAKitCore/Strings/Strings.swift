@@ -33,7 +33,10 @@ public class Strings: NSObject {
 
     public static let donationThankYouTitle = OBALoc("common.donation_thank_you.title", value: "Thank you for your support!", comment: "Title of an alert to display to the user after they donate to OTSF")
 
-    public static let donationThankYouBody = OBALoc("common.donation_thank_you.body", value: "Your support will help us continue to improve OneBusAway.", comment: "The body of the message to display to the user after they donate to OTSF")
+    public static let donationThankYouBody = String(
+        format: OBALoc("common.donation_thank_you.body", value: "Your support will help us continue to improve %@.", comment: "The body of the message to display to the user after they donate to OTSF. %@ is the app name."),
+        Bundle.main.appName
+    )
 
     public static let confirmDelete = OBALoc("common.confirmdelete", value: "Confirm Delete", comment: "Asks the user to confirm a delete action. Typically this is showned when the user taps a 'delete' button on an important item.")
 

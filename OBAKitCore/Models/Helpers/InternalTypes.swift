@@ -73,3 +73,11 @@ extension JSONDecoder {
         return decoder
     }
 }
+
+extension JSONEncoder {
+    class func RESTEncoder() -> JSONEncoder {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .millisecondsSince1970
+        return encoder
+    }
+}

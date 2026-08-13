@@ -11,10 +11,13 @@ import SwiftUI
 
 struct OBAWidget: Widget {
     let kind: String = "OBAWidget"
-    let dataProvider = WidgetDataProvider.shared
 
     var body: some WidgetConfiguration {
-        AppIntentConfiguration(
+        // WidgetDataProvider.shared is main-actor-isolated; Widget.body is
+        // evaluated on the main actor, so resolve it here instead of in a
+        // stored property (whose default value would be nonisolated).
+        let dataProvider = WidgetDataProvider.shared
+        return AppIntentConfiguration(
             kind: kind,
             provider: BookmarkTimelineProvider(dataProvider: dataProvider)
         ) { entry in

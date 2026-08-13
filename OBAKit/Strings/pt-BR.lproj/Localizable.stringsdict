@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>data_migration_bulletin.report_summary_number_of_failures</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>1 falha</string>
+			<key>other</key>
+			<string>%d falhas</string>
+		</dict>
+	</dict>
+	<key>data_migration_bulletin.report_summary_number_of_successes</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>1 bem-sucedida</string>
+			<key>other</key>
+			<string>%d bem-sucedidas</string>
+		</dict>
+	</dict>
+	<key>stop_controller.transfer_show_earlier_departures_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Mostrar 1 partida anterior</string>
+			<key>other</key>
+			<string>Mostrar %d partidas anteriores</string>
+		</dict>
+	</dict>
+	<key>stop_page.empty.no_departures_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Nenhuma partida no próximo minuto</string>
+			<key>other</key>
+			<string>Nenhuma partida nos próximos %d minutos</string>
+		</dict>
+	</dict>
+	<key>stop_page.past_toggle_show_a11y_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Mostrar 1 partida anterior</string>
+			<key>other</key>
+			<string>Mostrar %d partidas anteriores</string>
+		</dict>
+	</dict>
+	<key>stop_page.service_alerts.show_all_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Mostrar 1 alerta</string>
+			<key>other</key>
+			<string>Mostrar todos os %d alertas</string>
+		</dict>
+	</dict>
+	<key>stop_page.service_alerts.summary_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>1 alerta de serviço</string>
+			<key>other</key>
+			<string>%d alertas de serviço</string>
+		</dict>
+	</dict>
+	<key>stop_page.timeline.skipped_stops_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>1 parada</string>
+			<key>other</key>
+			<string>%d paradas</string>
+		</dict>
+	</dict>
+</dict>
+</plist>

@@ -10,6 +10,10 @@ import OBAKitCore
 import MapKit
 
 class VehicleAnnotation: MKPointAnnotation {
+    // Matches the isolation of the nonisolated MKPointAnnotation initializer it overrides.
+    nonisolated override init() {
+        super.init()
+    }
 
     init(tripStatus: TripStatus) {
         self.tripStatus = tripStatus

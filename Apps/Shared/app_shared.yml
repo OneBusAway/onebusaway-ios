@@ -6,10 +6,36 @@ name: OBAKit
 
 settings:
   base:
-    MARKETING_VERSION: 26.1.0
+    MARKETING_VERSION: 26.4.0
+    # Swift 6 migration, now complete (docs/swift6-migration-plan.md): every
+    # target in the project — frameworks, apps, widget, OBAKitTests and
+    # OBAKitUITests — builds in the Swift 6 language mode with main-actor
+    # default isolation.
+    # Exactly one target overrides this base: OBAKitCore pins
+    # SWIFT_DEFAULT_ACTOR_ISOLATION back to nonisolated, because it owns the
+    # actors and the background decode. OBAKitTests used to override it too;
+    # that pin went away when the suite moved to Swift Testing (see Phase 4).
+    # Approachable concurrency stays on permanently for Swift 6 targets (two
+    # of its five features are not part of the Swift 6 language mode).
+    SWIFT_STRICT_CONCURRENCY: complete
+    SWIFT_APPROACHABLE_CONCURRENCY: YES
+    SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
+    SWIFT_VERSION: "6.0"
+    # Zero-warning lock (plan Phase 0, step 2): every Swift 6 target is at zero
+    # data-race diagnostics; escalate the concurrency diagnostic groups to
+    # errors so they can't creep back in as warnings. Every target is now
+    # covered, including OBAKitTests, which dropped its opt-out on 2026-07-28
+    # when it reached zero warnings.
+    SWIFT_WARNINGS_AS_ERRORS_GROUPS: "ActorIsolatedCall SendableClosureCaptures RegionIsolation ConformanceIsolation MutableGlobalVariable"
 
 options:
-  minimumXcodeGenVersion: 2.42
+  # Directory sources generate Xcode 16 buildable folders
+  # (PBXFileSystemSynchronizedRootGroup): the pbxproj records only the folder
+  # path and target membership follows the file system, so adding/removing
+  # files no longer touches the project file. Requires XcodeGen >= 2.45 for
+  # excludes -> membership exceptions and automatic Info.plist exclusion.
+  minimumXcodeGenVersion: 2.45.4
+  defaultSourceDirectoryType: syncedFolder
   generateEmptyDirectories: true
   groupSortPosition: top
   deploymentTarget:
@@ -31,17 +57,26 @@ targets:
       properties:
         CFBundleShortVersionString: "$(MARKETING_VERSION)"
         CFBundleLocalizations:
+          - ar
           - en
           - es
+          - fil
+          - fr
           - it
+          - ko
           - pl
+          - pt-BR
+          - ru
+          - vi
           - zh-Hans
+          - zh-Hant
         ITSAppUsesNonExemptEncryption: false
         LSApplicationQueriesSchemes:
           - fb
           - twitter
           - comgooglemaps
         NSLocationWhenInUseUsageDescription: See where you are in relation to transit, and help you navigate more easily.
+        # HealthKit purpose strings live in Apps/Shared/info_plist.yml (shared by every app).
         NSLocationTemporaryUsageDescriptionDictionary:
           MapStatusView: See where you are in relation to transit, and help you navigate more easily.
         UILaunchStoryboardName: LaunchScreen
@@ -52,6 +87,12 @@ targets:
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
           - UIInterfaceOrientationPortraitUpsideDown
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+          UISceneConfigurations:
+            UIWindowSceneSessionRoleApplication:
+              - UISceneConfigurationName: Default Configuration
+                UISceneDelegateClassName: SceneDelegate
     preBuildScripts:
       - name: Versioning
         script: "${PROJECT_DIR}/scripts/version"
@@ -83,10 +124,10 @@ packages:
         exactVersion: 5.5.0
     FloatingPanel:
         url: https://github.com/SCENEE/FloatingPanel.git
-        exactVersion: 3.0.1
+        exactVersion: 3.2.2
     GRDB:
         url: https://github.com/groue/GRDB.swift.git
-        minorVersion: 6.29.0
+        minorVersion: 7.11.0
     Hyperconnectivity:
         url: https://github.com/rwbutler/Hyperconnectivity.git
         exactVersion: 1.2.0
@@ -94,9 +135,11 @@ packages:
         url: https://github.com/cbpowell/MarqueeLabel.git
         exactVersion: 4.5.3
     OTPKit:
+        # OneBusAway/otpkit#155 has merged to main but is not in a tagged
+        # release yet; track main until one ships, then switch back to a
+        # version range.
         url: https://github.com/OneBusAway/otpkit.git
-        minVersion: 0.5.0
-        maxVersion: 1.0.0
+        branch: main
     SwiftProtobuf:
         url: https://github.com/apple/swift-protobuf.git
-        minorVersion: 1.32.0
+        minorVersion: 1.38.1

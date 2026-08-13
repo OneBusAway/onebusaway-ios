@@ -16,18 +16,43 @@ public struct StopURLData {
 }
 
 /// `AddRegionURLData` is a data structure that encapsulates the information needed to add a new region
-/// through a deep link. It contains the name of the region, the URL to the OneBusAway (OBA) server, and an optional
-/// URL to the OpenTripPlanner (OTP) server.
+/// through a deep link. All URL values must be percent-encoded inside the deep link; an unencoded `&`
+/// inside a nested URL ends that value.
 ///
 /// - Parameters:
 ///   - name: The name of the region to be added. This is a human-readable string that identifies the region.
+///   - regionID: The region's identifier on the Obaco sidecar. Optional, because links generated before
+///               `region-id` was emitted omit it — but every sidecar-backed feature (alerts, alarms, push
+///               registration, surveys) 404s when it's missing, since `Region` then falls back to a random
+///               identifier the sidecar has never heard of.
 ///   - obaURL: The URL to the OneBusAway (OBA) server for the region. This URL is used to access transit data.
-///   - otpURL: An optional URL to the OpenTripPlanner (OTP) server. If provided, it can be used for trip planning.
-///             If nil, it indicates that the region does not support OTP or that the URL was not provided.
+///   - otpURL: An optional URL to the OpenTripPlanner (OTP) server, used for trip planning.
+///   - sidecarURL: An optional base URL for the Obaco sidecar server.
+///   - umamiURL: An optional Umami analytics server URL. Never read this directly to decide whether
+///               analytics is enabled — use `umamiAnalytics`.
+///   - umamiID: An optional Umami website ID. Like `umamiURL`, this can dangle (e.g. an ID with an
+///              invalid URL); use `umamiAnalytics`.
 public struct AddRegionURLData {
     public let name: String
+    public let regionID: Int?
     public let obaURL: URL
     public let otpURL: URL?
+    /// An optional URL to an OTP 2.x GTFS GraphQL server (`otp-graphql-url`).
+    /// Its presence is the explicit "this is an OTP 2.x GraphQL server" signal;
+    /// when set, it is preferred over `otpURL` for trip planning.
+    public let otpGraphQLURL: URL?
+    /// Whether the GraphQL server exposes vehicle rental data
+    /// (`otp-graphql-bikeshare=true`). Meaningless without `otpGraphQLURL`.
+    public let supportsOTPGraphQLBikeshare: Bool
+    public let sidecarURL: URL?
+    public let umamiURL: URL?
+    public let umamiID: String?
+
+    /// The both-or-nothing Umami config: non-nil only when both `umamiURL` and a
+    /// non-blank `umamiID` are present. Consumers must use this, not the raw fields.
+    public var umamiAnalytics: UmamiAnalyticsConfig? {
+        UmamiAnalyticsConfig(url: umamiURL, id: umamiID)
+    }
 }
 
 /// `URLType` represents the types of URLs that the `URLSchemeRouter` can handle.
@@ -44,7 +69,7 @@ public enum URLType {
 }
 /// Provides support for deep linking into the app by way of a custom URL scheme.
 ///
-/// Custom URL scheme deep linking (e.g. `onebusaway://view-stop?region_id=1&stop_id=12345`)
+/// Custom URL scheme deep linking (e.g. `onebusaway://view-stop?stopID=12345&regionID=1`)
 /// is the most reliable way to perform deep linking into the iOS app from an extension like the Today View.
 /// The only reason we don't use it everywhere is because the URLs generated are completely useless unless
 /// their recipient has a compatible version of OneBusAway installed on their device.
@@ -104,7 +129,10 @@ public class URLSchemeRouter: NSObject {
     }
 
     // MARK: - Add Region URLs
-    /// Encodes the OBA URL for adding custom region  along with its Name into an URL with the scheme `extensionURLScheme`. It also has optional OTP URL
+    /// Decodes an `AddRegionURLData` from `add-region` URL components. `name` and a valid
+    /// `oba-url` are required; `region-id`, `otp-url`, `otp-graphql-url`,
+    /// `otp-graphql-bikeshare`, `sidecar-url`, `umami-url`, and
+    /// `umami-id` are optional, and invalid optional values degrade to `nil`.
     private func decodeAddRegion(from components: URLComponents) -> URLType? {
         guard
             let name = components.queryItem(named: "name")?.value,
@@ -113,12 +141,39 @@ public class URLSchemeRouter: NSObject {
             return .addRegion(nil)
         }
 
-        var otpURL: URL?
-        if let otpUrlString = components.queryItem(named: "otp-url")?.value {
-            otpURL = validateAndCreateURL(from: otpUrlString)
+        var umamiID: String?
+        if let rawUmamiID = components.queryItem(named: "umami-id")?.value {
+            let trimmed = rawUmamiID.strip()
+            umamiID = trimmed.isEmpty ? nil : trimmed
         }
 
-        return .addRegion(AddRegionURLData(name: name, obaURL: obaURL, otpURL: otpURL))
+        // A malformed region-id degrades to nil rather than rejecting the link:
+        // the region is still worth adding, it just loses sidecar features.
+        var regionID: Int?
+        if let rawRegionID = components.queryItem(named: "region-id")?.value {
+            regionID = Int(rawRegionID.strip())
+        }
+
+        let bikeshareFlag = components.queryItem(named: "otp-graphql-bikeshare")?.value?.strip().lowercased()
+
+        return .addRegion(AddRegionURLData(
+            name: name,
+            regionID: regionID,
+            obaURL: obaURL,
+            otpURL: optionalURL(named: "otp-url", in: components),
+            otpGraphQLURL: optionalURL(named: "otp-graphql-url", in: components),
+            supportsOTPGraphQLBikeshare: bikeshareFlag == "true" || bikeshareFlag == "1",
+            sidecarURL: optionalURL(named: "sidecar-url", in: components),
+            umamiURL: optionalURL(named: "umami-url", in: components),
+            umamiID: umamiID))
+    }
+
+    /// Extracts and validates an optional URL query item; missing or invalid values become `nil`.
+    private func optionalURL(named name: String, in components: URLComponents) -> URL? {
+        guard let string = components.queryItem(named: name)?.value else {
+            return nil
+        }
+        return validateAndCreateURL(from: string)
     }
 
     /// Validates that a URL string represents a proper URL with a scheme or is a valid path

@@ -7,16 +7,16 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
-import Nimble
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
 // swiftlint:disable force_try
 
-class TripTests: OBATestCase {
+@Suite(.serialized)
+final class TripTests: OBATestCase {
     
-    func test_decodeValidTrip() {
+    @Test func `Decode valid trip`() {
         let tripData: [String: Any] = [
             "id": "1_18196913",
             "blockId": "7001_1001",
@@ -32,21 +32,21 @@ class TripTests: OBATestCase {
         
         let trip = try! Fixtures.dictionaryToModel(type: Trip.self, dictionary: tripData)
         
-        expect(trip.id) == "1_18196913"
-        expect(trip.blockID) == "7001_1001"
-        expect(trip.routeID) == "1_100002"
-        expect(trip.serviceID) == "1_20200101"
-        expect(trip.shapeID) == "1_20010002"
-        expect(trip.headsign) == "Bellevue TC"
-        expect(trip.shortName) == "Express 001"
-        expect(trip.direction) == "0"
-        expect(trip.routeShortName) == "ST Express"
-        expect(trip.timeZone) == "America/Los_Angeles"
-        expect(trip.route).to(beNil())
-        expect(trip.regionIdentifier).to(beNil())
+        #expect(trip.id == "1_18196913")
+        #expect(trip.blockID == "7001_1001")
+        #expect(trip.routeID == "1_100002")
+        #expect(trip.serviceID == "1_20200101")
+        #expect(trip.shapeID == "1_20010002")
+        #expect(trip.headsign == "Bellevue TC")
+        #expect(trip.shortName == "Express 001")
+        #expect(trip.direction == "0")
+        #expect(trip.routeShortName == "ST Express")
+        #expect(trip.timeZone == "America/Los_Angeles")
+        #expect(trip.route == nil)
+        #expect(trip.regionIdentifier == nil)
     }
     
-    func test_decodeMinimalTrip() {
+    @Test func `Decode minimal trip`() {
         let minimalData: [String: Any] = [
             "id": "minimal_trip",
             "blockId": "block_123",
@@ -60,17 +60,17 @@ class TripTests: OBATestCase {
         
         let trip = try! Fixtures.dictionaryToModel(type: Trip.self, dictionary: minimalData)
         
-        expect(trip.id) == "minimal_trip"
-        expect(trip.blockID) == "block_123"
-        expect(trip.routeID) == "route_456"
-        expect(trip.serviceID) == "service_789"
-        expect(trip.shapeID) == "shape_abc"
-        expect(trip.routeShortName) == "99"
-        expect(trip.shortName) == "Short"
-        expect(trip.timeZone) == "UTC"
+        #expect(trip.id == "minimal_trip")
+        #expect(trip.blockID == "block_123")
+        #expect(trip.routeID == "route_456")
+        #expect(trip.serviceID == "service_789")
+        #expect(trip.shapeID == "shape_abc")
+        #expect(trip.routeShortName == "99")
+        #expect(trip.shortName == "Short")
+        #expect(trip.timeZone == "UTC")
     }
     
-    func test_decodeWithBlankValues() {
+    @Test func `Decode with blank values`() {
         let dataWithBlanks: [String: Any] = [
             "id": "blank_trip",
             "blockId": "block_blank",
@@ -85,12 +85,12 @@ class TripTests: OBATestCase {
         let trip = try! Fixtures.dictionaryToModel(type: Trip.self, dictionary: dataWithBlanks)
         
         // String.nilifyBlankValue should convert empty strings to nil
-        expect(trip.routeShortName).to(beNil())
-        expect(trip.shortName).to(beNil())
-        expect(trip.timeZone).to(beNil())
+        #expect(trip.routeShortName == nil)
+        #expect(trip.shortName == nil)
+        #expect(trip.timeZone == nil)
     }
     
-    func test_hasReferencesLoadReferences() {
+    @Test func `Has references load references`() {
         let tripData: [String: Any] = [
             "id": "test_trip",
             "blockId": "test_block",
@@ -128,12 +128,12 @@ class TripTests: OBATestCase {
         
         trip.loadReferences(references, regionIdentifier: 456)
         
-        expect(trip.route).toNot(beNil())
-        expect(trip.route.id) == "1_100002"
-        expect(trip.regionIdentifier) == 456
+        #expect(trip.route != nil)
+        #expect(trip.route.id == "1_100002")
+        #expect(trip.regionIdentifier == 456)
     }
     
-    func test_routeHeadsign() {
+    @Test func `Route headsign`() {
         let tripData: [String: Any] = [
             "id": "headsign_trip",
             "blockId": "test_block",
@@ -158,10 +158,10 @@ class TripTests: OBATestCase {
         let route = try! Fixtures.dictionaryToModel(type: Route.self, dictionary: routeData)
         trip.route = route
         
-        expect(trip.routeHeadsign) == "ST Express - Bellevue TC"
+        #expect(trip.routeHeadsign == "ST Express - Bellevue TC")
     }
     
-    func test_routeHeadsignWithoutTripHeadsign() {
+    @Test func `Route headsign without trip headsign`() {
         let tripData: [String: Any] = [
             "id": "no_headsign_trip",
             "blockId": "test_block",
@@ -185,10 +185,10 @@ class TripTests: OBATestCase {
         let route = try! Fixtures.dictionaryToModel(type: Route.self, dictionary: routeData)
         trip.route = route
         
-        expect(trip.routeHeadsign) == "ST Express"
+        #expect(trip.routeHeadsign == "ST Express")
     }
     
-    func test_equalityAndHash() {
+    @Test func `Equality and hash`() {
         let tripData: [String: Any] = [
             "id": "equality_test",
             "blockId": "test_block",
@@ -206,11 +206,11 @@ class TripTests: OBATestCase {
         let differentData = tripData.merging(["id": "different_trip"]) { _, new in new }
         let trip3 = try! Fixtures.dictionaryToModel(type: Trip.self, dictionary: differentData)
         
-        expect(trip1.isEqual(trip2)) == true
-        expect(trip1.isEqual(trip3)) == false
-        expect(trip1.isEqual("not a trip")) == false
+        #expect(trip1.isEqual(trip2) == true)
+        #expect(trip1.isEqual(trip3) == false)
+        #expect(trip1.isEqual("not a trip") == false)
         
-        expect(trip1.hash) == trip2.hash
-        expect(trip1.hash) != trip3.hash
+        #expect(trip1.hash == trip2.hash)
+        #expect(trip1.hash != trip3.hash)
     }
 }

@@ -11,6 +11,7 @@ import UIKit
 
 // MARK: - SelfSizing
 
+@MainActor
 public protocol SelfSizing: NSObjectProtocol {
     func calculateLayoutAttributesFitting(_ layoutAttributes: UICollectionViewLayoutAttributes) -> UICollectionViewLayoutAttributes
 }

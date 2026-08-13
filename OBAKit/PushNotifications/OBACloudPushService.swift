@@ -30,6 +30,9 @@ public class OBACloudPushService: NSObject, PushServiceProvider {
     /// Called when an error occurs during push registration or authorization. Set by ``PushService`` during initialization.
     public var errorHandler: PushServiceErrorHandler!
 
+    /// Called with the hex token on every successful APNs registration. Set by ``PushService`` during initialization.
+    public var deviceTokenUpdatedHandler: PushServiceDeviceTokenCallback?
+
     /// The hex-encoded APNs device token, or `nil` if the device has not yet registered.
     private var deviceToken: String?
 
@@ -73,20 +76,22 @@ public class OBACloudPushService: NSObject, PushServiceProvider {
 
         pendingCallbacks.append(callback)
 
+        // The completion handler runs on a background queue; hop to the main actor
+        // before touching state or UIApplication.
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { [weak self] granted, error in
-            guard let self else { return }
+            Task { @MainActor in
+                guard let self else { return }
 
-            if let error {
-                self.errorHandler?(error)
-                return
-            }
+                if let error {
+                    self.errorHandler?(error)
+                    return
+                }
 
-            guard granted else {
-                self.errorHandler?(PushErrors.authorizationDenied)
-                return
-            }
+                guard granted else {
+                    self.errorHandler?(PushErrors.authorizationDenied)
+                    return
+                }
 
-            DispatchQueue.main.async {
                 UIApplication.shared.registerForRemoteNotifications()
             }
         }
@@ -105,6 +110,8 @@ public class OBACloudPushService: NSObject, PushServiceProvider {
         self.deviceToken = token
 
         Logger.info("APNs device token: \(token)")
+
+        deviceTokenUpdatedHandler?(token)
 
         let callbacks = pendingCallbacks
         pendingCallbacks.removeAll()

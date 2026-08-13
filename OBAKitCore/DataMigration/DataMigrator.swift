@@ -11,7 +11,8 @@ import Foundation
 
 // swiftlint:disable cyclomatic_complexity function_body_length
 
-public protocol DataMigrationDelegate: AnyObject {
+@MainActor
+public protocol DataMigrationDelegate: AnyObject, Sendable {
     func migrate(recentStop: Stop) async throws
     func migrate(userID: String) async throws
     func migrate(region: MigrationRegion) async throws
@@ -29,9 +30,11 @@ public enum DataMigrationBookmarkError: Error {
     case noActiveTrips
 }
 
+// @unchecked Sendable: stored state is an immutable extractor and a UserDefaults
+// reference (thread-safe); `isMigrationPending` delegates to UserDefaults.
 /// `DataMigrator` decodes classic-OBA-encoded objects from UserDefaults, fetches the latest information from the API, then stores it in the new OBAKit format.
-public class DataMigrator {
-    public struct MigrationParameters {
+public final class DataMigrator: @unchecked Sendable {
+    public struct MigrationParameters: Sendable {
         public var forceMigration: Bool
         public var regionIdentifier: RegionIdentifier
         public weak var delegate: DataMigrationDelegate?
@@ -145,7 +148,7 @@ public class DataMigrator {
         //    ╚═══════════════╝
 
         // The API service must be configured to the same region as parameters.regionIdentifier.
-        guard let apiServiceRegionIdentifier = await apiService.configuration.regionIdentifier,
+        guard let apiServiceRegionIdentifier = apiService.configuration.regionIdentifier,
               apiServiceRegionIdentifier == parameters.regionIdentifier else {
             throw DataMigrationError.invalidAPIService("The API must be configured to the same region as parameters.regionIdentifier")
         }
@@ -270,7 +273,7 @@ public class DataMigrator {
     }
 
     // MARK: - Bookmarks
-    public struct MigrationBookmarkGroupResult {
+    public struct MigrationBookmarkGroupResult: Sendable {
         public let bookmarkGroup: MigrationBookmarkGroup
         public internal(set) var bookmarks: [MigrationBookmark: Result<Bookmark, Error>]
     }

@@ -11,7 +11,10 @@ import Foundation
 
 /// A wrapper around a Protocol Buffer alert object. ProtoBuf is somewhat unpleasant to use directly,
 /// and so this class offers some Swifty niceties on top of its jank.
-public class AgencyAlert: NSObject, Identifiable {
+///
+/// Every stored property is set in `init` and never mutated, which is what makes the
+/// `@unchecked Sendable` conformance sound (`@unchecked` only because NSObject is not Sendable).
+public final class AgencyAlert: NSObject, Identifiable, @unchecked Sendable {
     private let alert: TransitRealtime_Alert
     public let id: String
 
@@ -34,7 +37,11 @@ public class AgencyAlert: NSObject, Identifiable {
         return nil
     }
 
+    /// The agency this alert applies to, or `nil` for a region-wide alert.
     public let agency: AgencyWithCoverage?
+
+    /// `true` when this alert applies to the whole region rather than a single agency.
+    public var isRegionWide: Bool { agency == nil }
 
     // MARK: - Localized Content Accessors
 
@@ -56,26 +63,6 @@ public class AgencyAlert: NSObject, Identifiable {
 
     private let defaultLanguageCode = "en"
 
-    // MARK: - Translation Properties
-
-    private lazy var urlTranslations: [String: String] = {
-        return alert.url.translation.reduce(into: [:]) { (acc, translation) in
-            acc[translation.language] = translation.text
-        }
-    }()
-
-    private lazy var titleTranslations: [String: String] = {
-        return alert.headerText.translation.reduce(into: [:]) { (acc, translation) in
-            acc[translation.language] = translation.text
-        }
-    }()
-
-    private lazy var bodyTranslations: [String: String] = {
-        return alert.descriptionText.translation.reduce(into: [:]) { (acc, translation) in
-            acc[translation.language] = translation.text
-        }
-    }()
-
     // MARK: - Initialization
 
     public convenience init(feedEntity: TransitRealtime_FeedEntity, agencies: [AgencyWithCoverage]) throws {
@@ -86,20 +73,26 @@ public class AgencyAlert: NSObject, Identifiable {
             throw AlertError.invalidAlert
         }
 
-        guard let selectedAgency = agencies.filter({ $0.agencyID == gtfsAgency.agencyID }).first else {
+        let selectedAgency = agencies.first { $0.agencyID == gtfsAgency.agencyID }
+
+        // Obaco marks region-wide alerts — ones that apply to every agency in the
+        // region rather than to one in particular — with an empty agency ID.
+        guard selectedAgency != nil || gtfsAgency.agencyID.isEmpty else {
             throw AlertError.unknownAgency
         }
 
         try self.init(feedEntity: feedEntity, agency: selectedAgency)
     }
 
-    public init(feedEntity: TransitRealtime_FeedEntity, agency: AgencyWithCoverage) throws {
+    public init(feedEntity: TransitRealtime_FeedEntity, agency: AgencyWithCoverage?) throws {
         guard
             feedEntity.hasAlert,
             AgencyAlert.isAgencyWideAlert(alert: feedEntity.alert),
             let gtfsAgency = AgencyAlert.findAgencyInList(list: feedEntity.alert.informedEntity),
             gtfsAgency.hasAgencyID,
-            gtfsAgency.agencyID == agency.agencyID
+            // A region-wide alert (no agency) must carry the empty agency ID Obaco
+            // uses to mark it; an agency-specific alert's ID must match its agency.
+            agency == nil ? gtfsAgency.agencyID.isEmpty : gtfsAgency.agencyID == agency?.agencyID
         else {
             throw AlertError.invalidAlert
         }
@@ -175,7 +168,7 @@ extension AgencyAlert {
     fileprivate func url(language: String) -> URL? {
         guard
             alert.hasURL,
-            let urlString = translation(key: language, from: urlTranslations)
+            let urlString = translation(key: language, from: alert.url.translation)
             else {
                 return nil
         }
@@ -188,7 +181,7 @@ extension AgencyAlert {
             return nil
         }
 
-        return translation(key: language, from: titleTranslations)
+        return translation(key: language, from: alert.headerText.translation)
     }
 
     fileprivate func body(language: String) -> String? {
@@ -196,30 +189,28 @@ extension AgencyAlert {
             return nil
         }
 
-        return translation(key: language, from: bodyTranslations)
+        return translation(key: language, from: alert.descriptionText.translation)
     }
 
-    private func translation(key: String, from map: [String: String]) -> String? {
-        if let translation = map[key] {
-            return translation
+    // A linear scan over the stored protobuf (translation lists hold a handful
+    // of entries at most): pure reads of immutable `let` state, so there is
+    // nothing to cache or synchronize.
+    private func translation(key: String, from translations: [TransitRealtime_TranslatedString.Translation]) -> String? {
+        if let translation = translations.first(where: { $0.language == key }) {
+            return translation.text
         }
 
         // If we don't have the desired translation, first check
         // to see if we have a default translation language value
         // present. For now this is English.
-        if let translation = map[defaultLanguageCode] {
-            return translation
+        if let translation = translations.first(where: { $0.language == defaultLanguageCode }) {
+            return translation.text
         }
 
         // If that doesn't work out and we don't have our
         // desired language or default language, then just
         // return whatever we can get our hands on.
-        if let key = map.keys.first {
-            return map[key]
-        }
-        else {
-            return nil
-        }
+        return translations.first?.text
     }
 }
 

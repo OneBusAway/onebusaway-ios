@@ -11,6 +11,9 @@ targets:
       - path: Apps/KiedyBus
         name: App
         group: KiedyBus
+        # gpx files are simulated-location fixtures for schemes, not app
+        # resources; keep them out of the bundle.
+        excludes: ["gpx_files"]
       - path: Apps/Shared/CommonClient
         name: Common
         group: KiedyBus
@@ -19,6 +22,7 @@ targets:
       properties:
         com.apple.security.application-groups:
           - group.pl.kiedybus.iphone
+        com.apple.developer.healthkit: true
     info:
       path: Apps/KiedyBus/Info.plist
       properties:
@@ -47,6 +51,12 @@ targets:
           AppGroup: group.pl.kiedybus.iphone
           BundledRegionsFileName: regions.json
           ExtensionURLScheme: kiedybus
+          MoreTab:
+            HeaderSupportText: "Powered by goEuropa"
+            ShowHelpOutSection: false
+            CustomLinks:
+              - Title: "goEuropa Website"
+                URL: "https://www.goeuropa.eu"
           PrivacyPolicyURL: https://www.goeuropa.eu
           RESTServerAPIKey: web
           RegionsServerBaseAddress: https://kiedybus.pl
@@ -77,6 +87,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: pl.kiedybus.iphone.OBAWidget
 include:
   - path: Apps/Shared/app_shared.yml
+  - path: Apps/Shared/info_plist.yml
   - path: OBAKitCore/project.yml
   - path: OBAKit/project.yml
   - path: OBAKitTests/project.yml

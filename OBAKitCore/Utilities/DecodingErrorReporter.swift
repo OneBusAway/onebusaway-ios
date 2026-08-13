@@ -12,7 +12,8 @@ import Foundation
 public enum DecodingErrorReporter {
 
     private static let lock = NSLock()
-    private static var _reportHandler: (@Sendable (_ error: DecodingError, _ url: URL, _ httpMethod: String, _ message: String) -> Void)?
+    // nonisolated(unsafe): every access goes through `lock` via the computed property below.
+    nonisolated(unsafe) private static var _reportHandler: (@Sendable (_ error: DecodingError, _ url: URL, _ httpMethod: String, _ message: String) -> Void)?
 
     public static var reportHandler: (@Sendable (_ error: DecodingError, _ url: URL, _ httpMethod: String, _ message: String) -> Void)? {
         get { lock.withLock { _reportHandler } }

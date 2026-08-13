@@ -13,7 +13,10 @@ platform :ios do
     )
 
     # Generate the Xcode project via XcodeGen (required before any build).
-    sh("../scripts/generate_project", "OneBusAway")
+    # Run from the project root so the script can find Apps/OneBusAway/project.yml.
+    Dir.chdir("..") do
+      sh("scripts/generate_project", "OneBusAway")
+    end
 
     # Use the GitHub Actions run number as the build number to ensure
     # each CI build has a unique, auto-incrementing number.

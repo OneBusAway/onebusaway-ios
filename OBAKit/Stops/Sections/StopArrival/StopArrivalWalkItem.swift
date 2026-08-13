@@ -8,7 +8,7 @@
 import OBAKitCore
 import CoreLocation
 
-struct StopArrivalWalkItem: OBAListViewItem {
+nonisolated struct StopArrivalWalkItem: OBAListViewItem {
     var configuration: OBAListViewItemConfiguration {
         return .custom(StopArrivalWalkContentConfiguration(distance: distance, timeToWalk: timeToWalk))
     }
@@ -38,7 +38,7 @@ struct StopArrivalWalkItem: OBAListViewItem {
     }
 }
 
-struct StopArrivalWalkContentConfiguration: OBAContentConfiguration {
+nonisolated struct StopArrivalWalkContentConfiguration: OBAContentConfiguration {
     var distance: CLLocationDistance
     var timeToWalk: TimeInterval
     var formatters: Formatters?

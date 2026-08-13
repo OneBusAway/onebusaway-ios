@@ -5,7 +5,7 @@
 //  Created by Alan Chu on 10/4/20.
 //
 
-public enum OBAListViewItemConfiguration {
+nonisolated public enum OBAListViewItemConfiguration {
     case custom(OBAContentConfiguration)
     case list(UIListContentConfiguration, [UICellAccessory?])
 }
@@ -22,7 +22,11 @@ public enum OBAListViewItemConfiguration {
 ///     similar to hashable, comparing *all values, including the identifier*.
 /// - The `Identifiable` protocol requires an `id` property.
 ///     It is currently not in use, reserved for future item identification functionality. This value is the "stable identity" (e.g. `stopID`) of the model.
-public protocol OBAListViewItem: Hashable, Identifiable {
+/// nonisolated: conforming types are value-type view models whose `Hashable`/`Equatable`
+/// witnesses are exercised by the diffable data source (see `OBAListViewSection`), so the
+/// view-model layer must not be main-actor-*isolated* — though in practice everything
+/// still runs on the main actor. Conforming types should also be declared `nonisolated`.
+nonisolated public protocol OBAListViewItem: Hashable, Identifiable {
     var configuration: OBAListViewItemConfiguration { get }
 
     var separatorConfiguration: OBAListRowSeparatorConfiguration { get }
@@ -48,7 +52,7 @@ public protocol OBAListViewItem: Hashable, Identifiable {
 }
 
 // MARK: Default implementations
-extension OBAListViewItem {
+nonisolated extension OBAListViewItem {
     public static var customCellType: OBAListViewCell.Type? {
         return nil
     }
@@ -79,13 +83,15 @@ extension OBAListViewItem {
 }
 
 // MARK: - Type erase OBAListViewItem
+// nonisolated + @unchecked Sendable: diffable data source identifier type; see
+// OBAListViewSection for the reasoning.
 /// A type-erased OBAListViewItem.
 ///
 /// To attempt to cast into an `OBAListViewItem`, call `as(:_)`. For example:
 /// ```swift
 /// let person: Person? = AnyOBAListViewItem.as(Person.self)
 /// ```
-public struct AnyOBAListViewItem: OBAListViewItem {
+nonisolated public struct AnyOBAListViewItem: OBAListViewItem, @unchecked Sendable {
     private let _anyEquatable: AnyEquatable
     private let _id: () -> AnyHashable
     private let _configuration: () -> OBAListViewItemConfiguration
@@ -200,7 +206,7 @@ public struct AnyOBAListViewItem: OBAListViewItem {
 private extension Equatable { typealias EqualSelf = Self }
 
 /// Existential wrapper around Equatable.
-private struct AnyEquatable: Equatable {
+nonisolated private struct AnyEquatable: Equatable, @unchecked Sendable {
     let value: Any
     let isEqual: (AnyEquatable) -> Bool
     init<T: Equatable>(_ value: T) {

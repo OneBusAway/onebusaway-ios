@@ -14,6 +14,7 @@ import CoreLocation
 ///
 /// - Note: See `OBAKit.Application` for a richer version of this class suitable for use in an iOS app.
 @objc(OBACoreApplication)
+@MainActor
 open class CoreApplication: NSObject,
     AgencyAlertsDelegate,
     DataMigrationDelegate,
@@ -39,6 +40,29 @@ open class CoreApplication: NSObject,
     /// The data store for `StopPreference` data.
     public var stopPreferencesDataStore: StopPreferencesStore {
         return userDefaultsStore
+    }
+
+    /// The default arrival/departure filter configured by the white-label app.
+    public var defaultArrivalDepartureFilter: ArrivalDepartureFilter {
+        return config.defaultArrivalDepartureFilter
+    }
+
+    /// The arrival/departure filter currently in effect: the rider's saved
+    /// choice when one exists, or `defaultArrivalDepartureFilter` when nothing
+    /// valid is saved. The single resolution point for every consumer — the
+    /// stop pages and Settings must not re-derive this from `UserDefaults`.
+    public var effectiveArrivalDepartureFilter: ArrivalDepartureFilter {
+        if let saved = userDefaults.string(forKey: CoreAppConfig.arrivalDepartureFilterUserDefaultsKey),
+           let filter = ArrivalDepartureFilter(rawValue: saved) {
+            return filter
+        }
+        return defaultArrivalDepartureFilter
+    }
+
+    /// Persists the rider's arrival/departure filter choice, the write half of
+    /// `effectiveArrivalDepartureFilter`.
+    public func setArrivalDepartureFilter(_ filter: ArrivalDepartureFilter) {
+        userDefaults.set(filter.rawValue, forKey: CoreAppConfig.arrivalDepartureFilterUserDefaultsKey)
     }
 
     @objc public let notificationCenter: NotificationCenter
@@ -118,7 +142,7 @@ open class CoreApplication: NSObject,
     // MARK: - Agency Alerts
 
     public var shouldDisplayRegionalTestAlerts: Bool {
-        return userDefaults.bool(forKey: AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts)
+        return AgencyAlertsStore.shouldDisplayTestAlerts(userDefaults: userDefaults)
     }
 
     public lazy var alertsStore = AgencyAlertsStore(userDefaults: userDefaults, regionsService: regionsService)
@@ -170,7 +194,10 @@ open class CoreApplication: NSObject,
             return
         }
 
-        self.apiService = RESTAPIService(APIServiceConfiguration(baseURL: region.OBABaseURL, apiKey: config.apiKey, uuid: userUUID, appVersion: config.appVersion, regionIdentifier: region.regionIdentifier, surveyBaseURL: region.sidecarBaseURL))
+        self.apiService = RESTAPIService(
+            APIServiceConfiguration(baseURL: region.OBABaseURL, apiKey: config.apiKey, uuid: userUUID, appVersion: config.appVersion, regionIdentifier: region.regionIdentifier, surveyBaseURL: region.sidecarBaseURL),
+            dataLoader: config.dataLoader
+        )
     }
 
     // MARK: - Obaco
@@ -185,6 +212,24 @@ open class CoreApplication: NSObject,
     private var obacoNetworkQueue = OperationQueue()
 
     public let obacoServiceUpdatedNotification = NSNotification.Name("ObacoServiceUpdatedNotification")
+
+    // MARK: - Live Activities
+
+    /// Owns the Live Activity push subscriptions registered with OBACloud: registration,
+    /// unregistration, and the launch-time reconciliation sweep that cleans up activities the
+    /// user dismissed while the app wasn't running.
+    ///
+    /// `obacoService` is resolved lazily on each call because it's recreated when the region
+    /// changes and is nil until a region is available.
+    public private(set) lazy var liveActivityRegistry = LiveActivityRegistry(
+        userDefaults: userDefaults,
+        obacoServiceProvider: { [weak self] in self?.obacoService }
+    )
+
+    /// Owns the ActivityKit observers that feed `liveActivityRegistry`. App-scoped rather than
+    /// per-screen on purpose: a Live Activity outlives the view controller that started it, and
+    /// so must the observer that unregisters it. See `LiveActivityTracker`.
+    public private(set) lazy var liveActivityTracker = LiveActivityTracker(registry: liveActivityRegistry)
 
     /// Reloads the Obaco Service stack, including the network queue, api service manager, and model service manager.
     /// This must be called when the region changes.
@@ -272,12 +317,24 @@ open class CoreApplication: NSObject,
 
     // MARK: - Surveys
 
-    public private(set) lazy var surveyService = SurveyService(apiService: apiService, userDataStore: userDefaultsStore)
+    public private(set) lazy var surveyService = SurveyService(apiService: apiService, userDataStore: userDefaultsStore, application: self)
 
     /// Recreates the survey service when the API service changes (region refresh/change).
     private func refreshSurveysService() {
         Task { @MainActor in
-            self.surveyService = SurveyService(apiService: self.apiService, userDataStore: self.userDefaultsStore)
+            self.surveyService = SurveyService(apiService: self.apiService, userDataStore: self.userDefaultsStore, application: self)
         }
+    }
+}
+
+// MARK: - SurveyURLApplicationContext
+
+extension CoreApplication: SurveyURLApplicationContext {
+    public var currentRegionIdentifier: Int? {
+        regionsService.currentRegion?.regionIdentifier
+    }
+
+    public var currentCoordinate: CLLocationCoordinate2D? {
+        locationService.currentLocation?.coordinate
     }
 }

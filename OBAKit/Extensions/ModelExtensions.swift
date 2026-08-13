@@ -13,7 +13,7 @@ import OBAKitCore
 
 // MARK: - Bookmark/MKAnnotation
 
-extension Bookmark: @retroactive MKAnnotation {
+nonisolated extension Bookmark: @retroactive MKAnnotation {
     public var coordinate: CLLocationCoordinate2D {
         stop.coordinate
     }
@@ -25,7 +25,7 @@ extension Bookmark: @retroactive MKAnnotation {
 
 // MARK: - Region/MKAnnotation
 
-extension Region: @retroactive MKAnnotation {
+nonisolated extension Region: @retroactive MKAnnotation {
     public var coordinate: CLLocationCoordinate2D {
         centerCoordinate
     }
@@ -41,7 +41,7 @@ extension Region: @retroactive MKAnnotation {
 /// Includes additional methods for rendering extra data directly onto the map.
 ///
 /// - Note: See `StopAnnotationView`for more details.
-extension Stop: @retroactive MKAnnotation {
+nonisolated extension Stop: @retroactive MKAnnotation {
     public var coordinate: CLLocationCoordinate2D {
         location.coordinate
     }
@@ -64,7 +64,7 @@ extension Stop: @retroactive MKAnnotation {
 // MARK: - TripStatus/MKAnnotation
 
 /// Adds conformance to `MKAnnotation` to `TripStatus`.
-extension TripStatus: @retroactive MKAnnotation {
+nonisolated extension TripStatus: @retroactive MKAnnotation {
 
     public var coordinate: CLLocationCoordinate2D {
         lastKnownLocation?.coordinate ?? CLLocationCoordinate2D(latitude: 0, longitude: 0)
@@ -85,7 +85,7 @@ extension TripStatus: @retroactive MKAnnotation {
 /// Adds conformance to `MKAnnotation` to `TripStopTime`.
 ///
 /// - Note: See `MinimalStopAnnotationView`for more details.
-extension TripStopTime: @retroactive MKAnnotation {
+nonisolated extension TripStopTime: @retroactive MKAnnotation {
     public var coordinate: CLLocationCoordinate2D {
         stop.location.coordinate
     }
@@ -96,5 +96,21 @@ extension TripStopTime: @retroactive MKAnnotation {
 
     public var subtitle: String? {
         nil
+    }
+}
+
+// MARK: - ArrivalDepartureFilter Display Titles
+
+extension ArrivalDepartureFilter {
+    /// Localized display title for use in menus and settings.
+    var displayTitle: String {
+        switch self {
+        case .all:
+            return OBALoc("arrival_departure_filter.all_departures", value: "All Departures", comment: "Filter option to show all departures regardless of real-time data availability")
+        case .estimatedOnly:
+            return OBALoc("arrival_departure_filter.real_time_only", value: "Real-Time Only", comment: "Filter option to show only departures with real-time estimated data")
+        case .scheduledOnly:
+            return OBALoc("arrival_departure_filter.scheduled_only", value: "Scheduled Only", comment: "Filter option to show only departures with scheduled data and no real-time information")
+        }
     }
 }

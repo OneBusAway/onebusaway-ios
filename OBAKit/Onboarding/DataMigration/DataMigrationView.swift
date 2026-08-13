@@ -115,20 +115,22 @@ public struct DataMigrationView: View, OnboardingView {
             return false
         }
 
+        // The completion handler runs on a background queue and `url` is only valid
+        // until it returns, so the data must be loaded here — but view state may only
+        // be touched on the main actor.
         _ = itemProvider.loadFileRepresentation(forTypeIdentifier: UTType.propertyList.identifier) { url, error in
             if let error {
-                self.migratorError = error
+                Task { @MainActor in self.migratorError = error }
                 return
             }
 
             guard let url else { return }
 
-            // The data must be loaded in this closure block, per OS requirements.
             do {
                 let data = try Data(contentsOf: url)
-                self.activeMigrationTask = .userDefaultsPlistFromData(data)
+                Task { @MainActor in self.activeMigrationTask = .userDefaultsPlistFromData(data) }
             } catch {
-                self.migratorError = error
+                Task { @MainActor in self.migratorError = error }
             }
         }
 

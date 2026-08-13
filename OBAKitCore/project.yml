@@ -2,7 +2,16 @@ targets:
   OBAKitCore:
     type: framework
     platform: iOS
-    sources: ["."]
+    sources:
+      # XcodeGen's synced folders can't mark headers public, so the umbrella
+      # header is carved out of the buildable folder and added as an explicit
+      # public header.
+      - path: "."
+        # The .proto schema is source material for pre-generated Swift, not a
+        # target member; without the exclusion Xcode tries to compile it.
+        excludes: ["OBAKitCore.h", "Models/Protobuf/gtfs-realtime.proto"]
+      - path: OBAKitCore.h
+        headerVisibility: public
     dependencies:
       - package: SwiftProtobuf
       - package: GRDB
@@ -15,3 +24,8 @@ targets:
     settings:
       base:
         APPLICATION_EXTENSION_API_ONLY: true
+        # Swift language mode and checking level come from the project-wide
+        # base in Apps/Shared/app_shared.yml. This one setting is a real
+        # override: Core owns actors, networking, and background decode, so it
+        # pins against the project-wide MainActor default.
+        SWIFT_DEFAULT_ACTOR_ISOLATION: nonisolated

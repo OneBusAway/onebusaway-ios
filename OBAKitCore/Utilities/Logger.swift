@@ -10,7 +10,8 @@
 import Foundation
 import OSLog
 
-@objc(OBALogger) public class Logger: NSObject {
+// Immutable (a single os.Logger, which is Sendable); @unchecked only because NSObject is not Sendable.
+@objc(OBALogger) public final class Logger: NSObject, @unchecked Sendable {
 
     static let shared = Logger()
 
@@ -28,7 +29,7 @@ import OSLog
     /// Returns log entries from OSLogStore for the app's subsystem
     /// - Parameter since: Optional date to filter logs from. If nil, returns logs since boot.
     /// - Returns: Array of log entries
-    public class func getLogEntries(since date: Date? = nil) throws -> [OSLogEntryLog] {
+    public static func getLogEntries(since date: Date? = nil) throws -> [OSLogEntryLog] {
         let store = try OSLogStore(scope: .currentProcessIdentifier)
         let position: OSLogPosition
         if let date = date {
@@ -44,7 +45,7 @@ import OSLog
     }
 
     /// Reads and returns the combined content of all log entries
-    public class func combinedLogContent() -> String {
+    public static func combinedLogContent() -> String {
         do {
             let entries = try getLogEntries()
             if entries.isEmpty {
@@ -60,7 +61,7 @@ import OSLog
         }
     }
 
-    private class func levelString(for level: OSLogEntryLog.Level) -> String {
+    private static func levelString(for level: OSLogEntryLog.Level) -> String {
         switch level {
         case .undefined: return "UNDEFINED"
         case .debug: return "DEBUG"
@@ -74,7 +75,7 @@ import OSLog
 
     // MARK: - Info
 
-    @objc public class func info(_ message: String) {
+    @objc public static func info(_ message: String) {
         shared.info(message)
     }
 
@@ -84,7 +85,7 @@ import OSLog
 
     // MARK: - Warn
 
-    @objc public class func warn(_ message: String) {
+    @objc public static func warn(_ message: String) {
         shared.warn(message)
     }
 
@@ -94,7 +95,7 @@ import OSLog
 
     // MARK: - Error
 
-    @objc public class func error(_ message: String) {
+    @objc public static func error(_ message: String) {
         shared.error(message)
     }
 

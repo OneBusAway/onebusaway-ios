@@ -1,0 +1,56 @@
+{
+  "currentTime": 1700000000000,
+  "text": "OK",
+  "data": {
+    "references": {
+      "stops": [
+        {
+          "id": "1_TEST",
+          "code": "TEST",
+          "name": "Test Stop",
+          "lat": 47.6,
+          "lon": -122.3,
+          "locationType": 0,
+          "routeIds": ["1_R1"],
+          "wheelchairBoarding": "unknown",
+          "direction": ""
+        }
+      ],
+      "situations": [],
+      "trips": [],
+      "routes": [
+        {
+          "id": "1_R1",
+          "shortName": "Test 1",
+          "longName": "Test Route 1",
+          "description": "",
+          "color": "",
+          "textColor": "",
+          "type": 3,
+          "agencyId": "1",
+          "url": ""
+        }
+      ],
+      "agencies": [
+        {
+          "id": "1",
+          "privateService": false,
+          "phone": "",
+          "timezone": "America/Los_Angeles",
+          "disclaimer": "",
+          "name": "Test Agency",
+          "lang": "en",
+          "url": "https://example.org"
+        }
+      ]
+    },
+    "entry": {
+      "arrivalsAndDepartures": [],
+      "nearbyStopIds": [],
+      "situationIds": [],
+      "stopId": "1_TEST"
+    }
+  },
+  "code": 200,
+  "version": 2
+}

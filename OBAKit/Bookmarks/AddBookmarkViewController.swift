@@ -20,16 +20,20 @@ protocol BookmarkEditorDelegate: NSObjectProtocol {
 /// - Note: This controller expects to be presented modally.
 class AddBookmarkViewController: TaskController<[ArrivalDeparture]>, OBAListViewDataSource {
     private let stop: Stop
+    private let preloadedArrivals: [ArrivalDeparture]?
     private weak var delegate: BookmarkEditorDelegate?
 
     /// This is the default initializer for `AddBookmarkViewController`.
     /// - Parameter application: The application object
-    /// - Parameter stop: The `Stop` object for which a bookmark will be added. This will be used to load available `ArrivalDeparture` objects, as well.
+    /// - Parameter stop: The `Stop` object for which a bookmark will be added.
+    /// - Parameter preloadedArrivals: Arrivals already fetched by a parent screen (e.g. `StopViewModel`).
+    ///   When provided, the network call in `loadData()` is skipped.
     /// - Parameter delegate: The `BookmarkEditorDelegate` receives callbacks when this controller (and its children) are dismissed.
     ///
     /// Initialize the view controller, wrap it with a navigation controller, and then modally present it to use.
-    public init(application: Application, stop: Stop, delegate: BookmarkEditorDelegate?) {
+    public init(application: Application, stop: Stop, preloadedArrivals: [ArrivalDeparture]? = nil, delegate: BookmarkEditorDelegate?) {
         self.stop = stop
+        self.preloadedArrivals = preloadedArrivals
         self.delegate = delegate
 
         super.init(application: application)
@@ -103,6 +107,12 @@ class AddBookmarkViewController: TaskController<[ArrivalDeparture]>, OBAListView
 
     // MARK: - Data and UI
     override func loadData() async throws -> [ArrivalDeparture] {
+        // An empty `preloadedArrivals` array deliberately short-circuits the fetch
+        // and surfaces the "no upcoming departures" view; pass `nil` to fetch fresh.
+        if let preloadedArrivals {
+            return preloadedArrivals
+        }
+
         guard let apiService = application.apiService else {
             throw UnstructuredError("No API Service")
         }

@@ -11,7 +11,9 @@ import Foundation
 
 public typealias TripIdentifier = String
 
-public class ArrivalDeparture: NSObject, Identifiable, Decodable, HasReferences {
+// @unchecked Sendable per the HasReferences concurrency contract (see References.swift):
+// mutation is confined to decode + loadReferences, before the instance is shared.
+public final class ArrivalDeparture: NSObject, Identifiable, Decodable, HasReferences, @unchecked Sendable {
 
     /// true if this transit vehicle is one that riders could arrive on
     public let arrivalEnabled: Bool
@@ -196,9 +198,12 @@ public class ArrivalDeparture: NSObject, Identifiable, Decodable, HasReferences 
 
     // MARK: - Helpers/Names
 
-    /// Provides an ID for this arrival departure consisting of its Stop, Trip, and Route IDs.
+    /// Provides an ID for this arrival departure consisting of its Stop, Trip, and Route IDs,
+    /// plus the service date and stop sequence. The latter two disambiguate the same trip
+    /// serving this stop more than once: loop routes visit a stop at multiple sequences, and
+    /// trips can repeat across consecutive service dates.
     public var id: String {
-        return "stop=\(stopID),trip=\(tripID),route=\(routeID),status=\(arrivalDepartureStatus)"
+        return "stop=\(stopID),trip=\(tripID),route=\(routeID),serviceDate=\(serviceDate.timeIntervalSince1970),sequence=\(stopSequence),status=\(arrivalDepartureStatus)"
     }
 
     /// Provides the best available trip headsign.
@@ -243,6 +248,15 @@ public class ArrivalDeparture: NSObject, Identifiable, Decodable, HasReferences 
         guard let totalStopsInTrip = totalStopsInTrip else { return nil }
 
         return stopSequence == totalStopsInTrip - 1
+    }
+
+    /// The earliest date considered plausible for display. Matches the threshold used by
+    /// `ModelHelpers.nilifyDate` when nullifying predicted times during decode.
+    public static let earliestPlausibleDate = Date(timeIntervalSinceReferenceDate: 1.0)
+
+    /// Whether `arrivalDepartureDate` is after the epoch/null sentinel threshold.
+    public var hasPlausibleArrivalDepartureDate: Bool {
+        arrivalDepartureDate >= Self.earliestPlausibleDate
     }
 
     /// A singluar value that can be displayed in the UI to represent the best date for this trip.
@@ -297,8 +311,12 @@ public class ArrivalDeparture: NSObject, Identifiable, Decodable, HasReferences 
     }
 
     /// A more precise (but maybe not as useful?) calculation of the deviation of this trip from schedule.
+    ///
+    /// - Note: Measured against `scheduledDate` so that arrivals compare against
+    ///         `scheduledArrival`. Using `scheduledDeparture` unconditionally reports a
+    ///         late arrival as early by the length of the layover.
     private var rawDeviationFromScheduleInMinutes: Double {
-        return (arrivalDepartureDate.timeIntervalSinceNow - scheduledDeparture.timeIntervalSinceNow) / 60.0
+        return (arrivalDepartureDate.timeIntervalSinceNow - scheduledDate.timeIntervalSinceNow) / 60.0
     }
 
     /// Is this trip early, on time, delayed, or of an unknown status?
@@ -469,6 +487,19 @@ public extension Sequence where Element == ArrivalDeparture {
     /// - Parameter preferences: The `StopPreferences` object that will be used to hide `ArrivalDeparture`s.
     func filter(preferences: StopPreferences) -> [ArrivalDeparture] {
         filter { !preferences.isRouteIDHidden($0.routeID) }
+    }
+
+    /// Filters arrivals/departures based on real-time data availability.
+    /// - Parameter arrivalDepartureFilter: Controls whether to show all, only estimated, or only scheduled arrivals.
+    func filter(by arrivalDepartureFilter: ArrivalDepartureFilter) -> [ArrivalDeparture] {
+        switch arrivalDepartureFilter {
+        case .all:
+            return Array(self)
+        case .estimatedOnly:
+            return filter { $0.predicted }
+        case .scheduledOnly:
+            return filter { !$0.predicted }
+        }
     }
 
     /// Filters out `Route`s that are marked as hidden by `preferences`, and then groups the remaining `ArrivalDeparture`s by `Route`.

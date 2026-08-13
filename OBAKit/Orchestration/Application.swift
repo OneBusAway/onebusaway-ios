@@ -74,7 +74,20 @@ public class Application: CoreApplication, PushServiceDelegate {
         bundle: applicationBundle,
         userDefaults: userDefaults,
         obacoService: obacoService,
-        analytics: analytics
+        analytics: analytics,
+        appLaunchCount: { [userDataStore] in userDataStore.appLaunchCount }
+    )
+
+    @MainActor
+    lazy var promptCoordinator = PromptCoordinator(
+        userDefaults: userDefaults,
+        notificationCenter: notificationCenter
+    )
+
+    @MainActor
+    lazy var reviewPromptPolicy = ReviewPromptPolicy(
+        userDefaults: userDefaults,
+        bundle: applicationBundle
     )
 
     /// Responsible for figuring out how to navigate between view controllers.
@@ -90,10 +103,15 @@ public class Application: CoreApplication, PushServiceDelegate {
 
     lazy var toastManager = ToastManager()
 
+    @MainActor
+    lazy var walkingSpeedManager = WalkingSpeedManager(userDataStore: userDataStore)
+
     @objc lazy var userActivityBuilder = UserActivityBuilder(application: self)
 
     /// Handles all deep-linking into the app.
-    @objc public private(set) lazy var appLinksRouter: AppLinksRouter? = {
+    @objc public private(set) lazy var appLinksRouter: AppLinksRouter? = makeAppLinksRouter()
+
+    private func makeAppLinksRouter() -> AppLinksRouter? {
         let router = AppLinksRouter(application: self)
 
         router?.showStopHandler = { [weak self] stop in
@@ -132,7 +150,7 @@ public class Application: CoreApplication, PushServiceDelegate {
         }
 
         return router
-    }()
+    }
 
     /// The application delegate object.
     @objc public weak var delegate: ApplicationDelegate?
@@ -152,6 +170,16 @@ public class Application: CoreApplication, PushServiceDelegate {
     }
 
     private func configureTipKit() {
+        // Shows all tips all the time, regardless of display frequency or
+        // invalidation state. Used by UI tests to make tip presentation
+        // deterministic. Must be called before `Tips.configure()`.
+        // https://developer.apple.com/documentation/tipkit/tips/showalltipsfortesting()
+        #if DEBUG
+        if ProcessInfo.processInfo.environment["TEST_SHOW_ALL_TIPS"] == "1" {
+            Tips.showAllTipsForTesting()
+        }
+        #endif
+
         do {
             try Tips.configure([
                 .displayFrequency(.hourly),
@@ -160,10 +188,6 @@ public class Application: CoreApplication, PushServiceDelegate {
         } catch {
             Logger.error("Failed to configure TipKit: \(error)")
         }
-
-        // Enable this to show all tips all the time.
-        // https://developer.apple.com/documentation/tipkit/tips/showalltipsfortesting()
-        // Tips.showAllTipsForTesting()
     }
 
     // MARK: - Onboarding/Data Migration
@@ -247,10 +271,16 @@ public class Application: CoreApplication, PushServiceDelegate {
             .eraseToAnyPublisher()
             .sink(receiveValue: { [weak self] result in
                 guard let self = self else { return }
-                if result.isConnected {
-                    self.reachabilityBulletin?.dismiss()
-                }
-                else {
+                // `.receive(on: DispatchQueue.main)` above is what makes
+                // `assumeIsolated` safe here — bulletin presentation is
+                // `@MainActor`. Don't remove the `.receive(on:)` upstream;
+                // doing so would silently turn this into a crash-on-mismatch.
+                MainActor.assumeIsolated {
+                    if result.isConnected {
+                        self.reachabilityBulletin?.dismiss()
+                        return
+                    }
+
                     guard let app = self.delegate?.uiApplication else { return }
 
                     if self.reachabilityBulletin == nil {
@@ -267,16 +297,41 @@ public class Application: CoreApplication, PushServiceDelegate {
     /// An optional property that contains this app's configured push notifications service.
     public private(set) var pushService: PushService?
 
+    /// Keeps this device's APNs token registered with the current region's OBACloud server so
+    /// agencies can send service-alert push notifications to it. See #1204.
+    public private(set) lazy var pushRegistrationManager = PushRegistrationManager(
+        obacoServiceProvider: { [weak self] in self?.obacoService },
+        userDefaults: userDefaults,
+        testDeviceProvider: { [weak self] in
+            // "Test users only" audience: agencies preview an alert push against flagged
+            // devices before sending it to everyone. Debug builds always qualify; release
+            // builds qualify via the Debug Mode switch in Settings. Either way, the device
+            // only registers as a test device once a Test Device Name is set in the Debug
+            // settings.
+            #if DEBUG
+            return true
+            #else
+            return self?.userDataStore.debugMode ?? false
+            #endif
+        },
+        testDeviceDescriptionProvider: { [weak self] in
+            self?.userDefaults.string(forKey: PushRegistrationManager.testDeviceDescriptionDefaultsKey)
+        },
+        currentRegionIdentifierProvider: { [weak self] in self?.currentRegionIdentifier },
+        errorReporter: { [weak self] error in
+            self?.analytics?.reportError?(error)
+        }
+    )
+
+    // Deliberately no Simulator carve-out: Simulators get real (sandbox) APNs tokens, so don't
+    // re-add a `#if targetEnvironment(simulator)` guard here. See docs/push-notifications.md §6
+    // for what a sandbox token does and doesn't receive.
     private func configurePushNotifications(launchOptions: [AnyHashable: Any]) {
         guard let pushServiceProvider = config.pushServiceProvider else { return }
 
-        #if targetEnvironment(simulator)
-            Logger.warn("Push notifications don't work on the Simulator. Run this app on a device instead!")
-            return
-        #else
-            self.pushService = PushService(serviceProvider: pushServiceProvider, delegate: self)
-            self.pushService?.start(launchOptions: launchOptions)
-        #endif
+        let pushService = PushService(serviceProvider: pushServiceProvider, delegate: self)
+        self.pushService = pushService
+        pushService.start(launchOptions: launchOptions)
     }
 
     public func pushServicePresentingController(_ pushService: PushService) -> UIViewController? {
@@ -284,24 +339,47 @@ public class Application: CoreApplication, PushServiceDelegate {
     }
 
     public func pushService(_ pushService: PushService, received pushBody: AlarmPushBody) {
-        guard let apiService = apiService else { return }
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            // Remove the fired alarm from the local store and let open stop pages
+            // update their alarm index via the notification.
+            self.deleteMatchingAlarm(for: pushBody)
+            NotificationCenter.default.post(name: .alarmFired, object: nil)
 
-        Task(priority: .userInitiated) { [weak self] in
-            do {
-                let arrivalDeparture = try await apiService.getTripArrivalDepartureAtStop(stopID: pushBody.stopID, tripID: pushBody.tripID, serviceDate: pushBody.serviceDate, vehicleID: pushBody.vehicleID, stopSequence: pushBody.stopSequence).entry
-
-                if let self, let topViewController = self.topViewController {
-                    await MainActor.run {
-                        let tripController = TripViewController(application: self, arrivalDeparture: arrivalDeparture)
-                        self.viewRouter.navigate(to: tripController, from: topViewController)
-                    }
-                }
-            } catch {
-                await self?.displayError(error)
+            guard let topViewController = self.topViewController else {
+                // UI not ready yet (cold launch). Navigate once the scene activates.
+                self.pendingStopID = pushBody.stopID
+                return
             }
+            self.viewRouter.navigateTo(stopID: pushBody.stopID, from: topViewController)
         }
     }
 
+    public func pushService(_ pushService: PushService, receivedDeviceToken token: String) {
+        pushRegistrationManager.updateDeviceToken(token)
+        Task { await pushRegistrationManager.registerIfNeeded() }
+    }
+
+    /// Deletes the stored alarm whose deep-link identity matches `pushBody`, so the stop
+    /// page reflects the fired state without waiting for the next full refresh.
+    @MainActor
+    private func deleteMatchingAlarm(for pushBody: AlarmPushBody) {
+        for alarm in userDataStore.alarms {
+            guard let deepLink = alarm.deepLink else { continue }
+            guard deepLink.stopID == pushBody.stopID,
+                  deepLink.tripID == pushBody.tripID,
+                  deepLink.stopSequence == pushBody.stopSequence,
+                  abs(deepLink.serviceDate.timeIntervalSince(pushBody.serviceDate)) < 60
+            else { continue }
+            userDataStore.delete(alarm: alarm)
+            return
+        }
+    }
+
+    /// A stop navigation (fired alarm push or `viewStop` deep link) received before the
+    /// root view controller was installed (cold launch). Drained on activation once a
+    /// root view controller exists.
+    private var pendingStopID: StopID?
     private var presentDonationUIOnActive = false
     private var presentAddRegionAlertOnActive = false
     private var donationPromptID: String?
@@ -317,17 +395,34 @@ public class Application: CoreApplication, PushServiceDelegate {
     }
 
     private func presentDonationUI(_ presentingController: UIViewController, id: String?) {
+        // `donationsEnabled` already folds in `obacoService != nil`, which is
+        // exactly what `buildLearnMoreView`/`buildObservableDonationModel` need
+        // to succeed — without this guard, a push arriving while donations are
+        // disabled or Obaco is unavailable would both persist a false "shown"
+        // state and crash on `buildLearnMoreView`'s internal `fatalError()`.
+        guard donationsManager.donationsEnabled else { return }
+
         analytics?.reportEvent(pageURL: "app://localhost/donations", label: AnalyticsLabels.donationPushNotificationTapped, value: id)
 
         let learnMoreView = donationsManager.buildLearnMoreView(presentingController: presentingController, donationPushNotificationID: id)
-        presentingController.present(UIHostingController(rootView: learnMoreView), animated: true)
+        presentingController.presentDonationModal(learnMoreView, coordinator: promptCoordinator)
     }
 
     // MARK: - Alerts Store
 
     private var alertBulletin: AgencyAlertBulletin?
 
+    @MainActor
     public func agencyAlertsUpdated() {
+        #if DEBUG
+        // UI tests run against the live network, so a real high-severity alert can
+        // pop a modal bulletin over the UI mid-test. Tests that aren't about the
+        // bulletin set this to keep their runs deterministic.
+        if ProcessInfo.processInfo.environment["TEST_SUPPRESS_ALERT_BULLETINS"] == "1" {
+            return
+        }
+        #endif
+
         guard
             let alert = alertsStore.recentUnreadHighSeverityAlerts.first,
             let app = self.delegate?.uiApplication
@@ -374,15 +469,89 @@ public class Application: CoreApplication, PushServiceDelegate {
         reportAnalyticsUserProperties()
 
         configureTipKit()
+
+        if userDataStore.walkingSpeedSource == .healthKit {
+            Task { await walkingSpeedManager.refreshFromHealthKitIfPossible() }
+        }
     }
 
-    @objc public func applicationDidBecomeActive(_ application: UIApplication) {
+    @MainActor @objc public func applicationDidBecomeActive(_ application: UIApplication) {
+        // The user may have re-enabled Location Services while they were away,
+        // which leaves `isLocationUseAuthorized` false until we probe for it.
+        // The probe is asynchronous, so the gate below still sees the pre-probe
+        // state — recovery is not this call's job. `LocationService` starts
+        // updates itself when the probe clears the latch.
+        locationService.retryIfLocationServicesDenied()
+
         if locationService.isLocationUseAuthorized {
             locationService.startUpdates()
         }
 
         configureConnectivity()
+
+        // Clean up Live Activity subscriptions whose activities are gone. This has to run on an
+        // app-lifecycle hook rather than in a view controller: an activity the user dismissed
+        // while the app wasn't running has no observer to notice it, and the server will keep
+        // pushing to it until the subscription is deleted. (The scene delegate calls this on
+        // launch as well as on every foreground.)
+        Task { await liveActivityRegistry.reconcile() }
+
+        #if DEBUG
+        // Lets UI tests exercise the modal alert bulletin deterministically,
+        // without depending on a high-severity alert being live in the region.
+        if ProcessInfo.processInfo.environment["TEST_INJECT_REGION_WIDE_ALERT"] == "1" {
+            alertsStore.seedRegionWideAlertForTesting()
+        }
+        #endif
+
         alertsStore.checkForUpdates()
+
+        // Re-register the push token with OBACloud so the server's inactivity prune never
+        // drops this device, and so locale changes propagate. The manager dedupes, so this
+        // only hits the network when something changed or the last POST is older than
+        // PushRegistrationManager.refreshInterval. Skipped in apps without a configured
+        // push provider, where pushService is never set.
+        if pushService != nil {
+            Task { await pushRegistrationManager.refreshRegistration() }
+        }
+
+        drainPendingUIPresentations()
+
+        if let region = regionsService.currentRegion, let analytics {
+            analytics.updateServer?(region: region)
+        }
+    }
+
+    /// Called by the app delegates after the real root view controller is installed.
+    ///
+    /// The root now installs asynchronously (onboarding evaluation awaits notification
+    /// settings), so on a cold launch `applicationDidBecomeActive` can fire while
+    /// `topViewController` is still nil — anything stashed for later presentation would
+    /// otherwise wait for the next foreground cycle. This is the deterministic drain point.
+    @MainActor @objc public func rootUserInterfaceDidLoad() {
+        drainPendingUIPresentations()
+    }
+
+    /// True while the onboarding flow is installed as the window's root — deferred
+    /// presentations should not navigate out from under it.
+    @MainActor
+    private var isOnboardingRoot: Bool {
+        delegate?.uiApplication?.keyWindowFromScene?.rootViewController is OnboardingFlowController
+    }
+
+    /// Presents any UI that arrived before a root view controller existed (cold-launch
+    /// stop navigations, donation prompts, add-region errors). Idempotent: each stash is
+    /// cleared on successful presentation. Runs from both `rootUserInterfaceDidLoad()`
+    /// (the deterministic post-root drain) and `applicationDidBecomeActive` (later
+    /// foregrounds), and never fires while onboarding is the root.
+    @MainActor
+    private func drainPendingUIPresentations() {
+        guard !isOnboardingRoot else { return }
+
+        if let stopID = pendingStopID, let topViewController {
+            viewRouter.navigateTo(stopID: stopID, from: topViewController)
+            pendingStopID = nil
+        }
 
         if presentDonationUIOnActive, let topViewController {
             presentDonationUI(topViewController, id: donationPromptID)
@@ -401,16 +570,12 @@ public class Application: CoreApplication, PushServiceDelegate {
             topViewController.present(alertController, animated: true)
             presentAddRegionAlertOnActive = false
         }
-
-        if let region = regionsService.currentRegion, let analytics {
-            analytics.updateServer!(defaultDomainURL: region.OBABaseURL, analyticsServerURL: region.plausibleAnalyticsServerURL)
-        }
     }
 
     @objc public func applicationWillResignActive(_ application: UIApplication) {
-        if locationService.isLocationUseAuthorized {
-            locationService.stopUpdates()
-        }
+        // Unconditional: stopping is always safe, and gating it on authorization
+        // would strand a manager we started before access was revoked.
+        locationService.stopUpdates()
 
         hyperconnectivityCancellable?.cancel()
     }
@@ -472,7 +637,11 @@ public class Application: CoreApplication, PushServiceDelegate {
 
         switch urlType {
         case .viewStop(let stopData):
-            guard let topViewController = self.topViewController else { return false }
+            guard let topViewController = self.topViewController else {
+                // UI not ready yet (cold launch). Navigate once the scene activates.
+                pendingStopID = stopData.stopID
+                return true
+            }
             viewRouter.navigateTo(stopID: stopData.stopID, from: topViewController)
             return true
         case .addRegion(let regionData):
@@ -496,8 +665,23 @@ public class Application: CoreApplication, PushServiceDelegate {
                     // Create region provider
                     let regionProvider = RegionPickerCoordinator(regionsService: self.regionsService, userDataStore: self.userDataStore)
 
-                    // Construct Region from URL data
-                    let currentRegion = Region(name: regionData.name, OBABaseURL: regionData.obaURL, coordinateRegion: adjustedRegionCoordinate, contactEmail: "example@example.com", openTripPlannerURL: regionData.otpURL)
+                    // Construct Region from URL data. umamiAnalytics applies the
+                    // both-or-nothing rule; no rule logic lives here.
+                    //
+                    // regionIdentifier must come from the link: Region falls back to a
+                    // random id when it's nil, and every Obaco call for the region then
+                    // 404s against an id the sidecar has never heard of.
+                    let currentRegion = Region(
+                        name: regionData.name,
+                        OBABaseURL: regionData.obaURL,
+                        coordinateRegion: adjustedRegionCoordinate,
+                        contactEmail: "example@example.com",
+                        regionIdentifier: regionData.regionID,
+                        openTripPlannerURL: regionData.otpURL,
+                        openTripPlannerGraphQLURL: regionData.otpGraphQLURL,
+                        supportsOTPGraphQLBikeshare: regionData.supportsOTPGraphQLBikeshare,
+                        sidecarBaseURL: regionData.sidecarURL,
+                        umamiAnalytics: regionData.umamiAnalytics)
 
                     // Add and set current region
                     try await regionProvider.add(customRegion: currentRegion)
@@ -548,7 +732,7 @@ public class Application: CoreApplication, PushServiceDelegate {
         super.regionsService(service, updatedRegion: region)
 
         if let analytics {
-            analytics.updateServer!(defaultDomainURL: region.OBABaseURL, analyticsServerURL: region.plausibleAnalyticsServerURL)
+            analytics.updateServer?(region: region)
 
             analytics.reportSetRegion(region.name)
 
@@ -556,6 +740,10 @@ public class Application: CoreApplication, PushServiceDelegate {
                 analytics.reportEvent(pageURL: "app://localhost/regions", label: AnalyticsLabels.manuallySelectedRegionChanged, value: region.name)
             }
         }
+
+        // By the time updatedRegion fires, willUpdateToRegion has already rebuilt
+        // obacoService for the new region, so this registers the token there.
+        Task { await pushRegistrationManager.registerIfNeeded() }
     }
 
     public func regionsService(_ service: RegionsService, displayError error: Error) {

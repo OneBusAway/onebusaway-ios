@@ -8,55 +8,72 @@
 //
 
 import Foundation
-import XCTest
-import Nimble
+import Testing
 import UIKit
 @testable import OBAKit
 
-class DataLoadFeedbackGeneratorTests: OBATestCase {
+@Suite(.serialized)
+final class DataLoadFeedbackGeneratorTests: OBATestCase {
     
     var feedbackGenerator: DataLoadFeedbackGenerator!
     
-    override func setUp() {
-        super.setUp()
+    override init() async throws {
+        try await super.init()
+
         feedbackGenerator = DataLoadFeedbackGenerator(userDefaults: userDefaults)
     }
     
-    func test_init_registersDefaults() {
+    @Test func `Init registers defaults`() {
         _ = DataLoadFeedbackGenerator(userDefaults: userDefaults)
         
-        expect(self.userDefaults.bool(forKey: DataLoadFeedbackGenerator.EnabledUserDefaultsKey)) == true
+        #expect(self.userDefaults.bool(forKey: DataLoadFeedbackGenerator.EnabledUserDefaultsKey) == true)
     }
     
-    func test_init_withApplication() {
-        let config = AppConfig(appBundle: Bundle.main, userDefaults: userDefaults, analytics: nil)
+    @Test func `Init with application`() {
+        // Inject a MockDataLoader instead of the `AppConfig(appBundle:userDefaults:analytics:)`
+        // convenience init, which defaults to `URLSession.shared`. `Application.init` calls
+        // `regionsService.updateRegionsList()`, so that init would hit the live regions server.
+        let dataLoader = MockDataLoader(testName: name)
+        stubRegions(dataLoader: dataLoader)
+
+        let locationService = LocationService(userDefaults: userDefaults, locationManager: LocationManagerMock())
+        let config = AppConfig(
+            regionsBaseURL: regionsURL,
+            apiKey: apiKey,
+            appVersion: appVersion,
+            userDefaults: userDefaults,
+            analytics: nil,
+            queue: OperationQueue(),
+            locationService: locationService,
+            bundledRegionsFilePath: bundledRegionsPath,
+            regionsAPIPath: regionsAPIPath,
+            dataLoader: dataLoader
+        )
         let application = Application(config: config)
-        let generator = DataLoadFeedbackGenerator(application: application)
-        
-        expect(generator).toNot(beNil())
+        _ = DataLoadFeedbackGenerator(application: application)
     }
     
-    func test_dataLoad_success() {
+    @Test func `Data load success`() {
         // Enable feedback
         userDefaults.set(true, forKey: DataLoadFeedbackGenerator.EnabledUserDefaultsKey)
         
         // This should not crash and should complete successfully
         feedbackGenerator.dataLoad(.success)
         
-        expect(true).to(beTrue()) // Test that it doesn't crash
+        #expect(true)  // Test that it doesn't crash
     }
     
-    func test_dataLoad_failed() {
+    @Test func `Data load failed`() {
         // Enable feedback
         userDefaults.set(true, forKey: DataLoadFeedbackGenerator.EnabledUserDefaultsKey)
         
         // This should not crash and should complete successfully
         feedbackGenerator.dataLoad(.failed)
         
-        expect(true).to(beTrue()) // Test that it doesn't crash
+        #expect(true)  // Test that it doesn't crash
     }
     
-    func test_dataLoad_disabled() {
+    @Test func `Data load disabled`() {
         // Disable feedback
         userDefaults.set(false, forKey: DataLoadFeedbackGenerator.EnabledUserDefaultsKey)
         
@@ -64,15 +81,15 @@ class DataLoadFeedbackGeneratorTests: OBATestCase {
         feedbackGenerator.dataLoad(.success)
         feedbackGenerator.dataLoad(.failed)
         
-        expect(true).to(beTrue()) // Test that it doesn't crash
+        #expect(true)  // Test that it doesn't crash
     }
     
-    func test_feedbackType_cases() {
+    @Test func `Feedback type cases`() {
         // Test that the enum cases exist
         let successType = DataLoadFeedbackGenerator.FeedbackType.success
         let failedType = DataLoadFeedbackGenerator.FeedbackType.failed
         
-        expect(successType).to(equal(.success))
-        expect(failedType).to(equal(.failed))
+        #expect(successType == .success)
+        #expect(failedType == .failed)
     }
 }

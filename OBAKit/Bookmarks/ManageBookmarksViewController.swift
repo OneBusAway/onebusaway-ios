@@ -12,10 +12,10 @@ import Eureka
 import OBAKitCore
 
 class ManageBookmarksViewController: FormViewController {
-    private let application: Application
+    private let viewModel: ManageBookmarksViewModel
 
     init(application: Application) {
-        self.application = application
+        self.viewModel = ManageBookmarksViewModel(application: application)
 
         super.init(nibName: nil, bundle: nil)
 
@@ -65,7 +65,7 @@ class ManageBookmarksViewController: FormViewController {
         }
 
         let destinationGroup = groupForBookmarkIndexPath(destinationIndexPath)
-        application.userDataStore.add(bookmark, to: destinationGroup, index: destinationIndexPath.row)
+        viewModel.moveBookmark(bookmark, to: destinationGroup, at: destinationIndexPath.row)
 
         // Defer refresh to avoid index-out-of-bounds during Eureka's internal animation.
         // See: https://github.com/OneBusAway/onebusaway-ios/issues/922
@@ -80,10 +80,7 @@ class ManageBookmarksViewController: FormViewController {
             return
         }
 
-        if let routeID = bookmark.routeID, let headsign = bookmark.tripHeadsign {
-            application.analytics?.reportEvent(pageURL: "app://localhost/bookmarks", label: AnalyticsLabels.removeBookmark, value: AnalyticsLabels.addRemoveBookmarkValue(routeID: routeID, headsign: headsign, stopID: bookmark.stopID))
-        }
-        application.userDataStore.delete(bookmark: bookmark)
+        viewModel.deleteBookmark(bookmark)
 
         super.tableView(tableView, commit: editingStyle, forRowAt: indexPath)
     }
@@ -108,7 +105,7 @@ class ManageBookmarksViewController: FormViewController {
             return nil
         }
 
-        return application.userDataStore.findGroup(id: sectionID)
+        return viewModel.findGroup(id: sectionID)
     }
 
     private func bookmarkForBookmarkIndexPath(_ indexPath: IndexPath) -> Bookmark? {
@@ -118,10 +115,11 @@ class ManageBookmarksViewController: FormViewController {
             return nil
         }
         guard let id = UUID(optionalUUIDString: row.tag) else {
+            Logger.warn("bookmarkForBookmarkIndexPath: NameRow at \(indexPath) has non-UUID tag \(row.tag ?? "nil")")
             return nil
         }
 
-        return application.userDataStore.findBookmark(id: id)
+        return viewModel.findBookmark(id: id)
     }
 
     // MARK: - Bookmarks/UI
@@ -129,14 +127,14 @@ class ManageBookmarksViewController: FormViewController {
     private var bookmarksSections: [MultivaluedSection]!
 
     private func resetBookmarksSections() {
-        var sections = application.userDataStore.bookmarkGroups.map { self.buildBookmarkSection(group: $0) }
+        var sections = viewModel.bookmarkGroups.map { self.buildBookmarkSection(group: $0) }
         sections.append(buildUngroupedBookmarkSection())
 
         bookmarksSections = sections
     }
 
     private func buildBookmarkSection(group: BookmarkGroup) -> MultivaluedSection {
-        let bookmarks = application.userDataStore.bookmarksInGroup(group)
+        let bookmarks = viewModel.bookmarksInGroup(group)
         let section = MultivaluedSection(multivaluedOptions: [.Reorder, .Delete], header: group.name, footer: "") {
             $0.tag = group.id.uuidString
             for bm in bookmarks {
@@ -157,7 +155,7 @@ class ManageBookmarksViewController: FormViewController {
         let footer = OBALoc("manage_bookmarks.controller_footer", value: "You can rearrange and delete Bookmarks from this screen.", comment: "Explains the purpose of the Manage Bookmarks controller")
         return MultivaluedSection(multivaluedOptions: [.Reorder, .Delete], header: Strings.bookmark, footer: footer) {
             $0.tag = ungroupedSectionTag
-            for bm in application.userDataStore.bookmarksInGroup(nil) {
+            for bm in viewModel.bookmarksInGroup(nil) {
                 $0 <<< NameRow {
                     $0.tag = bm.id.uuidString
                     $0.value = bm.name
@@ -170,39 +168,11 @@ class ManageBookmarksViewController: FormViewController {
 
     // MARK: - Bookmark Name Updates
 
-    /// Derives the original transit-provided name for a bookmark
-    /// (e.g., "57 - Downtown Seattle Via SR-99" for a trip bookmark,
-    /// or the formatted stop title for a stop bookmark).
-    private func originalTransitName(for bookmark: Bookmark) -> String {
-        if bookmark.isTripBookmark,
-           let routeShortName = bookmark.routeShortName,
-           let tripHeadsign = bookmark.tripHeadsign {
-            return "\(routeShortName) - \(tripHeadsign)"
-        }
-        return Formatters.formattedTitle(stop: bookmark.stop)
-    }
-
-    /// Persists a non-empty name change as the user types.
-    /// Empty names are deferred to `restoreEmptyBookmarkNames()` at dismissal,
-    /// so the user can freely clear the field before typing a new name.
     private func saveBookmarkNameChange(row: NameRow) {
-        guard
-            let bookmarkID = UUID(optionalUUIDString: row.tag),
-            let newName = row.value,
-            !newName.trimmingCharacters(in: .whitespaces).isEmpty,
-            let bookmark = application.userDataStore.findBookmark(id: bookmarkID)
-        else {
+        guard let bookmarkID = UUID(optionalUUIDString: row.tag), let newName = row.value else {
             return
         }
-
-        bookmark.name = newName
-
-        // Look up current group from bookmark's groupID
-        let currentGroup = bookmark.groupID.flatMap {
-            application.userDataStore.findGroup(id: $0)
-        }
-
-        application.userDataStore.add(bookmark, to: currentGroup)
+        viewModel.saveNameChange(bookmarkID: bookmarkID, newName: newName)
     }
 
     /// Called when the user closes the screen. Any bookmark whose name field
@@ -216,18 +186,12 @@ class ManageBookmarksViewController: FormViewController {
 
                 guard
                     let bookmarkID = UUID(optionalUUIDString: nameRow.tag),
-                    let bookmark = application.userDataStore.findBookmark(id: bookmarkID)
+                    let bookmark = viewModel.findBookmark(id: bookmarkID)
                 else {
                     continue
                 }
 
-                let restored = originalTransitName(for: bookmark)
-                bookmark.name = restored
-
-                let currentGroup = bookmark.groupID.flatMap {
-                    application.userDataStore.findGroup(id: $0)
-                }
-                application.userDataStore.add(bookmark, to: currentGroup)
+                viewModel.restoreTransitName(for: bookmark)
             }
         }
     }

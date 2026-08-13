@@ -7,17 +7,17 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
-import Nimble
+import Testing
 import CoreLocation
 @testable import OBAKit
 @testable import OBAKitCore
 
 // swiftlint:disable force_cast
 
-class CurrentTimeModelOperationTests: OBATestCase {
+@Suite(.serialized)
+final class CurrentTimeModelOperationTests: OBATestCase {
 
-    func testCurrentTime_success() async throws {
+    @Test func `Current time success`() async throws {
         let dataLoader = (restService.dataLoader as! MockDataLoader)
 
         dataLoader.mock(
@@ -25,6 +25,6 @@ class CurrentTimeModelOperationTests: OBATestCase {
             with: Fixtures.loadData(file: "current_time.json"))
 
         let response = try await restService.getCurrentTime()
-        expect(response.currentTime) == 1343587068277
+        #expect(response.currentTime == 1343587068277)
     }
 }

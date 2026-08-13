@@ -7,18 +7,19 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
-import Nimble
+import Foundation
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
 // swiftlint:disable force_cast
 
-class ScheduleForStopTests: OBATestCase {
+@Suite(.serialized)
+final class ScheduleForStopTests: OBATestCase {
     let stopID = "1_75403"
 
-    override func setUp() {
-        super.setUp()
+    override init() async throws {
+        try await super.init()
 
         let dataLoader = (restService.dataLoader as! MockDataLoader)
         dataLoader.mock(
@@ -29,121 +30,119 @@ class ScheduleForStopTests: OBATestCase {
 
     // MARK: - URL Builder Tests
 
-    func test_urlBuilder_generatesCorrectURL() {
+    @Test func `Url builder generates correct URL`() {
         let url = restService.urlBuilder.getScheduleForStop(id: stopID)
-        expect(url.absoluteString).to(contain("/api/where/schedule-for-stop/\(stopID).json"))
+        #expect(url.absoluteString.contains("/api/where/schedule-for-stop/\(stopID).json"))
     }
 
-    func test_urlBuilder_withDate_includesDateParameter() {
+    @Test func `Url builder with date includes date parameter`() {
         let date = Date(timeIntervalSince1970: 1765008000) // 2025-12-06
         let url = restService.urlBuilder.getScheduleForStop(id: stopID, date: date)
-        expect(url.absoluteString).to(contain("date="))
+        #expect(url.absoluteString.contains("date="))
     }
 
     // MARK: - Model Decoding Tests
 
-    func test_loading_success() async throws {
+    @Test func `Loading success`() async throws {
         let response = try await restService.getScheduleForStop(stopID: stopID)
         let schedule = response.entry
 
-        expect(schedule.stopID) == "1_75403"
-        expect(schedule.date).toNot(beNil())
-        expect(schedule.stopRouteSchedules).toNot(beEmpty())
+        #expect(schedule.stopID == "1_75403")
+        #expect(!schedule.stopRouteSchedules.isEmpty)
     }
 
-    func test_stopRouteSchedules_parsing() async throws {
+    @Test func `Stop route schedules parsing`() async throws {
         let response = try await restService.getScheduleForStop(stopID: stopID)
         let schedule = response.entry
 
         // The fixture has multiple routes at this stop
-        expect(schedule.stopRouteSchedules.count).to(beGreaterThanOrEqualTo(1))
+        #expect(schedule.stopRouteSchedules.count >= 1)
 
-        let routeSchedule = try XCTUnwrap(schedule.stopRouteSchedules.first)
-        expect(routeSchedule.routeID).toNot(beEmpty())
-        expect(routeSchedule.stopRouteDirectionSchedules).toNot(beEmpty())
+        let routeSchedule = try #require(schedule.stopRouteSchedules.first)
+        #expect(!routeSchedule.routeID.isEmpty)
+        #expect(!routeSchedule.stopRouteDirectionSchedules.isEmpty)
     }
 
-    func test_stopRouteDirectionSchedules_parsing() async throws {
+    @Test func `Stop route direction schedules parsing`() async throws {
         let response = try await restService.getScheduleForStop(stopID: stopID)
         let schedule = response.entry
 
-        let routeSchedule = try XCTUnwrap(schedule.stopRouteSchedules.first)
-        let directionSchedule = try XCTUnwrap(routeSchedule.stopRouteDirectionSchedules.first)
+        let routeSchedule = try #require(schedule.stopRouteSchedules.first)
+        let directionSchedule = try #require(routeSchedule.stopRouteDirectionSchedules.first)
 
-        expect(directionSchedule.tripHeadsign).toNot(beEmpty())
-        expect(directionSchedule.scheduleStopTimes).toNot(beEmpty())
+        #expect(!directionSchedule.tripHeadsign.isEmpty)
+        #expect(!directionSchedule.scheduleStopTimes.isEmpty)
     }
 
-    func test_scheduleStopTimes_parsing() async throws {
+    @Test func `Schedule stop times parsing`() async throws {
         let response = try await restService.getScheduleForStop(stopID: stopID)
         let schedule = response.entry
 
-        let routeSchedule = try XCTUnwrap(schedule.stopRouteSchedules.first)
-        let directionSchedule = try XCTUnwrap(routeSchedule.stopRouteDirectionSchedules.first)
-        let stopTime = try XCTUnwrap(directionSchedule.scheduleStopTimes.first)
+        let routeSchedule = try #require(schedule.stopRouteSchedules.first)
+        let directionSchedule = try #require(routeSchedule.stopRouteDirectionSchedules.first)
+        let stopTime = try #require(directionSchedule.scheduleStopTimes.first)
 
-        expect(stopTime.tripID).toNot(beEmpty())
-        expect(stopTime.serviceID).toNot(beEmpty())
+        #expect(!stopTime.tripID.isEmpty)
+        #expect(!stopTime.serviceID.isEmpty)
         // arrivalTime and departureTime are Unix timestamps in milliseconds
-        expect(stopTime.arrivalTime).to(beGreaterThan(0))
-        expect(stopTime.departureTime).to(beGreaterThan(0))
-        expect(stopTime.arrivalEnabled).to(beTrue())
-        expect(stopTime.departureEnabled).to(beTrue())
+        #expect(stopTime.arrivalTime > 0)
+        #expect(stopTime.departureTime > 0)
+        #expect(stopTime.arrivalEnabled)
+        #expect(stopTime.departureEnabled)
     }
 
-    func test_arrivalTime_isUnixTimestampInMilliseconds() async throws {
+    @Test func `Arrival time is unix timestamp in milliseconds`() async throws {
         let response = try await restService.getScheduleForStop(stopID: stopID)
         let schedule = response.entry
 
-        let routeSchedule = try XCTUnwrap(schedule.stopRouteSchedules.first)
-        let directionSchedule = try XCTUnwrap(routeSchedule.stopRouteDirectionSchedules.first)
-        let stopTime = try XCTUnwrap(directionSchedule.scheduleStopTimes.first)
+        let routeSchedule = try #require(schedule.stopRouteSchedules.first)
+        let directionSchedule = try #require(routeSchedule.stopRouteDirectionSchedules.first)
+        let stopTime = try #require(directionSchedule.scheduleStopTimes.first)
 
         // The fixture has arrivalTime like 1765029720000 (milliseconds)
         // This should be a reasonable timestamp (after year 2000, before year 2100)
         let minTimestamp: Int64 = 946684800000 // 2000-01-01 in ms
         let maxTimestamp: Int64 = 4102444800000 // 2100-01-01 in ms
 
-        expect(stopTime.arrivalTime).to(beGreaterThan(minTimestamp))
-        expect(stopTime.arrivalTime).to(beLessThan(maxTimestamp))
+        #expect(stopTime.arrivalTime > minTimestamp)
+        #expect(stopTime.arrivalTime < maxTimestamp)
     }
 
-    func test_arrivalDate_convertsCorrectly() async throws {
+    @Test func `Arrival date converts correctly`() async throws {
         let response = try await restService.getScheduleForStop(stopID: stopID)
         let schedule = response.entry
 
-        let routeSchedule = try XCTUnwrap(schedule.stopRouteSchedules.first)
-        let directionSchedule = try XCTUnwrap(routeSchedule.stopRouteDirectionSchedules.first)
-        let stopTime = try XCTUnwrap(directionSchedule.scheduleStopTimes.first)
+        let routeSchedule = try #require(schedule.stopRouteSchedules.first)
+        let directionSchedule = try #require(routeSchedule.stopRouteDirectionSchedules.first)
+        let stopTime = try #require(directionSchedule.scheduleStopTimes.first)
 
         let arrivalDate = stopTime.arrivalDate
-        expect(arrivalDate).toNot(beNil())
 
         // Verify it's a valid date by checking it's after year 2000
         let year2000 = Date(timeIntervalSince1970: 946684800)
-        expect(arrivalDate).to(beGreaterThan(year2000))
+        #expect(arrivalDate > year2000)
     }
 
     // MARK: - References Tests
 
-    func test_references_containsRoutes() async throws {
+    @Test func `References contains routes`() async throws {
         let response = try await restService.getScheduleForStop(stopID: stopID)
 
-        expect(response.references).toNot(beNil())
-        expect(response.references?.routes).toNot(beEmpty())
+        #expect(response.references != nil)
+        #expect(response.references?.routes.isEmpty == false)
     }
 
-    func test_references_containsStops() async throws {
+    @Test func `References contains stops`() async throws {
         let response = try await restService.getScheduleForStop(stopID: stopID)
 
-        expect(response.references).toNot(beNil())
-        expect(response.references?.stops).toNot(beEmpty())
+        #expect(response.references != nil)
+        #expect(response.references?.stops.isEmpty == false)
     }
 
-    func test_references_containsAgencies() async throws {
+    @Test func `References contains agencies`() async throws {
         let response = try await restService.getScheduleForStop(stopID: stopID)
 
-        expect(response.references).toNot(beNil())
-        expect(response.references?.agencies).toNot(beEmpty())
+        #expect(response.references != nil)
+        #expect(response.references?.agencies.isEmpty == false)
     }
 }

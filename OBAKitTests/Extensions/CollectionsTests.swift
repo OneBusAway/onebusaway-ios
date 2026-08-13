@@ -8,25 +8,26 @@
 //
 
 import Foundation
-import Nimble
-import XCTest
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
-class CollectionsTests: XCTestCase {
+@MainActor
+@Suite(.serialized)
+final class CollectionsTests {
 
-    func test_set_allObjects() {
+    @Test func `Set all objects`() {
         let mySet: Set = ["one", "two", "three"]
         let array = mySet.allObjects
 
-        expect(array).to(contain("one"))
-        expect(array).to(contain("two"))
-        expect(array).to(contain("three"))
+        #expect(array.contains("one"))
+        #expect(array.contains("two"))
+        #expect(array.contains("three"))
     }
 
-    func testFilter() {
+    @Test func filter() {
         let list: [Any] = [1, "two", 3, "four", 5]
         let filtered = list.filter(type: Int.self)
-        expect(filtered) == [1, 3, 5]
+        #expect(filtered == [1, 3, 5])
     }
 }

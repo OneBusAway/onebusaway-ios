@@ -29,7 +29,8 @@ class NearbyStopsListViewController: UIViewController, UICollectionViewDelegate,
     var onExpandSearchTapped: (() -> Void)?
 
     // MARK: - Type definitions
-    private enum Section: Hashable {
+    // nonisolated: diffable data source identifier types (see OBAListViewSection).
+    nonisolated private enum Section: Hashable {
         case alert
         case nearbyStops
 
@@ -43,7 +44,7 @@ class NearbyStopsListViewController: UIViewController, UICollectionViewDelegate,
         }
     }
 
-    private struct Item: Hashable {
+    nonisolated private struct Item: Hashable, @unchecked Sendable {
         // swiftlint:disable:next nesting
         enum ItemType: Hashable {
             case header

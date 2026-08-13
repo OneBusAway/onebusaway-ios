@@ -12,7 +12,7 @@ import UIKit
 ///
 /// The `appearance` property governs what data may be shown. For example, the `default`
 /// appearance will gracefully ignore the `secondaryText` property since it only has one label view.
-public struct OBAListRowConfiguration: OBAContentConfiguration, Equatable {
+nonisolated public struct OBAListRowConfiguration: OBAContentConfiguration, Equatable {
     public enum Appearance {
         /// The default look of a list row.
         case `default`

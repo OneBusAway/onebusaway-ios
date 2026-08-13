@@ -12,13 +12,15 @@ public typealias OBAListViewAction<Item: OBAListViewItem> = (Item) -> Void
 
 // This needs to be declared by itself. If you declare it under OBAListViewAction,
 // it makes it a generic and messes things up.
-public enum OBAListViewContextualActionStyle {
+nonisolated public enum OBAListViewContextualActionStyle {
     case destructive
     case normal
 }
 
 /// An action to display when the user swipes a list view row.
-public struct OBAListViewContextualAction<Item: OBAListViewItem> {
+/// nonisolated: stored on nonisolated `OBAListViewItem` view models; only
+/// `contextualAction` needs UIKit and is explicitly main-actor.
+nonisolated public struct OBAListViewContextualAction<Item: OBAListViewItem> {
     /// The style applied to the action button.
     public var style: OBAListViewContextualActionStyle = .normal
 
@@ -42,7 +44,7 @@ public struct OBAListViewContextualAction<Item: OBAListViewItem> {
     public var item: Item?
     public var handler: OBAListViewAction<Item>?
 
-    public var contextualAction: UIContextualAction {
+    @MainActor public var contextualAction: UIContextualAction {
         let style: UIContextualAction.Style
         switch self.style {
         case .destructive: style = .destructive

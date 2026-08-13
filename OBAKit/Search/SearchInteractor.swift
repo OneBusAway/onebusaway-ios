@@ -73,7 +73,7 @@ class SearchInteractor: NSObject {
     }
 
     // MARK: - Deinit
-    deinit {
+    isolated deinit {
         debounceTimer?.invalidate()
         localSearch?.cancel()
     }
@@ -163,6 +163,7 @@ class SearchInteractor: NSObject {
 
     // MARK: - Placemarks Section
 
+    // swiftlint:disable:next cyclomatic_complexity function_body_length
     private func placemarkSearch(searchText: String, mapRect: MKMapRect) {
         guard
             searchText != lastSearchText,
@@ -176,10 +177,10 @@ class SearchInteractor: NSObject {
         debounceTimer?.invalidate()
         debounceTimer = nil
 
-        debounceTimer = Timer.scheduledTimer(
+        debounceTimer = Timer.scheduledMainActorTimer(
             withTimeInterval: debounceInterval,
             repeats: false
-        ) { [weak self] _ in
+        ) { [weak self] in
             guard let self = self else { return }
 
             if let localSearch = self.localSearch {

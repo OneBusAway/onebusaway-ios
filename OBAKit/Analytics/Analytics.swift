@@ -11,8 +11,9 @@ import Foundation
 import OBAKitCore
 
 /// User Defaults keys for configuring analytics behavior in OBAKit.
+/// nonisolated: a constants namespace; read from nonisolated analytics paths.
 @objc(OBAAnalyticsKeys)
-public class AnalyticsKeys: NSObject {
+nonisolated public class AnalyticsKeys: NSObject {
     @objc public static let reportingEnabledUserDefaultsKey = "reportingEnabledUserDefaultsKey"
 }
 
@@ -54,6 +55,29 @@ public class AnalyticsLabels: NSObject {
     /// Label used when 'show my location' button is tapped.'
     @objc public static let mapShowUserLocationButtonTapped = "Clicked My Location Button"
 
+    /// Label used when a map layer is toggled in the Map sheet. Value: "<layerID>:<on|off>".
+    @objc public static let mapLayerToggled = "Map Layer Toggled"
+
+    /// Label used when a rental vehicle or cluster annotation is tapped on the map.
+    @objc public static let rentalVehicleSelected = "Rental Vehicle Selected"
+
+    /// Label used when the rider taps "Plan a trip using this bike" — the browse
+    /// layer's conversion into trip planning.
+    @objc public static let rentalPlanTripTapped = "Rental Plan Trip Tapped"
+
+    /// Label used when the rider taps "Open in <operator>" on the rental sheet.
+    /// Value: the network id.
+    @objc public static let rentalDeepLinkTapped = "Rental Deep Link Tapped"
+
+    /// Label used when a rental deep link failed to open. Value: the network id.
+    /// A fallback rate that jumps toward 100% is the only signal that an
+    /// operator changed its URL scheme.
+    @objc public static let rentalDeepLinkFallbackFired = "Rental Deep Link Fallback Fired"
+
+    /// Label used when the rental minimum-range filter changes. Value: the
+    /// threshold in meters, or "0" for no minimum.
+    @objc public static let rentalRangeFilterChanged = "Rental Range Filter Changed"
+
     /// Label used when 'Learn More About Donations' screen is displayed
     @objc public static let donationLearnMoreShown = "Donation Learn More Shown"
 
@@ -74,6 +98,35 @@ public class AnalyticsLabels: NSObject {
 
     /// Label used when a push notification results in a donation
     @objc public static let donationPushNotificationSuccess = "Donation Push Notification Success"
+
+    /// Label used when the sentiment feedback prompt is displayed.
+    @objc public static let feedbackPromptShown = "Feedback Prompt Shown"
+
+    /// Label used when a rider answers the feedback prompt positively.
+    @objc public static let feedbackPositive = "Feedback Positive"
+
+    /// Label used when a rider answers the feedback prompt negatively.
+    @objc public static let feedbackNegative = "Feedback Negative"
+
+    /// Label used when a rider defers the feedback prompt.
+    @objc public static let feedbackDeferred = "Feedback Deferred"
+
+    /// Label used when the feedback email composer is opened.
+    @objc public static let feedbackEmailOpened = "Feedback Email Opened"
+
+    /// Label used when a feedback email is actually sent.
+    @objc public static let feedbackEmailSent = "Feedback Email Sent"
+
+    /// Label used when the rider wanted to send feedback but the device can't compose
+    /// mail. Distinct from `feedbackEmailOpened` so this population — riders who
+    /// structurally cannot reach us — doesn't hide inside opened-then-abandoned.
+    @objc public static let feedbackEmailUnavailable = "Feedback Email Unavailable"
+
+    /// Label used when the mail composer reports a send failure.
+    @objc public static let feedbackEmailFailed = "Feedback Email Failed"
+
+    /// Label used when the More tab's 'Rate' row is tapped.
+    @objc public static let rateAppRowTapped = "Rate App Row Tapped"
 }
 
 /// Implement this protocol for reporting analytics events in order to be able to plug in a custom provider of your choosing.
@@ -82,7 +135,7 @@ public class AnalyticsLabels: NSObject {
 /// implement it similarly in order to use your own custom analytics provider.
 @objc(OBAAnalytics)
 public protocol Analytics: NSObjectProtocol {
-    @objc optional func updateServer(defaultDomainURL: URL, analyticsServerURL: URL?)
+    @objc optional func updateServer(region: Region)
 
     @objc func reportEvent(pageURL: String, label: String, value: Any?)
 

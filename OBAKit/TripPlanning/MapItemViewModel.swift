@@ -133,8 +133,14 @@ public class MapItemViewModel {
 
     /// Helper: attempts to load a scene, returns nil on failure
     private func fetchScene(using request: MKLookAroundSceneRequest) async -> MKLookAroundScene? {
+        // Same Swift 6.2 boundary issue as MapRegionManager.handleMapFeatureSelection:
+        // neither the request nor the scene is Sendable, so hand each across in a box —
+        // the request is one-shot and the scene has no other owner until the transfer.
+        let requestBox = UncheckedSendableBox(value: request)
         do {
-            return try await request.scene
+            return try await Task.detached {
+                UncheckedSendableBox(value: try await requestBox.value.scene)
+            }.value.value
         } catch {
             return nil
         }

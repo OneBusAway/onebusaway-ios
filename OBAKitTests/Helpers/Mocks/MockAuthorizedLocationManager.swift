@@ -20,6 +20,7 @@ class MockAuthorizedLocationManager: NSObject, LocationManager {
 
     var updatingLocation = false
     var updatingHeading = false
+    private(set) var monitoredRegions = Set<CLRegion>()
 
     init(updateLocation: CLLocation, updateHeading: CLHeading) {
         self.updateLocation = updateLocation
@@ -51,11 +52,21 @@ class MockAuthorizedLocationManager: NSObject, LocationManager {
     }
 
     var authorizationStatus: CLAuthorizationStatus = .authorizedWhenInUse
-    var isLocationServicesEnabled: Bool = true
+
+    var locationServicesEnabledValue = true
+    func locationServicesEnabled() async -> Bool {
+        return locationServicesEnabledValue
+    }
+
+    /// Stored so tests can toggle reduced accuracy without needing a separate
+    /// mock class. Kept as `CLAccuracyAuthorization` even though it's only
+    /// touched under iOS 14+ — the availability gate lives on the protocol
+    /// requirement below, matching how `LocationManager` declares it.
+    var overrideAccuracyAuthorization: CLAccuracyAuthorization = .fullAccuracy
 
     @available(iOS 14, *)
     var accuracyAuthorization: CLAccuracyAuthorization {
-        return .fullAccuracy
+        return overrideAccuracyAuthorization
     }
 
     func startUpdatingLocation() {
@@ -76,5 +87,13 @@ class MockAuthorizedLocationManager: NSObject, LocationManager {
 
     func stopUpdatingHeading() {
         updatingHeading = false
+    }
+
+    func startMonitoring(for region: CLRegion) {
+        monitoredRegions.insert(region)
+    }
+
+    func stopMonitoring(for region: CLRegion) {
+        monitoredRegions.remove(region)
     }
 }

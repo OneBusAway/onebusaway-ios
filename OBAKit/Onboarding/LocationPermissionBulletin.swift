@@ -18,6 +18,12 @@ class LocationPermissionItem: ThemedBulletinPage, LocationServiceDelegate {
     private let locationService: LocationService
     private let completion: VoidBlock
 
+    // Required by ThemedBulletinPage's initializer contract (see its init(title:)).
+    @available(*, unavailable)
+    nonisolated override init(title: String) {
+        fatalError("Use init(locationService:completion:)")
+    }
+
     init(locationService: LocationService, completion: @escaping VoidBlock) {
         self.locationService = locationService
         self.completion = completion

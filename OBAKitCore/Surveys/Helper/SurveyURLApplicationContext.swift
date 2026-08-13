@@ -7,7 +7,7 @@
 
 import CoreLocation
 
-public protocol SurveyURLApplicationContext {
+public protocol SurveyURLApplicationContext: AnyObject {
 
     var currentRegionIdentifier: Int? { get }
 

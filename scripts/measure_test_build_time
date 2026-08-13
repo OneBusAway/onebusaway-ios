@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+#
+# Times a COLD build-for-testing and reports how long compiling OBAKitTests took.
+#
+# Exists to answer one question during the Nimble -> Swift Testing conversion:
+# does replacing ~2,700 Nimble assertions with `#expect` macros blow up the test
+# target's compile time? Macro expansion runs the swift-syntax plugin once per
+# expansion site, so the cost is real and worth watching per batch.
+#
+# The build has to be cold or the timing is fiction; scripts/_cold_build.sh
+# explains what that takes.
+#
+# Usage: scripts/measure_test_build_time [label]
+
+set -euo pipefail
+
+# shellcheck source=scripts/_cold_build.sh
+source "$(dirname "$0")/_cold_build.sh"
+cold_build_init
+
+LABEL="${1:-unlabeled}"
+OUT_DIR="$REPO_ROOT/.build-timings"
+mkdir -p "$OUT_DIR"
+LOG="$OUT_DIR/$LABEL.log"
+
+echo "Cold build-for-testing (label: $LABEL, sim: $SIMULATOR)..."
+START="$SECONDS"
+set +e
+cold_build "$LOG" -showBuildTimingSummary
+STATUS=$?
+set -e
+ELAPSED=$(( SECONDS - START ))
+
+echo
+if (( STATUS != 0 )); then
+  echo "BUILD FAILED (exit $STATUS) after ${ELAPSED}s. Errors:"
+  grep -E 'error:' "$LOG" | head -40
+  echo "(full log: $LOG)"
+  exit "$STATUS"
+fi
+
+echo "Total cold build: ${ELAPSED}s   (label: $LABEL)"
+echo
+echo "=== Build timing summary ==="
+# -showBuildTimingSummary prints a table at the end of a successful build.
+sed -n '/Build Timing Summary/,$p' "$LOG" | head -30
+echo
+echo "=== Swift compile time attributed to OBAKitTests ==="
+grep -E 'CompileSwiftSources.*OBAKitTests|SwiftCompile.*OBAKitTests' "$LOG" \
+  | grep -oE 'cpu [0-9.]+s|[0-9.]+ seconds' | head -5 || echo "(no per-target line found; use the summary above)"
+echo
+echo "log: $LOG"

@@ -5,6 +5,7 @@
 //  Created by Alan Chu on 1/19/23.
 //
 
+import CoreLocation
 import OBAKitCore
 
 /// The coordinator for a SwiftUI-friendly (`ObservableObject`) version of `RegionsServices`.
@@ -32,7 +33,7 @@ public class RegionPickerCoordinator: ObservableObject, RegionProvider, RegionsS
         self.init(regionsService: regionsService, userDataStore: userDataStore)
     }
 
-    deinit {
+    isolated deinit {
         regionsService.removeDelegate(self)
     }
 
@@ -73,6 +74,14 @@ public class RegionPickerCoordinator: ObservableObject, RegionProvider, RegionsS
         await MainActor.run {
             self.allRegions = regionsService.allRegions
         }
+    }
+
+    public var currentLocation: CLLocation? {
+        regionsService.currentLocation
+    }
+
+    public func fetchAgenciesWithCoverage(baseURL: URL) async throws -> [AgencyWithCoverage] {
+        try await regionsService.fetchAgenciesWithCoverage(baseURL: baseURL)
     }
 
     // MARK: - RegionsServiceDelegate implementation

@@ -11,7 +11,9 @@ import UIKit
 import OBAKitCore
 
 /// Static accessors for icons available in the framework.
-class Icons: NSObject {
+/// nonisolated: only constructs `UIImage`/`UIColor` values, which is thread-safe;
+/// nonisolated list-item view models need these accessors off the main actor.
+nonisolated class Icons: NSObject {
 
     // MARK: - Tab Icons
     /// The Map tab icon, for apps using a tab bar UI metaphor.
@@ -137,6 +139,13 @@ class Icons: NSObject {
         systemImage(named: "trash.fill")
     }
 
+    // MARK: - Live Activity
+
+    // An icon used for Live Activities ..
+    public class var liveActivity: UIImage {
+        systemImage(named: "waveform.circle.fill")
+    }
+
     // MARK: - Bookmarks
 
     /// An icon used to represent bookmarked stops and trips.
@@ -168,6 +177,16 @@ class Icons: NSObject {
     /// A large 'header'-style version of the OBA icon/logo.
     public class var header: UIImage {
         imageNamed("header")
+    }
+
+    /// An icon for the departure-type filter menu (antenna radiowaves).
+    public class var departureType: UIImage {
+        systemImage(named: "antenna.radiowaves.left.and.right")
+    }
+
+    /// An icon for the sort-order menu (up/down arrows).
+    public class var sort: UIImage {
+        systemImage(named: "arrow.up.arrow.down")
     }
 
     // MARK: - Miscellaneous
@@ -257,6 +276,61 @@ class Icons: NSObject {
     /// A transport icon depicting a person walking.
     public class var walkTransport: UIImage {
         imageNamed("walkTransport")
+    }
+
+    // MARK: - Squircle icon
+
+    /// nonisolated(unsafe): NSCache is documented thread-safe (it just lacks a
+    /// Sendable annotation), so the nonisolated `Icons` can touch it from any
+    /// isolation.
+    nonisolated(unsafe) private static let iconCache = NSCache<NSNumber, UIImage>()
+    public static let squircleIconSize: CGFloat = 40
+
+    /// Shared squircle appearance constants, so this icon and `StopIconFactory`'s
+    /// map squircle stay in sync.
+    public static let squircleCornerRadiusRatio: CGFloat = 0.28
+    public static let squircleGradientTopBlend: CGFloat = 0.18
+    public static let squircleGradientBottomBlend: CGFloat = 0.12
+
+    /// The transport glyph in white over a brand-color gradient squircle,
+    /// echoing the stop page's `RouteBadgeView` treatment.
+    public static func squircleTransportIcon(for routeType: Route.RouteType) -> UIImage {
+        let cacheKey = NSNumber(value: routeType.rawValue)
+        if let cached = iconCache.object(forKey: cacheKey) { return cached }
+
+        let rect = CGRect(x: 0, y: 0, width: squircleIconSize, height: squircleIconSize)
+        let image = UIGraphicsImageRenderer(bounds: rect).image { context in
+            let brand = ThemeColors.shared.brand
+            UIBezierPath(roundedRect: rect, cornerRadius: squircleIconSize * squircleCornerRadiusRatio).addClip()
+
+            let colors = [
+                brand.blended(with: .white, amount: squircleGradientTopBlend).cgColor,
+                brand.blended(with: .black, amount: squircleGradientBottomBlend).cgColor
+            ]
+            if let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors as CFArray, locations: [0, 1]) {
+                context.cgContext.drawLinearGradient(
+                    gradient,
+                    start: CGPoint(x: rect.midX, y: rect.minY),
+                    end: CGPoint(x: rect.midX, y: rect.maxY),
+                    options: [])
+            } else {
+                brand.setFill()
+                context.fill(rect)
+            }
+
+            let glyph = Icons.transportIcon(from: routeType).withTintColor(.white, renderingMode: .alwaysOriginal)
+            let maxGlyphExtent = squircleIconSize * 0.55
+            let scale = min(maxGlyphExtent / glyph.size.width, maxGlyphExtent / glyph.size.height)
+            let glyphSize = CGSize(width: glyph.size.width * scale, height: glyph.size.height * scale)
+            glyph.draw(in: CGRect(
+                x: rect.midX - glyphSize.width / 2.0,
+                y: rect.midY - glyphSize.height / 2.0,
+                width: glyphSize.width,
+                height: glyphSize.height))
+        }.withRenderingMode(.alwaysOriginal)
+
+        iconCache.setObject(image, forKey: cacheKey)
+        return image
     }
 
     // MARK: - Private Helpers

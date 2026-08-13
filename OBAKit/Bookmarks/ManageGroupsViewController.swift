@@ -12,10 +12,10 @@ import Eureka
 import OBAKitCore
 
 class ManageGroupsViewController: FormViewController {
-    private let application: Application
+    private let viewModel: ManageGroupsViewModel
 
     init(application: Application) {
-        self.application = application
+        self.viewModel = ManageGroupsViewModel(application: application)
 
         super.init(nibName: nil, bundle: nil)
 
@@ -61,11 +61,10 @@ class ManageGroupsViewController: FormViewController {
             ManageGroupsViewController.buildNameRow()
         }
 
-        if application.userDataStore.bookmarkGroups.count == 0 {
+        if viewModel.bookmarkGroups.isEmpty {
             $0 <<< ManageGroupsViewController.buildNameRow()
-        }
-        else {
-            for group in application.userDataStore.bookmarkGroups {
+        } else {
+            for group in viewModel.bookmarkGroups {
                 $0 <<< ManageGroupsViewController.buildNameRow(tag: group.id.uuidString, value: group.name)
             }
         }
@@ -82,27 +81,8 @@ class ManageGroupsViewController: FormViewController {
     // MARK: - Model State
 
     func updateModelState() {
-        let nameRows = groupsSection.allRows.filter { $0 is NameRow } as! [NameRow] // swiftlint:disable:this force_cast
-        let newGroups = nameRows.bookmarkGroups
-        application.userDataStore.replaceBookmarkGroups(with: newGroups)
-    }
-}
-
-// MARK: - Private Helpers
-
-fileprivate extension Array where Element == NameRow {
-    var bookmarkGroups: [BookmarkGroup] {
-        var groups = [BookmarkGroup]()
-
-        for index in 0..<count {
-            let elt = self[index]
-
-            if let name = elt.value, name.count > 0 {
-                let id = UUID(optionalUUIDString: elt.tag) ?? UUID()
-                groups.append(BookmarkGroup(name: name, id: id, sortOrder: index))
-            }
-        }
-
-        return groups
+        let nameRows = groupsSection.allRows.compactMap { $0 as? NameRow }
+        let rowData = nameRows.map { (tag: $0.tag, value: $0.value) }
+        viewModel.replaceGroups(viewModel.groups(from: rowData))
     }
 }

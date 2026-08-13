@@ -18,6 +18,7 @@ import CoreLocation
 ///         `OBAKit.AppConfig` instead. It offers additional features you'll
 ///         likely want to use in your app.
 @objc(OBACoreAppConfig)
+@MainActor
 open class CoreAppConfig: NSObject {
     public let regionsBaseURL: URL?
     public let regionsAPIPath: String?
@@ -28,6 +29,10 @@ open class CoreAppConfig: NSObject {
     public let locationService: LocationService
     public let bundledRegionsFilePath: String
     public let dataLoader: URLDataLoader
+    public let defaultArrivalDepartureFilter: ArrivalDepartureFilter
+
+    /// UserDefaults key for the user's global arrival/departure filter preference.
+    public static let arrivalDepartureFilterUserDefaultsKey = "CoreAppConfig.arrivalDepartureFilter"
 
     /// The name of a fixed region to auto-select at launch, bypassing the region picker.
     public let fixedRegionName: String?
@@ -55,7 +60,8 @@ open class CoreAppConfig: NSObject {
             regionsAPIPath: appBundle.regionsServerAPIPath!,
             dataLoader: URLSession.shared,
             fixedRegionName: appBundle.fixedRegionName,
-            fixedRegionOBABaseURL: appBundle.fixedRegionOBABaseURL
+            fixedRegionOBABaseURL: appBundle.fixedRegionOBABaseURL,
+            defaultArrivalDepartureFilter: appBundle.defaultArrivalDepartureFilter
         )
     }
 
@@ -79,7 +85,8 @@ open class CoreAppConfig: NSObject {
         regionsAPIPath: String?,
         dataLoader: URLDataLoader,
         fixedRegionName: String? = nil,
-        fixedRegionOBABaseURL: URL? = nil
+        fixedRegionOBABaseURL: URL? = nil,
+        defaultArrivalDepartureFilter: ArrivalDepartureFilter = .all
     ) {
         self.regionsBaseURL = regionsBaseURL
         self.apiKey = apiKey
@@ -92,5 +99,6 @@ open class CoreAppConfig: NSObject {
         self.dataLoader = dataLoader
         self.fixedRegionName = fixedRegionName
         self.fixedRegionOBABaseURL = fixedRegionOBABaseURL
+        self.defaultArrivalDepartureFilter = defaultArrivalDepartureFilter
     }
 }

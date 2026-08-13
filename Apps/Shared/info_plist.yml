@@ -1,0 +1,18 @@
+############
+# Info.plist
+############
+#
+# Shared Info.plist purpose strings, localized once for every white-label app.
+# Each app's project.yml includes this file; the base (English) values live here
+# and per-locale translations live in Apps/<App>/<locale>.lproj/InfoPlist.strings.
+#
+# Bodies are app-neutral: the system inserts the app name into the permission
+# dialog's title, so the purpose string must not hardcode a brand — the same
+# convention the NSLocation* strings follow in app_shared.yml.
+
+targets:
+  App:
+    info:
+      properties:
+        NSHealthShareUsageDescription: Uses your walking speed from the Health app to give you more accurate arrival time estimates.
+        NSHealthUpdateUsageDescription: Uses your walking speed from the Health app to give you more accurate arrival time estimates.

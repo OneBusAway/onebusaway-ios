@@ -7,7 +7,7 @@
 
 import OBAKitCore
 
-struct OBAListViewHeader: OBAListViewItem {
+nonisolated struct OBAListViewHeader: OBAListViewItem {
     let id: String
     let title: String?
     let isCollapsible: Bool

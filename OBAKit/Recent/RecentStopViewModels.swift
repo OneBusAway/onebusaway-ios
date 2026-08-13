@@ -1,5 +1,5 @@
 //
-//  RecentStopViewModels.swift
+//  RecentStopRowItems.swift
 //  OBAKit
 //
 //  Created by Alan Chu on 11/3/20.
@@ -11,7 +11,7 @@ import OBAKitCore
 ///
 /// This model uses a default content configuration, there is no need to register this
 /// item with OBAListView before use.
-struct StopViewModel: OBAListViewItem {
+nonisolated struct StopRowItem: OBAListViewItem {
     let name: String
     let subtitle: String?
 
@@ -19,28 +19,42 @@ struct StopViewModel: OBAListViewItem {
     let stopID: Stop.ID
     let routeType: Route.RouteType
 
-    // Hide icon if there is only one type of route in the list
     var configuration: OBAListViewItemConfiguration {
-        let transportIcon = Icons.transportIcon(from: routeType)
         var config = OBAListRowConfiguration(
-            image: transportIcon,
-            text: .string(name),
-            secondaryText: .string(subtitle),
+            image: Icons.squircleTransportIcon(for: routeType),
+            text: .attributed(styledTitle),
+            secondaryText: .attributed(styledSubtitle),
             appearance: .subtitle,
             accessoryType: .disclosureIndicator)
-        config.imageConfig.tintColor = .label
-        config.imageConfig.maximumSize = CGSize(width: 24, height: 24)
+        // The squircle icon is pre-rendered with its own colors; don't re-tint.
+        config.imageConfig.tintColor = nil
+        config.imageConfig.maximumSize = CGSize(width: Icons.squircleIconSize, height: Icons.squircleIconSize)
 
         return .custom(config)
     }
 
-    let onSelectAction: OBAListViewAction<StopViewModel>?
-    let onDeleteAction: OBAListViewAction<StopViewModel>?
+    private var styledTitle: NSAttributedString {
+        NSAttributedString(string: name, attributes: [
+            .font: UIFont.preferredFont(forTextStyle: .title3).bold,
+            .foregroundColor: UIColor.label
+        ])
+    }
+
+    private var styledSubtitle: NSAttributedString? {
+        guard let subtitle else { return nil }
+        return NSAttributedString(string: subtitle, attributes: [
+            .font: UIFont.preferredFont(forTextStyle: .body),
+            .foregroundColor: UIColor.label
+        ])
+    }
+
+    let onSelectAction: OBAListViewAction<StopRowItem>?
+    let onDeleteAction: OBAListViewAction<StopRowItem>?
 
     init(withStop stop: Stop,
          showDirectionInTitle: Bool = false,
-         onSelect selectAction: OBAListViewAction<StopViewModel>?,
-         onDelete deleteAction: OBAListViewAction<StopViewModel>?) {
+         onSelect selectAction: OBAListViewAction<StopRowItem>?,
+         onDelete deleteAction: OBAListViewAction<StopRowItem>?) {
 
         self.name = showDirectionInTitle ? stop.nameWithLocalizedDirectionAbbreviation : stop.name
         self.subtitle = stop.subtitle
@@ -58,7 +72,7 @@ struct StopViewModel: OBAListViewItem {
         hasher.combine(routeType)
     }
 
-    static func == (lhs: StopViewModel, rhs: StopViewModel) -> Bool {
+    static func == (lhs: StopRowItem, rhs: StopRowItem) -> Bool {
         return lhs.id == rhs.id &&
             lhs.stopID == rhs.stopID &&
             lhs.name == rhs.name &&
@@ -67,7 +81,7 @@ struct StopViewModel: OBAListViewItem {
 }
 
 extension RecentStopsViewController {
-    struct AlarmViewModel: OBAListViewItem {
+    nonisolated struct AlarmViewModel: OBAListViewItem {
         let alarm: Alarm
         let deepLink: ArrivalDepartureDeepLink
 

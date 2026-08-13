@@ -7,25 +7,26 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
-import Nimble
+import Foundation
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
 // swiftlint:disable force_cast
 
-class ScheduleForRouteViewModelTests: OBATestCase {
+@Suite(.serialized)
+final class ScheduleForRouteViewModelTests: OBATestCase {
     let routeID = "1_100223"
     var queue: OperationQueue!
 
-    override func setUp() {
-        super.setUp()
+    override init() async throws {
+        try await super.init()
+
         queue = OperationQueue()
         queue.maxConcurrentOperationCount = 1
     }
 
-    override func tearDown() {
-        super.tearDown()
+    isolated deinit {
         queue.cancelAllOperations()
     }
 
@@ -69,19 +70,19 @@ class ScheduleForRouteViewModelTests: OBATestCase {
 
     // MARK: - Initialization Tests
 
-    @MainActor
-    func test_init_setsRouteID() {
+    @Test @MainActor
+    func `Init sets route ID`() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForRoute(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
 
         let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app)
 
-        expect(viewModel.routeID) == routeID
+        #expect(viewModel.routeID == routeID)
     }
 
-    @MainActor
-    func test_init_setsInitialDate() {
+    @Test @MainActor
+    func `Init sets initial date`() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForRoute(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -89,124 +90,124 @@ class ScheduleForRouteViewModelTests: OBATestCase {
 
         let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app, initialDate: testDate)
 
-        expect(Calendar.current.isDate(viewModel.selectedDate, inSameDayAs: testDate)).to(beTrue())
+        #expect(Calendar.current.isDate(viewModel.selectedDate, inSameDayAs: testDate))
     }
 
-    @MainActor
-    func test_init_defaultsSelectedDirectionIndexToZero() {
+    @Test @MainActor
+    func `Init defaults selected direction index to zero`() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForRoute(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
 
         let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app)
 
-        expect(viewModel.selectedDirectionIndex) == 0
+        #expect(viewModel.selectedDirectionIndex == 0)
     }
 
     // MARK: - Route Name Tests
 
-    @MainActor
-    func test_routeName_beforeFetch_returnsRouteID() {
+    @Test @MainActor
+    func `Route name before fetch returns route ID`() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForRoute(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app)
 
-        expect(viewModel.routeName) == routeID
+        #expect(viewModel.routeName == routeID)
     }
 
     // MARK: - Directions Tests
 
-    @MainActor
-    func test_directions_beforeFetch_isEmpty() {
+    @Test @MainActor
+    func `Directions before fetch is empty`() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForRoute(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app)
 
-        expect(viewModel.directions).to(beEmpty())
+        #expect(viewModel.directions.isEmpty)
     }
 
-    @MainActor
-    func test_currentDirection_beforeFetch_returnsNil() {
+    @Test @MainActor
+    func `Current direction before fetch returns nil`() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForRoute(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app)
 
-        expect(viewModel.currentDirection).to(beNil())
+        #expect(viewModel.currentDirection == nil)
     }
 
     // MARK: - Headsign Tests
 
-    @MainActor
-    func test_currentHeadsign_beforeFetch_isEmpty() {
+    @Test @MainActor
+    func `Current headsign before fetch is empty`() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForRoute(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app)
 
-        expect(viewModel.currentHeadsign).to(beEmpty())
+        #expect(viewModel.currentHeadsign.isEmpty)
     }
 
     // MARK: - Stop Names and IDs Tests
 
-    @MainActor
-    func test_stopNames_beforeFetch_isEmpty() {
+    @Test @MainActor
+    func `Stop names before fetch is empty`() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForRoute(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app)
 
-        expect(viewModel.stopNames).to(beEmpty())
+        #expect(viewModel.stopNames.isEmpty)
     }
 
-    @MainActor
-    func test_stopIDs_beforeFetch_isEmpty() {
+    @Test @MainActor
+    func `Stop IDs before fetch is empty`() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForRoute(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app)
 
-        expect(viewModel.stopIDs).to(beEmpty())
+        #expect(viewModel.stopIDs.isEmpty)
     }
 
     // MARK: - Departure Times Tests
 
-    @MainActor
-    func test_departureTimes_beforeFetch_isEmpty() {
+    @Test @MainActor
+    func `Departure times before fetch is empty`() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForRoute(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app)
 
-        expect(viewModel.departureTimes).to(beEmpty())
+        #expect(viewModel.departureTimes.isEmpty)
     }
 
-    @MainActor
-    func test_sortedDepartureTimes_beforeFetch_isEmpty() {
+    @Test @MainActor
+    func `Sorted departure times before fetch is empty`() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForRoute(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app)
 
-        expect(viewModel.sortedDepartureTimes).to(beEmpty())
+        #expect(viewModel.sortedDepartureTimes.isEmpty)
     }
 
-    @MainActor
-    func test_departureTimesDisplay_beforeFetch_isEmpty() {
+    @Test @MainActor
+    func `Departure times display before fetch is empty`() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForRoute(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app)
 
-        expect(viewModel.departureTimesDisplay).to(beEmpty())
+        #expect(viewModel.departureTimesDisplay.isEmpty)
     }
 
     // MARK: - Time Formatting Tests
 
-    @MainActor
-    func test_formatTime_withDate_returnsFormattedString() {
+    @Test @MainActor
+    func `Format time with date returns formatted string`() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForRoute(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -217,15 +218,15 @@ class ScheduleForRouteViewModelTests: OBATestCase {
 
         let result = viewModel.formatTime(date)
 
-        expect(result).to(contain(":"))
-        expect(result).toNot(equal("-"))
-        expect(result).toNot(contain("AM"))
-        expect(result).toNot(contain("PM"))
-        expect(result.count) == 5
+        #expect(result.contains(":"))
+        #expect(result != "-")
+        #expect(!result.contains("AM"))
+        #expect(!result.contains("PM"))
+        #expect(result.count == 5)
     }
 
-    @MainActor
-    func test_formatTime_midnight_returns0000() {
+    @Test @MainActor
+    func `Format time midnight returns 0000`() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForRoute(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -238,11 +239,11 @@ class ScheduleForRouteViewModelTests: OBATestCase {
 
         let result = viewModel.formatTime(date)
 
-        expect(result) == "00:00"
+        #expect(result == "00:00")
     }
 
-    @MainActor
-    func test_formatTime_noon_returns1200() {
+    @Test @MainActor
+    func `Format time noon returns 1200`() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForRoute(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -255,11 +256,11 @@ class ScheduleForRouteViewModelTests: OBATestCase {
 
         let result = viewModel.formatTime(date)
 
-        expect(result) == "12:00"
+        #expect(result == "12:00")
     }
 
-    @MainActor
-    func test_formatTime_nilDate_returnsDash() {
+    @Test @MainActor
+    func `Format time nil date returns dash`() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForRoute(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -267,11 +268,11 @@ class ScheduleForRouteViewModelTests: OBATestCase {
 
         let result = viewModel.formatTime(nil)
 
-        expect(result) == "-"
+        #expect(result == "-")
     }
 
-    @MainActor
-    func test_formatTimeAccessible_withDate_returnsReadableTime() {
+    @Test @MainActor
+    func `Format time accessible with date returns readable time`() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForRoute(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -282,13 +283,13 @@ class ScheduleForRouteViewModelTests: OBATestCase {
         let result = viewModel.formatTimeAccessible(date)
 
         // Locale-aware format contains colon and readable time
-        expect(result).to(contain(":"))
-        expect(result).toNot(beEmpty())
-        expect(result).toNot(equal("-"))
+        #expect(result.contains(":"))
+        #expect(!result.isEmpty)
+        #expect(result != "-")
     }
 
-    @MainActor
-    func test_formatTimeAccessible_nilDate_returnsNoDepartureText() {
+    @Test @MainActor
+    func `Format time accessible nil date returns no departure text`() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForRoute(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -297,39 +298,39 @@ class ScheduleForRouteViewModelTests: OBATestCase {
         let result = viewModel.formatTimeAccessible(nil)
 
         // Should return the localized "No departure" string
-        expect(result).toNot(beEmpty())
-        expect(result).toNot(equal("-"))
+        #expect(!result.isEmpty)
+        #expect(result != "-")
     }
 
     // MARK: - Loading State Tests
 
-    @MainActor
-    func test_isLoading_initiallyFalse() {
+    @Test @MainActor
+    func `Is loading initially false`() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForRoute(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app)
 
-        expect(viewModel.isLoading).to(beFalse())
+        #expect(!viewModel.isLoading)
     }
 
-    @MainActor
-    func test_error_initiallyNil() {
+    @Test @MainActor
+    func `Error initially nil`() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForRoute(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app)
 
-        expect(viewModel.error).to(beNil())
+        #expect(viewModel.error == nil)
     }
 
-    @MainActor
-    func test_scheduleData_initiallyNil() {
+    @Test @MainActor
+    func `Schedule data initially nil`() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForRoute(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app)
 
-        expect(viewModel.scheduleData).to(beNil())
+        #expect(viewModel.scheduleData == nil)
     }
 }

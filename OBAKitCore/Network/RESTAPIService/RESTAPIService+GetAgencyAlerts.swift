@@ -31,9 +31,13 @@ extension RESTAPIService {
             let message = try TransitRealtime_FeedMessage(serializedBytes: data)
             return message.entity
                 .filter(isQualifiedAlert)
-                .compactMap {
-                    // TODO: Don't swallow error
-                    try? AgencyAlert(feedEntity: $0, agencies: [agency])
+                .compactMap { entity in
+                    do {
+                        return try AgencyAlert(feedEntity: entity, agencies: [agency])
+                    } catch {
+                        logger.error("Dropped alert \(entity.id, privacy: .public) from \(agency.agency.name, privacy: .public) feed: \(error, privacy: .public)")
+                        return nil
+                    }
                 }
         } catch {
             logger.error("getAlerts() failed for \(agency.agency.name, privacy: .public): \(error, privacy: .public)")

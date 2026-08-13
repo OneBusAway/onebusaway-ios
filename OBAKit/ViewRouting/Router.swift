@@ -28,6 +28,10 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
 
     private let application: Application
 
+    /// Set by `ClassicApplicationRootController.init`. `nil` when the
+    /// experimental SwiftUI map-panel experience is the active root —
+    /// `SheetCoordinator` owns navigation in that mode and bypasses
+    /// `ViewRouter` entirely.
     var rootController: ClassicApplicationRootController?
 
     public init(application: Application) {
@@ -82,16 +86,41 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
 
     public func navigateTo(stop: Stop, from fromController: UIViewController, bookmark: Bookmark? = nil, transferContext: TransferContext? = nil) {
         guard shouldNavigate(from: fromController, to: .stop(stop)) else { return }
-        let stopController = StopViewController(application: application, stop: stop)
-        stopController.bookmarkContext = bookmark
-        stopController.transferContext = transferContext
-        navigate(to: stopController, from: fromController)
+        navigate(to: makeStopController(stop: stop, bookmark: bookmark, transferContext: transferContext), from: fromController)
     }
 
     public func navigateTo(stopID: StopID, from fromController: UIViewController) {
         guard shouldNavigate(from: fromController, to: .stopID(stopID)) else { return }
-        let stopController = StopViewController(application: application, stopID: stopID)
-        navigate(to: stopController, from: fromController)
+        navigate(to: makeStopController(stopID: stopID), from: fromController)
+    }
+
+    /// Builds the Stop screen honoring the new-stop-page feature flag. All stop
+    /// navigation and long-press previews must construct the controller through
+    /// these factories so the flag governs every path.
+    ///
+    /// - Parameter showToolbarOnBottom: Pass `true` when the caller will present the result as a
+    ///   sheet rather than push it, which swaps the redesigned page's dark map header for a light
+    ///   one and moves its chrome into a bottom toolbar. Ignored when the flag or a transfer
+    ///   context routes to the legacy `StopViewController`, which has only the pushed layout.
+    public func makeStopController(stop: Stop, bookmark: Bookmark? = nil, transferContext: TransferContext? = nil, showToolbarOnBottom: Bool = false) -> UIViewController {
+        // TransferContext UX (arrival-relative filtering, transfer banner) is not yet built on the new stop page — route transfers to the legacy screen until it is.
+        let stopController: StopContextConfigurable
+        if transferContext == nil, FeatureFlags.isNewStopPageEnabled(userDefaults: application.userDefaults) {
+            stopController = StopPageViewController(application: application, stop: stop, showToolbarOnBottom: showToolbarOnBottom)
+        } else {
+            stopController = StopViewController(application: application, stop: stop)
+        }
+        stopController.bookmarkContext = bookmark
+        stopController.transferContext = transferContext
+        return stopController
+    }
+
+    public func makeStopController(stopID: StopID, showToolbarOnBottom: Bool = false) -> UIViewController {
+        if FeatureFlags.isNewStopPageEnabled(userDefaults: application.userDefaults) {
+            return StopPageViewController(application: application, stopID: stopID, showToolbarOnBottom: showToolbarOnBottom)
+        } else {
+            return StopViewController(application: application, stopID: stopID)
+        }
     }
 
     public func navigateTo(arrivalDeparture: ArrivalDeparture, from fromController: UIViewController) {
@@ -101,7 +130,23 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
     }
 
     public func rootNavigateTo(page: ClassicApplicationRootController.Page) {
-        guard let rootController = self.rootController else { return }
+        guard let rootController = self.rootController else {
+            // Map-panel mode bypasses ViewRouter — `SheetCoordinator` owns
+            // navigation. Log so deep-link / recent-stops paths that still
+            // call this don't silently degrade. (No `assertionFailure`: test
+            // harnesses construct `Application` without a root controller,
+            // and tripping there would crash unrelated tests.)
+            //
+            // TODO(mosliem): map-panel deep-link / page-navigation story.
+            // Today deep links and "open in tab" callers go to a log and
+            // nothing visible happens. Either route `.tab` cases through
+            // `SheetCoordinator.push(...)` analogues (e.g. `.recent` →
+            // `.recentStopsAll`, `.bookmarks` → `.bookmarksAll`) or define a
+            // dedicated deep-link surface on the coordinator before the
+            // map-panel experience leaves the experimental flag.
+            Logger.error("rootNavigateTo(page: \(page)) dropped: no classic root controller (map-panel mode is active)")
+            return
+        }
         rootController.navigate(to: page)
     }
 
@@ -151,3 +196,15 @@ extension ViewRouter: RoutePickerDelegate {
         navigation.pushViewController(currentTripController, animated: true)
     }
 }
+
+// MARK: - Stop controller factory seam
+
+/// The shared context both Stop-screen controllers expose, so `makeStopController`
+/// can set it once regardless of which the feature flag selects.
+protocol StopContextConfigurable: UIViewController {
+    var bookmarkContext: Bookmark? { get set }
+    var transferContext: TransferContext? { get set }
+}
+
+extension StopViewController: StopContextConfigurable {}
+extension StopPageViewController: StopContextConfigurable {}

@@ -7,8 +7,8 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
-import Nimble
+import Foundation
+import Testing
 import CoreLocation
 import MapKit
 @testable import OBAKit
@@ -16,13 +16,14 @@ import MapKit
 
 // swiftlint:disable force_cast
 
-class RouteSearchModelOperationTests: OBATestCase {
+@Suite(.serialized)
+final class RouteSearchModelOperationTests: OBATestCase {
     let query = "Link"
     let center = CLLocationCoordinate2D(latitude: 47.0, longitude: -122)
     let radius = 5000.0
     lazy var region = CLCircularRegion(center: center, radius: radius, identifier: "identifier")
 
-    func testLoading_success() async throws {
+    @Test func `Loading success`() async throws {
         let dataLoader = (restService.dataLoader as! MockDataLoader)
         let data = Fixtures.loadData(file: "routes-for-location-10.json")
         dataLoader.mock(URLString: "https://www.example.com/api/where/routes-for-location.json", with: data)
@@ -30,19 +31,19 @@ class RouteSearchModelOperationTests: OBATestCase {
         let response = try await restService.getRoute(query: query, region: region)
         let routes = response.list
 
-        expect(routes.count) == 1
+        #expect(routes.count == 1)
 
-        let route = try XCTUnwrap(routes.first)
+        let route = try #require(routes.first)
 
-        expect(route.agency.id) == "1"
-        expect(route.agency.name) == "Metro Transit"
-        expect(route.color).to(beNil())
-        expect(route.routeDescription) == "Capitol Hill - Downtown Seattle"
-        expect(route.id) == "1_100002"
-        expect(route.longName).to(beNil())
-        expect(route.shortName) == "10"
-        expect(route.textColor).to(beNil())
-        expect(route.routeType) == .bus
-        expect(route.routeURL) == URL(string: "http://metro.kingcounty.gov/schedules/010/n0.html")!
+        #expect(route.agency.id == "1")
+        #expect(route.agency.name == "Metro Transit")
+        #expect(route.color == nil)
+        #expect(route.routeDescription == "Capitol Hill - Downtown Seattle")
+        #expect(route.id == "1_100002")
+        #expect(route.longName == nil)
+        #expect(route.shortName == "10")
+        #expect(route.textColor == nil)
+        #expect(route.routeType == .bus)
+        #expect(route.routeURL == URL(string: "http://metro.kingcounty.gov/schedules/010/n0.html")!)
     }
 }

@@ -8,15 +8,15 @@
 //
 
 #import "AppDelegate.h"
+#import "OBARootInterfaceLauncher.h"
 @import OBAKitCore;
 @import OBAKit;
 #import <FirebaseCrashlytics/FirebaseCrashlytics.h>
 #import "App-Swift.h"
 
 @interface AppDelegate ()<OBAApplicationDelegate>
-@property(nonatomic,strong) OBAApplication *app;
 @property(nonatomic,strong) NSUserDefaults *userDefaults;
-@property(nonatomic,strong) OBAClassicApplicationRootController *rootController;
+@property(nonatomic,strong) UIViewController *rootController;
 @property(nonatomic,strong) OBAAnalyticsOrchestrator *analyticsClient;
 @property(nonatomic,strong) OBACloudPushService *pushService;
 @end
@@ -60,24 +60,13 @@
 }
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-    self.window = [[UIWindow alloc] initWithFrame:UIScreen.mainScreen.bounds];
-    [self.window makeKeyAndVisible];
-
-    // This method will call -applicationReloadRootInterface:, which creates the
-    // application's UI and attaches it to the window, so no need to do that here.
-    [self.app application:application didFinishLaunching:launchOptions];
+    // The window, root interface, and active/resign lifecycle now live in
+    // SceneDelegate, which forwards these launch options to the app stack.
+    self.launchOptions = launchOptions;
 
     [self.analyticsClient configureWithUserID:self.app.userUUID];
 
     return YES;
-}
-
-- (void)applicationDidBecomeActive:(UIApplication *)application {
-    [self.app applicationDidBecomeActive:application];
-}
-
-- (void)applicationWillResignActive:(UIApplication *)application {
-    [self.app applicationWillResignActive:application];
 }
 
 #pragma mark - OBAApplicationDelegate
@@ -110,19 +99,10 @@
 }
 
 - (void)applicationReloadRootInterface:(OBAApplication*)application {
-    void(^showRootController)(void) = ^{
-        self.rootController = [[OBAClassicApplicationRootController alloc] initWithApplication:application];
+    [OBARootInterfaceLauncher reloadRootInterfaceWithApplication:application window:self.window showRootController:^{
+        self.rootController = [OBAApplicationRootControllerFactory makeWithApplication:application];
         self.window.rootViewController = self.rootController;
-    };
-
-    if ([OBAOnboardingNavigationController needsToOnboardWithApplication:application]) {
-        self.window.rootViewController = [[OBAOnboardingNavigationController alloc] initWithApplication:application completion:^{
-            showRootController();
-            [UIView transitionWithView:self.window duration:0.5 options:UIViewAnimationOptionTransitionFlipFromLeft animations:nil completion:nil];
-        }];
-    } else {
-        showRootController();
-    }
+    }];
 }
 
 - (BOOL)canOpenURL:(NSURL*)url {

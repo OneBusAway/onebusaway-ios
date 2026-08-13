@@ -8,146 +8,211 @@
 //
 
 import Foundation
-import XCTest
-import Nimble
+import Testing
 @testable import OBAKitCore
 
-class FoundationExtensionsTests: XCTestCase {
+@MainActor
+@Suite(.serialized)
+final class FoundationExtensionsTests {
+
+    // MARK: - Error.isCancellation
+
+    /// `isCancellation` decides whether an error is *swallowed* rather than
+    /// surfaced (e.g. `TripViewModel`), so misclassification in either
+    /// direction is user-visible: swallow a real error, or alert on every
+    /// dismissed context-menu preview.
+    @Test func `Error is cancellation`() {
+        #expect(CancellationError().isCancellation)
+        #expect(URLError(.cancelled).isCancellation)
+        #expect(NSError(domain: NSURLErrorDomain, code: NSURLErrorCancelled).isCancellation)
+
+        #expect(!URLError(.badServerResponse).isCancellation)
+        #expect(!URLError(.timedOut).isCancellation)
+        #expect(!NSError(domain: NSCocoaErrorDomain, code: NSURLErrorCancelled).isCancellation)
+    }
     
-    func test_Bundle_appName() {
+    @Test func `Bundle app name`() {
         let bundle = Bundle.main
         let appName = bundle.appName
         
         // This will vary by app, but should not be empty for main bundle
-        expect(appName).toNot(beEmpty())
+        #expect(!appName.isEmpty)
     }
     
-    func test_Bundle_bundleIdentifier_extension() {
+    @Test func `Bundle bundle identifier extension`() {
         let bundle = Bundle.main
         // Test that our bundleIdentifier extension works by getting the CFBundleIdentifier value
         let bundleIdentifier = bundle.object(forInfoDictionaryKey: "CFBundleIdentifier") as? String
         
-        expect(bundleIdentifier).toNot(beNil())
-        expect(bundleIdentifier).toNot(beEmpty())
-        expect(bundleIdentifier).to(contain("."))
+        #expect(bundleIdentifier != nil)
+        #expect(bundleIdentifier?.isEmpty == false)
+        // `bundleIdentifier` is String?; Nimble's contain failed on nil, and so
+        // does `?.contains(...) == true`.
+        #expect(bundleIdentifier?.contains(".") == true)
     }
     
-    func test_Bundle_appVersion() {
+    @Test func `Bundle app version`() {
         let bundle = Bundle.main
         let appVersion = bundle.appVersion
         
-        expect(appVersion).toNot(beEmpty())
+        #expect(!appVersion.isEmpty)
     }
     
-    func test_Bundle_copyright() {
+    @Test func `Bundle copyright`() {
         let bundle = Bundle.main
-        let copyright = bundle.copyright
-        
+
         // This may be empty in test bundles, but should not crash
-        expect(copyright).toNot(beNil())
+        _ = bundle.copyright
     }
     
-    func test_Bundle_userActivityTypes() {
+    @Test func `Bundle user activity types`() {
         let bundle = Bundle.main
         let userActivityTypes = bundle.userActivityTypes
         
         // This may be nil, but should not crash
         if let types = userActivityTypes {
-            expect(types).to(beAnInstanceOf([String].self))
+            #expect(type(of: types) == [String].self)
         }
     }
     
-    func test_Bundle_donationsEnabled() {
+    @Test func `Bundle donations enabled`() {
         let bundle = Bundle.main
         let donationsEnabled = bundle.donationsEnabled
         
         // This should return a boolean value without crashing
-        expect(donationsEnabled).to(beAnInstanceOf(Bool.self))
+        #expect(type(of: donationsEnabled) == Bool.self)
     }
     
-    func test_Bundle_donationManagementPortal() {
+    @Test func `Bundle donation management portal`() {
         let bundle = Bundle.main
         let portal = bundle.donationManagementPortal
         
         // This may be nil, but should not crash
         if let portalURL = portal {
-            expect(portalURL).to(beAnInstanceOf(URL.self))
+            #expect(type(of: portalURL) == URL.self)
         }
     }
     
-    func test_Bundle_extensionURLScheme() {
+    @Test func `Bundle extension URL scheme`() {
         let bundle = Bundle.main
         let scheme = bundle.extensionURLScheme
         
         // This may be nil, but should not crash
         if let urlScheme = scheme {
-            expect(urlScheme).to(beAnInstanceOf(String.self))
-            expect(urlScheme).toNot(beEmpty())
+            #expect(type(of: urlScheme) == String.self)
+            #expect(!urlScheme.isEmpty)
         }
     }
     
-    func test_Bundle_bundledRegionsFileName() {
+    @Test func `Bundle bundled regions file name`() {
         let bundle = Bundle.main
         let fileName = bundle.bundledRegionsFileName
         
         // This may be nil, but should not crash
         if let name = fileName {
-            expect(name).to(beAnInstanceOf(String.self))
-            expect(name).toNot(beEmpty())
+            #expect(type(of: name) == String.self)
+            #expect(!name.isEmpty)
         }
     }
     
-    func test_Bundle_bundledRegionsFilePath() {
+    @Test func `Bundle bundled regions file path`() {
         let bundle = Bundle.main
         let filePath = bundle.bundledRegionsFilePath
         
         // This may be nil, but should not crash
         if let path = filePath {
-            expect(path).to(beAnInstanceOf(String.self))
-            expect(path).toNot(beEmpty())
+            #expect(type(of: path) == String.self)
+            #expect(!path.isEmpty)
         }
     }
     
-    func test_Bundle_regionsServerBaseAddress() {
+    @Test func `Bundle regions server base address`() {
         let bundle = Bundle.main
         let baseAddress = bundle.regionsServerBaseAddress
         
         // This may be nil, but should not crash
         if let url = baseAddress {
-            expect(url).to(beAnInstanceOf(URL.self))
+            #expect(type(of: url) == URL.self)
         }
     }
     
-    func test_Bundle_regionsServerAPIPath() {
+    @Test func `Bundle regions server API path`() {
         let bundle = Bundle.main
         let apiPath = bundle.regionsServerAPIPath
         
         // This may be nil, but should not crash
         if let path = apiPath {
-            expect(path).to(beAnInstanceOf(String.self))
-            expect(path).toNot(beEmpty())
+            #expect(type(of: path) == String.self)
+            #expect(!path.isEmpty)
         }
     }
     
-    func test_Bundle_restServerAPIKey() {
+    @Test func `Bundle rest server API key`() {
         let bundle = Bundle.main
         let apiKey = bundle.restServerAPIKey
         
         // This may be nil, but should not crash
         if let key = apiKey {
-            expect(key).to(beAnInstanceOf(String.self))
-            expect(key).toNot(beEmpty())
+            #expect(type(of: key) == String.self)
+            #expect(!key.isEmpty)
         }
     }
     
-    func test_Bundle_appGroup() {
+    @Test func `Bundle app group`() {
         let bundle = Bundle.main
         let appGroup = bundle.appGroup
-        
+
         // This may be nil, but should not crash
         if let group = appGroup {
-            expect(group).to(beAnInstanceOf(String.self))
-            expect(group).toNot(beEmpty())
+            #expect(type(of: group) == String.self)
+            #expect(!group.isEmpty)
         }
+    }
+}
+
+/// A `Bundle` whose `OBAKitConfig` reports configurable feedback-prompt values,
+/// so these tests don't depend on the host app's Info.plist.
+// `Bundle` is already `@unchecked Sendable`; a subclass has to restate it or the
+// compiler warns. Mutated only from the test that owns the instance.
+// `nonisolated`: overrides nonisolated Bundle members, which the
+// target's main-actor default isolation would conflict with.
+private nonisolated class FeedbackConfigBundle: Bundle, @unchecked Sendable {
+    var config: [AnyHashable: Any] = [:]
+
+    override func object(forInfoDictionaryKey key: String) -> Any? {
+        if key == "OBAKitConfig" { return config }
+        return super.object(forInfoDictionaryKey: key)
+    }
+
+    static func create(config: [AnyHashable: Any]) throws -> FeedbackConfigBundle {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let bundle = try #require(FeedbackConfigBundle(path: dir.path))
+        bundle.config = config
+        return bundle
+    }
+}
+
+@Suite(.serialized)
+final class BundleFeedbackConfigTests {
+
+    @Test func `App store ID reads from OBA kit config`() throws {
+        let bundle = try FeedbackConfigBundle.create(config: ["AppStoreID": "329380089"])
+        #expect(bundle.appStoreID == "329380089")
+    }
+
+    @Test func `App store ID is nil when absent`() throws {
+        let bundle = try FeedbackConfigBundle.create(config: [:])
+        #expect(bundle.appStoreID == nil)
+    }
+
+    @Test func `Feedback prompt enabled defaults to true when absent`() throws {
+        let bundle = try FeedbackConfigBundle.create(config: [:])
+        #expect(bundle.feedbackPromptEnabled)
+    }
+
+    @Test func `Feedback prompt enabled honors explicit false`() throws {
+        let bundle = try FeedbackConfigBundle.create(config: ["FeedbackPromptEnabled": false])
+        #expect(!bundle.feedbackPromptEnabled)
     }
 }

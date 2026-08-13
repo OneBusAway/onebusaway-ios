@@ -1,8 +1,33 @@
+# Declared here rather than as `scheme:` on the OBAKit target below, purely so the
+# scheme's name differs from the target's.
+#
+# The generated project is `OBAKit.xcodeproj` (see `name:` in
+# Apps/Shared/app_shared.yml), and when Xcode opens a project with no saved user
+# state it selects the scheme whose name matches the project's. A target-generated
+# `OBAKit` scheme therefore won `App` every time a developer regenerated the project
+# — which `scripts/generate_project` does routinely, wiping the xcuserdata that
+# would otherwise remember the choice. Nothing selects this scheme by name (CI,
+# scripts/docs, and CLAUDE.md all use `App`), so only the display name moves.
+schemes:
+  OBAKit Framework:
+    build:
+      targets:
+        OBAKit: all
+    test:
+      gatherCoverageData: true
+
 targets:
   OBAKit:
     type: framework
     platform: iOS
-    sources: ["."]
+    sources:
+      # XcodeGen's synced folders can't mark headers public, so the umbrella
+      # header is carved out of the buildable folder and added as an explicit
+      # public header.
+      - path: "."
+        excludes: ["OBAKit.h"]
+      - path: OBAKit.h
+        headerVisibility: public
     dependencies:
       - target: OBAKitCore
       - package: BLTNBoard
@@ -11,12 +36,11 @@ targets:
       - package: FloatingPanel
       - package: MarqueeLabel
       - package: OTPKit
+      - sdk: HealthKit.framework
     postBuildScripts:
       - path: "../scripts/swiftlint.sh"
         name: Swiftlint
         basedOnDependencyAnalysis: false
-    scheme:
-      gatherCoverageData: true
     info:
       path: "Info.plist"
       properties:
@@ -24,6 +48,8 @@ targets:
     settings:
       base:
         APPLICATION_EXTENSION_API_ONLY: false
+        # Swift language mode, checking level, and MainActor default isolation
+        # come from the project-wide base in Apps/Shared/app_shared.yml.
       configs:
           Debug:
             LD_RUNPATH_SEARCH_PATHS:

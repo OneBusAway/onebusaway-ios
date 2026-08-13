@@ -1,0 +1,6 @@
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "Xem vị trí của bạn so với mạng lưới giao thông công cộng và giúp bạn di chuyển dễ dàng hơn.";
+"NSLocationWhenInUseUsageDescription" = "Xem vị trí của bạn so với mạng lưới giao thông công cộng và giúp bạn di chuyển dễ dàng hơn.";
+
+/* Purpose string shown when the app requests HealthKit access to your walking speed. */
+"NSHealthShareUsageDescription" = "Dùng tốc độ đi bộ của bạn từ ứng dụng Sức khỏe để ước tính giờ đến chính xác hơn.";
+"NSHealthUpdateUsageDescription" = "Dùng tốc độ đi bộ của bạn từ ứng dụng Sức khỏe để ước tính giờ đến chính xác hơn.";

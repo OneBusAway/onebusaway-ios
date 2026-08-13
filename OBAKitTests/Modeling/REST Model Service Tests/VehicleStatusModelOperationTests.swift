@@ -7,22 +7,23 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
-import Nimble
 import CoreLocation
+import Foundation
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
 // swiftlint:disable function_body_length force_cast
 
-class VehicleStatusModelOperationTests: OBATestCase {
+@Suite(.serialized)
+final class VehicleStatusModelOperationTests: OBATestCase {
     let vehicleID = "1_4351"
     lazy var apiPath = "https://www.example.com/api/where/vehicle/\(vehicleID).json"
 
     var dataLoader: MockDataLoader!
 
-    override func setUp() {
-        super.setUp()
+    override init() async throws {
+        try await super.init()
 
         dataLoader = (restService.dataLoader as! MockDataLoader)
     }
@@ -43,124 +44,118 @@ class VehicleStatusModelOperationTests: OBATestCase {
 
     // MARK: - Vehicle Status
 
-    func testLoading_vehicleStatus_failure_garbageData() async throws {
+    @Test func `Loading vehicle status failure garbage data`() async throws {
         stubVehicle14351CaptivePortal()
 
-        // TODO: XCTAssertThrowsError does not support async. Make a XCTAssertThrowsAPIError helper method.
-        do {
+        // The do/catch this replaces carried a TODO asking for an
+        // XCTAssertThrowsAPIError helper, because XCTAssertThrowsError could not
+        // take an async expression. #expect(throws:) can, so the helper is moot.
+        // APIError isn't Equatable, so match the case rather than the value.
+        let thrown = await #expect(throws: APIError.self) {
             _ = try await restService.getVehicle(vehicleID: vehicleID)
-            XCTFail("Expected a captive portal response to throw an error.")
-        } catch(let error as APIError) {
-            if case APIError.captivePortal = error {
-                return // Success
-            } else {
-                XCTFail("Expected captive portal response to throw APIError.CaptivePortal. Actual value: \(error)")
-            }
-        } catch {
-            XCTFail("Expected captive portal response to throw an APIError. Actual value: \(error)")
+        }
+
+        guard case .captivePortal? = thrown else {
+            Issue.record("Expected APIError.captivePortal, got \(String(describing: thrown))")
+            return
         }
     }
 
-    func testLoading_vehicleStatus_success() async throws {
+    @Test func `Loading vehicle status success`() async throws {
         stubVehicle14351Success()
 
         let vehicle = try await restService.getVehicle(vehicleID: vehicleID).entry
-        expect(vehicle.lastLocationUpdateTime) == Date.fromComponents(year: 2020, month: 05, day: 07, hour: 21, minute: 59, second: 04)
-        expect(vehicle.lastUpdateTime) == Date.fromComponents(year: 2020, month: 05, day: 07, hour: 21, minute: 59, second: 04)
-        expect(vehicle.location!.coordinate.latitude).to(beCloseTo(47.6195))
-        expect(vehicle.location!.coordinate.longitude).to(beCloseTo(-122.3244))
-        expect(vehicle.phase) == "in_progress"
-        expect(vehicle.status) == "SCHEDULED"
+        #expect(vehicle.lastLocationUpdateTime == Date.fromComponents(year: 2020, month: 05, day: 07, hour: 21, minute: 59, second: 04))
+        #expect(vehicle.lastUpdateTime == Date.fromComponents(year: 2020, month: 05, day: 07, hour: 21, minute: 59, second: 04))
+        expectClose(vehicle.location!.coordinate.latitude, 47.6195)
+        expectClose(vehicle.location!.coordinate.longitude, -122.3244)
+        #expect(vehicle.phase == "in_progress")
+        #expect(vehicle.status == "SCHEDULED")
     }
 
     // MARK: - Trip Status
 
-    func testLoading_tripStatus_success() async throws {
+    @Test func `Loading trip status success`() async throws {
         stubVehicle14351Success()
 
         let vehicle = try await restService.getVehicle(vehicleID: vehicleID).entry
-        expect(vehicle.vehicleID) == "1_4351"
-        expect(vehicle.lastUpdateTime) == Date.fromComponents(year: 2020, month: 05, day: 07, hour: 21, minute: 59, second: 04)
-        expect(vehicle.lastLocationUpdateTime) == Date.fromComponents(year: 2020, month: 05, day: 07, hour: 21, minute: 59, second: 04)
-        expect(vehicle.location?.coordinate.latitude).to(beCloseTo(47.6195))
-        expect(vehicle.location?.coordinate.longitude).to(beCloseTo(-122.3244))
+        #expect(vehicle.vehicleID == "1_4351")
+        #expect(vehicle.lastUpdateTime == Date.fromComponents(year: 2020, month: 05, day: 07, hour: 21, minute: 59, second: 04))
+        #expect(vehicle.lastLocationUpdateTime == Date.fromComponents(year: 2020, month: 05, day: 07, hour: 21, minute: 59, second: 04))
+        expectClose(vehicle.location?.coordinate.latitude, 47.6195)
+        expectClose(vehicle.location?.coordinate.longitude, -122.3244)
 
-        expect(vehicle.trip!.id) == "1_47649081"
-        expect(vehicle.trip!.routeShortName).to(beNil())
-        expect(vehicle.trip!.shortName) == "LOCAL"
+        #expect(vehicle.trip!.id == "1_47649081")
+        #expect(vehicle.trip!.routeShortName == nil)
+        #expect(vehicle.trip!.shortName == "LOCAL")
 
-        expect(vehicle.phase) == "in_progress"
-        expect(vehicle.status) == "SCHEDULED"
+        #expect(vehicle.phase == "in_progress")
+        #expect(vehicle.status == "SCHEDULED")
 
         let tripStatus = vehicle.tripStatus
+        #expect(tripStatus.activeTrip.id == "1_47649081")
+        #expect(tripStatus.activeTrip.headsign == "Downtown Seattle")
 
-        // Trip Status
-        expect(tripStatus).toNot(beNil())
+        #expect(tripStatus.blockTripSequence == 19)
 
-        expect(tripStatus.activeTrip.id) == "1_47649081"
-        expect(tripStatus.activeTrip.headsign) == "Downtown Seattle"
+        #expect(tripStatus.closestStop.id == "1_29266")
+        #expect(tripStatus.closestStop.name == "E Olive Way & Summit Ave E")
 
-        expect(tripStatus.blockTripSequence) == 19
-
-        expect(tripStatus.closestStop.id) == "1_29266"
-        expect(tripStatus.closestStop.name) == "E Olive Way & Summit Ave E"
-
-        expect(tripStatus.closestStopTimeOffset) == 23
-        expect(tripStatus.distanceAlongTrip).to(beCloseTo(2277.5779, within: 0.1))
-        expect(tripStatus.lastKnownDistanceAlongTrip) == 0
+        #expect(tripStatus.closestStopTimeOffset == 23)
+        expectClose(tripStatus.distanceAlongTrip, 2277.5779, within: 0.1)
+        #expect(tripStatus.lastKnownDistanceAlongTrip == 0)
 
         let lastKnown = tripStatus.lastKnownLocation!.coordinate
-        expect(lastKnown.latitude).to(beCloseTo(47.61949539))
-        expect(lastKnown.longitude).to(beCloseTo(-122.32442474))
-        expect(tripStatus.lastKnownOrientation) == 0
-        expect(tripStatus.lastLocationUpdateTime) == 1588888744000
-        expect(tripStatus.lastUpdate) == Date.fromComponents(year: 2020, month: 05, day: 07, hour: 21, minute: 59, second: 04)
+        expectClose(lastKnown.latitude, 47.61949539)
+        expectClose(lastKnown.longitude, -122.32442474)
+        #expect(tripStatus.lastKnownOrientation == 0)
+        #expect(tripStatus.lastLocationUpdateTime == 1588888744000)
+        #expect(tripStatus.lastUpdate == Date.fromComponents(year: 2020, month: 05, day: 07, hour: 21, minute: 59, second: 04))
 
-        expect(tripStatus.nextStop!.id) == "1_29266"
-        expect(tripStatus.nextStop!.name) == "E Olive Way & Summit Ave E"
+        #expect(tripStatus.nextStop!.id == "1_29266")
+        #expect(tripStatus.nextStop!.name == "E Olive Way & Summit Ave E")
 
-        expect(tripStatus.nextStopTimeOffset) == 23
-        expect(tripStatus.orientation).to(beCloseTo(204.6164, within: 0.1))
-        expect(tripStatus.phase) == "in_progress"
-        expect(tripStatus.position!.coordinate.latitude).to(beCloseTo(47.6195, within: 0.01))
-        expect(tripStatus.position!.coordinate.longitude).to(beCloseTo(-122.33187637, within: 0.01))
-        expect(tripStatus.isRealTime).to(beTrue())
-        expect(tripStatus.scheduleDeviation) == -116
-        expect(tripStatus.scheduledDistanceAlongTrip).to(beCloseTo(2277.5779, within: 0.1))
-        expect(tripStatus.serviceDate) == Date.fromComponents(year: 2020, month: 05, day: 07, hour: 07, minute: 00, second: 00)
-        expect(tripStatus.serviceAlerts.count) == 1
-        expect(tripStatus.statusModifier) == .scheduled
-        expect(tripStatus.totalDistanceAlongTrip).to(beCloseTo(3302.4674, within: 0.01))
-        expect(tripStatus.vehicleID) == "1_4351"
+        #expect(tripStatus.nextStopTimeOffset == 23)
+        expectClose(tripStatus.orientation, 204.6164, within: 0.1)
+        #expect(tripStatus.phase == "in_progress")
+        expectClose(tripStatus.position!.coordinate.latitude, 47.6195, within: 0.01)
+        expectClose(tripStatus.position!.coordinate.longitude, -122.33187637, within: 0.01)
+        #expect(tripStatus.isRealTime)
+        #expect(tripStatus.scheduleDeviation == -116)
+        expectClose(tripStatus.scheduledDistanceAlongTrip, 2277.5779, within: 0.1)
+        #expect(tripStatus.serviceDate == Date.fromComponents(year: 2020, month: 05, day: 07, hour: 07, minute: 00, second: 00))
+        #expect(tripStatus.serviceAlerts.count == 1)
+        #expect(tripStatus.statusModifier == .scheduled)
+        expectClose(tripStatus.totalDistanceAlongTrip, 3302.4674, within: 0.01)
+        #expect(tripStatus.vehicleID == "1_4351")
     }
 
     // MARK: - References
 
-    func testLoading_references_success() async throws {
+    @Test func `Loading references success`() async throws {
         stubVehicle14351Success()
 
         let response = try await restService.getVehicle(vehicleID: vehicleID)
-        let references = try XCTUnwrap(response.references)
-        expect(references.agencies.count) == 1
-        expect(references.routes.count) == 3
-        expect(references.serviceAlerts.count) == 1
-        expect(references.stops.count) == 1
-        expect(references.trips.count) == 1
+        let references = try #require(response.references)
+        #expect(references.agencies.count == 1)
+        #expect(references.routes.count == 3)
+        #expect(references.serviceAlerts.count == 1)
+        #expect(references.stops.count == 1)
+        #expect(references.trips.count == 1)
     }
 
     // MARK: - Frequency
 
-    func testLoading_frequency_success() async throws {
+    @Test func `Loading frequency success`() async throws {
         let data = Fixtures.loadData(file: "frequency-vehicle.json")
         dataLoader.mock(URLString: "https://www.example.com/api/where/vehicle/\(vehicleID).json", with: data)
 
         let response = try await restService.getVehicle(vehicleID: vehicleID)
-        let frequency = try XCTUnwrap(response.entry.tripStatus.frequency)
+        let frequency = try #require(response.entry.tripStatus.frequency)
 
-        expect(frequency).toNot(beNil())
-        expect(frequency.startTime) == Date.fromComponents(year: 2010, month: 11, day: 12, hour: 16, minute: 30, second: 00)
+        #expect(frequency.startTime == Date.fromComponents(year: 2010, month: 11, day: 12, hour: 16, minute: 30, second: 00))
 
-        expect(frequency.endTime) == Date.fromComponents(year: 2010, month: 11, day: 12, hour: 22, minute: 59, second: 59)
-        expect(frequency.headway) == 600
+        #expect(frequency.endTime == Date.fromComponents(year: 2010, month: 11, day: 12, hour: 22, minute: 59, second: 59))
+        #expect(frequency.headway == 600)
     }
 }

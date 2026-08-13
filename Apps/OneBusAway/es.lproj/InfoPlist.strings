@@ -1,0 +1,6 @@
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "Vea dónde se encuentra en relación con el transporte público y navegue con mayor facilidad.";
+"NSLocationWhenInUseUsageDescription" = "Vea dónde se encuentra en relación con el transporte público y navegue con mayor facilidad.";
+
+/* Purpose string shown when the app requests HealthKit access to your walking speed. */
+"NSHealthShareUsageDescription" = "Usa su velocidad al caminar de la app Salud para ofrecerle estimaciones más precisas de la hora de llegada.";
+"NSHealthUpdateUsageDescription" = "Usa su velocidad al caminar de la app Salud para ofrecerle estimaciones más precisas de la hora de llegada.";

@@ -8,14 +8,15 @@
 //
 
 import Foundation
-import XCTest
-import Nimble
+import Testing
 import UIKit
 @testable import OBAKit
 
-class ModalDelegateTests: XCTestCase {
+@MainActor
+@Suite(.serialized)
+final class ModalDelegateTests {
     
-    func test_ModalDelegate_protocol() {
+    @Test func `Modal delegate protocol`() {
         // Test that a class can conform to ModalDelegate
         class TestModalDelegate: NSObject, ModalDelegate {
             var dismissedController: UIViewController?
@@ -30,6 +31,6 @@ class ModalDelegateTests: XCTestCase {
         
         delegate.dismissModalController(controller)
         
-        expect(delegate.dismissedController) === controller
+        #expect(delegate.dismissedController === controller)
     }
 }

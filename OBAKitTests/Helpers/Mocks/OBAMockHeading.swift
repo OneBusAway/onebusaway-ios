@@ -10,25 +10,31 @@
 import Foundation
 import CoreLocation
 
-open class OBAMockHeading: CLHeading {
+/// Immutable after `init`, which is what makes the `@unchecked Sendable` below
+/// honest: every stored property is a `let`, and the class is `final` so no
+/// subclass can add mutable state and silently inherit the promise. Needed
+/// because `TestData.mockHeading` is a shared static.
+// `nonisolated`: overrides nonisolated CLHeading members, which the target's
+// main-actor default isolation would conflict with.
+public final nonisolated class OBAMockHeading: CLHeading, @unchecked Sendable {
 
-    var _magneticHeading: CLLocationDirection = 0.0
-    open override var magneticHeading: CLLocationDirection {
+    let _magneticHeading: CLLocationDirection
+    public override var magneticHeading: CLLocationDirection {
         return _magneticHeading
     }
 
-    var _trueHeading: CLLocationDirection = 0.0
-    open override var trueHeading: CLLocationDirection {
+    let _trueHeading: CLLocationDirection
+    public override var trueHeading: CLLocationDirection {
         return _trueHeading
     }
 
-    var _headingAccuracy: CLLocationDirection = 0.0
-    open override var headingAccuracy: CLLocationDirection {
+    let _headingAccuracy: CLLocationDirection = 0.0
+    public override var headingAccuracy: CLLocationDirection {
         return _headingAccuracy
     }
 
-    var _timestamp: Date
-    open override var timestamp: Date {
+    let _timestamp: Date
+    public override var timestamp: Date {
         return _timestamp
     }
 
@@ -42,7 +48,16 @@ open class OBAMockHeading: CLHeading {
 
     public required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
-    open override var debugDescription: String {
+    public override var debugDescription: String {
         return "wtf is wrong with this class?"
+    }
+
+    /// `CLHeading`'s own `description` reads the raw magnetometer components
+    /// (`x`/`y`/`z`), which this mock does not implement — reaching it segfaults.
+    /// Swift Testing reflects the values in a *failing* `#expect`, so without
+    /// this override any assertion that touches a mock heading turns a clean
+    /// test failure into a crashed test run.
+    public override var description: String {
+        return "OBAMockHeading(magnetic: \(_magneticHeading), true: \(_trueHeading))"
     }
 }

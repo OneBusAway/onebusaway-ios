@@ -9,7 +9,7 @@
 
 import Foundation
 
-public protocol URLDataLoader: NSObjectProtocol {
+public protocol URLDataLoader: NSObjectProtocol, Sendable {
     func dataTask(with request: URLRequest, completionHandler: @escaping @Sendable (Data?, URLResponse?, Error?) -> Void) -> URLSessionDataTask
     func data(for request: URLRequest) async throws -> (Data, URLResponse)
 }

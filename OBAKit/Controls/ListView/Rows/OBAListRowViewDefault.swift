@@ -9,7 +9,7 @@
 extension OBAListRowView {
     /// For convenience, if you are tracking data separately from the view model or you are displaying UI with no data,
     /// you can use this view model to define a `default` appearance list row.
-    public struct DefaultViewModel: OBAListViewItem {
+    nonisolated public struct DefaultViewModel: OBAListViewItem {
         public let id: UUID = UUID()
         public var image: UIImage?
         public var title: OBAListRowConfiguration.LabelText

@@ -159,6 +159,45 @@ public extension MKMapView {
     }
 }
 
+public extension MKCoordinateRegion {
+    /// Builds a region centered on `coordinate` sized to the given `zoomLevel`
+    /// for a map view of `size`. Shared with the SwiftUI `Map` in
+    /// `MapPanelRootView` so its "center on user location" behaves the same as
+    /// `MKMapView.setCenterCoordinate(zoomLevel:)`.
+    init(centeredOn coordinate: CLLocationCoordinate2D, zoomLevel: Int, mapSize: CGSize) {
+        let clampedZoom = min(zoomLevel, 28)
+        let span = MapHelpers.coordinateSpanFrom(size: mapSize, centerCoordinate: coordinate, zoomLevel: clampedZoom)
+        self.init(center: coordinate, span: span)
+    }
+}
+
+// MARK: - MapBaseType ↔ MKMapType
+
+extension MapBaseType {
+    /// The MapKit type this base type renders as. Lives on the MapKit
+    /// extension file rather than on the enum so `MapViewModel` doesn't take
+    /// on an explicit MapKit dependency; call sites that need MKMapType
+    /// already import MapKit.
+    var mkMapType: MKMapType {
+        switch self {
+        case .standard: return .mutedStandard
+        case .satellite: return .satellite
+        case .hybrid: return .hybrid
+        }
+    }
+
+    /// Inverse of `mkMapType`. Any unhandled MapKit value collapses to
+    /// `.standard` so a stray persisted future addition never boots the app
+    /// into an unhandled render mode.
+    init(_ mkMapType: MKMapType) {
+        switch mkMapType {
+        case .hybrid: self = .hybrid
+        case .satellite: self = .satellite
+        default: self = .standard
+        }
+    }
+}
+
 extension MKMapView {
 
     /// Syntactic sugar for registering annotation views
@@ -222,8 +261,14 @@ extension MKMapView {
     /// Removes all annotations from the map view, with the possible exception of the user's location annotation if available.
     /// - Parameter excludeUserLocation: Set this to `true` to keep the user location annotation visible on the map.
     func removeAllAnnotations(excludeUserLocation: Bool = true) {
-        let allAnnotations = excludeUserLocation ? annotations : annotations.filter { !($0 is MKUserLocation) }
-        removeAnnotations(allAnnotations)
+        removeAnnotations(Self.annotationsToRemove(from: annotations, excludingUserLocation: excludeUserLocation))
+    }
+
+    /// Extracted so the filter is testable: MKUserLocation never materializes on a
+    /// map view in a unit-test process, so the round trip through `removeAllAnnotations`
+    /// cannot exercise the `excludeUserLocation` branch at all.
+    static func annotationsToRemove(from annotations: [MKAnnotation], excludingUserLocation: Bool) -> [MKAnnotation] {
+        excludingUserLocation ? annotations.filter { !($0 is MKUserLocation) } : annotations
     }
 
     /// Removes all `MKAnnotation`s of a particular type `T` from the map.

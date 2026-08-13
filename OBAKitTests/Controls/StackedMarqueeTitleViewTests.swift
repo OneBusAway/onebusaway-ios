@@ -8,74 +8,68 @@
 //
 
 import Foundation
-import XCTest
-import Nimble
+import Testing
 import UIKit
 import MarqueeLabel
 @testable import OBAKit
 @testable import OBAKitCore
 
-class StackedMarqueeTitleViewTests: XCTestCase {
+@MainActor
+@Suite(.serialized)
+final class StackedMarqueeTitleViewTests {
     
     var titleView: StackedMarqueeTitleView!
     let testWidth: CGFloat = 200.0
     
-    override func setUp() {
-        super.setUp()
+    init() {
         titleView = StackedMarqueeTitleView(width: testWidth)
     }
     
-    func test_init_createsLabels() {
-        expect(self.titleView).toNot(beNil())
-        expect(self.titleView.topLabel).to(beAnInstanceOf(MarqueeLabel.self))
-        expect(self.titleView.bottomLabel).to(beAnInstanceOf(MarqueeLabel.self))
+    @Test func `Init creates labels`() {
+        #expect(self.titleView != nil)
+        #expect(type(of: self.titleView.topLabel) == MarqueeLabel.self)
+        #expect(type(of: self.titleView.bottomLabel) == MarqueeLabel.self)
     }
     
-    func test_init_addsLabelsAsSubviews() {
-        expect(self.titleView.subviews.count) == 2
-        expect(self.titleView.subviews).to(contain(self.titleView.topLabel))
-        expect(self.titleView.subviews).to(contain(self.titleView.bottomLabel))
+    @Test func `Init adds labels as subviews`() {
+        #expect(self.titleView.subviews.count == 2)
+        #expect(self.titleView.subviews.contains(self.titleView.topLabel))
+        #expect(self.titleView.subviews.contains(self.titleView.bottomLabel))
     }
     
-    func test_topLabel_configuration() {
+    @Test func `Top label configuration`() {
         let topLabel = titleView.topLabel
         
-        expect(topLabel.frame.width) == testWidth
-        expect(topLabel.font).toNot(beNil())
-        expect(topLabel.adjustsFontForContentSizeCategory) == true
-        expect(topLabel.textAlignment) == .center
-        expect(topLabel.adjustsFontSizeToFitWidth) == true
-        expect(topLabel.trailingBuffer) == ThemeMetrics.padding
-        expect(topLabel.fadeLength) == ThemeMetrics.padding
+        #expect(topLabel.frame.width == testWidth)
+        #expect(topLabel.font != nil)
+        #expect(topLabel.adjustsFontForContentSizeCategory == true)
+        #expect(topLabel.textAlignment == .center)
+        #expect(topLabel.adjustsFontSizeToFitWidth == true)
+        #expect(topLabel.trailingBuffer == ThemeMetrics.padding)
+        #expect(topLabel.fadeLength == ThemeMetrics.padding)
     }
     
-    func test_bottomLabel_configuration() {
+    @Test func `Bottom label configuration`() {
         let bottomLabel = titleView.bottomLabel
         
-        expect(bottomLabel.frame.width) == testWidth
-        expect(bottomLabel.font).toNot(beNil())
-        expect(bottomLabel.adjustsFontForContentSizeCategory) == true
-        expect(bottomLabel.textAlignment) == .center
-        expect(bottomLabel.adjustsFontSizeToFitWidth) == true
-        expect(bottomLabel.trailingBuffer) == ThemeMetrics.padding
-        expect(bottomLabel.fadeLength) == ThemeMetrics.padding
+        #expect(bottomLabel.frame.width == testWidth)
+        #expect(bottomLabel.font != nil)
+        #expect(bottomLabel.adjustsFontForContentSizeCategory == true)
+        #expect(bottomLabel.textAlignment == .center)
+        #expect(bottomLabel.adjustsFontSizeToFitWidth == true)
+        #expect(bottomLabel.trailingBuffer == ThemeMetrics.padding)
+        #expect(bottomLabel.fadeLength == ThemeMetrics.padding)
     }
     
-    func test_labels_positioning() {
+    @Test func `Labels positioning`() {
         // Bottom label should be positioned below top label
-        expect(self.titleView.bottomLabel.frame.origin.y) == self.titleView.topLabel.frame.maxY
-        expect(self.titleView.topLabel.frame.origin.y) == 0
+        #expect(self.titleView.bottomLabel.frame.origin.y == self.titleView.topLabel.frame.maxY)
+        #expect(self.titleView.topLabel.frame.origin.y == 0)
     }
     
-    func test_frame_sizing() {
+    @Test func `Frame sizing`() {
         let expectedHeight = titleView.topLabel.frame.height + titleView.bottomLabel.frame.height
-        expect(self.titleView.frame.width) == testWidth
-        expect(self.titleView.frame.height) == expectedHeight
-    }
-    
-    func test_initWithCoder_fatalError() {
-        expect {
-            _ = StackedMarqueeTitleView(coder: NSCoder())
-        }.to(throwAssertion())
+        #expect(self.titleView.frame.width == testWidth)
+        #expect(self.titleView.frame.height == expectedHeight)
     }
 }

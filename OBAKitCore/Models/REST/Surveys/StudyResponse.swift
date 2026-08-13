@@ -132,6 +132,18 @@ extension Survey {
         return questions.first { $0.position == 1 }
     }
 
+    /// The hero question's display text, trimmed of surrounding whitespace, or
+    /// `nil` when there is no hero question or its text is blank. Callers supply
+    /// their own (localized) fallback — e.g. a survey launcher title — since the
+    /// model layer has no access to UI localization.
+    public var heroQuestionTitle: String? {
+        guard let title = heroQuestion?.content.labelText.trimmingCharacters(in: .whitespacesAndNewlines),
+              !title.isEmpty else {
+            return nil
+        }
+        return title
+    }
+
     /// Returns all questions except the hero question
     public var remainingQuestions: [SurveyQuestion] {
         guard let hero = heroQuestion else { return questions }
@@ -148,23 +160,31 @@ extension Survey {
 
     /// Returns true if the survey should be shown on the specified stop.
     /// Checks `showOnStops` and `isActive` before matching the stop list.
+    /// A `nil` or empty `visibleStopsList` means "no stop restriction" (all stops).
     public func shouldShowOnStop(_ stopID: String) -> Bool {
         guard showOnStops, isActive else { return false }
-        guard let visibleStops = visibleStopsList else { return true }
+        guard let visibleStops = visibleStopsList, !visibleStops.isEmpty else { return true }
         return visibleStops.contains(stopID)
     }
 
     /// Returns true if the survey should be shown for the specified route.
     /// Checks `showOnStops` and `isActive` before matching the route list.
+    /// A `nil` or empty `visibleRoutesList` means "no route restriction" (all routes).
     public func shouldShowOnRoute(_ routeID: String) -> Bool {
         guard showOnStops, isActive else { return false }
-        guard let visibleRoutes = visibleRoutesList else { return true }
+        guard let visibleRoutes = visibleRoutesList, !visibleRoutes.isEmpty else { return true }
         return visibleRoutes.contains(routeID)
     }
 
     /// Returns true if the survey should be shown on the map
     public var shouldShowOnMap: Bool {
         return showOnMap && isActive
+    }
+
+    /// Returns true when the survey's hero question links out to an external
+    /// survey (e.g. Qualtrics) rather than collecting answers in-app.
+    public var isExternalSurvey: Bool {
+        return heroQuestion?.content.type == .externalSurvey
     }
 
 }

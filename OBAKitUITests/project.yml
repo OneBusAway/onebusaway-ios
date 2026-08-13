@@ -1,0 +1,16 @@
+targets:
+  OBAKitUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: ["."]
+    dependencies:
+      - target: App
+    info:
+      path: "Info.plist"
+      properties: {}
+    settings:
+      base:
+        TEST_TARGET_NAME: App
+    scheme:
+      testTargets:
+        - OBAKitUITests

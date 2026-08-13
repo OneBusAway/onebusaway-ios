@@ -1,0 +1,6 @@
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "查看您与公共交通的相对位置，帮助您更轻松地出行。";
+"NSLocationWhenInUseUsageDescription" = "查看您与公共交通的相对位置，帮助您更轻松地出行。";
+
+/* Purpose string shown when the app requests HealthKit access to your walking speed. */
+"NSHealthShareUsageDescription" = "使用“健康”App中的步行速度，为您提供更准确的到站时间预估。";
+"NSHealthUpdateUsageDescription" = "使用“健康”App中的步行速度，为您提供更准确的到站时间预估。";

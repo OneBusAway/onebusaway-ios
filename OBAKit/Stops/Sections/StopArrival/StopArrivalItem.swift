@@ -7,7 +7,7 @@
 
 import OBAKitCore
 
-struct ArrivalDepartureItem: OBAListViewItem {
+nonisolated struct ArrivalDepartureItem: OBAListViewItem {
     var configuration: OBAListViewItemConfiguration {
         return .custom(ArrivalDepartureContentConfiguration(viewModel: self))
     }
@@ -163,7 +163,7 @@ struct ArrivalDepartureItem: OBAListViewItem {
     }
 }
 
-struct ArrivalDepartureContentConfiguration: OBAContentConfiguration {
+nonisolated struct ArrivalDepartureContentConfiguration: OBAContentConfiguration {
     var deemphasizePastEvents: Bool = true
     var viewModel: ArrivalDepartureItem
     var formatters: Formatters?

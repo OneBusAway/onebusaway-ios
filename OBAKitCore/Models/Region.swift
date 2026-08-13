@@ -52,6 +52,9 @@ public class Region: NSObject, Identifiable, Codable {
     /// The base URL for reporting analytics to a Plausible Analytics server
     public let plausibleAnalyticsServerURL: URL?
 
+    /// Per-region Umami analytics config, or `nil` when analytics is disabled for this region.
+    public let umamiAnalytics: UmamiAnalyticsConfig?
+
     /// The base URL for making Service Interface for Real Time Information (SIRI) requests.
     ///
     /// true if this OBA instance supports using the SIRI Real-time APIs to find out real-time
@@ -61,8 +64,14 @@ public class Region: NSObject, Identifiable, Codable {
     /// See https://en.wikipedia.org/wiki/Service_Interface_for_Real_Time_Information for more information.
     public let siriBaseURL: URL?
 
-    /// The base URL for making OpenTripPlanner (OTP) requests.
+    /// The base URL for making OpenTripPlanner (OTP) 1.x REST requests.
     public let openTripPlannerURL: URL?
+
+    /// The base URL for making OpenTripPlanner 2.x GTFS GraphQL requests.
+    ///
+    /// When present, GraphQL is the preferred trip-planning API for the region
+    /// and `openTripPlannerURL` is only a fallback.
+    public let openTripPlannerGraphQLURL: URL?
 
     /// The base URL of a stop info server (used for crowd-sourcing bus stop info for blind or low-vision riders) for the given region
     /// If no stop info server is available, this field will be blank.
@@ -90,7 +99,14 @@ public class Region: NSObject, Identifiable, Codable {
     /// If the value is true, then the field `OBABaseURL` must be populated.
     public let supportsOBADiscoveryAPIs: Bool
 
+    /// Legacy OTP 1.x-era bikeshare flag. Decoded and stored for compatibility;
+    /// never read by product code. Use `supportsOTPGraphQLBikeshare` instead.
     public let supportsOTPBikeshare: Bool
+
+    /// Does this region's OTP 2.x GraphQL server expose vehicle rental (bikeshare/
+    /// micromobility) data? Meaningless unless `openTripPlannerGraphQLURL` is set —
+    /// use `isBikeshareEnabled` for the combined check.
+    public let supportsOTPGraphQLBikeshare: Bool
 
     /// Does this OBA instance supports using the SIRI Real-time APIs to find out real-time information about the transit system?
     ///
@@ -170,9 +186,11 @@ public class Region: NSObject, Identifiable, Codable {
         case isExperimental = "experimental"
         case sidecarBaseURL = "sidecarBaseUrl"
         case plausibleAnalyticsServerURL = "plausibleAnalyticsServerUrl"
+        case umamiAnalytics
         case OBABaseURL = "obaBaseUrl"
         case siriBaseURL = "siriBaseUrl"
         case openTripPlannerURL = "otpBaseUrl"
+        case openTripPlannerGraphQLURL = "otpBaseGraphqlUrl"
         case stopInfoURL = "stopInfoUrl"
         case regionBounds = "bounds"
         case open311Servers
@@ -180,6 +198,7 @@ public class Region: NSObject, Identifiable, Codable {
         case supportsOBARealtimeAPIs = "supportsObaRealtimeApis"
         case supportsOBADiscoveryAPIs = "supportsObaDiscoveryApis"
         case supportsOTPBikeshare = "supportsOtpBikeshare"
+        case supportsOTPGraphQLBikeshare = "supportsOtpGraphqlBikeshare"
         case supportsSiriRealtimeAPIs = "supportsSiriRealtimeApis"
         case contactEmail
         case twitterURL = "twitterUrl"
@@ -202,8 +221,12 @@ public class Region: NSObject, Identifiable, Codable {
     /// - Parameter coordinateRegion: The coordinate region that circumscribes this region.
     /// - Parameter contactEmail: The contact email address for this region.
     /// - Parameter regionIdentifier: The identifier for this region. If unassigned, it will be given a random value.
-    /// - Parameter regionIdentifier: The identifier for this region. If unassigned, it will be given a random value.
-    public required init(name: String, OBABaseURL: URL, coordinateRegion: MKCoordinateRegion, contactEmail: String, regionIdentifier: Int? = nil, openTripPlannerURL: URL? = nil) {
+    /// - Parameter openTripPlannerURL: Optional URL for the region's OpenTripPlanner server.
+    /// - Parameter openTripPlannerGraphQLURL: Optional URL for the region's OTP 2.x GraphQL server. When set, it is preferred over `openTripPlannerURL`.
+    /// - Parameter supportsOTPGraphQLBikeshare: Whether the GraphQL server exposes vehicle rental data. Defaults to `false`; meaningless without `openTripPlannerGraphQLURL`.
+    /// - Parameter sidecarBaseURL: Optional base URL for the Obaco sidecar server.
+    /// - Parameter umamiAnalytics: Optional Umami analytics configuration.
+    public required init(name: String, OBABaseURL: URL, coordinateRegion: MKCoordinateRegion, contactEmail: String, regionIdentifier: Int? = nil, openTripPlannerURL: URL? = nil, openTripPlannerGraphQLURL: URL? = nil, supportsOTPGraphQLBikeshare: Bool = false, sidecarBaseURL: URL? = nil, umamiAnalytics: UmamiAnalyticsConfig? = nil) {
         self.name = name
         self.regionIdentifier = regionIdentifier ?? 1000 + Int.random(in: 0...999)
         isActive = true
@@ -211,13 +234,15 @@ public class Region: NSObject, Identifiable, Codable {
         isCustom = true
 
         self.OBABaseURL = OBABaseURL
-        self.sidecarBaseURL = nil
+        self.sidecarBaseURL = sidecarBaseURL
 
         let bound = RegionBound(lat: coordinateRegion.center.latitude, lon: coordinateRegion.center.longitude, latSpan: coordinateRegion.span.latitudeDelta, lonSpan: coordinateRegion.span.longitudeDelta)
         regionBounds = [bound]
         self.contactEmail = contactEmail
 
         self.openTripPlannerURL = openTripPlannerURL
+        self.openTripPlannerGraphQLURL = openTripPlannerGraphQLURL
+        self.supportsOTPGraphQLBikeshare = supportsOTPGraphQLBikeshare
 
         // Uninitialized properties
         facebookURL = nil
@@ -231,6 +256,7 @@ public class Region: NSObject, Identifiable, Codable {
         paymentiOSAppStoreIdentifier = nil
         paymentiOSAppURLScheme = nil
         plausibleAnalyticsServerURL = nil
+        self.umamiAnalytics = umamiAnalytics
         siriBaseURL = nil
         stopInfoURL = nil
         supportsEmbeddedSocial = false
@@ -255,8 +281,10 @@ public class Region: NSObject, Identifiable, Codable {
         sidecarBaseURL = try? container.decodeIfPresent(URL.self, forKey: .sidecarBaseURL)
         siriBaseURL = try? container.decodeIfPresent(URL.self, forKey: .siriBaseURL)
         openTripPlannerURL = try? container.decodeIfPresent(URL.self, forKey: .openTripPlannerURL)
+        openTripPlannerGraphQLURL = try? container.decodeIfPresent(URL.self, forKey: .openTripPlannerGraphQLURL)
         stopInfoURL = try? container.decodeIfPresent(URL.self, forKey: .stopInfoURL)
         plausibleAnalyticsServerURL = try? container.decodeIfPresent(URL.self, forKey: .plausibleAnalyticsServerURL)
+        umamiAnalytics = try? container.decodeIfPresent(UmamiAnalyticsConfig.self, forKey: .umamiAnalytics)
 
         regionBounds = try container.decode([RegionBound].self, forKey: .regionBounds)
 
@@ -266,6 +294,7 @@ public class Region: NSObject, Identifiable, Codable {
         supportsOBARealtimeAPIs = try container.decode(Bool.self, forKey: .supportsOBARealtimeAPIs)
         supportsOBADiscoveryAPIs = try container.decode(Bool.self, forKey: .supportsOBADiscoveryAPIs)
         supportsOTPBikeshare = try (container.decodeIfPresent(Bool.self, forKey: .supportsOTPBikeshare) ?? false)
+        supportsOTPGraphQLBikeshare = try (container.decodeIfPresent(Bool.self, forKey: .supportsOTPGraphQLBikeshare) ?? false)
         supportsSiriRealtimeAPIs = try container.decode(Bool.self, forKey: .supportsSiriRealtimeAPIs)
 
         contactEmail = try container.decode(String.self, forKey: .contactEmail)
@@ -295,8 +324,10 @@ public class Region: NSObject, Identifiable, Codable {
         try container.encode(OBABaseURL, forKey: .OBABaseURL)
         try container.encode(sidecarBaseURL, forKey: .sidecarBaseURL)
         try container.encode(plausibleAnalyticsServerURL, forKey: .plausibleAnalyticsServerURL)
+        try container.encodeIfPresent(umamiAnalytics, forKey: .umamiAnalytics)
         try container.encodeIfPresent(siriBaseURL, forKey: .siriBaseURL)
         try container.encodeIfPresent(openTripPlannerURL, forKey: .openTripPlannerURL)
+        try container.encodeIfPresent(openTripPlannerGraphQLURL, forKey: .openTripPlannerGraphQLURL)
         try container.encodeIfPresent(stopInfoURL, forKey: .stopInfoURL)
         try container.encode(regionBounds, forKey: .regionBounds)
         try container.encodeIfPresent(open311Servers, forKey: .open311Servers)
@@ -304,6 +335,7 @@ public class Region: NSObject, Identifiable, Codable {
         try container.encode(supportsOBARealtimeAPIs, forKey: .supportsOBARealtimeAPIs)
         try container.encode(supportsOBADiscoveryAPIs, forKey: .supportsOBADiscoveryAPIs)
         try container.encode(supportsOTPBikeshare, forKey: .supportsOTPBikeshare)
+        try container.encode(supportsOTPGraphQLBikeshare, forKey: .supportsOTPGraphQLBikeshare)
         try container.encode(supportsSiriRealtimeAPIs, forKey: .supportsSiriRealtimeAPIs)
         try container.encode(contactEmail, forKey: .contactEmail)
         try container.encodeIfPresent(twitterURL?.absoluteString, forKey: .twitterURL)
@@ -337,13 +369,16 @@ public class Region: NSObject, Identifiable, Codable {
             sidecarBaseURL == rhs.sidecarBaseURL &&
             siriBaseURL == rhs.siriBaseURL &&
             openTripPlannerURL == rhs.openTripPlannerURL &&
+            openTripPlannerGraphQLURL == rhs.openTripPlannerGraphQLURL &&
             plausibleAnalyticsServerURL == rhs.plausibleAnalyticsServerURL &&
+            umamiAnalytics == rhs.umamiAnalytics &&
             stopInfoURL == rhs.stopInfoURL &&
             open311Servers == rhs.open311Servers &&
             supportsEmbeddedSocial == rhs.supportsEmbeddedSocial &&
             supportsOBARealtimeAPIs == rhs.supportsOBARealtimeAPIs &&
             supportsOBADiscoveryAPIs == rhs.supportsOBADiscoveryAPIs &&
             supportsOTPBikeshare == rhs.supportsOTPBikeshare &&
+            supportsOTPGraphQLBikeshare == rhs.supportsOTPGraphQLBikeshare &&
             supportsSiriRealtimeAPIs == rhs.supportsSiriRealtimeAPIs &&
             contactEmail == rhs.contactEmail &&
             twitterURL == rhs.twitterURL &&
@@ -369,13 +404,16 @@ public class Region: NSObject, Identifiable, Codable {
         hasher.combine(sidecarBaseURL)
         hasher.combine(siriBaseURL)
         hasher.combine(plausibleAnalyticsServerURL)
+        hasher.combine(umamiAnalytics)
         hasher.combine(openTripPlannerURL)
+        hasher.combine(openTripPlannerGraphQLURL)
         hasher.combine(stopInfoURL)
         hasher.combine(open311Servers)
         hasher.combine(supportsEmbeddedSocial)
         hasher.combine(supportsOBARealtimeAPIs)
         hasher.combine(supportsOBADiscoveryAPIs)
         hasher.combine(supportsOTPBikeshare)
+        hasher.combine(supportsOTPGraphQLBikeshare)
         hasher.combine(supportsSiriRealtimeAPIs)
         hasher.combine(contactEmail)
         hasher.combine(twitterURL)
@@ -391,9 +429,20 @@ public class Region: NSObject, Identifiable, Codable {
         return hasher.finalize()
     }
 
-    /// Returns true if this region supports OpenTripPlanner (OTP) trip planning.
+    /// Returns true if this region supports OpenTripPlanner (OTP) trip planning,
+    /// via either the OTP 2.x GraphQL API or the OTP 1.x REST API.
     public var supportsOTP: Bool {
-        return openTripPlannerURL != nil
+        return openTripPlannerGraphQLURL != nil || openTripPlannerURL != nil
+    }
+
+    /// Returns true if this region is configured for bikeshare/micromobility rental
+    /// features: the region opts in *and* has a GraphQL server to serve the data.
+    ///
+    /// This is the product gate only. Whether the injected trip-planning service can
+    /// actually fetch rentals is a separate capability check, and whether the server
+    /// actually works is determined by the first fetch's outcome.
+    public var isBikeshareEnabled: Bool {
+        return supportsOTPGraphQLBikeshare && openTripPlannerGraphQLURL != nil
     }
 
     // MARK: - API Feature Support
@@ -517,6 +566,35 @@ public class Region: NSObject, Identifiable, Codable {
         }
 
         return URL(string: String(format: "%@://onebusaway", paymentiOSAppURLScheme))
+    }
+}
+
+// MARK: - UmamiAnalyticsConfig
+
+/// Per-region Umami analytics discovery info, published in the region feed.
+///
+/// `nil` (a JSON `null` or an absent key) means analytics is disabled for the
+/// region and no events should be emitted.
+public struct UmamiAnalyticsConfig: Codable, Equatable, Hashable {
+    /// The Umami host to POST events to, e.g. `https://analytics.onebusawaycloud.com`.
+    public let url: URL
+
+    /// The Umami website UUID that events are keyed/routed by.
+    public let id: String
+
+    public init(url: URL, id: String) {
+        self.url = url
+        self.id = id
+    }
+
+    /// The single source of truth for the both-or-nothing rule: a config exists
+    /// only when both a URL and a non-blank website ID are present. Partial
+    /// pairs collapse to `nil`, which means "analytics disabled."
+    public init?(url: URL?, id: String?) {
+        guard let url, let id = id?.strip(), !id.isEmpty else {
+            return nil
+        }
+        self.init(url: url, id: id)
     }
 }
 

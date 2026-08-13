@@ -281,6 +281,22 @@ public class Formatters: NSObject {
         return formattedScheduleDeviation(temporalState: arrivalDeparture.temporalState, arrivalDepartureStatus: arrivalDeparture.arrivalDepartureStatus, scheduleDeviation: arrivalDeparture.deviationFromScheduleInMinutes)
     }
 
+    /// The schedule-adherence half of a "time · status" line: the deviation phrase
+    /// (e.g. `"departs 3 min late"`) when a real-time prediction exists, or
+    /// `Strings.scheduledNotRealTime` when the trip is schedule-only.
+    ///
+    /// Prefer this over `formattedScheduleDeviation(for:)` anywhere the string
+    /// stands alone as a status: a schedule-only trip has a deviation of zero by
+    /// definition, so the raw deviation phrase would falsely claim the trip is
+    /// "on time" when no vehicle has reported at all. Mirrors the gate
+    /// `TripActivityPresenter.deviationLabel(for:now:)` applies for Live
+    /// Activity content states.
+    public func deviationLabel(for arrivalDeparture: ArrivalDeparture) -> String {
+        guard arrivalDeparture.predicted else { return Strings.scheduledNotRealTime }
+
+        return formattedScheduleDeviation(for: arrivalDeparture)
+    }
+
     public func formattedScheduleDeviation(temporalState: TemporalState, arrivalDepartureStatus: ArrivalDepartureStatus, scheduleDeviation: Int) -> String {
         switch (temporalState, arrivalDepartureStatus) {
         case (.past, .arriving):
@@ -477,10 +493,20 @@ public class Formatters: NSObject {
     }
 
     /// Creates a string suitable for use as an accessibility label for a stop annotation view on the map.
-    /// - Parameter stop: The `Stop` object to generate an accessibility label from.
+    /// - Parameters:
+    ///   - stop: The `Stop` object to generate an accessibility label from.
+    ///   - bookmarkName: The user's name for this stop, when the pin is a bookmark.
+    ///   Led with, so VoiceOver announces the name the user chose — the same thing
+    ///   the pin's visible label shows — rather than only the stop's own name.
     /// - Returns: A localized string.
-    public class func formattedAccessibilityLabel(stop: Stop) -> String {
-        var parts = [stop.name]
+    public class func formattedAccessibilityLabel(stop: Stop, bookmarkName: String? = nil) -> String {
+        var parts: [String] = []
+
+        if let bookmarkName, !bookmarkName.isEmpty, bookmarkName != stop.name {
+            parts.append(bookmarkName)
+        }
+
+        parts.append(stop.name)
 
         if let direction = directionString(stop.direction) {
             parts.append(direction)

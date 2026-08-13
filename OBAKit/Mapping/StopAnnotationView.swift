@@ -15,12 +15,22 @@ protocol StopAnnotationDelegate: NSObjectProtocol {
     func isStopBookmarked(_ stop: Stop) -> Bool
     var iconFactory: StopIconFactory { get }
     var shouldHideExtraStopAnnotationData: Bool { get }
+
+    /// Whether tapping a stop annotation should open a callout, or open the stop directly.
+    var showsStopAnnotationCallouts: Bool { get }
 }
 
 class StopAnnotationView: MKAnnotationView {
 
     // MARK: - Delegate
-    public weak var delegate: StopAnnotationDelegate?
+
+    /// Setting this recomputes `canShowCallout`, which the delegate has a say in. The delegate is
+    /// assigned after `init`, so the value computed there is provisional until this fires.
+    public weak var delegate: StopAnnotationDelegate? {
+        didSet {
+            updateCalloutVisibility()
+        }
+    }
 
     // MARK: - View Config Constants
 
@@ -72,7 +82,7 @@ class StopAnnotationView: MKAnnotationView {
         rightCalloutAccessoryView = UIButton.chevronButton
 
         annotationSize = ThemeMetrics.defaultMapAnnotationSize
-        updateAccessibility()
+        updateCalloutVisibility()
 
         NotificationCenter.default.addObserver(self, selector: #selector(voiceoverStatusDidChange), name: UIAccessibility.voiceOverStatusDidChangeNotification, object: nil)
 
@@ -101,6 +111,10 @@ class StopAnnotationView: MKAnnotationView {
 
     public override func prepareForDisplay() {
         super.prepareForDisplay()
+
+        // The delegate's answer can change between displays — it reads a feature flag the user
+        // can flip mid-session — and a recycled view still carries the previous one.
+        updateCalloutVisibility()
 
         guard let delegate = delegate else {
             return
@@ -184,13 +198,23 @@ class StopAnnotationView: MKAnnotationView {
     }
 
     @objc fileprivate func voiceoverStatusDidChange(_ notification: Notification) {
-        updateAccessibility()
+        updateCalloutVisibility()
     }
 
-    fileprivate func updateAccessibility() {
-        // Callouts are finicky when in VoiceOver. When VoiceOver is running,
-        // we should skip the callout and push directly to the annotation's destination view.
-        canShowCallout = !UIAccessibility.isVoiceOverRunning
+    /// A callout is an intermediate step: tap the annotation to preview the stop, then tap the
+    /// callout's chevron to actually open it. Two situations skip it, and `MapViewController`
+    /// treats selection itself as the open gesture whenever `canShowCallout` is `false`:
+    ///
+    /// - VoiceOver, because `MKMapView` callouts are finicky under it.
+    /// - The redesigned Stop page, which opens as a sheet over the map. The sheet already lands at
+    ///   a half detent showing the same name and routes the callout previewed, so the callout is
+    ///   a tap the user has to spend for information they are about to get anyway.
+    ///
+    /// Both inputs can change while a view sits on the map, so this is re-run on display and
+    /// whenever `MapRegionManager` refreshes the annotations it is already showing.
+    func updateCalloutVisibility() {
+        let delegateAllowsCallouts = delegate?.showsStopAnnotationCallouts ?? true
+        canShowCallout = !UIAccessibility.isVoiceOverRunning && delegateAllowsCallouts
     }
 
     private func rebuildIcon() {

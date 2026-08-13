@@ -10,7 +10,7 @@ import Foundation
 /// A view model defining `UILabel` properties.
 ///
 /// Technical Note: This may be expanded in the future, as needed.
-public struct OBALabelConfiguration: Hashable, Equatable {
+nonisolated public struct OBALabelConfiguration: Hashable, Equatable {
     var textColor: UIColor = .label
 
     /// The number of lines when the content size is a standard size, aka `UITraitEnvironment.isAccessibility` is `false`.
@@ -51,7 +51,7 @@ extension UILabel {
     }
 }
 
-extension UIListContentConfiguration {
+nonisolated extension UIListContentConfiguration {
     var labelText: OBAListRowConfiguration.LabelText? {
         get {
             if let text = text {

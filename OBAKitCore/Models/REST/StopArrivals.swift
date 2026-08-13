@@ -39,11 +39,9 @@ public class StopArrivals: NSObject, Identifiable, Decodable, HasReferences {
             var uniqueAlerts: [ServiceAlert] = []
             var seenIDs = Set<String>()
 
-            for alert in allAlerts {
-                if !seenIDs.contains(alert.id) {
-                    uniqueAlerts.append(alert)
-                    seenIDs.insert(alert.id)
-                }
+            for alert in allAlerts where !seenIDs.contains(alert.id) {
+                uniqueAlerts.append(alert)
+                seenIDs.insert(alert.id)
             }
             return uniqueAlerts
         }
@@ -67,7 +65,14 @@ public class StopArrivals: NSObject, Identifiable, Decodable, HasReferences {
     public required init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
+        // Some real-time feeds briefly assign two vehicles to one trip, which makes the
+        // server emit two entries for a single trip visit. Collapse those at ingestion so
+        // every consumer sees one entry per visit (see `filteringDuplicateVehicleReports`).
+        // Also drop epoch-sentinel times that would sort to the top as millions of minutes
+        // early (see `filteringImplausibleDates`).
         arrivalsAndDepartures = try container.decode([ArrivalDeparture].self, forKey: .arrivalsAndDepartures)
+            .filteringDuplicateVehicleReports()
+            .filteringImplausibleDates()
         nearbyStopIDs = try container.decode([StopID].self, forKey: .nearbyStopIDs)
         situationIDs = try container.decode([String].self, forKey: .situationIDs)
         stopID = try container.decode(StopID.self, forKey: .stopID)
