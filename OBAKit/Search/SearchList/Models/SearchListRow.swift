@@ -8,6 +8,7 @@
 import Foundation
 import MapKit
 import UIKit
+import OBAKitCore
 
 struct SearchListRow: Identifiable {
     enum Accessory {
@@ -21,6 +22,9 @@ struct SearchListRow: Identifiable {
         /// stops are rendered in a `ForEach`, and two stops on opposite sides of a
         /// corner share a name.
         case recentStop(id: String)
+        /// Carries the stop's id for the same reason `recentStop` does: two
+        /// stops on opposite sides of a corner share a name.
+        case nearbyStop(id: String)
         /// Carries the bookmark's id for the same reason `recentStop` does: a
         /// bookmark's default name is its stop's name, so two bookmarks on
         /// opposite sides of one street would otherwise share a row id.
@@ -48,6 +52,8 @@ struct SearchListRow: Identifiable {
                 return "quickSearch-\(type.rawValue)"
             case .recentStop(let id):
                 return "recentStop-\(id)"
+            case .nearbyStop(let id):
+                return "nearbyStop-\(id)"
             case .bookmark(let id):
                 return "bookmark-\(id)"
             case .placemark(let item):
@@ -135,5 +141,51 @@ extension SearchListRow {
             return .system(poi.symbolName)
         }
         return .system("mappin")
+    }
+}
+
+// MARK: - Stop Row Building
+
+extension SearchListRow {
+
+    /// The standard stop row: stop glyph, name, and a "distance • direction"
+    /// subtitle. Shared by the search results sheet and the home sheet's nearby
+    /// and recent sections so all three render stops identically.
+    ///
+    /// `kind` is a parameter rather than fixed because the caller owns row
+    /// identity — the same stop can legitimately appear in two sections at once.
+    @MainActor
+    static func stop(
+        _ stop: Stop,
+        application: Application,
+        kind: Kind,
+        onSelect: @escaping () -> Void
+    ) -> SearchListRow {
+        SearchListRow(
+            kind: kind,
+            title: stop.name,
+            subtitle: stopSubtitle(application, stop),
+            icon: .uiImage(Icons.stop),
+            accessory: .disclosureIndicator,
+            action: onSelect
+        )
+    }
+
+    /// Direction plus distance from the user, mirroring what the placemark rows
+    /// in the search list already show. Distance is dropped when there's no fix.
+    @MainActor
+    static func stopSubtitle(_ application: Application, _ stop: Stop) -> String? {
+        var parts: [String] = []
+
+        if let currentLocation = application.locationService.currentLocation {
+            let distance = currentLocation.distance(from: stop.location)
+            parts.append(application.formatters.distanceFormatter.string(fromDistance: distance))
+        }
+
+        if let direction = Formatters.adjectiveFormOfCardinalDirection(stop.direction), !direction.isEmpty {
+            parts.append(direction)
+        }
+
+        return parts.isEmpty ? nil : parts.joined(separator: " • ")
     }
 }

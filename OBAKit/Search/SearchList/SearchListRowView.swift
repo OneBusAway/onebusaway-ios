@@ -23,7 +23,7 @@ struct SearchListRowView: View {
             errorRow
         case .clearRecents:
             clearRecentsRow
-        case .quickSearch, .recentStop, .bookmark, .placemark, .searchResult:
+        case .quickSearch, .recentStop, .nearbyStop, .bookmark, .placemark, .searchResult:
             actionRow
         }
     }
@@ -135,7 +135,7 @@ struct SearchListRowView: View {
             switch row.kind {
             case .placemark:
                 badgedIcon(icon, size: 32, imagePadding: 14)
-            case .quickSearch, .recentStop, .bookmark, .searchResult:
+            case .quickSearch, .recentStop, .nearbyStop, .bookmark, .searchResult:
                 badgedIcon(icon, size: 24, imagePadding: 8)
             case .error:
                 plainIcon(icon, size: 20, tint: .orange)
