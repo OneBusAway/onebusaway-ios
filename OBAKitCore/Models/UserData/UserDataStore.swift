@@ -129,6 +129,10 @@ public protocol UserDataStore: NSObjectProtocol {
     /// A list of recently-viewed stops
     var recentStops: [Stop] { get }
 
+    /// Recent stops belonging to `region`, most-recently-used first.
+    /// Returns `[]` when `region` is nil.
+    func recentStops(in region: Region?) -> [Stop]
+
     /// Add a `Stop` to the list of recently-viewed `Stop`s
     ///
     /// - Parameter stop: The stop to add to the list
@@ -667,6 +671,8 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
     public func addRecentStop(_ stop: Stop, region: Region) {
         var recentStops = self.recentStops
 
+        stop.regionIdentifier = region.regionIdentifier
+
         updateBookmarksWithStop(stop, region: region)
 
         if let idx = recentStops.firstIndex(of: stop) {
@@ -699,6 +705,11 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
     public func findRecentStops(matching searchText: String) -> [Stop] {
         let cleanedText = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         return recentStops.filter { $0.matchesQuery(cleanedText) }
+    }
+
+    public func recentStops(in region: Region?) -> [Stop] {
+        guard let region = region else { return [] }
+        return recentStops.filter { $0.regionIdentifier == region.regionIdentifier }
     }
 
     // MARK: - Recent Map Items

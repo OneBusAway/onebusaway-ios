@@ -41,9 +41,7 @@ final class RecentStopsViewModel: ObservableObject {
         }
         // Region resolved — re-arm the warn so a *later* region loss is still observable.
         didWarnNilRegion = false
-        recentStops = application.userDataStore.recentStops.filter {
-            $0.regionIdentifier == currentRegion.regionIdentifier
-        }
+        recentStops = application.userDataStore.recentStops(in: currentRegion)
     }
 
     func deleteAllRecentStops() {
