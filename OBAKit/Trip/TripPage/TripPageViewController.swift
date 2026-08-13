@@ -9,6 +9,7 @@
 
 import ActivityKit
 import Combine
+import CoreLocation
 import SwiftUI
 import OBAKitCore
 
