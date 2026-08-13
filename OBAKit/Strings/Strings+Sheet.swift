@@ -11,7 +11,7 @@ import Foundation
 import OBAKitCore
 
 /// Localized strings consumed by the SwiftUI sheet surfaces
-/// (`MapPanelRootView` and its views).
+/// (`MapPanelRootView` and its views) and related UIKit components.
 public extension Strings {
 
     // MARK: - Route Picker
@@ -88,5 +88,19 @@ public extension Strings {
         "current_trip_controller.distance_fmt",
         value: "%@ away",
         comment: "Distance from user to vehicle. e.g. '0.2 mi away'"
+    )
+
+    // MARK: - Shared Section Titles
+
+    nonisolated static let nearbyStops = OBALoc(
+        "nearby_stops_controller.title",
+        value: "Nearby Stops",
+        comment: "The title of the Nearby Stops controller."
+    )
+
+    nonisolated static let bookmarks = OBALoc(
+        "search_controller.bookmarks.header",
+        value: "Bookmarks",
+        comment: "Title of the Bookmarks search header"
     )
 }
