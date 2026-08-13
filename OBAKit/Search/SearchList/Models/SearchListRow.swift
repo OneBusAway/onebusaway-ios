@@ -21,7 +21,10 @@ struct SearchListRow: Identifiable {
         /// stops are rendered in a `ForEach`, and two stops on opposite sides of a
         /// corner share a name.
         case recentStop(id: String)
-        case bookmark
+        /// Carries the bookmark's id for the same reason `recentStop` does: a
+        /// bookmark's default name is its stop's name, so two bookmarks on
+        /// opposite sides of one street would otherwise share a row id.
+        case bookmark(id: String)
         case placemark(MKMapItem)
         /// A row in a disambiguation list. Carries the underlying model's id
         /// because titles are not identity — two stops on opposite sides of the
@@ -45,8 +48,8 @@ struct SearchListRow: Identifiable {
                 return "quickSearch-\(type.rawValue)"
             case .recentStop(let id):
                 return "recentStop-\(id)"
-            case .bookmark:
-                return "bookmark"
+            case .bookmark(let id):
+                return "bookmark-\(id)"
             case .placemark(let item):
                 let coord = item.placemark.coordinate
                 return "placemark-\(coord.latitude)-\(coord.longitude)"

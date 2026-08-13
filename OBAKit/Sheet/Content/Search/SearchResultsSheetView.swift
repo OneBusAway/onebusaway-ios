@@ -18,6 +18,7 @@ struct SearchResultsSheetView: View {
     let router: SearchResultRouter
 
     @StateObject private var viewModel: SearchViewModel
+    @StateObject private var selection: SearchResultsSelection
     @EnvironmentObject var coordinator: SheetCoordinator<AppSheetRoute>
     @Environment(\.dismiss) private var dismiss
 
@@ -25,6 +26,7 @@ struct SearchResultsSheetView: View {
         self.application = application
         self.router = router
         _viewModel = StateObject(wrappedValue: SearchViewModel(searchResponse: response, application: application))
+        _selection = StateObject(wrappedValue: SearchResultsSelection(router: router))
     }
 
     var body: some View {
@@ -73,27 +75,29 @@ struct SearchResultsSheetView: View {
                         .font(.headline)
                 }
 
-                if let error = viewModel.vehicleError {
-                    // Inline rather than a modal alert: the sheet is already the
-                    // user's context, and a bulletin over it hides what failed.
+                if let errorRow {
                     Section {
-                        SearchListRowView(row: SearchListRow(
-                            kind: .error(error.localizedDescription, systemImage: "exclamationmark.triangle"),
-                            title: error.localizedDescription,
-                            subtitle: Strings.retry,
-                            icon: .system("exclamationmark.triangle"),
-                            // `SearchListRowView.errorRow` renders a retry badge and
-                            // enables the row only when there's an action, so a
-                            // failure the user can re-attempt isn't a dead end.
-                            action: viewModel.failedVehicleID.map { vehicleID in
-                                { Task { await viewModel.selectVehicle(vehicleID: vehicleID) } }
-                            }
-                        ))
+                        SearchListRowView(row: errorRow)
                     }
                 }
             }
             .searchListChrome()
         }
+    }
+
+    private var errorRow: SearchListRow? {
+        SearchResultRow.inlineErrorRow(
+            vehicleError: viewModel.vehicleError,
+            failedVehicleID: viewModel.failedVehicleID,
+            selectionError: selection.error,
+            failedResult: selection.failedResult,
+            onRetryVehicle: { vehicleID in
+                Task { await viewModel.selectVehicle(vehicleID: vehicleID) }
+            },
+            onRetrySelect: { result in
+                Task { await select(result) }
+            }
+        )
     }
 
     private var resultCountText: String {
@@ -102,43 +106,28 @@ struct SearchResultsSheetView: View {
             value: "%d results",
             comment: "Header showing how many results a search matched, e.g. '12 results'. %d is the number of results. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback."
         )
-        return String(format: format, viewModel.results.count)
+        // `localizedStringWithFormat`, not `String(format:)`: the latter expands
+        // `%#@count@` but always resolves it against the root plural rule, so the
+        // `few`/`many`/`zero`/`two` forms in the ar, pl, and ru entries could never
+        // be selected. Invisible in English; wrong everywhere with more than two.
+        return String.localizedStringWithFormat(format, viewModel.results.count)
     }
 
     private var rows: [SearchListRow] {
-        viewModel.results.compactMap { result in
-            if let vehicle = result as? AgencyVehicle, let vehicleID = vehicle.vehicleID {
-                // Vehicles need a second request before they can be routed, so the
-                // row shows progress in place instead of navigating immediately.
-                if viewModel.loadingVehicleID == vehicleID {
-                    return SearchListRow(kind: .loading, title: vehicleID, icon: .system("bus"))
-                }
-                return SearchResultRow.row(for: result, application: application) {
-                    Task { await viewModel.selectVehicle(vehicleID: vehicleID) }
-                }
-            }
-
-            return SearchResultRow.row(for: result, application: application) {
+        SearchResultRow.rows(
+            for: viewModel.results,
+            loadingVehicleID: viewModel.loadingVehicleID,
+            application: application,
+            onSelectVehicle: { vehicleID in
+                Task { await viewModel.selectVehicle(vehicleID: vehicleID) }
+            },
+            onSelect: { result in
                 Task { await select(result) }
             }
-        }
+        )
     }
 
-    /// Unwinds back to home and opens the result — the SwiftUI equivalent of the UIKit
-    /// path's `exitSearchMode()`.
-    ///
-    /// Resolution comes first so this sheet stays up while the request runs: a failure
-    /// leaves the user on their results rather than dropping them on home, and the
-    /// stacked layer isn't emptied and refilled around a network call.
-    ///
-    /// `popToRoot()` rather than `dismiss()` + `pop()`: two layers have to come off
-    /// (this stacked sheet and the `.search` route beneath it), and `pop()` acts on
-    /// whichever layer is topmost *at the moment it runs* — racing the SwiftUI
-    /// binding write that `dismiss()` triggers. `popToRoot()` clears both
-    /// deterministically in one step.
     private func select(_ result: Any) async {
-        guard let resolved = await router.resolve(result: result) else { return }
-        coordinator.popToRoot()
-        router.present(resolved)
+        await selection.select(result, coordinator: coordinator)
     }
 }

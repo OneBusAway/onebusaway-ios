@@ -858,6 +858,9 @@
 /* Title for the route picker screen where the user selects their transit route. */
 "route_picker.title" = "노선 선택";
 
+/* Title shown when a route's stop list could not be loaded or is empty. */
+"route_stops_sheet.empty.title" = "정류장 없음";
+
 /* Label for date picker in schedule view */
 "schedule_view.date" = "날짜";
 
@@ -947,6 +950,9 @@
 
 /* Header showing how many results a search matched, e.g. '12 results'. %d is the number of results. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
 "search_results_sheet.result_count_fmt" = "결과 %d개";
+
+/* Error shown when a tapped search result cannot be turned into something to display. */
+"search_results_sheet.unresolvable_result" = "이 검색 결과를 열 수 없습니다.";
 
 /* Accessibility label for the button that clears the search query. */
 "search_sheet.clear_query" = "지우기";

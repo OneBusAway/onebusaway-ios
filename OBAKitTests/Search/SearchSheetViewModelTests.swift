@@ -77,12 +77,16 @@ final class SearchSheetViewModelTests: OBATestCase {
     }
 
     @Test @MainActor
-    func `Showing a map item records it as a recent search`() {
+    func `Showing a map item records it as a recent search`() async {
         let (viewModel, application, _) = makeViewModel(dataLoader: MockDataLoader(testName: name))
         let item = MKMapItem(placemark: MKPlacemark(coordinate: CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3)))
         item.name = "Pike Place Market"
 
         viewModel.showMapItem(item)
+        // The detached presentation task pops search and pushes the map item. The
+        // suite is `.serialized`, so leaving it in flight lets it land during the
+        // next test.
+        await viewModel.pendingPresentation?.value
 
         #expect(application.userDataStore.recentMapItems.isEmpty == false)
     }
@@ -199,6 +203,74 @@ final class SearchSheetViewModelTests: OBATestCase {
         #expect(viewModel.message?.kind == .error)
         #expect(coordinator.currentRoute == .search, "Search must stay up to show the failure")
         #expect(coordinator.stackedRoutes.isEmpty)
+    }
+
+    // MARK: - Vehicle search
+
+    /// The vehicle exists; its *details* request is what failed. `fetchVehicleID` used
+    /// to swallow that and hand back an empty response, which classifies as
+    /// `.noResults` — telling the user their query matched nothing and sending them
+    /// off rewording a search that was fine. It has to read as the failure it is.
+    @Test @MainActor
+    func `A failed vehicle details fetch reports an error rather than no results`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let vehicles = #"[{"id": "1", "name": "Metro Transit", "vehicle_id": "1_4351"}]"#
+        dataLoader.mock(data: Data(vehicles.utf8)) { request in
+            request.url?.path.contains("/api/v1/regions/") ?? false
+        }
+        dataLoader.mock(data: "not json".data(using: .utf8)!) { request in
+            request.url?.path.contains("/api/where/vehicle/") ?? false
+        }
+        let (viewModel, _, coordinator) = makeViewModel(dataLoader: dataLoader)
+
+        await viewModel.performSearchAndWait(request: SearchRequest(query: "4351", type: .vehicleID))
+
+        #expect(viewModel.message?.kind == .error)
+        #expect(viewModel.message?.text != SearchSheetViewModel.noResultsText)
+        #expect(coordinator.stackedRoutes.isEmpty)
+    }
+
+    // MARK: - Superseded searches
+
+    /// Cancelling `searchTask` doesn't stop the request already in flight, so a
+    /// superseded search runs to completion. It must not report, navigate, or clear
+    /// `isSearching` — that flag belongs to the search that replaced it, and clearing
+    /// it dismisses the progress HUD while the newer search is still running.
+    @Test @MainActor
+    func `A cancelled search neither reports nor navigates`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        dataLoader.mock(data: Fixtures.loadData(file: "routes_for_location_outofrange.json")) { request in
+            request.url?.path.contains("/api/where/routes-for-location.json") ?? false
+        }
+        let (viewModel, _, coordinator) = makeViewModel(dataLoader: dataLoader)
+        coordinator.push(.search)
+
+        let search = Task { await viewModel.performSearchAndWait(request: SearchRequest(query: "zzzz", type: .route)) }
+        search.cancel()
+        await search.value
+
+        #expect(viewModel.message == nil, "A search the user abandoned must not raise an alert")
+        #expect(viewModel.isSearching, "Clearing this would dismiss the HUD out from under the newer search")
+        #expect(coordinator.currentRoute == .search)
+        #expect(coordinator.stackedRoutes.isEmpty)
+    }
+
+    // MARK: - Analytics
+
+    /// The sheet system tears a sheet's content view down and rebuilds it without the
+    /// user going anywhere, so `onAppear` can fire more than once per entry into
+    /// search. The event is documented as once per entry.
+    @Test @MainActor
+    func `Reporting search opened more than once counts once`() throws {
+        let (viewModel, application, _) = makeViewModel(dataLoader: MockDataLoader(testName: name))
+        let analytics = try #require(application.analytics as? AnalyticsMock)
+
+        viewModel.reportSearchOpened()
+        viewModel.reportSearchOpened()
+        viewModel.reportSearchOpened()
+
+        let opens = analytics.reportedEvents.filter { $0.label == AnalyticsLabels.searchSelected }
+        #expect(opens.count == 1)
     }
 
     // MARK: - Outcome classification

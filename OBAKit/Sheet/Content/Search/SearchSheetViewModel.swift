@@ -65,9 +65,19 @@ final class SearchSheetViewModel: NSObject, ObservableObject, SearchDelegate {
 
     // MARK: - Session
 
+    /// Guards `reportSearchOpened()`. It lives here rather than on the view because
+    /// the sheet system tears a sheet's content view down and rebuilds it without the
+    /// user going anywhere — see `MapSearchDisplayModel.owner` — so `onAppear` can fire
+    /// more than once per entry into search. This object survives that via
+    /// `@StateObject`, so the flag is accurate no matter how the container behaves.
+    private var hasReportedOpen = false
+
     /// Reported once per entry into search, matching the UIKit panel's
     /// `inSearchMode` analytics.
     func reportSearchOpened() {
+        guard !hasReportedOpen else { return }
+        hasReportedOpen = true
+
         application.analytics?.reportEvent(
             pageURL: "app://localhost/map",
             label: AnalyticsLabels.searchSelected,
@@ -139,17 +149,36 @@ final class SearchSheetViewModel: NSObject, ObservableObject, SearchDelegate {
 
         isSearching = true
         message = nil
-        defer { isSearching = false }
+        // Cancelling `searchTask` doesn't stop the request already in flight, so a
+        // superseded search still runs to completion. It must not clear `isSearching`
+        // — the HUD belongs to the search that replaced it, which is still running —
+        // and the `Task.isCancelled` checks below stop it reporting or navigating for
+        // a query the user has already moved on from.
+        defer {
+            if !Task.isCancelled {
+                isSearching = false
+            }
+        }
 
         let response: SearchResponse?
         do {
             response = try await application.searchManager.fetchResults(for: request)
         } catch {
+            guard !Task.isCancelled else { return }
             message = SearchSheetMessage(kind: .error, text: error.localizedDescription)
             return
         }
 
-        switch SearchOutcome(response: response) {
+        guard !Task.isCancelled else { return }
+
+        await present(SearchOutcome(response: response))
+    }
+
+    /// What each outcome does to the screen. Split from `performSearchAndWait` so the
+    /// request, its cancellation checks, and the four outcomes stay separately
+    /// readable rather than one long function.
+    private func present(_ outcome: SearchOutcome) async {
+        switch outcome {
         case .unavailable:
             // The query was never sent. Saying "no results" would send the user off
             // rewording a search that never left the device.
@@ -167,11 +196,13 @@ final class SearchSheetViewModel: NSObject, ObservableObject, SearchDelegate {
             // a failure had nowhere to surface and the user landed on home with no
             // explanation. It also left the stacked sheet layer empty across the call.
             guard let resolved = await router.resolveSingleResult(from: response) else {
+                guard !Task.isCancelled else { return }
                 if let error = router.lastError {
                     message = SearchSheetMessage(kind: .error, text: error.localizedDescription)
                 }
                 return
             }
+            guard !Task.isCancelled else { return }
             // Leave search before opening the result, so Close on the detail sheet
             // lands back on home rather than on a stale search screen.
             coordinator.pop()

@@ -858,6 +858,9 @@
 /* Title for the route picker screen where the user selects their transit route. */
 "route_picker.title" = "Selecione Sua Linha";
 
+/* Title shown when a route's stop list could not be loaded or is empty. */
+"route_stops_sheet.empty.title" = "Nenhuma parada";
+
 /* Label for date picker in schedule view */
 "schedule_view.date" = "Data";
 
@@ -947,6 +950,9 @@
 
 /* Header showing how many results a search matched, e.g. '12 results'. %d is the number of results. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
 "search_results_sheet.result_count_fmt" = "%d resultados";
+
+/* Error shown when a tapped search result cannot be turned into something to display. */
+"search_results_sheet.unresolvable_result" = "Não foi possível abrir este resultado de busca.";
 
 /* Accessibility label for the button that clears the search query. */
 "search_sheet.clear_query" = "Limpar";

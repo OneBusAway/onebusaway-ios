@@ -95,6 +95,11 @@ public class SearchManager: NSObject {
     ///   - `.route` / `.vehicleID` show an alert only; publishing an empty response
     ///     would additionally trigger the "No search results were found" alert via
     ///     `notifyDelegatesNoSearchResults`, double-alerting the user.
+    ///
+    /// A failed vehicle *details* fetch used to be the one exception, alerting and
+    /// publishing an empty error response from inside `fetchVehicleID` — i.e. the
+    /// double alert the `.vehicleID` rule above exists to avoid. It now propagates
+    /// like every other failure and lands in the same branch.
     public func search(request: SearchRequest) async {
         if request.searchType == .vehicleID {
             ProgressHUD.show()
@@ -182,16 +187,15 @@ public class SearchManager: NSObject {
             return SearchResponse(request: request, results: [], boundingRegion: nil, error: nil)
         }
 
-        do {
-            let vehicle = try await apiService.getVehicle(vehicleID: vehicleID).entry
-            return SearchResponse(request: request, results: [vehicle], boundingRegion: nil, error: nil)
-        } catch {
-            // Preserved from `processSearchResults`: this inner failure alerted and
-            // published an empty error response rather than propagating. Kept as-is
-            // so the UIKit path is unchanged; revisit when the SwiftUI panel is the
-            // only surface.
-            await application.displayError(error)
-            return SearchResponse(request: request, results: [], boundingRegion: nil, error: error)
-        }
+        // Propagated, not swallowed. `processSearchResults` used to alert here and
+        // return an empty error response, which put a *failed* lookup and a query
+        // that genuinely matched nothing into the same shape — fine while
+        // `MapRegionManager` was the only consumer, wrong now that `fetchResults` is
+        // also the SwiftUI entry point and classifies purely on `results`. Letting it
+        // throw sends it to the `.vehicleID` branch of `search(request:)`, which is
+        // where every other vehicle-search failure is already alerted, and lets the
+        // SwiftUI sheet report it as the error it is.
+        let vehicle = try await apiService.getVehicle(vehicleID: vehicleID).entry
+        return SearchResponse(request: request, results: [vehicle], boundingRegion: nil, error: nil)
     }
 }

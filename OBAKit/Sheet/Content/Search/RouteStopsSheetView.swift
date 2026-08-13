@@ -56,6 +56,44 @@ struct RouteStopsSheetView: View {
 
     var body: some View {
         NavigationStack {
+            content
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .principal) {
+                        VStack(spacing: 0) {
+                            Text(stopsForRoute.route?.shortName ?? "")
+                                .font(.headline)
+                            if let subtitle = routeSubtitle {
+                                Text(subtitle)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button(Strings.close) { dismiss() }
+                    }
+                }
+        }
+        .searchSheetBackground()
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        if rows.isEmpty {
+            // `RouteStopsRow.rows(from:)` yields nothing for an unresolved payload.
+            // Say so, rather than showing a blank list the user can only read as a
+            // broken screen — the same treatment `SearchResultsSheetView` gives its
+            // empty case.
+            EmptyStateView(
+                title: OBALoc(
+                    "route_stops_sheet.empty.title",
+                    value: "No stops",
+                    comment: "Title shown when a route's stop list could not be loaded or is empty."
+                ),
+                systemImage: AppSymbol.error
+            )
+        } else {
             List(rows) { row in
                 Button {
                     // Keep the map in step with the list — something the UIKit
@@ -83,25 +121,7 @@ struct RouteStopsSheetView: View {
                 .buttonStyle(.plain)
             }
             .searchListChrome()
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .principal) {
-                    VStack(spacing: 0) {
-                        Text(stopsForRoute.route?.shortName ?? "")
-                            .font(.headline)
-                        if let subtitle = routeSubtitle {
-                            Text(subtitle)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
-                ToolbarItem(placement: .topBarLeading) {
-                    Button(Strings.close) { dismiss() }
-                }
-            }
         }
-        .searchSheetBackground()
     }
 
     private var routeSubtitle: String? {

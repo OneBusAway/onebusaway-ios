@@ -124,7 +124,7 @@ class SearchInteractor: NSObject {
     // MARK: - Bookmarks
     private func buildBookmarksSection(searchText: String) -> SearchListSection? {
         let bookmarks = userDataStore.findBookmarks(matching: searchText).map { bookmark in
-            SearchListRow(kind: .bookmark, title: bookmark.name, accessory: .disclosureIndicator) { [weak self] in
+            SearchListRow(kind: .bookmark(id: bookmark.id.uuidString), title: bookmark.name, accessory: .disclosureIndicator) { [weak self] in
                 guard let self else { return }
                 self.delegate?.searchInteractor(self, showStop: bookmark.stop)
             }
