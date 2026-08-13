@@ -671,8 +671,6 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
     public func addRecentStop(_ stop: Stop, region: Region) {
         var recentStops = self.recentStops
 
-        stop.regionIdentifier = region.regionIdentifier
-
         updateBookmarksWithStop(stop, region: region)
 
         if let idx = recentStops.firstIndex(of: stop) {

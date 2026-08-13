@@ -21,6 +21,11 @@ final class RecentStopsTests: OBATestCase {
         let first = try #require(stops.first)
         let second = try #require(stops.dropFirst().first)
 
+        // Production stops receive regionIdentifier from RESTAPIResponse.loadReferences;
+        // fixture stops bypass that path, so we assign it here to match production state.
+        first.regionIdentifier = Fixtures.pugetSoundRegion.regionIdentifier
+        second.regionIdentifier = Fixtures.pugetSoundRegion.regionIdentifier
+
         let store = UserDefaultsStore(userDefaults: userDefaults)
         store.addRecentStop(first, region: Fixtures.pugetSoundRegion)
         store.addRecentStop(second, region: Fixtures.pugetSoundRegion)
@@ -35,6 +40,10 @@ final class RecentStopsTests: OBATestCase {
     @Test func `Recent stops in region returns empty for a nil region`() throws {
         let stops = try Fixtures.loadSomeStops()
         let first = try #require(stops.first)
+
+        // Production stops receive regionIdentifier from RESTAPIResponse.loadReferences;
+        // fixture stops bypass that path, so we assign it here to match production state.
+        first.regionIdentifier = Fixtures.pugetSoundRegion.regionIdentifier
 
         let store = UserDefaultsStore(userDefaults: userDefaults)
         store.addRecentStop(first, region: Fixtures.pugetSoundRegion)
