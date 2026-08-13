@@ -33,9 +33,23 @@ struct DepartureStatus {
     var showsOccupancy: Bool { isRealTime }
 
     var color: UIColor {
+        // Prefer `color(for:)` from SwiftUI so on-time green follows
+        // `colorScheme` (#1255). This path keeps UIKit call sites working.
+        color(for: .unspecified)
+    }
+
+    /// Resolves status colors against an explicit interface style.
+    ///
+    /// On-time green is a dynamic `UIColor`; passing `.dark` / `.light` forces
+    /// the matching provider so SwiftUI doesn't get stuck on the light hex.
+    func color(for userInterfaceStyle: UIUserInterfaceStyle) -> UIColor {
         guard isRealTime else { return .secondaryLabel }
         switch scheduleStatus {
-        case .onTime: return ThemeColors.shared.departureOnTime
+        case .onTime:
+            if userInterfaceStyle == .unspecified {
+                return ThemeColors.shared.departureOnTime
+            }
+            return ThemeColors.shared.departureOnTime(for: userInterfaceStyle)
         case .early: return ThemeColors.shared.departureEarly
         case .delayed: return ThemeColors.shared.departureLate
         default: return .secondaryLabel

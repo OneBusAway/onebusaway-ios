@@ -63,6 +63,7 @@ struct StopPageSheetHeaderView: View {
     /// observes it — see `StopPageView`'s note on observation discipline.
     @ObservedObject var mapFocus: StopMapFocus
 
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     private var subtitle: String {
@@ -213,10 +214,10 @@ struct StopPageSheetHeaderView: View {
                 .fixedSize(horizontal: true, vertical: false)
         }
         .font(chipFont)
-        .foregroundStyle(Color(uiColor: ThemeColors.shared.departureOnTime))
+        .foregroundStyle(ThemeSwiftUI.departureOnTime(colorScheme))
         .padding(.horizontal, chipHorizontalPadding)
         .padding(.vertical, chipVerticalPadding)
-        .background(Color(uiColor: ThemeColors.shared.departureOnTime).opacity(0.14), in: Capsule())
+        .background(ThemeSwiftUI.departureOnTime(colorScheme).opacity(0.14), in: Capsule())
         .contentShape(Capsule())
         .onTapGesture(perform: onWalkingDirections)
         // `.accessibilityHidden(true)` on the glyph above was not enough on its

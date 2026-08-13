@@ -92,4 +92,28 @@ struct UIColorWCAGTests {
         )
         #expect(light.wcagContrastRatio(against: .white) >= 4.5)
     }
+
+    // MARK: - departureOnTime trait resolution (#1255)
+
+    @Test func departureOnTimeForDarkStyleMatchesSystemGreen() {
+        let themes = ThemeColors()
+        let resolved = themes.departureOnTime(for: .dark)
+        let expected = UIColor.systemGreen.resolvedColor(with: UITraitCollection(userInterfaceStyle: .dark))
+        #expect(colorsMatch(resolved, expected))
+    }
+
+    @Test func departureOnTimeForLightStyleKeepsConfiguredGreen() {
+        let themes = ThemeColors()
+        let resolved = themes.departureOnTime(for: .light)
+        let configured = UIColor(red: 0.00, green: 0.45, blue: 0.00, alpha: 1.00)
+        #expect(colorsMatch(resolved, configured))
+    }
+
+    private func colorsMatch(_ a: UIColor, _ b: UIColor) -> Bool {
+        var ar: CGFloat = 0, ag: CGFloat = 0, ab: CGFloat = 0, aa: CGFloat = 0
+        var br: CGFloat = 0, bg: CGFloat = 0, bb: CGFloat = 0, ba: CGFloat = 0
+        a.getRed(&ar, green: &ag, blue: &ab, alpha: &aa)
+        b.getRed(&br, green: &bg, blue: &bb, alpha: &ba)
+        return abs(ar - br) < 0.01 && abs(ag - bg) < 0.01 && abs(ab - bb) < 0.01 && abs(aa - ba) < 0.01
+    }
 }

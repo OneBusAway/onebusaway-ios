@@ -39,6 +39,7 @@ struct GroupedListView: View {
 
     @Environment(\.obaFormatters) private var formatters
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.colorScheme) private var colorScheme
     @AppStorage(UserDefaultsStore.stopUIReducedColorsKey) private var reducedColors = false
 
     /// At accessibility sizes the card layouts "stack" (the guide's committed
@@ -126,14 +127,14 @@ struct GroupedListView: View {
                 HStack(alignment: .center) {
                     routeBadge(for: next, routeColor: routeColor)
                     Spacer(minLength: 8)
-                    CountdownView(minutes: next.arrivalDepartureMinutes, isRealTime: status.isRealTime, color: Color(uiColor: status.color))
+                    CountdownView(minutes: next.arrivalDepartureMinutes, isRealTime: status.isRealTime, color: ThemeSwiftUI.departureStatus(status, colorScheme))
                 }
                 headsignText(next)
                 DepartureTimeText(display: timeDisplay(next))
                     .font(.footnote).foregroundStyle(.secondary)
                 Text(status.label)
                     .font(.footnote.weight(.semibold))
-                    .foregroundStyle(Color(uiColor: status.color))
+                    .foregroundStyle(ThemeSwiftUI.departureStatus(status, colorScheme))
             } else {
                 HStack(alignment: .center, spacing: 13) {
                     routeBadge(for: next, routeColor: routeColor)
@@ -145,11 +146,11 @@ struct GroupedListView: View {
                             Text("·").foregroundStyle(.tertiary)
                             Text(status.label)
                                 .font(.footnote.weight(.semibold))
-                                .foregroundStyle(Color(uiColor: status.color))
+                                .foregroundStyle(ThemeSwiftUI.departureStatus(status, colorScheme))
                         }
                     }
                     Spacer(minLength: 8)
-                    CountdownView(minutes: next.arrivalDepartureMinutes, isRealTime: status.isRealTime, color: Color(uiColor: status.color))
+                    CountdownView(minutes: next.arrivalDepartureMinutes, isRealTime: status.isRealTime, color: ThemeSwiftUI.departureStatus(status, colorScheme))
                 }
             }
         }
@@ -212,9 +213,9 @@ struct GroupedListView: View {
             let chipStatus = statusProvider(chip)
             Text("\(chip.arrivalDepartureMinutes)m")
                 .font(.caption.weight(.heavy)).monospacedDigit()
-                .foregroundStyle(Color(uiColor: chipStatus.color))
+                .foregroundStyle(ThemeSwiftUI.departureStatus(chipStatus, colorScheme))
                 .padding(.horizontal, 8).padding(.vertical, 3)
-                .background(Color(uiColor: chipStatus.color).opacity(0.14), in: RoundedRectangle(cornerRadius: 8))
+                .background(ThemeSwiftUI.departureStatus(chipStatus, colorScheme).opacity(0.14), in: RoundedRectangle(cornerRadius: 8))
         }
     }
 
@@ -240,7 +241,7 @@ struct GroupedListView: View {
                 .font(.caption.weight(.heavy))
                 .foregroundStyle(alarm != nil ? Color.white : Color.secondary)
                 .padding(.horizontal, 10).padding(.vertical, 6)
-                .background(alarm != nil ? Color(uiColor: ThemeColors.shared.departureOnTime) : Color(uiColor: .tertiarySystemFill), in: Capsule())
+                .background(alarm != nil ? ThemeSwiftUI.departureOnTime(colorScheme) : Color(uiColor: .tertiarySystemFill), in: Capsule())
             }
             .buttonStyle(.plain)
         }
@@ -261,14 +262,14 @@ struct GroupedListView: View {
                     HStack(spacing: 12) {
                         alarmIcon(for: departure)
                         Spacer(minLength: 8)
-                        CountdownView(minutes: departure.arrivalDepartureMinutes, isRealTime: status.isRealTime, color: Color(uiColor: status.color), emphasized: false)
+                        CountdownView(minutes: departure.arrivalDepartureMinutes, isRealTime: status.isRealTime, color: ThemeSwiftUI.departureStatus(status, colorScheme), emphasized: false)
                         tripChevron(departure)
                     }
                     DepartureTimeText(display: timeDisplay(departure))
                         .font(.subheadline.weight(.semibold))
                     Text(status.label)
                         .font(.subheadline)
-                        .foregroundStyle(Color(uiColor: status.color))
+                        .foregroundStyle(ThemeSwiftUI.departureStatus(status, colorScheme))
                     if status.showsOccupancy, let occupancy = departure.occupancyStatus, occupancy != .unknown {
                         OccupancyBadge(occupancy: occupancy)
                     }
@@ -281,14 +282,14 @@ struct GroupedListView: View {
                                     .font(.subheadline.weight(.semibold))
                                 Text("· \(status.label)")
                                     .font(.subheadline)
-                                    .foregroundStyle(Color(uiColor: status.color))
+                                    .foregroundStyle(ThemeSwiftUI.departureStatus(status, colorScheme))
                             }
                             if status.showsOccupancy, let occupancy = departure.occupancyStatus, occupancy != .unknown {
                                 OccupancyBadge(occupancy: occupancy)
                             }
                         }
                         Spacer(minLength: 8)
-                        CountdownView(minutes: departure.arrivalDepartureMinutes, isRealTime: status.isRealTime, color: Color(uiColor: status.color), emphasized: false)
+                        CountdownView(minutes: departure.arrivalDepartureMinutes, isRealTime: status.isRealTime, color: ThemeSwiftUI.departureStatus(status, colorScheme), emphasized: false)
                         tripChevron(departure)
                     }
                 }
@@ -330,7 +331,7 @@ struct GroupedListView: View {
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(alarm != nil ? Color.white : Color.secondary)
                     .frame(width: alarmCircleSize, height: alarmCircleSize)
-                    .background(alarm != nil ? Color(uiColor: ThemeColors.shared.departureOnTime) : Color.clear, in: Circle())
+                    .background(alarm != nil ? ThemeSwiftUI.departureOnTime(colorScheme) : Color.clear, in: Circle())
                     .overlay(Circle().strokeBorder(Color(uiColor: .separator), lineWidth: alarm != nil ? 0 : 1.5))
             }
             .buttonStyle(.plain)
