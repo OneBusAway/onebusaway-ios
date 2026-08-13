@@ -37,6 +37,7 @@ final class AppSheetViewFactory {
     let onPresentVehicleTrip: (VehicleStatus) -> Void
     let coordinator: SheetCoordinator<AppSheetRoute>
     let searchDisplayModel: MapSearchDisplayModel
+    let stopsObserver: MapStopsObserver
 
     /// Nothing here is defaulted, on purpose, and for two separate reasons.
     ///
@@ -45,10 +46,11 @@ final class AppSheetViewFactory {
     /// it, so a call site that omitted it would build a factory whose sheet
     /// renders correctly and then silently ignores every button on it.
     ///
-    /// `coordinator` and `searchDisplayModel`: they must be the same instances the
-    /// hosting `MapPanelRootView` observes. A factory built with its own private
-    /// copies would push routes onto a coordinator nobody is watching and draw into
-    /// a display model nobody renders — silently, with the search sheet simply
+    /// `coordinator`, `searchDisplayModel`, and `stopsObserver`: they must be the
+    /// same instances the hosting `MapPanelRootView` observes. A factory built with
+    /// its own private copies would push routes onto a coordinator nobody is
+    /// watching, draw into a display model nobody renders, or observe a different
+    /// stop set than the map is showing — silently, with the search sheet simply
     /// appearing to do nothing.
     init(
         application: Application,
@@ -56,7 +58,8 @@ final class AppSheetViewFactory {
         onPresentVehicleTrip: @escaping (VehicleStatus) -> Void,
         presentingController: @escaping () -> UIViewController?,
         coordinator: SheetCoordinator<AppSheetRoute>,
-        searchDisplayModel: MapSearchDisplayModel
+        searchDisplayModel: MapSearchDisplayModel,
+        stopsObserver: MapStopsObserver
     ) {
         self.application = application
         self.onPresentTrip = onPresentTrip
@@ -64,6 +67,7 @@ final class AppSheetViewFactory {
         self.presentingController = presentingController
         self.coordinator = coordinator
         self.searchDisplayModel = searchDisplayModel
+        self.stopsObserver = stopsObserver
     }
 
     /// Built once and shared: the search sheet and the results sheet must route a

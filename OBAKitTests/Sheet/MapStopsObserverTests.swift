@@ -298,4 +298,44 @@ final class MapStopsObserverTests: OBATestCase {
         #expect(observer.bookmarks.count == 1)
         #expect(observer.bookmarks.first?.name == "Second")
     }
+
+    /// The settled viewport's center is published so consumers can sort by it.
+    @Test @MainActor
+    func `Update viewport publishes its center`() async {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+
+        let observer = MapStopsObserver(application: application)
+        #expect(observer.viewportCenter == nil)
+
+        let region = MKCoordinateRegion(
+            center: TestData.mockSeattleLocation.coordinate,
+            latitudinalMeters: 5000,
+            longitudinalMeters: 5000
+        )
+        observer.updateViewport(region)
+
+        #expect(observer.viewportCenter?.latitude == region.center.latitude)
+        #expect(observer.viewportCenter?.longitude == region.center.longitude)
+    }
+
+    /// Zooming out clears the center along with the stops, so a stale center
+    /// can't outlive the render set it was ordering.
+    @Test @MainActor
+    func `Reset clears the viewport center`() async {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+
+        let observer = MapStopsObserver(application: application)
+        observer.updateViewport(MKCoordinateRegion(
+            center: TestData.mockSeattleLocation.coordinate,
+            latitudinalMeters: 5000,
+            longitudinalMeters: 5000
+        ))
+        #expect(observer.viewportCenter != nil)
+
+        observer.reset()
+
+        #expect(observer.viewportCenter == nil)
+    }
 }

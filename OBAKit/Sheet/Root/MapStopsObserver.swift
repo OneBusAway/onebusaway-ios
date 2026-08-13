@@ -65,6 +65,11 @@ final class MapStopsObserver: NSObject, ObservableObject, MapRegionDelegate, Reg
     /// Last settled viewport, the prune reference. Nil = no prune (set grows).
     private var viewport: MKCoordinateRegion?
 
+    /// Center of the last settled viewport, published so the home sheet's
+    /// nearby section can order stops by it. Nil until the first settle, and
+    /// cleared on `reset()` so a stale center never outlives its render set.
+    @Published private(set) var viewportCenter: CLLocationCoordinate2D?
+
     private let application: Application
 
     init(application: Application, pruneSpanFactor: Double = 4.0, renderCap: Int = 400) {
@@ -105,6 +110,7 @@ final class MapStopsObserver: NSObject, ObservableObject, MapRegionDelegate, Reg
     func reset() {
         accumulated.removeAll()
         viewport = nil
+        viewportCenter = nil
         guard !stops.isEmpty else { return }
         stops = []
     }
@@ -114,6 +120,7 @@ final class MapStopsObserver: NSObject, ObservableObject, MapRegionDelegate, Reg
     /// stops. Loop-safe: a re-fired same-region settle changes nothing.
     func updateViewport(_ region: MKCoordinateRegion) {
         viewport = region
+        viewportCenter = region.center
         if pruneAccumulated() {
             publish()
         }

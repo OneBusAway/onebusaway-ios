@@ -39,7 +39,8 @@ final class MapItemSheetViewTests: OBATestCase {
             onPresentVehicleTrip: { _ in },
             presentingController: { nil },
             coordinator: SheetCoordinator(root: .home),
-            searchDisplayModel: MapSearchDisplayModel()
+            searchDisplayModel: MapSearchDisplayModel(),
+            stopsObserver: MapStopsObserver(application: application)
         )
     }
 
