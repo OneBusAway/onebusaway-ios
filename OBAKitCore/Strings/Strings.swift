@@ -70,6 +70,10 @@ public class Strings: NSObject {
 
     public static let recentStops = OBALoc("common.recent_stops", value: "Recent Stops", comment: "i.e. recently viewed or visited stops for transit vehicles, like a bus stop, ferry terminal, or train station.")
 
+    public static let nearbyStops = OBALoc("nearby_stops_controller.title", value: "Nearby Stops", comment: "The title of the Nearby Stops controller.")
+
+    public static let bookmarks = OBALoc("search_controller.bookmarks.header", value: "Bookmarks", comment: "Title of the Bookmarks search header")
+
     public static let recentSearches = OBALoc("common.recent_searches", value: "Recent Searches", comment: "i.e. recently selected search results for map locations from the trip planner.")
 
     public static let clearRecentSearches = OBALoc("common.clear_recent_searches", value: "Clear Recent Searches", comment: "Button to clear recent search results")
