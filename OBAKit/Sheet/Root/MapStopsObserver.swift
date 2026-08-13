@@ -200,24 +200,11 @@ final class MapStopsObserver: NSObject, ObservableObject, MapRegionDelegate, Reg
 
         // Count cap: keep the `renderCap` nearest to center, evict the rest.
         if accumulated.count > renderCap {
-            let nearest = accumulated.values
-                .sorted { squaredDistance($0, to: center) < squaredDistance($1, to: center) }
-                .prefix(renderCap)
+            let nearest = Stop.nearest(Array(accumulated.values), to: center, limit: renderCap)
             accumulated = Dictionary(nearest.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         }
 
         return true
-    }
-
-    /// Squared distance with longitude scaled by `cos(latitude)` so lat/lon
-    /// degrees compare on a common metric scale. Ordering only — no sqrt.
-    ///
-    /// Internal rather than private so the cap-eviction tests can assert against
-    /// this exact ordering instead of maintaining a second copy of the formula.
-    func squaredDistance(_ stop: Stop, to center: CLLocationCoordinate2D) -> Double {
-        let dLat = stop.coordinate.latitude - center.latitude
-        let dLon = (stop.coordinate.longitude - center.longitude) * cos(center.latitude * .pi / 180)
-        return dLat * dLat + dLon * dLon
     }
 
     private func orderedStops() -> [Stop] {

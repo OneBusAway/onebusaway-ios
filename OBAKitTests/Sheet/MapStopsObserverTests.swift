@@ -152,7 +152,7 @@ final class MapStopsObserverTests: OBATestCase {
         let anchor = try #require(allStops.first)
         let farStop = try #require(
             allStops.max {
-                observer.squaredDistance($0, to: anchor.coordinate) < observer.squaredDistance($1, to: anchor.coordinate)
+                Stop.squaredDistance($0, to: anchor.coordinate) < Stop.squaredDistance($1, to: anchor.coordinate)
             }
         )
         try #require(farStop.id != anchor.id, "Need two fixture stops at distinct coordinates")
@@ -198,7 +198,7 @@ final class MapStopsObserverTests: OBATestCase {
         #expect(observer.stops.map(\.id).contains(anchor.id))
         let nearest3 = allStops
             .sorted {
-                observer.squaredDistance($0, to: anchor.coordinate) < observer.squaredDistance($1, to: anchor.coordinate)
+                Stop.squaredDistance($0, to: anchor.coordinate) < Stop.squaredDistance($1, to: anchor.coordinate)
             }
             .prefix(3)
             .map(\.id)
