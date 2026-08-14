@@ -194,4 +194,105 @@ final class HomeSectionModelTests: OBATestCase {
 
         #expect(model.stops.map(\.id) == [stop.id])
     }
+
+    // MARK: - Bookmarks
+
+    @MainActor
+    private func seedBookmarks(count: Int, application: Application) throws -> [Bookmark] {
+        let stops = try Fixtures.loadSomeStops()
+        // sortOrder is assigned in reverse so the test proves the model sorts
+        // rather than accidentally matching insertion order.
+        return (0..<count).map { index in
+            let bookmark = Bookmark(
+                name: "Bookmark \(index)",
+                regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier,
+                stop: stops[index % stops.count]
+            )
+            bookmark.sortOrder = count - index
+            application.userDataStore.add(bookmark, to: nil)
+            return bookmark
+        }
+    }
+
+    /// The four shown are chosen by `sortOrder`, not by insertion order —
+    /// `findBookmarks(in:)` returns raw persisted order, so the model must sort.
+    @Test @MainActor
+    func `Bookmarks section selects by sort order up to the limit`() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplicationWithRegion(queue: queue, dataLoader: dataLoader)
+        _ = try seedBookmarks(count: 6, application: application)
+
+        try #require(application.currentRegion != nil)
+        let model = HomeBookmarksSectionModel(application: application, limit: 4)
+
+        #expect(model.rows.count == 4)
+        let sortOrders = model.rows.map(\.bookmark.sortOrder)
+        #expect(sortOrders == sortOrders.sorted())
+    }
+
+    /// Whole-stop bookmarks have no trip to fetch, so they never report as
+    /// having loaded arrival data and never carry departures.
+    @Test @MainActor
+    func `Bookmarks section leaves stop bookmarks without arrival data`() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplicationWithRegion(queue: queue, dataLoader: dataLoader)
+        _ = try seedBookmarks(count: 2, application: application)
+
+        try #require(application.currentRegion != nil)
+        let model = HomeBookmarksSectionModel(application: application, limit: 4)
+
+        for row in model.rows {
+            #expect(row.isTripBookmark == false)
+            #expect(row.arrivalDepartures.isEmpty)
+            #expect(row.hasLoadedArrivalData == false)
+        }
+    }
+
+    /// A second activation inside the staleness window does not re-fetch.
+    @Test @MainActor
+    func `Bookmarks section skips a repeat load inside the staleness window`() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplicationWithRegion(queue: queue, dataLoader: dataLoader)
+        _ = try seedBookmarks(count: 2, application: application)
+
+        try #require(application.currentRegion != nil)
+        let model = HomeBookmarksSectionModel(application: application, limit: 4)
+        let start = Date()
+
+        #expect(model.loadIfNeeded(now: start, staleAfter: 30))
+        #expect(model.loadIfNeeded(now: start.addingTimeInterval(5), staleAfter: 30) == false)
+    }
+
+    /// Once the window lapses, the next activation re-fetches.
+    @Test @MainActor
+    func `Bookmarks section reloads after the staleness window lapses`() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplicationWithRegion(queue: queue, dataLoader: dataLoader)
+        _ = try seedBookmarks(count: 2, application: application)
+
+        try #require(application.currentRegion != nil)
+        let model = HomeBookmarksSectionModel(application: application, limit: 4)
+        let start = Date()
+
+        #expect(model.loadIfNeeded(now: start, staleAfter: 30))
+        #expect(model.loadIfNeeded(now: start.addingTimeInterval(31), staleAfter: 30))
+    }
+
+    /// A changed selection re-fetches even inside the staleness window —
+    /// otherwise a newly added bookmark would show blank until the window lapsed.
+    @Test @MainActor
+    func `Bookmarks section reloads when the selection changes`() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplicationWithRegion(queue: queue, dataLoader: dataLoader)
+        _ = try seedBookmarks(count: 2, application: application)
+
+        try #require(application.currentRegion != nil)
+        let model = HomeBookmarksSectionModel(application: application, limit: 4)
+        let start = Date()
+        #expect(model.loadIfNeeded(now: start, staleAfter: 30))
+
+        _ = try seedBookmarks(count: 1, application: application)
+
+        #expect(model.loadIfNeeded(now: start.addingTimeInterval(1), staleAfter: 30))
+    }
 }
