@@ -129,7 +129,13 @@ final class AppSheetViewFactory {
     // MARK: - Per-route view builders
 
     func homeView() -> HomeSheetView {
-        HomeSheetView(viewModel: HomeSheetViewModel(application: self.application, stopsObserver: self.stopsObserver))
+        HomeSheetView(
+            application: self.application,
+            viewModel: HomeSheetViewModel(
+                application: self.application,
+                stopsObserver: self.stopsObserver
+            )
+        )
     }
 
     /// Bridges `AppSheetRoute.more` to the existing UIKit `MoreViewController`

@@ -14,18 +14,41 @@ struct HomeSheetView: View {
     @StateObject private var viewModel: HomeSheetViewModel
     @EnvironmentObject var coordinator: SheetCoordinator<AppSheetRoute>
 
-    init(viewModel: @autoclosure @escaping () -> HomeSheetViewModel) {
+    /// Needed by `SearchListRow.stop(...)` for distance formatting. Passed in
+    /// rather than read from the environment: there is no `Application`
+    /// environment key in this codebase, and adding one for a single consumer
+    /// would be a wider change than this task warrants. `obaFormatters` (used by
+    /// the bookmark rows below) does exist, and is injected from here.
+    private let application: Application
+
+    init(
+        application: Application,
+        viewModel: @autoclosure @escaping () -> HomeSheetViewModel
+    ) {
+        self.application = application
         _viewModel = StateObject(wrappedValue: viewModel())
     }
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 0) {
+            VStack(alignment: .leading, spacing: 20) {
                 searchBarRow
                     .padding(.top, 16)
+
+                if viewModel.visibleSections.isEmpty {
+                    emptyState
+                } else {
+                    ForEach(viewModel.visibleSections, id: \.self) { section in
+                        sectionView(for: section)
+                    }
+                }
             }
+            .padding(.bottom, 24)
         }
         .ignoresSafeArea(.container, edges: .bottom)
+        .task {
+            viewModel.activate()
+        }
     }
 
     // MARK: - Search Bar
@@ -50,4 +73,98 @@ struct HomeSheetView: View {
         .padding(.horizontal, 12)
     }
 
+    // MARK: - Sections
+
+    @ViewBuilder
+    private func sectionView(for section: HomeSheetSection) -> some View {
+        switch section {
+        case .nearby:
+            stopSection(
+                title: Strings.nearbyStops,
+                stops: viewModel.nearby.stops,
+                destination: .nearbyAll,
+                kind: { .nearbyStop(id: $0.id) }
+            )
+        case .recent:
+            stopSection(
+                title: Strings.recentStops,
+                stops: viewModel.recent.stops,
+                destination: .recentStopsAll,
+                kind: { .recentStop(id: $0.id) }
+            )
+        case .bookmarks:
+            bookmarksSection
+        }
+    }
+
+    /// Nearby and Recent render identically — same row builder, same layout —
+    /// and differ only in title, data, destination, and row kind.
+    private func stopSection(
+        title: String,
+        stops: [Stop],
+        destination: AppSheetRoute,
+        kind: @escaping (Stop) -> SearchListRow.Kind
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HomeSectionHeader(title: title) {
+                coordinator.push(destination)
+            }
+            ForEach(stops, id: \.id) { stop in
+                SearchListRowView(
+                    row: SearchListRow.stop(
+                        stop,
+                        application: application,
+                        kind: kind(stop),
+                        onSelect: { coordinator.push(.stopDetails(stopID: stop.id)) }
+                    )
+                )
+            }
+        }
+        .padding(.horizontal, 12)
+    }
+
+    private var bookmarksSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HomeSectionHeader(title: Strings.bookmarks) {
+                coordinator.push(.bookmarksAll)
+            }
+            ForEach(viewModel.bookmarks.rows) { row in
+                Group {
+                    if row.isTripBookmark {
+                        BookmarkCardView(row: row)
+                    } else {
+                        StopBookmarkRow(row: row)
+                    }
+                }
+                .contentShape(.rect)
+                .onTapGesture {
+                    coordinator.push(.stopDetails(stopID: row.stopID))
+                }
+            }
+        }
+        .padding(.horizontal, 12)
+        .environment(\.obaFormatters, application.formatters)
+    }
+
+    /// Shown only when all three sections are empty — a first launch, or a map
+    /// parked at region-level zoom with no saved data. Reuses the nearby
+    /// controller's copy, minus its "Search Wider Area" button: that drives
+    /// `MapRegionManager.preferredLoadDataRegionFudgeFactor` and a timed reset
+    /// the SwiftUI path has no equivalent plumbing for.
+    private var emptyState: some View {
+        EmptyStateView(
+            title: OBALoc(
+                "nearby_controller.empty_set.title",
+                value: "No Nearby Stops",
+                comment: "Title for the empty set indicator on the Nearby controller"
+            ),
+            description: OBALoc(
+                "nearby_controller.empty_set.body",
+                value: "Zoom out or pan around to find some stops.",
+                comment: "Body for the empty set indicator on the Nearby controller."
+            ),
+            systemImage: "mappin.slash"
+        )
+        .padding(.top, 40)
+    }
 }
