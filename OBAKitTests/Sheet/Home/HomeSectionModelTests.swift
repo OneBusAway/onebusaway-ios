@@ -29,6 +29,37 @@ final class HomeSectionModelTests: OBATestCase {
         queue.cancelAllOperations()
     }
 
+    // MARK: - Helpers
+
+    private func buildApplicationWithRegion(queue: OperationQueue, dataLoader: MockDataLoader) -> Application {
+        stubRegions(dataLoader: dataLoader)
+        stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
+        Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
+
+        let locManager = MockAuthorizedLocationManager(
+            updateLocation: TestData.mockSeattleLocation,
+            updateHeading: TestData.mockHeading
+        )
+        let locationService = LocationService(userDefaults: userDefaults, locationManager: locManager)
+        locationService.startUpdates()
+
+        let config = AppConfig(
+            regionsBaseURL: regionsURL,
+            apiKey: apiKey,
+            appVersion: appVersion,
+            userDefaults: userDefaults,
+            analytics: AnalyticsMock(),
+            queue: queue,
+            locationService: locationService,
+            bundledRegionsFilePath: bundledRegionsPath,
+            regionsAPIPath: regionsAPIPath,
+            dataLoader: dataLoader,
+            fixedRegionName: Fixtures.pugetSoundRegion.name
+        )
+
+        return Application(config: config)
+    }
+
     // MARK: - Nearby
 
     /// The section caps at its limit and orders by the observer's viewport center.
@@ -118,7 +149,7 @@ final class HomeSectionModelTests: OBATestCase {
     @Test @MainActor
     func `Recent section caps at the limit in most recently used order`() throws {
         let dataLoader = MockDataLoader(testName: name)
-        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let application = buildApplicationWithRegion(queue: queue, dataLoader: dataLoader)
         let stops = try Fixtures.loadSomeStops()
 
         // Added oldest-first; the store inserts each at index 0, so the last
@@ -127,6 +158,8 @@ final class HomeSectionModelTests: OBATestCase {
             application.userDataStore.addRecentStop(stop, region: Fixtures.pugetSoundRegion)
         }
 
+        try #require(application.currentRegion != nil)
+        try #require(Fixtures.pugetSoundRegion.regionIdentifier == application.currentRegion!.regionIdentifier, "Region mismatch: fixture ID \(Fixtures.pugetSoundRegion.regionIdentifier) != app current ID \(application.currentRegion!.regionIdentifier)")
         let model = HomeRecentStopsSectionModel(application: application, limit: 4)
 
         #expect(model.stops.count == 4)
@@ -141,9 +174,10 @@ final class HomeSectionModelTests: OBATestCase {
     @Test @MainActor
     func `Recent section reload picks up newly added stops`() throws {
         let dataLoader = MockDataLoader(testName: name)
-        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let application = buildApplicationWithRegion(queue: queue, dataLoader: dataLoader)
         let stops = try Fixtures.loadSomeStops()
 
+        try #require(application.currentRegion != nil)
         let model = HomeRecentStopsSectionModel(application: application, limit: 4)
         #expect(model.stops.isEmpty)
 
