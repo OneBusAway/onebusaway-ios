@@ -14,11 +14,7 @@ struct HomeSheetView: View {
     @StateObject private var viewModel: HomeSheetViewModel
     @EnvironmentObject var coordinator: SheetCoordinator<AppSheetRoute>
 
-    /// Needed by `SearchListRow.stop(...)` for distance formatting. Passed in
-    /// rather than read from the environment: there is no `Application`
-    /// environment key in this codebase, and adding one for a single consumer
-    /// would be a wider change than this task warrants. `obaFormatters` (used by
-    /// the bookmark rows below) does exist, and is injected from here.
+    /// Used by the bookmark rows to format distances.
     private let application: Application
 
     init(
@@ -92,15 +88,13 @@ struct HomeSheetView: View {
             stopSection(
                 title: Strings.nearbyStops,
                 stops: viewModel.nearby.stops,
-                destination: .nearbyAll,
-                kind: { .nearbyStop(id: $0.id) }
+                destination: .nearbyAll
             )
         case .recent:
             stopSection(
                 title: Strings.recentStops,
                 stops: viewModel.recent.stops,
-                destination: .recentStopsAll,
-                kind: { .recentStop(id: $0.id) }
+                destination: .recentStopsAll
             )
         case .bookmarks:
             bookmarksSection
@@ -108,26 +102,20 @@ struct HomeSheetView: View {
     }
 
     /// Nearby and Recent render identically — same row builder, same layout —
-    /// and differ only in title, data, destination, and row kind.
+    /// and differ only in title, data, and destination.
     private func stopSection(
         title: String,
         stops: [Stop],
-        destination: AppSheetRoute,
-        kind: @escaping (Stop) -> SearchListRow.Kind
+        destination: AppSheetRoute
     ) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HomeSectionHeader(title: title) {
                 coordinator.push(destination)
             }
             ForEach(stops, id: \.id) { stop in
-                SearchListRowView(
-                    row: SearchListRow.stop(
-                        stop,
-                        application: application,
-                        kind: kind(stop),
-                        onSelect: { coordinator.push(.stopDetails(stopID: stop.id)) }
-                    )
-                )
+                HomeStopRow(stop: stop) {
+                    coordinator.push(.stopDetails(stopID: stop.id))
+                }
             }
         }
         .padding(.horizontal, 12)

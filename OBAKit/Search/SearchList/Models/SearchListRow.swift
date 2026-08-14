@@ -22,9 +22,6 @@ struct SearchListRow: Identifiable {
         /// stops are rendered in a `ForEach`, and two stops on opposite sides of a
         /// corner share a name.
         case recentStop(id: String)
-        /// Carries the stop's id for the same reason `recentStop` does: two
-        /// stops on opposite sides of a corner share a name.
-        case nearbyStop(id: String)
         /// Carries the bookmark's id for the same reason `recentStop` does: a
         /// bookmark's default name is its stop's name, so two bookmarks on
         /// opposite sides of one street would otherwise share a row id.
@@ -52,8 +49,6 @@ struct SearchListRow: Identifiable {
                 return "quickSearch-\(type.rawValue)"
             case .recentStop(let id):
                 return "recentStop-\(id)"
-            case .nearbyStop(let id):
-                return "nearbyStop-\(id)"
             case .bookmark(let id):
                 return "bookmark-\(id)"
             case .placemark(let item):

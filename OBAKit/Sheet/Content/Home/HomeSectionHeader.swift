@@ -25,7 +25,8 @@ struct HomeSectionHeader: View {
         Button(action: onSeeAll) {
             HStack(spacing: 8) {
                 Text(title)
-                    .font(.headline)
+                    .font(.title2)
+                    .fontWeight(.bold)
                     .foregroundStyle(.primary)
                 Spacer()
                 Image(systemName: "chevron.right")

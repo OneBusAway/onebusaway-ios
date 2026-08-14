@@ -134,30 +134,16 @@ final class SearchResultRowTests: OBATestCase {
         let row = SearchListRow.stop(
             stop,
             application: application,
-            kind: .nearbyStop(id: stop.id),
+            kind: .recentStop(id: stop.id),
             onSelect: {}
         )
 
         #expect(row.title == stop.name)
         #expect(row.accessory == .disclosureIndicator)
-        if case .nearbyStop(let id) = row.kind {
+        if case .recentStop(let id) = row.kind {
             #expect(id == stop.id)
         } else {
-            Issue.record("Expected a .nearbyStop kind, got \(row.kind)")
+            Issue.record("Expected a .recentStop kind, got \(row.kind)")
         }
-    }
-
-    /// A stop shown in both the nearby and recent sections must not produce two
-    /// rows with the same `id`, or `ForEach` collapses them.
-    @Test @MainActor
-    func `Nearby and recent kinds yield distinct identifiers for one stop`() throws {
-        let dataLoader = MockDataLoader(testName: name)
-        let application = buildApplication(queue: queue, dataLoader: dataLoader)
-        let stop = try #require(try Fixtures.loadSomeStops().first)
-
-        let nearby = SearchListRow.stop(stop, application: application, kind: .nearbyStop(id: stop.id), onSelect: {})
-        let recent = SearchListRow.stop(stop, application: application, kind: .recentStop(id: stop.id), onSelect: {})
-
-        #expect(nearby.id != recent.id)
     }
 }
