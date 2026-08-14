@@ -52,4 +52,4 @@ Empty-state / error icons treat `.invalidResponseData` like other “bad payload
 
 ## Locales
 
-Update `OBALoc` defaults and `en.lproj`. Other locales keep the previous `.serverUnavailable` wording until translated; the new key falls back to the English `value:` via `OBALoc`.
+Update `OBALoc` defaults and `en.lproj`. Add `api_error.invalid_response_data_fmt` to every `OBAKitCore` locale — `LocalizationTests` requires key parity, so a missing key fails CI instead of falling back. Existing `server_unavailable_fmt` / `decoding_failure` translations stay until a translator revises them; they still have the key.

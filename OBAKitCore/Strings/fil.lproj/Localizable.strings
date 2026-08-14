@@ -10,6 +10,8 @@
 /* An error message that informs the user that the wrong kind of content was received from the server. */
 "api_error.invalid_content_type_fmt" = "Inaasahan naming makatanggap ng %1$@ na data mula sa server, pero %2$@ ang natanggap namin.";
 
+"api_error.invalid_response_data_fmt" = "Nagbalik ang server para sa %1$@ ng data na hindi mabasa ng app na ito. Kadalasan ay problema ito sa stop o agency feed, hindi sa %2$@. Pakisubukang muli sa ilang sandali.";
+
 /* An error that tells the user that the network connection isn't working. */
 "api_error.network_failure" = "Hindi makakonekta sa Internet o sa server. Pakisuri ang iyong koneksyon sa network at subukang muli.";
 

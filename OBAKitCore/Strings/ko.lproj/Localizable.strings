@@ -10,6 +10,8 @@
 /* An error message that informs the user that the wrong kind of content was received from the server. */
 "api_error.invalid_content_type_fmt" = "서버에서 %1$@ 데이터를 받을 것으로 예상했지만 %2$@ 데이터를 받았습니다.";
 
+"api_error.invalid_response_data_fmt" = "%1$@ 서버가 이 앱에서 읽을 수 없는 데이터를 반환했습니다. 보통 정류장 또는 기관 피드 문제이며 %2$@의 문제는 아닙니다. 잠시 후 다시 시도해 주세요.";
+
 /* An error that tells the user that the network connection isn't working. */
 "api_error.network_failure" = "인터넷 또는 서버에 연결할 수 없습니다. 네트워크 연결을 확인한 후 다시 시도해 주세요.";
 

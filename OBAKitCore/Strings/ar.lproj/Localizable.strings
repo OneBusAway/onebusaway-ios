@@ -10,6 +10,8 @@
 /* An error message that informs the user that the wrong kind of content was received from the server. */
 "api_error.invalid_content_type_fmt" = "كان من المتوقع استلام بيانات %1$@ من الخادم، ولكننا استلمنا %2$@ بدلًا من ذلك.";
 
+"api_error.invalid_response_data_fmt" = "أرجع خادم %1$@ بيانات لا يستطيع هذا التطبيق قراءتها. عادةً ما تكون هذه مشكلة في المحطة أو تغذية الوكالة، وليست مشكلة في %2$@. يُرجى المحاولة مرة أخرى بعد قليل.";
+
 /* An error that tells the user that the network connection isn't working. */
 "api_error.network_failure" = "تعذّر الاتصال بالإنترنت أو بالخادم. يُرجى التحقق من اتصالك بالشبكة والمحاولة مرة أخرى.";
 
