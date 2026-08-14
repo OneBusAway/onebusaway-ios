@@ -49,6 +49,15 @@ final class HomeBookmarksSectionModel: NSObject, ObservableObject, BookmarkDataD
         )
 
         refreshSelection()
+
+        // `.bookmarksDidChange` may be posted off the main actor, so hop rather
+        // than assume isolation. This mirrors the pattern in `MapStopsObserver`.
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(bookmarksDidChange),
+            name: .bookmarksDidChange,
+            object: nil
+        )
     }
 
     isolated deinit {
@@ -68,6 +77,19 @@ final class HomeBookmarksSectionModel: NSObject, ObservableObject, BookmarkDataD
                 .prefix(limit)
         )
         rebuildRows()
+    }
+
+    // MARK: - Bookmarks
+
+    /// `.bookmarksDidChange` may be posted off the main actor, so hop rather
+    /// than assume isolation. Selector-based observation is auto-removed on
+    /// dealloc, so no token/deinit needed.
+    @objc
+    private nonisolated func bookmarksDidChange() {
+        Task { @MainActor [weak self] in
+            self?.refreshSelection()
+            self?.loadIfNeeded()
+        }
     }
 
     /// Fetches arrivals for the current selection, but only when something has

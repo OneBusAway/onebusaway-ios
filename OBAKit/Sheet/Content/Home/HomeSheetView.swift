@@ -14,6 +14,10 @@ struct HomeSheetView: View {
     @StateObject private var viewModel: HomeSheetViewModel
     @EnvironmentObject var coordinator: SheetCoordinator<AppSheetRoute>
 
+    /// Tracks whether the stacked routes were non-empty on the last observation,
+    /// so we can detect the transition to empty and re-activate.
+    @State private var wasStackedRoutesNonEmpty = false
+
     /// Needed by `SearchListRow.stop(...)` for distance formatting. Passed in
     /// rather than read from the environment: there is no `Application`
     /// environment key in this codebase, and adding one for a single consumer
@@ -48,6 +52,16 @@ struct HomeSheetView: View {
         .ignoresSafeArea(.container, edges: .bottom)
         .task {
             viewModel.activate()
+        }
+        .onChange(of: coordinator.stackedRoutes) { _, routes in
+            // When a stacked sheet is dismissed and the stack transitions to empty,
+            // re-activate the home sheet. This is the moment the user returns to it,
+            // and when a new recent stop may have been added.
+            let isStackedRoutesNonEmpty = !routes.isEmpty
+            if wasStackedRoutesNonEmpty && !isStackedRoutesNonEmpty {
+                viewModel.activate()
+            }
+            wasStackedRoutesNonEmpty = isStackedRoutesNonEmpty
         }
     }
 

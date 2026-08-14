@@ -295,4 +295,30 @@ final class HomeSectionModelTests: OBATestCase {
 
         #expect(model.loadIfNeeded(now: start.addingTimeInterval(1), staleAfter: 30))
     }
+
+    /// Posting `.bookmarksDidChange` causes the section to pick up a newly
+    /// added bookmark. The notification is delivered asynchronously via a
+    /// main-actor hop, so we poll until the rows are updated.
+    @Test @MainActor
+    func `Bookmarks section updates when bookmarks did change notification is posted`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplicationWithRegion(queue: queue, dataLoader: dataLoader)
+        _ = try seedBookmarks(count: 2, application: application)
+
+        try #require(application.currentRegion != nil)
+        let model = HomeBookmarksSectionModel(application: application, limit: 4)
+        let initialRowCount = model.rows.count
+        #expect(initialRowCount == 2)
+
+        // Add a new bookmark, then post the notification
+        _ = try seedBookmarks(count: 1, application: application)
+        NotificationCenter.default.post(name: .bookmarksDidChange, object: nil)
+
+        // Poll until the rows are updated with the new bookmark
+        await poll(until: {
+            model.rows.count == initialRowCount + 1
+        }, "Bookmarks section did not pick up the newly added bookmark after notification")
+
+        #expect(model.rows.count == 3)
+    }
 }
