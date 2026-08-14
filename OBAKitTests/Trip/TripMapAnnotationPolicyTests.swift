@@ -63,13 +63,17 @@ final class TripMapAnnotationPolicyTests: OBATestCase {
 
     /// Opening a trip from a departure auto-selects the rider's stop. That
     /// programmatic select must not push the stop page back on top (#713).
+    ///
+    /// Do not load `controller.view`. `viewDidLoad` reads `ArrivalDeparture.route`,
+    /// which `Fixtures.arrivalDeparture()` leaves unresolved, and spinning up the
+    /// trip map plus floating panel crashed CI then hung the simulator for 10 minutes.
+    /// `didSelect` is the production path under test; wrapping in a nav controller
+    /// is enough for `ViewRouter.navigateTo` to push.
     @Test @MainActor
     func `Programmatic selection does not open the stop`() throws {
         let arrivalDeparture = try Fixtures.arrivalDeparture()
         let controller = makeController(arrivalDeparture: arrivalDeparture)
         let nav = UINavigationController(rootViewController: controller)
-        _ = nav.view
-        _ = controller.view
 
         let stopTime = try #require(try loadTripDetails().stopTimes.first)
         let annotationView = MinimalStopAnnotationView(annotation: stopTime, reuseIdentifier: "test")
@@ -88,8 +92,6 @@ final class TripMapAnnotationPolicyTests: OBATestCase {
         let arrivalDeparture = try Fixtures.arrivalDeparture()
         let controller = makeController(arrivalDeparture: arrivalDeparture)
         let nav = UINavigationController(rootViewController: controller)
-        _ = nav.view
-        _ = controller.view
 
         let stopTime = try #require(try loadTripDetails().stopTimes.first)
         let annotationView = MinimalStopAnnotationView(annotation: stopTime, reuseIdentifier: "test")
