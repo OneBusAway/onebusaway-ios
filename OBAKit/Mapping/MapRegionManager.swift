@@ -976,6 +976,18 @@ public class MapRegionManager: NSObject,
 
     // MARK: - Map View Delegate
 
+    /// Applies the current under-pin label gate to every bookmark pin on the map.
+    /// Bookmarks stay visible through search, zoom, and a disabled stops layer,
+    /// so this must run before those early returns.
+    func refreshBookmarkAnnotationLabels() {
+        let hideExtra = shouldHideExtraStopAnnotationData
+        for annotation in mapView.annotations where annotation is Bookmark {
+            if let stopView = mapView.view(for: annotation) as? StopAnnotationView {
+                stopView.isHidingExtraStopAnnotationData = hideExtra
+            }
+        }
+    }
+
     private func reloadStopAnnotations() {
         // Ahead of every early return below, including the search-result guard.
         // The pill states something about the current zoom, so it has to be
@@ -985,6 +997,10 @@ public class MapRegionManager: NSObject,
         // cancelled. Mirrors the ordering `MapPanelRootView.onMapCameraChange`
         // already uses.
         updateZoomWarningOverlay()
+
+        // Bookmark pins are user content, so their label gate must refresh even
+        // when stop loading is suppressed by search, zoom, or a disabled layer.
+        refreshBookmarkAnnotationLabels()
 
         if searchResponseOverridesStopLoading() {
             return
@@ -1008,11 +1024,6 @@ public class MapRegionManager: NSObject,
 
         for stop in mapView.annotations(in: mapView.visibleMapRect).filter(type: Stop.self) {
             if let stopView = mapView.view(for: stop) as? StopAnnotationView {
-                stopView.isHidingExtraStopAnnotationData = shouldHideExtraStopAnnotationData
-            }
-        }
-        for bookmark in mapView.annotations(in: mapView.visibleMapRect).filter(type: Bookmark.self) {
-            if let stopView = mapView.view(for: bookmark) as? StopAnnotationView {
                 stopView.isHidingExtraStopAnnotationData = shouldHideExtraStopAnnotationData
             }
         }

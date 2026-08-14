@@ -527,13 +527,25 @@ final class MapRegionManagerTests: OBATestCase {
             PrepareForReuseCountingStopAnnotationView.self,
             forAnnotationViewWithReuseIdentifier: MKMapView.reuseIdentifier(for: StopAnnotationView.self)
         )
+
+        // Host the map so MapKit vends annotation views. Calling `viewFor`
+        // directly hands the dequeued view to the test, not the map, so
+        // `mapView.view(for:)` would observe a different instance (or nil).
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        mgr.mapView.frame = window.bounds
+        window.addSubview(mgr.mapView)
+        window.makeKeyAndVisible()
+
         let stop = try #require(Fixtures.loadSomeStops().first)
         let bookmark = Bookmark(name: "Home", regionIdentifier: pugetSoundRegionIdentifier, stop: stop)
 
         mgr.mapView.addAnnotations([stop, bookmark])
+        mgr.mapView.setCenter(stop.coordinate, animated: false)
+        mgr.mapView.layoutIfNeeded()
         mgr.mapView.selectAnnotation(bookmark, animated: false)
+
         let bookmarkView = try #require(
-            mgr.mapView(mgr.mapView, viewFor: bookmark) as? PrepareForReuseCountingStopAnnotationView
+            mgr.mapView.view(for: bookmark) as? PrepareForReuseCountingStopAnnotationView
         )
 
         // Simulate a stale sibling Stop lingering after a stops reload.
@@ -543,6 +555,7 @@ final class MapRegionManagerTests: OBATestCase {
         #expect(mgr.mapView.annotations.contains { $0 === bookmark })
         #expect(!mgr.mapView.annotations.contains { ($0 as? Stop)?.id == stop.id })
         #expect(bookmarkView.prepareForReuseCount == 0)
+        #expect(mgr.mapView.view(for: bookmark) === bookmarkView)
     }
 
     /// Disabling the stops layer removes browse stops but must not deselect a
