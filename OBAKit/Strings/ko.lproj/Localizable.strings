@@ -841,7 +841,7 @@
 "report_problem_controller.stop_problem.header" = "정류장 관련 문제";
 
 /* A table header in the 'Report Problem' view controller. */
-"report_problem_controller.vehicle_problem.header" = "정류장의 차량 관련 문제";
+"report_problem_controller.trip_problem.header" = "운행 관련 문제";
 
 /* Error when location is unavailable in the route picker. */
 "route_picker.error_no_location" = "위치를 사용할 수 없습니다. 주변 노선을 찾으려면 위치 서비스를 활성화해 주세요.";

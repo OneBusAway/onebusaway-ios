@@ -841,7 +841,7 @@
 "report_problem_controller.stop_problem.header" = "站牌問題";
 
 /* A table header in the 'Report Problem' view controller. */
-"report_problem_controller.vehicle_problem.header" = "此站牌車輛的問題";
+"report_problem_controller.trip_problem.header" = "行程問題";
 
 /* Error when location is unavailable in the route picker. */
 "route_picker.error_no_location" = "無法取得位置。請開啟定位服務以尋找附近路線。";

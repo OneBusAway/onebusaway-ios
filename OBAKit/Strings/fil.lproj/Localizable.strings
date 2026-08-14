@@ -841,7 +841,7 @@
 "report_problem_controller.stop_problem.header" = "Problema sa Hintuan";
 
 /* A table header in the 'Report Problem' view controller. */
-"report_problem_controller.vehicle_problem.header" = "Problema sa Sasakyan sa Hintuan";
+"report_problem_controller.trip_problem.header" = "Problema sa Biyahe";
 
 /* Error when location is unavailable in the route picker. */
 "route_picker.error_no_location" = "Hindi available ang lokasyon. Paki-enable ang mga serbisyo ng lokasyon para makahanap ng mga kalapit na ruta.";

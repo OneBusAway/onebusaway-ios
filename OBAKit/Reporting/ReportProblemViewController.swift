@@ -12,7 +12,9 @@ import OBAKitCore
 
 /// The 'hub' view controller for reporting problems about stops and trips.
 ///
-/// From here, a user can report a problem either about a `Stop` or about a trip at that stop.
+/// From here, a user can report incorrect stop details or a problem with a specific
+/// trip's service. These reports are sent to the transit agency to improve data and
+/// service — they are not app bug reports.
 ///
 /// - Note: This view controller expects to be presented modally.
 class ReportProblemViewController: TaskController<StopArrivals>,
@@ -98,7 +100,7 @@ class ReportProblemViewController: TaskController<StopArrivals>,
             self.navigationController?.pushViewController(stopProblemController, animated: true)
         }
 
-        return OBAListViewSection(id: "stop_problem_section", title: OBALoc("report_problem_controller.stop_problem.header", value: "Problem with the Stop", comment: "A table header in the 'Report Problem' view controller."), contents: [row])
+        return OBAListViewSection(id: "stop_problem_section", title: ReportProblemCopy.stopProblemHeader, contents: [row])
     }
 
     private var vehicleProblemSection: OBAListViewSection? {
@@ -108,7 +110,7 @@ class ReportProblemViewController: TaskController<StopArrivals>,
 
         let rows = arrivalsAndDepartures.map { ArrivalDepartureItem(arrivalDeparture: $0, isAlarmAvailable: false, onSelectAction: onSelectArrivalDeparture) }
 
-        return OBAListViewSection(id: "vehicle_problem_section", title: OBALoc("report_problem_controller.vehicle_problem.header", value: "Problem with a Vehicle at the Stop", comment: "A table header in the 'Report Problem' view controller."), contents: rows)
+        return OBAListViewSection(id: "vehicle_problem_section", title: ReportProblemCopy.vehicleProblemHeader, contents: rows)
     }
 
     func onSelectArrivalDeparture(_ arrivalDepartureItem: ArrivalDepartureItem) {
