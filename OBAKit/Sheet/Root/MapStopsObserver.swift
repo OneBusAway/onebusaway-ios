@@ -117,10 +117,18 @@ final class MapStopsObserver: NSObject, ObservableObject, MapRegionDelegate, Reg
 
     /// Records the settled viewport and prunes against it. Pruning here (not
     /// only in `stopsUpdated`) bounds the set even on settles that load no
-    /// stops. Loop-safe: a re-fired same-region settle changes nothing.
+    /// stops. Loop-safe: a re-fired same-region settle changes nothing — neither
+    /// `stops` nor `viewportCenter` is republished, so observers aren't invalidated.
     func updateViewport(_ region: MKCoordinateRegion) {
         viewport = region
-        viewportCenter = region.center
+        // `CLLocationCoordinate2D` isn't `Equatable`, so `@Published` can't drop a
+        // same-value write for us. Comparing by hand is what keeps a re-fired
+        // settle from firing `objectWillChange` — and with it a `MapPanelRootView`
+        // body eval and a full re-sort of the nearby section — for no change.
+        if viewportCenter?.latitude != region.center.latitude
+            || viewportCenter?.longitude != region.center.longitude {
+            viewportCenter = region.center
+        }
         if pruneAccumulated() {
             publish()
         }

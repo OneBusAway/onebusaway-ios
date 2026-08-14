@@ -50,7 +50,7 @@ struct BookmarkCardView: View {
         .onAppear { flashIfNeeded() }
         .onChange(of: row.highlightedTripIDs) { flashIfNeeded() }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(formatters.accessibilityLabel(for: row))
+        .accessibilityLabel(row.accessibilityLabel(base: formatters.accessibilityLabel(for: row)))
         .accessibilityValue(formatters.accessibilityValue(for: row) ?? "")
         .accessibilityAddTraits([.isButton, .updatesFrequently])
     }
@@ -102,10 +102,15 @@ struct BookmarkCardView: View {
     }
 
     private var nameText: some View {
-        Text(row.name)
-            .font(.headline.weight(.heavy))
-            .foregroundStyle(.primary)
-            .lineLimit(isAccessibilitySize ? nil : 2)
+        HStack(spacing: 4) {
+            if row.isPinned {
+                BookmarkPinIndicator()
+            }
+            Text(row.name)
+                .font(.headline.weight(.heavy))
+                .foregroundStyle(.primary)
+                .lineLimit(isAccessibilitySize ? nil : 2)
+        }
     }
 
     @ViewBuilder
@@ -265,10 +270,15 @@ struct StopBookmarkRow: View {
                     in: RoundedRectangle(cornerRadius: 48 * badgeScale * 0.28, style: .continuous)
                 )
             VStack(alignment: .leading, spacing: 3) {
-                Text(row.name)
-                    .font(.headline.weight(.heavy))
-                    .foregroundStyle(.primary)
-                    .lineLimit(2)
+                HStack(spacing: 4) {
+                    if row.isPinned {
+                        BookmarkPinIndicator()
+                    }
+                    Text(row.name)
+                        .font(.headline.weight(.heavy))
+                        .foregroundStyle(.primary)
+                        .lineLimit(2)
+                }
                 if let subtitle = row.routesSubtitle {
                     Text(subtitle)
                         .font(.footnote)
@@ -279,7 +289,7 @@ struct StopBookmarkRow: View {
             Spacer(minLength: 0)
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(formatters.accessibilityLabel(for: row))
+        .accessibilityLabel(row.accessibilityLabel(base: formatters.accessibilityLabel(for: row)))
         .accessibilityAddTraits(.isButton)
     }
 }

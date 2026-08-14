@@ -68,7 +68,7 @@ public class BookmarkDataLoader: NSObject {
     /// bookmark in the current region. Lets a caller that only displays a few
     /// bookmarks — the home sheet's preview section — reuse this loader without
     /// paying for the whole set.
-    private let bookmarkProvider: (@MainActor () -> [Bookmark])?
+    private let bookmarkProvider: (() -> [Bookmark])?
 
     /// When `false`, `startRefreshTimer()` is a no-op, so the loader fetches
     /// only when explicitly asked. Callers that display a handful of bookmarks
@@ -78,7 +78,7 @@ public class BookmarkDataLoader: NSObject {
     public init(
         application: CoreApplication,
         delegate: BookmarkDataDelegate,
-        bookmarkProvider: (@MainActor () -> [Bookmark])? = nil,
+        bookmarkProvider: (() -> [Bookmark])? = nil,
         autoRefreshes: Bool = true
     ) {
         self.application = application
@@ -100,9 +100,13 @@ public class BookmarkDataLoader: NSObject {
         }
     }
 
-    /// Whether a repeating refresh is currently armed. Exposed so callers that
-    /// opted out of auto-refresh can assert they really did.
-    @MainActor public var hasScheduledRefresh: Bool {
+    /// Whether a repeating refresh is currently armed.
+    ///
+    /// Deliberately `internal`, not `public`: nothing in the app reads it, and
+    /// it exists so `BookmarkDataLoaderTests` can assert that a loader built with
+    /// `autoRefreshes: false` really installs no timer. `@testable import` reaches
+    /// it; the framework's public surface doesn't grow for a test.
+    var hasScheduledRefresh: Bool {
         timer?.isValid ?? false
     }
 

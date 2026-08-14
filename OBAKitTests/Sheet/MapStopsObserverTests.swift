@@ -338,4 +338,55 @@ final class MapStopsObserverTests: OBATestCase {
 
         #expect(observer.viewportCenter == nil)
     }
+
+    /// A re-fired settle at the same center publishes nothing.
+    ///
+    /// `CLLocationCoordinate2D` isn't `Equatable`, so `@Published` won't drop a
+    /// same-value write on its own — without the explicit guard in
+    /// `updateViewport`, every settle would fire `objectWillChange` and invalidate
+    /// `MapPanelRootView`. The map re-serves the same region often enough that the
+    /// rest of this class is built around not republishing on a no-op.
+    @Test @MainActor
+    func `Repeat settle at the same center does not republish`() async {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+
+        let observer = MapStopsObserver(application: application)
+        let region = MKCoordinateRegion(
+            center: TestData.mockSeattleLocation.coordinate,
+            latitudinalMeters: 5000,
+            longitudinalMeters: 5000
+        )
+        observer.updateViewport(region)
+
+        let counter = ChangeCounter()
+        let cancellable = observer.objectWillChange.sink { _ in counter.increment() }
+        defer { cancellable.cancel() }
+
+        observer.updateViewport(region)
+        #expect(counter.count == 0, "A same-center settle must not invalidate observers")
+
+        // A real move still publishes.
+        observer.updateViewport(MKCoordinateRegion(
+            center: CLLocationCoordinate2D(
+                latitude: region.center.latitude + 0.1,
+                longitude: region.center.longitude
+            ),
+            latitudinalMeters: 5000,
+            longitudinalMeters: 5000
+        ))
+        #expect(counter.count == 1, "A moved center must still publish")
+    }
+
+    /// Thread-safe counter — `objectWillChange` delivery isn't actor-isolated.
+    private final class ChangeCounter {
+        private let lock = NSLock()
+        nonisolated(unsafe) private(set) var count: Int = 0
+
+        nonisolated func increment() {
+            lock.lock()
+            defer { lock.unlock() }
+            count += 1
+        }
+    }
 }

@@ -219,7 +219,7 @@ final class AppSheetViewFactory {
             Text(OBALoc(
                 "app_sheet.unimplemented_route.placeholder",
                 value: "This screen is coming soon.",
-                comment: "Placeholder shown in release builds when a sheet route is pushed but has no view registered."
+                comment: "Placeholder shown when a sheet route is pushed but its screen has not been built yet."
             ))
             .font(.headline)
             .foregroundStyle(.secondary)

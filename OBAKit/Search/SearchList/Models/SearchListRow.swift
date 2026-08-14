@@ -143,9 +143,14 @@ extension SearchListRow {
 
 extension SearchListRow {
 
-    /// The standard stop row: stop glyph, name, and a "distance • direction"
-    /// subtitle. Shared by the search results sheet and the home sheet's nearby
-    /// and recent sections so all three render stops identically.
+    /// The standard `SearchListRow` for a stop: stop glyph, name, and a
+    /// "distance • direction" subtitle.
+    ///
+    /// Used by the search results sheet (`SearchResultRow`). The home sheet's
+    /// nearby and recent sections deliberately do **not** use this — they render
+    /// `HomeStopRow`, which uses the squircle transport glyph to match the
+    /// bookmark cards it sits beside. Keep this in step with the search list's
+    /// placemark rows, not with the home sheet.
     ///
     /// `kind` is a parameter rather than fixed because the caller owns row
     /// identity — the same stop can legitimately appear in two sections at once.

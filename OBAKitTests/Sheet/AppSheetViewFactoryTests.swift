@@ -153,20 +153,24 @@ final class AppSheetViewFactoryTests: OBATestCase {
     }
 
     /// The three index routes are wired for navigation before their screens
-    /// exist, so they must render a placeholder instead of tripping the
-    /// debug assertion that guards genuinely unwired routes.
+    /// exist, so the dispatcher must send them to the placeholder instead of to
+    /// `unimplementedView`, whose DEBUG `assertionFailure` guards genuinely
+    /// unwired routes.
+    ///
+    /// Goes through `view(for:)` rather than calling `indexPlaceholderView`
+    /// directly: the dispatch is the thing under test. `view(for:)` is
+    /// `@ViewBuilder`, so its switch — and any `assertionFailure` on the branch
+    /// it picks — runs at call time. Completing this loop without trapping is
+    /// the assertion; calling the placeholder builder directly would pass even
+    /// if the routes were dropped from the dispatcher.
     @Test @MainActor
-    func `Index routes render a placeholder without asserting`() {
+    func `Index routes dispatch to a placeholder without asserting`() {
         let dataLoader = MockDataLoader(testName: name)
         let application = buildApplication(queue: queue, dataLoader: dataLoader)
         let factory = makeFactory(application: application)
 
-        // Reaching `unimplementedView` would call assertionFailure and trap the
-        // test run, so simply building each view is the assertion.
         for route in [AppSheetRoute.nearbyAll, .recentStopsAll, .bookmarksAll] {
-            _ = factory.indexPlaceholderView(for: route)
+            _ = factory.view(for: route)
         }
-
-        #expect(Bool(true))
     }
 }

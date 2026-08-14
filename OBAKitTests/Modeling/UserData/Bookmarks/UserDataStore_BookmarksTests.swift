@@ -145,6 +145,103 @@ final class UserDefaultsStore_BookmarksTests: OBATestCase {
         #expect(self.userDefaultsStore.bookmarks == [bookmark])
     }
 
+    // MARK: - Pinning
+
+    /// `bookmarks` is computed over `UserDefaults` — its getter decodes fresh
+    /// instances — so a pin only sticks if the store writes the array back.
+    @Test func `Set pinned persists through the store`() {
+        let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stops[0])
+        userDefaultsStore.add(bookmark)
+        #expect(self.userDefaultsStore.bookmarks.first?.isPinned == false)
+
+        userDefaultsStore.setPinned(true, for: bookmark)
+        #expect(self.userDefaultsStore.bookmarks.first?.isPinned == true)
+        // The caller's own instance is updated too, so a held reference doesn't
+        // read stale.
+        #expect(bookmark.isPinned)
+
+        userDefaultsStore.setPinned(false, for: bookmark)
+        #expect(self.userDefaultsStore.bookmarks.first?.isPinned == false)
+        #expect(bookmark.isPinned == false)
+    }
+
+    /// Pinning must not disturb the user's manual ordering. Routing the write
+    /// through `add(_:to:)` would have re-appended the bookmark and renumbered
+    /// `sortOrder`, silently moving it to the bottom of its group.
+    @Test func `Set pinned leaves sort order and group membership alone`() {
+        let group = BookmarkGroup(name: "Commute", sortOrder: 0)
+        let first = Bookmark(name: "First", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stops[0])
+        let second = Bookmark(name: "Second", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stops[1])
+        userDefaultsStore.add(first, to: group)
+        userDefaultsStore.add(second, to: group)
+
+        let orderBefore = userDefaultsStore.bookmarksInGroup(group).map { ($0.id, $0.sortOrder) }
+
+        userDefaultsStore.setPinned(true, for: first)
+
+        let orderAfter = userDefaultsStore.bookmarksInGroup(group).map { ($0.id, $0.sortOrder) }
+        #expect(orderBefore.map(\.0) == orderAfter.map(\.0))
+        #expect(orderBefore.map(\.1) == orderAfter.map(\.1))
+        #expect(self.userDefaultsStore.findBookmark(id: first.id)?.groupID == group.id)
+    }
+
+    /// Consumers refresh off `.bookmarksDidChange`, so the toggle has to post it.
+    @Test func `Set pinned posts bookmarksDidChange`() async {
+        let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stops[0])
+        userDefaultsStore.add(bookmark)
+
+        await confirmation("bookmarksDidChange posted") { posted in
+            let token = NotificationCenter.default.addObserver(
+                forName: .bookmarksDidChange,
+                object: userDefaultsStore,
+                queue: nil
+            ) { _ in posted() }
+            defer { NotificationCenter.default.removeObserver(token) }
+
+            userDefaultsStore.setPinned(true, for: bookmark)
+        }
+    }
+
+    /// Thread-safe flag — notification delivery isn't actor-isolated.
+    private final class NotifiedFlag {
+        private let lock = NSLock()
+        nonisolated(unsafe) private(set) var value = false
+
+        nonisolated func set() {
+            lock.lock()
+            defer { lock.unlock() }
+            value = true
+        }
+    }
+
+    /// A no-op toggle shouldn't churn storage or wake every listener.
+    @Test func `Set pinned to the current value does nothing`() {
+        let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stops[0])
+        userDefaultsStore.add(bookmark)
+
+        let notified = NotifiedFlag()
+        let token = NotificationCenter.default.addObserver(
+            forName: .bookmarksDidChange,
+            object: userDefaultsStore,
+            queue: nil
+        ) { _ in notified.set() }
+        defer { NotificationCenter.default.removeObserver(token) }
+
+        userDefaultsStore.setPinned(false, for: bookmark)
+
+        #expect(notified.value == false)
+    }
+
+    /// A bookmark that was never added has nothing to update.
+    @Test func `Set pinned on an unknown bookmark is a no-op`() {
+        let stranger = Bookmark(name: "Not Stored", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stops[0])
+
+        userDefaultsStore.setPinned(true, for: stranger)
+
+        #expect(self.userDefaultsStore.bookmarks.isEmpty)
+        #expect(stranger.isPinned == false)
+    }
+
     @Test func `Bookmark find by ID`() {
         let stop = stops[0]
         let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)

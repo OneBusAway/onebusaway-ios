@@ -52,11 +52,16 @@ final class HomeBookmarksSectionModel: NSObject, ObservableObject, BookmarkDataD
 
         // `.bookmarksDidChange` may be posted off the main actor, so hop rather
         // than assume isolation. This mirrors the pattern in `MapStopsObserver`.
+        //
+        // Scoped to this application's own store rather than `object: nil`:
+        // `UserDefaultsStore` is the only poster and always posts `object: self`,
+        // so narrowing costs nothing in the app and keeps a concurrently-running
+        // test suite's store from driving this model.
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(bookmarksDidChange),
             name: .bookmarksDidChange,
-            object: nil
+            object: application.userDataStore
         )
     }
 
@@ -66,17 +71,39 @@ final class HomeBookmarksSectionModel: NSObject, ObservableObject, BookmarkDataD
 
     /// Re-reads which bookmarks belong on screen and rebuilds the rows.
     ///
-    /// `findBookmarks(in:)` returns raw persisted order — only `bookmarksInGroup`
-    /// sorts — so the sort here is what makes the four shown match the user's
-    /// Manage Bookmarks ordering.
+    /// Every pinned bookmark is shown, then unpinned ones fill up to `limit`.
+    /// `limit` is therefore a *floor* on the section's size, not a cap: pinning
+    /// is the user saying "always keep this one here", so a pin is never squeezed
+    /// out by a newer bookmark. With nothing pinned this is just the `limit`
+    /// most recent.
+    ///
+    /// Within each half, most-recently-created first — a bookmark the user just
+    /// made should be visible. `sortOrder` can't do that job: `UserDataStore.add`
+    /// appends a new bookmark to the end of its group, so ordering by it puts the
+    /// newest one *last*, past the cut. It's also renumbered per group, so its
+    /// values aren't comparable across groups at all. It still breaks ties,
+    /// ascending: bookmarks stored before `dateCreated` existed all decode as
+    /// `.distantPast`, and among those the user's own Manage Bookmarks order is
+    /// the best signal left.
     func refreshSelection() {
-        selection = Array(
-            application.userDataStore
-                .findBookmarks(in: application.currentRegion)
-                .sorted { $0.sortOrder < $1.sortOrder }
-                .prefix(limit)
-        )
+        let all = application.userDataStore
+            .findBookmarks(in: application.currentRegion)
+            .sorted(by: Self.isOrderedBefore)
+
+        let pinned = all.filter(\.isPinned)
+        let unpinned = all.filter { !$0.isPinned }
+
+        selection = pinned + unpinned.prefix(max(0, limit - pinned.count))
         rebuildRows()
+    }
+
+    /// Newest first, with the user's manual order breaking same-date ties.
+    /// `static` so the ordering can be asserted directly in tests.
+    static func isOrderedBefore(_ lhs: Bookmark, _ rhs: Bookmark) -> Bool {
+        if lhs.dateCreated != rhs.dateCreated {
+            return lhs.dateCreated > rhs.dateCreated
+        }
+        return lhs.sortOrder < rhs.sortOrder
     }
 
     // MARK: - Bookmarks
@@ -84,10 +111,14 @@ final class HomeBookmarksSectionModel: NSObject, ObservableObject, BookmarkDataD
     /// `.bookmarksDidChange` may be posted off the main actor, so hop rather
     /// than assume isolation. Selector-based observation is auto-removed on
     /// dealloc, so no token/deinit needed.
+    ///
+    /// Goes straight to `loadIfNeeded()`, which re-reads the selection itself.
+    /// Calling `refreshSelection()` first would update `selection` *before*
+    /// `loadIfNeeded()` snapshots it, so the newly bookmarked stop would never
+    /// register as a selection change and its arrivals would never be fetched.
     @objc
     private nonisolated func bookmarksDidChange() {
         Task { @MainActor [weak self] in
-            self?.refreshSelection()
             self?.loadIfNeeded()
         }
     }
@@ -115,6 +146,15 @@ final class HomeBookmarksSectionModel: NSObject, ObservableObject, BookmarkDataD
         lastFetchedRegionID = regionID
         loader.loadData()
         return true
+    }
+
+    /// Flips `bookmark`'s pinned state.
+    ///
+    /// No local refresh: the store posts `.bookmarksDidChange`, which this model
+    /// already observes, so the reorder arrives through the same path as any
+    /// other bookmark edit rather than a second one that could drift from it.
+    func togglePin(_ bookmark: Bookmark) {
+        application.userDataStore.setPinned(!bookmark.isPinned, for: bookmark)
     }
 
     // MARK: - Row Building

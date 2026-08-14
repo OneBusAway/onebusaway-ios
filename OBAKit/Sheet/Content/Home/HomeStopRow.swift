@@ -21,8 +21,13 @@ struct HomeStopRow: View {
 
     private let brandColor = Color(uiColor: ThemeColors.shared.brand)
 
+    /// Name, direction, routes, and stop ID — the same label the map pins use.
+    ///
+    /// Not `stop.name` joined with `stop.subtitle`: `subtitle` comes from `Stop`'s
+    /// `MKAnnotation` conformance and embeds a newline between the stop code and
+    /// the route list, which VoiceOver reads verbatim.
     private var accessibilityLabelText: String {
-        [stop.name, stop.subtitle].compactMap { $0 }.joined(separator: ", ")
+        Formatters.formattedAccessibilityLabel(stop: stop)
     }
 
     var body: some View {

@@ -50,6 +50,28 @@ final class HomeSheetViewModel: NSObject, ObservableObject, RegionsServiceDelega
         // `RegionsService` holds delegates weakly, so there's nothing to unregister.
         application.regionsService.addDelegate(self)
 
+        // Republish the children's changes as our own.
+        //
+        // `HomeSheetView` is handed this object and reads section content through
+        // it (`viewModel.recent.stops`). SwiftUI subscribes to the object a view
+        // is given and never to nested `ObservableObject`s reached through it, so
+        // without this a child's `@Published` write updates the model and leaves
+        // the sheet rendering stale rows. `visibleSections` below can't stand in
+        // for it: it's guarded against no-op writes, so a stop viewed while the
+        // Recent section is already on screen would publish nothing at all.
+        //
+        // Forwarding `objectWillChange` rather than the specific publishers used
+        // below so a `@Published` added to a section model later is covered
+        // automatically. Delivery is synchronous on the child's `willSet`, which
+        // is the timing SwiftUI wants.
+        Publishers.MergeMany(
+            nearby.objectWillChange,
+            recent.objectWillChange,
+            bookmarks.objectWillChange
+        )
+        .sink { [weak self] _ in self?.objectWillChange.send() }
+        .store(in: &cancellables)
+
         // Recompute the visible set whenever any child's content changes. The
         // children publish values, not the section list, so this is the single
         // place the order and the omission rule live.

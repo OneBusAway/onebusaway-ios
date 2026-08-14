@@ -95,6 +95,22 @@ public protocol UserDataStore: NSObjectProtocol {
     ///   - index: The sort order or index of the bookmark in its group. Pass in `Int.max` to append to the end.
     func add(_ bookmark: Bookmark, to group: BookmarkGroup?, index: Int)
 
+    /// Sets whether `bookmark` is pinned to the top of the home sheet's bookmarks
+    /// section, and persists the change.
+    ///
+    /// Separate from `add(_:to:)` on purpose. `bookmarks` is computed over
+    /// `UserDefaults` — its getter decodes fresh instances — so mutating a
+    /// `Bookmark` in memory doesn't persist, and routing the write through
+    /// `add(_:to:)` would re-append the bookmark and renumber `sortOrder` within
+    /// its group, quietly moving it to the bottom of the Bookmarks tab. This
+    /// updates in place and leaves group membership and `sortOrder` alone.
+    ///
+    /// Posts `.bookmarksDidChange`. No-op if `bookmark` isn't in the store.
+    /// - Parameters:
+    ///   - isPinned: The new pinned state.
+    ///   - bookmark: The `Bookmark` to update.
+    func setPinned(_ isPinned: Bool, for bookmark: Bookmark)
+
     /// Deletes the specified `Bookmark` from the `UserDataStore`.
     /// - Parameter bookmark: The `Bookmark` to delete.
     func delete(bookmark: Bookmark)
@@ -602,6 +618,22 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         }
 
         bookmarks = all
+        NotificationCenter.default.post(name: .bookmarksDidChange, object: self)
+    }
+
+    public func setPinned(_ isPinned: Bool, for bookmark: Bookmark) {
+        var allBookmarks = bookmarks
+        guard let index = allBookmarks.firstIndex(where: { $0.id == bookmark.id }) else { return }
+        guard allBookmarks[index].isPinned != isPinned else { return }
+
+        allBookmarks[index].isPinned = isPinned
+        // Keep the caller's instance in step. `bookmarks`' getter decodes fresh
+        // objects, so the one the caller is holding is a different instance than
+        // the one just written — without this its `isPinned` would still read
+        // stale to whoever kept a reference.
+        bookmark.isPinned = isPinned
+        bookmarks = allBookmarks
+
         NotificationCenter.default.post(name: .bookmarksDidChange, object: self)
     }
 

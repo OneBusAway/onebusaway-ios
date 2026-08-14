@@ -87,74 +87,100 @@ struct HomeSheetView: View {
     private func sectionContent(for section: HomeSheetSection) -> some View {
         switch section {
         case .nearby:
-            Section {
-                ForEach(viewModel.nearby.stops, id: \.id) { stop in
-                    HomeStopRow(stop: stop) {
-                        coordinator.push(.stopDetails(stopID: stop.id))
-                    }
-                }
-            } header: {
-                HomeSectionHeader(title: Strings.nearbyStops) {
-                    coordinator.push(.nearbyAll)
-                }
-            }
-            .textCase(nil)
+            stopSection(
+                stops: viewModel.nearby.stops,
+                title: Strings.nearbyStops,
+                seeAll: .nearbyAll
+            )
 
         case .recent:
-            Section {
-                ForEach(viewModel.recent.stops, id: \.id) { stop in
-                    HomeStopRow(stop: stop) {
-                        coordinator.push(.stopDetails(stopID: stop.id))
-                    }
-                }
-            } header: {
-                HomeSectionHeader(title: Strings.recentStops) {
-                    coordinator.push(.recentStopsAll)
-                }
-            }
-            .textCase(nil)
+            stopSection(
+                stops: viewModel.recent.stops,
+                title: Strings.recentStops,
+                seeAll: .recentStopsAll
+            )
 
         case .bookmarks:
-            Section {
-                ForEach(viewModel.bookmarks.rows) { row in
-                    Group {
-                        if row.isTripBookmark {
-                            BookmarkCardView(row: row)
-                        } else {
-                            StopBookmarkRow(row: row)
-                        }
-                    }
-                    .contentShape(.rect)
-                    .onTapGesture {
-                        coordinator.push(.stopDetails(stopID: row.stopID))
-                    }
-                }
-            } header: {
-                HomeSectionHeader(title: Strings.bookmarks) {
-                    coordinator.push(.bookmarksAll)
-                }
-            }
-            .textCase(nil)
-            .environment(\.obaFormatters, application.formatters)
+            bookmarksSection
+                .environment(\.obaFormatters, application.formatters)
         }
     }
 
-    /// Shown only when all three sections are empty — a first launch, or a map
-    /// parked at region-level zoom with no saved data. Reuses the nearby
-    /// controller's copy, minus its "Search Wider Area" button: that drives
-    /// `MapRegionManager.preferredLoadDataRegionFudgeFactor` and a timed reset
-    /// the SwiftUI path has no equivalent plumbing for.
+    /// The nearby and recent sections: same row and header shape, different
+    /// source and destination.
+    private func stopSection(
+        stops: [Stop],
+        title: String,
+        seeAll: AppSheetRoute
+    ) -> some View {
+        Section {
+            ForEach(stops, id: \.id) { stop in
+                HomeStopRow(stop: stop) {
+                    coordinator.push(.stopDetails(stopID: stop.id))
+                }
+            }
+        } header: {
+            HomeSectionHeader(title: title) {
+                coordinator.push(seeAll)
+            }
+        }
+        .textCase(nil)
+    }
+
+    /// Bookmark rows reuse the Bookmarks tab's cells as-is, so the two surfaces
+    /// can't drift apart visually.
+    private var bookmarksSection: some View {
+        Section {
+            ForEach(viewModel.bookmarks.rows) { row in
+                Group {
+                    if row.isTripBookmark {
+                        BookmarkCardView(row: row)
+                    } else {
+                        StopBookmarkRow(row: row)
+                    }
+                }
+                .contentShape(.rect)
+                .onTapGesture {
+                    coordinator.push(.stopDetails(stopID: row.stopID))
+                }
+                .contextMenu {
+                    // Pinning is reachable from the row it affects, not only from
+                    // the Bookmarks tab — this section is where the result shows.
+                    BookmarkPinButton(isPinned: row.isPinned) {
+                        viewModel.bookmarks.togglePin(row.bookmark)
+                    }
+                }
+            }
+        } header: {
+            HomeSectionHeader(title: Strings.bookmarks) {
+                coordinator.push(.bookmarksAll)
+            }
+        }
+        .textCase(nil)
+    }
+
+    /// Shown only when all three sections are empty at once — a first launch, or
+    /// a map parked at region-level zoom with nothing saved.
+    ///
+    /// Has its own copy rather than reusing the nearby controller's: two of the
+    /// three sections have nothing to do with the map, so "Zoom out or pan around
+    /// to find some stops" would be advice that can't fix what the user is
+    /// actually missing.
+    ///
+    /// Deliberately omits the nearby controller's "Search Wider Area" button: that
+    /// drives `MapRegionManager.preferredLoadDataRegionFudgeFactor` and a timed
+    /// reset the SwiftUI path has no equivalent plumbing for.
     private var emptyState: some View {
         EmptyStateView(
             title: OBALoc(
-                "nearby_controller.empty_set.title",
-                value: "No Nearby Stops",
-                comment: "Title for the empty set indicator on the Nearby controller"
+                "home_sheet.empty_set.title",
+                value: "Nothing Here Yet",
+                comment: "Title for the home sheet's empty state, shown when there are no nearby stops, no recent stops, and no bookmarks."
             ),
             description: OBALoc(
-                "nearby_controller.empty_set.body",
-                value: "Zoom out or pan around to find some stops.",
-                comment: "Body for the empty set indicator on the Nearby controller."
+                "home_sheet.empty_set.body",
+                value: "Nearby stops, stops you've viewed, and your bookmarks will show up here.",
+                comment: "Body for the home sheet's empty state, shown when there are no nearby stops, no recent stops, and no bookmarks."
             ),
             systemImage: "mappin.slash"
         )
