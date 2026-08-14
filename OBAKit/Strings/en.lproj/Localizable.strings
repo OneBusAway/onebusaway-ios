@@ -982,7 +982,7 @@
 "settings_controller.alerts_section.display_test_alerts" = "Display test alerts";
 
 /* Settings section title for controlling which arrivals/departures are shown */
-"settings_controller.arrival_display_section.title" = "Arrival Display";
+"settings_controller.arrival_display_section.title" = "Arrival & Departure Display";
 
 /* Title for the departure filter selection alert */
 "settings_controller.arrival_filter.selector_title" = "Show Departures";

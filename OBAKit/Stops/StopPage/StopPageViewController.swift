@@ -660,8 +660,14 @@ private extension StopPageViewController {
         // The titles double as the VoiceOver labels for these image-only bar
         // buttons, so they must be localized, human-readable strings — the
         // filter's on/off state rides in `accessibilityValue` rather than
-        // being baked into the label. The glyph fills for either filter: hidden
-        // routes or a non-default Departure Type both mean rows are being held back.
+        // being baked into the label.
+        //
+        // This glyph fills for either filter: the bar button owns `filterMenu()`,
+        // which contains both the route section and the Departure Type submenu, so
+        // hidden routes or a non-default Departure Type both mean rows are being
+        // held back and either should show up here. The sheet presentation's
+        // toolbar deliberately does *not* mirror this — see `StopPageToolbar`,
+        // where the two filters are siblings and each carries its own state.
         let filterIsOn = (viewModel.stopPreferences.hasHiddenRoutes && viewModel.isListFiltered)
             || viewModel.arrivalDepartureFilter != .all
         let filterButtonImage = UIImage(systemName: filterIsOn ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
@@ -702,11 +708,12 @@ private extension StopPageViewController {
 
         if let stop = viewModel.stop {
             if stop.routes.count > 1 {
-                if viewModel.isListFiltered && viewModel.stopPreferences.hasHiddenRoutes {
-                    showFiltered.image = UIImage(systemName: "checkmark")
-                } else {
-                    showAll.image = UIImage(systemName: "checkmark")
-                }
+                // `state`, not a checkmark image: it draws the same checkmark but
+                // is also what VoiceOver reads as "selected". An image is
+                // decoration the accessibility layer never announces.
+                let routesAreFiltered = viewModel.isListFiltered && viewModel.stopPreferences.hasHiddenRoutes
+                showFiltered.state = routesAreFiltered ? .on : .off
+                showAll.state = routesAreFiltered ? .off : .on
 
                 routeChildren.append(showFiltered)
             }
@@ -727,12 +734,12 @@ private extension StopPageViewController {
             let action = UIAction(title: filter.displayTitle) { [unowned self] _ in
                 self.viewModel.updateArrivalDepartureFilter(filter)
             }
-            if filter == currentFilter { action.image = UIImage(systemName: "checkmark") }
+            action.state = filter == currentFilter ? .on : .off
             return action
         }
 
         let menuTitle = OBALoc("stop_controller.arrival_filter.menu_title", value: "Departure Type", comment: "Title for the menu that filters departures by data type")
-        return UIMenu(title: menuTitle, image: UIImage(systemName: "antenna.radiowaves.left.and.right"), children: actions)
+        return UIMenu(title: menuTitle, image: Icons.departureType(isActive: currentFilter != .all), children: actions)
     }
 
     func fileMenu() -> UIMenu {

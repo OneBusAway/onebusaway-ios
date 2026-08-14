@@ -176,13 +176,13 @@ class SettingsViewController: FormViewController {
         store.walkingSpeedMetersPerSecond = decision.speed
     }
 
-    // MARK: - Arrival Display Section
+    // MARK: - Arrival & Departure Display Section
 
     private let arrivalFilterTag = "arrivalDepartureFilter"
 
     private lazy var arrivalDisplaySection: Section = {
         let section = Section(
-            OBALoc("settings_controller.arrival_display_section.title", value: "Arrival Display", comment: "Settings section title for controlling which arrivals/departures are shown")
+            OBALoc("settings_controller.arrival_display_section.title", value: "Arrival & Departure Display", comment: "Settings section title for controlling which arrivals/departures are shown")
         )
 
         section <<< AlertRow<ArrivalDepartureFilter> {
