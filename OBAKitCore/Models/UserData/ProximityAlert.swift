@@ -28,14 +28,72 @@ public class ProximityAlert: NSObject, Codable {
     /// The maximum age (in seconds) before a proximity alert is considered stale and should be removed.
     public static let expirationInterval: TimeInterval = 24 * 60 * 60 // 24 hours
 
-    public init(stop: Stop, radiusMeters: Double = 200.0, createdAt: Date = Date()) {
+    // MARK: - Radius
+
+    /// The geofence radius used when a caller doesn't choose one.
+    public static let defaultRadiusMeters: CLLocationDistance = 200
+
+    /// The tightest geofence worth arming. Core Location's own accuracy floor
+    /// means anything smaller fires late, early, or not at all.
+    public static let minimumRadiusMeters: CLLocationDistance = 50
+
+    /// A conservative ceiling for a radius, applied where the device's real limit
+    /// isn't reachable.
+    ///
+    /// `LocationManager.maximumRegionMonitoringDistance` is the authoritative
+    /// value and varies with hardware and current resource constraints, so this
+    /// model can't consult it. `LocationService` clamps a second time against the
+    /// live value when it actually arms the region.
+    public static let maximumRadiusMeters: CLLocationDistance = 10_000
+
+    /// Brings `radius` into the monitorable range, logging whenever it has to.
+    ///
+    /// An out-of-range radius can't simply be passed along: `CLCircularRegion`
+    /// clamps it silently, so the alert would fire at a distance nobody asked for
+    /// with nothing anywhere recording that it had changed.
+    static func clampedRadius(_ radius: CLLocationDistance) -> CLLocationDistance {
+        guard radius.isFinite else {
+            Logger.warn("ProximityAlert radius \(radius) is not a finite number; using the \(defaultRadiusMeters)m default.")
+            return defaultRadiusMeters
+        }
+
+        let clamped = min(max(radius, minimumRadiusMeters), maximumRadiusMeters)
+        if clamped != radius {
+            Logger.warn("ProximityAlert radius \(radius)m falls outside \(minimumRadiusMeters)m–\(maximumRadiusMeters)m; clamped to \(clamped)m.")
+        }
+
+        return clamped
+    }
+
+    public init(stop: Stop, radiusMeters: CLLocationDistance = ProximityAlert.defaultRadiusMeters, createdAt: Date = Date()) {
         self.id = UUID()
         self.stopID = stop.id
         self.stopName = stop.name
         self.latitude = stop.location.coordinate.latitude
         self.longitude = stop.location.coordinate.longitude
-        self.radiusMeters = radiusMeters
+        self.radiusMeters = ProximityAlert.clampedRadius(radiusMeters)
         self.createdAt = createdAt
+    }
+
+    // MARK: - Codable
+
+    private enum CodingKeys: String, CodingKey {
+        case id, stopID, stopName, latitude, longitude, radiusMeters, createdAt
+    }
+
+    /// Re-applies the radius clamp on the way in, so the invariant also holds for
+    /// alerts persisted by a build that predates it. Keys match the property
+    /// names the synthesized conformance used, keeping stored alerts readable.
+    public required init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        id = try container.decode(UUID.self, forKey: .id)
+        stopID = try container.decode(StopID.self, forKey: .stopID)
+        stopName = try container.decode(String.self, forKey: .stopName)
+        latitude = try container.decode(Double.self, forKey: .latitude)
+        longitude = try container.decode(Double.self, forKey: .longitude)
+        radiusMeters = ProximityAlert.clampedRadius(try container.decode(CLLocationDistance.self, forKey: .radiusMeters))
+        createdAt = try container.decode(Date.self, forKey: .createdAt)
     }
 
     /// Whether this alert has expired based on `expirationInterval`.
