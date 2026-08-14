@@ -52,13 +52,14 @@ public class BookmarkDataLoader: NSObject {
     /// Resumed when that batch drains (`taskFinished`) or is retired (`cancelUpdates`).
     @MainActor private var batchContinuations: [UInt64: [CheckedContinuation<Void, Never>]] = [:]
 
-    /// Stops whose arrival fetch has completed successfully at least once this
-    /// session. Lets consumers distinguish "still loading" from "loaded, but no
-    /// upcoming departures".
+    /// Stops whose arrival fetch has finished this session — a successful
+    /// payload **or** a literal HTTP 404. Lets consumers distinguish "still
+    /// loading" from "loaded, but no upcoming departures". Empty HTTP 200
+    /// (also thrown as `APIError.requestNotFound`) is not recorded here.
     @MainActor private var fetchedStopIDs = Set<StopID>()
 
-    /// `true` once at least one arrival fetch for `stopID` has completed
-    /// successfully this session.
+    /// `true` once an arrival fetch for `stopID` has finished this session
+    /// (success or HTTP 404).
     @MainActor public func hasFetchedData(forStopID stopID: StopID) -> Bool {
         fetchedStopIDs.contains(stopID)
     }
@@ -178,14 +179,17 @@ public class BookmarkDataLoader: NSObject {
 
                     self.delegate?.dataLoaderDidUpdate(self)
                 }
-            } catch APIError.requestNotFound {
-                // A bookmarked stop that no longer resolves in the current region is
-                // not a failure the rider watched happen — mirror StopViewModel's 404
-                // handling: no bulletin, no batch-error flag. Still mark it fetched so
-                // the card settles on "No upcoming departures" rather than "Loading...".
+            } catch APIError.requestNotFound(let response) where response.statusCode == 404 {
+                // Literal HTTP 404: the stop no longer exists in this region.
+                // San Diego trace 2026-08-14 against realtime.sdmts.com: a live
+                // stop (`MTS_11589`) returns HTTP 200 with a full JSON body on
+                // the app URL (`/api/api/where/...`). Empty HTTP 200 — also
+                // thrown as `requestNotFound` by `APIService+GetData` — is a
+                // transient blip and falls through to `displayError` below.
                 await MainActor.run {
                     guard batchID == self.currentBatchID else { return }
                     self.fetchedStopIDs.insert(bookmark.stopID)
+                    self.tripBookmarkKeys = self.tripBookmarkKeys.filter { $0.key.stopID != bookmark.stopID }
                     self.delegate?.dataLoaderDidUpdate(self)
                 }
             } catch {

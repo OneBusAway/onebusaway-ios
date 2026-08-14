@@ -526,9 +526,8 @@ final class BookmarksViewModelTests: OBATestCase {
 
     // MARK: - Request not found (404)
 
-    /// A 404 on a bookmarked stop must not surface a bulletin — the stop simply
-    /// no longer resolves in the current region (e.g. after switching to San Diego).
-    /// Mirrors StopViewModel's non-fatal 404 handling.
+    /// A literal HTTP 404 on a bookmarked stop must not surface a bulletin — the
+    /// stop no longer resolves. Empty HTTP 200 is a different case (see below).
     @Test @MainActor
     func `Request not found does not call display error`() async throws {
         let dataLoader = MockDataLoader(testName: name)
@@ -590,5 +589,62 @@ final class BookmarksViewModelTests: OBATestCase {
 
         #expect(app.displayErrorCallCount == 1)
         #expect(viewModel.lastRefreshHadError)
+    }
+
+    /// `APIService+GetData` maps HTTP 200 + `Content-Length: 0` to
+    /// `APIError.requestNotFound` as well as a literal 404. A live San Diego
+    /// stop (`MTS_11589`) returns HTTP 200 with a full JSON body, so an empty
+    /// 200 is a transient blip, not a missing stop — it must still bulletin.
+    @Test @MainActor
+    func `Empty 200 still calls display error`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createSpyApplication(dataLoader: dataLoader)
+        _ = try addTripBookmark(to: app)
+
+        dataLoader.mock(data: Data(), statusCode: 200) {
+            $0.url?.path.contains("/api/where/arrivals-and-departures-for-stop") ?? false
+        }
+
+        let viewModel = BookmarksViewModel(application: app)
+        await viewModel.refreshAndWait()
+
+        #expect(app.displayErrorCallCount == 1)
+        #expect(viewModel.lastRefreshHadError)
+    }
+
+    /// A 404 after a successful fetch must drop the previous departures rather
+    /// than leave a frozen countdown on the card.
+    @Test @MainActor
+    func `HTTP 404 after success clears stale departures`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createSpyApplication(dataLoader: dataLoader)
+        _ = try addTripBookmark(to: app)
+
+        dataLoader.mock(
+            data: Fixtures.loadData(file: "arrivals-and-departures-for-stop-1_10914.json")
+        ) { $0.url?.path.contains("/api/where/arrivals-and-departures-for-stop") ?? false }
+
+        let viewModel = BookmarksViewModel(application: app)
+        await viewModel.refreshAndWait()
+
+        let loaded = try #require(viewModel.sections.flatMap(\.rows).first)
+        #expect(!loaded.arrivalDepartures.isEmpty)
+
+        dataLoader.replaceMappedResponses { staging in
+            stubRegions(dataLoader: staging)
+            stubAgenciesWithCoverage(dataLoader: staging, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
+            Fixtures.stubAllAgencyAlerts(dataLoader: staging)
+            staging.mock(data: Data(), statusCode: 404) {
+                $0.url?.path.contains("/api/where/arrivals-and-departures-for-stop") ?? false
+            }
+        }
+
+        await viewModel.refreshAndWait()
+
+        #expect(app.displayErrorCallCount == 0)
+        #expect(!viewModel.lastRefreshHadError)
+        let row = try #require(viewModel.sections.flatMap(\.rows).first)
+        #expect(row.hasLoadedArrivalData)
+        #expect(row.arrivalDepartures.isEmpty)
     }
 }
