@@ -51,6 +51,8 @@ struct ErrorView: View {
             return "wifi.slash"
         case .serverError, .serverUnavailable:
             return "server.rack"
+        case .invalidResponseData:
+            return "exclamationmark.triangle"
         case .captivePortal:
             return "lock.shield"
         default:
