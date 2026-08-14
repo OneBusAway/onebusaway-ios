@@ -87,9 +87,17 @@ final class TripMapAnnotationPolicyTests: OBATestCase {
     }
 
     /// A rider tap with callouts off still opens the stop.
+    ///
+    /// Needs a referenced `ArrivalDeparture`: `openStop` builds `TransferContext.from`,
+    /// which reads `routeShortName`. `Fixtures.arrivalDeparture()` leaves `route` nil
+    /// and crashed CI at `ArrivalDeparture.swift:221`.
     @Test @MainActor
     func `User tap opens the stop when callouts are hidden`() throws {
-        let arrivalDeparture = try Fixtures.arrivalDeparture()
+        let stopArrivals = try Fixtures.loadRESTAPIPayload(
+            type: StopArrivals.self,
+            fileName: "arrivals-and-departures-for-stop-1_10914.json"
+        )
+        let arrivalDeparture = try #require(stopArrivals.arrivalsAndDepartures.first)
         let controller = makeController(arrivalDeparture: arrivalDeparture)
         let nav = UINavigationController(rootViewController: controller)
 
