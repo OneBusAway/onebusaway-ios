@@ -7,20 +7,23 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
+import Combine
 import MapKit
 import OBAKitCore
 
 // MARK: - HomeSheetViewModel
 
-// Owns the home sheet's reactive content state. Empty today beyond a stub
-// for the nearby-stops snapshot — kept here so `HomeSheetView`'s
-// `@StateObject` + `@autoclosure` plumbing is already in place and the
-// next reader sees the intended shape rather than an unexplained empty type.
+/// Owns the home sheet's reactive content state: the search bar's placeholder
+/// and the three preview sections.
+///
+/// Composes three child section models rather than talking to the data sources
+/// itself, so each section's rules stay separately readable and testable.
 @MainActor
 final class HomeSheetViewModel: NSObject, ObservableObject, RegionsServiceDelegate {
-    // TODO: Populate from `RESTAPIService` / `LocationService` once the
-    // home sheet renders nearby stops.
-    @Published private(set) var nearbyStops: [Stop] = []
+
+    let nearby: HomeNearbyStopsSectionModel
+    let recent: HomeRecentStopsSectionModel
+    let bookmarks: HomeBookmarksSectionModel
 
     /// Published rather than computed so a region change repaints the search bar.
     /// The UIKit panel gets this from its own `RegionsServiceDelegate` callback
@@ -29,20 +32,64 @@ final class HomeSheetViewModel: NSObject, ObservableObject, RegionsServiceDelega
     /// something unrelated happened to invalidate the view.
     @Published private(set) var searchPlaceholder: String
 
-    private let application: Application
+    /// Sections that currently have something to show, in render order. Empty
+    /// sections are dropped entirely — header included.
+    @Published private(set) var visibleSections: [HomeSheetSection] = []
 
-    init(application: Application) {
+    private let application: Application
+    private var cancellables = Set<AnyCancellable>()
+
+    init(application: Application, stopsObserver: MapStopsObserver) {
         self.application = application
         self.searchPlaceholder = SearchPlaceholder.text(for: application)
+        self.nearby = HomeNearbyStopsSectionModel(observer: stopsObserver)
+        self.recent = HomeRecentStopsSectionModel(application: application)
+        self.bookmarks = HomeBookmarksSectionModel(application: application)
         super.init()
 
         // `RegionsService` holds delegates weakly, so there's nothing to unregister.
         application.regionsService.addDelegate(self)
+
+        // Recompute the visible set whenever any child's content changes. The
+        // children publish values, not the section list, so this is the single
+        // place the order and the omission rule live.
+        nearby.$stops
+            .combineLatest(recent.$stops, bookmarks.$rows)
+            .sink { [weak self] nearbyStops, recentStops, bookmarkRows in
+                self?.updateVisibleSections(
+                    hasNearby: !nearbyStops.isEmpty,
+                    hasRecent: !recentStops.isEmpty,
+                    hasBookmarks: !bookmarkRows.isEmpty
+                )
+            }
+            .store(in: &cancellables)
+    }
+
+    /// Called when the sheet's content appears. Idempotent: the sheet system
+    /// tears content down and rebuilds it without the user navigating anywhere,
+    /// so this can fire several times per visit. The store reads are cheap and
+    /// unconditional; only the bookmark fetch is gated.
+    func activate() {
+        recent.reload()
+        bookmarks.loadIfNeeded()
+    }
+
+    private func updateVisibleSections(hasNearby: Bool, hasRecent: Bool, hasBookmarks: Bool) {
+        var sections: [HomeSheetSection] = []
+        if hasNearby { sections.append(.nearby) }
+        if hasRecent { sections.append(.recent) }
+        if hasBookmarks { sections.append(.bookmarks) }
+        guard sections != visibleSections else { return }
+        visibleSections = sections
     }
 
     // MARK: - RegionsServiceDelegate
 
     func regionsService(_ service: RegionsService, updatedRegion region: Region) {
         searchPlaceholder = SearchPlaceholder.text(for: application)
+        // Which recents and bookmarks are "current" changed, and neither store
+        // posts a notification for it.
+        recent.reload()
+        bookmarks.loadIfNeeded()
     }
 }
