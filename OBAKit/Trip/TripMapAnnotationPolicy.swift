@@ -11,9 +11,12 @@ import MapKit
 
 /// Callout behavior for stop annotations on the trip map.
 ///
-/// Trip stop pins are selected to highlight the corresponding row in the trip
-/// details list. Schedule-time callouts ("flags") obscure the vehicle annotation
-/// and duplicate information already shown in the list and navigation bar.
+/// Schedule-time callouts duplicated the trip list and obscured the vehicle.
+/// Pins therefore have `canShowCallout = false`. A rider tap opens the stop
+/// (the same gesture `StopAnnotationView` uses without a callout) and
+/// highlights the matching list row. Programmatic selection on load is skipped
+/// via `TripViewController.skipNextStopTimeHighlight` so opening a trip from a
+/// departure does not immediately push that stop back on top of the trip.
 enum TripMapAnnotationPolicy {
     static let showsStopCallout = false
 

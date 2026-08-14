@@ -16,25 +16,35 @@ import Testing
 @Suite(.serialized)
 final class TripMapAnnotationPolicyTests: OBATestCase {
 
-    @Test @MainActor
-    func `Trip controller applies the no-callout policy to stop views`() throws {
+    private func makeController(arrivalDeparture: ArrivalDeparture) -> TripViewController {
         let dataLoader = MockDataLoader(testName: name)
         let application = buildApplication(queue: OperationQueue(), dataLoader: dataLoader)
-        let tripDetails = try JSONDecoder.RESTDecoder().decode(
+        return TripViewController(application: application, arrivalDeparture: arrivalDeparture)
+    }
+
+    private func loadTripDetails() throws -> TripDetails {
+        try JSONDecoder.RESTDecoder().decode(
             RESTAPIResponse<TripDetails>.self,
             from: Fixtures.loadData(file: "trip_details_1_18196913.json")
         ).entry
-        let controller = TripViewController(
-            application: application,
-            tripConvertible: TripConvertible(tripDetails: tripDetails)
-        )
+    }
+
+    /// `viewFor` only applies the policy when `arrivalDeparture` is set. Building
+    /// the controller from `TripConvertible(tripDetails:)` skipped that branch,
+    /// so `canShowCallout` was just MKAnnotationView's default `false`.
+    @Test @MainActor
+    func `Trip controller applies the no-callout policy to stop views`() throws {
+        let arrivalDeparture = try Fixtures.arrivalDeparture()
+        let controller = makeController(arrivalDeparture: arrivalDeparture)
         let mapView = MKMapView()
         mapView.registerAnnotationView(MinimalStopAnnotationView.self)
-        let stopTime = try #require(tripDetails.stopTimes.first)
+        let stopTime = try #require(try loadTripDetails().stopTimes.first)
 
         let view = try #require(controller.mapView(mapView, viewFor: stopTime) as? MinimalStopAnnotationView)
 
         #expect(!view.canShowCallout)
+        #expect(view.rightCalloutAccessoryView == nil)
+        #expect(view.detailCalloutAccessoryView == nil)
     }
 
     @Test @MainActor
@@ -49,5 +59,45 @@ final class TripMapAnnotationPolicyTests: OBATestCase {
         #expect(!view.canShowCallout)
         #expect(view.rightCalloutAccessoryView == nil)
         #expect(view.detailCalloutAccessoryView == nil)
+    }
+
+    /// Opening a trip from a departure auto-selects the rider's stop. That
+    /// programmatic select must not push the stop page back on top (#713).
+    @Test @MainActor
+    func `Programmatic selection does not open the stop`() throws {
+        let arrivalDeparture = try Fixtures.arrivalDeparture()
+        let controller = makeController(arrivalDeparture: arrivalDeparture)
+        let nav = UINavigationController(rootViewController: controller)
+        _ = nav.view
+        _ = controller.view
+
+        let stopTime = try #require(try loadTripDetails().stopTimes.first)
+        let annotationView = MinimalStopAnnotationView(annotation: stopTime, reuseIdentifier: "test")
+        annotationView.canShowCallout = false
+
+        controller.skipNextStopTimeHighlight = true
+        controller.mapView(MKMapView(), didSelect: annotationView)
+
+        #expect(nav.viewControllers.count == 1)
+        #expect(nav.viewControllers.first === controller)
+    }
+
+    /// A rider tap with callouts off still opens the stop.
+    @Test @MainActor
+    func `User tap opens the stop when callouts are hidden`() throws {
+        let arrivalDeparture = try Fixtures.arrivalDeparture()
+        let controller = makeController(arrivalDeparture: arrivalDeparture)
+        let nav = UINavigationController(rootViewController: controller)
+        _ = nav.view
+        _ = controller.view
+
+        let stopTime = try #require(try loadTripDetails().stopTimes.first)
+        let annotationView = MinimalStopAnnotationView(annotation: stopTime, reuseIdentifier: "test")
+        annotationView.canShowCallout = false
+
+        controller.skipNextStopTimeHighlight = false
+        controller.mapView(MKMapView(), didSelect: annotationView)
+
+        #expect(nav.viewControllers.count == 2)
     }
 }

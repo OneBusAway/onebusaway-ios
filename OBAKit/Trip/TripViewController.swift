@@ -343,22 +343,26 @@ class TripViewController: UIViewController,
         defer { skipNextStopTimeHighlight = false }
         guard !skipNextStopTimeHighlight else { return }
 
+        func highlightStopInList() {
+            self.tripDetailsController.highlightStopInList(stopTime.stop)
+        }
+
+        // Callouts are off on this map. A rider tap opens the stop — the same
+        // gesture StopAnnotationView uses when `canShowCallout` is false —
+        // and still highlights the matching list row so the two surfaces agree.
         guard view.canShowCallout else {
+            highlightStopInList()
             openStop(stopTime)
             return
         }
 
-        func mapViewAnnotationSelectionComplete() {
-            self.tripDetailsController.highlightStopInList(stopTime.stop)
-        }
-
         if self.mapView.hasBeenTouched {
-            mapViewAnnotationSelectionComplete()
+            highlightStopInList()
         } else {
             if traitCollection.horizontalSizeClass == .regular {
-                floatingPanel.move(to: .full, animated: true, completion: mapViewAnnotationSelectionComplete)
+                floatingPanel.move(to: .full, animated: true, completion: highlightStopInList)
             } else {
-                floatingPanel.move(to: .half, animated: true, completion: mapViewAnnotationSelectionComplete)
+                floatingPanel.move(to: .half, animated: true, completion: highlightStopInList)
             }
         }
     }
@@ -368,11 +372,6 @@ class TripViewController: UIViewController,
             stopTime == self.selectedStopTime else { return }
 
         self.selectedStopTime = nil
-    }
-
-    public func mapView(_ mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl) {
-        guard let stopTime = view.annotation as? TripStopTime else { return }
-        openStop(stopTime)
     }
 
     private func openStop(_ stopTime: TripStopTime) {
@@ -503,6 +502,7 @@ private extension TripViewController {
                 }
 
                 if let arrivalDeparture = tripConvertible.arrivalDeparture {
+                    skipNextStopTimeHighlight = true
                     selectedStopTime = details.stopTimes.filter { $0.stopID == arrivalDeparture.stopID }.first
                 }
             }
