@@ -32,6 +32,7 @@ struct HomeSectionHeader: View {
                     .font(.footnote)
                     .fontWeight(.semibold)
                     .foregroundStyle(brandColor)
+                    .accessibilityHidden(true)
             }
             .contentShape(.rect)
         }
@@ -42,7 +43,6 @@ struct HomeSectionHeader: View {
             value: "Shows all items in this section.",
             comment: "VoiceOver hint for a home sheet section header, which opens that section's full list."
         ))
-        .accessibilityAddTraits(.isButton)
     }
 }
 
