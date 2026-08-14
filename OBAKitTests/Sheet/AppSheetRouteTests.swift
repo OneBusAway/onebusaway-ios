@@ -72,8 +72,8 @@ final class AppSheetRouteTests {
 
     @Test func `Home detent starts at small and offers all three`() {
         let config = AppSheetRoute.home.detentConfiguration
-        #expect(config.detents == [.height(80), .medium, AppSheetRoute.largeDetent])
-        #expect(config.initialDetent == .height(80))
+        #expect(config.detents == [.height(AppSheetRoute.homeCollapsedHeight), .medium, AppSheetRoute.largeDetent])
+        #expect(config.initialDetent == .height(AppSheetRoute.homeCollapsedHeight))
         #expect(config.showDragIndicator == true)
         #expect(config.isDismissDisabled == true)
     }
@@ -160,7 +160,7 @@ final class AppSheetRouteTests {
     @Test func `Home collapsed height matches map bottom inset`() {
         // Shared with `MapPanelRootView` so the map's bottom safe-area padding
         // matches the collapsed sheet — keep the constant pinned.
-        #expect(AppSheetRoute.homeCollapsedHeight == 80)
+        #expect(AppSheetRoute.homeCollapsedHeight == 75)
     }
 
     // MARK: - SheetDetentConfiguration defaults

@@ -176,7 +176,7 @@ nonisolated extension AppSheetRoute {
 
     /// Height of the home sheet's smallest detent. Shared by `MapPanelRootView`
     /// so the map's bottom safe-area padding matches the collapsed sheet.
-    static let homeCollapsedHeight: CGFloat = 80
+    static let homeCollapsedHeight: CGFloat = 75
 
     var detentConfiguration: SheetDetentConfiguration {
         switch self {
