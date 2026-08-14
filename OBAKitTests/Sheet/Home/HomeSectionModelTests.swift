@@ -111,4 +111,46 @@ final class HomeSectionModelTests: OBATestCase {
 
         #expect(model.stops.map(\.id) == observer.stops.prefix(4).map(\.id))
     }
+
+    // MARK: - Recent
+
+    /// The section caps at its limit and preserves the store's MRU ordering.
+    @Test @MainActor
+    func `Recent section caps at the limit in most recently used order`() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let stops = try Fixtures.loadSomeStops()
+
+        // Added oldest-first; the store inserts each at index 0, so the last
+        // one added is the first one out.
+        for stop in stops.prefix(6) {
+            application.userDataStore.addRecentStop(stop, region: Fixtures.pugetSoundRegion)
+        }
+
+        let model = HomeRecentStopsSectionModel(application: application, limit: 4)
+
+        #expect(model.stops.count == 4)
+        let expected = application.userDataStore
+            .recentStops(in: application.currentRegion)
+            .prefix(4)
+            .map(\.id)
+        #expect(model.stops.map(\.id) == Array(expected))
+    }
+
+    /// `reload()` picks up a stop added after construction.
+    @Test @MainActor
+    func `Recent section reload picks up newly added stops`() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let stops = try Fixtures.loadSomeStops()
+
+        let model = HomeRecentStopsSectionModel(application: application, limit: 4)
+        #expect(model.stops.isEmpty)
+
+        let stop = try #require(stops.first)
+        application.userDataStore.addRecentStop(stop, region: Fixtures.pugetSoundRegion)
+        model.reload()
+
+        #expect(model.stops.map(\.id) == [stop.id])
+    }
 }
