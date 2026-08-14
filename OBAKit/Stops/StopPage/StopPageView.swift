@@ -155,6 +155,10 @@ struct StopPageView: View {
     /// immediately instead of waiting for the next view-model refresh to re-read
     /// `shouldRequestDonations`.
     @State private var donationHidden = false
+    /// Suppresses the "Departures updated" VoiceOver announcement for the very
+    /// first successful load — the page has just appeared and VoiceOver is
+    /// already reading it, so only later refreshes announce.
+    @State private var didInitialA11yLoad = false
     @AppStorage("StopViewController.pastDeparturesCollapsed") private var pastCollapsed = true
 
     var body: some View {
@@ -162,6 +166,8 @@ struct StopPageView: View {
         // chronological partition, and the divider all read one snapshot of it.
         let walkTime = viewModel.walkTime
         let content = StopPageContent(viewModel: viewModel)
+
+        let rotorEntries = departuresRotorEntries(content: content, walkMinutes: walkTime?.walkMinutes)
 
         List {
             if let stop = viewModel.stop {
@@ -234,6 +240,32 @@ struct StopPageView: View {
         .onChange(of: content.routeIDs) { _, ids in
             if let rid = expandedRouteID, !ids.contains(rid) { expandedRouteID = nil }
         }
+        // A custom rotor so a VoiceOver user can spin to "Departures" and flick
+        // straight through the buses, skipping the header, status line, survey,
+        // donation, service-alerts card, and the mode/Past controls above them —
+        // the "so much information … hard to get bus schedules" complaint. Entries
+        // bind to the rows by the same id the ForEach uses (departure id in
+        // chronological mode, route id in grouped mode).
+        .accessibilityRotor(Text(Self.departuresRotorTitle)) {
+            ForEach(rotorEntries, id: \.id) { entry in
+                AccessibilityRotorEntry(entry.label, id: entry.id)
+            }
+        }
+        // Announce dynamic changes that otherwise mutate the list silently.
+        .onChange(of: viewModel.isLoading) { wasLoading, isLoading in
+            guard wasLoading, !isLoading, content.hasLoadedArrivals else { return }
+            if didInitialA11yLoad {
+                AccessibilityNotification.Announcement(Self.refreshedAnnouncement).post()
+            } else {
+                didInitialA11yLoad = true
+            }
+        }
+        .onChange(of: viewModel.arrivalDepartureFilter) { _, _ in
+            AccessibilityNotification.Announcement(Self.filterChangedAnnouncement).post()
+        }
+        .onChange(of: viewModel.isListFiltered) { _, filtered in
+            AccessibilityNotification.Announcement(filtered ? Self.routesFilteredAnnouncement : Self.routesAllAnnouncement).post()
+        }
     }
 
     /// The sheet presentation's bottom chrome. Reads the view model directly — `StopPageView` is
@@ -281,6 +313,33 @@ struct StopPageView: View {
             pastCollapsed: $pastCollapsed
         )
     }
+
+    // MARK: - VoiceOver announcements
+
+    /// The rows the custom "Departures" rotor steps through, in render order.
+    /// Each `id` matches the row's `ForEach` identity — departure id in
+    /// chronological mode, route id in grouped mode, both `String` — so the
+    /// rotor lands on the real rows. Collapsed Past rows are left out; there is
+    /// nothing rendered for the rotor to focus.
+    ///
+    /// The partition is recomputed rather than shared with
+    /// `StopDeparturesSections`: it is a pure function of values this body
+    /// already holds, and threading it through the sections' argument list would
+    /// buy nothing but another parameter.
+    private func departuresRotorEntries(content: StopPageContent, walkMinutes: Int?) -> [(label: String, id: String)] {
+        if content.isGrouped {
+            return content.routeGroups.map { ($0.next.routeAndHeadsign, $0.routeID) }
+        }
+        let partition = StopPageListBuilder.chronologicalPartition(content.departures, walkMinutes: walkMinutes)
+        let rows = (pastCollapsed ? [] : partition.past) + partition.missed + partition.reachable
+        return rows.map { ($0.routeAndHeadsign, $0.id) }
+    }
+
+    private static let departuresRotorTitle = OBALoc("stop_page.rotor.departures", value: "Departures", comment: "Title of the VoiceOver rotor that steps through the departure rows, skipping the header and cards above them.")
+    private static let refreshedAnnouncement = OBALoc("stop_page.a11y.refreshed", value: "Departures updated", comment: "VoiceOver announcement posted when a manual refresh finishes and the departure times have been updated.")
+    private static let filterChangedAnnouncement = OBALoc("stop_page.a11y.filter_changed", value: "Departure filter changed", comment: "VoiceOver announcement posted when the Departure Type filter changes which departures are visible.")
+    private static let routesFilteredAnnouncement = OBALoc("stop_page.a11y.routes_filtered", value: "Showing filtered routes", comment: "VoiceOver announcement posted when the route filter is turned on.")
+    private static let routesAllAnnouncement = OBALoc("stop_page.a11y.routes_all", value: "Showing all routes", comment: "VoiceOver announcement posted when the route filter is turned off.")
 }
 
 #Preview("Initial loading") {

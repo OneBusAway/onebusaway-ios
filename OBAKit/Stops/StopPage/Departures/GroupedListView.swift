@@ -90,7 +90,14 @@ struct GroupedListView: View {
         .onTapGesture { onToggleRoute(group.routeID) }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(groupAccessibilityLabel(group, status: status))
-        .accessibilityAddTraits(.isButton)
+        // `.updatesFrequently` so a focused card re-speaks its changing countdown,
+        // matching the legacy `StopArrivalView` and the flat departure rows.
+        .accessibilityAddTraits([.isButton, .updatesFrequently])
+        // Wire the card's expand/collapse to VoiceOver's activate (double-tap):
+        // the header's tap lives on `.onTapGesture`, which assistive tech can't
+        // reach, so `.isButton` alone would speak "button" while double-tap did
+        // nothing. See the matching note on `DepartureRowView`.
+        .accessibilityAction { onToggleRoute(group.routeID) }
         // Disclosure state: the card header's activation toggles the list of
         // departures beneath it, so announce which way it will go.
         .accessibilityValue(expandedRouteID == group.routeID
@@ -303,7 +310,11 @@ struct GroupedListView: View {
             // as a custom action just like the header's alarm pill.
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(expandedRowAccessibilityLabel(departure, status: status))
-            .accessibilityAddTraits(.isButton)
+            .accessibilityAddTraits([.isButton, .updatesFrequently])
+            // Wire the row's activate (double-tap) to open the trip: the tap
+            // lives on `.onTapGesture`, invisible to assistive tech, so
+            // `.isButton` alone announces "button" but activating does nothing.
+            .accessibilityAction { onSelectDeparture(departure) }
             .accessibilityActions {
                 if showsAlarmAffordance(for: departure) {
                     Button(alarmActionName(for: alarmLookup(departure))) {

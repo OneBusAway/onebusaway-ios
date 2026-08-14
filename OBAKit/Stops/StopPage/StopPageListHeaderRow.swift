@@ -140,7 +140,16 @@ struct StopPageListHeaderRow: View {
             }
         }
         .padding(.vertical, 4)
+        // The visible "Arrivals & Departures" title was dropped to save vertical
+        // space, which left VoiceOver's Headings rotor with no anchor for the list
+        // itself. A container heading restores that anchor at zero visual cost —
+        // the Past and mode controls inside stay individually focusable.
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(Self.departuresHeading)
+        .accessibilityAddTraits(.isHeader)
     }
+
+    private static let departuresHeading = OBALoc("stop_page.departures_heading", value: "Departures", comment: "VoiceOver-only heading that anchors the departures list in the Headings rotor; not shown on screen.")
 
     private var sideBySide: some View {
         HStack(spacing: 12) {
@@ -170,7 +179,7 @@ struct StopPageListHeaderRow: View {
     /// The chevron follows the conventional disclosure direction — down closed, up
     /// open — rather than pointing at the disclosed rows, which are below.
     private var pastButton: some View {
-        Button(action: onTogglePast) {
+        Button(action: togglePast) {
             HStack(spacing: 5) {
                 Text(showPast
                      ? OBALoc("stop_page.past_toggle_hide", value: "Hide past", comment: "Button hiding recently departed trips")
@@ -198,6 +207,18 @@ struct StopPageListHeaderRow: View {
         .accessibilityLabel(showPast
             ? OBALoc("stop_page.past_toggle_hide_a11y", value: "Hide past departures", comment: "VoiceOver label for the button hiding recently departed trips")
             : String(format: OBALoc("stop_page.past_toggle_show_a11y_fmt", value: "Show %d past departures", comment: "VoiceOver label for the button revealing recently departed trips. %d is the count. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback."), pastCount))
+    }
+
+    /// Toggling the disclosure inserts or removes rows well below this button,
+    /// which VoiceOver has no reason to re-read — so say what just happened.
+    /// Announced here rather than by the callers because this row is where both
+    /// the count and the direction are already known.
+    private func togglePast() {
+        onTogglePast()
+        let message = showPast
+            ? OBALoc("stop_page.a11y.past_hidden", value: "Past departures hidden", comment: "VoiceOver announcement when the Past disclosure is closed.")
+            : String(format: OBALoc("stop_page.a11y.past_shown_fmt", value: "Showing %d past departures", comment: "VoiceOver announcement when the Past disclosure is opened. %d is the count. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback."), pastCount)
+        AccessibilityNotification.Announcement(message).post()
     }
 }
 

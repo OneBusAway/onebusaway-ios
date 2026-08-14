@@ -60,6 +60,11 @@ struct StopDeparturesSections: View {
     let onShowAllDepartureTypes: () -> Void
     let onLoadMore: () -> Void
 
+    /// Moves VoiceOver focus to the empty-state message when a filter empties
+    /// the list. Owned here rather than by either presentation: the row it
+    /// targets is this view's, and both presentations want the same behaviour.
+    @AccessibilityFocusState private var emptyStateFocused: Bool
+
     /// Leading/trailing inset shared by the page's full-width card rows,
     /// matching the inset-grouped card margin.
     private static let horizontalRowInset: CGFloat = 0
@@ -87,6 +92,9 @@ struct StopDeparturesSections: View {
                     onDismiss: onSurveyDismiss,
                     onOpenExternalSurvey: onSurveyExternal
                 )
+                // Promotional, not core content: read after the departures in the
+                // default VoiceOver sweep (the rotor jumps past it entirely).
+                .accessibilitySortPriority(-1)
                 .listRowInsets(EdgeInsets(top: 8, leading: Self.surveyRowInset, bottom: 8, trailing: Self.surveyRowInset))
                 .listRowBackground(Color.clear)
                 .listRowSeparator(.hidden)
@@ -103,6 +111,9 @@ struct StopDeparturesSections: View {
                     onLearnMore: onDonate,
                     onClose: onDonationClose
                 )
+                // Promotional, not core content: read after the departures in the
+                // default VoiceOver sweep (the rotor jumps past it entirely).
+                .accessibilitySortPriority(-1)
                 .listRowInsets(EdgeInsets(top: 4, leading: Self.horizontalRowInset, bottom: 4, trailing: Self.horizontalRowInset))
                 .listRowBackground(Color.clear)
                 .listRowSeparator(.hidden)
@@ -147,6 +158,17 @@ struct StopDeparturesSections: View {
                         onShowAllRoutes: onShowAllRoutes,
                         onShowAllDepartureTypes: onShowAllDepartureTypes
                     )
+                    .accessibilityFocused($emptyStateFocused)
+                    // A filter that empties the list strands VoiceOver focus on a
+                    // row that no longer exists, with nothing spoken to say why.
+                    // Only for the filtered cases: a stop that simply has no
+                    // departures shows this row from the first frame, and moving
+                    // focus there would cut off the header VoiceOver is reading.
+                    .onAppear {
+                        if content.isFilteredEmpty || content.isDepartureFilterEmpty {
+                            emptyStateFocused = true
+                        }
+                    }
                 }
             }
         } else if !content.isGrouped {
