@@ -8,7 +8,6 @@
 //
 
 import ActivityKit
-import CoreLocation
 import Combine
 import CoreLocation
 import SwiftUI
