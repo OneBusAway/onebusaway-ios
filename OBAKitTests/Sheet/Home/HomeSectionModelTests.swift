@@ -155,11 +155,14 @@ final class HomeSectionModelTests: OBATestCase {
         // Added oldest-first; the store inserts each at index 0, so the last
         // one added is the first one out.
         for stop in stops.prefix(6) {
+            // Production stops receive regionIdentifier from RESTAPIResponse.loadReferences;
+            // fixture stops bypass that path, so we assign it here to match production state.
+            stop.regionIdentifier = Fixtures.pugetSoundRegion.regionIdentifier
             application.userDataStore.addRecentStop(stop, region: Fixtures.pugetSoundRegion)
         }
 
         try #require(application.currentRegion != nil)
-        try #require(Fixtures.pugetSoundRegion.regionIdentifier == application.currentRegion!.regionIdentifier, "Region mismatch: fixture ID \(Fixtures.pugetSoundRegion.regionIdentifier) != app current ID \(application.currentRegion!.regionIdentifier)")
+        try #require(!application.userDataStore.recentStops(in: application.currentRegion).isEmpty)
         let model = HomeRecentStopsSectionModel(application: application, limit: 4)
 
         #expect(model.stops.count == 4)
@@ -182,7 +185,11 @@ final class HomeSectionModelTests: OBATestCase {
         #expect(model.stops.isEmpty)
 
         let stop = try #require(stops.first)
+        // Production stops receive regionIdentifier from RESTAPIResponse.loadReferences;
+        // fixture stops bypass that path, so we assign it here to match production state.
+        stop.regionIdentifier = Fixtures.pugetSoundRegion.regionIdentifier
         application.userDataStore.addRecentStop(stop, region: Fixtures.pugetSoundRegion)
+        try #require(!application.userDataStore.recentStops(in: application.currentRegion).isEmpty)
         model.reload()
 
         #expect(model.stops.map(\.id) == [stop.id])
