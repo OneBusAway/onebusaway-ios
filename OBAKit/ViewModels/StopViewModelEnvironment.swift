@@ -50,6 +50,10 @@ protocol StopViewModelEnvironment: AnyObject {
     /// Persists the rider's arrival/departure filter choice.
     func setArrivalDepartureFilter(_ filter: ArrivalDepartureFilter)
 
+    /// The defaults store Settings writes. Used to observe filter changes made
+    /// while this stop page is already on screen (#1273).
+    var userDefaults: UserDefaults { get }
+
     // MARK: - Scalar extractions (avoid concrete service types in the protocol)
 
     /// `locationService.currentLocation`
@@ -152,6 +156,8 @@ final class PreviewStopViewModelEnvironment: StopViewModelEnvironment {
     func setArrivalDepartureFilter(_ filter: ArrivalDepartureFilter) {
         effectiveArrivalDepartureFilter = filter
     }
+
+    let userDefaults = UserDefaults(suiteName: "StopViewModelPreview")!
 
     var currentUserLocation: CLLocation? { nil }
     var shouldRequestDonations: Bool { false }
