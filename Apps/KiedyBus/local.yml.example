@@ -1,0 +1,15 @@
+# Copy to Apps/KiedyBus/local.yml (gitignored) and adjust for your Apple team.
+# `scripts/generate_project` copies DEVELOPMENT_TEAM into the generated
+# project, so this file is authoritative for local signing. See
+# Apps/OneBusAway/local.yml.example before changing a bundle identifier:
+# associated identifiers must be changed together in a white-label config.
+
+targets:
+  App:
+    settings:
+      base:
+        DEVELOPMENT_TEAM: YOUR_TEAM_ID
+  OBAWidget:
+    settings:
+      base:
+        DEVELOPMENT_TEAM: YOUR_TEAM_ID
