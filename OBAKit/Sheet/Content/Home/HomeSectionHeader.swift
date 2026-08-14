@@ -27,7 +27,8 @@ struct HomeSectionHeader: View {
                 Text(title)
                     .font(.title2)
                     .fontWeight(.bold)
-                    .foregroundStyle(.primary)
+                    // Use explicit .label color instead of .primary, which would be remapped to secondary by the List's muted treatment
+                    .foregroundStyle(Color(uiColor: .label))
                 Spacer()
                 Image(systemName: "chevron.right")
                     .font(.footnote)
