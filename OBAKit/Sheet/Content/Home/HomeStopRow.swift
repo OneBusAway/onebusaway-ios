@@ -20,6 +20,10 @@ struct HomeStopRow: View {
 
     private let brandColor = Color(uiColor: ThemeColors.shared.brand)
 
+    private var accessibilityLabelText: String {
+        [stop.name, stop.subtitle].compactMap { $0 }.joined(separator: ", ")
+    }
+
     var body: some View {
         Button(action: onSelect) {
             HStack(spacing: 12) {
@@ -33,13 +37,13 @@ struct HomeStopRow: View {
                         .font(.title3)
                         .fontWeight(.bold)
                         .foregroundStyle(.primary)
-                        .lineLimit(1)
+                        .lineLimit(2)
 
                     if let subtitle = stop.subtitle {
                         Text(subtitle)
                             .font(.body)
                             .foregroundStyle(.primary)
-                            .lineLimit(1)
+                            .lineLimit(2)
                     }
                 }
 
@@ -56,8 +60,7 @@ struct HomeStopRow: View {
         }
         .buttonStyle(.plain)
         .accessibilityElement()
-        .accessibilityLabel(stop.name)
-        .accessibilityHint(stop.subtitle ?? "")
+        .accessibilityLabel(accessibilityLabelText)
         .accessibilityAddTraits(.isButton)
     }
 }
