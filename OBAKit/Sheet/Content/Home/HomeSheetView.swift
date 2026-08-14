@@ -26,21 +26,23 @@ struct HomeSheetView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                searchBarRow
-                    .padding(.top, 16)
+        VStack(spacing: 0) {
+            searchBarRow
+                .padding(.top, 16)
+                .padding(.bottom, 12)
 
-                if viewModel.visibleSections.isEmpty {
-                    emptyState
-                } else {
+            if viewModel.visibleSections.isEmpty {
+                emptyState
+            } else {
+                List {
                     ForEach(viewModel.visibleSections, id: \.self) { section in
-                        sectionView(for: section)
+                        sectionContent(for: section)
                     }
                 }
+                .searchListChrome()
             }
-            .padding(.bottom, 24)
         }
+        .searchSheetBackground()
         .ignoresSafeArea(.container, edges: .bottom)
         .task {
             viewModel.activate()
@@ -82,66 +84,59 @@ struct HomeSheetView: View {
     // MARK: - Sections
 
     @ViewBuilder
-    private func sectionView(for section: HomeSheetSection) -> some View {
+    private func sectionContent(for section: HomeSheetSection) -> some View {
         switch section {
         case .nearby:
-            stopSection(
-                title: Strings.nearbyStops,
-                stops: viewModel.nearby.stops,
-                destination: .nearbyAll
-            )
-        case .recent:
-            stopSection(
-                title: Strings.recentStops,
-                stops: viewModel.recent.stops,
-                destination: .recentStopsAll
-            )
-        case .bookmarks:
-            bookmarksSection
-        }
-    }
-
-    /// Nearby and Recent render identically — same row builder, same layout —
-    /// and differ only in title, data, and destination.
-    private func stopSection(
-        title: String,
-        stops: [Stop],
-        destination: AppSheetRoute
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HomeSectionHeader(title: title) {
-                coordinator.push(destination)
-            }
-            ForEach(stops, id: \.id) { stop in
-                HomeStopRow(stop: stop) {
-                    coordinator.push(.stopDetails(stopID: stop.id))
-                }
-            }
-        }
-        .padding(.horizontal, 12)
-    }
-
-    private var bookmarksSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HomeSectionHeader(title: Strings.bookmarks) {
-                coordinator.push(.bookmarksAll)
-            }
-            ForEach(viewModel.bookmarks.rows) { row in
-                Group {
-                    if row.isTripBookmark {
-                        BookmarkCardView(row: row)
-                    } else {
-                        StopBookmarkRow(row: row)
+            Section {
+                ForEach(viewModel.nearby.stops, id: \.id) { stop in
+                    HomeStopRow(stop: stop) {
+                        coordinator.push(.stopDetails(stopID: stop.id))
                     }
                 }
-                .contentShape(.rect)
-                .onTapGesture {
-                    coordinator.push(.stopDetails(stopID: row.stopID))
+            } header: {
+                HomeSectionHeader(title: Strings.nearbyStops) {
+                    coordinator.push(.nearbyAll)
                 }
             }
+            .textCase(nil)
+
+        case .recent:
+            Section {
+                ForEach(viewModel.recent.stops, id: \.id) { stop in
+                    HomeStopRow(stop: stop) {
+                        coordinator.push(.stopDetails(stopID: stop.id))
+                    }
+                }
+            } header: {
+                HomeSectionHeader(title: Strings.recentStops) {
+                    coordinator.push(.recentStopsAll)
+                }
+            }
+            .textCase(nil)
+
+        case .bookmarks:
+            Section {
+                ForEach(viewModel.bookmarks.rows) { row in
+                    Group {
+                        if row.isTripBookmark {
+                            BookmarkCardView(row: row)
+                        } else {
+                            StopBookmarkRow(row: row)
+                        }
+                    }
+                    .contentShape(.rect)
+                    .onTapGesture {
+                        coordinator.push(.stopDetails(stopID: row.stopID))
+                    }
+                }
+            } header: {
+                HomeSectionHeader(title: Strings.bookmarks) {
+                    coordinator.push(.bookmarksAll)
+                }
+            }
+            .textCase(nil)
+            .environment(\.obaFormatters, application.formatters)
         }
-        .padding(.horizontal, 12)
-        .environment(\.obaFormatters, application.formatters)
     }
 
     /// Shown only when all three sections are empty — a first launch, or a map

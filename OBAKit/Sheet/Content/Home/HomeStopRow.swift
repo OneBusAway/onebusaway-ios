@@ -12,8 +12,9 @@ import OBAKitCore
 
 /// A stop row for the home sheet's nearby and recent sections.
 ///
-/// Mirrors the UIKit `StopRowItem` appearance: untinted squircle transport icon,
-/// stop name in title3 bold, subtitle in body, and a trailing chevron.
+/// Uses headline heavy for stop name and footnote secondary for subtitle,
+/// matching the bookmark card rows. Includes an untinted squircle transport icon
+/// and a trailing chevron.
 struct HomeStopRow: View {
     let stop: Stop
     let onSelect: () -> Void
@@ -34,15 +35,14 @@ struct HomeStopRow: View {
                 // Title and subtitle stack
                 VStack(alignment: .leading, spacing: 0) {
                     Text(stop.name)
-                        .font(.title3)
-                        .fontWeight(.bold)
+                        .font(.headline.weight(.heavy))
                         .foregroundStyle(.primary)
                         .lineLimit(2)
 
                     if let subtitle = stop.subtitle {
                         Text(subtitle)
-                            .font(.body)
-                            .foregroundStyle(.primary)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
                             .lineLimit(2)
                     }
                 }
