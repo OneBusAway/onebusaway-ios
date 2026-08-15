@@ -168,7 +168,7 @@ final class AppSheetViewFactoryTests: OBATestCase {
         let application = buildApplication(queue: queue, dataLoader: dataLoader)
         let factory = makeFactory(application: application)
 
-        for route in [AppSheetRoute.recentStopsAll, .bookmarksAll] {
+        for route in [AppSheetRoute.bookmarksAll] {
             _ = factory.view(for: route)
         }
     }
@@ -215,5 +215,16 @@ final class AppSheetViewFactoryTests: OBATestCase {
 
         #expect(view.coordinate?.latitude == coordinate.latitude)
         #expect(view.coordinate?.longitude == coordinate.longitude)
+    }
+
+    /// `.recentStopsAll` renders the native index, not the placeholder.
+    @Test @MainActor
+    func `Recent stops all view forwards the application`() {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+
+        let view = makeFactory(application: application).recentStopsAllView()
+
+        #expect(view.application === application)
     }
 }

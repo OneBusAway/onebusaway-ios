@@ -97,7 +97,10 @@ final class AppSheetViewFactory {
         case .nearbyAll:
             nearbyAllView()
 
-        case .recentStopsAll, .bookmarksAll:
+        case .recentStopsAll:
+            recentStopsAllView()
+
+        case .bookmarksAll:
             indexPlaceholderView(for: route)
 
         // Wiring a push for one of these routes before its view exists will
@@ -206,6 +209,11 @@ final class AppSheetViewFactory {
                 region: application.currentRegion
             )
         )
+    }
+
+    /// `AppSheetRoute.recentStopsAll` — the home sheet's "Recent Stops" header.
+    func recentStopsAllView() -> RecentStopsSheetView {
+        RecentStopsSheetView(application: application)
     }
 
     func routeStopsView(stopsForRoute: StopsForRoute) -> RouteStopsSheetView {
