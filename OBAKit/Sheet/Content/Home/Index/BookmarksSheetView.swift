@@ -89,6 +89,13 @@ struct BookmarksSheetView: View {
         )
     }
 
+    /// Computed (rebuilt on each body evaluation) to capture current environment and
+    /// state values. `coordinator` is an `@EnvironmentObject` and `editingBookmark`,
+    /// `isShowingTrackError` are `@State` — none are available in `init()`, and the
+    /// latter two must be written through their projected bindings, which exist only
+    /// during body evaluation. Rebuilding the handler's eight closures is cheap (stack
+    /// allocation), and `BookmarksListView` stores it as a plain `let` without keying
+    /// view identity off it, so per-eval rebuilds are safe and correct.
     private var navigationHandler: BookmarksNavigationHandler {
         Self.makeNavigationHandler(
             application: application,
