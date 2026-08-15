@@ -30,6 +30,18 @@ struct BookmarksSheetView: View {
     @State private var editingBookmark: Bookmark?
     @State private var isShowingTrackError = false
 
+    /// A refresh the user asked for, as opposed to the 30 s poll `start()`
+    /// installs. Deliberately not `viewModel.isLoading`, which the background
+    /// poll also raises — a toolbar spinner appearing every 30 seconds on its
+    /// own would read as the screen doing something the user didn't ask for.
+    @State private var isRefreshing = false
+
+    /// How long the spinner stays up at minimum. A batch served from cache can
+    /// finish in a few milliseconds; without a floor the spinner would appear
+    /// and vanish inside one or two frames, leaving the user unsure the tap
+    /// registered at all.
+    private static let minimumSpinnerDuration: Duration = .milliseconds(300)
+
     private let actions: BookmarkActions
     private let feedback: DataLoadFeedbackGenerator
 
@@ -110,13 +122,20 @@ struct BookmarksSheetView: View {
 
     var body: some View {
         NavigationStack {
-            BookmarksListView(viewModel: viewModel, navigation: navigationHandler)
+            BookmarksListView(
+                viewModel: viewModel,
+                navigation: navigationHandler,
+                presentation: .sheet
+            )
                 .environment(\.obaFormatters, application.formatters)
                 .navigationTitle(Text(Strings.bookmarks))
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
                         Button(Strings.close) { dismiss() }
+                    }
+                    ToolbarItem(placement: .topBarTrailing) {
+                        refreshButton
                     }
                     ToolbarItem(placement: .topBarTrailing) {
                         sortMenu
@@ -141,6 +160,40 @@ struct BookmarksSheetView: View {
             Button(Strings.ok, role: .cancel) { }
         } message: {
             Text(OBALoc("live_activity.error.message", value: "Please check your Live Activities settings in Settings.", comment: "Alert message for Live Activity error. \"Settings\" is the iOS Settings app."))
+        }
+    }
+
+    /// Replaces pull-to-refresh, which on a sheet competes with the drag-down
+    /// dismiss gesture. Drives the same `navigation.refresh()` closure the tab's
+    /// pull gesture does, so the fetch and its completion haptic are identical.
+    ///
+    /// Tapping swaps the button for a spinner immediately, held for at least
+    /// `minimumSpinnerDuration` so even an instant refresh is visibly
+    /// acknowledged. The button is gone for the duration, so a second tap can't
+    /// stack another batch on the first.
+    @ViewBuilder
+    private var refreshButton: some View {
+        if isRefreshing {
+            ProgressView()
+        } else {
+            Button {
+                Task {
+                    isRefreshing = true
+                    let startedAt = ContinuousClock.now
+
+                    await navigationHandler.refresh()
+
+                    // Pad out the remainder of the floor, if the fetch beat it.
+                    let elapsed = ContinuousClock.now - startedAt
+                    if elapsed < Self.minimumSpinnerDuration {
+                        try? await Task.sleep(for: Self.minimumSpinnerDuration - elapsed)
+                    }
+
+                    isRefreshing = false
+                }
+            } label: {
+                Label(Strings.refresh, systemImage: AppSymbol.refresh)
+            }
         }
     }
 
