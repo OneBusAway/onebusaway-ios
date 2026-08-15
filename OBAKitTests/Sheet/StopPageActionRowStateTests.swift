@@ -9,6 +9,7 @@
 
 import Testing
 @testable import OBAKit
+@testable import OBAKitCore
 
 /// The action row's enabled and filled predicates, extracted from the view so
 /// they can be asserted directly rather than through view inspection.
@@ -23,6 +24,7 @@ struct StopPageActionRowStateTests {
         routeCount: Int = 3,
         hasHiddenRoutes: Bool = false,
         isListFiltered: Bool = true,
+        departureFilter: ArrivalDepartureFilter = .all,
         hasServiceAlerts: Bool = false
     ) -> StopPageActionRowState {
         StopPageActionRowState(
@@ -30,6 +32,7 @@ struct StopPageActionRowStateTests {
             routeCount: routeCount,
             hasHiddenRoutes: hasHiddenRoutes,
             isListFiltered: isListFiltered,
+            departureFilter: departureFilter,
             hasServiceAlerts: hasServiceAlerts
         )
     }
@@ -46,7 +49,13 @@ struct StopPageActionRowStateTests {
         #expect(!state(routeCount: 0).canFilter)
     }
 
-    @Test func `The filter reads as on only when hidden routes are actually applied`() {
+    @Test func `The route filter reads as on only when hidden routes are actually applied`() {
+        #expect(state(hasHiddenRoutes: true, isListFiltered: true).isRouteFilterOn)
+        #expect(!state(hasHiddenRoutes: true, isListFiltered: false).isRouteFilterOn)
+        #expect(!state(hasHiddenRoutes: false, isListFiltered: true).isRouteFilterOn)
+    }
+
+    @Test func `The filter glyph fills when hidden routes are applied`() {
         let applied = state(hasHiddenRoutes: true, isListFiltered: true)
         #expect(applied.isFilterOn)
         #expect(applied.filterSystemImage == "line.3.horizontal.decrease.circle.fill")
@@ -56,6 +65,28 @@ struct StopPageActionRowStateTests {
         #expect(savedButOff.filterSystemImage == "line.3.horizontal.decrease.circle")
 
         #expect(!state(hasHiddenRoutes: false, isListFiltered: true).isFilterOn)
+    }
+
+    /// The Departure Type filter carries a Settings-level default, so it can be
+    /// holding rows back on a stop with no hidden routes at all. The bar button
+    /// this row replaces fills its glyph for that case; the row has to as well,
+    /// or the only filter in effect reads as "off".
+    @Test func `The filter glyph fills for a non default departure type`() {
+        for filter in [ArrivalDepartureFilter.estimatedOnly, .scheduledOnly] {
+            let state = state(hasHiddenRoutes: false, isListFiltered: false, departureFilter: filter)
+            #expect(state.isFilterOn)
+            #expect(!state.isRouteFilterOn)
+            #expect(state.filterSystemImage == "line.3.horizontal.decrease.circle.fill")
+        }
+
+        #expect(!state(departureFilter: .all).isFilterOn)
+    }
+
+    /// `isRouteFilterOn` is what checks one of the two route choices, so it must
+    /// not move with the departure filter — otherwise picking "Scheduled Only"
+    /// would check "Filtered Routes" on a stop with no hidden routes.
+    @Test func `The departure filter does not check a route choice`() {
+        #expect(!state(hasHiddenRoutes: false, isListFiltered: true, departureFilter: .scheduledOnly).isRouteFilterOn)
     }
 
     @Test func `Service alerts are reachable only when the stop has some`() {

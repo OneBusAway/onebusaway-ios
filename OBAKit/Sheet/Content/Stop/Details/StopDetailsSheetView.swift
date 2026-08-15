@@ -414,6 +414,7 @@ struct StopDetailsSheetView: View {
                 routeCount: viewModel.stop?.routes.count ?? 0,
                 hasHiddenRoutes: viewModel.stopPreferences.hasHiddenRoutes,
                 isListFiltered: viewModel.isListFiltered,
+                departureFilter: viewModel.arrivalDepartureFilter,
                 hasServiceAlerts: !(viewModel.stopArrivals?.serviceAlerts ?? []).isEmpty
             ),
             onSchedule: navigation.showScheduleForStop,
@@ -424,6 +425,7 @@ struct StopDetailsSheetView: View {
                 // on a stop with no saved hidden routes silently does nothing.
                 if filtered { navigation.showRouteFilter() }
             },
+            onSetDepartureFilter: { viewModel.updateArrivalDepartureFilter($0) },
             onBookmark: { navigation.showBookmarkEditor(nil) },
             onServiceAlerts: navigation.showServiceAlerts,
             onNearbyStops: navigation.showNearbyStops,

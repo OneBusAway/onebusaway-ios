@@ -102,12 +102,20 @@ struct StopPageToolbar: View {
         .disabled(isRefreshing)
     }
 
+    /// One of two mutually exclusive route choices. The checkmark is what a
+    /// sighted rider reads the selection from — the trait alone leaves two
+    /// identical plain rows — and matches the Departure Type menu below and the
+    /// UIKit `filterMenu()` both surfaces port from.
     @ViewBuilder
     private func filterChoice(title: String, isSelected: Bool, filtered: Bool) -> some View {
         Button {
             onSetListFiltered(filtered)
         } label: {
-            Text(title)
+            if isSelected {
+                Label(title, systemImage: "checkmark")
+            } else {
+                Text(title)
+            }
         }
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
