@@ -101,7 +101,7 @@ final class AppSheetViewFactory {
             recentStopsAllView()
 
         case .bookmarksAll:
-            indexPlaceholderView(for: route)
+            bookmarksAllView()
 
         // Wiring a push for one of these routes before its view exists will
         // trip the debug assertion in `unimplementedView(for:)` — register the
@@ -216,6 +216,11 @@ final class AppSheetViewFactory {
         RecentStopsSheetView(application: application)
     }
 
+    /// `AppSheetRoute.bookmarksAll` — the home sheet's "Bookmarks" header.
+    func bookmarksAllView() -> BookmarksSheetView {
+        BookmarksSheetView(application: application)
+    }
+
     func routeStopsView(stopsForRoute: StopsForRoute) -> RouteStopsSheetView {
         RouteStopsSheetView(stopsForRoute: stopsForRoute, displayModel: searchDisplayModel)
     }
@@ -235,11 +240,8 @@ final class AppSheetViewFactory {
         )
     }
 
-    /// The remaining index routes navigate here before their screens exist, so
-    /// they render the "coming soon" placeholder in every configuration rather
-    /// than asserting. `unimplementedView` stays armed for routes nobody has
-    /// wired a push for yet — remove a route from here once its real view is
-    /// registered above.
+    /// Visible "coming soon" body used by `unimplementedView` in release builds.
+    /// No route dispatches here directly: every index route now has a real view.
     func indexPlaceholderView(for route: AppSheetRoute) -> some View {
         VStack(spacing: 4) {
             Text(OBALoc(

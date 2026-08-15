@@ -153,24 +153,17 @@ final class AppSheetViewFactoryTests: OBATestCase {
         #expect(!view.placeholder.isEmpty)
     }
 
-    /// The two index routes whose screens don't exist yet must still reach the
-    /// placeholder rather than `unimplementedView`, whose DEBUG
-    /// `assertionFailure` guards genuinely unwired routes.
-    ///
-    /// Goes through `view(for:)` rather than calling `indexPlaceholderView`
-    /// directly: the dispatch is the thing under test. `view(for:)` is
-    /// `@ViewBuilder`, so its switch — and any `assertionFailure` on the branch
-    /// it picks — runs at call time. Completing this loop without trapping is
-    /// the assertion.
+    /// `.bookmarksAll` renders the native index, not the placeholder. With all
+    /// three index routes wired, no route reaches `indexPlaceholderView` any
+    /// more — it survives only as `unimplementedView`'s release-build fallback.
     @Test @MainActor
-    func `Remaining index routes dispatch to a placeholder without asserting`() {
+    func `Bookmarks all view forwards the application`() {
         let dataLoader = MockDataLoader(testName: name)
         let application = buildApplication(queue: queue, dataLoader: dataLoader)
-        let factory = makeFactory(application: application)
 
-        for route in [AppSheetRoute.bookmarksAll] {
-            _ = factory.view(for: route)
-        }
+        let view = makeFactory(application: application).bookmarksAllView()
+
+        #expect(view.application === application)
     }
 
     /// `.nearbyAll` carries no coordinate, so the factory resolves one. With a
