@@ -138,14 +138,14 @@ final class MapItemSheetViewTests: OBATestCase {
     }
 
     @Test @MainActor
-    func `Factory builds a nearby stops host for the route`() {
+    func `Factory builds a nearby stops view for the route`() {
         let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
         let factory = makeFactory(application: application)
         let coordinate = CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3)
 
-        let host = factory.nearbyStopsView(coordinate: coordinate)
+        let view = factory.nearbyStopsView(coordinate: coordinate)
 
-        #expect(host.application === application)
-        #expect(host.coordinate.latitude == coordinate.latitude)
+        #expect(view.application === application)
+        #expect(view.coordinate?.latitude == coordinate.latitude)
     }
 }

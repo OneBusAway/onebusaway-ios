@@ -187,10 +187,11 @@ final class AppSheetViewFactory {
         MapItemSheetView(application: application, mapItem: mapItem)
     }
 
-    /// Bridges `AppSheetRoute.nearbyStops` to the existing `NearbyStopsViewController`.
-    /// Swap this branch's return type once a SwiftUI nearby-stops list lands.
-    func nearbyStopsView(coordinate: CLLocationCoordinate2D) -> NearbyStopsSheetHost {
-        NearbyStopsSheetHost(application: application, coordinate: coordinate)
+    /// `AppSheetRoute.nearbyStops` — stops around a coordinate the user picked
+    /// (a dropped pin, a map-item result). Same screen as `.nearbyAll`; only the
+    /// source of the coordinate differs.
+    func nearbyStopsView(coordinate: CLLocationCoordinate2D) -> NearbyStopsSheetView {
+        NearbyStopsSheetView(application: application, coordinate: coordinate)
     }
 
     /// `AppSheetRoute.nearbyAll` — the home sheet's "Nearby Stops" header. The

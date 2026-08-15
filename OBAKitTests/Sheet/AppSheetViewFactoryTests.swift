@@ -10,6 +10,7 @@
 import SwiftUI
 import Foundation
 import Testing
+import CoreLocation
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -199,5 +200,20 @@ final class AppSheetViewFactoryTests: OBATestCase {
         default:
             #expect(view.coordinate != nil)
         }
+    }
+
+    /// `.nearbyStops` and `.nearbyAll` are the same screen; only the way the
+    /// coordinate is obtained differs. This one carries its anchor in the route,
+    /// so it must be passed through untouched.
+    @Test @MainActor
+    func `Nearby stops view forwards the route coordinate`() {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let coordinate = CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3)
+
+        let view = makeFactory(application: application).nearbyStopsView(coordinate: coordinate)
+
+        #expect(view.coordinate?.latitude == coordinate.latitude)
+        #expect(view.coordinate?.longitude == coordinate.longitude)
     }
 }
