@@ -152,25 +152,52 @@ final class AppSheetViewFactoryTests: OBATestCase {
         #expect(!view.placeholder.isEmpty)
     }
 
-    /// The three index routes are wired for navigation before their screens
-    /// exist, so the dispatcher must send them to the placeholder instead of to
-    /// `unimplementedView`, whose DEBUG `assertionFailure` guards genuinely
-    /// unwired routes.
+    /// The two index routes whose screens don't exist yet must still reach the
+    /// placeholder rather than `unimplementedView`, whose DEBUG
+    /// `assertionFailure` guards genuinely unwired routes.
     ///
     /// Goes through `view(for:)` rather than calling `indexPlaceholderView`
     /// directly: the dispatch is the thing under test. `view(for:)` is
     /// `@ViewBuilder`, so its switch — and any `assertionFailure` on the branch
     /// it picks — runs at call time. Completing this loop without trapping is
-    /// the assertion; calling the placeholder builder directly would pass even
-    /// if the routes were dropped from the dispatcher.
+    /// the assertion.
     @Test @MainActor
-    func `Index routes dispatch to a placeholder without asserting`() {
+    func `Remaining index routes dispatch to a placeholder without asserting`() {
         let dataLoader = MockDataLoader(testName: name)
         let application = buildApplication(queue: queue, dataLoader: dataLoader)
         let factory = makeFactory(application: application)
 
-        for route in [AppSheetRoute.nearbyAll, .recentStopsAll, .bookmarksAll] {
+        for route in [AppSheetRoute.recentStopsAll, .bookmarksAll] {
             _ = factory.view(for: route)
+        }
+    }
+
+    /// `.nearbyAll` carries no coordinate, so the factory resolves one. With a
+    /// current region present there is always an anchor, so the view must not
+    /// be handed nil.
+    @Test @MainActor
+    func `Nearby all view resolves a coordinate`() {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let stopsObserver = MapStopsObserver(application: application)
+        let factory = makeFactory(application: application, stopsObserver: stopsObserver)
+
+        let view = factory.nearbyAllView()
+
+        let expectedCoordinate = NearbyCoordinateResolver.coordinate(
+            viewportCenter: stopsObserver.viewportCenter,
+            currentLocation: application.locationService.currentLocation,
+            region: application.currentRegion
+        )
+
+        switch (view.coordinate, expectedCoordinate) {
+        case let (.some(coordinate), .some(expected)):
+            #expect(coordinate.latitude == expected.latitude)
+            #expect(coordinate.longitude == expected.longitude)
+        case (.none, .none):
+            break // Both nil, test passes
+        default:
+            #expect(view.coordinate != nil)
         }
     }
 }

@@ -94,7 +94,10 @@ final class AppSheetViewFactory {
         case .search:
             searchView()
 
-        case .nearbyAll, .recentStopsAll, .bookmarksAll:
+        case .nearbyAll:
+            nearbyAllView()
+
+        case .recentStopsAll, .bookmarksAll:
             indexPlaceholderView(for: route)
 
         // Wiring a push for one of these routes before its view exists will
@@ -190,6 +193,20 @@ final class AppSheetViewFactory {
         NearbyStopsSheetHost(application: application, coordinate: coordinate)
     }
 
+    /// `AppSheetRoute.nearbyAll` — the home sheet's "Nearby Stops" header. The
+    /// route carries no coordinate (it's pushed from a section header, not a
+    /// tapped place), so the anchor is resolved here from what the app knows.
+    func nearbyAllView() -> NearbyStopsSheetView {
+        NearbyStopsSheetView(
+            application: application,
+            coordinate: NearbyCoordinateResolver.coordinate(
+                viewportCenter: stopsObserver.viewportCenter,
+                currentLocation: application.locationService.currentLocation,
+                region: application.currentRegion
+            )
+        )
+    }
+
     func routeStopsView(stopsForRoute: StopsForRoute) -> RouteStopsSheetView {
         RouteStopsSheetView(stopsForRoute: stopsForRoute, displayModel: searchDisplayModel)
     }
@@ -209,11 +226,11 @@ final class AppSheetViewFactory {
         )
     }
 
-    /// The home sheet's section headers navigate to these three routes before
-    /// their index screens exist, so they render the "coming soon" placeholder
-    /// in every configuration rather than asserting. `unimplementedView` stays
-    /// armed for routes nobody has wired a push for yet — remove a route from
-    /// here once its real view is registered above.
+    /// The remaining index routes navigate here before their screens exist, so
+    /// they render the "coming soon" placeholder in every configuration rather
+    /// than asserting. `unimplementedView` stays armed for routes nobody has
+    /// wired a push for yet — remove a route from here once its real view is
+    /// registered above.
     func indexPlaceholderView(for route: AppSheetRoute) -> some View {
         VStack(spacing: 4) {
             Text(OBALoc(
