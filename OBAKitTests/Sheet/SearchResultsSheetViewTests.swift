@@ -328,7 +328,14 @@ final class SearchResultsSheetViewTests: OBATestCase {
         await selection.select(route, coordinator: coordinator)
         #expect(selection.error != nil)
 
+        // replaceMappedResponses replaces the *entire* table, so re-register the
+        // regions/agencies mocks that the Application's background tasks rely on.
+        // Dropping them lets the regions refresh land on an unmocked URL, and
+        // MockDataLoader's fatalError takes the whole test host down — attributed to
+        // whichever test happened to be in flight, not this one.
         dataLoader.replaceMappedResponses { loader in
+            stubRegions(dataLoader: loader)
+            stubAgenciesWithCoverage(dataLoader: loader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
             loader.mock(data: Fixtures.loadData(file: "stops-for-route-1_100002.json")) { request in
                 request.url?.path.contains("/api/where/stops-for-route") ?? false
             }

@@ -76,6 +76,22 @@ final class SearchSheetViewModelTests: OBATestCase {
         #expect(coordinator.stackedRoutes.contains(.stopDetails(stopID: stop.id)))
     }
 
+    /// Closing search has to take a resolving presentation with it. Otherwise it
+    /// lands afterwards and hands the rider a detail sheet they already backed out of.
+    @Test @MainActor
+    func `Closing search cancels an in-flight presentation`() async throws {
+        let (viewModel, _, coordinator) = makeViewModel(dataLoader: MockDataLoader(testName: name))
+        coordinator.push(.search)
+        let stop = try #require(try Fixtures.loadSomeStops().first)
+
+        viewModel.searchInteractor(viewModel.searchInteractor, showStop: stop)
+        viewModel.close()
+        await viewModel.pendingPresentation?.value
+
+        #expect(coordinator.currentRoute == .home)
+        #expect(coordinator.stackedRoutes.isEmpty)
+    }
+
     @Test @MainActor
     func `Showing a map item records it as a recent search`() async {
         let (viewModel, application, _) = makeViewModel(dataLoader: MockDataLoader(testName: name))

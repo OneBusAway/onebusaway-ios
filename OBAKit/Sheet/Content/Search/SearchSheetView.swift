@@ -42,6 +42,14 @@ struct SearchSheetView: View {
         .onAppear {
             viewModel.reportSearchOpened()
             isFieldFocused = true
+            // `onDisappear` dismisses the HUD, and the sheet system rebuilds a sheet's
+            // content view without the user going anywhere — see
+            // `MapSearchDisplayModel.owner`. `isSearching` doesn't change across that
+            // rebuild, so `onChange` won't fire and the HUD has to be restored here or
+            // an in-flight search runs with nothing on screen.
+            if viewModel.isSearching {
+                ProgressHUD.show()
+            }
         }
         // The app-wide HUD rather than a spinner of our own: it centres itself over
         // everything, which is what the rest of the app does for an in-flight

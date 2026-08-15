@@ -101,6 +101,11 @@ final class SearchSheetViewModel: NSObject, ObservableObject, SearchDelegate {
     func close() {
         searchTask?.cancel()
         searchTask = nil
+        // A resolving stop or map item has to go too. Without this it lands after the
+        // user has already backed out of search and pushes a detail sheet they
+        // dismissed. The handle is kept rather than cleared so callers can still await
+        // the cancelled task's completion.
+        pendingPresentation?.cancel()
         coordinator.pop()
     }
 
@@ -233,7 +238,12 @@ final class SearchSheetViewModel: NSObject, ObservableObject, SearchDelegate {
     /// Same order as the single-result path: resolve, then unwind, then present — so
     /// search is only left once there's something to show.
     private func leaveSearchAndPresent(_ result: Any) async {
-        guard let resolved = await router.resolve(result: result) else {
+        let resolved = await router.resolve(result: result)
+        // Cancelling the task doesn't stop the resolve already in flight, so check
+        // before touching the screen: `close()` has already popped search, and
+        // presenting now would hand the rider a sheet they backed out of.
+        guard !Task.isCancelled else { return }
+        guard let resolved else {
             if let error = router.lastError {
                 message = SearchSheetMessage(kind: .error, text: error.localizedDescription)
             }
