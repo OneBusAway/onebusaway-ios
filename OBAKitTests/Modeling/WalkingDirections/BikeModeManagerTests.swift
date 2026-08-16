@@ -7,12 +7,11 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import XCTest
-import Nimble
+import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
-@MainActor
+@Suite(.serialized)
 final class BikeModeManagerTests: OBATestCase {
 
     private struct FakeProvider: BikeSpeedHealthKitProviding {
@@ -39,7 +38,7 @@ final class BikeModeManagerTests: OBATestCase {
 
     // MARK: - requestHealthKitAuthorizationAndSync
 
-    func test_requestAndSync_whenSampleMissing_returnsFalseAndForcesManual() async {
+    @Test func `Request and sync when sample missing returns false and forces manual`() async {
         store.bikeSpeedSource = .healthKit
         store.bikeSpeedMetersPerSecond = 4.5
 
@@ -50,13 +49,13 @@ final class BikeModeManagerTests: OBATestCase {
 
         let result = await manager.requestHealthKitAuthorizationAndSync()
 
-        expect(result) == false
-        expect(self.store.bikeSpeedSource) == .manual
+        #expect(result == false)
+        #expect(self.store.bikeSpeedSource == .manual)
         // Speed left untouched even on failure.
-        expect(self.store.bikeSpeedMetersPerSecond).to(beCloseTo(4.5))
+        expectClose(self.store.bikeSpeedMetersPerSecond, 4.5)
     }
 
-    func test_requestAndSync_whenSampleInRange_writesValueAndMarksHealthKit() async {
+    @Test func `Request and sync when sample in range writes value and marks health kit`() async {
         store.bikeSpeedSource = .manual
         store.bikeSpeedMetersPerSecond = 4.2
 
@@ -67,12 +66,12 @@ final class BikeModeManagerTests: OBATestCase {
 
         let result = await manager.requestHealthKitAuthorizationAndSync()
 
-        expect(result) == true
-        expect(self.store.bikeSpeedSource) == .healthKit
-        expect(self.store.bikeSpeedMetersPerSecond).to(beCloseTo(5.5))
+        #expect(result == true)
+        #expect(self.store.bikeSpeedSource == .healthKit)
+        expectClose(self.store.bikeSpeedMetersPerSecond, 5.5)
     }
 
-    func test_requestAndSync_whenSampleOutOfRange_doesNotWriteAndForcesManual() async {
+    @Test func `Request and sync when sample out of range does not write and forces manual`() async {
         store.bikeSpeedSource = .healthKit
         store.bikeSpeedMetersPerSecond = 4.2
 
@@ -84,13 +83,13 @@ final class BikeModeManagerTests: OBATestCase {
 
         let result = await manager.requestHealthKitAuthorizationAndSync()
 
-        expect(result) == false
-        expect(self.store.bikeSpeedSource) == .manual
+        #expect(result == false)
+        #expect(self.store.bikeSpeedSource == .manual)
         // Stored speed unchanged — the out-of-range sample must not leak in.
-        expect(self.store.bikeSpeedMetersPerSecond).to(beCloseTo(4.2))
+        expectClose(self.store.bikeSpeedMetersPerSecond, 4.2)
     }
 
-    func test_requestAndSync_whenAuthorizationThrows_forcesManual() async {
+    @Test func `Request and sync when authorization throws forces manual`() async {
         store.bikeSpeedSource = .healthKit
 
         let manager = BikeModeManager(
@@ -100,11 +99,11 @@ final class BikeModeManagerTests: OBATestCase {
 
         let result = await manager.requestHealthKitAuthorizationAndSync()
 
-        expect(result) == false
-        expect(self.store.bikeSpeedSource) == .manual
+        #expect(result == false)
+        #expect(self.store.bikeSpeedSource == .manual)
     }
 
-    func test_requestAndSync_whenHealthKitUnavailable_forcesManual() async {
+    @Test func `Request and sync when health kit unavailable forces manual`() async {
         store.bikeSpeedSource = .healthKit
 
         let manager = BikeModeManager(
@@ -114,13 +113,13 @@ final class BikeModeManagerTests: OBATestCase {
 
         let result = await manager.requestHealthKitAuthorizationAndSync()
 
-        expect(result) == false
-        expect(self.store.bikeSpeedSource) == .manual
+        #expect(result == false)
+        #expect(self.store.bikeSpeedSource == .manual)
     }
 
     // MARK: - refreshFromHealthKitIfPossible
 
-    func test_passiveRefresh_withNoSample_leavesSourceAndSpeedUntouched() async {
+    @Test func `Passive refresh with no sample leaves source and speed untouched`() async {
         store.bikeSpeedSource = .healthKit
         store.bikeSpeedMetersPerSecond = 5.5
 
@@ -132,11 +131,11 @@ final class BikeModeManagerTests: OBATestCase {
         await manager.refreshFromHealthKitIfPossible()
 
         // The asymmetry: passive refresh must never downgrade source to .manual.
-        expect(self.store.bikeSpeedSource) == .healthKit
-        expect(self.store.bikeSpeedMetersPerSecond).to(beCloseTo(5.5))
+        #expect(self.store.bikeSpeedSource == .healthKit)
+        expectClose(self.store.bikeSpeedMetersPerSecond, 5.5)
     }
 
-    func test_passiveRefresh_withInRangeSample_updatesSpeed() async {
+    @Test func `Passive refresh with in range sample updates speed`() async {
         store.bikeSpeedSource = .healthKit
         store.bikeSpeedMetersPerSecond = 4.2
 
@@ -147,11 +146,11 @@ final class BikeModeManagerTests: OBATestCase {
 
         await manager.refreshFromHealthKitIfPossible()
 
-        expect(self.store.bikeSpeedSource) == .healthKit
-        expect(self.store.bikeSpeedMetersPerSecond).to(beCloseTo(6.0))
+        #expect(self.store.bikeSpeedSource == .healthKit)
+        expectClose(self.store.bikeSpeedMetersPerSecond, 6.0)
     }
 
-    func test_passiveRefresh_withOutOfRangeSample_isNoOp() async {
+    @Test func `Passive refresh with out of range sample is no op`() async {
         store.bikeSpeedSource = .healthKit
         store.bikeSpeedMetersPerSecond = 4.2
 
@@ -162,7 +161,7 @@ final class BikeModeManagerTests: OBATestCase {
 
         await manager.refreshFromHealthKitIfPossible()
 
-        expect(self.store.bikeSpeedSource) == .healthKit
-        expect(self.store.bikeSpeedMetersPerSecond).to(beCloseTo(4.2))
+        #expect(self.store.bikeSpeedSource == .healthKit)
+        expectClose(self.store.bikeSpeedMetersPerSecond, 4.2)
     }
 }
