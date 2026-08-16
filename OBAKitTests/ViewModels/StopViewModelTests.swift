@@ -956,8 +956,8 @@ final class StopViewModelTests: OBATestCase {
     /// `headerWalkTime` and `headerBikeTime` must stay fixed at their respective speeds
     /// regardless of Bike Mode, while the mode-aware `walkTime` is the one that switches —
     /// the contract the header chips and the chronological split each depend on.
-    @MainActor
-    func test_headerWalkAndBikeTime_areIndependentOfBikeModeWhileWalkTimeSwitches() async {
+    @Test @MainActor
+    func `Header walk and bike time stay fixed across Bike Mode while the mode-aware value switches`() async throws {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock())
 
@@ -965,22 +965,20 @@ final class StopViewModelTests: OBATestCase {
         await viewModel.refresh()
 
         app.userDataStore.bikeModeEnabled = false
-        let headerWalkBefore = viewModel.headerWalkTime
-        let headerBikeBefore = viewModel.headerBikeTime
+        let headerWalkBefore = try #require(viewModel.headerWalkTime)
+        let headerBikeBefore = try #require(viewModel.headerBikeTime)
 
-        expect(headerWalkBefore).toNot(beNil())
-        expect(headerBikeBefore).toNot(beNil())
         // Cycling speed is faster than walking speed, so the bike estimate must be shorter.
-        expect(headerBikeBefore?.walkMinutes).to(beLessThan(headerWalkBefore?.walkMinutes))
+        #expect(headerBikeBefore.walkMinutes < headerWalkBefore.walkMinutes)
         // Bike Mode off: the mode-aware value tracks the walking speed.
-        expect(viewModel.walkTime) == headerWalkBefore
+        #expect(viewModel.walkTime == headerWalkBefore)
 
         app.userDataStore.bikeModeEnabled = true
 
         // The header chips must not move when Bike Mode toggles...
-        expect(viewModel.headerWalkTime) == headerWalkBefore
-        expect(viewModel.headerBikeTime) == headerBikeBefore
+        #expect(viewModel.headerWalkTime == headerWalkBefore)
+        #expect(viewModel.headerBikeTime == headerBikeBefore)
         // ...but the mode-aware value now tracks the cycling speed instead.
-        expect(viewModel.walkTime) == headerBikeBefore
+        #expect(viewModel.walkTime == headerBikeBefore)
     }
 }
