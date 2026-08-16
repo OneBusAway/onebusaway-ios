@@ -98,13 +98,13 @@ struct StopPageHeaderView: View {
                 HStack(spacing: 8) {
                     if let walkTime {
                         Button(action: onWalkingDirections) {
-                            travelChip(walkChipText(walkTime), systemImage: "figure.walk")
+                            travelChip(walkChipText(walkTime), systemImage: "figure.walk", background: ThemeColors.shared.departureOnTime)
                         }
                         .buttonStyle(.plain)
                         .accessibilityHint(OBALoc("stop_page.header.walk_a11y_hint", value: "Opens walking directions to this stop.", comment: "VoiceOver hint on the header card's walk-time button."))
                     }
                     if let bikeTime {
-                        travelChip(bikeChipText(bikeTime), systemImage: "bicycle")
+                        travelChip(bikeChipText(bikeTime), systemImage: "bicycle", background: ThemeColors.shared.blue)
                     }
                 }
             }
@@ -157,14 +157,15 @@ struct StopPageHeaderView: View {
             .background(Color.white.opacity(0.18), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
     }
 
-    /// Shared capsule styling for the walk and bike chips. The icon is a
-    /// placeholder for now; distinct iconography can come later.
-    private func travelChip(_ text: String, systemImage: String) -> some View {
+    /// Shared capsule styling for the walk and bike chips. Each mode gets its own
+    /// background color (walk: on-time green, bike: system blue) so the two
+    /// estimates read as distinct at a glance, not just by their icon.
+    private func travelChip(_ text: String, systemImage: String, background: UIColor) -> some View {
         Label(text, systemImage: systemImage)
             .font(.footnote.weight(.heavy))
             .foregroundStyle(.white)
             .padding(.horizontal, 12).padding(.vertical, 6)
-            .background(Color(uiColor: ThemeColors.shared.departureOnTime), in: Capsule())
+            .background(Color(uiColor: background), in: Capsule())
             .contentShape(Capsule())
     }
 
