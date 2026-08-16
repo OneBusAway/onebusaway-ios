@@ -32,15 +32,6 @@ extension MapViewController {
         updateMapLayerBadge()
     }
 
-    /// Updates overlay layers and badge on region change. Called by the region-change
-    /// delegate path to avoid calling `registrar.configure()` twice (the registrar's
-    /// own delegate handles stops and rentals rebuild).
-    private func updateRegionScopedLayers() {
-        dismissStopSheetForReplacement()
-        configureStopRouteFocusLayer()
-        updateMapLayerBadge()
-    }
-
     /// Registers `StopRouteFocusMapLayer`, rebuilding it with a fresh
     /// `ShapeCache` when the current region has actually changed.
     ///
@@ -89,10 +80,13 @@ extension MapViewController {
 
     /// Re-points everything hanging off the freshly-built rental layers: the
     /// detail-sheet action delegate, and the `MKMapView` syncer that replaced
-    /// the coordinator's own map-view writes.
+    /// the coordinator's own map-view writes. Updates the badge after the registrar
+    /// finishes rebuilding, ensuring the count reflects the current layers regardless
+    /// of RegionsService delegate fan-out order.
     private func attachRentalLayerHost(_ registrar: MapLayerRegistrar) {
         guard let coordinator = registrar.rentalCoordinator else {
             rentalAnnotationSyncer = nil
+            updateMapLayerBadge()
             return
         }
 
@@ -103,6 +97,8 @@ extension MapViewController {
             layer.actionsDelegate = self
             layer.annotationSyncer = syncer
         }
+
+        updateMapLayerBadge()
     }
 
     /// Presents a layer-owned detail sheet (vehicle detail or cluster list) for
@@ -221,13 +217,23 @@ extension MapViewController {
 
 extension MapViewController: RegionsServiceDelegate {
     public func regionsService(_ service: RegionsService, updatedRegion region: Region) {
-        updateRegionScopedLayers()
+        // The stop the sheet is showing belongs to the region we just left, and
+        // the route-focus layer driving it is about to be torn down. Leaving the
+        // sheet up would strand it: its arrivals sink would feed a layer no longer
+        // on the map, so the lines and vehicles would never come back, and
+        // `stopSheetSelection` would stay set — every other marker held down as a
+        // gray dot for the rest of the session. Re-attaching the presentation to
+        // the rebuilt layer isn't the fix either: shape IDs are region-scoped, so
+        // the new region's server would answer this stop's IDs with the wrong lines.
+        dismissStopSheetForReplacement()
+
+        configureStopRouteFocusLayer()
     }
 
     public func regionsService(_ service: RegionsService, updatedRegionsList regions: [Region]) {
         // A regions-list refresh can flip the current region's bikeshare fields in
         // place without changing the region identity; re-evaluate the layers.
-        configureMapLayers()
+        configureStopRouteFocusLayer()
     }
 }
 
