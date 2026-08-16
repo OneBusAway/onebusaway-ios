@@ -716,6 +716,10 @@ class MapViewController: UIViewController,
 
     var rentalLayerCoordinator: RentalLayerCoordinator?
 
+    /// Mirrors the coordinator's published rentals onto the map view. Held here
+    /// because the coordinator no longer knows about `MKMapView`.
+    var rentalAnnotationSyncer: RentalAnnotationSyncer?
+
     /// The region `StopRouteFocusMapLayer` was last (re)registered for, so
     /// `configureMapLayers()` can tell an actual region change (rebuild, with a
     /// fresh `ShapeCache`) apart from `updatedRegionsList` firing with the same

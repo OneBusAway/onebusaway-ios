@@ -81,6 +81,7 @@ extension MapViewController {
         mapRegionManager.removeMapLayer(id: RentalMapLayer.bikesLayerID)
         mapRegionManager.removeMapLayer(id: RentalMapLayer.scootersLayerID)
         rentalLayerCoordinator = nil
+        rentalAnnotationSyncer = nil
 
         // Region flag = product enablement; the GraphQL service supplies the
         // capability. Whether the server actually works is decided by the first
@@ -92,8 +93,9 @@ extension MapViewController {
         }
 
         let service = GraphQLAPIService(baseURL: graphQLURL)
-        let coordinator = RentalLayerCoordinator(service: service, mapView: mapRegionManager.mapView)
+        let coordinator = RentalLayerCoordinator(service: service, locationService: application.locationService)
         rentalLayerCoordinator = coordinator
+        rentalAnnotationSyncer = RentalAnnotationSyncer(coordinator: coordinator, mapView: mapRegionManager.mapView)
 
         // Apply a filter chosen in a previous session before the first fetch,
         // rather than one notification late.
@@ -101,10 +103,12 @@ extension MapViewController {
 
         let bikes = RentalMapLayer.bikesLayer(coordinator: coordinator)
         bikes.actionsDelegate = self
+        bikes.annotationSyncer = rentalAnnotationSyncer
         mapRegionManager.registerMapLayer(bikes)
 
         let scooters = RentalMapLayer.scootersLayer(coordinator: coordinator)
         scooters.actionsDelegate = self
+        scooters.annotationSyncer = rentalAnnotationSyncer
         mapRegionManager.registerMapLayer(scooters)
     }
 
