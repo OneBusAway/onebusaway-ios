@@ -21,38 +21,14 @@ final class MapLayerRegistrarTests: OBATestCase {
 
     private var application: Application!
     private var registrar: MapLayerRegistrar!
-    private var noBikeshareApplication: Application!
+    private var savedRegion: Region?
 
     override init() async throws {
         try await super.init()
         let queue = OperationQueue()
         let dataLoader = MockDataLoader(testName: name)
         application = buildApplication(queue: queue, dataLoader: dataLoader)
-
-        // Set up a separate application for testing the no-bikeshare scenario
-        let noBikeshareQueue = OperationQueue()
-        let noBikeshareDataLoader = MockDataLoader(testName: "noBikeshare")
-        noBikeshareApplication = buildApplication(queue: noBikeshareQueue, dataLoader: noBikeshareDataLoader)
-
-        // Replace its region with one that has no bikeshare
-        // Note: RegionsService.currentRegion getter looks up by ID in the regions list,
-        // so we must use a unique ID that won't conflict
-        if let currentRegion = noBikeshareApplication.regionsService.currentRegion {
-            let noBikeshareRegion = Region(
-                name: "No Bikeshare Test",
-                OBABaseURL: currentRegion.OBABaseURL,
-                coordinateRegion: MKCoordinateRegion(
-                    center: currentRegion.centerCoordinate,
-                    span: MKCoordinateSpan(latitudeDelta: 1.0, longitudeDelta: 1.0)
-                ),
-                contactEmail: currentRegion.contactEmail,
-                regionIdentifier: 99999, // Unique ID to avoid conflicts with fixture regions
-                openTripPlannerURL: nil,
-                openTripPlannerGraphQLURL: nil,
-                supportsOTPGraphQLBikeshare: false
-            )
-            noBikeshareApplication.regionsService.currentRegion = noBikeshareRegion
-        }
+        savedRegion = application.regionsService.currentRegion
     }
 
     @Test func `Registers the stops layer`() {
@@ -74,22 +50,60 @@ final class MapLayerRegistrarTests: OBATestCase {
     /// The region flag is product enablement and the GraphQL URL is the
     /// capability. Without both, there is no rental data source, so no rows.
     @Test func `Skips rental layers when the region has no bikeshare`() throws {
-        // Verify the noBikeshareApplication region is set up correctly
-        let region = try #require(noBikeshareApplication.regionsService.currentRegion)
-        #expect(region.isBikeshareEnabled == false)
-        #expect(region.openTripPlannerGraphQLURL == nil)
-        #expect(region.supportsOTPGraphQLBikeshare == false)
+        // Clean up layers from previous tests
+        application.mapRegionManager.removeMapLayer(id: RentalMapLayer.bikesLayerID)
+        application.mapRegionManager.removeMapLayer(id: RentalMapLayer.scootersLayerID)
 
-        registrar = MapLayerRegistrar(application: noBikeshareApplication) { _ in }
+        let currentRegion = try #require(application.regionsService.currentRegion)
+
+        // Create a region without bikeshare
+        let noBikeshareRegion = Region(
+            name: currentRegion.name,
+            OBABaseURL: currentRegion.OBABaseURL,
+            coordinateRegion: MKCoordinateRegion(
+                center: currentRegion.centerCoordinate,
+                span: MKCoordinateSpan(latitudeDelta: 1.0, longitudeDelta: 1.0)
+            ),
+            contactEmail: currentRegion.contactEmail,
+            regionIdentifier: 99999,
+            openTripPlannerURL: nil,
+            openTripPlannerGraphQLURL: nil,
+            supportsOTPGraphQLBikeshare: false
+        )
+
+        application.regionsService.currentRegion = noBikeshareRegion
+
+        registrar = MapLayerRegistrar(application: application) { _ in }
         registrar.configure()
 
-        #expect(noBikeshareApplication.mapRegionManager.mapLayer(id: RentalMapLayer.bikesLayerID) == nil)
-        #expect(noBikeshareApplication.mapRegionManager.mapLayer(id: RentalMapLayer.scootersLayerID) == nil)
+        #expect(application.mapRegionManager.mapLayer(id: RentalMapLayer.bikesLayerID) == nil)
+        #expect(application.mapRegionManager.mapLayer(id: RentalMapLayer.scootersLayerID) == nil)
         #expect(registrar.rentalCoordinator == nil)
     }
 
     @Test func `Registers both rental layers for a bikeshare region`() throws {
-        try enableBikeshareOnCurrentRegion()
+        // Clean up layers from previous test
+        application.mapRegionManager.removeMapLayer(id: RentalMapLayer.bikesLayerID)
+        application.mapRegionManager.removeMapLayer(id: RentalMapLayer.scootersLayerID)
+
+        // Ensure bikeshare is enabled
+        let currentRegion = try #require(application.regionsService.currentRegion)
+        let bikeshareRegion = Region(
+            name: currentRegion.name,
+            OBABaseURL: currentRegion.OBABaseURL,
+            coordinateRegion: MKCoordinateRegion(
+                center: currentRegion.centerCoordinate,
+                span: MKCoordinateSpan(latitudeDelta: 0.5, longitudeDelta: 0.5)
+            ),
+            contactEmail: currentRegion.contactEmail,
+            regionIdentifier: currentRegion.regionIdentifier,
+            openTripPlannerURL: currentRegion.openTripPlannerURL,
+            openTripPlannerGraphQLURL: URL(string: "https://otp.example.com/graphql"),
+            supportsOTPGraphQLBikeshare: true,
+            sidecarBaseURL: currentRegion.sidecarBaseURL,
+            umamiAnalytics: currentRegion.umamiAnalytics
+        )
+        application.regionsService.currentRegion = bikeshareRegion
 
         registrar = MapLayerRegistrar(application: application) { _ in }
         registrar.configure()
@@ -103,7 +117,24 @@ final class MapLayerRegistrarTests: OBATestCase {
     /// A returning rider's stored threshold must reach the coordinator before
     /// the first fetch, not one notification later.
     @Test func `Applies the persisted range filter before the first fetch`() throws {
-        try enableBikeshareOnCurrentRegion()
+        // Ensure bikeshare is enabled
+        let currentRegion = try #require(application.regionsService.currentRegion)
+        let bikeshareRegion = Region(
+            name: currentRegion.name,
+            OBABaseURL: currentRegion.OBABaseURL,
+            coordinateRegion: MKCoordinateRegion(
+                center: currentRegion.centerCoordinate,
+                span: MKCoordinateSpan(latitudeDelta: 0.5, longitudeDelta: 0.5)
+            ),
+            contactEmail: currentRegion.contactEmail,
+            regionIdentifier: currentRegion.regionIdentifier,
+            openTripPlannerURL: currentRegion.openTripPlannerURL,
+            openTripPlannerGraphQLURL: URL(string: "https://otp.example.com/graphql"),
+            supportsOTPGraphQLBikeshare: true,
+            sidecarBaseURL: currentRegion.sidecarBaseURL,
+            umamiAnalytics: currentRegion.umamiAnalytics
+        )
+        application.regionsService.currentRegion = bikeshareRegion
         application.mapRegionManager.rentalRangeFilter = RentalRangeFilter(minimumRangeMeters: 8047)
 
         registrar = MapLayerRegistrar(application: application) { _ in }
@@ -113,7 +144,25 @@ final class MapLayerRegistrarTests: OBATestCase {
     }
 
     @Test func `Rebuilds rental layers on reconfigure`() throws {
-        try enableBikeshareOnCurrentRegion()
+        // Ensure bikeshare is enabled
+        let currentRegion = try #require(application.regionsService.currentRegion)
+        let bikeshareRegion = Region(
+            name: currentRegion.name,
+            OBABaseURL: currentRegion.OBABaseURL,
+            coordinateRegion: MKCoordinateRegion(
+                center: currentRegion.centerCoordinate,
+                span: MKCoordinateSpan(latitudeDelta: 0.5, longitudeDelta: 0.5)
+            ),
+            contactEmail: currentRegion.contactEmail,
+            regionIdentifier: currentRegion.regionIdentifier,
+            openTripPlannerURL: currentRegion.openTripPlannerURL,
+            openTripPlannerGraphQLURL: URL(string: "https://otp.example.com/graphql"),
+            supportsOTPGraphQLBikeshare: true,
+            sidecarBaseURL: currentRegion.sidecarBaseURL,
+            umamiAnalytics: currentRegion.umamiAnalytics
+        )
+        application.regionsService.currentRegion = bikeshareRegion
+
         registrar = MapLayerRegistrar(application: application) { _ in }
         registrar.configure()
         let first = try #require(registrar.rentalCoordinator)
@@ -131,34 +180,5 @@ final class MapLayerRegistrarTests: OBATestCase {
         registrar.configure()
 
         #expect(callCount == 1)
-    }
-
-    /// Sets the current region to one with bikeshare enabled and a GraphQL URL
-    /// so the rental branch is reachable.
-    private func enableBikeshareOnCurrentRegion() throws {
-        let currentRegion = try #require(application.regionsService.currentRegion)
-        let graphQLURL = URL(string: "https://otp.example.com/otp/routers/default/index/graphql")!
-
-        // Build a coordinate region from the center coordinate
-        let coordinateRegion = MKCoordinateRegion(
-            center: currentRegion.centerCoordinate,
-            span: MKCoordinateSpan(latitudeDelta: 0.5, longitudeDelta: 0.5)
-        )
-
-        // Build a new Region with bikeshare enabled and GraphQL URL
-        let bikeshareRegion = Region(
-            name: currentRegion.name,
-            OBABaseURL: currentRegion.OBABaseURL,
-            coordinateRegion: coordinateRegion,
-            contactEmail: currentRegion.contactEmail,
-            regionIdentifier: currentRegion.regionIdentifier,
-            openTripPlannerURL: currentRegion.openTripPlannerURL,
-            openTripPlannerGraphQLURL: graphQLURL,
-            supportsOTPGraphQLBikeshare: true,
-            sidecarBaseURL: currentRegion.sidecarBaseURL,
-            umamiAnalytics: currentRegion.umamiAnalytics
-        )
-
-        application.regionsService.currentRegion = bikeshareRegion
     }
 }
