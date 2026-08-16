@@ -24,7 +24,7 @@ import OTPKit
 /// Subclasses `NSObject` because `RegionsServiceDelegate` is an `@objc`
 /// protocol. `RegionsService` holds delegates weakly, so the host must retain
 /// this object or region changes will silently stop rebuilding layers.
-@MainActor public final class MapLayerRegistrar: NSObject {
+@MainActor final class MapLayerRegistrar: NSObject {
 
     private let application: Application
 
@@ -35,13 +35,13 @@ import OTPKit
 
     /// The engine behind the rental layers, or nil when the current region has
     /// no bikeshare.
-    public private(set) var rentalCoordinator: RentalLayerCoordinator?
+    private(set) var rentalCoordinator: RentalLayerCoordinator?
 
     /// The rental layers built by the most recent `configure()`, in registration
     /// order: Bikes then Scooters.
-    public private(set) var rentalLayers: [RentalMapLayer] = []
+    private(set) var rentalLayers: [RentalMapLayer] = []
 
-    public init(application: Application, onDidConfigure: @escaping (MapLayerRegistrar) -> Void) {
+    init(application: Application, onDidConfigure: @escaping (MapLayerRegistrar) -> Void) {
         self.application = application
         self.onDidConfigure = onDidConfigure
         super.init()
@@ -52,7 +52,7 @@ import OTPKit
 
     /// Registers the stops layer once, then tears down and rebuilds the
     /// region-scoped rental layers. Safe to call repeatedly.
-    public func configure() {
+    func configure() {
         if mapRegionManager.mapLayer(id: StopsMapLayer.layerID) == nil {
             mapRegionManager.registerMapLayer(StopsMapLayer(manager: mapRegionManager))
         }
@@ -96,13 +96,13 @@ import OTPKit
 // MARK: - RegionsServiceDelegate
 
 extension MapLayerRegistrar: RegionsServiceDelegate {
-    public func regionsService(_ service: RegionsService, updatedRegion region: Region) {
+    func regionsService(_ service: RegionsService, updatedRegion region: Region) {
         configure()
     }
 
     /// A regions-list refresh can flip the current region's bikeshare fields in
     /// place without changing the region identity; re-evaluate the layers.
-    public func regionsService(_ service: RegionsService, updatedRegionsList regions: [Region]) {
+    func regionsService(_ service: RegionsService, updatedRegionsList regions: [Region]) {
         configure()
     }
 }

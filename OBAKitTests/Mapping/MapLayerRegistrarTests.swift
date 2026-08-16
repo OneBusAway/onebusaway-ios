@@ -21,14 +21,13 @@ final class MapLayerRegistrarTests: OBATestCase {
 
     private var application: Application!
     private var registrar: MapLayerRegistrar!
-    private var savedRegion: Region?
 
     override init() async throws {
         try await super.init()
         let queue = OperationQueue()
         let dataLoader = MockDataLoader(testName: name)
+        Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
         application = buildApplication(queue: queue, dataLoader: dataLoader)
-        savedRegion = application.regionsService.currentRegion
     }
 
     @Test func `Registers the stops layer`() {
@@ -50,13 +49,10 @@ final class MapLayerRegistrarTests: OBATestCase {
     /// The region flag is product enablement and the GraphQL URL is the
     /// capability. Without both, there is no rental data source, so no rows.
     @Test func `Skips rental layers when the region has no bikeshare`() throws {
-        // Clean up layers from previous tests
-        application.mapRegionManager.removeMapLayer(id: RentalMapLayer.bikesLayerID)
-        application.mapRegionManager.removeMapLayer(id: RentalMapLayer.scootersLayerID)
-
         let currentRegion = try #require(application.regionsService.currentRegion)
 
-        // Create a region without bikeshare
+        // Create a region without bikeshare, using the same OBABaseURL so
+        // existing agency stubs continue to work
         let noBikeshareRegion = Region(
             name: currentRegion.name,
             OBABaseURL: currentRegion.OBABaseURL,
@@ -82,12 +78,10 @@ final class MapLayerRegistrarTests: OBATestCase {
     }
 
     @Test func `Registers both rental layers for a bikeshare region`() throws {
-        // Clean up layers from previous test
-        application.mapRegionManager.removeMapLayer(id: RentalMapLayer.bikesLayerID)
-        application.mapRegionManager.removeMapLayer(id: RentalMapLayer.scootersLayerID)
-
-        // Ensure bikeshare is enabled
         let currentRegion = try #require(application.regionsService.currentRegion)
+
+        // Build a bikeshare-enabled region using the same OBABaseURL so existing
+        // agency stubs continue to work
         let bikeshareRegion = Region(
             name: currentRegion.name,
             OBABaseURL: currentRegion.OBABaseURL,
@@ -117,8 +111,9 @@ final class MapLayerRegistrarTests: OBATestCase {
     /// A returning rider's stored threshold must reach the coordinator before
     /// the first fetch, not one notification later.
     @Test func `Applies the persisted range filter before the first fetch`() throws {
-        // Ensure bikeshare is enabled
         let currentRegion = try #require(application.regionsService.currentRegion)
+
+        // Build a bikeshare-enabled region using the same OBABaseURL
         let bikeshareRegion = Region(
             name: currentRegion.name,
             OBABaseURL: currentRegion.OBABaseURL,
@@ -144,8 +139,9 @@ final class MapLayerRegistrarTests: OBATestCase {
     }
 
     @Test func `Rebuilds rental layers on reconfigure`() throws {
-        // Ensure bikeshare is enabled
         let currentRegion = try #require(application.regionsService.currentRegion)
+
+        // Build a bikeshare-enabled region using the same OBABaseURL
         let bikeshareRegion = Region(
             name: currentRegion.name,
             OBABaseURL: currentRegion.OBABaseURL,

@@ -22,7 +22,7 @@ import OTPKit
 /// range threshold — before publishing the resulting diffs, and it tracks runtime
 /// availability from fetch outcomes. Both the UIKit map (through `RentalAnnotationSyncer`)
 /// and the SwiftUI panel render from the published state.
-@MainActor public final class RentalLayerCoordinator: ObservableObject {
+@MainActor final class RentalLayerCoordinator: ObservableObject {
 
     private let source: VehicleRentalSource
     private let locationService: LocationService
