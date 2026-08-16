@@ -714,11 +714,13 @@ class MapViewController: UIViewController,
 
     // MARK: - Map Layers
 
-    var rentalLayerCoordinator: RentalLayerCoordinator?
+    /// Retained here because `RegionsService` holds its delegates weakly.
+    var mapLayerRegistrar: MapLayerRegistrar?
 
-    /// Mirrors the coordinator's published rentals onto the map view. Held here
-    /// because the coordinator no longer knows about `MKMapView`.
+    /// Mirrors the coordinator's published rentals onto the map view.
     var rentalAnnotationSyncer: RentalAnnotationSyncer?
+
+    var rentalLayerCoordinator: RentalLayerCoordinator? { mapLayerRegistrar?.rentalCoordinator }
 
     /// The region `StopRouteFocusMapLayer` was last (re)registered for, so
     /// `configureMapLayers()` can tell an actual region change (rebuild, with a

@@ -17,16 +17,18 @@ import UIKit
 
 extension MapViewController {
 
-    /// Registers the map's toggleable layers: the stops adapter always, the
-    /// rental layers only when the current region is configured for bikeshare.
-    /// Called at load and again whenever the region changes.
+    /// Registers the map's toggleable layers. The shared half (stops, rentals)
+    /// lives in `MapLayerRegistrar`; the overlay layers stay here because they
+    /// draw `MKOverlay`s and carry a region-scoped `ShapeCache`.
     func configureMapLayers() {
-        if mapRegionManager.mapLayer(id: StopsMapLayer.layerID) == nil {
-            mapRegionManager.registerMapLayer(StopsMapLayer(manager: mapRegionManager))
+        if mapLayerRegistrar == nil {
+            mapLayerRegistrar = MapLayerRegistrar(application: application) { [weak self] registrar in
+                self?.attachRentalLayerHost(registrar)
+            }
         }
+        mapLayerRegistrar?.configure()
 
         configureStopRouteFocusLayer()
-        configureRentalLayers()
         updateMapLayerBadge()
     }
 
@@ -76,40 +78,22 @@ extension MapViewController {
         stopRouteFocusLayerRegionIdentifier = currentRegionIdentifier
     }
 
-    private func configureRentalLayers() {
-        // Tear down any layers built for a previous region; preferences persist.
-        mapRegionManager.removeMapLayer(id: RentalMapLayer.bikesLayerID)
-        mapRegionManager.removeMapLayer(id: RentalMapLayer.scootersLayerID)
-        rentalLayerCoordinator = nil
-        rentalAnnotationSyncer = nil
-
-        // Region flag = product enablement; the GraphQL service supplies the
-        // capability. Whether the server actually works is decided by the first
-        // fetch, which can dim the rows at runtime.
-        guard let region = application.regionsService.currentRegion,
-              region.isBikeshareEnabled,
-              let graphQLURL = region.openTripPlannerGraphQLURL else {
+    /// Re-points everything hanging off the freshly-built rental layers: the
+    /// detail-sheet action delegate, and the `MKMapView` syncer that replaced
+    /// the coordinator's own map-view writes.
+    private func attachRentalLayerHost(_ registrar: MapLayerRegistrar) {
+        guard let coordinator = registrar.rentalCoordinator else {
+            rentalAnnotationSyncer = nil
             return
         }
 
-        let service = GraphQLAPIService(baseURL: graphQLURL)
-        let coordinator = RentalLayerCoordinator(service: service, locationService: application.locationService)
-        rentalLayerCoordinator = coordinator
-        rentalAnnotationSyncer = RentalAnnotationSyncer(coordinator: coordinator, mapView: mapRegionManager.mapView)
+        let syncer = RentalAnnotationSyncer(coordinator: coordinator, mapView: mapRegionManager.mapView)
+        rentalAnnotationSyncer = syncer
 
-        // Apply a filter chosen in a previous session before the first fetch,
-        // rather than one notification late.
-        coordinator.setRangeFilter(mapRegionManager.rentalRangeFilter)
-
-        let bikes = RentalMapLayer.bikesLayer(coordinator: coordinator)
-        bikes.actionsDelegate = self
-        bikes.annotationSyncer = rentalAnnotationSyncer
-        mapRegionManager.registerMapLayer(bikes)
-
-        let scooters = RentalMapLayer.scootersLayer(coordinator: coordinator)
-        scooters.actionsDelegate = self
-        scooters.annotationSyncer = rentalAnnotationSyncer
-        mapRegionManager.registerMapLayer(scooters)
+        for layer in registrar.rentalLayers {
+            layer.actionsDelegate = self
+            layer.annotationSyncer = syncer
+        }
     }
 
     /// Presents a layer-owned detail sheet (vehicle detail or cluster list) for
