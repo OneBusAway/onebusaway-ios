@@ -41,6 +41,9 @@ protocol StopViewModelEnvironment: AnyObject {
     /// `userDataStore.effectiveTravelVelocityMetersPerSecond` — walking speed, or
     /// cycling speed when Bike Mode is enabled. Drives the mode-aware split.
     var effectiveTravelVelocityMetersPerSecond: CLLocationSpeed { get }
+    /// Whether the mode-aware split above is currently reading bike speed —
+    /// drives the "walk" vs. "bike" wording on the chronological divider.
+    var bikeModeEnabled: Bool { get }
 
     // MARK: - Stop preferences (individual operations, not the full StopPreferencesStore)
 
@@ -103,6 +106,7 @@ extension Application: StopViewModelEnvironment {
     var walkingSpeedMetersPerSecond: CLLocationSpeed { userDataStore.walkingSpeedMetersPerSecond }
     var bikeSpeedMetersPerSecond: CLLocationSpeed { userDataStore.bikeSpeedMetersPerSecond }
     var effectiveTravelVelocityMetersPerSecond: CLLocationSpeed { userDataStore.effectiveTravelVelocityMetersPerSecond }
+    var bikeModeEnabled: Bool { userDataStore.bikeModeEnabled }
 
     func stopPreferences(stopID: StopID, region: Region) -> StopPreferences {
         stopPreferencesDataStore.preferences(stopID: stopID, region: region)
@@ -157,6 +161,7 @@ final class PreviewStopViewModelEnvironment: StopViewModelEnvironment {
     var walkingSpeedMetersPerSecond: CLLocationSpeed { 1.4 }
     var bikeSpeedMetersPerSecond: CLLocationSpeed { 4.2 }
     var effectiveTravelVelocityMetersPerSecond: CLLocationSpeed { 1.4 }
+    var bikeModeEnabled: Bool { false }
 
     func stopPreferences(stopID: StopID, region: Region) -> StopPreferences { .init() }
     func setStopPreferences(_ prefs: StopPreferences, stop: Stop, region: Region) {}

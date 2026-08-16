@@ -418,7 +418,7 @@ class SettingsViewController: FormViewController {
             $0.title = OBALoc("settings_controller.bike_mode.title", value: "Bike Mode", comment: "Settings > Bike Mode > on/off toggle")
             $0.onChange { [weak self] row in
                 guard let self, row.value == true, HKHealthStore.isHealthDataAvailable() else { return }
-                Task {
+                Task { @MainActor in
                     let granted = await self.application.bikeModeManager.requestHealthKitAuthorizationAndSync()
                     if !granted {
                         self.showErrorToast(
