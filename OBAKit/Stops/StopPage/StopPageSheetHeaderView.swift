@@ -50,7 +50,7 @@ struct StopPageSheetHeaderView: View {
     /// Walk time at the user's walking speed — always shown, independent of Bike Mode.
     let walkTime: WalkTimeInfo?
     /// Bike time at the user's cycling speed — always shown, independent of Bike Mode.
-    var bikeTime: WalkTimeInfo? = nil
+    var bikeTime: WalkTimeInfo?
     /// Opens walking directions to the stop (VC-owned; disambiguates between maps apps when more
     /// than one is available).
     let onWalkingDirections: () -> Void
@@ -169,7 +169,7 @@ struct StopPageSheetHeaderView: View {
                         if let bikeTime {
                             bikePill(bikeTime)
                         }
-                        if (walkTime != nil || bikeTime != nil), !chips.isEmpty {
+                        if (walkTime != nil || bikeTime != nil) && !chips.isEmpty {
                             rowSeparator
                         }
                         ForEach(chips) { chip in

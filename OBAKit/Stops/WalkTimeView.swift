@@ -93,6 +93,10 @@ class WalkTimeView: UIView {
         // min' looks weird.
         guard distance > 40 else {
             label.text = nil
+            // This view is reused across list cells; without clearing it, a cell that
+            // previously showed the bike icon (or vice versa) would keep it here even
+            // though no text renders alongside it.
+            walkerImageView.image = nil
             isAccessibilityElement = false
             return
         }
