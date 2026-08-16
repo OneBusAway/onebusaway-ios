@@ -222,7 +222,7 @@ struct StopPageView: View {
         .safeAreaInset(edge: .top, spacing: 0) {
             if showToolbarOnBottom {
                 if let stop = viewModel.stop {
-                    StopPageSheetHeaderView(stop: stop, walkTime: walkTime, onWalkingDirections: navigation.showWalkingDirections, onClose: navigation.closeSheet, isCollapsed: isCollapsed, mapFocus: mapFocus)
+                    StopPageSheetHeaderView(stop: stop, walkTime: viewModel.headerWalkTime, bikeTime: viewModel.headerBikeTime, onWalkingDirections: navigation.showWalkingDirections, onClose: navigation.closeSheet, isCollapsed: isCollapsed, mapFocus: mapFocus)
                 } else {
                     // Unconditional, unlike the pushed presentation's header: with no navigation
                     // bar behind the sheet, this strip carries the only close button, so a stop
