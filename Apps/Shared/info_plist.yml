@@ -14,5 +14,5 @@ targets:
   App:
     info:
       properties:
-        NSHealthShareUsageDescription: Uses your walking speed from the Health app to give you more accurate arrival time estimates.
-        NSHealthUpdateUsageDescription: Uses your walking speed from the Health app to give you more accurate arrival time estimates.
+        NSHealthShareUsageDescription: Uses your walking or cycling speed from the Health app to give you more accurate arrival time estimates.
+        NSHealthUpdateUsageDescription: Uses your walking or cycling speed from the Health app to give you more accurate arrival time estimates.

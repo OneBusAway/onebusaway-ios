@@ -87,35 +87,47 @@ class WalkTimeView: UIView {
         NotificationCenter.default.removeObserver(self)
     }
 
-    public func set(distance: CLLocationDistance, timeToWalk: TimeInterval) {
+    public func set(distance: CLLocationDistance, timeToWalk: TimeInterval, isBikeMode: Bool = false) {
         // bail out if the distance is 40 meters or less. Just don't show anything because
         // it suggests the user is essentially at the stop and showing '100 feet arriving in 1
         // min' looks weird.
         guard distance > 40 else {
             label.text = nil
+            // This view is reused across list cells; without clearing it, a cell that
+            // previously showed the bike icon (or vice versa) would keep it here even
+            // though no text renders alongside it.
+            walkerImageView.image = nil
             isAccessibilityElement = false
             return
         }
 
-        walkerImageView.image = Icons.walkTransport
+        // No dedicated bike glyph asset exists yet (matches `walkTransport`'s vector PDF); the
+        // SF Symbol used by the SwiftUI stop page's bike chip is a reasonable stand-in here too.
+        walkerImageView.image = isBikeMode ? UIImage(systemName: "bicycle") : Icons.walkTransport
 
         let distanceString = formatters.distanceFormatter.string(fromDistance: distance)
         let arrivalTime = formatters.timeFormatter.string(from: Date().addingTimeInterval(timeToWalk))
 
         if let timeString = formatters.positionalTimeFormatter.string(from: timeToWalk) {
-            let fmt = OBALoc("walk_time_view.distance_time_fmt", value: "%@, %@: arriving at %@", comment: "Format string with placeholders for distance from stop, walking time to stop, and predicted arrival time. e.g. 1.2 miles, 17m: arriving at 09:41 A.M.")
+            let fmt = isBikeMode
+                ? OBALoc("walk_time_view.distance_time_bike_fmt", value: "%@, %@: arriving at %@", comment: "Format string with placeholders for distance from stop, biking time to stop, and predicted arrival time. e.g. 1.2 miles, 6m: arriving at 09:41 A.M.")
+                : OBALoc("walk_time_view.distance_time_fmt", value: "%@, %@: arriving at %@", comment: "Format string with placeholders for distance from stop, walking time to stop, and predicted arrival time. e.g. 1.2 miles, 17m: arriving at 09:41 A.M.")
             label.text = String(format: fmt, distanceString, timeString, arrivalTime)
         }
         else {
             label.text = distanceString
         }
 
-        accessibilityLabel = OBALoc("walk_time_view.accessibility_label", value: "Time to walk to stop", comment: "A label for blind or low-vision users on the UI element that describes how long it takes to walk to the stop.")
+        accessibilityLabel = isBikeMode
+            ? OBALoc("walk_time_view.accessibility_label_bike", value: "Time to bike to stop", comment: "A label for blind or low-vision users on the UI element that describes how long it takes to bike to the stop.")
+            : OBALoc("walk_time_view.accessibility_label", value: "Time to walk to stop", comment: "A label for blind or low-vision users on the UI element that describes how long it takes to walk to the stop.")
         accessibilityTraits = [.staticText]
         isAccessibilityElement = true
 
         if let timeString = formatters.accessibilityPositionalTimeFormatter.string(from: timeToWalk) {
-            let fmt = OBALoc("walk_time_view.accessibility_value", value: "%@. Takes %@ to walk, arriving at %@", comment: "Accessibility string with placeholders for distance from stop, walking time to stop, and predicted arrival time. e.g. 1.2 miles. Takes 17 minutes to walk, arriving at 9:41 am")
+            let fmt = isBikeMode
+                ? OBALoc("walk_time_view.accessibility_value_bike", value: "%@. Takes %@ to bike, arriving at %@", comment: "Accessibility string with placeholders for distance from stop, biking time to stop, and predicted arrival time. e.g. 1.2 miles. Takes 6 minutes to bike, arriving at 9:41 am")
+                : OBALoc("walk_time_view.accessibility_value", value: "%@. Takes %@ to walk, arriving at %@", comment: "Accessibility string with placeholders for distance from stop, walking time to stop, and predicted arrival time. e.g. 1.2 miles. Takes 17 minutes to walk, arriving at 9:41 am")
             accessibilityValue = String(format: fmt, distanceString, timeString, arrivalTime)
         }
         else {

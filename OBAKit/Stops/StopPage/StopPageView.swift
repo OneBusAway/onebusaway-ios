@@ -209,8 +209,9 @@ struct StopPageView: View {
     }
 
     var body: some View {
-        // Hoist the single computed walk value so the header chip, the
-        // chronological partition, and the divider all read one snapshot of it.
+        // Hoist the mode-aware walk value so the chronological partition and the
+        // divider read one snapshot of it. The header shows its own always-on
+        // walk and bike estimates, independent of Bike Mode.
         let walkTime = viewModel.walkTime
         // Route filter, then Departure Type filter, then terminal dedup — the
         // type filter must run before `filteringTerminalDuplicates()`: dedup
@@ -241,7 +242,7 @@ struct StopPageView: View {
             if let stop = viewModel.stop {
                 if !showToolbarOnBottom {
                     Section {
-                        StopPageHeaderView(stop: stop, walkTime: walkTime, statusText: viewModel.statusText, snapshotLoader: snapshotLoader, onWalkingDirections: navigation.showWalkingDirections)
+                        StopPageHeaderView(stop: stop, walkTime: viewModel.headerWalkTime, bikeTime: viewModel.headerBikeTime, statusText: viewModel.statusText, snapshotLoader: snapshotLoader, onWalkingDirections: navigation.showWalkingDirections)
                             .listRowInsets(EdgeInsets(top: 0, leading: Self.horizontalRowInset, bottom: 0, trailing: Self.horizontalRowInset))
                             .listRowBackground(Color.clear)
                             .listRowSeparator(.hidden)
@@ -369,6 +370,7 @@ struct StopPageView: View {
                     // whether there is anything to disclose.
                     partition: chronologicalPartition,
                     walkMinutes: walkTime?.walkMinutes,
+                    isBikeMode: viewModel.isBikeModeEnabled,
                     showPast: !pastCollapsed,
                     statusProvider: { DepartureStatus(arrivalDeparture: $0) },
                     alarmLookup: { viewModel.alarm(for: $0) },
@@ -425,7 +427,7 @@ struct StopPageView: View {
         .safeAreaInset(edge: .top, spacing: 0) {
             if showToolbarOnBottom {
                 if let stop = viewModel.stop {
-                    StopPageSheetHeaderView(stop: stop, walkTime: walkTime, onWalkingDirections: navigation.showWalkingDirections, onClose: navigation.closeSheet, isCollapsed: isCollapsed, mapFocus: mapFocus)
+                    StopPageSheetHeaderView(stop: stop, walkTime: viewModel.headerWalkTime, bikeTime: viewModel.headerBikeTime, onWalkingDirections: navigation.showWalkingDirections, onClose: navigation.closeSheet, isCollapsed: isCollapsed, mapFocus: mapFocus)
                 } else {
                     // Unconditional, unlike the pushed presentation's header: with no navigation
                     // bar behind the sheet, this strip carries the only close button, so a stop

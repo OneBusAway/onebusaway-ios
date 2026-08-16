@@ -159,6 +159,14 @@ class StopViewModel: ObservableObject {
 
     private var alarmFiredCancellable: AnyCancellable?
 
+    /// Re-publishes on any UserDefaults write so the header's walk/bike chips and
+    /// the chronological divider — plain computed properties, not `@Published` —
+    /// pick up a Bike Mode toggle made in Settings without waiting for the next
+    /// periodic refresh. Broad (any key, not just bike settings) but cheap: this
+    /// only runs while a stop page is on screen, and re-reading a few computed
+    /// properties on an unrelated settings write is negligible.
+    private var settingsChangedCancellable: AnyCancellable?
+
     // MARK: - Init Context
 
     /// Optional bookmark that opened this stop view.
@@ -222,6 +230,11 @@ class StopViewModel: ObservableObject {
             .publisher(for: .alarmFired)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in self?.rebuildAlarmIndex() }
+
+        settingsChangedCancellable = NotificationCenter.default
+            .publisher(for: UserDefaults.didChangeNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.objectWillChange.send() }
     }
 
     /// Backward-compatible entry point for existing callers that pass `Application` directly.
@@ -661,14 +674,39 @@ class StopViewModel: ObservableObject {
 
     // MARK: - Stop Page: Walk Time
 
-    /// Walk time from the user's current location to this stop; the single
-    /// source for the header chip and the chronological walk line (§4.5).
-    var walkTime: WalkTimeInfo? {
+    /// Travel time to this stop at an arbitrary speed. Shared by the header's
+    /// walk/bike chips and the mode-aware chronological split.
+    private func travelTime(atSpeed speed: Double) -> WalkTimeInfo? {
         WalkTimeInfo.compute(
             from: environment.currentUserLocation,
             to: stop?.location,
-            speedMetersPerSecond: environment.walkingSpeedMetersPerSecond
+            speedMetersPerSecond: speed
         )
+    }
+
+    /// Travel time using the mode the user has selected — Bike Mode swaps in the
+    /// cycling speed. Drives the chronological reachable/missed split and the
+    /// walk-line divider (§4.5).
+    var walkTime: WalkTimeInfo? {
+        travelTime(atSpeed: environment.effectiveTravelVelocityMetersPerSecond)
+    }
+
+    /// Walk time at the user's walking speed — always shown on the header's walk
+    /// chip, independent of whether Bike Mode is enabled.
+    var headerWalkTime: WalkTimeInfo? {
+        travelTime(atSpeed: environment.walkingSpeedMetersPerSecond)
+    }
+
+    /// Bike time at the user's cycling speed — always shown on the header's bike
+    /// chip, independent of whether Bike Mode is enabled.
+    var headerBikeTime: WalkTimeInfo? {
+        travelTime(atSpeed: environment.bikeSpeedMetersPerSecond)
+    }
+
+    /// Whether `walkTime` above is currently reading bike speed — the chronological
+    /// divider's wording ("walk" vs. "bike") must match what actually produced its minutes.
+    var isBikeModeEnabled: Bool {
+        environment.bikeModeEnabled
     }
 
     // MARK: - Stop Page: Alarms

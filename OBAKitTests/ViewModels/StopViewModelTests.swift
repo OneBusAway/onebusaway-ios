@@ -950,4 +950,35 @@ final class StopViewModelTests: OBATestCase {
         await viewModel.refresh()
         #expect(application.promptCoordinator.sawErrorThisSession)
     }
+
+    // MARK: - Stop Page: Walk/Bike Time
+
+    /// `headerWalkTime` and `headerBikeTime` must stay fixed at their respective speeds
+    /// regardless of Bike Mode, while the mode-aware `walkTime` is the one that switches —
+    /// the contract the header chips and the chronological split each depend on.
+    @Test @MainActor
+    func `Header walk and bike time stay fixed across Bike Mode while the mode-aware value switches`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock())
+
+        let viewModel = StopViewModel(application: app, stopID: testStopID)
+        await viewModel.refresh()
+
+        app.userDataStore.bikeModeEnabled = false
+        let headerWalkBefore = try #require(viewModel.headerWalkTime)
+        let headerBikeBefore = try #require(viewModel.headerBikeTime)
+
+        // Cycling speed is faster than walking speed, so the bike estimate must be shorter.
+        #expect(headerBikeBefore.walkMinutes < headerWalkBefore.walkMinutes)
+        // Bike Mode off: the mode-aware value tracks the walking speed.
+        #expect(viewModel.walkTime == headerWalkBefore)
+
+        app.userDataStore.bikeModeEnabled = true
+
+        // The header chips must not move when Bike Mode toggles...
+        #expect(viewModel.headerWalkTime == headerWalkBefore)
+        #expect(viewModel.headerBikeTime == headerBikeBefore)
+        // ...but the mode-aware value now tracks the cycling speed instead.
+        #expect(viewModel.walkTime == headerBikeBefore)
+    }
 }
