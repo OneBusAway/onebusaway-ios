@@ -370,6 +370,7 @@ struct StopPageView: View {
                     // whether there is anything to disclose.
                     partition: chronologicalPartition,
                     walkMinutes: walkTime?.walkMinutes,
+                    isBikeMode: viewModel.isBikeModeEnabled,
                     showPast: !pastCollapsed,
                     statusProvider: { DepartureStatus(arrivalDeparture: $0) },
                     alarmLookup: { viewModel.alarm(for: $0) },

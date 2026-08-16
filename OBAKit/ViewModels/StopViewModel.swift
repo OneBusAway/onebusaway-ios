@@ -159,6 +159,14 @@ class StopViewModel: ObservableObject {
 
     private var alarmFiredCancellable: AnyCancellable?
 
+    /// Re-publishes on any UserDefaults write so the header's walk/bike chips and
+    /// the chronological divider — plain computed properties, not `@Published` —
+    /// pick up a Bike Mode toggle made in Settings without waiting for the next
+    /// periodic refresh. Broad (any key, not just bike settings) but cheap: this
+    /// only runs while a stop page is on screen, and re-reading a few computed
+    /// properties on an unrelated settings write is negligible.
+    private var settingsChangedCancellable: AnyCancellable?
+
     // MARK: - Init Context
 
     /// Optional bookmark that opened this stop view.
@@ -222,6 +230,11 @@ class StopViewModel: ObservableObject {
             .publisher(for: .alarmFired)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in self?.rebuildAlarmIndex() }
+
+        settingsChangedCancellable = NotificationCenter.default
+            .publisher(for: UserDefaults.didChangeNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.objectWillChange.send() }
     }
 
     /// Backward-compatible entry point for existing callers that pass `Application` directly.
@@ -688,6 +701,12 @@ class StopViewModel: ObservableObject {
     /// chip, independent of whether Bike Mode is enabled.
     var headerBikeTime: WalkTimeInfo? {
         travelTime(atSpeed: environment.bikeSpeedMetersPerSecond)
+    }
+
+    /// Whether `walkTime` above is currently reading bike speed — the chronological
+    /// divider's wording ("walk" vs. "bike") must match what actually produced its minutes.
+    var isBikeModeEnabled: Bool {
+        environment.bikeModeEnabled
     }
 
     // MARK: - Stop Page: Alarms
