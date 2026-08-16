@@ -172,9 +172,15 @@ final class BackgroundAnnotationDeemphasisTests: OBATestCase {
 
     @Test func `Rental vehicles and their clusters recede`() throws {
         let mapView = MKMapView()
-        let layer = RentalMapLayer.bikesLayer(
-            coordinator: RentalLayerCoordinator(service: StubVehicleRentalService(), mapView: mapView)
+        let locationManager = MockAuthorizedLocationManager(
+            updateLocation: TestData.mockSeattleLocation,
+            updateHeading: TestData.mockHeading
         )
+        let coordinator = RentalLayerCoordinator(
+            service: StubVehicleRentalService(),
+            locationService: LocationService(userDefaults: UserDefaults(), locationManager: locationManager)
+        )
+        let layer = RentalMapLayer.bikesLayer(coordinator: coordinator)
         let rental = RentalAnnotation(rental: try RentalFixtures.vehicle())
         let cluster = MKClusterAnnotation(memberAnnotations: [rental])
 
