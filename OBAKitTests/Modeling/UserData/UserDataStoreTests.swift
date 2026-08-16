@@ -347,66 +347,66 @@ final class UserDefaultsStoreTests: OBATestCase {
 
     // MARK: - Bike Mode
 
-    func test_bikeModeEnabled_defaultValue() {
-        expect(self.userDefaultsStore.bikeModeEnabled) == false
+    @Test func `Bike mode enabled default value`() {
+        #expect(self.userDefaultsStore.bikeModeEnabled == false)
     }
 
-    func test_bikeModeEnabled_roundTrip() {
+    @Test func `Bike mode enabled round trip`() {
         userDefaultsStore.bikeModeEnabled = true
-        expect(self.userDefaultsStore.bikeModeEnabled) == true
+        #expect(UserDefaultsStore(userDefaults: userDefaults).bikeModeEnabled == true)
 
         userDefaultsStore.bikeModeEnabled = false
-        expect(self.userDefaultsStore.bikeModeEnabled) == false
+        #expect(UserDefaultsStore(userDefaults: userDefaults).bikeModeEnabled == false)
     }
 
-    func test_bikeSpeed_defaultValue() {
-        expect(self.userDefaultsStore.bikeSpeedMetersPerSecond).to(beCloseTo(4.2))
+    @Test func `Bike speed default value`() {
+        expectClose(self.userDefaultsStore.bikeSpeedMetersPerSecond, 4.2)
     }
 
-    func test_bikeSpeed_roundTrip() {
+    @Test func `Bike speed round trip`() {
         userDefaultsStore.bikeSpeedMetersPerSecond = 5.0
-        expect(self.userDefaultsStore.bikeSpeedMetersPerSecond).to(beCloseTo(5.0))
+        expectClose(self.userDefaultsStore.bikeSpeedMetersPerSecond, 5.0)
 
         let newStore = UserDefaultsStore(userDefaults: userDefaults)
-        expect(newStore.bikeSpeedMetersPerSecond).to(beCloseTo(5.0))
+        expectClose(newStore.bikeSpeedMetersPerSecond, 5.0)
     }
 
-    func test_bikeSpeedSource_defaultValue() {
-        expect(self.userDefaultsStore.bikeSpeedSource) == .manual
+    @Test func `Bike speed source default value`() {
+        #expect(self.userDefaultsStore.bikeSpeedSource == .manual)
     }
 
-    func test_bikeSpeedSource_roundTrip() {
+    @Test func `Bike speed source round trip`() {
         userDefaultsStore.bikeSpeedSource = .healthKit
-        expect(self.userDefaultsStore.bikeSpeedSource) == .healthKit
+        #expect(UserDefaultsStore(userDefaults: userDefaults).bikeSpeedSource == .healthKit)
 
         userDefaultsStore.bikeSpeedSource = .manual
-        expect(self.userDefaultsStore.bikeSpeedSource) == .manual
+        #expect(UserDefaultsStore(userDefaults: userDefaults).bikeSpeedSource == .manual)
     }
 
-    func test_bikeSpeedMetersPerSecond_clampsBelowRange() {
+    @Test func `Bike speed meters per second clamps below range`() {
         userDefaultsStore.bikeSpeedMetersPerSecond = 0.1
-        expect(self.userDefaultsStore.bikeSpeedMetersPerSecond).to(beCloseTo(BikeSpeed.validRange.lowerBound))
+        expectClose(self.userDefaultsStore.bikeSpeedMetersPerSecond, BikeSpeed.validRange.lowerBound)
     }
 
-    func test_bikeSpeedMetersPerSecond_clampsAboveRange() {
+    @Test func `Bike speed meters per second clamps above range`() {
         userDefaultsStore.bikeSpeedMetersPerSecond = 30.0
-        expect(self.userDefaultsStore.bikeSpeedMetersPerSecond).to(beCloseTo(BikeSpeed.validRange.upperBound))
+        expectClose(self.userDefaultsStore.bikeSpeedMetersPerSecond, BikeSpeed.validRange.upperBound)
     }
 
-    func test_effectiveTravelVelocity_whenBikeModeDisabled_returnsWalkingSpeed() {
+    @Test func `Effective travel velocity when bike mode disabled returns walking speed`() {
         userDefaultsStore.bikeModeEnabled = false
         userDefaultsStore.walkingSpeedMetersPerSecond = 1.6
         userDefaultsStore.bikeSpeedMetersPerSecond = 5.0
 
-        expect(self.userDefaultsStore.effectiveTravelVelocityMetersPerSecond).to(beCloseTo(1.6))
+        expectClose(self.userDefaultsStore.effectiveTravelVelocityMetersPerSecond, 1.6)
     }
 
-    func test_effectiveTravelVelocity_whenBikeModeEnabled_returnsBikeSpeed() {
+    @Test func `Effective travel velocity when bike mode enabled returns bike speed`() {
         userDefaultsStore.bikeModeEnabled = true
         userDefaultsStore.walkingSpeedMetersPerSecond = 1.6
         userDefaultsStore.bikeSpeedMetersPerSecond = 5.0
 
-        expect(self.userDefaultsStore.effectiveTravelVelocityMetersPerSecond).to(beCloseTo(5.0))
+        expectClose(self.userDefaultsStore.effectiveTravelVelocityMetersPerSecond, 5.0)
     }
 
     // MARK: - Default Alarm Lead Time
