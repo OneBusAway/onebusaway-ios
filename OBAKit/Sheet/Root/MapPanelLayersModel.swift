@@ -7,6 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
+import Combine
 import MapKit
 import OBAKitCore
 
@@ -29,6 +30,7 @@ import OBAKitCore
 
     private let application: Application
     private var registrar: MapLayerRegistrar!
+    private var cancellables = Set<AnyCancellable>()
 
     init(application: Application) {
         self.application = application
@@ -45,12 +47,17 @@ import OBAKitCore
             .mapPointsOfInterestVisibilityDidChange,
             .rentalRangeFilterDidChange
         ] {
-            center.addObserver(
-                self,
-                selector: #selector(refresh),
-                name: name,
-                object: nil
-            )
+            center.publisher(for: name)
+                .sink { [weak self] _ in
+                    // Every one of these notifications is posted from @MainActor code
+                    // (MapRegionManager's setters, RentalLayerCoordinator's availability
+                    // updates). Asserting that here keeps delivery synchronous — so the
+                    // panel's published state is correct in the same turn the sheet
+                    // writes it — while trapping loudly if a future writer ever posts
+                    // from a background thread.
+                    MainActor.assumeIsolated { self?.refresh() }
+                }
+                .store(in: &cancellables)
         }
 
         refresh()
@@ -58,7 +65,7 @@ import OBAKitCore
 
     private var mapRegionManager: MapRegionManager { application.mapRegionManager }
 
-    @objc private func refresh() {
+    private func refresh() {
         isStopsLayerEnabled = mapRegionManager.isStopsLayerEnabled
         showsPointsOfInterest = mapRegionManager.mapViewShowsPointsOfInterest
         enabledLayerCount = mapRegionManager.enabledMapLayerCount
