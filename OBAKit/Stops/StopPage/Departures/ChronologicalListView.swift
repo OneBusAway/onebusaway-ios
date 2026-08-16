@@ -16,6 +16,9 @@ import OBAKitCore
 struct ChronologicalListView: View {
     let partition: StopPageListBuilder.ChronologicalPartition<ArrivalDeparture>
     let walkMinutes: Int?
+    /// Whether `walkMinutes` was computed at bike speed — Bike Mode swaps the
+    /// divider's wording/icon/color from walk to bike to match.
+    var isBikeMode: Bool = false
     let showPast: Bool
     let statusProvider: (ArrivalDeparture) -> DepartureStatus
     let alarmLookup: (ArrivalDeparture) -> Alarm?
@@ -39,7 +42,7 @@ struct ChronologicalListView: View {
             }
             // Walk divider escapes the card chrome (out-of-card row rules).
             Section {
-                WalkLineDivider(walkMinutes: walkMinutes)
+                WalkLineDivider(walkMinutes: walkMinutes, isBikeMode: isBikeMode)
                     .listRowInsets(EdgeInsets())
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)

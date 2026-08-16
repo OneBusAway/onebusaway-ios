@@ -160,6 +160,16 @@ class StopViewModel: ObservableObject {
     private var alarmFiredCancellable: AnyCancellable?
     private var userDefaultsCancellable: AnyCancellable?
 
+    /// Snapshot of the three values behind the header's walk/bike chips and the
+    /// chronological divider, so `syncBikeStateFromDefaults()` can tell a real
+    /// change from an unrelated settings write.
+    private struct BikeState: Equatable {
+        let walkingSpeed: Double
+        let bikeSpeed: Double
+        let bikeModeEnabled: Bool
+    }
+    private var lastBikeState: BikeState?
+
     // MARK: - Init Context
 
     /// Optional bookmark that opened this stop view.
@@ -227,10 +237,22 @@ class StopViewModel: ObservableObject {
         // Settings is presented modally from More, so this VM can outlive a
         // filter change. Re-read the persisted value; skip the write path so
         // we don't echo defaults back at ourselves (#1273).
+        //
+        // The header's walk/bike chips and the chronological divider are plain
+        // computed properties, not `@Published` — a Bike Mode toggle in Settings
+        // needs the same fan-out to reach them. `syncBikeStateFromDefaults()`
+        // shares this one subscription rather than adding a second, and is a
+        // no-op unless one of the three bike-relevant values actually moved —
+        // same shape as `syncArrivalDepartureFilterFromDefaults`'s guard, so an
+        // unrelated settings write doesn't invalidate the stop page.
         userDefaultsCancellable = NotificationCenter.default
             .publisher(for: UserDefaults.didChangeNotification, object: environment.userDefaults)
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in self?.syncArrivalDepartureFilterFromDefaults() }
+            .sink { [weak self] _ in
+                self?.syncArrivalDepartureFilterFromDefaults()
+                self?.syncBikeStateFromDefaults()
+            }
+        lastBikeState = currentBikeState
     }
 
     /// Backward-compatible entry point for existing callers that pass `Application` directly.
@@ -532,6 +554,28 @@ class StopViewModel: ObservableObject {
         }
     }
 
+    private var currentBikeState: BikeState {
+        BikeState(
+            walkingSpeed: environment.walkingSpeedMetersPerSecond,
+            bikeSpeed: environment.bikeSpeedMetersPerSecond,
+            bikeModeEnabled: environment.bikeModeEnabled
+        )
+    }
+
+    /// `headerWalkTime`/`headerBikeTime`/`walkTime` are plain computed properties,
+    /// not `@Published`, so a Bike Mode toggle (or a speed re-sync) made in
+    /// Settings needs an explicit nudge to reach the stop page on this same
+    /// `UserDefaults.didChangeNotification` fan-out. No-op unless one of the
+    /// three values actually moved, so an unrelated settings write — same hot
+    /// path as `syncArrivalDepartureFilterFromDefaults` — doesn't invalidate it.
+    private func syncBikeStateFromDefaults() {
+        let current = currentBikeState
+        if current != lastBikeState {
+            lastBikeState = current
+            objectWillChange.send()
+        }
+    }
+
     /// `true` when the user has never saved preferences for this stop, so the
     /// page may seed its sort mode from the app-wide last-used mode. A stop whose
     /// preferences were saved — including one deliberately set back to
@@ -707,6 +751,12 @@ class StopViewModel: ObservableObject {
     /// chip, independent of whether Bike Mode is enabled.
     var headerBikeTime: WalkTimeInfo? {
         travelTime(atSpeed: environment.bikeSpeedMetersPerSecond)
+    }
+
+    /// Whether `walkTime` above is currently reading bike speed — the chronological
+    /// divider's wording ("walk" vs. "bike") must match what actually produced its minutes.
+    var isBikeModeEnabled: Bool {
+        environment.bikeModeEnabled
     }
 
     // MARK: - Stop Page: Alarms
