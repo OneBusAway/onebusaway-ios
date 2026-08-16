@@ -25,11 +25,27 @@ public final class MapPanelRootController: UIViewController {
 
     public init(application: Application) {
         let bridge = TripPresentationBridge()
+
+        // Built here, not inside `MapPanelRootView.init`, because
+        // `AppSheetViewFactory` needs the same instances — `MapSheetModel` reads
+        // and writes the map type through the view model the map renders from,
+        // so a second instance would let the sheet and the map disagree.
+        let initialMapType = MapBaseType(application.mapRegionManager.userSelectedMapType)
+        let mapViewModel = MapViewModel(application: application, initialMapType: initialMapType)
+        let layersModel = MapPanelLayersModel(application: application)
+
         let factory = AppSheetViewFactory(
             application: application,
+            mapViewModel: mapViewModel,
+            layersModel: layersModel,
             onPresentTrip: { [weak bridge] arrival in bridge?.present(arrival) }
         )
-        let rootView = MapPanelRootView(application: application, factory: factory)
+        let rootView = MapPanelRootView(
+            application: application,
+            mapViewModel: mapViewModel,
+            layersModel: layersModel,
+            factory: factory
+        )
         self.host = UIHostingController(rootView: rootView)
         self.bridge = bridge
         super.init(nibName: nil, bundle: nil)

@@ -195,31 +195,29 @@ final class MapViewModelTests: OBATestCase {
 
     // MARK: - Map Type
 
-    /// `toggleMapType()` flips the published `mapType` between `.standard` and `.hybrid`
-    /// and persists the selection through `MapRegionManager` so a later launch
-    /// (or the UIKit path) reads the same value.
+    /// The Map sheet's basemap tiles call `setMapType` directly; the old
+    /// two-way toggle is gone from both surfaces.
     @Test @MainActor
-    func `Toggle map type flips and publishes and persists`() {
+    func `Setting the map type persists it through the region manager`() {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
 
         let viewModel = MapViewModel(application: app)
+        viewModel.setMapType(.satellite)
+
+        #expect(viewModel.mapType == .satellite)
+        #expect(app.mapRegionManager.userSelectedMapType == MapBaseType.satellite.mkMapType)
+    }
+
+    @Test @MainActor
+    func `Setting the same map type is a no-op`() {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader)
+
+        let viewModel = MapViewModel(application: app)
+        viewModel.setMapType(.standard)
+
         #expect(viewModel.mapType == .standard)
-
-        var observed: [MapBaseType] = []
-        let cancellable = viewModel.$mapType.sink { observed.append($0) }
-        defer { cancellable.cancel() }
-
-        viewModel.toggleMapType()
-        #expect(viewModel.mapType == .hybrid)
-        #expect(app.mapRegionManager.userSelectedMapType == .hybrid)
-
-        viewModel.toggleMapType()
-        #expect(viewModel.mapType == .standard)
-        #expect(app.mapRegionManager.userSelectedMapType == .mutedStandard)
-
-        // Initial value + two toggles.
-        #expect(observed == [.standard, .hybrid, .standard])
     }
 
     /// An external mutation of `MapRegionManager.userSelectedMapType`
@@ -234,7 +232,7 @@ final class MapViewModelTests: OBATestCase {
         let viewModel = MapViewModel(application: app)
         #expect(viewModel.mapType == .standard)
 
-        // External mutation — bypasses `toggleMapType()` entirely, simulating
+        // External mutation — bypasses `setMapType(_:)` entirely, simulating
         // the UIKit path or an out-of-VM defaults edit.
         app.mapRegionManager.userSelectedMapType = .hybrid
 

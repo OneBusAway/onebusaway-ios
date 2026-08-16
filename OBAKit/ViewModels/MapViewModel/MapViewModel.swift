@@ -49,7 +49,7 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
     @Published private(set) var showZoomWarning = false
 
     /// The currently selected base map type (standard vs. hybrid).
-    /// Persistence is owned by `toggleMapType()`, which writes through
+    /// Persistence is owned by `setMapType(_:)`, which writes through
     /// `MapRegionManager`; the UIKit `$mapType` sink only mirrors the value
     /// onto MapKit and refreshes its toolbar icon.
     @Published private(set) var mapType: MapBaseType
@@ -271,11 +271,6 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
     /// the choice through `MapRegionManager`. The UIKit path used to persist
     /// this in its `$mapType` Combine sink; owning it here means SwiftUI-only
     /// sessions persist too, and both paths share one write.
-    func toggleMapType() {
-        let next: MapBaseType = mapType == .standard ? .hybrid : .standard
-        setMapType(next)
-    }
-
     /// Selects a specific base map type (the Map sheet's basemap tiles) and
     /// persists the choice through `MapRegionManager`.
     func setMapType(_ newType: MapBaseType) {

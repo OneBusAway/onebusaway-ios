@@ -23,10 +23,19 @@ import OBAKitCore
 final class AppSheetViewFactory {
 
     let application: Application
+    let mapViewModel: MapViewModel
+    let layersModel: MapPanelLayersModel
     let onPresentTrip: (ArrivalDeparture) -> Void
 
-    init(application: Application, onPresentTrip: @escaping (ArrivalDeparture) -> Void) {
+    init(
+        application: Application,
+        mapViewModel: MapViewModel,
+        layersModel: MapPanelLayersModel,
+        onPresentTrip: @escaping (ArrivalDeparture) -> Void
+    ) {
         self.application = application
+        self.mapViewModel = mapViewModel
+        self.layersModel = layersModel
         self.onPresentTrip = onPresentTrip
     }
 
@@ -61,6 +70,9 @@ final class AppSheetViewFactory {
 
         case .currentTrip(let route):
             currentTripView(route: route)
+
+        case .mapSettings:
+            mapSettingsView()
         }
     }
 
@@ -95,6 +107,16 @@ final class AppSheetViewFactory {
             formatters: self.application.formatters,
             onPresentTrip: onPresentTrip
         )
+    }
+
+    /// The Map sheet, shared verbatim with `MapViewController`. Its own doc
+    /// comment calls it "the single canonical place riders turn layers on and
+    /// off" — so the panel reuses it rather than growing a parallel surface.
+    func mapSettingsView() -> MapSheetView {
+        MapSheetView(model: MapSheetModel(
+            mapRegionManager: application.mapRegionManager,
+            mapViewModel: mapViewModel
+        ))
     }
 
     /// Placeholder until each route gets its own real view. In debug builds we

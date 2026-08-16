@@ -86,6 +86,7 @@ nonisolated enum AppSheetRoute: SheetRouteable {
 
     case more
     case settings
+    case mapSettings
 
 }
 
@@ -112,7 +113,7 @@ nonisolated extension AppSheetRoute {
     var id: String {
         switch self {
         case .home, .search, .nearbyAll, .recentStopsAll, .bookmarksAll,
-             .tripPlanner, .routePicker, .more, .settings:
+             .tripPlanner, .routePicker, .more, .settings, .mapSettings:
             return caseName
         case .stopDetails(let stopID):
             return "\(caseName)-\(stopID)"
@@ -140,7 +141,7 @@ nonisolated extension AppSheetRoute {
     /// Detail destinations prefer the stacked layer so the base sheet peeks beneath.
     var prefersStacking: Bool {
         switch self {
-        case .stopDetails, .tripPlanner, .tripDetails, .currentTrip, .transitAlert, .more, .nearbyAll, .recentStopsAll, .bookmarksAll, .settings:
+        case .stopDetails, .tripPlanner, .tripDetails, .currentTrip, .transitAlert, .more, .nearbyAll, .recentStopsAll, .bookmarksAll, .settings, .mapSettings:
             return true
         case .home, .search, .routePicker:
             return false
@@ -207,6 +208,14 @@ nonisolated extension AppSheetRoute {
             return SheetDetentConfiguration(
                 detents: [.medium, .large],
                 initialDetent: .large,
+                isDismissDisabled: false
+            )
+        case .mapSettings:
+            // Opens at `.medium` so the map stays visible behind the basemap
+            // tiles: picking a basemap you cannot see is a guess.
+            return SheetDetentConfiguration(
+                detents: [.medium, .large],
+                initialDetent: .medium,
                 isDismissDisabled: false
             )
         }

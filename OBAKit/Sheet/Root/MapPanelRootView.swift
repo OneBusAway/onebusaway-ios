@@ -21,6 +21,7 @@ struct MapPanelRootView: View {
 
     @StateObject private var coordinator: SheetCoordinator<AppSheetRoute>
     @StateObject private var mapViewModel: MapViewModel
+    @StateObject private var layersModel: MapPanelLayersModel
     @StateObject private var stopsObserver: MapStopsObserver
 
     /// Presentation state only. The popup reads its data from
@@ -84,11 +85,16 @@ struct MapPanelRootView: View {
     private let application: Application
     private let factory: AppSheetViewFactory
 
-    init(application: Application, factory: AppSheetViewFactory) {
+    init(
+        application: Application,
+        mapViewModel: MapViewModel,
+        layersModel: MapPanelLayersModel,
+        factory: AppSheetViewFactory
+    ) {
         _coordinator = StateObject(wrappedValue: SheetCoordinator<AppSheetRoute>(root: .home))
         _stopsObserver = StateObject(wrappedValue: MapStopsObserver(application: application))
-        let initialMapType = MapBaseType(application.mapRegionManager.userSelectedMapType)
-        _mapViewModel = StateObject(wrappedValue: MapViewModel(application: application, initialMapType: initialMapType))
+        _mapViewModel = StateObject(wrappedValue: mapViewModel)
+        _layersModel = StateObject(wrappedValue: layersModel)
         self.application = application
         self.factory = factory
 
@@ -123,7 +129,7 @@ struct MapPanelRootView: View {
             }
             // Regular stops show only zoomed in; `renderStops` already excludes
             // bookmarked stops and precomputes labels.
-            if isZoomedInForStops {
+            if isZoomedInForStops && layersModel.isStopsLayerEnabled {
                 ForEach(stopsObserver.renderStops) { renderStop in
                     stopAnnotation(
                         for: renderStop.stop,
@@ -137,6 +143,7 @@ struct MapPanelRootView: View {
         .onMapCameraChange(frequency: .onEnd) { context in
             visibleRegion = context.region
             visibleMapRectHeight = context.rect.height
+            layersModel.viewportDidChange(context.rect)
             // Keep the "Zoom in for stops" pill in sync with the stop-loading
             // threshold by updating it before the stop-loading early return, so it
             // also works when the map is zoomed out.
@@ -172,7 +179,9 @@ struct MapPanelRootView: View {
             coordinator.push(.stopDetails(stopID: id))
             selectedStopID = nil
         }
-        .mapStyle(mapViewModel.mapType == .standard ? .standard(emphasis: .muted) : .hybrid)
+        .mapStyle(mapViewModel.mapType.styleDescriptor(
+            showingPointsOfInterest: layersModel.showsPointsOfInterest
+        ).mapStyle)
         .safeAreaPadding(.bottom, 180)
         .onGeometryChange(for: CGFloat.self) { proxy in
             proxy.size.height / 2
@@ -482,8 +491,9 @@ extension MapPanelRootView {
     private var mapControlsCluster: some View {
         MapControlsCluster(
             mapType: mapViewModel.mapType,
+            badgeCount: layersModel.enabledLayerCount,
             isLocationButtonVisible: application.locationService.isLocationUseAuthorized,
-            onToggleMapType: mapViewModel.toggleMapType,
+            onOpenMapSettings: { coordinator.push(.mapSettings) },
             onCenterOnUser: centerOnUser
         )
         .padding(.trailing, ThemeMetrics.controllerMargin)

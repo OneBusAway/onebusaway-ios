@@ -10,11 +10,16 @@
 import SwiftUI
 import OBAKitCore
 
-/// Floating map-type toggle rendered on the bottom-trailing cluster of
-/// `MapPanelRootView`. Mirrors the UIKit `toggleMapTypeButton` in
-/// `MapViewController` — same icons, same accessibility strings, same VM call.
+/// Floating basemap button on the bottom-trailing cluster of
+/// `MapPanelRootView`. Opens the Map sheet, which absorbs the old
+/// standard/hybrid toggle as its basemap tiles — the same move
+/// `MapViewController`'s basemap button already made.
+///
+/// The badge carries the active-layer count: layer state stays readable
+/// without opening anything.
 struct MapTypeButton: View {
     let mapType: MapBaseType
+    let badgeCount: Int
     let onTap: () -> Void
 
     var body: some View {
@@ -25,6 +30,17 @@ struct MapTypeButton: View {
                 .contentShape(Circle())
         }
         .liquidGlassButtonStyle(borderShape: .circle, fallbackShape: Circle())
+        .overlay(alignment: .topTrailing) {
+            if badgeCount > 0 {
+                Text(String(badgeCount))
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(.white)
+                    .frame(minWidth: 15, minHeight: 15)
+                    .background(Color(uiColor: ThemeColors.shared.brand), in: Circle())
+                    .offset(x: -2, y: 2)
+                    .accessibilityHidden(true)
+            }
+        }
         .accessibilityLabel(Text(OBALoc(
             "map_controller.map_type.accessibility_label",
             value: "Map type",

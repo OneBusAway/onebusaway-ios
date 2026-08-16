@@ -223,6 +223,26 @@ final class AppSheetRouteTests {
         #expect(sheetRoute1.hashValue == sheetRoute2.hashValue)
     }
 
+    @Test func `Map settings route has a stable id`() {
+        #expect(AppSheetRoute.mapSettings.id == "mapSettings")
+    }
+
+    /// Stacked so the home sheet peeks beneath, matching every other detail
+    /// destination — and because `SheetCoordinator.push` preconditions that a
+    /// stacked route allows interactive dismissal.
+    @Test func `Map settings route stacks and allows dismissal`() {
+        #expect(AppSheetRoute.mapSettings.prefersStacking)
+        #expect(AppSheetRoute.mapSettings.detentConfiguration.isDismissDisabled == false)
+    }
+
+    /// Opens at `.medium` so the map stays visible behind the basemap tiles —
+    /// picking a basemap you cannot see is a guess.
+    @Test func `Map settings route opens at medium`() {
+        let config = AppSheetRoute.mapSettings.detentConfiguration
+        #expect(config.initialDetent == .medium)
+        #expect(config.detents == [.medium, .large])
+    }
+
     // MARK: - Exhaustiveness guard
 
     /// Adding a new `AppSheetRoute` case must fail to compile here, forcing
@@ -231,7 +251,7 @@ final class AppSheetRouteTests {
         switch route {
         case .home, .search, .nearbyAll, .recentStopsAll, .bookmarksAll,
              .stopDetails, .tripPlanner, .tripDetails, .routePicker,
-             .currentTrip, .transitAlert, .more, .settings:
+             .currentTrip, .transitAlert, .more, .settings, .mapSettings:
             break
         }
     }

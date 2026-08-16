@@ -38,7 +38,9 @@ final class AppSheetViewFactoryTests: OBATestCase {
         let dataLoader = MockDataLoader(testName: name)
         let application = buildApplication(queue: queue, dataLoader: dataLoader)
 
-        let factory = AppSheetViewFactory(application: application, onPresentTrip: { _ in })
+        let mapViewModel = MapViewModel(application: application)
+        let layersModel = MapPanelLayersModel(application: application)
+        let factory = AppSheetViewFactory(application: application, mapViewModel: mapViewModel, layersModel: layersModel, onPresentTrip: { _ in })
         let host = factory.moreView()
 
         // Reference identity: the factory must forward its own `Application`
@@ -53,7 +55,9 @@ final class AppSheetViewFactoryTests: OBATestCase {
         let dataLoader = MockDataLoader(testName: name)
         let application = buildApplication(queue: queue, dataLoader: dataLoader)
 
-        let factory = AppSheetViewFactory(application: application, onPresentTrip: { _ in })
+        let mapViewModel = MapViewModel(application: application)
+        let layersModel = MapPanelLayersModel(application: application)
+        let factory = AppSheetViewFactory(application: application, mapViewModel: mapViewModel, layersModel: layersModel, onPresentTrip: { _ in })
         let host = factory.stopDetailView(stopID: "1_10914")
 
         #expect(host.application === application)
