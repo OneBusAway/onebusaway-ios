@@ -155,6 +155,16 @@ public class Application: CoreApplication, PushServiceDelegate {
     /// The application delegate object.
     @objc public weak var delegate: ApplicationDelegate?
 
+    /// Keeps the bookmarks widget's timeline in step with the bookmark store, no
+    /// matter which screen performed the write.
+    ///
+    /// Eagerly constructed rather than `lazy`, and held for the app's lifetime:
+    /// it exists purely for the side effect of observing `.bookmarksDidChange`,
+    /// so a lazy property nobody reads would never start observing, and a
+    /// shorter-lived owner would stop refreshing the widget the moment its
+    /// screen went away.
+    let bookmarkWidgetRefresher: BookmarkWidgetRefresher
+
     // MARK: - Init
 
     /// Creates a new `Application` object.
@@ -163,6 +173,7 @@ public class Application: CoreApplication, PushServiceDelegate {
         self.config = config
 
         analytics = config.analytics
+        bookmarkWidgetRefresher = BookmarkWidgetRefresher()
 
         super.init(config: config)
 

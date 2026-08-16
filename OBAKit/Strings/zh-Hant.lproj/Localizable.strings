@@ -612,6 +612,9 @@
 /* The title of the Nearby Stops controller. */
 "nearby_stops_controller.title" = "附近站牌";
 
+/* Body shown on the Nearby Stops index sheet when no map viewport, device location, or region is available to search around. */
+"nearby_stops_sheet.no_location.body" = "移動地圖或開啟定位服務，即可查看附近的站牌。";
+
 /* Vehicle occupancy is very high */
 "occupancy_status.crushed_standing_room_only" = "極為擁擠，僅剩站位";
 

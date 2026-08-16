@@ -55,11 +55,10 @@ struct NearbyStopsSheetView: View {
             )
         } else {
             EmptyStateView(
-                title: OBALoc(
-                    "nearby_stops_sheet.no_location.title",
-                    value: "Location Unavailable",
-                    comment: "Title shown on the Nearby Stops index sheet when no map viewport, device location, or region is available to search around."
-                ),
+                // Reuses OBAKitCore's shared title, already translated in every
+                // locale, rather than minting a sheet-specific key for the same
+                // two words.
+                title: Strings.locationUnavailable,
                 description: OBALoc(
                     "nearby_stops_sheet.no_location.body",
                     value: "Move the map or turn on location services to see stops near you.",
@@ -84,6 +83,13 @@ private struct NearbyStopsSheetContent: View {
 
     private var sections: [NearbyStopsIndexSection] {
         NearbyStopsIndexSection.sections(stops: viewModel.stops, filter: searchText)
+    }
+
+    /// Whether the user has actually typed something to filter by, as opposed to
+    /// merely focusing the field. Drives the choice between the "no stops nearby"
+    /// empty state and a no-search-results one.
+    private var hasActiveQuery: Bool {
+        String.normalizedSearchQuery(searchText) != nil
     }
 
     var body: some View {
@@ -111,19 +117,28 @@ private struct NearbyStopsSheetContent: View {
             ProgressView()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if sections.isEmpty {
-            EmptyStateView(
-                title: OBALoc(
-                    "nearby_stops_sheet.empty.title",
-                    value: "No Nearby Stops",
-                    comment: "Title shown on the Nearby Stops index sheet when no stops match."
-                ),
-                description: OBALoc(
-                    "nearby_stops_sheet.empty.body",
-                    value: "There are no other stops in the vicinity.",
-                    comment: "Body shown on the Nearby Stops index sheet when no stops match."
-                ),
-                systemImage: AppSymbol.search
-            )
+            if hasActiveQuery {
+                // Distinct from "there are no stops here": the user filtered them
+                // away. The system's own search-empty view says so in every
+                // locale and quotes the query back.
+                ContentUnavailableView.search(text: searchText)
+            } else {
+                // Reuses the UIKit Nearby Stops screen's already-translated
+                // empty-set copy — same screen, same sentence.
+                EmptyStateView(
+                    title: OBALoc(
+                        "nearby_stops_controller.empty_set.title",
+                        value: "No Nearby Stops",
+                        comment: "Title for the empty set indicator on the Nearby Stops controller."
+                    ),
+                    description: OBALoc(
+                        "nearby_stops_controller.empty_set.body",
+                        value: "There are no other stops in the vicinity.",
+                        comment: "Body for the empty set indicator on the Nearby Stops controller."
+                    ),
+                    systemImage: AppSymbol.search
+                )
+            }
         } else {
             List {
                 ForEach(sections) { section in

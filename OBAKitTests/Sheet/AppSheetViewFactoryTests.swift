@@ -11,6 +11,7 @@ import SwiftUI
 import Foundation
 import Testing
 import CoreLocation
+import MapKit
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -166,32 +167,63 @@ final class AppSheetViewFactoryTests: OBATestCase {
         #expect(view.application === application)
     }
 
-    /// `.nearbyAll` carries no coordinate, so the factory resolves one. With a
-    /// current region present there is always an anchor, so the view must not
-    /// be handed nil.
+    /// `.nearbyAll` carries no coordinate, so the factory resolves one from the
+    /// map's settled viewport.
+    ///
+    /// Asserts against a *seeded* centre rather than against a second call to
+    /// `NearbyCoordinateResolver` with the same inputs: recomputing the
+    /// expectation the same way the factory does would pass even if the factory
+    /// read the wrong sources — swapping location for region, or dropping the
+    /// viewport entirely. `NearbyCoordinateResolverTests` covers the preference
+    /// order; what's under test here is that the factory hands it the right
+    /// three things.
     @Test @MainActor
-    func `Nearby all view resolves a coordinate`() {
+    func `Nearby all view resolves the settled viewport center`() {
         let dataLoader = MockDataLoader(testName: name)
         let application = buildApplication(queue: queue, dataLoader: dataLoader)
         let stopsObserver = MapStopsObserver(application: application)
-        let factory = makeFactory(application: application, stopsObserver: stopsObserver)
 
-        let view = factory.nearbyAllView()
-
-        let expectedCoordinate = NearbyCoordinateResolver.coordinate(
-            viewportCenter: stopsObserver.viewportCenter,
-            currentLocation: application.locationService.currentLocation,
-            region: application.currentRegion
+        // A deliberately implausible anchor: far from both the device location
+        // and any region centre, so only the viewport could have produced it.
+        let settled = CLLocationCoordinate2D(latitude: 12.345, longitude: 54.321)
+        stopsObserver.updateViewport(
+            MKCoordinateRegion(
+                center: settled,
+                latitudinalMeters: 1000,
+                longitudinalMeters: 1000
+            )
         )
+        try? #require(stopsObserver.viewportCenter != nil)
 
-        switch (view.coordinate, expectedCoordinate) {
-        case let (.some(coordinate), .some(expected)):
-            #expect(coordinate.latitude == expected.latitude)
-            #expect(coordinate.longitude == expected.longitude)
-        case (.none, .none):
-            break // Both nil, test passes
-        default:
-            #expect(view.coordinate != nil)
+        let view = makeFactory(application: application, stopsObserver: stopsObserver).nearbyAllView()
+
+        #expect(view.coordinate?.latitude == settled.latitude)
+        #expect(view.coordinate?.longitude == settled.longitude)
+    }
+
+    /// With no viewport, no device fix, and no current region there is nothing to
+    /// anchor on, and the factory must hand the view nil rather than a default —
+    /// nil is what renders the empty state instead of fetching stops around (0, 0).
+    @Test @MainActor
+    func `Nearby all view passes nil when nothing can anchor the search`() {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let stopsObserver = MapStopsObserver(application: application)
+
+        // `reset()` clears any settled centre; the test application has no
+        // location fix. Only a current region could still supply an anchor.
+        stopsObserver.reset()
+
+        try? #require(stopsObserver.viewportCenter == nil)
+        try? #require(application.locationService.currentLocation == nil)
+
+        let view = makeFactory(application: application, stopsObserver: stopsObserver).nearbyAllView()
+
+        if application.currentRegion == nil {
+            #expect(view.coordinate == nil)
+        } else {
+            // A region is configured, so the last link in the chain supplies it.
+            #expect(view.coordinate?.latitude == application.currentRegion?.centerCoordinate.latitude)
         }
     }
 

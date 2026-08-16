@@ -185,9 +185,13 @@ class BookmarksViewController: UIHostingController<BookmarksRootView>,
 
     // MARK: - Refresh Widget
 
+    /// Pushes freshly-loaded *arrival times* to the widget. Changes to the
+    /// bookmark set itself are handled app-wide by `BookmarkWidgetRefresher`,
+    /// which observes the store — this tab is not the only surface that edits
+    /// bookmarks, so it must not be the only thing that refreshes the widget.
     func reloadWidget() {
         Logger.info("Reloading the widget")
-        WidgetCenter.shared.reloadTimelines(ofKind: "OBAWidget")
+        WidgetCenter.shared.reloadTimelines(ofKind: BookmarkWidgetRefresher.widgetKind)
     }
 
     // MARK: - Live Activity Management

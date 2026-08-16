@@ -73,6 +73,49 @@ final class RecentStopsSheetViewTests: OBATestCase {
         #expect(RecentStopsSheetView.filter(stops: stops, query: "zzzzz-no-such-stop").isEmpty)
     }
 
+    // MARK: - Empty state vs. no search results
+
+    /// An empty result set means two different things depending on whether the
+    /// user typed anything, and the view picks its empty state on exactly this
+    /// distinction. Telling someone their viewed stops "will appear here" while
+    /// they stare at a query that matched nothing describes the wrong problem.
+    @Test func `Only a non-blank query counts as an active search`() {
+        #expect(String.normalizedSearchQuery(nil) == nil)
+        #expect(String.normalizedSearchQuery("") == nil)
+        #expect(String.normalizedSearchQuery("  \n ") == nil)
+        #expect(String.normalizedSearchQuery("pike") != nil)
+    }
+
+    // MARK: - Returning from a stacked sheet
+
+    /// Viewing a stop from this list calls `addRecentStop`, so the store is
+    /// rewritten by the act of navigating away. The index sits on the stacked
+    /// layer and is never removed from the hierarchy while the stop sheet covers
+    /// it, so the reload has to be driven by the stack shrinking.
+    @Test func `Closing a sheet stacked above triggers a reload`() {
+        // Stop details closes over the recents index: depth 2 → 1.
+        #expect(StackedSheetReturn.wasUncovered(previousDepth: 2, depth: 1))
+    }
+
+    /// Opening one must not: the index is being covered, not uncovered, and
+    /// reloading here would rebuild the list underneath the sheet the user just
+    /// opened.
+    @Test func `Opening a sheet on top does not trigger a reload`() {
+        #expect(!StackedSheetReturn.wasUncovered(previousDepth: 1, depth: 2))
+        #expect(!StackedSheetReturn.wasUncovered(previousDepth: 0, depth: 1))
+    }
+
+    /// The regression this guards: watching for the stack to *empty* — which is
+    /// what `HomeSheetView` correctly does from below the stacked layer — never
+    /// fires for a screen that is itself stacked, because its own entry keeps the
+    /// count at 1 or more the entire time it's on screen.
+    @Test func `Uncovering is detected without the stack ever emptying`() {
+        #expect(StackedSheetReturn.wasUncovered(previousDepth: 3, depth: 2))
+        #expect(StackedSheetReturn.wasUncovered(previousDepth: 2, depth: 1))
+        // No change is not a return.
+        #expect(!StackedSheetReturn.wasUncovered(previousDepth: 1, depth: 1))
+    }
+
     // MARK: - Deletion
 
     /// Swipe-to-delete removes exactly the swiped stop and leaves the rest.

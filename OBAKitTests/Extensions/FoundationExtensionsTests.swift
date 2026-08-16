@@ -215,4 +215,29 @@ final class BundleFeedbackConfigTests {
         let bundle = try FeedbackConfigBundle.create(config: ["FeedbackPromptEnabled": false])
         #expect(!bundle.feedbackPromptEnabled)
     }
+
+    // MARK: - String.normalizedSearchQuery
+
+    /// Nil means "match everything". `.searchable` hands a view the empty string
+    /// the moment its field is focused, and whitespace is the same non-intent —
+    /// treating either as a real query would blank the list the instant the user
+    /// tapped the search field.
+    @Test func `Normalized search query is nil for absent or blank input`() {
+        #expect(String.normalizedSearchQuery(nil) == nil)
+        #expect(String.normalizedSearchQuery("") == nil)
+        #expect(String.normalizedSearchQuery("   ") == nil)
+        #expect(String.normalizedSearchQuery("\n\t ") == nil)
+    }
+
+    /// Lowercased and trimmed, because `matchesQuery(_:)` compares against
+    /// lowercased fields and users leave stray spaces when they paste.
+    @Test func `Normalized search query lowercases and trims`() {
+        #expect(String.normalizedSearchQuery("  Pike St  ") == "pike st")
+        #expect(String.normalizedSearchQuery("3RD AVE") == "3rd ave")
+    }
+
+    /// Interior spacing is part of the query — only the ends are trimmed.
+    @Test func `Normalized search query preserves interior spacing`() {
+        #expect(String.normalizedSearchQuery(" 3rd  ave ") == "3rd  ave")
+    }
 }

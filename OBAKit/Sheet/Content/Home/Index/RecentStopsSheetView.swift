@@ -38,14 +38,19 @@ struct RecentStopsSheetView: View {
     ///
     /// Static and pure so the rule is assertable without a view.
     static func filter(stops: [Stop], query: String?) -> [Stop] {
-        let normalized = String.nilifyBlankValue(
-            query?.localizedLowercase.trimmingCharacters(in: .whitespacesAndNewlines)
-        ) ?? nil
+        let normalized = String.normalizedSearchQuery(query)
         return stops.filter { $0.matchesQuery(normalized) }
     }
 
     private var stops: [Stop] {
         Self.filter(stops: viewModel.recentStops, query: searchText)
+    }
+
+    /// Whether the user has actually typed something to filter by, as opposed to
+    /// merely focusing the field. Drives the choice between the "no recents yet"
+    /// empty state and a no-search-results one.
+    private var hasActiveQuery: Bool {
+        String.normalizedSearchQuery(searchText) != nil
     }
 
     var body: some View {
@@ -86,24 +91,43 @@ struct RecentStopsSheetView: View {
         }
         .searchSheetBackground()
         .task { viewModel.loadData() }
+        .onChange(of: coordinator.stackedRoutes.count) { previousCount, count in
+            // Reload when a sheet stacked *above* this one goes away. Tapping a row
+            // pushes `.stopDetails`, which `prefersStacking` puts on the stacked
+            // layer — this view is never removed from the hierarchy, so `.task`
+            // never runs again. Meanwhile viewing a stop calls `addRecentStop`, so
+            // by the time the user drags that sheet away the store has reordered
+            // and this list has not.
+            guard StackedSheetReturn.wasUncovered(previousDepth: previousCount, depth: count) else { return }
+            viewModel.loadData()
+        }
     }
 
     @ViewBuilder
     private var content: some View {
         if stops.isEmpty {
-            EmptyStateView(
-                title: OBALoc(
-                    "recent_stops.empty_set.title",
-                    value: "No Recent Stops",
-                    comment: "Title for the empty set indicator on the Recent Stops controller."
-                ),
-                description: OBALoc(
-                    "recent_stops.empty_set.body",
-                    value: "Transit stops that you view in the app will appear here.",
-                    comment: "Body for the empty set indicator on the Recent Stops controller."
-                ),
-                systemImage: AppSymbol.search
-            )
+            if hasActiveQuery {
+                // A search that matched nothing is not an empty list: telling the
+                // user their viewed stops "will appear here" when they're staring
+                // at a query that didn't match describes the wrong problem.
+                // `ContentUnavailableView.search` is the system's own phrasing,
+                // localized by the OS and quoting the query back.
+                ContentUnavailableView.search(text: searchText)
+            } else {
+                EmptyStateView(
+                    title: OBALoc(
+                        "recent_stops.empty_set.title",
+                        value: "No Recent Stops",
+                        comment: "Title for the empty set indicator on the Recent Stops controller."
+                    ),
+                    description: OBALoc(
+                        "recent_stops.empty_set.body",
+                        value: "Transit stops that you view in the app will appear here.",
+                        comment: "Body for the empty set indicator on the Recent Stops controller."
+                    ),
+                    systemImage: AppSymbol.search
+                )
+            }
         } else {
             List {
                 ForEach(stops, id: \.id) { stop in

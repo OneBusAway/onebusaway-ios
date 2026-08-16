@@ -30,9 +30,7 @@ nonisolated struct NearbyStopsIndexSection: Identifiable {
     /// `.searchable` hands the view an empty string the moment the field is
     /// focused, which must not blank the list.
     static func sections(stops: [Stop], filter: String?) -> [NearbyStopsIndexSection] {
-        let query = String.nilifyBlankValue(
-            filter?.localizedLowercase.trimmingCharacters(in: .whitespacesAndNewlines)
-        ) ?? nil
+        let query = String.normalizedSearchQuery(filter)
 
         var grouped: [Direction: [Stop]] = [:]
         for stop in stops where stop.matchesQuery(query) {

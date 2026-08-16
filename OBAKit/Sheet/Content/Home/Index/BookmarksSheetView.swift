@@ -147,6 +147,15 @@ struct BookmarksSheetView: View {
         // Stops the 30 s poll when the sheet goes away. The tab does the same on
         // `viewWillDisappear`.
         .onDisappear { viewModel.deactivate() }
+        .onChange(of: coordinator.stackedRoutes.count) { previousCount, count in
+            // Rebuild when a sheet stacked above this one closes: the stop page it
+            // pushes can add or remove a bookmark, and this view is never removed
+            // from the hierarchy while covered, so `onAppear` won't fire again.
+            // Without this the list would carry the stale set until the 30 s poll
+            // happened to come round.
+            guard StackedSheetReturn.wasUncovered(previousDepth: previousCount, depth: count) else { return }
+            viewModel.rebuildSections()
+        }
         .sheet(item: $editingBookmark) { bookmark in
             BookmarkEditorHost(application: application, bookmark: bookmark) {
                 editingBookmark = nil
