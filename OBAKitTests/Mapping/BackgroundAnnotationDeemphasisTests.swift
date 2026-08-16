@@ -235,8 +235,10 @@ final class BackgroundAnnotationDeemphasisTests: OBATestCase {
         manager.mapView.addAnnotations([stops.selected, stops.other] + bystanders)
 
         let affected = manager.annotationsNeedingEmphasisRefresh(from: stops.selected.id, to: stops.other.id)
+        // MKMapView may include a user-location annotation, so tests must never assert on the raw count — only on specific annotations.
+        let nonUserLocationAffected = affected.filter { !($0 is MKUserLocation) }
 
-        #expect(affected.count == 2)
+        #expect(nonUserLocationAffected.count == 2)
         #expect(affected.contains { $0 === stops.selected })
         #expect(affected.contains { $0 === stops.other })
     }
@@ -251,8 +253,10 @@ final class BackgroundAnnotationDeemphasisTests: OBATestCase {
         manager.mapView.addAnnotations([stops.selected, stops.other, receding])
 
         let affected = manager.annotationsNeedingEmphasisRefresh(from: nil, to: stops.selected.id)
+        // MKMapView may include a user-location annotation, so tests must never assert on the raw count — only on specific annotations.
+        let nonUserLocationAffected = affected.filter { !($0 is MKUserLocation) }
 
-        #expect(affected.count == 2)
+        #expect(nonUserLocationAffected.count == 2)
         #expect(affected.contains { $0 === stops.other })
         #expect(affected.contains { $0 === receding })
         #expect(affected.contains { $0 === stops.selected } == false)
