@@ -16,7 +16,7 @@ import OTPKit
 /// The UIKit map gets this split from MapKit, which hands back
 /// `MKClusterAnnotation`s. SwiftUI `Map` has no equivalent, so the panel
 /// computes it — see `RentalClustering`.
-enum RentalMapItem: Identifiable {
+nonisolated enum RentalMapItem: Identifiable {
     case single(VehicleRental)
     case cluster(id: String, coordinate: CLLocationCoordinate2D, members: [VehicleRental])
 

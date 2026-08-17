@@ -27,7 +27,7 @@ import OTPKit
 /// map), not by how many vehicles the viewport holds, so `RentalMapLayer`'s
 /// 500-vehicle `densityBudget` never translates into 500 SwiftUI views — and no
 /// vehicle is ever silently dropped to stay under a limit.
-enum RentalClustering {
+nonisolated enum RentalClustering {
 
     /// Buckets `rentals` into `cellSize`-point grid cells, emitting a single for
     /// a lone occupant and a cluster at the centroid otherwise.
