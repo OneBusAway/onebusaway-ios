@@ -39,10 +39,14 @@ struct RentalClusteringTests {
     }
 
     @Test func `Co-located vehicles collapse into one cluster`() throws {
+        // Base coordinate deliberately chosen to sit mid-cell (raw longitude index
+        // -79494.48, comfortably between cell boundaries). Tiny offsets keep all
+        // three in the same cell; see `Vehicles straddling a cell boundary are not merged`
+        // for the accepted boundary-crossing divergence.
         let result = items([
-            try RentalFixtures.vehicle(id: "a", lat: 47.6000, lon: -122.3000),
-            try RentalFixtures.vehicle(id: "b", lat: 47.60001, lon: -122.30001),
-            try RentalFixtures.vehicle(id: "c", lat: 47.60002, lon: -122.30002)
+            try RentalFixtures.vehicle(id: "a", lat: 47.60040, lon: -122.29920),
+            try RentalFixtures.vehicle(id: "b", lat: 47.60041, lon: -122.29919),
+            try RentalFixtures.vehicle(id: "c", lat: 47.60042, lon: -122.29918)
         ])
 
         #expect(result.count == 1)
@@ -54,17 +58,18 @@ struct RentalClusteringTests {
     }
 
     @Test func `A cluster sits at the centroid of its members`() throws {
+        // Base coordinate deliberately chosen to sit mid-cell to ensure clustering.
         let result = items([
-            try RentalFixtures.vehicle(id: "a", lat: 47.6000, lon: -122.3000),
-            try RentalFixtures.vehicle(id: "b", lat: 47.6001, lon: -122.3001)
+            try RentalFixtures.vehicle(id: "a", lat: 47.60040, lon: -122.29920),
+            try RentalFixtures.vehicle(id: "b", lat: 47.60041, lon: -122.29919)
         ])
 
         guard case .cluster(_, let coordinate, _) = try #require(result.first) else {
             Issue.record("expected a cluster")
             return
         }
-        #expect(abs(coordinate.latitude - 47.60005) < 0.000001)
-        #expect(abs(coordinate.longitude - (-122.30005)) < 0.000001)
+        #expect(abs(coordinate.latitude - 47.600405) < 0.000001)
+        #expect(abs(coordinate.longitude - (-122.299195)) < 0.000001)
     }
 
     /// Identity is a hash of the sorted member ids, not the cell index. Cell
@@ -140,5 +145,21 @@ struct RentalClusteringTests {
         )
 
         #expect(result.count == 2)
+    }
+
+    /// Vehicles straddling a cell boundary are not merged. This is an accepted
+    /// divergence from MapKit's collision-based clustering (which tests frame
+    /// overlap). The dominant real case — a genuine pile-up at one corner — lands
+    /// in a single cell. Two vehicles a hair apart crossing a known boundary
+    /// (longitude -122.30000 divides to exactly -79495.0, landing on the boundary)
+    /// correctly stay separate.
+    @Test func `Vehicles straddling a cell boundary are not merged`() throws {
+        let result = items([
+            try RentalFixtures.vehicle(id: "a", lat: 47.6004, lon: -122.30000),
+            try RentalFixtures.vehicle(id: "b", lat: 47.6004, lon: -122.30001)
+        ])
+
+        #expect(result.count == 2)
+        #expect(result.allSatisfy { if case .single = $0 { return true } else { return false } })
     }
 }
