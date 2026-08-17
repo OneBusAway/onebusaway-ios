@@ -87,25 +87,23 @@ nonisolated enum RentalClustering {
             }
 
             let centroidCoord = centroid(of: members)
-            var coordinate = centroidCoord
 
-            // Clamp centroid to within a quarter-cell of the cell center, but only at the
-            // production default cellSize. This fixes overlap across cell boundaries while
-            // preserving test compatibility for explicitly-specified sizes.
-            if cellSize == 100 {
-                let cellCenterLat = (Double(cellIndex.row) + 0.5) * latitudePerCell
-                let cellCenterLon = (Double(cellIndex.column) + 0.5) * longitudePerCell
-                let clampRangeLat = latitudePerCell / 4
-                let clampRangeLon = longitudePerCell / 4
+            // Clamp centroid to within a quarter-cell of the cell center. Adjacent cell
+            // centres are one cell apart; each clamped marker deviates at most a quarter-cell
+            // toward the other, so minimum separation between clustered markers is half a cell
+            // (50pt at default 100pt size). With 32pt markers, overlap becomes impossible by
+            // construction rather than merely improbable.
+            let cellCenterLat = (Double(cellIndex.row) + 0.5) * latitudePerCell
+            let cellCenterLon = (Double(cellIndex.column) + 0.5) * longitudePerCell
+            let clampRangeLat = latitudePerCell / 4
+            let clampRangeLon = longitudePerCell / 4
 
-                let clampedLatitude = clamp(centroidCoord.latitude, min: cellCenterLat - clampRangeLat, max: cellCenterLat + clampRangeLat)
-                let clampedLongitude = clamp(centroidCoord.longitude, min: cellCenterLon - clampRangeLon, max: cellCenterLon + clampRangeLon)
-                coordinate = CLLocationCoordinate2D(latitude: clampedLatitude, longitude: clampedLongitude)
-            }
+            let clampedLatitude = clamp(centroidCoord.latitude, min: cellCenterLat - clampRangeLat, max: cellCenterLat + clampRangeLat)
+            let clampedLongitude = clamp(centroidCoord.longitude, min: cellCenterLon - clampRangeLon, max: cellCenterLon + clampRangeLon)
 
             return .cluster(
                 id: clusterID(for: members),
-                coordinate: coordinate,
+                coordinate: CLLocationCoordinate2D(latitude: clampedLatitude, longitude: clampedLongitude),
                 members: members
             )
         }

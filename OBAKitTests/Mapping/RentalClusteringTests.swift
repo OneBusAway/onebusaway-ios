@@ -58,17 +58,20 @@ struct RentalClusteringTests {
     }
 
     @Test func `A cluster sits at the centroid of its members`() throws {
-        // Base coordinate deliberately chosen to sit mid-cell to ensure clustering.
+        // Coordinates positioned so their centroid falls well within a quarter-cell
+        // of the cell center at cellSize 60, ensuring the raw average is tested
+        // independently of clamping.
         let result = items([
-            try RentalFixtures.vehicle(id: "a", lat: 47.60040, lon: -122.29920),
-            try RentalFixtures.vehicle(id: "b", lat: 47.60041, lon: -122.29919)
+            try RentalFixtures.vehicle(id: "a", lat: 47.60010, lon: -122.29920),
+            try RentalFixtures.vehicle(id: "b", lat: 47.60012, lon: -122.29919)
         ])
 
         guard case .cluster(_, let coordinate, _) = try #require(result.first) else {
             Issue.record("expected a cluster")
             return
         }
-        #expect(abs(coordinate.latitude - 47.600405) < 0.000001)
+        // Centroid of (47.60010, 47.60012) and (-122.29920, -122.29919)
+        #expect(abs(coordinate.latitude - 47.600110) < 0.000001)
         #expect(abs(coordinate.longitude - (-122.299195)) < 0.000001)
     }
 
