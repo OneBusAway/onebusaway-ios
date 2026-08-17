@@ -9,6 +9,7 @@
 
 import SwiftUI
 import OBAKitCore
+import OTPKit
 
 // MARK: - SheetDetentConfiguration
 
@@ -83,6 +84,8 @@ nonisolated enum AppSheetRoute: SheetRouteable {
     case routePicker
     case currentTrip(route: Route)
     case transitAlert(alertID: String)
+    case rentalDetail(rentalID: VehicleRental.ID)
+    case rentalCluster(memberIDs: [VehicleRental.ID])
 
     case more
     case settings
@@ -123,6 +126,13 @@ nonisolated extension AppSheetRoute {
             return "\(caseName)-\(route.id)"
         case .transitAlert(let alertID):
             return "\(caseName)-\(alertID)"
+        case .rentalDetail(let rentalID):
+            return "\(caseName)-\(rentalID)"
+        case .rentalCluster(let memberIDs):
+            // Sorted so the id is order-independent — the same pile of vehicles
+            // must produce the same route regardless of feed ordering, which is
+            // what keeps an open sheet bound to its marker across a camera move.
+            return "\(caseName)-\(memberIDs.sorted().joined(separator: ","))"
         }
     }
 
@@ -141,7 +151,7 @@ nonisolated extension AppSheetRoute {
     /// Detail destinations prefer the stacked layer so the base sheet peeks beneath.
     var prefersStacking: Bool {
         switch self {
-        case .stopDetails, .tripPlanner, .tripDetails, .currentTrip, .transitAlert, .more, .nearbyAll, .recentStopsAll, .bookmarksAll, .settings, .mapSettings:
+        case .stopDetails, .tripPlanner, .tripDetails, .currentTrip, .transitAlert, .more, .nearbyAll, .recentStopsAll, .bookmarksAll, .settings, .mapSettings, .rentalDetail, .rentalCluster:
             return true
         case .home, .search, .routePicker:
             return false
@@ -208,6 +218,14 @@ nonisolated extension AppSheetRoute {
             return SheetDetentConfiguration(
                 detents: [.medium, .large],
                 initialDetent: .large,
+                isDismissDisabled: false
+            )
+        case .rentalDetail, .rentalCluster:
+            // `.medium` first: a rental sheet is a glance, and the map behind it
+            // is the context for "is this one near me?".
+            return SheetDetentConfiguration(
+                detents: [.medium, .large],
+                initialDetent: .medium,
                 isDismissDisabled: false
             )
         case .mapSettings:

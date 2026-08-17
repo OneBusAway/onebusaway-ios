@@ -9,6 +9,7 @@
 
 import SwiftUI
 import OBAKitCore
+import OTPKit
 
 // MARK: - AppSheetViewFactory
 
@@ -71,6 +72,12 @@ final class AppSheetViewFactory {
         case .currentTrip(let route):
             currentTripView(route: route)
 
+        case .rentalDetail(let rentalID):
+            rentalDetailView(rentalID: rentalID)
+
+        case .rentalCluster(let memberIDs):
+            rentalClusterView(memberIDs: memberIDs)
+
         case .mapSettings:
             mapSettingsView()
         }
@@ -117,6 +124,69 @@ final class AppSheetViewFactory {
             mapRegionManager: application.mapRegionManager,
             mapViewModel: mapViewModel
         ))
+    }
+
+    /// Resolves the id to a live model, so a vehicle that leaves the feed while
+    /// the sheet is open reads as gone rather than as a stale row.
+    ///
+    /// `onPlanTrip` is nil: the panel has no trip planner to route into. See
+    /// the doc comment on `RentalDetailView.onPlanTrip`.
+    @ViewBuilder
+    func rentalDetailView(rentalID: VehicleRental.ID) -> some View {
+        if let rental = layersModel.rental(withID: rentalID) {
+            RentalDetailView(
+                rental: rental,
+                fetchedAt: layersModel.rentalFetchedAt,
+                staleAfter: .seconds(120),
+                userLocation: layersModel.rentalUserLocation,
+                onPlanTrip: nil,
+                onOpenURL: { [weak application] url, webFallback, _ in
+                    guard let application else { return }
+                    application.open(url, options: [:]) { success in
+                        guard !success, let webFallback else { return }
+                        application.open(webFallback, options: [:], completionHandler: nil)
+                    }
+                }
+            )
+        } else {
+            rentalUnavailableView
+        }
+    }
+
+    @ViewBuilder
+    func rentalClusterView(memberIDs: [VehicleRental.ID]) -> some View {
+        let rentals = layersModel.rentals(withIDs: memberIDs)
+        if rentals.isEmpty {
+            rentalUnavailableView
+        } else {
+            RentalClusterListView(
+                rentals: rentals,
+                fetchedAt: layersModel.rentalFetchedAt,
+                staleAfter: .seconds(120),
+                userLocation: layersModel.rentalUserLocation,
+                onPlanTrip: nil,
+                onOpenURL: { [weak application] url, webFallback, _ in
+                    guard let application else { return }
+                    application.open(url, options: [:]) { success in
+                        guard !success, let webFallback else { return }
+                        application.open(webFallback, options: [:], completionHandler: nil)
+                    }
+                }
+            )
+        }
+    }
+
+    /// Shown when a rental route outlives the vehicle it points at — the feed
+    /// dropped it while the sheet was open.
+    private var rentalUnavailableView: some View {
+        Text(OBALoc(
+            "map_layers.rental_unavailable",
+            value: "Not available right now",
+            comment: "Reason shown on a dimmed rental layer row when its server is unreachable"
+        ))
+        .font(.headline)
+        .foregroundStyle(.secondary)
+        .padding()
     }
 
     /// Placeholder until each route gets its own real view. In debug builds we

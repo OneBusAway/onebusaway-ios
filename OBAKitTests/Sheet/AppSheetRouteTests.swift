@@ -243,6 +243,37 @@ final class AppSheetRouteTests {
         #expect(config.detents == [.medium, .large])
     }
 
+    @Test func `Rental routes embed their associated values`() {
+        #expect(AppSheetRoute.rentalDetail(rentalID: "bike_7").id == "rentalDetail-bike_7")
+    }
+
+    /// The cluster route's id is the cluster's own id, so an open sheet and the
+    /// marker that opened it agree on identity across a camera move.
+    @Test func `Rental cluster id is order independent`() {
+        let a = AppSheetRoute.rentalCluster(memberIDs: ["a", "b", "c"])
+        let b = AppSheetRoute.rentalCluster(memberIDs: ["c", "b", "a"])
+
+        #expect(a.id == b.id)
+    }
+
+    @Test func `Rental cluster id changes with membership`() {
+        let a = AppSheetRoute.rentalCluster(memberIDs: ["a", "b", "c"])
+        let b = AppSheetRoute.rentalCluster(memberIDs: ["a", "b"])
+
+        #expect(a.id != b.id)
+    }
+
+    @Test func `Rental routes stack and allow dismissal`() {
+        for route in [
+            AppSheetRoute.rentalDetail(rentalID: "bike_7"),
+            AppSheetRoute.rentalCluster(memberIDs: ["a", "b"])
+        ] {
+            #expect(route.prefersStacking)
+            #expect(route.detentConfiguration.isDismissDisabled == false)
+            #expect(route.detentConfiguration.initialDetent == .medium)
+        }
+    }
+
     // MARK: - Exhaustiveness guard
 
     /// Adding a new `AppSheetRoute` case must fail to compile here, forcing
@@ -251,7 +282,8 @@ final class AppSheetRouteTests {
         switch route {
         case .home, .search, .nearbyAll, .recentStopsAll, .bookmarksAll,
              .stopDetails, .tripPlanner, .tripDetails, .routePicker,
-             .currentTrip, .transitAlert, .more, .settings, .mapSettings:
+             .currentTrip, .transitAlert, .more, .settings, .mapSettings,
+             .rentalDetail, .rentalCluster:
             break
         }
     }
