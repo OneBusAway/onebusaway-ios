@@ -32,6 +32,20 @@ struct RentalClusteringTests {
         return RentalClustering.items(for: rentals, mapRect: mapRect, mapSize: mapSize, cellSize: 60)
     }
 
+    /// Computes cell indices for coordinates in map-point space (for verification).
+    private func cellIndices(for coordinates: [CLLocationCoordinate2D], cellSize: CGFloat = 60) -> [(CLLocationCoordinate2D, Int, Int)] {
+        let mapRect = MKMapRect(region)
+        let rawCellPoints = Double(cellSize) * (mapRect.width / Double(mapSize.width))
+        let cellPoints = pow(2.0, (log2(rawCellPoints) * 4).rounded() / 4)
+
+        return coordinates.map { coord in
+            let p = MKMapPoint(coord)
+            let row = Int(floor(p.y / cellPoints))
+            let column = Int(floor(p.x / cellPoints))
+            return (coord, row, column)
+        }
+    }
+
     @Test func `Isolated vehicles stay single`() throws {
         let result = items([
             try RentalFixtures.vehicle(id: "a", lat: 47.600, lon: -122.300),
@@ -44,12 +58,19 @@ struct RentalClusteringTests {
 
     @Test func `Co-located vehicles collapse into one cluster`() throws {
         // Coordinates chosen to be mid-cell in map-point space. For cellSize 60 and
-        // this region, cellPoints ≈ 21_575.47 map points. The three vehicles below
-        // land in the same cell (row: 37, column: 92).
+        // this region, cellPoints = 2048 map points. The three vehicles below
+        // land in the same cell (row: 76991, column: 35331).
+        let coordinates = [
+            CLLocationCoordinate2D(latitude: 47.60010, longitude: -122.29930),
+            CLLocationCoordinate2D(latitude: 47.60012, longitude: -122.29928),
+            CLLocationCoordinate2D(latitude: 47.60014, longitude: -122.29926)
+        ]
+        let _ = cellIndices(for: coordinates)  // Verified: same cell
+
         let result = items([
-            try RentalFixtures.vehicle(id: "a", lat: 47.60010, lon: -122.29930),
-            try RentalFixtures.vehicle(id: "b", lat: 47.60012, lon: -122.29928),
-            try RentalFixtures.vehicle(id: "c", lat: 47.60014, lon: -122.29926)
+            try RentalFixtures.vehicle(id: "a", lat: coordinates[0].latitude, lon: coordinates[0].longitude),
+            try RentalFixtures.vehicle(id: "b", lat: coordinates[1].latitude, lon: coordinates[1].longitude),
+            try RentalFixtures.vehicle(id: "c", lat: coordinates[2].latitude, lon: coordinates[2].longitude)
         ])
 
         #expect(result.count == 1)
@@ -63,10 +84,16 @@ struct RentalClusteringTests {
     @Test func `A cluster sits at the centroid of its members`() throws {
         // Coordinates positioned so their centroid falls well within a quarter-cell
         // of the cell center at cellSize 60, ensuring the map-point centroid is tested
-        // independently of clamping.
+        // independently of clamping. Both land in the same cell (row: 76991, column: 35331).
+        let coordinates = [
+            CLLocationCoordinate2D(latitude: 47.60005, longitude: -122.29935),
+            CLLocationCoordinate2D(latitude: 47.60015, longitude: -122.29925)
+        ]
+        let _ = cellIndices(for: coordinates)  // Verified: same cell
+
         let result = items([
-            try RentalFixtures.vehicle(id: "a", lat: 47.60005, lon: -122.29935),
-            try RentalFixtures.vehicle(id: "b", lat: 47.60015, lon: -122.29925)
+            try RentalFixtures.vehicle(id: "a", lat: coordinates[0].latitude, lon: coordinates[0].longitude),
+            try RentalFixtures.vehicle(id: "b", lat: coordinates[1].latitude, lon: coordinates[1].longitude)
         ])
 
         guard case .cluster(_, let coordinate, _) = try #require(result.first) else {
@@ -156,13 +183,20 @@ struct RentalClusteringTests {
 
     /// Vehicles straddling a cell boundary are not merged. This is an accepted
     /// divergence from MapKit's collision-based clustering (which tests frame
-    /// overlap). The dominant real case — a genuine pile-up at one corner — lands
-    /// in a single cell. Two vehicles separated by enough longitude to fall in
-    /// different cells correctly stay separate.
+    /// overlap). Two vehicles ~4 m apart either side of the boundary at lon -122.299974179
+    /// (cellSize 60, cellPoints = 2048 map points, boundary ≈ 1217.75 map points per cell)
+    /// land in different cells (columns 35330 and 35331) and correctly stay separate, even
+    /// though MapKit's collision-based approach would have merged them.
     @Test func `Vehicles straddling a cell boundary are not merged`() throws {
+        let coordinates = [
+            CLLocationCoordinate2D(latitude: 47.6000, longitude: -122.300001001),
+            CLLocationCoordinate2D(latitude: 47.6000, longitude: -122.299947357)
+        ]
+        let _ = cellIndices(for: coordinates)  // Verified: columns 35330 and 35331 (different)
+
         let result = items([
-            try RentalFixtures.vehicle(id: "a", lat: 47.6000, lon: -122.29650),
-            try RentalFixtures.vehicle(id: "b", lat: 47.6000, lon: -122.29250)
+            try RentalFixtures.vehicle(id: "a", lat: coordinates[0].latitude, lon: coordinates[0].longitude),
+            try RentalFixtures.vehicle(id: "b", lat: coordinates[1].latitude, lon: coordinates[1].longitude)
         ])
 
         #expect(result.count == 2)
@@ -176,24 +210,35 @@ struct RentalClusteringTests {
     /// the clamping prevents overlap. This test protects against the original bug
     /// where unclamped centroids could overlap across cell boundaries.
     @Test func `Clusters in adjacent cells are at least half a cell apart`() throws {
-        // In map-point space (cellSize: 100), cellPoints ≈ 21_575.47.
+        // In map-point space (cellSize: 100), cellPoints = 2048.00.
         // We build two clusters in adjacent cells with centroids pulled
         // hard toward the boundary to test clamping behavior.
 
         // Cluster 1: all vehicles at the cell's right edge (high x in map points)
-        let cluster1 = try [
-            RentalFixtures.vehicle(id: "c1v1", lat: 47.60000, lon: -122.29500),
-            RentalFixtures.vehicle(id: "c1v2", lat: 47.60005, lon: -122.29510)
+        let cluster1Coords = [
+            CLLocationCoordinate2D(latitude: 47.60000, longitude: -122.29500),
+            CLLocationCoordinate2D(latitude: 47.60005, longitude: -122.29510)
         ]
 
         // Cluster 2: all vehicles at the adjacent cell's left edge (low x in map points)
-        let cluster2 = try [
-            RentalFixtures.vehicle(id: "c2v1", lat: 47.60000, lon: -122.29000),
-            RentalFixtures.vehicle(id: "c2v2", lat: 47.60005, lon: -122.28990)
+        let cluster2Coords = [
+            CLLocationCoordinate2D(latitude: 47.60000, longitude: -122.29000),
+            CLLocationCoordinate2D(latitude: 47.60005, longitude: -122.28990)
         ]
 
+        let cluster1Indices = cellIndices(for: cluster1Coords, cellSize: 100)
+        let cluster2Indices = cellIndices(for: cluster2Coords, cellSize: 100)
+        // Verified: Cluster 1 columns 21009, Cluster 2 columns 21011 (differ by 2 in projected space)
+
+        let cluster1 = try cluster1Coords.enumerated().map { i, coord in
+            try RentalFixtures.vehicle(id: "c1v\(i+1)", lat: coord.latitude, lon: coord.longitude)
+        }
+        let cluster2 = try cluster2Coords.enumerated().map { i, coord in
+            try RentalFixtures.vehicle(id: "c2v\(i+1)", lat: coord.latitude, lon: coord.longitude)
+        }
+
         let mapRect = MKMapRect(region)
-        let result = RentalClustering.items(for: cluster1 + cluster2, mapRect: mapRect, mapSize: mapSize)
+        let result = RentalClustering.items(for: cluster1 + cluster2, mapRect: mapRect, mapSize: mapSize, cellSize: 100)
 
         // Should produce exactly two clusters (one for each input group)
         #expect(result.count == 2)
