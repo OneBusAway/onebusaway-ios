@@ -10,7 +10,18 @@
 import MapKit
 import SwiftUI
 import OBAKitCore
+import OTPKit
 import UIKit
+
+// MARK: - MapPinSelection
+
+/// What the panel map's `selection` can hold. Stops and rentals share one Map,
+/// so the binding needs one type covering both.
+enum MapPinSelection: Hashable {
+    case stop(Stop.ID)
+    case rental(VehicleRental.ID)
+    case rentalCluster(String)
+}
 
 // MARK: - MapPanelRootView
 
@@ -29,9 +40,9 @@ struct MapPanelRootView: View {
     /// is open updates the displayed forecast in place.
     @State private var isWeatherPopupPresented = false
 
-    /// The stop the user tapped, if any. Bound to the `Map`'s `selection`; cleared
-    /// after pushing so re-tapping the same stop pushes again.
-    @State private var selectedStopID: Stop.ID?
+    /// The pin the user tapped, if any. Bound to the `Map`'s `selection`;
+    /// cleared after pushing so re-tapping the same pin pushes again.
+    @State private var mapSelection: MapPinSelection?
 
     /// Whether the map is zoomed in far enough to load and show stops. Mirrors the
     /// UIKit path's `requiredHeightToShowStops` gate so both surfaces suppress
@@ -113,7 +124,7 @@ struct MapPanelRootView: View {
     }
 
     var body: some View {
-        Map(position: $cameraPosition, selection: $selectedStopID) {
+        Map(position: $cameraPosition, selection: $mapSelection) {
             UserAnnotation()
             // Bookmark pins render at every zoom level, like the UIKit map.
             ForEach(stopsObserver.bookmarks) { bookmark in
@@ -139,11 +150,14 @@ struct MapPanelRootView: View {
                     )
                 }
             }
+
+            rentalAnnotations
         }
         .onMapCameraChange(frequency: .onEnd) { context in
             visibleRegion = context.region
             visibleMapRectHeight = context.rect.height
             layersModel.viewportDidChange(context.rect)
+            layersModel.updateViewport(span: context.region.span, mapSize: mapSize)
             // Keep the "Zoom in for stops" pill in sync with the stop-loading
             // threshold by updating it before the stop-loading early return, so it
             // also works when the map is zoomed out.
@@ -174,10 +188,21 @@ struct MapPanelRootView: View {
         .onChange(of: mapViewModel.mapType) { _, _ in
             recomputeStopLabels()
         }
-        .onChange(of: selectedStopID) { _, id in
-            guard let id else { return }
-            coordinator.push(.stopDetails(stopID: id))
-            selectedStopID = nil
+        .onChange(of: mapSelection) {
+            guard let selection = mapSelection else { return }
+            switch selection {
+            case .stop(let stopID):
+                coordinator.push(.stopDetails(stopID: stopID))
+            case .rental(let rentalID):
+                coordinator.push(.rentalDetail(rentalID: rentalID))
+            case .rentalCluster(let clusterID):
+                let members = layersModel.rentalItems
+                    .first { $0.id == clusterID }?
+                    .members ?? []
+                guard !members.isEmpty else { break }
+                coordinator.push(.rentalCluster(memberIDs: members.map(\.id)))
+            }
+            mapSelection = nil
         }
         .mapStyle(mapViewModel.mapType.styleDescriptor(
             showingPointsOfInterest: layersModel.showsPointsOfInterest
@@ -275,7 +300,29 @@ struct MapPanelRootView: View {
                     .offset(y: ThemeMetrics.defaultMapAnnotationSize + 2)
             }
         }
-        .tag(stop.id)
+        .tag(MapPinSelection.stop(stop.id))
+    }
+
+    private func tag(for item: RentalMapItem) -> MapPinSelection {
+        switch item {
+        case .single(let rental): return .rental(rental.id)
+        case .cluster(let id, _, _): return .rentalCluster(id)
+        }
+    }
+
+    @MapContentBuilder
+    private var rentalAnnotations: some MapContent {
+        ForEach(layersModel.rentalItems) { item in
+            Annotation("", coordinate: item.coordinate) {
+                switch item {
+                case .single(let rental):
+                    RentalMapMarker(rental: rental, showsFuelLabel: layersModel.showsFuelLabels)
+                case .cluster(_, _, let members):
+                    RentalClusterMapMarker(count: members.count)
+                }
+            }
+            .tag(tag(for: item))
+        }
     }
 
     /// Re-evaluates `showStopLabels` from the last settled viewport height and

@@ -8,8 +8,10 @@
 //
 
 import Combine
+import CoreLocation
 import MapKit
 import OBAKitCore
+import OTPKit
 
 /// The SwiftUI panel's window onto the map layer system.
 ///
@@ -27,6 +29,20 @@ import OBAKitCore
     /// Drives the badge on the map-type button — the panel's only at-a-glance
     /// readout of layer state.
     @Published private(set) var enabledLayerCount = 0
+
+    /// Clustered rental markers for the current viewport.
+    @Published private(set) var rentalItems: [RentalMapItem] = []
+
+    /// Whether the current zoom is tight enough to show fuel figures.
+    @Published private(set) var showsFuelLabels = false
+
+    /// Every rental currently visible, before clustering. Backs id resolution
+    /// for the rental sheet routes.
+    private var visibleRentals: [VehicleRental] = []
+
+    private var lastSpan = MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+    private var lastMapSize: CGSize = .zero
+    private var rentalCancellables = Set<AnyCancellable>()
 
     private let application: Application
     private var registrar: MapLayerRegistrar!
@@ -69,6 +85,67 @@ import OBAKitCore
         isStopsLayerEnabled = mapRegionManager.isStopsLayerEnabled
         showsPointsOfInterest = mapRegionManager.mapViewShowsPointsOfInterest
         enabledLayerCount = mapRegionManager.enabledMapLayerCount
+        subscribeToRentalCoordinator()
+    }
+
+    /// (Re-)binds to the registrar's current coordinator. `MapLayerRegistrar`
+    /// builds a fresh one on every region change, so an old subscription would
+    /// keep delivering the previous region's vehicles.
+    private func subscribeToRentalCoordinator() {
+        rentalCancellables.removeAll()
+
+        guard let coordinator = registrar.rentalCoordinator else {
+            visibleRentals = []
+            rentalItems = []
+            showsFuelLabels = false
+            return
+        }
+
+        coordinator.$visibleRentals
+            .sink { [weak self] rentals in
+                self?.visibleRentals = rentals
+                self?.recomputeClusters()
+            }
+            .store(in: &rentalCancellables)
+
+        coordinator.$showsFuelLabels
+            .sink { [weak self] shows in self?.showsFuelLabels = shows }
+            .store(in: &rentalCancellables)
+    }
+
+    /// Records the viewport geometry clustering needs and recomputes.
+    func updateViewport(span: MKCoordinateSpan, mapSize: CGSize) {
+        lastSpan = span
+        lastMapSize = mapSize
+        recomputeClusters()
+    }
+
+    private func recomputeClusters() {
+        rentalItems = RentalClustering.items(
+            for: visibleRentals,
+            span: lastSpan,
+            mapSize: lastMapSize
+        )
+    }
+
+    // MARK: - Route resolution
+
+    /// When the rental data arrived — feeds the detail sheet's freshness line.
+    var rentalFetchedAt: Date? { registrar.rentalCoordinator?.lastSnapshotAt }
+
+    /// The rider's location, for walk-time estimates in detail sheets.
+    var rentalUserLocation: CLLocation? { registrar.rentalCoordinator?.userLocation }
+
+    /// Resolves a route's id back to a live model. Returns nil once the vehicle
+    /// has left the feed, so an open sheet reflects reality rather than a
+    /// snapshot taken at push time.
+    func rental(withID id: VehicleRental.ID) -> VehicleRental? {
+        visibleRentals.first { $0.id == id }
+    }
+
+    func rentals(withIDs ids: [VehicleRental.ID]) -> [VehicleRental] {
+        let wanted = Set(ids)
+        return visibleRentals.filter { wanted.contains($0.id) }
     }
 
     /// Feeds the panel's camera into the layer pipeline. The `MKMapView` this

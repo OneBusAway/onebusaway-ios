@@ -88,4 +88,18 @@ final class MapPanelLayersModelTests: OBATestCase {
 
         #expect(application.mapRegionManager.currentVisibleMapRect.height == 10_000)
     }
+
+    @Test func `Publishes no rental items without a bikeshare region`() {
+        #expect(model.rentalItems.isEmpty)
+    }
+
+    /// The two rental sheet routes carry ids, not model objects, so the model
+    /// has to resolve them — and answer nil once a vehicle leaves the feed.
+    @Test func `Resolving an unknown rental id returns nil`() {
+        #expect(model.rental(withID: "not-in-the-feed") == nil)
+    }
+
+    @Test func `Resolving unknown rental ids drops them`() {
+        #expect(model.rentals(withIDs: ["a", "b"]).isEmpty)
+    }
 }
