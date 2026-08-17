@@ -162,4 +162,70 @@ struct RentalClusteringTests {
         #expect(result.count == 2)
         #expect(result.allSatisfy { if case .single = $0 { return true } else { return false } })
     }
+
+    /// Cluster centroids are clamped to a quarter-cell of their cell's centre,
+    /// guaranteeing that markers in adjacent cells are at least half a cell apart.
+    /// This test constructs vehicles in adjacent cells with centroids pulled
+    /// toward the shared edge, runs at the production default, and verifies that
+    /// the clamping prevents overlap. This test protects against the original bug
+    /// where unclamped centroids could overlap across cell boundaries.
+    @Test func `Clusters in adjacent cells are at least half a cell apart`() throws {
+        // At the production default (cellSize: 100), latitudePerCell ≈ 0.00119°
+        // and longitudePerCell ≈ 0.00256°. We build two clusters in adjacent
+        // cells with centroids pulled hard toward the boundary.
+
+        // Cluster 1: all vehicles at the cell's right edge (high longitude)
+        let cluster1 = try [
+            RentalFixtures.vehicle(id: "c1v1", lat: 47.60000, lon: -122.29500),
+            RentalFixtures.vehicle(id: "c1v2", lat: 47.60005, lon: -122.29510)
+        ]
+
+        // Cluster 2: all vehicles at the adjacent cell's left edge (low longitude)
+        let cluster2 = try [
+            RentalFixtures.vehicle(id: "c2v1", lat: 47.60000, lon: -122.29000),
+            RentalFixtures.vehicle(id: "c2v2", lat: 47.60005, lon: -122.28990)
+        ]
+
+        let result = RentalClustering.items(for: cluster1 + cluster2, span: span, mapSize: mapSize)
+
+        // Should produce exactly two clusters (one for each input group)
+        #expect(result.count == 2)
+
+        var clusters: [CLLocationCoordinate2D] = []
+        for item in result {
+            if case .cluster(_, let coordinate, _) = item {
+                clusters.append(coordinate)
+            }
+        }
+        #expect(clusters.count == 2)
+
+        guard clusters.count == 2 else { return }
+
+        let longitudePerCell = span.longitudeDelta * Double(100 / mapSize.width)
+        // Half a cell (minimum safe separation due to clamping)
+        let minSeparationLon = longitudePerCell / 2
+
+        // Verify adjacent clusters are at least half a cell apart
+        let lonDistance = abs(clusters[0].longitude - clusters[1].longitude)
+        #expect(lonDistance >= minSeparationLon)
+    }
+
+    /// Single items must render at their vehicle's exact coordinate and never be
+    /// clamped to a cell centre. Displacement would harm usability: a rider
+    /// looking at the map must trust that a single marks the actual bike/scooter
+    /// location, not an abstraction. This test ensures a future refactor cannot
+    /// accidentally start clamping singles.
+    @Test func `Single items are not clamped and show exact vehicle location`() throws {
+        let vehicle = try RentalFixtures.vehicle(id: "a", lat: 47.60111, lon: -122.29876)
+        let result = RentalClustering.items(for: [vehicle], span: span, mapSize: mapSize)
+
+        #expect(result.count == 1)
+        guard case .single(let emission) = result.first else {
+            Issue.record("expected a single item")
+            return
+        }
+
+        #expect(emission.coordinate.latitude == vehicle.coordinate.latitude)
+        #expect(emission.coordinate.longitude == vehicle.coordinate.longitude)
+    }
 }

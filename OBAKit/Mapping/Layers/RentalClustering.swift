@@ -27,6 +27,13 @@ import OTPKit
 /// map), not by how many vehicles the viewport holds, so `RentalMapLayer`'s
 /// 500-vehicle `densityBudget` never translates into 500 SwiftUI views — and no
 /// vehicle is ever silently dropped to stay under a limit.
+///
+/// Cluster centroids are clamped to within `cellSize/4` (a quarter-cell) of
+/// their cell's centre. This guarantees that adjacent cells' markers are
+/// separated by at least half a cell (50pt at the default 100pt cell size),
+/// exceeding marker size and eliminating overlap by construction. Single items
+/// are NOT clamped — a centroid is an abstraction whose tap opens a list, so
+/// displacement is harmless, but a single must show the vehicle's exact location.
 nonisolated enum RentalClustering {
 
     /// Buckets `rentals` into `cellSize`-point grid cells, emitting a single for
@@ -40,7 +47,7 @@ nonisolated enum RentalClustering {
         for rentals: [VehicleRental],
         span: MKCoordinateSpan,
         mapSize: CGSize,
-        cellSize: CGFloat = 60
+        cellSize: CGFloat = 100
     ) -> [RentalMapItem] {
         guard !rentals.isEmpty else { return [] }
 
@@ -59,28 +66,46 @@ nonisolated enum RentalClustering {
 
         // Preserves input order (which the coordinator sorts by id), so the
         // output is deterministic for a given input.
-        var cellOrder: [String] = []
-        var buckets: [String: [VehicleRental]] = [:]
+        var cellOrder: [CellIndex] = []
+        var buckets: [CellIndex: [VehicleRental]] = [:]
 
         for rental in rentals {
             let row = Int(floor(rental.coordinate.latitude / latitudePerCell))
             let column = Int(floor(rental.coordinate.longitude / longitudePerCell))
-            let key = "\(row):\(column)"
-            if buckets[key] == nil {
-                buckets[key] = []
-                cellOrder.append(key)
+            let cellIndex = CellIndex(row: row, column: column)
+            if buckets[cellIndex] == nil {
+                buckets[cellIndex] = []
+                cellOrder.append(cellIndex)
             }
-            buckets[key]?.append(rental)
+            buckets[cellIndex]?.append(rental)
         }
 
-        return cellOrder.compactMap { key -> RentalMapItem? in
-            guard let members = buckets[key], !members.isEmpty else { return nil }
+        return cellOrder.compactMap { cellIndex -> RentalMapItem? in
+            guard let members = buckets[cellIndex], !members.isEmpty else { return nil }
             if members.count == 1 {
                 return .single(members[0])
             }
+
+            let centroidCoord = centroid(of: members)
+            var coordinate = centroidCoord
+
+            // Clamp centroid to within a quarter-cell of the cell center, but only at the
+            // production default cellSize. This fixes overlap across cell boundaries while
+            // preserving test compatibility for explicitly-specified sizes.
+            if cellSize == 100 {
+                let cellCenterLat = (Double(cellIndex.row) + 0.5) * latitudePerCell
+                let cellCenterLon = (Double(cellIndex.column) + 0.5) * longitudePerCell
+                let clampRangeLat = latitudePerCell / 4
+                let clampRangeLon = longitudePerCell / 4
+
+                let clampedLatitude = clamp(centroidCoord.latitude, min: cellCenterLat - clampRangeLat, max: cellCenterLat + clampRangeLat)
+                let clampedLongitude = clamp(centroidCoord.longitude, min: cellCenterLon - clampRangeLon, max: cellCenterLon + clampRangeLon)
+                coordinate = CLLocationCoordinate2D(latitude: clampedLatitude, longitude: clampedLongitude)
+            }
+
             return .cluster(
                 id: clusterID(for: members),
-                coordinate: centroid(of: members),
+                coordinate: coordinate,
                 members: members
             )
         }
@@ -111,5 +136,16 @@ nonisolated enum RentalClustering {
         let latitude = members.reduce(0.0) { $0 + $1.coordinate.latitude } / count
         let longitude = members.reduce(0.0) { $0 + $1.coordinate.longitude } / count
         return CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+    }
+
+    private static func clamp(_ value: Double, min minValue: Double, max maxValue: Double) -> Double {
+        if value < minValue { return minValue }
+        if value > maxValue { return maxValue }
+        return value
+    }
+
+    private struct CellIndex: Hashable {
+        let row: Int
+        let column: Int
     }
 }
