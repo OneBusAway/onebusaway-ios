@@ -69,10 +69,7 @@ nonisolated enum RentalClustering {
             return rentals.map { .single($0) }
         }
 
-        // Cell size in map-point space (flat projection). Quantize to quarter-octave
-        // steps to prevent residual float jitter in mapRect.width from moving boundaries.
-        let rawCellPoints = Double(cellSize) * (mapRect.width / Double(mapSize.width))
-        let cellPoints = quantizeToQuarterOctave(rawCellPoints)
+        let cellPoints = Self.cellPoints(cellSize: cellSize, mapRect: mapRect, mapSize: mapSize)
 
         guard cellPoints > 0 else {
             return rentals.map { .single($0) }
@@ -123,6 +120,21 @@ nonisolated enum RentalClustering {
                 members: members
             )
         }
+    }
+
+    /// The grid cell's edge length in map-point space, for a given viewport.
+    ///
+    /// Quantized to quarter-octave steps so residual float jitter in
+    /// `mapRect.width` cannot nudge cell boundaries and re-bucket vehicles that
+    /// have not moved. Returns 0 for a viewport that cannot define a grid, which
+    /// `items(for:mapRect:mapSize:cellSize:)` treats as "draw everything singly".
+    ///
+    /// Exposed so tests can derive expected cell indices from the same math the
+    /// bucketing uses, instead of reimplementing it and silently diverging the
+    /// day this changes.
+    static func cellPoints(cellSize: CGFloat, mapRect: MKMapRect, mapSize: CGSize) -> Double {
+        guard cellSize > 0, mapSize.width > 0, mapRect.width > 0 else { return 0 }
+        return quantizeToQuarterOctave(Double(cellSize) * (mapRect.width / Double(mapSize.width)))
     }
 
     /// A cluster's identity, derived from its sorted member ids.

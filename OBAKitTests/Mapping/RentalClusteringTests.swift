@@ -32,17 +32,31 @@ struct RentalClusteringTests {
         return RentalClustering.items(for: rentals, mapRect: mapRect, mapSize: mapSize, cellSize: 60)
     }
 
+    /// Where a coordinate lands in the bucketing grid.
+    private struct CellProbe {
+        let coordinate: CLLocationCoordinate2D
+        let row: Int
+        let column: Int
+    }
+
+    /// The cell edge length these tests bucket against, taken from production
+    /// rather than recomputed, so a change to the quantization can't leave these
+    /// tests verifying yesterday's grid while still passing.
+    private func cellPoints(cellSize: CGFloat = 60) -> Double {
+        RentalClustering.cellPoints(cellSize: cellSize, mapRect: MKMapRect(region), mapSize: mapSize)
+    }
+
     /// Computes cell indices for coordinates in map-point space (for verification).
-    private func cellIndices(for coordinates: [CLLocationCoordinate2D], cellSize: CGFloat = 60) -> [(CLLocationCoordinate2D, Int, Int)] {
-        let mapRect = MKMapRect(region)
-        let rawCellPoints = Double(cellSize) * (mapRect.width / Double(mapSize.width))
-        let cellPoints = pow(2.0, (log2(rawCellPoints) * 4).rounded() / 4)
+    private func cellIndices(for coordinates: [CLLocationCoordinate2D], cellSize: CGFloat = 60) -> [CellProbe] {
+        let cellPoints = cellPoints(cellSize: cellSize)
 
         return coordinates.map { coord in
             let p = MKMapPoint(coord)
-            let row = Int(floor(p.y / cellPoints))
-            let column = Int(floor(p.x / cellPoints))
-            return (coord, row, column)
+            return CellProbe(
+                coordinate: coord,
+                row: Int(floor(p.y / cellPoints)),
+                column: Int(floor(p.x / cellPoints))
+            )
         }
     }
 
@@ -66,8 +80,8 @@ struct RentalClusteringTests {
             CLLocationCoordinate2D(latitude: 47.60014, longitude: -122.29926)
         ]
         let indices = cellIndices(for: coordinates)
-        #expect(indices[0].1 == indices[1].1 && indices[1].1 == indices[2].1)  // Same row
-        #expect(indices[0].2 == indices[1].2 && indices[1].2 == indices[2].2)  // Same column
+        #expect(indices[0].row == indices[1].row && indices[1].row == indices[2].row)
+        #expect(indices[0].column == indices[1].column && indices[1].column == indices[2].column)
 
         let result = items([
             try RentalFixtures.vehicle(id: "a", lat: coordinates[0].latitude, lon: coordinates[0].longitude),
@@ -92,7 +106,7 @@ struct RentalClusteringTests {
             CLLocationCoordinate2D(latitude: 47.60015, longitude: -122.29925)
         ]
         let indices = cellIndices(for: coordinates)
-        #expect(indices[0].1 == indices[1].1 && indices[0].2 == indices[1].2)  // Same cell
+        #expect(indices[0].row == indices[1].row && indices[0].column == indices[1].column)
 
         let result = items([
             try RentalFixtures.vehicle(id: "a", lat: coordinates[0].latitude, lon: coordinates[0].longitude),
@@ -196,7 +210,7 @@ struct RentalClusteringTests {
             CLLocationCoordinate2D(latitude: 47.6000, longitude: -122.299947357)
         ]
         let indices = cellIndices(for: coordinates)
-        #expect(indices[0].2 != indices[1].2)  // Different columns
+        #expect(indices[0].column != indices[1].column)
 
         let result = items([
             try RentalFixtures.vehicle(id: "a", lat: coordinates[0].latitude, lon: coordinates[0].longitude),
@@ -236,8 +250,8 @@ struct RentalClusteringTests {
         let cluster1Indices = cellIndices(for: cluster1Coords, cellSize: 100)
         let cluster2Indices = cellIndices(for: cluster2Coords, cellSize: 100)
         // Verified: columns 21009 and 21010 (adjacent, differ by exactly 1)
-        #expect(cluster1Indices.allSatisfy { $0.2 == 21009 })
-        #expect(cluster2Indices.allSatisfy { $0.2 == 21010 })
+        #expect(cluster1Indices.allSatisfy { $0.column == 21009 })
+        #expect(cluster2Indices.allSatisfy { $0.column == 21010 })
 
         let cluster1 = try cluster1Coords.enumerated().map { i, coord in
             try RentalFixtures.vehicle(id: "c1v\(i+1)", lat: coord.latitude, lon: coord.longitude)
@@ -249,10 +263,6 @@ struct RentalClusteringTests {
         let mapRect = MKMapRect(region)
         let result = RentalClustering.items(for: cluster1 + cluster2, mapRect: mapRect, mapSize: mapSize, cellSize: 100)
 
-        // Should produce exactly two clusters (one for each input group). Without clamping,
-        // unclamped centroids 80 map points apart (0.039 cells) would overlap and merge.
-        // With clamping to quarter-cell, they separate to 1024 map points (0.5 cells),
-        // preventing merge and demonstrating the clamp guarantee.
         #expect(result.count == 2)
 
         var clusters: [CLLocationCoordinate2D] = []
@@ -262,6 +272,21 @@ struct RentalClusteringTests {
             }
         }
         #expect(clusters.count == 2)
+
+        // The assertion the clamp exists for. Unclamped, these two centroids sit
+        // 80 map points apart (0.039 of a cell) and their markers overlap on
+        // screen; clamping each to within a quarter-cell of its own cell centre
+        // forces them at least half a cell apart. Asserting only on cluster
+        // *count* above would pass with the clamp deleted entirely — clamping
+        // moves coordinates, it never changes how many items come back.
+        let cellPoints = cellPoints(cellSize: 100)
+        let first = MKMapPoint(try #require(clusters.first))
+        let second = MKMapPoint(try #require(clusters.last))
+        let separation = hypot(first.x - second.x, first.y - second.y)
+
+        // The guarantee is exactly half a cell in this construction, so compare
+        // with a small tolerance rather than demanding strictly greater.
+        #expect(separation >= cellPoints / 2 - 0.000001)
     }
 
     /// Single items must render at their vehicle's exact coordinate and never be
@@ -303,6 +328,14 @@ struct RentalClusteringTests {
             width: baseMapRect.width,
             height: baseMapRect.height
         )
+
+        // Establishes that the two viewports really are the ones the old
+        // implementation would have treated differently: same zoom, but a
+        // different latitude, so `MKCoordinateRegion`'s `latitudeDelta` differs.
+        // Without this the test could pass simply because both rects were
+        // equivalent, rather than because bucketing ignores where you are.
+        #expect(MKCoordinateRegion(baseMapRect).span.latitudeDelta
+                != MKCoordinateRegion(translatedMapRect).span.latitudeDelta)
 
         let result1 = RentalClustering.items(for: vehicles, mapRect: baseMapRect, mapSize: mapSize, cellSize: 60)
         let result2 = RentalClustering.items(for: vehicles, mapRect: translatedMapRect, mapSize: mapSize, cellSize: 60)
@@ -357,13 +390,20 @@ struct RentalClusteringTests {
 
         let baseMapRect = MKMapRect(region)
 
-        // Pan north by ~500 m (translate in projected space)
+        // Pan north by ~1.2 km (translate in projected space)
         let pannedMapRect = MKMapRect(
             x: baseMapRect.origin.x,
             y: baseMapRect.origin.y + 12_000,
             width: baseMapRect.width,
             height: baseMapRect.height
         )
+
+        // The premise of the regression: at the same zoom, this northward pan
+        // yields a viewport whose degree-space span is genuinely different, which
+        // is what used to move the cell boundaries. Bucketing in map-point space
+        // is what makes the membership assertions below hold anyway.
+        #expect(MKCoordinateRegion(baseMapRect).span.latitudeDelta
+                != MKCoordinateRegion(pannedMapRect).span.latitudeDelta)
 
         let resultBefore = RentalClustering.items(for: vehicles, mapRect: baseMapRect, mapSize: mapSize, cellSize: 60)
         let resultAfter = RentalClustering.items(for: vehicles, mapRect: pannedMapRect, mapSize: mapSize, cellSize: 60)

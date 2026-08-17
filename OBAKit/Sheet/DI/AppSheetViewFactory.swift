@@ -137,16 +137,10 @@ final class AppSheetViewFactory {
             RentalDetailView(
                 rental: rental,
                 fetchedAt: layersModel.rentalFetchedAt,
-                staleAfter: .seconds(120),
+                staleAfter: layersModel.rentalStaleAfter,
                 userLocation: layersModel.rentalUserLocation,
                 onPlanTrip: nil,
-                onOpenURL: { [weak application] url, webFallback, _ in
-                    guard let application else { return }
-                    application.open(url, options: [:]) { success in
-                        guard !success, let webFallback else { return }
-                        application.open(webFallback, options: [:], completionHandler: nil)
-                    }
-                }
+                onOpenURL: openRentalURL
             )
         } else {
             rentalUnavailableView
@@ -162,17 +156,25 @@ final class AppSheetViewFactory {
             RentalClusterListView(
                 rentals: rentals,
                 fetchedAt: layersModel.rentalFetchedAt,
-                staleAfter: .seconds(120),
+                staleAfter: layersModel.rentalStaleAfter,
                 userLocation: layersModel.rentalUserLocation,
                 onPlanTrip: nil,
-                onOpenURL: { [weak application] url, webFallback, _ in
-                    guard let application else { return }
-                    application.open(url, options: [:]) { success in
-                        guard !success, let webFallback else { return }
-                        application.open(webFallback, options: [:], completionHandler: nil)
-                    }
-                }
+                onOpenURL: openRentalURL
             )
+        }
+    }
+
+    /// Opens a rental's deep link, falling back to the operator's web URL when
+    /// no installed app claims the scheme. Shared by both rental sheets, which
+    /// must behave identically — the cluster list is just a way of reaching the
+    /// same vehicle.
+    private var openRentalURL: (URL, URL?, String?) -> Void {
+        { [weak application] url, webFallback, _ in
+            guard let application else { return }
+            application.open(url, options: [:]) { success in
+                guard !success, let webFallback else { return }
+                application.open(webFallback, options: [:], completionHandler: nil)
+            }
         }
     }
 

@@ -267,12 +267,10 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
 
     // MARK: - Map Type
 
-    /// Toggles between the standard and hybrid base map types and persists
-    /// the choice through `MapRegionManager`. The UIKit path used to persist
-    /// this in its `$mapType` Combine sink; owning it here means SwiftUI-only
-    /// sessions persist too, and both paths share one write.
     /// Selects a specific base map type (the Map sheet's basemap tiles) and
-    /// persists the choice through `MapRegionManager`.
+    /// persists the choice through `MapRegionManager`. The UIKit path used to
+    /// persist this in its `$mapType` Combine sink; owning it here means
+    /// SwiftUI-only sessions persist too, and both paths share one write.
     func setMapType(_ newType: MapBaseType) {
         guard newType != mapType else { return }
         mapType = newType

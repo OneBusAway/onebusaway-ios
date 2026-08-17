@@ -95,7 +95,14 @@ import OTPKit
     var refreshPolicy: MapLayerRefreshPolicy { .onViewportChange }
 
     /// Riders distrust stale micromobility data faster than stale bus data.
-    var staleAfter: Duration? { .seconds(120) }
+    ///
+    /// The single source of truth for the rental freshness window: both map
+    /// surfaces read it from here (the panel through
+    /// `MapPanelLayersModel.rentalStaleAfter`) rather than restating the
+    /// literal, so the two cannot drift apart.
+    static let freshnessWindow: Duration = .seconds(120)
+
+    var staleAfter: Duration? { Self.freshnessWindow }
 
     /// When the last rental data arrived — feeds the detail sheet's freshness line.
     var lastSnapshotAt: Date? { coordinator.lastSnapshotAt }

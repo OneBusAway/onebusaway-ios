@@ -171,7 +171,6 @@ final class BackgroundAnnotationDeemphasisTests: OBATestCase {
     // MARK: - Rentals
 
     @Test func `Rental vehicles and their clusters recede`() throws {
-        let mapView = MKMapView()
         let locationManager = MockAuthorizedLocationManager(
             updateLocation: TestData.mockSeattleLocation,
             updateHeading: TestData.mockHeading

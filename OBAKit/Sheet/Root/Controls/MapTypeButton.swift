@@ -44,7 +44,7 @@ struct MapTypeButton: View {
         .accessibilityLabel(Text(OBALoc(
             "map_controller.map_type.accessibility_label",
             value: "Map type",
-            comment: "Voiceover text indicating that this button toggles the base map type."
+            comment: "Voiceover text for the button that opens the Map settings sheet."
         )))
         .accessibilityValue(Text(accessibilityValueText))
     }
@@ -57,7 +57,27 @@ struct MapTypeButton: View {
         }
     }
 
+    /// The basemap name, plus the layer count when the badge is showing one.
+    ///
+    /// The badge itself is `accessibilityHidden` — it is decoration sitting on
+    /// top of the button — so without folding the count in here a VoiceOver user
+    /// would have no way to learn the layer state short of opening the sheet,
+    /// which is exactly the trip the badge exists to save.
     private var accessibilityValueText: String {
+        guard badgeCount > 0 else { return baseTypeValueText }
+
+        return String(
+            format: OBALoc(
+                "map_controller.map_type.accessibility_value_with_layers_fmt",
+                value: "%1$@, %2$d layers on",
+                comment: "Voiceover value combining the base map type with the number of enabled map layers. %1$@ is the base map type, %2$d is the layer count."
+            ),
+            baseTypeValueText,
+            badgeCount
+        )
+    }
+
+    private var baseTypeValueText: String {
         switch mapType {
         case .standard:
             return OBALoc(

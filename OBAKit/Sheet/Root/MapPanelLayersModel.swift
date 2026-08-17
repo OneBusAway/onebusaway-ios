@@ -40,12 +40,27 @@ import OTPKit
     /// for the rental sheet routes.
     private var visibleRentals: [VehicleRental] = []
 
-    private var lastMapRect = MKMapRect(x: 0, y: 0, width: 1, height: 1)
+    /// Zero until the first camera settle. `RentalClustering` treats a
+    /// degenerate rect as "no viewport yet" and emits one item per rental, which
+    /// is the honest fallback before the map has reported where it is looking.
+    private var lastMapRect = MKMapRect(x: 0, y: 0, width: 0, height: 0)
     private var lastMapSize: CGSize = .zero
     private var rentalCancellables = Set<AnyCancellable>()
 
+    /// The coordinator `rentalCancellables` is currently subscribed to.
+    ///
+    /// Held strongly on purpose: comparing identity against a `weak` reference
+    /// would be unsound, because a zeroed reference cannot be told apart from a
+    /// fresh coordinator that happened to be allocated at the same address. The
+    /// retention lasts only until the next `refresh()` swaps it out.
+    private var boundRentalCoordinator: RentalLayerCoordinator?
+
     private let application: Application
-    private var registrar: MapLayerRegistrar!
+
+    /// Exposed (not `private`) so `MapPanelLayersModelTests` can push snapshots
+    /// through the live coordinator, the same reason `RentalLayerCoordinator`
+    /// exposes `apply(_:)`. Nothing on the panel reads it.
+    private(set) var registrar: MapLayerRegistrar!
     private var cancellables = Set<AnyCancellable>()
 
     init(application: Application) {
@@ -86,15 +101,33 @@ import OTPKit
         showsPointsOfInterest = mapRegionManager.mapViewShowsPointsOfInterest
         enabledLayerCount = mapRegionManager.enabledMapLayerCount
         subscribeToRentalCoordinator()
+
+        // The Map sheet writes the threshold through `MapRegionManager` and
+        // posts `.rentalRangeFilterDidChange`; on this surface nothing else
+        // carries it to the coordinator, so without this the filter (and the
+        // range half of Reset) would persist but never change what is drawn
+        // until the next region change or launch. `MapViewController` does the
+        // same for the UIKit map. `RentalVisibility.setFilter` no-ops when the
+        // value is unchanged, so running it on every refresh is free.
+        registrar.rentalCoordinator?.setRangeFilter(mapRegionManager.rentalRangeFilter)
     }
 
     /// (Re-)binds to the registrar's current coordinator. `MapLayerRegistrar`
     /// builds a fresh one on every region change, so an old subscription would
     /// keep delivering the previous region's vehicles.
+    ///
+    /// Rebinding only when the identity changes matters: `@Published` replays
+    /// its current value to every new subscriber, so re-subscribing on each
+    /// `refresh()` would re-deliver the whole rental list and recluster it every
+    /// time an unrelated toggle (points of interest, a layer switch) posted.
     private func subscribeToRentalCoordinator() {
+        let coordinator = registrar.rentalCoordinator
+        guard coordinator !== boundRentalCoordinator else { return }
+        boundRentalCoordinator = coordinator
+
         rentalCancellables.removeAll()
 
-        guard let coordinator = registrar.rentalCoordinator else {
+        guard let coordinator else {
             visibleRentals = []
             rentalItems = []
             showsFuelLabels = false
@@ -120,6 +153,20 @@ import OTPKit
         recomputeClusters()
     }
 
+    /// Records the map's reported size on its own and recomputes.
+    ///
+    /// The panel learns its size from `.onGeometryChange`, which can report the
+    /// first non-zero size *after* the camera has already settled. In that
+    /// ordering `updateViewport(mapRect:mapSize:)` ran with `.zero`, clustering
+    /// took its no-layout fallback of one marker per vehicle, and nothing would
+    /// recompute until the rider next moved the map — leaving the first screen
+    /// of a dense area completely unclustered.
+    func updateMapSize(_ mapSize: CGSize) {
+        guard mapSize != lastMapSize else { return }
+        lastMapSize = mapSize
+        recomputeClusters()
+    }
+
     private func recomputeClusters() {
         rentalItems = RentalClustering.items(
             for: visibleRentals,
@@ -132,6 +179,11 @@ import OTPKit
 
     /// When the rental data arrived — feeds the detail sheet's freshness line.
     var rentalFetchedAt: Date? { registrar.rentalCoordinator?.lastSnapshotAt }
+
+    /// The rental layer's own trust window, read from the layer rather than
+    /// restated, so the panel's freshness footer cannot drift from the UIKit
+    /// map's. Both rental layers declare the same window, so either answers.
+    var rentalStaleAfter: Duration? { registrar.rentalLayers.first?.staleAfter }
 
     /// The rider's location, for walk-time estimates in detail sheets.
     var rentalUserLocation: CLLocation? { registrar.rentalCoordinator?.userLocation }

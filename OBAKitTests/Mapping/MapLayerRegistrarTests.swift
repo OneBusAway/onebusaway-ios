@@ -10,6 +10,7 @@
 import Foundation
 import MapKit
 import Testing
+import OTPKit
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -75,6 +76,10 @@ final class MapLayerRegistrarTests: OBATestCase {
 
     /// A returning rider's stored threshold must reach the coordinator before
     /// the first fetch, not one notification later.
+    ///
+    /// Asserted by pushing a below-threshold vehicle through the freshly-built
+    /// coordinator: merely checking that a coordinator exists would pass with
+    /// the `setRangeFilter` call deleted from the registrar entirely.
     @Test func `Applies the persisted range filter before the first fetch`() throws {
         // The default region (Puget Sound) has bikeshare enabled
         application.mapRegionManager.rentalRangeFilter = RentalRangeFilter(minimumRangeMeters: 8047)
@@ -82,7 +87,14 @@ final class MapLayerRegistrarTests: OBATestCase {
         registrar = MapLayerRegistrar(application: application) { _ in }
         registrar.configure()
 
-        #expect(registrar.rentalCoordinator != nil)
+        let coordinator = try #require(registrar.rentalCoordinator)
+        coordinator.setLayer(id: RentalMapLayer.bikesLayerID, enabled: true, formFactors: [.bicycle])
+        coordinator.apply(RentalFixtures.snapshot(added: [
+            try RentalFixtures.vehicle(id: "near", formFactor: "BICYCLE", rangeMeters: 3_000),
+            try RentalFixtures.vehicle(id: "far", formFactor: "BICYCLE", rangeMeters: 12_000)
+        ]))
+
+        #expect(coordinator.visibleRentals.map(\.id) == ["far"])
     }
 
     @Test func `Rebuilds rental layers on reconfigure`() throws {

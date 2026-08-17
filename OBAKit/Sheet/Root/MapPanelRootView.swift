@@ -224,6 +224,11 @@ struct MapPanelRootView: View {
             proxy.size
         } action: { _, newValue in
             mapSize = newValue
+            // Clustering is computed in screen space, so it needs this size. The
+            // camera can settle before the first non-zero size is reported, in
+            // which case the `.onMapCameraChange` handler above already ran with
+            // `.zero` and fell back to one marker per vehicle.
+            layersModel.updateMapSize(newValue)
             // On a cold launch a cached location fix can arrive before the Map
             // reports its first non-zero size, in which case the recenter in
             // `.onChange(of: didReceiveInitialLocation)` bails (`centerOnUser`
