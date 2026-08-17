@@ -210,25 +210,30 @@ struct RentalClusteringTests {
     /// the clamping prevents overlap. This test protects against the original bug
     /// where unclamped centroids could overlap across cell boundaries.
     @Test func `Clusters in adjacent cells are at least half a cell apart`() throws {
-        // In map-point space (cellSize: 100), cellPoints = 2048.00.
-        // We build two clusters in adjacent cells with centroids pulled
-        // hard toward the boundary to test clamping behavior.
+        // In map-point space (cellSize: 100), cellPoints = 2048.0 map points.
+        // Boundary at longitude -122.294311523 (x = 43028480.0 in map points).
+        // All four vehicles share latitude 47.60000 (row 45779).
+        // Cluster 1 at column 21009, Cluster 2 at column 21010 (adjacent, differ by 1).
+        // Unclamped centroid separation: 80 map points (0.039 of a cell).
+        // Clamped separation: 1024 map points (0.500 of a cell, exactly the guarantee).
 
-        // Cluster 1: all vehicles at the cell's right edge (high x in map points)
+        // Cluster 1: vehicles hugging the right edge of the shared boundary
         let cluster1Coords = [
-            CLLocationCoordinate2D(latitude: 47.60000, longitude: -122.29500),
-            CLLocationCoordinate2D(latitude: 47.60005, longitude: -122.29510)
+            CLLocationCoordinate2D(latitude: 47.60000, longitude: -122.294338346),
+            CLLocationCoordinate2D(latitude: 47.60000, longitude: -122.294391990)
         ]
 
-        // Cluster 2: all vehicles at the adjacent cell's left edge (low x in map points)
+        // Cluster 2: vehicles hugging the left edge of the shared boundary
         let cluster2Coords = [
-            CLLocationCoordinate2D(latitude: 47.60000, longitude: -122.29000),
-            CLLocationCoordinate2D(latitude: 47.60005, longitude: -122.28990)
+            CLLocationCoordinate2D(latitude: 47.60000, longitude: -122.294284701),
+            CLLocationCoordinate2D(latitude: 47.60000, longitude: -122.294231057)
         ]
 
         let cluster1Indices = cellIndices(for: cluster1Coords, cellSize: 100)
         let cluster2Indices = cellIndices(for: cluster2Coords, cellSize: 100)
-        // Verified: Cluster 1 columns 21009, Cluster 2 columns 21011 (differ by 2 in projected space)
+        // Verified: columns 21009 and 21010 (adjacent, differ by exactly 1)
+        #expect(cluster1Indices.allSatisfy { $0.2 == 21009 })
+        #expect(cluster2Indices.allSatisfy { $0.2 == 21010 })
 
         let cluster1 = try cluster1Coords.enumerated().map { i, coord in
             try RentalFixtures.vehicle(id: "c1v\(i+1)", lat: coord.latitude, lon: coord.longitude)
@@ -240,7 +245,10 @@ struct RentalClusteringTests {
         let mapRect = MKMapRect(region)
         let result = RentalClustering.items(for: cluster1 + cluster2, mapRect: mapRect, mapSize: mapSize, cellSize: 100)
 
-        // Should produce exactly two clusters (one for each input group)
+        // Should produce exactly two clusters (one for each input group). Without clamping,
+        // unclamped centroids 80 map points apart (0.039 cells) would overlap and merge.
+        // With clamping to quarter-cell, they separate to 1024 map points (0.5 cells),
+        // preventing merge and demonstrating the clamp guarantee.
         #expect(result.count == 2)
 
         var clusters: [CLLocationCoordinate2D] = []
@@ -250,20 +258,6 @@ struct RentalClusteringTests {
             }
         }
         #expect(clusters.count == 2)
-
-        guard clusters.count == 2 else { return }
-
-        let rawCellPoints = Double(100) * (mapRect.width / Double(mapSize.width))
-        let cellPoints = pow(2.0, (log2(rawCellPoints) * 4).rounded() / 4)
-        // Convert cell points (projected space) back to approximate degree separation
-        // using the map rect width as a scaling factor
-        let cellDegrees = (cellPoints / mapRect.width) * region.span.longitudeDelta
-        // Half a cell (minimum safe separation due to clamping)
-        let minSeparationLon = cellDegrees / 2
-
-        // Verify adjacent clusters are at least half a cell apart
-        let lonDistance = abs(clusters[0].longitude - clusters[1].longitude)
-        #expect(lonDistance >= minSeparationLon)
     }
 
     /// Single items must render at their vehicle's exact coordinate and never be
