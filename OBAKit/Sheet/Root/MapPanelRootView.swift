@@ -157,7 +157,7 @@ struct MapPanelRootView: View {
             visibleRegion = context.region
             visibleMapRectHeight = context.rect.height
             layersModel.viewportDidChange(context.rect)
-            layersModel.updateViewport(span: context.region.span, mapSize: mapSize)
+            layersModel.updateViewport(mapRect: context.rect, mapSize: mapSize)
             // Keep the "Zoom in for stops" pill in sync with the stop-loading
             // threshold by updating it before the stop-loading early return, so it
             // also works when the map is zoomed out.

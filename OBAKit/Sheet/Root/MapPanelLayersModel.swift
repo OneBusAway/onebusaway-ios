@@ -40,7 +40,7 @@ import OTPKit
     /// for the rental sheet routes.
     private var visibleRentals: [VehicleRental] = []
 
-    private var lastSpan = MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+    private var lastMapRect = MKMapRect(x: 0, y: 0, width: 1, height: 1)
     private var lastMapSize: CGSize = .zero
     private var rentalCancellables = Set<AnyCancellable>()
 
@@ -114,8 +114,8 @@ import OTPKit
     }
 
     /// Records the viewport geometry clustering needs and recomputes.
-    func updateViewport(span: MKCoordinateSpan, mapSize: CGSize) {
-        lastSpan = span
+    func updateViewport(mapRect: MKMapRect, mapSize: CGSize) {
+        lastMapRect = mapRect
         lastMapSize = mapSize
         recomputeClusters()
     }
@@ -123,7 +123,7 @@ import OTPKit
     private func recomputeClusters() {
         rentalItems = RentalClustering.items(
             for: visibleRentals,
-            span: lastSpan,
+            mapRect: lastMapRect,
             mapSize: lastMapSize
         )
     }

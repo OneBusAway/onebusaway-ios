@@ -21,11 +21,15 @@ import OTPKit
 struct RentalClusteringTests {
 
     /// An iPhone-ish map viewport spanning roughly one square kilometre.
-    private let span = MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+    private let region = MKCoordinateRegion(
+        center: CLLocationCoordinate2D(latitude: 47.6000, longitude: -122.3000),
+        span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+    )
     private let mapSize = CGSize(width: 390, height: 844)
 
     private func items(_ rentals: [VehicleRental]) -> [RentalMapItem] {
-        RentalClustering.items(for: rentals, span: span, mapSize: mapSize, cellSize: 60)
+        let mapRect = MKMapRect(region)
+        return RentalClustering.items(for: rentals, mapRect: mapRect, mapSize: mapSize, cellSize: 60)
     }
 
     @Test func `Isolated vehicles stay single`() throws {
@@ -39,14 +43,13 @@ struct RentalClusteringTests {
     }
 
     @Test func `Co-located vehicles collapse into one cluster`() throws {
-        // Base coordinate deliberately chosen to sit mid-cell (raw longitude index
-        // -79494.48, comfortably between cell boundaries). Tiny offsets keep all
-        // three in the same cell; see `Vehicles straddling a cell boundary are not merged`
-        // for the accepted boundary-crossing divergence.
+        // Coordinates chosen to be mid-cell in map-point space. For cellSize 60 and
+        // this region, cellPoints ≈ 21_575.47 map points. The three vehicles below
+        // land in the same cell (row: 37, column: 92).
         let result = items([
-            try RentalFixtures.vehicle(id: "a", lat: 47.60040, lon: -122.29920),
-            try RentalFixtures.vehicle(id: "b", lat: 47.60041, lon: -122.29919),
-            try RentalFixtures.vehicle(id: "c", lat: 47.60042, lon: -122.29918)
+            try RentalFixtures.vehicle(id: "a", lat: 47.60010, lon: -122.29930),
+            try RentalFixtures.vehicle(id: "b", lat: 47.60012, lon: -122.29928),
+            try RentalFixtures.vehicle(id: "c", lat: 47.60014, lon: -122.29926)
         ])
 
         #expect(result.count == 1)
@@ -59,20 +62,20 @@ struct RentalClusteringTests {
 
     @Test func `A cluster sits at the centroid of its members`() throws {
         // Coordinates positioned so their centroid falls well within a quarter-cell
-        // of the cell center at cellSize 60, ensuring the raw average is tested
+        // of the cell center at cellSize 60, ensuring the map-point centroid is tested
         // independently of clamping.
         let result = items([
-            try RentalFixtures.vehicle(id: "a", lat: 47.60010, lon: -122.29920),
-            try RentalFixtures.vehicle(id: "b", lat: 47.60012, lon: -122.29919)
+            try RentalFixtures.vehicle(id: "a", lat: 47.60005, lon: -122.29935),
+            try RentalFixtures.vehicle(id: "b", lat: 47.60015, lon: -122.29925)
         ])
 
         guard case .cluster(_, let coordinate, _) = try #require(result.first) else {
             Issue.record("expected a cluster")
             return
         }
-        // Centroid of (47.60010, 47.60012) and (-122.29920, -122.29919)
-        #expect(abs(coordinate.latitude - 47.600110) < 0.000001)
-        #expect(abs(coordinate.longitude - (-122.299195)) < 0.000001)
+        // Centroid in map-point space converted back to coordinate. Expected lat: 47.60010, lon: -122.29930
+        #expect(abs(coordinate.latitude - 47.600100) < 0.000001)
+        #expect(abs(coordinate.longitude - (-122.299300)) < 0.000001)
     }
 
     /// Identity is a hash of the sorted member ids, not the cell index. Cell
@@ -140,9 +143,10 @@ struct RentalClusteringTests {
     /// A degenerate viewport (before the Map reports its first layout) must not
     /// divide by zero or emit garbage.
     @Test func `A zero-sized map produces one item per rental`() throws {
+        let mapRect = MKMapRect(region)
         let result = RentalClustering.items(
             for: [try RentalFixtures.vehicle(id: "a"), try RentalFixtures.vehicle(id: "b")],
-            span: span,
+            mapRect: mapRect,
             mapSize: .zero,
             cellSize: 60
         )
@@ -153,13 +157,12 @@ struct RentalClusteringTests {
     /// Vehicles straddling a cell boundary are not merged. This is an accepted
     /// divergence from MapKit's collision-based clustering (which tests frame
     /// overlap). The dominant real case — a genuine pile-up at one corner — lands
-    /// in a single cell. Two vehicles a hair apart crossing a known boundary
-    /// (longitude -122.30000 divides to exactly -79495.0, landing on the boundary)
-    /// correctly stay separate.
+    /// in a single cell. Two vehicles separated by enough longitude to fall in
+    /// different cells correctly stay separate.
     @Test func `Vehicles straddling a cell boundary are not merged`() throws {
         let result = items([
-            try RentalFixtures.vehicle(id: "a", lat: 47.6004, lon: -122.30000),
-            try RentalFixtures.vehicle(id: "b", lat: 47.6004, lon: -122.30001)
+            try RentalFixtures.vehicle(id: "a", lat: 47.6000, lon: -122.29650),
+            try RentalFixtures.vehicle(id: "b", lat: 47.6000, lon: -122.29250)
         ])
 
         #expect(result.count == 2)
@@ -173,23 +176,24 @@ struct RentalClusteringTests {
     /// the clamping prevents overlap. This test protects against the original bug
     /// where unclamped centroids could overlap across cell boundaries.
     @Test func `Clusters in adjacent cells are at least half a cell apart`() throws {
-        // At the production default (cellSize: 100), latitudePerCell ≈ 0.00119°
-        // and longitudePerCell ≈ 0.00256°. We build two clusters in adjacent
-        // cells with centroids pulled hard toward the boundary.
+        // In map-point space (cellSize: 100), cellPoints ≈ 21_575.47.
+        // We build two clusters in adjacent cells with centroids pulled
+        // hard toward the boundary to test clamping behavior.
 
-        // Cluster 1: all vehicles at the cell's right edge (high longitude)
+        // Cluster 1: all vehicles at the cell's right edge (high x in map points)
         let cluster1 = try [
             RentalFixtures.vehicle(id: "c1v1", lat: 47.60000, lon: -122.29500),
             RentalFixtures.vehicle(id: "c1v2", lat: 47.60005, lon: -122.29510)
         ]
 
-        // Cluster 2: all vehicles at the adjacent cell's left edge (low longitude)
+        // Cluster 2: all vehicles at the adjacent cell's left edge (low x in map points)
         let cluster2 = try [
             RentalFixtures.vehicle(id: "c2v1", lat: 47.60000, lon: -122.29000),
             RentalFixtures.vehicle(id: "c2v2", lat: 47.60005, lon: -122.28990)
         ]
 
-        let result = RentalClustering.items(for: cluster1 + cluster2, span: span, mapSize: mapSize)
+        let mapRect = MKMapRect(region)
+        let result = RentalClustering.items(for: cluster1 + cluster2, mapRect: mapRect, mapSize: mapSize)
 
         // Should produce exactly two clusters (one for each input group)
         #expect(result.count == 2)
@@ -204,9 +208,13 @@ struct RentalClusteringTests {
 
         guard clusters.count == 2 else { return }
 
-        let longitudePerCell = span.longitudeDelta * Double(100 / mapSize.width)
+        let rawCellPoints = Double(100) * (mapRect.width / Double(mapSize.width))
+        let cellPoints = pow(2.0, (log2(rawCellPoints) * 4).rounded() / 4)
+        // Convert cell points (projected space) back to approximate degree separation
+        // using the map rect width as a scaling factor
+        let cellDegrees = (cellPoints / mapRect.width) * region.span.longitudeDelta
         // Half a cell (minimum safe separation due to clamping)
-        let minSeparationLon = longitudePerCell / 2
+        let minSeparationLon = cellDegrees / 2
 
         // Verify adjacent clusters are at least half a cell apart
         let lonDistance = abs(clusters[0].longitude - clusters[1].longitude)
@@ -220,7 +228,8 @@ struct RentalClusteringTests {
     /// accidentally start clamping singles.
     @Test func `Single items are not clamped and show exact vehicle location`() throws {
         let vehicle = try RentalFixtures.vehicle(id: "a", lat: 47.60111, lon: -122.29876)
-        let result = RentalClustering.items(for: [vehicle], span: span, mapSize: mapSize)
+        let mapRect = MKMapRect(region)
+        let result = RentalClustering.items(for: [vehicle], mapRect: mapRect, mapSize: mapSize)
 
         #expect(result.count == 1)
         guard case .single(let emission) = result.first else {
@@ -230,5 +239,114 @@ struct RentalClusteringTests {
 
         #expect(emission.coordinate.latitude == vehicle.coordinate.latitude)
         #expect(emission.coordinate.longitude == vehicle.coordinate.longitude)
+    }
+
+    /// Pan invariance: clustering the same vehicles with two MKMapRects that differ
+    /// only in origin (identical size) must produce identical output. This catches
+    /// the regression where degree-space bucketing caused pan-induced re-bucketing.
+    @Test func `Pan invariance - same vehicles cluster identically when rect translates`() throws {
+        let vehicles = try [
+            RentalFixtures.vehicle(id: "a", lat: 47.59990, lon: -122.30010),
+            RentalFixtures.vehicle(id: "b", lat: 47.60000, lon: -122.30000),
+            RentalFixtures.vehicle(id: "c", lat: 47.60010, lon: -122.29990)
+        ]
+
+        let baseMapRect = MKMapRect(region)
+
+        // Create a translated mapRect (panning north by ~111 m in map points)
+        let translatedMapRect = MKMapRect(
+            x: baseMapRect.origin.x,
+            y: baseMapRect.origin.y + 2500,  // Translate in projected space
+            width: baseMapRect.width,
+            height: baseMapRect.height
+        )
+
+        let result1 = RentalClustering.items(for: vehicles, mapRect: baseMapRect, mapSize: mapSize, cellSize: 60)
+        let result2 = RentalClustering.items(for: vehicles, mapRect: translatedMapRect, mapSize: mapSize, cellSize: 60)
+
+        #expect(result1.count == result2.count)
+
+        // Extract item IDs from both results for comparison
+        let ids1 = Set(result1.flatMap { item -> [String] in
+            switch item {
+            case .single(let rental): return [rental.id]
+            case .cluster(_, _, let members): return members.map(\.id)
+            }
+        })
+
+        let ids2 = Set(result2.flatMap { item -> [String] in
+            switch item {
+            case .single(let rental): return [rental.id]
+            case .cluster(_, _, let members): return members.map(\.id)
+            }
+        })
+
+        #expect(ids1 == ids2)
+    }
+
+    /// Regression test for the reported symptom: panning north caused clusters to
+    /// re-bucket (e.g. 10+10 → 12+8). In degree-space, the span's latitudeDelta
+    /// changes with Mercator projection as you pan, shifting cell boundaries. In
+    /// map-point space, panning is a pure translation with constant cell boundaries.
+    @Test func `Panning north does not re-bucket vehicles`() throws {
+        let vehicles = try [
+            RentalFixtures.vehicle(id: "v01", lat: 47.59990, lon: -122.30010),
+            RentalFixtures.vehicle(id: "v02", lat: 47.59991, lon: -122.30009),
+            RentalFixtures.vehicle(id: "v03", lat: 47.59992, lon: -122.30008),
+            RentalFixtures.vehicle(id: "v04", lat: 47.59993, lon: -122.30007),
+            RentalFixtures.vehicle(id: "v05", lat: 47.59994, lon: -122.30006),
+            RentalFixtures.vehicle(id: "v06", lat: 47.59995, lon: -122.30005),
+            RentalFixtures.vehicle(id: "v07", lat: 47.59996, lon: -122.30004),
+            RentalFixtures.vehicle(id: "v08", lat: 47.59997, lon: -122.30003),
+            RentalFixtures.vehicle(id: "v09", lat: 47.59998, lon: -122.30002),
+            RentalFixtures.vehicle(id: "v10", lat: 47.59999, lon: -122.30001),
+            RentalFixtures.vehicle(id: "v11", lat: 47.60010, lon: -122.29990),
+            RentalFixtures.vehicle(id: "v12", lat: 47.60011, lon: -122.29989),
+            RentalFixtures.vehicle(id: "v13", lat: 47.60012, lon: -122.29988),
+            RentalFixtures.vehicle(id: "v14", lat: 47.60013, lon: -122.29987),
+            RentalFixtures.vehicle(id: "v15", lat: 47.60014, lon: -122.29986),
+            RentalFixtures.vehicle(id: "v16", lat: 47.60015, lon: -122.29985),
+            RentalFixtures.vehicle(id: "v17", lat: 47.60016, lon: -122.29984),
+            RentalFixtures.vehicle(id: "v18", lat: 47.60017, lon: -122.29983),
+            RentalFixtures.vehicle(id: "v19", lat: 47.60018, lon: -122.29982),
+            RentalFixtures.vehicle(id: "v20", lat: 47.60019, lon: -122.29981)
+        ]
+
+        let baseMapRect = MKMapRect(region)
+
+        // Pan north by ~500 m (translate in projected space)
+        let pannedMapRect = MKMapRect(
+            x: baseMapRect.origin.x,
+            y: baseMapRect.origin.y + 12_000,
+            width: baseMapRect.width,
+            height: baseMapRect.height
+        )
+
+        let resultBefore = RentalClustering.items(for: vehicles, mapRect: baseMapRect, mapSize: mapSize, cellSize: 60)
+        let resultAfter = RentalClustering.items(for: vehicles, mapRect: pannedMapRect, mapSize: mapSize, cellSize: 60)
+
+        // Extract membership maps: cluster id → set of member ids
+        func membershipMap(_ items: [RentalMapItem]) -> [String: Set<String>] {
+            var map: [String: Set<String>] = [:]
+            for item in items {
+                switch item {
+                case .single(let rental):
+                    map[rental.id] = Set([rental.id])
+                case .cluster(let id, _, let members):
+                    map[id] = Set(members.map(\.id))
+                }
+            }
+            return map
+        }
+
+        let membersBefore = membershipMap(resultBefore)
+        let membersAfter = membershipMap(resultAfter)
+
+        // For each vehicle, it should be grouped with the same set of companions
+        for vehicle in vehicles {
+            let companionsBefore = membersBefore.values.first { $0.contains(vehicle.id) } ?? Set([vehicle.id])
+            let companionsAfter = membersAfter.values.first { $0.contains(vehicle.id) } ?? Set([vehicle.id])
+            #expect(companionsBefore == companionsAfter, "Vehicle \(vehicle.id) changed clusters when panning north")
+        }
     }
 }

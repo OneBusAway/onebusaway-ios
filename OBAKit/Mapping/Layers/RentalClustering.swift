@@ -22,6 +22,14 @@ import OTPKit
 /// overlap. The dominant real case — a pile-up at one corner — lands in one
 /// cell.
 ///
+/// Bucketing occurs in the flat-projected `MKMapRect` space, not in degrees.
+/// This is critical for pan stability: `MKMapRect` width and height are constant
+/// at constant zoom, so panning only translates the origin without resizing.
+/// Degree-space bucketing (latitude/longitude per cell derived from the span)
+/// exhibits latitude dependence: the span's `latitudeDelta` changes with Mercator
+/// projection as you pan north/south, causing cell boundaries to drift and
+/// vehicles to be rebucketed wholesale. Projected space eliminates this amplification.
+///
 /// This is also what makes a density cap unnecessary. Marker count is bounded by
 /// *occupied cells* (screen area ÷ cell area, roughly 90 on an iPhone-sized
 /// map), not by how many vehicles the viewport holds, so `RentalMapLayer`'s
@@ -40,12 +48,12 @@ nonisolated enum RentalClustering {
     /// a lone occupant and a cluster at the centroid otherwise.
     ///
     /// - Parameters:
-    ///   - span: the visible region's span, used to convert points to degrees.
+    ///   - mapRect: the visible region's map rectangle in flat projected space.
     ///   - mapSize: the map view's size in points. `.zero` before the first
     ///     layout, which yields one item per rental rather than a division by zero.
     static func items(
         for rentals: [VehicleRental],
-        span: MKCoordinateSpan,
+        mapRect: MKMapRect,
         mapSize: CGSize,
         cellSize: CGFloat = 100
     ) -> [RentalMapItem] {
@@ -57,10 +65,16 @@ nonisolated enum RentalClustering {
             return rentals.map { .single($0) }
         }
 
-        let latitudePerCell = span.latitudeDelta * Double(cellSize / mapSize.height)
-        let longitudePerCell = span.longitudeDelta * Double(cellSize / mapSize.width)
+        guard mapRect.width > 0, mapRect.height > 0 else {
+            return rentals.map { .single($0) }
+        }
 
-        guard latitudePerCell > 0, longitudePerCell > 0 else {
+        // Cell size in map-point space (flat projection). Quantize to quarter-octave
+        // steps to prevent residual float jitter in mapRect.width from moving boundaries.
+        let rawCellPoints = Double(cellSize) * (mapRect.width / Double(mapSize.width))
+        let cellPoints = quantizeToQuarterOctave(rawCellPoints)
+
+        guard cellPoints > 0 else {
             return rentals.map { .single($0) }
         }
 
@@ -70,8 +84,9 @@ nonisolated enum RentalClustering {
         var buckets: [CellIndex: [VehicleRental]] = [:]
 
         for rental in rentals {
-            let row = Int(floor(rental.coordinate.latitude / latitudePerCell))
-            let column = Int(floor(rental.coordinate.longitude / longitudePerCell))
+            let p = MKMapPoint(rental.coordinate)
+            let row = Int(floor(p.y / cellPoints))
+            let column = Int(floor(p.x / cellPoints))
             let cellIndex = CellIndex(row: row, column: column)
             if buckets[cellIndex] == nil {
                 buckets[cellIndex] = []
@@ -86,24 +101,25 @@ nonisolated enum RentalClustering {
                 return .single(members[0])
             }
 
-            let centroidCoord = centroid(of: members)
+            let centroidMapPoint = centroidMapPoint(of: members)
 
             // Clamp centroid to within a quarter-cell of the cell center. Adjacent cell
             // centres are one cell apart; each clamped marker deviates at most a quarter-cell
             // toward the other, so minimum separation between clustered markers is half a cell
             // (50pt at default 100pt size). With 32pt markers, overlap becomes impossible by
             // construction rather than merely improbable.
-            let cellCenterLat = (Double(cellIndex.row) + 0.5) * latitudePerCell
-            let cellCenterLon = (Double(cellIndex.column) + 0.5) * longitudePerCell
-            let clampRangeLat = latitudePerCell / 4
-            let clampRangeLon = longitudePerCell / 4
+            let cellCenterX = (Double(cellIndex.column) + 0.5) * cellPoints
+            let cellCenterY = (Double(cellIndex.row) + 0.5) * cellPoints
+            let clampRange = cellPoints / 4
 
-            let clampedLatitude = clamp(centroidCoord.latitude, min: cellCenterLat - clampRangeLat, max: cellCenterLat + clampRangeLat)
-            let clampedLongitude = clamp(centroidCoord.longitude, min: cellCenterLon - clampRangeLon, max: cellCenterLon + clampRangeLon)
+            let clampedX = clamp(centroidMapPoint.x, min: cellCenterX - clampRange, max: cellCenterX + clampRange)
+            let clampedY = clamp(centroidMapPoint.y, min: cellCenterY - clampRange, max: cellCenterY + clampRange)
+
+            let clampedCoordinate = MKMapPoint(x: clampedX, y: clampedY).coordinate
 
             return .cluster(
                 id: clusterID(for: members),
-                coordinate: CLLocationCoordinate2D(latitude: clampedLatitude, longitude: clampedLongitude),
+                coordinate: clampedCoordinate,
                 members: members
             )
         }
@@ -129,11 +145,18 @@ nonisolated enum RentalClustering {
         return "rentalCluster-\(hasher.finalize())"
     }
 
-    private static func centroid(of members: [VehicleRental]) -> CLLocationCoordinate2D {
+    private static func centroidMapPoint(of members: [VehicleRental]) -> MKMapPoint {
         let count = Double(members.count)
-        let latitude = members.reduce(0.0) { $0 + $1.coordinate.latitude } / count
-        let longitude = members.reduce(0.0) { $0 + $1.coordinate.longitude } / count
-        return CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+        let sumX = members.reduce(0.0) { $0 + MKMapPoint($1.coordinate).x }
+        let sumY = members.reduce(0.0) { $0 + MKMapPoint($1.coordinate).y }
+        return MKMapPoint(x: sumX / count, y: sumY / count)
+    }
+
+    private static func quantizeToQuarterOctave(_ value: Double) -> Double {
+        guard value.isFinite, value > 0 else { return 100 }
+        let log = log2(value)
+        let quantized = pow(2.0, (log * 4).rounded() / 4)
+        return quantized.isFinite && quantized > 0 ? quantized : 100
     }
 
     private static func clamp(_ value: Double, min minValue: Double, max maxValue: Double) -> Double {
