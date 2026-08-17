@@ -58,14 +58,16 @@ struct RentalClusteringTests {
 
     @Test func `Co-located vehicles collapse into one cluster`() throws {
         // Coordinates chosen to be mid-cell in map-point space. For cellSize 60 and
-        // this region, cellPoints = 2048 map points. The three vehicles below
+        // this region, cellPoints = 1217.75 map points. The three vehicles below
         // land in the same cell (row: 76991, column: 35331).
         let coordinates = [
             CLLocationCoordinate2D(latitude: 47.60010, longitude: -122.29930),
             CLLocationCoordinate2D(latitude: 47.60012, longitude: -122.29928),
             CLLocationCoordinate2D(latitude: 47.60014, longitude: -122.29926)
         ]
-        let _ = cellIndices(for: coordinates)  // Verified: same cell
+        let indices = cellIndices(for: coordinates)
+        #expect(indices[0].1 == indices[1].1 && indices[1].1 == indices[2].1)  // Same row
+        #expect(indices[0].2 == indices[1].2 && indices[1].2 == indices[2].2)  // Same column
 
         let result = items([
             try RentalFixtures.vehicle(id: "a", lat: coordinates[0].latitude, lon: coordinates[0].longitude),
@@ -89,7 +91,8 @@ struct RentalClusteringTests {
             CLLocationCoordinate2D(latitude: 47.60005, longitude: -122.29935),
             CLLocationCoordinate2D(latitude: 47.60015, longitude: -122.29925)
         ]
-        let _ = cellIndices(for: coordinates)  // Verified: same cell
+        let indices = cellIndices(for: coordinates)
+        #expect(indices[0].1 == indices[1].1 && indices[0].2 == indices[1].2)  // Same cell
 
         let result = items([
             try RentalFixtures.vehicle(id: "a", lat: coordinates[0].latitude, lon: coordinates[0].longitude),
@@ -184,15 +187,16 @@ struct RentalClusteringTests {
     /// Vehicles straddling a cell boundary are not merged. This is an accepted
     /// divergence from MapKit's collision-based clustering (which tests frame
     /// overlap). Two vehicles ~4 m apart either side of the boundary at lon -122.299974179
-    /// (cellSize 60, cellPoints = 2048 map points, boundary ≈ 1217.75 map points per cell)
-    /// land in different cells (columns 35330 and 35331) and correctly stay separate, even
-    /// though MapKit's collision-based approach would have merged them.
+    /// (cellSize 60, cellPoints = 1217.75 map points) land in different cells
+    /// (columns 35330 and 35331) and correctly stay separate, even though MapKit's
+    /// collision-based approach would have merged them.
     @Test func `Vehicles straddling a cell boundary are not merged`() throws {
         let coordinates = [
             CLLocationCoordinate2D(latitude: 47.6000, longitude: -122.300001001),
             CLLocationCoordinate2D(latitude: 47.6000, longitude: -122.299947357)
         ]
-        let _ = cellIndices(for: coordinates)  // Verified: columns 35330 and 35331 (different)
+        let indices = cellIndices(for: coordinates)
+        #expect(indices[0].2 != indices[1].2)  // Different columns
 
         let result = items([
             try RentalFixtures.vehicle(id: "a", lat: coordinates[0].latitude, lon: coordinates[0].longitude),
