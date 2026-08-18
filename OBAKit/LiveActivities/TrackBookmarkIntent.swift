@@ -17,9 +17,9 @@ import OBAKitCore
 /// on the existing Track path once arrivals load — ActivityKit is not called
 /// from the intent, and no `Activity` is captured into a `Task`. See #1222.
 struct TrackBookmarkIntent: AppIntent {
-    static var title: LocalizedStringResource = "Track Bookmark"
-    static var description = IntentDescription("Start a Live Activity for a bookmarked trip.")
-    static var openAppWhenRun = true
+    static let title: LocalizedStringResource = "Track Bookmark"
+    static let description = IntentDescription("Start a Live Activity for a bookmarked trip.")
+    static let openAppWhenRun = true
 
     @Parameter(title: "Bookmark")
     var bookmark: BookmarkEntity
@@ -34,9 +34,10 @@ struct TrackBookmarkIntent: AppIntent {
     }
 }
 
-struct BookmarkEntity: AppEntity {
-    static var typeDisplayRepresentation = TypeDisplayRepresentation(name: "Bookmark")
-    static var defaultQuery = BookmarkEntityQuery()
+/// App Entity types are extracted off the main actor; OBAKit defaults to `@MainActor`.
+nonisolated struct BookmarkEntity: AppEntity {
+    static let typeDisplayRepresentation = TypeDisplayRepresentation(name: "Bookmark")
+    static let defaultQuery = BookmarkEntityQuery()
 
     var id: UUID
     var name: String
@@ -46,7 +47,7 @@ struct BookmarkEntity: AppEntity {
     }
 }
 
-struct BookmarkEntityQuery: EntityQuery {
+nonisolated struct BookmarkEntityQuery: EntityQuery {
     func entities(for identifiers: [UUID]) async throws -> [BookmarkEntity] {
         tripBookmarkEntities().filter { identifiers.contains($0.id) }
     }
@@ -64,7 +65,7 @@ struct BookmarkEntityQuery: EntityQuery {
     }
 }
 
-enum BookmarkIntentMapping {
+nonisolated enum BookmarkIntentMapping {
     static func entities(from bookmarks: [Bookmark]) -> [BookmarkEntity] {
         bookmarks.filter(\.isTripBookmark).map {
             BookmarkEntity(id: $0.id, name: $0.name)
@@ -72,7 +73,12 @@ enum BookmarkIntentMapping {
     }
 }
 
-struct OBAAppShortcuts: AppShortcutsProvider {
+/// Exports this module's App Intents so the app target can include them.
+/// Without an `AppIntentsPackage` chain, `appintentsmetadataprocessor` never
+/// indexes intents compiled into OBAKit, and Shortcuts would not see Track.
+nonisolated public struct OBAKitAppIntentsPackage: AppIntentsPackage {}
+
+nonisolated struct OBAAppShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
         AppShortcut(
             intent: TrackBookmarkIntent(),

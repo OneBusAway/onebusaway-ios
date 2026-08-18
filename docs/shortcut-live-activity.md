@@ -13,6 +13,10 @@ and the only user-curated list of those is **trip bookmarks**.
 3. Once that bookmark's arrivals are in, the existing Track path starts (or
    promotes) the Live Activity. No `Activity` is captured into a `Task`.
 
+Intents live in OBAKit. The app target includes them through
+`OBAAppIntentsPackage` → `OBAKitAppIntentsPackage`. Without that chain,
+Shortcuts never sees Track.
+
 Whole-stop bookmarks are omitted from the intent's entity query: they have no
 single route to Track. Arbitrary stop IDs that are not bookmarked are out of
 scope for this change.

@@ -14,6 +14,10 @@ import Testing
 @Suite(.serialized)
 final class BookmarkIntentMappingTests: OBATestCase {
 
+    override init() async throws {
+        try await super.init()
+    }
+
     /// Whole-stop bookmarks have no single route to Track. Including them in
     /// the Shortcut entity query would offer a start path that cannot build
     /// `TripAttributes.StaticData`. Filter them out and this still fails.
