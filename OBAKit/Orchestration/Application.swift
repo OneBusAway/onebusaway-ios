@@ -526,6 +526,8 @@ public class Application: CoreApplication, PushServiceDelegate {
 
         drainPendingUIPresentations()
 
+        revealBookmarksTabIfLiveActivityShortcutPending()
+
         if let region = regionsService.currentRegion, let analytics {
             analytics.updateServer?(region: region)
         }
@@ -539,6 +541,7 @@ public class Application: CoreApplication, PushServiceDelegate {
     /// otherwise wait for the next foreground cycle. This is the deterministic drain point.
     @MainActor @objc public func rootUserInterfaceDidLoad() {
         drainPendingUIPresentations()
+        revealBookmarksTabIfLiveActivityShortcutPending()
     }
 
     /// True while the onboarding flow is installed as the window's root — deferred
@@ -590,6 +593,17 @@ public class Application: CoreApplication, PushServiceDelegate {
             topViewController.present(alertController, animated: true)
             presentAddRegionAlertOnActive = false
         }
+    }
+
+    /// A Track Bookmark Shortcut queued a Live Activity. Select the Bookmarks
+    /// tab so `BookmarksViewController` loads (it is lazy until first shown)
+    /// and can start the activity on the existing Track path once arrivals
+    /// arrive. Does not consume the pending id — that is the VC's job.
+    @MainActor
+    private func revealBookmarksTabIfLiveActivityShortcutPending() {
+        guard !isOnboardingRoot else { return }
+        guard LiveActivityShortcutRequest.peek(userDefaults: userDefaults) != nil else { return }
+        (viewRouter.rootController as? UITabBarController)?.selectedIndex = SelectedTab.bookmarks.rawValue
     }
 
     @objc public func applicationWillResignActive(_ application: UIApplication) {

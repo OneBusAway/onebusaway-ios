@@ -71,6 +71,7 @@ class BookmarksViewController: UIHostingController<BookmarksRootView>,
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         viewModel.start()
+        consumePendingLiveActivityShortcut()
 
         application.notificationCenter.addObserver(self, selector: #selector(applicationEnteredBackground), name: UIApplication.didEnterBackgroundNotification, object: nil)
         application.notificationCenter.addObserver(self, selector: #selector(applicationWillEnterForeground), name: UIApplication.willEnterForegroundNotification, object: nil)
@@ -196,6 +197,26 @@ class BookmarksViewController: UIHostingController<BookmarksRootView>,
 
     // MARK: - Live Activity Management
 
+    /// Starts a Live Activity queued by the Track Bookmark Shortcut (#1222).
+    /// Waits until arrivals for that stop have loaded so we reuse the Track
+    /// path instead of hitting its empty-data error. Peek until arrivals are
+    /// in; clear only when starting or when the request cannot succeed.
+    func consumePendingLiveActivityShortcut() {
+        guard let id = LiveActivityShortcutRequest.peek(userDefaults: application.userDefaults) else { return }
+        guard let bookmark = application.userDataStore.findBookmark(id: id) else {
+            _ = LiveActivityShortcutRequest.take(userDefaults: application.userDefaults)
+            return
+        }
+
+        guard viewModel.hasFetchedArrivals(for: bookmark) else { return }
+
+        _ = LiveActivityShortcutRequest.take(userDefaults: application.userDefaults)
+        let arrivals = viewModel.arrivalDepartures(for: bookmark)
+        if bookmarkActions.startLiveActivity(for: bookmark, arrivalDepartures: arrivals) == .failed {
+            showLiveActivityErrorAlert()
+        }
+    }
+
     func updateRunningLiveActivities() {
         let activities = Activity<TripAttributes>.activities
         for activity in activities {
@@ -258,6 +279,7 @@ class BookmarksViewController: UIHostingController<BookmarksRootView>,
 
     @objc private func applicationWillEnterForeground() {
         viewModel.start()
+        consumePendingLiveActivityShortcut()
     }
 
     // MARK: - Bookmark Groups
@@ -301,6 +323,7 @@ private extension BookmarksViewController {
         viewModel.didUpdate
             .sink { [weak self] _ in
                 self?.updateRunningLiveActivities()
+                self?.consumePendingLiveActivityShortcut()
             }
             .store(in: &cancellables)
 
