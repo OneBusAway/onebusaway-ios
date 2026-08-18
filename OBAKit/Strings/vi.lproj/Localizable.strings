@@ -841,7 +841,7 @@
 "report_problem_controller.stop_problem.header" = "Sự cố với điểm dừng";
 
 /* A table header in the 'Report Problem' view controller. */
-"report_problem_controller.vehicle_problem.header" = "Sự cố với phương tiện tại điểm dừng";
+"report_problem_controller.trip_problem.header" = "Sự cố với chuyến đi";
 
 /* Error when location is unavailable in the route picker. */
 "route_picker.error_no_location" = "Không có thông tin vị trí. Vui lòng bật dịch vụ định vị để tìm các tuyến lân cận.";

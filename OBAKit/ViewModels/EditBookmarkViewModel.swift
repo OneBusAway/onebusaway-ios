@@ -27,10 +27,20 @@ enum BookmarkSource {
     }
 }
 
+/// Outcome of validating a save. New vs existing is a separate case so a
+/// `(bookmark, isNew)` pair can never disagree (#1145).
 enum SaveOutcome {
     case regionUnavailable
-    case readyToSave(Bookmark, isNew: Bool)
+    case readyToSaveNew(Bookmark)
+    case readyToSaveExisting(Bookmark)
     case duplicateRequiresConfirmation(Bookmark)
+}
+
+/// User response to the duplicate-bookmark alert. Cancel must not persist or
+/// fire analytics (#1145 / #1138).
+enum DuplicateBookmarkDecision {
+    case cancelled
+    case createDuplicate(Bookmark)
 }
 
 /// Shared ViewModel for creating and editing a single bookmark.
@@ -112,10 +122,9 @@ final class EditBookmarkViewModel {
     /// Validates that a region is available and, in add mode, builds the `Bookmark`
     /// and checks for duplicates against the data store.
     ///
-    /// Does NOT mutate the existing bookmark or write to the data store. The form
-    /// values (`name`, `isFavorite`) are applied to the bookmark inside
-    /// `persist(_:name:isFavorite:to:isNewBookmark:)`.
-    func prepareToSave(name: String, isFavorite: Bool) -> SaveOutcome {
+    /// Does NOT mutate the existing bookmark or write to the data store. The
+    /// `name` form value is applied inside `persist`.
+    func prepareToSave(name: String) -> SaveOutcome {
         guard let region = application.currentRegion else { return .regionUnavailable }
 
         switch mode {
@@ -131,22 +140,52 @@ final class EditBookmarkViewModel {
             if application.userDataStore.checkForDuplicates(bookmark: bookmark) {
                 return .duplicateRequiresConfirmation(bookmark)
             }
-            return .readyToSave(bookmark, isNew: true)
+            return .readyToSaveNew(bookmark)
         case .edit(let bookmark):
-            return .readyToSave(bookmark, isNew: false)
+            return .readyToSaveExisting(bookmark)
         }
     }
 
-    /// Applies the form values to `bookmark`, saves it to the data store, and
-    /// reports analytics for new trip bookmarks.
-    func persist(_ bookmark: Bookmark, name: String, isFavorite: Bool, to groupID: UUID?, isNewBookmark: Bool) {
+    /// Applies the form values to `bookmark`, saves it, and reports analytics for
+    /// new trip bookmarks. Prefer the typed `SaveOutcome` / `DuplicateBookmarkDecision`
+    /// helpers so callers can't pass a mismatched new/existing flag.
+    func persistNew(_ bookmark: Bookmark, name: String, isFavorite: Bool, to groupID: UUID?) {
+        persist(bookmark, name: name, isFavorite: isFavorite, to: groupID, reportAddAnalytics: true)
+    }
+
+    func persistExisting(_ bookmark: Bookmark, name: String, isFavorite: Bool, to groupID: UUID?) {
+        persist(bookmark, name: name, isFavorite: isFavorite, to: groupID, reportAddAnalytics: false)
+    }
+
+    /// Handles the duplicate alert. Cancel is a no-op (no store write, no analytics).
+    func resolveDuplicate(
+        _ decision: DuplicateBookmarkDecision,
+        name: String,
+        isFavorite: Bool,
+        to groupID: UUID?
+    ) {
+        switch decision {
+        case .cancelled:
+            return
+        case .createDuplicate(let bookmark):
+            persistNew(bookmark, name: name, isFavorite: isFavorite, to: groupID)
+        }
+    }
+
+    private func persist(
+        _ bookmark: Bookmark,
+        name: String,
+        isFavorite: Bool,
+        to groupID: UUID?,
+        reportAddAnalytics: Bool
+    ) {
         bookmark.name = resolveName(name)
         bookmark.isFavorite = isFavorite
 
         let group = groupID.flatMap { application.userDataStore.findGroup(id: $0) }
         application.userDataStore.add(bookmark, to: group)
 
-        if isNewBookmark, case .arrivalDeparture(let ad) = source {
+        if reportAddAnalytics, case .arrivalDeparture(let ad) = source {
             let value = AnalyticsLabels.addRemoveBookmarkValue(
                 routeID: ad.routeID,
                 headsign: ad.tripHeadsign,

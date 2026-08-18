@@ -1,0 +1,20 @@
+# Copy to Apps/OneBusAway/local.yml (gitignored) and adjust for your Apple team.
+# Regenerated into the Xcode project via `scripts/setup` / `scripts/generate_project`.
+#
+# `scripts/generate_project` copies DEVELOPMENT_TEAM into the generated
+# project, so this file is authoritative for local signing.
+#
+# PRODUCT_BUNDLE_IDENTIFIER is intentionally not supported here. A working
+# personal bundle ID also needs matching app groups, associated domains,
+# Apple Pay, URL-scheme, and user-activity identifiers; create a complete
+# white-label configuration before changing those.
+
+targets:
+  App:
+    settings:
+      base:
+        DEVELOPMENT_TEAM: YOUR_TEAM_ID
+  OBAWidget:
+    settings:
+      base:
+        DEVELOPMENT_TEAM: YOUR_TEAM_ID

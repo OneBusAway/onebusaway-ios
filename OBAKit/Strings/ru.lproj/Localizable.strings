@@ -841,7 +841,7 @@
 "report_problem_controller.stop_problem.header" = "Проблема с остановкой";
 
 /* A table header in the 'Report Problem' view controller. */
-"report_problem_controller.vehicle_problem.header" = "Проблема с транспортом на остановке";
+"report_problem_controller.trip_problem.header" = "Проблема с рейсом";
 
 /* Error when location is unavailable in the route picker. */
 "route_picker.error_no_location" = "Геопозиция недоступна. Включите службы геолокации, чтобы найти маршруты поблизости.";

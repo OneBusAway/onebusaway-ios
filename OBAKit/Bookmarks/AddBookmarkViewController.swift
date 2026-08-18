@@ -107,8 +107,10 @@ class AddBookmarkViewController: TaskController<[ArrivalDeparture]>, OBAListView
 
     // MARK: - Data and UI
     override func loadData() async throws -> [ArrivalDeparture] {
-        // An empty `preloadedArrivals` array deliberately short-circuits the fetch
-        // and surfaces the "no upcoming departures" view; pass `nil` to fetch fresh.
+        // An empty `preloadedArrivals` array deliberately short-circuits the fetch.
+        // There is no dedicated empty-state screen: the trip section shows the
+        // inline "route bookmarks unavailable" explanation while the whole-stop
+        // bookmark row remains. Pass `nil` to fetch fresh arrivals.
         if let preloadedArrivals {
             return preloadedArrivals
         }
