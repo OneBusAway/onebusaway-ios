@@ -417,7 +417,10 @@ final class UserDefaultsStore_BookmarksTests: OBATestCase {
 
 /// Counts `UserDataStore.bookmarks` encodes. Subclassing `UserDefaults` is the
 /// seam: `Bookmark` is a production type and should not grow test-only hooks.
-private final class BookmarkWriteCountingDefaults: UserDefaults {
+///
+/// `nonisolated` because OBAKitTests defaults to `@MainActor` and
+/// `UserDefaults.set(_:forKey:)` / `init(suiteName:)` are not.
+nonisolated private final class BookmarkWriteCountingDefaults: UserDefaults {
     var bookmarkWrites = 0
 
     override func set(_ value: Any?, forKey defaultName: String) {
