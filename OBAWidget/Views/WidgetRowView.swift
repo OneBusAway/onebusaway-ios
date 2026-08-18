@@ -90,8 +90,10 @@ struct WidgetRowView: View {
                         Spacer()
                         Text(formatters.shortFormattedTime(until: departure))
                             .font(.system(size: Constants.fontSize, weight: .bold))
-                            .foregroundStyle(Color(formatters.backgroundColorForScheduleStatus(departure.scheduleStatus)))
+                            .foregroundStyle(Color(formatters.colorForScheduleStatus(departure.scheduleStatus)))
                     }
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("\(departure.routeAndHeadsign), \(formatters.explanation(from: departure))")
                 }
             } else {
                 Text(fallbackLabel)
