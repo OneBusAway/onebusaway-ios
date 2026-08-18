@@ -1017,6 +1017,12 @@
 /* Settings section title for controlling which arrivals/departures are shown */
 "settings_controller.arrival_display_section.title" = "Display ng Pagdating at Pag-alis";
 
+/* Settings > Arrival Display > Toggle that shows the Arriving at XX:XX via route banner when opening a stop from a trip */
+"settings_controller.arrival_display_section.transfer_banner" = "Ipakita ang banner ng pagdating sa transfer";
+
+/* Settings > Arrival Display > Footer explaining the transfer arrival banner toggle */
+"settings_controller.arrival_display_section.transfer_banner.footer" = "Kapag magbubukas ng hintuan mula sa biyahe, relative sa pagdating mo ang oras. I-off para sa orasan at lahat ng alis.";
+
 /* Title for the departure filter selection alert */
 "settings_controller.arrival_filter.selector_title" = "Ipakita ang mga Pag-alis";
 

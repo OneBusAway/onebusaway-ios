@@ -41,6 +41,11 @@ public protocol UserDataStore: NSObjectProtocol {
     /// Settings > Accessibility.
     var stopUIReducedColors: Bool { get set }
 
+    /// Whether opening a stop from a trip applies transfer-relative times
+    /// and the "Arriving at XX:XX via ###" banner. Default `true` so existing
+    /// riders keep current behavior; Settings > Arrival Display can turn it off.
+    var showTransferArrivalBanner: Bool { get set }
+
     // MARK: - Bookmark Groups
 
     /// Retrieves a list of `BookmarkGroup` objects.
@@ -332,6 +337,16 @@ public protocol UserDataStore: NSObjectProtocol {
 
 }
 
+extension UserDataStore {
+    /// Drops `context` when the rider has turned the transfer banner off, so
+    /// the stop page shows ordinary clock times and the full departure list.
+    /// Lives on the protocol extension rather than the `@objc` protocol:
+    /// `TransferContext` is a Swift struct and cannot appear in an ObjC requirement.
+    public func displayedTransferContext(_ context: TransferContext?) -> TransferContext? {
+        showTransferArrivalBanner ? context : nil
+    }
+}
+
 // MARK: - Survey Tracking Data Models
 
 /// Represents a completed survey entry
@@ -426,6 +441,7 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         static let walkingSpeedSource = "UserDataStore.walkingSpeedSource"
         static let defaultAlarmLeadTimeMinutes = "UserDataStore.defaultAlarmLeadTimeMinutes"
         static let stopUIReducedColors = UserDefaultsStore.stopUIReducedColorsKey
+        static let showTransferArrivalBanner = UserDefaultsStore.showTransferArrivalBannerKey
     }
 
     /// The defaults key backing `stopUIReducedColors`, public so the stop
@@ -436,12 +452,17 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
     /// docs/superpowers/specs/2026-07-20-stop-ui-accessibility-design.md §3.
     public static let stopUIReducedColorsKey = "stopUIReducedColors"
 
+    /// Defaults key for `showTransferArrivalBanner`. Dot-free so a future
+    /// `@AppStorage` reader can observe it; see `stopUIReducedColorsKey`.
+    public static let showTransferArrivalBannerKey = "showTransferArrivalBanner"
+
     public init(userDefaults: UserDefaults) {
         self.userDefaults = userDefaults
 
         self.userDefaults.register(defaults: [
             UserDefaultsKeys.debugMode: false,
             UserDefaultsKeys.stopUIReducedColors: false,
+            UserDefaultsKeys.showTransferArrivalBanner: true,
             UserDefaultsKeys.walkingSpeedMetersPerSecond: WalkingSpeed.defaultMetersPerSecond,
             UserDefaultsKeys.walkingSpeedSource: WalkingSpeedSource.manual.rawValue
         ])
@@ -470,6 +491,17 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         }
         set {
             userDefaults.set(newValue, forKey: UserDefaultsKeys.stopUIReducedColors)
+        }
+    }
+
+    // MARK: - Transfer Arrival Banner
+
+    public var showTransferArrivalBanner: Bool {
+        get {
+            return userDefaults.bool(forKey: UserDefaultsKeys.showTransferArrivalBanner)
+        }
+        set {
+            userDefaults.set(newValue, forKey: UserDefaultsKeys.showTransferArrivalBanner)
         }
     }
 

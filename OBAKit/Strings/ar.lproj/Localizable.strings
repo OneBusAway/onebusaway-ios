@@ -1017,6 +1017,12 @@
 /* Settings section title for controlling which arrivals/departures are shown */
 "settings_controller.arrival_display_section.title" = "عرض الوصول والمغادرة";
 
+/* Settings > Arrival Display > Toggle that shows the Arriving at XX:XX via route banner when opening a stop from a trip */
+"settings_controller.arrival_display_section.transfer_banner" = "إظهار شريط وصول التحويلة";
+
+/* Settings > Arrival Display > Footer explaining the transfer arrival banner toggle */
+"settings_controller.arrival_display_section.transfer_banner.footer" = "عند فتح محطة من رحلة تُعرض الأوقات نسبة إلى وصولك. أوقف الخيار لرؤية الساعة وكل المغادرات.";
+
 /* Title for the departure filter selection alert */
 "settings_controller.arrival_filter.selector_title" = "إظهار المغادرات";
 
