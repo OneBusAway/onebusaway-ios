@@ -963,6 +963,9 @@
 /* Directs the user to tap on the link that comes at the end of the string. Learn more: <HYPERLINK IS INSERTED HERE> */
 "service_alert_controller.learn_more_fmt" = "더 알아보기: %@";
 
+/* 설정 > 손쉬운 사용 > 새 정류장 및 여행 화면 간격을 좁힙니다 */
+"settings_controller.accessibility_section.compact_stop_trip" = "정류장·여행 화면 압축";
+
 /* Settings > Accessibility section > Always show full sheet on Voiceover */
 "settings_controller.accessibility_section.default_full_sheet_voiceover" = "VoiceOver 사용 시 항상 전체 시트 표시";
 

@@ -963,6 +963,9 @@
 /* Directs the user to tap on the link that comes at the end of the string. Learn more: <HYPERLINK IS INSERTED HERE> */
 "service_alert_controller.learn_more_fmt" = "معرفة المزيد: %@";
 
+/* الإعدادات > تسهيلات الاستخدام > تضييق المسافات في شاشات المحطة والرحلة الجديدة */
+"settings_controller.accessibility_section.compact_stop_trip" = "صفحات محطة ورحلة مضغوطة";
+
 /* Settings > Accessibility section > Always show full sheet on Voiceover */
 "settings_controller.accessibility_section.default_full_sheet_voiceover" = "إظهار اللوحة الكاملة دائمًا عند تشغيل VoiceOver";
 

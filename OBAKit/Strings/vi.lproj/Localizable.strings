@@ -963,6 +963,9 @@
 /* Directs the user to tap on the link that comes at the end of the string. Learn more: <HYPERLINK IS INSERTED HERE> */
 "service_alert_controller.learn_more_fmt" = "Tìm hiểu thêm: %@";
 
+/* Cài đặt > Trợ năng > Thu hẹp khoảng cách trên màn hình điểm dừng và chuyến mới */
+"settings_controller.accessibility_section.compact_stop_trip" = "Trang dừng và chuyến gọn";
+
 /* Settings > Accessibility section > Always show full sheet on Voiceover */
 "settings_controller.accessibility_section.default_full_sheet_voiceover" = "Luôn hiển thị bảng đầy đủ khi bật VoiceOver";
 

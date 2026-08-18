@@ -37,6 +37,7 @@ struct DepartureRowView: View {
     @Environment(\.obaFormatters) private var formatters
     @ScaledMetric(relativeTo: .body) private var alarmCircleSize: CGFloat = 34
     @AppStorage(UserDefaultsStore.stopUIReducedColorsKey) private var reducedColors = false
+    @AppStorage(UserDefaultsStore.stopTripCompactModeKey) private var compactMode = false
 
     private var dimmed: Bool { style == .past }
 
@@ -51,7 +52,7 @@ struct DepartureRowView: View {
         // fast path holds. At accessibility sizes the row "stacks" (the guide's
         // committed layout): badge + countdown share the first line as glance
         // tokens, destination + status flow below — nothing is dropped.
-        VStack(alignment: .leading, spacing: 3) {
+        VStack(alignment: .leading, spacing: StopTripSpacing.stack(compactMode)) {
             if dynamicTypeSize.isAccessibilitySize {
                 HStack(alignment: .center) {
                     routeBadge
@@ -66,9 +67,9 @@ struct DepartureRowView: View {
                 statusText
                 occupancyBadge
             } else {
-                HStack(alignment: .center, spacing: 13) {
+                HStack(alignment: .center, spacing: StopTripSpacing.hStack(compactMode)) {
                     routeBadge
-                    VStack(alignment: .leading, spacing: 3) {
+                    VStack(alignment: .leading, spacing: StopTripSpacing.stack(compactMode)) {
                         headsignText
                         HStack(spacing: 6) {
                             DepartureTimeText(display: timeDisplay)

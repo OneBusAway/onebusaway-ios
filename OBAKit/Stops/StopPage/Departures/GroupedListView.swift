@@ -40,6 +40,7 @@ struct GroupedListView: View {
     @Environment(\.obaFormatters) private var formatters
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @AppStorage(UserDefaultsStore.stopUIReducedColorsKey) private var reducedColors = false
+    @AppStorage(UserDefaultsStore.stopTripCompactModeKey) private var compactMode = false
 
     /// At accessibility sizes the card layouts "stack" (the guide's committed
     /// layout): badge + countdown become glance tokens on the first line and
@@ -80,7 +81,7 @@ struct GroupedListView: View {
         let routeColor = Color(uiColor: next.route.color ?? ThemeColors.shared.brand)
         let alarm = alarmLookup(next)
 
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: StopTripSpacing.card(compactMode)) {
             headerPrimaryRow(next: next, status: status, routeColor: routeColor)
             headerChipsRow(group)
         }
@@ -121,7 +122,7 @@ struct GroupedListView: View {
     /// At accessibility sizes the badge and countdown become glance tokens on
     /// the first line, with the headsign and time/status stacked below.
     private func headerPrimaryRow(next: ArrivalDeparture, status: DepartureStatus, routeColor: Color) -> some View {
-        VStack(alignment: .leading, spacing: 3) {
+        VStack(alignment: .leading, spacing: StopTripSpacing.stack(compactMode)) {
             if isAccessibilitySize {
                 HStack(alignment: .center) {
                     routeBadge(for: next, routeColor: routeColor)
@@ -135,9 +136,9 @@ struct GroupedListView: View {
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(Color(uiColor: status.color))
             } else {
-                HStack(alignment: .center, spacing: 13) {
+                HStack(alignment: .center, spacing: StopTripSpacing.hStack(compactMode)) {
                     routeBadge(for: next, routeColor: routeColor)
-                    VStack(alignment: .leading, spacing: 3) {
+                    VStack(alignment: .leading, spacing: StopTripSpacing.stack(compactMode)) {
                         headsignText(next)
                         HStack(spacing: 6) {
                             DepartureTimeText(display: timeDisplay(next))
