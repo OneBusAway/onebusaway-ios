@@ -8,16 +8,17 @@
 //
 
 import Foundation
+import Synchronization
 
 public enum DecodingErrorReporter {
 
-    private static let lock = NSLock()
-    // nonisolated(unsafe): every access goes through `lock` via the computed property below.
-    nonisolated(unsafe) private static var _reportHandler: (@Sendable (_ error: DecodingError, _ url: URL, _ httpMethod: String, _ message: String) -> Void)?
+    // Mutex is compiler-checked. The previous `nonisolated(unsafe)` + `NSLock`
+    // pair encoded the same exclusive-access invariant by comment only (#1198).
+    private static let handler = Mutex<(@Sendable (_ error: DecodingError, _ url: URL, _ httpMethod: String, _ message: String) -> Void)?>(nil)
 
     public static var reportHandler: (@Sendable (_ error: DecodingError, _ url: URL, _ httpMethod: String, _ message: String) -> Void)? {
-        get { lock.withLock { _reportHandler } }
-        set { lock.withLock { _reportHandler = newValue } }
+        get { handler.withLock { $0 } }
+        set { handler.withLock { $0 = newValue } }
     }
 
     public static func message(from error: DecodingError) -> String {

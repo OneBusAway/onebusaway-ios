@@ -50,7 +50,7 @@ public final class ArrivalDeparture: NSObject, Identifiable, Decodable, HasRefer
     public let routeID: RouteID
 
     /// the route for the arriving vehicle
-    public var route: Route!
+    public private(set) var route: Route!
 
     /// the route long name that potentially overrides the route long name in the referenced `Route` element
     private let _routeLongName: String?
@@ -79,7 +79,7 @@ public final class ArrivalDeparture: NSObject, Identifiable, Decodable, HasRefer
     public let stopID: StopID
 
     /// The stop the vehicle is arriving at
-    public var stop: Stop!
+    public private(set) var stop: Stop!
 
     /// The index of the stop into the sequence of stops that make up the trip for this arrival
     public let stopSequence: Int
@@ -94,7 +94,7 @@ public final class ArrivalDeparture: NSObject, Identifiable, Decodable, HasRefer
     public let tripID: TripIdentifier
 
     /// The Trip for the arriving vehicle
-    public var trip: Trip!
+    public private(set) var trip: Trip!
 
     /// Trip-specific status for the arriving transit vehicle
     public let tripStatus: TripStatus?
