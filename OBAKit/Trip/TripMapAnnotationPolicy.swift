@@ -18,13 +18,8 @@ import MapKit
 /// via `TripViewController.skipNextStopTimeHighlight` so opening a trip from a
 /// departure does not immediately push that stop back on top of the trip.
 enum TripMapAnnotationPolicy {
-    static let showsStopCallout = false
-
     static func apply(to view: MinimalStopAnnotationView) {
-        view.canShowCallout = showsStopCallout
-
-        guard !showsStopCallout else { return }
-
+        view.canShowCallout = false
         view.rightCalloutAccessoryView = nil
         view.detailCalloutAccessoryView = nil
     }

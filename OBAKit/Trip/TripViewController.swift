@@ -343,28 +343,8 @@ class TripViewController: UIViewController,
         defer { skipNextStopTimeHighlight = false }
         guard !skipNextStopTimeHighlight else { return }
 
-        func highlightStopInList() {
-            self.tripDetailsController.highlightStopInList(stopTime.stop)
-        }
-
-        // Callouts are off on this map. A rider tap opens the stop — the same
-        // gesture StopAnnotationView uses when `canShowCallout` is false —
-        // and still highlights the matching list row so the two surfaces agree.
-        guard view.canShowCallout else {
-            highlightStopInList()
-            openStop(stopTime)
-            return
-        }
-
-        if self.mapView.hasBeenTouched {
-            highlightStopInList()
-        } else {
-            if traitCollection.horizontalSizeClass == .regular {
-                floatingPanel.move(to: .full, animated: true, completion: highlightStopInList)
-            } else {
-                floatingPanel.move(to: .half, animated: true, completion: highlightStopInList)
-            }
-        }
+        tripDetailsController.highlightStopInList(stopTime.stop)
+        openStop(stopTime)
     }
 
     public func mapView(_ mapView: MKMapView, didDeselect view: MKAnnotationView) {
@@ -472,6 +452,20 @@ class TripViewController: UIViewController,
         }
     }
     private var isFirstStopTimeLoad = true
+
+    /// Auto-selects the rider's origin stop when trip details load. Arms the
+    /// skip flag only on the first load: `tripDetails` republishes every 30s
+    /// with a value-equal `TripStopTime`, so arming on every emission left the
+    /// flag stuck and swallowed the next pin tap.
+    func applyOriginStopSelection(from details: TripDetails) {
+        guard let arrivalDeparture = tripConvertible.arrivalDeparture else { return }
+        if isFirstStopTimeLoad {
+            skipNextStopTimeHighlight = true
+        } else {
+            skipNextStopTimeHighlight = false
+        }
+        selectedStopTime = details.stopTimes.filter { $0.stopID == arrivalDeparture.stopID }.first
+    }
 }
 
 // MARK: - ViewModel Binding
@@ -501,10 +495,7 @@ private extension TripViewController {
                     mapView.showAnnotations(annotationsToShow, animated: true)
                 }
 
-                if let arrivalDeparture = tripConvertible.arrivalDeparture {
-                    skipNextStopTimeHighlight = true
-                    selectedStopTime = details.stopTimes.filter { $0.stopID == arrivalDeparture.stopID }.first
-                }
+                applyOriginStopSelection(from: details)
             }
             .store(in: &cancellables)
     }
