@@ -110,4 +110,34 @@ final class TripMapAnnotationPolicyTests: OBATestCase {
 
         #expect(nav.viewControllers.count == 2)
     }
+
+    /// `$tripDetails` republishes every 30s. Arming skip on every emission left
+    /// the flag stuck (value-equal `TripStopTime` skips `didSelect`). A refresh
+    /// must clear a leaked arm so the next pin tap still opens the stop.
+    ///
+    /// Uses a referenced `ArrivalDeparture` because the post-refresh tap path
+    /// hits `openStop`. Do not load `controller.view`.
+    @Test @MainActor
+    func `Origin selection arms skip only on first load`() throws {
+        let stopArrivals = try Fixtures.loadRESTAPIPayload(
+            type: StopArrivals.self,
+            fileName: "arrivals-and-departures-for-stop-1_10914.json"
+        )
+        let arrivalDeparture = try #require(stopArrivals.arrivalsAndDepartures.first)
+        let controller = makeController(arrivalDeparture: arrivalDeparture)
+        let nav = UINavigationController(rootViewController: controller)
+        let details = try loadTripDetails()
+
+        controller.applyOriginStopSelection(from: details)
+        #expect(controller.skipNextStopTimeHighlight)
+
+        controller.applyOriginStopSelection(from: details)
+        #expect(!controller.skipNextStopTimeHighlight)
+
+        let stopTime = try #require(details.stopTimes.first)
+        let annotationView = MinimalStopAnnotationView(annotation: stopTime, reuseIdentifier: "test")
+        controller.mapView(MKMapView(), didSelect: annotationView)
+
+        #expect(nav.viewControllers.count == 2)
+    }
 }
