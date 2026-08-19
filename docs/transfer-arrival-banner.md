@@ -19,6 +19,7 @@ protocol extension — `TransferContext` cannot appear on the `@objc` protocol)
 returns `nil` and `StopViewController` renders the stop as a normal stop:
 wall-clock times, walk-time row, full departure list.
 
-The new stop page still does not implement transfer UX
-(`Router.makeStopController` sends transfers to the legacy screen). This
-toggle only affects that legacy path.
+The new stop page still does not implement transfer UX. With the toggle **on**,
+`Router.makeStopController` sends a real transfer to the legacy screen. With it
+**off**, `displayedTransferContext` is nil at the routing boundary too, so a
+trip→stop tap uses the new stop page like any other stop.

@@ -1020,8 +1020,8 @@
 /* Settings > Arrival Display > Toggle that shows the Arriving at XX:XX via route banner when opening a stop from a trip */
 "settings_controller.arrival_display_section.transfer_banner" = "Pokaż baner przyjazdu przy przesiadce";
 
-/* Settings > Arrival Display > Footer explaining the transfer arrival banner toggle */
-"settings_controller.arrival_display_section.transfer_banner.footer" = "Po otwarciu przystanku z kursu czasy są względne wobec Twojego przyjazdu. Wyłącz, aby zobaczyć zegar i wszystkie odjazdy.";
+/* Settings > Arrival Display > Footer for the Show transfer arrival banner switch only, not the Show Departures filter */
+"settings_controller.arrival_display_section.transfer_banner.footer" = "Pokaż baner przyjazdu przesiadki: gdy włączony, otwarcie przystanku z kursu pokazuje czasy względem Twojego przyjazdu. Wyłącz ten przełącznik, aby zobaczyć zegar i wszystkie odjazdy.";
 
 /* Title for the departure filter selection alert */
 "settings_controller.arrival_filter.selector_title" = "Pokazuj odjazdy";

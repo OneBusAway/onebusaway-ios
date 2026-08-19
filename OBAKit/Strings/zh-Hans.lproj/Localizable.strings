@@ -1020,8 +1020,8 @@
 /* Settings > Arrival Display > Toggle that shows the Arriving at XX:XX via route banner when opening a stop from a trip */
 "settings_controller.arrival_display_section.transfer_banner" = "显示换乘到达横幅";
 
-/* Settings > Arrival Display > Footer explaining the transfer arrival banner toggle */
-"settings_controller.arrival_display_section.transfer_banner.footer" = "从行程打开车站时，时间相对你到达该站显示。关闭后将显示时钟时间和全部出发班次。";
+/* Settings > Arrival Display > Footer for the Show transfer arrival banner switch only, not the Show Departures filter */
+"settings_controller.arrival_display_section.transfer_banner.footer" = "显示换乘到达横幅：开启后，从行程打开车站时时间相对你到达该站显示。关闭该开关将显示时钟时间和全部出发班次。";
 
 /* Title for the departure filter selection alert */
 "settings_controller.arrival_filter.selector_title" = "显示班次";
