@@ -126,6 +126,11 @@ struct StopPageToolbar: View {
                     filtered: true
                 )
             } label: {
+                // Route filter only. Unlike the pushed presentation — where this
+                // glyph sits on the bar button that *contains* both filters, and so
+                // fills for either — here the two are sibling submenus. Filling this
+                // one for a Departure Type change would point at the wrong filter,
+                // so each submenu carries its own state instead.
                 Label(
                     Strings.filter,
                     systemImage: isFilterOn ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle"
@@ -149,7 +154,7 @@ struct StopPageToolbar: View {
             } label: {
                 Label(
                     OBALoc("stop_controller.arrival_filter.menu_title", value: "Departure Type", comment: "Title for the menu that filters departures by data type"),
-                    systemImage: "antenna.radiowaves.left.and.right"
+                    systemImage: Icons.departureTypeSymbolName(isActive: activeDepartureFilter != .all)
                 )
             }
 

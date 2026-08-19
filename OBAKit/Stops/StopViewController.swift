@@ -348,11 +348,12 @@ public class StopViewController: UIViewController,
         var children = [showAll]
 
         if stop.routes.count > 1 {
-            if viewModel.isListFiltered && viewModel.stopPreferences.hasHiddenRoutes {
-                showFiltered.image = UIImage(systemName: "checkmark")
-            } else {
-                showAll.image = UIImage(systemName: "checkmark")
-            }
+            // `state`, not a checkmark image: it draws the same checkmark but is
+            // also what VoiceOver reads as "selected". An image is decoration the
+            // accessibility layer never announces.
+            let routesAreFiltered = viewModel.isListFiltered && viewModel.stopPreferences.hasHiddenRoutes
+            showFiltered.state = routesAreFiltered ? .on : .off
+            showAll.state = routesAreFiltered ? .off : .on
 
             children.append(showFiltered)
         }
@@ -435,10 +436,8 @@ public class StopViewController: UIViewController,
             self.viewModel.updateSortType(.route)
         }
 
-        switch currentSort {
-        case .time:  sortByTime.image =  Icons.checkmark
-        case .route: sortByRoute.image = Icons.checkmark
-        }
+        sortByTime.state = currentSort == .time ? .on : .off
+        sortByRoute.state = currentSort == .route ? .on : .off
 
         let sortMenuTitle = OBALoc("stop_preferences_controller.sorting_section.header_title", value: "Sort By", comment: "Title of the Sorting section")
         return UIMenu(title: sortMenuTitle, image: Icons.sort, children: [sortByTime, sortByRoute])
@@ -458,12 +457,12 @@ public class StopViewController: UIViewController,
                 self.viewModel.updateArrivalDepartureFilter(filter)
                 self.dataDidReload()
             }
-            if filter == currentFilter { action.image = Icons.checkmark }
+            action.state = filter == currentFilter ? .on : .off
             return action
         }
 
         let menuTitle = OBALoc("stop_controller.arrival_filter.menu_title", value: "Departure Type", comment: "Title for the menu that filters departures by data type")
-        return UIMenu(title: menuTitle, image: Icons.departureType, children: actions)
+        return UIMenu(title: menuTitle, image: Icons.departureType(isActive: currentFilter != .all), children: actions)
     }
 
     fileprivate func helpMenu() -> UIMenu {
@@ -725,14 +724,19 @@ public class StopViewController: UIViewController,
                 sections.append(arrivalFilterNoResultsSection())
             } else {
                 let pastDeps = filtered.filter { $0.arrivalDepartureMinutes < 0 }
-                let upcomingDeps = filtered.filter { $0.arrivalDepartureMinutes >= 0 }
-
                 if !pastDeps.isEmpty {
                     sections.append(sectionForPastDepartures(groupRoute: nil, arrDeps: pastDeps))
                 }
-                // Always append upcoming section (even if empty) to display load more and walk times
-                sections.append(sectionForGroup(groupRoute: nil, arrDeps: upcomingDeps))
             }
+
+            // Always append the upcoming section, even when it is empty and even
+            // behind the filter's empty state, because it carries Load More —
+            // the one control that can resolve a filtered-empty stop, since
+            // widening the window is how a real-time departure appears when the
+            // loaded window holds only scheduled ones. (The walk-time row rides
+            // along here too, but suppresses itself on an empty list.)
+            let upcomingDeps = filtered.filter { $0.arrivalDepartureMinutes >= 0 }
+            sections.append(sectionForGroup(groupRoute: nil, arrDeps: upcomingDeps))
 
         } else {
             let plausible = stopArrivals.arrivalsAndDepartures.filteringImplausibleDates()
