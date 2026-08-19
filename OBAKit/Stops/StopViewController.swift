@@ -240,10 +240,6 @@ public class StopViewController: UIViewController,
 
     private let scheduleTipPresenter = TipPresenter(tip: ScheduleTip())
 
-    // MARK: - Idle Timer
-
-    public var idleTimerFailsafe: Timer?
-
     // MARK: - Options Nudge
     private func showSwipeOptionsNudge(on cell: StopArrivalCell) {
         guard let presentationWindow = view.window else { return }
@@ -1155,10 +1151,6 @@ public class StopViewController: UIViewController,
     func addAlarm(arrivalDeparture: ArrivalDeparture) {
         alarmBuilder = AlarmBuilder(arrivalDeparture: arrivalDeparture, application: application, delegate: self)
         alarmBuilder?.showBulletin(above: self)
-    }
-
-    func alarmBuilderStartedRequest(_ alarmBuilder: AlarmBuilder) {
-        ProgressHUD.show()
     }
 
     func alarmBuilder(_ alarmBuilder: AlarmBuilder, alarmCreated alarm: Alarm) {

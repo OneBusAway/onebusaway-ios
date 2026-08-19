@@ -1238,6 +1238,9 @@
 /* Context menu action opening the full trip screen */
 "stop_page.row.show_trip" = "Show Trip Details";
 
+/* VoiceOver label for the button that returns the stop page's departure list to the top. */
+"stop_page.scroll_to_top" = "Scroll to top";
+
 /* Fallback title for a service alert that has no summary text. */
 "stop_page.service_alert_fallback" = "Service alert";
 

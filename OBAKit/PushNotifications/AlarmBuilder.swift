@@ -11,12 +11,10 @@ import UIKit
 import BLTNBoard
 import OBAKitCore
 
+/// The `AlarmBuilder` shows the loading HUD itself when it begins its request;
+/// the delegate takes ownership of it from the moment either method below is
+/// called, replacing it with a success message or dismissing it on failure.
 protocol AlarmBuilderDelegate: NSObjectProtocol {
-
-    /// Delegate method that gets called when the `AlarmBuilder` begins its request to create an `Alarm`.
-    /// A perfect opportunity to display a loading indicator.
-    /// - Parameter alarmBuilder: The `AlarmBuilder` object.
-    func alarmBuilderStartedRequest(_ alarmBuilder: AlarmBuilder)
 
     /// Delegate method that gets called when the `AlarmBuilder` has successfully created an `Alarm`.
     /// - Parameter alarmBuilder: The `AlarmBuilder` object.
@@ -112,7 +110,17 @@ class AlarmBuilder: NSObject {
 
         defer {
             Task { @MainActor in
-                ProgressHUD.dismiss()
+                // The delegate owns the HUD from here: it shows a self-dismissing
+                // success message on creation, and dismisses on failure.
+                // Dismissing here too would hide "Alarm created" the instant it
+                // appeared — `showSuccessAndDismiss` schedules its own dismissal,
+                // and this ran immediately after it.
+                //
+                // The delegate is weak, so with nobody left to own it, fall back
+                // to dismissing here rather than stranding a spinner on screen.
+                if self.delegate == nil {
+                    ProgressHUD.dismiss()
+                }
                 self.bulletinManager.dismissBulletin(animated: true)
             }
         }
@@ -122,18 +130,19 @@ class AlarmBuilder: NSObject {
         do {
             alarm = try await modelService.postAlarm(minutesBefore: minutes, arrivalDeparture: arrivalDeparture, userPushID: userPushID)
         } catch {
-            self.delegate?.alarmBuilder(self, error: AlarmBuilderErrors.creationFailed)
+            // No actor hop needed: OBAKit builds with
+            // `SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor`, so this type, this
+            // method and `AlarmBuilderDelegate` are all already main-actor
+            // isolated. When the delegate has gone, the `defer` above sees the
+            // same nil and dismisses the HUD itself.
+            delegate?.alarmBuilder(self, error: AlarmBuilderErrors.creationFailed)
             return
         }
 
         alarm.deepLink = ArrivalDepartureDeepLink(arrivalDeparture: self.arrivalDeparture, regionID: currentRegion.regionIdentifier)
         alarm.set(tripDate: self.arrivalDeparture.arrivalDepartureDate, alarmOffset: minutes)
 
-        if let delegate {
-            await MainActor.run {
-                delegate.alarmBuilder(self, alarmCreated: alarm)
-            }
-        }
+        delegate?.alarmBuilder(self, alarmCreated: alarm)
     }
 
     public enum AlarmBuilderErrors: Error {

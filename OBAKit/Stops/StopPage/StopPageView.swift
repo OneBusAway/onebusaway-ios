@@ -151,103 +151,29 @@ struct StopPageView: View {
     }
 
     @State private var expandedRouteID: RouteID?
-    @State private var didSeedMode = false
     /// Set when the user explicitly dismisses the donation card, so it disappears
     /// immediately instead of waiting for the next view-model refresh to re-read
     /// `shouldRequestDonations`.
     @State private var donationHidden = false
     @AppStorage("StopViewController.pastDeparturesCollapsed") private var pastCollapsed = true
 
-    /// Global (not per-stop) "last mode the user picked" seed. A stop the user
-    /// has never customized opens in this mode; touched in exactly two places —
-    /// read in `seedLastUsedModeIfNeeded()`, written in the toggle's `onChange`.
-    private static let lastUsedStopSortKey = "OBALastUsedStopSort"
-
-    /// Leading/trailing inset shared by the page's full-width card rows
-    /// (header, survey, donation), matching the inset-grouped card margin.
-    private static let horizontalRowInset: CGFloat = 0
-
-    /// `true` once any fetch has succeeded (errors don't clear `stopArrivals`).
-    /// Gates the chrome that means nothing before data exists — the mode
-    /// toggle, the donation card, and the Load-more/attribution footer — so
-    /// the first load reads as one deliberate loading page rather than empty
-    /// controls scattered around a spinner.
-    private var hasLoadedArrivals: Bool {
-        viewModel.stopArrivals != nil
-    }
-
-    /// `true` when the empty departures area should show the loading treatment
-    /// rather than an empty state: any in-flight fetch, plus the pre-`.task`
-    /// first frame (nothing fetched, no error yet) so the page never flashes
-    /// "No departures" before the first request has even started.
-    private var showsLoadingState: Bool {
-        viewModel.isLoading || (!hasLoadedArrivals && viewModel.operationError == nil && !viewModel.isBrokenBookmark)
-    }
-
-    /// The departures that survive the route filter, before the Departure Type
-    /// filter and terminal dedup are applied. Kept separate from the fully
-    /// filtered list so the empty state can tell whether the route filter or
-    /// the Departure Type filter emptied the page.
-    private var routeVisibleDepartures: [ArrivalDeparture] {
-        let all = viewModel.stopArrivals?.arrivalsAndDepartures ?? []
-        let visible = viewModel.isListFiltered ? all.filter(preferences: viewModel.stopPreferences) : all
-        // Terminal dedup deliberately runs downstream, after the Departure Type
-        // filter — see the ordering note at the `departures` binding below.
-        return visible.filteringImplausibleDates()
-    }
-
-    private var attributionText: String {
-        guard let stop = viewModel.stop else { return "" }
-        let agencies = Formatters.formattedAgenciesForRoutes(stop.routes)
-        guard !agencies.isEmpty else { return "" }
-        let fmt = OBALoc(
-            "stop_controller.data_attribution_format",
-            value: "Data provided by %@",
-            comment: "A string listing the data providers (agencies) for this stop's data. It contains one or more providers separated by commas. e.g. Data provided by King County Metro, Sound Transit"
-        )
-        return String(format: fmt, agencies)
-    }
-
     var body: some View {
         // Hoist the single computed walk value so the header chip, the
         // chronological partition, and the divider all read one snapshot of it.
         let walkTime = viewModel.walkTime
-        // Route filter, then Departure Type filter, then terminal dedup — the
-        // type filter must run before `filteringTerminalDuplicates()`: dedup
-        // prefers the predicted half of an arrival/departure pair, so filtering
-        // afterward could drop a scheduled row whose predicted twin had already
-        // been consumed (same ordering as `StopViewController`).
-        let routeVisible = routeVisibleDepartures
-        let departures = routeVisible
-            .filter(by: viewModel.arrivalDepartureFilter)
-            .filteringTerminalDuplicates()
-        let departureIDs = Set(departures.map(\.id))
-        let routeIDs = Set(departures.map(\.routeID))
-        // Grouped mode drops past departures, so it can have nothing to render
-        // while `departures` is non-empty (the last bus of the evening has left).
-        // Deciding emptiness from the groups themselves — rather than from
-        // `departures` — keeps that case on the empty state instead of a void.
-        let isGrouped = viewModel.stopPreferences.sortType == .route
-        let routeGroups = isGrouped ? StopPageListBuilder.routeGroups(departures) : []
-        let listIsEmpty = isGrouped ? routeGroups.isEmpty : departures.isEmpty
-        // Hoisted for the same reason as `walkTime`: the header row's Past count and
-        // the list's past section have to be reading the same partition.
-        let chronologicalPartition = StopPageListBuilder.chronologicalPartition(
-            departures,
-            walkMinutes: walkTime?.walkMinutes
-        )
+        let content = StopPageContent(viewModel: viewModel)
 
         List {
             if let stop = viewModel.stop {
                 if !showToolbarOnBottom {
                     Section {
                         StopPageHeaderView(stop: stop, walkTime: walkTime, statusText: viewModel.statusText, snapshotLoader: snapshotLoader, onWalkingDirections: navigation.showWalkingDirections)
-                            .listRowInsets(EdgeInsets(top: 0, leading: Self.horizontalRowInset, bottom: 0, trailing: Self.horizontalRowInset))
+                            .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
                             .listRowBackground(Color.clear)
                             .listRowSeparator(.hidden)
                     }
                 }
-            } else if showsLoadingState {
+            } else if content.showsLoadingState {
                 // Loading only. A first fetch that fails leaves no header at
                 // all — a "loading" skeleton sitting above an error message
                 // reads as two contradictory states on one page; the centered
@@ -255,158 +181,14 @@ struct StopPageView: View {
                 if !showToolbarOnBottom {
                     Section {
                         StopPageHeaderPlaceholderView()
-                            .listRowInsets(EdgeInsets(top: 0, leading: Self.horizontalRowInset, bottom: 0, trailing: Self.horizontalRowInset))
+                            .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
                             .listRowBackground(Color.clear)
                             .listRowSeparator(.hidden)
                     }
                 }
             }
 
-            if let survey = viewModel.currentSurvey {
-                Section {
-                    SurveyCardRepresentable(
-                        survey: survey,
-                        stopID: viewModel.stopID,
-                        onNext: { answer in
-                            Task { await viewModel.submitHeroAnswer(answer, stopLocation: viewModel.stop?.coordinate) }
-                        },
-                        onDismiss: { viewModel.dismissCurrentSurvey() },
-                        onOpenExternalSurvey: {
-                            viewModel.launchExternalSurvey(survey, onFailure: navigation.showExternalSurveyError)
-                        }
-                    )
-                    .listRowInsets(EdgeInsets(top: 4, leading: Self.horizontalRowInset, bottom: 4, trailing: Self.horizontalRowInset))
-                    .listRowBackground(Color.clear)
-                    .listRowSeparator(.hidden)
-                }
-            }
-
-            // Inline donation request (parity with the legacy UIKit `DonationListItem`).
-            // Gated on the view model's `shouldRequestDonations`; all three actions
-            // present VC-owned modals via the navigation handler. Sits after the
-            // survey and before service alerts, matching the legacy section order.
-            if hasLoadedArrivals && viewModel.shouldRequestDonations && !donationHidden {
-                Section {
-                    DonationCardRepresentable(
-                        onDonate: navigation.showDonation,
-                        onLearnMore: navigation.showDonation,
-                        onClose: { navigation.dismissDonation { donationHidden = true } }
-                    )
-                    .listRowInsets(EdgeInsets(top: 4, leading: Self.horizontalRowInset, bottom: 4, trailing: Self.horizontalRowInset))
-                    .listRowBackground(Color.clear)
-                    .listRowSeparator(.hidden)
-                }
-            }
-
-            if let alerts = viewModel.stopArrivals?.serviceAlerts, !alerts.isEmpty {
-                ServiceAlertsSection(alerts: alerts, onSelect: navigation.showAlertDetail)
-            }
-
-            if hasLoadedArrivals {
-                Section {
-                    StopPageListHeaderRow(
-                        mode: viewModel.stopPreferences.sortType,
-                        // Grouped mode has no past partition, so it has nothing to disclose.
-                        pastCount: isGrouped ? 0 : chronologicalPartition.past.count,
-                        showPast: !pastCollapsed,
-                        onTogglePast: { withAnimation { pastCollapsed.toggle() } },
-                        onChangeMode: { newValue in
-                            withAnimation {
-                                // Switching modes collapses the open route card.
-                                expandedRouteID = nil
-                                userDefaults.set(newValue.rawValue, forKey: Self.lastUsedStopSortKey)
-                                viewModel.updateSortType(newValue)
-                            }
-                        }
-                    )
-                    .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
-                    .listRowBackground(Color.clear)
-                    .listRowSeparator(.hidden)
-                }
-            }
-
-            if listIsEmpty {
-                if showsLoadingState {
-                    Section {
-                        StopPageLoadingRow()
-                    }
-                } else {
-                    Section {
-                        StopPageEmptyStateRow(
-                            isBrokenBookmark: viewModel.isBrokenBookmark,
-                            errorText: viewModel.operationErrorMessage,
-                            // Only when the route filter is what emptied the list:
-                            // the stop has departures but none survive the route
-                            // preferences. Grouped mode can be empty while
-                            // `departures` isn't (every departure is in the past);
-                            // that's a no-service state, not a filtered-out one.
-                            isFilteredEmpty: viewModel.isListFiltered
-                                && routeVisible.isEmpty
-                                && !(viewModel.stopArrivals?.arrivalsAndDepartures.isEmpty ?? true),
-                            // Only when the Departure Type filter is what emptied
-                            // it: rows survived the route filter and then the
-                            // type filter removed every one of them.
-                            isDepartureFilterEmpty: viewModel.arrivalDepartureFilter != .all
-                                && departures.isEmpty
-                                && !routeVisible.isEmpty,
-                            minutesAfter: viewModel.minutesAfter,
-                            // With no header card above it (first fetch failed
-                            // before the stop resolved), the row is the whole
-                            // page — center it vertically so it reads as a
-                            // designed full-screen state rather than content
-                            // stranded under the nav bar.
-                            fillsPage: viewModel.stop == nil,
-                            onRetry: { Task { await viewModel.refresh() } },
-                            onShowAllRoutes: { viewModel.isListFiltered = false },
-                            onShowAllDepartureTypes: { viewModel.updateArrivalDepartureFilter(.all) }
-                        )
-                    }
-                }
-            } else if !isGrouped {
-                ChronologicalListView(
-                    // Same value the header row counts its Past disclosure from —
-                    // two derivations of the same partition could disagree about
-                    // whether there is anything to disclose.
-                    partition: chronologicalPartition,
-                    walkMinutes: walkTime?.walkMinutes,
-                    showPast: !pastCollapsed,
-                    statusProvider: { DepartureStatus(arrivalDeparture: $0) },
-                    alarmLookup: { viewModel.alarm(for: $0) },
-                    actionsProvider: makeActions(for:),
-                    onSelectDeparture: { navigation.showTrip($0) }
-                )
-            } else {
-                GroupedListView(
-                    groups: routeGroups,
-                    expandedRouteID: expandedRouteID,
-                    statusProvider: { DepartureStatus(arrivalDeparture: $0) },
-                    alarmLookup: { viewModel.alarm(for: $0) },
-                    alarmLeadTime: { viewModel.alarmLeadTimeMinutes($0) },
-                    canAlarm: { viewModel.canCreateAlarm(for: $0) },
-                    onToggleRoute: { routeID in
-                        withAnimation(.snappy) {
-                            expandedRouteID = expandedRouteID == routeID ? nil : routeID
-                        }
-                    },
-                    onSelectDeparture: { navigation.showTrip($0) },
-                    onAlarmToggle: { departure in
-                        if viewModel.alarm(for: departure) != nil {
-                            Task { await viewModel.cancelAlarm(for: departure) }
-                        } else {
-                            navigation.showAlarmPicker(departure)
-                        }
-                    },
-                )
-            }
-
-            if hasLoadedArrivals {
-                StopPageFooterSection(
-                    showLoadMore: !viewModel.isLoadMoreExhausted,
-                    isLoading: viewModel.isLoading,
-                    attribution: attributionText,
-                    onLoadMore: { Task { await viewModel.loadMoreDepartures() } }
-                )
-            }
+            departuresBuilder.sections(content: content, walkTime: walkTime)
         }
         // `.plain` (rather than `.insetGrouped`) so sections have no horizontal
         // card margin insetting them from the screen edges. That margin is
@@ -430,7 +212,7 @@ struct StopPageView: View {
                     // Unconditional, unlike the pushed presentation's header: with no navigation
                     // bar behind the sheet, this strip carries the only close button, so a stop
                     // whose first fetch failed must still render it.
-                    StopPageSheetHeaderPlaceholderView(showsSkeleton: showsLoadingState, onClose: navigation.closeSheet, isCollapsed: isCollapsed)
+                    StopPageSheetHeaderPlaceholderView(showsSkeleton: content.showsLoadingState, onClose: navigation.closeSheet, isCollapsed: isCollapsed)
                 }
             }
         }
@@ -441,29 +223,17 @@ struct StopPageView: View {
                 toolbar
             }
         }
-        .task { await viewModel.start() }
-        .onAppear(perform: seedLastUsedModeIfNeeded)
-        .onDisappear { viewModel.deactivate() }
         .refreshable { await viewModel.refresh() }
+        .stopPageLifecycle(
+            viewModel: viewModel,
+            userDefaults: userDefaults,
+            liveActivityStarted: viewModel.liveActivityStarted
+        )
         // Reconcile the open route card against the live feed: when a refresh
         // drops the expanded route from the list, clear the stale expansion.
-        .onChange(of: routeIDs) { _, ids in
+        .onChange(of: content.routeIDs) { _, ids in
             if let rid = expandedRouteID, !ids.contains(rid) { expandedRouteID = nil }
         }
-        .overlay(alignment: .bottom) {
-            if viewModel.liveActivityStarted {
-                Text(OBALoc("live_activity.started.title", value: "Tracking on Lock Screen", comment: "Toast shown when a Live Activity starts on the Lock Screen"))
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
-                    .background(.tint, in: Capsule())
-                    .padding(.bottom, 16)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-        }
-        .animation(.spring(duration: 0.3), value: viewModel.liveActivityStarted)
     }
 
     /// The sheet presentation's bottom chrome. Reads the view model directly — `StopPageView` is
@@ -497,41 +267,18 @@ struct StopPageView: View {
         )
     }
 
-    /// One-shot: a stop the user has never customized opens in the last mode they
-    /// picked anywhere in the app. A stop with saved preferences owns its sort
-    /// type and is left alone — including one deliberately set to Chronological,
-    /// which `stopPreferences.sortType` alone can't tell apart from the default.
-    private func seedLastUsedModeIfNeeded() {
-        guard !didSeedMode else { return }
-        didSeedMode = true
-        guard !viewModel.hasCustomizedPreferences,
-              let raw = userDefaults.string(forKey: Self.lastUsedStopSortKey),
-              let seeded = StopSort(rawValue: raw)
-        else { return }
-        viewModel.seedSortType(seeded)
-    }
-
-    /// Builds the shared trip-detail panel (§4.6) for an expanded departure.
-    /// `StopPageView` is the only view that touches the VM, so the panel receives
-    /// plain values plus closures — the `approachLoader` closure wraps the cached,
-    /// live-only VM fetch; the alarm closures route through the single alarm index.
-    private func makeActions(for departure: ArrivalDeparture) -> DepartureRowActions {
-        DepartureRowActions(
-            canAlarm: viewModel.canCreateAlarm(for: departure),
-            canSchedule: navigation.canScheduleForRoute,
-            hasAlarm: viewModel.alarm(for: departure) != nil,
-            onAlarmToggle: {
-                if viewModel.alarm(for: departure) != nil {
-                    Task { await viewModel.cancelAlarm(for: departure) }
-                } else {
-                    navigation.showAlarmPicker(departure)
-                }
-            },
-            onSchedule: { navigation.showScheduleForRoute(departure) },
-            onBookmark: { navigation.showBookmarkEditor(departure) },
-            onShowTrip: { navigation.showTrip(departure) },
-            onShareTrip: { navigation.shareTrip(departure) },
-            makePreview: { navigation.makeTripPreview(departure) }
+    /// The shared assembly of the departures list. Identical to the one the map
+    /// sheet builds apart from `onRetry`: this presentation offers
+    /// pull-to-refresh, so a retry is just a refresh.
+    private var departuresBuilder: StopDeparturesBuilder {
+        StopDeparturesBuilder(
+            viewModel: viewModel,
+            navigation: navigation,
+            userDefaults: userDefaults,
+            onRetry: { Task { await viewModel.refresh() } },
+            expandedRouteID: $expandedRouteID,
+            donationHidden: $donationHidden,
+            pastCollapsed: $pastCollapsed
         )
     }
 }
