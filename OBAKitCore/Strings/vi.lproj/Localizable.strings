@@ -10,6 +10,8 @@
 /* An error message that informs the user that the wrong kind of content was received from the server. */
 "api_error.invalid_content_type_fmt" = "Dự kiến nhận dữ liệu %1$@ từ máy chủ, nhưng chúng tôi lại nhận được %2$@.";
 
+"api_error.invalid_response_data_fmt" = "Máy chủ của %1$@ trả về dữ liệu mà ứng dụng này không đọc được. Đây thường là vấn đề với điểm dừng hoặc nguồn dữ liệu của cơ quan, không phải với %2$@. Vui lòng thử lại sau ít phút.";
+
 /* An error that tells the user that the network connection isn't working. */
 "api_error.network_failure" = "Không thể kết nối với Internet hoặc máy chủ. Vui lòng kiểm tra kết nối mạng của bạn và thử lại.";
 

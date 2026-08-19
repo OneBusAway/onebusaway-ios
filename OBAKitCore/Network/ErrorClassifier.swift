@@ -30,7 +30,7 @@ public enum ErrorClassifier {
         // Already-classified errors pass through unchanged.
         if let apiError = error as? APIError {
             switch apiError {
-            case .serverError, .serverUnavailable, .cellularDataRestricted:
+            case .serverError, .serverUnavailable, .invalidResponseData, .cellularDataRestricted:
                 return apiError
             default:
                 return classifyAPIError(apiError, regionName: regionName, isCellularDataRestricted: isCellularDataRestricted)
@@ -45,7 +45,7 @@ public enum ErrorClassifier {
 
         // DecodingErrors surface raw Swift messages like
         // "The data couldn't be read because it is missing."
-        // Replace with a server-problem message.
+        // That is bad payload, not an unreachable host (#1276).
         if error is DecodingError {
             return classifyDecodingError(error, regionName: regionName)
         }
@@ -112,13 +112,13 @@ public enum ErrorClassifier {
         guard let regionName else {
             let message = OBALoc(
                 "api_error.decoding_failure",
-                value: "The server returned unexpected data. This usually means the server is experiencing problems. Please try again shortly.",
-                comment: "An error shown when the server returns data the app can't understand, indicating a likely server-side issue."
+                value: "The server returned data this app can't read. That's usually a problem with the stop or agency feed. Please try again shortly.",
+                comment: "An error shown when the server returns a body the app cannot decode and no region name is available to specialize the copy."
             )
             return UnstructuredError(message)
         }
 
-        return APIError.serverUnavailable(regionName: regionName, statusCode: nil)
+        return APIError.invalidResponseData(regionName: regionName)
     }
 
     // MARK: - Helpers
