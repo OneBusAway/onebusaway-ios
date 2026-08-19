@@ -42,4 +42,12 @@ struct StopTripSpacingTests {
         #expect(StopTripSpacing.stopRowVertical(true) < StopTripSpacing.stopRowVertical(false))
         #expect(StopTripSpacing.cardPadding(true) < StopTripSpacing.cardPadding(false))
     }
+
+    /// Compact padding would otherwise drop a tappable trip-stop row under
+    /// 44pt. Drop this constant and the Accessibility setting shrinks the
+    /// hit target — the thing Aaron blocked #1297 on.
+    @Test func `Tappable trip-stop rows keep a 44pt minimum height`() {
+        #expect(StopTripSpacing.stopRowMinHeight == 44)
+        #expect(StopTripSpacing.stopRowMinHeight > StopTripSpacing.stopRowVertical(true) * 2)
+    }
 }

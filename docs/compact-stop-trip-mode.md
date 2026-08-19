@@ -9,7 +9,9 @@ Settings → Accessibility → **Compact stop and trip pages**.
 
 When on, the new stop page (departure rows, grouped cards) and the new trip
 page (header card, stop timeline) read tighter spacing from `StopTripSpacing`.
-Accessibility-size stacked layouts are left alone.
+Accessibility-size stacked layouts use the same table — compact is opt-in, so
+tighter AX stacks are intentional. Tappable trip-stop rows keep a 44pt
+minimum height so the Accessibility setting does not shrink the hit target.
 
 No arrivals, occupancy, or actions are hidden. This is spacing only.
 

@@ -11,8 +11,12 @@ import CoreGraphics
 
 /// Spacing table for the new stop and trip screens. Compact values are the
 /// opt-in space-saving mode (#1278); regular values are the layout those
-/// screens shipped with. Accessibility-size stacked layouts do not consult
-/// this table — they keep the committed stacked arrangement.
+/// screens shipped with.
+///
+/// Accessibility-size stacked layouts **do** consult this table: the outer
+/// stacks in `DepartureRowView`, `GroupedListView`, and `TripCardView` wrap
+/// the AX branch, so compact tightens those layouts too. Tappable trip-stop
+/// rows keep a 44pt minimum height regardless.
 enum StopTripSpacing {
     /// Interior `VStack` under a route badge / headsign block.
     static func stack(_ compact: Bool) -> CGFloat { compact ? 1 : 3 }
@@ -28,6 +32,10 @@ enum StopTripSpacing {
 
     /// Vertical padding inside one trip-stop timeline row.
     static func stopRowVertical(_ compact: Bool) -> CGFloat { compact ? 6 : 11 }
+
+    /// Minimum height of a tappable trip-stop row. Compact padding would
+    /// otherwise drop the hit target under 44pt.
+    static let stopRowMinHeight: CGFloat = 44
 
     /// Padding around the trip header card.
     static func cardPadding(_ compact: Bool) -> CGFloat { compact ? 10 : 14 }
