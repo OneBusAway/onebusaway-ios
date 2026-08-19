@@ -570,60 +570,52 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
 
         bookmark.groupID = group?.id ?? nil
 
-        if let existing = findBookmark(id: bookmark.id) {
-            delete(bookmark: existing, reorderGroup: true)
-        }
+        // Decode once, mutate in memory, encode once. The previous loop called
+        // `bookmarks` get/set (full plist round-trip) per row, which froze the
+        // UI for several seconds with a dozen bookmarks. See #548.
+        var all = bookmarks.filter { $0.id != bookmark.id }
+        let newGroupID = bookmark.groupID
 
-        var newGroupBookmarks = bookmarksInGroup(group)
-        newGroupBookmarks.insert(bookmark, at: min(index, newGroupBookmarks.count))
-
-        for (idx, elt) in newGroupBookmarks.enumerated() {
-            if let existing = findBookmark(id: elt.id) {
-                delete(bookmark: existing, reorderGroup: false)
-            }
-
+        var destination = all
+            .filter { $0.groupID == newGroupID }
+            .sorted { $0.sortOrder < $1.sortOrder }
+        destination.insert(bookmark, at: min(index, destination.count))
+        for (idx, elt) in destination.enumerated() {
             elt.sortOrder = idx
-
-            bookmarks.append(elt)
         }
 
-        if oldGroupID != bookmark.groupID {
-            let oldGroupBookmarks = bookmarksInGroup(findGroup(id: oldGroupID))
-            for (idx, elt) in oldGroupBookmarks.enumerated() {
-                if let existing = findBookmark(id: elt.id) {
-                    delete(bookmark: existing, reorderGroup: false)
-                }
+        let destinationIDs = Set(destination.map(\.id))
+        all.removeAll { destinationIDs.contains($0.id) }
+        all.append(contentsOf: destination)
 
+        if oldGroupID != newGroupID {
+            let remaining = all
+                .filter { $0.groupID == oldGroupID }
+                .sorted { $0.sortOrder < $1.sortOrder }
+            for (idx, elt) in remaining.enumerated() {
                 elt.sortOrder = idx
-                bookmarks.append(elt)
             }
         }
 
+        bookmarks = all
         NotificationCenter.default.post(name: .bookmarksDidChange, object: self)
     }
 
     public func delete(bookmark: Bookmark) {
-        delete(bookmark: bookmark, reorderGroup: true)
-        NotificationCenter.default.post(name: .bookmarksDidChange, object: self)
-    }
+        var all = bookmarks
+        guard let stored = all.first(where: { $0.id == bookmark.id }) else { return }
+        let groupID = stored.groupID
+        all.removeAll { $0.id == bookmark.id }
 
-    private func delete(bookmark: Bookmark, reorderGroup: Bool) {
-        let bookmark = findBookmark(id: bookmark.id, defaultValue: bookmark)
-        guard let index = bookmarks.firstIndex(of: bookmark) else { return }
-
-        let groupID = bookmark.groupID
-
-        bookmarks.remove(at: index)
-
-        if reorderGroup {
-            for (idx, elt) in bookmarksInGroup(findGroup(id: groupID)).enumerated() {
-                if let existing = findBookmark(id: elt.id) {
-                    delete(bookmark: existing, reorderGroup: false)
-                }
-                elt.sortOrder = idx
-                bookmarks.append(elt)
-            }
+        let remaining = all
+            .filter { $0.groupID == groupID }
+            .sorted { $0.sortOrder < $1.sortOrder }
+        for (idx, elt) in remaining.enumerated() {
+            elt.sortOrder = idx
         }
+
+        bookmarks = all
+        NotificationCenter.default.post(name: .bookmarksDidChange, object: self)
     }
 
     /// Finds the specified `Bookmark` by `id` or returns the `defaultValue`. Useful for upserts and the like.
