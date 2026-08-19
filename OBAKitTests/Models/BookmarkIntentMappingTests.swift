@@ -27,7 +27,7 @@ final class BookmarkIntentMappingTests: OBATestCase {
             fileName: "arrivals-and-departures-for-stop-1_10914.json"
         )
         let arrivalDep = try #require(stopArrivals.arrivalsAndDepartures.first)
-        let stop = arrivalDep.stop
+        let stop = try #require(arrivalDep.stop)
 
         let trip = Bookmark(
             name: "49 to Downtown",
@@ -40,10 +40,47 @@ final class BookmarkIntentMappingTests: OBATestCase {
             stop: stop
         )
 
-        let entities = BookmarkIntentMapping.entities(from: [wholeStop, trip])
+        let entities = BookmarkIntentMapping.entities(
+            from: [wholeStop, trip],
+            regionIdentifier: pugetSoundRegionIdentifier
+        )
         #expect(entities.map(\.id) == [trip.id])
         #expect(entities.map(\.name) == ["49 to Downtown"])
         #expect(trip.isTripBookmark)
         #expect(!wholeStop.isTripBookmark)
+    }
+
+    /// Arrivals are only fetched for the current region. Offering an out-of-
+    /// region trip bookmark queues a request `hasFetchedArrivals` can never
+    /// satisfy. Drop the region filter and this fails.
+    @Test func `Shortcut entities skip trip bookmarks from other regions`() throws {
+        let stopArrivals = try Fixtures.loadRESTAPIPayload(
+            type: StopArrivals.self,
+            fileName: "arrivals-and-departures-for-stop-1_10914.json"
+        )
+        let arrivalDep = try #require(stopArrivals.arrivalsAndDepartures.first)
+
+        let local = Bookmark(
+            name: "Local 49",
+            regionIdentifier: pugetSoundRegionIdentifier,
+            arrivalDeparture: arrivalDep
+        )
+        let other = Bookmark(
+            name: "Other region",
+            regionIdentifier: pugetSoundRegionIdentifier + 1,
+            arrivalDeparture: arrivalDep
+        )
+
+        let entities = BookmarkIntentMapping.entities(
+            from: [local, other],
+            regionIdentifier: pugetSoundRegionIdentifier
+        )
+        #expect(entities.map(\.id) == [local.id])
+
+        let none = BookmarkIntentMapping.entities(
+            from: [local, other],
+            regionIdentifier: nil
+        )
+        #expect(none.isEmpty)
     }
 }

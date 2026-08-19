@@ -204,13 +204,24 @@ class BookmarksViewController: UIHostingController<BookmarksRootView>,
     func consumePendingLiveActivityShortcut() {
         guard let id = LiveActivityShortcutRequest.peek(userDefaults: application.userDefaults) else { return }
         guard let bookmark = application.userDataStore.findBookmark(id: id) else {
-            _ = LiveActivityShortcutRequest.take(userDefaults: application.userDefaults)
+            LiveActivityShortcutRequest.clear(application.userDefaults)
+            return
+        }
+
+        let currentRegionID = application.currentRegion?.regionIdentifier
+        if bookmark.regionIdentifier != currentRegionID {
+            LiveActivityShortcutRequest.clear(application.userDefaults)
+            return
+        }
+
+        guard ActivityAuthorizationInfo().areActivitiesEnabled else {
+            LiveActivityShortcutRequest.clear(application.userDefaults)
             return
         }
 
         guard viewModel.hasFetchedArrivals(for: bookmark) else { return }
 
-        _ = LiveActivityShortcutRequest.take(userDefaults: application.userDefaults)
+        LiveActivityShortcutRequest.clear(application.userDefaults)
         let arrivals = viewModel.arrivalDepartures(for: bookmark)
         if bookmarkActions.startLiveActivity(for: bookmark, arrivalDepartures: arrivals) == .failed {
             showLiveActivityErrorAlert()

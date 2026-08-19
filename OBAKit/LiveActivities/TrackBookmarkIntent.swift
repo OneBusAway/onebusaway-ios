@@ -27,6 +27,7 @@ struct TrackBookmarkIntent: AppIntent {
     func perform() async throws -> some IntentResult {
         guard let suite = Bundle.main.appGroup,
               let defaults = UserDefaults(suiteName: suite) else {
+            Logger.error("Track Bookmark Shortcut: app group UserDefaults unavailable; cannot queue a Live Activity.")
             return .result()
         }
         LiveActivityShortcutRequest.store(bookmark.id, userDefaults: defaults)
@@ -56,18 +57,25 @@ nonisolated struct BookmarkEntityQuery: EntityQuery {
         tripBookmarkEntities()
     }
 
-    /// Trip bookmarks only. A whole-stop bookmark has no single route to Track.
+    /// Trip bookmarks in the current region only. A whole-stop bookmark has
+    /// no single route to Track; an out-of-region trip bookmark never gets
+    /// arrivals loaded, so offering it would queue a request that cannot start.
     private func tripBookmarkEntities() -> [BookmarkEntity] {
         guard let suite = Bundle.main.appGroup,
               let defaults = UserDefaults(suiteName: suite) else { return [] }
         let store = UserDefaultsStore(userDefaults: defaults)
-        return BookmarkIntentMapping.entities(from: store.bookmarks)
+        let regionID = defaults.object(forKey: BookmarkIntentMapping.currentRegionIdentifierKey) as? Int
+        return BookmarkIntentMapping.entities(from: store.bookmarks, regionIdentifier: regionID)
     }
 }
 
 nonisolated enum BookmarkIntentMapping {
-    static func entities(from bookmarks: [Bookmark]) -> [BookmarkEntity] {
-        bookmarks.filter(\.isTripBookmark).map {
+    /// Same string as `RegionsService.currentRegionIdentifierUserDefaultsKey`.
+    /// Duplicated because `RegionsService` is `@MainActor` and this query is not.
+    static let currentRegionIdentifierKey = "OBACurrentRegionIdentifierUserDefaultsKey"
+
+    static func entities(from bookmarks: [Bookmark], regionIdentifier: Int?) -> [BookmarkEntity] {
+        bookmarks.filter { $0.isTripBookmark && $0.regionIdentifier == regionIdentifier }.map {
             BookmarkEntity(id: $0.id, name: $0.name)
         }
     }

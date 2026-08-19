@@ -603,7 +603,7 @@ public class Application: CoreApplication, PushServiceDelegate {
     private func revealBookmarksTabIfLiveActivityShortcutPending() {
         guard !isOnboardingRoot else { return }
         guard LiveActivityShortcutRequest.peek(userDefaults: userDefaults) != nil else { return }
-        (viewRouter.rootController as? UITabBarController)?.selectedIndex = SelectedTab.bookmarks.rawValue
+        viewRouter.rootNavigateTo(page: .bookmarks)
     }
 
     @objc public func applicationWillResignActive(_ application: UIApplication) {

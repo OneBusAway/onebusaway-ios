@@ -48,4 +48,29 @@ struct LiveActivityShortcutRequestTests {
         #expect(LiveActivityShortcutRequest.peek(userDefaults: userDefaults) == nil)
         #expect(LiveActivityShortcutRequest.take(userDefaults: userDefaults) == nil)
     }
+
+    /// A request without a timestamp is treated as expired so a leftover id
+    /// cannot force the Bookmarks tab on every launch.
+    @Test func `Legacy id without a timestamp is treated as empty`() {
+        let userDefaults = defaults()
+        userDefaults.set(UUID().uuidString, forKey: LiveActivityShortcutRequest.userDefaultsKey)
+        #expect(LiveActivityShortcutRequest.peek(userDefaults: userDefaults) == nil)
+        #expect(userDefaults.string(forKey: LiveActivityShortcutRequest.userDefaultsKey) == nil)
+    }
+
+    /// Drop the expiry check and a request queued hours earlier still peeks.
+    @Test func `Peek returns nil and clears after the expiration window`() {
+        let userDefaults = defaults()
+        let id = UUID()
+        let storedAt = Date(timeIntervalSince1970: 0)
+        LiveActivityShortcutRequest.store(id, userDefaults: userDefaults, now: storedAt)
+
+        let stillFresh = storedAt.addingTimeInterval(LiveActivityShortcutRequest.expiration)
+        #expect(LiveActivityShortcutRequest.peek(userDefaults: userDefaults, now: stillFresh) == id)
+
+        let expired = storedAt.addingTimeInterval(LiveActivityShortcutRequest.expiration + 1)
+        #expect(LiveActivityShortcutRequest.peek(userDefaults: userDefaults, now: expired) == nil)
+        #expect(userDefaults.string(forKey: LiveActivityShortcutRequest.userDefaultsKey) == nil)
+        #expect(userDefaults.object(forKey: LiveActivityShortcutRequest.storedAtKey) == nil)
+    }
 }

@@ -18,11 +18,18 @@ Intents live in OBAKit. The app target includes them through
 Shortcuts never sees Track.
 
 Whole-stop bookmarks are omitted from the intent's entity query: they have no
-single route to Track. Arbitrary stop IDs that are not bookmarked are out of
-scope for this change.
+single route to Track. Out-of-region trip bookmarks are omitted too — arrivals
+only load for the current region, so offering them queued a request that never
+started and hijacked the Bookmarks tab on every launch.
+
+A queued request expires after 90 seconds (and leftover ids without a timestamp
+are dropped). `rootNavigateTo(page: .bookmarks)` selects the tab. Live
+Activities disabled system-wide clears the request instead of showing the Track
+error alert.
+
+Arbitrary stop IDs that are not bookmarked are out of scope for this change.
 
 ## Tests
 
-`LiveActivityShortcutRequestTests` pin store / peek / take. ActivityKit itself
-is not injectable; the start path is the same code the Bookmarks Track action
-already uses.
+`LiveActivityShortcutRequestTests` pin store / peek / take and expiry.
+`BookmarkIntentMappingTests` pin trip-vs-whole-stop and the region filter.
