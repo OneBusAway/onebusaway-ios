@@ -31,6 +31,10 @@ class MockAuthorizedLocationManager: NSObject, LocationManager {
         // nop, already authorized.
     }
 
+    func requestAlwaysAuthorization() {
+        authorizationStatus = .authorizedAlways
+    }
+
     @available(iOS 14, *)
     func requestTemporaryFullAccuracyAuthorization(withPurposeKey purposeKey: String) {
         // nop.
@@ -96,4 +100,8 @@ class MockAuthorizedLocationManager: NSObject, LocationManager {
     func stopMonitoring(for region: CLRegion) {
         monitoredRegions.remove(region)
     }
+
+    /// Large enough that no radius this mock is handed gets clamped by accident;
+    /// the clamping path has dedicated coverage against `LocationManagerMock`.
+    var maximumRegionMonitoringDistance: CLLocationDistance = 100_000
 }
