@@ -31,15 +31,22 @@ struct HomeSheetView: View {
                 .padding(.top, 16)
                 .padding(.bottom, 12)
 
-            if viewModel.visibleSections.isEmpty {
-                emptyState
-            } else {
+            if !viewModel.visibleSections.isEmpty {
                 List {
                     ForEach(viewModel.visibleSections, id: \.self) { section in
                         sectionContent(for: section)
                     }
                 }
+                // Applied to the `List`, matching `BookmarksListView`, rather than
+                // to the bookmarks `Section` alone.
+                .environment(\.obaFormatters, application.formatters)
                 .searchListChrome()
+            } else if viewModel.hasLoadedInitialContent {
+                emptyState
+            } else {
+                // Pre-first-settle: nearby hasn't had its chance yet, so "empty"
+                // isn't a fact. Hold the space rather than flash a wrong answer.
+                Spacer()
             }
         }
         .searchSheetBackground()
@@ -102,7 +109,6 @@ struct HomeSheetView: View {
 
         case .bookmarks:
             bookmarksSection
-                .environment(\.obaFormatters, application.formatters)
         }
     }
 

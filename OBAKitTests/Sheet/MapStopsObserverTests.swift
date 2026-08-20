@@ -378,6 +378,38 @@ final class MapStopsObserverTests: OBATestCase {
         #expect(counter.count == 1, "A moved center must still publish")
     }
 
+    /// A repeated `reset()` publishes nothing.
+    ///
+    /// `MapPanelRootView.onMapCameraChange(frequency: .onEnd)` calls `reset()` on
+    /// the zoomed-out branch of *every* settle, not only on the zoom-out
+    /// transition. `viewportCenter` is `@Published` and `CLLocationCoordinate2D`
+    /// isn't `Equatable`, so without the explicit nil guard each pan while zoomed
+    /// out would fire `objectWillChange` and cascade through
+    /// `HomeNearbyStopsSectionModel` into the home sheet. This is the `reset()`
+    /// counterpart of `Repeat settle at the same center does not republish`.
+    @Test @MainActor
+    func `Repeat reset does not republish`() async {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+
+        let observer = MapStopsObserver(application: application)
+        observer.updateViewport(MKCoordinateRegion(
+            center: TestData.mockSeattleLocation.coordinate,
+            latitudinalMeters: 5000,
+            longitudinalMeters: 5000
+        ))
+        observer.reset()
+        #expect(observer.viewportCenter == nil)
+
+        let counter = ChangeCounter()
+        let cancellable = observer.objectWillChange.sink { _ in counter.increment() }
+        defer { cancellable.cancel() }
+
+        observer.reset()
+        observer.reset()
+        #expect(counter.count == 0, "A repeated reset must not invalidate observers")
+    }
+
     /// Thread-safe counter — `objectWillChange` delivery isn't actor-isolated.
     private final class ChangeCounter {
         private let lock = NSLock()

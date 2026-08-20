@@ -28,7 +28,16 @@ final class HomeBookmarksSectionModel: NSObject, ObservableObject, BookmarkDataD
 
     private let application: Application
     private let limit: Int
-    private var loader: BookmarkDataLoader!
+
+    /// The loader driving this section's arrivals.
+    ///
+    /// Deliberately `internal`, not `private`: nothing in the app reaches it, and
+    /// it exists so `HomeSectionModelTests` can drive a real batch to completion
+    /// and assert what this model does with the outcome — in particular the
+    /// failed-batch retry path below, which can't be observed from the outside
+    /// otherwise. `@testable import` reaches it; the framework's public surface
+    /// doesn't grow for a test.
+    private(set) var loader: BookmarkDataLoader!
 
     private var lastFetchDate: Date?
     private var lastFetchedRegionID: Int?
@@ -163,8 +172,13 @@ final class HomeBookmarksSectionModel: NSObject, ObservableObject, BookmarkDataD
     ///
     /// `highlightedTripIDs` is always empty: the flash-on-change affordance
     /// belongs to the polling Bookmarks tab, and nothing polls here.
+    ///
+    /// Guarded against a no-op write for the same reason
+    /// `HomeRecentStopsSectionModel.reload()` is: this runs on every activation
+    /// and on every loader update, and `BookmarkRowViewModel` is `Equatable`, so
+    /// an unchanged rebuild can be dropped rather than republished.
     private func rebuildRows() {
-        rows = selection.map { bookmark in
+        let rebuilt = selection.map { bookmark in
             BookmarkRowViewModel(
                 bookmark: bookmark,
                 arrivalDepartures: arrivalDepartures(for: bookmark),
@@ -172,6 +186,8 @@ final class HomeBookmarksSectionModel: NSObject, ObservableObject, BookmarkDataD
                 hasLoadedArrivalData: loader.hasFetchedData(forStopID: bookmark.stopID)
             )
         }
+        guard rebuilt != rows else { return }
+        rows = rebuilt
     }
 
     private func arrivalDepartures(for bookmark: Bookmark) -> [ArrivalDeparture] {
@@ -183,5 +199,23 @@ final class HomeBookmarksSectionModel: NSObject, ObservableObject, BookmarkDataD
 
     func dataLoaderDidUpdate(_ dataLoader: BookmarkDataLoader) {
         rebuildRows()
+    }
+
+    /// Clears the staleness stamp when a batch finishes having failed, so the
+    /// next activation retries instead of being gated out.
+    ///
+    /// `loadIfNeeded()` stamps `lastFetchDate` *before* the batch resolves — it
+    /// has to, or two activations in the same run loop would both fetch. That
+    /// stamp is only meaningful if the batch succeeded: without this, a failed
+    /// batch left the rows stuck in their "Loading…" state for the rest of the
+    /// staleness window, and this sheet has neither the polling timer nor the
+    /// pull-to-refresh that bail the Bookmarks tab out of the same situation.
+    ///
+    /// `lastFetchedRegionID` is deliberately left alone: `isStale` is enough to
+    /// reopen the gate, and clearing the region too would make the next
+    /// successful fetch look like a region change to any future caller.
+    func dataLoader(_ dataLoader: BookmarkDataLoader, isLoadingChanged isLoading: Bool) {
+        guard !isLoading, dataLoader.lastBatchHadError else { return }
+        lastFetchDate = nil
     }
 }

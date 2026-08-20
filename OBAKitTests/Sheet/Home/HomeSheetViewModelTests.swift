@@ -189,6 +189,51 @@ final class HomeSheetViewModelTests: OBATestCase {
         #expect(counter.count > 0, "A section content change did not invalidate the view model")
     }
 
+    /// The all-empty state is held back until the map has settled once.
+    ///
+    /// Recents and bookmarks are read from the store in the section models'
+    /// initializers, so they're accurate at first body evaluation; nearby isn't,
+    /// because it has nothing until the map settles. Without this gate a cold
+    /// open with nothing saved paints "Nothing Here Yet" for a frame or two and
+    /// then replaces it with the nearby stops.
+    @Test @MainActor
+    func `Initial content is withheld until the map settles`() {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+
+        let observer = MapStopsObserver(application: application)
+        let viewModel = HomeSheetViewModel(application: application, stopsObserver: observer)
+
+        #expect(viewModel.visibleSections.isEmpty)
+        #expect(viewModel.hasLoadedInitialContent == false, "Nearby has not had its chance yet")
+
+        observer.updateViewport(MKCoordinateRegion(
+            center: TestData.mockSeattleLocation.coordinate,
+            latitudinalMeters: 5000,
+            longitudinalMeters: 5000
+        ))
+
+        #expect(viewModel.hasLoadedInitialContent)
+    }
+
+    /// A map parked at region-level zoom settles through `reset()`, never
+    /// `updateViewport(_:)` — and that is exactly a case where the empty state is
+    /// the right answer, so it has to open the gate too.
+    @Test @MainActor
+    func `A zoomed out settle also releases the empty state`() {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+
+        let observer = MapStopsObserver(application: application)
+        let viewModel = HomeSheetViewModel(application: application, stopsObserver: observer)
+        #expect(viewModel.hasLoadedInitialContent == false)
+
+        observer.reset()
+
+        #expect(viewModel.hasLoadedInitialContent)
+        #expect(viewModel.visibleSections.isEmpty, "Precondition: this is the all-empty case")
+    }
+
     /// Thread-safe counter — `objectWillChange` delivery isn't actor-isolated.
     private final class ChangeCounter {
         private let lock = NSLock()

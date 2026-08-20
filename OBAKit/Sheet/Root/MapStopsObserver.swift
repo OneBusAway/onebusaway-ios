@@ -70,6 +70,18 @@ final class MapStopsObserver: NSObject, ObservableObject, MapRegionDelegate, Reg
     /// cleared on `reset()` so a stale center never outlives its render set.
     @Published private(set) var viewportCenter: CLLocationCoordinate2D?
 
+    /// True once the map has reported a settled camera, through *either* branch
+    /// of `MapPanelRootView.onMapCameraChange` — a zoomed-in settle or a
+    /// zoomed-out `reset()`. Latched, so it survives the reset that a zoom-out
+    /// performs.
+    ///
+    /// The home sheet reads it to hold its empty state back until "there's
+    /// nothing nearby" is a fact rather than the pre-first-settle default. Both
+    /// branches count: a map parked at region-level zoom never settles into
+    /// `updateViewport(_:)`, and that's exactly a case where the empty state is
+    /// the correct thing to show.
+    @Published private(set) var hasSettledOnce = false
+
     private let application: Application
 
     init(application: Application, pruneSpanFactor: Double = 4.0, renderCap: Int = 400) {
@@ -110,7 +122,18 @@ final class MapStopsObserver: NSObject, ObservableObject, MapRegionDelegate, Reg
     func reset() {
         accumulated.removeAll()
         viewport = nil
-        viewportCenter = nil
+        if !hasSettledOnce {
+            hasSettledOnce = true
+        }
+        // Guarded for the same reason `updateViewport(_:)` hand-rolls its
+        // comparison: `CLLocationCoordinate2D` isn't `Equatable`, so `@Published`
+        // won't drop a nil-over-nil write. `MapPanelRootView` calls `reset()` on
+        // *every* settle while zoomed out, not just on the zoom-out transition,
+        // so an unguarded clear would fire `objectWillChange` on each pan and
+        // cascade into the nearby section and the whole home sheet.
+        if viewportCenter != nil {
+            viewportCenter = nil
+        }
         guard !stops.isEmpty else { return }
         stops = []
     }
@@ -121,6 +144,9 @@ final class MapStopsObserver: NSObject, ObservableObject, MapRegionDelegate, Reg
     /// `stops` nor `viewportCenter` is republished, so observers aren't invalidated.
     func updateViewport(_ region: MKCoordinateRegion) {
         viewport = region
+        if !hasSettledOnce {
+            hasSettledOnce = true
+        }
         // `CLLocationCoordinate2D` isn't `Equatable`, so `@Published` can't drop a
         // same-value write for us. Comparing by hand is what keeps a re-fired
         // settle from firing `objectWillChange` — and with it a `MapPanelRootView`

@@ -31,11 +31,18 @@ final class HomeRecentStopsSectionModel: ObservableObject {
     /// Re-reads the store. Called on activation and on region change — a
     /// region switch changes which recents are current, and the store posts no
     /// notification for it.
+    ///
+    /// Guarded against a no-op write: `activate()` runs on every sheet
+    /// re-appearance and the store usually hasn't changed, so an unconditional
+    /// assignment would fire `objectWillChange` — and through the view model's
+    /// forwarding, a whole home-sheet body evaluation — for nothing.
     func reload() {
-        stops = Array(
+        let reloaded = Array(
             application.userDataStore
                 .recentStops(in: application.currentRegion)
                 .prefix(limit)
         )
+        guard reloaded != stops else { return }
+        stops = reloaded
     }
 }

@@ -7,6 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
+import Combine
 import Foundation
 import MapKit
 import Testing
@@ -440,6 +441,134 @@ final class HomeSectionModelTests: OBATestCase {
 
         #expect(model.loadIfNeeded(now: start, staleAfter: 30))
         #expect(model.loadIfNeeded(now: start.addingTimeInterval(31), staleAfter: 30))
+    }
+
+    /// A failed batch reopens the staleness gate, so the next activation retries.
+    ///
+    /// `loadIfNeeded()` has to stamp `lastFetchDate` before the batch resolves —
+    /// otherwise two activations in the same run loop would both fetch. That
+    /// stamp is only meaningful if the batch succeeded: without the failure
+    /// path, a failed fetch left the rows stuck in "Loading…" for the rest of
+    /// the 30-second window, and this section has neither the polling timer nor
+    /// the pull-to-refresh that rescue the Bookmarks tab.
+    @Test @MainActor
+    func `Bookmarks section retries inside the staleness window after a failed batch`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplicationWithRegion(queue: queue, dataLoader: dataLoader)
+        _ = try makeTripBookmarks(count: 1, application: application)
+
+        dataLoader.mock(data: Data(), statusCode: 500) { request in
+            request.url?.path.contains("/api/where/arrivals-and-departures-for-stop") ?? false
+        }
+
+        try #require(application.currentRegion != nil)
+        let model = HomeBookmarksSectionModel(application: application, limit: 4)
+        let start = Date()
+        try #require(model.loadIfNeeded(now: start, staleAfter: 30))
+
+        // Drive a batch to completion so the loader reports its outcome.
+        await model.loader.loadDataAndWait()
+        try #require(model.loader.lastBatchHadError, "Precondition: the batch must have failed")
+
+        #expect(
+            model.loadIfNeeded(now: start.addingTimeInterval(1), staleAfter: 30),
+            "A failed batch must not gate out the next activation"
+        )
+    }
+
+    /// The control for the test above: a *successful* batch leaves the gate shut,
+    /// so the failure path can't be passing because the gate stopped working.
+    @Test @MainActor
+    func `Bookmarks section keeps the staleness gate shut after a successful batch`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplicationWithRegion(queue: queue, dataLoader: dataLoader)
+        _ = try makeTripBookmarks(count: 1, application: application)
+
+        dataLoader.mock(data: Fixtures.loadData(file: "arrivals-and-departures-for-stop-1_75414.json")) { request in
+            request.url?.path.contains("/api/where/arrivals-and-departures-for-stop") ?? false
+        }
+
+        try #require(application.currentRegion != nil)
+        let model = HomeBookmarksSectionModel(application: application, limit: 4)
+        let start = Date()
+        try #require(model.loadIfNeeded(now: start, staleAfter: 30))
+
+        await model.loader.loadDataAndWait()
+        try #require(model.loader.lastBatchHadError == false, "Precondition: the batch must have succeeded")
+
+        #expect(model.loadIfNeeded(now: start.addingTimeInterval(1), staleAfter: 30) == false)
+    }
+
+    /// A repeat reload with an unchanged store publishes nothing.
+    ///
+    /// `activate()` runs on every sheet re-appearance, and the view model
+    /// forwards each section's `objectWillChange` as its own — so an
+    /// unconditional assignment here would cost a full home-sheet body
+    /// evaluation every time the user returned from a stacked sheet.
+    @Test @MainActor
+    func `Recent section does not republish when the store is unchanged`() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let stops = try Fixtures.loadSomeStops()
+        let stop = try #require(stops.first)
+        stop.regionIdentifier = Fixtures.pugetSoundRegion.regionIdentifier
+        application.userDataStore.addRecentStop(stop, region: Fixtures.pugetSoundRegion)
+
+        let model = HomeRecentStopsSectionModel(application: application)
+        try #require(model.stops.isEmpty == false)
+
+        let counter = ChangeCounter()
+        let cancellable = model.objectWillChange.sink { _ in counter.increment() }
+        defer { cancellable.cancel() }
+
+        model.reload()
+        model.reload()
+        #expect(counter.count == 0, "An unchanged reload must not invalidate observers")
+
+        // A real change still publishes.
+        let second = try #require(stops.dropFirst().first)
+        second.regionIdentifier = Fixtures.pugetSoundRegion.regionIdentifier
+        application.userDataStore.addRecentStop(second, region: Fixtures.pugetSoundRegion)
+        model.reload()
+        #expect(counter.count == 1, "A changed store must still publish")
+    }
+
+    /// The bookmarks counterpart of the test above: rebuilding identical rows
+    /// publishes nothing. This runs on every activation *and* on every loader
+    /// update, so it's the hotter of the two.
+    @Test @MainActor
+    func `Bookmarks section does not republish when the rows are unchanged`() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplicationWithRegion(queue: queue, dataLoader: dataLoader)
+        _ = try seedBookmarks(count: 2, application: application)
+
+        try #require(application.currentRegion != nil)
+        let model = HomeBookmarksSectionModel(application: application, limit: 4)
+        try #require(model.rows.count == 2)
+
+        let counter = ChangeCounter()
+        let cancellable = model.objectWillChange.sink { _ in counter.increment() }
+        defer { cancellable.cancel() }
+
+        model.refreshSelection()
+        model.refreshSelection()
+        #expect(counter.count == 0, "An unchanged rebuild must not invalidate observers")
+
+        _ = try seedBookmarks(count: 1, application: application, startingAt: 2)
+        model.refreshSelection()
+        #expect(counter.count == 1, "A changed selection must still publish")
+    }
+
+    /// Thread-safe counter — `objectWillChange` delivery isn't actor-isolated.
+    private final class ChangeCounter {
+        private let lock = NSLock()
+        nonisolated(unsafe) private(set) var count: Int = 0
+
+        nonisolated func increment() {
+            lock.lock()
+            defer { lock.unlock() }
+            count += 1
+        }
     }
 
     /// A changed selection re-fetches even inside the staleness window —

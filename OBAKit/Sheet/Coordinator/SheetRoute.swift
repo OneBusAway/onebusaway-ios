@@ -176,6 +176,13 @@ nonisolated extension AppSheetRoute {
 
     /// Height of the home sheet's smallest detent. Shared by `MapPanelRootView`
     /// so the map's bottom safe-area padding matches the collapsed sheet.
+    ///
+    /// Sized to `HomeSheetView`'s search-bar row and nothing else, so the
+    /// collapsed sheet reads as a search field rather than as a list that got
+    /// cut off: a body-metrics capsule (~48pt: one line of text plus its 14pt
+    /// vertical padding, top and bottom) under the row's own 16pt top and 12pt
+    /// bottom padding, less the couple of points the drag indicator already
+    /// occupies above it.
     static let homeCollapsedHeight: CGFloat = 75
 
     var detentConfiguration: SheetDetentConfiguration {

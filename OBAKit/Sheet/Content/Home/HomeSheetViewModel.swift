@@ -36,6 +36,16 @@ final class HomeSheetViewModel: NSObject, ObservableObject, RegionsServiceDelega
     /// sections are dropped entirely — header included.
     @Published private(set) var visibleSections: [HomeSheetSection] = []
 
+    /// Whether the sheet knows enough to say the three sections are genuinely
+    /// empty. False until the map's first camera settle.
+    ///
+    /// Recents and bookmarks are read from the store synchronously in the
+    /// section models' initializers, so they're already accurate at first body
+    /// evaluation. Nearby isn't: it's empty until the map settles. Without this
+    /// gate, a cold open with nothing saved paints "Nothing Here Yet" for a frame
+    /// or two before the nearby stops arrive and replace it.
+    @Published private(set) var hasLoadedInitialContent = false
+
     private let application: Application
     private var cancellables = Set<AnyCancellable>()
 
@@ -72,6 +82,16 @@ final class HomeSheetViewModel: NSObject, ObservableObject, RegionsServiceDelega
         .sink { [weak self] _ in self?.objectWillChange.send() }
         .store(in: &cancellables)
 
+        // Latched in the observer, so this fires at most once with `true` — and
+        // fires immediately with `true` when the sheet is rebuilt against an
+        // observer that has already settled.
+        stopsObserver.$hasSettledOnce
+            .sink { [weak self] hasSettled in
+                guard let self, hasSettled, !self.hasLoadedInitialContent else { return }
+                self.hasLoadedInitialContent = true
+            }
+            .store(in: &cancellables)
+
         // Recompute the visible set whenever any child's content changes. The
         // children publish values, not the section list, so this is the single
         // place the order and the omission rule live.
@@ -89,8 +109,10 @@ final class HomeSheetViewModel: NSObject, ObservableObject, RegionsServiceDelega
 
     /// Called when the sheet's content appears. Idempotent: the sheet system
     /// tears content down and rebuilds it without the user navigating anywhere,
-    /// so this can fire several times per visit. The store reads are cheap and
-    /// unconditional; only the bookmark fetch is gated.
+    /// so this can fire several times per visit. Every step here is a no-op when
+    /// nothing changed: the store reads are cheap and their results are only
+    /// published when they differ, and the bookmark fetch is gated on staleness,
+    /// region, and selection.
     func activate() {
         recent.reload()
         bookmarks.loadIfNeeded()
