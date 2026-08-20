@@ -8,6 +8,7 @@
 //
 
 import Foundation
+import UIKit
 import Testing
 @testable import OBAKit
 @testable import OBAKitCore
@@ -133,5 +134,48 @@ final class BookmarkActionsTests: OBATestCase {
             .startLiveActivity(for: bookmark, arrivalDepartures: [])
 
         #expect(result == .failed)
+    }
+
+    /// Cancelling the editor must reach the delegate.
+    ///
+    /// `EditBookmarkViewController.close()` used to call `dismiss(animated:)`
+    /// itself and tell nobody. The UIKit callers never noticed — their
+    /// `bookmarkEditorCancelled` only dismisses, which UIKit had already done —
+    /// but a presenter holding its own state, like the Bookmarks index sheet's
+    /// `.sheet(item:)` binding, was left believing the editor was still up.
+    @Test @MainActor func `Cancelling the bookmark editor notifies the delegate`() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let bookmark = try makeStopBookmark(application: application)
+        let delegate = BookmarkEditorDelegateSpy()
+
+        let navigation = BookmarkActions(application: application)
+            .makeBookmarkEditor(for: bookmark, delegate: delegate)
+        let editor = try #require(navigation.viewControllers.first)
+
+        // Fires the Cancel button's action rather than calling `close()`, which
+        // is private — and this way the button's wiring is under test too.
+        let cancelButton = try #require(editor.navigationItem.leftBarButtonItem)
+        let action = try #require(cancelButton.action)
+        let target = try #require(cancelButton.target as? NSObject)
+        _ = target.perform(action, with: cancelButton)
+
+        #expect(delegate.cancelledCount == 1)
+        #expect(delegate.editedCount == 0)
+    }
+}
+
+/// Records which `BookmarkEditorDelegate` callback the editor reached.
+@MainActor
+private final class BookmarkEditorDelegateSpy: NSObject, BookmarkEditorDelegate {
+    private(set) var cancelledCount = 0
+    private(set) var editedCount = 0
+
+    func bookmarkEditorCancelled(_ viewController: UIViewController) {
+        cancelledCount += 1
+    }
+
+    func bookmarkEditor(_ viewController: UIViewController, editedBookmark bookmark: Bookmark, isNewBookmark: Bool) {
+        editedCount += 1
     }
 }

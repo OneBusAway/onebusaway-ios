@@ -178,7 +178,7 @@ final class AppSheetViewFactoryTests: OBATestCase {
     /// order; what's under test here is that the factory hands it the right
     /// three things.
     @Test @MainActor
-    func `Nearby all view resolves the settled viewport center`() {
+    func `Nearby all view resolves the settled viewport center`() throws {
         let dataLoader = MockDataLoader(testName: name)
         let application = buildApplication(queue: queue, dataLoader: dataLoader)
         let stopsObserver = MapStopsObserver(application: application)
@@ -193,7 +193,7 @@ final class AppSheetViewFactoryTests: OBATestCase {
                 longitudinalMeters: 1000
             )
         )
-        try? #require(stopsObserver.viewportCenter != nil)
+        try #require(stopsObserver.viewportCenter != nil)
 
         let view = makeFactory(application: application, stopsObserver: stopsObserver).nearbyAllView()
 
@@ -201,30 +201,58 @@ final class AppSheetViewFactoryTests: OBATestCase {
         #expect(view.coordinate?.longitude == settled.longitude)
     }
 
-    /// With no viewport, no device fix, and no current region there is nothing to
-    /// anchor on, and the factory must hand the view nil rather than a default —
-    /// nil is what renders the empty state instead of fetching stops around (0, 0).
+    /// The second link in the chain: with no settled viewport, the anchor is the
+    /// device's fix. Asserting it separately from the region centre is what shows
+    /// the factory reads `locationService` at all — a factory that skipped
+    /// straight to the region would still satisfy the viewport test above.
     @Test @MainActor
-    func `Nearby all view passes nil when nothing can anchor the search`() {
+    func `Nearby all view falls back to the device location`() throws {
         let dataLoader = MockDataLoader(testName: name)
         let application = buildApplication(queue: queue, dataLoader: dataLoader)
         let stopsObserver = MapStopsObserver(application: application)
 
-        // `reset()` clears any settled centre; the test application has no
-        // location fix. Only a current region could still supply an anchor.
-        stopsObserver.reset()
+        // A published fix sends the app off to fetch agency alerts, and
+        // `MockDataLoader` traps any request it has no stub for — which takes
+        // the whole test process down, not just this test.
+        Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
 
-        try? #require(stopsObserver.viewportCenter == nil)
-        try? #require(application.locationService.currentLocation == nil)
+        stopsObserver.reset()
+        try #require(stopsObserver.viewportCenter == nil)
+
+        // The mock manager publishes its fix only once updates start, which is
+        // why `currentLocation` is nil until this call.
+        application.locationService.startUpdatingLocation()
+        let location = try #require(application.locationService.currentLocation)
 
         let view = makeFactory(application: application, stopsObserver: stopsObserver).nearbyAllView()
 
-        if application.currentRegion == nil {
-            #expect(view.coordinate == nil)
-        } else {
-            // A region is configured, so the last link in the chain supplies it.
-            #expect(view.coordinate?.latitude == application.currentRegion?.centerCoordinate.latitude)
-        }
+        #expect(view.coordinate?.latitude == location.coordinate.latitude)
+        #expect(view.coordinate?.longitude == location.coordinate.longitude)
+    }
+
+    /// The last link: no viewport and no device fix leaves the current region's
+    /// centre.
+    ///
+    /// The all-nil case — where the factory must hand the view nil rather than
+    /// search around (0, 0) — is asserted in `NearbyCoordinateResolverTests`. It
+    /// isn't reachable from here: a test `Application` is built with a fixed
+    /// region, so `currentRegion` is never nil.
+    @Test @MainActor
+    func `Nearby all view falls back to the current region center`() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let stopsObserver = MapStopsObserver(application: application)
+
+        stopsObserver.reset()
+
+        try #require(stopsObserver.viewportCenter == nil)
+        try #require(application.locationService.currentLocation == nil)
+        let region = try #require(application.currentRegion)
+
+        let view = makeFactory(application: application, stopsObserver: stopsObserver).nearbyAllView()
+
+        #expect(view.coordinate?.latitude == region.centerCoordinate.latitude)
+        #expect(view.coordinate?.longitude == region.centerCoordinate.longitude)
     }
 
     /// `.nearbyStops` and `.nearbyAll` are the same screen; only the way the

@@ -13,10 +13,12 @@ import OBAKitCore
 
 /// The Bookmarks index — `AppSheetRoute.bookmarksAll`.
 ///
-/// Renders `BookmarksListView` unchanged, so group sections, collapse state,
-/// pull-to-refresh, and the row context menu can't drift from the Bookmarks
-/// tab. Only the navigation handler differs: taps stack `.stopDetails` on the
-/// sheet coordinator instead of pushing through `viewRouter`.
+/// Renders the same `BookmarksListView` the Bookmarks tab does, so group
+/// sections, collapse state, and the row context menu can't drift between the
+/// two. Two things differ: the navigation handler — taps stack `.stopDetails`
+/// on the sheet coordinator instead of pushing through `viewRouter` — and
+/// `Presentation.sheet`, which swaps pull-to-refresh for a toolbar button,
+/// since a downward drag here is already the sheet's dismiss gesture.
 ///
 /// Manage Bookmarks/Groups is deliberately not offered here — that stays a
 /// tab-level editing surface.

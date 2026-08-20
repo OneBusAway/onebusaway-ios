@@ -77,6 +77,14 @@ private struct NearbyStopsSheetContent: View {
     @EnvironmentObject var coordinator: SheetCoordinator<AppSheetRoute>
     @State private var searchText = ""
 
+    /// Whether `.task` has run to completion at least once.
+    ///
+    /// `viewModel.isLoading` alone can't drive the spinner: it is still `false`
+    /// on the first render, because `.task` doesn't run until after the body has
+    /// been evaluated. Keying only on it painted "No Nearby Stops" for a frame
+    /// before the fetch had even started.
+    @State private var hasCompletedFirstLoad = false
+
     init(viewModel: @autoclosure @escaping () -> NearbyStopsViewModel) {
         _viewModel = StateObject(wrappedValue: viewModel())
     }
@@ -95,7 +103,10 @@ private struct NearbyStopsSheetContent: View {
     var body: some View {
         list
             .searchable(text: $searchText)
-            .task { await viewModel.loadStops() }
+            .task {
+                await viewModel.loadStops()
+                hasCompletedFirstLoad = true
+            }
     }
 
     @ViewBuilder
@@ -113,7 +124,7 @@ private struct NearbyStopsSheetContent: View {
                     Task { await viewModel.loadStops() }
                 }
             }
-        } else if viewModel.isLoading && viewModel.stops.isEmpty {
+        } else if !hasCompletedFirstLoad || (viewModel.isLoading && viewModel.stops.isEmpty) {
             ProgressView()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if sections.isEmpty {
