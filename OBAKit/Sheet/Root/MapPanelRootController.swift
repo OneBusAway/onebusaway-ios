@@ -102,7 +102,7 @@ public final class MapPanelRootController: UIViewController {
 
         func present(vehicleStatus: VehicleStatus) {
             // As above: `topmostController()` is nil exactly when `host` is.
-            guard let host, let application, let presenter = topmostController() else {
+            guard let application, let presenter = topmostController() else {
                 Logger.error("TripPresentationBridge: dropping vehicle present — host or application is nil")
                 return
             }
@@ -115,7 +115,13 @@ public final class MapPanelRootController: UIViewController {
                     value: "The vehicle you chose doesn't appear to be on a trip right now, which means we don't know how to show it to you.",
                     comment: "This message appears when a searched-for vehicle doesn't have an assigned trip."
                 )
-                Task { await AlertPresenter.show(errorMessage: message, presentingController: host) }
+                // `presenter`, not `host`, for the reason spelled out in
+                // `presentTripController` below: UIKit ignores `present` on a
+                // controller that already has a `presentedViewController`, and by the
+                // time we get here the base sheet is still up on `host`. Presenting
+                // from `host` silently drops the alert, leaving the rider on home with
+                // no explanation for why their vehicle search went nowhere.
+                Task { await AlertPresenter.show(errorMessage: message, presentingController: presenter) }
                 return
             }
 
