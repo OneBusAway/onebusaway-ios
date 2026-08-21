@@ -8,6 +8,7 @@
 //
 
 import SwiftUI
+import MapKit
 import OBAKitCore
 import OTPKit
 
@@ -86,6 +87,10 @@ nonisolated enum AppSheetRoute: SheetRouteable {
     case transitAlert(alertID: String)
     case rentalDetail(rentalID: VehicleRental.ID)
     case rentalCluster(memberIDs: [VehicleRental.ID])
+    case searchResults(SearchResponse)
+    case mapItem(MKMapItem)
+    case routeStops(StopsForRoute)
+    case nearbyStops(coordinate: CLLocationCoordinate2D)
 
     case more
     case settings
@@ -133,6 +138,15 @@ nonisolated extension AppSheetRoute {
             // must produce the same route regardless of feed ordering, which is
             // what keeps an open sheet bound to its marker across a camera move.
             return "\(caseName)-\(memberIDs.sorted().joined(separator: ","))"
+        case .searchResults(let response):
+            return "\(caseName)-\(response.request.searchType.rawValue)-\(response.request.query)"
+        case .mapItem(let item):
+            let coordinate = item.placemark.coordinate
+            return "\(caseName)-\(coordinate.latitude)-\(coordinate.longitude)"
+        case .routeStops(let stopsForRoute):
+            return "\(caseName)-\(stopsForRoute.id)"
+        case .nearbyStops(let coordinate):
+            return "\(caseName)-\(coordinate.latitude)-\(coordinate.longitude)"
         }
     }
 
@@ -151,7 +165,9 @@ nonisolated extension AppSheetRoute {
     /// Detail destinations prefer the stacked layer so the base sheet peeks beneath.
     var prefersStacking: Bool {
         switch self {
-        case .stopDetails, .tripPlanner, .tripDetails, .currentTrip, .transitAlert, .more, .nearbyAll, .recentStopsAll, .bookmarksAll, .settings, .mapSettings, .rentalDetail, .rentalCluster:
+        case .stopDetails, .tripPlanner, .tripDetails, .currentTrip, .transitAlert, .more, .nearbyAll,
+             .recentStopsAll, .bookmarksAll, .settings, .mapSettings, .rentalDetail, .rentalCluster,
+             .searchResults, .mapItem, .routeStops, .nearbyStops:
             return true
         case .home, .search, .routePicker:
             return false
@@ -173,7 +189,14 @@ nonisolated extension AppSheetRoute {
 
     /// Height of the home sheet's smallest detent. Shared by `MapPanelRootView`
     /// so the map's bottom safe-area padding matches the collapsed sheet.
-    static let homeCollapsedHeight: CGFloat = 80
+    ///
+    /// Sized to `HomeSheetView`'s search-bar row and nothing else, so the
+    /// collapsed sheet reads as a search field rather than as a list that got
+    /// cut off: a body-metrics capsule (~48pt: one line of text plus its 14pt
+    /// vertical padding, top and bottom) under the row's own 16pt top and 12pt
+    /// bottom padding, less the couple of points the drag indicator already
+    /// occupies above it.
+    static let homeCollapsedHeight: CGFloat = 75
 
     var detentConfiguration: SheetDetentConfiguration {
         switch self {
@@ -246,6 +269,34 @@ nonisolated extension AppSheetRoute {
             return SheetDetentConfiguration(
                 detents: [.medium, .large],
                 initialDetent: .medium,
+                isDismissDisabled: false
+            )
+        case .mapItem:
+            // Medium only: the sheet is a detail card over the map, and the map has
+            // to stay visible behind it. Long content scrolls inside the detent.
+            return SheetDetentConfiguration(
+                detents: [.medium],
+                initialDetent: .medium,
+                isDismissDisabled: false
+            )
+        case .routeStops:
+            // Opens at medium so the route polyline stays on screen; the user can
+            // drag to large for the full stop list.
+            return SheetDetentConfiguration(
+                detents: [.medium, .large],
+                initialDetent: .medium,
+                isDismissDisabled: false
+            )
+        case .searchResults:
+            return SheetDetentConfiguration(
+                detents: [.medium, .large],
+                initialDetent: .large,
+                isDismissDisabled: false
+            )
+        case .nearbyStops:
+            return SheetDetentConfiguration(
+                detents: [.large],
+                initialDetent: .large,
                 isDismissDisabled: false
             )
         }

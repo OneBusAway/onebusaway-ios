@@ -35,6 +35,12 @@ struct BookmarkRowViewModel: Identifiable, Equatable {
     let stopID: StopID
     let isTripBookmark: Bool
     let isFavorite: Bool
+
+    /// Whether the user pinned this bookmark to the top of the home sheet's
+    /// bookmarks section. Carried into the row so the cell can show the glyph and
+    /// the context menu can offer the right verb.
+    let isPinned: Bool
+
     let routeShortName: String?
 
     /// Upcoming arrival/departures for a trip bookmark. Empty until data lands,
@@ -61,6 +67,7 @@ struct BookmarkRowViewModel: Identifiable, Equatable {
         self.stopID = bookmark.stopID
         self.isTripBookmark = bookmark.isTripBookmark
         self.isFavorite = bookmark.isFavorite
+        self.isPinned = bookmark.isPinned
         self.routeShortName = bookmark.routeShortName
         // Self-enforce "always empty for whole-stop bookmarks" rather than
         // trusting the caller.
@@ -76,6 +83,7 @@ struct BookmarkRowViewModel: Identifiable, Equatable {
         lhs.stopID == rhs.stopID &&
         lhs.isTripBookmark == rhs.isTripBookmark &&
         lhs.isFavorite == rhs.isFavorite &&
+        lhs.isPinned == rhs.isPinned &&
         lhs.routeShortName == rhs.routeShortName &&
         lhs.arrivalDepartures == rhs.arrivalDepartures &&
         lhs.hasLoadedArrivalData == rhs.hasLoadedArrivalData &&

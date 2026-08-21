@@ -74,6 +74,30 @@
 			<string>%2$d طبقة مفعّلة</string>
 		</dict>
 	</dict>
+	<key>search_results_sheet.result_count_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>لا توجد نتائج</string>
+			<key>one</key>
+			<string>نتيجة واحدة</string>
+			<key>two</key>
+			<string>نتيجتان</string>
+			<key>few</key>
+			<string>%d نتائج</string>
+			<key>many</key>
+			<string>%d نتيجة</string>
+			<key>other</key>
+			<string>%d نتيجة</string>
+		</dict>
+	</dict>
 	<key>stop_controller.transfer_show_earlier_departures_fmt</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

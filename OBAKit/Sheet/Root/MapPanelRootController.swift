@@ -25,27 +25,39 @@ public final class MapPanelRootController: UIViewController {
 
     public init(application: Application) {
         let bridge = TripPresentationBridge()
-
-        // Built here, not inside `MapPanelRootView.init`, because
-        // `AppSheetViewFactory` needs the same instances — `MapSheetModel` reads
-        // and writes the map type through the view model the map renders from,
-        // so a second instance would let the sheet and the map disagree.
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        let displayModel = MapSearchDisplayModel()
+        // Built here, not inside `MapPanelRootView`, because the factory is
+        // constructed first and the home sheet's nearby section must observe
+        // the same instance the map renders from. Same reasoning as
+        // `displayModel` above.
+        let stopsObserver = MapStopsObserver(application: application)
+        // Same reasoning for the map models: `AppSheetViewFactory` needs the
+        // very instances the map renders from — `MapSheetModel` reads and
+        // writes the map type through `MapViewModel`, so a second copy would
+        // let the Map settings sheet and the map disagree.
         let initialMapType = MapBaseType(application.mapRegionManager.userSelectedMapType)
         let mapViewModel = MapViewModel(application: application, initialMapType: initialMapType)
         let layersModel = MapPanelLayersModel(application: application)
-
         let factory = AppSheetViewFactory(
             application: application,
             mapViewModel: mapViewModel,
             layersModel: layersModel,
             onPresentTrip: { [weak bridge] arrival in bridge?.present(arrival) },
-            presentingController: { [weak bridge] in bridge?.topmostController() }
+            onPresentVehicleTrip: { [weak bridge] vehicleStatus in bridge?.present(vehicleStatus: vehicleStatus) },
+            presentingController: { [weak bridge] in bridge?.topmostController() },
+            coordinator: coordinator,
+            searchDisplayModel: displayModel,
+            stopsObserver: stopsObserver
         )
         let rootView = MapPanelRootView(
             application: application,
             mapViewModel: mapViewModel,
             layersModel: layersModel,
-            factory: factory
+            factory: factory,
+            coordinator: coordinator,
+            searchDisplayModel: displayModel,
+            stopsObserver: stopsObserver
         )
         self.host = UIHostingController(rootView: rootView)
         self.bridge = bridge
@@ -103,6 +115,39 @@ public final class MapPanelRootController: UIViewController {
                 return
             }
             let trip = TripViewController(application: application, arrivalDeparture: arrival)
+            presentTripController(trip, application: application, presenter: presenter)
+        }
+
+        func present(vehicleStatus: VehicleStatus) {
+            // As above: `topmostController()` is nil exactly when `host` is.
+            guard let application, let presenter = topmostController() else {
+                Logger.error("TripPresentationBridge: dropping vehicle present — host or application is nil")
+                return
+            }
+
+            guard let convertible = TripConvertible(vehicleStatus: vehicleStatus) else {
+                // Same message the UIKit map shows: the vehicle exists but isn't
+                // assigned to a trip, so there's nothing to display.
+                let message = OBALoc(
+                    "map_controller.vehicle_not_on_trip_error",
+                    value: "The vehicle you chose doesn't appear to be on a trip right now, which means we don't know how to show it to you.",
+                    comment: "This message appears when a searched-for vehicle doesn't have an assigned trip."
+                )
+                // `presenter`, not `host`, for the reason spelled out in
+                // `presentTripController` below: UIKit ignores `present` on a
+                // controller that already has a `presentedViewController`, and by the
+                // time we get here the base sheet is still up on `host`. Presenting
+                // from `host` silently drops the alert, leaving the rider on home with
+                // no explanation for why their vehicle search went nowhere.
+                Task { await AlertPresenter.show(errorMessage: message, presentingController: presenter) }
+                return
+            }
+
+            let trip = TripViewController(application: application, tripConvertible: convertible)
+            presentTripController(trip, application: application, presenter: presenter)
+        }
+
+        private func presentTripController(_ trip: TripViewController, application: Application, presenter: UIViewController) {
             // Wrap in our own UINavigationController and modally present from
             // the topmost presented controller, not `host` directly:
             //

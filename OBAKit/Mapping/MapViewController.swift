@@ -1216,17 +1216,20 @@ class MapViewController: UIViewController,
             removePinHandler = nil
         }
 
-        let viewModel = MapItemViewModel(mapItem: mapItem, application: application, delegate: self, removePinHandler: removePinHandler) { [weak self] in
-            guard let self else { return }
-
-            self.dismissExistingMapItemController(animated: true)
-            self.showTripPlanner(destination: mapItem)
-            self.semiModalPanel?.move(to: .tip, animated: false)
-        }
-
         self.floatingPanel.move(to: .tip, animated: true)
 
-        let mapItemController = MapItemViewController(viewModel)
+        let mapItemController = MapItemViewController(
+            application: application,
+            mapItem: mapItem,
+            delegate: self,
+            removePinHandler: removePinHandler,
+            planTripHandler: { [weak self] in
+                guard let self else { return }
+                self.dismissExistingMapItemController(animated: true)
+                self.showTripPlanner(destination: mapItem)
+                self.semiModalPanel?.move(to: .tip, animated: false)
+            }
+        )
         let semiModal = createSemiModalPanel(childController: mapItemController)
         semiModal.addPanel(toParent: self)
         self.semiModalMapItemController = semiModal

@@ -95,6 +95,22 @@ public protocol UserDataStore: NSObjectProtocol {
     ///   - index: The sort order or index of the bookmark in its group. Pass in `Int.max` to append to the end.
     func add(_ bookmark: Bookmark, to group: BookmarkGroup?, index: Int)
 
+    /// Sets whether `bookmark` is pinned to the top of the home sheet's bookmarks
+    /// section, and persists the change.
+    ///
+    /// Separate from `add(_:to:)` on purpose. `bookmarks` is computed over
+    /// `UserDefaults` — its getter decodes fresh instances — so mutating a
+    /// `Bookmark` in memory doesn't persist, and routing the write through
+    /// `add(_:to:)` would re-append the bookmark and renumber `sortOrder` within
+    /// its group, quietly moving it to the bottom of the Bookmarks tab. This
+    /// updates in place and leaves group membership and `sortOrder` alone.
+    ///
+    /// Posts `.bookmarksDidChange`. No-op if `bookmark` isn't in the store.
+    /// - Parameters:
+    ///   - isPinned: The new pinned state.
+    ///   - bookmark: The `Bookmark` to update.
+    func setPinned(_ isPinned: Bool, for bookmark: Bookmark)
+
     /// Deletes the specified `Bookmark` from the `UserDataStore`.
     /// - Parameter bookmark: The `Bookmark` to delete.
     func delete(bookmark: Bookmark)
@@ -128,6 +144,10 @@ public protocol UserDataStore: NSObjectProtocol {
 
     /// A list of recently-viewed stops
     var recentStops: [Stop] { get }
+
+    /// Recent stops belonging to `region`, most-recently-used first.
+    /// Returns `[]` when `region` is nil.
+    func recentStops(in region: Region?) -> [Stop]
 
     /// Add a `Stop` to the list of recently-viewed `Stop`s
     ///
@@ -601,6 +621,22 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         NotificationCenter.default.post(name: .bookmarksDidChange, object: self)
     }
 
+    public func setPinned(_ isPinned: Bool, for bookmark: Bookmark) {
+        var allBookmarks = bookmarks
+        guard let index = allBookmarks.firstIndex(where: { $0.id == bookmark.id }) else { return }
+        guard allBookmarks[index].isPinned != isPinned else { return }
+
+        allBookmarks[index].isPinned = isPinned
+        // Keep the caller's instance in step. `bookmarks`' getter decodes fresh
+        // objects, so the one the caller is holding is a different instance than
+        // the one just written — without this its `isPinned` would still read
+        // stale to whoever kept a reference.
+        bookmark.isPinned = isPinned
+        bookmarks = allBookmarks
+
+        NotificationCenter.default.post(name: .bookmarksDidChange, object: self)
+    }
+
     public func delete(bookmark: Bookmark) {
         var all = bookmarks
         guard let stored = all.first(where: { $0.id == bookmark.id }) else { return }
@@ -669,9 +705,17 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
 
         updateBookmarksWithStop(stop, region: region)
 
-        if let idx = recentStops.firstIndex(of: stop) {
-            recentStops.remove(at: idx)
-        }
+        // A stop's identity is its `id`. `firstIndex(of:)` would compare every
+        // field `Stop.isEqual` covers — route list, name, code, coordinates — so
+        // the same stop re-fetched after any server-side change wouldn't match
+        // the stored copy and would be appended a second time under one id.
+        // Bookmarks already identify by id (see `add(_:to:index:)`, which looks
+        // up `findBookmark(id:)`); recents now do too.
+        //
+        // `removeAll` rather than removing the first match: a store that already
+        // accumulated duplicates before this fix heals the next time the user
+        // views that stop, instead of shedding one copy per visit.
+        recentStops.removeAll { $0.id == stop.id }
         recentStops.insert(stop, at: 0)
 
         if recentStops.count > maximumRecentStopsCount {
@@ -686,10 +730,12 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         recentStops.removeAll()
     }
 
+    /// Identifies the stop by `id`, like `addRecentStop`. The instance a list
+    /// hands back on swipe-to-delete was decoded from the store, but the caller
+    /// may equally pass a freshly-fetched copy whose fields have since drifted;
+    /// matching on full equality would silently delete nothing.
     public func delete(recentStop: Stop) {
-        if let idx = recentStops.firstIndex(of: recentStop) {
-            recentStops.remove(at: idx)
-        }
+        recentStops.removeAll { $0.id == recentStop.id }
     }
 
     public var maximumRecentStopsCount: Int {
@@ -699,6 +745,21 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
     public func findRecentStops(matching searchText: String) -> [Stop] {
         let cleanedText = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         return recentStops.filter { $0.matchesQuery(cleanedText) }
+    }
+
+    public func recentStops(in region: Region?) -> [Stop] {
+        guard let region = region else { return [] }
+
+        // Deduped by `id`, keeping the most recent occurrence. `addRecentStop`
+        // prevents duplicates going in, but stores written before it identified
+        // stops by id can already hold two entries for one stop — and callers
+        // key their list rows off `id`, where a repeat is undefined behaviour
+        // rather than a cosmetic issue. This makes such a store render
+        // correctly now instead of only after the user revisits each stop.
+        var seen = Set<StopID>()
+        return recentStops
+            .filter { $0.regionIdentifier == region.regionIdentifier }
+            .filter { seen.insert($0.id).inserted }
     }
 
     // MARK: - Recent Map Items

@@ -108,7 +108,7 @@ class SearchInteractor: NSObject {
     // MARK: - Recent Stops
     private func buildRecentStopsSection(searchText: String) -> SearchListSection? {
         let recentStops = userDataStore.findRecentStops(matching: searchText).map { stop in
-            SearchListRow(kind: .recentStop, title: stop.name, accessory: .disclosureIndicator) { [weak self] in
+            SearchListRow(kind: .recentStop(id: stop.id), title: stop.name, accessory: .disclosureIndicator) { [weak self] in
                 guard let self else { return }
                 self.delegate?.searchInteractor(self, showStop: stop)
             }
@@ -124,7 +124,7 @@ class SearchInteractor: NSObject {
     // MARK: - Bookmarks
     private func buildBookmarksSection(searchText: String) -> SearchListSection? {
         let bookmarks = userDataStore.findBookmarks(matching: searchText).map { bookmark in
-            SearchListRow(kind: .bookmark, title: bookmark.name, accessory: .disclosureIndicator) { [weak self] in
+            SearchListRow(kind: .bookmark(id: bookmark.id.uuidString), title: bookmark.name, accessory: .disclosureIndicator) { [weak self] in
                 guard let self else { return }
                 self.delegate?.searchInteractor(self, showStop: bookmark.stop)
             }
@@ -136,7 +136,7 @@ class SearchInteractor: NSObject {
 
         return .init(
             id: .bookmarks,
-            title: OBALoc("search_controller.bookmarks.header", value: "Bookmarks", comment: "Title of the Bookmarks search header"),
+            title: Strings.bookmarks,
             content: bookmarks
         )
     }

@@ -62,6 +62,26 @@
 			<string>включено %2$d слоя</string>
 		</dict>
 	</dict>
+	<key>search_results_sheet.result_count_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d результат</string>
+			<key>few</key>
+			<string>%d результата</string>
+			<key>many</key>
+			<string>%d результатов</string>
+			<key>other</key>
+			<string>%d результата</string>
+		</dict>
+	</dict>
 	<key>stop_controller.transfer_show_earlier_departures_fmt</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

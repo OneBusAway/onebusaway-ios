@@ -132,3 +132,35 @@ final class SheetCoordinator<Route: SheetRouteable>: ObservableObject {
         currentDetent = root.detentConfiguration.initialDetent
     }
 }
+
+// MARK: - Returning to a stacked sheet
+
+/// When a screen that is *itself* a stacked sheet has become visible again
+/// because something on top of it went away.
+///
+/// A stacked sheet is never removed from the view hierarchy while another sheet
+/// covers it, so `.task` and `.onAppear` fire exactly once no matter how many
+/// times the user comes back to it. Any screen whose contents can go stale
+/// underneath — the Recent Stops index, whose store is rewritten by the very act
+/// of viewing a stop from it — has to notice the return some other way.
+///
+/// Kept as a pure function so the rule is assertable without a sheet stack, in
+/// the same spirit as `NearbyCoordinateResolver`.
+nonisolated enum StackedSheetReturn {
+
+    /// Whether a change in stacked depth means a sheet at *any* depth has just
+    /// been uncovered.
+    ///
+    /// Keyed on the depth decreasing rather than reaching zero: a stacked sheet
+    /// is itself part of the count, so the stack never empties while one is on
+    /// screen. `HomeSheetView` can watch for empty because it sits below the
+    /// stacked layer entirely — same intent, different depth. Getting this
+    /// wrong fails silently, which is why it has a name and a test.
+    ///
+    /// - Parameters:
+    ///   - previousDepth: `stackedRoutes.count` before the change.
+    ///   - depth: `stackedRoutes.count` after it.
+    static func wasUncovered(previousDepth: Int, depth: Int) -> Bool {
+        depth < previousDepth
+    }
+}

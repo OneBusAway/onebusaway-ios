@@ -8,6 +8,7 @@
 //
 
 import SwiftUI
+import MapKit
 import OBAKitCore
 import OTPKit
 
@@ -36,28 +37,59 @@ final class AppSheetViewFactory {
     /// `TripPresentationBridge` does.
     let presentingController: () -> UIViewController?
 
-    /// `presentingController` has no default on purpose. Every stop-sheet action
-    /// — schedules, bookmarks, the route filter, report-a-problem, the alarm
-    /// picker — resolves through it, so a call site that omitted it would build
-    /// a factory whose sheet renders correctly and then silently ignores every
-    /// button on it.
+    let onPresentVehicleTrip: (VehicleStatus) -> Void
+    let coordinator: SheetCoordinator<AppSheetRoute>
+    let searchDisplayModel: MapSearchDisplayModel
+    let stopsObserver: MapStopsObserver
+
+    /// Nothing here is defaulted, on purpose, and for two separate reasons.
+    ///
+    /// `presentingController`: every stop-sheet action — schedules, bookmarks,
+    /// the route filter, report-a-problem, the alarm picker — resolves through
+    /// it, so a call site that omitted it would build a factory whose sheet
+    /// renders correctly and then silently ignores every button on it.
+    ///
+    /// `coordinator`, `searchDisplayModel`, and `stopsObserver`: they must be the
+    /// same instances the hosting `MapPanelRootView` observes. A factory built with
+    /// its own private copies would push routes onto a coordinator nobody is
+    /// watching, draw into a display model nobody renders, or observe a different
+    /// stop set than the map is showing — silently, with the search sheet simply
+    /// appearing to do nothing.
     init(
         application: Application,
         mapViewModel: MapViewModel,
         layersModel: MapPanelLayersModel,
         onPresentTrip: @escaping (ArrivalDeparture) -> Void,
-        presentingController: @escaping () -> UIViewController?
+        onPresentVehicleTrip: @escaping (VehicleStatus) -> Void,
+        presentingController: @escaping () -> UIViewController?,
+        coordinator: SheetCoordinator<AppSheetRoute>,
+        searchDisplayModel: MapSearchDisplayModel,
+        stopsObserver: MapStopsObserver
     ) {
         self.application = application
         self.mapViewModel = mapViewModel
         self.layersModel = layersModel
         self.onPresentTrip = onPresentTrip
+        self.onPresentVehicleTrip = onPresentVehicleTrip
         self.presentingController = presentingController
+        self.coordinator = coordinator
+        self.searchDisplayModel = searchDisplayModel
+        self.stopsObserver = stopsObserver
     }
+
+    /// Built once and shared: the search sheet and the results sheet must route a
+    /// picked result the same way, and both need the same coordinator instance.
+    private(set) lazy var searchResultRouter = SearchResultRouter(
+        application: application,
+        coordinator: coordinator,
+        displayModel: searchDisplayModel,
+        onPresentVehicleTrip: onPresentVehicleTrip
+    )
 
     // MARK: - Dispatcher
 
     @ViewBuilder
+    // swiftlint:disable:next cyclomatic_complexity
     func view(for route: AppSheetRoute) -> some View {
         switch route {
         case .home:
@@ -66,17 +98,35 @@ final class AppSheetViewFactory {
         case .more:
             moreView()
 
+        case .search:
+            searchView()
+
+        case .nearbyAll:
+            nearbyAllView()
+
+        case .recentStopsAll:
+            recentStopsAllView()
+
+        case .bookmarksAll:
+            bookmarksAllView()
+
         // Wiring a push for one of these routes before its view exists will
         // trip the debug assertion in `unimplementedView(for:)` — register the
         // view here before reaching for `SheetCoordinator.push(...)`.
-        //
-        // TODO: `.search` is base-layer and has `isDismissDisabled: true`
-        // — its real view needs to wire up an explicit back affordance
-        // (the home sheet only knows how to push, not pop), otherwise the
-        // route is unreachable once entered.
-        case .search, .nearbyAll, .recentStopsAll, .bookmarksAll,
-             .tripPlanner, .tripDetails, .transitAlert, .settings:
+        case .tripPlanner, .tripDetails, .transitAlert, .settings:
             unimplementedView(for: route)
+
+        case .searchResults(let response):
+            searchResultsView(response: response)
+
+        case .routeStops(let stopsForRoute):
+            routeStopsView(stopsForRoute: stopsForRoute)
+
+        case .mapItem(let mapItem):
+            mapItemView(mapItem: mapItem)
+
+        case .nearbyStops(let coordinate):
+            nearbyStopsView(coordinate: coordinate)
 
         case .stopDetails(let stopID):
             stopDetailView(stopID: stopID)
@@ -101,7 +151,13 @@ final class AppSheetViewFactory {
     // MARK: - Per-route view builders
 
     func homeView() -> HomeSheetView {
-        HomeSheetView(viewModel: HomeSheetViewModel())
+        HomeSheetView(
+            application: self.application,
+            viewModel: HomeSheetViewModel(
+                application: self.application,
+                stopsObserver: self.stopsObserver
+            )
+        )
     }
 
     /// Bridges `AppSheetRoute.more` to the existing UIKit `MoreViewController`
@@ -221,6 +277,78 @@ final class AppSheetViewFactory {
         .padding()
     }
 
+    func mapItemView(mapItem: MKMapItem) -> MapItemSheetView {
+        MapItemSheetView(application: application, mapItem: mapItem)
+    }
+
+    /// `AppSheetRoute.nearbyStops` — stops around a coordinate the user picked
+    /// (a dropped pin, a map-item result). Same screen as `.nearbyAll`; only the
+    /// source of the coordinate differs.
+    func nearbyStopsView(coordinate: CLLocationCoordinate2D) -> NearbyStopsSheetView {
+        NearbyStopsSheetView(application: application, coordinate: coordinate)
+    }
+
+    /// `AppSheetRoute.nearbyAll` — the home sheet's "Nearby Stops" header. The
+    /// route carries no coordinate (it's pushed from a section header, not a
+    /// tapped place), so the anchor is resolved here from what the app knows.
+    func nearbyAllView() -> NearbyStopsSheetView {
+        NearbyStopsSheetView(
+            application: application,
+            coordinate: NearbyCoordinateResolver.coordinate(
+                viewportCenter: stopsObserver.viewportCenter,
+                currentLocation: application.locationService.currentLocation,
+                region: application.currentRegion
+            )
+        )
+    }
+
+    /// `AppSheetRoute.recentStopsAll` — the home sheet's "Recent Stops" header.
+    func recentStopsAllView() -> RecentStopsSheetView {
+        RecentStopsSheetView(application: application)
+    }
+
+    /// `AppSheetRoute.bookmarksAll` — the home sheet's "Bookmarks" header.
+    func bookmarksAllView() -> BookmarksSheetView {
+        BookmarksSheetView(application: application)
+    }
+
+    func routeStopsView(stopsForRoute: StopsForRoute) -> RouteStopsSheetView {
+        RouteStopsSheetView(stopsForRoute: stopsForRoute, displayModel: searchDisplayModel)
+    }
+
+    func searchResultsView(response: SearchResponse) -> SearchResultsSheetView {
+        SearchResultsSheetView(application: application, response: response, router: searchResultRouter)
+    }
+
+    func searchView() -> SearchSheetView {
+        SearchSheetView(
+            viewModel: SearchSheetViewModel(
+                application: self.application,
+                coordinator: self.coordinator,
+                router: self.searchResultRouter
+            ),
+            placeholder: SearchPlaceholder.text(for: self.application)
+        )
+    }
+
+    /// Visible "coming soon" body used by `unimplementedView` in release builds.
+    /// No route dispatches here directly: every index route now has a real view.
+    func indexPlaceholderView(for route: AppSheetRoute) -> some View {
+        VStack(spacing: 4) {
+            Text(OBALoc(
+                "app_sheet.unimplemented_route.placeholder",
+                value: "This screen is coming soon.",
+                comment: "Placeholder shown when a sheet route is pushed but its screen has not been built yet."
+            ))
+            .font(.headline)
+            .foregroundStyle(.secondary)
+            Text(route.id)
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+        }
+        .padding()
+    }
+
     /// Placeholder until each route gets its own real view. In debug builds we
     /// surface a visible label and fire an assertion so a stray `push(...)`
     /// during development can't silently render a blank sheet. In release we
@@ -242,22 +370,7 @@ final class AppSheetViewFactory {
 #else
         // swiftlint:disable:next redundant_discardable_let
         let _ = Logger.error("AppSheetRoute.\(route.id) pushed but no view is registered — rendering placeholder.")
-        // Embed `route.id` in the visible copy so an experimental-flag tester
-        // who hits this in the wild has something concrete to report back —
-        // the `Logger.error` line above is invisible to them.
-        VStack(spacing: 4) {
-            Text(OBALoc(
-                "app_sheet.unimplemented_route.placeholder",
-                value: "This screen is coming soon.",
-                comment: "Placeholder shown in release builds when a sheet route is pushed but has no view registered."
-            ))
-            .font(.headline)
-            .foregroundStyle(.secondary)
-            Text(route.id)
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
-        }
-        .padding()
+        indexPlaceholderView(for: route)
 #endif
     }
 }

@@ -46,7 +46,7 @@
 /* Toggle label that starts a Live Activity widget on the Lock Screen when an alarm is set. */
 "alarm_time_picker.track_on_lock_screen" = "在锁定屏幕上追踪";
 
-/* Placeholder shown in release builds when a sheet route is pushed but has no view registered. */
+/* Placeholder shown when a sheet route is pushed but its screen has not been built yet. */
 "app_sheet.unimplemented_route.placeholder" = "此页面即将推出。";
 
 /* Filter option to show all departures regardless of real-time data availability */
@@ -58,8 +58,14 @@
 /* Filter option to show only departures with scheduled data and no real-time information */
 "arrival_departure_filter.scheduled_only" = "仅时刻表";
 
+/* Context menu action that pins a bookmark to the top of the home sheet's bookmarks section. */
+"bookmarks_controller.context_menu.pin" = "置顶";
+
 /* Action to start a Live Activity for a specific bookmark */
 "bookmarks_controller.context_menu.track_live_activity" = "追踪";
+
+/* Context menu action that removes a bookmark's pin, returning it to the normal ordering. */
+"bookmarks_controller.context_menu.unpin" = "取消置顶";
 
 /* The title to display to confirm the user's action to delete a bookmark. */
 "bookmarks_controller.delete_bookmark.actionsheet.title" = "删除书签";
@@ -69,6 +75,9 @@
 
 /* Shown on a bookmark card when arrival data has loaded but there are no departures in the near future */
 "bookmarks_controller.no_upcoming_departures" = "暂无即将发车的班次";
+
+/* VoiceOver suffix announcing that a bookmark row is pinned. */
+"bookmarks_controller.pinned.a11y_label" = "已置顶";
 
 /* A menu item that allows the user to sort their bookmarks by distance from the user. */
 "bookmarks_controller.sort_menu.sort_by_distance" = "按距离排序";
@@ -316,8 +325,14 @@
 /* A voiceover title describing that the card's visibility taking up the minimum amount of screen. */
 "floating_panel.controller.position.minimized" = "已最小化";
 
-/* Placeholder text inside the disabled search bar on the home sheet, shown while search is unimplemented. */
-"home_sheet.search_bar.coming_soon" = "搜索功能即将推出";
+/* Body for the home sheet's empty state, shown when there are no nearby stops, no recent stops, and no bookmarks. */
+"home_sheet.empty_set.body" = "附近的车站、您查看过的车站以及您的书签将显示在这里。";
+
+/* Title for the home sheet's empty state, shown when there are no nearby stops, no recent stops, and no bookmarks. */
+"home_sheet.empty_set.title" = "这里还没有内容";
+
+/* VoiceOver hint for a home sheet section header, which opens that section's full list. */
+"home_sheet.section_header.a11y_hint" = "显示此部分的所有项目。";
 
 /* Alert message for Live Activity error. \"Settings\" is the iOS Settings app. */
 "live_activity.error.message" = "请在“设置”中检查“实时活动”的相关设置。";
@@ -603,6 +618,9 @@
 /* The title of the Nearby Stops controller. */
 "nearby_stops_controller.title" = "附近的车站";
 
+/* Body shown on the Nearby Stops index sheet when no map viewport, device location, or region is available to search around. */
+"nearby_stops_sheet.no_location.body" = "移动地图或开启定位服务，即可查看附近的公交车站。";
+
 /* Vehicle occupancy is very high */
 "occupancy_status.crushed_standing_room_only" = "站立空间非常拥挤";
 
@@ -867,6 +885,9 @@
 /* Title for the route picker screen where the user selects their transit route. */
 "route_picker.title" = "选择您的线路";
 
+/* Title shown when a route's stop list could not be loaded or is empty. */
+"route_stops_sheet.empty.title" = "无站点";
+
 /* Label for date picker in schedule view */
 "schedule_view.date" = "日期";
 
@@ -950,6 +971,18 @@
 
 /* The title of the Search Results controller. */
 "search_results_controller.title" = "搜索结果";
+
+/* Title shown when a disambiguation sheet has no results to show. */
+"search_results_sheet.empty.title" = "无结果";
+
+/* Header showing how many results a search matched, e.g. '12 results'. %d is the number of results. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
+"search_results_sheet.result_count_fmt" = "%d 个结果";
+
+/* Error shown when a tapped search result cannot be turned into something to display. */
+"search_results_sheet.unresolvable_result" = "无法打开此搜索结果。";
+
+/* Accessibility label for the button that clears the search query. */
+"search_sheet.clear_query" = "清除";
 
 /* The transit agencies affected by this service alert. */
 "service_alert_controller.affected_agencies" = "受此影响的公交公司";

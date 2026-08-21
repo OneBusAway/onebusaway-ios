@@ -31,9 +31,10 @@ enum MapPinSelection: Hashable {
 struct MapPanelRootView: View {
 
     @StateObject private var coordinator: SheetCoordinator<AppSheetRoute>
+    @ObservedObject private var searchDisplay: MapSearchDisplayModel
     @StateObject private var mapViewModel: MapViewModel
     @StateObject private var layersModel: MapPanelLayersModel
-    @StateObject private var stopsObserver: MapStopsObserver
+    @ObservedObject private var stopsObserver: MapStopsObserver
 
     /// Presentation state only. The popup reads its data from
     /// `mapViewModel.weatherDisplay` so a refresh that finishes while the card
@@ -95,19 +96,25 @@ struct MapPanelRootView: View {
 
     private let application: Application
     private let factory: AppSheetViewFactory
+    private let viewportRecorder: MapViewportRecorder
 
     init(
         application: Application,
         mapViewModel: MapViewModel,
         layersModel: MapPanelLayersModel,
-        factory: AppSheetViewFactory
+        factory: AppSheetViewFactory,
+        coordinator: SheetCoordinator<AppSheetRoute>,
+        searchDisplayModel: MapSearchDisplayModel,
+        stopsObserver: MapStopsObserver
     ) {
-        _coordinator = StateObject(wrappedValue: SheetCoordinator<AppSheetRoute>(root: .home))
-        _stopsObserver = StateObject(wrappedValue: MapStopsObserver(application: application))
+        _coordinator = StateObject(wrappedValue: coordinator)
+        _searchDisplay = ObservedObject(wrappedValue: searchDisplayModel)
+        _stopsObserver = ObservedObject(wrappedValue: stopsObserver)
         _mapViewModel = StateObject(wrappedValue: mapViewModel)
         _layersModel = StateObject(wrappedValue: layersModel)
         self.application = application
         self.factory = factory
+        self.viewportRecorder = MapViewportRecorder(application: application)
 
         // With no location fix, frame the current transit region rather than
         // letting `.automatic` frame the bookmark annotations.
@@ -140,7 +147,7 @@ struct MapPanelRootView: View {
             }
             // Regular stops show only zoomed in; `renderStops` already excludes
             // bookmarked stops and precomputes labels.
-            if isZoomedInForStops && layersModel.isStopsLayerEnabled {
+            if isZoomedInForStops, layersModel.isStopsLayerEnabled, !searchDisplay.suppressesAmbientStops {
                 ForEach(stopsObserver.renderStops) { renderStop in
                     stopAnnotation(
                         for: renderStop.stop,
@@ -152,8 +159,17 @@ struct MapPanelRootView: View {
             }
 
             rentalAnnotations
+
+            searchResultMapContent(for: searchDisplay.display) { stop in
+                application.stopIconFactory.buildSquircleIcon(
+                    for: stop,
+                    isBookmarked: false,
+                    traits: UITraitCollection(userInterfaceStyle: colorScheme == .dark ? .dark : .light)
+                )
+            }
         }
         .onMapCameraChange(frequency: .onEnd) { context in
+            viewportRecorder.record(context.rect)
             visibleRegion = context.region
             visibleMapRectHeight = context.rect.height
             layersModel.viewportDidChange(context.rect)
@@ -183,6 +199,7 @@ struct MapPanelRootView: View {
             // directly — and `updateViewport` is the observer's prune step.
             // Only rendering is gated, in the `ForEach` above.
             stopsObserver.updateViewport(context.region)
+            guard !searchDisplay.suppressesAmbientStops else { return }
             application.mapRegionManager.scheduleStopsRequest(in: context.region)
         }
         // The map-type toggle changes the label gate (labels only show on the
@@ -208,6 +225,34 @@ struct MapPanelRootView: View {
                 coordinator.push(.rentalCluster(memberIDs: members.map(\.id)))
             }
             mapSelection = nil
+        }
+        // A searched result stays drawn for exactly as long as the sheet that owns it
+        // is on the stack. Watching the stack — rather than clearing from the owning
+        // sheet's `onDisappear` — keeps the drawing alive across the content
+        // teardowns the sheet system performs without dismissing anything, and still
+        // clears on a real exit, including the drag-down the OS routes through
+        // `truncateStacked`.
+        .onChange(of: coordinator.stackedRoutes) { _, _ in
+            searchDisplay.clearIfOwnerAbsent(from: coordinator.routeStack + coordinator.stackedRoutes)
+        }
+        .onChange(of: searchDisplay.cameraTarget) { _, target in
+            guard let target else { return }
+            switch target {
+            case .coordinate(let coordinate, let animated):
+                let region = MKCoordinateRegion(
+                    centeredOn: coordinate,
+                    zoomLevel: 16,
+                    mapSize: mapSize
+                )
+                if animated {
+                    withAnimation { cameraPosition = .region(region) }
+                } else {
+                    cameraPosition = .region(region)
+                }
+            case .rect(let rect):
+                withAnimation { cameraPosition = .rect(rect) }
+            }
+            searchDisplay.consumeCameraTarget()
         }
         .mapStyle(mapViewModel.mapType.styleDescriptor(
             showingPointsOfInterest: layersModel.showsPointsOfInterest
@@ -497,6 +542,10 @@ extension MapPanelRootView {
             zoomLevel: mapViewModel.zoomLevelForCurrentLocation(),
             mapSize: mapSize
         )
+        // Seed the viewport before the camera animates: `.onMapCameraChange` only
+        // fires on settle, so a search run between launch and the first settle would
+        // otherwise be scoped to a stale rect.
+        viewportRecorder.record(MKMapRect(region))
         withAnimation {
             cameraPosition = .region(region)
         }

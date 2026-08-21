@@ -23,6 +23,9 @@ struct BookmarksNavigationHandler {
     let deleteBookmark: (Bookmark) -> Void
     /// Starts a Live Activity tracking the bookmark on the Lock Screen.
     let trackBookmark: (Bookmark) -> Void
+    /// Pins or unpins the bookmark (row context menu). Pinning affects the home
+    /// sheet's bookmarks section only; this tab's ordering is unchanged.
+    let togglePin: (Bookmark) -> Void
     /// Whether the system allows starting Live Activities; gates the Track item.
     let liveActivitiesEnabled: () -> Bool
     /// Drives pull-to-refresh: kicks off a batch, returns when it completes,
@@ -56,6 +59,23 @@ struct BookmarksListView: View {
     @ObservedObject var viewModel: BookmarksViewModel
     let navigation: BookmarksNavigationHandler
 
+    /// Where this list is being shown. The two surfaces differ in chrome, not
+    /// in content: one parameter rather than a flag per difference, so the
+    /// call site says which screen it is and the differences stay listed
+    /// together in `list` below.
+    enum Presentation {
+        /// The Bookmarks tab: a full-screen plain list with pull-to-refresh.
+        case tab
+
+        /// The home sheet's Bookmarks index: inset-grouped cards matching the
+        /// Nearby and Recent index sheets, and no pull-to-refresh — a downward
+        /// drag there is the sheet's own dismiss gesture, so refreshing is a
+        /// toolbar button driving the same `navigation.refresh()`.
+        case sheet
+    }
+
+    var presentation: Presentation = .tab
+
     var body: some View {
         if viewModel.sections.isEmpty {
             let empty = viewModel.emptyState
@@ -65,7 +85,32 @@ struct BookmarksListView: View {
         }
     }
 
+    /// Branches rather than applying the modifiers conditionally: an installed
+    /// `.refreshable` shows the pull spinner whether or not its body does
+    /// anything, and `listStyle` has no "leave it alone" value. `presentation`
+    /// is fixed per call site, so the branch doesn't churn view identity.
+    @ViewBuilder
     private var list: some View {
+        switch presentation {
+        case .tab:
+            baseList
+                .listStyle(.plain)
+                .refreshable {
+                    await navigation.refresh()
+                }
+        case .sheet:
+            baseList
+                // The same chrome the Nearby and Recent index sheets wear, so
+                // all three read as one family. Pairs with
+                // `searchSheetBackground()` on the enclosing sheet.
+                .searchListChrome()
+                // Grouped styles uppercase section headers by default, which
+                // would shout the user's own group names back at them.
+                .textCase(nil)
+        }
+    }
+
+    private var baseList: some View {
         List {
             ForEach(viewModel.sections) { section in
                 Section {
@@ -78,10 +123,6 @@ struct BookmarksListView: View {
                     sectionHeader(section)
                 }
             }
-        }
-        .listStyle(.plain)
-        .refreshable {
-            await navigation.refresh()
         }
         .sensoryFeedback(.selection, trigger: viewModel.collapsedSectionIDs)
     }
@@ -150,6 +191,10 @@ struct BookmarksListView: View {
                     systemImage: "waveform.circle.fill"
                 )
             }
+        }
+
+        BookmarkPinButton(isPinned: row.isPinned) {
+            navigation.togglePin(row.bookmark)
         }
 
         Button {

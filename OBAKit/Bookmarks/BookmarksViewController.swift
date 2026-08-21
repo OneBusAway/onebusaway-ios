@@ -31,6 +31,7 @@ class BookmarksViewController: UIHostingController<BookmarksRootView>,
     private var cancellables = Set<AnyCancellable>()
 
     private lazy var dataLoadFeedbackGenerator = DataLoadFeedbackGenerator(application: application)
+    private lazy var bookmarkActions = BookmarkActions(application: application)
 
     init(application: Application) {
         self.application = application
@@ -96,6 +97,7 @@ class BookmarksViewController: UIHostingController<BookmarksRootView>,
         editBookmark: { _ in assertionFailure("placeholder navigation handler invoked") },
         deleteBookmark: { _ in assertionFailure("placeholder navigation handler invoked") },
         trackBookmark: { _ in assertionFailure("placeholder navigation handler invoked") },
+        togglePin: { _ in assertionFailure("placeholder navigation handler invoked") },
         liveActivitiesEnabled: {
             assertionFailure("placeholder navigation handler invoked")
             return false
@@ -113,9 +115,27 @@ class BookmarksViewController: UIHostingController<BookmarksRootView>,
                 guard let self else { return }
                 self.application.viewRouter.navigateTo(stop: bookmark.stop, from: self, bookmark: bookmark)
             },
-            editBookmark: { [weak self] bookmark in self?.editBookmark(bookmark) },
-            deleteBookmark: { [weak self] bookmark in self?.deleteBookmark(bookmark) },
-            trackBookmark: { [weak self] bookmark in self?.startLiveActivity(for: bookmark) },
+            editBookmark: { [weak self] bookmark in
+                guard let self else { return }
+                let editor = self.bookmarkActions.makeBookmarkEditor(for: bookmark, delegate: self)
+                self.application.viewRouter.present(editor, from: self)
+            },
+            deleteBookmark: { [weak self] bookmark in
+                guard let self else { return }
+                self.bookmarkActions.reportDeletion(of: bookmark)
+                self.viewModel.deleteBookmark(bookmark)
+            },
+            trackBookmark: { [weak self] bookmark in
+                guard let self else { return }
+                let arrivals = self.viewModel.arrivalDepartures(for: bookmark)
+                if self.bookmarkActions.startLiveActivity(for: bookmark, arrivalDepartures: arrivals) == .failed {
+                    self.showLiveActivityErrorAlert()
+                }
+            },
+            togglePin: { [weak self] bookmark in
+                guard let self else { return }
+                self.application.userDataStore.setPinned(!bookmark.isPinned, for: bookmark)
+            },
             liveActivitiesEnabled: { ActivityAuthorizationInfo().areActivitiesEnabled },
             refresh: { [weak self] in
                 guard let self else { return }
@@ -165,122 +185,16 @@ class BookmarksViewController: UIHostingController<BookmarksRootView>,
 
     // MARK: - Refresh Widget
 
+    /// Pushes freshly-loaded *arrival times* to the widget. Changes to the
+    /// bookmark set itself are handled app-wide by `BookmarkWidgetRefresher`,
+    /// which observes the store — this tab is not the only surface that edits
+    /// bookmarks, so it must not be the only thing that refreshes the widget.
     func reloadWidget() {
         Logger.info("Reloading the widget")
-        WidgetCenter.shared.reloadTimelines(ofKind: "OBAWidget")
-    }
-
-    // MARK: - Bookmark Actions
-
-    private func editBookmark(_ bookmark: Bookmark) {
-        let bookmarkEditor = EditBookmarkViewController(application: application, stop: bookmark.stop, bookmark: bookmark, delegate: self)
-        let navigation = UINavigationController(rootViewController: bookmarkEditor)
-        application.viewRouter.present(navigation, from: self)
-    }
-
-    private func deleteBookmark(_ bookmark: Bookmark) {
-        // Report remove bookmark event to analytics
-        if let routeID = bookmark.routeID, let headsign = bookmark.tripHeadsign {
-            application.analytics?.reportEvent(
-                pageURL: "app://localhost/bookmarks",
-                label: AnalyticsLabels.removeBookmark,
-                value: AnalyticsLabels.addRemoveBookmarkValue(
-                    routeID: routeID,
-                    headsign: headsign,
-                    stopID: bookmark.stopID))
-        }
-
-        viewModel.deleteBookmark(bookmark)
+        WidgetCenter.shared.reloadTimelines(ofKind: BookmarkWidgetRefresher.widgetKind)
     }
 
     // MARK: - Live Activity Management
-
-    /// The route name/headsign pair stored in a Live Activity's `StaticData`.
-    /// Creation and reconciliation must apply the same fallbacks — comparing
-    /// raw optionals against these stored values would never match a bookmark
-    /// whose route name or headsign is missing.
-    private static func liveActivityKeys(for bookmark: Bookmark) -> (routeShortName: String, routeHeadsign: String) {
-        // Use structured properties directly from the Bookmark model instead of parsing
-        // the display name, which would break on hyphenated route names like "A-Line".
-        (bookmark.routeShortName ?? bookmark.name, bookmark.tripHeadsign ?? "")
-    }
-
-    func startLiveActivity(for bookmark: Bookmark) {
-        let (routeShortName, routeHeadsign) = Self.liveActivityKeys(for: bookmark)
-
-        let arrivalDepartures = viewModel.arrivalDepartures(for: bookmark)
-        let routeColorHex = arrivalDepartures.first?.route.color?.toHex()
-        let staticData = TripAttributes.StaticData(
-            routeShortName: routeShortName,
-            routeHeadsign: routeHeadsign,
-            stopID: bookmark.stopID,
-            routeColorHex: routeColorHex,
-            regionID: application.currentRegion?.regionIdentifier ?? 0
-        )
-
-        // Tapping Track again on a bookmark that is already tracked — or tracking
-        // the same trip from the stop page — would otherwise mint a second
-        // activity for one stop, leaving the user with duplicate Lock Screen
-        // cards and duplicate OBACloud push registrations. Re-Track still needs
-        // to promote the existing activity: after A→B the Island is on B with A
-        // demoted to 0, so tapping Track on A again must bump A (not just toast).
-        if let existing = Activity<TripAttributes>.running(matching: staticData) {
-            Logger.info("Live Activity already running for stop \(staticData.stopID) route \(staticData.routeShortName); promoting instead of duplicating.")
-            let existingID = existing.id
-            Task {
-                await Activity<TripAttributes>.promoteToDynamicIsland(activityID: existingID)
-            }
-            showLiveActivityStartedToast()
-            return
-        }
-
-        guard let contentState = buildContentState(from: arrivalDepartures) else {
-            // Shouldn't happen — the context menu only offers Track once arrival
-            // data has loaded — but if data was cleared between the menu render
-            // and the tap, tell the user rather than silently doing nothing.
-            Logger.error("Failed to build content state for Live Activity")
-            showLiveActivityErrorAlert()
-            return
-        }
-
-        let attributes = TripAttributes(staticData: staticData)
-        // Prominence so the Dynamic Island switches to this Track when another
-        // trip is already live (#1189 Problem 2). Default score is 0 and equal
-        // scores keep the first-started activity.
-        let prominence = TripLiveActivityRelevance.prominenceScore()
-        do {
-            let activity = try Activity.request(
-                attributes: attributes,
-                content: TripLiveActivityRelevance.content(
-                    state: contentState,
-                    staleDate: nil,
-                    relevanceScore: prominence
-                ),
-                pushType: .token
-            )
-            trackLiveActivity(activity, arrivalDepartures: arrivalDepartures)
-            let activityID = activity.id
-            Task {
-                await Activity<TripAttributes>.demoteLivePeers(
-                    exceptActivityID: activityID,
-                    relativeTo: prominence
-                )
-            }
-            Logger.info("Started Live Activity with ID: \(activity.id)")
-            showLiveActivityStartedToast()
-        } catch {
-            Logger.error("Failed to start Live Activity: \(error)")
-            showLiveActivityErrorAlert()
-        }
-    }
-
-    /// Shared by the start path and the already-tracking guard, so a duplicate
-    /// tap gets the same confirmation the first tap did rather than silently
-    /// appearing to do nothing.
-    private func showLiveActivityStartedToast() {
-        let message = OBALoc("live_activity.started.title", value: "Tracking on Lock Screen", comment: "Toast shown when a Live Activity starts on the Lock Screen")
-        ProgressHUD.showSuccessAndDismiss(message: message)
-    }
 
     func updateRunningLiveActivities() {
         let activities = Activity<TripAttributes>.activities
@@ -289,7 +203,7 @@ class BookmarksViewController: UIHostingController<BookmarksRootView>,
             let matchingBookmark = application.userDataStore.bookmarks.first(where: { bookmark in
                 // Delegates to the shared identity rule so this match can't
                 // drift from the start paths' duplicate guard.
-                let keys = Self.liveActivityKeys(for: bookmark)
+                let keys = BookmarkActions.liveActivityKeys(for: bookmark)
                 let bookmarkIdentity = TripAttributes.StaticData(
                     routeShortName: keys.routeShortName,
                     routeHeadsign: keys.routeHeadsign,
@@ -299,7 +213,7 @@ class BookmarksViewController: UIHostingController<BookmarksRootView>,
             })
             let arrivalDepartures = matchingBookmark.map { viewModel.arrivalDepartures(for: $0) } ?? []
 
-            if matchingBookmark != nil, let contentState = buildContentState(from: arrivalDepartures) {
+            if matchingBookmark != nil, let contentState = BookmarkActions.buildContentState(from: arrivalDepartures) {
                 // Re-arm the push token/lifecycle observers on relaunch. `startLiveActivity`
                 // only tracks activities it creates in-session, so without this a Live Activity
                 // that's still running after a relaunch would never re-establish its observers
@@ -312,7 +226,10 @@ class BookmarksViewController: UIHostingController<BookmarksRootView>,
                 // the sweep below could only lifecycle-observe (no matching bookmark at the time)
                 // must still be upgradable to a full registration once its bookmark reappears.
                 if !application.liveActivityTracker.isForwardingPushToken(activityID: activity.id) {
-                    trackLiveActivity(activity, arrivalDepartures: arrivalDepartures)
+                    application.liveActivityTracker.track(
+                        activity: activity,
+                        metadata: .init(arrivalDepartures.first)
+                    )
                 }
                 // Coalesce per activity ID. The worker re-fetches the activity
                 // before applying content, so its current relevance score is
@@ -331,36 +248,6 @@ class BookmarksViewController: UIHostingController<BookmarksRootView>,
                 application.liveActivityTracker.observeLifecycle(of: activity)
             }
         }
-    }
-
-    // MARK: - Live Activity Helper Methods
-
-    private func buildContentState(from arrivalDepartures: [ArrivalDeparture]) -> TripAttributes.ContentState? {
-        guard !arrivalDepartures.isEmpty else {
-            return nil
-        }
-        let arrivals = arrivalDepartures.prefix(3).map { arrDep in
-            TripAttributes.ContentState.ArrivalInfo(
-                departureTime: Int(arrDep.arrivalDepartureDate.timeIntervalSince1970),
-                scheduleStatus: .init(arrDep.scheduleStatus),
-                scheduleDeviation: arrDep.deviationFromScheduleInMinutes * 60,
-                isArrival: arrDep.arrivalDepartureStatus == .arriving
-            )
-        }
-        return TripAttributes.ContentState(arrivals: Array(arrivals))
-    }
-
-    // MARK: - Live Activity Push Registration
-
-    /// Hands `activity` to the app-scoped tracker, which owns the push-token and lifecycle
-    /// observers. They deliberately outlive this controller — and every other screen — so that an
-    /// activity is unregistered when it actually ends rather than when a view controller happens
-    /// to be deallocated. See `LiveActivityTracker`.
-    private func trackLiveActivity(_ activity: Activity<TripAttributes>, arrivalDepartures: [ArrivalDeparture]) {
-        application.liveActivityTracker.track(
-            activity: activity,
-            metadata: .init(arrivalDepartures.first)
-        )
     }
 
     // MARK: - Notifications

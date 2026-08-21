@@ -330,6 +330,24 @@ public extension String {
 
         return string.count > 0 ? string : nil
     }
+
+    /// Normalizes a search field's raw text into a query suitable for `matchesQuery(_:)`.
+    ///
+    /// Lowercases, trims, and collapses "nothing to filter by" to nil. `.searchable`
+    /// hands a view the empty string the moment its field is focused, and a
+    /// whitespace-only query is the same non-intent, so both must mean "match
+    /// everything" rather than "match nothing".
+    ///
+    /// Shared rather than reimplemented per screen: callers use the nil-ness of the
+    /// result to decide between a "nothing here yet" empty state and a "no search
+    /// results" one, so the definition of an *active* query has to be the same
+    /// everywhere it's asked.
+    ///
+    /// - Parameter query: Raw text straight from the search field.
+    /// - Returns: The normalized query, or nil when there is nothing to filter by.
+    static func normalizedSearchQuery(_ query: String?) -> String? {
+        nilifyBlankValue(query?.localizedLowercase.trimmingCharacters(in: .whitespacesAndNewlines))
+    }
 }
 
 // MARK: - String/Regex

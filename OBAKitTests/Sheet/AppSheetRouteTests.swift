@@ -8,6 +8,7 @@
 //
 
 import Testing
+import MapKit
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -71,8 +72,8 @@ final class AppSheetRouteTests {
 
     @Test func `Home detent starts at small and offers all three`() {
         let config = AppSheetRoute.home.detentConfiguration
-        #expect(config.detents == [.height(80), .medium, AppSheetRoute.largeDetent])
-        #expect(config.initialDetent == .height(80))
+        #expect(config.detents == [.height(AppSheetRoute.homeCollapsedHeight), .medium, AppSheetRoute.largeDetent])
+        #expect(config.initialDetent == .height(AppSheetRoute.homeCollapsedHeight))
         #expect(config.showDragIndicator == true)
         #expect(config.isDismissDisabled == true)
     }
@@ -159,7 +160,7 @@ final class AppSheetRouteTests {
     @Test func `Home collapsed height matches map bottom inset`() {
         // Shared with `MapPanelRootView` so the map's bottom safe-area padding
         // matches the collapsed sheet — keep the constant pinned.
-        #expect(AppSheetRoute.homeCollapsedHeight == 80)
+        #expect(AppSheetRoute.homeCollapsedHeight == 75)
     }
 
     // MARK: - SheetDetentConfiguration defaults
@@ -274,6 +275,70 @@ final class AppSheetRouteTests {
         }
     }
 
+    // MARK: - Search result routes
+
+    @Test func `Id embeds map item coordinates`() {
+        let item = MKMapItem(placemark: MKPlacemark(coordinate: CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3)))
+        #expect(AppSheetRoute.mapItem(item).id == "mapItem-47.6--122.3")
+    }
+
+    @Test func `Id embeds the route id for route stops`() throws {
+        let stopsForRoute = try Fixtures.loadRESTAPIPayload(type: StopsForRoute.self, fileName: "stops_for_route_1_44.json")
+        #expect(AppSheetRoute.routeStops(stopsForRoute).id == "routeStops-\(stopsForRoute.id)")
+    }
+
+    @Test func `Id embeds the query and type for search results`() {
+        let request = SearchRequest(query: "44", type: .route)
+        let response = SearchResponse(request: request, results: [], boundingRegion: nil, error: nil)
+        #expect(AppSheetRoute.searchResults(response).id == "searchResults-\(SearchType.route.rawValue)-44")
+    }
+
+    @Test func `Id embeds nearby stops coordinates`() {
+        let coordinate = CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3)
+        #expect(AppSheetRoute.nearbyStops(coordinate: coordinate).id == "nearbyStops-47.6--122.3")
+    }
+
+    @Test func `Search result routes prefer stacking`() throws {
+        let item = MKMapItem(placemark: MKPlacemark(coordinate: CLLocationCoordinate2D(latitude: 1, longitude: 2)))
+        let stopsForRoute = try Fixtures.loadRESTAPIPayload(type: StopsForRoute.self, fileName: "stops_for_route_1_44.json")
+        let response = SearchResponse(request: SearchRequest(query: "q", type: .route), results: [], boundingRegion: nil, error: nil)
+
+        #expect(AppSheetRoute.mapItem(item).prefersStacking == true)
+        #expect(AppSheetRoute.routeStops(stopsForRoute).prefersStacking == true)
+        #expect(AppSheetRoute.searchResults(response).prefersStacking == true)
+        #expect(AppSheetRoute.nearbyStops(coordinate: CLLocationCoordinate2D(latitude: 1, longitude: 2)).prefersStacking == true)
+    }
+
+    @Test func `Map item route offers only the medium detent`() {
+        let item = MKMapItem(placemark: MKPlacemark(coordinate: CLLocationCoordinate2D(latitude: 1, longitude: 2)))
+        let config = AppSheetRoute.mapItem(item).detentConfiguration
+
+        #expect(config.detents == [.medium])
+        #expect(config.initialDetent == .medium)
+    }
+
+    @Test func `Route stops route opens at medium so the polyline stays visible`() throws {
+        let stopsForRoute = try Fixtures.loadRESTAPIPayload(type: StopsForRoute.self, fileName: "stops_for_route_1_44.json")
+        let config = AppSheetRoute.routeStops(stopsForRoute).detentConfiguration
+
+        #expect(config.detents == [.medium, .large])
+        #expect(config.initialDetent == .medium)
+    }
+
+    /// `SheetCoordinator.push` preconditions on this for every stacked route: the OS
+    /// owns drag-down on that layer, and locking dismissal would leave
+    /// `stackedEntries` pointing at a sheet that is no longer on screen.
+    @Test func `Stacked search routes allow interactive dismissal`() throws {
+        let item = MKMapItem(placemark: MKPlacemark(coordinate: CLLocationCoordinate2D(latitude: 1, longitude: 2)))
+        let stopsForRoute = try Fixtures.loadRESTAPIPayload(type: StopsForRoute.self, fileName: "stops_for_route_1_44.json")
+        let response = SearchResponse(request: SearchRequest(query: "q", type: .route), results: [], boundingRegion: nil, error: nil)
+
+        #expect(AppSheetRoute.mapItem(item).detentConfiguration.isDismissDisabled == false)
+        #expect(AppSheetRoute.routeStops(stopsForRoute).detentConfiguration.isDismissDisabled == false)
+        #expect(AppSheetRoute.searchResults(response).detentConfiguration.isDismissDisabled == false)
+        #expect(AppSheetRoute.nearbyStops(coordinate: CLLocationCoordinate2D(latitude: 1, longitude: 2)).detentConfiguration.isDismissDisabled == false)
+    }
+
     // MARK: - Exhaustiveness guard
 
     /// Adding a new `AppSheetRoute` case must fail to compile here, forcing
@@ -283,7 +348,8 @@ final class AppSheetRouteTests {
         case .home, .search, .nearbyAll, .recentStopsAll, .bookmarksAll,
              .stopDetails, .tripPlanner, .tripDetails, .routePicker,
              .currentTrip, .transitAlert, .more, .settings, .mapSettings,
-             .rentalDetail, .rentalCluster:
+             .rentalDetail, .rentalCluster,
+             .searchResults, .mapItem, .routeStops, .nearbyStops:
             break
         }
     }

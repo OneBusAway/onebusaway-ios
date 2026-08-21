@@ -46,7 +46,7 @@
 /* Toggle label that starts a Live Activity widget on the Lock Screen when an alarm is set. */
 "alarm_time_picker.track_on_lock_screen" = "Śledź na ekranie blokady";
 
-/* Placeholder shown in release builds when a sheet route is pushed but has no view registered. */
+/* Placeholder shown when a sheet route is pushed but its screen has not been built yet. */
 "app_sheet.unimplemented_route.placeholder" = "Ten ekran będzie dostępny wkrótce.";
 
 /* Filter option to show all departures regardless of real-time data availability */
@@ -58,8 +58,14 @@
 /* Filter option to show only departures with scheduled data and no real-time information */
 "arrival_departure_filter.scheduled_only" = "Tylko rozkładowe";
 
+/* Context menu action that pins a bookmark to the top of the home sheet's bookmarks section. */
+"bookmarks_controller.context_menu.pin" = "Przypnij";
+
 /* Action to start a Live Activity for a specific bookmark */
 "bookmarks_controller.context_menu.track_live_activity" = "Śledź";
+
+/* Context menu action that removes a bookmark's pin, returning it to the normal ordering. */
+"bookmarks_controller.context_menu.unpin" = "Odepnij";
 
 /* The title to display to confirm the user's action to delete a bookmark. */
 "bookmarks_controller.delete_bookmark.actionsheet.title" = "Usuń zakładkę";
@@ -69,6 +75,9 @@
 
 /* Shown on a bookmark card when arrival data has loaded but there are no departures in the near future */
 "bookmarks_controller.no_upcoming_departures" = "Brak nadchodzących odjazdów";
+
+/* VoiceOver suffix announcing that a bookmark row is pinned. */
+"bookmarks_controller.pinned.a11y_label" = "Przypięto";
 
 /* A menu item that allows the user to sort their bookmarks by distance from the user. */
 "bookmarks_controller.sort_menu.sort_by_distance" = "Sortuj po odległości";
@@ -316,8 +325,14 @@
 /* A voiceover title describing that the card's visibility taking up the minimum amount of screen. */
 "floating_panel.controller.position.minimized" = "Zminimalizowany";
 
-/* Placeholder text inside the disabled search bar on the home sheet, shown while search is unimplemented. */
-"home_sheet.search_bar.coming_soon" = "Wyszukiwanie już wkrótce";
+/* Body for the home sheet's empty state, shown when there are no nearby stops, no recent stops, and no bookmarks. */
+"home_sheet.empty_set.body" = "Pojawią się tutaj przystanki w pobliżu, oglądane przystanki i Twoje zakładki.";
+
+/* Title for the home sheet's empty state, shown when there are no nearby stops, no recent stops, and no bookmarks. */
+"home_sheet.empty_set.title" = "Jeszcze nic tu nie ma";
+
+/* VoiceOver hint for a home sheet section header, which opens that section's full list. */
+"home_sheet.section_header.a11y_hint" = "Pokazuje wszystkie elementy w tej sekcji.";
 
 /* Alert message for Live Activity error. \"Settings\" is the iOS Settings app. */
 "live_activity.error.message" = "Sprawdź ustawienia Aktywności na żywo w aplikacji Ustawienia.";
@@ -603,6 +618,9 @@
 /* The title of the Nearby Stops controller. */
 "nearby_stops_controller.title" = "Przystanki w pobliżu";
 
+/* Body shown on the Nearby Stops index sheet when no map viewport, device location, or region is available to search around. */
+"nearby_stops_sheet.no_location.body" = "Przesuń mapę lub włącz usługi lokalizacji, aby zobaczyć przystanki w pobliżu.";
+
 /* Vehicle occupancy is very high */
 "occupancy_status.crushed_standing_room_only" = "Tylko zatłoczone miejsca stojące";
 
@@ -867,6 +885,9 @@
 /* Title for the route picker screen where the user selects their transit route. */
 "route_picker.title" = "Wybierz swoją linię";
 
+/* Title shown when a route's stop list could not be loaded or is empty. */
+"route_stops_sheet.empty.title" = "Brak przystanków";
+
 /* Label for date picker in schedule view */
 "schedule_view.date" = "Data";
 
@@ -950,6 +971,18 @@
 
 /* The title of the Search Results controller. */
 "search_results_controller.title" = "Wyniki wyszukiwania";
+
+/* Title shown when a disambiguation sheet has no results to show. */
+"search_results_sheet.empty.title" = "Brak wyników";
+
+/* Header showing how many results a search matched, e.g. '12 results'. %d is the number of results. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
+"search_results_sheet.result_count_fmt" = "%d wyników";
+
+/* Error shown when a tapped search result cannot be turned into something to display. */
+"search_results_sheet.unresolvable_result" = "Nie można otworzyć tego wyniku wyszukiwania.";
+
+/* Accessibility label for the button that clears the search query. */
+"search_sheet.clear_query" = "Wyczyść";
 
 /* The transit agencies affected by this service alert. */
 "service_alert_controller.affected_agencies" = "Dotyczy tych przewoźników";

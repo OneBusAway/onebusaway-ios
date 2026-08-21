@@ -64,6 +64,11 @@ struct StopDeparturesSections: View {
     /// matching the inset-grouped card margin.
     private static let horizontalRowInset: CGFloat = 0
 
+    /// The survey card draws its own rounded background, so unlike the other
+    /// card rows it needs a margin: flush with the screen edges, its corners fall
+    /// off-screen and the card reads as a stray hairline band.
+    private static let surveyRowInset: CGFloat = 16
+
     var body: some View {
         // Hoisted for the same reason `walkMinutes` is passed in rather than
         // recomputed: the header row's Past count and the list's past section
@@ -82,7 +87,7 @@ struct StopDeparturesSections: View {
                     onDismiss: onSurveyDismiss,
                     onOpenExternalSurvey: onSurveyExternal
                 )
-                .listRowInsets(EdgeInsets(top: 4, leading: Self.horizontalRowInset, bottom: 4, trailing: Self.horizontalRowInset))
+                .listRowInsets(EdgeInsets(top: 8, leading: Self.surveyRowInset, bottom: 8, trailing: Self.surveyRowInset))
                 .listRowBackground(Color.clear)
                 .listRowSeparator(.hidden)
             }

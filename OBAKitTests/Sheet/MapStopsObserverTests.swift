@@ -152,7 +152,7 @@ final class MapStopsObserverTests: OBATestCase {
         let anchor = try #require(allStops.first)
         let farStop = try #require(
             allStops.max {
-                observer.squaredDistance($0, to: anchor.coordinate) < observer.squaredDistance($1, to: anchor.coordinate)
+                Stop.squaredDistance($0, to: anchor.coordinate) < Stop.squaredDistance($1, to: anchor.coordinate)
             }
         )
         try #require(farStop.id != anchor.id, "Need two fixture stops at distinct coordinates")
@@ -198,7 +198,7 @@ final class MapStopsObserverTests: OBATestCase {
         #expect(observer.stops.map(\.id).contains(anchor.id))
         let nearest3 = allStops
             .sorted {
-                observer.squaredDistance($0, to: anchor.coordinate) < observer.squaredDistance($1, to: anchor.coordinate)
+                Stop.squaredDistance($0, to: anchor.coordinate) < Stop.squaredDistance($1, to: anchor.coordinate)
             }
             .prefix(3)
             .map(\.id)
@@ -297,5 +297,128 @@ final class MapStopsObserverTests: OBATestCase {
         let observer = MapStopsObserver(application: application)
         #expect(observer.bookmarks.count == 1)
         #expect(observer.bookmarks.first?.name == "Second")
+    }
+
+    /// The settled viewport's center is published so consumers can sort by it.
+    @Test @MainActor
+    func `Update viewport publishes its center`() async {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+
+        let observer = MapStopsObserver(application: application)
+        #expect(observer.viewportCenter == nil)
+
+        let region = MKCoordinateRegion(
+            center: TestData.mockSeattleLocation.coordinate,
+            latitudinalMeters: 5000,
+            longitudinalMeters: 5000
+        )
+        observer.updateViewport(region)
+
+        #expect(observer.viewportCenter?.latitude == region.center.latitude)
+        #expect(observer.viewportCenter?.longitude == region.center.longitude)
+    }
+
+    /// Zooming out clears the center along with the stops, so a stale center
+    /// can't outlive the render set it was ordering.
+    @Test @MainActor
+    func `Reset clears the viewport center`() async {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+
+        let observer = MapStopsObserver(application: application)
+        observer.updateViewport(MKCoordinateRegion(
+            center: TestData.mockSeattleLocation.coordinate,
+            latitudinalMeters: 5000,
+            longitudinalMeters: 5000
+        ))
+        #expect(observer.viewportCenter != nil)
+
+        observer.reset()
+
+        #expect(observer.viewportCenter == nil)
+    }
+
+    /// A re-fired settle at the same center publishes nothing.
+    ///
+    /// `CLLocationCoordinate2D` isn't `Equatable`, so `@Published` won't drop a
+    /// same-value write on its own — without the explicit guard in
+    /// `updateViewport`, every settle would fire `objectWillChange` and invalidate
+    /// `MapPanelRootView`. The map re-serves the same region often enough that the
+    /// rest of this class is built around not republishing on a no-op.
+    @Test @MainActor
+    func `Repeat settle at the same center does not republish`() async {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+
+        let observer = MapStopsObserver(application: application)
+        let region = MKCoordinateRegion(
+            center: TestData.mockSeattleLocation.coordinate,
+            latitudinalMeters: 5000,
+            longitudinalMeters: 5000
+        )
+        observer.updateViewport(region)
+
+        let counter = ChangeCounter()
+        let cancellable = observer.objectWillChange.sink { _ in counter.increment() }
+        defer { cancellable.cancel() }
+
+        observer.updateViewport(region)
+        #expect(counter.count == 0, "A same-center settle must not invalidate observers")
+
+        // A real move still publishes.
+        observer.updateViewport(MKCoordinateRegion(
+            center: CLLocationCoordinate2D(
+                latitude: region.center.latitude + 0.1,
+                longitude: region.center.longitude
+            ),
+            latitudinalMeters: 5000,
+            longitudinalMeters: 5000
+        ))
+        #expect(counter.count == 1, "A moved center must still publish")
+    }
+
+    /// A repeated `reset()` publishes nothing.
+    ///
+    /// `MapPanelRootView.onMapCameraChange(frequency: .onEnd)` calls `reset()` on
+    /// the zoomed-out branch of *every* settle, not only on the zoom-out
+    /// transition. `viewportCenter` is `@Published` and `CLLocationCoordinate2D`
+    /// isn't `Equatable`, so without the explicit nil guard each pan while zoomed
+    /// out would fire `objectWillChange` and cascade through
+    /// `HomeNearbyStopsSectionModel` into the home sheet. This is the `reset()`
+    /// counterpart of `Repeat settle at the same center does not republish`.
+    @Test @MainActor
+    func `Repeat reset does not republish`() async {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+
+        let observer = MapStopsObserver(application: application)
+        observer.updateViewport(MKCoordinateRegion(
+            center: TestData.mockSeattleLocation.coordinate,
+            latitudinalMeters: 5000,
+            longitudinalMeters: 5000
+        ))
+        observer.reset()
+        #expect(observer.viewportCenter == nil)
+
+        let counter = ChangeCounter()
+        let cancellable = observer.objectWillChange.sink { _ in counter.increment() }
+        defer { cancellable.cancel() }
+
+        observer.reset()
+        observer.reset()
+        #expect(counter.count == 0, "A repeated reset must not invalidate observers")
+    }
+
+    /// Thread-safe counter — `objectWillChange` delivery isn't actor-isolated.
+    private final class ChangeCounter {
+        private let lock = NSLock()
+        nonisolated(unsafe) private(set) var count: Int = 0
+
+        nonisolated func increment() {
+            lock.lock()
+            defer { lock.unlock() }
+            count += 1
+        }
     }
 }

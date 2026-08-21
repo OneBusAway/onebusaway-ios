@@ -21,7 +21,12 @@ import Testing
 final class LocalizationTests {
 
     /// Keys whose plural forms come from `Localizable.stringsdict` rather than
-    /// `Localizable.strings`. Every one of these is called with `String(format:)` and a count.
+    /// `Localizable.strings`. Each is called with a count.
+    ///
+    /// Note that `String(format:)` expands `%#@…@` but always resolves it against the root
+    /// plural rule, so only `one`/`other` are ever reachable through it — the call site has to
+    /// use `String.localizedStringWithFormat` for a locale's `few`/`many`/`zero`/`two` entries
+    /// to mean anything. Nothing here can catch that; it's a call-site property.
     private static let pluralKeys: Set<String> = [
         "stop_page.service_alerts.summary_fmt",
         "stop_page.service_alerts.show_all_fmt",
@@ -31,7 +36,8 @@ final class LocalizationTests {
         "stop_page.empty.no_departures_fmt",
         "data_migration_bulletin.report_summary_number_of_failures",
         "data_migration_bulletin.report_summary_number_of_successes",
-        "map_controller.map_type.accessibility_value_with_layers_fmt"
+        "map_controller.map_type.accessibility_value_with_layers_fmt",
+        "search_results_sheet.result_count_fmt"
     ]
 
     /// `%@`, `%d`, `%1$@`, `%2$d`, … and the escaped `%%`.
