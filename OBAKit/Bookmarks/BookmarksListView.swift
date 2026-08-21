@@ -23,6 +23,9 @@ struct BookmarksNavigationHandler {
     let deleteBookmark: (Bookmark) -> Void
     /// Starts a Live Activity tracking the bookmark on the Lock Screen.
     let trackBookmark: (Bookmark) -> Void
+    /// Pins or unpins the bookmark (row context menu). Pinning affects the home
+    /// sheet's bookmarks section only; this tab's ordering is unchanged.
+    let togglePin: (Bookmark) -> Void
     /// Whether the system allows starting Live Activities; gates the Track item.
     let liveActivitiesEnabled: () -> Bool
     /// Drives pull-to-refresh: kicks off a batch, returns when it completes,
@@ -150,6 +153,10 @@ struct BookmarksListView: View {
                     systemImage: "waveform.circle.fill"
                 )
             }
+        }
+
+        BookmarkPinButton(isPinned: row.isPinned) {
+            navigation.togglePin(row.bookmark)
         }
 
         Button {

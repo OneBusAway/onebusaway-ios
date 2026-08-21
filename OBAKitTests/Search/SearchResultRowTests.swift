@@ -122,4 +122,28 @@ final class SearchResultRowTests: OBATestCase {
         #expect(rows[0].title == rows[1].title)
         #expect(rows[0].id != rows[1].id)
     }
+
+    /// The shared factory reproduces what the inline `Stop` branch produced,
+    /// for whichever kind the caller asks for.
+    @Test @MainActor
+    func `Stop factory builds a row with the requested kind`() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let stop = try #require(try Fixtures.loadSomeStops().first)
+
+        let row = SearchListRow.stop(
+            stop,
+            application: application,
+            kind: .recentStop(id: stop.id),
+            onSelect: {}
+        )
+
+        #expect(row.title == stop.name)
+        #expect(row.accessory == .disclosureIndicator)
+        if case .recentStop(let id) = row.kind {
+            #expect(id == stop.id)
+        } else {
+            Issue.record("Expected a .recentStop kind, got \(row.kind)")
+        }
+    }
 }

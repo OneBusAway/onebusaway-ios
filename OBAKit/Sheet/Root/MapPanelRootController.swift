@@ -27,19 +27,26 @@ public final class MapPanelRootController: UIViewController {
         let bridge = TripPresentationBridge()
         let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
         let displayModel = MapSearchDisplayModel()
+        // Built here, not inside `MapPanelRootView`, because the factory is
+        // constructed first and the home sheet's nearby section must observe
+        // the same instance the map renders from. Same reasoning as
+        // `displayModel` above.
+        let stopsObserver = MapStopsObserver(application: application)
         let factory = AppSheetViewFactory(
             application: application,
             onPresentTrip: { [weak bridge] arrival in bridge?.present(arrival) },
             onPresentVehicleTrip: { [weak bridge] vehicleStatus in bridge?.present(vehicleStatus: vehicleStatus) },
             presentingController: { [weak bridge] in bridge?.topmostController() },
             coordinator: coordinator,
-            searchDisplayModel: displayModel
+            searchDisplayModel: displayModel,
+            stopsObserver: stopsObserver
         )
         let rootView = MapPanelRootView(
             application: application,
             factory: factory,
             coordinator: coordinator,
-            searchDisplayModel: displayModel
+            searchDisplayModel: displayModel,
+            stopsObserver: stopsObserver
         )
         self.host = UIHostingController(rootView: rootView)
         self.bridge = bridge

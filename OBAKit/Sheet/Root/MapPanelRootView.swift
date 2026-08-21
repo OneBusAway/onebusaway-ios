@@ -22,7 +22,7 @@ struct MapPanelRootView: View {
     @StateObject private var coordinator: SheetCoordinator<AppSheetRoute>
     @ObservedObject private var searchDisplay: MapSearchDisplayModel
     @StateObject private var mapViewModel: MapViewModel
-    @StateObject private var stopsObserver: MapStopsObserver
+    @ObservedObject private var stopsObserver: MapStopsObserver
 
     /// Presentation state only. The popup reads its data from
     /// `mapViewModel.weatherDisplay` so a refresh that finishes while the card
@@ -90,11 +90,12 @@ struct MapPanelRootView: View {
         application: Application,
         factory: AppSheetViewFactory,
         coordinator: SheetCoordinator<AppSheetRoute>,
-        searchDisplayModel: MapSearchDisplayModel
+        searchDisplayModel: MapSearchDisplayModel,
+        stopsObserver: MapStopsObserver
     ) {
         _coordinator = StateObject(wrappedValue: coordinator)
         _searchDisplay = ObservedObject(wrappedValue: searchDisplayModel)
-        _stopsObserver = StateObject(wrappedValue: MapStopsObserver(application: application))
+        _stopsObserver = ObservedObject(wrappedValue: stopsObserver)
         let initialMapType = MapBaseType(application.mapRegionManager.userSelectedMapType)
         _mapViewModel = StateObject(wrappedValue: MapViewModel(application: application, initialMapType: initialMapType))
         self.application = application

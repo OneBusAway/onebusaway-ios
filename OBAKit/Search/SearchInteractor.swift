@@ -136,7 +136,7 @@ class SearchInteractor: NSObject {
 
         return .init(
             id: .bookmarks,
-            title: OBALoc("search_controller.bookmarks.header", value: "Bookmarks", comment: "Title of the Bookmarks search header"),
+            title: Strings.bookmarks,
             content: bookmarks
         )
     }

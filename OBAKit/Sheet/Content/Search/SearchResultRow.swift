@@ -90,13 +90,11 @@ enum SearchResultRow {
     static func row(for result: Any, application: Application, onSelect: @escaping () -> Void) -> SearchListRow? {
         switch result {
         case let stop as Stop:
-            return SearchListRow(
+            return SearchListRow.stop(
+                stop,
+                application: application,
                 kind: .searchResult(id: stop.id),
-                title: stop.name,
-                subtitle: stopSubtitle(application, stop),
-                icon: .uiImage(Icons.stop),
-                accessory: .disclosureIndicator,
-                action: onSelect
+                onSelect: onSelect
             )
 
         case let route as Route:
@@ -136,20 +134,4 @@ enum SearchResultRow {
         }
     }
 
-    /// Direction plus distance from the user, mirroring what the placemark rows in
-    /// the search list already show. Distance is dropped when there's no fix.
-    private static func stopSubtitle(_ application: Application, _ stop: Stop) -> String? {
-        var parts: [String] = []
-
-        if let currentLocation = application.locationService.currentLocation {
-            let distance = currentLocation.distance(from: CLLocation(latitude: stop.coordinate.latitude, longitude: stop.coordinate.longitude))
-            parts.append(application.formatters.distanceFormatter.string(fromDistance: distance))
-        }
-
-        if let direction = Formatters.adjectiveFormOfCardinalDirection(stop.direction), !direction.isEmpty {
-            parts.append(direction)
-        }
-
-        return parts.isEmpty ? nil : parts.joined(separator: " • ")
-    }
 }

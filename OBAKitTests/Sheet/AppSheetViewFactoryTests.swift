@@ -33,13 +33,14 @@ final class AppSheetViewFactoryTests: OBATestCase {
         queue.cancelAllOperations()
     }
 
-    /// The coordinator and display model are required dependencies, so every test
+    /// The coordinator, display model, and stops observer are required dependencies, so every test
     /// builds the factory the same way the app does.
     @MainActor
     private func makeFactory(
         application: Application,
         coordinator: SheetCoordinator<AppSheetRoute> = SheetCoordinator(root: .home),
-        displayModel: MapSearchDisplayModel = MapSearchDisplayModel()
+        displayModel: MapSearchDisplayModel = MapSearchDisplayModel(),
+        stopsObserver: MapStopsObserver? = nil
     ) -> AppSheetViewFactory {
         AppSheetViewFactory(
             application: application,
@@ -47,7 +48,8 @@ final class AppSheetViewFactoryTests: OBATestCase {
             onPresentVehicleTrip: { _ in },
             presentingController: { nil },
             coordinator: coordinator,
-            searchDisplayModel: displayModel
+            searchDisplayModel: displayModel,
+            stopsObserver: stopsObserver ?? MapStopsObserver(application: application)
         )
     }
 
@@ -148,5 +150,27 @@ final class AppSheetViewFactoryTests: OBATestCase {
 
         #expect(view.placeholder == SearchPlaceholder.text(for: application))
         #expect(!view.placeholder.isEmpty)
+    }
+
+    /// The three index routes are wired for navigation before their screens
+    /// exist, so the dispatcher must send them to the placeholder instead of to
+    /// `unimplementedView`, whose DEBUG `assertionFailure` guards genuinely
+    /// unwired routes.
+    ///
+    /// Goes through `view(for:)` rather than calling `indexPlaceholderView`
+    /// directly: the dispatch is the thing under test. `view(for:)` is
+    /// `@ViewBuilder`, so its switch — and any `assertionFailure` on the branch
+    /// it picks — runs at call time. Completing this loop without trapping is
+    /// the assertion; calling the placeholder builder directly would pass even
+    /// if the routes were dropped from the dispatcher.
+    @Test @MainActor
+    func `Index routes dispatch to a placeholder without asserting`() {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let factory = makeFactory(application: application)
+
+        for route in [AppSheetRoute.nearbyAll, .recentStopsAll, .bookmarksAll] {
+            _ = factory.view(for: route)
+        }
     }
 }

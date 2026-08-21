@@ -37,6 +37,7 @@ final class AppSheetViewFactory {
     let onPresentVehicleTrip: (VehicleStatus) -> Void
     let coordinator: SheetCoordinator<AppSheetRoute>
     let searchDisplayModel: MapSearchDisplayModel
+    let stopsObserver: MapStopsObserver
 
     /// Nothing here is defaulted, on purpose, and for two separate reasons.
     ///
@@ -45,10 +46,11 @@ final class AppSheetViewFactory {
     /// it, so a call site that omitted it would build a factory whose sheet
     /// renders correctly and then silently ignores every button on it.
     ///
-    /// `coordinator` and `searchDisplayModel`: they must be the same instances the
-    /// hosting `MapPanelRootView` observes. A factory built with its own private
-    /// copies would push routes onto a coordinator nobody is watching and draw into
-    /// a display model nobody renders — silently, with the search sheet simply
+    /// `coordinator`, `searchDisplayModel`, and `stopsObserver`: they must be the
+    /// same instances the hosting `MapPanelRootView` observes. A factory built with
+    /// its own private copies would push routes onto a coordinator nobody is
+    /// watching, draw into a display model nobody renders, or observe a different
+    /// stop set than the map is showing — silently, with the search sheet simply
     /// appearing to do nothing.
     init(
         application: Application,
@@ -56,7 +58,8 @@ final class AppSheetViewFactory {
         onPresentVehicleTrip: @escaping (VehicleStatus) -> Void,
         presentingController: @escaping () -> UIViewController?,
         coordinator: SheetCoordinator<AppSheetRoute>,
-        searchDisplayModel: MapSearchDisplayModel
+        searchDisplayModel: MapSearchDisplayModel,
+        stopsObserver: MapStopsObserver
     ) {
         self.application = application
         self.onPresentTrip = onPresentTrip
@@ -64,6 +67,7 @@ final class AppSheetViewFactory {
         self.presentingController = presentingController
         self.coordinator = coordinator
         self.searchDisplayModel = searchDisplayModel
+        self.stopsObserver = stopsObserver
     }
 
     /// Built once and shared: the search sheet and the results sheet must route a
@@ -90,11 +94,13 @@ final class AppSheetViewFactory {
         case .search:
             searchView()
 
+        case .nearbyAll, .recentStopsAll, .bookmarksAll:
+            indexPlaceholderView(for: route)
+
         // Wiring a push for one of these routes before its view exists will
         // trip the debug assertion in `unimplementedView(for:)` — register the
         // view here before reaching for `SheetCoordinator.push(...)`.
-        case .nearbyAll, .recentStopsAll, .bookmarksAll,
-             .tripPlanner, .tripDetails, .transitAlert, .settings:
+        case .tripPlanner, .tripDetails, .transitAlert, .settings:
             unimplementedView(for: route)
 
         case .searchResults(let response):
@@ -123,7 +129,13 @@ final class AppSheetViewFactory {
     // MARK: - Per-route view builders
 
     func homeView() -> HomeSheetView {
-        HomeSheetView(viewModel: HomeSheetViewModel(application: self.application))
+        HomeSheetView(
+            application: self.application,
+            viewModel: HomeSheetViewModel(
+                application: self.application,
+                stopsObserver: self.stopsObserver
+            )
+        )
     }
 
     /// Bridges `AppSheetRoute.more` to the existing UIKit `MoreViewController`
@@ -197,6 +209,27 @@ final class AppSheetViewFactory {
         )
     }
 
+    /// The home sheet's section headers navigate to these three routes before
+    /// their index screens exist, so they render the "coming soon" placeholder
+    /// in every configuration rather than asserting. `unimplementedView` stays
+    /// armed for routes nobody has wired a push for yet — remove a route from
+    /// here once its real view is registered above.
+    func indexPlaceholderView(for route: AppSheetRoute) -> some View {
+        VStack(spacing: 4) {
+            Text(OBALoc(
+                "app_sheet.unimplemented_route.placeholder",
+                value: "This screen is coming soon.",
+                comment: "Placeholder shown when a sheet route is pushed but its screen has not been built yet."
+            ))
+            .font(.headline)
+            .foregroundStyle(.secondary)
+            Text(route.id)
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+        }
+        .padding()
+    }
+
     /// Placeholder until each route gets its own real view. In debug builds we
     /// surface a visible label and fire an assertion so a stray `push(...)`
     /// during development can't silently render a blank sheet. In release we
@@ -218,22 +251,7 @@ final class AppSheetViewFactory {
 #else
         // swiftlint:disable:next redundant_discardable_let
         let _ = Logger.error("AppSheetRoute.\(route.id) pushed but no view is registered — rendering placeholder.")
-        // Embed `route.id` in the visible copy so an experimental-flag tester
-        // who hits this in the wild has something concrete to report back —
-        // the `Logger.error` line above is invisible to them.
-        VStack(spacing: 4) {
-            Text(OBALoc(
-                "app_sheet.unimplemented_route.placeholder",
-                value: "This screen is coming soon.",
-                comment: "Placeholder shown in release builds when a sheet route is pushed but has no view registered."
-            ))
-            .font(.headline)
-            .foregroundStyle(.secondary)
-            Text(route.id)
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
-        }
-        .padding()
+        indexPlaceholderView(for: route)
 #endif
     }
 }

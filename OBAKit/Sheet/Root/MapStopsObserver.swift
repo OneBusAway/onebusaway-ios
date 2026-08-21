@@ -65,6 +65,23 @@ final class MapStopsObserver: NSObject, ObservableObject, MapRegionDelegate, Reg
     /// Last settled viewport, the prune reference. Nil = no prune (set grows).
     private var viewport: MKCoordinateRegion?
 
+    /// Center of the last settled viewport, published so the home sheet's
+    /// nearby section can order stops by it. Nil until the first settle, and
+    /// cleared on `reset()` so a stale center never outlives its render set.
+    @Published private(set) var viewportCenter: CLLocationCoordinate2D?
+
+    /// True once the map has reported a settled camera, through *either* branch
+    /// of `MapPanelRootView.onMapCameraChange` — a zoomed-in settle or a
+    /// zoomed-out `reset()`. Latched, so it survives the reset that a zoom-out
+    /// performs.
+    ///
+    /// The home sheet reads it to hold its empty state back until "there's
+    /// nothing nearby" is a fact rather than the pre-first-settle default. Both
+    /// branches count: a map parked at region-level zoom never settles into
+    /// `updateViewport(_:)`, and that's exactly a case where the empty state is
+    /// the correct thing to show.
+    @Published private(set) var hasSettledOnce = false
+
     private let application: Application
 
     init(application: Application, pruneSpanFactor: Double = 4.0, renderCap: Int = 400) {
@@ -105,15 +122,39 @@ final class MapStopsObserver: NSObject, ObservableObject, MapRegionDelegate, Reg
     func reset() {
         accumulated.removeAll()
         viewport = nil
+        if !hasSettledOnce {
+            hasSettledOnce = true
+        }
+        // Guarded for the same reason `updateViewport(_:)` hand-rolls its
+        // comparison: `CLLocationCoordinate2D` isn't `Equatable`, so `@Published`
+        // won't drop a nil-over-nil write. `MapPanelRootView` calls `reset()` on
+        // *every* settle while zoomed out, not just on the zoom-out transition,
+        // so an unguarded clear would fire `objectWillChange` on each pan and
+        // cascade into the nearby section and the whole home sheet.
+        if viewportCenter != nil {
+            viewportCenter = nil
+        }
         guard !stops.isEmpty else { return }
         stops = []
     }
 
     /// Records the settled viewport and prunes against it. Pruning here (not
     /// only in `stopsUpdated`) bounds the set even on settles that load no
-    /// stops. Loop-safe: a re-fired same-region settle changes nothing.
+    /// stops. Loop-safe: a re-fired same-region settle changes nothing — neither
+    /// `stops` nor `viewportCenter` is republished, so observers aren't invalidated.
     func updateViewport(_ region: MKCoordinateRegion) {
         viewport = region
+        if !hasSettledOnce {
+            hasSettledOnce = true
+        }
+        // `CLLocationCoordinate2D` isn't `Equatable`, so `@Published` can't drop a
+        // same-value write for us. Comparing by hand is what keeps a re-fired
+        // settle from firing `objectWillChange` — and with it a `MapPanelRootView`
+        // body eval and a full re-sort of the nearby section — for no change.
+        if viewportCenter?.latitude != region.center.latitude
+            || viewportCenter?.longitude != region.center.longitude {
+            viewportCenter = region.center
+        }
         if pruneAccumulated() {
             publish()
         }
@@ -200,24 +241,11 @@ final class MapStopsObserver: NSObject, ObservableObject, MapRegionDelegate, Reg
 
         // Count cap: keep the `renderCap` nearest to center, evict the rest.
         if accumulated.count > renderCap {
-            let nearest = accumulated.values
-                .sorted { squaredDistance($0, to: center) < squaredDistance($1, to: center) }
-                .prefix(renderCap)
+            let nearest = Stop.nearest(Array(accumulated.values), to: center, limit: renderCap)
             accumulated = Dictionary(nearest.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         }
 
         return true
-    }
-
-    /// Squared distance with longitude scaled by `cos(latitude)` so lat/lon
-    /// degrees compare on a common metric scale. Ordering only — no sqrt.
-    ///
-    /// Internal rather than private so the cap-eviction tests can assert against
-    /// this exact ordering instead of maintaining a second copy of the formula.
-    func squaredDistance(_ stop: Stop, to center: CLLocationCoordinate2D) -> Double {
-        let dLat = stop.coordinate.latitude - center.latitude
-        let dLon = (stop.coordinate.longitude - center.longitude) * cos(center.latitude * .pi / 180)
-        return dLat * dLat + dLon * dLon
     }
 
     private func orderedStops() -> [Stop] {

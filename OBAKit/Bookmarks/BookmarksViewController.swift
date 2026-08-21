@@ -96,6 +96,7 @@ class BookmarksViewController: UIHostingController<BookmarksRootView>,
         editBookmark: { _ in assertionFailure("placeholder navigation handler invoked") },
         deleteBookmark: { _ in assertionFailure("placeholder navigation handler invoked") },
         trackBookmark: { _ in assertionFailure("placeholder navigation handler invoked") },
+        togglePin: { _ in assertionFailure("placeholder navigation handler invoked") },
         liveActivitiesEnabled: {
             assertionFailure("placeholder navigation handler invoked")
             return false
@@ -116,6 +117,10 @@ class BookmarksViewController: UIHostingController<BookmarksRootView>,
             editBookmark: { [weak self] bookmark in self?.editBookmark(bookmark) },
             deleteBookmark: { [weak self] bookmark in self?.deleteBookmark(bookmark) },
             trackBookmark: { [weak self] bookmark in self?.startLiveActivity(for: bookmark) },
+            togglePin: { [weak self] bookmark in
+                guard let self else { return }
+                self.application.userDataStore.setPinned(!bookmark.isPinned, for: bookmark)
+            },
             liveActivitiesEnabled: { ActivityAuthorizationInfo().areActivitiesEnabled },
             refresh: { [weak self] in
                 guard let self else { return }
