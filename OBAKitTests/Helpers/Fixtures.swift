@@ -159,7 +159,16 @@ class Fixtures {
             "agencyId": "test_agency",
             "id": id,
             "shortName": "1",
-            "type": 3
+            "type": 3,
+            "agency": [
+                "id": "test_agency",
+                "name": "Test Agency",
+                "lang": "en",
+                "phone": "555-0000",
+                "privateService": false,
+                "timezone": "America/Los_Angeles",
+                "url": "https://example.com"
+            ]
         ]
         return try dictionaryToModel(type: Route.self, dictionary: dictionary)
     }

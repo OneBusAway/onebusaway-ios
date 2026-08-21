@@ -17,9 +17,21 @@ struct SearchListRow: Identifiable {
 
     enum Kind {
         case quickSearch(SearchType)
-        case recentStop
-        case bookmark
+        /// Carries the stop's id for the same reason `searchResult` does: recent
+        /// stops are rendered in a `ForEach`, and two stops on opposite sides of a
+        /// corner share a name.
+        case recentStop(id: String)
+        /// Carries the bookmark's id for the same reason `recentStop` does: a
+        /// bookmark's default name is its stop's name, so two bookmarks on
+        /// opposite sides of one street would otherwise share a row id.
+        case bookmark(id: String)
         case placemark(MKMapItem)
+        /// A row in a disambiguation list. Carries the underlying model's id
+        /// because titles are not identity — two stops on opposite sides of the
+        /// same corner share a name, and two agencies can both run a route "1".
+        /// Deriving the row id from the title alone collides in exactly the case
+        /// a disambiguation list exists to handle.
+        case searchResult(id: String)
         case clearRecents
         case loading
         case noResults
@@ -34,13 +46,15 @@ struct SearchListRow: Identifiable {
             switch self {
             case .quickSearch(let type):
                 return "quickSearch-\(type.rawValue)"
-            case .recentStop:
-                return "recentStop"
-            case .bookmark:
-                return "bookmark"
+            case .recentStop(let id):
+                return "recentStop-\(id)"
+            case .bookmark(let id):
+                return "bookmark-\(id)"
             case .placemark(let item):
                 let coord = item.placemark.coordinate
                 return "placemark-\(coord.latitude)-\(coord.longitude)"
+            case .searchResult(let id):
+                return "searchResult-\(id)"
             case .clearRecents:
                 return "clearRecents"
             case .loading:

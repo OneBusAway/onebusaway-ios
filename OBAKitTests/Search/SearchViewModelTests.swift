@@ -286,4 +286,132 @@ final class SearchViewModelTests: OBATestCase {
         #expect(vm.vehicleError == nil)
         #expect(vm.vehicleSearchResponse != nil)
     }
+
+    // MARK: - Row-level loading state
+
+    @Test @MainActor
+    func `Loading vehicle id is nil before any request`() {
+        let vm = SearchViewModel(searchResponse: makeSearchResponse(searchType: .vehicleID), apiService: nil)
+        #expect(vm.loadingVehicleID == nil)
+    }
+
+    /// The results sheet shows progress on the tapped row, so the id has to be
+    /// observable while the request is in flight and cleared afterwards.
+    @Test @MainActor
+    func `Loading vehicle id is cleared once the request finishes`() async {
+        let vm = SearchViewModel(
+            searchResponse: makeSearchResponse(searchType: .vehicleID, query: vehicleID),
+            apiService: buildRESTService(dataLoader: makeSuccessLoader())
+        )
+
+        await vm.selectVehicle(vehicleID: vehicleID)
+
+        #expect(vm.loadingVehicleID == nil)
+        #expect(vm.vehicleSearchResponse != nil)
+    }
+
+    @Test @MainActor
+    func `Loading vehicle id is cleared after a failure`() async {
+        let vm = SearchViewModel(
+            searchResponse: makeSearchResponse(searchType: .vehicleID, query: vehicleID),
+            apiService: buildRESTService(dataLoader: makeNetworkErrorLoader())
+        )
+
+        await vm.selectVehicle(vehicleID: vehicleID)
+
+        #expect(vm.loadingVehicleID == nil)
+        #expect(vm.vehicleError != nil)
+    }
+
+    /// `loadingVehicleID` is the only thing driving the in-row progress indicator, so
+    /// asserting it's nil afterwards isn't enough — a version that never set it at all
+    /// would pass that. Observed while the request is held open.
+    @Test @MainActor
+    func `Loading vehicle id names the vehicle being fetched while the request is in flight`() async {
+        let loader = GatedDataLoader(makeSuccessLoader())
+        let config = APIServiceConfiguration(baseURL: baseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, regionIdentifier: pugetSoundRegionIdentifier, surveyBaseURL: surveyBaseURL)
+        let vm = SearchViewModel(
+            searchResponse: makeSearchResponse(searchType: .vehicleID, query: vehicleID),
+            apiService: RESTAPIService(config, dataLoader: loader)
+        )
+
+        let lookup = Task { await vm.selectVehicle(vehicleID: vehicleID) }
+        await loader.waitForRequest()
+
+        #expect(vm.loadingVehicleID == vehicleID)
+
+        loader.releaseRequest()
+        await lookup.value
+
+        #expect(vm.loadingVehicleID == nil)
+        #expect(vm.vehicleSearchResponse != nil)
+    }
+
+    // MARK: - Vehicle retry affordance
+
+    @Test @MainActor
+    func `Failed vehicle id is nil before any request`() {
+        let vm = SearchViewModel(searchResponse: makeSearchResponse(searchType: .vehicleID), apiService: nil)
+        #expect(vm.failedVehicleID == nil)
+    }
+
+    /// `failedVehicleID` is the user's only escape from a failed lookup: it's what
+    /// lets the inline error row offer a retry rather than dead-ending them.
+    @Test @MainActor
+    func `Failed vehicle id names the vehicle whose lookup failed`() async {
+        let vm = SearchViewModel(
+            searchResponse: makeSearchResponse(searchType: .vehicleID, query: vehicleID),
+            apiService: buildRESTService(dataLoader: makeNetworkErrorLoader())
+        )
+
+        await vm.selectVehicle(vehicleID: vehicleID)
+
+        #expect(vm.failedVehicleID == vehicleID)
+        #expect(vm.vehicleError != nil)
+    }
+
+    @Test @MainActor
+    func `Failed vehicle id is set when the vehicle is not on any trip`() async {
+        let vm = SearchViewModel(
+            searchResponse: makeSearchResponse(searchType: .vehicleID, query: vehicleID),
+            apiService: buildRESTService(dataLoader: makeKeyNotFoundLoader())
+        )
+
+        await vm.selectVehicle(vehicleID: vehicleID)
+
+        #expect(vm.failedVehicleID == vehicleID)
+        #expect((vm.vehicleError as? SearchError) == .noTripsAvailable)
+    }
+
+    /// The misconfiguration path bails before `loadingVehicleID` is ever set, so it
+    /// has to name the vehicle on its own or the error row loses its retry.
+    @Test @MainActor
+    func `Failed vehicle id is set when there is no api service`() async {
+        let vm = SearchViewModel(searchResponse: makeSearchResponse(searchType: .vehicleID), apiService: nil)
+
+        await vm.selectVehicle(vehicleID: vehicleID)
+
+        #expect(vm.failedVehicleID == vehicleID)
+    }
+
+    /// A retry that succeeds has to clear it, or the error row outlives the error.
+    @Test @MainActor
+    func `Failed vehicle id is cleared by a successful retry`() async {
+        let loader = makeNetworkErrorLoader()
+        let vm = SearchViewModel(
+            searchResponse: makeSearchResponse(searchType: .vehicleID, query: vehicleID),
+            apiService: buildRESTService(dataLoader: loader)
+        )
+
+        await vm.selectVehicle(vehicleID: vehicleID)
+        #expect(vm.failedVehicleID == vehicleID)
+
+        loader.removeMappedResponses()
+        loader.mock(URLString: vehicleURLString, with: Fixtures.loadData(file: "api_where_vehicle_1_4351.json"))
+
+        await vm.selectVehicle(vehicleID: vehicleID)
+
+        #expect(vm.failedVehicleID == nil)
+        #expect(vm.vehicleSearchResponse != nil)
+    }
 }

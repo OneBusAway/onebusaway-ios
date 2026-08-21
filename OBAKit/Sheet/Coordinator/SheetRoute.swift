@@ -8,6 +8,7 @@
 //
 
 import SwiftUI
+import MapKit
 import OBAKitCore
 
 // MARK: - SheetDetentConfiguration
@@ -83,6 +84,10 @@ nonisolated enum AppSheetRoute: SheetRouteable {
     case routePicker
     case currentTrip(route: Route)
     case transitAlert(alertID: String)
+    case searchResults(SearchResponse)
+    case mapItem(MKMapItem)
+    case routeStops(StopsForRoute)
+    case nearbyStops(coordinate: CLLocationCoordinate2D)
 
     case more
     case settings
@@ -122,6 +127,15 @@ nonisolated extension AppSheetRoute {
             return "\(caseName)-\(route.id)"
         case .transitAlert(let alertID):
             return "\(caseName)-\(alertID)"
+        case .searchResults(let response):
+            return "\(caseName)-\(response.request.searchType.rawValue)-\(response.request.query)"
+        case .mapItem(let item):
+            let coordinate = item.placemark.coordinate
+            return "\(caseName)-\(coordinate.latitude)-\(coordinate.longitude)"
+        case .routeStops(let stopsForRoute):
+            return "\(caseName)-\(stopsForRoute.id)"
+        case .nearbyStops(let coordinate):
+            return "\(caseName)-\(coordinate.latitude)-\(coordinate.longitude)"
         }
     }
 
@@ -140,7 +154,7 @@ nonisolated extension AppSheetRoute {
     /// Detail destinations prefer the stacked layer so the base sheet peeks beneath.
     var prefersStacking: Bool {
         switch self {
-        case .stopDetails, .tripPlanner, .tripDetails, .currentTrip, .transitAlert, .more, .nearbyAll, .recentStopsAll, .bookmarksAll, .settings:
+        case .stopDetails, .tripPlanner, .tripDetails, .currentTrip, .transitAlert, .more, .nearbyAll, .recentStopsAll, .bookmarksAll, .settings, .searchResults, .mapItem, .routeStops, .nearbyStops:
             return true
         case .home, .search, .routePicker:
             return false
@@ -218,6 +232,34 @@ nonisolated extension AppSheetRoute {
         case .tripPlanner, .tripDetails, .routePicker, .currentTrip, .transitAlert, .more, .settings:
             return SheetDetentConfiguration(
                 detents: [.medium, .large],
+                initialDetent: .large,
+                isDismissDisabled: false
+            )
+        case .mapItem:
+            // Medium only: the sheet is a detail card over the map, and the map has
+            // to stay visible behind it. Long content scrolls inside the detent.
+            return SheetDetentConfiguration(
+                detents: [.medium],
+                initialDetent: .medium,
+                isDismissDisabled: false
+            )
+        case .routeStops:
+            // Opens at medium so the route polyline stays on screen; the user can
+            // drag to large for the full stop list.
+            return SheetDetentConfiguration(
+                detents: [.medium, .large],
+                initialDetent: .medium,
+                isDismissDisabled: false
+            )
+        case .searchResults:
+            return SheetDetentConfiguration(
+                detents: [.medium, .large],
+                initialDetent: .large,
+                isDismissDisabled: false
+            )
+        case .nearbyStops:
+            return SheetDetentConfiguration(
+                detents: [.large],
                 initialDetent: .large,
                 isDismissDisabled: false
             )

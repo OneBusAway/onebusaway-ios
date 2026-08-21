@@ -15,13 +15,20 @@ final class SearchViewModel: ObservableObject {
 
     @Published private(set) var vehicleSearchResponse: SearchResponse?
     @Published private(set) var vehicleError: Error?
+    /// The vehicle whose details are being fetched, or `nil` when idle. Published so
+    /// the results sheet can show progress on the tapped row — the UIKit controller
+    /// showed none at all.
+    @Published private(set) var loadingVehicleID: String?
+
+    /// The vehicle whose lookup produced `vehicleError`, so the inline error row can
+    /// offer a retry rather than dead-ending the user.
+    @Published private(set) var failedVehicleID: String?
 
     let subtitle: String
     let results: [Any]
 
     private let searchResponse: SearchResponse
     private let apiService: RESTAPIService?
-    private var isLoading = false
 
     convenience init(searchResponse: SearchResponse, application: Application) {
         self.init(searchResponse: searchResponse, apiService: application.apiService)
@@ -39,10 +46,11 @@ final class SearchViewModel: ObservableObject {
     }
 
     func selectVehicle(vehicleID: String) async {
-        guard !isLoading else { return }
+        guard loadingVehicleID == nil else { return }
         guard let apiService else {
             // Misconfiguration (no API service available). Surface it through the same
             // error channel as a request failure so the screen doesn't silently no-op.
+            failedVehicleID = vehicleID
             vehicleError = UnstructuredError(OBALoc(
                 "search_results_controller.no_api_service_error",
                 value: "No transit data service is available. Please choose a region in Settings.",
@@ -50,10 +58,11 @@ final class SearchViewModel: ObservableObject {
             ))
             return
         }
-        isLoading = true
+        loadingVehicleID = vehicleID
         vehicleError = nil
+        failedVehicleID = nil
         vehicleSearchResponse = nil
-        defer { isLoading = false }
+        defer { loadingVehicleID = nil }
         do {
             let vehicle = try await apiService.getVehicle(vehicleID: vehicleID).entry
             vehicleSearchResponse = SearchResponse(response: searchResponse, substituteResult: vehicle)
@@ -61,9 +70,11 @@ final class SearchViewModel: ObservableObject {
             // VehicleStatus requires `tripId`; its absence means the vehicle isn't on
             // any trip right now. Any *other* missing key signals a real decode failure
             // (renamed field, malformed payload) and should surface as-is.
+            failedVehicleID = vehicleID
             vehicleError = SearchError.noTripsAvailable
         } catch {
             Logger.error("selectVehicle decode failure: \(error)")
+            failedVehicleID = vehicleID
             vehicleError = error
         }
     }

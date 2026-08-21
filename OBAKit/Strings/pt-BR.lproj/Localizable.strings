@@ -316,9 +316,6 @@
 /* A voiceover title describing that the card's visibility taking up the minimum amount of screen. */
 "floating_panel.controller.position.minimized" = "Minimizado";
 
-/* Placeholder text inside the disabled search bar on the home sheet, shown while search is unimplemented. */
-"home_sheet.search_bar.coming_soon" = "Busca em breve";
-
 /* Alert message for Live Activity error. \"Settings\" is the iOS Settings app. */
 "live_activity.error.message" = "Verifique os ajustes de Atividades ao Vivo nos Ajustes do sistema.";
 
@@ -861,6 +858,9 @@
 /* Title for the route picker screen where the user selects their transit route. */
 "route_picker.title" = "Selecione Sua Linha";
 
+/* Title shown when a route's stop list could not be loaded or is empty. */
+"route_stops_sheet.empty.title" = "Nenhuma parada";
+
 /* Label for date picker in schedule view */
 "schedule_view.date" = "Data";
 
@@ -944,6 +944,18 @@
 
 /* The title of the Search Results controller. */
 "search_results_controller.title" = "Resultados da Busca";
+
+/* Title shown when a disambiguation sheet has no results to show. */
+"search_results_sheet.empty.title" = "Nenhum resultado";
+
+/* Header showing how many results a search matched, e.g. '12 results'. %d is the number of results. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
+"search_results_sheet.result_count_fmt" = "%d resultados";
+
+/* Error shown when a tapped search result cannot be turned into something to display. */
+"search_results_sheet.unresolvable_result" = "Não foi possível abrir este resultado de busca.";
+
+/* Accessibility label for the button that clears the search query. */
+"search_sheet.clear_query" = "Limpar";
 
 /* The transit agencies affected by this service alert. */
 "service_alert_controller.affected_agencies" = "Agências Afetadas";

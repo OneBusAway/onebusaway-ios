@@ -20,6 +20,7 @@ import UIKit
 struct MapPanelRootView: View {
 
     @StateObject private var coordinator: SheetCoordinator<AppSheetRoute>
+    @ObservedObject private var searchDisplay: MapSearchDisplayModel
     @StateObject private var mapViewModel: MapViewModel
     @StateObject private var stopsObserver: MapStopsObserver
 
@@ -83,14 +84,22 @@ struct MapPanelRootView: View {
 
     private let application: Application
     private let factory: AppSheetViewFactory
+    private let viewportRecorder: MapViewportRecorder
 
-    init(application: Application, factory: AppSheetViewFactory) {
-        _coordinator = StateObject(wrappedValue: SheetCoordinator<AppSheetRoute>(root: .home))
+    init(
+        application: Application,
+        factory: AppSheetViewFactory,
+        coordinator: SheetCoordinator<AppSheetRoute>,
+        searchDisplayModel: MapSearchDisplayModel
+    ) {
+        _coordinator = StateObject(wrappedValue: coordinator)
+        _searchDisplay = ObservedObject(wrappedValue: searchDisplayModel)
         _stopsObserver = StateObject(wrappedValue: MapStopsObserver(application: application))
         let initialMapType = MapBaseType(application.mapRegionManager.userSelectedMapType)
         _mapViewModel = StateObject(wrappedValue: MapViewModel(application: application, initialMapType: initialMapType))
         self.application = application
         self.factory = factory
+        self.viewportRecorder = MapViewportRecorder(application: application)
 
         // With no location fix, frame the current transit region rather than
         // letting `.automatic` frame the bookmark annotations.
@@ -123,7 +132,7 @@ struct MapPanelRootView: View {
             }
             // Regular stops show only zoomed in; `renderStops` already excludes
             // bookmarked stops and precomputes labels.
-            if isZoomedInForStops {
+            if isZoomedInForStops, !searchDisplay.suppressesAmbientStops {
                 ForEach(stopsObserver.renderStops) { renderStop in
                     stopAnnotation(
                         for: renderStop.stop,
@@ -133,8 +142,16 @@ struct MapPanelRootView: View {
                     )
                 }
             }
+            searchResultMapContent(for: searchDisplay.display) { stop in
+                application.stopIconFactory.buildSquircleIcon(
+                    for: stop,
+                    isBookmarked: false,
+                    traits: UITraitCollection(userInterfaceStyle: colorScheme == .dark ? .dark : .light)
+                )
+            }
         }
         .onMapCameraChange(frequency: .onEnd) { context in
+            viewportRecorder.record(context.rect)
             visibleRegion = context.region
             visibleMapRectHeight = context.rect.height
             // Keep the "Zoom in for stops" pill in sync with the stop-loading
@@ -157,6 +174,7 @@ struct MapPanelRootView: View {
             }
             recomputeStopLabels()
             stopsObserver.updateViewport(context.region)
+            guard !searchDisplay.suppressesAmbientStops else { return }
             application.mapRegionManager.scheduleStopsRequest(in: context.region)
         }
         // The map-type toggle changes the label gate (labels only show on the
@@ -171,6 +189,34 @@ struct MapPanelRootView: View {
             guard let id else { return }
             coordinator.push(.stopDetails(stopID: id))
             selectedStopID = nil
+        }
+        // A searched result stays drawn for exactly as long as the sheet that owns it
+        // is on the stack. Watching the stack — rather than clearing from the owning
+        // sheet's `onDisappear` — keeps the drawing alive across the content
+        // teardowns the sheet system performs without dismissing anything, and still
+        // clears on a real exit, including the drag-down the OS routes through
+        // `truncateStacked`.
+        .onChange(of: coordinator.stackedRoutes) { _, _ in
+            searchDisplay.clearIfOwnerAbsent(from: coordinator.routeStack + coordinator.stackedRoutes)
+        }
+        .onChange(of: searchDisplay.cameraTarget) { _, target in
+            guard let target else { return }
+            switch target {
+            case .coordinate(let coordinate, let animated):
+                let region = MKCoordinateRegion(
+                    centeredOn: coordinate,
+                    zoomLevel: 16,
+                    mapSize: mapSize
+                )
+                if animated {
+                    withAnimation { cameraPosition = .region(region) }
+                } else {
+                    cameraPosition = .region(region)
+                }
+            case .rect(let rect):
+                withAnimation { cameraPosition = .rect(rect) }
+            }
+            searchDisplay.consumeCameraTarget()
         }
         .mapStyle(mapViewModel.mapType == .standard ? .standard(emphasis: .muted) : .hybrid)
         .safeAreaPadding(.bottom, 180)
@@ -431,6 +477,10 @@ extension MapPanelRootView {
             zoomLevel: mapViewModel.zoomLevelForCurrentLocation(),
             mapSize: mapSize
         )
+        // Seed the viewport before the camera animates: `.onMapCameraChange` only
+        // fires on settle, so a search run between launch and the first settle would
+        // otherwise be scoped to a stale rect.
+        viewportRecorder.record(MKMapRect(region))
         withAnimation {
             cameraPosition = .region(region)
         }
