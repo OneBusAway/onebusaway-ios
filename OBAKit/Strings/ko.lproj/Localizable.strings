@@ -430,7 +430,7 @@
 /* Voiceover text indicating that this button toggles the base map type. */
 "map_controller.map_type.accessibility_label" = "지도 유형";
 
-/* Voiceover value combining the base map type with the number of enabled map layers. %1$@ is the base map type, %2$d is the layer count. */
+/* Voiceover value combining the base map type with the number of enabled map layers. %1$@ is the base map type, %2$d is the layer count. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
 "map_controller.map_type.accessibility_value_with_layers_fmt" = "%1$@, 레이어 %2$d개 켜짐";
 
 /* Voiceover text indicating the current map type as the hybrid base map (satellite view with labels). */

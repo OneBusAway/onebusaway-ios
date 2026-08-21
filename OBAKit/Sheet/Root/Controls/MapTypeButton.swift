@@ -66,15 +66,16 @@ struct MapTypeButton: View {
     private var accessibilityValueText: String {
         guard badgeCount > 0 else { return baseTypeValueText }
 
-        return String(
-            format: OBALoc(
-                "map_controller.map_type.accessibility_value_with_layers_fmt",
-                value: "%1$@, %2$d layers on",
-                comment: "Voiceover value combining the base map type with the number of enabled map layers. %1$@ is the base map type, %2$d is the layer count."
-            ),
-            baseTypeValueText,
-            badgeCount
+        let format = OBALoc(
+            "map_controller.map_type.accessibility_value_with_layers_fmt",
+            value: "%1$@, %2$d layers on",
+            comment: "Voiceover value combining the base map type with the number of enabled map layers. %1$@ is the base map type, %2$d is the layer count. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback."
         )
+        // `localizedStringWithFormat`, not `String(format:)`: the latter expands
+        // `%2$#@count@` but always resolves it against the root plural rule, so the
+        // `few`/`many`/`zero`/`two` forms in the ar, pl, and ru entries could never
+        // be selected. Invisible in English; wrong everywhere with more than two.
+        return String.localizedStringWithFormat(format, baseTypeValueText, badgeCount)
     }
 
     private var baseTypeValueText: String {
