@@ -765,7 +765,7 @@ class MapViewController: UIViewController,
             present(stopController: application.viewRouter.makeStopController(stop: stop, showToolbarOnBottom: true), deselecting: annotation)
             return
         }
-        deselectForPushedStopPage(annotation)
+        prepareMapForPushedStopPage(deselecting: annotation)
         application.viewRouter.navigateTo(stop: stop, from: self)
     }
 
@@ -775,6 +775,7 @@ class MapViewController: UIViewController,
             present(stopController: application.viewRouter.makeStopController(stopID: stopID, showToolbarOnBottom: true))
             return
         }
+        prepareMapForPushedStopPage(deselecting: nil)
         application.viewRouter.navigateTo(stopID: stopID, from: self)
     }
 
@@ -795,9 +796,21 @@ class MapViewController: UIViewController,
         UIAccessibility.isVoiceOverRunning
     }
 
-    /// A full-screen push covers the map, so leaving the tapped pin selected only strands a
-    /// highlight for the rider to find on the way back.
-    private func deselectForPushedStopPage(_ annotation: MKAnnotation?) {
+    /// Clears the map of what the sheet path would have replaced, because a full-screen push
+    /// covers it just as thoroughly.
+    ///
+    /// A sheet left open behind the push is not merely stale scenery: `stopSheetStopID` stays
+    /// set, so every other marker is held down as a gray dot and the zoom pill stays hidden for
+    /// the rest of the session, and its route-focus layer and refresh timer keep running behind
+    /// a screen nobody can see. Reachable whenever VoiceOver is switched on with a sheet already
+    /// up — the one case `prefersPushedStopPage` leaves as-is — and the next stop the rider
+    /// opens then pushes over it.
+    ///
+    /// Deselecting for the same reason: leaving the tapped pin selected only strands a highlight
+    /// for the rider to find on the way back.
+    private func prepareMapForPushedStopPage(deselecting annotation: MKAnnotation?) {
+        dismissStopSheetForReplacement()
+
         guard let annotation else { return }
         mapRegionManager.mapView.deselectAnnotation(annotation, animated: false)
     }

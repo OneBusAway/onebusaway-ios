@@ -65,6 +65,13 @@ struct StopDeparturesSections: View {
     /// targets is this view's, and both presentations want the same behaviour.
     @AccessibilityFocusState private var emptyStateFocused: Bool
 
+    /// Armed when the list *becomes* filter-empty under the rider, and consumed by the
+    /// empty-state row's `onAppear` — see the header row's `onChange` for why the transition,
+    /// rather than the state, is what may move focus. Set from both sides because SwiftUI
+    /// makes no promise about whether the change lands before or after the row is inserted:
+    /// the direct write covers a row that already exists, the flag covers one still arriving.
+    @State private var pendingEmptyStateFocus = false
+
     /// Leading/trailing inset shared by the page's full-width card rows,
     /// matching the inset-grouped card margin.
     private static let horizontalRowInset: CGFloat = 0
@@ -127,6 +134,10 @@ struct StopDeparturesSections: View {
             ServiceAlertsSection(alerts: serviceAlerts, onSelect: onSelectAlert)
         }
 
+        // The two states the row itself offers a "show everything" button for —
+        // and the only ones where focus should jump to it.
+        let isFilterCausedEmpty = content.isFilteredEmpty || content.isDepartureFilterEmpty
+
         if content.hasLoadedArrivals {
             Section {
                 StopPageListHeaderRow(
@@ -137,15 +148,21 @@ struct StopDeparturesSections: View {
                     onTogglePast: onTogglePast,
                     onChangeMode: onChangeMode
                 )
+                // Watched from here, not from the empty-state row: a filter the rider already
+                // had on — the app-wide departure-type filter, or routes hidden at this stop —
+                // makes the list filter-empty from the first frame it renders, and focusing the
+                // row then cuts off the stop name VoiceOver is reading. This row outlives the
+                // list going empty and coming back, so it can tell "just went empty" from
+                // "arrived empty"; `onChange` deliberately doesn't fire for its initial value.
+                .onChange(of: isFilterCausedEmpty) { _, nowEmpty in
+                    pendingEmptyStateFocus = nowEmpty
+                    if nowEmpty { emptyStateFocused = true }
+                }
                 .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
                 .listRowBackground(Color.clear)
                 .listRowSeparator(.hidden)
             }
         }
-
-        // The two states the row itself offers a "show everything" button for —
-        // and the only ones where focus should jump to it.
-        let isFilterCausedEmpty = content.isFilteredEmpty || content.isDepartureFilterEmpty
 
         if content.listIsEmpty {
             if content.showsLoadingState {
@@ -168,16 +185,23 @@ struct StopDeparturesSections: View {
                     .accessibilityFocused($emptyStateFocused)
                     // A filter that empties the list strands VoiceOver focus on a
                     // row that no longer exists, with nothing spoken to say why.
-                    // Only for the filtered cases: a stop that simply has no
-                    // departures shows this row from the first frame, and moving
-                    // focus there would cut off the header VoiceOver is reading.
+                    // Only when a filter emptied it *just now*, which the header
+                    // row's `onChange` decides: a stop that has no departures — or
+                    // one whose pre-existing filter hides them all — shows this row
+                    // from the frame the first fetch lands on, and moving focus
+                    // there would cut off the header VoiceOver is reading.
                     //
-                    // Set, never cleared. `onAppear` fires again whenever the List
-                    // rebuilds this row, and writing `false` to a focus binding whose
-                    // element is currently focused yanks VoiceOver off it — so an
-                    // unconditional assignment would steal focus from a rider sitting
-                    // on the "no departures" message when the next refresh lands.
-                    .onAppear { if isFilterCausedEmpty { emptyStateFocused = true } }
+                    // Only ever set to `true`. `onAppear` fires again whenever the
+                    // List rebuilds this row, and writing `false` to a focus binding
+                    // whose element is currently focused yanks VoiceOver off it — so
+                    // an unconditional assignment would steal focus from a rider
+                    // sitting on the "no departures" message when the next refresh
+                    // lands.
+                    .onAppear {
+                        guard pendingEmptyStateFocus else { return }
+                        pendingEmptyStateFocus = false
+                        emptyStateFocused = true
+                    }
                 }
             }
         } else if !content.isGrouped {
