@@ -16,6 +16,20 @@ class SurveyCell: OBAListViewCell {
     private var optionButtons: [UIButton] = []
     private var currentSelection: String?
 
+    /// Whether the hero question collects an answer inside the card. A `.label`
+    /// hero is display-only — no option to pick, no field to fill in — so it is
+    /// answerable without a selection.
+    private var heroCollectsAnswer = true
+
+    /// The answer a Next tap would submit, or `nil` while the hero question is
+    /// still unanswered. A display-only hero answers with an empty string;
+    /// without that, `Next` was gated on a selection that could never arrive and
+    /// stayed permanently disabled.
+    private var pendingAnswer: String? {
+        if let currentSelection { return currentSelection }
+        return heroCollectsAnswer ? nil : ""
+    }
+
     public override func apply(_ config: OBAContentConfiguration) {
         super.apply(config)
 
@@ -28,38 +42,104 @@ class SurveyCell: OBAListViewCell {
         updateUI()
     }
 
+    // MARK: - Metrics
+
+    private enum Metrics {
+        /// Matches `SurveyLauncherCardView`'s grouped card so the two survey
+        /// surfaces read as the same component.
+        static let cardRadius: CGFloat = 16.0
+        static let cardPadding: CGFloat = 16.0
+        static let optionRadius: CGFloat = 10.0
+        static let hairline: CGFloat = 1.0
+
+        // Icon tile, also lifted from `SurveyLauncherCardView`.
+        static let tileSize: CGFloat = 42.0
+        static let tileRadius: CGFloat = 10.0
+        static let tileGlyphPointSize: CGFloat = 20.0
+        static let tileTextGap: CGFloat = 14.0
+        /// Ceilings for the scaled tile. Left uncapped, an AX5 tile is wide
+        /// enough to leave the question a single word per line.
+        static let maxTileSize: CGFloat = 72.0
+        static let maxTileGlyphPointSize: CGFloat = 34.0
+    }
+
     // MARK: - UI Components
+
+    /// The rounded card the content sits in. The cell itself stays transparent:
+    /// it spans the full row width, so drawing the card chrome on the cell drew
+    /// a hairline across the whole screen instead of a card.
+    private lazy var cardView: UIView = {
+        let view = UIView.autolayoutNew()
+        view.backgroundColor = .secondarySystemBackground
+        view.layer.cornerRadius = Metrics.cardRadius
+        view.layer.cornerCurve = .continuous
+        return view
+    }()
+
+    /// Brand-filled tile carrying the survey glyph. Decorative — the question
+    /// text alongside it already says what the card is.
+    private let iconTile: UIView = {
+        let view = UIView.autolayoutNew()
+        view.backgroundColor = ThemeColors.shared.brand
+        view.layer.cornerRadius = Metrics.tileRadius
+        view.layer.cornerCurve = .continuous
+        return view
+    }()
+
+    private let tileGlyph: UIImageView = {
+        let symbol = UIImage(
+            systemName: "questionmark.bubble",
+            withConfiguration: UIImage.SymbolConfiguration(pointSize: Metrics.tileGlyphPointSize, weight: .semibold)
+        )
+        let imageView = UIImageView(image: symbol)
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.tintColor = .white
+        imageView.contentMode = .scaleAspectFit
+        return imageView
+    }()
 
     lazy var questionLabel: UILabel = {
         let label = UILabel.autolayoutNew()
         label.numberOfLines = 0
-        label.font = .preferredFont(forTextStyle: .body)
+        label.font = .preferredFont(forTextStyle: .headline)
+        label.adjustsFontForContentSizeCategory = true
         label.textColor = .label
         return label
     }()
 
-    lazy var optionsStack: UIStackView = {
-        let stack = UIStackView.verticalStack(arrangedSubviews: [])
-        stack.spacing = 8
+    /// Held so `updateTileSize()` can rescale the tile when the user's text size
+    /// changes; the tile is square, so both constraints share one constant.
+    private lazy var tileSizeConstraints: [NSLayoutConstraint] = [
+        iconTile.widthAnchor.constraint(equalToConstant: Metrics.tileSize),
+        iconTile.heightAnchor.constraint(equalToConstant: Metrics.tileSize)
+    ]
+
+    /// Tile and question side by side. The tile keeps its square footprint while
+    /// the question takes the rest of the width and wraps.
+    private lazy var headerRow: UIStackView = {
+        let stack = UIStackView.horizontalStack(arrangedSubviews: [iconTile, questionLabel])
+        stack.spacing = Metrics.tileTextGap
+        stack.alignment = .center
         return stack
     }()
 
+    lazy var optionsStack: UIStackView = {
+        let stack = UIStackView.verticalStack(arrangedSubviews: [])
+        stack.spacing = ThemeMetrics.padding
+        return stack
+    }()
+
+    /// Borderless and secondary: dismissing is the low-emphasis action, and the
+    /// bordered half-width box it used to be competed with `Next`.
     lazy var dismissButton: UIButton = {
         var config = UIButton.Configuration.plain()
         config.title = OBALoc("survey_cell.dismiss_button", value: "Dismiss", comment: "Button to dismiss the survey")
-        config.baseForegroundColor = .label
-        config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
-            var outgoing = incoming
-            outgoing.font = .systemFont(ofSize: incoming.font?.pointSize ?? UIFont.labelFontSize, weight: .medium)
-            return outgoing
-        }
-        config.contentInsets = NSDirectionalEdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16)
+        config.baseForegroundColor = .secondaryLabel
+        config.contentInsets = NSDirectionalEdgeInsets(top: 10, leading: 0, bottom: 10, trailing: 12)
 
         let button = UIButton(configuration: config)
         button.translatesAutoresizingMaskIntoConstraints = false
-        button.layer.cornerRadius = 8
-        button.layer.borderWidth = 1
-        button.layer.borderColor = UIColor.systemGray4.cgColor
+        button.setContentHuggingPriority(.required, for: .horizontal)
 
         let action = UIAction { [weak self] _ in
             guard let viewModel = self?.viewModel else { return }
@@ -70,38 +150,24 @@ class SurveyCell: OBAListViewCell {
     }()
 
     lazy var nextButton: UIButton = {
-        var config = UIButton.Configuration.filled()
-        config.title = OBALoc("survey_cell.next_button", value: "Next", comment: "Button to proceed to next survey question")
-        config.baseBackgroundColor = .systemGreen
-        config.baseForegroundColor = .white
-        config.contentInsets = NSDirectionalEdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16)
-
-        let button = UIButton(configuration: config)
-        button.translatesAutoresizingMaskIntoConstraints = false
-        button.layer.cornerRadius = 8
-        button.clipsToBounds = true
+        let button = SurveyCell.prominentButton(
+            title: OBALoc("survey_cell.next_button", value: "Next", comment: "Button to proceed to next survey question")
+        )
 
         let action = UIAction { [weak self] _ in
             guard let self,
                   let viewModel = self.viewModel,
-                  let selectedOption = self.currentSelection else { return }
-            viewModel.onNext(selectedOption)
+                  let answer = self.pendingAnswer else { return }
+            viewModel.onNext(answer)
         }
         button.addAction(action, for: .touchUpInside)
         return button
     }()
 
     lazy var externalSurveyButton: UIButton = {
-        var config = UIButton.Configuration.filled()
-        config.title = OBALoc("survey_cell.open_external_survey_button", value: "Open Survey", comment: "Button that opens an external survey in the browser")
-        config.baseBackgroundColor = .systemGreen
-        config.baseForegroundColor = .white
-        config.contentInsets = NSDirectionalEdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16)
-
-        let button = UIButton(configuration: config)
-        button.translatesAutoresizingMaskIntoConstraints = false
-        button.layer.cornerRadius = 8
-        button.clipsToBounds = true
+        let button = SurveyCell.prominentButton(
+            title: OBALoc("survey_cell.open_external_survey_button", value: "Open Survey", comment: "Button that opens an external survey in the browser")
+        )
         button.isHidden = true
 
         let action = UIAction { [weak self] _ in
@@ -111,22 +177,27 @@ class SurveyCell: OBAListViewCell {
         return button
     }()
 
+    /// Dismiss trailing-aligned next to the call to action rather than splitting
+    /// the card in half: the spacer takes the slack so both buttons keep their
+    /// intrinsic width. `Next` and `Open Survey` are mutually exclusive, so they
+    /// share the slot and every question type gets the same single action row.
     lazy var actionButtonsStack: UIStackView = {
-        let stack = UIStackView.horizontalStack(arrangedSubviews: [dismissButton, nextButton])
+        let spacer = UIView.autolayoutNew()
+        spacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
+
+        let stack = UIStackView.horizontalStack(arrangedSubviews: [spacer, dismissButton, nextButton, externalSurveyButton])
         stack.spacing = ThemeMetrics.compactPadding
-        stack.distribution = .fillEqually
+        stack.alignment = .center
         return stack
     }()
 
     lazy var contentStack: UIStackView = {
         let stack = UIStackView.verticalStack(arrangedSubviews: [
-            questionLabel,
+            headerRow,
             optionsStack,
-            externalSurveyButton,
-            UIView.spacerView(height: 8.0),
             actionButtonsStack
         ])
-        stack.spacing = 8.0
+        stack.spacing = ThemeMetrics.padding
         return stack
     }()
 
@@ -142,22 +213,70 @@ class SurveyCell: OBAListViewCell {
     }
 
     private func setupView() {
-        backgroundColor = .systemBackground
-        layer.cornerRadius = 12
-        layer.borderWidth = 1
-        layer.borderColor = UIColor.systemGray4.cgColor
+        backgroundColor = .clear
 
-        // Add content stack with padding
-        addSubview(contentStack)
-        contentStack.pinToSuperview(.edges, insets: NSDirectionalEdgeInsets(top: 12, leading: 12, bottom: -12, trailing: -12))
+        addSubview(cardView)
+        cardView.pinToSuperview(.edges)
+
+        let padding = Metrics.cardPadding
+        iconTile.addSubview(tileGlyph)
+        cardView.addSubview(contentStack)
+        contentStack.pinToSuperview(.edges, insets: NSDirectionalEdgeInsets(top: padding, leading: padding, bottom: -padding, trailing: -padding))
+
+        NSLayoutConstraint.activate(tileSizeConstraints + [
+            tileGlyph.centerXAnchor.constraint(equalTo: iconTile.centerXAnchor),
+            tileGlyph.centerYAnchor.constraint(equalTo: iconTile.centerYAnchor)
+        ])
+        updateTileSize()
 
         registerForTraitChanges([UITraitUserInterfaceStyle.self, UITraitAccessibilityContrast.self]) { (self: SurveyCell, _: UITraitCollection) in
-            self.layer.borderColor = UIColor.systemGray4.cgColor
-            self.dismissButton.layer.borderColor = UIColor.systemGray4.cgColor
             for button in self.optionButtons {
-                button.layer.borderColor = button.isSelected ? UIColor.systemGreen.cgColor : UIColor.systemGray4.cgColor
+                button.layer.borderColor = SurveyCell.optionBorderColor(isSelected: button.isSelected)
             }
         }
+
+        registerForTraitChanges([UITraitPreferredContentSizeCategory.self]) { (self: SurveyCell, _: UITraitCollection) in
+            self.updateTileSize()
+        }
+    }
+
+    /// Grows the tile alongside the question text. A fixed 42pt tile shrinks into
+    /// a bullet next to accessibility-size text, which reads as a rendering bug.
+    private func updateTileSize() {
+        let metrics = UIFontMetrics(forTextStyle: .headline)
+        let side = min(metrics.scaledValue(for: Metrics.tileSize, compatibleWith: traitCollection), Metrics.maxTileSize)
+        for constraint in tileSizeConstraints {
+            constraint.constant = side
+        }
+
+        let glyphPointSize = min(
+            metrics.scaledValue(for: Metrics.tileGlyphPointSize, compatibleWith: traitCollection),
+            Metrics.maxTileGlyphPointSize
+        )
+        tileGlyph.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: glyphPointSize, weight: .semibold)
+    }
+
+    // MARK: - Factories
+
+    /// The card's filled call-to-action buttons. `UIButton.Configuration` rounds
+    /// its own background, so the buttons carry no `layer.cornerRadius` — setting
+    /// both left the configuration's radius fighting the layer's.
+    private static func prominentButton(title: String) -> UIButton {
+        var config = UIButton.Configuration.filled()
+        config.title = title
+        config.baseBackgroundColor = ThemeColors.shared.brand
+        config.baseForegroundColor = .white
+        config.cornerStyle = .large
+        config.contentInsets = NSDirectionalEdgeInsets(top: 10, leading: 20, bottom: 10, trailing: 20)
+
+        let button = UIButton(configuration: config)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.setContentHuggingPriority(.required, for: .horizontal)
+        return button
+    }
+
+    private static func optionBorderColor(isSelected: Bool) -> CGColor {
+        isSelected ? ThemeColors.shared.brand.cgColor : UIColor.separator.cgColor
     }
 
     // MARK: - UI Updates
@@ -189,6 +308,7 @@ class SurveyCell: OBAListViewCell {
 
         externalSurveyButton.isHidden = true
         nextButton.isHidden = false
+        heroCollectsAnswer = true
 
         switch question.content.type {
         case .radio:
@@ -207,6 +327,7 @@ class SurveyCell: OBAListViewCell {
 
         case .label:
             optionsStack.isHidden = true
+            heroCollectsAnswer = false
 
         case .externalSurvey:
             optionsStack.isHidden = true
@@ -244,12 +365,14 @@ class SurveyCell: OBAListViewCell {
         let iconName = isRadio ? "circle" : "square"
         let selectedIconName = isRadio ? "circle.fill" : "checkmark.square.fill"
 
+        let brand = ThemeColors.shared.brand
+
         var config = UIButton.Configuration.plain()
         config.title = title
         config.baseForegroundColor = .label
-        config.image = UIImage(systemName: iconName)?.withTintColor(.systemGreen, renderingMode: .alwaysOriginal)
-        config.imagePadding = 8
-        config.contentInsets = NSDirectionalEdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16)
+        config.image = UIImage(systemName: iconName)?.withTintColor(brand, renderingMode: .alwaysOriginal)
+        config.imagePadding = ThemeMetrics.padding
+        config.contentInsets = NSDirectionalEdgeInsets(top: 12, leading: 14, bottom: 12, trailing: 14)
         config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
             var outgoing = incoming
             outgoing.font = .preferredFont(forTextStyle: .body)
@@ -260,14 +383,17 @@ class SurveyCell: OBAListViewCell {
         button.configurationUpdateHandler = { btn in
             var updatedConfig = btn.configuration
             let name = btn.isSelected ? selectedIconName : iconName
-            updatedConfig?.image = UIImage(systemName: name)?.withTintColor(.systemGreen, renderingMode: .alwaysOriginal)
+            updatedConfig?.image = UIImage(systemName: name)?.withTintColor(brand, renderingMode: .alwaysOriginal)
             btn.configuration = updatedConfig
         }
         button.contentHorizontalAlignment = .leading
-        button.backgroundColor = .systemGray6
-        button.layer.cornerRadius = 8
-        button.layer.borderWidth = 1
-        button.layer.borderColor = UIColor.systemGray4.cgColor
+        // Filled with the page background rather than a gray: the card is already
+        // `secondarySystemBackground`, so a gray-on-gray row had no edge.
+        button.backgroundColor = .systemBackground
+        button.layer.cornerRadius = Metrics.optionRadius
+        button.layer.cornerCurve = .continuous
+        button.layer.borderWidth = Metrics.hairline
+        button.layer.borderColor = SurveyCell.optionBorderColor(isSelected: false)
 
         let action = UIAction { [weak self] _ in
             if isRadio {
@@ -322,26 +448,18 @@ class SurveyCell: OBAListViewCell {
 
     private func selectButton(_ button: UIButton) {
         button.isSelected = true
-        button.backgroundColor = .systemGreen.withAlphaComponent(0.15)
-        button.layer.borderColor = UIColor.systemGreen.cgColor
+        button.backgroundColor = ThemeColors.shared.brand.withAlphaComponent(0.12)
+        button.layer.borderColor = SurveyCell.optionBorderColor(isSelected: true)
     }
 
     private func deselectButton(_ button: UIButton) {
         button.isSelected = false
-        button.backgroundColor = .systemGray6
-        button.layer.borderColor = UIColor.systemGray4.cgColor
+        button.backgroundColor = .systemBackground
+        button.layer.borderColor = SurveyCell.optionBorderColor(isSelected: false)
     }
 
     private func updateNextButtonState() {
-        let hasSelection = currentSelection != nil
-        nextButton.isEnabled = hasSelection
-        nextButton.configurationUpdateHandler = { btn in
-            var config = btn.configuration
-            config?.baseBackgroundColor = .systemGreen
-            config?.baseForegroundColor = .white
-            btn.configuration = config
-            btn.alpha = btn.isEnabled ? 1.0 : 0.5
-        }
+        nextButton.isEnabled = pendingAnswer != nil
     }
 
 }

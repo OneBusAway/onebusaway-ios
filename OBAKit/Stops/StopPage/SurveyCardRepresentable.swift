@@ -68,3 +68,61 @@ struct SurveyCardRepresentable: UIViewRepresentable {
         }
     }
 }
+
+// MARK: - Previews
+
+/// Builds a one-question survey whose hero question is `type`, so the previews
+/// below can show every shape of card the Stop page can render.
+private func previewSurvey(type: QuestionType, labelText: String, options: [String]? = nil) -> Survey {
+    Survey(
+        id: 1,
+        name: "Preview Survey",
+        createdAt: Date(),
+        updatedAt: Date(),
+        showOnMap: false,
+        showOnStops: true,
+        startDate: nil,
+        endDate: nil,
+        visibleStopsList: nil,
+        visibleRoutesList: nil,
+        allowsMultipleResponses: false,
+        alwaysVisible: true,
+        study: Study(id: 1, name: "Preview Study", description: nil),
+        // `heroQuestion` is the question at position 1.
+        questions: [
+            SurveyQuestion(
+                id: 1,
+                position: 1,
+                required: false,
+                content: QuestionContent(labelText: labelText, type: type, options: options)
+            )
+        ]
+    )
+}
+
+private func previewCard(_ survey: Survey) -> some View {
+    SurveyCardRepresentable(
+        survey: survey,
+        stopID: "1_11370",
+        onNext: { _ in },
+        onDismiss: {},
+        onOpenExternalSurvey: {}
+    )
+    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+    .listRowBackground(Color.clear)
+    .listRowSeparator(.hidden)
+}
+
+#Preview("Survey card variants") {
+    List {
+        // A label hero collects no answer, so Next is actionable immediately.
+        previewCard(previewSurvey(type: .label, labelText: "Share your transit story"))
+        previewCard(previewSurvey(
+            type: .radio,
+            labelText: "How was your trip today?",
+            options: ["Great", "Fine", "Not great"]
+        ))
+        previewCard(previewSurvey(type: .externalSurvey, labelText: "Help us plan future service"))
+    }
+    .listStyle(.plain)
+}
