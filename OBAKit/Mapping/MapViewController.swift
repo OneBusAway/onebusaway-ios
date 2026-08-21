@@ -761,41 +761,45 @@ class MapViewController: UIViewController,
     ///   - annotation: The annotation the stop was opened from, if any. Deselected when the
     ///     stop sheet closes so the map doesn't keep a pin highlighted for a dismissed sheet.
     func show(stop: Stop, deselecting annotation: MKAnnotation? = nil) {
-        // Under VoiceOver the redesigned Stop page pushes full-screen instead of coming up as a
-        // half-detent sheet. A partial-height FloatingPanel over a live map is a poor modal for
-        // VoiceOver — the map behind it stays in the accessibility tree, and the detents,
-        // swipe-to-dismiss, and collapse-to-`.tip` behaviors are drag gestures VoiceOver can't
-        // perform. The pushed presentation (`showToolbarOnBottom: false`) is a standard, opaque
-        // screen with a nav-bar back button and contained focus. Decided at open time only; a
-        // sheet already onscreen when VoiceOver is switched on is left as-is.
-        if UIAccessibility.isVoiceOverRunning {
-            pushStopForVoiceOver(application.viewRouter.makeStopController(stop: stop, showToolbarOnBottom: false), deselecting: annotation)
-        } else {
+        guard prefersPushedStopPage else {
             present(stopController: application.viewRouter.makeStopController(stop: stop, showToolbarOnBottom: true), deselecting: annotation)
+            return
         }
+        deselectForPushedStopPage(annotation)
+        application.viewRouter.navigateTo(stop: stop, from: self)
     }
 
     /// Displays the specified stop by ID.
     func show(stopID: StopID) {
-        // See `show(stop:)` for why VoiceOver gets the pushed presentation rather than the sheet.
-        if UIAccessibility.isVoiceOverRunning {
-            pushStopForVoiceOver(application.viewRouter.makeStopController(stopID: stopID, showToolbarOnBottom: false))
-        } else {
+        guard prefersPushedStopPage else {
             present(stopController: application.viewRouter.makeStopController(stopID: stopID, showToolbarOnBottom: true))
+            return
         }
+        application.viewRouter.navigateTo(stopID: stopID, from: self)
     }
 
-    /// Pushes the Stop page onto the map's navigation stack — the VoiceOver alternative to the
-    /// map sheet. Deselects the source annotation right away: a full-screen push covers the map,
-    /// so leaving a pin selected only strands a highlight for the rider to find on the way back.
-    /// Deliberately skips the sheet path's map-focus wiring (route highlight, recentering,
-    /// tab-bar hiding, `stopSheetStopID`) — all of it is map-visual bookkeeping that means
+    /// `true` while VoiceOver is running, where the Stop page opens as a full-screen push
+    /// instead of the map's half-detent sheet.
+    ///
+    /// A partial-height FloatingPanel over a live map is a poor modal for VoiceOver — the map
+    /// behind it stays in the accessibility tree, and the detents, swipe-to-dismiss, and
+    /// collapse-to-`.tip` behaviors are drag gestures VoiceOver can't perform. The pushed
+    /// presentation the router builds is a standard, opaque screen with a nav-bar back button
+    /// and contained focus, and it skips the sheet path's map-focus wiring (route highlight,
+    /// recentering, tab-bar hiding, `stopSheetStopID`) — map-visual bookkeeping that means
     /// nothing while a pushed screen covers the map, exactly as the legacy push path skips it.
-    private func pushStopForVoiceOver(_ stopController: UIViewController, deselecting annotation: MKAnnotation? = nil) {
-        if let annotation {
-            mapRegionManager.mapView.deselectAnnotation(annotation, animated: false)
-        }
-        application.viewRouter.navigate(to: stopController, from: self)
+    ///
+    /// Read at open time only: a sheet already onscreen when VoiceOver is switched on is left
+    /// as-is.
+    private var prefersPushedStopPage: Bool {
+        UIAccessibility.isVoiceOverRunning
+    }
+
+    /// A full-screen push covers the map, so leaving the tapped pin selected only strands a
+    /// highlight for the rider to find on the way back.
+    private func deselectForPushedStopPage(_ annotation: MKAnnotation?) {
+        guard let annotation else { return }
+        mapRegionManager.mapView.deselectAnnotation(annotation, animated: false)
     }
 
     /// Routes a stop screen to the presentation that suits it: the redesigned Stop page comes

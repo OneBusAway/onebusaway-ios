@@ -92,8 +92,12 @@ struct StopDeparturesSections: View {
                     onDismiss: onSurveyDismiss,
                     onOpenExternalSurvey: onSurveyExternal
                 )
-                // Promotional, not core content: read after the departures in the
-                // default VoiceOver sweep (the rotor jumps past it entirely).
+                // Promotional, not core content, so it asks to be swept last.
+                // A hint, not a guarantee: sort priority only reorders siblings
+                // within one accessibility container, and each card here is its
+                // own List row — whether VoiceOver honors it across rows is
+                // unverified. The Departures rotor skips the card either way,
+                // which is what actually gets a rider to the buses.
                 .accessibilitySortPriority(-1)
                 .listRowInsets(EdgeInsets(top: 8, leading: Self.surveyRowInset, bottom: 8, trailing: Self.surveyRowInset))
                 .listRowBackground(Color.clear)
@@ -111,8 +115,7 @@ struct StopDeparturesSections: View {
                     onLearnMore: onDonate,
                     onClose: onDonationClose
                 )
-                // Promotional, not core content: read after the departures in the
-                // default VoiceOver sweep (the rotor jumps past it entirely).
+                // Deprioritized for the same reason as the survey card above.
                 .accessibilitySortPriority(-1)
                 .listRowInsets(EdgeInsets(top: 4, leading: Self.horizontalRowInset, bottom: 4, trailing: Self.horizontalRowInset))
                 .listRowBackground(Color.clear)
@@ -140,6 +143,10 @@ struct StopDeparturesSections: View {
             }
         }
 
+        // The two states the row itself offers a "show everything" button for —
+        // and the only ones where focus should jump to it.
+        let isFilterCausedEmpty = content.isFilteredEmpty || content.isDepartureFilterEmpty
+
         if content.listIsEmpty {
             if content.showsLoadingState {
                 Section {
@@ -164,11 +171,13 @@ struct StopDeparturesSections: View {
                     // Only for the filtered cases: a stop that simply has no
                     // departures shows this row from the first frame, and moving
                     // focus there would cut off the header VoiceOver is reading.
-                    .onAppear {
-                        if content.isFilteredEmpty || content.isDepartureFilterEmpty {
-                            emptyStateFocused = true
-                        }
-                    }
+                    //
+                    // Set, never cleared. `onAppear` fires again whenever the List
+                    // rebuilds this row, and writing `false` to a focus binding whose
+                    // element is currently focused yanks VoiceOver off it — so an
+                    // unconditional assignment would steal focus from a rider sitting
+                    // on the "no departures" message when the next refresh lands.
+                    .onAppear { if isFilterCausedEmpty { emptyStateFocused = true } }
                 }
             }
         } else if !content.isGrouped {

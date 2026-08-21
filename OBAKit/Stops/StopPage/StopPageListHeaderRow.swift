@@ -142,14 +142,21 @@ struct StopPageListHeaderRow: View {
         .padding(.vertical, 4)
         // The visible "Arrivals & Departures" title was dropped to save vertical
         // space, which left VoiceOver's Headings rotor with no anchor for the list
-        // itself. A container heading restores that anchor at zero visual cost —
-        // the Past and mode controls inside stay individually focusable.
+        // itself. `.contain` keeps the Past and mode controls individually
+        // focusable while naming the group they belong to.
+        //
+        // Whether the header trait on a *container* also surfaces in the Headings
+        // rotor is unverified — containers aren't focusable elements, so it may
+        // not. If a device check says it doesn't, the anchor has to be a real
+        // element: a visually hidden `Text` heading above this row.
         .accessibilityElement(children: .contain)
         .accessibilityLabel(Self.departuresHeading)
         .accessibilityAddTraits(.isHeader)
     }
 
-    private static let departuresHeading = OBALoc("stop_page.departures_heading", value: "Departures", comment: "VoiceOver-only heading that anchors the departures list in the Headings rotor; not shown on screen.")
+    /// Shared with `StopPageView`'s Departures rotor: the heading and the rotor
+    /// name the same list, so they must not drift in translation.
+    static let departuresHeading = OBALoc("stop_page.departures_heading", value: "Departures", comment: "VoiceOver-only heading that anchors the departures list in the Headings rotor, and the title of the rotor itself; not shown on screen.")
 
     private var sideBySide: some View {
         HStack(spacing: 12) {
@@ -179,7 +186,7 @@ struct StopPageListHeaderRow: View {
     /// The chevron follows the conventional disclosure direction — down closed, up
     /// open — rather than pointing at the disclosed rows, which are below.
     private var pastButton: some View {
-        Button(action: togglePast) {
+        Button(action: togglePastAndAnnounce) {
             HStack(spacing: 5) {
                 Text(showPast
                      ? OBALoc("stop_page.past_toggle_hide", value: "Hide past", comment: "Button hiding recently departed trips")
@@ -213,7 +220,7 @@ struct StopPageListHeaderRow: View {
     /// which VoiceOver has no reason to re-read — so say what just happened.
     /// Announced here rather than by the callers because this row is where both
     /// the count and the direction are already known.
-    private func togglePast() {
+    private func togglePastAndAnnounce() {
         onTogglePast()
         let message = showPast
             ? OBALoc("stop_page.a11y.past_hidden", value: "Past departures hidden", comment: "VoiceOver announcement when the Past disclosure is closed.")
