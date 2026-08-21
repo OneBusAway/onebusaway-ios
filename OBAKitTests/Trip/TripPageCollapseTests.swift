@@ -44,26 +44,23 @@ final class TripPageCollapseTests: OBATestCase {
         )
     }
 
-    /// Without this conformance the presenter's detent changes never reach the page, which is
-    /// exactly how it ended up rendering its full chrome inside a sliver.
-    @Test func `The page is collapsible sheet content`() throws {
-        let page = try makeTripPage()
-        #expect(page as? StopSheetCollapsibleContent != nil)
-    }
-
-    /// Expanded is the state the page is built in: every other detent has room for the bar.
+    /// Expanded is the state the page is built in: every detent but `.tip` has room for the bar.
     @Test func `The page starts expanded`() throws {
         let page = try makeTripPage()
         #expect(page.rootView.isCollapsed == false)
     }
 
-    @Test func `Moving to the tip detent collapses the page`() throws {
+    /// Driven through the protocol deliberately: the presenter reaches the page as a
+    /// `StopSheetCollapsibleContent` and nothing else, so this asserts the conformance the
+    /// presenter needs as much as the toggle itself.
+    @Test func `Moving to the tip detent collapses the page and back again expands it`() throws {
         let page = try makeTripPage()
+        let collapsible: StopSheetCollapsibleContent = page
 
-        page.setAtTip(true)
+        collapsible.setAtTip(true)
         #expect(page.rootView.isCollapsed)
 
-        page.setAtTip(false)
+        collapsible.setAtTip(false)
         #expect(page.rootView.isCollapsed == false)
     }
 }

@@ -10,7 +10,6 @@
 import ActivityKit
 import CoreLocation
 import Combine
-import CoreLocation
 import SwiftUI
 import OBAKitCore
 
@@ -27,6 +26,7 @@ final class TripPageViewController: UIHostingController<TripPageView>,
     AlarmBuilderDelegate,
     BookmarkEditorDelegate,
     Idleable,
+    StopSheetCollapsibleContent,
     StopSheetSelfChromedContent {
 
     public let application: Application
@@ -39,6 +39,11 @@ final class TripPageViewController: UIHostingController<TripPageView>,
     private var alarmBuilder: AlarmBuilder?
     private var alarmBuilderDeparture: ArrivalDeparture?
     private var isTrackingLiveActivity = false
+
+    /// `true` while the sheet showing this page sits at its `.tip` detent. Stored rather than
+    /// derived so every `render()` — the 30s refresh drives one — rebuilds the page with the
+    /// detent the sheet is actually at instead of resetting it to expanded.
+    private var isAtTip = false
 
     let providesOwnSheetChrome = true
 
@@ -189,8 +194,20 @@ final class TripPageViewController: UIHostingController<TripPageView>,
             actions: makeActions(),
             backBehavior: backBehavior,
             hasAlarm: false,
-            isTrackingLiveActivity: isTrackingLiveActivity
+            isTrackingLiveActivity: isTrackingLiveActivity,
+            isCollapsed: isAtTip
         )
+    }
+
+    // MARK: - StopSheetCollapsibleContent
+
+    /// Called by `StopSheetPresenter` whenever the sheet's detent changes. At `.tip` the page
+    /// drops its pinned action bar, which is taller than that detent, so the peek shows the back
+    /// row naming where the trip was opened from instead of a stranded Live Activity button.
+    func setAtTip(_ isAtTip: Bool) {
+        guard self.isAtTip != isAtTip else { return }
+        self.isAtTip = isAtTip
+        rootView.isCollapsed = isAtTip
     }
 
     // MARK: - Back
