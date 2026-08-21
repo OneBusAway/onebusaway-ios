@@ -57,9 +57,10 @@ import OTPKit
 
     private let application: Application
 
-    /// Exposed (not `private`) so `MapPanelLayersModelTests` can push snapshots
-    /// through the live coordinator, the same reason `RentalLayerCoordinator`
-    /// exposes `apply(_:)`. Nothing on the panel reads it.
+    /// The panel's route to whatever lives on the live layers rather than in
+    /// published state: the range filter in `refresh()`, and `rentalFetchedAt` /
+    /// `rentalStaleAfter` / `rentalUserLocation` behind the rental sheets. Also
+    /// how the tests push snapshots through the coordinator.
     private(set) var registrar: MapLayerRegistrar!
     private var cancellables = Set<AnyCancellable>()
 

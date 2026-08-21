@@ -96,10 +96,10 @@ import OTPKit
 
     /// Riders distrust stale micromobility data faster than stale bus data.
     ///
-    /// The single source of truth for the rental freshness window: both map
-    /// surfaces read it from here (the panel through
-    /// `MapPanelLayersModel.rentalStaleAfter`) rather than restating the
-    /// literal, so the two cannot drift apart.
+    /// The single source of truth for the window. Both surfaces reach it through
+    /// the `staleAfter` below rather than restating the literal — the UIKit map
+    /// off the layer it renders, the panel off
+    /// `MapPanelLayersModel.rentalStaleAfter` — so the two cannot drift apart.
     static let freshnessWindow: Duration = .seconds(120)
 
     var staleAfter: Duration? { Self.freshnessWindow }

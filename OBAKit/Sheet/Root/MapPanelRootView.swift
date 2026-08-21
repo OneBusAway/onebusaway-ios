@@ -177,6 +177,11 @@ struct MapPanelRootView: View {
                 return
             }
             recomputeStopLabels()
+            // Both keep running with the stops layer off, like the UIKit map:
+            // its `isStopsLayerEnabled` guard still arms the request timer,
+            // because the nearby stops list reads `mapRegionManager.stops`
+            // directly — and `updateViewport` is the observer's prune step.
+            // Only rendering is gated, in the `ForEach` above.
             stopsObserver.updateViewport(context.region)
             application.mapRegionManager.scheduleStopsRequest(in: context.region)
         }

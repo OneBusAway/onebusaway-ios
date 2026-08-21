@@ -29,6 +29,10 @@ final class MapPanelLayersModelTests: OBATestCase {
         try await super.init()
         let queue = OperationQueue()
         let dataLoader = MockDataLoader(testName: name)
+        // The no-bikeshare case below switches to Tampa, which fetches against
+        // that region's base URL.
+        Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
+        stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.tampaRegion.OBABaseURL)
         application = buildApplication(queue: queue, dataLoader: dataLoader)
         model = MapPanelLayersModel(application: application)
     }
@@ -91,8 +95,25 @@ final class MapPanelLayersModelTests: OBATestCase {
         #expect(application.mapRegionManager.currentVisibleMapRect.height == 10_000)
     }
 
-    @Test func `Publishes no rental items without a bikeshare region`() {
+    /// Leaving bikeshare must *empty* the panel, or the rider keeps seeing the
+    /// old region's vehicles. Pins the whole chain — layer deactivation clears
+    /// `visibleRentals` through the still-live subscription, then the coordinator
+    /// drops — because no single link does it alone.
+    ///
+    /// Seeded first on purpose: `rentalItems` is empty at construction in every
+    /// scenario, so asserting only the empty state would pass with the feature
+    /// deleted.
+    @Test func `Leaving a bikeshare region clears the published rentals`() throws {
+        _ = try seedRentals()
+        #expect(model.rentalItems.isEmpty == false)
+        #expect(model.rental(withID: "near") != nil)
+
+        // Tampa is a real list member with bikeshare disabled.
+        application.regionsService.currentRegion = Fixtures.tampaRegion
+
+        #expect(model.registrar.rentalCoordinator == nil)
         #expect(model.rentalItems.isEmpty)
+        #expect(model.rental(withID: "near") == nil)
     }
 
     /// The two rental sheet routes carry ids, not model objects, so the model

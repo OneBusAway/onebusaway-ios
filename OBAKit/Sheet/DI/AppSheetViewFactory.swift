@@ -151,8 +151,8 @@ final class AppSheetViewFactory {
     /// off" — so the panel reuses it rather than growing a parallel surface.
     func mapSettingsView() -> MapSheetView {
         MapSheetView(model: MapSheetModel(
-            mapRegionManager: application.mapRegionManager,
-            mapViewModel: mapViewModel
+            mapRegionManager: self.application.mapRegionManager,
+            mapViewModel: self.mapViewModel
         ))
     }
 
