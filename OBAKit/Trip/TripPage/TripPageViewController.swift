@@ -40,8 +40,6 @@ final class TripPageViewController: UIHostingController<TripPageView>,
     private var alarmBuilderDeparture: ArrivalDeparture?
     private var isTrackingLiveActivity = false
 
-    public var idleTimerFailsafe: Timer?
-
     let providesOwnSheetChrome = true
 
     /// The page is grouped-gray, not `.systemBackground`, so the sheet has to paint the
@@ -86,6 +84,12 @@ final class TripPageViewController: UIHostingController<TripPageView>,
         // presenter re-decides it on every push and would otherwise put the bar
         // straight back.
         navigationController?.setNavigationBarHidden(true, animated: false)
+
+        // Re-render now that there is a `navigationController` to ask. `init`
+        // runs before this page is on anyone's stack, so the back row's glyph
+        // was built from an unanswerable question — and a modal would have come
+        // up wearing a chevron for the first frame.
+        render()
 
         // Everything the map draws, and the gates the action bar renders from,
         // are derived from these three together.
@@ -183,9 +187,36 @@ final class TripPageViewController: UIHostingController<TripPageView>,
             viewModel: viewModel,
             originTitle: originTitle,
             actions: makeActions(),
+            backBehavior: backBehavior,
             hasAlarm: false,
             isTrackingLiveActivity: isTrackingLiveActivity
         )
+    }
+
+    // MARK: - Back
+
+    /// Which way out this presentation has. See `TripPageBackBehavior`.
+    var backBehavior: TripPageBackBehavior {
+        TripPageBackBehavior.forStackDepth(navigationController?.viewControllers.count ?? 0)
+    }
+
+    /// Back, resolved against the stack rather than assumed.
+    ///
+    /// The page is pushed from the Stop page and presented from the map sheet,
+    /// and `popViewController` only works for the first — as the root of its own
+    /// navigation controller it returns nil and leaves the rider pressing a
+    /// button that does nothing.
+    private func goBack() {
+        switch backBehavior {
+        case .pop:
+            navigationController?.popViewController(animated: true)
+        case .dismiss:
+            // UIKit forwards this up to whoever did the presenting, so it takes
+            // the wrapping navigation controller with it. The Done button
+            // `StopPageActionPresenter.presentWrappedInNavigation` installs
+            // dismisses the same way.
+            dismiss(animated: true)
+        }
     }
 
     private func makeActions() -> TripPageActions {
@@ -197,10 +228,7 @@ final class TripPageViewController: UIHostingController<TripPageView>,
         // there is no stop and nothing to count down to.
         actions.canStartLiveActivity = departure != nil && ActivityAuthorizationInfo().areActivitiesEnabled
 
-        actions.onBack = { [weak self] in
-            guard let self else { return }
-            navigationController?.popViewController(animated: true)
-        }
+        actions.onBack = { [weak self] in self?.goBack() }
         actions.onSelectStop = { [weak self] stopID in
             guard let self else { return }
             application.viewRouter.navigateTo(stopID: stopID, from: self)

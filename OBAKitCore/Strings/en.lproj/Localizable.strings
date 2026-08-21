@@ -5,10 +5,12 @@
 "api_error.cellular_data_restricted_fmt" = "%1$@ is not currently allowed to access cellular data. To fix this, go to Settings > Cellular and enable cellular data for %2$@, or connect to a WiFi network.";
 
 /* An error shown when the server returns data the app can't understand, indicating a likely server-side issue. */
-"api_error.decoding_failure" = "The server returned unexpected data. This usually means the server is experiencing problems. Please try again shortly.";
+"api_error.decoding_failure" = "The server returned data this app can't read. That's usually a problem with the stop or agency feed. Please try again shortly.";
 
 /* An error message that informs the user that the wrong kind of content was received from the server. */
 "api_error.invalid_content_type_fmt" = "Expected to receive %1$@ data from the server, but we received %2$@ instead.";
+
+"api_error.invalid_response_data_fmt" = "The server for %1$@ returned data this app can't read. That's usually a problem with the stop or agency feed, not with %2$@. Try again shortly.";
 
 /* An error that tells the user that the network connection isn't working. */
 "api_error.network_failure" = "Unable to connect to the Internet or the server. Please check your network connection and try again.";
@@ -29,7 +31,7 @@
 "api_error.server_error_fmt" = "The server for %@ encountered an error while handling your request. Please try again.";
 
 /* An error shown when the regional transit server is unavailable. The first substituted value is the region name, the second is the app name. */
-"api_error.server_unavailable_fmt" = "The server for %1$@ appears to be down right now, so %2$@ isn't able to show transit information for this region. The app should start working again once the server is back up.";
+"api_error.server_unavailable_fmt" = "Unable to reach the server for %1$@. %2$@ can't show transit information for this region right now. The server may be down, or a VPN or firewall may be blocking it.";
 
 /* An error message that tells the user that surveys are not available. */
 "api_error.survey_service_not_configured" = "Survey service is not available in this region.";

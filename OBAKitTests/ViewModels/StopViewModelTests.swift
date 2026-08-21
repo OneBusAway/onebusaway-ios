@@ -347,6 +347,27 @@ final class StopViewModelTests: OBATestCase {
         #expect(app.effectiveArrivalDepartureFilter == .estimatedOnly)
     }
 
+    /// Settings writes the same defaults key without going through this view
+    /// model. An already-open stop page must pick that up so its Departure Type
+    /// menu and filtered list don't stay on the value from `init` (#1273).
+    @Test @MainActor
+    func `Arrival departure filter syncs from an external Settings change`() async {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock())
+
+        let viewModel = StopViewModel(application: app, stopID: testStopID)
+        #expect(viewModel.arrivalDepartureFilter == .all)
+
+        // Settings' write path — not `updateArrivalDepartureFilter`.
+        app.setArrivalDepartureFilter(.estimatedOnly)
+
+        // `UserDefaults.didChangeNotification` fan-out is `receive(on: main)`,
+        // so give the runloop a few hops to deliver.
+        for _ in 0..<5 { await Task.yield() }
+
+        #expect(viewModel.arrivalDepartureFilter == .estimatedOnly)
+    }
+
     // MARK: - $stop re-emit guard
 
     /// `$stop` must not re-emit across refreshes when the underlying value is unchanged.

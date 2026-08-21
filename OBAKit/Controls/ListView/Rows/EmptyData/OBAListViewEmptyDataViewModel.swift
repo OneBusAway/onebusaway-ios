@@ -55,6 +55,8 @@ extension OBAListView {
                     icon = UIImage(systemName: "questionmark.square.dashed")
                 case .serverError, .serverUnavailable:
                     icon = UIImage(systemName: "server.rack")
+                case .invalidResponseData:
+                    icon = UIImage(systemName: "exclamationmark.triangle")
                 case .surveyServiceNotConfigured:
                     icon = UIImage(systemName: "doc.text.magnifyingglass")
                 case .noRegionSelected:

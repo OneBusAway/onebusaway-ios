@@ -27,17 +27,32 @@ final class AppSheetViewFactory {
     let mapViewModel: MapViewModel
     let layersModel: MapPanelLayersModel
     let onPresentTrip: (ArrivalDeparture) -> Void
+    /// Resolves the controller a UIKit modal should be presented from.
+    ///
+    /// The sheet system bridges SwiftUI `.sheet(...)` to UIKit modals on the
+    /// host, so by the time a stop sheet is visible the host already has a
+    /// `presentedViewController` — and UIKit silently ignores `present` on such
+    /// a controller. The provider walks to the top of that chain, the same way
+    /// `TripPresentationBridge` does.
+    let presentingController: () -> UIViewController?
 
+    /// `presentingController` has no default on purpose. Every stop-sheet action
+    /// — schedules, bookmarks, the route filter, report-a-problem, the alarm
+    /// picker — resolves through it, so a call site that omitted it would build
+    /// a factory whose sheet renders correctly and then silently ignores every
+    /// button on it.
     init(
         application: Application,
         mapViewModel: MapViewModel,
         layersModel: MapPanelLayersModel,
-        onPresentTrip: @escaping (ArrivalDeparture) -> Void
+        onPresentTrip: @escaping (ArrivalDeparture) -> Void,
+        presentingController: @escaping () -> UIViewController?
     ) {
         self.application = application
         self.mapViewModel = mapViewModel
         self.layersModel = layersModel
         self.onPresentTrip = onPresentTrip
+        self.presentingController = presentingController
     }
 
     // MARK: - Dispatcher
@@ -96,11 +111,26 @@ final class AppSheetViewFactory {
         MoreSheetHost(application: application)
     }
 
-    /// Bridges `AppSheetRoute.stopDetails` to the existing `StopPageViewController`
-    /// via `StopDetailSheetHost`. Swap this branch's return type once a SwiftUI
-    /// stop-detail view lands.
-    func stopDetailView(stopID: Stop.ID) -> StopDetailSheetHost {
-        StopDetailSheetHost(application: application, stopID: stopID)
+    /// The Stop page as a native SwiftUI sheet over the map panel.
+    ///
+    /// It renders the same departures as the pushed screen — through the shared
+    /// `StopDeparturesSections` — but replaces the navigation bar with a pinned
+    /// Refresh/Close strip and a row of circular actions, and collapses the map
+    /// header away as the list scrolls so the actions stay reachable.
+    func stopDetailView(stopID: Stop.ID) -> StopDetailsSheetRootView {
+        StopDetailsSheetRootView(
+            stopID: stopID,
+            makeViewModel: { StopViewModel(environment: self.application, stopID: stopID) },
+            makePresenter: {
+                StopPageActionPresenter(
+                    application: self.application,
+                    presentingController: self.presentingController
+                )
+            },
+            feedback: DataLoadFeedbackGenerator(application: self.application),
+            formatters: self.application.formatters,
+            userDefaults: self.application.userDefaults
+        )
     }
 
     func routePickerView() -> RoutePickerView {

@@ -51,7 +51,7 @@ public class StopArrivals: NSObject, Identifiable, Decodable, HasReferences {
     let stopID: StopID
 
     /// The stop to which this object refers.
-    public var stop: Stop!
+    public private(set) var stop: Stop!
 
     public private(set) var regionIdentifier: Int?
 

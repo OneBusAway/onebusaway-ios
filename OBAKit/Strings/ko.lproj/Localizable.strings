@@ -1236,6 +1236,9 @@
 /* Context menu action opening the full trip screen */
 "stop_page.row.show_trip" = "운행 세부 정보 보기";
 
+/* VoiceOver label for the button that returns the stop page's departure list to the top. */
+"stop_page.scroll_to_top" = "맨 위로 스크롤";
+
 /* Fallback title for a service alert that has no summary text. */
 "stop_page.service_alert_fallback" = "운행 알림";
 

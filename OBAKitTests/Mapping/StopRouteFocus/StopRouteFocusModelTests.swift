@@ -13,7 +13,7 @@ import UIKit
 import OBAKitCore
 @testable import OBAKit
 
-nonisolated private struct StubMapDeparture: MapDepartureEntry {
+private nonisolated struct StubMapDeparture: MapDepartureEntry {
     let id: String
     let routeID: RouteID
     let arrivalDepartureMinutes: Int

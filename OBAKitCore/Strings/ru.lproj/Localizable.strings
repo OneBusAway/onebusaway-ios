@@ -10,6 +10,8 @@
 /* An error message that informs the user that the wrong kind of content was received from the server. */
 "api_error.invalid_content_type_fmt" = "От сервера ожидались данные типа %1$@, но вместо этого получены %2$@.";
 
+"api_error.invalid_response_data_fmt" = "Сервер региона %1$@ вернул данные, которые это приложение не может прочитать. Обычно это проблема остановки или фида агентства, а не приложения %2$@. Повторите попытку чуть позже.";
+
 /* An error that tells the user that the network connection isn't working. */
 "api_error.network_failure" = "Не удаётся подключиться к интернету или серверу. Проверьте сетевое подключение и повторите попытку.";
 

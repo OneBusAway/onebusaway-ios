@@ -64,6 +64,59 @@ final class BookmarksViewModelTests: OBATestCase {
         return Application(config: config)
     }
 
+    @MainActor
+    private final class DisplayErrorSpyApplication: Application {
+        private(set) var displayErrorCallCount = 0
+
+        override func displayError(_ error: Error) async {
+            displayErrorCallCount += 1
+        }
+    }
+
+    private func createSpyApplication(dataLoader: MockDataLoader) -> DisplayErrorSpyApplication {
+        stubRegions(dataLoader: dataLoader)
+        stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
+        Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
+
+        let locManager = MockAuthorizedLocationManager(
+            updateLocation: TestData.mockSeattleLocation,
+            updateHeading: TestData.mockHeading
+        )
+        let locationService = LocationService(userDefaults: userDefaults, locationManager: locManager)
+        locationService.startUpdates()
+
+        let config = AppConfig(
+            regionsBaseURL: regionsURL,
+            apiKey: apiKey,
+            appVersion: appVersion,
+            userDefaults: userDefaults,
+            analytics: AnalyticsMock(),
+            queue: queue,
+            locationService: locationService,
+            bundledRegionsFilePath: bundledRegionsPath,
+            regionsAPIPath: regionsAPIPath,
+            dataLoader: dataLoader,
+            fixedRegionName: Fixtures.pugetSoundRegion.name
+        )
+
+        return DisplayErrorSpyApplication(config: config)
+    }
+
+    private func addTripBookmark(to app: Application) throws -> Bookmark {
+        let stopArrivals = try Fixtures.loadRESTAPIPayload(
+            type: StopArrivals.self,
+            fileName: "arrivals-and-departures-for-stop-1_10914.json"
+        )
+        let arrivalDep = try #require(stopArrivals.arrivalsAndDepartures.first)
+        let bookmark = Bookmark(
+            name: "Route 49",
+            regionIdentifier: pugetSoundRegionIdentifier,
+            arrivalDeparture: arrivalDep
+        )
+        app.userDataStore.add(bookmark, to: nil)
+        return bookmark
+    }
+
     // MARK: - Tests
 
     /// `init` defaults to `true` (set via `register(defaults:)`) on a clean UserDefaults.
@@ -469,5 +522,129 @@ final class BookmarksViewModelTests: OBATestCase {
         await poll(until: { cleanBatchDone }, timeout: .seconds(10), "clean batch never finished")
 
         #expect(!viewModel.lastRefreshHadError)
+    }
+
+    // MARK: - Request not found (404)
+
+    /// A literal HTTP 404 on a bookmarked stop must not surface a bulletin — the
+    /// stop no longer resolves. Empty HTTP 200 is a different case (see below).
+    @Test @MainActor
+    func `Request not found does not call display error`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createSpyApplication(dataLoader: dataLoader)
+        _ = try addTripBookmark(to: app)
+
+        dataLoader.mock(data: Data(), statusCode: 404) {
+            $0.url?.path.contains("/api/where/arrivals-and-departures-for-stop") ?? false
+        }
+
+        let viewModel = BookmarksViewModel(application: app)
+        #expect(app.displayErrorCallCount == 0)
+
+        var batchDone = false
+        var seenLoading = false
+        var cancellables = Set<AnyCancellable>()
+        viewModel.$isLoading.sink { isLoading in
+            if isLoading { seenLoading = true }
+            if seenLoading && !isLoading { batchDone = true }
+        }.store(in: &cancellables)
+
+        viewModel.refresh()
+        await poll(until: { batchDone }, timeout: .seconds(10), "404 batch never finished")
+        cancellables.removeAll()
+
+        #expect(app.displayErrorCallCount == 0)
+        #expect(!viewModel.lastRefreshHadError)
+
+        // 404 is a terminal empty result, not perpetual loading (#1181 review).
+        let rows = viewModel.sections.flatMap(\.rows)
+        let row = try #require(rows.first)
+        #expect(row.hasLoadedArrivalData)
+    }
+
+    /// Non-404 fetch failures must still surface via `displayError`.
+    @Test @MainActor
+    func `Server error still calls display error`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createSpyApplication(dataLoader: dataLoader)
+        _ = try addTripBookmark(to: app)
+
+        dataLoader.mock(data: Data(), statusCode: 500) {
+            $0.url?.path.contains("/api/where/arrivals-and-departures-for-stop") ?? false
+        }
+
+        let viewModel = BookmarksViewModel(application: app)
+
+        var batchDone = false
+        var seenLoading = false
+        var cancellables = Set<AnyCancellable>()
+        viewModel.$isLoading.sink { isLoading in
+            if isLoading { seenLoading = true }
+            if seenLoading && !isLoading { batchDone = true }
+        }.store(in: &cancellables)
+
+        viewModel.refresh()
+        await poll(until: { batchDone }, timeout: .seconds(10), "500 batch never finished")
+        cancellables.removeAll()
+
+        #expect(app.displayErrorCallCount == 1)
+        #expect(viewModel.lastRefreshHadError)
+    }
+
+    /// `APIService+GetData` maps HTTP 200 + `Content-Length: 0` to
+    /// `APIError.requestNotFound` as well as a literal 404. A live San Diego
+    /// stop (`MTS_11589`) returns HTTP 200 with a full JSON body, so an empty
+    /// 200 is a transient blip, not a missing stop — it must still bulletin.
+    @Test @MainActor
+    func `Empty 200 still calls display error`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createSpyApplication(dataLoader: dataLoader)
+        _ = try addTripBookmark(to: app)
+
+        dataLoader.mock(data: Data(), statusCode: 200) {
+            $0.url?.path.contains("/api/where/arrivals-and-departures-for-stop") ?? false
+        }
+
+        let viewModel = BookmarksViewModel(application: app)
+        await viewModel.refreshAndWait()
+
+        #expect(app.displayErrorCallCount == 1)
+        #expect(viewModel.lastRefreshHadError)
+    }
+
+    /// A 404 after a successful fetch must drop the previous departures rather
+    /// than leave a frozen countdown on the card.
+    @Test @MainActor
+    func `HTTP 404 after success clears stale departures`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createSpyApplication(dataLoader: dataLoader)
+        _ = try addTripBookmark(to: app)
+
+        dataLoader.mock(
+            data: Fixtures.loadData(file: "arrivals-and-departures-for-stop-1_10914.json")
+        ) { $0.url?.path.contains("/api/where/arrivals-and-departures-for-stop") ?? false }
+
+        let viewModel = BookmarksViewModel(application: app)
+        await viewModel.refreshAndWait()
+
+        let loaded = try #require(viewModel.sections.flatMap(\.rows).first)
+        #expect(!loaded.arrivalDepartures.isEmpty)
+
+        dataLoader.replaceMappedResponses { staging in
+            stubRegions(dataLoader: staging)
+            stubAgenciesWithCoverage(dataLoader: staging, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
+            Fixtures.stubAllAgencyAlerts(dataLoader: staging)
+            staging.mock(data: Data(), statusCode: 404) {
+                $0.url?.path.contains("/api/where/arrivals-and-departures-for-stop") ?? false
+            }
+        }
+
+        await viewModel.refreshAndWait()
+
+        #expect(app.displayErrorCallCount == 0)
+        #expect(!viewModel.lastRefreshHadError)
+        let row = try #require(viewModel.sections.flatMap(\.rows).first)
+        #expect(row.hasLoadedArrivalData)
+        #expect(row.arrivalDepartures.isEmpty)
     }
 }

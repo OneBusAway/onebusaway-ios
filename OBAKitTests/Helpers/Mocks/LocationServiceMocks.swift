@@ -31,7 +31,14 @@ public class LocationManagerMock: NSObject, LocationManager {
         monitoredRegions.remove(region)
     }
 
+    /// Settable so tests can drive the radius-clamping path. The default is far
+    /// larger than any radius `ProximityAlert` will hand over, so a test that
+    /// doesn't care about clamping never trips it by accident.
+    public var maximumRegionMonitoringDistance: CLLocationDistance = 100_000
+
     public func requestWhenInUseAuthorization() { }
+
+    public func requestAlwaysAuthorization() { }
 
     @available(iOS 14, *)
     public func requestTemporaryFullAccuracyAuthorization(withPurposeKey purposeKey: String) {
@@ -118,6 +125,14 @@ public class AuthorizableLocationManagerMock: LocationManagerMock {
         _authorizationStatus = .authorizedWhenInUse
     }
 
+    /// Mirrors the real prompt's one rule that matters here: Always can only be
+    /// granted from `.notDetermined` or `.authorizedWhenInUse`. From `.denied` or
+    /// `.restricted` the system shows nothing, so neither does this.
+    public override func requestAlwaysAuthorization() {
+        guard _authorizationStatus == .notDetermined || _authorizationStatus == .authorizedWhenInUse else { return }
+        _authorizationStatus = .authorizedAlways
+    }
+
     public override var authorizationStatus: CLAuthorizationStatus {
         return _authorizationStatus
     }
@@ -186,6 +201,10 @@ class LocDelegate: NSObject, LocationServiceDelegate {
     var enteredRegionIdentifier: String?
     var monitoringFailedIdentifier: String?
     var monitoringFailedError: Error?
+    var monitoringFailedKind: RegionMonitoringFailureKind?
+    /// Distinguishes "not notified at all" from "notified with a nil identifier",
+    /// which the prefix-filtering tests turn on.
+    var monitoringFailedCallCount = 0
 
     func locationService(_ service: LocationService, locationChanged location: CLLocation) {
         self.location = location
@@ -207,8 +226,10 @@ class LocDelegate: NSObject, LocationServiceDelegate {
         self.enteredRegionIdentifier = identifier
     }
 
-    func locationService(_ service: LocationService, monitoringDidFailFor identifier: String?, error: Error) {
+    func locationService(_ service: LocationService, monitoringDidFailFor identifier: String?, error: Error, kind: RegionMonitoringFailureKind) {
         self.monitoringFailedIdentifier = identifier
         self.monitoringFailedError = error
+        self.monitoringFailedKind = kind
+        self.monitoringFailedCallCount += 1
     }
 }

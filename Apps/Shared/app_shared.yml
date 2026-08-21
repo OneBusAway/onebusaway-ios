@@ -75,6 +75,10 @@ targets:
           - fb
           - twitter
           - comgooglemaps
+        # Proximity alerts geofence the destination, and Core Location only delivers
+        # region events in the background under Always. Same body as the When In Use
+        # string, matching every InfoPlist.strings translation already in the repo.
+        NSLocationAlwaysAndWhenInUseUsageDescription: See where you are in relation to transit, and help you navigate more easily.
         NSLocationWhenInUseUsageDescription: See where you are in relation to transit, and help you navigate more easily.
         # HealthKit purpose strings live in Apps/Shared/info_plist.yml (shared by every app).
         NSLocationTemporaryUsageDescriptionDictionary:

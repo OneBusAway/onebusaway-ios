@@ -369,4 +369,64 @@ final class UserDefaultsStore_BookmarksTests: OBATestCase {
         #expect(self.userDefaultsStore.findBookmark(id: g1b2.id)!.sortOrder == 0)
         #expect(self.userDefaultsStore.findBookmark(id: g1b3.id)!.sortOrder == 1)
     }
+
+    // MARK: - Bookmark plist write coalescing (#548)
+
+    /// Revert `add(_:to:index:)` to the per-row `bookmarks` get/set loop and
+    /// this fails: that path wrote the full bookmark plist once per member.
+    @Test func `Moving a bookmark encodes the bookmark list once`() {
+        let defaults = BookmarkWriteCountingDefaults(suiteName: "bookmark-writes-move-\(UUID().uuidString)")!
+        let store = UserDefaultsStore(userDefaults: defaults)
+        let stop = stops[0]
+
+        for i in 0..<12 {
+            store.add(Bookmark(name: "Bookmark \(i)", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop))
+        }
+
+        defaults.bookmarkWrites = 0
+        let inserted = Bookmark(name: "Inserted", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
+        store.add(inserted, to: nil, index: 3)
+
+        #expect(defaults.bookmarkWrites == 1)
+        #expect(store.bookmarks.map(\.name)[3] == "Inserted")
+        #expect(store.bookmarks.count == 13)
+    }
+
+    /// Same coalescing guarantee on delete: one plist write, remaining
+    /// sortOrder values compacted. Restoring the per-row rewrite fails this.
+    @Test func `Deleting a bookmark encodes the bookmark list once`() {
+        let defaults = BookmarkWriteCountingDefaults(suiteName: "bookmark-writes-delete-\(UUID().uuidString)")!
+        let store = UserDefaultsStore(userDefaults: defaults)
+        let stop = stops[0]
+
+        var bookmarks: [Bookmark] = []
+        for i in 0..<12 {
+            let bookmark = Bookmark(name: "Bookmark \(i)", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
+            store.add(bookmark)
+            bookmarks.append(bookmark)
+        }
+
+        defaults.bookmarkWrites = 0
+        store.delete(bookmark: bookmarks[4])
+
+        #expect(defaults.bookmarkWrites == 1)
+        #expect(store.bookmarks.count == 11)
+        #expect(store.bookmarks.map(\.sortOrder) == Array(0..<11))
+    }
+}
+
+/// Counts `UserDataStore.bookmarks` encodes. Subclassing `UserDefaults` is the
+/// seam: `Bookmark` is a production type and should not grow test-only hooks.
+///
+/// `nonisolated` because OBAKitTests defaults to `@MainActor` and
+/// `UserDefaults.set(_:forKey:)` / `init(suiteName:)` are not.
+nonisolated private final class BookmarkWriteCountingDefaults: UserDefaults {
+    var bookmarkWrites = 0
+
+    override func set(_ value: Any?, forKey defaultName: String) {
+        if defaultName == "UserDataStore.bookmarks" {
+            bookmarkWrites += 1
+        }
+        super.set(value, forKey: defaultName)
+    }
 }

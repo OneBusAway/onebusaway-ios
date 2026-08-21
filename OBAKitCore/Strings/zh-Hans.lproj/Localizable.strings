@@ -10,6 +10,8 @@
 /* An error message that informs the user that the wrong kind of content was received from the server. */
 "api_error.invalid_content_type_fmt" = "预计从服务器收到%1$@数据，但收到了%2$@。";
 
+"api_error.invalid_response_data_fmt" = "%1$@的服务器返回了此应用无法读取的数据。这通常是站点或机构数据源的问题，而不是%2$@的问题。请稍后重试。";
+
 /* An error that tells the user that the network connection isn't working. */
 "api_error.network_failure" = "无法连接到互联网或者服务器。请检查网络连接后重试。";
 

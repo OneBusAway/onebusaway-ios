@@ -40,6 +40,10 @@ struct TripPageView: View {
     let originTitle: String?
     let actions: TripPageActions
 
+    /// Which way out the back row offers. Set by the host, which is the only
+    /// thing that knows whether this page was pushed or presented.
+    var backBehavior: TripPageBackBehavior = .pop
+
     /// Set by the host so the alarm and Live Activity buttons render their
     /// current state rather than always offering to start something.
     var hasAlarm = false
@@ -76,7 +80,7 @@ struct TripPageView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            TripPageBackRow(title: originTitle, onBack: actions.onBack)
+            TripPageBackRow(title: originTitle, behavior: backBehavior, onBack: actions.onBack)
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
@@ -219,18 +223,21 @@ struct TripPageView: View {
 /// scarce height.
 private struct TripPageBackRow: View {
     let title: String?
+    /// Drives the glyph and the VoiceOver label together — the two must never
+    /// disagree about whether this goes back or closes.
+    let behavior: TripPageBackBehavior
     let onBack: () -> Void
 
     var body: some View {
         HStack(spacing: 12) {
             Button(action: onBack) {
-                Image(systemName: "chevron.backward")
+                Image(systemName: behavior.systemImage)
                     .font(.subheadline.weight(.semibold))
                     .frame(width: 32, height: 32)
                     .background(Color(uiColor: .tertiarySystemFill), in: Circle())
             }
             .tint(Color(uiColor: .label))
-            .accessibilityLabel(Strings.back)
+            .accessibilityLabel(behavior == .pop ? Strings.back : Strings.close)
 
             if let title {
                 Text(title)
