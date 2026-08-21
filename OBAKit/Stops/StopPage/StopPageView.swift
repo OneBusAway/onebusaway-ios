@@ -173,7 +173,9 @@ struct StopPageView: View {
         let walkTime = viewModel.walkTime
         let content = StopPageContent(viewModel: viewModel)
 
-        let rotorEntries = voiceOverEnabled ? departuresRotorEntries(content: content) : []
+        let rotorEntries = voiceOverEnabled
+            ? departuresRotorEntries(content: content, walkMinutes: walkTime?.walkMinutes)
+            : []
 
         List {
             if let stop = viewModel.stop {
@@ -320,20 +322,21 @@ struct StopPageView: View {
     /// `String` — so the rotor lands on the real rows. Collapsed Past rows are
     /// left out; there is nothing rendered for the rotor to focus.
     ///
-    /// The chronological order is the plain time sort rather than
-    /// `chronologicalPartition`: that partition splits the same sorted list into
-    /// past / missed / reachable so the list can draw a walk divider between the
-    /// last two, and `ChronologicalListView` renders the three back to back — so
-    /// reassembling them here would only sort the same rows a second time to
-    /// arrive at the same sequence.
-    private func departuresRotorEntries(content: StopPageContent) -> [(label: String, id: String)] {
+    /// The chronological order is read from `chronologicalPartition` rather than
+    /// re-derived here. A plain time sort happens to produce the same sequence
+    /// today, and costs the same one sort — but it is a second copy of "what
+    /// order do departures come in, and what counts as past" with no test tying
+    /// the two together, so a change to the builder would silently land the
+    /// rotor on rows in an order the screen doesn't show. `ChronologicalListView`
+    /// renders past (when expanded) → missed → reachable, which is what this
+    /// concatenation reproduces.
+    private func departuresRotorEntries(content: StopPageContent, walkMinutes: Int?) -> [(label: String, id: String)] {
         if content.isGrouped {
             return content.routeGroups.map { (rotorLabel(for: $0.next), $0.routeID) }
         }
-        return content.departures
-            .sorted { $0.arrivalDepartureMinutes < $1.arrivalDepartureMinutes }
-            .filter { !pastCollapsed || $0.temporalState != .past }
-            .map { (rotorLabel(for: $0), $0.id) }
+        let partition = StopPageListBuilder.chronologicalPartition(content.departures, walkMinutes: walkMinutes)
+        let rendered = (pastCollapsed ? [] : partition.past) + partition.missed + partition.reachable
+        return rendered.map { (rotorLabel(for: $0), $0.id) }
     }
 
     /// Spoken form of a departure's route, e.g. "Route 49 - University District".
