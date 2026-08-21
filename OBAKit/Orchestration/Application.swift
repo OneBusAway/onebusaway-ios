@@ -114,15 +114,8 @@ public class Application: CoreApplication, PushServiceDelegate {
     private func makeAppLinksRouter() -> AppLinksRouter? {
         let router = AppLinksRouter(application: self)
 
-        router?.showStopHandler = { [weak self] stop in
-            guard
-                let self = self,
-                let topVC = self.topViewController
-            else { return }
-
-            Task { @MainActor in
-                self.viewRouter.navigateTo(stop: stop, from: topVC)
-            }
+        router?.showStopDestinationHandler = { [weak self] destination in
+            self?.queueOrOpenStop(destination)
         }
 
         router?.showArrivalDepartureDeepLink = { [weak self] deepLink in
@@ -376,10 +369,15 @@ public class Application: CoreApplication, PushServiceDelegate {
         }
     }
 
-    /// A stop navigation (fired alarm push or `viewStop` deep link) received before the
-    /// root view controller was installed (cold launch). Drained on activation once a
-    /// root view controller exists.
-    private var pendingStopID: StopID?
+    /// A stop navigation (fired alarm push, `viewStop` deep link, or a donated
+    /// stop `NSUserActivity`) received before the root view controller was
+    /// installed, or before `currentRegion` had loaded. Drained once both exist.
+    /// Internal so tests can assert the shortcut was stashed rather than dropped.
+    var pendingStopID: StopID?
+    /// Region the stashed stop belongs to. Nil for the URL-scheme path, which
+    /// historically did not carry a region. When set, drain refuses to open the
+    /// stop against a different region's API.
+    var pendingStopRegionID: Int?
     private var presentDonationUIOnActive = false
     private var presentAddRegionAlertOnActive = false
     private var donationPromptID: String?
@@ -549,8 +547,19 @@ public class Application: CoreApplication, PushServiceDelegate {
         guard !isOnboardingRoot else { return }
 
         if let stopID = pendingStopID, let topViewController {
+            if let neededRegion = pendingStopRegionID {
+                // Region still loading: wait. Loaded but different: drop — do not
+                // fetch this stop against the wrong region's API.
+                guard let current = currentRegion?.regionIdentifier else { return }
+                if current != neededRegion {
+                    pendingStopID = nil
+                    pendingStopRegionID = nil
+                    return
+                }
+            }
             viewRouter.navigateTo(stopID: stopID, from: topViewController)
             pendingStopID = nil
+            pendingStopRegionID = nil
         }
 
         if presentDonationUIOnActive, let topViewController {
@@ -613,6 +622,22 @@ public class Application: CoreApplication, PushServiceDelegate {
     /// Proxies the delegate method.
     var credits: [String: String] {
         delegate?.credits ?? [:]
+    }
+
+    /// Opens `destination` now, or stashes it until the root UI and matching
+    /// region exist. Does not fetch this stop against a different region's API.
+    func queueOrOpenStop(_ destination: AppLinksRouter.StopDestination) {
+        if let current = currentRegion?.regionIdentifier, current != destination.regionID {
+            return
+        }
+
+        if let topViewController, currentRegion?.regionIdentifier == destination.regionID {
+            viewRouter.navigateTo(stopID: destination.stopID, from: topViewController)
+            return
+        }
+
+        pendingStopID = destination.stopID
+        pendingStopRegionID = destination.regionID
     }
 
     @objc public func application(_ application: UIApplication, continue userActivity: NSUserActivity, restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void) -> Bool {
@@ -744,6 +769,10 @@ public class Application: CoreApplication, PushServiceDelegate {
         // By the time updatedRegion fires, willUpdateToRegion has already rebuilt
         // obacoService for the new region, so this registers the token there.
         Task { await pushRegistrationManager.registerIfNeeded() }
+
+        // A donated stop shortcut that arrived before `currentRegion` was set
+        // is sitting in `pendingStopID`. Drain now that we know which region we are in.
+        drainPendingUIPresentations()
     }
 
     public func regionsService(_ service: RegionsService, displayError error: Error) {
