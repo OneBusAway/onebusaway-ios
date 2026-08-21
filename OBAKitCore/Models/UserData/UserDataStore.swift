@@ -705,9 +705,17 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
 
         updateBookmarksWithStop(stop, region: region)
 
-        if let idx = recentStops.firstIndex(of: stop) {
-            recentStops.remove(at: idx)
-        }
+        // A stop's identity is its `id`. `firstIndex(of:)` would compare every
+        // field `Stop.isEqual` covers — route list, name, code, coordinates — so
+        // the same stop re-fetched after any server-side change wouldn't match
+        // the stored copy and would be appended a second time under one id.
+        // Bookmarks already identify by id (see `add(_:to:index:)`, which looks
+        // up `findBookmark(id:)`); recents now do too.
+        //
+        // `removeAll` rather than removing the first match: a store that already
+        // accumulated duplicates before this fix heals the next time the user
+        // views that stop, instead of shedding one copy per visit.
+        recentStops.removeAll { $0.id == stop.id }
         recentStops.insert(stop, at: 0)
 
         if recentStops.count > maximumRecentStopsCount {
@@ -722,10 +730,12 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         recentStops.removeAll()
     }
 
+    /// Identifies the stop by `id`, like `addRecentStop`. The instance a list
+    /// hands back on swipe-to-delete was decoded from the store, but the caller
+    /// may equally pass a freshly-fetched copy whose fields have since drifted;
+    /// matching on full equality would silently delete nothing.
     public func delete(recentStop: Stop) {
-        if let idx = recentStops.firstIndex(of: recentStop) {
-            recentStops.remove(at: idx)
-        }
+        recentStops.removeAll { $0.id == recentStop.id }
     }
 
     public var maximumRecentStopsCount: Int {
@@ -739,7 +749,17 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
 
     public func recentStops(in region: Region?) -> [Stop] {
         guard let region = region else { return [] }
-        return recentStops.filter { $0.regionIdentifier == region.regionIdentifier }
+
+        // Deduped by `id`, keeping the most recent occurrence. `addRecentStop`
+        // prevents duplicates going in, but stores written before it identified
+        // stops by id can already hold two entries for one stop — and callers
+        // key their list rows off `id`, where a repeat is undefined behaviour
+        // rather than a cosmetic issue. This makes such a store render
+        // correctly now instead of only after the user revisits each stop.
+        var seen = Set<StopID>()
+        return recentStops
+            .filter { $0.regionIdentifier == region.regionIdentifier }
+            .filter { seen.insert($0.id).inserted }
     }
 
     // MARK: - Recent Map Items

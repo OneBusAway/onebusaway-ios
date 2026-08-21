@@ -10,6 +10,8 @@
 import SwiftUI
 import Foundation
 import Testing
+import CoreLocation
+import MapKit
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -152,25 +154,130 @@ final class AppSheetViewFactoryTests: OBATestCase {
         #expect(!view.placeholder.isEmpty)
     }
 
-    /// The three index routes are wired for navigation before their screens
-    /// exist, so the dispatcher must send them to the placeholder instead of to
-    /// `unimplementedView`, whose DEBUG `assertionFailure` guards genuinely
-    /// unwired routes.
-    ///
-    /// Goes through `view(for:)` rather than calling `indexPlaceholderView`
-    /// directly: the dispatch is the thing under test. `view(for:)` is
-    /// `@ViewBuilder`, so its switch — and any `assertionFailure` on the branch
-    /// it picks — runs at call time. Completing this loop without trapping is
-    /// the assertion; calling the placeholder builder directly would pass even
-    /// if the routes were dropped from the dispatcher.
+    /// `.bookmarksAll` renders the native index, not the placeholder. With all
+    /// three index routes wired, no route reaches `indexPlaceholderView` any
+    /// more — it survives only as `unimplementedView`'s release-build fallback.
     @Test @MainActor
-    func `Index routes dispatch to a placeholder without asserting`() {
+    func `Bookmarks all view forwards the application`() {
         let dataLoader = MockDataLoader(testName: name)
         let application = buildApplication(queue: queue, dataLoader: dataLoader)
-        let factory = makeFactory(application: application)
 
-        for route in [AppSheetRoute.nearbyAll, .recentStopsAll, .bookmarksAll] {
-            _ = factory.view(for: route)
-        }
+        let view = makeFactory(application: application).bookmarksAllView()
+
+        #expect(view.application === application)
+    }
+
+    /// `.nearbyAll` carries no coordinate, so the factory resolves one from the
+    /// map's settled viewport.
+    ///
+    /// Asserts against a *seeded* centre rather than against a second call to
+    /// `NearbyCoordinateResolver` with the same inputs: recomputing the
+    /// expectation the same way the factory does would pass even if the factory
+    /// read the wrong sources — swapping location for region, or dropping the
+    /// viewport entirely. `NearbyCoordinateResolverTests` covers the preference
+    /// order; what's under test here is that the factory hands it the right
+    /// three things.
+    @Test @MainActor
+    func `Nearby all view resolves the settled viewport center`() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let stopsObserver = MapStopsObserver(application: application)
+
+        // A deliberately implausible anchor: far from both the device location
+        // and any region centre, so only the viewport could have produced it.
+        let settled = CLLocationCoordinate2D(latitude: 12.345, longitude: 54.321)
+        stopsObserver.updateViewport(
+            MKCoordinateRegion(
+                center: settled,
+                latitudinalMeters: 1000,
+                longitudinalMeters: 1000
+            )
+        )
+        try #require(stopsObserver.viewportCenter != nil)
+
+        let view = makeFactory(application: application, stopsObserver: stopsObserver).nearbyAllView()
+
+        #expect(view.coordinate?.latitude == settled.latitude)
+        #expect(view.coordinate?.longitude == settled.longitude)
+    }
+
+    /// The second link in the chain: with no settled viewport, the anchor is the
+    /// device's fix. Asserting it separately from the region centre is what shows
+    /// the factory reads `locationService` at all — a factory that skipped
+    /// straight to the region would still satisfy the viewport test above.
+    @Test @MainActor
+    func `Nearby all view falls back to the device location`() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let stopsObserver = MapStopsObserver(application: application)
+
+        // A published fix sends the app off to fetch agency alerts, and
+        // `MockDataLoader` traps any request it has no stub for — which takes
+        // the whole test process down, not just this test.
+        Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
+
+        stopsObserver.reset()
+        try #require(stopsObserver.viewportCenter == nil)
+
+        // The mock manager publishes its fix only once updates start, which is
+        // why `currentLocation` is nil until this call.
+        application.locationService.startUpdatingLocation()
+        let location = try #require(application.locationService.currentLocation)
+
+        let view = makeFactory(application: application, stopsObserver: stopsObserver).nearbyAllView()
+
+        #expect(view.coordinate?.latitude == location.coordinate.latitude)
+        #expect(view.coordinate?.longitude == location.coordinate.longitude)
+    }
+
+    /// The last link: no viewport and no device fix leaves the current region's
+    /// centre.
+    ///
+    /// The all-nil case — where the factory must hand the view nil rather than
+    /// search around (0, 0) — is asserted in `NearbyCoordinateResolverTests`. It
+    /// isn't reachable from here: a test `Application` is built with a fixed
+    /// region, so `currentRegion` is never nil.
+    @Test @MainActor
+    func `Nearby all view falls back to the current region center`() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let stopsObserver = MapStopsObserver(application: application)
+
+        stopsObserver.reset()
+
+        try #require(stopsObserver.viewportCenter == nil)
+        try #require(application.locationService.currentLocation == nil)
+        let region = try #require(application.currentRegion)
+
+        let view = makeFactory(application: application, stopsObserver: stopsObserver).nearbyAllView()
+
+        #expect(view.coordinate?.latitude == region.centerCoordinate.latitude)
+        #expect(view.coordinate?.longitude == region.centerCoordinate.longitude)
+    }
+
+    /// `.nearbyStops` and `.nearbyAll` are the same screen; only the way the
+    /// coordinate is obtained differs. This one carries its anchor in the route,
+    /// so it must be passed through untouched.
+    @Test @MainActor
+    func `Nearby stops view forwards the route coordinate`() {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let coordinate = CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3)
+
+        let view = makeFactory(application: application).nearbyStopsView(coordinate: coordinate)
+
+        #expect(view.coordinate?.latitude == coordinate.latitude)
+        #expect(view.coordinate?.longitude == coordinate.longitude)
+    }
+
+    /// `.recentStopsAll` renders the native index, not the placeholder.
+    @Test @MainActor
+    func `Recent stops all view forwards the application`() {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+
+        let view = makeFactory(application: application).recentStopsAllView()
+
+        #expect(view.application === application)
     }
 }

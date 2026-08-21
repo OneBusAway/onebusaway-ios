@@ -612,6 +612,9 @@
 /* The title of the Nearby Stops controller. */
 "nearby_stops_controller.title" = "附近的车站";
 
+/* Body shown on the Nearby Stops index sheet when no map viewport, device location, or region is available to search around. */
+"nearby_stops_sheet.no_location.body" = "移动地图或开启定位服务，即可查看附近的公交车站。";
+
 /* Vehicle occupancy is very high */
 "occupancy_status.crushed_standing_room_only" = "站立空间非常拥挤";
 

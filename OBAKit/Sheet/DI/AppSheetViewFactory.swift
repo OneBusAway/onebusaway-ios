@@ -94,8 +94,14 @@ final class AppSheetViewFactory {
         case .search:
             searchView()
 
-        case .nearbyAll, .recentStopsAll, .bookmarksAll:
-            indexPlaceholderView(for: route)
+        case .nearbyAll:
+            nearbyAllView()
+
+        case .recentStopsAll:
+            recentStopsAllView()
+
+        case .bookmarksAll:
+            bookmarksAllView()
 
         // Wiring a push for one of these routes before its view exists will
         // trip the debug assertion in `unimplementedView(for:)` — register the
@@ -184,10 +190,35 @@ final class AppSheetViewFactory {
         MapItemSheetView(application: application, mapItem: mapItem)
     }
 
-    /// Bridges `AppSheetRoute.nearbyStops` to the existing `NearbyStopsViewController`.
-    /// Swap this branch's return type once a SwiftUI nearby-stops list lands.
-    func nearbyStopsView(coordinate: CLLocationCoordinate2D) -> NearbyStopsSheetHost {
-        NearbyStopsSheetHost(application: application, coordinate: coordinate)
+    /// `AppSheetRoute.nearbyStops` — stops around a coordinate the user picked
+    /// (a dropped pin, a map-item result). Same screen as `.nearbyAll`; only the
+    /// source of the coordinate differs.
+    func nearbyStopsView(coordinate: CLLocationCoordinate2D) -> NearbyStopsSheetView {
+        NearbyStopsSheetView(application: application, coordinate: coordinate)
+    }
+
+    /// `AppSheetRoute.nearbyAll` — the home sheet's "Nearby Stops" header. The
+    /// route carries no coordinate (it's pushed from a section header, not a
+    /// tapped place), so the anchor is resolved here from what the app knows.
+    func nearbyAllView() -> NearbyStopsSheetView {
+        NearbyStopsSheetView(
+            application: application,
+            coordinate: NearbyCoordinateResolver.coordinate(
+                viewportCenter: stopsObserver.viewportCenter,
+                currentLocation: application.locationService.currentLocation,
+                region: application.currentRegion
+            )
+        )
+    }
+
+    /// `AppSheetRoute.recentStopsAll` — the home sheet's "Recent Stops" header.
+    func recentStopsAllView() -> RecentStopsSheetView {
+        RecentStopsSheetView(application: application)
+    }
+
+    /// `AppSheetRoute.bookmarksAll` — the home sheet's "Bookmarks" header.
+    func bookmarksAllView() -> BookmarksSheetView {
+        BookmarksSheetView(application: application)
     }
 
     func routeStopsView(stopsForRoute: StopsForRoute) -> RouteStopsSheetView {
@@ -209,11 +240,8 @@ final class AppSheetViewFactory {
         )
     }
 
-    /// The home sheet's section headers navigate to these three routes before
-    /// their index screens exist, so they render the "coming soon" placeholder
-    /// in every configuration rather than asserting. `unimplementedView` stays
-    /// armed for routes nobody has wired a push for yet — remove a route from
-    /// here once its real view is registered above.
+    /// Visible "coming soon" body used by `unimplementedView` in release builds.
+    /// No route dispatches here directly: every index route now has a real view.
     func indexPlaceholderView(for route: AppSheetRoute) -> some View {
         VStack(spacing: 4) {
             Text(OBALoc(
