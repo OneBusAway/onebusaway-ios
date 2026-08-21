@@ -50,6 +50,30 @@
 			<string>%d حالة ناجحة</string>
 		</dict>
 	</dict>
+	<key>map_controller.map_type.accessibility_value_with_layers_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$@، %2$#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>لا توجد طبقات مفعّلة</string>
+			<key>one</key>
+			<string>طبقة واحدة مفعّلة</string>
+			<key>two</key>
+			<string>طبقتان مفعّلتان</string>
+			<key>few</key>
+			<string>%2$d طبقات مفعّلة</string>
+			<key>many</key>
+			<string>%2$d طبقة مفعّلة</string>
+			<key>other</key>
+			<string>%2$d طبقة مفعّلة</string>
+		</dict>
+	</dict>
 	<key>stop_controller.transfer_show_earlier_departures_fmt</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

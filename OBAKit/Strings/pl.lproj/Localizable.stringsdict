@@ -42,6 +42,26 @@
 			<string>%d udanego zadania</string>
 		</dict>
 	</dict>
+	<key>map_controller.map_type.accessibility_value_with_layers_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$@, %2$#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%2$d warstwa włączona</string>
+			<key>few</key>
+			<string>%2$d warstwy włączone</string>
+			<key>many</key>
+			<string>%2$d warstw włączonych</string>
+			<key>other</key>
+			<string>%2$d warstwy włączonej</string>
+		</dict>
+	</dict>
 	<key>stop_controller.transfer_show_earlier_departures_fmt</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

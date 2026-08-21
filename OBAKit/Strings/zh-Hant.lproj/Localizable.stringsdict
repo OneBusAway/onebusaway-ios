@@ -30,6 +30,20 @@
 			<string>%d 個成功</string>
 		</dict>
 	</dict>
+	<key>map_controller.map_type.accessibility_value_with_layers_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$@，%2$#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>other</key>
+			<string>已開啟 %2$d 個圖層</string>
+		</dict>
+	</dict>
 	<key>stop_controller.transfer_show_earlier_departures_fmt</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

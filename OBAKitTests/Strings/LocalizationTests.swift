@@ -30,7 +30,8 @@ final class LocalizationTests {
         "stop_controller.transfer_show_earlier_departures_fmt",
         "stop_page.empty.no_departures_fmt",
         "data_migration_bulletin.report_summary_number_of_failures",
-        "data_migration_bulletin.report_summary_number_of_successes"
+        "data_migration_bulletin.report_summary_number_of_successes",
+        "map_controller.map_type.accessibility_value_with_layers_fmt"
     ]
 
     /// `%@`, `%d`, `%1$@`, `%2$d`, … and the escaped `%%`.
@@ -142,5 +143,25 @@ final class LocalizationTests {
             let format = bundle.localizedString(forKey: key, value: "MISSING", table: nil)
             #expect(String(format: format, 1) == expected, "\(key) did not resolve its singular — is Localizable.stringsdict bundled?")
         }
+    }
+
+    /// The map-type button's VoiceOver value is the one plural key here that takes a
+    /// second argument, so its variable is bound positionally (`%2$#@count@`). Assert
+    /// both categories: the count lands in the right slot only when that binding and the
+    /// `%2$d` inside each category agree.
+    ///
+    /// Regression: this shipped as a flat `"%1$@, %2$d layers on"`. In a region without
+    /// bikeshare the stops layer is the only one, so the singular is the *common* case
+    /// and VoiceOver read "standard, 1 layers on".
+    @Test func `Map type layer count reads its singular and plural`() {
+        let bundle = Bundle(for: DonationCell.self)
+        let format = bundle.localizedString(
+            forKey: "map_controller.map_type.accessibility_value_with_layers_fmt",
+            value: "MISSING",
+            table: nil
+        )
+
+        #expect(String(format: format, "standard", 1) == "standard, 1 layer on")
+        #expect(String(format: format, "standard", 2) == "standard, 2 layers on")
     }
 }

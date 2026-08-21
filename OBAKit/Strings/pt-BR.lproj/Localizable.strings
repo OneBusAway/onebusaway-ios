@@ -415,8 +415,14 @@
 /* Voiceover text indicating that this button toggles the base map type. */
 "map_controller.map_type.accessibility_label" = "Tipo de mapa";
 
+/* Voiceover value combining the base map type with the number of enabled map layers. %1$@ is the base map type, %2$d is the layer count. */
+"map_controller.map_type.accessibility_value_with_layers_fmt" = "%1$@, %2$d camadas ativadas";
+
 /* Voiceover text indicating the current map type as the hybrid base map (satellite view with labels). */
 "map_controller.map_type.hybrid.accessibility_value" = "híbrido";
+
+/* Voiceover text indicating the current map type as the satellite base map. */
+"map_controller.map_type.satellite.accessibility_value" = "satélite";
 
 /* Voiceover text indicating the current map type as the standard base map. */
 "map_controller.map_type.standard.accessibility_value" = "padrão";

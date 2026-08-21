@@ -20,7 +20,12 @@
 - **Commit messages are a single line, no AI/Claude attribution of any kind.**
 - **`RegionsService` holds delegates weakly** in an `NSHashTable`. Anything registering as a `RegionsServiceDelegate` must be strongly retained by its host or it will silently stop receiving callbacks.
 - **`RegionsServiceDelegate` is an `@objc` protocol**, so conformers must subclass `NSObject`.
-- **New rider-facing copy uses `OBALoc(_:value:comment:)`.** This plan introduces no new strings — every label is reused from an existing key.
+- **New rider-facing copy uses `OBALoc(_:value:comment:)`.** Most labels are reused from
+  existing keys, but the map-type button's VoiceOver value needed two new ones:
+  `map_controller.map_type.satellite.accessibility_value` and
+  `map_controller.map_type.accessibility_value_with_layers_fmt`. Both are added to all 13
+  `.strings` files; the second takes a count, so its plural forms live in
+  `Localizable.stringsdict` and its key is registered in `LocalizationTests.pluralKeys`.
 
 ## Build & test commands
 
