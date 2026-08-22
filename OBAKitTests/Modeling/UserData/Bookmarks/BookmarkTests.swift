@@ -131,4 +131,19 @@ final class BookmarkTests: OBATestCase {
 
         #expect(bookmark.stop.id == stops[0].id)
     }
+
+    @Test func `Stop bookmark is not a trip bookmark`() {
+        let bookmark = Bookmark(name: "BM 1", regionIdentifier: region.regionIdentifier, stop: stops[0])
+        #expect(!bookmark.isTripBookmark)
+    }
+
+    @Test func `Trip bookmark is a trip bookmark`() throws {
+        let stopArrivals = try Fixtures.loadRESTAPIPayload(
+            type: StopArrivals.self,
+            fileName: "arrivals-and-departures-for-stop-1_10914.json"
+        )
+        let arrDep = try #require(stopArrivals.arrivalsAndDepartures.first)
+        let bookmark = Bookmark(name: "BM 1", regionIdentifier: region.regionIdentifier, arrivalDeparture: arrDep)
+        #expect(bookmark.isTripBookmark)
+    }
 }

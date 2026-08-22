@@ -13,6 +13,7 @@ import OBAKitCore
 private enum Constants {
     static let minutes: UInt = 60
     static let maxDeparturesToShow = 3
+    static let maxStopDeparturesToShow = 2
     static let rowWidth: CGFloat = 180
     static let fontSize: CGFloat = 13
 }
@@ -38,12 +39,26 @@ struct WidgetRowView: View {
     }
 
     var body: some View {
+        if bookmark?.isTripBookmark == true {
+            tripBookmarkView
+        } else {
+            stopBookmarkView
+        }
+    }
+
+    private var titleText: some View {
+        Text(bookmarkTitle)
+            .font(.system(size: Constants.fontSize, weight: .semibold))
+            .lineLimit(1)
+            .truncationMode(.tail)
+    }
+
+    // MARK: - Trip Bookmark Layout
+
+    private var tripBookmarkView: some View {
         HStack {
             VStack(alignment: .leading) {
-                Text(bookmarkTitle)
-                    .font(.system(size: Constants.fontSize, weight: .semibold))
-                    .lineLimit(1)
-                    .truncationMode(.tail)
+                titleText
 
                 departureLabel
             }
@@ -54,6 +69,37 @@ struct WidgetRowView: View {
 
             if departures?.isEmpty == false {
                 departureTimeBadges
+            }
+        }
+    }
+
+    // MARK: - Stop Bookmark Layout (next N departures across all routes)
+
+    private var stopBookmarkView: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            titleText
+
+            if let departures, !departures.isEmpty {
+                ForEach(departures.prefix(Constants.maxStopDeparturesToShow), id: \.self) { departure in
+                    HStack {
+                        Text(departure.routeAndHeadsign)
+                            .font(.system(size: Constants.fontSize))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                        Spacer()
+                        Text(formatters.shortFormattedTime(until: departure))
+                            .font(.system(size: Constants.fontSize, weight: .bold))
+                            .foregroundStyle(Color(formatters.colorForScheduleStatus(departure.scheduleStatus)))
+                    }
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("\(departure.routeAndHeadsign), \(formatters.explanation(from: departure))")
+                }
+            } else {
+                Text(fallbackLabel)
+                    .font(.system(size: Constants.fontSize))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
             }
         }
     }
