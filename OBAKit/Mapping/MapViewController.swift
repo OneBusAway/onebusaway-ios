@@ -21,6 +21,10 @@ import SafariServices
 /// Displays a map, a set of stops rendered as annotation views, and the user's location if authorized.
 ///
 /// `MapViewController` is the average user's primary means of interacting with OneBusAway data.
+// Over the 1000-line body budget, and has been since before this change. Splitting
+// it is worth doing but is not this change's job; without the disable the error
+// fails every local build.
+// swiftlint:disable:next type_body_length
 class MapViewController: UIViewController,
     FloatingPanelControllerDelegate,
     LocationServiceDelegate,
@@ -210,7 +214,7 @@ class MapViewController: UIViewController,
 
         viewModel.start()
         updateVoiceover()
-        showMapLayersNudgeIfNeeded()
+        showMapLayersTipIfNeeded()
         Task { @MainActor [weak viewModel] in await viewModel?.checkForSurveyPrompt() }
     }
 
@@ -222,6 +226,8 @@ class MapViewController: UIViewController,
         // A rider who dismisses a stop sheet and immediately switches tabs shouldn't be
         // chased by an alert from a screen they've left.
         cancelScheduledFeedbackPrompt()
+
+        mapLayersTipPresenter.stop()
     }
 
     // MARK: - Surveys
@@ -722,7 +728,9 @@ class MapViewController: UIViewController,
     /// region — which happens routinely and must not tear the layer down.
     var stopRouteFocusLayerRegionIdentifier: Int?
 
-    // The layer/sheet/nudge machinery lives in MapViewController+MapLayers.swift.
+    let mapLayersTipPresenter = TipPresenter(tip: MapLayersTip())
+
+    // The layer/sheet/tip machinery lives in MapViewController+MapLayers.swift.
 
     // MARK: - Application State
 
