@@ -40,7 +40,7 @@ func searchResultMapContent(
                 Image(uiImage: stopIcon(stop))
                     .accessibilityLabel(Formatters.formattedAccessibilityLabel(stop: stop))
             }
-            .tag(stop.id)
+            .tag(MapPinSelection.stop(stop.id))
         }
     case .mapItem(let item):
         Marker(item.name ?? "", coordinate: item.placemark.coordinate)

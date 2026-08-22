@@ -171,10 +171,15 @@ final class BackgroundAnnotationDeemphasisTests: OBATestCase {
     // MARK: - Rentals
 
     @Test func `Rental vehicles and their clusters recede`() throws {
-        let mapView = MKMapView()
-        let layer = RentalMapLayer.bikesLayer(
-            coordinator: RentalLayerCoordinator(service: StubVehicleRentalService(), mapView: mapView)
+        let locationManager = MockAuthorizedLocationManager(
+            updateLocation: TestData.mockSeattleLocation,
+            updateHeading: TestData.mockHeading
         )
+        let coordinator = RentalLayerCoordinator(
+            service: StubVehicleRentalService(),
+            locationService: LocationService(userDefaults: UserDefaults(), locationManager: locationManager)
+        )
+        let layer = RentalMapLayer.bikesLayer(coordinator: coordinator)
         let rental = RentalAnnotation(rental: try RentalFixtures.vehicle())
         let cluster = MKClusterAnnotation(memberAnnotations: [rental])
 
@@ -229,8 +234,10 @@ final class BackgroundAnnotationDeemphasisTests: OBATestCase {
         manager.mapView.addAnnotations([stops.selected, stops.other] + bystanders)
 
         let affected = manager.annotationsNeedingEmphasisRefresh(from: stops.selected.id, to: stops.other.id)
+        // MKMapView may include a user-location annotation, so tests must never assert on the raw count — only on specific annotations.
+        let nonUserLocationAffected = affected.filter { !($0 is MKUserLocation) }
 
-        #expect(affected.count == 2)
+        #expect(nonUserLocationAffected.count == 2)
         #expect(affected.contains { $0 === stops.selected })
         #expect(affected.contains { $0 === stops.other })
     }
@@ -245,8 +252,10 @@ final class BackgroundAnnotationDeemphasisTests: OBATestCase {
         manager.mapView.addAnnotations([stops.selected, stops.other, receding])
 
         let affected = manager.annotationsNeedingEmphasisRefresh(from: nil, to: stops.selected.id)
+        // MKMapView may include a user-location annotation, so tests must never assert on the raw count — only on specific annotations.
+        let nonUserLocationAffected = affected.filter { !($0 is MKUserLocation) }
 
-        #expect(affected.count == 2)
+        #expect(nonUserLocationAffected.count == 2)
         #expect(affected.contains { $0 === stops.other })
         #expect(affected.contains { $0 === receding })
         #expect(affected.contains { $0 === stops.selected } == false)

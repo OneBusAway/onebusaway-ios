@@ -32,6 +32,11 @@ import OTPKit
     /// Set by `MapViewController` at registration.
     weak var actionsDelegate: RentalLayerActionsDelegate?
 
+    /// Re-attaches annotations after a wholesale map clear. Set by
+    /// `MapViewController` at registration; nil on the SwiftUI panel, which has
+    /// no `MKMapView` to re-attach to.
+    weak var annotationSyncer: RentalAnnotationSyncer?
+
     /// Builds the Bikes layer: enabled by default so the first-run map is useful,
     /// fail-open entities included (matching the framework filter).
     static func bikesLayer(coordinator: RentalLayerCoordinator) -> RentalMapLayer {
@@ -90,7 +95,14 @@ import OTPKit
     var refreshPolicy: MapLayerRefreshPolicy { .onViewportChange }
 
     /// Riders distrust stale micromobility data faster than stale bus data.
-    var staleAfter: Duration? { .seconds(120) }
+    ///
+    /// The single source of truth for the window. Both surfaces reach it through
+    /// the `staleAfter` below rather than restating the literal — the UIKit map
+    /// off the layer it renders, the panel off
+    /// `MapPanelLayersModel.rentalStaleAfter` — so the two cannot drift apart.
+    static let freshnessWindow: Duration = .seconds(120)
+
+    var staleAfter: Duration? { Self.freshnessWindow }
 
     /// When the last rental data arrived — feeds the detail sheet's freshness line.
     var lastSnapshotAt: Date? { coordinator.lastSnapshotAt }
@@ -108,7 +120,7 @@ import OTPKit
     }
 
     func mapAnnotationsWereCleared() {
-        coordinator.reattachAnnotations()
+        annotationSyncer?.reattachAnnotations()
     }
 
     func annotationView(for annotation: MKAnnotation, in mapView: MKMapView) -> MKAnnotationView? {
