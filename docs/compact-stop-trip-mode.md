@@ -1,0 +1,22 @@
+# Compact stop and trip pages
+
+A rider asked for a more space-saving stop and trip layout (#1278). It is
+opt-in and **off by default**.
+
+## Setting
+
+Settings → Accessibility → **Compact stop and trip pages**.
+
+When on, the new stop page (departure rows, grouped cards) and the new trip
+page (header card, stop timeline) read tighter spacing from `StopTripSpacing`.
+Accessibility-size stacked layouts use the same table — compact is opt-in, so
+tighter AX stacks are intentional. Tappable trip-stop rows keep a 44pt
+**hit** target (`stopRowHitSlop`, canceling vertical padding) so compact
+still shrinks the laid-out row at default Dynamic Type. Do not put
+`stopRowMinHeight` on the whole row as `.frame(minHeight:)` — that made
+compact a no-op and floated the divider off the connector.
+
+No arrivals, occupancy, or actions are hidden. This is spacing only.
+
+The `@AppStorage` key is `stopTripCompactMode` (dot-free, same KVO constraint
+as `stopUIReducedColors`).

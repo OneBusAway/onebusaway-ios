@@ -214,6 +214,22 @@ final class UserDefaultsStoreTests: OBATestCase {
         #expect(self.userDefaultsStore.userDefaults.bool(forKey: UserDefaultsStore.stopUIReducedColorsKey))
     }
 
+    // MARK: - Compact Stop / Trip Mode
+
+    @Test func `Stop trip compact mode defaults off`() {
+        #expect(!self.userDefaultsStore.stopTripCompactMode)
+        #expect(UserDefaultsStore.stopTripCompactModeKey == "stopTripCompactMode")
+    }
+
+    @Test func `Stop trip compact mode persists under the app storage key`() {
+        userDefaultsStore.stopTripCompactMode = true
+        #expect(self.userDefaultsStore.stopTripCompactMode)
+
+        let reloaded = UserDefaultsStore(userDefaults: userDefaults)
+        #expect(reloaded.stopTripCompactMode)
+        #expect(self.userDefaultsStore.userDefaults.bool(forKey: UserDefaultsStore.stopTripCompactModeKey))
+    }
+
     // MARK: - Survey Properties
 
     @Test func `Survey user identifier generates UUID`() {

@@ -64,6 +64,7 @@ struct TripPageView: View {
     /// The page's laid-out height, which is the sheet detent's — not the screen's. Feeds the
     /// action bar's ceiling at accessibility sizes; see `TripActionBar.maxHeight`.
     @State private var pageHeight: CGFloat = 0
+    @AppStorage(UserDefaultsStore.stopTripCompactModeKey) private var compactMode = false
 
     /// The largest share of the page the pinned action bar may take before it starts scrolling.
     ///
@@ -95,7 +96,7 @@ struct TripPageView: View {
             TripPageBackRow(title: originTitle, behavior: backBehavior, onBack: actions.onBack)
 
             ScrollView {
-                VStack(alignment: .leading, spacing: 14) {
+                VStack(alignment: .leading, spacing: StopTripSpacing.tripPage(compactMode)) {
                     card
 
                     let rows = stopList.rows

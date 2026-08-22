@@ -996,6 +996,9 @@
 /* Directs the user to tap on the link that comes at the end of the string. Learn more: <HYPERLINK IS INSERTED HERE> */
 "service_alert_controller.learn_more_fmt" = "Подробнее: %@";
 
+/* Настройки > Универсальный доступ > Более плотная вёрстка новых экранов остановки и рейса */
+"settings_controller.accessibility_section.compact_stop_trip" = "Компактные страницы остановки и рейса";
+
 /* Settings > Accessibility section > Always show full sheet on Voiceover */
 "settings_controller.accessibility_section.default_full_sheet_voiceover" = "Всегда разворачивать панель при VoiceOver";
 

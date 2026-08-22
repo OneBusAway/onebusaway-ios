@@ -70,6 +70,7 @@ class SettingsViewController: FormViewController {
             walkingSpeedMetersPerSecondKey: snapToPreset(application.userDataStore.walkingSpeedMetersPerSecond),
             walkingSpeedUseHealthKitKey: application.userDataStore.walkingSpeedSource == .healthKit,
             stopUIReducedColorsTag: application.userDataStore.stopUIReducedColors,
+            stopTripCompactModeTag: application.userDataStore.stopTripCompactMode,
             alwaysShowFeedbackPrompt: application.reviewPromptPolicy.alwaysShowPrompt
         ])
     }
@@ -145,6 +146,10 @@ class SettingsViewController: FormViewController {
 
         if let reducedColors = values[stopUIReducedColorsTag] as? Bool {
             application.userDataStore.stopUIReducedColors = reducedColors
+        }
+
+        if let compactMode = values[stopTripCompactModeTag] as? Bool {
+            application.userDataStore.stopTripCompactMode = compactMode
         }
     }
 
@@ -306,6 +311,11 @@ class SettingsViewController: FormViewController {
             $0.title = OBALoc("settings_controller.accessibility_section.reduce_stop_colors", value: "Reduce colors on stop page", comment: "Settings > Accessibility section > Toggle that renders stop page route badges as a thin color bar beside plain text instead of a colored square")
         }
 
+        section <<< SwitchRow {
+            $0.tag = stopTripCompactModeTag
+            $0.title = OBALoc("settings_controller.accessibility_section.compact_stop_trip", value: "Compact stop and trip pages", comment: "Settings > Accessibility > Toggle that tightens spacing on the new stop and trip screens")
+        }
+
         return section
     }()
 
@@ -314,6 +324,7 @@ class SettingsViewController: FormViewController {
     private let walkingSpeedMetersPerSecondKey = "walkingSpeedMetersPerSecond"
     private let walkingSpeedUseHealthKitKey = "walkingSpeedUseHealthKit"
     private let stopUIReducedColorsTag = UserDefaultsStore.stopUIReducedColorsKey
+    private let stopTripCompactModeTag = UserDefaultsStore.stopTripCompactModeKey
 
     private func snapToPreset(_ speed: Double) -> Double {
         WalkingSpeedPreset.nearest(to: speed).rawValue

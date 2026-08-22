@@ -22,6 +22,8 @@ struct TripStopListView: View {
     let routeType: Route.RouteType
     let onSelect: (TripStopListModel.Row) -> Void
 
+    @AppStorage(UserDefaultsStore.stopTripCompactModeKey) private var compactMode = false
+
     var body: some View {
         // Lazy because a long trip runs to sixty-odd stops and only a handful
         // are ever on screen.
@@ -34,6 +36,7 @@ struct TripStopListView: View {
                     segmentAboveIsSpent: index > 0 && rows[index - 1].isPassed,
                     routeColor: routeColor,
                     routeType: routeType,
+                    compactMode: compactMode,
                     onSelect: { onSelect(row) }
                 )
             }
@@ -55,6 +58,7 @@ private struct TripStopRow: View {
     let segmentAboveIsSpent: Bool
     let routeColor: Color
     let routeType: Route.RouteType
+    let compactMode: Bool
     let onSelect: () -> Void
 
     @Environment(\.obaFormatters) private var formatters
@@ -77,7 +81,7 @@ private struct TripStopRow: View {
                     Spacer(minLength: 8)
                     time
                 }
-                .padding(.vertical, 11)
+                .padding(.vertical, StopTripSpacing.stopRowVertical(compactMode))
                 // The rule stops short of the connector so the line reads as
                 // continuous through the whole list.
                 if !isLast {
@@ -87,8 +91,10 @@ private struct TripStopRow: View {
         }
         .padding(.leading, 12)
         .padding(.trailing, 14)
+        .padding(.vertical, StopTripSpacing.stopRowHitSlop(compact: compactMode))
         .contentShape(Rectangle())
         .onTapGesture(perform: onSelect)
+        .padding(.vertical, -StopTripSpacing.stopRowHitSlop(compact: compactMode))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityLabel)
         .accessibilityAddTraits(.isButton)

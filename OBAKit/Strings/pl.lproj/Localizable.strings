@@ -996,6 +996,9 @@
 /* Directs the user to tap on the link that comes at the end of the string. Learn more: <HYPERLINK IS INSERTED HERE> */
 "service_alert_controller.learn_more_fmt" = "Dowiedz się więcej: %@";
 
+/* Ustawienia > Dostępność > Zmniejsza odstępy na nowych ekranach przystanku i kursu */
+"settings_controller.accessibility_section.compact_stop_trip" = "Zwarte strony przystanku i kursu";
+
 /* Settings > Accessibility section > Always show full sheet on Voiceover */
 "settings_controller.accessibility_section.default_full_sheet_voiceover" = "Zawsze pokazuj cały arkusz w trybie lektora";
 
