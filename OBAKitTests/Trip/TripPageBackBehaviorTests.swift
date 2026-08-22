@@ -65,11 +65,8 @@ final class TripPageBackWiringTests: OBATestCase {
     }
 
     private func makeTripPage() throws -> TripPageViewController {
-        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
-        return TripPageViewController(
-            application: application,
-            tripConvertible: TripConvertible(arrivalDeparture: try Fixtures.arrivalDeparture()),
-            originTitle: "3rd Ave & Pike St"
+        try TripPageFixture.makePage(
+            application: buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
         )
     }
 

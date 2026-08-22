@@ -109,6 +109,9 @@ struct ServiceAlertsSection: View {
         .accessibilityValue(showsServiceAlerts
             ? OBALoc("stop_page.service_alerts.a11y_expanded", value: "expanded", comment: "VoiceOver value of the service-alerts card header when the alert list is showing.")
             : OBALoc("stop_page.service_alerts.a11y_collapsed", value: "collapsed", comment: "VoiceOver value of the service-alerts card header when the alert list is hidden."))
+        // Also a heading so it anchors VoiceOver's Headings rotor between the
+        // stop title and the departures.
+        .accessibilityAddTraits(.isHeader)
     }
 
     private var showAllRow: some View {

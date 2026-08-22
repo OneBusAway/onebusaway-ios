@@ -84,6 +84,9 @@ struct StopPageHeaderView: View {
             // button below stays separate so it remains individually
             // focusable and activatable.
             .accessibilityElement(children: .combine)
+            // The screen's title: mark it a heading so it anchors VoiceOver's
+            // Headings rotor for quick top-of-page navigation.
+            .accessibilityAddTraits(.isHeader)
             if let walkTime {
                 Button(action: onWalkingDirections) {
                     Label(walkChipText(walkTime), systemImage: "figure.walk")

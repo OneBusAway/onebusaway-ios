@@ -150,6 +150,16 @@ struct StopPageView: View {
         showToolbarOnBottom && !isCollapsed
     }
 
+    /// Read from the environment rather than the `formatters` property `StopPageRootView`
+    /// publishes: this view is constructed by that wrapper, so its own property wrappers
+    /// resolve against the environment it was handed.
+    @Environment(\.obaFormatters) private var formatters
+    /// Gates the rotor's entry list, the one piece of per-body work here that scales with
+    /// the whole departure list rather than the handful of rows the `List` materializes.
+    /// An environment read, not `UIAccessibility.isVoiceOverRunning`, so switching
+    /// VoiceOver on invalidates the body instead of waiting for an incidental one.
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
+
     @State private var expandedRouteID: RouteID?
     /// Set when the user explicitly dismisses the donation card, so it disappears
     /// immediately instead of waiting for the next view-model refresh to re-read
@@ -162,6 +172,10 @@ struct StopPageView: View {
         // chronological partition, and the divider all read one snapshot of it.
         let walkTime = viewModel.walkTime
         let content = StopPageContent(viewModel: viewModel)
+
+        let rotorEntries = voiceOverEnabled
+            ? departuresRotorEntries(content: content, walkMinutes: walkTime?.walkMinutes)
+            : []
 
         List {
             if let stop = viewModel.stop {
@@ -223,7 +237,7 @@ struct StopPageView: View {
                 toolbar
             }
         }
-        .refreshable { await viewModel.refresh() }
+        .refreshable { await refreshAndAnnounce() }
         .stopPageLifecycle(
             viewModel: viewModel,
             userDefaults: userDefaults,
@@ -233,6 +247,24 @@ struct StopPageView: View {
         // drops the expanded route from the list, clear the stale expansion.
         .onChange(of: content.routeIDs) { _, ids in
             if let rid = expandedRouteID, !ids.contains(rid) { expandedRouteID = nil }
+        }
+        // A custom rotor so a VoiceOver user can spin to "Departures" and flick
+        // straight through the buses, skipping the header, status line, survey,
+        // donation, service-alerts card, and the mode/Past controls above them —
+        // the "so much information … hard to get bus schedules" complaint. Entries
+        // bind to the rows by the same id the ForEach uses (departure id in
+        // chronological mode, route id in grouped mode).
+        .accessibilityRotor(Text(Self.departuresRotorTitle)) {
+            ForEach(rotorEntries, id: \.id) { entry in
+                AccessibilityRotorEntry(entry.label, id: entry.id)
+            }
+        }
+        // Announce dynamic changes that otherwise mutate the list silently.
+        .onChange(of: viewModel.arrivalDepartureFilter) { _, _ in
+            AccessibilityNotification.Announcement(Self.filterChangedAnnouncement).post()
+        }
+        .onChange(of: viewModel.isListFiltered) { _, filtered in
+            AccessibilityNotification.Announcement(filtered ? Self.routesFilteredAnnouncement : Self.routesAllAnnouncement).post()
         }
     }
 
@@ -249,7 +281,7 @@ struct StopPageView: View {
             isListFiltered: viewModel.isListFiltered,
             activeDepartureFilter: viewModel.arrivalDepartureFilter,
             hasServiceAlerts: !(viewModel.stopArrivals?.serviceAlerts ?? []).isEmpty,
-            onRefresh: { Task { await viewModel.refresh() } },
+            onRefresh: { Task { await refreshAndAnnounce() } },
             onSetListFiltered: { filtered in
                 viewModel.isListFiltered = filtered
                 // Picking "Filtered Routes" opens the picker, matching the pushed
@@ -281,6 +313,65 @@ struct StopPageView: View {
             pastCollapsed: $pastCollapsed
         )
     }
+
+    // MARK: - VoiceOver announcements
+
+    /// The rows the custom "Departures" rotor steps through, in the order the
+    /// list renders them. Each `id` matches the row's `ForEach` identity —
+    /// departure id in chronological mode, route id in grouped mode, both
+    /// `String` — so the rotor lands on the real rows. Collapsed Past rows are
+    /// left out; there is nothing rendered for the rotor to focus.
+    ///
+    /// The chronological order is read from `chronologicalPartition` rather than
+    /// re-derived here. A plain time sort happens to produce the same sequence
+    /// today, and costs the same one sort — but it is a second copy of "what
+    /// order do departures come in, and what counts as past" with no test tying
+    /// the two together, so a change to the builder would silently land the
+    /// rotor on rows in an order the screen doesn't show. `ChronologicalListView`
+    /// renders past (when expanded) → missed → reachable, which is what this
+    /// concatenation reproduces.
+    private func departuresRotorEntries(content: StopPageContent, walkMinutes: Int?) -> [(label: String, id: String)] {
+        if content.isGrouped {
+            return content.routeGroups.map { (rotorLabel(for: $0.next), $0.routeID) }
+        }
+        let partition = StopPageListBuilder.chronologicalPartition(content.departures, walkMinutes: walkMinutes)
+        let rendered = (pastCollapsed ? [] : partition.past) + partition.missed + partition.reachable
+        return rendered.map { (rotorLabel(for: $0), $0.id) }
+    }
+
+    /// Spoken form of a departure's route, e.g. "Route 49 - University District".
+    /// The rows speak a whole sentence (route, timing, status); the rotor only has
+    /// to say which bus it just landed on, but it says it the way the rest of the
+    /// app does rather than reading the on-screen string and its em dash aloud.
+    private func rotorLabel(for departure: ArrivalDeparture) -> String {
+        formatters.accessibilityLabel(for: departure)
+    }
+
+    /// Pull-to-refresh and the toolbar's Refresh button — the two places the rider
+    /// asks for fresh times and so has reason to be told they arrived. Deliberately
+    /// not the 15-second auto-refresh, which runs through the same view model call
+    /// and would interrupt whatever VoiceOver is reading four times a minute.
+    ///
+    /// Keyed on `lastUpdated` moving rather than on the call returning, because
+    /// `refresh()` returns without fetching in two cases that must stay silent: a
+    /// refresh already in flight (the auto-refresh timer) makes it a no-op, and a
+    /// failed fetch lands in `operationError` and leaves the old times on screen.
+    /// Announcing either as "Departures updated" tells a rider who can't see the
+    /// stale rows that they're fresh.
+    private func refreshAndAnnounce() async {
+        let updatedBefore = viewModel.lastUpdated
+        await viewModel.refresh()
+        guard viewModel.lastUpdated != updatedBefore else { return }
+        AccessibilityNotification.Announcement(Self.refreshedAnnouncement).post()
+    }
+
+    /// The rotor's title and the list's heading name the same thing, so they share
+    /// one string — two keys would let 13 locales translate them apart.
+    private static let departuresRotorTitle = StopPageListHeaderRow.departuresHeading
+    private static let refreshedAnnouncement = OBALoc("stop_page.a11y.refreshed", value: "Departures updated", comment: "VoiceOver announcement posted when a rider-initiated refresh finishes and the departure times have been updated.")
+    private static let filterChangedAnnouncement = OBALoc("stop_page.a11y.filter_changed", value: "Departure filter changed", comment: "VoiceOver announcement posted when the Departure Type filter changes which departures are visible.")
+    private static let routesFilteredAnnouncement = OBALoc("stop_page.a11y.routes_filtered", value: "Showing filtered routes", comment: "VoiceOver announcement posted when the route filter is turned on.")
+    private static let routesAllAnnouncement = OBALoc("stop_page.a11y.routes_all", value: "Showing all routes", comment: "VoiceOver announcement posted when the route filter is turned off.")
 }
 
 #Preview("Initial loading") {

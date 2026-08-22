@@ -761,12 +761,58 @@ class MapViewController: UIViewController,
     ///   - annotation: The annotation the stop was opened from, if any. Deselected when the
     ///     stop sheet closes so the map doesn't keep a pin highlighted for a dismissed sheet.
     func show(stop: Stop, deselecting annotation: MKAnnotation? = nil) {
-        present(stopController: application.viewRouter.makeStopController(stop: stop, showToolbarOnBottom: true), deselecting: annotation)
+        guard prefersPushedStopPage else {
+            present(stopController: application.viewRouter.makeStopController(stop: stop, showToolbarOnBottom: true), deselecting: annotation)
+            return
+        }
+        prepareMapForPushedStopPage(deselecting: annotation)
+        application.viewRouter.navigateTo(stop: stop, from: self)
     }
 
     /// Displays the specified stop by ID.
     func show(stopID: StopID) {
-        present(stopController: application.viewRouter.makeStopController(stopID: stopID, showToolbarOnBottom: true))
+        guard prefersPushedStopPage else {
+            present(stopController: application.viewRouter.makeStopController(stopID: stopID, showToolbarOnBottom: true))
+            return
+        }
+        prepareMapForPushedStopPage(deselecting: nil)
+        application.viewRouter.navigateTo(stopID: stopID, from: self)
+    }
+
+    /// `true` while VoiceOver is running, where the Stop page opens as a full-screen push
+    /// instead of the map's half-detent sheet.
+    ///
+    /// A partial-height FloatingPanel over a live map is a poor modal for VoiceOver — the map
+    /// behind it stays in the accessibility tree, and the detents, swipe-to-dismiss, and
+    /// collapse-to-`.tip` behaviors are drag gestures VoiceOver can't perform. The pushed
+    /// presentation the router builds is a standard, opaque screen with a nav-bar back button
+    /// and contained focus, and it skips the sheet path's map-focus wiring (route highlight,
+    /// recentering, tab-bar hiding, `stopSheetStopID`) — map-visual bookkeeping that means
+    /// nothing while a pushed screen covers the map, exactly as the legacy push path skips it.
+    ///
+    /// Read at open time only: a sheet already onscreen when VoiceOver is switched on is left
+    /// as-is.
+    private var prefersPushedStopPage: Bool {
+        UIAccessibility.isVoiceOverRunning
+    }
+
+    /// Clears the map of what the sheet path would have replaced, because a full-screen push
+    /// covers it just as thoroughly.
+    ///
+    /// A sheet left open behind the push is not merely stale scenery: `stopSheetStopID` stays
+    /// set, so every other marker is held down as a gray dot and the zoom pill stays hidden for
+    /// the rest of the session, and its route-focus layer and refresh timer keep running behind
+    /// a screen nobody can see. Reachable whenever VoiceOver is switched on with a sheet already
+    /// up — the one case `prefersPushedStopPage` leaves as-is — and the next stop the rider
+    /// opens then pushes over it.
+    ///
+    /// Deselecting for the same reason: leaving the tapped pin selected only strands a highlight
+    /// for the rider to find on the way back.
+    private func prepareMapForPushedStopPage(deselecting annotation: MKAnnotation?) {
+        dismissStopSheetForReplacement()
+
+        guard let annotation else { return }
+        mapRegionManager.mapView.deselectAnnotation(annotation, animated: false)
     }
 
     /// Routes a stop screen to the presentation that suits it: the redesigned Stop page comes

@@ -372,11 +372,17 @@ extension StopSheetPresenter: UINavigationControllerDelegate {
 
     /// Raises a sheet sitting at `.tip` when something is pushed over the stop page.
     ///
-    /// `.tip` shows a sliver — the collapsed stop header and nothing else. That is a
-    /// deliberate peek-at-the-map detent for the *stop page*, which has a collapsed form
-    /// built for it; a pushed screen has none, so it arrives entirely below the fold and the
-    /// tap that pushed it reads as having done nothing. `.half` is where the sheet opens,
-    /// so it's the detent the rider already associates with "this is on screen now."
+    /// `.tip` shows a sliver — one row's worth of content. That is a deliberate
+    /// peek-at-the-map detent for whatever is *already* onscreen, not a detent to arrive at:
+    /// a screen pushed into it lands below the fold and the tap that pushed it reads as
+    /// having done nothing. `.half` is where the sheet opens, so it's the detent the rider
+    /// already associates with "this is on screen now."
+    ///
+    /// Raises regardless of whether the pushed page has a collapsed form. The trip page now
+    /// does (`StopSheetCollapsibleContent`), so this could instead let a conformer stay at
+    /// `.tip` — but its collapsed form names the stop the trip was opened *from*, which is
+    /// the sliver the rider was already looking at. Landing there would still read as
+    /// nothing having happened.
     ///
     /// Only from `.tip`: at `.half` or `.full` the pushed screen is already visible, and
     /// moving the sheet under the rider would be its own surprise. Popping back doesn't
