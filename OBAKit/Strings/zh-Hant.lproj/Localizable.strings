@@ -1017,6 +1017,12 @@
 /* Settings section title for controlling which arrivals/departures are shown */
 "settings_controller.arrival_display_section.title" = "到站與離站資訊顯示";
 
+/* Settings > Arrival Display > Toggle that shows the Arriving at XX:XX via route banner when opening a stop from a trip */
+"settings_controller.arrival_display_section.transfer_banner" = "顯示轉乘到達橫幅";
+
+/* Settings > Arrival Display > Footer for the Show transfer arrival banner switch only, not the Show Departures filter */
+"settings_controller.arrival_display_section.transfer_banner.footer" = "顯示轉乘到達橫幅：開啟後，從行程開啟車站時時間會相對你到達該站顯示。關閉該開關將顯示時鐘時間和全部出發班次。";
+
 /* Title for the departure filter selection alert */
 "settings_controller.arrival_filter.selector_title" = "顯示班次";
 

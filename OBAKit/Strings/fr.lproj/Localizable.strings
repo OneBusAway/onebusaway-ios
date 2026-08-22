@@ -1017,6 +1017,12 @@
 /* Settings section title for controlling which arrivals/departures are shown */
 "settings_controller.arrival_display_section.title" = "Affichage des arrivées et départs";
 
+/* Settings > Arrival Display > Toggle that shows the Arriving at XX:XX via route banner when opening a stop from a trip */
+"settings_controller.arrival_display_section.transfer_banner" = "Afficher la bannière d’arrivée de correspondance";
+
+/* Settings > Arrival Display > Footer for the Show transfer arrival banner switch only, not the Show Departures filter */
+"settings_controller.arrival_display_section.transfer_banner.footer" = "Afficher la bannière d’arrivée de correspondance : activée, l’ouverture d’un arrêt depuis un trajet affiche les horaires relatifs à votre arrivée. Désactivez ce commutateur pour l’heure réelle et tous les départs.";
+
 /* Title for the departure filter selection alert */
 "settings_controller.arrival_filter.selector_title" = "Afficher les départs";
 

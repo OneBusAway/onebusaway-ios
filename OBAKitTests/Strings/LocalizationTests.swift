@@ -132,6 +132,25 @@ final class LocalizationTests {
         }
     }
 
+    /// The footer names the switch. A locale that leaves the English phrase in
+    /// the footer while translating the title makes the two unrecognizable as
+    /// the same control.
+    @Test func `Transfer banner footer names the switch title in every locale`() {
+        let bundle = Bundle(for: DonationCell.self)
+        let titleKey = "settings_controller.arrival_display_section.transfer_banner"
+        let footerKey = "settings_controller.arrival_display_section.transfer_banner.footer"
+
+        for localization in bundle.localizations where localization != "Base" {
+            guard let table = strings(in: bundle, localization: localization),
+                  let title = table[titleKey],
+                  let footer = table[footerKey] else {
+                Issue.record("\(localization): missing transfer banner strings")
+                continue
+            }
+            #expect(footer.hasPrefix(title), "\(localization): footer must start with the switch title \"\(title)\"")
+        }
+    }
+
     /// The plural keys exist in *both* `Localizable.strings` (as the `value:` fallback) and
     /// `Localizable.stringsdict`. If the stringsdict resource ever stops being bundled, lookup
     /// silently falls back to the bare `%d` form and English renders "1 stops". Assert the
