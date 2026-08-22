@@ -11,8 +11,9 @@ the live stop.
 
 ## Setting
 
-Settings → Arrival Display → **Show transfer arrival banner**. Default **on**,
-so existing riders keep the current trip-to-stop flow.
+Settings → Arrival & Departure Display → **Show transfer arrival banner**.
+Default **on**, so existing riders keep the current trip-to-stop flow. The
+footer in every locale starts with that switch title verbatim.
 
 When the switch is off, `UserDataStore.displayedTransferContext(_:)` (a Swift
 protocol extension — `TransferContext` cannot appear on the `@objc` protocol)

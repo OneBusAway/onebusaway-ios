@@ -1021,7 +1021,7 @@
 "settings_controller.arrival_display_section.transfer_banner" = "Показывать баннер прибытия при пересадке";
 
 /* Settings > Arrival Display > Footer for the Show transfer arrival banner switch only, not the Show Departures filter */
-"settings_controller.arrival_display_section.transfer_banner.footer" = "Баннер прибытия пересадки: если включён, при открытии остановки с рейса время относительно вашего прибытия. Выключите этот переключатель, чтобы видеть обычные часы и все отправления.";
+"settings_controller.arrival_display_section.transfer_banner.footer" = "Показывать баннер прибытия при пересадке: если включён, при открытии остановки с рейса время относительно вашего прибытия. Выключите этот переключатель, чтобы видеть обычные часы и все отправления.";
 
 /* Title for the departure filter selection alert */
 "settings_controller.arrival_filter.selector_title" = "Показывать отправления";

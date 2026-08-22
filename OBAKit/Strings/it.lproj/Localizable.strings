@@ -1021,7 +1021,7 @@
 "settings_controller.arrival_display_section.transfer_banner" = "Mostra il banner di arrivo della coincidenza";
 
 /* Settings > Arrival Display > Footer for the Show transfer arrival banner switch only, not the Show Departures filter */
-"settings_controller.arrival_display_section.transfer_banner.footer" = "Mostra banner arrivo trasferimento: se attivo, aprendo una fermata da una corsa gli orari sono relativi al tuo arrivo. Disattiva quell’interruttore per l’orologio e tutte le partenze.";
+"settings_controller.arrival_display_section.transfer_banner.footer" = "Mostra il banner di arrivo della coincidenza: se attivo, aprendo una fermata da una corsa gli orari sono relativi al tuo arrivo. Disattiva quell’interruttore per l’orologio e tutte le partenze.";
 
 /* Title for the departure filter selection alert */
 "settings_controller.arrival_filter.selector_title" = "Mostra partenze";

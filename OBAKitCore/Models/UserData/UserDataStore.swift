@@ -43,7 +43,7 @@ public protocol UserDataStore: NSObjectProtocol {
 
     /// Whether opening a stop from a trip applies transfer-relative times
     /// and the "Arriving at XX:XX via ###" banner. Default `true` so existing
-    /// riders keep current behavior; Settings > Arrival Display can turn it off.
+    /// riders keep current behavior; Settings > Arrival & Departure Display can turn it off.
     var showTransferArrivalBanner: Bool { get set }
 
     // MARK: - Bookmark Groups

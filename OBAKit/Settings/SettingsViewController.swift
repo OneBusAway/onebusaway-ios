@@ -210,7 +210,7 @@ class SettingsViewController: FormViewController {
             $0.title = OBALoc(
                 "settings_controller.arrival_display_section.transfer_banner",
                 value: "Show transfer arrival banner",
-                comment: "Settings > Arrival Display > Toggle that shows the Arriving at XX:XX via route banner when opening a stop from a trip"
+                comment: "Settings > Arrival & Departure Display > Toggle that shows the Arriving at XX:XX via route banner when opening a stop from a trip"
             )
         }
 

@@ -96,7 +96,7 @@ public class StopViewController: UIViewController,
         set { viewModel.transferContext = newValue }
     }
 
-    /// Honors Settings > Arrival Display > transfer banner. When the rider
+    /// Honors Settings > Arrival & Departure Display > transfer banner. When the rider
     /// turns that off, the stop page ignores the trip-sourced transfer context
     /// so times are wall-clock and the full list is shown (#1277).
     private var displayedTransferContext: TransferContext? {
