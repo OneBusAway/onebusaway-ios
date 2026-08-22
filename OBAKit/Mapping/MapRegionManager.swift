@@ -649,70 +649,46 @@ public class MapRegionManager: NSObject,
 
         let existingAnnotations = mapView.annotations
         let existingStopIDs = Set(existingAnnotations.compactMap { ($0 as? Stop)?.id })
-        var affectedStopIDs: Set<StopID> = []
-
-        // Remove Stop annotations that now have a corresponding Bookmark
-        let stopAnnotationsToRemove = existingAnnotations.compactMap { annotation -> MKAnnotation? in
-            guard
-                let stop = annotation as? Stop,
-                bookmarksHash[stop.id] != nil
-            else {
-                return nil
-            }
-
-            affectedStopIDs.insert(stop.id)
-            return stop
+        let existingBookmarks = existingAnnotations.compactMap { annotation -> StopAnnotationSync.BookmarkRef? in
+            guard let bookmark = annotation as? Bookmark else { return nil }
+            return StopAnnotationSync.BookmarkRef(id: bookmark.id, stopID: bookmark.stopID)
         }
-
-        // Remove Bookmark annotations that are stale:
-        //   - The bookmark's stop no longer has ANY bookmark (deleted), OR
-        //   - The bookmark on the map is a different object than the current one (replaced)
-        let bookmarkAnnotationsToRemove = existingAnnotations.compactMap { annotation -> MKAnnotation? in
-            guard let bookmark = annotation as? Bookmark else {
-                return nil
-            }
-
-            guard let currentBookmark = bookmarksHash[bookmark.stopID] else {
-                // No bookmark exists for this stop anymore, remove the stale annotation
-                affectedStopIDs.insert(bookmark.stopID)
-                return bookmark
-            }
-
-            // If a different bookmark now represents this stop, remove the old one
-            if currentBookmark.id != bookmark.id {
-                affectedStopIDs.insert(bookmark.stopID)
-                return bookmark
-            }
-
+        let selectedStopIDs = Set(existingAnnotations.compactMap { annotation -> StopID? in
+            guard mapView.selectedAnnotations.contains(where: { $0 === annotation }) else { return nil }
+            if let stop = annotation as? Stop { return stop.id }
+            if let bookmark = annotation as? Bookmark { return bookmark.stopID }
             return nil
-        }
+        })
 
-        let allAnnotationsToRemove = stopAnnotationsToRemove + bookmarkAnnotationsToRemove
-        for annotation in allAnnotationsToRemove {
+        let changes = StopAnnotationSync.changes(
+            existingStopIDs: existingStopIDs,
+            existingBookmarks: existingBookmarks,
+            incomingStopIDs: Set(stops.map(\.id)),
+            bookmarksByStopID: Dictionary(uniqueKeysWithValues: bookmarksHash.map { ($0.key, $0.value.id) }),
+            selectedStopIDs: selectedStopIDs,
+            isStopsLayerEnabled: isStopsLayerEnabled
+        )
+
+        let stopsToRemove = existingAnnotations.compactMap { $0 as? Stop }
+            .filter { changes.stopIDsToRemove.contains($0.id) }
+        let bookmarksToRemove = existingAnnotations.compactMap { $0 as? Bookmark }
+            .filter { changes.bookmarkIDsToRemove.contains($0.id) }
+        let annotationsToRemove: [MKAnnotation] = stopsToRemove + bookmarksToRemove
+
+        for annotation in annotationsToRemove {
             guard mapView.selectedAnnotations.contains(where: { $0 === annotation }) else { continue }
             mapView.deselectAnnotation(annotation, animated: false)
         }
-        mapView.removeAnnotations(allAnnotationsToRemove)
+        mapView.removeAnnotations(annotationsToRemove)
 
-        // Add new Bookmark annotations that aren't already on the map
-        // Check by bookmark ID (not just stopID) to correctly add replacements
-        let existingBookmarkIDs = Set(mapView.annotations.compactMap { ($0 as? Bookmark)?.id })
-        let bookmarksToAdd = bookmarksHash.values.filter {
-            !existingBookmarkIDs.contains($0.id)
-        }
-        mapView.addAnnotations(Array(bookmarksToAdd))
+        mapView.addAnnotations(bookmarksHash.values.filter { changes.bookmarkIDsToAdd.contains($0.id) })
+        mapView.addAnnotations(stops.filter { changes.stopIDsToAdd.contains($0.id) })
 
-        // Re-add Stop annotations for stops that no longer have bookmarks.
-        // With the stops layer toggled off, nothing is added — bookmarks are
-        // user content and stay visible regardless.
-        let stopsToAdd = isStopsLayerEnabled ? stops.filter {
-            !bookmarksHash.keys.contains($0.id) &&
-            !existingStopIDs.contains($0.id)
-        } : []
-        mapView.addAnnotations(stopsToAdd)
-
-        // Removing a sibling Stop for a bookmarked stopID shouldn't refresh a
-        // selected Bookmark — rebinding its view dismisses an open callout.
+        // A bookmark↔stop identity change still needs the surviving view rebound.
+        // Skip selected bookmarks: rebinding dismisses an open callout (#1266).
+        var affectedStopIDs = changes.stopIDsToRemove.union(
+            Set(bookmarksToRemove.map(\.stopID))
+        )
         let selectedBookmarkStopIDs = Set(mapView.selectedAnnotations.compactMap { ($0 as? Bookmark)?.stopID })
         affectedStopIDs.subtract(selectedBookmarkStopIDs)
 
@@ -741,9 +717,11 @@ public class MapRegionManager: NSObject,
                 continue
             }
 
-            view.prepareForReuse()
+            // `prepareForReuse` is for views leaving the map. Calling it on a
+            // live pin clears the icon and is what the rider sees as a reset.
             view.annotation = annotation
             view.delegate = self
+            view.applyPresentation()
             mapViewDelegate?.mapRegionManager(self, customize: view)
         }
     }
@@ -1166,6 +1144,7 @@ public class MapRegionManager: NSObject,
 
         if let stopAnnotation = annotationView as? StopAnnotationView {
             stopAnnotation.delegate = self
+            stopAnnotation.applyPresentation()
             mapViewDelegate?.mapRegionManager(self, customize: stopAnnotation)
         }
 
