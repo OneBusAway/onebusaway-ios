@@ -498,14 +498,14 @@ final class MapRegionManagerTests: OBATestCase {
 
     /// The under-pin label height gate (routes served / bookmark name), shared
     /// by the UIKit `shouldHideExtraStopAnnotationData` and the SwiftUI
-    /// `MapPanelRootView` — labels show only at/below the 7,000-point threshold.
+    /// `MapPanelRootView` — labels show only at/below the 5,000-point threshold.
     @Test func `Should show extra stop data threshold behavior`() {
         // Zoomed in close → show labels.
         #expect(MapRegionManager.shouldShowExtraStopData(forVisibleMapRectHeight: 1_000) == true)
         // At the threshold → still show.
-        #expect(MapRegionManager.shouldShowExtraStopData(forVisibleMapRectHeight: 7_000) == true)
+        #expect(MapRegionManager.shouldShowExtraStopData(forVisibleMapRectHeight: 5_000) == true)
         // Zoomed out past it → hide.
-        #expect(MapRegionManager.shouldShowExtraStopData(forVisibleMapRectHeight: 7_001) == false)
+        #expect(MapRegionManager.shouldShowExtraStopData(forVisibleMapRectHeight: 5_001) == false)
     }
 
     // MARK: - Bookmark selection preservation

@@ -161,4 +161,33 @@ final class FormattersTests: OBATestCase {
 
         #expect(formatters.deviationLabel(for: arrivalDeparture) == Strings.scheduledNotRealTime)
     }
+
+    // MARK: - Map route labels (#132)
+
+    @Test func `Formatted map routes within the limit lists every route`() throws {
+        let routes = try makeRoutes(shortNames: ["10", "20", "30"])
+        let label = try #require(Formatters.formattedMapRoutes(routes, limit: 3))
+        #expect(label == "10, 20, 30")
+        #expect(!label.contains("..."))
+        #expect(!label.hasPrefix("Routes:"))
+    }
+
+    @Test func `Formatted map routes over the limit appends ellipsis`() throws {
+        let routes = try makeRoutes(shortNames: ["10", "20", "30", "40", "62"])
+        let label = try #require(Formatters.formattedMapRoutes(routes, limit: 3))
+        #expect(label == "10, 20, 30...")
+        #expect(!label.contains("more"))
+        #expect(!label.hasPrefix("Routes:"))
+    }
+
+    private func makeRoutes(shortNames: [String]) throws -> [Route] {
+        try shortNames.enumerated().map { index, shortName in
+            try Fixtures.dictionaryToModel(type: Route.self, dictionary: [
+                "agencyId": "test_agency",
+                "id": "route_\(index)",
+                "shortName": shortName,
+                "type": 3
+            ])
+        }
+    }
 }
