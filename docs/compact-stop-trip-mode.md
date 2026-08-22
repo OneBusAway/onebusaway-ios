@@ -11,7 +11,10 @@ When on, the new stop page (departure rows, grouped cards) and the new trip
 page (header card, stop timeline) read tighter spacing from `StopTripSpacing`.
 Accessibility-size stacked layouts use the same table — compact is opt-in, so
 tighter AX stacks are intentional. Tappable trip-stop rows keep a 44pt
-minimum height so the Accessibility setting does not shrink the hit target.
+**hit** target (`stopRowHitSlop`, canceling vertical padding) so compact
+still shrinks the laid-out row at default Dynamic Type. Do not put
+`stopRowMinHeight` on the whole row as `.frame(minHeight:)` — that made
+compact a no-op and floated the divider off the connector.
 
 No arrivals, occupancy, or actions are hidden. This is spacing only.
 

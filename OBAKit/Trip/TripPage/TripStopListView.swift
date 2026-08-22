@@ -91,9 +91,10 @@ private struct TripStopRow: View {
         }
         .padding(.leading, 12)
         .padding(.trailing, 14)
-        .frame(minHeight: StopTripSpacing.stopRowMinHeight)
+        .padding(.vertical, StopTripSpacing.stopRowHitSlop(compact: compactMode))
         .contentShape(Rectangle())
         .onTapGesture(perform: onSelect)
+        .padding(.vertical, -StopTripSpacing.stopRowHitSlop(compact: compactMode))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityLabel)
         .accessibilityAddTraits(.isButton)

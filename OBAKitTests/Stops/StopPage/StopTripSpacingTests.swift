@@ -43,11 +43,22 @@ struct StopTripSpacingTests {
         #expect(StopTripSpacing.cardPadding(true) < StopTripSpacing.cardPadding(false))
     }
 
-    /// Compact padding would otherwise drop a tappable trip-stop row under
-    /// 44pt. Drop this constant and the Accessibility setting shrinks the
-    /// hit target — the thing Aaron blocked #1297 on.
-    @Test func `Tappable trip-stop rows keep a 44pt minimum height`() {
-        #expect(StopTripSpacing.stopRowMinHeight == 44)
-        #expect(StopTripSpacing.stopRowMinHeight > StopTripSpacing.stopRowVertical(true) * 2)
+    /// The 44pt floor is a hit target, not a layout floor. Applying it as
+    /// `.frame(minHeight:)` on the whole `TripStopRow` made compact a no-op
+    /// at default Dynamic Type and grew regular rows, floating the divider
+    /// off the connector. Layout height is text + padding; hit height is
+    /// `max(44, layout)`. Put the minHeight on the outer row and compact
+    /// layout equals regular (both 44).
+    @Test func `Stop-row 44pt floor expands the hit target not the layout`() {
+        let compactLayout = StopTripSpacing.stopRowLayoutHeight(compact: true)
+        let regularLayout = StopTripSpacing.stopRowLayoutHeight(compact: false)
+
+        #expect(compactLayout < StopTripSpacing.stopRowMinHeight)
+        #expect(regularLayout < StopTripSpacing.stopRowMinHeight)
+        #expect(compactLayout < regularLayout)
+
+        #expect(StopTripSpacing.stopRowHitHeight(compact: true) >= StopTripSpacing.stopRowMinHeight)
+        #expect(StopTripSpacing.stopRowHitHeight(compact: false) >= StopTripSpacing.stopRowMinHeight)
+        #expect(StopTripSpacing.stopRowHitSlop(compact: true) > 0)
     }
 }
