@@ -14,9 +14,10 @@ import MapKit
 /// Schedule-time callouts duplicated the trip list and obscured the vehicle.
 /// Pins therefore have `canShowCallout = false`. A rider tap opens the stop
 /// (the same gesture `StopAnnotationView` uses without a callout) and
-/// highlights the matching list row. Programmatic selection on load is skipped
-/// via `TripViewController.skipNextStopTimeHighlight` so opening a trip from a
-/// departure does not immediately push that stop back on top of the trip.
+/// highlights the matching list row. Programmatic selection (first load,
+/// list → map) arms `skipNextStopTimeHighlight` so that `didSelect` does
+/// not push the stop. A 30s refresh must not re-select the origin after
+/// the rider has moved the pin.
 enum TripMapAnnotationPolicy {
     static func apply(to view: MinimalStopAnnotationView) {
         view.canShowCallout = false

@@ -111,33 +111,43 @@ final class TripMapAnnotationPolicyTests: OBATestCase {
         #expect(nav.viewControllers.count == 2)
     }
 
-    /// `$tripDetails` republishes every 30s. Arming skip on every emission left
-    /// the flag stuck (value-equal `TripStopTime` skips `didSelect`). A refresh
-    /// must clear a leaked arm so the next pin tap still opens the stop.
-    ///
-    /// Uses a referenced `ArrivalDeparture` because the post-refresh tap path
-    /// hits `openStop`. Do not load `controller.view`.
+    /// `$tripDetails` republishes every 30s. Re-assigning origin on every
+    /// emission is a value-equal write, so `didSet` must drop a leaked skip
+    /// arm — otherwise the next pin tap is swallowed. Do not load `.view`.
+    /// Does not tap-to-open: `Fixtures.arrivalDeparture` leaves `route` nil.
     @Test @MainActor
-    func `Origin selection arms skip only on first load`() throws {
-        let stopArrivals = try Fixtures.loadRESTAPIPayload(
-            type: StopArrivals.self,
-            fileName: "arrivals-and-departures-for-stop-1_10914.json"
-        )
-        let arrivalDeparture = try #require(stopArrivals.arrivalsAndDepartures.first)
-        let controller = makeController(arrivalDeparture: arrivalDeparture)
-        let nav = UINavigationController(rootViewController: controller)
+    func `Value-equal origin refresh clears a leaked skip arm`() throws {
         let details = try loadTripDetails()
+        let originID = try #require(details.stopTimes.first?.stopID)
+        let arrivalDeparture = try Fixtures.arrivalDeparture(stopID: originID)
+        let controller = makeController(arrivalDeparture: arrivalDeparture)
 
         controller.applyOriginStopSelection(from: details)
         #expect(controller.skipNextStopTimeHighlight)
+        #expect(controller.selectedStopTime?.stopID == originID)
 
         controller.applyOriginStopSelection(from: details)
         #expect(!controller.skipNextStopTimeHighlight)
+        #expect(controller.selectedStopTime?.stopID == originID)
+    }
 
-        let stopTime = try #require(details.stopTimes.first)
-        let annotationView = MinimalStopAnnotationView(annotation: stopTime, reuseIdentifier: "test")
-        controller.mapView(MKMapView(), didSelect: annotationView)
+    /// After the rider deselects (or picks another stop), a 30s refresh must
+    /// not write the origin back. That re-select would fire `didSelect` →
+    /// `openStop`. Setting `selectedStopTime = nil` is the production
+    /// `didDeselect` assignment. Do not load `.view`.
+    @Test @MainActor
+    func `Refresh does not reselect origin after the rider deselects`() throws {
+        let details = try loadTripDetails()
+        let originID = try #require(details.stopTimes.first?.stopID)
+        let arrivalDeparture = try Fixtures.arrivalDeparture(stopID: originID)
+        let controller = makeController(arrivalDeparture: arrivalDeparture)
 
-        #expect(nav.viewControllers.count == 2)
+        controller.applyOriginStopSelection(from: details)
+        #expect(controller.selectedStopTime?.stopID == originID)
+
+        controller.selectedStopTime = nil
+        controller.applyOriginStopSelection(from: details)
+
+        #expect(controller.selectedStopTime == nil)
     }
 }

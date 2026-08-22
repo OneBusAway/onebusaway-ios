@@ -78,8 +78,12 @@ class Fixtures {
         scheduledDeparture: Int = 1_700_000_000,
         predictedDeparture: Int? = nil,
         stopSequence: Int = 5,
+<<<<<<< HEAD
         routeID: String = "route_1",
         tripID: String = "trip_1"
+=======
+        stopID: String = "stop_1"
+>>>>>>> a39cbe3c (Stop a 30s trip refresh from reopening the origin stop.)
     ) throws -> ArrivalDeparture {
         var dictionary: [String: Any] = [
             "arrivalEnabled": true,
@@ -95,7 +99,7 @@ class Fixtures {
             "serviceDate": scheduledArrival,
             "situationIds": [],
             "status": "SCHEDULED",
-            "stopId": "stop_1",
+            "stopId": stopID,
             "stopSequence": stopSequence,
             "tripId": tripID,
             "vehicleId": "vehicle_1"
