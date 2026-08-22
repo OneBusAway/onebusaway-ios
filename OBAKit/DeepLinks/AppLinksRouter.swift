@@ -42,6 +42,9 @@ public class AppLinksRouter: NSObject {
 
     private let deepLinkPathFormat = "/regions/%d/stops/%@/trips"
     private let deepLinkPattern = "/regions/(?<region>.*)/stops/(?<stop>.*)/trips"
+    /// Stop pages are the same path without the `/trips` suffix. Named groups are
+    /// `[^/]+` so a trip URL cannot masquerade as a stop whose ID contains `/trips`.
+    private static let stopPathPattern = "/regions/(?<region>[^/]+)/stops/(?<stop>[^/]+)$"
 
     /// Encodes an `ArrivalDeparture` into an `URL` so that it can be shared as a deep link with others.
     /// - Parameters:
@@ -117,9 +120,64 @@ public class AppLinksRouter: NSObject {
         return deepLink
     }
 
+    // MARK: - Stop user activities
+
+    /// The stop a donated `NSUserActivity` (or a stop webpage URL) should open.
+    struct StopDestination: Equatable {
+        let stopID: StopID
+        let regionID: Int
+    }
+
+    /// Reads the stop out of a Siri/Shortcuts activity.
+    ///
+    /// Shortcuts round-trips `userInfo` through a plist, so `regionID` may arrive
+    /// as `Int`, `NSNumber`, or `String`. When `userInfo` is stripped entirely,
+    /// the donated `webpageURL` (`/regions/{id}/stops/{stopID}`) still names the
+    /// stop. Trip URLs (`.../trips`) are not stops. See #1221.
+    static func stopDestination(userInfo: [AnyHashable: Any]?, webpageURL: URL?) -> StopDestination? {
+        if let userInfo,
+           let stopID = userInfo[UserActivityBuilder.UserInfoKeys.stopID] as? StopID,
+           let regionID = regionIdentifier(from: userInfo[UserActivityBuilder.UserInfoKeys.regionID]) {
+            return StopDestination(stopID: stopID, regionID: regionID)
+        }
+
+        guard let webpageURL else { return nil }
+        return stopDestination(fromWebpageURL: webpageURL)
+    }
+
+    static func stopDestination(fromWebpageURL url: URL) -> StopDestination? {
+        guard
+            let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+            let matches = components.path.caseInsensitiveMatch(
+                pattern: stopPathPattern,
+                namedGroups: ["stop", "region"]
+            ),
+            let regionIDStr = matches["region"],
+            let regionID = Int(regionIDStr),
+            let stopID = matches["stop"],
+            !stopID.isEmpty
+        else {
+            return nil
+        }
+
+        return StopDestination(stopID: stopID, regionID: regionID)
+    }
+
+    /// Plist round-trips turn `Int` into `NSNumber`; some Shortcuts builds
+    /// stringify it. `as? Int` only covers the first two via bridging.
+    private static func regionIdentifier(from value: Any?) -> Int? {
+        if let int = value as? Int { return int }
+        if let number = value as? NSNumber { return number.intValue }
+        if let string = value as? String { return Int(string) }
+        return nil
+    }
+
     // MARK: - UI Routing
 
-    public var showStopHandler: ((Stop) -> Void)?
+    /// Opens a stop by ID. The caller is responsible for stashing the ID when
+    /// the UI or current region is not ready yet — this router does not fetch
+    /// a `Stop` and then drop it on a nil `topViewController`.
+    var showStopDestinationHandler: ((StopDestination) -> Void)?
     public var showArrivalDepartureDeepLink: ((ArrivalDepartureDeepLink) -> Void)?
 
     public func route(userActivity: NSUserActivity) -> Bool {
@@ -147,37 +205,28 @@ public class AppLinksRouter: NSObject {
     }
 
     private func route(url: URL) -> Bool {
-        guard let deepLink = decode(url: url) else {
-            return false
+        if let deepLink = decode(url: url) {
+            showArrivalDepartureDeepLink?(deepLink)
+            return true
         }
 
-        showArrivalDepartureDeepLink?(deepLink)
+        if let destination = Self.stopDestination(fromWebpageURL: url) {
+            showStopDestinationHandler?(destination)
+            return true
+        }
 
-        return true
+        return false
     }
 
     private func routeStop(userActivity: NSUserActivity) -> Bool {
-        guard
-            let userInfo = userActivity.userInfo,
-            let stopID = userInfo[UserActivityBuilder.UserInfoKeys.stopID] as? StopID,
-            let regionID = userInfo[UserActivityBuilder.UserInfoKeys.regionID] as? Int,
-            let apiService = application.apiService,
-            application.currentRegion?.regionIdentifier == regionID
-            else {
-                return false
+        guard let destination = Self.stopDestination(
+            userInfo: userActivity.userInfo,
+            webpageURL: userActivity.webpageURL
+        ) else {
+            return false
         }
 
-        Task(priority: .userInitiated) {
-            do {
-                let stop = try await apiService.getStop(id: stopID)
-                await MainActor.run {
-                    self.showStopHandler?(stop.entry)
-                }
-            } catch {
-                await self.application.displayError(error)
-            }
-        }
-
+        showStopDestinationHandler?(destination)
         return true
     }
 
