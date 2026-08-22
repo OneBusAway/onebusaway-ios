@@ -84,6 +84,10 @@ public class Strings: NSObject {
 
     public static let scheduleTipMessage = OBALoc("schedule_tip.message", value: "Tap here to view the schedule or timetable for your buses and trains.", comment: "The body of the schedule/timetable feature tip")
 
+    public static let mapLayersTipTitle = OBALoc("map_layers_tip.title", value: "New: Bikes and Scooters", comment: "Title for the tip pointing at the map toolbar's basemap button when a region gains bike and scooter rental map layers")
+
+    public static let mapLayersTipMessage = OBALoc("map_layers_tip.message", value: "Tap here to show bikes and scooters on the map.", comment: "The body of the tip pointing at the map toolbar's basemap button, which opens the Map sheet where the rental layers are turned on and off")
+
     public static let refresh = OBALoc("common.refresh", value: "Refresh", comment: "The verb 'refresh', as in 'reload'.")
 
     public static let retry = OBALoc("common.retry", value: "Retry", comment: "The verb 'retry'.")

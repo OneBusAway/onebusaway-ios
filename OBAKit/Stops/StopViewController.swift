@@ -218,15 +218,7 @@ public class StopViewController: UIViewController,
         super.viewDidAppear(animated)
 
         if let schedulesButton {
-            scheduleTipPresenter.showIfNeeded(sourceItem: schedulesButton) { [weak self] vc in
-                guard let self else { return }
-                present(vc, animated: animated)
-            } presentedController: { [weak self] in
-                guard let self else { return nil }
-                return self.presentedViewController
-            } dismiss: { vc in
-                vc.dismiss(animated: animated)
-            }
+            scheduleTipPresenter.showIfNeeded(in: self, sourceItem: schedulesButton, animated: animated)
         }
     }
 

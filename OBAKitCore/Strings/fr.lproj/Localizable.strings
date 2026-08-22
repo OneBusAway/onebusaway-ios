@@ -381,6 +381,12 @@
 /* Short text shown when a departure occurs at the same time as the rider's transfer arrival. */
 "formatters.transfer.on_arrival" = "MAINT.";
 
+/* The body of the tip pointing at the map toolbar's basemap button, which opens the Map sheet where the rental layers are turned on and off */
+"map_layers_tip.message" = "Appuyez ici pour afficher les vélos et trottinettes sur la carte.";
+
+/* Title for the tip pointing at the map toolbar's basemap button when a region gains bike and scooter rental map layers */
+"map_layers_tip.title" = "Nouveau : vélos et trottinettes";
+
 /* Error when a route has no real-time vehicle tracking data. */
 "nearby_trip_matcher.error.no_realtime" = "Aucune donnée de suivi en temps réel n'est disponible pour cette ligne.";
 
