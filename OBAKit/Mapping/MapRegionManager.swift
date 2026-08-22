@@ -372,6 +372,12 @@ public class MapRegionManager: NSObject,
     /// whichever host is driving. The panel must write it: the `MKMapView` this
     /// manager owns is never added to a view hierarchy in panel mode, so its
     /// `visibleMapRect` is not the viewport the rider is actually looking at.
+    ///
+    /// The one place that moves the unhosted map view behind the panel's back is
+    /// `regionsService(_:updatedRegion:)`, which frames the new region on it.
+    /// That does not clobber this value: `regionDidChangeAnimated` does not fire
+    /// for a map view with no window, so the whole-region rect is never
+    /// republished to the layers. `MapLayerViewportForwardingTests` pins that.
     public private(set) var currentVisibleMapRect: MKMapRect = .world
 
     /// Registered toggleable data layers, in Map sheet order.

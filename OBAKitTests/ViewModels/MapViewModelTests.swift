@@ -209,15 +209,31 @@ final class MapViewModelTests: OBATestCase {
         #expect(app.mapRegionManager.userSelectedMapType == MapBaseType.satellite.mkMapType)
     }
 
+    /// The `guard newType != mapType` in `setMapType(_:)` exists to suppress a
+    /// redundant `$mapType` emission — every UIKit sink on it rebuilds the map
+    /// type button and rewrites `mapView.mapType`. Asserting the value is
+    /// unchanged would pass with or without the guard, so this observes the
+    /// publisher instead.
     @Test @MainActor
-    func `Setting the same map type is a no-op`() {
+    func `Setting the same map type publishes nothing`() {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
 
         let viewModel = MapViewModel(application: app)
-        viewModel.setMapType(.standard)
-
         #expect(viewModel.mapType == .standard)
+
+        var emissions: [MapBaseType] = []
+        // `dropFirst()` skips the CurrentValueSubject-style replay of the
+        // value already held, leaving only genuine changes.
+        let cancellable = viewModel.$mapType.dropFirst().sink { emissions.append($0) }
+        defer { cancellable.cancel() }
+
+        viewModel.setMapType(.standard)
+        #expect(emissions.isEmpty)
+
+        // A real change still publishes, so the guard is not swallowing everything.
+        viewModel.setMapType(.satellite)
+        #expect(emissions == [.satellite])
     }
 
     /// An external mutation of `MapRegionManager.userSelectedMapType`

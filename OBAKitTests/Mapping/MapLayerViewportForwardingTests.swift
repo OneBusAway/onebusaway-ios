@@ -55,12 +55,14 @@ private final class RecordingMapLayer: NSObject, MapLayer {
 final class MapLayerViewportForwardingTests: OBATestCase {
 
     private var manager: MapRegionManager!
+    private var application: Application!
 
     override init() async throws {
         try await super.init()
         let queue = OperationQueue()
         let dataLoader = MockDataLoader(testName: name)
-        manager = MapRegionManager(application: buildApplication(queue: queue, dataLoader: dataLoader))
+        application = buildApplication(queue: queue, dataLoader: dataLoader)
+        manager = MapRegionManager(application: application)
     }
 
     private func rect(height: Double) -> MKMapRect {
@@ -110,5 +112,26 @@ final class MapLayerViewportForwardingTests: OBATestCase {
 
         #expect(manager.currentVisibleMapRect.height == 10_000)
         #expect(layer.receivedViewports.first??.height == 10_000)
+    }
+
+    /// `regionsService(_:updatedRegion:)` frames the new region on the `MKMapView`
+    /// this manager owns. In panel mode that map view is never laid out, so if its
+    /// `regionDidChangeAnimated` delegate callback fires it would republish a
+    /// whole-region rect as the viewport — pushing nil to every zoom-gated layer
+    /// and emptying the panel until the rider next pans.
+    @Test func `A region change does not overwrite the panel viewport`() async throws {
+        let layer = RecordingMapLayer(id: "region-change", maxVisibleHeight: 20_000)
+        manager.registerMapLayer(layer)
+        manager.mapLayersViewportDidChange(rect(height: 10_000))
+        layer.receivedViewports.removeAll()
+
+        manager.regionsService(application.regionsService, updatedRegion: Fixtures.customMinneapolisRegion)
+        // The framing call is animated, so the delegate callback — if it fires at
+        // all for a map view with no window — lands after the animation, not on
+        // this turn of the run loop.
+        try await Task.sleep(for: .seconds(1))
+
+        #expect(manager.currentVisibleMapRect.height == 10_000)
+        #expect(!layer.receivedViewports.contains(where: { $0 == nil }))
     }
 }
