@@ -152,6 +152,49 @@ public actor ObacoAPIService: @preconcurrency APIService {
         return try await data(for: request as URLRequest)
     }
 
+    // MARK: - Ghost Bus Reports
+
+    /// Reports a "ghost bus" — a scheduled (possibly real-time-tracked) vehicle
+    /// that never arrived — to the sidecar for the current region.
+    /// - parameter draft: The captured trip context plus the rider's answers.
+    /// - parameter userID: The app's anonymous, persisted user UUID.
+    public nonisolated func postGhostBusReport(_ draft: GhostBusReportDraft, userID: String) async throws -> GhostBusReport {
+        let url = await buildURL(path: String(format: "/api/v2/regions/%d/ghost_bus_reports", regionID))
+        let urlRequest = NSMutableURLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10)
+        urlRequest.httpMethod = "POST"
+
+        var params: [String: Any] = [
+            "user_identifier": userID,
+            "trip_identifier": draft.tripID,
+            "service_date": Int64(draft.serviceDate.timeIntervalSince1970 * 1000),
+            "wait_duration_minutes": draft.waitDurationMinutes
+        ]
+
+        if let routeID = draft.routeID { params["route_identifier"] = routeID }
+        if let stopID = draft.stopID { params["stop_identifier"] = stopID }
+        if let vehicleID = draft.vehicleID { params["vehicle_identifier"] = vehicleID }
+        if let stopSequence = draft.stopSequence { params["stop_sequence"] = stopSequence }
+        if let predicted = draft.predicted { params["predicted"] = predicted ? "1" : "0" }
+        if let scheduled = draft.scheduledArrivalAt {
+            params["scheduled_arrival_at"] = Int64(scheduled.timeIntervalSince1970 * 1000)
+        }
+        if let predictedAt = draft.predictedArrivalAt {
+            params["predicted_arrival_at"] = Int64(predictedAt.timeIntervalSince1970 * 1000)
+        }
+        if let deviation = draft.scheduleDeviationMinutes { params["schedule_deviation_minutes"] = deviation }
+        if let lastUpdated = draft.predictionLastUpdatedAt {
+            params["prediction_last_updated_at"] = Int64(lastUpdated.timeIntervalSince1970 * 1000)
+        }
+        if let comment = draft.comment, !comment.isEmpty { params["comment"] = comment }
+        if let lat = draft.userLatitude { params["user_latitude"] = lat }
+        if let lon = draft.userLongitude { params["user_longitude"] = lon }
+
+        urlRequest.httpBody = NetworkHelpers.dictionary(toHTTPBodyData: params)
+
+        let (data, _) = try await data(for: urlRequest as URLRequest)
+        return try JSONDecoder.obacoServiceDecoder.decode(GhostBusReport.self, from: data)
+    }
+
     // MARK: - APNs Environment
 
     /// Stamps `apns_sandbox=1` onto a token-registering request in debug builds.

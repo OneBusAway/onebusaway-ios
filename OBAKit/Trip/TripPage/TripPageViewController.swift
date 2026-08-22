@@ -243,6 +243,7 @@ final class TripPageViewController: UIHostingController<TripPageView>,
         // A Live Activity reports a countdown to a stop. Without a departure
         // there is no stop and nothing to count down to.
         actions.canStartLiveActivity = departure != nil && ActivityAuthorizationInfo().areActivitiesEnabled
+        actions.canReportGhostBus = application.features.obaco == .running
 
         actions.onBack = { [weak self] in self?.goBack() }
         actions.onSelectStop = { [weak self] stopID in
@@ -253,6 +254,7 @@ final class TripPageViewController: UIHostingController<TripPageView>,
         actions.onSchedule = { [weak self] in self?.showSchedule() }
         actions.onAlarm = { [weak self] in self?.showAlarmPicker() }
         actions.onLiveActivity = { [weak self] in self?.startLiveActivity() }
+        actions.onReportGhostBus = { [weak self] in self?.showGhostBusReport() }
 
         return actions
     }
@@ -274,6 +276,98 @@ final class TripPageViewController: UIHostingController<TripPageView>,
             application: application
         )
         present(scheduleVC, animated: true)
+    }
+
+    /// Building the draft: prefer `ArrivalDeparture` fields (stop-level context) when a departure
+    /// is loaded, falling back to trip-level data from `TripConvertible` otherwise.
+    private func showGhostBusReport() {
+        let convertible = viewModel.tripConvertible
+        let trip = convertible.trip
+
+        var draft: GhostBusReportDraft
+        if let departure {
+            draft = GhostBusReportDraft(tripID: departure.tripID, serviceDate: departure.serviceDate)
+            draft.stopID = departure.stopID
+            draft.routeID = departure.routeID
+            draft.vehicleID = departure.vehicleID
+            draft.stopSequence = departure.stopSequence
+            draft.predicted = departure.predicted
+            draft.scheduledArrivalAt = departure.scheduledDate
+            draft.predictedArrivalAt = departure.predicted ? departure.arrivalDepartureDate : nil
+            draft.scheduleDeviationMinutes = departure.deviationFromScheduleInMinutes
+            draft.predictionLastUpdatedAt = departure.lastUpdated
+        } else {
+            // TripConvertible's initializers guarantee exactly one of arrivalDeparture,
+            // vehicleStatus, or tripDetails is set, so `serviceDate` always has a
+            // non-departure source to resolve from here. Without a departure there is
+            // no stop-level context.
+            draft = GhostBusReportDraft(tripID: trip.id, serviceDate: convertible.serviceDate)
+            draft.routeID = trip.routeID
+            draft.vehicleID = convertible.vehicleID
+        }
+
+        let context = GhostBusReportContext(
+            routeAndHeadsign: [departure?.routeShortName ?? trip.route?.shortName, departure?.tripHeadsign ?? trip.headsign]
+                .compactMap { $0 }
+                .joined(separator: " — "),
+            stopName: departure?.stop.name,
+            scheduledTime: draft.scheduledArrivalAt,
+            vehicleID: draft.vehicleID
+        )
+
+        let shareLocationKey = "GhostBusReport.shareLocation"
+        application.userDefaults.register(defaults: [shareLocationKey: true])
+
+        let host = UIHostingController(rootView: GhostBusReportView(
+            context: context,
+            defaultShareLocation: application.userDefaults.bool(forKey: shareLocationKey),
+            submit: { [weak self] waitDurationMinutes, comment, shareLocation in
+                // `submit` is `async throws`, and `GhostBusReportView.performSubmit` reads a
+                // plain return as success and dismisses the sheet. A guard failure has to
+                // throw, not return, or the rider is told their report went out when it
+                // never did. (Today `obacoService` is never nil once set — a region switch
+                // replaces it or leaves the old one — so this guard is defense against
+                // `self` deallocating and against that invariant changing, not a live path.)
+                guard let self, let obacoService = self.application.obacoService else {
+                    throw GhostBusReportSubmissionError.serviceUnavailable
+                }
+                self.application.userDefaults.set(shareLocation, forKey: shareLocationKey)
+
+                var submitted = draft
+                submitted.waitDurationMinutes = waitDurationMinutes
+                submitted.comment = comment
+                if shareLocation, let location = self.application.locationService.currentLocation {
+                    submitted.userLatitude = location.coordinate.latitude
+                    submitted.userLongitude = location.coordinate.longitude
+                }
+
+                _ = try await obacoService.postGhostBusReport(submitted, userID: self.application.userUUID)
+            },
+            onDismiss: { [weak self] in self?.presentedViewController?.dismiss(animated: true) }
+        ))
+
+        if let sheet = host.sheetPresentationController {
+            sheet.detents = [.medium(), .large()]
+            sheet.prefersGrabberVisible = true
+        }
+        present(host, animated: true)
+    }
+
+    /// Why a ghost bus report couldn't be submitted before ever reaching the network.
+    /// Surfaced through `GhostBusReportView`'s error alert, same as a network failure —
+    /// see the `submit` closure in `showGhostBusReport()`.
+    enum GhostBusReportSubmissionError: LocalizedError {
+        /// The submit closure couldn't reach an Obaco service — the presenting
+        /// controller deallocated, or `obacoService` was unexpectedly absent.
+        case serviceUnavailable
+
+        var errorDescription: String? {
+            OBALoc(
+                "trip_page.ghost_bus_report_unavailable",
+                value: "This report couldn't be submitted because the reporting service isn't available right now. Please try again later.",
+                comment: "Error shown when a ghost bus report can't be submitted because the region's Obaco service is unreachable."
+            )
+        }
     }
 
     private func showBookmarkEditor() {
