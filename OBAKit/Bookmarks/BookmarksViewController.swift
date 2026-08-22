@@ -71,6 +71,7 @@ class BookmarksViewController: UIHostingController<BookmarksRootView>,
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         viewModel.start()
+        consumePendingLiveActivityShortcut()
 
         application.notificationCenter.addObserver(self, selector: #selector(applicationEnteredBackground), name: UIApplication.didEnterBackgroundNotification, object: nil)
         application.notificationCenter.addObserver(self, selector: #selector(applicationWillEnterForeground), name: UIApplication.willEnterForegroundNotification, object: nil)
@@ -196,6 +197,39 @@ class BookmarksViewController: UIHostingController<BookmarksRootView>,
 
     // MARK: - Live Activity Management
 
+    /// Starts a Live Activity queued by the Track Bookmark Shortcut (#1222).
+    /// Waits until arrivals for that stop have loaded so we reuse the Track
+    /// path instead of hitting its empty-data error. Peek until arrivals are
+    /// in; clear only when starting or when the request cannot succeed.
+    func consumePendingLiveActivityShortcut() {
+        guard let id = LiveActivityShortcutRequest.peek(userDefaults: application.userDefaults) else { return }
+        guard let bookmark = application.userDataStore.findBookmark(id: id) else {
+            LiveActivityShortcutRequest.clear(application.userDefaults)
+            return
+        }
+
+        let currentRegionID = application.currentRegion?.regionIdentifier
+        if bookmark.regionIdentifier != currentRegionID {
+            Logger.warn("Track Bookmark Shortcut: bookmark \(id) is region \(String(describing: bookmark.regionIdentifier)); current region is \(String(describing: currentRegionID)). Dropping the queued request.")
+            LiveActivityShortcutRequest.clear(application.userDefaults)
+            return
+        }
+
+        guard ActivityAuthorizationInfo().areActivitiesEnabled else {
+            Logger.warn("Track Bookmark Shortcut: Live Activities are disabled. Dropping the queued request \(id). Enable Live Activities for this app in iOS Settings to use Track Bookmark.")
+            LiveActivityShortcutRequest.clear(application.userDefaults)
+            return
+        }
+
+        guard viewModel.hasFetchedArrivals(for: bookmark) else { return }
+
+        LiveActivityShortcutRequest.clear(application.userDefaults)
+        let arrivals = viewModel.arrivalDepartures(for: bookmark)
+        if bookmarkActions.startLiveActivity(for: bookmark, arrivalDepartures: arrivals) == .failed {
+            showLiveActivityErrorAlert()
+        }
+    }
+
     func updateRunningLiveActivities() {
         let activities = Activity<TripAttributes>.activities
         for activity in activities {
@@ -258,6 +292,7 @@ class BookmarksViewController: UIHostingController<BookmarksRootView>,
 
     @objc private func applicationWillEnterForeground() {
         viewModel.start()
+        consumePendingLiveActivityShortcut()
     }
 
     // MARK: - Bookmark Groups
@@ -301,6 +336,7 @@ private extension BookmarksViewController {
         viewModel.didUpdate
             .sink { [weak self] _ in
                 self?.updateRunningLiveActivities()
+                self?.consumePendingLiveActivityShortcut()
             }
             .store(in: &cancellables)
 

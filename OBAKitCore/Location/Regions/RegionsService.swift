@@ -319,7 +319,9 @@ public class RegionsService: NSObject, LocationServiceDelegate {
 
     public static let alwaysRefreshRegionsOnLaunchUserDefaultsKey = "OBAAlwaysRefreshRegionsOnLaunchUserDefaultsKey"
     static let automaticallySelectRegionUserDefaultsKey = "OBAAutomaticallySelectRegionUserDefaultsKey"
-    static let currentRegionIdentifierUserDefaultsKey = "OBACurrentRegionIdentifierUserDefaultsKey"
+    /// Readable off the main actor: App Intent entity queries are `nonisolated`
+    /// and must look up the same key the service writes.
+    public nonisolated static let currentRegionIdentifierUserDefaultsKey = "OBACurrentRegionIdentifierUserDefaultsKey"
     static let regionsUpdatedAtUserDefaultsKey = "OBARegionsUpdatedAtUserDefaultsKey"
 
     // Legacy keys — kept only for the one-time migration read; not written after migration.
