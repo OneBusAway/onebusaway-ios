@@ -171,6 +171,7 @@ public class Application: CoreApplication, PushServiceDelegate {
         super.init(config: config)
 
         configureAppearanceProxies()
+        observeShortcutLifecycle()
     }
 
     private func configureTipKit() {
@@ -478,6 +479,7 @@ public class Application: CoreApplication, PushServiceDelegate {
         reportAnalyticsUserProperties()
 
         configureTipKit()
+        OBAAppShortcuts.updateAppShortcutParameters()
 
         if userDataStore.walkingSpeedSource == .healthKit {
             Task { await walkingSpeedManager.refreshFromHealthKitIfPossible() }
@@ -604,6 +606,31 @@ public class Application: CoreApplication, PushServiceDelegate {
         guard !isOnboardingRoot else { return }
         guard LiveActivityShortcutRequest.peek(userDefaults: userDefaults) != nil else { return }
         viewRouter.rootNavigateTo(page: .bookmarks)
+    }
+
+    /// `openAppWhenRun` activates the app before `perform()` stores, so
+    /// `applicationDidBecomeActive` / `rootUserInterfaceDidLoad` peek an empty
+    /// queue. Observe the store notification (warm launch) and bookmark
+    /// changes (Shortcut parameter list).
+    private func observeShortcutLifecycle() {
+        notificationCenter.addObserver(
+            forName: .liveActivityShortcutRequestDidStore,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self else { return }
+            MainActor.assumeIsolated {
+                self.revealBookmarksTabIfLiveActivityShortcutPending()
+            }
+        }
+
+        notificationCenter.addObserver(
+            forName: .bookmarksDidChange,
+            object: nil,
+            queue: .main
+        ) { _ in
+            OBAAppShortcuts.updateAppShortcutParameters()
+        }
     }
 
     @objc public func applicationWillResignActive(_ application: UIApplication) {

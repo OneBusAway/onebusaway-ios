@@ -83,4 +83,14 @@ final class BookmarkIntentMappingTests: OBATestCase {
         )
         #expect(none.isEmpty)
     }
+
+    /// The entity query is `nonisolated`. Duplicating the region key as a
+    /// string drifted from `RegionsService`. Reading the service's own
+    /// `nonisolated` constant is the contract.
+    @Test func `Entity query reads the RegionsService current-region key`() {
+        #expect(
+            BookmarkIntentMapping.regionIdentifierUserDefaultsKey
+                == RegionsService.currentRegionIdentifierUserDefaultsKey
+        )
+    }
 }

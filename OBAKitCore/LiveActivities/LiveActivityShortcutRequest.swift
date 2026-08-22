@@ -9,6 +9,14 @@
 
 import Foundation
 
+public extension Notification.Name {
+    /// Posted after `store` writes a still-valid request. `openAppWhenRun`
+    /// brings the app forward *before* `perform()`, so lifecycle hooks have
+    /// already peeked an empty queue. The app observes this to select
+    /// Bookmarks after the write.
+    static let liveActivityShortcutRequestDidStore = Notification.Name("LiveActivityShortcutRequest.didStore")
+}
+
 /// Queues a bookmark Live Activity request from an App Intent so the main app
 /// can start it after `openAppWhenRun` brings the process up. ActivityKit
 /// `request` lives on the in-app start path (`BookmarksViewController`); the
@@ -19,7 +27,7 @@ public enum LiveActivityShortcutRequest {
     /// not observed via `@AppStorage`.
     public static let userDefaultsKey = "LiveActivityShortcut.pendingBookmarkID"
 
-    /// When the UUID was stored. Peek/take drop the request after `expiration`.
+    /// When the UUID was stored. Peek drops the request after `expiration`.
     public static let storedAtKey = "LiveActivityShortcut.pendingBookmarkStoredAt"
 
     /// How long a queued request may hijack the Bookmarks tab. Short enough
@@ -30,6 +38,7 @@ public enum LiveActivityShortcutRequest {
     public static func store(_ bookmarkID: UUID, userDefaults: UserDefaults, now: Date = Date()) {
         userDefaults.set(bookmarkID.uuidString, forKey: userDefaultsKey)
         userDefaults.set(now.timeIntervalSince1970, forKey: storedAtKey)
+        NotificationCenter.default.post(name: .liveActivityShortcutRequestDidStore, object: nil)
     }
 
     /// The pending bookmark id, if any and not expired. Does not clear a
@@ -47,14 +56,6 @@ public enum LiveActivityShortcutRequest {
             clear(userDefaults)
             return nil
         }
-        return id
-    }
-
-    /// Returns the pending bookmark id and clears it. `nil` if nothing was stored,
-    /// the stored value is not a UUID, or the request has expired.
-    public static func take(userDefaults: UserDefaults, now: Date = Date()) -> UUID? {
-        let id = peek(userDefaults: userDefaults, now: now)
-        clear(userDefaults)
         return id
     }
 

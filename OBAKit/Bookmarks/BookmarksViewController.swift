@@ -210,11 +210,13 @@ class BookmarksViewController: UIHostingController<BookmarksRootView>,
 
         let currentRegionID = application.currentRegion?.regionIdentifier
         if bookmark.regionIdentifier != currentRegionID {
+            Logger.warn("Track Bookmark Shortcut: bookmark \(id) is region \(String(describing: bookmark.regionIdentifier)); current region is \(String(describing: currentRegionID)). Dropping the queued request.")
             LiveActivityShortcutRequest.clear(application.userDefaults)
             return
         }
 
         guard ActivityAuthorizationInfo().areActivitiesEnabled else {
+            Logger.warn("Track Bookmark Shortcut: Live Activities are disabled. Dropping the queued request \(id). Enable Live Activities for this app in iOS Settings to use Track Bookmark.")
             LiveActivityShortcutRequest.clear(application.userDefaults)
             return
         }

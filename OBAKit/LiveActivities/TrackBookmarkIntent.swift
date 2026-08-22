@@ -64,15 +64,13 @@ nonisolated struct BookmarkEntityQuery: EntityQuery {
         guard let suite = Bundle.main.appGroup,
               let defaults = UserDefaults(suiteName: suite) else { return [] }
         let store = UserDefaultsStore(userDefaults: defaults)
-        let regionID = defaults.object(forKey: BookmarkIntentMapping.currentRegionIdentifierKey) as? Int
+        let regionID = defaults.object(forKey: BookmarkIntentMapping.regionIdentifierUserDefaultsKey) as? Int
         return BookmarkIntentMapping.entities(from: store.bookmarks, regionIdentifier: regionID)
     }
 }
 
 nonisolated enum BookmarkIntentMapping {
-    /// Same string as `RegionsService.currentRegionIdentifierUserDefaultsKey`.
-    /// Duplicated because `RegionsService` is `@MainActor` and this query is not.
-    static let currentRegionIdentifierKey = "OBACurrentRegionIdentifierUserDefaultsKey"
+    static let regionIdentifierUserDefaultsKey = RegionsService.currentRegionIdentifierUserDefaultsKey
 
     static func entities(from bookmarks: [Bookmark], regionIdentifier: Int?) -> [BookmarkEntity] {
         bookmarks.filter { $0.isTripBookmark && $0.regionIdentifier == regionIdentifier }.map {
@@ -91,6 +89,7 @@ nonisolated struct OBAAppShortcuts: AppShortcutsProvider {
         AppShortcut(
             intent: TrackBookmarkIntent(),
             phrases: [
+                "Track \(\.$bookmark) with \(.applicationName)",
                 "Track \(.applicationName) bookmark",
                 "Start \(.applicationName) Live Activity"
             ],
