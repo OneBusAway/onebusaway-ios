@@ -378,28 +378,26 @@ class TripViewController: UIViewController,
     public func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
         let renderer = MKPolylineRenderer(polyline: overlay as! MKPolyline) // swiftlint:disable:this force_cast
 
-        // Tries to use an agency provided color, if available.
-        var strokeColor = tripConvertible.arrivalDeparture?.route.color ?? ThemeColors.shared.brand
-
-        // If the user has High Contrast or Reduce Transparency turned ON in iOS,
-        // don't apply the transparency to the stroke color.
+        let isSpent = (overlay as? TripShapeOverlay)?.isSpent ?? false
+        let routeColor = tripConvertible.arrivalDeparture?.route.color ?? ThemeColors.shared.brand
         let needsIncreasedVisibility =
             traitCollection.userInterfaceStyle == .dark ||
             traitCollection.accessibilityContrast == .high ||
             UIAccessibility.isReduceTransparencyEnabled
 
-        if !needsIncreasedVisibility {
-            strokeColor = strokeColor.withAlphaComponent(0.75)
-        }
-        renderer.strokeColor = strokeColor
-
-        renderer.lineWidth = 6.0
+        let appearance = TripRouteOverlayAppearance.make(
+            isSpent: isSpent,
+            routeColor: routeColor,
+            needsIncreasedVisibility: needsIncreasedVisibility
+        )
+        renderer.strokeColor = appearance.strokeColor
+        renderer.lineWidth = appearance.lineWidth
         renderer.lineCap = .round
 
         return renderer
     }
 
-    private var routeOverlay: MKPolyline?
+    private var routeOverlays: [MKOverlay] = []
     private var userLocationAnnotationView: PulsingAnnotationView?
 
     private var vehicleAnnotationView: PulsingAnnotationView?
@@ -509,16 +507,27 @@ private extension TripViewController {
 
     func bindRouteOverlay() {
         viewModel.$routePolylineCoordinates
-            .compactMap { $0 }
-            .sink { [weak self] coordinates in
-                guard let self else { return }
-                if let existing = routeOverlay { mapView.removeOverlay(existing) }
-                let polyline = MKPolyline(coordinates: coordinates, count: coordinates.count)
-                routeOverlay = polyline
-                mapView.addOverlay(polyline)
+            .combineLatest(viewModel.$tripDetails)
+            .sink { [weak self] coordinates, details in
+                guard let self, let coordinates, coordinates.count >= 2 else { return }
+
+                let fraction = details?.status.flatMap {
+                    TripShapeSplit.fraction(
+                        distanceAlongTrip: $0.distanceAlongTrip,
+                        totalDistanceAlongTrip: $0.totalDistanceAlongTrip
+                    )
+                }
+
+                mapView.removeOverlays(routeOverlays)
+                let overlays = TripRouteOverlays.make(coordinates: coordinates, fraction: fraction)
+                routeOverlays = overlays
+                mapView.addOverlays(overlays)
+
                 if !mapView.hasBeenTouched {
+                    let fit = overlays.reduce(MKMapRect.null) { $0.union($1.boundingMapRect) }
+                    guard !fit.isNull else { return }
                     mapView.visibleMapRect = mapView.mapRectThatFits(
-                        polyline.boundingMapRect,
+                        fit,
                         edgePadding: UIEdgeInsets(top: 60, left: 20, bottom: 128, right: 20)
                     )
                 }
