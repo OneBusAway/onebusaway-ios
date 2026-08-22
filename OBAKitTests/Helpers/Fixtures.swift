@@ -68,7 +68,8 @@ class Fixtures {
         predictedArrival: Int? = nil,
         scheduledDeparture: Int = 1_700_000_000,
         predictedDeparture: Int? = nil,
-        stopSequence: Int = 5
+        stopSequence: Int = 5,
+        stopID: String = "stop_1"
     ) throws -> ArrivalDeparture {
         var dictionary: [String: Any] = [
             "arrivalEnabled": true,
@@ -84,7 +85,7 @@ class Fixtures {
             "serviceDate": scheduledArrival,
             "situationIds": [],
             "status": "SCHEDULED",
-            "stopId": "stop_1",
+            "stopId": stopID,
             "stopSequence": stopSequence,
             "tripId": "trip_1",
             "vehicleId": "vehicle_1"
