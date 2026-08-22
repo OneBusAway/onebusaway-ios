@@ -339,19 +339,8 @@ class TripViewController: UIViewController,
         defer { skipNextStopTimeHighlight = false }
         guard !skipNextStopTimeHighlight else { return }
 
-        func mapViewAnnotationSelectionComplete() {
-            self.tripDetailsController.highlightStopInList(stopTime.stop)
-        }
-
-        if self.mapView.hasBeenTouched {
-            mapViewAnnotationSelectionComplete()
-        } else {
-            if traitCollection.horizontalSizeClass == .regular {
-                floatingPanel.move(to: .full, animated: true, completion: mapViewAnnotationSelectionComplete)
-            } else {
-                floatingPanel.move(to: .half, animated: true, completion: mapViewAnnotationSelectionComplete)
-            }
-        }
+        tripDetailsController.highlightStopInList(stopTime.stop)
+        openStop(stopTime)
     }
 
     public func mapView(_ mapView: MKMapView, didDeselect view: MKAnnotationView) {
@@ -361,9 +350,7 @@ class TripViewController: UIViewController,
         self.selectedStopTime = nil
     }
 
-    public func mapView(_ mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl) {
-        guard let stopTime = view.annotation as? TripStopTime else { return }
-
+    private func openStop(_ stopTime: TripStopTime) {
         var transferContext: TransferContext?
         if let arrivalDeparture = tripConvertible.arrivalDeparture,
            stopTime.stopID != arrivalDeparture.stopID {
@@ -423,17 +410,7 @@ class TripViewController: UIViewController,
         }
         else if let view = annotationView as? MinimalStopAnnotationView, let arrivalDeparture = tripConvertible.arrivalDeparture {
             view.selectedArrivalDeparture = arrivalDeparture
-
-            if let stopTime = annotation as? TripStopTime {
-                view.rightCalloutAccessoryView = UIButton.chevronButton
-
-                let calloutLabel = UILabel.autolayoutNew()
-                calloutLabel.textColor = ThemeColors.shared.secondaryLabel
-                calloutLabel.text = application.formatters.timeFormatter.string(from: stopTime.arrivalDate)
-                view.detailCalloutAccessoryView = calloutLabel
-            }
-
-            view.canShowCallout = true
+            TripMapAnnotationPolicy.apply(to: view)
         }
 
         return annotationView
@@ -471,6 +448,20 @@ class TripViewController: UIViewController,
         }
     }
     private var isFirstStopTimeLoad = true
+
+    /// Auto-selects the rider's origin stop when trip details load. Arms the
+    /// skip flag only on the first load: `tripDetails` republishes every 30s
+    /// with a value-equal `TripStopTime`, so arming on every emission left the
+    /// flag stuck and swallowed the next pin tap.
+    func applyOriginStopSelection(from details: TripDetails) {
+        guard let arrivalDeparture = tripConvertible.arrivalDeparture else { return }
+        if isFirstStopTimeLoad {
+            skipNextStopTimeHighlight = true
+        } else {
+            skipNextStopTimeHighlight = false
+        }
+        selectedStopTime = details.stopTimes.filter { $0.stopID == arrivalDeparture.stopID }.first
+    }
 }
 
 // MARK: - ViewModel Binding
@@ -500,9 +491,7 @@ private extension TripViewController {
                     mapView.showAnnotations(annotationsToShow, animated: true)
                 }
 
-                if let arrivalDeparture = tripConvertible.arrivalDeparture {
-                    selectedStopTime = details.stopTimes.filter { $0.stopID == arrivalDeparture.stopID }.first
-                }
+                applyOriginStopSelection(from: details)
             }
             .store(in: &cancellables)
     }
