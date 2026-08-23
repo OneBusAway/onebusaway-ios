@@ -1017,6 +1017,12 @@
 /* Settings section title for controlling which arrivals/departures are shown */
 "settings_controller.arrival_display_section.title" = "Hiển thị giờ đến và khởi hành";
 
+/* Settings > Arrival Display > Toggle that shows the Arriving at XX:XX via route banner when opening a stop from a trip */
+"settings_controller.arrival_display_section.transfer_banner" = "Hiện banner tới lúc chuyển tuyến";
+
+/* Settings > Arrival Display > Footer for the Show transfer arrival banner switch only, not the Show Departures filter */
+"settings_controller.arrival_display_section.transfer_banner.footer" = "Hiện banner tới lúc chuyển tuyến: khi bật, mở điểm dừng từ chuyến đi sẽ hiện giờ theo lúc bạn tới. Tắt công tắc đó để xem đồng hồ thường và mọi chuyến.";
+
 /* Title for the departure filter selection alert */
 "settings_controller.arrival_filter.selector_title" = "Hiển thị chuyến khởi hành";
 
