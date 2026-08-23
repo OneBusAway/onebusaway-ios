@@ -53,9 +53,8 @@ class TipHostingViewController: UIViewController {
 
 /// Simplifies the process of showing a `TipKit` `Tip` within `UIKit`.
 ///
-/// Call `showIfNeeded()` with a `sourceItem`, which is the view to attach the tip to,
-/// `present`, which simply calls `UIViewController.present()`, and
-/// `dismiss`, which calls `dismiss()` on the presented view controller.
+/// Call `showIfNeeded(in:sourceItem:)` from `viewDidAppear` with the view the tip
+/// should point at, and `stop()` from `viewWillDisappear`.
 class TipPresenter: NSObject, UIPopoverPresentationControllerDelegate {
     private let tip: any Tip
     private var tipObservationTask: Task<Void, Never>?
@@ -71,26 +70,47 @@ class TipPresenter: NSObject, UIPopoverPresentationControllerDelegate {
     func stop() {
         tipObservationTask?.cancel()
         tipObservationTask = nil
+
+        // Take the popover with the screen it belongs to. Merely forgetting it
+        // would strand a visible bubble anchored to a view the rider has left,
+        // and `tipWasDismissedByUser()` would then no-op when it finally closed,
+        // so TipKit would never learn the tip had been shown and dismissed.
+        tipViewController?.dismiss(animated: false)
+        tipViewController = nil
     }
 
-    /// Presents the tip, if its internal conditions are met.
+    /// Presents the tip from `presenter`, if TipKit's conditions are met.
+    ///
+    /// Safe to call repeatedly — the observation is started at most once, and is
+    /// skipped entirely once the tip has been invalidated.
+    ///
     /// - Parameters:
-    ///   - sourceItem: The `UIView`/`UIBarButtonItem`/`UITabBarItem` that will be the presented source of the tip.
+    ///   - presenter: The view controller that presents (and dismisses) the tip popover. Held weakly.
+    ///   - sourceItem: The `UIView`/`UIBarButtonItem`/`UITabBarItem` the tip points at.
     ///   - sourceRect: The frame within the sourceItem. Only needed for `UIView` sources; `UIBarButtonItem` and `UITabBarItem` handle positioning automatically.
-    ///   - present: A handler that is responsible for presenting  the `UIViewController` parameter  via `UIViewController.present()`.
-    ///   - presentedController: A handler that is responsible for returning `UIViewController.presentedViewController`
-    ///   - dismiss: A handler that is responsible for calling `dismiss()` on the `UIViewController` parameter.
+    ///   - animated: Whether the popover animates in and out.
     func showIfNeeded(
+        in presenter: UIViewController,
         sourceItem: (any UIPopoverPresentationControllerSourceItem),
         sourceRect: CGRect? = nil,
-        present: @escaping (UIViewController) -> Void,
-        presentedController: @escaping () -> (UIViewController?),
-        dismiss: @escaping (UIViewController) -> Void
+        animated: Bool = true
     ) {
-        tipObservationTask = tipObservationTask ?? Task { @MainActor in
+        // An invalidated tip can only ever report `false`, so subscribing again
+        // would rebuild a datastore observation on every appearance for the rest
+        // of the session and never present anything.
+        if case .invalidated = tip.status { return }
+
+        guard tipObservationTask == nil else { return }
+
+        tipObservationTask = Task { @MainActor [weak presenter] in
             for await shouldDisplay in tip.shouldDisplayUpdates {
+                guard let presenter else { return }
+
                 if shouldDisplay {
-                    guard tipViewController == nil else { continue }
+                    // Nothing may be presented already: a tip popover that lands
+                    // on top of a stop sheet or another tip either fails outright
+                    // or steals the screen from something the rider asked for.
+                    guard tipViewController == nil, presenter.presentedViewController == nil else { continue }
 
                     let hostingController = TipHostingViewController(tip: tip)
                     hostingController.modalPresentationStyle = .popover
@@ -104,16 +124,17 @@ class TipPresenter: NSObject, UIPopoverPresentationControllerDelegate {
                         popover.delegate = self
                     }
 
-                    present(hostingController)
+                    presenter.present(hostingController, animated: animated)
                     tipViewController = hostingController
                 }
-                else {
-                    let presentedController = presentedController()
-
-                    if let presentedController, presentedController is TipHostingViewController {
-                        dismiss(presentedController)
-                        tipViewController = nil
-                    }
+                else if let tipViewController {
+                    // Only ever dismiss the controller *this* presenter put up.
+                    // Two presenters can share a screen — the map's layer tip and
+                    // the floating panel's trip-planner tip — so acting on
+                    // `presenter.presentedViewController` would let whichever tip
+                    // goes ineligible first tear down the other one's popover.
+                    tipViewController.dismiss(animated: animated)
+                    self.tipViewController = nil
                 }
             }
         }

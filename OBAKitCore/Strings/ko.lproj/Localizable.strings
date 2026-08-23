@@ -381,6 +381,12 @@
 /* Short text shown when a departure occurs at the same time as the rider's transfer arrival. */
 "formatters.transfer.on_arrival" = "지금";
 
+/* The body of the tip pointing at the map toolbar's basemap button, which opens the Map sheet where the rental layers are turned on and off */
+"map_layers_tip.message" = "지도에 자전거와 킥보드를 표시하려면 여기를 누르세요.";
+
+/* Title for the tip pointing at the map toolbar's basemap button when a region gains bike and scooter rental map layers */
+"map_layers_tip.title" = "신규: 자전거 및 킥보드";
+
 /* Error when a route has no real-time vehicle tracking data. */
 "nearby_trip_matcher.error.no_realtime" = "이 노선에는 실시간 차량 추적 데이터가 없습니다.";
 
