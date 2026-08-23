@@ -216,15 +216,7 @@ class MapFloatingPanelController: VisualEffectViewController,
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
 
-        tripPlannerTipPresenter.showIfNeeded(sourceItem: searchBar, sourceRect: searchBar.bounds) { [weak self] vc in
-            guard let self else { return }
-            self.present(vc, animated: animated)
-        } presentedController: { [weak self] in
-            guard let self else { return nil }
-            return self.presentedViewController
-        } dismiss: { vc in
-            vc.dismiss(animated: animated)
-        }
+        tripPlannerTipPresenter.showIfNeeded(in: self, sourceItem: searchBar, sourceRect: searchBar.bounds, animated: animated)
     }
 
     override func viewWillDisappear(_ animated: Bool) {

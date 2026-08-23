@@ -92,7 +92,18 @@ struct DepartureRowView: View {
         .onTapGesture(perform: onTap)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityText)
-        .accessibilityAddTraits(.isButton)
+        // `.updatesFrequently` so a focused row re-speaks its changing countdown,
+        // matching the legacy `StopArrivalView`'s `[.button, .updatesFrequently]`.
+        // VoiceOver re-reads only the focused element, so this isn't chatty.
+        .accessibilityAddTraits([.isButton, .updatesFrequently])
+        // THE contract for every tap-driven row on this page, restated nowhere
+        // else: `.isButton` only changes the spoken trait, and the row's tap lives
+        // on `.onTapGesture`, which assistive tech cannot reach — so without an
+        // explicit default action VoiceOver announces "button" and activating does
+        // nothing. A default `.accessibilityAction` touches only the accessibility
+        // layer, so it avoids the nested-Button gesture conflict called out on
+        // `alarmCircleButton`.
+        .accessibilityAction { onTap() }
         .accessibilityActions {
             if showsAlarmAffordance {
                 Button(hasAlarm ? removeAlarmTitle : Strings.addAlarm) {

@@ -90,7 +90,12 @@ struct GroupedListView: View {
         .onTapGesture { onToggleRoute(group.routeID) }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(groupAccessibilityLabel(group, status: status))
-        .accessibilityAddTraits(.isButton)
+        // `.updatesFrequently` so a focused card re-speaks its changing countdown,
+        // matching the legacy `StopArrivalView` and the flat departure rows.
+        .accessibilityAddTraits([.isButton, .updatesFrequently])
+        // Activation expands the card. See `DepartureRowView` for why a tap-driven
+        // row needs this on top of `.isButton`.
+        .accessibilityAction { onToggleRoute(group.routeID) }
         // Disclosure state: the card header's activation toggles the list of
         // departures beneath it, so announce which way it will go.
         .accessibilityValue(expandedRouteID == group.routeID
@@ -303,7 +308,10 @@ struct GroupedListView: View {
             // as a custom action just like the header's alarm pill.
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(expandedRowAccessibilityLabel(departure, status: status))
-            .accessibilityAddTraits(.isButton)
+            .accessibilityAddTraits([.isButton, .updatesFrequently])
+            // Activation opens the trip. See `DepartureRowView` for why a
+            // tap-driven row needs this on top of `.isButton`.
+            .accessibilityAction { onSelectDeparture(departure) }
             .accessibilityActions {
                 if showsAlarmAffordance(for: departure) {
                     Button(alarmActionName(for: alarmLookup(departure))) {

@@ -21,6 +21,10 @@ import SafariServices
 /// Displays a map, a set of stops rendered as annotation views, and the user's location if authorized.
 ///
 /// `MapViewController` is the average user's primary means of interacting with OneBusAway data.
+// Over the 1000-line body budget, and has been since before this change. Splitting
+// it is worth doing but is not this change's job; without the disable the error
+// fails every local build.
+// swiftlint:disable:next type_body_length
 class MapViewController: UIViewController,
     FloatingPanelControllerDelegate,
     LocationServiceDelegate,
@@ -210,7 +214,7 @@ class MapViewController: UIViewController,
 
         viewModel.start()
         updateVoiceover()
-        showMapLayersNudgeIfNeeded()
+        showMapLayersTipIfNeeded()
         Task { @MainActor [weak viewModel] in await viewModel?.checkForSurveyPrompt() }
     }
 
@@ -222,6 +226,8 @@ class MapViewController: UIViewController,
         // A rider who dismisses a stop sheet and immediately switches tabs shouldn't be
         // chased by an alert from a screen they've left.
         cancelScheduledFeedbackPrompt()
+
+        mapLayersTipPresenter.stop()
     }
 
     // MARK: - Surveys
@@ -730,7 +736,9 @@ class MapViewController: UIViewController,
     /// region — which happens routinely and must not tear the layer down.
     var stopRouteFocusLayerRegionIdentifier: Int?
 
-    // The layer/sheet/nudge machinery lives in MapViewController+MapLayers.swift.
+    let mapLayersTipPresenter = TipPresenter(tip: MapLayersTip())
+
+    // The layer/sheet/tip machinery lives in MapViewController+MapLayers.swift.
 
     // MARK: - Application State
 
@@ -769,12 +777,58 @@ class MapViewController: UIViewController,
     ///   - annotation: The annotation the stop was opened from, if any. Deselected when the
     ///     stop sheet closes so the map doesn't keep a pin highlighted for a dismissed sheet.
     func show(stop: Stop, deselecting annotation: MKAnnotation? = nil) {
-        present(stopController: application.viewRouter.makeStopController(stop: stop, showToolbarOnBottom: true), deselecting: annotation)
+        guard prefersPushedStopPage else {
+            present(stopController: application.viewRouter.makeStopController(stop: stop, showToolbarOnBottom: true), deselecting: annotation)
+            return
+        }
+        prepareMapForPushedStopPage(deselecting: annotation)
+        application.viewRouter.navigateTo(stop: stop, from: self)
     }
 
     /// Displays the specified stop by ID.
     func show(stopID: StopID) {
-        present(stopController: application.viewRouter.makeStopController(stopID: stopID, showToolbarOnBottom: true))
+        guard prefersPushedStopPage else {
+            present(stopController: application.viewRouter.makeStopController(stopID: stopID, showToolbarOnBottom: true))
+            return
+        }
+        prepareMapForPushedStopPage(deselecting: nil)
+        application.viewRouter.navigateTo(stopID: stopID, from: self)
+    }
+
+    /// `true` while VoiceOver is running, where the Stop page opens as a full-screen push
+    /// instead of the map's half-detent sheet.
+    ///
+    /// A partial-height FloatingPanel over a live map is a poor modal for VoiceOver — the map
+    /// behind it stays in the accessibility tree, and the detents, swipe-to-dismiss, and
+    /// collapse-to-`.tip` behaviors are drag gestures VoiceOver can't perform. The pushed
+    /// presentation the router builds is a standard, opaque screen with a nav-bar back button
+    /// and contained focus, and it skips the sheet path's map-focus wiring (route highlight,
+    /// recentering, tab-bar hiding, `stopSheetStopID`) — map-visual bookkeeping that means
+    /// nothing while a pushed screen covers the map, exactly as the legacy push path skips it.
+    ///
+    /// Read at open time only: a sheet already onscreen when VoiceOver is switched on is left
+    /// as-is.
+    private var prefersPushedStopPage: Bool {
+        UIAccessibility.isVoiceOverRunning
+    }
+
+    /// Clears the map of what the sheet path would have replaced, because a full-screen push
+    /// covers it just as thoroughly.
+    ///
+    /// A sheet left open behind the push is not merely stale scenery: `stopSheetStopID` stays
+    /// set, so every other marker is held down as a gray dot and the zoom pill stays hidden for
+    /// the rest of the session, and its route-focus layer and refresh timer keep running behind
+    /// a screen nobody can see. Reachable whenever VoiceOver is switched on with a sheet already
+    /// up — the one case `prefersPushedStopPage` leaves as-is — and the next stop the rider
+    /// opens then pushes over it.
+    ///
+    /// Deselecting for the same reason: leaving the tapped pin selected only strands a highlight
+    /// for the rider to find on the way back.
+    private func prepareMapForPushedStopPage(deselecting annotation: MKAnnotation?) {
+        dismissStopSheetForReplacement()
+
+        guard let annotation else { return }
+        mapRegionManager.mapView.deselectAnnotation(annotation, animated: false)
     }
 
     /// Routes a stop screen to the presentation that suits it: the redesigned Stop page comes

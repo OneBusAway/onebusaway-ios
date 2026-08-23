@@ -96,6 +96,13 @@ public class StopViewController: UIViewController,
         set { viewModel.transferContext = newValue }
     }
 
+    /// Honors Settings > Arrival & Departure Display > transfer banner. When the rider
+    /// turns that off, the stop page ignores the trip-sourced transfer context
+    /// so times are wall-clock and the full list is shown (#1277).
+    private var displayedTransferContext: TransferContext? {
+        application.userDataStore.displayedTransferContext(transferContext)
+    }
+
     var stop: Stop? { viewModel.stop }
     var stopArrivals: StopArrivals? { viewModel.stopArrivals }
     var stopPreferences: StopPreferences { viewModel.stopPreferences }
@@ -218,15 +225,7 @@ public class StopViewController: UIViewController,
         super.viewDidAppear(animated)
 
         if let schedulesButton {
-            scheduleTipPresenter.showIfNeeded(sourceItem: schedulesButton) { [weak self] vc in
-                guard let self else { return }
-                present(vc, animated: animated)
-            } presentedController: { [weak self] in
-                guard let self else { return nil }
-                return self.presentedViewController
-            } dismiss: { vc in
-                vc.dismiss(animated: animated)
-            }
+            scheduleTipPresenter.showIfNeeded(in: self, sourceItem: schedulesButton, animated: animated)
         }
     }
 
@@ -234,6 +233,7 @@ public class StopViewController: UIViewController,
         super.viewWillDisappear(animated)
         enableIdleTimer()
         viewModel.deactivate()
+        scheduleTipPresenter.stop()
     }
 
     // MARK: - Tips
@@ -807,7 +807,7 @@ public class StopViewController: UIViewController,
             arrivalDeparture: arrivalDeparture,
             isAlarmAvailable: alarmAvailable,
             highlightTimeOnDisplay: highlightTimeOnDisplay,
-            transferContext: transferContext,
+            transferContext: displayedTransferContext,
             onSelectAction: onSelectAction,
             alarmAction: addAlarmAction,
             bookmarkAction: bookmarkAction,
@@ -855,7 +855,7 @@ public class StopViewController: UIViewController,
         // Filter departures before transfer arrival time, unless user opted to show all.
         // Only insert the "Show earlier" button when sorting by time (groupRoute == nil)
         // to avoid duplicate item IDs across route groups. See #409.
-        if let transferContext = transferContext, !showAllTransferDepartures {
+        if let transferContext = displayedTransferContext, !showAllTransferDepartures {
             let (visible, hidden) = partitionTransferDepartures(items: items, arrivalTime: transferContext.arrivalTime)
             items = visible
             if !hidden.isEmpty && groupRoute == nil {
@@ -987,7 +987,7 @@ public class StopViewController: UIViewController,
 
     /// Inserts either a transfer arrival banner or the GPS-based walk time row.
     private func addWalkTimeOrTransferBanner(to items: inout [AnyOBAListViewItem]) {
-        if let transferContext = transferContext {
+        if let transferContext = displayedTransferContext {
             let bannerItem = TransferArrivalItem(
                 id: "transfer_arrival_banner",
                 arrivalTime: transferContext.arrivalTime,

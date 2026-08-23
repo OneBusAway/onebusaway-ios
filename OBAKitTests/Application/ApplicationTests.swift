@@ -549,6 +549,100 @@ final class ApplicationTests: OBATestCase {
         #expect(!result)
     }
 
+    /// Donated stop shortcuts launch the app via `continue userActivity`. Before
+    /// the root UI exists, that used to return `false` (no `apiService` / no
+    /// `currentRegion`) and drop the stop. Same stash as the `viewStop` URL-scheme
+    /// cold-launch path.
+    /// See: https://github.com/OneBusAway/onebusaway-ios/issues/1221
+    @Test func `Application continues a stop user activity on cold launch`() async {
+        let app = makeApplicationForUserActivity()
+        guard let builder = app.userActivityBuilder else {
+            Issue.record("Test host is missing NSUserActivityTypes")
+            return
+        }
+
+        let activity = NSUserActivity(activityType: builder.stopActivityType)
+        activity.userInfo = [
+            UserActivityBuilder.UserInfoKeys.stopID: "1_75403",
+            UserActivityBuilder.UserInfoKeys.regionID: 1
+        ]
+
+        let result = await MainActor.run {
+            app.application(UIApplication.shared, continue: activity, restorationHandler: { _ in })
+        }
+        #expect(result)
+        #expect(app.pendingStopID == "1_75403")
+        #expect(app.pendingStopRegionID == 1)
+    }
+
+    /// Shortcuts reconstitutes `userInfo` through a plist, so the donated
+    /// `regionID` may arrive as `NSNumber`. The parser has to accept that
+    /// shape, not only a Swift `Int`.
+    @Test func `Application continues a stop user activity whose region ID is an NSNumber`() async {
+        let app = makeApplicationForUserActivity()
+        guard let builder = app.userActivityBuilder else {
+            Issue.record("Test host is missing NSUserActivityTypes")
+            return
+        }
+
+        let activity = NSUserActivity(activityType: builder.stopActivityType)
+        activity.userInfo = [
+            UserActivityBuilder.UserInfoKeys.stopID: "1_75403",
+            UserActivityBuilder.UserInfoKeys.regionID: NSNumber(value: 1)
+        ]
+
+        let result = await MainActor.run {
+            app.application(UIApplication.shared, continue: activity, restorationHandler: { _ in })
+        }
+        #expect(result)
+        #expect(app.pendingStopID == "1_75403")
+        #expect(app.pendingStopRegionID == 1)
+    }
+
+    /// When Shortcuts strips `userInfo` and leaves only `webpageURL`, the stop
+    /// path (`/regions/{id}/stops/{stopID}`) still has to open that stop. Trip
+    /// URLs keep going through the existing trip decoder.
+    @Test func `Application continues a stop user activity from its webpage URL`() async {
+        let app = makeApplicationForUserActivity()
+        guard let builder = app.userActivityBuilder else {
+            Issue.record("Test host is missing NSUserActivityTypes")
+            return
+        }
+
+        let activity = NSUserActivity(activityType: builder.stopActivityType)
+        activity.webpageURL = URL(string: "https://onebusaway.co/regions/1/stops/1_75403")
+
+        let result = await MainActor.run {
+            app.application(UIApplication.shared, continue: activity, restorationHandler: { _ in })
+        }
+        #expect(result)
+        #expect(app.pendingStopID == "1_75403")
+        #expect(app.pendingStopRegionID == 1)
+    }
+
+    @Test func `Application continues a browsing-web stop URL`() async {
+        let app = makeApplicationForUserActivity()
+
+        let activity = NSUserActivity(activityType: NSUserActivityTypeBrowsingWeb)
+        activity.webpageURL = URL(string: "https://onebusaway.co/regions/1/stops/1_75403")
+
+        let result = await MainActor.run {
+            app.application(UIApplication.shared, continue: activity, restorationHandler: { _ in })
+        }
+        #expect(result)
+        #expect(app.pendingStopID == "1_75403")
+        #expect(app.pendingStopRegionID == 1)
+    }
+
+    private func makeApplicationForUserActivity() -> Application {
+        let dataLoader = MockDataLoader(testName: name)
+        stubRegions(dataLoader: dataLoader)
+        let locManager = LocationManagerMock()
+        let locationService = LocationService(userDefaults: userDefaults, locationManager: locManager)
+        let config = AppConfig(regionsBaseURL: regionsURL, apiKey: apiKey, appVersion: appVersion, userDefaults: userDefaults, analytics: AnalyticsMock(), queue: queue, locationService: locationService, bundledRegionsFilePath: bundledRegionsPath, regionsAPIPath: regionsAPIPath, dataLoader: dataLoader)
+        return Application(config: config)
+    }
+
     // MARK: - Analytics Tests
 
     @Test func `Application has analytics property`() {

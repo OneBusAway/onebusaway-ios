@@ -30,6 +30,13 @@ extension MapViewController {
 
         configureStopRouteFocusLayer()
         updateMapLayerBadge()
+
+        // On a cold launch the region resolves *after* `viewDidAppear`, so the
+        // coordinator that gates the tip doesn't exist yet when that first
+        // attempt runs. Retrying here — once the layers are actually registered
+        // — is what makes the tip show on the launch that introduces bikeshare,
+        // which is the launch it exists for.
+        showMapLayersTipIfNeeded()
     }
 
     /// Registers `StopRouteFocusMapLayer`, rebuilding it with a fresh
@@ -155,61 +162,20 @@ extension MapViewController {
         present(controller, animated: true)
     }
 
-    // MARK: - First-Run Layer Nudge
+    // MARK: - First-Run Layer Tip
 
-    private static let mapLayersNudgeShownKey = "mapViewController.mapLayersNudgeShown"
+    /// The one-time tip pointing at the basemap button the first time a region
+    /// offers rental layers.
+    ///
+    /// Gated on the rental coordinator existing rather than on a rule inside the
+    /// tip, because the observation `showIfNeeded` starts is long-lived: not
+    /// starting it is what keeps the tip off regions without bikeshare. Both
+    /// callers are idempotent — the window check drops calls that arrive while
+    /// the map is off screen, and `TipPresenter` observes at most once.
+    func showMapLayersTipIfNeeded() {
+        guard viewIfLoaded?.window != nil, rentalLayerCoordinator != nil else { return }
 
-    /// The one-time nudge pointing at the basemap button the first time a region
-    /// offers rental layers. Not a permanent band, not a recurring tip — shown
-    /// once, then never again.
-    func showMapLayersNudgeIfNeeded() {
-        guard rentalLayerCoordinator != nil,
-              !application.userDefaults.bool(forKey: Self.mapLayersNudgeShownKey),
-              presentedViewController == nil else {
-            return
-        }
-        application.userDefaults.set(true, forKey: Self.mapLayersNudgeShownKey)
-
-        let nudge = UILabel.autolayoutNew()
-        nudge.text = OBALoc("map_controller.layers_nudge", value: "New: bikes and scooters on the map. Tap to explore.", comment: "One-time callout pointing at the basemap button when a region gains rental map layers")
-        nudge.font = .preferredFont(forTextStyle: .footnote)
-        nudge.textColor = .white
-        nudge.numberOfLines = 0
-        nudge.textAlignment = .center
-
-        let padded = UIView.autolayoutNew()
-        padded.backgroundColor = UIColor.rentalPurple
-        padded.layer.cornerRadius = 10
-        padded.layer.masksToBounds = true
-        padded.alpha = 0
-        padded.addSubview(nudge)
-        view.addSubview(padded)
-
-        NSLayoutConstraint.activate([
-            nudge.topAnchor.constraint(equalTo: padded.topAnchor, constant: 8),
-            nudge.bottomAnchor.constraint(equalTo: padded.bottomAnchor, constant: -8),
-            nudge.leadingAnchor.constraint(equalTo: padded.leadingAnchor, constant: 10),
-            nudge.trailingAnchor.constraint(equalTo: padded.trailingAnchor, constant: -10),
-            padded.trailingAnchor.constraint(equalTo: toolbar.trailingAnchor),
-            padded.topAnchor.constraint(equalTo: toolbar.bottomAnchor, constant: 8),
-            padded.widthAnchor.constraint(lessThanOrEqualToConstant: 220)
-        ])
-
-        let tap = UITapGestureRecognizer(target: self, action: #selector(nudgeTapped(_:)))
-        padded.isUserInteractionEnabled = true
-        padded.addGestureRecognizer(tap)
-
-        UIView.animate(withDuration: 0.3) { padded.alpha = 1 }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 8) {
-            UIView.animate(withDuration: 0.5, animations: { padded.alpha = 0 }) { _ in
-                padded.removeFromSuperview()
-            }
-        }
-    }
-
-    @objc private func nudgeTapped(_ gesture: UITapGestureRecognizer) {
-        gesture.view?.removeFromSuperview()
-        presentMapSheet()
+        mapLayersTipPresenter.showIfNeeded(in: self, sourceItem: toggleMapTypeButton)
     }
 }
 

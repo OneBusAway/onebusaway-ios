@@ -964,7 +964,11 @@ public class MapRegionManager: NSObject,
 
     /// Above this visible-map-rect height (map points), stop pins are too
     /// zoomed-out for their under-pin label. Shared with `MapPanelRootView`.
-    public static let requiredHeightToShowExtraStopData = 7000.0
+    ///
+    /// 7,000 still showed route lists at a city-block zoom where pins overlap
+    /// and the text is unreadable. 5,000 keeps labels for street-level zoom
+    /// where they help, and hides them sooner when zoomed out (#132).
+    public static let requiredHeightToShowExtraStopData = 5000.0
 
     /// Height half of the under-pin label gate. Callers combine it with the
     /// standard-map-type and "show labels" default checks.

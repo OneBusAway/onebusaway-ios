@@ -18,12 +18,14 @@ struct TripPageActions {
     var canSchedule = false
     var canAlarm = false
     var canStartLiveActivity = false
+    var canReportGhostBus = false
     var onBack: () -> Void = {}
     var onSelectStop: (StopID) -> Void = { _ in }
     var onLiveActivity: () -> Void = {}
     var onBookmark: () -> Void = {}
     var onSchedule: () -> Void = {}
     var onAlarm: () -> Void = {}
+    var onReportGhostBus: () -> Void = {}
 }
 
 /// The trip page: which vehicle, when it gets to you, and every stop on its way.
@@ -48,6 +50,16 @@ struct TripPageView: View {
     /// current state rather than always offering to start something.
     var hasAlarm = false
     var isTrackingLiveActivity = false
+
+    /// `true` while the sheet showing this page sits at its `.tip` detent, where the only thing
+    /// that fits is the back row.
+    ///
+    /// The action bar is pinned as a bottom `safeAreaInset`, and at `.tip` it is taller than the
+    /// whole detent — so SwiftUI squeezes the back row and the list to nothing and the sheet peeks
+    /// as a Live Activity button floating over the map, with no indication of which trip it
+    /// belongs to. Dropping the bar at this detent leaves the row that names the trip's origin,
+    /// which is what a peek is for. Mirrors `StopPageView.isCollapsed`.
+    var isCollapsed = false
 
     /// The page's laid-out height, which is the sheet detent's — not the screen's. Feeds the
     /// action bar's ceiling at accessibility sizes; see `TripActionBar.maxHeight`.
@@ -128,18 +140,22 @@ struct TripPageView: View {
         // discards the reservation. Until someone can explain the difference,
         // this stays where it is empirically correct.
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            TripActionBar(
-                canStartLiveActivity: actions.canStartLiveActivity,
-                isTrackingLiveActivity: isTrackingLiveActivity,
-                canSchedule: actions.canSchedule,
-                canAlarm: actions.canAlarm,
-                hasAlarm: hasAlarm,
-                maxHeight: pageHeight > 0 ? pageHeight * Self.actionBarHeightShare : nil,
-                onLiveActivity: actions.onLiveActivity,
-                onBookmark: actions.onBookmark,
-                onSchedule: actions.onSchedule,
-                onAlarm: actions.onAlarm
-            )
+            if !isCollapsed {
+                TripActionBar(
+                    canStartLiveActivity: actions.canStartLiveActivity,
+                    isTrackingLiveActivity: isTrackingLiveActivity,
+                    canSchedule: actions.canSchedule,
+                    canAlarm: actions.canAlarm,
+                    hasAlarm: hasAlarm,
+                    canReportGhostBus: actions.canReportGhostBus,
+                    maxHeight: pageHeight > 0 ? pageHeight * Self.actionBarHeightShare : nil,
+                    onLiveActivity: actions.onLiveActivity,
+                    onBookmark: actions.onBookmark,
+                    onSchedule: actions.onSchedule,
+                    onAlarm: actions.onAlarm,
+                    onReportGhostBus: actions.onReportGhostBus
+                )
+            }
         }
         // The page's height is imposed by the host (the sheet detent), not derived from this
         // content, so feeding it back in to bound the bar converges instead of looping.

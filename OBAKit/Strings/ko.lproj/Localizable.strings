@@ -1023,6 +1023,12 @@
 /* Settings section title for controlling which arrivals/departures are shown */
 "settings_controller.arrival_display_section.title" = "도착·출발 정보 표시";
 
+/* Settings > Arrival Display > Toggle that shows the Arriving at XX:XX via route banner when opening a stop from a trip */
+"settings_controller.arrival_display_section.transfer_banner" = "환승 도착 배너 표시";
+
+/* Settings > Arrival Display > Footer for the Show transfer arrival banner switch only, not the Show Departures filter */
+"settings_controller.arrival_display_section.transfer_banner.footer" = "환승 도착 배너 표시: 켜면 여행에서 정류장을 열 때 도착 시각 기준으로 시간이 표시됩니다. 그 스위치를 끄면 일반 시각과 모든 출발이 보입니다.";
+
 /* Title for the departure filter selection alert */
 "settings_controller.arrival_filter.selector_title" = "출발 표시";
 

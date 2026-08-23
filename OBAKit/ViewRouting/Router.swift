@@ -103,15 +103,18 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
     ///   one and moves its chrome into a bottom toolbar. Ignored when the flag or a transfer
     ///   context routes to the legacy `StopViewController`, which has only the pushed layout.
     public func makeStopController(stop: Stop, bookmark: Bookmark? = nil, transferContext: TransferContext? = nil, showToolbarOnBottom: Bool = false) -> UIViewController {
-        // TransferContext UX (arrival-relative filtering, transfer banner) is not yet built on the new stop page — route transfers to the legacy screen until it is.
+        // Transfer UX is not on the new stop page yet. The banner toggle can
+        // drop the context — use the same helper the page will, or a trip→stop
+        // tap with the toggle off lands on the legacy screen for nothing.
+        let effective = application.userDataStore.displayedTransferContext(transferContext)
         let stopController: StopContextConfigurable
-        if transferContext == nil, FeatureFlags.isNewStopPageEnabled(userDefaults: application.userDefaults) {
+        if effective == nil, FeatureFlags.isNewStopPageEnabled(userDefaults: application.userDefaults) {
             stopController = StopPageViewController(application: application, stop: stop, showToolbarOnBottom: showToolbarOnBottom)
         } else {
             stopController = StopViewController(application: application, stop: stop)
         }
         stopController.bookmarkContext = bookmark
-        stopController.transferContext = transferContext
+        stopController.transferContext = effective
         return stopController
     }
 
