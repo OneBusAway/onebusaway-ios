@@ -16,18 +16,18 @@ struct LiveActivityShortcutRequestTests {
 
     /// Isolated suite plus teardown. A `deinit` cannot touch `UserDefaults`
     /// (non-Sendable) under the test target's isolation.
-    private func withDefaults(_ body: (UserDefaults) throws -> Void) rethrows {
+    private func withDefaults(_ body: (UserDefaults) -> Void) {
         let suiteName = "live-activity-shortcut-\(UUID().uuidString)"
         let userDefaults = UserDefaults(suiteName: suiteName)!
         defer { userDefaults.removePersistentDomain(forName: suiteName) }
-        try body(userDefaults)
+        body(userDefaults)
     }
 
-    private func withDefaults(_ body: (UserDefaults) async throws -> Void) async rethrows {
+    private func withDefaults(_ body: (UserDefaults) async -> Void) async {
         let suiteName = "live-activity-shortcut-\(UUID().uuidString)"
         let userDefaults = UserDefaults(suiteName: suiteName)!
         defer { userDefaults.removePersistentDomain(forName: suiteName) }
-        try await body(userDefaults)
+        await body(userDefaults)
     }
 
     /// `openAppWhenRun` brings the app forward *before* `perform()` stores.
@@ -49,8 +49,8 @@ struct LiveActivityShortcutRequestTests {
         }
     }
 
-    @Test func `Peek does not clear the stored id`() throws {
-        try withDefaults { userDefaults in
+    @Test func `Peek does not clear the stored id`() {
+        withDefaults { userDefaults in
             let id = UUID()
             LiveActivityShortcutRequest.store(id, userDefaults: userDefaults)
 
@@ -59,8 +59,8 @@ struct LiveActivityShortcutRequestTests {
         }
     }
 
-    @Test func `Clear drops a still-valid request`() throws {
-        try withDefaults { userDefaults in
+    @Test func `Clear drops a still-valid request`() {
+        withDefaults { userDefaults in
             let id = UUID()
             LiveActivityShortcutRequest.store(id, userDefaults: userDefaults)
             LiveActivityShortcutRequest.clear(userDefaults)
@@ -68,17 +68,25 @@ struct LiveActivityShortcutRequestTests {
         }
     }
 
-    @Test func `Garbage stored value is treated as empty`() throws {
-        try withDefaults { userDefaults in
+    /// Timestamp present, UUID string garbage. Without the timestamp this
+    /// is the same as the legacy-id test — `peek` clears at the first guard
+    /// and never reaches `UUID.init`. Drop the UUID-parsing guard and this
+    /// fails because a still-fresh timestamp plus a leftover string would
+    /// otherwise peek as a request.
+    @Test func `Garbage stored value is treated as empty`() {
+        withDefaults { userDefaults in
             userDefaults.set("not-a-uuid", forKey: LiveActivityShortcutRequest.userDefaultsKey)
+            userDefaults.set(Date().timeIntervalSince1970, forKey: LiveActivityShortcutRequest.storedAtKey)
             #expect(LiveActivityShortcutRequest.peek(userDefaults: userDefaults) == nil)
+            #expect(userDefaults.string(forKey: LiveActivityShortcutRequest.userDefaultsKey) == nil)
+            #expect(userDefaults.object(forKey: LiveActivityShortcutRequest.storedAtKey) == nil)
         }
     }
 
     /// A request without a timestamp is treated as expired so a leftover id
     /// cannot force the Bookmarks tab on every launch.
-    @Test func `Legacy id without a timestamp is treated as empty`() throws {
-        try withDefaults { userDefaults in
+    @Test func `Legacy id without a timestamp is treated as empty`() {
+        withDefaults { userDefaults in
             userDefaults.set(UUID().uuidString, forKey: LiveActivityShortcutRequest.userDefaultsKey)
             #expect(LiveActivityShortcutRequest.peek(userDefaults: userDefaults) == nil)
             #expect(userDefaults.string(forKey: LiveActivityShortcutRequest.userDefaultsKey) == nil)
@@ -86,8 +94,8 @@ struct LiveActivityShortcutRequestTests {
     }
 
     /// Drop the expiry check and a request queued hours earlier still peeks.
-    @Test func `Peek returns nil and clears after the expiration window`() throws {
-        try withDefaults { userDefaults in
+    @Test func `Peek returns nil and clears after the expiration window`() {
+        withDefaults { userDefaults in
             let id = UUID()
             let storedAt = Date(timeIntervalSince1970: 0)
             LiveActivityShortcutRequest.store(id, userDefaults: userDefaults, now: storedAt)
@@ -98,6 +106,16 @@ struct LiveActivityShortcutRequestTests {
             let expired = storedAt.addingTimeInterval(LiveActivityShortcutRequest.expiration + 1)
             #expect(LiveActivityShortcutRequest.peek(userDefaults: userDefaults, now: expired) == nil)
             #expect(userDefaults.string(forKey: LiveActivityShortcutRequest.userDefaultsKey) == nil)
+            #expect(userDefaults.object(forKey: LiveActivityShortcutRequest.storedAtKey) == nil)
+        }
+    }
+
+    /// `peek` is called from become-active, Bookmarks `viewWillAppear`, and
+    /// the 30s arrivals tick. An empty suite must not `removeObject`.
+    @Test func `Peek on an empty suite does not write`() {
+        withDefaults { userDefaults in
+            #expect(LiveActivityShortcutRequest.peek(userDefaults: userDefaults) == nil)
+            #expect(userDefaults.object(forKey: LiveActivityShortcutRequest.userDefaultsKey) == nil)
             #expect(userDefaults.object(forKey: LiveActivityShortcutRequest.storedAtKey) == nil)
         }
     }

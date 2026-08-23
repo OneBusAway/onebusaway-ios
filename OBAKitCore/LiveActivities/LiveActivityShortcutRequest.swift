@@ -44,7 +44,13 @@ public enum LiveActivityShortcutRequest {
     /// The pending bookmark id, if any and not expired. Does not clear a
     /// still-valid request. Expired or garbage values are removed.
     public static func peek(userDefaults: UserDefaults, now: Date = Date()) -> UUID? {
-        guard let storedAt = userDefaults.object(forKey: storedAtKey) as? TimeInterval else {
+        let rawID = userDefaults.string(forKey: userDefaultsKey)
+        let storedAtObject = userDefaults.object(forKey: storedAtKey)
+        if rawID == nil && storedAtObject == nil {
+            return nil
+        }
+
+        guard let storedAt = storedAtObject as? TimeInterval else {
             clear(userDefaults)
             return nil
         }

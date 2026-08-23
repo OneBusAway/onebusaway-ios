@@ -42,7 +42,8 @@ Arbitrary stop IDs that are not bookmarked are out of scope for this change.
 
 ## Tests
 
-`LiveActivityShortcutRequestTests` pin store / peek / expiry and that `store`
-posts the drain notification.
+`LiveActivityShortcutRequestTests` pin store / peek / expiry, that `store`
+posts the drain notification, and that a still-fresh timestamp plus a
+non-UUID string is treated as empty (not as a missing timestamp).
 `BookmarkIntentMappingTests` pin trip-vs-whole-stop, the region filter, and
 that the query reads the `RegionsService` key.
