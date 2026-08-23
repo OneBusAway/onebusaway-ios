@@ -162,6 +162,18 @@ final class FormattersTests: OBATestCase {
         #expect(formatters.deviationLabel(for: arrivalDeparture) == Strings.scheduledNotRealTime)
     }
 
+    // MARK: - Arrival vs departure caption (#447)
+
+    @Test func `Caption is Arrives for a vehicle arriving at this stop`() {
+        let formatters = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
+        #expect(formatters.arrivalDepartureCaption(for: .arriving) == "Arrives")
+    }
+
+    @Test func `Caption is Departs for a vehicle leaving this stop`() {
+        let formatters = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
+        #expect(formatters.arrivalDepartureCaption(for: .departing) == "Departs")
+    }
+
     // MARK: - Map route labels (#132)
 
     @Test func `Formatted map routes within the limit lists every route`() throws {
