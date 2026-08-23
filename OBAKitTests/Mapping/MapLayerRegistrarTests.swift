@@ -117,4 +117,24 @@ final class MapLayerRegistrarTests: OBATestCase {
 
         #expect(callCount == 1)
     }
+
+    /// A region change must reach the host, not just the registrar's own layers.
+    ///
+    /// `MapViewController` hangs its per-region work off this callback —
+    /// re-pointing the annotation syncer and the layer action delegates, and
+    /// retrying the first-run layers tip, which a cold launch cannot show from
+    /// `viewDidAppear` because the region resolves later. Nothing else on the
+    /// host runs on region change since the registrar took over
+    /// `RegionsServiceDelegate`, so if this wiring breaks, all of that silently
+    /// stops without a compile error.
+    @Test func `A region change reaches the host callback`() throws {
+        var callCount = 0
+        registrar = MapLayerRegistrar(application: application) { _ in callCount += 1 }
+        registrar.configure()
+        let afterInitialConfigure = callCount
+
+        application.regionsService.currentRegion = Fixtures.tampaRegion
+
+        #expect(callCount == afterInitialConfigure + 1)
+    }
 }

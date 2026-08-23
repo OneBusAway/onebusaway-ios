@@ -30,13 +30,6 @@ extension MapViewController {
 
         configureStopRouteFocusLayer()
         updateMapLayerBadge()
-
-        // On a cold launch the region resolves *after* `viewDidAppear`, so the
-        // coordinator that gates the tip doesn't exist yet when that first
-        // attempt runs. Retrying here — once the layers are actually registered
-        // — is what makes the tip show on the launch that introduces bikeshare,
-        // which is the launch it exists for.
-        showMapLayersTipIfNeeded()
     }
 
     /// Registers `StopRouteFocusMapLayer`, rebuilding it with a fresh
@@ -90,6 +83,15 @@ extension MapViewController {
     /// the coordinator's own map-view writes. Updates the badge after the registrar
     /// finishes rebuilding, ensuring the count reflects the current layers regardless
     /// of RegionsService delegate fan-out order.
+    ///
+    /// This is also where the first-run tip gets its second chance. The registrar
+    /// is the `RegionsServiceDelegate` that rebuilds the rental layers now, so its
+    /// `onDidConfigure` callback is the only host-side hook a region change still
+    /// reaches — `configureMapLayers()` runs from `viewDidAppear` alone. On a cold
+    /// launch the region resolves *after* `viewDidAppear`, so the coordinator that
+    /// gates the tip doesn't exist yet when that first attempt runs; retrying here,
+    /// once the layers are actually registered, is what makes the tip show on the
+    /// launch that introduces bikeshare — the launch it exists for.
     private func attachRentalLayerHost(_ registrar: MapLayerRegistrar) {
         guard let coordinator = registrar.rentalCoordinator else {
             rentalAnnotationSyncer = nil
@@ -106,6 +108,7 @@ extension MapViewController {
         }
 
         updateMapLayerBadge()
+        showMapLayersTipIfNeeded()
     }
 
     /// Presents a layer-owned detail sheet (vehicle detail or cluster list) for

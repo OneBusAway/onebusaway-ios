@@ -7,6 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
+import Combine
 import CoreLocation
 import Foundation
 import MapKit
@@ -190,5 +191,46 @@ final class MapPanelLayersModelTests: OBATestCase {
         model.updateMapSize(CGSize(width: 390, height: 844))
 
         #expect(model.rentalItems.count == 1)
+    }
+
+    /// A camera settle that lands on the same clustering must not republish.
+    ///
+    /// `recomputeClusters()` runs on every settle, and `@Published` fires on
+    /// assignment rather than on difference — so writing an identical array
+    /// re-rendered the whole panel body, `factory.view(for:)` included, for a
+    /// pan that moved no marker. Panning inside one grid cell is the common case.
+    ///
+    /// The second half is what keeps this from passing on a model that publishes
+    /// nothing at all: a real change still has to come through.
+    @Test func `An unchanged recompute publishes nothing`() throws {
+        let coordinator = try #require(model.registrar.rentalCoordinator)
+        coordinator.setLayer(id: RentalMapLayer.bikesLayerID, enabled: true, formFactors: [.bicycle])
+        coordinator.apply(RentalFixtures.snapshot(added: [
+            try RentalFixtures.vehicle(id: "a", formFactor: "BICYCLE", lat: 47.60000, lon: -122.30000)
+        ]))
+
+        let mapRect = MKMapRect(MKCoordinateRegion(
+            center: CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3),
+            span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+        ))
+        let mapSize = CGSize(width: 390, height: 844)
+        model.updateViewport(mapRect: mapRect, mapSize: mapSize)
+
+        var publishCount = 0
+        let subscription = model.$rentalItems.dropFirst().sink { _ in publishCount += 1 }
+        defer { subscription.cancel() }
+
+        // Same viewport, same rentals: the computed array is identical.
+        model.updateViewport(mapRect: mapRect, mapSize: mapSize)
+        #expect(publishCount == 0)
+
+        // A vehicle actually arriving still has to reach the panel.
+        coordinator.apply(RentalFixtures.snapshot(added: [
+            try RentalFixtures.vehicle(id: "b", formFactor: "BICYCLE", lat: 47.60300, lon: -122.30300)
+        ]))
+        #expect(publishCount == 1)
+        // Asserted through `members` rather than item count, so the test does not
+        // depend on whether the two land in the same grid cell.
+        #expect(model.rentalItems.flatMap(\.members).map(\.id).sorted() == ["a", "b"])
     }
 }

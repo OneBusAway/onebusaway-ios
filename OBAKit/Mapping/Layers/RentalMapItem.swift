@@ -16,7 +16,7 @@ import OTPKit
 /// The UIKit map gets this split from MapKit, which hands back
 /// `MKClusterAnnotation`s. SwiftUI `Map` has no equivalent, so the panel
 /// computes it — see `RentalClustering`.
-nonisolated enum RentalMapItem: Identifiable {
+nonisolated enum RentalMapItem: Identifiable, Equatable {
     case single(VehicleRental)
     case cluster(id: String, coordinate: CLLocationCoordinate2D, members: [VehicleRental])
 
@@ -40,6 +40,24 @@ nonisolated enum RentalMapItem: Identifiable {
         switch self {
         case .single(let rental): return [rental]
         case .cluster(_, _, let members): return members
+        }
+    }
+
+    /// Written out because `CLLocationCoordinate2D` is not `Equatable`, so the
+    /// cluster case blocks synthesis. Compares everything a marker renders from
+    /// — `VehicleRental` is `Hashable`, so a member whose range or availability
+    /// moved compares unequal and the panel redraws.
+    static func == (lhs: RentalMapItem, rhs: RentalMapItem) -> Bool {
+        switch (lhs, rhs) {
+        case let (.single(lhsRental), .single(rhsRental)):
+            return lhsRental == rhsRental
+        case let (.cluster(lhsID, lhsCoordinate, lhsMembers), .cluster(rhsID, rhsCoordinate, rhsMembers)):
+            return lhsID == rhsID
+                && lhsCoordinate.latitude == rhsCoordinate.latitude
+                && lhsCoordinate.longitude == rhsCoordinate.longitude
+                && lhsMembers == rhsMembers
+        default:
+            return false
         }
     }
 }

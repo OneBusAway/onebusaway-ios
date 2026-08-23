@@ -168,12 +168,21 @@ import OTPKit
         recomputeClusters()
     }
 
+    /// Assigns only on a real change.
+    ///
+    /// This runs on every camera settle, and `@Published` fires on assignment
+    /// rather than on difference — so an unconditional write re-rendered the
+    /// whole panel body, `factory.view(for:)` included, each time the rider
+    /// nudged the map without moving a single marker. Panning within one grid
+    /// cell is the common case.
     private func recomputeClusters() {
-        rentalItems = RentalClustering.items(
+        let items = RentalClustering.items(
             for: visibleRentals,
             mapRect: lastMapRect,
             mapSize: lastMapSize
         )
+        guard items != rentalItems else { return }
+        rentalItems = items
     }
 
     // MARK: - Route resolution

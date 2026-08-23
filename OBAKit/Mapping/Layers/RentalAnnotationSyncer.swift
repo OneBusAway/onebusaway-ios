@@ -56,6 +56,12 @@ import OTPKit
         var added: [RentalAnnotation] = []
         for rental in rentals {
             if let existing = annotations[rental.id] {
+                // Gated on the entity actually differing, so a refresh that
+                // returns identical data costs nothing. Without it the work is
+                // O(visible) on every publish — up to `densityBudget` (500)
+                // reconfigures for a fetch that changed one vehicle.
+                guard existing.rental != rental else { continue }
+
                 existing.update(with: rental)
                 // Re-assigning re-runs the view's configure() so glyphs, tint,
                 // and the fuel label track the data; identity is unchanged, so
