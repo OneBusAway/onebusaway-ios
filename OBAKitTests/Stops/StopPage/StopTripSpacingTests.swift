@@ -43,22 +43,16 @@ struct StopTripSpacingTests {
         #expect(StopTripSpacing.cardPadding(true) < StopTripSpacing.cardPadding(false))
     }
 
-    /// The 44pt floor is a hit target, not a layout floor. Applying it as
-    /// `.frame(minHeight:)` on the whole `TripStopRow` made compact a no-op
-    /// at default Dynamic Type and grew regular rows, floating the divider
-    /// off the connector. Layout height is text + padding; hit height is
-    /// `max(44, layout)`. Put the minHeight on the outer row and compact
-    /// layout equals regular (both 44).
-    @Test func `Stop-row 44pt floor expands the hit target not the layout`() {
-        let compactLayout = StopTripSpacing.stopRowLayoutHeight(compact: true)
-        let regularLayout = StopTripSpacing.stopRowLayoutHeight(compact: false)
+    /// Compact trip-stop rows are their own tap target. A 44pt overlay on a
+    /// 32pt `LazyVStack` row overlaps the neighbour; the later sibling wins
+    /// and a tap near a row's divider opens the stop below it.
+    @Test func `Compact stop-row is tighter than regular and stays under 44pt`() {
+        let defaultText: CGFloat = 20
+        let compact = defaultText + StopTripSpacing.stopRowVertical(true) * 2
+        let regular = defaultText + StopTripSpacing.stopRowVertical(false) * 2
 
-        #expect(compactLayout < StopTripSpacing.stopRowMinHeight)
-        #expect(regularLayout < StopTripSpacing.stopRowMinHeight)
-        #expect(compactLayout < regularLayout)
-
-        #expect(StopTripSpacing.stopRowHitHeight(compact: true) >= StopTripSpacing.stopRowMinHeight)
-        #expect(StopTripSpacing.stopRowHitHeight(compact: false) >= StopTripSpacing.stopRowMinHeight)
-        #expect(StopTripSpacing.stopRowHitSlop(compact: true) > 0)
+        #expect(compact < regular)
+        #expect(compact < 44)
+        #expect(regular < 44)
     }
 }

@@ -15,8 +15,9 @@ import CoreGraphics
 ///
 /// Accessibility-size stacked layouts **do** consult this table: the outer
 /// stacks in `DepartureRowView`, `GroupedListView`, and `TripCardView` wrap
-/// the AX branch, so compact tightens those layouts too. Tappable trip-stop
-/// rows keep a 44pt *hit* target; their laid-out height is text + padding.
+/// the AX branch, so compact tightens those layouts too. A compact trip-stop
+/// row is its own tap target — smaller than 44pt at default Dynamic Type.
+/// That is the trade the rider chose by opting in.
 enum StopTripSpacing {
     /// Interior `VStack` under a route badge / headsign block.
     static func stack(_ compact: Bool) -> CGFloat { compact ? 1 : 3 }
@@ -30,31 +31,11 @@ enum StopTripSpacing {
     /// Trip page's scroll content `VStack` (card, then stop list).
     static func tripPage(_ compact: Bool) -> CGFloat { compact ? 8 : 14 }
 
-    /// Vertical padding inside one trip-stop timeline row.
+    /// Vertical padding inside one trip-stop timeline row. Compact 6pt
+    /// makes a default-size subheadline row ~32pt; the tap target is that
+    /// row, not a 44pt overlay. A 44pt slop on a 32pt `LazyVStack` row
+    /// overlaps the neighbour and opens the wrong stop.
     static func stopRowVertical(_ compact: Bool) -> CGFloat { compact ? 6 : 11 }
-
-    /// Minimum *hit* height of a tappable trip-stop row. Applied as canceling
-    /// padding around the row (`+slop` / `contentShape` / `−slop`) so compact
-    /// layout can stay under 44pt at default Dynamic Type. Putting this on
-    /// the row as `.frame(minHeight:)` made compact a no-op and floated the
-    /// divider off the connector.
-    static let stopRowMinHeight: CGFloat = 44
-
-    /// Default-size subheadline used to compute hit slop. Accessibility
-    /// sizes already exceed 44pt; extra slop there is harmless.
-    static let stopRowDefaultTextHeight: CGFloat = 20
-
-    static func stopRowLayoutHeight(compact: Bool, textHeight: CGFloat = stopRowDefaultTextHeight) -> CGFloat {
-        textHeight + stopRowVertical(compact) * 2
-    }
-
-    static func stopRowHitSlop(compact: Bool, textHeight: CGFloat = stopRowDefaultTextHeight) -> CGFloat {
-        max(0, (stopRowMinHeight - stopRowLayoutHeight(compact: compact, textHeight: textHeight)) / 2)
-    }
-
-    static func stopRowHitHeight(compact: Bool, textHeight: CGFloat = stopRowDefaultTextHeight) -> CGFloat {
-        stopRowLayoutHeight(compact: compact, textHeight: textHeight) + stopRowHitSlop(compact: compact, textHeight: textHeight) * 2
-    }
 
     /// Padding around the trip header card.
     static func cardPadding(_ compact: Bool) -> CGFloat { compact ? 10 : 14 }
