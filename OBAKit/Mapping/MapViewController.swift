@@ -751,6 +751,14 @@ class MapViewController: UIViewController,
             return
         }
 
+        // Same rule as launch: don't yank a rider in another city onto GPS
+        // just because the app sat in the background for ten minutes (#615).
+        if let region = application.regionsService.currentRegion,
+           let location = application.locationService.currentLocation,
+           !region.contains(location: location) {
+            return
+        }
+
         centerMapOnUserLocation()
     }
 
@@ -1522,13 +1530,36 @@ class MapViewController: UIViewController,
 
     /// Updates the visible area on the map view based on the user's selected `Region` and current location.
     private func updateVisibleMapRect() {
+        applyLaunchCamera(userLocation: application.locationService.currentLocation)
+    }
+
+    /// Frames GPS when it sits in the selected region; otherwise the region's
+    /// service rect (or last in-region viewport). The first location fix used
+    /// to call `programmaticallyUpdateVisibleMapRegion` unconditionally, which
+    /// is why a Taipei GPS with Puget Sound selected opened on Taipei (#615).
+    private func applyLaunchCamera(userLocation: CLLocation?) {
         guard let currentRegion = application.regionsService.currentRegion else { return }
 
-        if let location = application.locationService.currentLocation, promptUserOnRegionMismatch {
-            if currentRegion.contains(location: location) {
-                programmaticallyUpdateVisibleMapRegion(location: location)
+        switch LaunchMapCamera.target(
+            selectedRegion: currentRegion,
+            userLocation: userLocation,
+            lastVisibleMapRect: mapRegionManager.lastVisibleMapRect
+        ) {
+        case .userLocation:
+            if let userLocation {
+                programmaticallyUpdateVisibleMapRegion(location: userLocation)
             }
-            else {
+        case .mapRect(let rect, let showMismatch):
+            if !initialMapChangeMade {
+                mapRegionManager.mapView.visibleMapRect = rect
+                // Latch on mismatch so the next GPS callback cannot yank the
+                // camera to the device. No GPS yet: leave the latch open so a
+                // later in-region fix can still zoom in for stops.
+                if showMismatch {
+                    initialMapChangeMade = true
+                }
+            }
+            if showMismatch && promptUserOnRegionMismatch {
                 promptUserOnRegionMismatch = false
                 if let regionMismatchBulletin = RegionMismatchBulletin(application: application),
                    let uiApp = application.delegate?.uiApplication {
@@ -1536,12 +1567,6 @@ class MapViewController: UIViewController,
                     self.regionMismatchBulletin?.show(in: uiApp)
                 }
             }
-        }
-        else if let lastVisibleRegion = mapRegionManager.lastVisibleMapRect {
-            mapRegionManager.mapView.visibleMapRect = lastVisibleRegion
-        }
-        else {
-            mapRegionManager.mapView.visibleMapRect = currentRegion.serviceRect
         }
     }
 
@@ -1556,7 +1581,7 @@ class MapViewController: UIViewController,
     }
 
     public func locationService(_ service: LocationService, locationChanged location: CLLocation) {
-        programmaticallyUpdateVisibleMapRegion(location: location)
+        applyLaunchCamera(userLocation: location)
     }
 
     // MARK: - Context Menus

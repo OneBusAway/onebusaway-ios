@@ -47,6 +47,8 @@ struct MapPanelRootView: View {
     /// first reported (non-zero) size, in which case the recenter must be
     /// retried when the size lands.
     @State private var needsInitialRecenter = false
+    @State private var regionMismatchBulletin: RegionMismatchBulletin?
+    @State private var didPromptRegionMismatch = false
 
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.colorScheme) private var colorScheme
@@ -102,10 +104,26 @@ struct MapPanelRootView: View {
         self.factory = factory
         self.viewportRecorder = MapViewportRecorder(application: application)
 
-        // With no location fix, frame the current transit region rather than
-        // letting `.automatic` frame the bookmark annotations.
+        // Frame the selected region unless GPS is already inside it.
+        // `.userLocation` follows the device, which is what opened Taipei
+        // over Puget Sound (#615).
         let fallback: MapCameraPosition = application.currentRegion.map { .rect($0.serviceRect) } ?? .automatic
-        _cameraPosition = State(initialValue: .userLocation(fallback: fallback))
+        let initialPosition: MapCameraPosition
+        if let selected = application.currentRegion {
+            switch LaunchMapCamera.target(
+                selectedRegion: selected,
+                userLocation: application.locationService.currentLocation,
+                lastVisibleMapRect: application.mapRegionManager.lastVisibleMapRect
+            ) {
+            case .userLocation:
+                initialPosition = .userLocation(fallback: fallback)
+            case .mapRect(let rect, _):
+                initialPosition = .rect(rect)
+            }
+        } else {
+            initialPosition = fallback
+        }
+        _cameraPosition = State(initialValue: initialPosition)
 
         // A returning user already has a fix here, so the `.onChange` below
         // never fires — the flag is already `true` and never transitions. Seed
@@ -456,14 +474,45 @@ extension MapPanelRootView {
 
     // MARK: - Actions
 
-    /// Performs the once-per-launch recenter on the user's first location fix,
-    /// waiting out the `mapSize == .zero` window: called both when the fix
-    /// arrives and when the Map reports a size, and only consumes the flag when
-    /// a recenter can actually happen.
+    /// One-shot launch camera: GPS inside the selected region zooms to the
+    /// user (nearby stops); GPS outside frames the region (#615). The locate
+    /// button still calls `centerOnUser()`.
     private func attemptInitialRecenter() {
         guard needsInitialRecenter, mapSize != .zero else { return }
         needsInitialRecenter = false
-        centerOnUser()
+        applyLaunchCamera()
+    }
+
+    private func applyLaunchCamera() {
+        guard let selected = application.currentRegion else {
+            centerOnUser()
+            return
+        }
+        switch LaunchMapCamera.target(
+            selectedRegion: selected,
+            userLocation: application.locationService.currentLocation,
+            lastVisibleMapRect: application.mapRegionManager.lastVisibleMapRect
+        ) {
+        case .userLocation:
+            centerOnUser()
+        case .mapRect(let rect, let showMismatch):
+            cameraPosition = .rect(rect)
+            viewportRecorder.record(rect)
+            if showMismatch {
+                presentRegionMismatchIfNeeded()
+            }
+        }
+    }
+
+    private func presentRegionMismatchIfNeeded() {
+        guard !didPromptRegionMismatch else { return }
+        didPromptRegionMismatch = true
+        guard
+            let bulletin = RegionMismatchBulletin(application: application),
+            let uiApp = application.delegate?.uiApplication
+        else { return }
+        regionMismatchBulletin = bulletin
+        bulletin.show(in: uiApp)
     }
 
     private func centerOnUser() {
