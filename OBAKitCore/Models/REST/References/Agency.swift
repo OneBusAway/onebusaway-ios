@@ -83,4 +83,10 @@ public final class Agency: NSObject, Identifiable, Codable, @unchecked Sendable 
         guard let cleaned = cleanedPhoneNumber() else { return nil }
         return URL(string: "tel://\(cleaned)")
     }
+
+    /// The agency's IANA time zone, or `nil` if `timeZone` is empty or unknown.
+    /// Does not fall back to the device zone — a missing identifier is not UTC.
+    public var resolvedTimeZone: TimeZone? {
+        TimeZone(identifier: timeZone)
+    }
 }

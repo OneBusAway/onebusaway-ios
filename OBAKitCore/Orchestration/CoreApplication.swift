@@ -198,6 +198,24 @@ open class CoreApplication: NSObject,
             APIServiceConfiguration(baseURL: region.OBABaseURL, apiKey: config.apiKey, uuid: userUUID, appVersion: config.appVersion, regionIdentifier: region.regionIdentifier, surveyBaseURL: region.sidecarBaseURL),
             dataLoader: config.dataLoader
         )
+        refreshFormattersTimeZone()
+    }
+
+    /// Points `formatters` at the region's dominant agency zone so clock times
+    /// match the timetable a rider is looking at, not the phone's zone.
+    private func refreshFormattersTimeZone() {
+        Task {
+            guard let apiService else { return }
+            do {
+                let agencies = try await apiService.getAgenciesWithCoverage().list
+                let identifiers = agencies.compactMap { $0.agency?.timeZone }
+                if let timeZone = TimeZone.preferredScheduleTimeZone(identifiers: identifiers) {
+                    self.formatters.timeZone = timeZone
+                }
+            } catch {
+                Logger.info("Unable to resolve region time zone from agencies-with-coverage: \(error)")
+            }
+        }
     }
 
     // MARK: - Obaco
