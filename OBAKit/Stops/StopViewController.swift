@@ -226,6 +226,7 @@ public class StopViewController: UIViewController,
         super.viewWillDisappear(animated)
         enableIdleTimer()
         viewModel.deactivate()
+        scheduleTipPresenter.stop()
     }
 
     // MARK: - Tips

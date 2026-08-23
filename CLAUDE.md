@@ -32,10 +32,11 @@ xcodebuildmcp ui-automation --help   # snapshot-ui, tap, swipe, type-text, scree
 Typical loop for verifying a change in the running app:
 
 ```bash
-xcodebuildmcp simulator build-and-run --projectPath OBAKit.xcodeproj --scheme App --simulator-id <UDID>
+scripts/generate_project OneBusAway                      # required before any build
+xcodebuildmcp simulator build-and-run --project-path OBAKit.xcodeproj --scheme App --simulator-id <UDID>
 xcodebuildmcp ui-automation snapshot-ui  --simulator-id <UDID> --style minimal
 xcodebuildmcp ui-automation touch        --simulator-id <UDID> --element-ref e26 --down --up --delay 0.08
-xcodebuildmcp ui-automation screenshot   --simulator-id <UDID> --returnFormat path --style minimal
+xcodebuildmcp ui-automation screenshot   --simulator-id <UDID> --return-format path --style minimal
 ```
 
 `snapshot-ui` returns semantic `elementRef` handles; drive those refs instead of
@@ -43,10 +44,12 @@ coordinates, and re-snapshot after any navigation or layout change.
 
 Two things that cost real time here:
 
-- **Flag spelling differs between the CLI and the MCP tools.** The CLI wants
-  `--simulator-id` / `--element-ref`; the MCP tool schema uses `simulatorId` /
-  `elementRef`. The CLI accepts `--simulatorId` on some commands and rejects it on
-  others (`simulator open` errors with "Unknown arguments"), so prefer kebab-case.
+- **Flag spelling differs between the CLI and the MCP tools.** The CLI documents
+  kebab-case (`--simulator-id`, `--element-ref`, `--project-path`,
+  `--return-format`); the MCP tool schema uses camelCase (`simulatorId`,
+  `elementRef`). The CLI tolerates camelCase on some commands and rejects it on
+  others (`simulator open` errors with "Unknown arguments"), so always use
+  kebab-case — `<workflow> <command> --help` prints the canonical names.
 - **Prefer `touch --down --up` over `tap`.** `tap` reports
   "simulated successfully" and frequently changes nothing — notably on SwiftUI
   onboarding buttons. `touch` reaches the same refs and actually lands. If a screen
@@ -59,8 +62,11 @@ driven this way — verify those with hosted unit tests instead.
 
 ```bash
 brew tap getsentry/xcodebuildmcp && brew install xcodebuildmcp
-# or: npm install -g xcodebuildmcp@latest
+# or, with Node.js 18+: npm install -g xcodebuildmcp@latest
 ```
+
+Homebrew is the path with no Node dependency. XcodeBuildMCP itself requires
+macOS 14.5+ and Xcode 16+.
 
 Every homegrown alternative on this codebase has been a dead end or a time sink: `idb` is
 broken on current Xcode, AppleScript/System Events hit an empty accessibility tree, and
