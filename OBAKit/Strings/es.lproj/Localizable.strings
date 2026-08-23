@@ -777,6 +777,12 @@
 /* Title of the first onboarding screen; the argument is the app name */
 "onboarding.welcome.title_fmt" = "Bienvenido a %@";
 
+/* Body of the destination alert notification. %@ is the name of the rider's destination stop. */
+"proximity_alert.notification.body_fmt" = "Te estás acercando a %@.";
+
+/* Title of the notification shown when the rider nears the stop they set a destination alert on. */
+"proximity_alert.notification.title" = "Te acercas a tu parada";
+
 /* Reachability bulletin shown when the user has disabled cellular data for this app in iOS Settings. Both substituted values are the app name. */
 "reachability_bulletin.description.cellular_data_restricted_fmt" = "%1$@ no tiene permiso para usar datos móviles en este momento. Para solucionarlo, vaya a Configuración > Datos móviles y active los datos móviles para %2$@, o conéctese a una red WiFi.";
 

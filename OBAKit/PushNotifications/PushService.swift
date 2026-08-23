@@ -52,6 +52,17 @@ public protocol PushServiceDelegate: NSObjectProtocol {
     func pushService(_ pushService: PushService, received arrivalDeparture: AlarmPushBody)
     func pushService(_ pushService: PushService, receivedDonationPrompt id: String?)
 
+    /// Called when the rider taps the destination proximity alert notification
+    /// that ``ProximityAlertManager`` posted for `stopID`.
+    ///
+    /// Local, not remote — it arrives here only because `OBACloudPushService` owns
+    /// the app's single `UNUserNotificationCenter` delegate and forwards every
+    /// notification tap through this service. Routing it is not optional: the
+    /// fallback for an unrecognized payload re-presents the notification's own
+    /// text in a modal alert, which for this one would tell the rider they are
+    /// approaching their stop a second time and nothing else.
+    func pushService(_ pushService: PushService, receivedProximityAlertForStopID stopID: StopID)
+
     /// Called whenever APNs issues the device a (possibly rotated) push token.
     func pushService(_ pushService: PushService, receivedDeviceToken token: String)
 }
@@ -106,6 +117,9 @@ public class PushService: NSObject {
         else if key == "donation" {
             let testID = additionalData["donation"] as? String
             delegate?.pushService(self, receivedDonationPrompt: testID)
+        }
+        else if key == ProximityAlertManager.notificationUserInfoKey, let stopID = additionalData[key] as? StopID {
+            delegate?.pushService(self, receivedProximityAlertForStopID: stopID)
         }
         else {
             displayMessage(message)

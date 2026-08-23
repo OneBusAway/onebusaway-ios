@@ -40,6 +40,7 @@ private class PushServiceDelegateRecorder: NSObject, PushServiceDelegate {
     var receivedAlarms: [AlarmPushBody] = []
     var receivedDonationPromptIDs: [String?] = []
     var receivedDeviceTokens: [String] = []
+    var receivedProximityAlertStopIDs: [StopID] = []
 
     func pushServicePresentingController(_ pushService: PushService) -> UIViewController? {
         nil
@@ -55,6 +56,10 @@ private class PushServiceDelegateRecorder: NSObject, PushServiceDelegate {
 
     func pushService(_ pushService: PushService, receivedDeviceToken token: String) {
         receivedDeviceTokens.append(token)
+    }
+
+    func pushService(_ pushService: PushService, receivedProximityAlertForStopID stopID: StopID) {
+        receivedProximityAlertStopIDs.append(stopID)
     }
 }
 
@@ -208,6 +213,36 @@ final class PushServiceTests: OBATestCase {
 
         #expect(delegate.receivedDonationPromptIDs.count == 1)
         #expect(delegate.receivedDonationPromptIDs[0] == "experiment-42")
+    }
+
+    // MARK: - Proximity Alert Payloads
+
+    @Test func `Proximity alert payload forwards stop ID to delegate`() {
+        provider.notificationReceivedHandler("You're getting close to 3rd & Pike", [
+            ProximityAlertManager.notificationUserInfoKey: "1_75403"
+        ])
+
+        #expect(delegate.receivedProximityAlertStopIDs == ["1_75403"])
+    }
+
+    /// Routing this at all is what keeps the fallback below from re-presenting
+    /// the notification's own text in a modal — which for a proximity alert
+    /// would tell the rider they are approaching their stop a second time.
+    @Test func `Proximity alert payload does not route to alarm or donation`() {
+        provider.notificationReceivedHandler("You're getting close to 3rd & Pike", [
+            ProximityAlertManager.notificationUserInfoKey: "1_75403"
+        ])
+
+        #expect(delegate.receivedAlarms.isEmpty)
+        #expect(delegate.receivedDonationPromptIDs.isEmpty)
+    }
+
+    @Test func `Proximity alert payload with non string stop ID is not routed`() {
+        provider.notificationReceivedHandler("You're getting close", [
+            ProximityAlertManager.notificationUserInfoKey: 123
+        ])
+
+        #expect(delegate.receivedProximityAlertStopIDs.isEmpty)
     }
 
     // MARK: - Fallback Paths
