@@ -150,4 +150,56 @@ final class TripMapAnnotationPolicyTests: OBATestCase {
 
         #expect(controller.selectedStopTime == nil)
     }
+
+    /// Callouts are off, so selection is the only open gesture. Leaving the
+    /// pin selected after `openStop` (or after the load-time skip) means
+    /// MapKit will not fire `didSelect` again. Use the `mapView` MapKit
+    /// passed in — not `self.mapView`, which would load `.view`.
+    @Test @MainActor
+    func `Opening a stop deselects the pin so a second tap still opens`() throws {
+        let stopArrivals = try Fixtures.loadRESTAPIPayload(
+            type: StopArrivals.self,
+            fileName: "arrivals-and-departures-for-stop-1_10914.json"
+        )
+        let arrivalDeparture = try #require(stopArrivals.arrivalsAndDepartures.first)
+        let controller = makeController(arrivalDeparture: arrivalDeparture)
+        let nav = UINavigationController(rootViewController: controller)
+        let mapView = MKMapView()
+        let stopTime = try #require(try loadTripDetails().stopTimes.first)
+        mapView.addAnnotation(stopTime)
+        mapView.selectAnnotation(stopTime, animated: false)
+
+        let annotationView = MinimalStopAnnotationView(annotation: stopTime, reuseIdentifier: "test")
+        annotationView.canShowCallout = false
+
+        controller.skipNextStopTimeHighlight = false
+        controller.mapView(mapView, didSelect: annotationView)
+
+        #expect(mapView.selectedAnnotations.isEmpty)
+        #expect(nav.viewControllers.count == 2)
+
+        mapView.selectAnnotation(stopTime, animated: false)
+        controller.mapView(mapView, didSelect: annotationView)
+
+        #expect(mapView.selectedAnnotations.isEmpty)
+        #expect(nav.viewControllers.count == 3)
+    }
+
+    /// Load-time `selectAnnotation` arms skip and must still deselect, or
+    /// the first tap on the origin pin is a no-op.
+    @Test @MainActor
+    func `Programmatic selection deselects so the origin pin can be tapped`() throws {
+        let arrivalDeparture = try Fixtures.arrivalDeparture()
+        let controller = makeController(arrivalDeparture: arrivalDeparture)
+        let mapView = MKMapView()
+        let stopTime = try #require(try loadTripDetails().stopTimes.first)
+        mapView.addAnnotation(stopTime)
+        mapView.selectAnnotation(stopTime, animated: false)
+
+        let annotationView = MinimalStopAnnotationView(annotation: stopTime, reuseIdentifier: "test")
+        controller.skipNextStopTimeHighlight = true
+        controller.mapView(mapView, didSelect: annotationView)
+
+        #expect(mapView.selectedAnnotations.isEmpty)
+    }
 }

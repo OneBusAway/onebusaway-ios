@@ -8,11 +8,17 @@ origin pin; that programmatic select must not push the stop back on top.
 
 `TripViewController.skipNextStopTimeHighlight` is armed on every programmatic
 assignment of `selectedStopTime` (first load, and `showStopOnMap` from the
-list). `mapView(_:didSelect:)` consumes the flag and skips `openStop`.
+list). `mapView(_:didSelect:)` consumes the flag and skips `openStop`. It
+still deselects the pin: MapKit will not re-fire `didSelect` for an
+already-selected annotation, and the first tap on the origin stop would
+otherwise do nothing.
 
 A value-equal assignment (same `TripStopTime` on a 30s refresh) clears the
 flag in `selectedStopTime`'s `didSet` so a leaked arm cannot swallow the next
 tap.
+
+`didSelect` also skips `highlightStopInList` when the flag is set. The origin
+pin is not highlighted in the trip list on load.
 
 ## Refresh
 
@@ -21,7 +27,11 @@ writes the origin only on the first load, or while the origin is still the
 selected stop. After the rider deselects (`didDeselect` → `selectedStopTime =
 nil`) or picks another stop, a later emission leaves that choice alone.
 
-`didSelect` still skips list highlight and the floating-panel move when the
-flag is set: those share the same `didSelect` entry. The origin pin is
-selected on the map. Tests must not load `TripViewController.view`
-(`viewDidLoad` reads an unresolved `ArrivalDeparture.route`).
+## Deselect after open
+
+`openStop` deselects the annotation on the `MKMapView` MapKit passed into
+`didSelect` (same pattern as `MapViewController`). Come back from the stop
+page and the same pin can be tapped again.
+
+Tests must not load `TripViewController.view` (`viewDidLoad` reads an
+unresolved `ArrivalDeparture.route`).

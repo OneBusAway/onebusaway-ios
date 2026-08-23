@@ -337,10 +337,16 @@ class TripViewController: UIViewController,
     public func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
         guard let stopTime = view.annotation as? TripStopTime else { return }
         defer { skipNextStopTimeHighlight = false }
-        guard !skipNextStopTimeHighlight else { return }
+        if skipNextStopTimeHighlight {
+            // Programmatic select leaves the pin selected. MapKit will not
+            // re-fire `didSelect` for an already-selected annotation, so the
+            // first tap on the origin stop would do nothing.
+            mapView.deselectAnnotation(view.annotation, animated: false)
+            return
+        }
 
         tripDetailsController.highlightStopInList(stopTime.stop)
-        openStop(stopTime)
+        openStop(stopTime, on: mapView)
     }
 
     public func mapView(_ mapView: MKMapView, didDeselect view: MKAnnotationView) {
@@ -350,12 +356,16 @@ class TripViewController: UIViewController,
         self.selectedStopTime = nil
     }
 
-    private func openStop(_ stopTime: TripStopTime) {
+    private func openStop(_ stopTime: TripStopTime, on mapView: MKMapView) {
         var transferContext: TransferContext?
         if let arrivalDeparture = tripConvertible.arrivalDeparture,
            stopTime.stopID != arrivalDeparture.stopID {
             transferContext = .from(arrivalDeparture: arrivalDeparture, arrivalDate: stopTime.arrivalDate)
         }
+
+        // Same reason as `MapViewController`: leaving the tapped pin selected
+        // only strands a highlight. MapKit will not fire `didSelect` again.
+        mapView.deselectAnnotation(stopTime, animated: false)
 
         application.viewRouter.navigateTo(stop: stopTime.stop, from: self, transferContext: transferContext)
     }
