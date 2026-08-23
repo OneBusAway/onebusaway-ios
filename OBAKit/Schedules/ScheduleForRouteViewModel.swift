@@ -138,7 +138,7 @@ class ScheduleForRouteViewModel: ObservableObject {
     private lazy var timeFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm"
-        formatter.timeZone = TimeZone.current
+        formatter.timeZone = application.formatters.timeZone
         return formatter
     }()
 
@@ -147,7 +147,7 @@ class ScheduleForRouteViewModel: ObservableObject {
         formatter.dateStyle = .none
         formatter.timeStyle = .short
         formatter.locale = .current
-        formatter.timeZone = TimeZone.current
+        formatter.timeZone = application.formatters.timeZone
         return formatter
     }()
 
