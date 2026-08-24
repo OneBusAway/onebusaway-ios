@@ -486,7 +486,11 @@ public class Application: CoreApplication, PushServiceDelegate {
             Task { await walkingSpeedManager.refreshFromHealthKitIfPossible() }
         }
 
-        if userDataStore.bikeModeEnabled && userDataStore.bikeSpeedSource == .healthKit {
+        // Matches the walking-speed refresh above: gated on the sync source alone, not
+        // on whether Bike Mode is currently toggled on. The header's bike chip is always
+        // shown regardless of mode, so a rider who synced once and later turned Bike Mode
+        // off would otherwise keep a frozen cycling-speed ETA on every stop header forever.
+        if userDataStore.bikeSpeedSource == .healthKit {
             Task { await bikeModeManager.refreshFromHealthKitIfPossible() }
         }
     }

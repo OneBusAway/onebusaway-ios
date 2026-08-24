@@ -28,6 +28,9 @@ struct StopDeparturesSections: View {
     let serviceAlerts: [ServiceAlert]
     let sortType: StopSort
     let walkMinutes: Int?
+    /// Whether `walkMinutes` was computed at bike speed — the chronological
+    /// divider's wording/icon/color has to match what actually produced it.
+    var isBikeMode: Bool = false
     let minutesAfter: UInt
     let isBrokenBookmark: Bool
     let errorText: String?
@@ -211,6 +214,7 @@ struct StopDeparturesSections: View {
                 // there is anything to disclose.
                 partition: chronologicalPartition,
                 walkMinutes: walkMinutes,
+                isBikeMode: isBikeMode,
                 showPast: !pastCollapsed,
                 statusProvider: statusProvider,
                 alarmLookup: alarmLookup,
