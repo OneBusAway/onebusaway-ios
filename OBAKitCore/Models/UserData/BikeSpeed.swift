@@ -11,7 +11,12 @@ import Foundation
 
 // Raw values are persisted to UserDefaults — do not reorder or renumber existing cases.
 @objc public enum BikeSpeedSource: Int {
-    case manual = 0    // fixed fallback constant in effect
+    // Not currently HealthKit-driven — covers both "never synced" (the stored speed is
+    // `BikeSpeed.defaultMetersPerSecond`) and "a sync attempt fell back to manual"
+    // (`BikeModeManager` leaves the last-synced speed in place rather than resetting it;
+    // see its `requestHealthKitAuthorizationAndSync` doc comment). There is no manual
+    // speed-entry UI — this case name means "not HealthKit", not "user-entered".
+    case manual = 0
     case healthKit = 1 // synced from HealthKit
 }
 
