@@ -57,7 +57,7 @@ struct OnboardingRegionView<Provider: RegionProvider>: View {
         ) {
             VStack(spacing: 0) {
                 if let region = resolved {
-                    selectedCard(for: region)
+                    selectedCard(for: region, isDetected: region.id == detected?.id)
                         .padding(.top, 22)
                 }
 
@@ -79,6 +79,12 @@ struct OnboardingRegionView<Provider: RegionProvider>: View {
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                     .padding(.horizontal, 16)
                                     .frame(height: 48)
+                                    // Without this the row's tappable area collapses to the
+                                    // glyphs of the region name: `.buttonStyle(.plain)` derives
+                                    // the hit region from the label's content rather than from
+                                    // the frame drawn around it, so most of the row ignored
+                                    // taps. See https://github.com/OneBusAway/onebusaway-ios/issues/1315
+                                    .contentShape(.rect)
                             }
                             .buttonStyle(.plain)
                             if index != shortList.count - 1 { Divider() }
@@ -108,7 +114,7 @@ struct OnboardingRegionView<Provider: RegionProvider>: View {
         .errorAlert(error: $error)
     }
 
-    private func selectedCard(for region: Region) -> some View {
+    private func selectedCard(for region: Region, isDetected: Bool) -> some View {
         VStack(spacing: 0) {
             // Live map preview, preferred over MKMapSnapshotter because snapshots
             // don't adapt to dark mode.
@@ -116,16 +122,21 @@ struct OnboardingRegionView<Provider: RegionProvider>: View {
                 .allowsHitTesting(false)
                 .frame(height: 108)
                 .clipped()
-            cardFooter(for: region)
+            cardFooter(for: region, isDetected: isDetected)
         }
         .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 20))
         .clipShape(RoundedRectangle(cornerRadius: 20))
     }
 
-    private func cardFooter(for region: Region) -> some View {
+    private func cardFooter(for region: Region, isDetected: Bool) -> some View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 3) {
-                Text(OBALoc("onboarding.region.detected_label", value: "Detected near you", comment: "Label on the detected-region card"))
+                // The same card renders a region the rider picked from the list
+                // below, and calling that one "detected near you" would claim
+                // something untrue about how it got there.
+                Text(isDetected
+                     ? OBALoc("onboarding.region.detected_label", value: "Detected near you", comment: "Label on the detected-region card")
+                     : OBALoc("onboarding.region.selected_label", value: "Your selection", comment: "Label on the region card when the rider chose the region from the list rather than it being detected from their location"))
                     .font(.caption.weight(.bold))
                     .foregroundStyle(Color.accentColor)
                     .textCase(.uppercase)

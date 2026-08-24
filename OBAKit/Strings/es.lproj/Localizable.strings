@@ -762,6 +762,9 @@
 /* Link to the full region picker */
 "onboarding.region.see_all_button" = "Ver todas las regiones";
 
+/* Label on the region card when the rider chose the region from the list rather than it being detected from their location */
+"onboarding.region.selected_label" = "Tu selección";
+
 /* Title of the region onboarding screen */
 "onboarding.region.title" = "Tu región";
 
