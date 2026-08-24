@@ -217,6 +217,36 @@
 /* Button title to let the user view a data migration report. */
 "data_migration_bulletin.view_report_button" = "보고서 보기";
 
+/* Error shown when the boarding stop cannot be found in the trip's stop list. */
+"destination_stop_picker.error_boarding_stop_not_found" = "이 여정에서 탑승 지점을 확인할 수 없습니다.";
+
+/* Error shown when the API service is unavailable in the destination stop picker. */
+"destination_stop_picker.error_no_service" = "대중교통 서비스에 연결할 수 없습니다.";
+
+/* Title shown while loading the list of stops for destination selection. */
+"destination_stop_picker.loading_title" = "정류장 불러오는 중";
+
+/* Body text shown when there are no stops available after the boarding stop. */
+"destination_stop_picker.no_stops_body" = "이 여정에 남은 정류장이 없습니다.";
+
+/* Title shown when there are no stops available after the boarding stop. */
+"destination_stop_picker.no_stops_title" = "이용 가능한 정류장 없음";
+
+/* Button to retry loading stops after an error. */
+"destination_stop_picker.retry_button" = "다시 시도";
+
+/* Section header prompting user to select their destination stop. */
+"destination_stop_picker.select_destination_header" = "어디에서 내리시나요?";
+
+/* VoiceOver label for the navigation bar button that shares the trip when no destination could be loaded. */
+"destination_stop_picker.share_without_destination_a11y_label" = "목적지 정류장 없이 여정 공유";
+
+/* Button shown when a trip has no remaining stops, letting the user share the trip without picking a destination. */
+"destination_stop_picker.share_without_destination_button" = "목적지 없이 공유";
+
+/* Navigation bar title for the destination stop picker when sharing a trip. */
+"destination_stop_picker.title" = "목적지 선택";
+
 /* Body of the donation widget that appears on the stop view controller */
 "donation_cell.body" = "이 앱은 현재 100% 자원봉사로 만들어지고 있으며, 향후 개발 자금 마련을 위해 여러분의 도움이 필요합니다.";
 
@@ -1502,6 +1532,12 @@
 
 /* Describes the previous trip of this vehicle. e.g. Starts as 10 - Downtown Seattle */
 "trip_details_controller.starts_as_fmt" = "%@(으)로 운행 시작";
+
+/* Alert message when trip sharing fails. */
+"trip_sharing.share_error.message" = "여정 링크를 준비하는 중 문제가 발생했습니다. 다시 시도해 주세요.";
+
+/* Alert title when trip sharing fails. */
+"trip_sharing.share_error.title" = "공유할 수 없음";
 
 /* A formatted string for displaying a vehicle's ID on the trip status map. e.g. 'Vehicle ID: 12345' */
 "trip_status_annotation.title_fmt" = "차량 ID: %@";

@@ -243,7 +243,7 @@ extension View {
                     Label(Strings.addBookmark, systemImage: "bookmark")
                 }
                 Button(action: actions.onShareTrip) {
-                    Label(OBALoc("stop_page.row.share_trip", value: "Share Trip", comment: "Context menu action that shares the trip after choosing a destination stop"), systemImage: "square.and.arrow.up")
+                    Label(Strings.shareTrip, systemImage: "square.and.arrow.up")
                 }
             }, preview: {
                 actions.makePreview()
