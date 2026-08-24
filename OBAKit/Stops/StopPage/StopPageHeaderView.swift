@@ -94,8 +94,11 @@ struct StopPageHeaderView: View {
             // Two independent estimates: the walk chip (tappable, opens walking
             // directions) and the bike chip. Both are always shown when
             // available — Bike Mode only affects the arrival split, not these.
+            // FlowLayout, not HStack: the subtitle/route chips above never
+            // compress or drop at accessibility sizes, and two side-by-side
+            // pills with no wrap would be the one thing on this card that does.
             if walkTime != nil || bikeTime != nil {
-                HStack(spacing: 8) {
+                FlowLayout(hSpacing: 8, vSpacing: 8) {
                     if let walkTime {
                         Button(action: onWalkingDirections) {
                             travelChip(walkChipText(walkTime), systemImage: "figure.walk", background: ThemeColors.shared.departureOnTime)
