@@ -170,6 +170,10 @@ class ScheduleForRouteViewModel: ObservableObject {
 
         do {
             let response = try await apiService.getScheduleForRoute(routeID: routeID, date: selectedDate)
+            // `.task(id:)` cancels this fetch when the date changes or the
+            // sheet dismisses. Applying after cancel republishes into a
+            // dying view — the Combine crash in #908.
+            guard !Task.isCancelled else { return }
             scheduleData = response.entry
         } catch let apiError as APIError {
             if case .requestNotFound = apiError {

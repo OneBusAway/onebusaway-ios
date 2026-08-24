@@ -122,6 +122,7 @@ struct ScheduleForStopView: View {
                     selection: $stopViewModel.selectedDate,
                     displayedComponents: [.date]
                 )
+                .datePickerStyle(.compact)
                 .labelsHidden()
             }
             .padding(.horizontal)

@@ -110,6 +110,7 @@ class ScheduleForStopViewModel: ObservableObject {
 
         do {
             let response = try await apiService.getScheduleForStop(stopID: stopID, date: selectedDate)
+            guard !Task.isCancelled else { return }
             scheduleData = response.entry
 
             // Validation - If the previously selected route doesn't exist on this new date, switch to the first available one.

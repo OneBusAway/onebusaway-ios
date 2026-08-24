@@ -22,8 +22,7 @@ class ScheduleForRouteViewController: UIHostingController<ScheduleForRouteView> 
         let rootView = ScheduleForRouteView(routeID: routeID, application: application)
         super.init(rootView: rootView)
 
-        // Configure modal presentation
-        modalPresentationStyle = .pageSheet
+        modalPresentationStyle = ScheduleSheetPresentation.modalStyle(for: UIDevice.current.userInterfaceIdiom)
     }
 
     @available(*, unavailable)
@@ -43,7 +42,7 @@ class ScheduleForStopViewController: UIHostingController<ScheduleForStopView> {
         let rootView = ScheduleForStopView(stopID: stopID, application: application)
         super.init(rootView: rootView)
 
-        self.modalPresentationStyle = .pageSheet
+        self.modalPresentationStyle = ScheduleSheetPresentation.modalStyle(for: UIDevice.current.userInterfaceIdiom)
     }
 
     @available(*, unavailable)
