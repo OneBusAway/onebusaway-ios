@@ -72,6 +72,54 @@ final class TripStopTemporalStateTests {
 
 @MainActor
 @Suite(.serialized)
+final class TripStopViewModelIdentityTests {
+
+    /// A loop route visits the same stop twice. `NSDiffableDataSource` crashes
+    /// if two rows share an item identifier (#538). The SwiftUI trip page already
+    /// qualifies ids by index (`TripStopListModel`); the UIKit list did not.
+    @Test func `A stop visited twice gets two distinct list ids`() throws {
+        let data = Fixtures.loadData(file: "trip_details_1_18196913_no_status.json")
+        let response = try JSONDecoder.RESTDecoder().decode(RESTAPIResponse<TripDetails>.self, from: data)
+        let stopTime = try #require(response.entry.stopTimes.first)
+
+        let first = TripStopViewModel(
+            stopTime: stopTime,
+            arrivalDeparture: nil,
+            stopIndex: 0,
+            closestStopIndex: nil,
+            onSelectAction: nil
+        )
+        let second = TripStopViewModel(
+            stopTime: stopTime,
+            arrivalDeparture: nil,
+            stopIndex: 5,
+            closestStopIndex: nil,
+            onSelectAction: nil
+        )
+
+        #expect(first.id != second.id)
+        #expect(first.stop.id == second.stop.id)
+        #expect(first != second)
+    }
+
+    @Test func `List ids stay unique across the whole trip`() throws {
+        let data = Fixtures.loadData(file: "trip_details_1_18196913_no_status.json")
+        let response = try JSONDecoder.RESTDecoder().decode(RESTAPIResponse<TripDetails>.self, from: data)
+        let ids = response.entry.stopTimes.enumerated().map { index, stopTime in
+            TripStopViewModel(
+                stopTime: stopTime,
+                arrivalDeparture: nil,
+                stopIndex: index,
+                closestStopIndex: nil,
+                onSelectAction: nil
+            ).id
+        }
+        #expect(Set(ids).count == ids.count)
+    }
+}
+
+@MainActor
+@Suite(.serialized)
 final class TripProgressViewModelTests {
 
     @Test func `Zero total stops returns nil`() {
