@@ -49,6 +49,11 @@ struct StopDeparturesBuilder {
             serviceAlerts: viewModel.stopArrivals?.serviceAlerts ?? [],
             sortType: viewModel.stopPreferences.sortType,
             walkMinutes: walkTime?.walkMinutes,
+            // Read straight off the view model, unlike `walkTime`: it has no
+            // location-drift-within-one-render-pass concern to guard against,
+            // so there's no snapshot-consistency reason to thread it through
+            // the caller too.
+            isBikeMode: viewModel.isBikeModeEnabled,
             minutesAfter: viewModel.minutesAfter,
             isBrokenBookmark: viewModel.isBrokenBookmark,
             errorText: viewModel.operationErrorMessage,

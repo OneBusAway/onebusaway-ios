@@ -47,7 +47,10 @@ nonisolated enum StopSheetHeaderMetrics {
 /// A plain-value view except for `mapFocus` — it never touches `StopViewModel`.
 struct StopPageSheetHeaderView: View {
     let stop: Stop
+    /// Walk time at the user's walking speed — always shown, independent of Bike Mode.
     let walkTime: WalkTimeInfo?
+    /// Bike time at the user's cycling speed — always shown, independent of Bike Mode.
+    var bikeTime: WalkTimeInfo?
     /// Opens walking directions to the stop (VC-owned; disambiguates between maps apps when more
     /// than one is available).
     let onWalkingDirections: () -> Void
@@ -149,21 +152,24 @@ struct StopPageSheetHeaderView: View {
                     }
                 }
 
-                if !isCollapsed, walkTime != nil || !chips.isEmpty {
-                    // Walk pill and chips share one flowing row, per the design — the pill
-                    // leads, a hairline separates it from the routes, and everything wraps
-                    // together.
+                if !isCollapsed, walkTime != nil || bikeTime != nil || !chips.isEmpty {
+                    // Walk pill, bike pill, and chips share one flowing row, per the design —
+                    // the pills lead, a hairline separates them from the routes, and everything
+                    // wraps together.
                     //
                     // `FlowLayout` sizes subviews with an unspecified proposal, which a
                     // `Button` answers with a greedy height — that is what once stretched the
                     // walk pill down the whole sheet. So nothing in this row is a `Button`;
-                    // the pill and the chips are `Text`-shaped tappable views instead. See
+                    // the pills and the chips are `Text`-shaped tappable views instead. See
                     // `chipView(_:)`.
                     FlowLayout(hSpacing: 6, vSpacing: 6) {
                         if let walkTime {
                             walkPill(walkTime)
                         }
-                        if walkTime != nil, !chips.isEmpty {
+                        if let bikeTime {
+                            bikePill(bikeTime)
+                        }
+                        if (walkTime != nil || bikeTime != nil) && !chips.isEmpty {
                             rowSeparator
                         }
                         ForEach(chips) { chip in
@@ -236,6 +242,28 @@ struct StopPageSheetHeaderView: View {
         .accessibilityLabel(text)
         .accessibilityAddTraits(.isButton)
         .accessibilityHint(OBALoc("stop_page.header.walk_a11y_hint", value: "Opens walking directions to this stop.", comment: "VoiceOver hint on the header card's walk-time button."))
+    }
+
+    /// The bike-time pill: same shape as `walkPill(_:)`, tinted blue (matching the pushed
+    /// header's bike chip) instead of on-time green. Not tappable — there's no cycling-directions
+    /// deep link to open (see the walk pill's `onWalkingDirections`; Apple's Maps URL scheme has
+    /// no documented bike mode), so unlike the walk pill this is a static value, not a button.
+    private func bikePill(_ info: WalkTimeInfo) -> some View {
+        let text = bikePillText(info)
+        return HStack(spacing: 4) {
+            Image(systemName: "bicycle")
+                .accessibilityHidden(true) // the text below carries the meaning
+            Text(text)
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
+        }
+        .font(chipFont)
+        .foregroundStyle(Color(uiColor: ThemeColors.shared.blue))
+        .padding(.horizontal, chipHorizontalPadding)
+        .padding(.vertical, chipVerticalPadding)
+        .background(Color(uiColor: ThemeColors.shared.blue).opacity(0.14), in: Capsule())
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(text)
     }
 
     // MARK: - Shared pill metrics
@@ -322,6 +350,17 @@ struct StopPageSheetHeaderView: View {
             "stop_page.walk_chip_minutes_fmt",
             value: "%d min walk",
             comment: "Walk chip on the header card. %d is the walk time in minutes."
+        )
+        return String(format: fmt, info.walkMinutes)
+    }
+
+    /// Shares its localization key with `StopPageHeaderView`'s bike chip — same wording,
+    /// different chrome, same string.
+    private func bikePillText(_ info: WalkTimeInfo) -> String {
+        let fmt = OBALoc(
+            "stop_page.bike_chip_minutes_fmt",
+            value: "%d min bike",
+            comment: "Bike chip on the header card. %d is the bike time in minutes."
         )
         return String(format: fmt, info.walkMinutes)
     }

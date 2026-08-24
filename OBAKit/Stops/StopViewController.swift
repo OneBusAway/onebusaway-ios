@@ -1004,12 +1004,12 @@ public class StopViewController: UIViewController,
         guard items.count > 0,
               let currentLocation = application.locationService.currentLocation,
               let stopLocation = stop?.location,
-              let walkingTime = WalkingDirections.travelTime(from: currentLocation, to: stopLocation, velocity: application.userDataStore.walkingSpeedMetersPerSecond)
+              let walkingTime = WalkingDirections.travelTime(from: currentLocation, to: stopLocation, velocity: application.userDataStore.effectiveTravelVelocityMetersPerSecond)
         else { return }
 
         if let insertionIndex = findInsertionIndexForWalkTime(walkingTime, items: items) {
             let distance = currentLocation.distance(from: stopLocation)
-            let walkItem = StopArrivalWalkItem(id: "walk_item", distance: distance, timeToWalk: walkingTime)
+            let walkItem = StopArrivalWalkItem(id: "walk_item", distance: distance, timeToWalk: walkingTime, isBikeMode: application.userDataStore.bikeModeEnabled)
             items.insert(walkItem.typeErased, at: insertionIndex)
         }
     }

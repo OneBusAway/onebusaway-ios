@@ -991,4 +991,100 @@ final class StopViewModelTests: OBATestCase {
         await viewModel.refresh()
         #expect(application.promptCoordinator.sawErrorThisSession)
     }
+
+    // MARK: - Stop Page: Walk/Bike Time
+
+    /// `headerWalkTime` and `headerBikeTime` must stay fixed at their respective speeds
+    /// regardless of Bike Mode, while the mode-aware `walkTime` is the one that switches —
+    /// the contract the header chips and the chronological split each depend on.
+    @Test @MainActor
+    func `Header walk and bike time stay fixed across Bike Mode while the mode-aware value switches`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock())
+
+        let viewModel = StopViewModel(application: app, stopID: testStopID)
+        await viewModel.refresh()
+
+        app.userDataStore.bikeModeEnabled = false
+        let headerWalkBefore = try #require(viewModel.headerWalkTime)
+        let headerBikeBefore = try #require(viewModel.headerBikeTime)
+
+        // Cycling speed is faster than walking speed, so the bike estimate must be shorter.
+        #expect(headerBikeBefore.walkMinutes < headerWalkBefore.walkMinutes)
+        // Bike Mode off: the mode-aware value tracks the walking speed.
+        #expect(viewModel.walkTime == headerWalkBefore)
+
+        app.userDataStore.bikeModeEnabled = true
+
+        // The header chips must not move when Bike Mode toggles...
+        #expect(viewModel.headerWalkTime == headerWalkBefore)
+        #expect(viewModel.headerBikeTime == headerBikeBefore)
+        // ...but the mode-aware value now tracks the cycling speed instead.
+        #expect(viewModel.walkTime == headerBikeBefore)
+    }
+
+    /// A Bike Mode toggle made in Settings — not through this view model — must
+    /// still refresh the stop page immediately, or the header chips and the
+    /// chronological divider would show stale minutes until the next periodic
+    /// poll. Mirrors `Arrival departure filter syncs from an external Settings
+    /// change` above: `syncBikeStateFromDefaults` shares that test's subscription
+    /// (#1273) rather than a second one.
+    @Test @MainActor
+    func `Bike Mode toggle from an external Settings change emits objectWillChange`() async {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock())
+
+        let viewModel = StopViewModel(application: app, stopID: testStopID)
+        await viewModel.refresh()
+
+        var emissions = 0
+        let cancellable = viewModel.objectWillChange.sink { emissions += 1 }
+        defer { cancellable.cancel() }
+
+        // `refresh()` above has its own async side effects (e.g. recording this
+        // stop as recently viewed) that can still be landing on the main queue
+        // here, each a legitimate `objectWillChange` in its own right. Let that
+        // settle before measuring, so the assertion below isolates this write's
+        // effect from that unrelated background noise, not just its raw count.
+        for _ in 0..<5 { await Task.yield() }
+        let baseline = emissions
+
+        // Settings' write path.
+        app.userDataStore.bikeModeEnabled = true
+
+        // `UserDefaults.didChangeNotification` fan-out is `receive(on: main)`,
+        // so give the runloop a few hops to deliver.
+        for _ in 0..<5 { await Task.yield() }
+
+        #expect(emissions > baseline)
+    }
+
+    /// The no-op guard on the same path: re-persisting an unchanged bike setting
+    /// must not emit beyond baseline — pins `syncBikeStateFromDefaults`'s
+    /// `current != lastBikeState` check so a rider isn't paying a re-render on
+    /// every unrelated Settings write.
+    @Test @MainActor
+    func `Unrelated Settings write does not emit a bike state refresh`() async {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock())
+
+        let viewModel = StopViewModel(application: app, stopID: testStopID)
+        await viewModel.refresh()
+
+        var emissions = 0
+        let cancellable = viewModel.objectWillChange.sink { emissions += 1 }
+        defer { cancellable.cancel() }
+
+        // See the sibling test above for why this settles against a baseline
+        // rather than an absolute count.
+        for _ in 0..<5 { await Task.yield() }
+        let baseline = emissions
+
+        // Re-writing the already-current value: nothing bike-related actually changed.
+        app.userDataStore.bikeModeEnabled = app.userDataStore.bikeModeEnabled
+
+        for _ in 0..<5 { await Task.yield() }
+
+        #expect(emissions == baseline)
+    }
 }
