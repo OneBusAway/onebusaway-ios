@@ -5,4 +5,6 @@ offers **Directions to Here** and **Directions from Here**. Those switch to the
 map tab and open the existing trip planner with the stop prefilled as
 destination or origin.
 
-Walking directions (Apple / Google Maps) are unchanged.
+The rows are hidden in the experimental map-panel experience: that shell has
+no `MapViewController` to present the planner on. Walking directions
+(Apple / Google Maps) are unchanged.

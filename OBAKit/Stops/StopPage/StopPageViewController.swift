@@ -564,7 +564,7 @@ private extension StopPageViewController {
 
         var locationChildren: [UIMenuElement] = [nearbyAction, walkingDirectionsElement]
 
-        if StopTripPlannerAction.isAvailable(application: application), let stop = viewModel.stop {
+        if StopTripPlannerAction.canPresent(application: application), let stop = viewModel.stop {
             let directionsToHere = UIAction(
                 title: StopTripPlannerAction.directionsToHereTitle,
                 image: UIImage(systemName: "arrow.triangle.turn.up.right.diamond")

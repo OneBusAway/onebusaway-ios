@@ -195,7 +195,7 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
     }
 
     private func makeStopClosures(viewModel: StopViewModel) -> StopClosures {
-        let tripPlannerAvailable = StopTripPlannerAction.isAvailable(application: application)
+        let tripPlannerAvailable = StopTripPlannerAction.canPresent(application: application)
         return StopClosures(
             showWalkingDirections: { [weak self] in
                 guard let coordinate = viewModel.stop?.coordinate else { return }
@@ -428,32 +428,8 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
 
     /// Switches to the map tab and opens the classic trip planner with this stop
     /// as origin or destination. Shared by the pushed Stop page and the map sheet.
-    ///
-    /// When `viewRouter.rootController` is nil (experimental map-panel mode),
-    /// logs and returns — there is no `MapViewController` to present on.
     func showTripPlanner(action: StopTripPlannerAction, stop: Stop) {
-        guard StopTripPlannerAction.isAvailable(application: application) else { return }
-
-        guard let rootController = application.viewRouter.rootController else {
-            // Same posture as `ViewRouter.rootNavigateTo`: map-panel mode bypasses
-            // the classic tab root, so Directions to/from Here cannot open the
-            // UIKit trip planner. Prefer an honest no-op over a dead button.
-            Logger.error("StopPageActionPresenter: showTripPlanner dropped — no classic root controller (map-panel mode is active)")
-            return
-        }
-
-        application.viewRouter.rootNavigateTo(page: .map)
-
-        let mapController = rootController.mapController
-        mapController.navigationController?.popToRootViewController(animated: false)
-
-        let stopMapItem = TripPlannerEndpoints.mapItem(from: stop)
-        switch action {
-        case .directionsToStop:
-            mapController.showTripPlanner(destination: stopMapItem)
-        case .directionsFromStop:
-            mapController.showTripPlanner(origin: stopMapItem, destination: nil)
-        }
+        StopTripPlannerAction.present(action, stop: stop, application: application)
     }
 
     /// An unanchored action sheet is a hard crash on a regular-width device.

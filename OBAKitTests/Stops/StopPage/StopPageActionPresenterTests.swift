@@ -247,9 +247,8 @@ final class StopPageActionPresenterTests: OBATestCase {
         #expect(host.presentedViewController === modal)
     }
 
-    /// Map-panel mode leaves `viewRouter.rootController` nil. Directions
-    /// to/from Here must log and return rather than crash — classic
-    /// `MapViewController.showTripPlanner` is unreachable there.
+    /// Map-panel mode leaves `viewRouter.rootController` nil. `canPresent` is
+    /// false so the rows stay hidden; calling `present` anyway must not crash.
     @Test func `Trip planner from stop returns when rootController is nil`() async throws {
         let host = makeHost()
         let (presenter, application) = makePresenter(host: host)

@@ -39,6 +39,9 @@ final class StopTripPlannerActionTests: OBATestCase {
         #expect(application.features.tripPlanning == .running)
         #expect(application.userDataStore.isTripPlanningEnabled(for: region))
         #expect(StopTripPlannerAction.isAvailable(application: application))
+        // Tests construct `Application` without a classic tab root, so the
+        // stop-page rows stay hidden — same as experimental map-panel mode.
+        #expect(!StopTripPlannerAction.canPresent(application: application))
     }
 
     @Test func `isAvailable is false when trip planning is disabled for the region`() async throws {
@@ -51,6 +54,7 @@ final class StopTripPlannerActionTests: OBATestCase {
 
         #expect(application.features.tripPlanning == .running)
         #expect(!StopTripPlannerAction.isAvailable(application: application))
+        #expect(!StopTripPlannerAction.canPresent(application: application))
     }
 
     @Test func `isAvailable is false when the region has no OTP`() async throws {
@@ -84,6 +88,7 @@ final class StopTripPlannerActionTests: OBATestCase {
         #expect(!region.supportsOTP)
         #expect(application.features.tripPlanning == .off)
         #expect(!StopTripPlannerAction.isAvailable(application: application))
+        #expect(!StopTripPlannerAction.canPresent(application: application))
     }
 
     /// `fixedRegionName` selects the region during Application init; poll briefly

@@ -417,20 +417,18 @@ public class StopViewController: UIViewController,
 
         var locationChildren: [UIMenuElement] = [nearbyAction, walkingDirectionsElement]
 
-        if StopTripPlannerAction.isAvailable(application: application), let stop {
+        if StopTripPlannerAction.canPresent(application: application), let stop {
             let directionsToHere = UIAction(
                 title: StopTripPlannerAction.directionsToHereTitle,
                 image: UIImage(systemName: "arrow.triangle.turn.up.right.diamond")
             ) { [unowned self] _ in
-                StopPageActionPresenter(application: self.application, presentingController: { [weak self] in self })
-                    .showTripPlanner(action: .directionsToStop, stop: stop)
+                StopTripPlannerAction.present(.directionsToStop, stop: stop, application: self.application)
             }
             let directionsFromHere = UIAction(
                 title: StopTripPlannerAction.directionsFromHereTitle,
                 image: UIImage(systemName: "arrow.triangle.turn.up.right.diamond.fill")
             ) { [unowned self] _ in
-                StopPageActionPresenter(application: self.application, presentingController: { [weak self] in self })
-                    .showTripPlanner(action: .directionsFromStop, stop: stop)
+                StopTripPlannerAction.present(.directionsFromStop, stop: stop, application: self.application)
             }
             locationChildren.append(contentsOf: [directionsToHere, directionsFromHere])
         }
