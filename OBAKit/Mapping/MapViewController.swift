@@ -470,16 +470,14 @@ class MapViewController: UIViewController,
     private var weatherDisplay: WeatherDisplay? {
         didSet {
             if let display = weatherDisplay {
-                let image = UIImage(systemName: WeatherFormatter.systemImageName(for: display.header.iconName))?
+                // Configuration-based buttons ignore `setTitle`/`setImage`. Update
+                // the configuration only so the stacked icon + temp actually show.
+                var config = weatherButton.configuration ?? .plain()
+                config.imagePlacement = .top
+                config.image = UIImage(systemName: WeatherFormatter.systemImageName(for: display.header.iconName))?
                     .withRenderingMode(.alwaysTemplate)
-                weatherButton.setImage(image, for: .normal)
-                weatherButton.setTitle(display.buttonTitle, for: .normal)
-                if var config = weatherButton.configuration {
-                    config.imagePlacement = .top
-                    config.image = image
-                    config.title = display.buttonTitle
-                    weatherButton.configuration = config
-                }
+                config.title = display.buttonTitle
+                weatherButton.configuration = config
                 weatherButton.accessibilityValue = display.buttonAccessibilityValue
                 weatherButton.isHidden = false
             } else {
