@@ -134,10 +134,15 @@ class CurrentTripViewController: UIViewController,
             ))
 
         case .noLocation:
+            // Recoverable like `.noResults` and `.error`: the rider can grant
+            // location access in Settings and come back, and `findVehicle()`
+            // re-reads `currentLocation` on the way in. Without the button the
+            // only way to re-run it is to leave the screen and return.
             return .standard(.init(
                 alignment: .center,
                 title: noLocationTitle,
-                body: nil
+                body: nil,
+                buttonConfig: retryButtonConfig
             ))
 
         case .noResults:
