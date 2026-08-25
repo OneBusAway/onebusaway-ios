@@ -246,4 +246,17 @@ final class StopPageActionPresenterTests: OBATestCase {
         #expect(presented is ScheduleForStopViewController)
         #expect(host.presentedViewController === modal)
     }
+
+    /// Map-panel mode leaves `viewRouter.rootController` nil. Directions
+    /// to/from Here must log and return rather than crash — classic
+    /// `MapViewController.showTripPlanner` is unreachable there.
+    @Test func `Trip planner from stop returns when rootController is nil`() async throws {
+        let host = makeHost()
+        let (presenter, application) = makePresenter(host: host)
+        #expect(application.viewRouter.rootController == nil)
+
+        let stop = try #require(Fixtures.loadSomeStops().first)
+        presenter.showTripPlanner(action: .directionsToStop, stop: stop)
+        presenter.showTripPlanner(action: .directionsFromStop, stop: stop)
+    }
 }
