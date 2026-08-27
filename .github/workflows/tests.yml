@@ -33,6 +33,23 @@ jobs:
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
+    # Fail on SwiftLint *errors* (the error-tier rules in .swiftlint.yml), so a
+    # type_body_length breach cannot land on main while staying green on GitHub.
+    # Warnings annotate via the GitHub reporter but do not fail the job —
+    # `--strict` would collapse that split. The Xcode build phase still skips
+    # in CI (scripts/swiftlint.sh); this step is the review-visible gate.
+    # See https://github.com/OneBusAway/onebusaway-ios/issues/1303
+    - name: SwiftLint (errors only)
+      env:
+        HOMEBREW_NO_AUTO_UPDATE: 1
+        HOMEBREW_NO_INSTALL_CLEANUP: 1
+      run: |
+        if ! command -v swiftlint >/dev/null; then
+          brew install swiftlint
+        fi
+        swiftlint lint --reporter github-actions-logging
+
+
     - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: .build
