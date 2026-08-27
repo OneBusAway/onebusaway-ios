@@ -216,6 +216,35 @@ final class BundleFeedbackConfigTests {
         #expect(!bundle.feedbackPromptEnabled)
     }
 
+    // MARK: - Fixed region (issue #608)
+
+    /// White-label apps pin a region in `OBAKitConfig` so the picker never
+    /// appears. These keys are how `RegionsService` is configured at launch.
+    @Test func `Fixed region name reads from OBA kit config`() throws {
+        let bundle = try FeedbackConfigBundle.create(config: ["FixedRegionName": "Puget Sound"])
+        #expect(bundle.fixedRegionName == "Puget Sound")
+    }
+
+    @Test func `Fixed region name is nil when absent`() throws {
+        let bundle = try FeedbackConfigBundle.create(config: [:])
+        #expect(bundle.fixedRegionName == nil)
+    }
+
+    @Test func `Fixed region OBA base URL reads from OBA kit config`() throws {
+        let bundle = try FeedbackConfigBundle.create(config: [
+            "FixedRegionOBABaseURL": "https://api.tampa.onebusawaycloud.com/"
+        ])
+        #expect(bundle.fixedRegionOBABaseURL == URL(string: "https://api.tampa.onebusawaycloud.com/"))
+    }
+
+    @Test func `Fixed region OBA base URL is nil when absent or unparseable`() throws {
+        let missing = try FeedbackConfigBundle.create(config: [:])
+        #expect(missing.fixedRegionOBABaseURL == nil)
+
+        let garbage = try FeedbackConfigBundle.create(config: ["FixedRegionOBABaseURL": ""])
+        #expect(garbage.fixedRegionOBABaseURL == nil)
+    }
+
     // MARK: - String.normalizedSearchQuery
 
     /// Nil means "match everything". `.searchable` hands a view the empty string
