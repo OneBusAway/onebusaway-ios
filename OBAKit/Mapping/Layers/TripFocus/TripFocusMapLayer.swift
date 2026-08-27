@@ -63,6 +63,7 @@ final class TripFocusMapLayer: NSObject, MapLayer {
 
     private var shapeOverlays: [TripShapeOverlay] = []
     private var stopAnnotations: [TripStopAnnotation] = []
+    private var directionArrowAnnotations: [PolylineArrowAnnotation] = []
     private var vehicleAnnotation: VehicleAnnotation?
 
     /// The trip the camera has already been framed for. Framing happens once per
@@ -80,6 +81,10 @@ final class TripFocusMapLayer: NSObject, MapLayer {
         mapView.register(
             TripStopAnnotationView.self,
             forAnnotationViewWithReuseIdentifier: TripStopAnnotationView.reuseIdentifier
+        )
+        mapView.register(
+            PolylineArrowAnnotationView.self,
+            forAnnotationViewWithReuseIdentifier: PolylineArrowAnnotationView.reuseIdentifier
         )
     }
 
@@ -119,6 +124,7 @@ final class TripFocusMapLayer: NSObject, MapLayer {
         let split = Self.split(content)
 
         drawShape(split)
+        drawDirectionArrows(along: split.ahead, color: content.routeColor)
         drawStops(content)
         drawVehicle(content)
         frameCameraIfNeeded(content, split: split)
@@ -146,6 +152,13 @@ final class TripFocusMapLayer: NSObject, MapLayer {
         let core = TripShapeOverlay.make(coordinates: coordinates, isSpent: isSpent, isCasing: false)
         shapeOverlays.append(contentsOf: [casing, core])
         mapView.addOverlays([casing, core], level: .aboveRoads)
+    }
+
+    private func drawDirectionArrows(along coordinates: [CLLocationCoordinate2D], color: UIColor) {
+        directionArrowAnnotations = PolylineDirectionArrows.placements(along: coordinates).map {
+            PolylineArrowAnnotation(placement: $0, tintColor: color)
+        }
+        mapView.addAnnotations(directionArrowAnnotations)
     }
 
     private func drawStops(_ content: TripMapFocus.Content) {
@@ -222,11 +235,13 @@ final class TripFocusMapLayer: NSObject, MapLayer {
     private func removeAllContent() {
         mapView.removeOverlays(shapeOverlays)
         mapView.removeAnnotations(stopAnnotations)
+        mapView.removeAnnotations(directionArrowAnnotations)
         if let vehicleAnnotation {
             mapView.removeAnnotation(vehicleAnnotation)
         }
         shapeOverlays.removeAll()
         stopAnnotations.removeAll()
+        directionArrowAnnotations.removeAll()
         vehicleAnnotation = nil
     }
 
@@ -252,6 +267,13 @@ final class TripFocusMapLayer: NSObject, MapLayer {
         if annotation is TripStopAnnotation {
             return mapView.dequeueReusableAnnotationView(
                 withIdentifier: TripStopAnnotationView.reuseIdentifier,
+                for: annotation
+            )
+        }
+
+        if annotation is PolylineArrowAnnotation {
+            return mapView.dequeueReusableAnnotationView(
+                withIdentifier: PolylineArrowAnnotationView.reuseIdentifier,
                 for: annotation
             )
         }
@@ -283,6 +305,7 @@ final class TripFocusMapLayer: NSObject, MapLayer {
     /// no-op and leak the following trip's markers on top.
     func mapAnnotationsWereCleared() {
         stopAnnotations.removeAll()
+        directionArrowAnnotations.removeAll()
         vehicleAnnotation = nil
     }
 
