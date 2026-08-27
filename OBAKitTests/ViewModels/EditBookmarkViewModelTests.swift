@@ -520,4 +520,31 @@ final class EditBookmarkViewModelTests: OBATestCase {
         #expect(app.userDataStore.bookmarks.count == 2)
         #expect(analyticsMock.reportedEvents.filter { $0.label == AnalyticsLabels.addBookmark }.count == 1)
     }
+
+    /// #1138 moved `addBookmark` to after duplicate confirmation. Cancelling that
+    /// alert must not persist a second bookmark and must not fire analytics —
+    /// the guarantee `EditBookmarkViewController.save()` relies on via
+    /// `resolveDuplicate(.cancelled)`.
+    @Test @MainActor
+    func `Cancelling duplicate confirmation does not persist or report analytics`() throws {
+        let arrivalDep = try makeArrivalDeparture()
+        let analyticsMock = AnalyticsMock()
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader, analytics: analyticsMock)
+
+        let existing = Bookmark(name: "Route", regionIdentifier: pugetSoundRegionIdentifier, arrivalDeparture: arrivalDep)
+        app.userDataStore.add(existing, to: nil)
+
+        let vm = EditBookmarkViewModel(application: app, source: .arrivalDeparture(arrivalDep), bookmark: nil)
+        guard case .duplicateRequiresConfirmation = vm.prepareToSave(name: "Route") else {
+            Issue.record("Expected .duplicateRequiresConfirmation")
+            return
+        }
+
+        vm.resolveDuplicate(.cancelled, name: "Route", isFavorite: true, to: nil)
+
+        #expect(app.userDataStore.bookmarks.count == 1)
+        #expect(app.userDataStore.findBookmark(id: existing.id) != nil)
+        #expect(analyticsMock.reportedEvents.filter { $0.label == AnalyticsLabels.addBookmark }.isEmpty)
+    }
 }
