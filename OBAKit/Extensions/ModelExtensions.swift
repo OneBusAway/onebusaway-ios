@@ -59,6 +59,13 @@ nonisolated extension Stop: @retroactive MKAnnotation {
     public var mapTitle: String? {
         Formatters.formattedMapRoutes(routes)
     }
+
+    /// Callout text for a stop pin. Same overflowing route list as `mapTitle`
+    /// (`"10, 12, 49…"`), plus the rider-visible stop code. Distinct from
+    /// `subtitle`, which Home/Recent/Nearby use and which lists every route.
+    public var mapCalloutText: String {
+        ["#\(code)", mapTitle].compactMap { $0 }.joined(separator: "\n")
+    }
 }
 
 // MARK: - TripStatus/MKAnnotation
