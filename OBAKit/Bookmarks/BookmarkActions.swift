@@ -94,6 +94,21 @@ final class BookmarkActions {
         return TripAttributes.ContentState(arrivals: Array(arrivals))
     }
 
+    /// Builds content for the trip the rider actually tracked: same stop, route,
+    /// and destination as `departure`. Route-only matching mixes both directions
+    /// at a transit center and shows the opposite bus's countdown (#1326).
+    static func buildContentState(
+        from arrivalDepartures: [ArrivalDeparture],
+        matching departure: ArrivalDeparture
+    ) -> TripAttributes.ContentState? {
+        let key = TripBookmarkKey(arrivalDeparture: departure)
+        let sameTrip = arrivalDepartures
+            .filter { TripBookmarkKey(arrivalDeparture: $0) == key }
+            .sorted { $0.arrivalDepartureDate < $1.arrivalDepartureDate }
+        let source = sameTrip.isEmpty ? [departure] : sameTrip
+        return buildContentState(from: source)
+    }
+
     @discardableResult
     func startLiveActivity(for bookmark: Bookmark, arrivalDepartures: [ArrivalDeparture]) -> TrackResult {
         let (routeShortName, routeHeadsign) = Self.liveActivityKeys(for: bookmark)

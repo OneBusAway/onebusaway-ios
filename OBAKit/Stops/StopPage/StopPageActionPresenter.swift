@@ -624,17 +624,7 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
 
     private func buildLiveActivityContentState(for departure: ArrivalDeparture, viewModel: StopViewModel) -> TripAttributes.ContentState? {
         let allArrivals = viewModel.stopArrivals?.arrivalsAndDepartures ?? [departure]
-        let sameRoute = allArrivals.filter { $0.routeID == departure.routeID }
-        let upcoming = sameRoute.isEmpty ? [departure] : Array(sameRoute.prefix(3))
-        let arrivals = upcoming.map { arrDep in
-            TripAttributes.ContentState.ArrivalInfo(
-                departureTime: Int(arrDep.arrivalDepartureDate.timeIntervalSince1970),
-                scheduleStatus: .init(arrDep.scheduleStatus),
-                scheduleDeviation: arrDep.deviationFromScheduleInMinutes * 60,
-                isArrival: arrDep.arrivalDepartureStatus == .arriving
-            )
-        }
-        return TripAttributes.ContentState(arrivals: arrivals)
+        return BookmarkActions.buildContentState(from: allArrivals, matching: departure)
     }
 
     // MARK: - User Activity
