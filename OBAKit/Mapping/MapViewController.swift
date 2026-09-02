@@ -144,7 +144,6 @@ class MapViewController: UIViewController,
             toolbar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: ThemeMetrics.controllerMargin),
             toolbar.widthAnchor.constraint(equalToConstant: 42.0),
             locationButton.heightAnchor.constraint(equalTo: locationButton.widthAnchor),
-            weatherButton.heightAnchor.constraint(equalTo: weatherButton.widthAnchor),
             toggleMapTypeButton.heightAnchor.constraint(equalTo: toggleMapTypeButton.widthAnchor),
             myTripButton.heightAnchor.constraint(equalTo: myTripButton.widthAnchor)
         ])
@@ -441,11 +440,17 @@ class MapViewController: UIViewController,
     // MARK: - Weather
 
     private lazy var weatherButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setTitle("—", for: .normal)
-        button.titleLabel?.adjustsFontSizeToFitWidth = true
+        var config = UIButton.Configuration.plain()
+        config.imagePlacement = .top
+        config.title = "—"
+        config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
+            var outgoing = incoming
+            outgoing.font = UIFont.preferredFont(forTextStyle: .body).bold
+            return outgoing
+        }
+
+        let button = UIButton(configuration: config)
         button.addTarget(self, action: #selector(showWeather), for: .touchUpInside)
-        button.titleLabel?.font = UIFont.preferredFont(forTextStyle: .body).bold
         button.accessibilityLabel = OBALoc("map_controller.show_weather_button", value: "Show Weather Forecast", comment: "Accessibility label for a button that provides the current forecast")
         return button
     }()
@@ -465,7 +470,15 @@ class MapViewController: UIViewController,
     private var weatherDisplay: WeatherDisplay? {
         didSet {
             if let display = weatherDisplay {
-                weatherButton.setTitle(display.buttonTitle, for: .normal)
+                // Configuration-based buttons ignore `setTitle`/`setImage`. Update
+                // the configuration only so the stacked icon + temp actually show.
+                var config = weatherButton.configuration ?? .plain()
+                config.imagePlacement = .top
+                config.image = UIImage(systemName: WeatherFormatter.systemImageName(for: display.header.iconName))?
+                    .withRenderingMode(.alwaysTemplate)
+                config.title = display.buttonTitle
+                weatherButton.configuration = config
+                weatherButton.accessibilityValue = display.buttonAccessibilityValue
                 weatherButton.isHidden = false
             } else {
                 weatherButton.isHidden = true
