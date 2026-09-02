@@ -1656,6 +1656,9 @@
 /* Accessibility label for the transfer arrival banner shown when navigating to a connecting stop. */
 "walk_time_view.transfer_accessibility_label" = "Horário de chegada da baldeação";
 
+/* Spoken value for the map weather control. First %@ is the temperature, second is the weather condition. */
+"weather.button_accessibility_value_format" = "%1$@, %2$@";
+
 /* Format for the chance-of-rain percentage on the weather card header. %d is the integer percent. */
 "weather.chance_of_rain_format" = "Chance de Chuva: %d%%";
 
