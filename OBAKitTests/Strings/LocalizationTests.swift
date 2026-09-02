@@ -26,7 +26,9 @@ final class LocalizationTests {
     /// Note that `String(format:)` expands `%#@…@` but always resolves it against the root
     /// plural rule, so only `one`/`other` are ever reachable through it — the call site has to
     /// use `String.localizedStringWithFormat` for a locale's `few`/`many`/`zero`/`two` entries
-    /// to mean anything. Nothing here can catch that; it's a call-site property.
+    /// to mean anything. The parity checks below can't see that; it's a call-site property.
+    /// A test *can* pin it per key by asserting a locale whose categories differ from the
+    /// root's — see `Polish layer count reaches its few and many forms`.
     private static let pluralKeys: Set<String> = [
         "stop_page.service_alerts.summary_fmt",
         "stop_page.service_alerts.show_all_fmt",
@@ -36,6 +38,7 @@ final class LocalizationTests {
         "stop_page.empty.no_departures_fmt",
         "data_migration_bulletin.report_summary_number_of_failures",
         "data_migration_bulletin.report_summary_number_of_successes",
+        "map_controller.map_type.accessibility_value_with_layers_fmt",
         "search_results_sheet.result_count_fmt"
     ]
 
@@ -52,6 +55,19 @@ final class LocalizationTests {
         guard let url = bundle.url(forResource: "Localizable", withExtension: "strings",
                                    subdirectory: nil, localization: localization) else { return nil }
         return NSDictionary(contentsOf: url) as? [String: String]
+    }
+
+    /// A named locale's own copy of a key, loaded by treating its `.lproj` as a bundle —
+    /// the only way to read a localization the test host doesn't prefer. Going through
+    /// `localizedString(forKey:)` matters: it keeps the `Localizable.stringsdict` rules
+    /// attached to the returned format, which parsing the plist by hand would not.
+    private func localizedFormat(forKey key: String, localization: String) -> String? {
+        guard let path = Bundle(for: DonationCell.self).path(forResource: localization, ofType: "lproj"),
+              let bundle = Bundle(path: path)
+        else { return nil }
+
+        let value = bundle.localizedString(forKey: key, value: "MISSING", table: nil)
+        return value == "MISSING" ? nil : value
     }
 
     private func specifiers(in value: String) -> [String] {
@@ -167,5 +183,54 @@ final class LocalizationTests {
             let format = bundle.localizedString(forKey: key, value: "MISSING", table: nil)
             #expect(String(format: format, 1) == expected, "\(key) did not resolve its singular — is Localizable.stringsdict bundled?")
         }
+    }
+
+    /// The map-type button's VoiceOver value is the one plural key here that takes a
+    /// second argument, so its variable is bound positionally (`%2$#@count@`). Assert
+    /// both categories: the count lands in the right slot only when that binding and the
+    /// `%2$d` inside each category agree.
+    ///
+    /// Regression: this shipped as a flat `"%1$@, %2$d layers on"`. In a region without
+    /// bikeshare the stops layer is the only one, so the singular is the *common* case
+    /// and VoiceOver read "standard, 1 layers on".
+    ///
+    /// Deliberately locale-agnostic — English and the root plural rule agree on
+    /// `one`/`other`, so this says nothing about which categories a *call site* can reach.
+    /// `Polish layer count reaches its few and many forms` covers that.
+    @Test func `Map type layer count reads its singular and plural`() {
+        let bundle = Bundle(for: DonationCell.self)
+        let format = bundle.localizedString(
+            forKey: "map_controller.map_type.accessibility_value_with_layers_fmt",
+            value: "MISSING",
+            table: nil
+        )
+
+        #expect(String(format: format, "standard", 1) == "standard, 1 layer on")
+        #expect(String(format: format, "standard", 2) == "standard, 2 layers on")
+    }
+
+    /// Which plural categories a locale can actually reach is a property of the *call site*:
+    /// `String(format:)` resolves `%#@count@` against the root rule, which only defines
+    /// `one` and `other`, so the `few`/`many` forms hand-written for ar, pl, and ru are dead
+    /// unless the call passes a locale. English can't see the difference, which is why the
+    /// English assertion above passes either way.
+    ///
+    /// Polish is the cheapest locale to prove it with: `few` (2–4) and `many` (5+) are
+    /// different words, and neither is the `other` form. Assert through the same
+    /// locale-aware path `String.localizedStringWithFormat` takes at runtime.
+    ///
+    /// Regression: `MapTypeButton.accessibilityValueText` shipped calling `String(format:)`,
+    /// which rendered a Polish count of 5 as `other` ("5 warstwy włączonej") rather than
+    /// `many` ("5 warstw włączonych").
+    @Test func `Polish layer count reaches its few and many forms`() throws {
+        let format = try #require(localizedFormat(
+            forKey: "map_controller.map_type.accessibility_value_with_layers_fmt",
+            localization: "pl"
+        ))
+        let polish = Locale(identifier: "pl")
+
+        #expect(String(format: format, locale: polish, "standardowa", 1) == "standardowa, 1 warstwa włączona")
+        #expect(String(format: format, locale: polish, "standardowa", 3) == "standardowa, 3 warstwy włączone")
+        #expect(String(format: format, locale: polish, "standardowa", 5) == "standardowa, 5 warstw włączonych")
     }
 }

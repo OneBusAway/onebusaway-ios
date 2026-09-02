@@ -15,13 +15,14 @@ import OBAKitCore
 /// sheet's collapsed height (see `MapPanelRootView`).
 struct MapControlsCluster: View {
     let mapType: MapBaseType
+    let badgeCount: Int
     let isLocationButtonVisible: Bool
-    let onToggleMapType: () -> Void
+    let onOpenMapSettings: () -> Void
     let onCenterOnUser: () -> Void
 
     var body: some View {
         VStack(spacing: 8) {
-            MapTypeButton(mapType: mapType, onTap: onToggleMapType)
+            MapTypeButton(mapType: mapType, badgeCount: badgeCount, onTap: onOpenMapSettings)
             CurrentLocationButton(isVisible: isLocationButtonVisible, onTap: onCenterOnUser)
         }
     }
