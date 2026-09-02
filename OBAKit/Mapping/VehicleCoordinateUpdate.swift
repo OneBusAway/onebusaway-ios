@@ -15,9 +15,9 @@ import UIKit
 /// Whether a vehicle marker should interpolate to a new coordinate or jump.
 ///
 /// Arrival polls land every 15–30s. Assigning `coordinate` each time teleports
-/// the pin; interpolating every hop looks like motion. Distances larger than
-/// one or two polls at motorway speed are a new fix (or a trip change), not
-/// something to ease across the map.
+/// the pin; interpolating every hop looks like motion. Hops longer than
+/// `snapBeyondMeters` are a new fix (or a trip change), not something to ease
+/// across the map.
 ///
 /// See: https://github.com/OneBusAway/onebusaway-ios/issues/1109
 enum VehicleCoordinateUpdate {
