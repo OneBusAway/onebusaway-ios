@@ -93,9 +93,10 @@ nonisolated enum PolylineDirectionArrows {
     }
 
     /// `chevron.up` points north at identity. Compass heading is clockwise from
-    /// north; `CGAffineTransform` rotates counter-clockwise, so the angle is negated.
+    /// north; UIKit view space has y down, so a positive `CGAffineTransform`
+    /// rotation is clockwise too. Do not negate — that mirrored east/west.
     static func viewTransform(headingDegrees: CLLocationDirection) -> CGAffineTransform {
-        CGAffineTransform(rotationAngle: -CGFloat(headingDegrees.radians))
+        CGAffineTransform(rotationAngle: CGFloat(headingDegrees.radians))
     }
 
     private static func mapPoint(at distance: CLLocationDistance, in segments: [Segment]) -> MKMapPoint? {
