@@ -439,6 +439,15 @@ class MapViewController: UIViewController,
         var config = UIButton.Configuration.plain()
         config.imagePlacement = .top
         config.title = "—"
+        // The toolbar pins this button to 42pt (see the width constraint above),
+        // and `.plain()` ships nonzero horizontal insets that the old
+        // `UIButton(type: .system)` did not have. That left the title too little
+        // room: a two-digit temperature already wrapped onto three lines
+        // ("1", "8", "°"). Zero the horizontal insets only — the vertical ones
+        // still separate the icon from the temperature under `imagePlacement`.
+        // See: https://github.com/OneBusAway/onebusaway-ios/issues/1344
+        config.contentInsets.leading = 0
+        config.contentInsets.trailing = 0
         config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
             var outgoing = incoming
             outgoing.font = UIFont.preferredFont(forTextStyle: .body).bold
@@ -446,6 +455,12 @@ class MapViewController: UIViewController,
         }
 
         let button = UIButton(configuration: config)
+        // Restores what `7f2c1b8b` intended before the Configuration switch
+        // dropped it, with the scale factor that version omitted: without a
+        // `minimumScaleFactor`, `adjustsFontSizeToFitWidth` never shrinks
+        // anything. Three-digit temperatures scale down rather than wrap.
+        button.titleLabel?.adjustsFontSizeToFitWidth = true
+        button.titleLabel?.minimumScaleFactor = 0.7
         button.addTarget(self, action: #selector(showWeather), for: .touchUpInside)
         button.accessibilityLabel = OBALoc("map_controller.show_weather_button", value: "Show Weather Forecast", comment: "Accessibility label for a button that provides the current forecast")
         return button
