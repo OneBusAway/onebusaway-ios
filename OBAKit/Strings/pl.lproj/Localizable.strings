@@ -217,6 +217,36 @@
 /* Button title to let the user view a data migration report. */
 "data_migration_bulletin.view_report_button" = "Zobacz raport";
 
+/* Error shown when the boarding stop cannot be found in the trip's stop list. */
+"destination_stop_picker.error_boarding_stop_not_found" = "Nie udało się ustalić Twojego przystanku początkowego na tym kursie.";
+
+/* Error shown when the API service is unavailable in the destination stop picker. */
+"destination_stop_picker.error_no_service" = "Nie można połączyć się z serwisem przewoźnika.";
+
+/* Title shown while loading the list of stops for destination selection. */
+"destination_stop_picker.loading_title" = "Wczytywanie przystanków";
+
+/* Body text shown when there are no stops available after the boarding stop. */
+"destination_stop_picker.no_stops_body" = "Na tym kursie nie ma już kolejnych przystanków.";
+
+/* Title shown when there are no stops available after the boarding stop. */
+"destination_stop_picker.no_stops_title" = "Brak dostępnych przystanków";
+
+/* Button to retry loading stops after an error. */
+"destination_stop_picker.retry_button" = "Spróbuj ponownie";
+
+/* Section header prompting user to select their destination stop. */
+"destination_stop_picker.select_destination_header" = "Gdzie wysiadasz?";
+
+/* VoiceOver label for the navigation bar button that shares the trip when no destination could be loaded. */
+"destination_stop_picker.share_without_destination_a11y_label" = "Udostępnij kurs bez przystanku docelowego";
+
+/* Button shown when a trip has no remaining stops, letting the user share the trip without picking a destination. */
+"destination_stop_picker.share_without_destination_button" = "Udostępnij bez celu podróży";
+
+/* Navigation bar title for the destination stop picker when sharing a trip. */
+"destination_stop_picker.title" = "Wybierz cel podróży";
+
 /* Body of the donation widget that appears on the stop view controller */
 "donation_cell.body" = "Ta aplikacja jest obecnie tworzona w 100% przez wolontariuszy i potrzebujemy Twojej pomocy w finansowaniu dalszego rozwoju.";
 
@@ -1511,6 +1541,12 @@
 
 /* Describes the previous trip of this vehicle. e.g. Starts as 10 - Downtown Seattle */
 "trip_details_controller.starts_as_fmt" = "Rozpoczyna jako %@";
+
+/* Alert message when trip sharing fails. */
+"trip_sharing.share_error.message" = "Coś poszło nie tak podczas przygotowywania linku do kursu. Spróbuj ponownie.";
+
+/* Alert title when trip sharing fails. */
+"trip_sharing.share_error.title" = "Nie można udostępnić";
 
 /* A formatted string for displaying a vehicle's ID on the trip status map. e.g. 'Vehicle ID: 12345' */
 "trip_status_annotation.title_fmt" = "ID pojazdu: %@";

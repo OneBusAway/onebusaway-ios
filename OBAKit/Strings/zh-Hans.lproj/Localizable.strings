@@ -217,6 +217,36 @@
 /* Button title to let the user view a data migration report. */
 "data_migration_bulletin.view_report_button" = "View Report";
 
+/* Error shown when the boarding stop cannot be found in the trip's stop list. */
+"destination_stop_picker.error_boarding_stop_not_found" = "无法确定您在本次车程中的上车站点。";
+
+/* Error shown when the API service is unavailable in the destination stop picker. */
+"destination_stop_picker.error_no_service" = "无法连接到公交服务。";
+
+/* Title shown while loading the list of stops for destination selection. */
+"destination_stop_picker.loading_title" = "正在加载站点";
+
+/* Body text shown when there are no stops available after the boarding stop. */
+"destination_stop_picker.no_stops_body" = "本次车程没有剩余站点。";
+
+/* Title shown when there are no stops available after the boarding stop. */
+"destination_stop_picker.no_stops_title" = "没有可用站点";
+
+/* Button to retry loading stops after an error. */
+"destination_stop_picker.retry_button" = "重试";
+
+/* Section header prompting user to select their destination stop. */
+"destination_stop_picker.select_destination_header" = "您在哪里下车？";
+
+/* VoiceOver label for the navigation bar button that shares the trip when no destination could be loaded. */
+"destination_stop_picker.share_without_destination_a11y_label" = "不选择目的地站点，直接分享车程";
+
+/* Button shown when a trip has no remaining stops, letting the user share the trip without picking a destination. */
+"destination_stop_picker.share_without_destination_button" = "不选目的地直接分享";
+
+/* Navigation bar title for the destination stop picker when sharing a trip. */
+"destination_stop_picker.title" = "选择目的地";
+
 /* Body of the donation widget that appears on the stop view controller */
 "donation_cell.body" = "本App目前完全由志愿者开发，我们需要您的帮助来资助未来的开发工作。";
 
@@ -1511,6 +1541,12 @@
 
 /* Describes the previous trip of this vehicle. e.g. Starts as 10 - Downtown Seattle */
 "trip_details_controller.starts_as_fmt" = "以%@为名启程";
+
+/* Alert message when trip sharing fails. */
+"trip_sharing.share_error.message" = "准备车程链接时出错。请重试。";
+
+/* Alert title when trip sharing fails. */
+"trip_sharing.share_error.title" = "无法分享";
 
 /* A formatted string for displaying a vehicle's ID on the trip status map. e.g. 'Vehicle ID: 12345' */
 "trip_status_annotation.title_fmt" = "服务车辆编号：%@";
