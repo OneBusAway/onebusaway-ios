@@ -337,21 +337,16 @@ class TripViewController: UIViewController,
     public func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
         guard let stopTime = view.annotation as? TripStopTime else { return }
         defer { skipNextStopTimeHighlight = false }
-        guard !skipNextStopTimeHighlight else { return }
-
-        func mapViewAnnotationSelectionComplete() {
-            self.tripDetailsController.highlightStopInList(stopTime.stop)
+        if skipNextStopTimeHighlight {
+            // Programmatic select leaves the pin selected. MapKit will not
+            // re-fire `didSelect` for an already-selected annotation, so the
+            // first tap on the origin stop would do nothing.
+            mapView.deselectAnnotation(view.annotation, animated: false)
+            return
         }
 
-        if self.mapView.hasBeenTouched {
-            mapViewAnnotationSelectionComplete()
-        } else {
-            if traitCollection.horizontalSizeClass == .regular {
-                floatingPanel.move(to: .full, animated: true, completion: mapViewAnnotationSelectionComplete)
-            } else {
-                floatingPanel.move(to: .half, animated: true, completion: mapViewAnnotationSelectionComplete)
-            }
-        }
+        tripDetailsController.highlightStopInList(stopTime.stop)
+        openStop(stopTime, on: mapView)
     }
 
     public func mapView(_ mapView: MKMapView, didDeselect view: MKAnnotationView) {
@@ -361,14 +356,16 @@ class TripViewController: UIViewController,
         self.selectedStopTime = nil
     }
 
-    public func mapView(_ mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl) {
-        guard let stopTime = view.annotation as? TripStopTime else { return }
-
+    private func openStop(_ stopTime: TripStopTime, on mapView: MKMapView) {
         var transferContext: TransferContext?
         if let arrivalDeparture = tripConvertible.arrivalDeparture,
            stopTime.stopID != arrivalDeparture.stopID {
             transferContext = .from(arrivalDeparture: arrivalDeparture, arrivalDate: stopTime.arrivalDate)
         }
+
+        // Same reason as `MapViewController`: leaving the tapped pin selected
+        // only strands a highlight. MapKit will not fire `didSelect` again.
+        mapView.deselectAnnotation(stopTime, animated: false)
 
         application.viewRouter.navigateTo(stop: stopTime.stop, from: self, transferContext: transferContext)
     }
@@ -421,17 +418,7 @@ class TripViewController: UIViewController,
         }
         else if let view = annotationView as? MinimalStopAnnotationView, let arrivalDeparture = tripConvertible.arrivalDeparture {
             view.selectedArrivalDeparture = arrivalDeparture
-
-            if let stopTime = annotation as? TripStopTime {
-                view.rightCalloutAccessoryView = UIButton.chevronButton
-
-                let calloutLabel = UILabel.autolayoutNew()
-                calloutLabel.textColor = ThemeColors.shared.secondaryLabel
-                calloutLabel.text = application.formatters.timeFormatter.string(from: stopTime.arrivalDate)
-                view.detailCalloutAccessoryView = calloutLabel
-            }
-
-            view.canShowCallout = true
+            TripMapAnnotationPolicy.apply(to: view)
         }
 
         return annotationView
@@ -450,6 +437,13 @@ class TripViewController: UIViewController,
         didSet {
             guard !isBeingPreviewed else { return }
 
+            // Value-equal write (30s refresh of the same stop): nothing to
+            // select. Drop a leaked skip so the next pin tap still opens.
+            if oldValue == selectedStopTime {
+                skipNextStopTimeHighlight = false
+                return
+            }
+
             var animated = true
             if isFirstStopTimeLoad {
                 animated = false
@@ -457,8 +451,7 @@ class TripViewController: UIViewController,
             }
             self.mapView.deselectAnnotation(oldValue, animated: animated)
 
-            guard oldValue != self.selectedStopTime,
-                let selectedStopTime = self.selectedStopTime else { return }
+            guard let selectedStopTime = self.selectedStopTime else { return }
 
             // Fixes #220: Find matching trip stop using stop ID instead of using pointers.
             if let annotation = self.mapView.annotations
@@ -469,6 +462,25 @@ class TripViewController: UIViewController,
         }
     }
     private var isFirstStopTimeLoad = true
+
+    /// Auto-selects the rider's origin stop when trip details first load.
+    /// Later `$tripDetails` emissions (30s refresh) must not write origin
+    /// back if the rider deselected or picked another stop — that
+    /// `selectAnnotation` would fire `didSelect` → `openStop`.
+    func applyOriginStopSelection(from details: TripDetails) {
+        guard let arrivalDeparture = tripConvertible.arrivalDeparture else { return }
+        guard let origin = details.stopTimes.first(where: { $0.stopID == arrivalDeparture.stopID }) else { return }
+
+        if let current = selectedStopTime, current.stopID != origin.stopID {
+            return
+        }
+        if selectedStopTime == nil && !isFirstStopTimeLoad {
+            return
+        }
+
+        skipNextStopTimeHighlight = true
+        selectedStopTime = origin
+    }
 }
 
 // MARK: - ViewModel Binding
@@ -498,9 +510,7 @@ private extension TripViewController {
                     mapView.showAnnotations(annotationsToShow, animated: true)
                 }
 
-                if let arrivalDeparture = tripConvertible.arrivalDeparture {
-                    selectedStopTime = details.stopTimes.filter { $0.stopID == arrivalDeparture.stopID }.first
-                }
+                applyOriginStopSelection(from: details)
             }
             .store(in: &cancellables)
     }
