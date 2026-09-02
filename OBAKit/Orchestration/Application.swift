@@ -106,6 +106,17 @@ public class Application: CoreApplication, PushServiceDelegate {
     @MainActor
     lazy var walkingSpeedManager = WalkingSpeedManager(userDataStore: userDataStore)
 
+    /// Owns the rider's destination proximity alerts.
+    ///
+    /// `lazy` only because it needs a fully-initialized `self`; `init` forces it
+    /// immediately, and the comment there explains why it must not wait for a
+    /// first use that may never come.
+    @MainActor
+    public private(set) lazy var proximityAlertManager = ProximityAlertManager(
+        locationService: locationService,
+        userDataStore: userDataStore
+    )
+
     @objc lazy var userActivityBuilder = UserActivityBuilder(application: self)
 
     /// Handles all deep-linking into the app.
@@ -169,6 +180,15 @@ public class Application: CoreApplication, PushServiceDelegate {
         bookmarkWidgetRefresher = BookmarkWidgetRefresher()
 
         super.init(config: config)
+
+        // Force the proximity alert manager now instead of leaving it to a first
+        // use that may never come. A geofence crossing relaunches a terminated
+        // app, and Core Location delivers the queued region event to whatever
+        // `LocationService` delegates exist once launch finishes — a launch on
+        // which no screen is ever built and nothing touches this property.
+        // Constructing it here registers the delegate, and re-arms the regions,
+        // before that event lands.
+        _ = proximityAlertManager
 
         configureAppearanceProxies()
     }
@@ -364,6 +384,29 @@ public class Application: CoreApplication, PushServiceDelegate {
         Task { await pushRegistrationManager.registerIfNeeded() }
     }
 
+    public func pushService(_ pushService: PushService, receivedProximityAlertForStopID stopID: StopID) {
+        // The current region is the right one by construction: the geofence that
+        // produced this notification is only crossed where the rider physically
+        // is. `queueOrOpenStop` still needs one named, because it refuses to open
+        // a stop against a different region's API.
+        guard let regionID = regionsService.currentRegion?.regionIdentifier else {
+            // No region yet — the ordinary case for a tap that relaunched a
+            // terminated app, since the regions list loads asynchronously. Stash
+            // without one, exactly as the fired-alarm handler above does: the
+            // drain navigates as soon as a root controller exists, and
+            // `regionsService(_:updatedRegion:)` drains again once a region lands.
+            // Returning here instead would drop the only thing the rider tapped.
+            Logger.info("Proximity alert tap for stop \(stopID) arrived before a region loaded; deferring navigation.")
+            pendingStopID = stopID
+            // Cleared rather than left alone: a region stashed by an earlier
+            // navigation would make the drain refuse this stop as belonging to
+            // somewhere else.
+            pendingStopRegionID = nil
+            return
+        }
+        queueOrOpenStop(AppLinksRouter.StopDestination(stopID: stopID, regionID: regionID))
+    }
+
     /// Deletes the stored alarm whose deep-link identity matches `pushBody`, so the stop
     /// page reflects the fired state without waiting for the next full refresh.
     @MainActor
@@ -497,6 +540,12 @@ public class Application: CoreApplication, PushServiceDelegate {
         }
 
         configureConnectivity()
+
+        // Re-arm proximity geofences and reap alerts that expired while the app was
+        // away. Same reason the Live Activity cleanup below runs here: alerts age
+        // out on a clock that keeps running with no process to notice, and the
+        // regions standing for them outlive the process that armed them.
+        proximityAlertManager.reconcileMonitoredRegions()
 
         // Clean up Live Activity subscriptions whose activities are gone. This has to run on an
         // app-lifecycle hook rather than in a view controller: an activity the user dismissed

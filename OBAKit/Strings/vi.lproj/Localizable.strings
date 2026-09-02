@@ -780,6 +780,12 @@
 /* Title of the first onboarding screen; the argument is the app name */
 "onboarding.welcome.title_fmt" = "Chào mừng đến với %@";
 
+/* Body of the destination alert notification. %@ is the name of the rider's destination stop. */
+"proximity_alert.notification.body_fmt" = "Bạn đang đến gần %@.";
+
+/* Title of the notification shown when the rider nears the stop they set a destination alert on. */
+"proximity_alert.notification.title" = "Sắp đến điểm dừng của bạn";
+
 /* Reachability bulletin shown when the user has disabled cellular data for this app in iOS Settings. Both substituted values are the app name. */
 "reachability_bulletin.description.cellular_data_restricted_fmt" = "%1$@ hiện không được phép truy cập dữ liệu di động. Để khắc phục, hãy vào Cài đặt > Di động và bật dữ liệu di động cho %2$@, hoặc kết nối với mạng WiFi.";
 

@@ -696,6 +696,29 @@ final class ApplicationTests: OBATestCase {
 
     // MARK: - Push Service Tests
 
+    @Test func `Push service proximity alert tap is never dropped`() {
+        let dataLoader = MockDataLoader(testName: name)
+        stubRegions(dataLoader: dataLoader)
+        let locManager = LocationManagerMock()
+        let locationService = LocationService(userDefaults: userDefaults, locationManager: locManager)
+        let config = AppConfig(regionsBaseURL: regionsURL, apiKey: apiKey, appVersion: appVersion, userDefaults: userDefaults, analytics: AnalyticsMock(), queue: queue, locationService: locationService, bundledRegionsFilePath: bundledRegionsPath, regionsAPIPath: regionsAPIPath, dataLoader: dataLoader)
+        let app = Application(config: config)
+        let pushService = PushService(serviceProvider: MockPushServiceProvider(), delegate: app)
+
+        app.pushService(pushService, receivedProximityAlertForStopID: "1_75403")
+
+        // The tap that matters is the one into a terminated app, where neither a
+        // root controller nor a region exists yet. Both branches must stash: with
+        // no region the handler stashes region-less, and with one `queueOrOpenStop`
+        // stashes it alongside the region. Dropping it would strand the rider on
+        // whatever screen the app happened to open to.
+        #expect(app.pendingStopID == "1_75403")
+        // Whatever region was stashed must be the one actually current, or the
+        // drain will refuse the stop as belonging somewhere else.
+        #expect(app.pendingStopRegionID == app.regionsService.currentRegion?.regionIdentifier)
+    }
+
+
     @Test func `Push service received donation prompt with no top view controller`() {
         let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)
