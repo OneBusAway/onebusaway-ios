@@ -1202,6 +1202,7 @@
 
 /* VoiceOver label for a grouped route card */
 "stop_page.grouped.a11y_fmt" = "%1$@号公交线路，开往%2$@，下一班将在%3$d分钟后离站，%4$@。另外加载了%5$d个班次。";
+"stop_page.grouped.a11y_arrives_fmt" = "%1$@号公交线路，开往%2$@，下一班将在%3$d分钟后到站，%4$@。另外加载了%5$d个班次。";
 
 /* VoiceOver custom action on a grouped route card's header that cancels the alarm already set for the next departure. */
 "stop_page.grouped.a11y_remove_alarm" = "移除闹钟";
@@ -1262,6 +1263,7 @@
 
 /* VoiceOver label for a departure row: route, headsign, minutes, status. */
 "stop_page.row.a11y_fmt" = "%1$@号公交线路，开往%2$@，将在%3$d分钟后离站，%4$@";
+"stop_page.row.a11y_arrives_fmt" = "%1$@号公交线路，开往%2$@，将在%3$d分钟后到站，%4$@";
 
 /* VoiceOver clause appended to a departure row that's upcoming but not reachable on foot before it leaves. */
 "stop_page.row.a11y_missed" = "很可能赶不上——此班次的离站时间早于您步行到车站所需的时间";

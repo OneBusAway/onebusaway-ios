@@ -1202,6 +1202,7 @@
 
 /* VoiceOver label for a grouped route card */
 "stop_page.grouped.a11y_fmt" = "Linha %1$@ para %2$@, próxima partida em %3$d minutos, %4$@. Mais %5$d partidas carregadas.";
+"stop_page.grouped.a11y_arrives_fmt" = "Linha %1$@ para %2$@, próxima chegada em %3$d minutos, %4$@. Mais %5$d partidas carregadas.";
 
 /* VoiceOver custom action on a grouped route card's header that cancels the alarm already set for the next departure. */
 "stop_page.grouped.a11y_remove_alarm" = "Remover lembrete";
@@ -1262,6 +1263,7 @@
 
 /* VoiceOver label for a departure row: route, headsign, minutes, status. */
 "stop_page.row.a11y_fmt" = "Linha %1$@ para %2$@, parte em %3$d minutos, %4$@";
+"stop_page.row.a11y_arrives_fmt" = "Linha %1$@ para %2$@, chega em %3$d minutos, %4$@";
 
 /* VoiceOver clause appended to a departure row that's upcoming but not reachable on foot before it leaves. */
 "stop_page.row.a11y_missed" = "provavelmente perdida — parte antes de você conseguir chegar a pé à parada";

@@ -169,7 +169,7 @@ struct DepartureRowView: View {
             minutes: departure.arrivalDepartureMinutes,
             isRealTime: status.isRealTime,
             color: dimmed ? Color(uiColor: .tertiaryLabel) : Color(uiColor: status.color),
-            caption: formatters.arrivalDepartureCaption(for: departure.arrivalDepartureStatus)
+            caption: formatters.arrivalDepartureCaption(for: departure.arrivalDepartureStatus, temporalState: departure.temporalState)
         )
     }
 

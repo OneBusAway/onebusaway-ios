@@ -166,12 +166,18 @@ final class FormattersTests: OBATestCase {
 
     @Test func `Caption is Arrives for a vehicle arriving at this stop`() {
         let formatters = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
-        #expect(formatters.arrivalDepartureCaption(for: .arriving) == "Arrives")
+        #expect(formatters.arrivalDepartureCaption(for: .arriving, temporalState: .future) == "Arrives")
     }
 
     @Test func `Caption is Departs for a vehicle leaving this stop`() {
         let formatters = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
-        #expect(formatters.arrivalDepartureCaption(for: .departing) == "Departs")
+        #expect(formatters.arrivalDepartureCaption(for: .departing, temporalState: .future) == "Departs")
+    }
+
+    @Test func `Past caption uses arrived or departed`() {
+        let formatters = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
+        #expect(formatters.arrivalDepartureCaption(for: .arriving, temporalState: .past) == "Arrived")
+        #expect(formatters.arrivalDepartureCaption(for: .departing, temporalState: .past) == "Departed")
     }
 
     // MARK: - Map route labels (#132)

@@ -218,6 +218,10 @@
 
 /* Use for vehicles arriving in X minutes. */
 "formatters.arrives_in_x_min_fmt" = "Darating sa loob ng %d min";
+"formatters.caption.arrives" = "Dumating";
+"formatters.caption.departs" = "Aalis";
+"formatters.caption.arrived" = "Dumating na";
+"formatters.caption.departed" = "Umalis";
 
 /* Use for vehicles arriving now. */
 "formatters.arriving_now" = "Dumarating na";

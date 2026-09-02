@@ -1202,6 +1202,7 @@
 
 /* VoiceOver label for a grouped route card */
 "stop_page.grouped.a11y_fmt" = "Маршрут %1$@ до %2$@, следующее отправление через %3$d мин., %4$@. Загружено ещё отправлений: %5$d.";
+"stop_page.grouped.a11y_arrives_fmt" = "Маршрут %1$@ до %2$@, следующее прибытие через %3$d мин., %4$@. Загружено ещё отправлений: %5$d.";
 
 /* VoiceOver custom action on a grouped route card's header that cancels the alarm already set for the next departure. */
 "stop_page.grouped.a11y_remove_alarm" = "Удалить напоминание";
@@ -1262,6 +1263,7 @@
 
 /* VoiceOver label for a departure row: route, headsign, minutes, status. */
 "stop_page.row.a11y_fmt" = "Маршрут %1$@ до %2$@, отправление через %3$d мин., %4$@";
+"stop_page.row.a11y_arrives_fmt" = "Маршрут %1$@ до %2$@, прибытие через %3$d мин., %4$@";
 
 /* VoiceOver clause appended to a departure row that's upcoming but not reachable on foot before it leaves. */
 "stop_page.row.a11y_missed" = "скорее всего, не успеете — отправляется раньше, чем вы дойдёте до остановки";

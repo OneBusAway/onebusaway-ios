@@ -218,6 +218,10 @@
 
 /* Use for vehicles arriving in X minutes. */
 "formatters.arrives_in_x_min_fmt" = "In arrivo tra %d min";
+"formatters.caption.arrives" = "Arriva";
+"formatters.caption.departs" = "Parte";
+"formatters.caption.arrived" = "Arrivato";
+"formatters.caption.departed" = "Partito";
 
 /* Use for vehicles arriving now. */
 "formatters.arriving_now" = "In arrivo";

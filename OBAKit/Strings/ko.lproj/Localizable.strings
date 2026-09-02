@@ -1202,6 +1202,7 @@
 
 /* VoiceOver label for a grouped route card */
 "stop_page.grouped.a11y_fmt" = "노선 %1$@, %2$@ 방면, 다음 출발 %3$d분 후, %4$@. 출발 %5$d건을 추가로 불러왔습니다.";
+"stop_page.grouped.a11y_arrives_fmt" = "노선 %1$@, %2$@ 방면, 다음 도착 %3$d분 후, %4$@. 출발 %5$d건을 추가로 불러왔습니다.";
 
 /* VoiceOver custom action on a grouped route card's header that cancels the alarm already set for the next departure. */
 "stop_page.grouped.a11y_remove_alarm" = "미리 알림 제거";
@@ -1262,6 +1263,7 @@
 
 /* VoiceOver label for a departure row: route, headsign, minutes, status. */
 "stop_page.row.a11y_fmt" = "노선 %1$@, %2$@ 방면, %3$d분 후 출발, %4$@";
+"stop_page.row.a11y_arrives_fmt" = "노선 %1$@, %2$@ 방면, %3$d분 후 도착, %4$@";
 
 /* VoiceOver clause appended to a departure row that's upcoming but not reachable on foot before it leaves. */
 "stop_page.row.a11y_missed" = "놓칠 가능성이 높습니다. 정류장까지 걸어가는 시간보다 먼저 출발합니다";

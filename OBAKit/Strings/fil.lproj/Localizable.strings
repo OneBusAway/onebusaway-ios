@@ -1202,6 +1202,7 @@
 
 /* VoiceOver label for a grouped route card */
 "stop_page.grouped.a11y_fmt" = "Ruta %1$@ papuntang %2$@, susunod na pag-alis sa loob ng %3$d minuto, %4$@. %5$d pang pag-alis ang na-load.";
+"stop_page.grouped.a11y_arrives_fmt" = "Ruta %1$@ papuntang %2$@, susunod na pagdating sa loob ng %3$d minuto, %4$@. %5$d pang pag-alis ang na-load.";
 
 /* VoiceOver custom action on a grouped route card's header that cancels the alarm already set for the next departure. */
 "stop_page.grouped.a11y_remove_alarm" = "Alisin ang paalala";
@@ -1262,6 +1263,7 @@
 
 /* VoiceOver label for a departure row: route, headsign, minutes, status. */
 "stop_page.row.a11y_fmt" = "Ruta %1$@ papuntang %2$@, aalis sa loob ng %3$d minuto, %4$@";
+"stop_page.row.a11y_arrives_fmt" = "Ruta %1$@ papuntang %2$@, darating sa loob ng %3$d minuto, %4$@";
 
 /* VoiceOver clause appended to a departure row that's upcoming but not reachable on foot before it leaves. */
 "stop_page.row.a11y_missed" = "malamang na hindi maaabutan — mas maaga itong aalis kaysa sa lakad mo papunta sa hintuan";

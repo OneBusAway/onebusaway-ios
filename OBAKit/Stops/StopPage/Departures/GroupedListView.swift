@@ -131,7 +131,7 @@ struct GroupedListView: View {
                 HStack(alignment: .center) {
                     routeBadge(for: next, routeColor: routeColor)
                     Spacer(minLength: 8)
-                    CountdownView(minutes: next.arrivalDepartureMinutes, isRealTime: status.isRealTime, color: Color(uiColor: status.color), caption: formatters.arrivalDepartureCaption(for: next.arrivalDepartureStatus))
+                    CountdownView(minutes: next.arrivalDepartureMinutes, isRealTime: status.isRealTime, color: Color(uiColor: status.color), caption: formatters.arrivalDepartureCaption(for: next.arrivalDepartureStatus, temporalState: next.temporalState))
                 }
                 headsignText(next)
                 DepartureTimeText(display: timeDisplay(next))
@@ -154,7 +154,7 @@ struct GroupedListView: View {
                         }
                     }
                     Spacer(minLength: 8)
-                    CountdownView(minutes: next.arrivalDepartureMinutes, isRealTime: status.isRealTime, color: Color(uiColor: status.color), caption: formatters.arrivalDepartureCaption(for: next.arrivalDepartureStatus))
+                    CountdownView(minutes: next.arrivalDepartureMinutes, isRealTime: status.isRealTime, color: Color(uiColor: status.color), caption: formatters.arrivalDepartureCaption(for: next.arrivalDepartureStatus, temporalState: next.temporalState))
                 }
             }
         }
@@ -266,7 +266,7 @@ struct GroupedListView: View {
                     HStack(spacing: 12) {
                         alarmIcon(for: departure)
                         Spacer(minLength: 8)
-                        CountdownView(minutes: departure.arrivalDepartureMinutes, isRealTime: status.isRealTime, color: Color(uiColor: status.color), emphasized: false, caption: formatters.arrivalDepartureCaption(for: departure.arrivalDepartureStatus))
+                        CountdownView(minutes: departure.arrivalDepartureMinutes, isRealTime: status.isRealTime, color: Color(uiColor: status.color), emphasized: false, caption: formatters.arrivalDepartureCaption(for: departure.arrivalDepartureStatus, temporalState: departure.temporalState))
                         tripChevron(departure)
                     }
                     DepartureTimeText(display: timeDisplay(departure))
@@ -293,7 +293,7 @@ struct GroupedListView: View {
                             }
                         }
                         Spacer(minLength: 8)
-                        CountdownView(minutes: departure.arrivalDepartureMinutes, isRealTime: status.isRealTime, color: Color(uiColor: status.color), emphasized: false, caption: formatters.arrivalDepartureCaption(for: departure.arrivalDepartureStatus))
+                        CountdownView(minutes: departure.arrivalDepartureMinutes, isRealTime: status.isRealTime, color: Color(uiColor: status.color), emphasized: false, caption: formatters.arrivalDepartureCaption(for: departure.arrivalDepartureStatus, temporalState: departure.temporalState))
                         tripChevron(departure)
                     }
                 }

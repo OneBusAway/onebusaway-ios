@@ -218,6 +218,10 @@
 
 /* Use for vehicles arriving in X minutes. */
 "formatters.arrives_in_x_min_fmt" = "Arrives in %d min";
+"formatters.caption.arrives" = "Arrives";
+"formatters.caption.departs" = "Departs";
+"formatters.caption.arrived" = "Arrived";
+"formatters.caption.departed" = "Departed";
 
 /* Use for vehicles arriving now. */
 "formatters.arriving_now" = "Arriving now";
