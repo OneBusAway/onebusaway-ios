@@ -331,7 +331,7 @@ struct RentalClusterListView: View {
                 .buttonStyle(.plain)
             }
             .listStyle(.plain)
-            .navigationTitle(String(format: OBALoc("rental_cluster.title_fmt", value: "%d vehicles here", comment: "Title of the sheet listing the members of a rental cluster"), rentals.count))
+            .navigationTitle(String(format: OBALoc("rental_cluster.title_fmt", value: "%d vehicles here", comment: "Title of the sheet listing the members of a rental cluster. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback."), rentals.count))
             .navigationBarTitleDisplayMode(.inline)
             .sheet(item: $selectedRental) { rental in
                 RentalDetailView(

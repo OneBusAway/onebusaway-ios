@@ -44,6 +44,20 @@
 			<string>已开启 %2$d 个图层</string>
 		</dict>
 	</dict>
+	<key>rental_cluster.title_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>other</key>
+			<string>这里有 %d 辆车</string>
+		</dict>
+	</dict>
 	<key>search_results_sheet.result_count_fmt</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

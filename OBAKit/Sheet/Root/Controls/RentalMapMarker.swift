@@ -111,7 +111,7 @@ struct RentalClusterMapMarker: View {
             format: OBALoc(
                 "rental_cluster.title_fmt",
                 value: "%d vehicles here",
-                comment: "Title of the sheet listing the members of a rental cluster"
+                comment: "Title of the sheet listing the members of a rental cluster. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback."
             ),
             count
         )))
