@@ -451,6 +451,11 @@ final class DestinationStopPickerControllerTests: OBATestCase {
     /// empty state does — from the navigation bar, because
     /// `StandardEmptyDataViewModel` holds exactly one `buttonConfig` and `.error`
     /// must keep its retry.
+    ///
+    /// The bar carries the short title while the empty state's body button keeps
+    /// the long one (asserted separately) — the bar shares its width with the
+    /// title and Cancel, where the full phrase does not fit. The accessibility
+    /// label still speaks the full phrase, which is why shortening it is safe.
     @Test @MainActor
     func `Error state offers a share escape without giving up the retry button`() async throws {
         let arrivalDeparture = try makeArrivalDeparture()
@@ -475,7 +480,7 @@ final class DestinationStopPickerControllerTests: OBATestCase {
         )
 
         let shareItem = try #require(controller.navigationItem.rightBarButtonItem)
-        #expect(shareItem.title == "Share Without Destination")
+        #expect(shareItem.title == "Share Anyway")
         #expect(shareItem.accessibilityLabel == "Share trip without a destination stop")
         #expect(
             standardEmptyData(controller, listView)?.buttonConfig?.text == "Try Again",
