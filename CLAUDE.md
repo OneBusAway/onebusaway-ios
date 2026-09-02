@@ -19,32 +19,35 @@ scripts/generate_project                # Defaults to OneBusAway if no app speci
 
 ### Picking a Simulator
 
-Both sections below need a simulator UDID. Resolve one first — the newest installed
-iOS runtime's first iPhone, which is the same selection `.github/workflows/tests.yml`
-makes:
+Every command below needs a simulator UDID. Resolve one with:
 
 ```bash
-SIMULATOR_UDID=$(xcrun simctl list devices available -j | python3 -c '
-import json, re, sys
-devices = json.load(sys.stdin)["devices"]
-def ios_version(runtime):
-    match = re.search(r"iOS-(\d+)-(\d+)", runtime)
-    return (int(match.group(1)), int(match.group(2))) if match else (0, 0)
-for runtime in sorted(devices, key=ios_version, reverse=True):
-    phones = [d for d in devices[runtime] if d["name"].startswith("iPhone")]
-    if phones:
-        print(phones[0]["udid"])
-        break
-')
-: "${SIMULATOR_UDID:?No available iPhone simulator found — install a runtime in Xcode > Settings > Components}"
+SIMULATOR_UDID=$(scripts/resolve_simulator_udid)
 ```
 
-Address the device by `id=` rather than `name=`. A hardcoded `name=iPhone 17 Pro`
-fails two different ways behind the *same* misleading error — "Unable to find a device
-matching the provided destination specifier" — when the named device is not installed,
-and when it is ambiguous across multiple installed runtimes. `OS=latest` fixes only the
-second. It also goes stale on every Xcode release: this line has already been `iPhone 16`
-and `iPhone 17 Pro`.
+That prints the first iPhone on the newest installed iOS runtime — the same
+selection `.github/workflows/tests.yml` makes, from the same implementation, so
+the two cannot drift apart.
+
+**Run it in the same shell invocation as the command that uses it.** It sets an
+ordinary shell variable, and this file's audience is Claude Code, whose Bash tool
+starts a fresh shell per call — the working directory persists, environment does
+not. Resolve it in one call and build in the next and you get
+`-destination "platform=iOS Simulator,id="`, which fails with exactly the error
+below. Each block that follows repeats the line for that reason; keep it when
+copying one.
+
+Address the device by `id=` rather than `name=`. A hardcoded name breaks two ways,
+and they report differently — which is why neither `OS=latest` nor a fresh device
+name fixes both:
+
+| | Error |
+|---|---|
+| not installed | "Unable to find a device matching the provided destination specifier" |
+| ambiguous across runtimes | "The requested device could not be found because multiple devices matched the request" |
+
+A name also goes stale on every Xcode release: this file has already carried
+`iPhone 16` and `iPhone 17 Pro`.
 
 ### Building, Testing, and Driving the App: use `xcodebuildmcp`
 
@@ -62,6 +65,7 @@ Typical loop for verifying a change in the running app:
 
 ```bash
 scripts/generate_project OneBusAway                      # required before any build
+SIMULATOR_UDID=$(scripts/resolve_simulator_udid)         # same shell invocation as the commands below
 xcodebuildmcp simulator build-and-run --project-path OBAKit.xcodeproj --scheme App --simulator-id "$SIMULATOR_UDID"
 xcodebuildmcp ui-automation snapshot-ui  --simulator-id "$SIMULATOR_UDID" --style minimal
 xcodebuildmcp ui-automation touch        --simulator-id "$SIMULATOR_UDID" --element-ref e26 --down --up --delay 0.08
@@ -109,6 +113,8 @@ the single most expensive failure mode here. Install the CLI instead.
 Use these only when `xcodebuildmcp` genuinely cannot do the job.
 
 ```bash
+SIMULATOR_UDID=$(scripts/resolve_simulator_udid)         # same shell invocation as the commands below
+
 # Build for testing
 xcodebuild clean build-for-testing -scheme 'App' -destination "platform=iOS Simulator,id=$SIMULATOR_UDID"
 
