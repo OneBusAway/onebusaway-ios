@@ -7,6 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
+import UIKit
 import Testing
 @testable import OBAKit
 @testable import OBAKitCore
@@ -89,6 +90,48 @@ final class StopTripPlannerActionTests: OBATestCase {
         #expect(application.features.tripPlanning == .off)
         #expect(!StopTripPlannerAction.isAvailable(application: application))
         #expect(!StopTripPlannerAction.canPresent(application: application))
+    }
+
+    /// A map-pin stop is a FloatingPanel on the map, not a nav push. `popToRoot`
+    /// leaves that sheet up and keeps the tab bar hidden (#883).
+    @Test func `present dismisses the map-pin stop sheet before the trip planner`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        stubStopsForLocation(dataLoader: dataLoader)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let region = try #require(await waitForRegion(application))
+        #expect(region.supportsOTP)
+
+        let root = ClassicApplicationRootController(application: application)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        window.rootViewController = root
+        window.makeKeyAndVisible()
+        root.view.layoutIfNeeded()
+
+        let map = root.mapController
+        #expect(StopTripPlannerAction.canPresent(application: application))
+
+        map.stopSheet.present(UIViewController(), from: map, onDismiss: {})
+        #expect(map.stopSheet.isPresenting)
+        for _ in 0..<20 {
+            if root.isTabBarHidden { break }
+            try? await Task.sleep(for: .milliseconds(50))
+        }
+        #expect(root.isTabBarHidden)
+
+        let stop = try #require(Fixtures.loadSomeStops().first)
+        StopTripPlannerAction.present(.directionsToStop, stop: stop, application: application)
+
+        #expect(!map.stopSheet.isPresenting)
+        #expect(!root.isTabBarHidden)
+
+        window.isHidden = true
+    }
+
+    private func stubStopsForLocation(dataLoader: MockDataLoader) {
+        dataLoader.mock(
+            url: URL(string: "https://api.pugetsound.onebusaway.org/api/where/stops-for-location.json")!,
+            with: Fixtures.loadData(file: "stops_for_location_seattle.json")
+        )
     }
 
     /// `fixedRegionName` selects the region during Application init; poll briefly

@@ -53,6 +53,9 @@ enum StopTripPlannerAction {
 
         let mapController = rootController.mapController
         mapController.navigationController?.popToRootViewController(animated: false)
+        // Map-pin stops live in `stopSheet`, not the nav stack. Same teardown
+        // as opening a map item or another panel (#883).
+        mapController.dismissStopSheetForReplacement()
 
         let stopMapItem = TripPlannerEndpoints.mapItem(from: stop)
         switch action {
