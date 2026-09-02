@@ -608,11 +608,13 @@ public class Formatters: NSObject {
 
     /// Compact route list for map pin labels under stop icons.
     ///
-    /// For example: "10, 12, 49..." — no "Routes:" prefix, and an explicit "..." when the
-    /// list overflows so UIKit truncation doesn't silently drop the overflow hint (#132).
+    /// For example: "10, 12, 49…" — no "Routes:" prefix, and an explicit U+2026
+    /// ellipsis when the list overflows so UIKit truncation doesn't silently drop
+    /// the overflow hint (#132, #514). The glyph lives in `OBALoc` so translators
+    /// can substitute locale-conventional marks (zh-Hans `……`).
     ///
     /// - Parameter routes: An array of `Route`s from which the string will be generated.
-    /// - Parameter limit: The number of route names shown before appending "...".
+    /// - Parameter limit: The number of route names shown before appending "…".
     /// - Returns: A comma-separated list of route short names, or `nil` when none are available.
     public class func formattedMapRoutes(_ routes: [Route], limit: Int = 3) -> String? {
         let routeNames = sortedRouteDisplayNames(from: routes)
@@ -621,7 +623,12 @@ public class Formatters: NSObject {
         }
 
         if routeNames.count > limit {
-            return routeNames.prefix(limit).joined(separator: ", ") + "..."
+            let fmt = OBALoc(
+                "formatters.map_routes_overflow_fmt",
+                value: "%@…",
+                comment: "Overflowing map-pin route list. The argument is the visible names; U+2026 marks that more routes exist. e.g. '10, 12, 49…'"
+            )
+            return String(format: fmt, routeNames.prefix(limit).joined(separator: ", "))
         }
         else {
             return routeNames.joined(separator: ", ")

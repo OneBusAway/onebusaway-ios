@@ -172,12 +172,38 @@ final class FormattersTests: OBATestCase {
         #expect(!label.hasPrefix("Routes:"))
     }
 
+    /// U+2026, not three ASCII periods: `StopAnnotationView.titleLabel` truncates
+    /// with UIKit's own `…`, and mixing the two glyphs is the inconsistency #514
+    /// is about. The marker lives in `OBALoc` so translators can substitute
+    /// locale-conventional overflow marks (zh-Hans `……`).
     @Test func `Formatted map routes over the limit appends ellipsis`() throws {
         let routes = try makeRoutes(shortNames: ["10", "20", "30", "40", "62"])
         let label = try #require(Formatters.formattedMapRoutes(routes, limit: 3))
-        #expect(label == "10, 20, 30...")
+        #expect(label == "10, 20, 30…")
+        #expect(label.contains("\u{2026}"))
+        #expect(!label.contains("..."))
         #expect(!label.contains("more"))
         #expect(!label.hasPrefix("Routes:"))
+    }
+
+    /// The pin label and the callout must agree. Home/Recent still use
+    /// `Stop.subtitle` (`"Routes: …"` with every route) — that is not a map
+    /// surface, so it is left alone.
+    @Test func `Map callout uses the overflowing map route list, not plus-more`() throws {
+        let stop = try #require(Fixtures.loadSomeStops().first)
+        stop.routes = try makeRoutes(shortNames: ["10", "20", "30", "40", "62"])
+
+        let callout = try #require(stop.mapCalloutText)
+        #expect(callout == "#\(stop.code)\n10, 20, 30…")
+        #expect(!callout.contains("more"))
+        #expect(!callout.contains("Routes:"))
+
+        let subtitle = try #require(stop.subtitle)
+        #expect(subtitle.hasPrefix("#\(stop.code)"))
+        #expect(subtitle.contains("Routes:"))
+        #expect(subtitle.contains("62"))
+        #expect(!subtitle.contains("\u{2026}"))
+        #expect(!subtitle.contains("more"))
     }
 
     private func makeRoutes(shortNames: [String]) throws -> [Route] {
