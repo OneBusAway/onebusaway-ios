@@ -783,11 +783,14 @@
 /* Accessibility label for the onboarding progress bar */
 "onboarding.progress.accessibility_label" = "Tiến trình hướng dẫn";
 
-/* Body of the region onboarding screen */
+/* Body of the region onboarding screen when the region was detected from the rider's location */
 "onboarding.region.body" = "Chúng tôi đã tìm thấy mạng lưới giao thông gần bạn nhất.";
 
-/* Body of the region onboarding screen when no location is available */
-"onboarding.region.body_no_location" = "Chọn mạng lưới giao thông bạn sử dụng.";
+/* Body of the region onboarding screen prompting the rider to choose a transit network */
+"onboarding.region.body_choose" = "Chọn mạng lưới giao thông bạn sử dụng.";
+
+/* Label on the region card when the region was already selected by app configuration or an earlier launch rather than detected from the rider's location */
+"onboarding.region.current_label" = "Khu vực hiện tại";
 
 /* Label on the detected-region card */
 "onboarding.region.detected_label" = "Phát hiện gần bạn";
