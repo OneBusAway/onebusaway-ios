@@ -21,10 +21,6 @@ import SafariServices
 /// Displays a map, a set of stops rendered as annotation views, and the user's location if authorized.
 ///
 /// `MapViewController` is the average user's primary means of interacting with OneBusAway data.
-// Over the 1000-line body budget, and has been since before this change. Splitting
-// it is worth doing but is not this change's job; without the disable the error
-// fails every local build.
-// swiftlint:disable:next type_body_length
 class MapViewController: UIViewController,
     FloatingPanelControllerDelegate,
     LocationServiceDelegate,
@@ -488,6 +484,8 @@ class MapViewController: UIViewController,
 
     // MARK: - Long Press Gesture
 
+    var longPressGesture: UILongPressGestureRecognizer!
+
     @objc private func handleLongPress(_ gesture: UILongPressGestureRecognizer) {
         // Only handle the began state to avoid multiple pins
         guard gesture.state == .began else { return }
@@ -503,185 +501,18 @@ class MapViewController: UIViewController,
 
     // MARK: - Trip Planner
 
-    private var semiModalTripPlannerController: FloatingPanelController?
+    var semiModalTripPlannerController: FloatingPanelController?
 
-    private var tripPlanner: TripPlanner?
-    private var tripPlannerHostingController: UIViewController?
-    private var longPressGesture: UILongPressGestureRecognizer!
+    var tripPlanner: TripPlanner?
+    var tripPlannerHostingController: UIViewController?
 
-    private lazy var tripPlannerMapView: MKMapView = {
+    lazy var tripPlannerMapView: MKMapView = {
         let mapView = MKMapView.autolayoutNew()
         mapView.alpha = 0
         view.insertSubview(mapView, belowSubview: mapRegionManager.mapView)
         mapView.pinToSuperview(.edges)
         return mapView
     }()
-
-    private func showTripPlannerMapView() {
-        tripPlannerMapView.mapType = mapRegionManager.mapView.mapType
-
-        tripPlannerMapView.isHidden = false
-
-        UIView.animate(withDuration: 0.3) {
-            self.mapRegionManager.mapView.alpha = 0
-            self.tripPlannerMapView.alpha = 1
-        } completion: { _ in
-            self.mapRegionManager.mapView.isHidden = true
-        }
-    }
-
-    private func hideTripPlannerMapView() {
-        mapRegionManager.mapView.mapType = tripPlannerMapView.mapType
-        mapRegionManager.mapView.region = tripPlannerMapView.region
-
-        mapRegionManager.mapView.isHidden = false
-
-        UIView.animate(withDuration: 0.3) {
-            self.mapRegionManager.mapView.alpha = 1
-            self.tripPlannerMapView.alpha = 0
-        } completion: { _ in
-            self.tripPlannerMapView.isHidden = true
-        }
-    }
-
-    private func buildTripPlanner(region: Region) -> TripPlanner? {
-        // GraphQL (OTP 2.x) is the preferred trip-planning API whenever the region
-        // provides it; OTP 1.x REST is the fallback. Only the GraphQL service can
-        // support vehicle rental features.
-        let serverURL: URL
-        let apiService: OTPKit.APIService
-        if let graphQLURL = region.openTripPlannerGraphQLURL {
-            serverURL = graphQLURL
-            apiService = GraphQLAPIService(baseURL: graphQLURL)
-        } else if let restURL = region.openTripPlannerURL {
-            serverURL = restURL
-            apiService = RestAPIService(baseURL: restURL)
-        } else {
-            return nil
-        }
-
-        var enabledModes: [TransportMode] = [.transit, .walk, .bike, .car]
-        if region.isBikeshareEnabled {
-            // The capability filter in OTPKit hides these again if the service
-            // can't actually plan rental trips (e.g. the REST fallback).
-            enabledModes.append(contentsOf: [.transitBikeRental, .bikeRental])
-        }
-
-        let searchRect = application.currentRegion?.serviceRect ?? mapRegionManager.mapView.visibleMapRect
-
-        let config = OTPConfiguration(
-            otpServerURL: serverURL,
-            enabledTransportModes: enabledModes,
-            themeConfiguration: .init(
-                primaryColor: Color(uiColor: ThemeColors().brand)
-            ),
-            searchRegion: MKCoordinateRegion(searchRect)
-        )
-
-        let mapViewProvider = MKMapViewAdapter(mapView: tripPlannerMapView)
-
-        let tripPlanner = TripPlanner(
-            otpConfig: config,
-            apiService: apiService,
-            mapProvider: mapViewProvider,
-            notificationCenter: application.notificationCenter
-        )
-
-        return tripPlanner
-    }
-
-    /// Presents the trip planner.
-    /// - Parameters:
-    ///   - destination: Optional prefilled destination.
-    ///   - viaPoint: Optional coordinate every planned trip must pass through — used by
-    ///     "Plan a trip using this bike" with the vehicle's location.
-    ///   - preselectedMode: Optional transport mode to preselect, e.g. `.transitBikeRental`.
-    func showTripPlanner(destination: MKMapItem? = nil, viaPoint: CLLocationCoordinate2D? = nil, preselectedMode: TransportMode? = nil) {
-        guard let currentRegion = application.regionsService.currentRegion,
-              currentRegion.supportsOTP,
-              application.userDataStore.isTripPlanningEnabled(for: currentRegion) else {
-            return
-        }
-
-        // Get current location for origin
-        var origin: Location?
-        if let currentLocation = application.locationService.currentLocation {
-            origin = Location(
-                title: "Current Location",
-                subTitle: "Your current location",
-                latitude: currentLocation.coordinate.latitude,
-                longitude: currentLocation.coordinate.longitude
-            )
-        }
-
-        // Convert MKMapItem destination to Location if provided
-        var destinationLocation: Location?
-        if let destination {
-            destinationLocation = Location(
-                title: destination.name ?? "Destination",
-                subTitle: destination.placemark.title ?? "",
-                latitude: destination.placemark.coordinate.latitude,
-                longitude: destination.placemark.coordinate.longitude
-            )
-        }
-
-        guard let tripPlanner = buildTripPlanner(region: currentRegion) else { return }
-
-        subscribeToTripPlannerNotifications()
-
-        let tripPlannerView = tripPlanner.createTripPlannerView(
-            origin: origin,
-            destination: destinationLocation,
-            viaPoint: viaPoint,
-            transportMode: preselectedMode
-        ) { [weak self] in
-            guard let self else { return }
-            self.dismissTripPlannerController()
-        }
-
-        self.floatingPanel.move(to: .tip, animated: true)
-
-        let hostingController = UIHostingController(rootView: tripPlannerView)
-        hostingController.view.backgroundColor = .clear
-
-        let semiModal = createSemiModalPanel(childController: hostingController)
-        semiModal.addPanel(toParent: self)
-        self.semiModalTripPlannerController = semiModal
-        self.tripPlanner = tripPlanner
-        self.tripPlannerHostingController = hostingController
-    }
-
-    private func dismissTripPlannerController() {
-        guard let tripPlannerHostingController else { return }
-        dismissModalController(tripPlannerHostingController)
-
-        self.semiModalTripPlannerController = nil
-        self.tripPlannerHostingController = nil
-        self.tripPlanner = nil
-        hideTripPlannerMapView()
-
-        unsubscribeFromTripPlannerNotifications()
-    }
-
-    private func subscribeToTripPlannerNotifications() {
-        application.notificationCenter.addObserver(self, selector: #selector(itinerariesUpdated), name: Notifications.itinerariesUpdated, object: nil)
-        application.notificationCenter.addObserver(self, selector: #selector(tripStarted), name: Notifications.tripStarted, object: nil)
-    }
-
-    private func unsubscribeFromTripPlannerNotifications() {
-        application.notificationCenter.removeObserver(self, name: Notifications.itinerariesUpdated, object: nil)
-        application.notificationCenter.removeObserver(self, name: Notifications.tripStarted, object: nil)
-    }
-
-    @objc private func itinerariesUpdated(_ note: NSNotification) {
-        semiModalTripPlannerController?.move(to: .full, animated: true)
-    }
-
-    @objc private func tripStarted(_ note: NSNotification) {
-        showTripPlannerMapView()
-
-        semiModalTripPlannerController?.move(to: .tip, animated: true)
-    }
 
     // MARK: - Map Type
     public lazy var toggleMapTypeButton: UIButton = {
@@ -1118,7 +949,7 @@ class MapViewController: UIViewController,
         return appearance
     }
 
-    private func createSemiModalPanel(childController: UIViewController) -> FloatingPanelController {
+    func createSemiModalPanel(childController: UIViewController) -> FloatingPanelController {
         let panel = FloatingPanelController()
         panel.surfaceView.appearance = createFloatingPanelSurfaceAppearance()
 
@@ -1156,7 +987,7 @@ class MapViewController: UIViewController,
     // MARK: - Floating Panel Controller
 
     /// The floating panel controller, which displays a drawer at the bottom of the map.
-    private lazy var floatingPanel: OBAFloatingPanelController = {
+    lazy var floatingPanel: OBAFloatingPanelController = {
         let panel = OBAFloatingPanelController(application, delegate: self)
         panel.isRemovalInteractionEnabled = false
         panel.surfaceView.appearance = createFloatingPanelSurfaceAppearance()
