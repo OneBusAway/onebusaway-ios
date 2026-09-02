@@ -46,7 +46,10 @@ struct LaunchMapCameraTests {
     }
 
     @Test func `GPS outside prefers a last viewport that still sits in the region`() {
-        let last = pugetSound.serviceRect
+        let last = TestData.seattleMapRect
+        #expect(last.intersects(pugetSound.serviceRect))
+        #expect(!MKMapRectEqualToRect(last, pugetSound.serviceRect))
+
         let target = LaunchMapCamera.target(
             selectedRegion: pugetSound,
             userLocation: TestData.mockTampaLocation,
@@ -57,6 +60,7 @@ struct LaunchMapCameraTests {
             return
         }
         #expect(MKMapRectEqualToRect(rect, last))
+        #expect(!MKMapRectEqualToRect(rect, pugetSound.serviceRect))
         #expect(showMismatch)
     }
 

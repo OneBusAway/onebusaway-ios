@@ -18,7 +18,11 @@ class RegionMismatchBulletin: NSObject {
     private let page: ThemedBulletinPage
     private let application: Application
 
-    init?(application: Application) {
+    init?(
+        application: Application,
+        onChangedPhysicalRegion: (() -> Void)? = nil,
+        onShowSelectedRegionOnMap: (() -> Void)? = nil
+    ) {
         guard
             let currentRegion = application.regionsService.currentRegion,
             let physicalRegion = application.regionsService.physicallyLocatedRegion
@@ -42,6 +46,7 @@ class RegionMismatchBulletin: NSObject {
 
             self.application.regionsService.currentRegion = physicalRegion
             self.application.regionsService.automaticallySelectRegion = true
+            onChangedPhysicalRegion?()
             self.bulletinManager.dismissBulletin()
         }
 
@@ -50,7 +55,11 @@ class RegionMismatchBulletin: NSObject {
         page.alternativeHandler = { [weak self] _ in
             guard let self = self else { return }
 
-            self.application.mapRegionManager.mapView.visibleMapRect = currentRegion.serviceRect
+            if let onShowSelectedRegionOnMap {
+                onShowSelectedRegionOnMap()
+            } else {
+                self.application.mapRegionManager.mapView.visibleMapRect = currentRegion.serviceRect
+            }
             self.bulletinManager.dismissBulletin()
         }
     }

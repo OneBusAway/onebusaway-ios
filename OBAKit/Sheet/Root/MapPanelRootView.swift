@@ -49,6 +49,7 @@ struct MapPanelRootView: View {
     @State private var needsInitialRecenter = false
     @State private var regionMismatchBulletin: RegionMismatchBulletin?
     @State private var didPromptRegionMismatch = false
+    @StateObject private var mismatchCamera = RegionMismatchCameraActions()
 
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.colorScheme) private var colorScheme
@@ -203,6 +204,18 @@ struct MapPanelRootView: View {
         // from `reloadStopAnnotations`, i.e. on a region change.
         .onChange(of: mapViewModel.mapType) { _, _ in
             recomputeStopLabels()
+        }
+        .onChange(of: mismatchCamera.applyLaunch) { _, flag in
+            guard flag else { return }
+            mismatchCamera.applyLaunch = false
+            applyLaunchCamera()
+        }
+        .onChange(of: mismatchCamera.showSelectedServiceRect) { _, flag in
+            guard flag else { return }
+            mismatchCamera.showSelectedServiceRect = false
+            guard let selected = application.currentRegion else { return }
+            cameraPosition = .rect(selected.serviceRect)
+            viewportRecorder.record(selected.serviceRect)
         }
         .onChange(of: selectedStopID) { _, id in
             guard let id else { return }
@@ -508,7 +521,15 @@ extension MapPanelRootView {
         guard !didPromptRegionMismatch else { return }
         didPromptRegionMismatch = true
         guard
-            let bulletin = RegionMismatchBulletin(application: application),
+            let bulletin = RegionMismatchBulletin(
+                application: application,
+                onChangedPhysicalRegion: { [mismatchCamera] in
+                    mismatchCamera.applyLaunch = true
+                },
+                onShowSelectedRegionOnMap: { [mismatchCamera] in
+                    mismatchCamera.showSelectedServiceRect = true
+                }
+            ),
             let uiApp = application.delegate?.uiApplication
         else { return }
         regionMismatchBulletin = bulletin
@@ -591,3 +612,12 @@ extension MapPanelRootView {
     }
 
 }
+
+/// Holds one-shot camera requests from `RegionMismatchBulletin`. The bulletin
+/// cannot write `MapCameraPosition` itself — that lives in SwiftUI `@State` —
+/// so buttons flip these flags and the view applies them in `.onChange`.
+private final class RegionMismatchCameraActions: ObservableObject {
+    @Published var applyLaunch = false
+    @Published var showSelectedServiceRect = false
+}
+
