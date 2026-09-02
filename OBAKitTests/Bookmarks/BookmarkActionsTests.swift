@@ -123,6 +123,68 @@ final class BookmarkActionsTests: OBATestCase {
         #expect(state.arrivals.count == 3)
     }
 
+    /// Transit-center case (#1326): the same route serves both directions at one
+    /// stop. Filtering on route ID alone would pick the opposite-direction bus
+    /// because it leaves sooner. Chips and the headline countdown must follow
+    /// the tracked destination, same key as trip bookmarks.
+    @Test @MainActor func `Content state matching a departure drops the opposite direction`() throws {
+        let oppositeSooner = try arrivalDeparture(
+            routeID: "40_100479",
+            headsign: "Angle Lake",
+            tripID: "trip_south",
+            departureEpoch: 1_700_000_120
+        )
+        let tracked = try arrivalDeparture(
+            routeID: "40_100479",
+            headsign: "Lynnwood City Center",
+            tripID: "trip_north",
+            departureEpoch: 1_700_000_480
+        )
+        let laterSameDirection = try arrivalDeparture(
+            routeID: "40_100479",
+            headsign: "Lynnwood City Center",
+            tripID: "trip_north_2",
+            departureEpoch: 1_700_000_840
+        )
+
+        let state = try #require(BookmarkActions.buildContentState(
+            from: [oppositeSooner, tracked, laterSameDirection],
+            matching: tracked
+        ))
+
+        #expect(state.arrivals.count == 2)
+        #expect(state.arrivals.map(\.departureTime) == [
+            Int(tracked.arrivalDepartureDate.timeIntervalSince1970),
+            Int(laterSameDirection.arrivalDepartureDate.timeIntervalSince1970)
+        ])
+        #expect(!state.arrivals.map(\.departureTime).contains(Int(oppositeSooner.arrivalDepartureDate.timeIntervalSince1970)))
+    }
+
+    /// If the stop list is stale and no longer contains the tapped trip, still
+    /// start an activity for that trip rather than failing or picking a stranger.
+    @Test @MainActor func `Content state matching falls back to the selected departure`() throws {
+        let tracked = try arrivalDeparture(
+            routeID: "40_100479",
+            headsign: "Lynnwood City Center",
+            tripID: "trip_north",
+            departureEpoch: 1_700_000_480
+        )
+        let otherRoute = try arrivalDeparture(
+            routeID: "1_100002",
+            headsign: "Downtown Seattle",
+            tripID: "trip_other",
+            departureEpoch: 1_700_000_100
+        )
+
+        let state = try #require(BookmarkActions.buildContentState(
+            from: [otherRoute],
+            matching: tracked
+        ))
+
+        #expect(state.arrivals.count == 1)
+        #expect(state.arrivals[0].departureTime == Int(tracked.arrivalDepartureDate.timeIntervalSince1970))
+    }
+
     /// Tracking a bookmark with no loaded arrivals can't build a content state,
     /// so it reports failure rather than requesting a contentless activity.
     @Test @MainActor func `Tracking without arrivals fails`() throws {
@@ -162,6 +224,41 @@ final class BookmarkActionsTests: OBATestCase {
 
         #expect(delegate.cancelledCount == 1)
         #expect(delegate.editedCount == 0)
+    }
+
+    /// Minimal `ArrivalDeparture` for Live Activity content-state tests. Times are
+    /// JSON numbers; `JSONDecoder`'s default Date strategy is seconds-since-2001,
+    /// which is fine — we compare through `arrivalDepartureDate`, not the raw ints.
+    private func arrivalDeparture(
+        routeID: String,
+        headsign: String,
+        tripID: String,
+        departureEpoch: Int
+    ) throws -> ArrivalDeparture {
+        try Fixtures.dictionaryToModel(type: ArrivalDeparture.self, dictionary: [
+            "arrivalEnabled": true,
+            "blockTripSequence": 1,
+            "departureEnabled": true,
+            "distanceFromStop": 100.0,
+            "lastUpdateTime": departureEpoch,
+            "numberOfStopsAway": 1,
+            "predicted": true,
+            "predictedArrivalTime": departureEpoch,
+            "predictedDepartureTime": departureEpoch,
+            "routeId": routeID,
+            "routeShortName": "1 Line",
+            "scheduledArrivalTime": departureEpoch,
+            "scheduledDepartureTime": departureEpoch,
+            "serviceDate": departureEpoch,
+            "situationIds": [] as [String],
+            "status": "default",
+            "stopId": "1_mtc",
+            "stopSequence": 10,
+            "totalStopsInTrip": 20,
+            "tripHeadsign": headsign,
+            "tripId": tripID,
+            "vehicleId": "vehicle_\(tripID)"
+        ])
     }
 }
 
