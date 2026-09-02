@@ -762,6 +762,9 @@
 /* Link to the full region picker */
 "onboarding.region.see_all_button" = "Xem tất cả khu vực";
 
+/* Label on the region card when the rider chose the region from the list rather than it being detected from their location */
+"onboarding.region.selected_label" = "Lựa chọn của bạn";
+
 /* Title of the region onboarding screen */
 "onboarding.region.title" = "Khu vực của bạn";
 
