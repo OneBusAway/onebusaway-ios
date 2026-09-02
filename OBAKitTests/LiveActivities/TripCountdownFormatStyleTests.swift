@@ -26,6 +26,19 @@ struct TripCountdownFormatStyleTests {
         #expect(style.format(now) == "8m")
     }
 
+    /// The Dynamic Island used to go through `presenter.minuteText` →
+    /// `Formatters.shortFormattedTime` → `formatters.short_time_fmt`. Keep that
+    /// coupling so ar/fr/ko/ru/vi/zh don't fall back to a hardcoded English `m`.
+    @Test func `Future minutes match Formatters.shortFormattedTime`() {
+        let now = departure.addingTimeInterval(-510)
+        let formatters = Formatters(
+            locale: Locale(identifier: "en_US"),
+            calendar: Calendar(identifier: .gregorian),
+            themeColors: ThemeColors.shared
+        )
+        #expect(style.format(now) == formatters.shortFormattedTime(untilMinutes: 8, temporalState: .future))
+    }
+
     @Test func `Under a minute formats as NOW`() {
         #expect(style.format(departure.addingTimeInterval(-30)) == "NOW")
         #expect(style.format(departure) == "NOW")

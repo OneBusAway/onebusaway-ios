@@ -42,7 +42,15 @@ public struct TripCountdownFormatStyle: DiscreteFormatStyle, Sendable {
                 comment: "Shown in place of the minutes countdown when the vehicle is departing now"
             )
         }
-        return "\(minutes)m"
+
+        // Same key as `Formatters.shortFormattedTime` so the Dynamic Island
+        // keeps ar/fr/ko/ru/vi/zh suffixes instead of a hardcoded English `m`.
+        let formatString = OBALoc(
+            "formatters.short_time_fmt",
+            value: "%dm",
+            comment: "Short formatted time text for arrivals/departures. Example: 7m means that this event happens 7 minutes in the future. -7m means 7 minutes in the past."
+        )
+        return String(format: formatString, minutes)
     }
 
     public func discreteInput(after date: Date) -> Date? {
