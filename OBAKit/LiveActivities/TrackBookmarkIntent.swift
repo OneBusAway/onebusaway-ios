@@ -13,9 +13,9 @@ import OBAKitCore
 /// Starts a Live Activity for a trip bookmark via Shortcuts.
 ///
 /// The intent only queues the bookmark id in the app-group defaults and opens
-/// the app (`openAppWhenRun`). `BookmarksViewController` starts the activity
-/// on the existing Track path once arrivals load — ActivityKit is not called
-/// from the intent, and no `Activity` is captured into a `Task`. See #1222.
+/// the app (`openAppWhenRun`). `Application` starts the activity on the
+/// existing Track path once arrivals load — ActivityKit is not called from
+/// the intent, and no `Activity` is captured into a `Task`. See #1222.
 struct TrackBookmarkIntent: AppIntent {
     static let title: LocalizedStringResource = "Track Bookmark"
     static let description = IntentDescription("Start a Live Activity for a bookmarked trip.")

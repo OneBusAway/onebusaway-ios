@@ -12,8 +12,8 @@ import Foundation
 public extension Notification.Name {
     /// Posted after `store` writes a still-valid request. `openAppWhenRun`
     /// brings the app forward *before* `perform()`, so lifecycle hooks have
-    /// already peeked an empty queue. The app observes this to select
-    /// Bookmarks after the write.
+    /// already peeked an empty queue. The app observes this to start the
+    /// Live Activity after the write.
     static let liveActivityShortcutRequestDidStore = Notification.Name("LiveActivityShortcutRequest.didStore")
 }
 

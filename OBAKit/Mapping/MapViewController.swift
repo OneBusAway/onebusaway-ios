@@ -21,6 +21,10 @@ import SafariServices
 /// Displays a map, a set of stops rendered as annotation views, and the user's location if authorized.
 ///
 /// `MapViewController` is the average user's primary means of interacting with OneBusAway data.
+// Over the 1000-line body budget, and has been since before this change. Splitting
+// it is worth doing but is not this change's job; without the disable the error
+// fails every local build.
+// swiftlint:disable:next type_body_length
 class MapViewController: UIViewController,
     FloatingPanelControllerDelegate,
     LocationServiceDelegate,
