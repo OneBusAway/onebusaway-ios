@@ -27,6 +27,11 @@ import OTPKit
 @Suite(.serialized)
 final class RentalLayerCoordinatorTests {
 
+    /// Suite-scoped rather than `UserDefaults()`, which is `.standard`: separate
+    /// suites run concurrently, so standard defaults let one suite observe
+    /// another's writes. Mirrors `OBATestCase.buildUserDefaults()`.
+    private let userDefaults = UserDefaults(suiteName: "RentalLayerCoordinatorTests.\(UUID().uuidString)")!
+
     /// Never actually called in these tests (no `await` reaches it), but the
     /// coordinator's initializer requires a `VehicleRentalService` to construct its
     /// `VehicleRentalSource`.
@@ -48,7 +53,7 @@ final class RentalLayerCoordinatorTests {
         )
         return RentalLayerCoordinator(
             service: StubVehicleRentalService(),
-            locationService: LocationService(userDefaults: UserDefaults(), locationManager: locationManager)
+            locationService: LocationService(userDefaults: userDefaults, locationManager: locationManager)
         )
     }
 
