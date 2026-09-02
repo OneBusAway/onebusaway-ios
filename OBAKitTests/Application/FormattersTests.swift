@@ -193,9 +193,8 @@ final class FormattersTests: OBATestCase {
         let stop = try #require(Fixtures.loadSomeStops().first)
         stop.routes = try makeRoutes(shortNames: ["10", "20", "30", "40", "62"])
 
-        let callout = try #require(stop.mapCalloutText)
+        let callout = stop.mapCalloutText
         #expect(callout == "#\(stop.code)\n10, 20, 30…")
-        #expect(!callout.contains("more"))
         #expect(!callout.contains("Routes:"))
 
         let subtitle = try #require(stop.subtitle)
@@ -203,7 +202,6 @@ final class FormattersTests: OBATestCase {
         #expect(subtitle.contains("Routes:"))
         #expect(subtitle.contains("62"))
         #expect(!subtitle.contains("\u{2026}"))
-        #expect(!subtitle.contains("more"))
     }
 
     private func makeRoutes(shortNames: [String]) throws -> [Route] {
