@@ -121,9 +121,10 @@ class MapStatusView: UIView {
         addSubview(visualEffectView)
 
         // Shadow on the outer view for the floating effect.
-        // Start with opacity 0 — the correct value is set in didMoveToWindow()
-        // because traitCollection is unreliable during init (view has no window yet,
-        // so userInterfaceStyle returns .unspecified regardless of actual appearance).
+        // Start with opacity 0 — `traitCollection` is unreliable during init (no
+        // window yet, so `userInterfaceStyle` reports `.unspecified` whatever the
+        // real appearance is). `layoutSubviews()` sets the first real value, and
+        // the `registerForTraitChanges` below keeps it right after that.
         layer.shadowColor = UIColor.black.cgColor
         layer.shadowOffset = CGSize(width: 0, height: 2)
         layer.shadowRadius = Layout.shadowBlur
