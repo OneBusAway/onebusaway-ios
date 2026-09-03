@@ -126,13 +126,11 @@ public class Formatters: NSObject {
 
         let arrDepTime = timeFormatter.string(from: arrivalDepartureDate)
 
-        let explanationText: String
-        if scheduleStatus == .unknown {
-            explanationText = Strings.scheduledNotRealTime
-        }
-        else {
-            explanationText = formattedScheduleDeviation(temporalState: temporalState, arrivalDepartureStatus: arrivalDepartureStatus, scheduleDeviation: scheduleDeviationInMinutes)
-        }
+        let explanationText = deviationLabel(
+            scheduleStatus: scheduleStatus,
+            temporalState: temporalState,
+            arrivalDepartureStatus: arrivalDepartureStatus,
+            scheduleDeviation: scheduleDeviationInMinutes)
 
         let scheduleStatusColor = colorForScheduleStatus(scheduleStatus)
         let timeExplanationFont = UIFont.preferredFont(forTextStyle: .footnote)
@@ -292,9 +290,33 @@ public class Formatters: NSObject {
     /// `TripActivityPresenter.deviationLabel(for:now:)` applies for Live
     /// Activity content states.
     public func deviationLabel(for arrivalDeparture: ArrivalDeparture) -> String {
-        guard arrivalDeparture.predicted else { return Strings.scheduledNotRealTime }
+        deviationLabel(
+            scheduleStatus: arrivalDeparture.scheduleStatus,
+            temporalState: arrivalDeparture.temporalState,
+            arrivalDepartureStatus: arrivalDeparture.arrivalDepartureStatus,
+            scheduleDeviation: arrivalDeparture.deviationFromScheduleInMinutes)
+    }
 
-        return formattedScheduleDeviation(for: arrivalDeparture)
+    /// The component form, for callers holding a view model rather than the
+    /// `ArrivalDeparture` it came from — `ArrivalDepartureItem` carries these four
+    /// values and not the model.
+    ///
+    /// Gating on `scheduleStatus == .unknown` rather than `predicted` is the same
+    /// condition, not a looser one: `ArrivalDeparture.scheduleStatus` opens with
+    /// `guard predicted else { return .unknown }`. Expressing it once here is what
+    /// stops the two forms drifting apart.
+    public func deviationLabel(
+        scheduleStatus: ScheduleStatus,
+        temporalState: TemporalState,
+        arrivalDepartureStatus: ArrivalDepartureStatus,
+        scheduleDeviation: Int
+    ) -> String {
+        guard scheduleStatus != .unknown else { return Strings.scheduledNotRealTime }
+
+        return formattedScheduleDeviation(
+            temporalState: temporalState,
+            arrivalDepartureStatus: arrivalDepartureStatus,
+            scheduleDeviation: scheduleDeviation)
     }
 
     public func formattedScheduleDeviation(temporalState: TemporalState, arrivalDepartureStatus: ArrivalDepartureStatus, scheduleDeviation: Int) -> String {

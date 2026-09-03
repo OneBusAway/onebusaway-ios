@@ -148,6 +148,57 @@ final class FormattersTests: OBATestCase {
         #expect(formatters.deviationLabel(for: arrivalDeparture) == Strings.scheduledNotRealTime)
     }
 
+    /// The component overload exists for callers holding a view model rather than
+    /// the `ArrivalDeparture` it came from — `ArrivalDepartureItem` carries the
+    /// four values and not the model. Same gate, so `.unknown` must produce the
+    /// same string the model form does.
+    @Test func `Deviation label component form says scheduled for unknown status`() {
+        let formatters = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
+
+        let label = formatters.deviationLabel(
+            scheduleStatus: .unknown,
+            temporalState: .future,
+            arrivalDepartureStatus: .arriving,
+            scheduleDeviation: 0)
+
+        #expect(label == Strings.scheduledNotRealTime)
+    }
+
+    /// And with a real prediction it must fall through to the deviation phrase
+    /// rather than short-circuiting — otherwise the gate would swallow every case.
+    @Test func `Deviation label component form uses the deviation phrase when predicted`() {
+        let formatters = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
+
+        let label = formatters.deviationLabel(
+            scheduleStatus: .delayed,
+            temporalState: .future,
+            arrivalDepartureStatus: .arriving,
+            scheduleDeviation: 2)
+
+        #expect(label == "arrives 2 min late")
+    }
+
+    /// The two forms are one implementation, so they must agree on the same trip.
+    /// A drift here is exactly what the third hand-rolled copy in
+    /// `StopArrivalItem` used to allow.
+    @Test func `Deviation label forms agree on the same trip`() throws {
+        let formatters = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
+        let arrivalDeparture = try Fixtures.arrivalDeparture(
+            predictedArrival: 1_700_000_120,
+            predictedDeparture: 1_700_000_120
+        )
+
+        let fromModel = formatters.deviationLabel(for: arrivalDeparture)
+        let fromComponents = formatters.deviationLabel(
+            scheduleStatus: arrivalDeparture.scheduleStatus,
+            temporalState: arrivalDeparture.temporalState,
+            arrivalDepartureStatus: arrivalDeparture.arrivalDepartureStatus,
+            scheduleDeviation: arrivalDeparture.deviationFromScheduleInMinutes)
+
+        #expect(fromModel == fromComponents)
+        #expect(fromModel == "arrives 2 min late")
+    }
+
     /// A payload can carry predicted timestamps while declaring
     /// `predicted: false`; the gate is the flag, not the fields — the same rule
     /// `DepartureTimeDisplay` applies before striking through a time.
