@@ -24,10 +24,9 @@ on:
 # tests", check the step timings first — it is almost never the tests.
 
 jobs:
-  build:
+  swiftlint:
     runs-on: xcode-27
     permissions:
-      checks: write
       contents: read
 
     steps:
@@ -38,7 +37,7 @@ jobs:
     # Warnings annotate via the GitHub reporter but do not fail the job —
     # `--strict` would collapse that split. The Xcode build phase still skips
     # in CI (scripts/swiftlint.sh); this step is the review-visible gate.
-    # See https://github.com/OneBusAway/onebusaway-ios/issues/1303
+    # Runs in its own job so a lint failure does not suppress test signal (#1340).
     - name: SwiftLint (errors only)
       env:
         HOMEBREW_NO_AUTO_UPDATE: 1
@@ -49,6 +48,14 @@ jobs:
         fi
         swiftlint lint --reporter github-actions-logging
 
+  build:
+    runs-on: xcode-27
+    permissions:
+      checks: write
+      contents: read
+
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
     - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
