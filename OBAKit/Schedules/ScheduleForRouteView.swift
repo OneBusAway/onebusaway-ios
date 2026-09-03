@@ -93,7 +93,6 @@ struct RouteScheduleContentView: View {
                         selection: $viewModel.selectedDate,
                         displayedComponents: [.date]
                     )
-                    .datePickerStyle(.compact)
                     .labelsHidden()
                 }
                 .padding(.horizontal)
