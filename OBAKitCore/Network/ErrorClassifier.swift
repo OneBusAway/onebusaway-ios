@@ -71,6 +71,17 @@ public enum ErrorClassifier {
             }
             return APIError.serverUnavailable(regionName: regionName, statusCode: response.statusCode)
 
+        case .requestNotFound(let response) where response.statusCode != 404:
+            // `APIService+GetData` throws `requestNotFound` for a blank HTTP 200 as
+            // well as for a literal 404, but `errorDescription` says "404 Not found
+            // (url)" either way — a raw URL and a status code the server never sent.
+            // The host answered; the body was unusable. Say that instead (#1336).
+            guard let regionName else {
+                logger.warning("Empty-body \(response.statusCode) but no region name available for user message.")
+                return apiError
+            }
+            return APIError.invalidResponseData(regionName: regionName)
+
         case .networkFailure:
             if isCellularDataRestricted {
                 logger.info("Network failure reclassified as cellular data restriction.")

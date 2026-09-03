@@ -34,6 +34,8 @@ final class ErrorClassifierTests {
         }
     }
 
+    /// A literal 404 keeps `requestNotFound`'s own copy. Half of the boundary added
+    /// in #1336 — the other half is the empty-200 reclassification below.
     @Test func `Classify request not found passes through`() {
         let url = URL(string: "https://api.pugetsound.onebusaway.org/api/where/stop/1_75403.json")!
         let response = HTTPURLResponse(url: url, statusCode: 404, httpVersion: nil, headerFields: nil)!
@@ -233,6 +235,51 @@ final class ErrorClassifierTests {
             #expect(resp.statusCode == 400)
         default:
             Issue.record("Expected .requestFailure for 4xx, got \(apiError)")
+        }
+    }
+
+    // MARK: - Empty HTTP 200 Thrown As Request Not Found (#1336)
+
+    /// `APIService+GetData` throws `requestNotFound` for a blank HTTP 200 as well as for
+    /// a literal 404, and `requestNotFound`'s description is hardcoded to "404 Not found
+    /// (url)". Riders must not be shown a status code the server never sent.
+    @Test func `Classify request not found carrying a 200 becomes invalid response data`() {
+        let url = URL(string: "https://api.pugetsound.onebusaway.org/api/where/arrivals-and-departures-for-stop/1_75403.json")!
+        let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: nil)!
+        let error = APIError.requestNotFound(response)
+        let result = ErrorClassifier.classify(error, regionName: "Puget Sound")
+
+        guard let apiError = result as? APIError else {
+            Issue.record("Expected APIError, got \(type(of: result))")
+            return
+        }
+
+        switch apiError {
+        case .invalidResponseData(let regionName):
+            #expect(regionName == "Puget Sound")
+        default:
+            Issue.record("Expected .invalidResponseData, got \(apiError)")
+        }
+    }
+
+    /// `.invalidResponseData`'s copy names the region, so with no region there is nothing
+    /// better to say — mirrors the existing `.requestFailure` guards.
+    @Test func `Classify request not found carrying a 200 with no region passes through`() {
+        let url = URL(string: "https://api.pugetsound.onebusaway.org/api/where/arrivals-and-departures-for-stop/1_75403.json")!
+        let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: nil)!
+        let error = APIError.requestNotFound(response)
+        let result = ErrorClassifier.classify(error, regionName: nil)
+
+        guard let apiError = result as? APIError else {
+            Issue.record("Expected APIError, got \(type(of: result))")
+            return
+        }
+
+        switch apiError {
+        case .requestNotFound(let resp):
+            #expect(resp.statusCode == 200)
+        default:
+            Issue.record("Expected .requestNotFound, got \(apiError)")
         }
     }
 
