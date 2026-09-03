@@ -296,19 +296,11 @@ class StopViewModel: ObservableObject {
                     pendingExtensionMinutes = pendingAutoExtensionAmount()
                 }
             }
+        } catch let error as APIError where error.isGoneStopResponse {
+            applyGoneStopOutcome()
         } catch APIError.requestNotFound {
-            operationError = nil
-            isBrokenBookmark = bookmarkContext != nil
-
-            // With a bookmark behind it, a 404 is the broken-bookmark path: the page
-            // explains itself and offers a way out, and it isn't a failure the rider
-            // watched happen. Without one — a deep link, a search result, a map pin —
-            // the same 404 leaves the page with no arrivals, no error, and nothing to
-            // do, which is exactly the experience that shouldn't be followed by a
-            // request for five stars.
-            if bookmarkContext == nil {
-                environment.noteStopLoadFailed()
-            }
+            // Empty 200 GET mapped to `requestNotFound` — transient, not a gone stop.
+            applyGoneStopOutcome()
         } catch {
             operationError = error
 
@@ -325,6 +317,18 @@ class StopViewModel: ObservableObject {
 
         if let additionalMinutes = pendingExtensionMinutes {
             await loadMore(minutes: additionalMinutes)
+        }
+    }
+
+    /// HTTP 404, JSON `null`, and empty 200 all mean "no stop payload". With a
+    /// bookmark behind the page that is the broken-bookmark path; without one it
+    /// still counts as a load failure for the review prompt.
+    private func applyGoneStopOutcome() {
+        operationError = nil
+        isBrokenBookmark = bookmarkContext != nil
+
+        if bookmarkContext == nil {
+            environment.noteStopLoadFailed()
         }
     }
 

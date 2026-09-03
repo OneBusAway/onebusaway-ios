@@ -122,6 +122,20 @@ final class StopViewModelTests: OBATestCase {
         return (viewModel, app)
     }
 
+    /// Builds a `StopViewModel` whose arrivals fetch returns HTTP 200 with a
+    /// literal `null` body — the shape many OBA servers use for a missing stop.
+    @MainActor
+    private func buildViewModelWithJSONNullArrivals(bookmarkContext: Bookmark? = nil) -> (StopViewModel, Application) {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(
+            dataLoader: dataLoader,
+            analytics: AnalyticsMock(),
+            arrivalsData: Data("null".utf8)
+        )
+        let viewModel = StopViewModel(application: app, stopID: testStopID, bookmarkContext: bookmarkContext)
+        return (viewModel, app)
+    }
+
     /// Hides every route present in `arrivals_and_departures_for_stop_1_10020.json`
     /// (routes `1_30` and `1_65`) so the rider never sees a real-time row from that
     /// fixture. Writes straight to the view model's in-memory `stopPreferences` via
@@ -989,6 +1003,28 @@ final class StopViewModelTests: OBATestCase {
     func `Request not found without bookmark context flags error`() async {
         let (viewModel, application) = buildViewModelWithFailingArrivals(statusCode: 404)
         await viewModel.refresh()
+        #expect(application.promptCoordinator.sawErrorThisSession)
+    }
+
+    /// OBA servers that cannot 404 a missing stop answer HTTP 200 with the literal
+    /// body `null`. That must follow the same broken-bookmark path as a literal 404
+    /// (#1336), not surface `invalidContentType` as `operationError`.
+    @Test @MainActor
+    func `JSON null with bookmark context marks broken bookmark`() async throws {
+        let stop = try #require(try Fixtures.loadSomeStops().first)
+        let bookmark = Bookmark(name: "Broken", regionIdentifier: pugetSoundRegionIdentifier, stop: stop)
+        let (viewModel, application) = buildViewModelWithJSONNullArrivals(bookmarkContext: bookmark)
+        await viewModel.refresh()
+        #expect(viewModel.isBrokenBookmark)
+        #expect(viewModel.operationError == nil)
+        #expect(!application.promptCoordinator.sawErrorThisSession)
+    }
+
+    @Test @MainActor
+    func `JSON null without bookmark context flags error`() async {
+        let (viewModel, application) = buildViewModelWithJSONNullArrivals()
+        await viewModel.refresh()
+        #expect(viewModel.operationError == nil)
         #expect(application.promptCoordinator.sawErrorThisSession)
     }
 }

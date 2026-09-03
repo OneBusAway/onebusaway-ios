@@ -128,4 +128,25 @@ public enum APIError: Error, LocalizedError {
             return OBALoc("api_error.no_region_selected", value: "No region has been selected. Please select a region to continue.", comment: "An error message that tells the user that no region has been selected.")
         }
     }
+
+    /// Missing-stop shapes shared by the Bookmarks tab and the stop page.
+    ///
+    /// - Literal HTTP 404: the stop no longer resolves.
+    /// - HTTP 200 with body `null`: what many OBA servers send instead of a
+    ///   404. `APIService+GetData` throws that as `invalidContentType(...,
+    ///   "json", "nothing")`.
+    ///
+    /// Empty HTTP 200 is *not* included; a live stop can return a full 200, so
+    /// an empty body stays a transient error.
+    nonisolated public var isGoneStopResponse: Bool {
+        switch self {
+        case .requestNotFound(let response) where response.statusCode == 404:
+            return true
+        case .invalidContentType(_, let expected, let actual)
+            where expected == "json" && actual == "nothing":
+            return true
+        default:
+            return false
+        }
+    }
 }
