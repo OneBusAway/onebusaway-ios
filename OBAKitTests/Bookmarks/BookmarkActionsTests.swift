@@ -147,10 +147,10 @@ final class BookmarkActionsTests: OBATestCase {
             departureEpoch: 1_700_000_840
         )
 
-        let state = try #require(BookmarkActions.buildContentState(
+        let state = BookmarkActions.buildContentState(
             from: [oppositeSooner, tracked, laterSameDirection],
             matching: tracked
-        ))
+        )
 
         #expect(state.arrivals.count == 2)
         #expect(state.arrivals.map(\.departureTime) == [
@@ -176,10 +176,10 @@ final class BookmarkActionsTests: OBATestCase {
             departureEpoch: 1_700_000_100
         )
 
-        let state = try #require(BookmarkActions.buildContentState(
+        let state = BookmarkActions.buildContentState(
             from: [otherRoute],
             matching: tracked
-        ))
+        )
 
         #expect(state.arrivals.count == 1)
         #expect(state.arrivals[0].departureTime == Int(tracked.arrivalDepartureDate.timeIntervalSince1970))

@@ -587,11 +587,7 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
             return
         }
 
-        guard let contentState = buildLiveActivityContentState(for: departure, viewModel: viewModel) else {
-            Logger.error("Failed to build content state for Live Activity")
-            return
-        }
-
+        let contentState = buildLiveActivityContentState(for: departure, viewModel: viewModel)
         // Prominence so the Dynamic Island switches to this Track when another
         // trip is already live (#1189 Problem 2). Default score is 0 and equal
         // scores keep the first-started activity.
@@ -622,7 +618,7 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
         }
     }
 
-    private func buildLiveActivityContentState(for departure: ArrivalDeparture, viewModel: StopViewModel) -> TripAttributes.ContentState? {
+    private func buildLiveActivityContentState(for departure: ArrivalDeparture, viewModel: StopViewModel) -> TripAttributes.ContentState {
         let allArrivals = viewModel.stopArrivals?.arrivalsAndDepartures ?? [departure]
         return BookmarkActions.buildContentState(from: allArrivals, matching: departure)
     }

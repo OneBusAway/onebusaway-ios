@@ -100,13 +100,13 @@ final class BookmarkActions {
     static func buildContentState(
         from arrivalDepartures: [ArrivalDeparture],
         matching departure: ArrivalDeparture
-    ) -> TripAttributes.ContentState? {
+    ) -> TripAttributes.ContentState {
         let key = TripBookmarkKey(arrivalDeparture: departure)
         let sameTrip = arrivalDepartures
             .filter { TripBookmarkKey(arrivalDeparture: $0) == key }
             .sorted { $0.arrivalDepartureDate < $1.arrivalDepartureDate }
         let source = sameTrip.isEmpty ? [departure] : sameTrip
-        return buildContentState(from: source)
+        return buildContentState(from: source)!
     }
 
     @discardableResult
