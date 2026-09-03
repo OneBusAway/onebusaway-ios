@@ -700,6 +700,12 @@ final class ApplicationTests: OBATestCase {
     private func makeAppAndPushService() -> (Application, PushService) {
         let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)
+        // Setting `currentRegion` refetches agencies-with-coverage and then one
+        // alerts feed per agency it names, and `MockDataLoader` traps on a URL
+        // nobody mocked. Same pairing as `MapLayerRegistrarTests`, which switches
+        // region the same way.
+        stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.tampaRegion.OBABaseURL)
+        Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
         let locManager = LocationManagerMock()
         let locationService = LocationService(userDefaults: userDefaults, locationManager: locManager)
         let config = AppConfig(regionsBaseURL: regionsURL, apiKey: apiKey, appVersion: appVersion, userDefaults: userDefaults, analytics: AnalyticsMock(), queue: queue, locationService: locationService, bundledRegionsFilePath: bundledRegionsPath, regionsAPIPath: regionsAPIPath, dataLoader: dataLoader)
