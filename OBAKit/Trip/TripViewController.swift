@@ -345,7 +345,12 @@ class TripViewController: UIViewController,
             return
         }
 
-        tripDetailsController.highlightStopInList(stopTime.stop)
+        if let stopTimes = tripDetailsController.tripDetails?.stopTimes,
+           let stopIndex = stopTimes.firstIndex(where: { $0 === stopTime }) {
+            tripDetailsController.highlightStopInList(stopTime.stop, stopIndex: stopIndex)
+        } else {
+            tripDetailsController.highlightStopInList(stopTime.stop)
+        }
         openStop(stopTime, on: mapView)
     }
 

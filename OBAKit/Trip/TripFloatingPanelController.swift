@@ -165,7 +165,7 @@ class TripFloatingPanelController: UIViewController,
     }
 
     // MARK: - Public Methods
-    public func highlightStopInList(_ matchingStop: Stop) {
+    public func highlightStopInList(_ matchingStop: Stop, stopIndex: Int? = nil) {
         let data = self.items(for: listView)
 
         var matchingIndexPath: IndexPath?
@@ -173,6 +173,7 @@ class TripFloatingPanelController: UIViewController,
             for (itemIndex, item) in section.contents.enumerated() {
                 guard let tripStop = item.as(TripStopViewModel.self),
                       tripStop.stop.id == matchingStop.id else { continue }
+                if let stopIndex, tripStop.stopIndex != stopIndex { continue }
                 matchingIndexPath = IndexPath(item: itemIndex, section: sectionIndex)
                 break
             }
@@ -361,8 +362,8 @@ class TripFloatingPanelController: UIViewController,
         parentTripViewController?.showStopOnMap(tripStop)
     }
 
-    private func showOnList(_ tripStop: TripStopTime) {
-        highlightStopInList(tripStop.stop)
+    private func showOnList(_ tripStop: TripStopViewModel) {
+        highlightStopInList(tripStop.stop, stopIndex: tripStop.stopIndex)
     }
 
     private func serviceAlertsListSection(_ alerts: [ServiceAlert]) -> OBAListViewSection {
@@ -393,6 +394,10 @@ class TripFloatingPanelController: UIViewController,
         }
 
         let closestStopIdx = closestStopIndex(in: tripDetails)
+        let userStopIndex = TripStopListModel.userStopIndex(
+            in: tripDetails.stopTimes,
+            arrivalDeparture: arrivalDeparture
+        )
 
         // Stop times
         let selectTripStopAction: OBAListViewAction<TripStopViewModel> = { [unowned self] item in self.onSelectTripStop(item) }
@@ -402,6 +407,7 @@ class TripFloatingPanelController: UIViewController,
                 arrivalDeparture: arrivalDeparture,
                 stopIndex: index,
                 closestStopIndex: closestStopIdx,
+                userStopIndex: userStopIndex,
                 onSelectAction: selectTripStopAction
             ).typeErased
         }

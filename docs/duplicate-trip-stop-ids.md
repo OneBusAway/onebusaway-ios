@@ -11,4 +11,6 @@ list now uses the same format.
 `Equatable` includes `id`, matching the protocol's "all values, including
 the identifier" rule. Two visits to one stop are no longer equal.
 
-Tests do not load `TripViewController.view`.
+UIKit selection paths (`highlightStopInList`, `isUserDestination`) also
+resolve the rider's stop by `stopSequence`, not bare stop ID alone, so a
+loop route highlights the correct visit.

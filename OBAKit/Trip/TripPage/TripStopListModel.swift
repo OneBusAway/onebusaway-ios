@@ -95,6 +95,13 @@ struct TripStopListModel {
         return TripStopListModel(rows: rows, vehicleIndex: vehicleIndex)
     }
 
+    /// Which row is the rider's boarding or destination stop. Shared by the
+    /// SwiftUI trip page and the UIKit stop list.
+    static func userStopIndex(in stopTimes: [TripStopTime], arrivalDeparture: ArrivalDeparture?) -> Int? {
+        guard let arrivalDeparture else { return nil }
+        return index(in: stopTimes, stopID: arrivalDeparture.stopID, stopSequence: arrivalDeparture.stopSequence)
+    }
+
     /// The vehicle's position, resolved from a stop ID that a loop route can
     /// match more than once.
     ///

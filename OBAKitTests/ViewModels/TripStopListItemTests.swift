@@ -63,6 +63,7 @@ final class TripStopTemporalStateTests {
             arrivalDeparture: nil,
             stopIndex: 0,
             closestStopIndex: nil,
+            userStopIndex: nil,
             onSelectAction: nil
         )
         #expect(viewModel.temporalState == .future)
@@ -87,6 +88,7 @@ final class TripStopViewModelIdentityTests {
             arrivalDeparture: nil,
             stopIndex: 0,
             closestStopIndex: nil,
+            userStopIndex: nil,
             onSelectAction: nil
         )
         let second = TripStopViewModel(
@@ -94,6 +96,7 @@ final class TripStopViewModelIdentityTests {
             arrivalDeparture: nil,
             stopIndex: 5,
             closestStopIndex: nil,
+            userStopIndex: nil,
             onSelectAction: nil
         )
 
@@ -105,16 +108,60 @@ final class TripStopViewModelIdentityTests {
     @Test func `List ids stay unique across the whole trip`() throws {
         let data = Fixtures.loadData(file: "trip_details_1_18196913_no_status.json")
         let response = try JSONDecoder.RESTDecoder().decode(RESTAPIResponse<TripDetails>.self, from: data)
-        let ids = response.entry.stopTimes.enumerated().map { index, stopTime in
+        var stopTimes = response.entry.stopTimes
+        // Inject a repeat visit so uniqueness is non-vacuous against bare stop IDs.
+        if stopTimes.count > 2 {
+            stopTimes.insert(stopTimes[1], at: min(4, stopTimes.count))
+        }
+        let ids = stopTimes.enumerated().map { index, stopTime in
             TripStopViewModel(
                 stopTime: stopTime,
                 arrivalDeparture: nil,
                 stopIndex: index,
                 closestStopIndex: nil,
+                userStopIndex: nil,
                 onSelectAction: nil
             ).id
         }
         #expect(Set(ids).count == ids.count)
+    }
+
+    /// Bare stop ID alone marks every occurrence on a loop; `stopSequence` picks
+    /// the rider's boarding visit (#1346).
+    @Test func `User destination uses stop sequence on a loop`() throws {
+        let data = Fixtures.loadData(file: "trip_details_1_18196913_no_status.json")
+        let response = try JSONDecoder.RESTDecoder().decode(RESTAPIResponse<TripDetails>.self, from: data)
+        var stopTimes = response.entry.stopTimes
+        let repeated = stopTimes[1]
+        stopTimes.insert(repeated, at: 4)
+
+        let arrivalDeparture = try Fixtures.arrivalDeparture(
+            stopSequence: 4,
+            stopID: repeated.stopID
+        )
+        let userStopIndex = try #require(
+            TripStopListModel.userStopIndex(in: stopTimes, arrivalDeparture: arrivalDeparture)
+        )
+        #expect(userStopIndex == 4)
+
+        let firstVisit = TripStopViewModel(
+            stopTime: repeated,
+            arrivalDeparture: arrivalDeparture,
+            stopIndex: 1,
+            closestStopIndex: nil,
+            userStopIndex: userStopIndex,
+            onSelectAction: nil
+        )
+        let secondVisit = TripStopViewModel(
+            stopTime: repeated,
+            arrivalDeparture: arrivalDeparture,
+            stopIndex: 4,
+            closestStopIndex: nil,
+            userStopIndex: userStopIndex,
+            onSelectAction: nil
+        )
+        #expect(!firstVisit.isUserDestination)
+        #expect(secondVisit.isUserDestination)
     }
 }
 
