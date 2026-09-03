@@ -114,7 +114,8 @@ public class Application: CoreApplication, PushServiceDelegate {
     @MainActor
     public private(set) lazy var proximityAlertManager = ProximityAlertManager(
         locationService: locationService,
-        userDataStore: userDataStore
+        userDataStore: userDataStore,
+        regionIDProvider: { [weak self] in self?.regionsService.currentRegion?.regionIdentifier }
     )
 
     @objc lazy var userActivityBuilder = UserActivityBuilder(application: self)
@@ -384,19 +385,21 @@ public class Application: CoreApplication, PushServiceDelegate {
         Task { await pushRegistrationManager.registerIfNeeded() }
     }
 
-    public func pushService(_ pushService: PushService, receivedProximityAlertForStopID stopID: StopID) {
-        // The current region is the right one by construction: the geofence that
-        // produced this notification is only crossed where the rider physically
-        // is. `queueOrOpenStop` still needs one named, because it refuses to open
-        // a stop against a different region's API.
-        guard let regionID = regionsService.currentRegion?.regionIdentifier else {
-            // No region yet — the ordinary case for a tap that relaunched a
+    public func pushService(_ pushService: PushService, receivedProximityAlertForStopID stopID: StopID, regionID: Int?) {
+        // The alert's own region wins where it has one. `currentRegion` is right
+        // only while it tracks the rider's location — the ordinary case, since the
+        // geofence is crossed where they are — and is wrong for a manually pinned
+        // region, which would send them to the pinned region's API for a stop they
+        // set somewhere else. Alerts stored before they carried a region still
+        // fall back to it, exactly as they always did.
+        guard let regionID = regionID ?? regionsService.currentRegion?.regionIdentifier else {
+            // Neither names one — the ordinary case for a tap that relaunched a
             // terminated app, since the regions list loads asynchronously. Stash
             // without one, exactly as the fired-alarm handler above does: the
             // drain navigates as soon as a root controller exists, and
             // `regionsService(_:updatedRegion:)` drains again once a region lands.
             // Returning here instead would drop the only thing the rider tapped.
-            Logger.info("Proximity alert tap for stop \(stopID) arrived before a region loaded; deferring navigation.")
+            Logger.info("Proximity alert tap for stop \(stopID) arrived with no region; deferring navigation.")
             pendingStopID = stopID
             // Cleared rather than left alone: a region stashed by an earlier
             // navigation would make the drain refuse this stop as belonging to
@@ -404,6 +407,11 @@ public class Application: CoreApplication, PushServiceDelegate {
             pendingStopRegionID = nil
             return
         }
+        // Through `queueOrOpenStop` on both branches, rather than a second copy of
+        // its deferral logic here: once the region can come from the alert instead
+        // of from `currentRegion`, its mismatch guard can finally disagree with
+        // itself, and a tap that relaunched the app stashes a region the drain can
+        // check instead of navigating against whatever loads first.
         queueOrOpenStop(AppLinksRouter.StopDestination(stopID: stopID, regionID: regionID))
     }
 

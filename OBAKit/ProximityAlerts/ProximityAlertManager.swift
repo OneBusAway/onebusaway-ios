@@ -36,6 +36,11 @@ public enum ProximityAlertActivationResult: Equatable {
     /// the rider yet; `.denied` means they have to be sent to Settings.
     case needsNotificationAuthorization(UNAuthorizationStatus)
 
+    /// Nothing was stored: this stop already has an unexpired alert, handed back
+    /// here. A second one would arm another geofence at the same coordinate, take
+    /// another of the twenty region slots, and fire alongside the first.
+    case alreadyActive(ProximityAlert)
+
     /// Nothing was stored: the app already monitors `limit` regions, which is all
     /// iOS allows. An existing alert has to go before another can arm.
     case regionLimitReached(limit: Int)
@@ -65,6 +70,14 @@ public final class ProximityAlertManager: NSObject, LocationServiceDelegate {
     /// Mirrors ``PushRegistrationManager/AuthorizationStatusProvider``.
     public typealias AuthorizationStatusProvider = @Sendable () async -> UNAuthorizationStatus
 
+    /// Names the region the rider is in when they set an alert.
+    ///
+    /// A closure rather than a `RegionsService` dependency: this needs one integer
+    /// at one moment, and taking the service would hand the manager a collaborator
+    /// it has no other use for and every test a stand-in to build. `@MainActor`
+    /// because the real one reads `RegionsService`, which is.
+    public typealias RegionIDProvider = @MainActor () -> Int?
+
     /// Hands a notification request to the system.
     ///
     /// Deliberately the completion-handler form rather than the `async` one. The
@@ -78,12 +91,18 @@ public final class ProximityAlertManager: NSObject, LocationServiceDelegate {
     /// `userInfo`, and the name `PushService` routes a tap on.
     static let notificationUserInfoKey = "proximity_alert"
 
+    /// Key under which the region the alert was set in travels alongside
+    /// ``notificationUserInfoKey``. Absent when the alert recorded none, which is
+    /// what every alert stored before this field existed looks like.
+    static let notificationRegionUserInfoKey = "proximity_alert_region"
+
     /// Namespaces the `UNNotificationRequest` identifier so a proximity
     /// notification can never collide with, or replace, one from another feature.
     static let notificationIdentifierPrefix = "oba.proximity-alert."
 
     private let locationService: LocationService
     private let userDataStore: UserDataStore
+    private let regionIDProvider: RegionIDProvider
     private let notificationCenter: NotificationCenter
     private let authorizationStatusProvider: AuthorizationStatusProvider
     private let scheduleNotification: NotificationScheduler
@@ -97,6 +116,10 @@ public final class ProximityAlertManager: NSObject, LocationServiceDelegate {
     /// - Parameters:
     ///   - locationService: Arms and disarms the geofences, and reports crossings.
     ///   - userDataStore: Persists the alerts the geofences stand for.
+    ///   - regionIDProvider: Names the region an alert is being set in, recorded
+    ///     on the alert so a tap on its notification opens the stop against the
+    ///     region the rider actually set it in. Defaults to naming none, which
+    ///     leaves the tap falling back to whichever region is current.
     ///   - notificationCenter: Carries `.proximityAlertsDidChange`. `UserDataStore`
     ///     posts to `.default`, so an injected center only sees store changes if
     ///     it is that same center.
@@ -107,6 +130,7 @@ public final class ProximityAlertManager: NSObject, LocationServiceDelegate {
     public init(
         locationService: LocationService,
         userDataStore: UserDataStore,
+        regionIDProvider: @escaping RegionIDProvider = { nil },
         notificationCenter: NotificationCenter = .default,
         authorizationStatusProvider: @escaping AuthorizationStatusProvider = {
             await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
@@ -117,6 +141,7 @@ public final class ProximityAlertManager: NSObject, LocationServiceDelegate {
     ) {
         self.locationService = locationService
         self.userDataStore = userDataStore
+        self.regionIDProvider = regionIDProvider
         self.notificationCenter = notificationCenter
         self.authorizationStatusProvider = authorizationStatusProvider
         self.scheduleNotification = scheduleNotification
@@ -190,7 +215,23 @@ public final class ProximityAlertManager: NSObject, LocationServiceDelegate {
             return .needsNotificationAuthorization(notificationStatus)
         }
 
-        let alert = ProximityAlert(stop: stop, radiusMeters: radiusMeters)
+        // A second alert on this stop would arm a second geofence at the same
+        // coordinate, hold another of the twenty slots the cap guard counts, and
+        // fire alongside the first. `activeAlert(for:)` ignores expired alerts, so
+        // a stale one does not block a new one.
+        //
+        // Checked after the authorization guards rather than before them: a
+        // downgrade from Always neither disarms nor deletes — see
+        // `locationService(_:authorizationStatusChanged:)`, which logs and returns
+        // — so a stored alert can look healthy here while no longer able to
+        // deliver. That rider needs `.needsLocationAuthorization`, which is both
+        // actionable and the explanation for why the alert they already have went
+        // quiet, rather than being told they already have one.
+        if let existing = activeAlert(for: stop.id) {
+            return .alreadyActive(existing)
+        }
+
+        let alert = ProximityAlert(stop: stop, radiusMeters: radiusMeters, regionID: regionIDProvider())
 
         switch locationService.startMonitoringProximity(for: alert) {
         case .started:
@@ -355,7 +396,13 @@ public final class ProximityAlertManager: NSObject, LocationServiceDelegate {
             alert.stopName
         )
         content.sound = .default
-        content.userInfo = [Self.notificationUserInfoKey: alert.stopID]
+        // The stop travels alone when the alert has no region, keeping the shape
+        // `PushService` reads for an alert set before the region was recorded.
+        var userInfo: [String: Any] = [Self.notificationUserInfoKey: alert.stopID]
+        if let regionID = alert.regionID {
+            userInfo[Self.notificationRegionUserInfoKey] = regionID
+        }
+        content.userInfo = userInfo
 
         let request = UNNotificationRequest(
             identifier: Self.notificationIdentifierPrefix + alert.id.uuidString,

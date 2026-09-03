@@ -61,7 +61,11 @@ public protocol PushServiceDelegate: NSObjectProtocol {
     /// fallback for an unrecognized payload re-presents the notification's own
     /// text in a modal alert, which for this one would tell the rider they are
     /// approaching their stop a second time and nothing else.
-    func pushService(_ pushService: PushService, receivedProximityAlertForStopID stopID: StopID)
+    ///
+    /// - Parameter regionID: The region the alert was set in, or `nil` for an
+    ///   alert that recorded none — one stored before the field existed, or a
+    ///   notification delivered by an earlier build and tapped after the update.
+    func pushService(_ pushService: PushService, receivedProximityAlertForStopID stopID: StopID, regionID: Int?)
 
     /// Called whenever APNs issues the device a (possibly rotated) push token.
     func pushService(_ pushService: PushService, receivedDeviceToken token: String)
@@ -92,6 +96,20 @@ public class PushService: NSObject {
     // MARK: - PushServiceProvider Callbacks
 
     private func notificationReceivedHandler(message: String, additionalData: [AnyHashable: Any]?) {
+        // Matched ahead of the single-custom-key routing below, which this payload
+        // cannot satisfy: a proximity alert carries the region it was set in
+        // alongside the stop, and that is two custom keys. It is also the one
+        // notification the app builds itself, so its shape is known here exactly
+        // rather than negotiated with a server.
+        if let additionalData, let stopID = additionalData[ProximityAlertManager.notificationUserInfoKey] as? StopID {
+            delegate?.pushService(
+                self,
+                receivedProximityAlertForStopID: stopID,
+                regionID: additionalData[ProximityAlertManager.notificationRegionUserInfoKey] as? Int
+            )
+            return
+        }
+
         // Remote-notification `userInfo` always includes an `aps` entry alongside
         // any custom data key (see OBACloudPushService.userNotificationCenter(_:didReceive:...),
         // which forwards the entire UNNotificationContent.userInfo). Routing must
@@ -117,9 +135,6 @@ public class PushService: NSObject {
         else if key == "donation" {
             let testID = additionalData["donation"] as? String
             delegate?.pushService(self, receivedDonationPrompt: testID)
-        }
-        else if key == ProximityAlertManager.notificationUserInfoKey, let stopID = additionalData[key] as? StopID {
-            delegate?.pushService(self, receivedProximityAlertForStopID: stopID)
         }
         else {
             displayMessage(message)
