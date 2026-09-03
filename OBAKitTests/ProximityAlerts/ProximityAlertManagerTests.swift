@@ -458,19 +458,29 @@ final class ProximityAlertManagerTests: OBATestCase {
         #expect(manager.proximityAlerts.isEmpty)
     }
 
-    @Test func `Entering the geofence of an expired alert delivers nothing`() {
-        let expired = ProximityAlert(
-            stop: stop,
-            createdAt: Date(timeIntervalSinceNow: -ProximityAlert.expirationInterval - 60)
-        )
-        store.add(proximityAlert: expired)
+    @Test func `Entering the geofence of an expired alert delivers nothing`() throws {
+        let alert = ProximityAlert(stop: stop)
+        store.add(proximityAlert: alert)
         let manager = makeManager()
-        // Reconciliation reaped it on construction, so put it back to reach the
-        // guard under test: the crossing arriving before anything reconciles.
-        store.add(proximityAlert: expired)
-        #expect(locationService.startMonitoringProximity(for: expired) == .started)
+        #expect(locationService.startMonitoringProximity(for: alert) == .started)
 
-        enterRegion(for: expired)
+        // Region is armed. Swap in an expired record with the same ID without
+        // posting `.proximityAlertsDidChange`, which would reconcile and reap it
+        // before the crossing reaches `guard !alert.isExpired`.
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .secondsSince1970
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .secondsSince1970
+        var payload = try JSONSerialization.jsonObject(with: try encoder.encode(alert)) as! [String: Any]
+        payload["createdAt"] = Date(timeIntervalSinceNow: -ProximityAlert.expirationInterval - 60).timeIntervalSince1970
+        let expired = try decoder.decode(
+            ProximityAlert.self,
+            from: JSONSerialization.data(withJSONObject: payload)
+        )
+        #expect(expired.isExpired)
+        store.proximityAlerts = [expired]
+
+        enterRegion(for: alert)
 
         // Waking a rider for a trip that ended a day ago is worse than not firing.
         #expect(self.delivered.value.isEmpty)
