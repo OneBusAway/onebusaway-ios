@@ -168,10 +168,11 @@ class TripFloatingPanelController: UIViewController,
     /// Scrolls the trip stop list to `matchingStop`'s row and, by default, blinks it.
     /// - Parameters:
     ///   - matchingStop: The stop whose row should be brought into view.
+    ///   - stopIndex: When the trip revisits a stop, disambiguates which visit to scroll to.
     ///   - blinksAfterScroll: Pass `false` when the caller is about to push another view
     ///     controller. The blink is delayed until scrolling settles, so it would play
     ///     underneath the pushed page and be finished before the rider returned to see it.
-    public func highlightStopInList(_ matchingStop: Stop, blinksAfterScroll: Bool = true) {
+    public func highlightStopInList(_ matchingStop: Stop, stopIndex: Int? = nil, blinksAfterScroll: Bool = true) {
         let data = self.items(for: listView)
 
         var matchingIndexPath: IndexPath?
@@ -179,6 +180,7 @@ class TripFloatingPanelController: UIViewController,
             for (itemIndex, item) in section.contents.enumerated() {
                 guard let tripStop = item.as(TripStopViewModel.self),
                       tripStop.stop.id == matchingStop.id else { continue }
+                if let stopIndex, tripStop.stopIndex != stopIndex { continue }
                 matchingIndexPath = IndexPath(item: itemIndex, section: sectionIndex)
                 break
             }
@@ -369,8 +371,8 @@ class TripFloatingPanelController: UIViewController,
         parentTripViewController?.showStopOnMap(tripStop)
     }
 
-    private func showOnList(_ tripStop: TripStopTime) {
-        highlightStopInList(tripStop.stop)
+    private func showOnList(_ tripStop: TripStopViewModel) {
+        highlightStopInList(tripStop.stop, stopIndex: tripStop.stopIndex)
     }
 
     private func serviceAlertsListSection(_ alerts: [ServiceAlert]) -> OBAListViewSection {
@@ -401,6 +403,10 @@ class TripFloatingPanelController: UIViewController,
         }
 
         let closestStopIdx = closestStopIndex(in: tripDetails)
+        let userStopIndex = TripStopListModel.userStopIndex(
+            in: tripDetails.stopTimes,
+            arrivalDeparture: arrivalDeparture
+        )
 
         // Stop times
         let selectTripStopAction: OBAListViewAction<TripStopViewModel> = { [unowned self] item in self.onSelectTripStop(item) }
@@ -410,6 +416,7 @@ class TripFloatingPanelController: UIViewController,
                 arrivalDeparture: arrivalDeparture,
                 stopIndex: index,
                 closestStopIndex: closestStopIdx,
+                userStopIndex: userStopIndex,
                 onSelectAction: selectTripStopAction
             ).typeErased
         }
@@ -437,9 +444,10 @@ class TripFloatingPanelController: UIViewController,
         }
 
         let arrivalDeparture = tripConvertible?.arrivalDeparture
-        let userStopIndex = arrivalDeparture.flatMap { ad in
-            tripDetails.stopTimes.firstIndex { $0.stopID == ad.stopID }
-        }
+        let userStopIndex = TripStopListModel.userStopIndex(
+            in: tripDetails.stopTimes,
+            arrivalDeparture: arrivalDeparture
+        )
 
         guard let vm = TripProgressViewModel(
             closestStopIndex: currentIndex,
