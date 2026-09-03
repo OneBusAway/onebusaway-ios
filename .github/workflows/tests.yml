@@ -24,10 +24,16 @@ on:
 # tests", check the step timings first — it is almost never the tests.
 
 jobs:
-  build:
+  # Its own job, not a step inside `build`. As a step it ran before
+  # build-for-testing in the same job, so one lint error failed the job and took
+  # every test result for that run with it — the two answer different questions
+  # and a PR wants both. Parallel jobs also overlap lint with the build instead
+  # of serialising them. No `needs:`: neither gates the other, and GitHub still
+  # requires both to pass.
+  # See https://github.com/OneBusAway/onebusaway-ios/issues/1340
+  lint:
     runs-on: xcode-27
     permissions:
-      checks: write
       contents: read
 
     steps:
@@ -37,7 +43,7 @@ jobs:
     # type_body_length breach cannot land on main while staying green on GitHub.
     # Warnings annotate via the GitHub reporter but do not fail the job —
     # `--strict` would collapse that split. The Xcode build phase still skips
-    # in CI (scripts/swiftlint.sh); this step is the review-visible gate.
+    # in CI (scripts/swiftlint.sh); this job is the review-visible gate.
     # See https://github.com/OneBusAway/onebusaway-ios/issues/1303
     - name: SwiftLint (errors only)
       env:
@@ -49,6 +55,14 @@ jobs:
         fi
         swiftlint lint --reporter github-actions-logging
 
+  build:
+    runs-on: xcode-27
+    permissions:
+      checks: write
+      contents: read
+
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
     - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
