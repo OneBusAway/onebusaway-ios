@@ -183,26 +183,6 @@ public class BookmarkDataLoader: NSObject {
         }
     }
 
-    /// Missing-stop shapes that must not bulletin on the Bookmarks tab.
-    ///
-    /// - Literal HTTP 404: the stop no longer resolves.
-    /// - HTTP 200 with body `null`: what many OBA servers send instead of a
-    ///   404. `APIService+GetData` throws that as `invalidContentType(...,
-    ///   "json", "nothing")` — the copy in #1331. Empty HTTP 200 is *not*
-    ///   included; a live San Diego stop is a full 200, so an empty body
-    ///   stays a transient error.
-    nonisolated private static func isGoneBookmarkStop(_ error: APIError) -> Bool {
-        switch error {
-        case .requestNotFound(let response) where response.statusCode == 404:
-            return true
-        case .invalidContentType(_, let expected, let actual)
-            where expected == "json" && actual == "nothing":
-            return true
-        default:
-            return false
-        }
-    }
-
     @MainActor
     private func loadData(bookmark: Bookmark, batchID: UInt64) {
         guard
@@ -236,16 +216,10 @@ public class BookmarkDataLoader: NSObject {
 
                     self.delegate?.dataLoaderDidUpdate(self)
                 }
-            } catch let error as APIError where Self.isGoneBookmarkStop(error) {
+            } catch let error as APIError where error.indicatesMissingStop {
                 // The stop no longer exists in this region. Don't bulletin —
                 // settle the card on "No upcoming departures" and drop any
                 // previous countdown for this stop.
-                //
-                // San Diego trace 2026-08-14 against realtime.sdmts.com: a live
-                // stop (`MTS_11589`) returns HTTP 200 with a full JSON body on
-                // the app URL (`/api/api/where/...`). Empty HTTP 200 — also
-                // thrown as `requestNotFound` by `APIService+GetData` — is a
-                // transient blip and falls through to `displayError` below.
                 await MainActor.run {
                     guard batchID == self.currentBatchID else { return }
                     self.fetchedStopIDs.insert(bookmark.stopID)

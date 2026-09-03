@@ -296,16 +296,21 @@ class StopViewModel: ObservableObject {
                     pendingExtensionMinutes = pendingAutoExtensionAmount()
                 }
             }
-        } catch APIError.requestNotFound {
+        } catch let error as APIError where error.indicatesMissingStop {
             operationError = nil
             isBrokenBookmark = bookmarkContext != nil
 
-            // With a bookmark behind it, a 404 is the broken-bookmark path: the page
-            // explains itself and offers a way out, and it isn't a failure the rider
-            // watched happen. Without one — a deep link, a search result, a map pin —
-            // the same 404 leaves the page with no arrivals, no error, and nothing to
-            // do, which is exactly the experience that shouldn't be followed by a
-            // request for five stars.
+            // With a bookmark behind it, a server that has no stop at this ID is the
+            // broken-bookmark path: the page explains itself and offers a way out, and
+            // it isn't a failure the rider watched happen. Without one — a deep link, a
+            // search result, a map pin — the same response leaves the page with no
+            // arrivals, no error, and nothing to do, which is exactly the experience
+            // that shouldn't be followed by a request for five stars.
+            //
+            // `indicatesMissingStop` covers both shapes the servers use — a literal 404
+            // and HTTP 200 with body `null` — so this agrees with the Bookmarks tab
+            // (#1336). An empty HTTP 200 is not one of them; it falls through to the
+            // general catch as the transient error it is.
             if bookmarkContext == nil {
                 environment.noteStopLoadFailed()
             }
