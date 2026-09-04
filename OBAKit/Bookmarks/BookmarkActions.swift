@@ -147,28 +147,12 @@ final class BookmarkActions {
         }
 
         let attributes = TripAttributes(staticData: staticData)
-        // Prominence so the Dynamic Island switches to this Track when another
-        // trip is already live (#1189 Problem 2). Default score is 0 and equal
-        // scores keep the first-started activity.
-        let prominence = TripLiveActivityRelevance.prominenceScore()
         do {
-            let activity = try Activity.request(
+            let activity = try Activity<TripAttributes>.requestProminent(
                 attributes: attributes,
-                content: TripLiveActivityRelevance.content(
-                    state: contentState,
-                    staleDate: nil,
-                    relevanceScore: prominence
-                ),
-                pushType: .token
+                state: contentState
             )
             trackLiveActivity(activity, arrivalDepartures: arrivalDepartures)
-            let activityID = activity.id
-            Task {
-                await Activity<TripAttributes>.demoteLivePeers(
-                    exceptActivityID: activityID,
-                    relativeTo: prominence
-                )
-            }
             Logger.info("Started Live Activity with ID: \(activity.id)")
             showLiveActivityStartedToast()
             return .started
