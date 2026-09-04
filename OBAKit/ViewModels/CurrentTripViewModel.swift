@@ -190,6 +190,13 @@ class CurrentTripViewModel: ObservableObject {
         pendingNavigation = nil
     }
 
+    /// Prompts for when-in-use authorization. A thin wrapper so the view layer
+    /// doesn't reach into `application.locationService`, matching
+    /// `MapViewModel.requestLocationAuthorization()`.
+    func requestLocationAuthorization() {
+        application.locationService.requestInUseAuthorization()
+    }
+
     // MARK: - Refresh Timer
 
     private func startRefreshTimer() {
@@ -261,6 +268,56 @@ extension CurrentTripViewModel {
             default:
                 return false
             }
+        }
+    }
+}
+
+// MARK: - No-Location Recovery
+
+extension CurrentTripViewModel {
+    /// What the `.noLocation` empty state can usefully offer the rider.
+    ///
+    /// Mirrors the precedence `MapViewModel.topPillState` already applies to the
+    /// same authorization values, so the two screens agree on what a rider in a
+    /// given state can do about it. `LocationService.authorizationStatus` folds
+    /// "Location Services are off system-wide" into `.denied`, so that needs no
+    /// branch of its own.
+    enum NoLocationRecovery: Equatable {
+        /// Nobody has asked yet. Declining onboarding's location step lands here
+        /// rather than in `.denied` — "Not Now" never calls Core Location — so
+        /// this is the likeliest reason for an absent location. An in-app prompt
+        /// is a far shorter path than a trip to Settings.
+        case requestAuthorization
+
+        /// Access was refused, or Location Services are off system-wide. Nothing
+        /// in the app can undo either, so a retry would only flash a spinner.
+        case openSettings
+
+        /// Authorized, but no fix has arrived yet (cold start, indoors).
+        /// `findVehicle()` re-reads `currentLocation`, so this is the one case a
+        /// retry can actually resolve.
+        case retry
+
+        /// Parental controls or an MDM profile block location and the rider
+        /// cannot lift that from Settings, so every affordance would be a dead
+        /// end. The same call `MapViewModel` makes for `.restricted`.
+        case unavailable
+    }
+
+    /// The recovery affordance the `.noLocation` empty state should present.
+    var noLocationRecovery: NoLocationRecovery {
+        switch application.locationService.authorizationStatus {
+        case .notDetermined:
+            return .requestAuthorization
+        case .denied:
+            return .openSettings
+        case .restricted:
+            return .unavailable
+        case .authorizedAlways, .authorizedWhenInUse:
+            return .retry
+        @unknown default:
+            // A future denied-like status must not offer a retry that cannot work.
+            return .unavailable
         }
     }
 }

@@ -118,6 +118,11 @@ nonisolated class Icons: NSObject {
         configureForButtonIcon(systemImage(named: "line.horizontal.3.decrease"))
     }
 
+    /// A gear icon, for controls that send the user to the system Settings app.
+    public class var settings: UIImage {
+        configureForButtonIcon(systemImage(named: "gearshape"))
+    }
+
     public class var addAlarm: UIImage {
         imageNamed("add_alarm")
     }

@@ -40,6 +40,8 @@ private class PushServiceDelegateRecorder: NSObject, PushServiceDelegate {
     var receivedAlarms: [AlarmPushBody] = []
     var receivedDonationPromptIDs: [String?] = []
     var receivedDeviceTokens: [String] = []
+    var receivedProximityAlertStopIDs: [StopID] = []
+    var receivedProximityAlertRegionIDs: [Int?] = []
 
     func pushServicePresentingController(_ pushService: PushService) -> UIViewController? {
         nil
@@ -55,6 +57,11 @@ private class PushServiceDelegateRecorder: NSObject, PushServiceDelegate {
 
     func pushService(_ pushService: PushService, receivedDeviceToken token: String) {
         receivedDeviceTokens.append(token)
+    }
+
+    func pushService(_ pushService: PushService, receivedProximityAlertForStopID stopID: StopID, regionID: Int?) {
+        receivedProximityAlertStopIDs.append(stopID)
+        receivedProximityAlertRegionIDs.append(regionID)
     }
 }
 
@@ -208,6 +215,56 @@ final class PushServiceTests: OBATestCase {
 
         #expect(delegate.receivedDonationPromptIDs.count == 1)
         #expect(delegate.receivedDonationPromptIDs[0] == "experiment-42")
+    }
+
+    // MARK: - Proximity Alert Payloads
+
+    @Test func `Proximity alert payload forwards stop ID to delegate`() {
+        provider.notificationReceivedHandler("You're getting close to 3rd & Pike", [
+            ProximityAlertManager.notificationUserInfoKey: "1_75403"
+        ])
+
+        #expect(delegate.receivedProximityAlertStopIDs == ["1_75403"])
+        // No region named. The shape of every alert stored before the field
+        // existed, and of any notification an earlier build delivered that is
+        // still sitting untapped in Notification Center.
+        #expect(delegate.receivedProximityAlertRegionIDs == [nil])
+    }
+
+    /// Two custom keys, which `PushService`'s single-custom-key routing cannot
+    /// satisfy — so this payload has to be matched ahead of it, or the rider's tap
+    /// lands in the fallback that tells them a second time that they are near
+    /// their stop.
+    @Test func `Proximity alert payload forwards the region it carries`() {
+        provider.notificationReceivedHandler("You're getting close to 3rd & Pike", [
+            ProximityAlertManager.notificationUserInfoKey: "1_75403",
+            ProximityAlertManager.notificationRegionUserInfoKey: 12
+        ])
+
+        #expect(delegate.receivedProximityAlertStopIDs == ["1_75403"])
+        #expect(delegate.receivedProximityAlertRegionIDs == [12])
+        #expect(delegate.receivedAlarms.isEmpty)
+        #expect(delegate.receivedDonationPromptIDs.isEmpty)
+    }
+
+    /// Routing this at all is what keeps the fallback below from re-presenting
+    /// the notification's own text in a modal — which for a proximity alert
+    /// would tell the rider they are approaching their stop a second time.
+    @Test func `Proximity alert payload does not route to alarm or donation`() {
+        provider.notificationReceivedHandler("You're getting close to 3rd & Pike", [
+            ProximityAlertManager.notificationUserInfoKey: "1_75403"
+        ])
+
+        #expect(delegate.receivedAlarms.isEmpty)
+        #expect(delegate.receivedDonationPromptIDs.isEmpty)
+    }
+
+    @Test func `Proximity alert payload with non string stop ID is not routed`() {
+        provider.notificationReceivedHandler("You're getting close", [
+            ProximityAlertManager.notificationUserInfoKey: 123
+        ])
+
+        #expect(delegate.receivedProximityAlertStopIDs.isEmpty)
     }
 
     // MARK: - Fallback Paths

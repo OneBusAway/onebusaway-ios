@@ -612,6 +612,33 @@ final class BookmarksViewModelTests: OBATestCase {
         #expect(viewModel.lastRefreshHadError)
     }
 
+    /// OBA servers that cannot 404 a missing stop answer HTTP 200 with the
+    /// literal body `null`. `APIService+GetData` throws that as
+    /// `invalidContentType(..., "json", "nothing")` — the copy riders see as
+    /// "Expected to receive json data from the server, but we received
+    /// nothing instead." Same terminal outcome as a literal 404: the stop
+    /// is gone, so the Bookmarks tab must not bulletin (#1331).
+    @Test @MainActor
+    func `JSON null body does not call display error`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createSpyApplication(dataLoader: dataLoader)
+        _ = try addTripBookmark(to: app)
+
+        dataLoader.mock(data: Data("null".utf8), statusCode: 200) {
+            $0.url?.path.contains("/api/where/arrivals-and-departures-for-stop") ?? false
+        }
+
+        let viewModel = BookmarksViewModel(application: app)
+        await viewModel.refreshAndWait()
+
+        #expect(app.displayErrorCallCount == 0)
+        #expect(!viewModel.lastRefreshHadError)
+
+        let rows = viewModel.sections.flatMap(\.rows)
+        let row = try #require(rows.first)
+        #expect(row.hasLoadedArrivalData)
+    }
+
     /// A 404 after a successful fetch must drop the previous departures rather
     /// than leave a frozen countdown on the card.
     @Test @MainActor
@@ -635,6 +662,42 @@ final class BookmarksViewModelTests: OBATestCase {
             stubAgenciesWithCoverage(dataLoader: staging, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
             Fixtures.stubAllAgencyAlerts(dataLoader: staging)
             staging.mock(data: Data(), statusCode: 404) {
+                $0.url?.path.contains("/api/where/arrivals-and-departures-for-stop") ?? false
+            }
+        }
+
+        await viewModel.refreshAndWait()
+
+        #expect(app.displayErrorCallCount == 0)
+        #expect(!viewModel.lastRefreshHadError)
+        let row = try #require(viewModel.sections.flatMap(\.rows).first)
+        #expect(row.hasLoadedArrivalData)
+        #expect(row.arrivalDepartures.isEmpty)
+    }
+
+    /// JSON `null` after a successful fetch must drop the previous departures
+    /// the same way a later 404 does (#1331).
+    @Test @MainActor
+    func `JSON null after success clears stale departures`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createSpyApplication(dataLoader: dataLoader)
+        _ = try addTripBookmark(to: app)
+
+        dataLoader.mock(
+            data: Fixtures.loadData(file: "arrivals-and-departures-for-stop-1_10914.json")
+        ) { $0.url?.path.contains("/api/where/arrivals-and-departures-for-stop") ?? false }
+
+        let viewModel = BookmarksViewModel(application: app)
+        await viewModel.refreshAndWait()
+
+        let loaded = try #require(viewModel.sections.flatMap(\.rows).first)
+        #expect(!loaded.arrivalDepartures.isEmpty)
+
+        dataLoader.replaceMappedResponses { staging in
+            stubRegions(dataLoader: staging)
+            stubAgenciesWithCoverage(dataLoader: staging, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
+            Fixtures.stubAllAgencyAlerts(dataLoader: staging)
+            staging.mock(data: Data("null".utf8), statusCode: 200) {
                 $0.url?.path.contains("/api/where/arrivals-and-departures-for-stop") ?? false
             }
         }

@@ -9,6 +9,7 @@
 
 import Foundation
 import Testing
+import UIKit
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -519,5 +520,55 @@ final class EditBookmarkViewModelTests: OBATestCase {
         #expect(app.userDataStore.findBookmark(id: dup.id) != nil)
         #expect(app.userDataStore.bookmarks.count == 2)
         #expect(analyticsMock.reportedEvents.filter { $0.label == AnalyticsLabels.addBookmark }.count == 1)
+    }
+
+    /// #1145 lives in the Cancel `UIAlertAction` on `EditBookmarkViewController.save()`,
+    /// not in `resolveDuplicate(.cancelled)` (that branch is a bare `return`).
+    /// Drive the alert the rider actually taps.
+    @Test @MainActor
+    func `Cancelling the duplicate alert from save does not report analytics`() async throws {
+        let arrivalDep = try makeArrivalDeparture()
+        let analyticsMock = AnalyticsMock()
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader, analytics: analyticsMock)
+
+        let existing = Bookmark(name: arrivalDep.routeAndHeadsign, regionIdentifier: pugetSoundRegionIdentifier, arrivalDeparture: arrivalDep)
+        app.userDataStore.add(existing, to: nil)
+
+        let editor = EditBookmarkViewController(
+            application: app,
+            arrivalDeparture: arrivalDep,
+            bookmark: nil,
+            delegate: nil
+        )
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        window.rootViewController = editor
+        window.makeKeyAndVisible()
+        editor.loadViewIfNeeded()
+        editor.view.layoutIfNeeded()
+
+        #expect(app.currentRegion != nil, "save() presents the region-error alert when currentRegion is nil")
+        editor.save()
+        for _ in 0..<40 where editor.presentedViewController == nil {
+            try await Task.sleep(for: .milliseconds(50))
+        }
+
+        let alert = try #require(editor.presentedViewController as? UIAlertController)
+        let cancel = try #require(alert.actions.first(where: { $0.style == .cancel }))
+        triggerAlertAction(cancel)
+
+        #expect(app.userDataStore.bookmarks.count == 1)
+        #expect(app.userDataStore.findBookmark(id: existing.id) != nil)
+        #expect(analyticsMock.reportedEvents.filter { $0.label == AnalyticsLabels.addBookmark }.isEmpty)
+
+        window.isHidden = true
+    }
+
+    /// `UIAlertAction.handler` is not public. This is the same KVC reach the
+    /// controller test needs to fire the Cancel closure `save()` actually installed.
+    private func triggerAlertAction(_ action: UIAlertAction) {
+        typealias Handler = @convention(block) (UIAlertAction) -> Void
+        guard let block = action.value(forKey: "handler") else { return }
+        unsafeBitCast(block as AnyObject, to: Handler.self)(action)
     }
 }

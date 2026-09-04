@@ -696,6 +696,84 @@ final class ApplicationTests: OBATestCase {
 
     // MARK: - Push Service Tests
 
+    /// The app and push service the proximity-tap tests below need.
+    private func makeAppAndPushService() -> (Application, PushService) {
+        let dataLoader = MockDataLoader(testName: name)
+        stubRegions(dataLoader: dataLoader)
+        // Setting `currentRegion` refetches agencies-with-coverage and then one
+        // alerts feed per agency it names, and `MockDataLoader` traps on a URL
+        // nobody mocked. Same pairing as `MapLayerRegistrarTests`, which switches
+        // region the same way.
+        stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.tampaRegion.OBABaseURL)
+        Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
+        let locManager = LocationManagerMock()
+        let locationService = LocationService(userDefaults: userDefaults, locationManager: locManager)
+        let config = AppConfig(regionsBaseURL: regionsURL, apiKey: apiKey, appVersion: appVersion, userDefaults: userDefaults, analytics: AnalyticsMock(), queue: queue, locationService: locationService, bundledRegionsFilePath: bundledRegionsPath, regionsAPIPath: regionsAPIPath, dataLoader: dataLoader)
+        let app = Application(config: config)
+        return (app, PushService(serviceProvider: MockPushServiceProvider(), delegate: app))
+    }
+
+    @Test func `Push service proximity alert tap is never dropped`() {
+        let (app, pushService) = makeAppAndPushService()
+
+        app.pushService(pushService, receivedProximityAlertForStopID: "1_75403", regionID: nil)
+
+        // The tap that matters is the one into a terminated app, where neither a
+        // root controller nor a region exists yet. Both branches must stash: with
+        // no region the handler stashes region-less, and with one `queueOrOpenStop`
+        // stashes it alongside the region. Dropping it would strand the rider on
+        // whatever screen the app happened to open to.
+        #expect(app.pendingStopID == "1_75403")
+        // Whatever region was stashed must be the one actually current, or the
+        // drain will refuse the stop as belonging somewhere else.
+        #expect(app.pendingStopRegionID == app.regionsService.currentRegion?.regionIdentifier)
+    }
+
+    @Test func `Push service proximity alert tap stashes the region the alert carries`() {
+        let (app, pushService) = makeAppAndPushService()
+
+        // The case the carried region exists for: a geofence crossing relaunched a
+        // terminated app, so no region has loaded to fall back on yet.
+        #expect(app.regionsService.currentRegion == nil)
+
+        app.pushService(pushService, receivedProximityAlertForStopID: "1_75403", regionID: 12)
+
+        #expect(app.pendingStopID == "1_75403")
+        // Stashed rather than dropped as it was before the alert carried one: the
+        // drain now has a region to check the stop against, instead of whichever
+        // one happens to load first.
+        #expect(app.pendingStopRegionID == 12)
+    }
+
+    @Test func `Push service proximity alert tap falls back to the current region`() {
+        let (app, pushService) = makeAppAndPushService()
+        app.regionsService.currentRegion = Fixtures.tampaRegion
+
+        app.pushService(pushService, receivedProximityAlertForStopID: "1_75403", regionID: nil)
+
+        // An alert stored before it carried a region resolves exactly as it always
+        // did. Without this the fallback could be deleted and nothing would fail.
+        #expect(app.pendingStopID == "1_75403")
+        #expect(app.pendingStopRegionID == Fixtures.tampaRegion.regionIdentifier)
+    }
+
+    @Test func `Push service proximity alert tap refuses a stop from another region`() {
+        let (app, pushService) = makeAppAndPushService()
+        app.regionsService.currentRegion = Fixtures.tampaRegion
+
+        app.pushService(
+            pushService,
+            receivedProximityAlertForStopID: "1_75403",
+            regionID: Fixtures.pugetSoundRegion.regionIdentifier
+        )
+
+        // `queueOrOpenStop`'s mismatch guard, live from this call site for the
+        // first time: while the region came from `currentRegion` it was compared
+        // against itself. A pinned rider is no longer sent to the wrong API.
+        #expect(app.pendingStopID == nil)
+        #expect(app.pendingStopRegionID == nil)
+    }
+
     @Test func `Push service received donation prompt with no top view controller`() {
         let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)

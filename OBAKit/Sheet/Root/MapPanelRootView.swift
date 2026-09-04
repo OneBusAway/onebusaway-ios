@@ -10,7 +10,18 @@
 import MapKit
 import SwiftUI
 import OBAKitCore
+import OTPKit
 import UIKit
+
+// MARK: - MapPinSelection
+
+/// What the panel map's `selection` can hold. Stops and rentals share one Map,
+/// so the binding needs one type covering both.
+enum MapPinSelection: Hashable {
+    case stop(Stop.ID)
+    case rental(VehicleRental.ID)
+    case rentalCluster(String)
+}
 
 // MARK: - MapPanelRootView
 
@@ -22,6 +33,7 @@ struct MapPanelRootView: View {
     @StateObject private var coordinator: SheetCoordinator<AppSheetRoute>
     @ObservedObject private var searchDisplay: MapSearchDisplayModel
     @StateObject private var mapViewModel: MapViewModel
+    @StateObject private var layersModel: MapPanelLayersModel
     @ObservedObject private var stopsObserver: MapStopsObserver
 
     /// Presentation state only. The popup reads its data from
@@ -29,9 +41,9 @@ struct MapPanelRootView: View {
     /// is open updates the displayed forecast in place.
     @State private var isWeatherPopupPresented = false
 
-    /// The stop the user tapped, if any. Bound to the `Map`'s `selection`; cleared
-    /// after pushing so re-tapping the same stop pushes again.
-    @State private var selectedStopID: Stop.ID?
+    /// The pin the user tapped, if any. Bound to the `Map`'s `selection`;
+    /// cleared after pushing so re-tapping the same pin pushes again.
+    @State private var mapSelection: MapPinSelection?
 
     /// Whether the map is zoomed in far enough to load and show stops. Mirrors the
     /// UIKit path's `requiredHeightToShowStops` gate so both surfaces suppress
@@ -91,6 +103,8 @@ struct MapPanelRootView: View {
 
     init(
         application: Application,
+        mapViewModel: MapViewModel,
+        layersModel: MapPanelLayersModel,
         factory: AppSheetViewFactory,
         coordinator: SheetCoordinator<AppSheetRoute>,
         searchDisplayModel: MapSearchDisplayModel,
@@ -99,8 +113,8 @@ struct MapPanelRootView: View {
         _coordinator = StateObject(wrappedValue: coordinator)
         _searchDisplay = ObservedObject(wrappedValue: searchDisplayModel)
         _stopsObserver = ObservedObject(wrappedValue: stopsObserver)
-        let initialMapType = MapBaseType(application.mapRegionManager.userSelectedMapType)
-        _mapViewModel = StateObject(wrappedValue: MapViewModel(application: application, initialMapType: initialMapType))
+        _mapViewModel = StateObject(wrappedValue: mapViewModel)
+        _layersModel = StateObject(wrappedValue: layersModel)
         self.application = application
         self.factory = factory
         self.viewportRecorder = MapViewportRecorder(application: application)
@@ -136,7 +150,7 @@ struct MapPanelRootView: View {
     }
 
     var body: some View {
-        Map(position: $cameraPosition, selection: $selectedStopID) {
+        Map(position: $cameraPosition, selection: $mapSelection) {
             UserAnnotation()
             // Bookmark pins render at every zoom level, like the UIKit map.
             ForEach(stopsObserver.bookmarks) { bookmark in
@@ -152,7 +166,7 @@ struct MapPanelRootView: View {
             }
             // Regular stops show only zoomed in; `renderStops` already excludes
             // bookmarked stops and precomputes labels.
-            if isZoomedInForStops, !searchDisplay.suppressesAmbientStops {
+            if isZoomedInForStops, layersModel.isStopsLayerEnabled, !searchDisplay.suppressesAmbientStops {
                 ForEach(stopsObserver.renderStops) { renderStop in
                     stopAnnotation(
                         for: renderStop.stop,
@@ -162,6 +176,9 @@ struct MapPanelRootView: View {
                     )
                 }
             }
+
+            rentalAnnotations
+
             searchResultMapContent(for: searchDisplay.display) { stop in
                 application.stopIconFactory.buildSquircleIcon(
                     for: stop,
@@ -174,6 +191,8 @@ struct MapPanelRootView: View {
             viewportRecorder.record(context.rect)
             visibleRegion = context.region
             visibleMapRectHeight = context.rect.height
+            layersModel.viewportDidChange(context.rect)
+            layersModel.updateViewport(mapRect: context.rect, mapSize: mapSize)
             // Keep the "Zoom in for stops" pill in sync with the stop-loading
             // threshold by updating it before the stop-loading early return, so it
             // also works when the map is zoomed out.
@@ -193,6 +212,11 @@ struct MapPanelRootView: View {
                 return
             }
             recomputeStopLabels()
+            // Both keep running with the stops layer off, like the UIKit map:
+            // its `isStopsLayerEnabled` guard still arms the request timer,
+            // because the nearby stops list reads `mapRegionManager.stops`
+            // directly — and `updateViewport` is the observer's prune step.
+            // Only rendering is gated, in the `ForEach` above.
             stopsObserver.updateViewport(context.region)
             guard !searchDisplay.suppressesAmbientStops else { return }
             application.mapRegionManager.scheduleStopsRequest(in: context.region)
@@ -217,10 +241,21 @@ struct MapPanelRootView: View {
             cameraPosition = .rect(selected.serviceRect)
             viewportRecorder.record(selected.serviceRect)
         }
-        .onChange(of: selectedStopID) { _, id in
-            guard let id else { return }
-            coordinator.push(.stopDetails(stopID: id))
-            selectedStopID = nil
+        .onChange(of: mapSelection) {
+            guard let selection = mapSelection else { return }
+            switch selection {
+            case .stop(let stopID):
+                coordinator.push(.stopDetails(stopID: stopID))
+            case .rental(let rentalID):
+                coordinator.push(.rentalDetail(rentalID: rentalID))
+            case .rentalCluster(let clusterID):
+                let members = layersModel.rentalItems
+                    .first { $0.id == clusterID }?
+                    .members ?? []
+                guard !members.isEmpty else { break }
+                coordinator.push(.rentalCluster(memberIDs: members.map(\.id)))
+            }
+            mapSelection = nil
         }
         // A searched result stays drawn for exactly as long as the sheet that owns it
         // is on the stack. Watching the stack — rather than clearing from the owning
@@ -250,7 +285,9 @@ struct MapPanelRootView: View {
             }
             searchDisplay.consumeCameraTarget()
         }
-        .mapStyle(mapViewModel.mapType == .standard ? .standard(emphasis: .muted) : .hybrid)
+        .mapStyle(mapViewModel.mapType.styleDescriptor(
+            showingPointsOfInterest: layersModel.showsPointsOfInterest
+        ).mapStyle)
         .safeAreaPadding(.bottom, 180)
         .onGeometryChange(for: CGFloat.self) { proxy in
             proxy.size.height / 2
@@ -268,6 +305,11 @@ struct MapPanelRootView: View {
             proxy.size
         } action: { _, newValue in
             mapSize = newValue
+            // Clustering is computed in screen space, so it needs this size. The
+            // camera can settle before the first non-zero size is reported, in
+            // which case the `.onMapCameraChange` handler above already ran with
+            // `.zero` and fell back to one marker per vehicle.
+            layersModel.updateMapSize(newValue)
             // On a cold launch a cached location fix can arrive before the Map
             // reports its first non-zero size, in which case the recenter in
             // `.onChange(of: didReceiveInitialLocation)` bails (`centerOnUser`
@@ -344,7 +386,29 @@ struct MapPanelRootView: View {
                     .offset(y: ThemeMetrics.defaultMapAnnotationSize + 2)
             }
         }
-        .tag(stop.id)
+        .tag(MapPinSelection.stop(stop.id))
+    }
+
+    private func tag(for item: RentalMapItem) -> MapPinSelection {
+        switch item {
+        case .single(let rental): return .rental(rental.id)
+        case .cluster(let id, _, _): return .rentalCluster(id)
+        }
+    }
+
+    @MapContentBuilder
+    private var rentalAnnotations: some MapContent {
+        ForEach(layersModel.rentalItems) { item in
+            Annotation("", coordinate: item.coordinate) {
+                switch item {
+                case .single(let rental):
+                    RentalMapMarker(rental: rental, showsFuelLabel: layersModel.showsFuelLabels)
+                case .cluster(_, _, let members):
+                    RentalClusterMapMarker(count: members.count)
+                }
+            }
+            .tag(tag(for: item))
+        }
     }
 
     /// Re-evaluates `showStopLabels` from the last settled viewport height and
@@ -603,8 +667,9 @@ extension MapPanelRootView {
     private var mapControlsCluster: some View {
         MapControlsCluster(
             mapType: mapViewModel.mapType,
+            badgeCount: layersModel.enabledLayerCount,
             isLocationButtonVisible: application.locationService.isLocationUseAuthorized,
-            onToggleMapType: mapViewModel.toggleMapType,
+            onOpenMapSettings: { coordinator.push(.mapSettings) },
             onCenterOnUser: centerOnUser
         )
         .padding(.trailing, ThemeMetrics.controllerMargin)

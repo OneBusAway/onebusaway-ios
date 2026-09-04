@@ -20,6 +20,14 @@ public class ProximityAlert: NSObject, Codable {
     public let radiusMeters: Double
     public let createdAt: Date
 
+    /// The region the rider was looking at when they set this alert.
+    ///
+    /// Optional because alerts persisted before the field existed have no answer
+    /// and inventing one would be worse than admitting it: `nil` means "fall back
+    /// to whichever region is current when the notification is tapped", which is
+    /// exactly what every alert did before.
+    public let regionID: Int?
+
     /// The coordinate of the destination stop.
     public var coordinate: CLLocationCoordinate2D {
         CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
@@ -65,7 +73,7 @@ public class ProximityAlert: NSObject, Codable {
         return clamped
     }
 
-    public init(stop: Stop, radiusMeters: CLLocationDistance = ProximityAlert.defaultRadiusMeters, createdAt: Date = Date()) {
+    public init(stop: Stop, radiusMeters: CLLocationDistance = ProximityAlert.defaultRadiusMeters, createdAt: Date = Date(), regionID: Int? = nil) {
         self.id = UUID()
         self.stopID = stop.id
         self.stopName = stop.name
@@ -73,12 +81,13 @@ public class ProximityAlert: NSObject, Codable {
         self.longitude = stop.location.coordinate.longitude
         self.radiusMeters = ProximityAlert.clampedRadius(radiusMeters)
         self.createdAt = createdAt
+        self.regionID = regionID
     }
 
     // MARK: - Codable
 
     private enum CodingKeys: String, CodingKey {
-        case id, stopID, stopName, latitude, longitude, radiusMeters, createdAt
+        case id, stopID, stopName, latitude, longitude, radiusMeters, createdAt, regionID
     }
 
     /// Re-applies the radius clamp on the way in, so the invariant also holds for
@@ -94,6 +103,7 @@ public class ProximityAlert: NSObject, Codable {
         longitude = try container.decode(Double.self, forKey: .longitude)
         radiusMeters = ProximityAlert.clampedRadius(try container.decode(CLLocationDistance.self, forKey: .radiusMeters))
         createdAt = try container.decode(Date.self, forKey: .createdAt)
+        regionID = try container.decodeIfPresent(Int.self, forKey: .regionID)
     }
 
     /// Whether this alert has expired based on `expirationInterval`.
