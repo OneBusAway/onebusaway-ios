@@ -12,11 +12,13 @@ and the only user-curated list of those is **trip bookmarks**.
 2. `openAppWhenRun` is equivalent to `supportedModes = .foreground(.immediate)`:
    the app is already frontmost **before** `perform()` runs. Lifecycle hooks
    (`applicationDidBecomeActive`, `rootUserInterfaceDidLoad`) therefore peek
-   an empty queue. The store notification is what selects the Bookmarks tab
-   on a warm launch. Cold launch still peeks from `rootUserInterfaceDidLoad`
+   an empty queue. The store notification wakes `Application`, which drains
+   the request from `topViewController` — it does **not** switch to the
+   Bookmarks tab. Cold launch still peeks from `rootUserInterfaceDidLoad`
    if the observer was not yet registered when `store` posted.
-3. Once that bookmark's arrivals are in, the existing Track path starts (or
-   promotes) the Live Activity. No `Activity` is captured into a `Task`.
+3. `LiveActivityShortcutDrain` builds its own `BookmarkDataLoader`, awaits
+   arrivals, then starts (or promotes) the Live Activity via the existing
+   Track path. No `Activity` is captured into a `Task`.
 
 Intents live in OBAKit. The app target includes them through
 `OBAAppIntentsPackage` → `OBAKitAppIntentsPackage`. Without that chain,
@@ -34,9 +36,9 @@ reads `RegionsService.currentRegionIdentifierUserDefaultsKey` (public
 `nonisolated`), not a copied string.
 
 A queued request expires after 90 seconds (and leftover ids without a timestamp
-are dropped). `rootNavigateTo(page: .bookmarks)` selects the tab. Live
-Activities disabled system-wide, or a region mismatch, clears the request and
-logs a warning (no Track error alert — the rider is not on a Track tap).
+are dropped). Drain does not switch tabs. Live Activities disabled
+system-wide, or a region mismatch, clears the request and logs a warning
+(no Track error alert — the rider is not on a Track tap).
 
 Arbitrary stop IDs that are not bookmarked are out of scope for this change.
 

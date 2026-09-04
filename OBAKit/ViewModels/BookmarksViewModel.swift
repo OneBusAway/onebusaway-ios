@@ -166,13 +166,6 @@ class BookmarksViewModel: NSObject, ObservableObject, BookmarkDataDelegate {
         return dataLoader.dataForKey(key)
     }
 
-    /// `true` once this session has finished at least one arrivals fetch for
-    /// the bookmark's stop. Shortcut Live Activity start waits on this so it
-    /// does not fire the empty-data error path before the loader returns.
-    func hasFetchedArrivals(for bookmark: Bookmark) -> Bool {
-        dataLoader.hasFetchedData(forStopID: bookmark.stopID)
-    }
-
     // MARK: - Bookmark Management
 
     func deleteBookmark(_ bookmark: Bookmark) {

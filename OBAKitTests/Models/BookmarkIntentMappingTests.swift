@@ -51,7 +51,7 @@ final class BookmarkIntentMappingTests: OBATestCase {
     }
 
     /// Arrivals are only fetched for the current region. Offering an out-of-
-    /// region trip bookmark queues a request `hasFetchedArrivals` can never
+    /// region trip bookmark queues a request `the drain loader` can never
     /// satisfy. Drop the region filter and this fails.
     @Test func `Shortcut entities skip trip bookmarks from other regions`() throws {
         let stopArrivals = try Fixtures.loadRESTAPIPayload(
