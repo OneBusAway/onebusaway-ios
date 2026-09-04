@@ -463,7 +463,7 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
 
     /// Defaults key for `showTransferArrivalBanner`. Dot-free so a future
     /// `@AppStorage` reader can observe it; see `stopUIReducedColorsKey`.
-    public static let showTransferArrivalBannerKey = "showTransferArrivalBanner
+    public static let showTransferArrivalBannerKey = "showTransferArrivalBanner"
 
     public init(userDefaults: UserDefaults) {
         self.userDefaults = userDefaults
