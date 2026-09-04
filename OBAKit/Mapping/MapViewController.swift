@@ -484,7 +484,7 @@ class MapViewController: UIViewController,
 
     // MARK: - Long Press Gesture
 
-    var longPressGesture: UILongPressGestureRecognizer!
+    private var longPressGesture: UILongPressGestureRecognizer!
 
     @objc private func handleLongPress(_ gesture: UILongPressGestureRecognizer) {
         // Only handle the began state to avoid multiple pins
