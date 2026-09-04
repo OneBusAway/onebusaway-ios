@@ -144,7 +144,7 @@ struct RentalClusteringTests {
 
     /// The property that removes the need for a density cap: marker count is
     /// bounded by occupied cells, not by how many vehicles are in the viewport.
-    @Test func `Marker count is bounded by viewport cells at extreme density`() throws {
+    @Test func `Marker count stays far below vehicle count at extreme density`() throws {
         let crowd = try (0..<500).map { index in
             try RentalFixtures.vehicle(
                 id: "v\(index)",
@@ -155,8 +155,13 @@ struct RentalClusteringTests {
 
         let result = items(crowd)
 
-        let maxCells = Int(ceil(mapSize.width / 60)) * Int(ceil(mapSize.height / 60))
-        #expect(result.count <= maxCells)
+        // `result.count < 500` is the assertion that carries the property: 500
+        // vehicles collapse to a fraction of that. The cell count below is a
+        // sanity bound, not the real invariant — bucketing happens in global
+        // map-point space, so a viewport-derived figure only bounds the result
+        // because this fixture fits inside one viewport.
+        let viewportCells = Int(ceil(mapSize.width / 60)) * Int(ceil(mapSize.height / 60))
+        #expect(result.count <= viewportCells)
         #expect(result.count < 500)
     }
 
