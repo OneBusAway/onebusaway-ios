@@ -56,7 +56,14 @@ struct WeatherDisplay: Equatable {
     /// Unknown-icon placeholder "—" is still included so VoiceOver always
     /// has the temperature.
     var buttonAccessibilityValue: String {
-        "\(buttonTitle), \(header.conditionSummary)"
+        String(
+            format: OBALoc(
+                "weather.button_accessibility_value_format",
+                value: "%@, %@",
+                comment: "Spoken value for the map weather control. First %@ is the temperature, second is the weather condition."
+            ),
+            buttonTitle, header.conditionSummary
+        )
     }
 }
 
