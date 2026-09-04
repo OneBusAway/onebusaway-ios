@@ -453,10 +453,9 @@ final class TripPageViewController: UIHostingController<TripPageView>,
         ])
 
         do {
-            let activity = try Activity.request(
+            let activity = try Activity<TripAttributes>.requestProminent(
                 attributes: TripAttributes(staticData: staticData),
-                content: .init(state: contentState, staleDate: nil),
-                pushType: .token
+                state: contentState
             )
             application.liveActivityTracker.track(activity: activity, metadata: .init(departure))
             Logger.info("Started Live Activity with ID: \(activity.id)")

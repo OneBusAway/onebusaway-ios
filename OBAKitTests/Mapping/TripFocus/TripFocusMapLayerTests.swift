@@ -250,6 +250,22 @@ final class TripFocusMapLayerTests {
         #expect(shapeOverlays.count == firstCount)
     }
 
+    /// Polling used to `removeAnnotation`/`addAnnotation` the bus on every
+    /// tick. MapKit treats that as a new pin, so the marker pops instead of
+    /// sliding, and any open callout is dismissed. Keep the same object.
+    /// See: https://github.com/OneBusAway/onebusaway-ios/issues/1109
+    @Test func `A refresh moves the existing vehicle annotation instead of replacing it`() throws {
+        let status = try vehicle()
+        let focus = focus(content(shape: shape(), progress: 0.5, vehicle: status))
+        let first = try #require(mapView.annotations.compactMap { $0 as? VehicleAnnotation }.first)
+
+        focus.apply(content(shape: shape(), progress: 0.6, vehicle: status))
+
+        let after = mapView.annotations.compactMap { $0 as? VehicleAnnotation }
+        #expect(after.count == 1)
+        #expect(after.first === first)
+    }
+
     @Test func `Clearing the focus clears the map`() {
         let focus = focus(content(shape: shape(), progress: 0.5))
 

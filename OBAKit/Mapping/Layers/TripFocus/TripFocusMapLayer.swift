@@ -115,9 +115,15 @@ final class TripFocusMapLayer: NSObject, MapLayer {
     // MARK: - Rendering
 
     private func render(_ content: TripMapFocus.Content?) {
-        removeAllContent()
+        // Shape and stops are cheap to replace. The vehicle marker is not:
+        // removing it dismisses any callout and pops the pin instead of sliding
+        // it. See `drawVehicle`.
+        removeShapeAndStops()
 
-        guard let content else { return }
+        guard let content else {
+            removeVehicle()
+            return
+        }
 
         // Split once: the drawing and the camera have to agree about which half
         // of the shape is still ahead of the bus.
@@ -172,11 +178,41 @@ final class TripFocusMapLayer: NSObject, MapLayer {
     }
 
     private func drawVehicle(_ content: TripMapFocus.Content) {
-        guard let status = content.vehicle, Self.vehicleCoordinate(content) != nil else { return }
+        guard let status = content.vehicle, let coord = Self.vehicleCoordinate(content) else {
+            removeVehicle()
+            return
+        }
 
+        if let existing = vehicleAnnotation, Self.isSameVehicle(existing.tripStatus, status) {
+            // `tripStatus`'s didSet writes lastKnownLocation onto coordinate
+            // immediately. Restore `from` so `VehicleCoordinateUpdate` can
+            // interpolate instead of that assignment teleporting the pin.
+            let from = existing.coordinate
+            existing.tripStatus = status
+            existing.coordinate = from
+            VehicleCoordinateUpdate.apply(from: from, to: coord, on: existing)
+            if let view = mapView.view(for: existing) as? PulsingVehicleAnnotationView {
+                view.realTimeAnnotationColor = content.routeColor
+                view.applyTripStatus(status)
+            }
+            return
+        }
+
+        removeVehicle()
         let annotation = VehicleAnnotation(tripStatus: status)
         vehicleAnnotation = annotation
         mapView.addAnnotation(annotation)
+    }
+
+    /// Same bus, not merely the same trip: a block handoff should replace the
+    /// marker rather than interpolate across the depot. Missing vehicle IDs
+    /// still count as the same marker — this layer only ever draws one.
+    private static func isSameVehicle(_ existing: TripStatus?, _ incoming: TripStatus) -> Bool {
+        guard let existing else { return false }
+        if let existingID = existing.vehicleID, let incomingID = incoming.vehicleID {
+            return existingID == incomingID
+        }
+        return true
     }
 
     /// The part of the map this layer may frame into — everything the host isn't
@@ -233,15 +269,23 @@ final class TripFocusMapLayer: NSObject, MapLayer {
     }
 
     private func removeAllContent() {
+        removeShapeAndStops()
+        removeVehicle()
+    }
+
+    private func removeShapeAndStops() {
         mapView.removeOverlays(shapeOverlays)
         mapView.removeAnnotations(stopAnnotations)
         mapView.removeAnnotations(directionArrowAnnotations)
-        if let vehicleAnnotation {
-            mapView.removeAnnotation(vehicleAnnotation)
-        }
         shapeOverlays.removeAll()
         stopAnnotations.removeAll()
         directionArrowAnnotations.removeAll()
+    }
+
+    private func removeVehicle() {
+        if let vehicleAnnotation {
+            mapView.removeAnnotation(vehicleAnnotation)
+        }
         vehicleAnnotation = nil
     }
 

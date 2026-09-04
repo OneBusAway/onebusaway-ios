@@ -171,3 +171,28 @@ Stop pages can hide departures that lack real-time data, or hide the real-time o
 * `scheduledOnly` - Show only departures without real-time data.
 
 This is a starting value, not a lock: riders can change it in Settings under Arrival & Departure Display, or from the Departure Type menu on any stop page, and their choice is remembered from then on. An unrecognized value is ignored and treated as `all`.
+
+### More Tab
+
+* `MoreTab` - Optional dictionary. Customizes the More (settings) tab header and menu items without forking the UI. Omit the whole key to keep OneBusAway defaults. KiedyBus is a working example.
+
+Nested keys (all optional):
+
+* `HeaderSupportText` - String shown in the branded header box. Omit or leave empty to keep the default volunteer-support copy.
+* `ShowHelpOutSection` - Boolean. Defaults to `true`. Set `false` to hide the "Help make the app better" section (translate / develop rows).
+* `TranslateURL` - URL for "Help Translate the App". Omit to hide that row. OneBusAway currently omits it; white-label apps can opt in.
+* `DevelopURL` - URL for "Help Fix Bugs & Build New Features". Defaults to the OneBusAway iOS GitHub repo when omitted. An empty string hides the row — and because the section is dropped when it has no rows left, an empty `DevelopURL` also hides the "Help make the app better" header whenever `TranslateURL` is absent, which is the OneBusAway default. Set `ShowHelpOutSection` to `false` when hiding the whole section is the intent.
+* `TutorialURL`, `PhoneURL`, `TextURL` - Optional. When set, they appear under "Contact & Help" as Tutorials, Call Agency, and Text Agency. `tel:` and `sms:` URLs are valid. Empty strings are ignored.
+* `CustomLinks` - Array of `{Title, URL}` dictionaries. Shown under "Resources". A row is dropped if `Title` or `URL` is missing or the URL is empty.
+
+Example (KiedyBus-style):
+
+```yaml
+OBAKitConfig:
+  MoreTab:
+    HeaderSupportText: "Powered by goEuropa"
+    ShowHelpOutSection: false
+    CustomLinks:
+      - Title: "goEuropa Website"
+        URL: "https://www.goeuropa.eu"
+```

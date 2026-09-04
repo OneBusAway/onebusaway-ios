@@ -125,8 +125,18 @@ import UIKit
 }
 
 struct MapSheetView: View {
-    @ObservedObject var model: MapSheetModel
+
+    /// `@StateObject`, not `@ObservedObject`: the panel builds this view inside
+    /// `MapPanelRootView.body`, so an eager model would be rebuilt — with its
+    /// three subscriptions — on every re-render. The autoclosure runs once per
+    /// view identity. The UIKit host's eager `MapSheetModel(...)` wraps unchanged.
+    @StateObject private var model: MapSheetModel
+
     @Environment(\.dismiss) private var dismiss
+
+    init(model: @autoclosure @escaping () -> MapSheetModel) {
+        _model = StateObject(wrappedValue: model())
+    }
 
     var body: some View {
         NavigationStack {

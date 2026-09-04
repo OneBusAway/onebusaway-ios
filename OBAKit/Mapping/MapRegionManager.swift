@@ -248,6 +248,7 @@ public class MapRegionManager: NSObject,
         mapView.showsScale = mapViewShowsScale
         mapView.showsTraffic = mapViewShowsTraffic
         mapView.mapType = userSelectedMapType
+        currentVisibleMapRect = mapView.visibleMapRect
         applyPointsOfInterestVisibility()
 
         registerAnnotationViews(mapView: mapView)
@@ -364,6 +365,20 @@ public class MapRegionManager: NSObject,
     }
 
     // MARK: - Map Layers
+
+    /// The viewport the layer pipeline last saw.
+    ///
+    /// Seeded from the map view so the UIKit path is unchanged, then written by
+    /// whichever host is driving. The panel must write it: the `MKMapView` this
+    /// manager owns is never added to a view hierarchy in panel mode, so its
+    /// `visibleMapRect` is not the viewport the rider is actually looking at.
+    ///
+    /// The one place that moves the unhosted map view behind the panel's back is
+    /// `regionsService(_:updatedRegion:)`, which frames the new region on it.
+    /// That does not clobber this value: `regionDidChangeAnimated` does not fire
+    /// for a map view with no window, so the whole-region rect is never
+    /// republished to the layers. `MapLayerViewportForwardingTests` pins that.
+    public private(set) var currentVisibleMapRect: MKMapRect = .world
 
     /// Registered toggleable data layers, in Map sheet order.
     public private(set) var mapLayers: [MapLayer] = []
@@ -526,12 +541,17 @@ public class MapRegionManager: NSObject,
     /// Feeds the current viewport to a layer, applying its zoom window: outside
     /// the window the layer receives nil and removes its annotations.
     private func forwardViewport(to layer: MapLayer) {
-        let visibleRect = mapView.visibleMapRect
+        let visibleRect = currentVisibleMapRect
         let insideWindow = layer.zoomWindow.contains(visibleHeight: visibleRect.height)
         layer.viewportDidChange(insideWindow ? visibleRect : nil)
     }
 
-    private func updateMapLayers() {
+    /// Records a new viewport and fans it out to every enabled layer.
+    ///
+    /// Called by both hosts: `mapView(_:regionDidChangeAnimated:)` on the UIKit
+    /// path, and `.onMapCameraChange` on the SwiftUI panel.
+    public func mapLayersViewportDidChange(_ rect: MKMapRect) {
+        currentVisibleMapRect = rect
         for layer in mapLayers where isMapLayerEnabled(id: layer.id) {
             forwardViewport(to: layer)
         }
@@ -1057,7 +1077,7 @@ public class MapRegionManager: NSObject,
 
         reloadRegionAnnotations()
         reloadStopAnnotations()
-        updateMapLayers()
+        mapLayersViewportDidChange(mapView.visibleMapRect)
     }
 
     public func mapView(_ mapView: MKMapView, didSelect annotation: any MKAnnotation) {
