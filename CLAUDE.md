@@ -79,15 +79,31 @@ the single most expensive failure mode here. Install the CLI instead.
 
 Use these only when `xcodebuildmcp` genuinely cannot do the job.
 
+Prefer `id=` over `name=` for the destination — a fixed name like
+`iPhone 17 Pro` breaks when Xcode ships a new default or when multiple
+matching devices exist. CI in `.github/workflows/tests.yml` picks any
+available iPhone on the newest installed runtime and passes its UDID:
+
 ```bash
+# Resolve a simulator UDID (same idea as CI)
+UDID=$(xcrun simctl list devices available -j | python3 -c "
+import json,sys
+data=json.load(sys.stdin)
+for runtime,devs in data.get('devices',{}).items():
+    if 'iOS' not in runtime: continue
+    for d in devs:
+        if d.get('isAvailable') and d['name'].startswith('iPhone'):
+            print(d['udid']); raise SystemExit
+")
+
 # Build for testing
-xcodebuild clean build-for-testing -scheme 'App' -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
+xcodebuild clean build-for-testing -scheme 'App' -destination "platform=iOS Simulator,id=${UDID}"
 
 # Run unit tests
-xcodebuild test-without-building -only-testing:OBAKitTests -project 'OBAKit.xcodeproj' -scheme 'App' -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
+xcodebuild test-without-building -only-testing:OBAKitTests -project 'OBAKit.xcodeproj' -scheme 'App' -destination "platform=iOS Simulator,id=${UDID}"
 
 # Run specific test class
-xcodebuild test-without-building -only-testing:OBAKitTests/SpecificTestClass -project 'OBAKit.xcodeproj' -scheme 'App' -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
+xcodebuild test-without-building -only-testing:OBAKitTests/SpecificTestClass -project 'OBAKit.xcodeproj' -scheme 'App' -destination "platform=iOS Simulator,id=${UDID}"
 ```
 
 ### Code Quality
