@@ -82,8 +82,9 @@ struct TripCountdownFormatStyleTests {
     @Test func `discreteInput after the 2m boundary flips to 1m not the next floor`() {
         let now = departure.addingTimeInterval(-120)
         #expect(style.format(now) == "2m")
-        let next = try #require(style.discreteInput(after: now))
-        #expect(style.format(next) == "1m")
-        #expect(next < departure.addingTimeInterval(-60))
+        let next = style.discreteInput(after: now)
+        #expect(next != nil)
+        #expect(style.format(next!) == "1m")
+        #expect(next! < departure.addingTimeInterval(-60))
     }
 }
