@@ -834,6 +834,26 @@ final class StopViewModelTests: OBATestCase {
         #expect(plainController is StopPageViewController)
     }
 
+    /// The banner toggle drops the effective transfer context. Routing must use
+    /// that same helper: a raw non-nil context with the toggle off is ordinary
+    /// stop UX, so it belongs on the new page (flag default ON). Leave the
+    /// router on the raw value and this fails — legacy screen, no banner.
+    @Test @MainActor
+    func `Make stop controller ignores transfer context when the banner toggle is off`() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock())
+        #expect(FeatureFlags.isNewStopPageEnabled(userDefaults: app.userDefaults))
+
+        app.userDataStore.showTransferArrivalBanner = false
+
+        let stop = try #require(try Fixtures.loadSomeStops().first)
+        let transfer = TransferContext(arrivalTime: Date(), fromRouteShortName: "1", fromTripHeadsign: "Downtown")
+        let controller = app.viewRouter.makeStopController(stop: stop, transferContext: transfer)
+
+        #expect(controller is StopPageViewController)
+        #expect((controller as? StopPageViewController)?.transferContext == nil)
+    }
+
     // MARK: - Alarm Lead Time
 
     /// `alarmLeadTimeMinutes` derives the displayed lead time from the alarm's
@@ -907,6 +927,31 @@ final class StopViewModelTests: OBATestCase {
         #expect(viewModel.alarmError != nil)
         #expect(viewModel.alarm(for: departure) != nil)
         #expect(!app.userDataStore.alarms.isEmpty)
+    }
+
+    // MARK: - Live Activity Toast
+
+    /// The toast's own contract: the flag goes up on demand, and a second signal
+    /// arriving inside the first one's window leaves it up rather than inheriting
+    /// that window's imminent dismissal.
+    ///
+    /// The race the `Task.checkCancellation()` in `signalLiveActivityStarted`
+    /// closes is not reachable from here. It needs `cancel()` to land after the
+    /// sleep has already resumed but before its continuation runs — a window the
+    /// scheduler owns, with no seam to force it from a test. Same limitation
+    /// `ProximityAlertTests` documents for the 24-hour expiry boundary.
+    @Test @MainActor
+    func `Signalling a Live Activity raises the toast and a second signal keeps it up`() {
+        let (viewModel, _) = buildViewModel(arrivalsFixture: "arrivals_and_departures_for_stop_1_10020.json")
+
+        #expect(!viewModel.liveActivityStarted)
+
+        viewModel.signalLiveActivityStarted()
+        #expect(viewModel.liveActivityStarted)
+
+        // The duplicate-Track path signals again; the rider must still see a toast.
+        viewModel.signalLiveActivityStarted()
+        #expect(viewModel.liveActivityStarted)
     }
 
     // MARK: - Review prompt success recording

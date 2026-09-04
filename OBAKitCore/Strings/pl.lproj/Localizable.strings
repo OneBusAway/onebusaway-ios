@@ -218,6 +218,10 @@
 
 /* Use for vehicles arriving in X minutes. */
 "formatters.arrives_in_x_min_fmt" = "Przyjeżdża za %d min";
+"formatters.caption.arrives" = "Przyjeżdża";
+"formatters.caption.departs" = "Odjeżdża";
+"formatters.caption.arrived" = "Przyjechał";
+"formatters.caption.departed" = "Odjechał";
 
 /* Use for vehicles arriving now. */
 "formatters.arriving_now" = "Przyjeżdża teraz";
@@ -339,6 +343,9 @@
 /* Describes an on-time departure. e.g. departed on time. */
 "formatters.deviation.departure_past_on_time" = "odjechał na czas";
 
+/* Overflowing map-pin route list. The argument is the visible names; U+2026 marks that more routes exist. e.g. '10, 12, 49…' */
+"formatters.map_routes_overflow_fmt" = "%@…";
+
 /* Short formatted time text for arrivals/departures occurring now. */
 "formatters.now" = "TERAZ";
 
@@ -380,6 +387,12 @@
 
 /* Short text shown when a departure occurs at the same time as the rider's transfer arrival. */
 "formatters.transfer.on_arrival" = "TERAZ";
+
+/* The body of the tip pointing at the map toolbar's basemap button, which opens the Map sheet where the rental layers are turned on and off */
+"map_layers_tip.message" = "Dotknij tutaj, aby pokazać rowery i hulajnogi na mapie.";
+
+/* Title for the tip pointing at the map toolbar's basemap button when a region gains bike and scooter rental map layers */
+"map_layers_tip.title" = "Nowość: rowery i hulajnogi";
 
 /* Error when a route has no real-time vehicle tracking data. */
 "nearby_trip_matcher.error.no_realtime" = "Brak danych śledzenia na żywo dla tej linii.";

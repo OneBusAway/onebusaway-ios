@@ -443,4 +443,110 @@ final class DestinationStopPickerControllerTests: OBATestCase {
             "Retry should reload and show the forward stops"
         )
     }
+
+    // MARK: - Error State Share Escape
+
+    /// A failed fetch used to leave only Try Again and Cancel. The destination is
+    /// optional, so the error state now offers the same destination-less share the
+    /// empty state does — from the navigation bar, because
+    /// `StandardEmptyDataViewModel` holds exactly one `buttonConfig` and `.error`
+    /// must keep its retry.
+    @Test @MainActor
+    func `Error state offers a share escape without giving up the retry button`() async throws {
+        let arrivalDeparture = try makeArrivalDeparture()
+
+        let dataLoader = MockDataLoader(testName: name)
+        let networkError = NSError(domain: NSURLErrorDomain, code: NSURLErrorNotConnectedToInternet,
+                                   userInfo: [NSLocalizedDescriptionKey: "The Internet connection appears to be offline."])
+        dataLoader.mock(response: MockDataResponse(data: nil, urlResponse: nil, error: networkError) {
+            $0.url?.path.contains("/api/where/trip-details") ?? false
+        })
+        let app = createApplication(dataLoader: dataLoader)
+
+        let controller = DestinationStopPickerController(application: app, arrivalDeparture: arrivalDeparture)
+        let recorder = PickerDelegateRecorder()
+        controller.delegate = recorder
+        controller.loadViewIfNeeded()
+
+        let listView = OBAListView()
+        await poll(
+            until: { controller.navigationItem.rightBarButtonItem != nil },
+            "picker never offered the error state's share escape"
+        )
+
+        let shareItem = try #require(controller.navigationItem.rightBarButtonItem)
+        #expect(shareItem.title == "Share Without Destination")
+        #expect(shareItem.accessibilityLabel == "Share trip without a destination stop")
+        #expect(
+            standardEmptyData(controller, listView)?.buttonConfig?.text == "Try Again",
+            "The escape must not cost the error state its retry button"
+        )
+
+        let target = try #require(shareItem.target as? NSObject)
+        _ = target.perform(try #require(shareItem.action))
+
+        #expect(recorder.didSkipDestination, "The escape shares without a destination")
+        #expect(recorder.selectedStopTime == nil)
+        #expect(!recorder.didCancel)
+    }
+
+    /// The escape belongs to the dead-end state only: while the list is still
+    /// coming there is nothing to escape from, and once stops are on screen the
+    /// user should be picking one.
+    @Test @MainActor
+    func `Share escape is absent while loading and once stops are on screen`() async throws {
+        let arrivalDeparture = try makeArrivalDeparture()
+        let forwardStopIDs = ["1_10915", "1_10916"]
+
+        let dataLoader = MockDataLoader(testName: name)
+        dataLoader.mock(data: try makeTripDetailsData(stopIDs: stopIDsWithBoarding(arrivalDeparture.stopID, forward: forwardStopIDs))) {
+            $0.url?.path.contains("/api/where/trip-details") ?? false
+        }
+        let app = createApplication(dataLoader: dataLoader)
+
+        let controller = DestinationStopPickerController(application: app, arrivalDeparture: arrivalDeparture)
+        controller.loadViewIfNeeded()
+
+        #expect(controller.navigationItem.rightBarButtonItem == nil, "Nothing to escape from while the list is still loading")
+
+        let listView = OBAListView()
+        await poll(
+            until: { !controller.items(for: listView).isEmpty },
+            "picker never entered the data state"
+        )
+
+        #expect(
+            controller.navigationItem.rightBarButtonItem == nil,
+            "With stops on screen the user should be picking one, not escaping"
+        )
+    }
+
+    /// `.empty` already offers the destination-less share as its body button, so
+    /// it deliberately does not also get the navigation bar escape — the identical
+    /// control twice on one screen reads as a bug.
+    @Test @MainActor
+    func `Empty state keeps one share button and gains no duplicate in the navigation bar`() async throws {
+        let arrivalDeparture = try makeArrivalDeparture()
+
+        let dataLoader = MockDataLoader(testName: name)
+        dataLoader.mock(data: try makeTripDetailsData(stopIDs: stopIDsWithBoarding(arrivalDeparture.stopID, forward: []))) {
+            $0.url?.path.contains("/api/where/trip-details") ?? false
+        }
+        let app = createApplication(dataLoader: dataLoader)
+
+        let controller = DestinationStopPickerController(application: app, arrivalDeparture: arrivalDeparture)
+        controller.loadViewIfNeeded()
+
+        let listView = OBAListView()
+        await poll(
+            until: { self.standardEmptyData(controller, listView)?.buttonConfig != nil },
+            "picker never entered the empty state"
+        )
+
+        #expect(standardEmptyData(controller, listView)?.buttonConfig?.text == "Share Without Destination")
+        #expect(
+            controller.navigationItem.rightBarButtonItem == nil,
+            "The empty state's body button is the only share escape it needs"
+        )
+    }
 }

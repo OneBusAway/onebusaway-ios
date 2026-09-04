@@ -14,7 +14,7 @@ import Foundation
 ///
 /// ActivityKit shows the Live Activity with the highest `relevanceScore` in the
 /// Dynamic Island. When scores are equal (or unset — default `0`), it keeps the
-/// first activity that was started. Both start paths previously built
+/// first activity that was started. The start paths originally built
 /// `ActivityContent` without a score, so tracking bookmark B after A left the
 /// Island on A.
 ///
@@ -22,6 +22,11 @@ import Foundation
 /// monotonic prominence score; peers are demoted to ``demotedScore``. Local
 /// content refreshes must go through ``contentPreservingRelevance`` — rebuilding
 /// with the default of `0` undoes prominence after the next arrivals poll.
+///
+/// Starting an activity is not done from here: `Activity.request` is unavailable
+/// to app extensions and this target is `APPLICATION_EXTENSION_API_ONLY`. The
+/// three start paths go through `Activity.requestProminent` in OBAKit, which
+/// pairs the score below with the matching ``demoteLivePeers`` call.
 public enum TripLiveActivityRelevance {
 
     /// Score assigned to activities that should yield the Dynamic Island.

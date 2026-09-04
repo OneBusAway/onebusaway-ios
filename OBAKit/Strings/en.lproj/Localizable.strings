@@ -217,6 +217,36 @@
 /* Button title to let the user view a data migration report. */
 "data_migration_bulletin.view_report_button" = "View Report";
 
+/* Error shown when the boarding stop cannot be found in the trip's stop list. */
+"destination_stop_picker.error_boarding_stop_not_found" = "Couldn't determine your boarding point on this trip.";
+
+/* Error shown when the API service is unavailable in the destination stop picker. */
+"destination_stop_picker.error_no_service" = "Unable to connect to the transit service.";
+
+/* Title shown while loading the list of stops for destination selection. */
+"destination_stop_picker.loading_title" = "Loading Stops";
+
+/* Body text shown when there are no stops available after the boarding stop. */
+"destination_stop_picker.no_stops_body" = "There are no remaining stops on this trip.";
+
+/* Title shown when there are no stops available after the boarding stop. */
+"destination_stop_picker.no_stops_title" = "No Stops Available";
+
+/* Button to retry loading stops after an error. */
+"destination_stop_picker.retry_button" = "Try Again";
+
+/* Section header prompting user to select their destination stop. */
+"destination_stop_picker.select_destination_header" = "Where are you getting off?";
+
+/* VoiceOver label for the navigation bar button that shares the trip when no destination could be loaded. */
+"destination_stop_picker.share_without_destination_a11y_label" = "Share trip without a destination stop";
+
+/* Button shown when a trip has no remaining stops, letting the user share the trip without picking a destination. */
+"destination_stop_picker.share_without_destination_button" = "Share Without Destination";
+
+/* Navigation bar title for the destination stop picker when sharing a trip. */
+"destination_stop_picker.title" = "Select Destination";
+
 /* Body of the donation widget that appears on the stop view controller */
 "donation_cell.body" = "This app is currently built with 100% volunteer labor, and we need you to help us fund future development.";
 
@@ -430,8 +460,14 @@
 /* Voiceover text indicating that this button toggles the base map type. */
 "map_controller.map_type.accessibility_label" = "Map type";
 
+/* Voiceover value combining the base map type with the number of enabled map layers. %1$@ is the base map type, %2$d is the layer count. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
+"map_controller.map_type.accessibility_value_with_layers_fmt" = "%1$@, %2$d layers on";
+
 /* Voiceover text indicating the current map type as the hybrid base map (satellite view with labels). */
 "map_controller.map_type.hybrid.accessibility_value" = "hybrid";
+
+/* Voiceover text indicating the current map type as the satellite base map. */
+"map_controller.map_type.satellite.accessibility_value" = "satellite";
 
 /* Voiceover text indicating the current map type as the standard base map. */
 "map_controller.map_type.standard.accessibility_value" = "standard";
@@ -747,11 +783,14 @@
 /* Accessibility label for the onboarding progress bar */
 "onboarding.progress.accessibility_label" = "Onboarding progress";
 
-/* Body of the region onboarding screen */
+/* Body of the region onboarding screen when the region was detected from the rider's location */
 "onboarding.region.body" = "We found the transit network closest to you.";
 
-/* Body of the region onboarding screen when no location is available */
-"onboarding.region.body_no_location" = "Choose the transit network you ride.";
+/* Body of the region onboarding screen prompting the rider to choose a transit network */
+"onboarding.region.body_choose" = "Choose the transit network you ride.";
+
+/* Label on the region card when the region was already selected by app configuration or an earlier launch rather than detected from the rider's location */
+"onboarding.region.current_label" = "Current region";
 
 /* Label on the detected-region card */
 "onboarding.region.detected_label" = "Detected near you";
@@ -761,6 +800,9 @@
 
 /* Link to the full region picker */
 "onboarding.region.see_all_button" = "See all regions";
+
+/* Label on the region card when the rider chose the region from the list rather than it being detected from their location */
+"onboarding.region.selected_label" = "Your selection";
 
 /* Title of the region onboarding screen */
 "onboarding.region.title" = "Your region";
@@ -776,6 +818,12 @@
 
 /* Title of the first onboarding screen; the argument is the app name */
 "onboarding.welcome.title_fmt" = "Welcome to %@";
+
+/* Body of the destination alert notification. %@ is the name of the rider's destination stop. */
+"proximity_alert.notification.body_fmt" = "You're getting close to %@.";
+
+/* Title of the notification shown when the rider nears the stop they set a destination alert on. */
+"proximity_alert.notification.title" = "Approaching your stop";
 
 /* Reachability bulletin shown when the user has disabled cellular data for this app in iOS Settings. Both substituted values are the app name. */
 "reachability_bulletin.description.cellular_data_restricted_fmt" = "%1$@ is not currently allowed to access cellular data. To fix this, go to Settings > Cellular and enable cellular data for %2$@, or connect to a WiFi network.";
@@ -1017,6 +1065,12 @@
 /* Settings section title for controlling which arrivals/departures are shown */
 "settings_controller.arrival_display_section.title" = "Arrival & Departure Display";
 
+/* Settings > Arrival Display > Toggle that shows the Arriving at XX:XX via route banner when opening a stop from a trip */
+"settings_controller.arrival_display_section.transfer_banner" = "Show transfer arrival banner";
+
+/* Settings > Arrival Display > Footer for the Show transfer arrival banner switch only, not the Show Departures filter */
+"settings_controller.arrival_display_section.transfer_banner.footer" = "Show transfer arrival banner: when on, opening a stop from a trip shows times relative to when you arrive. Turn that switch off for ordinary clock times and every departure.";
+
 /* Title for the departure filter selection alert */
 "settings_controller.arrival_filter.selector_title" = "Show Departures";
 
@@ -1198,6 +1252,7 @@
 
 /* VoiceOver label for a grouped route card */
 "stop_page.grouped.a11y_fmt" = "Route %1$@ to %2$@, next departure in %3$d minutes, %4$@. %5$d more departures loaded.";
+"stop_page.grouped.a11y_arrives_fmt" = "Route %1$@ to %2$@, next arrival in %3$d minutes, %4$@. %5$d more departures loaded.";
 
 /* VoiceOver custom action on a grouped route card's header that cancels the alarm already set for the next departure. */
 "stop_page.grouped.a11y_remove_alarm" = "Remove alarm";
@@ -1258,6 +1313,7 @@
 
 /* VoiceOver label for a departure row: route, headsign, minutes, status. */
 "stop_page.row.a11y_fmt" = "Route %1$@ to %2$@, departs in %3$d minutes, %4$@";
+"stop_page.row.a11y_arrives_fmt" = "Route %1$@ to %2$@, arrives in %3$d minutes, %4$@";
 
 /* VoiceOver clause appended to a departure row that's upcoming but not reachable on foot before it leaves. */
 "stop_page.row.a11y_missed" = "likely missed — departs sooner than your walk to the stop";
@@ -1499,6 +1555,12 @@
 /* Describes the previous trip of this vehicle. e.g. Starts as 10 - Downtown Seattle */
 "trip_details_controller.starts_as_fmt" = "Starts as %@";
 
+/* Alert message when trip sharing fails. */
+"trip_sharing.share_error.message" = "Something went wrong while preparing the trip link. Please try again.";
+
+/* Alert title when trip sharing fails. */
+"trip_sharing.share_error.title" = "Unable to Share";
+
 /* A formatted string for displaying a vehicle's ID on the trip status map. e.g. 'Vehicle ID: 12345' */
 "trip_status_annotation.title_fmt" = "Vehicle ID: %@";
 
@@ -1600,6 +1662,9 @@
 
 /* Accessibility label for the transfer arrival banner shown when navigating to a connecting stop. */
 "walk_time_view.transfer_accessibility_label" = "Transfer arrival time";
+
+/* Spoken value for the map weather control. First %@ is the temperature, second is the weather condition. */
+"weather.button_accessibility_value_format" = "%1$@, %2$@";
 
 /* Format for the chance-of-rain percentage on the weather card header. %d is the integer percent. */
 "weather.chance_of_rain_format" = "Chance of Rain: %d%%";
