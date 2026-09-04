@@ -181,7 +181,7 @@ Nested keys (all optional):
 * `HeaderSupportText` - String shown in the branded header box. Omit or leave empty to keep the default volunteer-support copy.
 * `ShowHelpOutSection` - Boolean. Defaults to `true`. Set `false` to hide the "Help make the app better" section (translate / develop rows).
 * `TranslateURL` - URL for "Help Translate the App". Omit to hide that row. OneBusAway currently omits it; white-label apps can opt in.
-* `DevelopURL` - URL for "Help Fix Bugs & Build New Features". Defaults to the OneBusAway iOS GitHub repo when omitted. An empty string hides the row.
+* `DevelopURL` - URL for "Help Fix Bugs & Build New Features". Defaults to the OneBusAway iOS GitHub repo when omitted. An empty string hides the row — and because the section is dropped when it has no rows left, an empty `DevelopURL` also hides the "Help make the app better" header whenever `TranslateURL` is absent, which is the OneBusAway default. Set `ShowHelpOutSection` to `false` when hiding the whole section is the intent.
 * `TutorialURL`, `PhoneURL`, `TextURL` - Optional. When set, they appear under "Contact & Help" as Tutorials, Call Agency, and Text Agency. `tel:` and `sms:` URLs are valid. Empty strings are ignored.
 * `CustomLinks` - Array of `{Title, URL}` dictionaries. Shown under "Resources". A row is dropped if `Title` or `URL` is missing or the URL is empty.
 
