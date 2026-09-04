@@ -32,7 +32,8 @@ struct TripLiveActivity: Widget {
         ActivityConfiguration(for: TripAttributes.self) { context in
             TripLiveActivityCardView(
                 staticData: context.attributes.staticData,
-                contentState: context.state
+                contentState: context.state,
+                isStale: context.isStale
             )
             .activityBackgroundTint(Color(UIColor.systemBackground))
             .widgetURL(
@@ -42,17 +43,19 @@ struct TripLiveActivity: Widget {
         } dynamicIsland: { context in
             let upcoming = context.state.upcomingArrivals()
             let primary = upcoming.first
+            let staleOpacity = LiveActivityStaleChrome.contentOpacity(isStale: context.isStale)
             return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
                     HStack(spacing: 8) {
-                        Image(systemName: "bus.fill")
+                        Image(systemName: context.isStale ? "exclamationmark.triangle.fill" : "bus.fill")
                             .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(Color(presenter.primaryColor(for: context.state)))
+                            .foregroundColor(context.isStale ? .orange : Color(presenter.primaryColor(for: context.state)))
                         Text(context.attributes.staticData.routeShortName)
                             .font(.system(.title3, design: .rounded))
                             .fontWeight(.heavy)
                             .foregroundColor(.white)
                     }
+                    .opacity(staleOpacity)
                     .padding(.leading, 6)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
@@ -62,6 +65,7 @@ struct TripLiveActivity: Widget {
                             .font(.system(size: 32, weight: .bold, design: .rounded))
                             .foregroundColor(Color(presenter.color(for: primary)))
                             .contentTransition(.numericText(value: Double(primaryMinuteText.filter("0123456789".contains)) ?? 0))
+                            .opacity(staleOpacity)
                             .padding(.trailing, 6)
                     }
                 }
@@ -90,6 +94,11 @@ struct TripLiveActivity: Widget {
                                         .foregroundColor(Color(presenter.primaryColor(for: context.state)))
                                 }
                                 .padding(.top, 2)
+                                if context.isStale {
+                                    Text(LiveActivityStaleChrome.warningText)
+                                        .font(.caption.weight(.semibold))
+                                        .foregroundStyle(.orange)
+                                }
                             }
                             .padding(.leading, 6)
                             Spacer(minLength: 12)
@@ -104,25 +113,41 @@ struct TripLiveActivity: Widget {
                             }
                             .padding(.trailing, 6)
                         }
+                        .opacity(staleOpacity)
                     }
                 }
             } compactLeading: {
                 // MARK: - COMPACT LEADING
-                Text(context.attributes.staticData.routeShortName)
-                    .font(.system(.body, design: .rounded))
-                    .fontWeight(.bold)
-                    .foregroundColor(Color(presenter.primaryColor(for: context.state)))
-                    .padding(.leading, 4)
+                Group {
+                    if context.isStale {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.system(.body, design: .rounded))
+                            .fontWeight(.bold)
+                            .foregroundColor(.orange)
+                    } else {
+                        Text(context.attributes.staticData.routeShortName)
+                            .font(.system(.body, design: .rounded))
+                            .fontWeight(.bold)
+                            .foregroundColor(Color(presenter.primaryColor(for: context.state)))
+                    }
+                }
+                .padding(.leading, 4)
             } compactTrailing: {
                 if let primary {
                     Text(presenter.minuteText(for: primary))
                         .font(.system(.body, design: .rounded))
                         .fontWeight(.bold)
                         .foregroundColor(Color(presenter.color(for: primary)))
+                        .opacity(staleOpacity)
                         .frame(minWidth: 20)
                 }
             } minimal: {
-                if let primary {
+                if context.isStale {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(.callout, design: .rounded))
+                        .fontWeight(.heavy)
+                        .foregroundColor(.orange)
+                } else if let primary {
                     Text(presenter.minuteText(for: primary))
                         .font(.system(.callout, design: .rounded))
                         .fontWeight(.heavy)

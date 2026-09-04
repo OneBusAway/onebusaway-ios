@@ -423,6 +423,9 @@
 /* Title for the schedule/timetable feature tip */
 "schedule_tip.title" = "Zobacz rozkład swojej linii";
 
+/* Shown on a Live Activity when ActivityKit marks it stale (no recent update). */
+"live_activity.stale_warning" = "Te dane mogą być nieaktualne.";
+
 /* Shown in place of the minutes countdown when the vehicle is departing now */
 "stop_page.countdown.now" = "TERAZ";
 

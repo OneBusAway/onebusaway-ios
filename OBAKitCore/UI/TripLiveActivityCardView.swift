@@ -16,12 +16,19 @@ import SwiftUI
 public struct TripLiveActivityCardView: View {
     public let staticData: TripAttributes.StaticData
     public let contentState: TripAttributes.ContentState
+    /// From `ActivityViewContext.isStale` — ActivityKit flips this after `staleDate`.
+    public let isStale: Bool
 
     private let presenter = TripActivityPresenter()
 
-    public init(staticData: TripAttributes.StaticData, contentState: TripAttributes.ContentState) {
+    public init(
+        staticData: TripAttributes.StaticData,
+        contentState: TripAttributes.ContentState,
+        isStale: Bool = false
+    ) {
         self.staticData = staticData
         self.contentState = contentState
+        self.isStale = isStale
     }
 
     public var body: some View {
@@ -35,7 +42,17 @@ public struct TripLiveActivityCardView: View {
             if !chips.isEmpty {
                 chipsRow(chips: chips, now: now)
             }
+            if isStale {
+                HStack(spacing: 6) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                    Text(LiveActivityStaleChrome.warningText)
+                }
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.orange)
+                .accessibilityElement(children: .combine)
+            }
         }
+        .opacity(LiveActivityStaleChrome.contentOpacity(isStale: isStale))
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
         .background(Color(uiColor: .systemBackground))

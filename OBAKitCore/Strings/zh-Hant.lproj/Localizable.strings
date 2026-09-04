@@ -423,6 +423,9 @@
 /* Title for the schedule/timetable feature tip */
 "schedule_tip.title" = "檢視您路線的時刻表";
 
+/* Shown on a Live Activity when ActivityKit marks it stale (no recent update). */
+"live_activity.stale_warning" = "此資料可能已過期。";
+
 /* Shown in place of the minutes countdown when the vehicle is departing now */
 "stop_page.countdown.now" = "現在";
 

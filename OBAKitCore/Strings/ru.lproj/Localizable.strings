@@ -423,6 +423,9 @@
 /* Title for the schedule/timetable feature tip */
 "schedule_tip.title" = "Смотрите расписание маршрута";
 
+/* Shown on a Live Activity when ActivityKit marks it stale (no recent update). */
+"live_activity.stale_warning" = "Эти данные могут быть устаревшими.";
+
 /* Shown in place of the minutes countdown when the vehicle is departing now */
 "stop_page.countdown.now" = "СЕЙЧАС";
 
