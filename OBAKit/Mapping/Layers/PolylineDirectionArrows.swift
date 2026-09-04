@@ -147,6 +147,10 @@ final class PolylineArrowAnnotationView: MKAnnotationView {
         super.init(annotation: annotation, reuseIdentifier: reuseIdentifier)
         canShowCallout = false
         isEnabled = false
+        // Decorative only — no title/subtitle. Same opt-out as
+        // BackgroundDotAnnotationView: unlabeled chevrons would flood the
+        // VoiceOver rotor (up to ~144 on a busy stop).
+        isAccessibilityElement = false
         displayPriority = .defaultLow
         collisionMode = .none
         applyAnnotation()

@@ -12,10 +12,10 @@ The chevrons indicate the direction encoded by the route geometry. They are
 annotations over the existing colored core line, not additions to its white
 casing.
 
-`chevron.up` points north at identity. Compass heading is clockwise from north;
-UIKit rotation is counter-clockwise, so the view transform is
-`-heading.radians`. Using `CLLocationDirection.affineTransform` as-is would
-point eastbound chevrons west.
+`chevron.up` points north at identity. Compass heading is clockwise from
+north; UIKit view space has y down, so a positive `CGAffineTransform`
+rotation is clockwise too. The view transform is `heading.radians` — do
+**not** negate, or eastbound chevrons mirror west.
 
 This intentionally does not reproduce Transit App's vehicle-dots design. It
 uses lightweight directional marks on OneBusAway's existing route polylines.
