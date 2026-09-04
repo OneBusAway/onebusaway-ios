@@ -164,15 +164,15 @@ If you choose to leave out `RegionsServerBaseAddress` and `RegionsServerAPIPath`
 
 ### Default region from OBAKitConfig
 
-These keys are **not a pin**. `RegionsService.init` picks a region in this order, and later steps never run if an earlier one already set `currentRegion`:
+These keys are **not a pin**. `RegionsService.init` resolves a region in this order:
 
-1. Previously stored region (UserDefaults)
-2. Location-based auto-select — if auto-select is on (the default) *or* no region is stored yet, and `LocationService` already has a cached fix inside a known region
-3. `FixedRegionName`, then `FixedRegionOBABaseURL` if the name matches nothing
+1. Previously stored region (UserDefaults), **unless** location auto-select is on (the default) — then a cached fix inside a known region can overwrite it
+2. Location-based auto-select when auto-select is on *or* no region is stored yet (`|| currentRegion == nil`), and `LocationService` already has a cached fix inside a known region
+3. `FixedRegionName`, then `FixedRegionOBABaseURL` if the name matches nothing — only when `currentRegion` is still nil after steps 1–2
 4. The only *active* region in the list, when there is exactly one
 5. The region picker
 
-A rider whose device already has a location fix inside another region's bounds will get **that** region, not the configured one. `OBAKitTests` covers this as `Location based selection takes priority`. An agency that needs every install on one region must ship a list with only that region (or turn location auto-select off themselves); these keys will not override a location match.
+A rider whose device already has a location fix inside another region's bounds will get **that** region, not the configured one. `OBAKitTests` covers this as `Location based selection takes priority`. Because location runs whenever `currentRegion` is nil (including first launch), registering `OBAAutomaticallySelectRegionUserDefaultsKey` as `false` does **not** skip that match on the launch where `FixedRegionName` could apply. An agency that needs every install on one region must ship a list with only that region (or avoid prompting for location so `currentLocation` stays nil); these keys will not override a location match.
 
 * `FixedRegionName` - Optional. The `name` of a region in the bundled (or downloaded) list. Used only when steps 1–2 left `currentRegion` nil. A successful match writes that region and turns auto-select off so a *later* location fix cannot steal it — an *earlier* one already can.
 * `FixedRegionOBABaseURL` - Optional. Used only when `FixedRegionName` is set and does not match any known region. The first region whose OBA base URL equals this value is selected instead. A missing or unparseable URL is ignored.
