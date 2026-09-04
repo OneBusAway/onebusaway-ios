@@ -89,9 +89,11 @@ final class BookmarkActions {
         return contentState(from: arrivalDepartures)
     }
 
-    /// Builds content for the trip the rider actually tracked: same stop, route,
-    /// and destination as `departure`. Route-only matching mixes both directions
-    /// at a transit center and shows the opposite bus's countdown (#1326).
+    /// Builds content for the trip the rider actually tracked.
+    ///
+    /// Pins by `tripID` so Track follows that vehicle's ETA (#1334), not the
+    /// next same-route/headsign arrival. If the stop list no longer contains
+    /// that trip, fall back to the tapped departure alone.
     ///
     /// Non-optional on purpose. When the stop list no longer contains the tracked
     /// trip — stale data, or a list that never loaded — this falls back to
@@ -101,19 +103,8 @@ final class BookmarkActions {
         from arrivalDepartures: [ArrivalDeparture],
         matching departure: ArrivalDeparture
     ) -> TripAttributes.ContentState {
-        let key = TripBookmarkKey(arrivalDeparture: departure)
-
-        if (departure.tripHeadsign ?? "").isEmpty {
-            // `TripBookmarkKey` substitutes "" for a missing headsign, so the
-            // filter below degrades to stop + route and can readmit the opposite
-            // direction — the very symptom this method exists to prevent. Still
-            // better than showing no trip at all, but it must not be silent.
-            // See: https://github.com/OneBusAway/onebusaway-ios/issues/1326
-            Logger.warn("Departure \(departure.tripID) at stop \(departure.stopID) has no trip headsign; Live Activity arrivals match on stop and route only and may mix directions.")
-        }
-
         let sameTrip = arrivalDepartures
-            .filter { TripBookmarkKey(arrivalDeparture: $0) == key }
+            .filter { $0.id == departure.id }
             .sorted { $0.arrivalDepartureDate < $1.arrivalDepartureDate }
         let source = sameTrip.isEmpty ? [departure] : sameTrip
         return contentState(from: source)
@@ -147,7 +138,8 @@ final class BookmarkActions {
             routeHeadsign: routeHeadsign,
             stopID: bookmark.stopID,
             routeColorHex: routeColorHex,
-            regionID: application.currentRegion?.regionIdentifier ?? 0
+            regionID: application.currentRegion?.regionIdentifier ?? 0,
+            tripID: arrivalDepartures.first?.tripID ?? ""
         )
 
         // Tapping Track again on a bookmark that is already tracked — or tracking

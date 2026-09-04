@@ -207,13 +207,23 @@ class BookmarksViewController: UIHostingController<BookmarksRootView>,
                 let bookmarkIdentity = TripAttributes.StaticData(
                     routeShortName: keys.routeShortName,
                     routeHeadsign: keys.routeHeadsign,
-                    stopID: bookmark.stopID
+                    stopID: bookmark.stopID,
+                    tripID: staticData.tripID
                 )
                 return bookmarkIdentity.tracksSameTrip(as: staticData)
             })
             let arrivalDepartures = matchingBookmark.map { viewModel.arrivalDepartures(for: $0) } ?? []
 
-            if matchingBookmark != nil, let contentState = BookmarkActions.buildContentState(from: arrivalDepartures) {
+            let contentState: TripAttributes.ContentState? = {
+                guard matchingBookmark != nil, !arrivalDepartures.isEmpty else { return nil }
+                if !staticData.tripID.isEmpty,
+                   let tracked = arrivalDepartures.first(where: { $0.tripID == staticData.tripID }) {
+                    return BookmarkActions.buildContentState(from: arrivalDepartures, matching: tracked)
+                }
+                return BookmarkActions.buildContentState(from: arrivalDepartures)
+            }()
+
+            if matchingBookmark != nil, let contentState {
                 // Re-arm the push token/lifecycle observers on relaunch. `startLiveActivity`
                 // only tracks activities it creates in-session, so without this a Live Activity
                 // that's still running after a relaunch would never re-establish its observers

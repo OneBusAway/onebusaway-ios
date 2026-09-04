@@ -430,7 +430,8 @@ final class TripPageViewController: UIHostingController<TripPageView>,
             routeHeadsign: departure.tripHeadsign ?? "",
             stopID: departure.stopID,
             routeColorHex: departure.route.color?.toHex(),
-            regionID: application.currentRegion?.regionIdentifier ?? 0
+            regionID: application.currentRegion?.regionIdentifier ?? 0,
+            tripID: departure.tripID
         )
 
         // The same trip can be started from here, the stop page, and the

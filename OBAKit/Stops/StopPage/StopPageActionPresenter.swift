@@ -568,7 +568,8 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
             routeHeadsign: departure.tripHeadsign ?? "",
             stopID: departure.stopID,
             routeColorHex: departure.route.color?.toHex(),
-            regionID: application.currentRegion?.regionIdentifier ?? 0
+            regionID: application.currentRegion?.regionIdentifier ?? 0,
+            tripID: departure.tripID
         )
 
         // The same trip can be started from here and from the bookmarks list, so
