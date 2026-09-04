@@ -593,10 +593,19 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
             return .regionLimitReached(limit: Self.maximumMonitoredRegions)
         }
 
-        // `CLCircularRegion` clamps an oversize radius without reporting it, so
-        // the alert would fire at a distance the user never chose. Clamp
-        // deliberately and say so. A non-positive device maximum means the value
-        // is unavailable rather than zero, so honor the request in that case.
+        // Clamp deliberately and report it. Core Location answers an oversize
+        // radius with `CLError.regionMonitoringFailure`, which arrives
+        // asynchronously through `monitoringDidFailFor` carrying no radius — too
+        // late, and too vague, to tell the rider their alert would have fired
+        // somewhere other than where they asked.
+        //
+        // `-1` is not an unknown limit. Apple documents it as region monitoring
+        // being unavailable or unsupported on this device, so honouring the
+        // request in that case hands the caller `.started` for an alert that can
+        // never fire. Left that way for now — the failure does still surface
+        // through `monitoringDidFailFor` — but refusing up front wants an
+        // `isMonitoringAvailable(for:)` check and a result case to carry it.
+        // Both points flagged in review of #1292.
         let requestedRadius = alert.radiusMeters
         let deviceMaximum = locationManager.maximumRegionMonitoringDistance
         let radius = deviceMaximum > 0 ? min(requestedRadius, deviceMaximum) : requestedRadius
