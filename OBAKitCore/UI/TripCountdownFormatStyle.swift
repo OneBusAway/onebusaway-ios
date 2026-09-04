@@ -57,15 +57,16 @@ public struct TripCountdownFormatStyle: DiscreteFormatStyle, Sendable {
         let minutes = Int(departure.timeIntervalSince(date) / 60.0)
         guard minutes > 0 else { return nil }
 
+        // Truncating `format` flips from N → N-1 the instant remaining drops
+        // *below* N*60, i.e. just after `departure - N*60`. Returning the
+        // floor itself leaves TimeDataSource displaying `format(floor)` (== N)
+        // for a full minute — so 2m shows while only 61s remain (#1187 follow-up).
         let boundary = departure.addingTimeInterval(-TimeInterval(minutes) * 60)
         if boundary > date { return boundary }
 
-        // Sitting on this minute's boundary. Next flip is the next lower
-        // minute, except 1m → NOW which starts the instant remaining < 60s.
-        if minutes == 1 {
-            return date.addingTimeInterval(1)
-        }
-        return departure.addingTimeInterval(-TimeInterval(minutes - 1) * 60)
+        // On the floor: step one second into the lower bucket so `format` flips
+        // (same treatment for every N, including 1m → NOW).
+        return date.addingTimeInterval(1)
     }
 
     public func discreteInput(before date: Date) -> Date? {

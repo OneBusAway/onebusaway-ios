@@ -52,12 +52,15 @@ struct TripCountdownFormatStyleTests {
         #expect(next == departure.addingTimeInterval(-480))
     }
 
-    /// Already on a boundary: `after` must move forward, not return the same instant
-    /// (that would spin the renderer).
-    @Test func `discreteInput after an exact minute boundary advances to the next one`() {
+    /// Already on a boundary: `after` must step into the lower truncating
+    /// bucket so `format` flips. Returning the next whole-minute floor left
+    /// TimeDataSource showing N while remaining was already in N-1.
+    @Test func `discreteInput after an exact minute boundary flips format immediately`() {
         let now = departure.addingTimeInterval(-480)
+        #expect(style.format(now) == "8m")
         let next = style.discreteInput(after: now)
-        #expect(next == departure.addingTimeInterval(-420))
+        #expect(next == now.addingTimeInterval(1))
+        #expect(style.format(next!) == "7m")
     }
 
     @Test func `discreteInput after NOW is nil so it does not count up past departure`() {
@@ -65,15 +68,22 @@ struct TripCountdownFormatStyleTests {
         #expect(style.discreteInput(after: departure.addingTimeInterval(10)) == nil)
     }
 
-    /// At remaining == 60s the label is still `1m`. The next flip is NOW, which
-    /// starts the instant remaining drops below 60. Returning the same instant
-    /// would spin the renderer; returning `departure` would freeze `1m` for a
-    /// full minute.
+    /// At remaining == 60s the label is still `1m`. The next flip is NOW.
     @Test func `discreteInput after the 1m boundary advances into NOW`() {
         let now = departure.addingTimeInterval(-60)
         let next = style.discreteInput(after: now)
         #expect(next != nil)
         #expect(next! > now)
         #expect(style.format(next!) == "NOW")
+    }
+
+    /// The rider-facing bug: with 61s left the card must already read `1m`,
+    /// not sit on a precomputed `2m` until the 60s floor.
+    @Test func `discreteInput after the 2m boundary flips to 1m not the next floor`() {
+        let now = departure.addingTimeInterval(-120)
+        #expect(style.format(now) == "2m")
+        let next = try #require(style.discreteInput(after: now))
+        #expect(style.format(next) == "1m")
+        #expect(next < departure.addingTimeInterval(-60))
     }
 }
