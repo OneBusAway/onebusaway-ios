@@ -38,7 +38,14 @@ nonisolated struct TripStopListItemRowConfiguration: OBAContentConfiguration {
 }
 
 nonisolated struct TripStopViewModel: OBAListViewItem {
-    var id: String { stop.id }
+    /// Position-qualified: a loop visits the same stop twice, and
+    /// `NSDiffableDataSource` crashes on duplicate item identifiers (#538).
+    /// Same format as `TripStopListModel.Row.id`.
+    var id: String { "\(stopIndex)-\(stop.id)" }
+
+    /// Index of this visit on the trip. Carried so `id` can stay unique
+    /// without parsing the identity string.
+    let stopIndex: Int
 
     var configuration: OBAListViewItemConfiguration {
         return .custom(TripStopListItemRowConfiguration(viewModel: self))
@@ -101,6 +108,7 @@ nonisolated struct TripStopViewModel: OBAListViewItem {
         routeType = stopTime.stop.prioritizedRouteTypeForDisplay
 
         self.onSelectAction = onSelectAction
+        self.stopIndex = stopIndex
     }
 
     func hash(into hasher: inout Hasher) {
@@ -114,7 +122,8 @@ nonisolated struct TripStopViewModel: OBAListViewItem {
     }
 
     static func == (lhs: TripStopViewModel, rhs: TripStopViewModel) -> Bool {
-        return lhs.isCurrentVehicleLocation == rhs.isCurrentVehicleLocation &&
+        return lhs.id == rhs.id &&
+            lhs.isCurrentVehicleLocation == rhs.isCurrentVehicleLocation &&
             lhs.isUserDestination == rhs.isUserDestination &&
             lhs.temporalState == rhs.temporalState &&
             lhs.title == rhs.title &&

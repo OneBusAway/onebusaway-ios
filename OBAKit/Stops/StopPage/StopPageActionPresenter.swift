@@ -587,54 +587,26 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
             return
         }
 
-        guard let contentState = buildLiveActivityContentState(for: departure, viewModel: viewModel) else {
-            Logger.error("Failed to build content state for Live Activity")
-            return
-        }
+        // Always yields content: the matching builder falls back to `departure`
+        // itself when the stop list is stale or hasn't loaded yet, so there is
+        // no failure branch to take here.
+        let contentState = BookmarkActions.buildContentState(
+            from: viewModel.stopArrivals?.arrivalsAndDepartures ?? [],
+            matching: departure
+        )
 
-        // Prominence so the Dynamic Island switches to this Track when another
-        // trip is already live (#1189 Problem 2). Default score is 0 and equal
-        // scores keep the first-started activity.
-        let prominence = TripLiveActivityRelevance.prominenceScore()
         do {
-            let activity = try Activity.request(
+            let activity = try Activity<TripAttributes>.requestProminent(
                 attributes: TripAttributes(staticData: staticData),
-                content: TripLiveActivityRelevance.content(
-                    state: contentState,
-                    staleDate: nil,
-                    relevanceScore: prominence
-                ),
-                pushType: .token
+                state: contentState
             )
             application.liveActivityTracker.track(activity: activity, metadata: .init(departure))
-            let activityID = activity.id
-            Task {
-                await Activity<TripAttributes>.demoteLivePeers(
-                    exceptActivityID: activityID,
-                    relativeTo: prominence
-                )
-            }
             Logger.info("Started Live Activity with ID: \(activity.id)")
             viewModel.signalLiveActivityStarted()
         } catch {
             Logger.error("Failed to start Live Activity: \(error)")
             presentationHost(for: "live activity error")?.showLiveActivityErrorAlert()
         }
-    }
-
-    private func buildLiveActivityContentState(for departure: ArrivalDeparture, viewModel: StopViewModel) -> TripAttributes.ContentState? {
-        let allArrivals = viewModel.stopArrivals?.arrivalsAndDepartures ?? [departure]
-        let sameRoute = allArrivals.filter { $0.routeID == departure.routeID }
-        let upcoming = sameRoute.isEmpty ? [departure] : Array(sameRoute.prefix(3))
-        let arrivals = upcoming.map { arrDep in
-            TripAttributes.ContentState.ArrivalInfo(
-                departureTime: Int(arrDep.arrivalDepartureDate.timeIntervalSince1970),
-                scheduleStatus: .init(arrDep.scheduleStatus),
-                scheduleDeviation: arrDep.deviationFromScheduleInMinutes * 60,
-                isArrival: arrDep.arrivalDepartureStatus == .arriving
-            )
-        }
-        return TripAttributes.ContentState(arrivals: arrivals)
     }
 
     // MARK: - User Activity

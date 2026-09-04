@@ -15,8 +15,9 @@ import Testing
 /// Pins the Dynamic Island prominence policy for #1189 Problem 2.
 ///
 /// ActivityKit itself isn't injectable, so these tests lock the score math and
-/// `ActivityContent` construction that the bookmark/stop start paths share —
-/// the same seam pattern as `TripAttributesIdentityTests` for Problem 1.
+/// `ActivityContent` construction that the three start paths share through
+/// `Activity.requestProminent` — the same seam pattern as
+/// `TripAttributesIdentityTests` for Problem 1.
 @MainActor
 @Suite(.serialized)
 final class TripLiveActivityRelevanceTests {
@@ -36,6 +37,25 @@ final class TripLiveActivityRelevanceTests {
             now: Date(timeIntervalSince1970: 1_700_000_100)
         )
         #expect(later > earlier)
+    }
+
+    /// The trip page's pre-#1375 construction didn't merely score low — a bare
+    /// `ActivityContent` scores `0`, which is exactly ``demotedScore``. A trip
+    /// tracked from that page was born indistinguishable from a peer that had
+    /// been deliberately demoted, so it could never take the Island from a
+    /// bookmark or stop Track scoring `prominenceScore()`.
+    @Test func `A bare content state is born at the demoted score`() {
+        let state = TripAttributes.ContentState(arrivals: [])
+        let bare = ActivityContent(state: state, staleDate: nil)
+
+        #expect(bare.relevanceScore == TripLiveActivityRelevance.demotedScore)
+
+        let started = TripLiveActivityRelevance.content(
+            state: state,
+            staleDate: nil,
+            relevanceScore: TripLiveActivityRelevance.prominenceScore()
+        )
+        #expect(started.relevanceScore > bare.relevanceScore)
     }
 
     @Test func `Content carries the supplied relevance score`() {
@@ -100,8 +120,10 @@ final class TripLiveActivityRelevanceTests {
         #expect(refreshed.relevanceScore == existing.relevanceScore)
         #expect(refreshed.relevanceScore == 1_700_000_050)
 
-        // Contrast: the default ActivityContent score is 0. If the call site
-        // ever drops back to `.init(state:staleDate:)`, this is what Island gets.
+        // Contrast: the default ActivityContent score is 0. This is what the
+        // Island got from the trip page, which built content with a bare
+        // `.init(state:staleDate:)` until #1375 routed all three start paths
+        // through `Activity.requestProminent`.
         let wiped = ActivityContent(state: refreshedState, staleDate: nil)
         #expect(wiped.relevanceScore == 0)
         #expect(wiped.relevanceScore != existing.relevanceScore)
