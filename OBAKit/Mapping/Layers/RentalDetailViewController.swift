@@ -63,7 +63,10 @@ struct RentalDetailView: View {
     /// The layer's declared trust window; past it, the footer flags the data as stale.
     let staleAfter: Duration?
     let userLocation: CLLocation?
-    var onPlanTrip: (VehicleRental) -> Void
+    /// Nil on the SwiftUI map panel, which has no trip planner to route into —
+    /// `AppSheetRoute.tripPlanner` has no registered view. The button is hidden
+    /// rather than disabled: a dead primary action is worse than none.
+    var onPlanTrip: ((VehicleRental) -> Void)?
     var onOpenURL: (URL, URL?, String?) -> Void
 
     /// Reverse-geocoded on selection — never in bulk. Falls back to a plain
@@ -75,19 +78,21 @@ struct RentalDetailView: View {
             header
             statsRow
 
-            Button {
-                onPlanTrip(rental)
-            } label: {
-                Label(
-                    OBALoc("rental_detail.plan_trip", value: "Plan a trip using this bike", comment: "Primary action on the rental vehicle sheet"),
-                    systemImage: "arrow.triangle.turn.up.right.diamond.fill"
-                )
-                .font(.headline)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 6)
+            if let onPlanTrip {
+                Button {
+                    onPlanTrip(rental)
+                } label: {
+                    Label(
+                        OBALoc("rental_detail.plan_trip", value: "Plan a trip using this bike", comment: "Primary action on the rental vehicle sheet"),
+                        systemImage: "arrow.triangle.turn.up.right.diamond.fill"
+                    )
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 6)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(Color(uiColor: .rentalPurple))
             }
-            .buttonStyle(.borderedProminent)
-            .tint(Color(uiColor: .rentalPurple))
 
             if let deepLink = deepLinkURL {
                 Button {
@@ -310,7 +315,7 @@ struct RentalClusterListView: View {
     let fetchedAt: Date?
     let staleAfter: Duration?
     let userLocation: CLLocation?
-    var onPlanTrip: (VehicleRental) -> Void
+    var onPlanTrip: ((VehicleRental) -> Void)?
     var onOpenURL: (URL, URL?, String?) -> Void
 
     @State private var selectedRental: VehicleRental?

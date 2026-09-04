@@ -28,6 +28,10 @@ public enum APIError: Error, LocalizedError {
     /// The regional server is down or unreachable (502, 503, 504, or timeout).
     case serverUnavailable(regionName: String, statusCode: Int?)
 
+    /// The regional server returned a body this app cannot decode. Distinct from
+    /// `.serverUnavailable`: the host responded, the payload is unusable (#1276).
+    case invalidResponseData(regionName: String)
+
     /// Survey service is not configured or survey base URL is missing.
     case surveyServiceNotConfigured
 
@@ -107,8 +111,15 @@ public enum APIError: Error, LocalizedError {
         case .serverUnavailable(let regionName, _):
             let fmt = OBALoc(
                 "api_error.server_unavailable_fmt",
-                value: "The server for %@ appears to be down right now, so %@ isn't able to show transit information for this region. The app should start working again once the server is back up.",
-                comment: "An error shown when the regional transit server is unavailable. The first substituted value is the region name, the second is the app name."
+                value: "Unable to reach the server for %@. %@ can't show transit information for this region right now. The server may be down, or a VPN or firewall may be blocking it.",
+                comment: "An error shown when the regional transit server cannot be reached. Mentions VPN because riders often hit this with a working phone on a filtered network. The first substituted value is the region name, the second is the app name."
+            )
+            return String(format: fmt, regionName, Bundle.main.appName)
+        case .invalidResponseData(let regionName):
+            let fmt = OBALoc(
+                "api_error.invalid_response_data_fmt",
+                value: "The server for %@ returned data this app can't read. That's usually a problem with the stop or agency feed, not with %@. Try again shortly.",
+                comment: "An error shown when the regional server returned a body the app cannot decode. Distinct from a down server. The first substituted value is the region name, the second is the app name."
             )
             return String(format: fmt, regionName, Bundle.main.appName)
         case .surveyServiceNotConfigured:

@@ -46,7 +46,7 @@
 /* Toggle label that starts a Live Activity widget on the Lock Screen when an alarm is set. */
 "alarm_time_picker.track_on_lock_screen" = "Suivre sur l'écran verrouillé";
 
-/* Placeholder shown in release builds when a sheet route is pushed but has no view registered. */
+/* Placeholder shown when a sheet route is pushed but its screen has not been built yet. */
 "app_sheet.unimplemented_route.placeholder" = "Cet écran arrive bientôt.";
 
 /* Filter option to show all departures regardless of real-time data availability */
@@ -58,8 +58,14 @@
 /* Filter option to show only departures with scheduled data and no real-time information */
 "arrival_departure_filter.scheduled_only" = "Horaires théoriques uniquement";
 
+/* Context menu action that pins a bookmark to the top of the home sheet's bookmarks section. */
+"bookmarks_controller.context_menu.pin" = "Épingler";
+
 /* Action to start a Live Activity for a specific bookmark */
 "bookmarks_controller.context_menu.track_live_activity" = "Suivre";
+
+/* Context menu action that removes a bookmark's pin, returning it to the normal ordering. */
+"bookmarks_controller.context_menu.unpin" = "Détacher";
 
 /* The title to display to confirm the user's action to delete a bookmark. */
 "bookmarks_controller.delete_bookmark.actionsheet.title" = "Supprimer le favori";
@@ -69,6 +75,9 @@
 
 /* Shown on a bookmark card when arrival data has loaded but there are no departures in the near future */
 "bookmarks_controller.no_upcoming_departures" = "Aucun départ à venir";
+
+/* VoiceOver suffix announcing that a bookmark row is pinned. */
+"bookmarks_controller.pinned.a11y_label" = "Épinglé";
 
 /* A menu item that allows the user to sort their bookmarks by distance from the user. */
 "bookmarks_controller.sort_menu.sort_by_distance" = "Trier par distance";
@@ -208,6 +217,36 @@
 /* Button title to let the user view a data migration report. */
 "data_migration_bulletin.view_report_button" = "Afficher le rapport";
 
+/* Error shown when the boarding stop cannot be found in the trip's stop list. */
+"destination_stop_picker.error_boarding_stop_not_found" = "Impossible de déterminer votre point de montée sur ce trajet.";
+
+/* Error shown when the API service is unavailable in the destination stop picker. */
+"destination_stop_picker.error_no_service" = "Impossible de se connecter au service de transport.";
+
+/* Title shown while loading the list of stops for destination selection. */
+"destination_stop_picker.loading_title" = "Chargement des arrêts";
+
+/* Body text shown when there are no stops available after the boarding stop. */
+"destination_stop_picker.no_stops_body" = "Il ne reste aucun arrêt sur ce trajet.";
+
+/* Title shown when there are no stops available after the boarding stop. */
+"destination_stop_picker.no_stops_title" = "Aucun arrêt disponible";
+
+/* Button to retry loading stops after an error. */
+"destination_stop_picker.retry_button" = "Réessayer";
+
+/* Section header prompting user to select their destination stop. */
+"destination_stop_picker.select_destination_header" = "Où descendez-vous ?";
+
+/* VoiceOver label for the navigation bar button that shares the trip when no destination could be loaded. */
+"destination_stop_picker.share_without_destination_a11y_label" = "Partager le trajet sans arrêt de destination";
+
+/* Button shown when a trip has no remaining stops, letting the user share the trip without picking a destination. */
+"destination_stop_picker.share_without_destination_button" = "Partager sans destination";
+
+/* Navigation bar title for the destination stop picker when sharing a trip. */
+"destination_stop_picker.title" = "Choisir la destination";
+
 /* Body of the donation widget that appears on the stop view controller */
 "donation_cell.body" = "Cette app est actuellement développée à 100 % par des bénévoles, et nous avons besoin de votre aide pour financer son développement futur.";
 
@@ -316,8 +355,14 @@
 /* A voiceover title describing that the card's visibility taking up the minimum amount of screen. */
 "floating_panel.controller.position.minimized" = "Réduit";
 
-/* Placeholder text inside the disabled search bar on the home sheet, shown while search is unimplemented. */
-"home_sheet.search_bar.coming_soon" = "Recherche bientôt disponible";
+/* Body for the home sheet's empty state, shown when there are no nearby stops, no recent stops, and no bookmarks. */
+"home_sheet.empty_set.body" = "Les arrêts à proximité, les arrêts consultés et vos favoris apparaîtront ici.";
+
+/* Title for the home sheet's empty state, shown when there are no nearby stops, no recent stops, and no bookmarks. */
+"home_sheet.empty_set.title" = "Rien pour l'instant";
+
+/* VoiceOver hint for a home sheet section header, which opens that section's full list. */
+"home_sheet.section_header.a11y_hint" = "Affiche tous les éléments de cette section.";
 
 /* Alert message for Live Activity error. \"Settings\" is the iOS Settings app. */
 "live_activity.error.message" = "Vérifiez vos réglages des activités en direct dans les Réglages.";
@@ -415,8 +460,14 @@
 /* Voiceover text indicating that this button toggles the base map type. */
 "map_controller.map_type.accessibility_label" = "Type de carte";
 
+/* Voiceover value combining the base map type with the number of enabled map layers. %1$@ is the base map type, %2$d is the layer count. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
+"map_controller.map_type.accessibility_value_with_layers_fmt" = "%1$@, %2$d couches activées";
+
 /* Voiceover text indicating the current map type as the hybrid base map (satellite view with labels). */
 "map_controller.map_type.hybrid.accessibility_value" = "hybride";
+
+/* Voiceover text indicating the current map type as the satellite base map. */
+"map_controller.map_type.satellite.accessibility_value" = "satellite";
 
 /* Voiceover text indicating the current map type as the standard base map. */
 "map_controller.map_type.standard.accessibility_value" = "standard";
@@ -597,6 +648,9 @@
 /* The title of the Nearby Stops controller. */
 "nearby_stops_controller.title" = "Arrêts à proximité";
 
+/* Body shown on the Nearby Stops index sheet when no map viewport, device location, or region is available to search around. */
+"nearby_stops_sheet.no_location.body" = "Déplacez la carte ou activez les services de localisation pour voir les arrêts à proximité.";
+
 /* Vehicle occupancy is very high */
 "occupancy_status.crushed_standing_room_only" = "Bondé, places debout uniquement";
 
@@ -729,11 +783,14 @@
 /* Accessibility label for the onboarding progress bar */
 "onboarding.progress.accessibility_label" = "Progression de la découverte";
 
-/* Body of the region onboarding screen */
+/* Body of the region onboarding screen when the region was detected from the rider's location */
 "onboarding.region.body" = "Nous avons trouvé le réseau de transport le plus proche de vous.";
 
-/* Body of the region onboarding screen when no location is available */
-"onboarding.region.body_no_location" = "Choisissez le réseau de transport que vous utilisez.";
+/* Body of the region onboarding screen prompting the rider to choose a transit network */
+"onboarding.region.body_choose" = "Choisissez le réseau de transport que vous utilisez.";
+
+/* Label on the region card when the region was already selected by app configuration or an earlier launch rather than detected from the rider's location */
+"onboarding.region.current_label" = "Région actuelle";
 
 /* Label on the detected-region card */
 "onboarding.region.detected_label" = "Détecté près de vous";
@@ -743,6 +800,9 @@
 
 /* Link to the full region picker */
 "onboarding.region.see_all_button" = "Voir toutes les régions";
+
+/* Label on the region card when the rider chose the region from the list rather than it being detected from their location */
+"onboarding.region.selected_label" = "Votre sélection";
 
 /* Title of the region onboarding screen */
 "onboarding.region.title" = "Votre région";
@@ -758,6 +818,12 @@
 
 /* Title of the first onboarding screen; the argument is the app name */
 "onboarding.welcome.title_fmt" = "Bienvenue dans %@";
+
+/* Body of the destination alert notification. %@ is the name of the rider's destination stop. */
+"proximity_alert.notification.body_fmt" = "Vous approchez de %@.";
+
+/* Title of the notification shown when the rider nears the stop they set a destination alert on. */
+"proximity_alert.notification.title" = "Vous approchez de votre arrêt";
 
 /* Reachability bulletin shown when the user has disabled cellular data for this app in iOS Settings. Both substituted values are the app name. */
 "reachability_bulletin.description.cellular_data_restricted_fmt" = "L'app %1$@ n'est actuellement pas autorisée à accéder aux données cellulaires. Pour corriger cela, allez dans Réglages > Données cellulaires et activez les données cellulaires pour %2$@, ou connectez-vous à un réseau Wi-Fi.";
@@ -861,6 +927,9 @@
 /* Title for the route picker screen where the user selects their transit route. */
 "route_picker.title" = "Sélectionnez votre ligne";
 
+/* Title shown when a route's stop list could not be loaded or is empty. */
+"route_stops_sheet.empty.title" = "Aucun arrêt";
+
 /* Label for date picker in schedule view */
 "schedule_view.date" = "Date";
 
@@ -945,6 +1014,18 @@
 /* The title of the Search Results controller. */
 "search_results_controller.title" = "Résultats de recherche";
 
+/* Title shown when a disambiguation sheet has no results to show. */
+"search_results_sheet.empty.title" = "Aucun résultat";
+
+/* Header showing how many results a search matched, e.g. '12 results'. %d is the number of results. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
+"search_results_sheet.result_count_fmt" = "%d résultats";
+
+/* Error shown when a tapped search result cannot be turned into something to display. */
+"search_results_sheet.unresolvable_result" = "Impossible d'ouvrir ce résultat de recherche.";
+
+/* Accessibility label for the button that clears the search query. */
+"search_sheet.clear_query" = "Effacer";
+
 /* The transit agencies affected by this service alert. */
 "service_alert_controller.affected_agencies" = "Agences concernées";
 
@@ -986,6 +1067,12 @@
 
 /* Settings section title for controlling which arrivals/departures are shown */
 "settings_controller.arrival_display_section.title" = "Affichage des arrivées et départs";
+
+/* Settings > Arrival Display > Toggle that shows the Arriving at XX:XX via route banner when opening a stop from a trip */
+"settings_controller.arrival_display_section.transfer_banner" = "Afficher la bannière d’arrivée de correspondance";
+
+/* Settings > Arrival Display > Footer for the Show transfer arrival banner switch only, not the Show Departures filter */
+"settings_controller.arrival_display_section.transfer_banner.footer" = "Afficher la bannière d’arrivée de correspondance : activée, l’ouverture d’un arrêt depuis un trajet affiche les horaires relatifs à votre arrivée. Désactivez ce commutateur pour l’heure réelle et tous les départs.";
 
 /* Title for the departure filter selection alert */
 "settings_controller.arrival_filter.selector_title" = "Afficher les départs";
@@ -1166,6 +1253,7 @@
 
 /* VoiceOver label for a grouped route card */
 "stop_page.grouped.a11y_fmt" = "Ligne %1$@ vers %2$@, prochain départ dans %3$d minutes, %4$@. %5$d autres départs chargés.";
+"stop_page.grouped.a11y_arrives_fmt" = "Ligne %1$@ vers %2$@, prochaine arrivée dans %3$d minutes, %4$@. %5$d autres départs chargés.";
 
 /* VoiceOver custom action on a grouped route card's header that cancels the alarm already set for the next departure. */
 "stop_page.grouped.a11y_remove_alarm" = "Supprimer le rappel";
@@ -1226,6 +1314,7 @@
 
 /* VoiceOver label for a departure row: route, headsign, minutes, status. */
 "stop_page.row.a11y_fmt" = "Ligne %1$@ vers %2$@, part dans %3$d minutes, %4$@";
+"stop_page.row.a11y_arrives_fmt" = "Ligne %1$@ vers %2$@, arrive dans %3$d minutes, %4$@";
 
 /* VoiceOver clause appended to a departure row that's upcoming but not reachable on foot before it leaves. */
 "stop_page.row.a11y_missed" = "probablement manqué — part avant que vous n'ayez le temps de rejoindre l'arrêt à pied";
@@ -1238,6 +1327,9 @@
 
 /* Context menu action opening the full trip screen */
 "stop_page.row.show_trip" = "Afficher les détails du trajet";
+
+/* VoiceOver label for the button that returns the stop page's departure list to the top. */
+"stop_page.scroll_to_top" = "Revenir en haut";
 
 /* Fallback title for a service alert that has no summary text. */
 "stop_page.service_alert_fallback" = "Alerte de service";
@@ -1464,6 +1556,12 @@
 /* Describes the previous trip of this vehicle. e.g. Starts as 10 - Downtown Seattle */
 "trip_details_controller.starts_as_fmt" = "Commence en tant que %@";
 
+/* Alert message when trip sharing fails. */
+"trip_sharing.share_error.message" = "Une erreur s'est produite lors de la préparation du lien du trajet. Veuillez réessayer.";
+
+/* Alert title when trip sharing fails. */
+"trip_sharing.share_error.title" = "Partage impossible";
+
 /* A formatted string for displaying a vehicle's ID on the trip status map. e.g. 'Vehicle ID: 12345' */
 "trip_status_annotation.title_fmt" = "ID du véhicule : %@";
 
@@ -1565,6 +1663,9 @@
 
 /* Accessibility label for the transfer arrival banner shown when navigating to a connecting stop. */
 "walk_time_view.transfer_accessibility_label" = "Heure d'arrivée de la correspondance";
+
+/* Spoken value for the map weather control. First %@ is the temperature, second is the weather condition. */
+"weather.button_accessibility_value_format" = "%1$@, %2$@";
 
 /* Format for the chance-of-rain percentage on the weather card header. %d is the integer percent. */
 "weather.chance_of_rain_format" = "Risque de pluie : %d %%";

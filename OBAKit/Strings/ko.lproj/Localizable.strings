@@ -46,7 +46,7 @@
 /* Toggle label that starts a Live Activity widget on the Lock Screen when an alarm is set. */
 "alarm_time_picker.track_on_lock_screen" = "잠금 화면에서 추적";
 
-/* Placeholder shown in release builds when a sheet route is pushed but has no view registered. */
+/* Placeholder shown when a sheet route is pushed but its screen has not been built yet. */
 "app_sheet.unimplemented_route.placeholder" = "이 화면은 곧 제공될 예정입니다.";
 
 /* Filter option to show all departures regardless of real-time data availability */
@@ -58,8 +58,14 @@
 /* Filter option to show only departures with scheduled data and no real-time information */
 "arrival_departure_filter.scheduled_only" = "시간표 기준만";
 
+/* Context menu action that pins a bookmark to the top of the home sheet's bookmarks section. */
+"bookmarks_controller.context_menu.pin" = "고정";
+
 /* Action to start a Live Activity for a specific bookmark */
 "bookmarks_controller.context_menu.track_live_activity" = "추적";
+
+/* Context menu action that removes a bookmark's pin, returning it to the normal ordering. */
+"bookmarks_controller.context_menu.unpin" = "고정 해제";
 
 /* The title to display to confirm the user's action to delete a bookmark. */
 "bookmarks_controller.delete_bookmark.actionsheet.title" = "즐겨찾기 삭제";
@@ -69,6 +75,9 @@
 
 /* Shown on a bookmark card when arrival data has loaded but there are no departures in the near future */
 "bookmarks_controller.no_upcoming_departures" = "예정된 출발 없음";
+
+/* VoiceOver suffix announcing that a bookmark row is pinned. */
+"bookmarks_controller.pinned.a11y_label" = "고정됨";
 
 /* A menu item that allows the user to sort their bookmarks by distance from the user. */
 "bookmarks_controller.sort_menu.sort_by_distance" = "거리순 정렬";
@@ -208,6 +217,36 @@
 /* Button title to let the user view a data migration report. */
 "data_migration_bulletin.view_report_button" = "보고서 보기";
 
+/* Error shown when the boarding stop cannot be found in the trip's stop list. */
+"destination_stop_picker.error_boarding_stop_not_found" = "이 여정에서 탑승 지점을 확인할 수 없습니다.";
+
+/* Error shown when the API service is unavailable in the destination stop picker. */
+"destination_stop_picker.error_no_service" = "대중교통 서비스에 연결할 수 없습니다.";
+
+/* Title shown while loading the list of stops for destination selection. */
+"destination_stop_picker.loading_title" = "정류장 불러오는 중";
+
+/* Body text shown when there are no stops available after the boarding stop. */
+"destination_stop_picker.no_stops_body" = "이 여정에 남은 정류장이 없습니다.";
+
+/* Title shown when there are no stops available after the boarding stop. */
+"destination_stop_picker.no_stops_title" = "이용 가능한 정류장 없음";
+
+/* Button to retry loading stops after an error. */
+"destination_stop_picker.retry_button" = "다시 시도";
+
+/* Section header prompting user to select their destination stop. */
+"destination_stop_picker.select_destination_header" = "어디에서 내리시나요?";
+
+/* VoiceOver label for the navigation bar button that shares the trip when no destination could be loaded. */
+"destination_stop_picker.share_without_destination_a11y_label" = "목적지 정류장 없이 여정 공유";
+
+/* Button shown when a trip has no remaining stops, letting the user share the trip without picking a destination. */
+"destination_stop_picker.share_without_destination_button" = "목적지 없이 공유";
+
+/* Navigation bar title for the destination stop picker when sharing a trip. */
+"destination_stop_picker.title" = "목적지 선택";
+
 /* Body of the donation widget that appears on the stop view controller */
 "donation_cell.body" = "이 앱은 현재 100% 자원봉사로 만들어지고 있으며, 향후 개발 자금 마련을 위해 여러분의 도움이 필요합니다.";
 
@@ -316,8 +355,14 @@
 /* A voiceover title describing that the card's visibility taking up the minimum amount of screen. */
 "floating_panel.controller.position.minimized" = "최소화됨";
 
-/* Placeholder text inside the disabled search bar on the home sheet, shown while search is unimplemented. */
-"home_sheet.search_bar.coming_soon" = "검색 기능 준비 중";
+/* Body for the home sheet's empty state, shown when there are no nearby stops, no recent stops, and no bookmarks. */
+"home_sheet.empty_set.body" = "주변 정류장, 최근에 본 정류장, 즐겨찾기가 여기에 표시됩니다.";
+
+/* Title for the home sheet's empty state, shown when there are no nearby stops, no recent stops, and no bookmarks. */
+"home_sheet.empty_set.title" = "아직 아무것도 없습니다";
+
+/* VoiceOver hint for a home sheet section header, which opens that section's full list. */
+"home_sheet.section_header.a11y_hint" = "이 섹션의 모든 항목을 표시합니다.";
 
 /* Alert message for Live Activity error. \"Settings\" is the iOS Settings app. */
 "live_activity.error.message" = "설정에서 실시간 액티비티 설정을 확인해 주세요.";
@@ -415,8 +460,14 @@
 /* Voiceover text indicating that this button toggles the base map type. */
 "map_controller.map_type.accessibility_label" = "지도 유형";
 
+/* Voiceover value combining the base map type with the number of enabled map layers. %1$@ is the base map type, %2$d is the layer count. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
+"map_controller.map_type.accessibility_value_with_layers_fmt" = "%1$@, 레이어 %2$d개 켜짐";
+
 /* Voiceover text indicating the current map type as the hybrid base map (satellite view with labels). */
 "map_controller.map_type.hybrid.accessibility_value" = "하이브리드";
+
+/* Voiceover text indicating the current map type as the satellite base map. */
+"map_controller.map_type.satellite.accessibility_value" = "위성";
 
 /* Voiceover text indicating the current map type as the standard base map. */
 "map_controller.map_type.standard.accessibility_value" = "표준";
@@ -597,6 +648,9 @@
 /* The title of the Nearby Stops controller. */
 "nearby_stops_controller.title" = "주변 정류장";
 
+/* Body shown on the Nearby Stops index sheet when no map viewport, device location, or region is available to search around. */
+"nearby_stops_sheet.no_location.body" = "지도를 움직이거나 위치 서비스를 켜면 주변 정류장을 볼 수 있습니다.";
+
 /* Vehicle occupancy is very high */
 "occupancy_status.crushed_standing_room_only" = "입석만 가능 (매우 혼잡)";
 
@@ -729,11 +783,14 @@
 /* Accessibility label for the onboarding progress bar */
 "onboarding.progress.accessibility_label" = "온보딩 진행률";
 
-/* Body of the region onboarding screen */
+/* Body of the region onboarding screen when the region was detected from the rider's location */
 "onboarding.region.body" = "가장 가까운 교통 네트워크를 찾았습니다.";
 
-/* Body of the region onboarding screen when no location is available */
-"onboarding.region.body_no_location" = "이용하는 교통 네트워크를 선택하세요.";
+/* Body of the region onboarding screen prompting the rider to choose a transit network */
+"onboarding.region.body_choose" = "이용하는 교통 네트워크를 선택하세요.";
+
+/* Label on the region card when the region was already selected by app configuration or an earlier launch rather than detected from the rider's location */
+"onboarding.region.current_label" = "현재 지역";
 
 /* Label on the detected-region card */
 "onboarding.region.detected_label" = "내 근처에서 감지됨";
@@ -743,6 +800,9 @@
 
 /* Link to the full region picker */
 "onboarding.region.see_all_button" = "모든 지역 보기";
+
+/* Label on the region card when the rider chose the region from the list rather than it being detected from their location */
+"onboarding.region.selected_label" = "내 선택";
 
 /* Title of the region onboarding screen */
 "onboarding.region.title" = "내 지역";
@@ -758,6 +818,12 @@
 
 /* Title of the first onboarding screen; the argument is the app name */
 "onboarding.welcome.title_fmt" = "%@에 오신 것을 환영합니다";
+
+/* Body of the destination alert notification. %@ is the name of the rider's destination stop. */
+"proximity_alert.notification.body_fmt" = "%@에 가까워지고 있습니다.";
+
+/* Title of the notification shown when the rider nears the stop they set a destination alert on. */
+"proximity_alert.notification.title" = "정류장에 접근 중";
 
 /* Reachability bulletin shown when the user has disabled cellular data for this app in iOS Settings. Both substituted values are the app name. */
 "reachability_bulletin.description.cellular_data_restricted_fmt" = "현재 %1$@의 셀룰러 데이터 사용이 허용되어 있지 않습니다. 설정 > 셀룰러로 이동하여 %2$@의 셀룰러 데이터를 켜거나 WiFi 네트워크에 연결해 주세요.";
@@ -861,6 +927,9 @@
 /* Title for the route picker screen where the user selects their transit route. */
 "route_picker.title" = "노선 선택";
 
+/* Title shown when a route's stop list could not be loaded or is empty. */
+"route_stops_sheet.empty.title" = "정류장 없음";
+
 /* Label for date picker in schedule view */
 "schedule_view.date" = "날짜";
 
@@ -945,6 +1014,18 @@
 /* The title of the Search Results controller. */
 "search_results_controller.title" = "검색 결과";
 
+/* Title shown when a disambiguation sheet has no results to show. */
+"search_results_sheet.empty.title" = "결과 없음";
+
+/* Header showing how many results a search matched, e.g. '12 results'. %d is the number of results. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
+"search_results_sheet.result_count_fmt" = "결과 %d개";
+
+/* Error shown when a tapped search result cannot be turned into something to display. */
+"search_results_sheet.unresolvable_result" = "이 검색 결과를 열 수 없습니다.";
+
+/* Accessibility label for the button that clears the search query. */
+"search_sheet.clear_query" = "지우기";
+
 /* The transit agencies affected by this service alert. */
 "service_alert_controller.affected_agencies" = "영향을 받는 운영 기관";
 
@@ -986,6 +1067,12 @@
 
 /* Settings section title for controlling which arrivals/departures are shown */
 "settings_controller.arrival_display_section.title" = "도착·출발 정보 표시";
+
+/* Settings > Arrival Display > Toggle that shows the Arriving at XX:XX via route banner when opening a stop from a trip */
+"settings_controller.arrival_display_section.transfer_banner" = "환승 도착 배너 표시";
+
+/* Settings > Arrival Display > Footer for the Show transfer arrival banner switch only, not the Show Departures filter */
+"settings_controller.arrival_display_section.transfer_banner.footer" = "환승 도착 배너 표시: 켜면 여행에서 정류장을 열 때 도착 시각 기준으로 시간이 표시됩니다. 그 스위치를 끄면 일반 시각과 모든 출발이 보입니다.";
 
 /* Title for the departure filter selection alert */
 "settings_controller.arrival_filter.selector_title" = "출발 표시";
@@ -1166,6 +1253,7 @@
 
 /* VoiceOver label for a grouped route card */
 "stop_page.grouped.a11y_fmt" = "노선 %1$@, %2$@ 방면, 다음 출발 %3$d분 후, %4$@. 출발 %5$d건을 추가로 불러왔습니다.";
+"stop_page.grouped.a11y_arrives_fmt" = "노선 %1$@, %2$@ 방면, 다음 도착 %3$d분 후, %4$@. 출발 %5$d건을 추가로 불러왔습니다.";
 
 /* VoiceOver custom action on a grouped route card's header that cancels the alarm already set for the next departure. */
 "stop_page.grouped.a11y_remove_alarm" = "미리 알림 제거";
@@ -1226,6 +1314,7 @@
 
 /* VoiceOver label for a departure row: route, headsign, minutes, status. */
 "stop_page.row.a11y_fmt" = "노선 %1$@, %2$@ 방면, %3$d분 후 출발, %4$@";
+"stop_page.row.a11y_arrives_fmt" = "노선 %1$@, %2$@ 방면, %3$d분 후 도착, %4$@";
 
 /* VoiceOver clause appended to a departure row that's upcoming but not reachable on foot before it leaves. */
 "stop_page.row.a11y_missed" = "놓칠 가능성이 높습니다. 정류장까지 걸어가는 시간보다 먼저 출발합니다";
@@ -1238,6 +1327,9 @@
 
 /* Context menu action opening the full trip screen */
 "stop_page.row.show_trip" = "운행 세부 정보 보기";
+
+/* VoiceOver label for the button that returns the stop page's departure list to the top. */
+"stop_page.scroll_to_top" = "맨 위로 스크롤";
 
 /* Fallback title for a service alert that has no summary text. */
 "stop_page.service_alert_fallback" = "운행 알림";
@@ -1464,6 +1556,12 @@
 /* Describes the previous trip of this vehicle. e.g. Starts as 10 - Downtown Seattle */
 "trip_details_controller.starts_as_fmt" = "%@(으)로 운행 시작";
 
+/* Alert message when trip sharing fails. */
+"trip_sharing.share_error.message" = "여정 링크를 준비하는 중 문제가 발생했습니다. 다시 시도해 주세요.";
+
+/* Alert title when trip sharing fails. */
+"trip_sharing.share_error.title" = "공유할 수 없음";
+
 /* A formatted string for displaying a vehicle's ID on the trip status map. e.g. 'Vehicle ID: 12345' */
 "trip_status_annotation.title_fmt" = "차량 ID: %@";
 
@@ -1565,6 +1663,9 @@
 
 /* Accessibility label for the transfer arrival banner shown when navigating to a connecting stop. */
 "walk_time_view.transfer_accessibility_label" = "환승 도착 시간";
+
+/* Spoken value for the map weather control. First %@ is the temperature, second is the weather condition. */
+"weather.button_accessibility_value_format" = "%1$@, %2$@";
 
 /* Format for the chance-of-rain percentage on the weather card header. %d is the integer percent. */
 "weather.chance_of_rain_format" = "강수 확률: %d%%";

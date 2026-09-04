@@ -17,16 +17,18 @@ import UIKit
 
 extension MapViewController {
 
-    /// Registers the map's toggleable layers: the stops adapter always, the
-    /// rental layers only when the current region is configured for bikeshare.
-    /// Called at load and again whenever the region changes.
+    /// Registers the map's toggleable layers. The shared half (stops, rentals)
+    /// lives in `MapLayerRegistrar`; the overlay layers stay here because they
+    /// draw `MKOverlay`s and carry a region-scoped `ShapeCache`.
     func configureMapLayers() {
-        if mapRegionManager.mapLayer(id: StopsMapLayer.layerID) == nil {
-            mapRegionManager.registerMapLayer(StopsMapLayer(manager: mapRegionManager))
+        if mapLayerRegistrar == nil {
+            mapLayerRegistrar = MapLayerRegistrar(application: application) { [weak self] registrar in
+                self?.attachRentalLayerHost(registrar)
+            }
         }
+        mapLayerRegistrar?.configure()
 
         configureStopRouteFocusLayer()
-        configureRentalLayers()
         updateMapLayerBadge()
     }
 
@@ -76,36 +78,37 @@ extension MapViewController {
         stopRouteFocusLayerRegionIdentifier = currentRegionIdentifier
     }
 
-    private func configureRentalLayers() {
-        // Tear down any layers built for a previous region; preferences persist.
-        mapRegionManager.removeMapLayer(id: RentalMapLayer.bikesLayerID)
-        mapRegionManager.removeMapLayer(id: RentalMapLayer.scootersLayerID)
-        rentalLayerCoordinator = nil
-
-        // Region flag = product enablement; the GraphQL service supplies the
-        // capability. Whether the server actually works is decided by the first
-        // fetch, which can dim the rows at runtime.
-        guard let region = application.regionsService.currentRegion,
-              region.isBikeshareEnabled,
-              let graphQLURL = region.openTripPlannerGraphQLURL else {
+    /// Re-points everything hanging off the freshly-built rental layers: the
+    /// detail-sheet action delegate, and the `MKMapView` syncer that replaced
+    /// the coordinator's own map-view writes. Updates the badge after the registrar
+    /// finishes rebuilding, ensuring the count reflects the current layers regardless
+    /// of RegionsService delegate fan-out order.
+    ///
+    /// This is also where the first-run tip gets its second chance. The registrar
+    /// is the `RegionsServiceDelegate` that rebuilds the rental layers now, so its
+    /// `onDidConfigure` callback is the only host-side hook a region change still
+    /// reaches — `configureMapLayers()` runs from `viewDidAppear` alone. On a cold
+    /// launch the region resolves *after* `viewDidAppear`, so the coordinator that
+    /// gates the tip doesn't exist yet when that first attempt runs; retrying here,
+    /// once the layers are actually registered, is what makes the tip show on the
+    /// launch that introduces bikeshare — the launch it exists for.
+    private func attachRentalLayerHost(_ registrar: MapLayerRegistrar) {
+        guard let coordinator = registrar.rentalCoordinator else {
+            rentalAnnotationSyncer = nil
+            updateMapLayerBadge()
             return
         }
 
-        let service = GraphQLAPIService(baseURL: graphQLURL)
-        let coordinator = RentalLayerCoordinator(service: service, mapView: mapRegionManager.mapView)
-        rentalLayerCoordinator = coordinator
+        let syncer = RentalAnnotationSyncer(coordinator: coordinator, mapView: mapRegionManager.mapView)
+        rentalAnnotationSyncer = syncer
 
-        // Apply a filter chosen in a previous session before the first fetch,
-        // rather than one notification late.
-        coordinator.setRangeFilter(mapRegionManager.rentalRangeFilter)
+        for layer in registrar.rentalLayers {
+            layer.actionsDelegate = self
+            layer.annotationSyncer = syncer
+        }
 
-        let bikes = RentalMapLayer.bikesLayer(coordinator: coordinator)
-        bikes.actionsDelegate = self
-        mapRegionManager.registerMapLayer(bikes)
-
-        let scooters = RentalMapLayer.scootersLayer(coordinator: coordinator)
-        scooters.actionsDelegate = self
-        mapRegionManager.registerMapLayer(scooters)
+        updateMapLayerBadge()
+        showMapLayersTipIfNeeded()
     }
 
     /// Presents a layer-owned detail sheet (vehicle detail or cluster list) for
@@ -162,61 +165,20 @@ extension MapViewController {
         present(controller, animated: true)
     }
 
-    // MARK: - First-Run Layer Nudge
+    // MARK: - First-Run Layer Tip
 
-    private static let mapLayersNudgeShownKey = "mapViewController.mapLayersNudgeShown"
+    /// The one-time tip pointing at the basemap button the first time a region
+    /// offers rental layers.
+    ///
+    /// Gated on the rental coordinator existing rather than on a rule inside the
+    /// tip, because the observation `showIfNeeded` starts is long-lived: not
+    /// starting it is what keeps the tip off regions without bikeshare. Both
+    /// callers are idempotent — the window check drops calls that arrive while
+    /// the map is off screen, and `TipPresenter` observes at most once.
+    func showMapLayersTipIfNeeded() {
+        guard viewIfLoaded?.window != nil, rentalLayerCoordinator != nil else { return }
 
-    /// The one-time nudge pointing at the basemap button the first time a region
-    /// offers rental layers. Not a permanent band, not a recurring tip — shown
-    /// once, then never again.
-    func showMapLayersNudgeIfNeeded() {
-        guard rentalLayerCoordinator != nil,
-              !application.userDefaults.bool(forKey: Self.mapLayersNudgeShownKey),
-              presentedViewController == nil else {
-            return
-        }
-        application.userDefaults.set(true, forKey: Self.mapLayersNudgeShownKey)
-
-        let nudge = UILabel.autolayoutNew()
-        nudge.text = OBALoc("map_controller.layers_nudge", value: "New: bikes and scooters on the map. Tap to explore.", comment: "One-time callout pointing at the basemap button when a region gains rental map layers")
-        nudge.font = .preferredFont(forTextStyle: .footnote)
-        nudge.textColor = .white
-        nudge.numberOfLines = 0
-        nudge.textAlignment = .center
-
-        let padded = UIView.autolayoutNew()
-        padded.backgroundColor = UIColor.rentalPurple
-        padded.layer.cornerRadius = 10
-        padded.layer.masksToBounds = true
-        padded.alpha = 0
-        padded.addSubview(nudge)
-        view.addSubview(padded)
-
-        NSLayoutConstraint.activate([
-            nudge.topAnchor.constraint(equalTo: padded.topAnchor, constant: 8),
-            nudge.bottomAnchor.constraint(equalTo: padded.bottomAnchor, constant: -8),
-            nudge.leadingAnchor.constraint(equalTo: padded.leadingAnchor, constant: 10),
-            nudge.trailingAnchor.constraint(equalTo: padded.trailingAnchor, constant: -10),
-            padded.trailingAnchor.constraint(equalTo: toolbar.trailingAnchor),
-            padded.topAnchor.constraint(equalTo: toolbar.bottomAnchor, constant: 8),
-            padded.widthAnchor.constraint(lessThanOrEqualToConstant: 220)
-        ])
-
-        let tap = UITapGestureRecognizer(target: self, action: #selector(nudgeTapped(_:)))
-        padded.isUserInteractionEnabled = true
-        padded.addGestureRecognizer(tap)
-
-        UIView.animate(withDuration: 0.3) { padded.alpha = 1 }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 8) {
-            UIView.animate(withDuration: 0.5, animations: { padded.alpha = 0 }) { _ in
-                padded.removeFromSuperview()
-            }
-        }
-    }
-
-    @objc private func nudgeTapped(_ gesture: UITapGestureRecognizer) {
-        gesture.view?.removeFromSuperview()
-        presentMapSheet()
+        mapLayersTipPresenter.showIfNeeded(in: self, sourceItem: toggleMapTypeButton)
     }
 }
 
@@ -225,24 +187,22 @@ extension MapViewController {
 extension MapViewController: RegionsServiceDelegate {
     public func regionsService(_ service: RegionsService, updatedRegion region: Region) {
         // The stop the sheet is showing belongs to the region we just left, and
-        // `configureMapLayers()` is about to throw away the route-focus layer
-        // driving it. Leaving the sheet up would strand it: its arrivals sink
-        // would feed a layer no longer on the map, so the lines and vehicles
-        // would never come back, and `stopSheetSelection` would stay set — every
-        // other marker held down as a gray dot for the rest of the session.
-        // Re-attaching the presentation to the rebuilt layer isn't the fix
-        // either: shape IDs are region-scoped, so the new region's server would
-        // answer this stop's IDs with the wrong lines.
+        // the route-focus layer driving it is about to be torn down. Leaving the
+        // sheet up would strand it: its arrivals sink would feed a layer no longer
+        // on the map, so the lines and vehicles would never come back, and
+        // `stopSheetSelection` would stay set — every other marker held down as a
+        // gray dot for the rest of the session. Re-attaching the presentation to
+        // the rebuilt layer isn't the fix either: shape IDs are region-scoped, so
+        // the new region's server would answer this stop's IDs with the wrong lines.
         dismissStopSheetForReplacement()
 
-        // Rebuild region-scoped layers: a new region may gain or lose bikeshare.
-        configureMapLayers()
+        configureStopRouteFocusLayer()
     }
 
     public func regionsService(_ service: RegionsService, updatedRegionsList regions: [Region]) {
         // A regions-list refresh can flip the current region's bikeshare fields in
         // place without changing the region identity; re-evaluate the layers.
-        configureMapLayers()
+        configureStopRouteFocusLayer()
     }
 }
 

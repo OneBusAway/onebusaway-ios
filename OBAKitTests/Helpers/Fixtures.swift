@@ -57,8 +57,17 @@ class Fixtures {
     }
 
     /// Builds an `ArrivalDeparture` from timestamps, defaulting the ~15 keys of
-    /// decoder boilerplate that no test cares about. Times are seconds since the
-    /// epoch; pass the predicted ones as `nil` to model a schedule-only trip.
+    /// decoder boilerplate that no test cares about. Pass the predicted times as
+    /// `nil` to model a schedule-only trip.
+    ///
+    /// - Note: `dictionaryToModel` uses a plain `JSONDecoder`, so these are
+    ///   `.deferredToDate` values — **seconds since Date's 2001 reference
+    ///   date**, not since the epoch, and not the `.millisecondsSince1970` that
+    ///   `JSONDecoder.RESTDecoder()` applies to real API payloads. The default
+    ///   below therefore lands in the 2050s, which is why fixtures built with it
+    ///   read as upcoming departures. Tests that care whether a departure is
+    ///   past or future should derive their values from
+    ///   `Date.timeIntervalSinceReferenceDate` rather than hard-coding one.
     ///
     /// `stopSequence` selects `arrivalDepartureStatus`: 0 is `.departing`,
     /// anything else `.arriving`.
@@ -68,7 +77,10 @@ class Fixtures {
         predictedArrival: Int? = nil,
         scheduledDeparture: Int = 1_700_000_000,
         predictedDeparture: Int? = nil,
-        stopSequence: Int = 5
+        stopSequence: Int = 5,
+        stopID: String = "stop_1",
+        routeID: String = "route_1",
+        tripID: String = "trip_1"
     ) throws -> ArrivalDeparture {
         var dictionary: [String: Any] = [
             "arrivalEnabled": true,
@@ -78,15 +90,15 @@ class Fixtures {
             "lastUpdateTime": scheduledArrival,
             "numberOfStopsAway": 1,
             "predicted": predicted,
-            "routeId": "route_1",
+            "routeId": routeID,
             "scheduledArrivalTime": scheduledArrival,
             "scheduledDepartureTime": scheduledDeparture,
             "serviceDate": scheduledArrival,
             "situationIds": [],
             "status": "SCHEDULED",
-            "stopId": "stop_1",
+            "stopId": stopID,
             "stopSequence": stopSequence,
-            "tripId": "trip_1",
+            "tripId": tripID,
             "vehicleId": "vehicle_1"
         ]
         if let predictedArrival { dictionary["predictedArrivalTime"] = predictedArrival }
@@ -148,7 +160,16 @@ class Fixtures {
             "agencyId": "test_agency",
             "id": id,
             "shortName": "1",
-            "type": 3
+            "type": 3,
+            "agency": [
+                "id": "test_agency",
+                "name": "Test Agency",
+                "lang": "en",
+                "phone": "555-0000",
+                "privateService": false,
+                "timezone": "America/Los_Angeles",
+                "url": "https://example.com"
+            ]
         ]
         return try dictionaryToModel(type: Route.self, dictionary: dictionary)
     }

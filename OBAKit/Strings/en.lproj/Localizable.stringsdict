@@ -34,6 +34,38 @@
 			<string>%d successful</string>
 		</dict>
 	</dict>
+	<key>map_controller.map_type.accessibility_value_with_layers_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$@, %2$#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%2$d layer on</string>
+			<key>other</key>
+			<string>%2$d layers on</string>
+		</dict>
+	</dict>
+	<key>search_results_sheet.result_count_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>1 result</string>
+			<key>other</key>
+			<string>%d results</string>
+		</dict>
+	</dict>
 	<key>stop_controller.transfer_show_earlier_departures_fmt</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -64,6 +96,22 @@
 			<string>No departures in the next minute</string>
 			<key>other</key>
 			<string>No departures in the next %d minutes</string>
+		</dict>
+	</dict>
+	<key>stop_page.a11y.past_shown_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Showing 1 past departure</string>
+			<key>other</key>
+			<string>Showing %d past departures</string>
 		</dict>
 	</dict>
 	<key>stop_page.past_toggle_show_a11y_fmt</key>

@@ -34,6 +34,38 @@
 			<string>%d exitosos</string>
 		</dict>
 	</dict>
+	<key>map_controller.map_type.accessibility_value_with_layers_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$@, %2$#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%2$d capa activada</string>
+			<key>other</key>
+			<string>%2$d capas activadas</string>
+		</dict>
+	</dict>
+	<key>search_results_sheet.result_count_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>1 resultado</string>
+			<key>other</key>
+			<string>%d resultados</string>
+		</dict>
+	</dict>
 	<key>stop_controller.transfer_show_earlier_departures_fmt</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

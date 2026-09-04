@@ -31,6 +31,11 @@ enum AppSymbol {
     /// "this will fire a fresh fetch."
     static let retry = "arrow.clockwise"
 
+    /// "Reload this now," as a user-initiated control rather than a recovery
+    /// from failure. Same glyph again; named separately so a refresh button
+    /// doesn't have to call itself a retry.
+    static let refresh = "arrow.clockwise"
+
     // MARK: - Search
 
     /// Search field icon / "no search results" placeholder.

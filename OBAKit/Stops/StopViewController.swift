@@ -96,6 +96,13 @@ public class StopViewController: UIViewController,
         set { viewModel.transferContext = newValue }
     }
 
+    /// Honors Settings > Arrival & Departure Display > transfer banner. When the rider
+    /// turns that off, the stop page ignores the trip-sourced transfer context
+    /// so times are wall-clock and the full list is shown (#1277).
+    private var displayedTransferContext: TransferContext? {
+        application.userDataStore.displayedTransferContext(transferContext)
+    }
+
     var stop: Stop? { viewModel.stop }
     var stopArrivals: StopArrivals? { viewModel.stopArrivals }
     var stopPreferences: StopPreferences { viewModel.stopPreferences }
@@ -218,15 +225,7 @@ public class StopViewController: UIViewController,
         super.viewDidAppear(animated)
 
         if let schedulesButton {
-            scheduleTipPresenter.showIfNeeded(sourceItem: schedulesButton) { [weak self] vc in
-                guard let self else { return }
-                present(vc, animated: animated)
-            } presentedController: { [weak self] in
-                guard let self else { return nil }
-                return self.presentedViewController
-            } dismiss: { vc in
-                vc.dismiss(animated: animated)
-            }
+            scheduleTipPresenter.showIfNeeded(in: self, sourceItem: schedulesButton, animated: animated)
         }
     }
 
@@ -234,15 +233,12 @@ public class StopViewController: UIViewController,
         super.viewWillDisappear(animated)
         enableIdleTimer()
         viewModel.deactivate()
+        scheduleTipPresenter.stop()
     }
 
     // MARK: - Tips
 
     private let scheduleTipPresenter = TipPresenter(tip: ScheduleTip())
-
-    // MARK: - Idle Timer
-
-    public var idleTimerFailsafe: Timer?
 
     // MARK: - Options Nudge
     private func showSwipeOptionsNudge(on cell: StopArrivalCell) {
@@ -348,11 +344,12 @@ public class StopViewController: UIViewController,
         var children = [showAll]
 
         if stop.routes.count > 1 {
-            if viewModel.isListFiltered && viewModel.stopPreferences.hasHiddenRoutes {
-                showFiltered.image = UIImage(systemName: "checkmark")
-            } else {
-                showAll.image = UIImage(systemName: "checkmark")
-            }
+            // `state`, not a checkmark image: it draws the same checkmark but is
+            // also what VoiceOver reads as "selected". An image is decoration the
+            // accessibility layer never announces.
+            let routesAreFiltered = viewModel.isListFiltered && viewModel.stopPreferences.hasHiddenRoutes
+            showFiltered.state = routesAreFiltered ? .on : .off
+            showAll.state = routesAreFiltered ? .off : .on
 
             children.append(showFiltered)
         }
@@ -435,10 +432,8 @@ public class StopViewController: UIViewController,
             self.viewModel.updateSortType(.route)
         }
 
-        switch currentSort {
-        case .time:  sortByTime.image =  Icons.checkmark
-        case .route: sortByRoute.image = Icons.checkmark
-        }
+        sortByTime.state = currentSort == .time ? .on : .off
+        sortByRoute.state = currentSort == .route ? .on : .off
 
         let sortMenuTitle = OBALoc("stop_preferences_controller.sorting_section.header_title", value: "Sort By", comment: "Title of the Sorting section")
         return UIMenu(title: sortMenuTitle, image: Icons.sort, children: [sortByTime, sortByRoute])
@@ -458,12 +453,12 @@ public class StopViewController: UIViewController,
                 self.viewModel.updateArrivalDepartureFilter(filter)
                 self.dataDidReload()
             }
-            if filter == currentFilter { action.image = Icons.checkmark }
+            action.state = filter == currentFilter ? .on : .off
             return action
         }
 
         let menuTitle = OBALoc("stop_controller.arrival_filter.menu_title", value: "Departure Type", comment: "Title for the menu that filters departures by data type")
-        return UIMenu(title: menuTitle, image: Icons.departureType, children: actions)
+        return UIMenu(title: menuTitle, image: Icons.departureType(isActive: currentFilter != .all), children: actions)
     }
 
     fileprivate func helpMenu() -> UIMenu {
@@ -725,14 +720,19 @@ public class StopViewController: UIViewController,
                 sections.append(arrivalFilterNoResultsSection())
             } else {
                 let pastDeps = filtered.filter { $0.arrivalDepartureMinutes < 0 }
-                let upcomingDeps = filtered.filter { $0.arrivalDepartureMinutes >= 0 }
-
                 if !pastDeps.isEmpty {
                     sections.append(sectionForPastDepartures(groupRoute: nil, arrDeps: pastDeps))
                 }
-                // Always append upcoming section (even if empty) to display load more and walk times
-                sections.append(sectionForGroup(groupRoute: nil, arrDeps: upcomingDeps))
             }
+
+            // Always append the upcoming section, even when it is empty and even
+            // behind the filter's empty state, because it carries Load More —
+            // the one control that can resolve a filtered-empty stop, since
+            // widening the window is how a real-time departure appears when the
+            // loaded window holds only scheduled ones. (The walk-time row rides
+            // along here too, but suppresses itself on an empty list.)
+            let upcomingDeps = filtered.filter { $0.arrivalDepartureMinutes >= 0 }
+            sections.append(sectionForGroup(groupRoute: nil, arrDeps: upcomingDeps))
 
         } else {
             let plausible = stopArrivals.arrivalsAndDepartures.filteringImplausibleDates()
@@ -807,7 +807,7 @@ public class StopViewController: UIViewController,
             arrivalDeparture: arrivalDeparture,
             isAlarmAvailable: alarmAvailable,
             highlightTimeOnDisplay: highlightTimeOnDisplay,
-            transferContext: transferContext,
+            transferContext: displayedTransferContext,
             onSelectAction: onSelectAction,
             alarmAction: addAlarmAction,
             bookmarkAction: bookmarkAction,
@@ -855,7 +855,7 @@ public class StopViewController: UIViewController,
         // Filter departures before transfer arrival time, unless user opted to show all.
         // Only insert the "Show earlier" button when sorting by time (groupRoute == nil)
         // to avoid duplicate item IDs across route groups. See #409.
-        if let transferContext = transferContext, !showAllTransferDepartures {
+        if let transferContext = displayedTransferContext, !showAllTransferDepartures {
             let (visible, hidden) = partitionTransferDepartures(items: items, arrivalTime: transferContext.arrivalTime)
             items = visible
             if !hidden.isEmpty && groupRoute == nil {
@@ -928,7 +928,7 @@ public class StopViewController: UIViewController,
                 actions.append(schedule)
             }
 
-            let shareTrip = UIAction(title: OBALoc("stop_controller.share_trip", value: "Share Trip", comment: "Context menu button that allows the user to share their trip status."), image: Icons.share) { [weak self] _ in
+            let shareTrip = UIAction(title: Strings.shareTrip, image: Icons.share) { [weak self] _ in
                 self?.shareTripStatus(viewModel: viewModel)
             }
             actions.append(shareTrip)
@@ -987,7 +987,7 @@ public class StopViewController: UIViewController,
 
     /// Inserts either a transfer arrival banner or the GPS-based walk time row.
     private func addWalkTimeOrTransferBanner(to items: inout [AnyOBAListViewItem]) {
-        if let transferContext = transferContext {
+        if let transferContext = displayedTransferContext {
             let bannerItem = TransferArrivalItem(
                 id: "transfer_arrival_banner",
                 arrivalTime: transferContext.arrivalTime,
@@ -1151,10 +1151,6 @@ public class StopViewController: UIViewController,
     func addAlarm(arrivalDeparture: ArrivalDeparture) {
         alarmBuilder = AlarmBuilder(arrivalDeparture: arrivalDeparture, application: application, delegate: self)
         alarmBuilder?.showBulletin(above: self)
-    }
-
-    func alarmBuilderStartedRequest(_ alarmBuilder: AlarmBuilder) {
-        ProgressHUD.show()
     }
 
     func alarmBuilder(_ alarmBuilder: AlarmBuilder, alarmCreated alarm: Alarm) {

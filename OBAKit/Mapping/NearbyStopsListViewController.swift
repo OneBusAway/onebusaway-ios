@@ -39,7 +39,7 @@ class NearbyStopsListViewController: UIViewController, UICollectionViewDelegate,
             case .alert:
                 return Strings.serviceAlerts
             case .nearbyStops:
-                return OBALoc("nearby_stops_controller.title", value: "Nearby Stops", comment: "The title of the Nearby Stops controller.")
+                return Strings.nearbyStops
             }
         }
     }

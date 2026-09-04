@@ -145,6 +145,103 @@ final class UserDefaultsStore_BookmarksTests: OBATestCase {
         #expect(self.userDefaultsStore.bookmarks == [bookmark])
     }
 
+    // MARK: - Pinning
+
+    /// `bookmarks` is computed over `UserDefaults` — its getter decodes fresh
+    /// instances — so a pin only sticks if the store writes the array back.
+    @Test func `Set pinned persists through the store`() {
+        let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stops[0])
+        userDefaultsStore.add(bookmark)
+        #expect(self.userDefaultsStore.bookmarks.first?.isPinned == false)
+
+        userDefaultsStore.setPinned(true, for: bookmark)
+        #expect(self.userDefaultsStore.bookmarks.first?.isPinned == true)
+        // The caller's own instance is updated too, so a held reference doesn't
+        // read stale.
+        #expect(bookmark.isPinned)
+
+        userDefaultsStore.setPinned(false, for: bookmark)
+        #expect(self.userDefaultsStore.bookmarks.first?.isPinned == false)
+        #expect(bookmark.isPinned == false)
+    }
+
+    /// Pinning must not disturb the user's manual ordering. Routing the write
+    /// through `add(_:to:)` would have re-appended the bookmark and renumbered
+    /// `sortOrder`, silently moving it to the bottom of its group.
+    @Test func `Set pinned leaves sort order and group membership alone`() {
+        let group = BookmarkGroup(name: "Commute", sortOrder: 0)
+        let first = Bookmark(name: "First", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stops[0])
+        let second = Bookmark(name: "Second", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stops[1])
+        userDefaultsStore.add(first, to: group)
+        userDefaultsStore.add(second, to: group)
+
+        let orderBefore = userDefaultsStore.bookmarksInGroup(group).map { ($0.id, $0.sortOrder) }
+
+        userDefaultsStore.setPinned(true, for: first)
+
+        let orderAfter = userDefaultsStore.bookmarksInGroup(group).map { ($0.id, $0.sortOrder) }
+        #expect(orderBefore.map(\.0) == orderAfter.map(\.0))
+        #expect(orderBefore.map(\.1) == orderAfter.map(\.1))
+        #expect(self.userDefaultsStore.findBookmark(id: first.id)?.groupID == group.id)
+    }
+
+    /// Consumers refresh off `.bookmarksDidChange`, so the toggle has to post it.
+    @Test func `Set pinned posts bookmarksDidChange`() async {
+        let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stops[0])
+        userDefaultsStore.add(bookmark)
+
+        await confirmation("bookmarksDidChange posted") { posted in
+            let token = NotificationCenter.default.addObserver(
+                forName: .bookmarksDidChange,
+                object: userDefaultsStore,
+                queue: nil
+            ) { _ in posted() }
+            defer { NotificationCenter.default.removeObserver(token) }
+
+            userDefaultsStore.setPinned(true, for: bookmark)
+        }
+    }
+
+    /// Thread-safe flag — notification delivery isn't actor-isolated.
+    private final class NotifiedFlag {
+        private let lock = NSLock()
+        nonisolated(unsafe) private(set) var value = false
+
+        nonisolated func set() {
+            lock.lock()
+            defer { lock.unlock() }
+            value = true
+        }
+    }
+
+    /// A no-op toggle shouldn't churn storage or wake every listener.
+    @Test func `Set pinned to the current value does nothing`() {
+        let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stops[0])
+        userDefaultsStore.add(bookmark)
+
+        let notified = NotifiedFlag()
+        let token = NotificationCenter.default.addObserver(
+            forName: .bookmarksDidChange,
+            object: userDefaultsStore,
+            queue: nil
+        ) { _ in notified.set() }
+        defer { NotificationCenter.default.removeObserver(token) }
+
+        userDefaultsStore.setPinned(false, for: bookmark)
+
+        #expect(notified.value == false)
+    }
+
+    /// A bookmark that was never added has nothing to update.
+    @Test func `Set pinned on an unknown bookmark is a no-op`() {
+        let stranger = Bookmark(name: "Not Stored", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stops[0])
+
+        userDefaultsStore.setPinned(true, for: stranger)
+
+        #expect(self.userDefaultsStore.bookmarks.isEmpty)
+        #expect(stranger.isPinned == false)
+    }
+
     @Test func `Bookmark find by ID`() {
         let stop = stops[0]
         let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
@@ -368,5 +465,65 @@ final class UserDefaultsStore_BookmarksTests: OBATestCase {
         #expect(self.userDefaultsStore.findBookmark(id: g1b1.id)!.sortOrder == 0)
         #expect(self.userDefaultsStore.findBookmark(id: g1b2.id)!.sortOrder == 0)
         #expect(self.userDefaultsStore.findBookmark(id: g1b3.id)!.sortOrder == 1)
+    }
+
+    // MARK: - Bookmark plist write coalescing (#548)
+
+    /// Revert `add(_:to:index:)` to the per-row `bookmarks` get/set loop and
+    /// this fails: that path wrote the full bookmark plist once per member.
+    @Test func `Moving a bookmark encodes the bookmark list once`() {
+        let defaults = BookmarkWriteCountingDefaults(suiteName: "bookmark-writes-move-\(UUID().uuidString)")!
+        let store = UserDefaultsStore(userDefaults: defaults)
+        let stop = stops[0]
+
+        for i in 0..<12 {
+            store.add(Bookmark(name: "Bookmark \(i)", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop))
+        }
+
+        defaults.bookmarkWrites = 0
+        let inserted = Bookmark(name: "Inserted", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
+        store.add(inserted, to: nil, index: 3)
+
+        #expect(defaults.bookmarkWrites == 1)
+        #expect(store.bookmarks.map(\.name)[3] == "Inserted")
+        #expect(store.bookmarks.count == 13)
+    }
+
+    /// Same coalescing guarantee on delete: one plist write, remaining
+    /// sortOrder values compacted. Restoring the per-row rewrite fails this.
+    @Test func `Deleting a bookmark encodes the bookmark list once`() {
+        let defaults = BookmarkWriteCountingDefaults(suiteName: "bookmark-writes-delete-\(UUID().uuidString)")!
+        let store = UserDefaultsStore(userDefaults: defaults)
+        let stop = stops[0]
+
+        var bookmarks: [Bookmark] = []
+        for i in 0..<12 {
+            let bookmark = Bookmark(name: "Bookmark \(i)", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
+            store.add(bookmark)
+            bookmarks.append(bookmark)
+        }
+
+        defaults.bookmarkWrites = 0
+        store.delete(bookmark: bookmarks[4])
+
+        #expect(defaults.bookmarkWrites == 1)
+        #expect(store.bookmarks.count == 11)
+        #expect(store.bookmarks.map(\.sortOrder) == Array(0..<11))
+    }
+}
+
+/// Counts `UserDataStore.bookmarks` encodes. Subclassing `UserDefaults` is the
+/// seam: `Bookmark` is a production type and should not grow test-only hooks.
+///
+/// `nonisolated` because OBAKitTests defaults to `@MainActor` and
+/// `UserDefaults.set(_:forKey:)` / `init(suiteName:)` are not.
+nonisolated private final class BookmarkWriteCountingDefaults: UserDefaults {
+    var bookmarkWrites = 0
+
+    override func set(_ value: Any?, forKey defaultName: String) {
+        if defaultName == "UserDataStore.bookmarks" {
+            bookmarkWrites += 1
+        }
+        super.set(value, forKey: defaultName)
     }
 }

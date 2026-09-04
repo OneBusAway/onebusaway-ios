@@ -110,6 +110,71 @@ final class StopVehicleAnnotationTests {
         #expect(annotation.routeColor == .systemGreen)
     }
 
+    /// #1341 item 3. The test above jumps (47.6, -122.3) → (48.1, -121.9) — about
+    /// 60 km, or 120× `snapBeyondMeters` — so it only ever reaches `.snap`. The
+    /// other two branches of `VehicleCoordinateUpdate.decision`, and the
+    /// restore-then-apply ordering they depend on, had no coverage at all.
+    ///
+    /// This is the branch that proves the ordering. Below `ignoreBelowMeters`
+    /// `apply` is a no-op, so whatever sits in `coordinate` when it runs is what
+    /// the rider keeps. `tripStatus`'s `didSet` has just overwritten that with the
+    /// fixture's `lastKnownLocation`; without `update`'s `self.coordinate = from`
+    /// restore, every poll too small to matter would teleport the pin there.
+    @Test func `A sub-threshold jitter leaves the coordinate where it was`() throws {
+        let origin = CLLocationCoordinate2D(latitude: 47.6100, longitude: -122.3300)
+        let annotation = StopVehicleAnnotation(
+            id: "6821", routeID: "H", routeColor: .systemRed, departureID: "dep1",
+            tripStatus: try makeTripStatus(),
+            coordinate: origin
+        )
+
+        // ~1.1 m. Asserted rather than assumed so the test can't go vacuous if
+        // the threshold is ever retuned.
+        let jitter = CLLocationCoordinate2D(latitude: 47.610010, longitude: -122.3300)
+        #expect(origin.distance(from: jitter) < VehicleCoordinateUpdate.ignoreBelowMeters)
+
+        annotation.update(
+            tripStatus: try makeTripStatus(),
+            coordinate: jitter,
+            routeColor: .systemGreen
+        )
+
+        #expect(annotation.coordinate.latitude == origin.latitude)
+        #expect(annotation.coordinate.longitude == origin.longitude)
+
+        // The value the didSet wrote, and the one the restore has to defeat.
+        let fixtureLocation = try #require(makeTripStatus().lastKnownLocation?.coordinate)
+        #expect(annotation.coordinate.latitude != fixtureLocation.latitude)
+    }
+
+    /// The middle branch, which the 60 km fixture skips. `apply` performs the
+    /// assignment inside `UIView.animate`, so the coordinate arrives
+    /// synchronously here — what this pins is that a city-block hop is *routed*
+    /// through the animated branch instead of being discarded as jitter.
+    @Test func `A city-block hop moves the annotation to the new coordinate`() throws {
+        let origin = CLLocationCoordinate2D(latitude: 47.6100, longitude: -122.3300)
+        let annotation = StopVehicleAnnotation(
+            id: "6821", routeID: "H", routeColor: .systemRed, departureID: "dep1",
+            tripStatus: try makeTripStatus(),
+            coordinate: origin
+        )
+
+        // ~100 m: above `ignoreBelowMeters`, well below `snapBeyondMeters`.
+        let hop = CLLocationCoordinate2D(latitude: 47.610900, longitude: -122.3300)
+        let meters = origin.distance(from: hop)
+        #expect(meters > VehicleCoordinateUpdate.ignoreBelowMeters)
+        #expect(meters < VehicleCoordinateUpdate.snapBeyondMeters)
+
+        annotation.update(
+            tripStatus: try makeTripStatus(),
+            coordinate: hop,
+            routeColor: .systemGreen
+        )
+
+        #expect(annotation.coordinate.latitude == hop.latitude)
+        #expect(annotation.coordinate.longitude == hop.longitude)
+    }
+
     @Test func `Markers are not selectable by default, preserving the trip screen`() {
         let view = PulsingVehicleAnnotationView(annotation: nil, reuseIdentifier: "test")
         #expect(view.isUserInteractionEnabled == false)

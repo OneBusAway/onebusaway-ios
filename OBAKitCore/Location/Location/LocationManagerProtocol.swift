@@ -17,6 +17,10 @@ public protocol LocationManager {
 
     func requestWhenInUseAuthorization()
 
+    /// Region monitoring only delivers events in the background under
+    /// `.authorizedAlways`, so proximity alerts must be able to ask for it.
+    func requestAlwaysAuthorization()
+
     @available(iOS 14, *)
     func requestTemporaryFullAccuracyAuthorization(withPurposeKey purposeKey: String)
 
@@ -56,6 +60,13 @@ public protocol LocationManager {
     func startMonitoring(for region: CLRegion)
     func stopMonitoring(for region: CLRegion)
     var monitoredRegions: Set<CLRegion> { get }
+
+    /// The largest radius, in meters, this device will actually monitor.
+    ///
+    /// `CLCircularRegion` silently clamps an oversize radius, so a region built
+    /// past this limit fires at a different distance than the one requested with
+    /// no error to tell anyone. Reading the limit is what makes that detectable.
+    var maximumRegionMonitoringDistance: CLLocationDistance { get }
 }
 
 extension CLLocationManager: LocationManager {

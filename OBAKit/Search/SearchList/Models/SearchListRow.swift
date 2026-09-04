@@ -8,6 +8,7 @@
 import Foundation
 import MapKit
 import UIKit
+import OBAKitCore
 
 struct SearchListRow: Identifiable {
     enum Accessory {
@@ -17,9 +18,21 @@ struct SearchListRow: Identifiable {
 
     enum Kind {
         case quickSearch(SearchType)
-        case recentStop
-        case bookmark
+        /// Carries the stop's id for the same reason `searchResult` does: recent
+        /// stops are rendered in a `ForEach`, and two stops on opposite sides of a
+        /// corner share a name.
+        case recentStop(id: String)
+        /// Carries the bookmark's id for the same reason `recentStop` does: a
+        /// bookmark's default name is its stop's name, so two bookmarks on
+        /// opposite sides of one street would otherwise share a row id.
+        case bookmark(id: String)
         case placemark(MKMapItem)
+        /// A row in a disambiguation list. Carries the underlying model's id
+        /// because titles are not identity — two stops on opposite sides of the
+        /// same corner share a name, and two agencies can both run a route "1".
+        /// Deriving the row id from the title alone collides in exactly the case
+        /// a disambiguation list exists to handle.
+        case searchResult(id: String)
         case clearRecents
         case loading
         case noResults
@@ -34,13 +47,15 @@ struct SearchListRow: Identifiable {
             switch self {
             case .quickSearch(let type):
                 return "quickSearch-\(type.rawValue)"
-            case .recentStop:
-                return "recentStop"
-            case .bookmark:
-                return "bookmark"
+            case .recentStop(let id):
+                return "recentStop-\(id)"
+            case .bookmark(let id):
+                return "bookmark-\(id)"
             case .placemark(let item):
                 let coord = item.placemark.coordinate
                 return "placemark-\(coord.latitude)-\(coord.longitude)"
+            case .searchResult(let id):
+                return "searchResult-\(id)"
             case .clearRecents:
                 return "clearRecents"
             case .loading:
@@ -121,5 +136,56 @@ extension SearchListRow {
             return .system(poi.symbolName)
         }
         return .system("mappin")
+    }
+}
+
+// MARK: - Stop Row Building
+
+extension SearchListRow {
+
+    /// The standard `SearchListRow` for a stop: stop glyph, name, and a
+    /// "distance • direction" subtitle.
+    ///
+    /// Used by the search results sheet (`SearchResultRow`). The home sheet's
+    /// nearby and recent sections deliberately do **not** use this — they render
+    /// `HomeStopRow`, which uses the squircle transport glyph to match the
+    /// bookmark cards it sits beside. Keep this in step with the search list's
+    /// placemark rows, not with the home sheet.
+    ///
+    /// `kind` is a parameter rather than fixed because the caller owns row
+    /// identity — the same stop can legitimately appear in two sections at once.
+    @MainActor
+    static func stop(
+        _ stop: Stop,
+        application: Application,
+        kind: Kind,
+        onSelect: @escaping () -> Void
+    ) -> SearchListRow {
+        SearchListRow(
+            kind: kind,
+            title: stop.name,
+            subtitle: stopSubtitle(application, stop),
+            icon: .uiImage(Icons.stop),
+            accessory: .disclosureIndicator,
+            action: onSelect
+        )
+    }
+
+    /// Direction plus distance from the user, mirroring what the placemark rows
+    /// in the search list already show. Distance is dropped when there's no fix.
+    @MainActor
+    static func stopSubtitle(_ application: Application, _ stop: Stop) -> String? {
+        var parts: [String] = []
+
+        if let currentLocation = application.locationService.currentLocation {
+            let distance = currentLocation.distance(from: stop.location)
+            parts.append(application.formatters.distanceFormatter.string(fromDistance: distance))
+        }
+
+        if let direction = Formatters.adjectiveFormOfCardinalDirection(stop.direction), !direction.isEmpty {
+            parts.append(direction)
+        }
+
+        return parts.isEmpty ? nil : parts.joined(separator: " • ")
     }
 }

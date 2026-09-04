@@ -170,11 +170,23 @@ class EditBookmarkViewController: FormViewController, AddGroupAlertDelegate {
 
     // MARK: - Actions
 
+    /// Cancels the editor by telling the delegate, the way `save()` and
+    /// `AddBookmarkViewController.cancel()` both do.
+    ///
+    /// Dismissing here directly would leave the delegate believing the editor is
+    /// still up, which matters to any presenter that keeps its own state — a
+    /// SwiftUI `.sheet(item:)` binding, for one. Every delegate dismisses us in
+    /// response; the fallback covers a delegate that has been deallocated.
     @objc private func close() {
-        dismiss(animated: true, completion: nil)
+        guard let delegate else {
+            dismiss(animated: true, completion: nil)
+            return
+        }
+
+        delegate.bookmarkEditorCancelled(self)
     }
 
-    @objc private func save() {
+    @objc func save() {
         let rawName = form.values()[bookmarkNameTag] as? String ?? ""
         let isFavorite = (form.values()[showInTodayViewTag] as? Bool) ?? true
         let rawSelectedGroupID = selectedBookmarkGroupSection.selectedRows().first?.value ?? ""

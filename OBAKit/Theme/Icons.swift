@@ -118,6 +118,11 @@ nonisolated class Icons: NSObject {
         configureForButtonIcon(systemImage(named: "line.horizontal.3.decrease"))
     }
 
+    /// A gear icon, for controls that send the user to the system Settings app.
+    public class var settings: UIImage {
+        configureForButtonIcon(systemImage(named: "gearshape"))
+    }
+
     public class var addAlarm: UIImage {
         imageNamed("add_alarm")
     }
@@ -179,9 +184,23 @@ nonisolated class Icons: NSObject {
         imageNamed("header")
     }
 
+    /// The symbol name behind ``departureType(isActive:)``, for the SwiftUI stop
+    /// page — `Label(_:systemImage:)` takes a name, not a `UIImage`, and both
+    /// presentations have to show the same glyph.
+    public class func departureTypeSymbolName(isActive: Bool) -> String {
+        isActive
+            ? "antenna.radiowaves.left.and.right.circle.fill"
+            : "antenna.radiowaves.left.and.right.circle"
+    }
+
     /// An icon for the departure-type filter menu (antenna radiowaves).
-    public class var departureType: UIImage {
-        systemImage(named: "antenna.radiowaves.left.and.right")
+    ///
+    /// Fills when a non-default filter is applied, the same filled/unfilled pair
+    /// the route filter uses. In the sheet presentation the two filters are
+    /// sibling submenus, so each one has to carry its own state — neither glyph
+    /// can stand in for the other.
+    public class func departureType(isActive: Bool) -> UIImage {
+        systemImage(named: departureTypeSymbolName(isActive: isActive))
     }
 
     /// An icon for the sort-order menu (up/down arrows).

@@ -49,7 +49,7 @@ fi
 if [[ -f "Apps/${APP}/local.yml" ]]; then
   ok "Local overrides: Apps/${APP}/local.yml (gitignored)"
 else
-  say "  · No Apps/${APP}/local.yml yet. Copy Apps/${APP}/local.yml.example to override DEVELOPMENT_TEAM / bundle ID without editing the shared project.yml."
+  say "  · No Apps/${APP}/local.yml yet. Copy Apps/${APP}/local.yml.example to override DEVELOPMENT_TEAM without editing the shared project.yml. PRODUCT_BUNDLE_IDENTIFIER is not supported there — see local.yml.example."
 fi
 
 say ""

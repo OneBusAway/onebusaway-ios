@@ -8,7 +8,6 @@
 //
 
 import ActivityKit
-import CoreLocation
 import Combine
 import CoreLocation
 import SwiftUI
@@ -27,6 +26,7 @@ final class TripPageViewController: UIHostingController<TripPageView>,
     AlarmBuilderDelegate,
     BookmarkEditorDelegate,
     Idleable,
+    StopSheetCollapsibleContent,
     StopSheetSelfChromedContent {
 
     public let application: Application
@@ -40,7 +40,10 @@ final class TripPageViewController: UIHostingController<TripPageView>,
     private var alarmBuilderDeparture: ArrivalDeparture?
     private var isTrackingLiveActivity = false
 
-    public var idleTimerFailsafe: Timer?
+    /// `true` while the sheet showing this page sits at its `.tip` detent. Stored rather than
+    /// derived so every `render()` — the 30s refresh drives one — rebuilds the page with the
+    /// detent the sheet is actually at instead of resetting it to expanded.
+    private var isAtTip = false
 
     let providesOwnSheetChrome = true
 
@@ -86,6 +89,12 @@ final class TripPageViewController: UIHostingController<TripPageView>,
         // presenter re-decides it on every push and would otherwise put the bar
         // straight back.
         navigationController?.setNavigationBarHidden(true, animated: false)
+
+        // Re-render now that there is a `navigationController` to ask. `init`
+        // runs before this page is on anyone's stack, so the back row's glyph
+        // was built from an unanswerable question — and a modal would have come
+        // up wearing a chevron for the first frame.
+        render()
 
         // Everything the map draws, and the gates the action bar renders from,
         // are derived from these three together.
@@ -183,9 +192,48 @@ final class TripPageViewController: UIHostingController<TripPageView>,
             viewModel: viewModel,
             originTitle: originTitle,
             actions: makeActions(),
+            backBehavior: backBehavior,
             hasAlarm: false,
-            isTrackingLiveActivity: isTrackingLiveActivity
+            isTrackingLiveActivity: isTrackingLiveActivity,
+            isCollapsed: isAtTip
         )
+    }
+
+    // MARK: - StopSheetCollapsibleContent
+
+    /// Called by `StopSheetPresenter` whenever the sheet's detent changes. At `.tip` the page
+    /// drops its pinned action bar, which is taller than that detent, so the peek shows the back
+    /// row naming where the trip was opened from instead of a stranded Live Activity button.
+    func setAtTip(_ isAtTip: Bool) {
+        guard self.isAtTip != isAtTip else { return }
+        self.isAtTip = isAtTip
+        rootView.isCollapsed = isAtTip
+    }
+
+    // MARK: - Back
+
+    /// Which way out this presentation has. See `TripPageBackBehavior`.
+    var backBehavior: TripPageBackBehavior {
+        TripPageBackBehavior.forStackDepth(navigationController?.viewControllers.count ?? 0)
+    }
+
+    /// Back, resolved against the stack rather than assumed.
+    ///
+    /// The page is pushed from the Stop page and presented from the map sheet,
+    /// and `popViewController` only works for the first — as the root of its own
+    /// navigation controller it returns nil and leaves the rider pressing a
+    /// button that does nothing.
+    private func goBack() {
+        switch backBehavior {
+        case .pop:
+            navigationController?.popViewController(animated: true)
+        case .dismiss:
+            // UIKit forwards this up to whoever did the presenting, so it takes
+            // the wrapping navigation controller with it. The Done button
+            // `StopPageActionPresenter.presentWrappedInNavigation` installs
+            // dismisses the same way.
+            dismiss(animated: true)
+        }
     }
 
     private func makeActions() -> TripPageActions {
@@ -196,11 +244,9 @@ final class TripPageViewController: UIHostingController<TripPageView>,
         // A Live Activity reports a countdown to a stop. Without a departure
         // there is no stop and nothing to count down to.
         actions.canStartLiveActivity = departure != nil && ActivityAuthorizationInfo().areActivitiesEnabled
+        actions.canReportGhostBus = application.features.obaco == .running
 
-        actions.onBack = { [weak self] in
-            guard let self else { return }
-            navigationController?.popViewController(animated: true)
-        }
+        actions.onBack = { [weak self] in self?.goBack() }
         actions.onSelectStop = { [weak self] stopID in
             guard let self else { return }
             application.viewRouter.navigateTo(stopID: stopID, from: self)
@@ -209,6 +255,7 @@ final class TripPageViewController: UIHostingController<TripPageView>,
         actions.onSchedule = { [weak self] in self?.showSchedule() }
         actions.onAlarm = { [weak self] in self?.showAlarmPicker() }
         actions.onLiveActivity = { [weak self] in self?.startLiveActivity() }
+        actions.onReportGhostBus = { [weak self] in self?.showGhostBusReport() }
 
         return actions
     }
@@ -230,6 +277,98 @@ final class TripPageViewController: UIHostingController<TripPageView>,
             application: application
         )
         present(scheduleVC, animated: true)
+    }
+
+    /// Building the draft: prefer `ArrivalDeparture` fields (stop-level context) when a departure
+    /// is loaded, falling back to trip-level data from `TripConvertible` otherwise.
+    private func showGhostBusReport() {
+        let convertible = viewModel.tripConvertible
+        let trip = convertible.trip
+
+        var draft: GhostBusReportDraft
+        if let departure {
+            draft = GhostBusReportDraft(tripID: departure.tripID, serviceDate: departure.serviceDate)
+            draft.stopID = departure.stopID
+            draft.routeID = departure.routeID
+            draft.vehicleID = departure.vehicleID
+            draft.stopSequence = departure.stopSequence
+            draft.predicted = departure.predicted
+            draft.scheduledArrivalAt = departure.scheduledDate
+            draft.predictedArrivalAt = departure.predicted ? departure.arrivalDepartureDate : nil
+            draft.scheduleDeviationMinutes = departure.deviationFromScheduleInMinutes
+            draft.predictionLastUpdatedAt = departure.lastUpdated
+        } else {
+            // TripConvertible's initializers guarantee exactly one of arrivalDeparture,
+            // vehicleStatus, or tripDetails is set, so `serviceDate` always has a
+            // non-departure source to resolve from here. Without a departure there is
+            // no stop-level context.
+            draft = GhostBusReportDraft(tripID: trip.id, serviceDate: convertible.serviceDate)
+            draft.routeID = trip.routeID
+            draft.vehicleID = convertible.vehicleID
+        }
+
+        let context = GhostBusReportContext(
+            routeAndHeadsign: [departure?.routeShortName ?? trip.route?.shortName, departure?.tripHeadsign ?? trip.headsign]
+                .compactMap { $0 }
+                .joined(separator: " — "),
+            stopName: departure?.stop.name,
+            scheduledTime: draft.scheduledArrivalAt,
+            vehicleID: draft.vehicleID
+        )
+
+        let shareLocationKey = "GhostBusReport.shareLocation"
+        application.userDefaults.register(defaults: [shareLocationKey: true])
+
+        let host = UIHostingController(rootView: GhostBusReportView(
+            context: context,
+            defaultShareLocation: application.userDefaults.bool(forKey: shareLocationKey),
+            submit: { [weak self] waitDurationMinutes, comment, shareLocation in
+                // `submit` is `async throws`, and `GhostBusReportView.performSubmit` reads a
+                // plain return as success and dismisses the sheet. A guard failure has to
+                // throw, not return, or the rider is told their report went out when it
+                // never did. (Today `obacoService` is never nil once set — a region switch
+                // replaces it or leaves the old one — so this guard is defense against
+                // `self` deallocating and against that invariant changing, not a live path.)
+                guard let self, let obacoService = self.application.obacoService else {
+                    throw GhostBusReportSubmissionError.serviceUnavailable
+                }
+                self.application.userDefaults.set(shareLocation, forKey: shareLocationKey)
+
+                var submitted = draft
+                submitted.waitDurationMinutes = waitDurationMinutes
+                submitted.comment = comment
+                if shareLocation, let location = self.application.locationService.currentLocation {
+                    submitted.userLatitude = location.coordinate.latitude
+                    submitted.userLongitude = location.coordinate.longitude
+                }
+
+                _ = try await obacoService.postGhostBusReport(submitted, userID: self.application.userUUID)
+            },
+            onDismiss: { [weak self] in self?.presentedViewController?.dismiss(animated: true) }
+        ))
+
+        if let sheet = host.sheetPresentationController {
+            sheet.detents = [.medium(), .large()]
+            sheet.prefersGrabberVisible = true
+        }
+        present(host, animated: true)
+    }
+
+    /// Why a ghost bus report couldn't be submitted before ever reaching the network.
+    /// Surfaced through `GhostBusReportView`'s error alert, same as a network failure —
+    /// see the `submit` closure in `showGhostBusReport()`.
+    enum GhostBusReportSubmissionError: LocalizedError {
+        /// The submit closure couldn't reach an Obaco service — the presenting
+        /// controller deallocated, or `obacoService` was unexpectedly absent.
+        case serviceUnavailable
+
+        var errorDescription: String? {
+            OBALoc(
+                "trip_page.ghost_bus_report_unavailable",
+                value: "This report couldn't be submitted because the reporting service isn't available right now. Please try again later.",
+                comment: "Error shown when a ghost bus report can't be submitted because the region's Obaco service is unreachable."
+            )
+        }
     }
 
     private func showBookmarkEditor() {
@@ -314,10 +453,9 @@ final class TripPageViewController: UIHostingController<TripPageView>,
         ])
 
         do {
-            let activity = try Activity.request(
+            let activity = try Activity<TripAttributes>.requestProminent(
                 attributes: TripAttributes(staticData: staticData),
-                content: .init(state: contentState, staleDate: nil),
-                pushType: .token
+                state: contentState
             )
             application.liveActivityTracker.track(activity: activity, metadata: .init(departure))
             Logger.info("Started Live Activity with ID: \(activity.id)")

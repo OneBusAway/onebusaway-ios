@@ -8,6 +8,7 @@
 //
 
 import Testing
+import MapKit
 @testable import OBAKit
 
 /// Behavior tests for `SheetCoordinator`'s content-swap and stacked navigation,
@@ -238,5 +239,33 @@ final class SheetCoordinatorTests {
 
         coordinator.push(.tripPlanner) // stacked — must not alter currentDetents
         #expect(coordinator.currentDetents == AppSheetRoute.search.detentConfiguration.detents)
+    }
+
+    // MARK: - Search navigation shape
+
+    /// Search content-swaps the base sheet; disambiguation stacks *over* it, so the
+    /// search screen stays alive underneath and its query survives a Close.
+    @Test func `Search results stack over the search route rather than replacing it`() {
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        let response = SearchResponse(request: SearchRequest(query: "44", type: .route), results: [], boundingRegion: nil, error: nil)
+
+        coordinator.push(.search)
+        coordinator.push(.searchResults(response))
+
+        #expect(coordinator.currentRoute == .search)
+        #expect(coordinator.stackedRoutes.count == 1)
+    }
+
+    /// Picking a result unwinds search before opening the detail, so Close on the
+    /// detail lands on home — not on a stale search screen.
+    @Test func `Popping search after a result leaves home beneath the detail sheet`() {
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+
+        coordinator.push(.search)
+        coordinator.pop()
+        coordinator.push(.stopDetails(stopID: "1_75403"))
+
+        #expect(coordinator.currentRoute == .home)
+        #expect(coordinator.stackedRoutes == [.stopDetails(stopID: "1_75403")])
     }
 }

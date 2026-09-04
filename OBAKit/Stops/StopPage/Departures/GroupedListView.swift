@@ -91,7 +91,12 @@ struct GroupedListView: View {
         .onTapGesture { onToggleRoute(group.routeID) }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(groupAccessibilityLabel(group, status: status))
-        .accessibilityAddTraits(.isButton)
+        // `.updatesFrequently` so a focused card re-speaks its changing countdown,
+        // matching the legacy `StopArrivalView` and the flat departure rows.
+        .accessibilityAddTraits([.isButton, .updatesFrequently])
+        // Activation expands the card. See `DepartureRowView` for why a tap-driven
+        // row needs this on top of `.isButton`.
+        .accessibilityAction { onToggleRoute(group.routeID) }
         // Disclosure state: the card header's activation toggles the list of
         // departures beneath it, so announce which way it will go.
         .accessibilityValue(expandedRouteID == group.routeID
@@ -127,7 +132,7 @@ struct GroupedListView: View {
                 HStack(alignment: .center) {
                     routeBadge(for: next, routeColor: routeColor)
                     Spacer(minLength: 8)
-                    CountdownView(minutes: next.arrivalDepartureMinutes, isRealTime: status.isRealTime, color: Color(uiColor: status.color))
+                    CountdownView(minutes: next.arrivalDepartureMinutes, isRealTime: status.isRealTime, color: Color(uiColor: status.color), caption: formatters.arrivalDepartureCaption(for: next.arrivalDepartureStatus, temporalState: next.temporalState))
                 }
                 headsignText(next)
                 DepartureTimeText(display: timeDisplay(next))
@@ -150,7 +155,7 @@ struct GroupedListView: View {
                         }
                     }
                     Spacer(minLength: 8)
-                    CountdownView(minutes: next.arrivalDepartureMinutes, isRealTime: status.isRealTime, color: Color(uiColor: status.color))
+                    CountdownView(minutes: next.arrivalDepartureMinutes, isRealTime: status.isRealTime, color: Color(uiColor: status.color), caption: formatters.arrivalDepartureCaption(for: next.arrivalDepartureStatus, temporalState: next.temporalState))
                 }
             }
         }
@@ -262,7 +267,7 @@ struct GroupedListView: View {
                     HStack(spacing: 12) {
                         alarmIcon(for: departure)
                         Spacer(minLength: 8)
-                        CountdownView(minutes: departure.arrivalDepartureMinutes, isRealTime: status.isRealTime, color: Color(uiColor: status.color), emphasized: false)
+                        CountdownView(minutes: departure.arrivalDepartureMinutes, isRealTime: status.isRealTime, color: Color(uiColor: status.color), emphasized: false, caption: formatters.arrivalDepartureCaption(for: departure.arrivalDepartureStatus, temporalState: departure.temporalState))
                         tripChevron(departure)
                     }
                     DepartureTimeText(display: timeDisplay(departure))
@@ -289,7 +294,7 @@ struct GroupedListView: View {
                             }
                         }
                         Spacer(minLength: 8)
-                        CountdownView(minutes: departure.arrivalDepartureMinutes, isRealTime: status.isRealTime, color: Color(uiColor: status.color), emphasized: false)
+                        CountdownView(minutes: departure.arrivalDepartureMinutes, isRealTime: status.isRealTime, color: Color(uiColor: status.color), emphasized: false, caption: formatters.arrivalDepartureCaption(for: departure.arrivalDepartureStatus, temporalState: departure.temporalState))
                         tripChevron(departure)
                     }
                 }
@@ -304,7 +309,10 @@ struct GroupedListView: View {
             // as a custom action just like the header's alarm pill.
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(expandedRowAccessibilityLabel(departure, status: status))
-            .accessibilityAddTraits(.isButton)
+            .accessibilityAddTraits([.isButton, .updatesFrequently])
+            // Activation opens the trip. See `DepartureRowView` for why a
+            // tap-driven row needs this on top of `.isButton`.
+            .accessibilityAction { onSelectDeparture(departure) }
             .accessibilityActions {
                 if showsAlarmAffordance(for: departure) {
                     Button(alarmActionName(for: alarmLookup(departure))) {
@@ -341,9 +349,15 @@ struct GroupedListView: View {
     /// Self-describing VoiceOver label for one expanded departure row: route,
     /// headsign, minutes, live/scheduled status, and occupancy when present.
     private func expandedRowAccessibilityLabel(_ departure: ArrivalDeparture, status: DepartureStatus) -> String {
-        let fmt = OBALoc("stop_page.grouped.expanded_row.a11y_fmt", value: "Route %@ to %@, departs in %d minutes, %@", comment: "VoiceOver label for one expanded departure row inside a grouped route card: route, headsign, minutes, status.")
+        let identity = StopPageAccessibilityCopy.upcomingIdentity(
+            routeShortName: departure.routeShortName,
+            headsign: departure.tripHeadsign ?? "",
+            minutes: departure.arrivalDepartureMinutes,
+            arrivalDepartureStatus: departure.arrivalDepartureStatus,
+            adherence: status.accessibilityStatusDescription
+        )
         return DepartureAccessibility.label(
-            identity: String(format: fmt, departure.routeShortName, departure.tripHeadsign ?? "", departure.arrivalDepartureMinutes, status.accessibilityStatusDescription),
+            identity: identity,
             departure: departure,
             status: status,
             timeDisplay: timeDisplay(departure)
@@ -351,8 +365,14 @@ struct GroupedListView: View {
     }
 
     private func groupAccessibilityLabel(_ group: StopPageListBuilder.RouteGroup<ArrivalDeparture>, status: DepartureStatus) -> String {
-        let fmt = OBALoc("stop_page.grouped.a11y_fmt", value: "Route %@ to %@, next departure in %d minutes, %@. %d more departures loaded.", comment: "VoiceOver label for a grouped route card")
-        let label = String(format: fmt, group.next.routeShortName, group.next.tripHeadsign ?? "", group.next.arrivalDepartureMinutes, status.accessibilityStatusDescription, group.upcoming.count)
+        let label = StopPageAccessibilityCopy.groupedCardIdentity(
+            routeShortName: group.next.routeShortName,
+            headsign: group.next.tripHeadsign ?? "",
+            minutes: group.next.arrivalDepartureMinutes,
+            arrivalDepartureStatus: group.next.arrivalDepartureStatus,
+            adherence: status.accessibilityStatusDescription,
+            moreCount: group.upcoming.count
+        )
         // Appended after the sentence rather than comma-joined like the row
         // labels: this format string ends in a full stop, and VoiceOver's pause
         // there keeps the time attached to the card rather than to the count.

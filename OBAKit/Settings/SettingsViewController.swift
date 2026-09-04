@@ -71,6 +71,7 @@ class SettingsViewController: FormViewController {
             walkingSpeedUseHealthKitKey: application.userDataStore.walkingSpeedSource == .healthKit,
             stopUIReducedColorsTag: application.userDataStore.stopUIReducedColors,
             stopTripCompactModeTag: application.userDataStore.stopTripCompactMode,
+            transferBannerTag: application.userDataStore.showTransferArrivalBanner,
             alwaysShowFeedbackPrompt: application.reviewPromptPolicy.alwaysShowPrompt
         ])
     }
@@ -128,6 +129,10 @@ class SettingsViewController: FormViewController {
             application.setArrivalDepartureFilter(filter)
         }
 
+        if let showBanner = values[transferBannerTag] as? Bool {
+            application.userDataStore.showTransferArrivalBanner = showBanner
+        }
+
         saveWalkingSpeedValues(values)
     }
 
@@ -181,13 +186,19 @@ class SettingsViewController: FormViewController {
         store.walkingSpeedMetersPerSecond = decision.speed
     }
 
-    // MARK: - Arrival Display Section
+    // MARK: - Arrival & Departure Display Section
 
     private let arrivalFilterTag = "arrivalDepartureFilter"
+    private let transferBannerTag = UserDefaultsStore.showTransferArrivalBannerKey
 
     private lazy var arrivalDisplaySection: Section = {
         let section = Section(
-            OBALoc("settings_controller.arrival_display_section.title", value: "Arrival Display", comment: "Settings section title for controlling which arrivals/departures are shown")
+            header: OBALoc("settings_controller.arrival_display_section.title", value: "Arrival & Departure Display", comment: "Settings section title for controlling which arrivals/departures are shown"),
+            footer: OBALoc(
+                "settings_controller.arrival_display_section.transfer_banner.footer",
+                value: "Show transfer arrival banner: when on, opening a stop from a trip shows times relative to when you arrive. Turn that switch off for ordinary clock times and every departure.",
+                comment: "Settings > Arrival & Departure Display > Footer for the Show transfer arrival banner switch only, not the Show Departures filter"
+            )
         )
 
         section <<< AlertRow<ArrivalDepartureFilter> {
@@ -197,6 +208,15 @@ class SettingsViewController: FormViewController {
             $0.options = Array(ArrivalDepartureFilter.allCases)
             $0.displayValueFor = { $0?.displayTitle }
             $0.value = self.application.effectiveArrivalDepartureFilter
+        }
+
+        section <<< SwitchRow {
+            $0.tag = transferBannerTag
+            $0.title = OBALoc(
+                "settings_controller.arrival_display_section.transfer_banner",
+                value: "Show transfer arrival banner",
+                comment: "Settings > Arrival & Departure Display > Toggle that shows the Arriving at XX:XX via route banner when opening a stop from a trip"
+            )
         }
 
         return section

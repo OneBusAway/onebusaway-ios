@@ -19,18 +19,33 @@ import OBAKitCore
 /// and provides a link to view nearby transit stops.
 ///
 class MapItemViewController: UIViewController, AppContext {
-    var application: Application {
-        viewModel.application
-    }
+    let application: Application
+
+    private let mapItem: MKMapItem
+    private weak var modalDelegate: ModalDelegate?
+    private let removePinHandler: (() -> Void)?
+    private let planTripHandler: () -> Void
 
     /// The hosting controller that embeds the SwiftUI view
     private var hostingController: UIHostingController<AnyView>?
 
-    /// The view model that manages the business logic
-    private let viewModel: MapItemViewModel
+    /// The view model, built in `viewDidLoad` because `MapItemActions.uiKit` needs
+    /// this controller as its presenter — which isn't available until after
+    /// `super.init`.
+    private var viewModel: MapItemViewModel?
 
-    init(_ viewModel: MapItemViewModel) {
-        self.viewModel = viewModel
+    init(
+        application: Application,
+        mapItem: MKMapItem,
+        delegate: ModalDelegate?,
+        removePinHandler: (() -> Void)? = nil,
+        planTripHandler: @escaping () -> Void
+    ) {
+        self.application = application
+        self.mapItem = mapItem
+        self.modalDelegate = delegate
+        self.removePinHandler = removePinHandler
+        self.planTripHandler = planTripHandler
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -39,12 +54,26 @@ class MapItemViewController: UIViewController, AppContext {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        let viewModel = MapItemViewModel(
+            mapItem: mapItem,
+            application: application,
+            actions: .uiKit(presenter: self, delegate: modalDelegate, application: application),
+            removePinHandler: removePinHandler,
+            planTripHandler: planTripHandler
+        )
+        self.viewModel = viewModel
+
         view.backgroundColor = .clear
 
-        viewModel.setPresentingViewController(self)
+        // The blurred surface used to live inside `MapItemView`. It's panel chrome,
+        // not content — and inside a SwiftUI sheet it fights the sheet's own
+        // material — so the UIKit host owns it now.
+        let background = UIVisualEffectView(effect: UIBlurEffect(style: .systemUltraThinMaterial))
+        view.addSubview(background)
+        background.pinToSuperview(.edges)
 
-        let mapItemView = MapItemView(viewModel: viewModel)
-            .environment(\.coreApplication, viewModel.application)
+        let mapItemView = MapItemView(viewModel: viewModel, showsShareButton: true)
+            .environment(\.coreApplication, application)
 
         let hostingController = UIHostingController(rootView: AnyView(mapItemView))
         hostingController.view.backgroundColor = .clear

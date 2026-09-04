@@ -230,6 +230,32 @@ final class UserDefaultsStoreTests: OBATestCase {
         #expect(self.userDefaultsStore.userDefaults.bool(forKey: UserDefaultsStore.stopTripCompactModeKey))
     }
 
+    // MARK: - Transfer Arrival Banner
+
+    @Test func `Transfer arrival banner defaults on`() {
+        #expect(self.userDefaultsStore.showTransferArrivalBanner)
+        #expect(UserDefaultsStore.showTransferArrivalBannerKey == "showTransferArrivalBanner")
+    }
+
+    @Test func `Transfer arrival banner off persists and drops displayed context`() {
+        let context = TransferContext(
+            arrivalTime: Date(timeIntervalSince1970: 1_700_000_000),
+            fromRouteShortName: "10",
+            fromTripHeadsign: "Capitol Hill"
+        )
+        #expect(self.userDefaultsStore.displayedTransferContext(context) == context)
+
+        userDefaultsStore.showTransferArrivalBanner = false
+        #expect(!self.userDefaultsStore.showTransferArrivalBanner)
+        #expect(self.userDefaultsStore.displayedTransferContext(context) == nil)
+
+        let reloaded = UserDefaultsStore(userDefaults: userDefaults)
+        #expect(!reloaded.showTransferArrivalBanner)
+        #expect(reloaded.displayedTransferContext(context) == nil)
+        #expect(self.userDefaultsStore.userDefaults.bool(forKey: UserDefaultsStore.showTransferArrivalBannerKey) == false)
+    }
+    }
+
     // MARK: - Survey Properties
 
     @Test func `Survey user identifier generates UUID`() {

@@ -158,6 +158,7 @@ class StopViewModel: ObservableObject {
     /// Cache for trip-panel approach timelines, invalidated on each refresh.
 
     private var alarmFiredCancellable: AnyCancellable?
+    private var userDefaultsCancellable: AnyCancellable?
 
     // MARK: - Init Context
 
@@ -222,6 +223,14 @@ class StopViewModel: ObservableObject {
             .publisher(for: .alarmFired)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in self?.rebuildAlarmIndex() }
+
+        // Settings is presented modally from More, so this VM can outlive a
+        // filter change. Re-read the persisted value; skip the write path so
+        // we don't echo defaults back at ourselves (#1273).
+        userDefaultsCancellable = NotificationCenter.default
+            .publisher(for: UserDefaults.didChangeNotification, object: environment.userDefaults)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.syncArrivalDepartureFilterFromDefaults() }
     }
 
     /// Backward-compatible entry point for existing callers that pass `Application` directly.
@@ -511,6 +520,16 @@ class StopViewModel: ObservableObject {
         guard filter != arrivalDepartureFilter else { return }
         arrivalDepartureFilter = filter
         environment.setArrivalDepartureFilter(filter)
+    }
+
+    /// Re-reads the persisted arrival/departure filter after an external write
+    /// (Settings). No-op when the published value already matches — this is the
+    /// hot path for `UserDefaults.didChangeNotification` fan-out.
+    private func syncArrivalDepartureFilterFromDefaults() {
+        let persisted = environment.effectiveArrivalDepartureFilter
+        if persisted != arrivalDepartureFilter {
+            arrivalDepartureFilter = persisted
+        }
     }
 
     /// `true` when the user has never saved preferences for this stop, so the
@@ -806,6 +825,13 @@ class StopViewModel: ObservableObject {
         liveActivityToastDismissTask = Task { [weak self] in
             do {
                 try await Task.sleep(for: .seconds(2))
+                // `cancel()` only interrupts the sleep while it is still
+                // suspended. Once it has resumed, this continuation is already
+                // queued on the main actor behind the newer signal that cancelled
+                // it — and that signal has set the flag back to true. Clearing it
+                // here would dismiss the *new* toast a moment after it appeared,
+                // which is the behaviour the cancellation exists to prevent.
+                try Task.checkCancellation()
             } catch {
                 // Superseded by a newer signal; that signal's task owns the dismissal.
                 return

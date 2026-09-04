@@ -10,6 +10,8 @@
 /* An error message that informs the user that the wrong kind of content was received from the server. */
 "api_error.invalid_content_type_fmt" = "Inaasahan naming makatanggap ng %1$@ na data mula sa server, pero %2$@ ang natanggap namin.";
 
+"api_error.invalid_response_data_fmt" = "Nagbalik ang server para sa %1$@ ng data na hindi mabasa ng app na ito. Kadalasan ay problema ito sa stop o agency feed, hindi sa %2$@. Pakisubukang muli sa ilang sandali.";
+
 /* An error that tells the user that the network connection isn't working. */
 "api_error.network_failure" = "Hindi makakonekta sa Internet o sa server. Pakisuri ang iyong koneksyon sa network at subukang muli.";
 
@@ -216,6 +218,10 @@
 
 /* Use for vehicles arriving in X minutes. */
 "formatters.arrives_in_x_min_fmt" = "Darating sa loob ng %d min";
+"formatters.caption.arrives" = "Darating";
+"formatters.caption.departs" = "Aalis";
+"formatters.caption.arrived" = "Dumating na";
+"formatters.caption.departed" = "Umalis";
 
 /* Use for vehicles arriving now. */
 "formatters.arriving_now" = "Dumarating na";
@@ -337,6 +343,9 @@
 /* Describes an on-time departure. e.g. departed on time. */
 "formatters.deviation.departure_past_on_time" = "umalis sa oras";
 
+/* Overflowing map-pin route list. The argument is the visible names; U+2026 marks that more routes exist. e.g. '10, 12, 49…' */
+"formatters.map_routes_overflow_fmt" = "%@…";
+
 /* Short formatted time text for arrivals/departures occurring now. */
 "formatters.now" = "NGAYON";
 
@@ -378,6 +387,12 @@
 
 /* Short text shown when a departure occurs at the same time as the rider's transfer arrival. */
 "formatters.transfer.on_arrival" = "NGAYON";
+
+/* The body of the tip pointing at the map toolbar's basemap button, which opens the Map sheet where the rental layers are turned on and off */
+"map_layers_tip.message" = "Pindutin dito para ipakita ang mga bisikleta at scooter sa mapa.";
+
+/* Title for the tip pointing at the map toolbar's basemap button when a region gains bike and scooter rental map layers */
+"map_layers_tip.title" = "Bago: Mga Bisikleta at Scooter";
 
 /* Error when a route has no real-time vehicle tracking data. */
 "nearby_trip_matcher.error.no_realtime" = "Walang available na real-time na data ng pagsubaybay para sa rutang ito.";

@@ -93,7 +93,18 @@ struct DepartureRowView: View {
         .onTapGesture(perform: onTap)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityText)
-        .accessibilityAddTraits(.isButton)
+        // `.updatesFrequently` so a focused row re-speaks its changing countdown,
+        // matching the legacy `StopArrivalView`'s `[.button, .updatesFrequently]`.
+        // VoiceOver re-reads only the focused element, so this isn't chatty.
+        .accessibilityAddTraits([.isButton, .updatesFrequently])
+        // THE contract for every tap-driven row on this page, restated nowhere
+        // else: `.isButton` only changes the spoken trait, and the row's tap lives
+        // on `.onTapGesture`, which assistive tech cannot reach — so without an
+        // explicit default action VoiceOver announces "button" and activating does
+        // nothing. A default `.accessibilityAction` touches only the accessibility
+        // layer, so it avoids the nested-Button gesture conflict called out on
+        // `alarmCircleButton`.
+        .accessibilityAction { onTap() }
         .accessibilityActions {
             if showsAlarmAffordance {
                 Button(hasAlarm ? removeAlarmTitle : Strings.addAlarm) {
@@ -158,7 +169,8 @@ struct DepartureRowView: View {
         CountdownView(
             minutes: departure.arrivalDepartureMinutes,
             isRealTime: status.isRealTime,
-            color: dimmed ? Color(uiColor: .tertiaryLabel) : Color(uiColor: status.color)
+            color: dimmed ? Color(uiColor: .tertiaryLabel) : Color(uiColor: status.color),
+            caption: formatters.arrivalDepartureCaption(for: departure.arrivalDepartureStatus, temporalState: departure.temporalState)
         )
     }
 
@@ -188,8 +200,13 @@ struct DepartureRowView: View {
             let fmt = OBALoc("stop_page.row.a11y_past_fmt", value: "Route %@ to %@, departed %d minutes ago, %@", comment: "VoiceOver label for a departure row that has already departed: route, headsign, minutes ago, status.")
             return String(format: fmt, departure.routeShortName, departure.tripHeadsign ?? "", abs(departure.arrivalDepartureMinutes), status.accessibilityStatusDescription)
         case .normal, .missed:
-            let fmt = OBALoc("stop_page.row.a11y_fmt", value: "Route %@ to %@, departs in %d minutes, %@", comment: "VoiceOver label for a departure row: route, headsign, minutes, status.")
-            return String(format: fmt, departure.routeShortName, departure.tripHeadsign ?? "", departure.arrivalDepartureMinutes, status.accessibilityStatusDescription)
+            return StopPageAccessibilityCopy.upcomingIdentity(
+                routeShortName: departure.routeShortName,
+                headsign: departure.tripHeadsign ?? "",
+                minutes: departure.arrivalDepartureMinutes,
+                arrivalDepartureStatus: departure.arrivalDepartureStatus,
+                adherence: status.accessibilityStatusDescription
+            )
         }
     }
 }
@@ -233,7 +250,7 @@ extension View {
                     Label(Strings.addBookmark, systemImage: "bookmark")
                 }
                 Button(action: actions.onShareTrip) {
-                    Label(OBALoc("stop_page.row.share_trip", value: "Share Trip", comment: "Context menu action that shares the trip after choosing a destination stop"), systemImage: "square.and.arrow.up")
+                    Label(Strings.shareTrip, systemImage: "square.and.arrow.up")
                 }
             }, preview: {
                 actions.makePreview()

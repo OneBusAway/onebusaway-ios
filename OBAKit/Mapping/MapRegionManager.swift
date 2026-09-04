@@ -248,6 +248,7 @@ public class MapRegionManager: NSObject,
         mapView.showsScale = mapViewShowsScale
         mapView.showsTraffic = mapViewShowsTraffic
         mapView.mapType = userSelectedMapType
+        currentVisibleMapRect = mapView.visibleMapRect
         applyPointsOfInterestVisibility()
 
         registerAnnotationViews(mapView: mapView)
@@ -364,6 +365,20 @@ public class MapRegionManager: NSObject,
     }
 
     // MARK: - Map Layers
+
+    /// The viewport the layer pipeline last saw.
+    ///
+    /// Seeded from the map view so the UIKit path is unchanged, then written by
+    /// whichever host is driving. The panel must write it: the `MKMapView` this
+    /// manager owns is never added to a view hierarchy in panel mode, so its
+    /// `visibleMapRect` is not the viewport the rider is actually looking at.
+    ///
+    /// The one place that moves the unhosted map view behind the panel's back is
+    /// `regionsService(_:updatedRegion:)`, which frames the new region on it.
+    /// That does not clobber this value: `regionDidChangeAnimated` does not fire
+    /// for a map view with no window, so the whole-region rect is never
+    /// republished to the layers. `MapLayerViewportForwardingTests` pins that.
+    public private(set) var currentVisibleMapRect: MKMapRect = .world
 
     /// Registered toggleable data layers, in Map sheet order.
     public private(set) var mapLayers: [MapLayer] = []
@@ -501,11 +516,24 @@ public class MapRegionManager: NSObject,
         }
     }
 
+    /// Stop IDs the rider is actively looking at — from either a `Stop` or `Bookmark`
+    /// annotation selection. Used to preserve callouts when annotations reload.
+    private var selectedStopIDs: Set<StopID> {
+        Set(mapView.selectedAnnotations.compactMap { annotation -> StopID? in
+            if let stop = annotation as? Stop {
+                return stop.id
+            }
+            if let bookmark = annotation as? Bookmark {
+                return bookmark.stopID
+            }
+            return nil
+        })
+    }
+
     /// Removes stop annotations for the layer toggle, but never a stop the rider is
     /// actively looking at: a searched or selected stop is explicit user intent and
     /// outranks the browse-layer preference (bookmarks get the same exemption).
     private func removeStopAnnotationsPreservingSelection() {
-        let selectedStopIDs = Set(mapView.selectedAnnotations.compactMap { ($0 as? Stop)?.id })
         let stopsToRemove = mapView.annotations.compactMap { $0 as? Stop }.filter { !selectedStopIDs.contains($0.id) }
         mapView.removeAnnotations(stopsToRemove)
     }
@@ -513,12 +541,17 @@ public class MapRegionManager: NSObject,
     /// Feeds the current viewport to a layer, applying its zoom window: outside
     /// the window the layer receives nil and removes its annotations.
     private func forwardViewport(to layer: MapLayer) {
-        let visibleRect = mapView.visibleMapRect
+        let visibleRect = currentVisibleMapRect
         let insideWindow = layer.zoomWindow.contains(visibleHeight: visibleRect.height)
         layer.viewportDidChange(insideWindow ? visibleRect : nil)
     }
 
-    private func updateMapLayers() {
+    /// Records a new viewport and fans it out to every enabled layer.
+    ///
+    /// Called by both hosts: `mapView(_:regionDidChangeAnimated:)` on the UIKit
+    /// path, and `.onMapCameraChange` on the SwiftUI panel.
+    public func mapLayersViewportDidChange(_ rect: MKMapRect) {
+        currentVisibleMapRect = rect
         for layer in mapLayers where isMapLayerEnabled(id: layer.id) {
             forwardViewport(to: layer)
         }
@@ -697,6 +730,12 @@ public class MapRegionManager: NSObject,
             !existingStopIDs.contains($0.id)
         } : []
         mapView.addAnnotations(stopsToAdd)
+
+        // Removing a sibling Stop for a bookmarked stopID shouldn't refresh a
+        // selected Bookmark — rebinding its view dismisses an open callout.
+        let selectedBookmarkStopIDs = Set(mapView.selectedAnnotations.compactMap { ($0 as? Bookmark)?.stopID })
+        affectedStopIDs.subtract(selectedBookmarkStopIDs)
+
         refreshAnnotationViews(for: Array(affectedStopIDs))
         notifyDelegatesStopsChanged()
     }
@@ -716,6 +755,12 @@ public class MapRegionManager: NSObject,
                   let view = mapView.view(for: annotation) as? StopAnnotationView else {
                 continue
             }
+
+            // Rebinding a selected annotation dismisses its callout; skip it.
+            guard !mapView.selectedAnnotations.contains(where: { $0 === annotation }) else {
+                continue
+            }
+
             view.prepareForReuse()
             view.annotation = annotation
             view.delegate = self
@@ -919,7 +964,11 @@ public class MapRegionManager: NSObject,
 
     /// Above this visible-map-rect height (map points), stop pins are too
     /// zoomed-out for their under-pin label. Shared with `MapPanelRootView`.
-    public static let requiredHeightToShowExtraStopData = 7000.0
+    ///
+    /// 7,000 still showed route lists at a city-block zoom where pins overlap
+    /// and the text is unreadable. 5,000 keeps labels for street-level zoom
+    /// where they help, and hides them sooner when zoomed out (#132).
+    public static let requiredHeightToShowExtraStopData = 5000.0
 
     /// Height half of the under-pin label gate. Callers combine it with the
     /// standard-map-type and "show labels" default checks.
@@ -951,6 +1000,18 @@ public class MapRegionManager: NSObject,
 
     // MARK: - Map View Delegate
 
+    /// Applies the current under-pin label gate to every bookmark pin on the map.
+    /// Bookmarks stay visible through search, zoom, and a disabled stops layer,
+    /// so this must run before those early returns.
+    func refreshBookmarkAnnotationLabels() {
+        let hideExtra = shouldHideExtraStopAnnotationData
+        for annotation in mapView.annotations where annotation is Bookmark {
+            if let stopView = mapView.view(for: annotation) as? StopAnnotationView {
+                stopView.isHidingExtraStopAnnotationData = hideExtra
+            }
+        }
+    }
+
     private func reloadStopAnnotations() {
         // Ahead of every early return below, including the search-result guard.
         // The pill states something about the current zoom, so it has to be
@@ -960,6 +1021,10 @@ public class MapRegionManager: NSObject,
         // cancelled. Mirrors the ordering `MapPanelRootView.onMapCameraChange`
         // already uses.
         updateZoomWarningOverlay()
+
+        // Bookmark pins are user content, so their label gate must refresh even
+        // when stop loading is suppressed by search, zoom, or a disabled layer.
+        refreshBookmarkAnnotationLabels()
 
         if searchResponseOverridesStopLoading() {
             return
@@ -981,9 +1046,8 @@ public class MapRegionManager: NSObject,
             return
         }
 
-        let visibleStops = mapView.annotations(in: mapView.visibleMapRect).filter(type: Stop.self)
-        for s in visibleStops {
-            if let stopView = mapView.view(for: s) as? StopAnnotationView {
+        for stop in mapView.annotations(in: mapView.visibleMapRect).filter(type: Stop.self) {
+            if let stopView = mapView.view(for: stop) as? StopAnnotationView {
                 stopView.isHidingExtraStopAnnotationData = shouldHideExtraStopAnnotationData
             }
         }
@@ -1013,7 +1077,7 @@ public class MapRegionManager: NSObject,
 
         reloadRegionAnnotations()
         reloadStopAnnotations()
-        updateMapLayers()
+        mapLayersViewportDidChange(mapView.visibleMapRect)
     }
 
     public func mapView(_ mapView: MKMapView, didSelect annotation: any MKAnnotation) {

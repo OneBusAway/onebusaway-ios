@@ -291,7 +291,7 @@ final class ErrorClassifierTests {
 
     // MARK: - DecodingError Classification
 
-    @Test func `Classify decoding error with region name becomes server unavailable`() {
+    @Test func `Classify decoding error with region name becomes invalid response data`() {
         let decodingError = DecodingError.keyNotFound(
             AnyCodingKey(stringValue: "data")!,
             DecodingError.Context(codingPath: [], debugDescription: "No value associated with key")
@@ -304,11 +304,12 @@ final class ErrorClassifierTests {
         }
 
         switch apiError {
-        case .serverUnavailable(let regionName, let statusCode):
+        case .invalidResponseData(let regionName):
             #expect(regionName == "San Diego")
-            #expect(statusCode == nil)
+        case .serverUnavailable:
+            Issue.record("DecodingError must not be classified as an unreachable server")
         default:
-            Issue.record("Expected .serverUnavailable, got \(apiError)")
+            Issue.record("Expected .invalidResponseData, got \(apiError)")
         }
     }
 
@@ -320,7 +321,8 @@ final class ErrorClassifierTests {
 
         let description = result.localizedDescription
         #expect(!description.contains("couldn't be read"))
-        #expect(description.contains("server"))
+        #expect(description.contains("feed"))
+        #expect(!description.contains("experiencing problems"))
     }
 
     // MARK: - NSURLError Classification
@@ -447,6 +449,23 @@ final class ErrorClassifierTests {
         }
     }
 
+    @Test func `Classify invalid response data passes through`() {
+        let error = APIError.invalidResponseData(regionName: "Puget Sound")
+        let result = ErrorClassifier.classify(error, regionName: "Tampa")
+
+        guard let apiError = result as? APIError else {
+            Issue.record("Expected APIError, got \(type(of: result))")
+            return
+        }
+
+        switch apiError {
+        case .invalidResponseData(let regionName):
+            #expect(regionName == "Puget Sound")
+        default:
+            Issue.record("Expected .invalidResponseData to pass through, got \(apiError)")
+        }
+    }
+
     @Test func `Classify cellular data restricted passes through`() {
         let error = APIError.cellularDataRestricted
         let result = ErrorClassifier.classify(error, regionName: "Puget Sound")
@@ -482,7 +501,19 @@ final class ErrorClassifierTests {
         let description = error.localizedDescription
 
         #expect(description.contains("Puget Sound"))
-        #expect(description.contains("down"))
+        #expect(description.contains("Unable to reach"))
+        #expect(description.contains("VPN"))
+        #expect(!description.contains("appears to be down right now"))
+    }
+
+    @Test func `Invalid response data error description does not claim the server is down`() {
+        let error = APIError.invalidResponseData(regionName: "San Diego")
+        let description = error.localizedDescription
+
+        #expect(description.contains("San Diego"))
+        #expect(description.contains("can't read"))
+        #expect(!description.contains("down"))
+        #expect(!description.contains("VPN"))
     }
 
     @Test func `Cellular data restricted error description mentions settings`() {

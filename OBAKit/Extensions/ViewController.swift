@@ -17,41 +17,38 @@ protocol AppContext where Self: UIViewController {
 /// Describes a class that can disable and reenable the UIApplication idle timer.
 @MainActor
 public protocol Idleable: NSObjectProtocol {
-    /// The timer that turns the UIApplication idle timer back on after a 10 minute time period.
-    var idleTimerFailsafe: Timer? { get set }
-
     /// The OBA application object, which is used to retrieve the `UIApplication`.
     var application: Application { get }
 
-    /// Disables the idle timer and creates the `idleTimerFailsafe`.
+    /// Takes a hold on the idle timer, so the display stays awake while this
+    /// screen is visible.
     func disableIdleTimer()
 
-    /// Reenables the idle timer and invalidates the `idleTimerFailsafe`.
+    /// Returns this screen's hold on the idle timer.
     func enableIdleTimer()
 }
 
 /// A view controller that can disable and reenable the UIApplication idle timer.
+///
+/// Both sides delegate to `ScreenAwakeCoordinator` rather than writing
+/// `isIdleTimerDisabled` directly. That global has SwiftUI screens holding
+/// leases on it too (`keepsScreenAwake()`), and one screen unconditionally
+/// switching it back on as it leaves would let the display sleep out from under
+/// a screen that is still up. The coordinator restores it exactly once, when the
+/// last holder goes away, and owns the failsafe that caps the hold.
 @MainActor
 public extension Idleable where Self: UIViewController {
     func disableIdleTimer() {
-        application.isIdleTimerDisabled = true
-
-        idleTimerFailsafe?.invalidate()
-        let idleTimerFailsafeInterval: TimeInterval = 600 // 10 minutes.
-        self.idleTimerFailsafe = Timer.scheduledTimer(withTimeInterval: idleTimerFailsafeInterval, repeats: false) { [weak self] _ in
-            guard let self = self else { return }
-            Task { @MainActor in
-                self.application.isIdleTimerDisabled = false
-            }
-        }
+        ScreenAwakeCoordinator.shared.acquire(owner: ObjectIdentifier(self))
     }
 
     nonisolated func enableIdleTimer() {
-        Task { @MainActor [weak self] in
-            guard let self = self else { return }
-            self.application.isIdleTimerDisabled = false
-            self.idleTimerFailsafe?.invalidate()
-            self.idleTimerFailsafe = nil
+        // Captured up front rather than through a `weak self` inside the hop: a
+        // controller deallocated before the hop runs would otherwise never
+        // return its lease, stranding the timer disabled.
+        let owner = ObjectIdentifier(self)
+        Task { @MainActor in
+            ScreenAwakeCoordinator.shared.release(owner: owner)
         }
     }
 }

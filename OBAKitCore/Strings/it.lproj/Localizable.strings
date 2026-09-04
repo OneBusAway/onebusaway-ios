@@ -10,6 +10,8 @@
 /* An error message that informs the user that the wrong kind of content was received from the server. */
 "api_error.invalid_content_type_fmt" = "Si sarebbero dovuti ricevere %1$@ dati dal server, invece ne sono stati ricevuti %2$@.";
 
+"api_error.invalid_response_data_fmt" = "Il server di %1$@ ha restituito dati che questa app non può leggere. Di solito è un problema con la fermata o il feed dell'agenzia, non con %2$@. Riprova tra poco.";
+
 /* An error that tells the user that the network connection isn't working. */
 "api_error.network_failure" = "Impossibile connettersi a Internet o al server. Controlla la connessione e riprova.";
 
@@ -216,6 +218,10 @@
 
 /* Use for vehicles arriving in X minutes. */
 "formatters.arrives_in_x_min_fmt" = "In arrivo tra %d min";
+"formatters.caption.arrives" = "Arriva";
+"formatters.caption.departs" = "Parte";
+"formatters.caption.arrived" = "Arrivato";
+"formatters.caption.departed" = "Partito";
 
 /* Use for vehicles arriving now. */
 "formatters.arriving_now" = "In arrivo";
@@ -337,6 +343,9 @@
 /* Describes an on-time departure. e.g. departed on time. */
 "formatters.deviation.departure_past_on_time" = "partito in orario";
 
+/* Overflowing map-pin route list. The argument is the visible names; U+2026 marks that more routes exist. e.g. '10, 12, 49…' */
+"formatters.map_routes_overflow_fmt" = "%@…";
+
 /* Short formatted time text for arrivals/departures occurring now. */
 "formatters.now" = "ADESSO";
 
@@ -378,6 +387,12 @@
 
 /* Short text shown when a departure occurs at the same time as the rider's transfer arrival. */
 "formatters.transfer.on_arrival" = "ADESSO";
+
+/* The body of the tip pointing at the map toolbar's basemap button, which opens the Map sheet where the rental layers are turned on and off */
+"map_layers_tip.message" = "Tocca qui per mostrare bici e monopattini sulla mappa.";
+
+/* Title for the tip pointing at the map toolbar's basemap button when a region gains bike and scooter rental map layers */
+"map_layers_tip.title" = "Novità: bici e monopattini";
 
 /* Error when a route has no real-time vehicle tracking data. */
 "nearby_trip_matcher.error.no_realtime" = "Nessun dato di tracciamento in tempo reale disponibile per questa linea.";

@@ -148,6 +148,57 @@ final class FormattersTests: OBATestCase {
         #expect(formatters.deviationLabel(for: arrivalDeparture) == Strings.scheduledNotRealTime)
     }
 
+    /// The component overload exists for callers holding a view model rather than
+    /// the `ArrivalDeparture` it came from — `ArrivalDepartureItem` carries the
+    /// four values and not the model. Same gate, so `.unknown` must produce the
+    /// same string the model form does.
+    @Test func `Deviation label component form says scheduled for unknown status`() {
+        let formatters = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
+
+        let label = formatters.deviationLabel(
+            scheduleStatus: .unknown,
+            temporalState: .future,
+            arrivalDepartureStatus: .arriving,
+            scheduleDeviation: 0)
+
+        #expect(label == Strings.scheduledNotRealTime)
+    }
+
+    /// And with a real prediction it must fall through to the deviation phrase
+    /// rather than short-circuiting — otherwise the gate would swallow every case.
+    @Test func `Deviation label component form uses the deviation phrase when predicted`() {
+        let formatters = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
+
+        let label = formatters.deviationLabel(
+            scheduleStatus: .delayed,
+            temporalState: .future,
+            arrivalDepartureStatus: .arriving,
+            scheduleDeviation: 2)
+
+        #expect(label == "arrives 2 min late")
+    }
+
+    /// The two forms are one implementation, so they must agree on the same trip.
+    /// A drift here is exactly what the third hand-rolled copy in
+    /// `StopArrivalItem` used to allow.
+    @Test func `Deviation label forms agree on the same trip`() throws {
+        let formatters = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
+        let arrivalDeparture = try Fixtures.arrivalDeparture(
+            predictedArrival: 1_700_000_120,
+            predictedDeparture: 1_700_000_120
+        )
+
+        let fromModel = formatters.deviationLabel(for: arrivalDeparture)
+        let fromComponents = formatters.deviationLabel(
+            scheduleStatus: arrivalDeparture.scheduleStatus,
+            temporalState: arrivalDeparture.temporalState,
+            arrivalDepartureStatus: arrivalDeparture.arrivalDepartureStatus,
+            scheduleDeviation: arrivalDeparture.deviationFromScheduleInMinutes)
+
+        #expect(fromModel == fromComponents)
+        #expect(fromModel == "arrives 2 min late")
+    }
+
     /// A payload can carry predicted timestamps while declaring
     /// `predicted: false`; the gate is the flag, not the fields — the same rule
     /// `DepartureTimeDisplay` applies before striking through a time.
@@ -160,5 +211,76 @@ final class FormattersTests: OBATestCase {
         )
 
         #expect(formatters.deviationLabel(for: arrivalDeparture) == Strings.scheduledNotRealTime)
+    }
+
+    // MARK: - Arrival vs departure caption (#447)
+
+    @Test func `Caption is Arrives for a vehicle arriving at this stop`() {
+        let formatters = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
+        #expect(formatters.arrivalDepartureCaption(for: .arriving, temporalState: .future) == "Arrives")
+    }
+
+    @Test func `Caption is Departs for a vehicle leaving this stop`() {
+        let formatters = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
+        #expect(formatters.arrivalDepartureCaption(for: .departing, temporalState: .future) == "Departs")
+    }
+
+    @Test func `Past caption uses arrived or departed`() {
+        let formatters = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
+        #expect(formatters.arrivalDepartureCaption(for: .arriving, temporalState: .past) == "Arrived")
+        #expect(formatters.arrivalDepartureCaption(for: .departing, temporalState: .past) == "Departed")
+    }
+
+    // MARK: - Map route labels (#132)
+
+    @Test func `Formatted map routes within the limit lists every route`() throws {
+        let routes = try makeRoutes(shortNames: ["10", "20", "30"])
+        let label = try #require(Formatters.formattedMapRoutes(routes, limit: 3))
+        #expect(label == "10, 20, 30")
+        #expect(!label.contains("..."))
+        #expect(!label.hasPrefix("Routes:"))
+    }
+
+    /// U+2026, not three ASCII periods: `StopAnnotationView.titleLabel` truncates
+    /// with UIKit's own `…`, and mixing the two glyphs is the inconsistency #514
+    /// is about. The marker lives in `OBALoc` so translators can substitute
+    /// locale-conventional overflow marks (zh-Hans `……`).
+    @Test func `Formatted map routes over the limit appends ellipsis`() throws {
+        let routes = try makeRoutes(shortNames: ["10", "20", "30", "40", "62"])
+        let label = try #require(Formatters.formattedMapRoutes(routes, limit: 3))
+        #expect(label == "10, 20, 30…")
+        #expect(label.contains("\u{2026}"))
+        #expect(!label.contains("..."))
+        #expect(!label.contains("more"))
+        #expect(!label.hasPrefix("Routes:"))
+    }
+
+    /// The pin label and the callout must agree. Home/Recent still use
+    /// `Stop.subtitle` (`"Routes: …"` with every route) — that is not a map
+    /// surface, so it is left alone.
+    @Test func `Map callout uses the overflowing map route list, not plus-more`() throws {
+        let stop = try #require(Fixtures.loadSomeStops().first)
+        stop.routes = try makeRoutes(shortNames: ["10", "20", "30", "40", "62"])
+
+        let callout = stop.mapCalloutText
+        #expect(callout == "#\(stop.code)\n10, 20, 30…")
+        #expect(!callout.contains("Routes:"))
+
+        let subtitle = try #require(stop.subtitle)
+        #expect(subtitle.hasPrefix("#\(stop.code)"))
+        #expect(subtitle.contains("Routes:"))
+        #expect(subtitle.contains("62"))
+        #expect(!subtitle.contains("\u{2026}"))
+    }
+
+    private func makeRoutes(shortNames: [String]) throws -> [Route] {
+        try shortNames.enumerated().map { index, shortName in
+            try Fixtures.dictionaryToModel(type: Route.self, dictionary: [
+                "agencyId": "test_agency",
+                "id": "route_\(index)",
+                "shortName": shortName,
+                "type": 3
+            ])
+        }
     }
 }

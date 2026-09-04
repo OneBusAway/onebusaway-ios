@@ -215,4 +215,69 @@ final class BundleFeedbackConfigTests {
         let bundle = try FeedbackConfigBundle.create(config: ["FeedbackPromptEnabled": false])
         #expect(!bundle.feedbackPromptEnabled)
     }
+
+    // MARK: - OBAKitConfig.MoreTab
+
+    @Test func `More tab configuration uses defaults when MoreTab is absent`() throws {
+        let bundle = try FeedbackConfigBundle.create(config: [:])
+        let more = bundle.moreTabConfiguration
+        #expect(more.headerSupportText == nil)
+        #expect(more.showHelpOutSection)
+        #expect(more.translateURL == nil)
+        #expect(more.developURL?.absoluteString == "https://github.com/oneBusAway/onebusaway-ios")
+        #expect(more.customLinks.isEmpty)
+    }
+
+    @Test func `More tab configuration reads nested MoreTab from OBAKitConfig`() throws {
+        let bundle = try FeedbackConfigBundle.create(config: [
+            "MoreTab": [
+                "HeaderSupportText": "Powered by TestAgency",
+                "ShowHelpOutSection": false,
+                "TranslateURL": "https://example.com/translate",
+                "DevelopURL": "https://example.com/develop",
+                "TutorialURL": "https://example.com/tutorials",
+                "PhoneURL": "tel:+1234567890",
+                "TextURL": "sms:+1234567890",
+                "CustomLinks": [
+                    ["Title": "Agency Site", "URL": "https://example.com"]
+                ]
+            ]
+        ])
+        let more = bundle.moreTabConfiguration
+        #expect(more.headerSupportText == "Powered by TestAgency")
+        #expect(!more.showHelpOutSection)
+        #expect(more.translateURL?.absoluteString == "https://example.com/translate")
+        #expect(more.developURL?.absoluteString == "https://example.com/develop")
+        #expect(more.tutorialURL?.absoluteString == "https://example.com/tutorials")
+        #expect(more.phoneURL?.absoluteString == "tel:+1234567890")
+        #expect(more.textURL?.absoluteString == "sms:+1234567890")
+        #expect(more.customLinks.count == 1)
+        #expect(more.customLinks[0].title == "Agency Site")
+        #expect(more.customLinks[0].url.absoluteString == "https://example.com")
+    }
+
+    // MARK: - String.normalizedSearchQuery
+
+    /// Nil means "match everything". `.searchable` hands a view the empty string
+    /// the moment its field is focused, and whitespace is the same non-intent —
+    /// treating either as a real query would blank the list the instant the user
+    /// tapped the search field.
+    @Test func `Normalized search query is nil for absent or blank input`() {
+        #expect(String.normalizedSearchQuery(nil) == nil)
+        #expect(String.normalizedSearchQuery("") == nil)
+        #expect(String.normalizedSearchQuery("   ") == nil)
+        #expect(String.normalizedSearchQuery("\n\t ") == nil)
+    }
+
+    /// Lowercased and trimmed, because `matchesQuery(_:)` compares against
+    /// lowercased fields and users leave stray spaces when they paste.
+    @Test func `Normalized search query lowercases and trims`() {
+        #expect(String.normalizedSearchQuery("  Pike St  ") == "pike st")
+        #expect(String.normalizedSearchQuery("3RD AVE") == "3rd ave")
+    }
+
+    /// Interior spacing is part of the query — only the ends are trimmed.
+    @Test func `Normalized search query preserves interior spacing`() {
+        #expect(String.normalizedSearchQuery(" 3rd  ave ") == "3rd  ave")
+    }
 }
