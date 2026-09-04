@@ -61,7 +61,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>1 sasakyan dito</string>
+			<string>%d sasakyan dito</string>
 			<key>other</key>
 			<string>%d na sasakyan dito</string>
 		</dict>
