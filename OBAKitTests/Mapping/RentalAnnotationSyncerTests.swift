@@ -21,6 +21,11 @@ import OBAKitCore
 @Suite(.serialized)
 final class RentalAnnotationSyncerTests {
 
+    /// Suite-scoped rather than `UserDefaults()`, which is `.standard`: separate
+    /// suites run concurrently, so standard defaults let one suite observe
+    /// another's writes. Mirrors `OBATestCase.buildUserDefaults()`.
+    private let userDefaults = UserDefaults(suiteName: "RentalAnnotationSyncerTests.\(UUID().uuidString)")!
+
     private struct StubVehicleRentalService: VehicleRentalService {
         func fetchVehicleRentals(
             in boundingBox: VehicleRentalBoundingBox,
@@ -38,7 +43,7 @@ final class RentalAnnotationSyncerTests {
         )
         let coordinator = RentalLayerCoordinator(
             service: StubVehicleRentalService(),
-            locationService: LocationService(userDefaults: UserDefaults(), locationManager: locationManager)
+            locationService: LocationService(userDefaults: userDefaults, locationManager: locationManager)
         )
         return (RentalAnnotationSyncer(coordinator: coordinator, mapView: mapView), mapView)
     }

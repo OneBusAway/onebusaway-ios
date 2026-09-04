@@ -41,6 +41,7 @@ private class PushServiceDelegateRecorder: NSObject, PushServiceDelegate {
     var receivedDonationPromptIDs: [String?] = []
     var receivedDeviceTokens: [String] = []
     var receivedProximityAlertStopIDs: [StopID] = []
+    var receivedProximityAlertRegionIDs: [Int?] = []
 
     func pushServicePresentingController(_ pushService: PushService) -> UIViewController? {
         nil
@@ -58,8 +59,9 @@ private class PushServiceDelegateRecorder: NSObject, PushServiceDelegate {
         receivedDeviceTokens.append(token)
     }
 
-    func pushService(_ pushService: PushService, receivedProximityAlertForStopID stopID: StopID) {
+    func pushService(_ pushService: PushService, receivedProximityAlertForStopID stopID: StopID, regionID: Int?) {
         receivedProximityAlertStopIDs.append(stopID)
+        receivedProximityAlertRegionIDs.append(regionID)
     }
 }
 
@@ -223,6 +225,26 @@ final class PushServiceTests: OBATestCase {
         ])
 
         #expect(delegate.receivedProximityAlertStopIDs == ["1_75403"])
+        // No region named. The shape of every alert stored before the field
+        // existed, and of any notification an earlier build delivered that is
+        // still sitting untapped in Notification Center.
+        #expect(delegate.receivedProximityAlertRegionIDs == [nil])
+    }
+
+    /// Two custom keys, which `PushService`'s single-custom-key routing cannot
+    /// satisfy — so this payload has to be matched ahead of it, or the rider's tap
+    /// lands in the fallback that tells them a second time that they are near
+    /// their stop.
+    @Test func `Proximity alert payload forwards the region it carries`() {
+        provider.notificationReceivedHandler("You're getting close to 3rd & Pike", [
+            ProximityAlertManager.notificationUserInfoKey: "1_75403",
+            ProximityAlertManager.notificationRegionUserInfoKey: 12
+        ])
+
+        #expect(delegate.receivedProximityAlertStopIDs == ["1_75403"])
+        #expect(delegate.receivedProximityAlertRegionIDs == [12])
+        #expect(delegate.receivedAlarms.isEmpty)
+        #expect(delegate.receivedDonationPromptIDs.isEmpty)
     }
 
     /// Routing this at all is what keeps the fallback below from re-presenting

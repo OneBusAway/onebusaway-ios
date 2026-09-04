@@ -102,10 +102,25 @@ final class TripStopViewModelIdentityTests {
         #expect(first != second)
     }
 
-    @Test func `List ids stay unique across the whole trip`() throws {
+    /// The whole-trip version of the test above. The fixture is an ordinary
+    /// point-to-point trip whose stops are all distinct, so running it as-is
+    /// proves nothing: the ids would come out unique under the bare `stop.id`
+    /// this replaced. Doubling it out-and-back gives every stop a second visit,
+    /// which is the shape a loop route actually has — and which halves the id
+    /// count the moment `stopIndex` stops qualifying them.
+    @Test func `List ids stay unique when a trip revisits every stop`() throws {
         let data = Fixtures.loadData(file: "trip_details_1_18196913_no_status.json")
         let response = try JSONDecoder.RESTDecoder().decode(RESTAPIResponse<TripDetails>.self, from: data)
-        let ids = response.entry.stopTimes.enumerated().map { index, stopTime in
+        let outbound = response.entry.stopTimes
+        let loop = outbound + outbound.reversed()
+
+        // Pins the premise rather than trusting it. If the doubling is ever dropped,
+        // or a future fixture stops producing repeats, this fails here — instead of
+        // the test quietly going back to passing for the wrong reason, which is what
+        // it did before.
+        #expect(Set(loop.map(\.stopID)).count < loop.count)
+
+        let ids = loop.enumerated().map { index, stopTime in
             TripStopViewModel(
                 stopTime: stopTime,
                 arrivalDeparture: nil,
@@ -114,7 +129,8 @@ final class TripStopViewModelIdentityTests {
                 onSelectAction: nil
             ).id
         }
-        #expect(Set(ids).count == ids.count)
+
+        #expect(Set(ids).count == loop.count)
     }
 }
 

@@ -21,17 +21,16 @@ struct OnboardingRegionView<Provider: RegionProvider>: View {
     @State private var error: Error?
     @State private var isSettingRegion = false
 
-    /// The already-selected region if one exists, else the nearest region to the user's location.
-    private var detectedRegion: Region? {
-        if let current = regionProvider.currentRegion { return current }
-        guard let location = regionProvider.currentLocation else { return nil }
-        return regionProvider.allRegions.min {
-            $0.distanceFrom(location: location) < $1.distanceFrom(location: location)
-        }
+    /// The region the card shows and how the app arrived at it.
+    private var selection: OnboardingRegionSelection? {
+        OnboardingRegionSelection.resolve(
+            chosen: selectedRegion,
+            current: regionProvider.currentRegion,
+            located: OnboardingRegionSelection.locatedRegion(in: regionProvider.allRegions, location: regionProvider.currentLocation))
     }
 
-    private func shortList(excluding resolved: Region?) -> [Region] {
-        var candidates = regionProvider.allRegions.filter { $0.id != resolved?.id }
+    private func shortList(excluding displayed: Region?) -> [Region] {
+        var candidates = regionProvider.allRegions.filter { $0.id != displayed?.id }
         if let location = regionProvider.currentLocation {
             candidates.sort { $0.distanceFrom(location: location) < $1.distanceFrom(location: location) }
         }
@@ -39,25 +38,22 @@ struct OnboardingRegionView<Provider: RegionProvider>: View {
     }
 
     var body: some View {
-        // Hoisted once per render: `detectedRegion` is an O(n) distance scan and
-        // `shortList` re-filters allRegions; the body references them repeatedly.
-        let detected = detectedRegion
-        let resolved = selectedRegion ?? detected
-        let shortList = shortList(excluding: resolved)
+        // Hoisted once per render: resolving the selection is an O(n) scan over allRegions
+        // and `shortList` re-filters it; the body references both repeatedly.
+        let selection = self.selection
+        let shortList = shortList(excluding: selection?.region)
 
         OnboardingScaffold(
             progress: progress,
             title: OBALoc("onboarding.region.title", value: "Your region", comment: "Title of the region onboarding screen"),
-            bodyText: detected == nil
-                ? OBALoc("onboarding.region.body_no_location", value: "Choose the transit network you ride.", comment: "Body of the region onboarding screen when no location is available")
-                : OBALoc("onboarding.region.body", value: "We found the transit network closest to you.", comment: "Body of the region onboarding screen"),
+            bodyText: bodyText(for: selection?.source),
             primaryTitle: Strings.continue,
-            primaryDisabled: resolved == nil,
+            primaryDisabled: selection == nil,
             primaryAction: confirmSelection
         ) {
             VStack(spacing: 0) {
-                if let region = resolved {
-                    selectedCard(for: region, isDetected: region.id == detected?.id)
+                if let selection {
+                    selectedCard(for: selection)
                         .padding(.top, 22)
                 }
 
@@ -114,33 +110,28 @@ struct OnboardingRegionView<Provider: RegionProvider>: View {
         .errorAlert(error: $error)
     }
 
-    private func selectedCard(for region: Region, isDetected: Bool) -> some View {
+    private func selectedCard(for selection: OnboardingRegionSelection) -> some View {
         VStack(spacing: 0) {
             // Live map preview, preferred over MKMapSnapshotter because snapshots
             // don't adapt to dark mode.
-            RegionPickerMap(mapRect: .constant(region.serviceRect), mapHeight: 108)
+            RegionPickerMap(mapRect: .constant(selection.region.serviceRect), mapHeight: 108)
                 .allowsHitTesting(false)
                 .frame(height: 108)
                 .clipped()
-            cardFooter(for: region, isDetected: isDetected)
+            cardFooter(for: selection)
         }
         .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 20))
         .clipShape(RoundedRectangle(cornerRadius: 20))
     }
 
-    private func cardFooter(for region: Region, isDetected: Bool) -> some View {
+    private func cardFooter(for selection: OnboardingRegionSelection) -> some View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 3) {
-                // The same card renders a region the rider picked from the list
-                // below, and calling that one "detected near you" would claim
-                // something untrue about how it got there.
-                Text(isDetected
-                     ? OBALoc("onboarding.region.detected_label", value: "Detected near you", comment: "Label on the detected-region card")
-                     : OBALoc("onboarding.region.selected_label", value: "Your selection", comment: "Label on the region card when the rider chose the region from the list rather than it being detected from their location"))
+                Text(eyebrow(for: selection.source))
                     .font(.caption.weight(.bold))
                     .foregroundStyle(Color.accentColor)
                     .textCase(.uppercase)
-                Text(region.name)
+                Text(selection.region.name)
                     .font(.title3.weight(.bold))
             }
             Spacer()
@@ -154,8 +145,33 @@ struct OnboardingRegionView<Provider: RegionProvider>: View {
         .accessibilityAddTraits(.isSelected)
     }
 
+    /// The card's eyebrow. Each `Source` names how the region got onto the card, so the
+    /// label can't claim detection for a region the rider's location never produced.
+    private func eyebrow(for source: OnboardingRegionSelection.Source) -> String {
+        switch source {
+        case .detected:
+            return OBALoc("onboarding.region.detected_label", value: "Detected near you", comment: "Label on the detected-region card")
+        case .chosen:
+            return OBALoc("onboarding.region.selected_label", value: "Your selection", comment: "Label on the region card when the rider chose the region from the list rather than it being detected from their location")
+        case .preselected:
+            return OBALoc("onboarding.region.current_label", value: "Current region", comment: "Label on the region card when the region was already selected by app configuration or an earlier launch rather than detected from the rider's location")
+        }
+    }
+
+    /// The screen's body text. Detection is the only state where the app can claim it found
+    /// the region; the others get the standing instruction, which stays true whether the
+    /// rider picked the card's region or is about to replace it.
+    private func bodyText(for source: OnboardingRegionSelection.Source?) -> String {
+        switch source {
+        case .detected:
+            return OBALoc("onboarding.region.body", value: "We found the transit network closest to you.", comment: "Body of the region onboarding screen when the region was detected from the rider's location")
+        case .chosen, .preselected, nil:
+            return OBALoc("onboarding.region.body_choose", value: "Choose the transit network you ride.", comment: "Body of the region onboarding screen prompting the rider to choose a transit network")
+        }
+    }
+
     private func confirmSelection() {
-        guard let region = selectedRegion ?? detectedRegion else { return }
+        guard let region = selection?.region else { return }
         isSettingRegion = true
         Task {
             defer { isSettingRegion = false }

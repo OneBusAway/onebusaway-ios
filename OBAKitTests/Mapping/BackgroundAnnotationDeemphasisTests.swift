@@ -177,7 +177,7 @@ final class BackgroundAnnotationDeemphasisTests: OBATestCase {
         )
         let coordinator = RentalLayerCoordinator(
             service: StubVehicleRentalService(),
-            locationService: LocationService(userDefaults: UserDefaults(), locationManager: locationManager)
+            locationService: LocationService(userDefaults: userDefaults, locationManager: locationManager)
         )
         let layer = RentalMapLayer.bikesLayer(coordinator: coordinator)
         let rental = RentalAnnotation(rental: try RentalFixtures.vehicle())

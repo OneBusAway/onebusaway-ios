@@ -11,4 +11,8 @@ list now uses the same format.
 `Equatable` includes `id`, matching the protocol's "all values, including
 the identifier" rule. Two visits to one stop are no longer equal.
 
-Tests do not load `TripViewController.view`.
+The tests exercise `TripStopViewModel` directly and do not load
+`TripViewController.view`, so they pin the identifier contract rather than
+the `NSDiffableDataSource` apply that #538 crashed in. The whole-trip test
+doubles the fixture out-and-back, because the fixture's own stops are all
+distinct and would satisfy a bare `stop.id` identifier too.

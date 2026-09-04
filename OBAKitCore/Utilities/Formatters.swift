@@ -126,13 +126,11 @@ public class Formatters: NSObject {
 
         let arrDepTime = timeFormatter.string(from: arrivalDepartureDate)
 
-        let explanationText: String
-        if scheduleStatus == .unknown {
-            explanationText = Strings.scheduledNotRealTime
-        }
-        else {
-            explanationText = formattedScheduleDeviation(temporalState: temporalState, arrivalDepartureStatus: arrivalDepartureStatus, scheduleDeviation: scheduleDeviationInMinutes)
-        }
+        let explanationText = deviationLabel(
+            scheduleStatus: scheduleStatus,
+            temporalState: temporalState,
+            arrivalDepartureStatus: arrivalDepartureStatus,
+            scheduleDeviation: scheduleDeviationInMinutes)
 
         let scheduleStatusColor = colorForScheduleStatus(scheduleStatus)
         let timeExplanationFont = UIFont.preferredFont(forTextStyle: .footnote)
@@ -268,6 +266,22 @@ public class Formatters: NSObject {
         }
     }
 
+    /// One-word caption under the minutes countdown so a layover/first stop
+    /// is readable at a glance (#447). The explanation line already says
+    /// Arrives/Departs; the minutes badge did not.
+    public func arrivalDepartureCaption(for status: ArrivalDepartureStatus, temporalState: TemporalState = .future) -> String {
+        switch (temporalState, status) {
+        case (.past, .arriving):
+            return OBALoc("formatters.caption.arrived", value: "Arrived", comment: "Short caption under a past stop-page countdown for a vehicle that already arrived.")
+        case (.past, .departing):
+            return OBALoc("formatters.caption.departed", value: "Departed", comment: "Short caption under a past stop-page countdown for a vehicle that already left.")
+        case (_, .arriving):
+            return OBALoc("formatters.caption.arrives", value: "Arrives", comment: "Short caption under a stop-page countdown for a vehicle arriving at this stop.")
+        case (_, .departing):
+            return OBALoc("formatters.caption.departs", value: "Departs", comment: "Short caption under a stop-page countdown for a vehicle departing this stop (first stop or layover).")
+        }
+    }
+
     // MARK: - ArrivalDeparture Schedule Deviation
 
     /// Creates a formatted string representing the deviation from schedule described by `arrivalDeparture`
@@ -292,9 +306,33 @@ public class Formatters: NSObject {
     /// `TripActivityPresenter.deviationLabel(for:now:)` applies for Live
     /// Activity content states.
     public func deviationLabel(for arrivalDeparture: ArrivalDeparture) -> String {
-        guard arrivalDeparture.predicted else { return Strings.scheduledNotRealTime }
+        deviationLabel(
+            scheduleStatus: arrivalDeparture.scheduleStatus,
+            temporalState: arrivalDeparture.temporalState,
+            arrivalDepartureStatus: arrivalDeparture.arrivalDepartureStatus,
+            scheduleDeviation: arrivalDeparture.deviationFromScheduleInMinutes)
+    }
 
-        return formattedScheduleDeviation(for: arrivalDeparture)
+    /// The component form, for callers holding a view model rather than the
+    /// `ArrivalDeparture` it came from — `ArrivalDepartureItem` carries these four
+    /// values and not the model.
+    ///
+    /// Gating on `scheduleStatus == .unknown` rather than `predicted` is the same
+    /// condition, not a looser one: `ArrivalDeparture.scheduleStatus` opens with
+    /// `guard predicted else { return .unknown }`. Expressing it once here is what
+    /// stops the two forms drifting apart.
+    public func deviationLabel(
+        scheduleStatus: ScheduleStatus,
+        temporalState: TemporalState,
+        arrivalDepartureStatus: ArrivalDepartureStatus,
+        scheduleDeviation: Int
+    ) -> String {
+        guard scheduleStatus != .unknown else { return Strings.scheduledNotRealTime }
+
+        return formattedScheduleDeviation(
+            temporalState: temporalState,
+            arrivalDepartureStatus: arrivalDepartureStatus,
+            scheduleDeviation: scheduleDeviation)
     }
 
     public func formattedScheduleDeviation(temporalState: TemporalState, arrivalDepartureStatus: ArrivalDepartureStatus, scheduleDeviation: Int) -> String {

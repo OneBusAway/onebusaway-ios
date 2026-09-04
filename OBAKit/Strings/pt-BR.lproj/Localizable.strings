@@ -783,11 +783,14 @@
 /* Accessibility label for the onboarding progress bar */
 "onboarding.progress.accessibility_label" = "Progresso da integração";
 
-/* Body of the region onboarding screen */
+/* Body of the region onboarding screen when the region was detected from the rider's location */
 "onboarding.region.body" = "Encontramos a rede de trânsito mais próxima de você.";
 
-/* Body of the region onboarding screen when no location is available */
-"onboarding.region.body_no_location" = "Escolha a rede de trânsito que você usa.";
+/* Body of the region onboarding screen prompting the rider to choose a transit network */
+"onboarding.region.body_choose" = "Escolha a rede de trânsito que você usa.";
+
+/* Label on the region card when the region was already selected by app configuration or an earlier launch rather than detected from the rider's location */
+"onboarding.region.current_label" = "Região atual";
 
 /* Label on the detected-region card */
 "onboarding.region.detected_label" = "Detectada perto de você";
@@ -1247,6 +1250,7 @@
 
 /* VoiceOver label for a grouped route card */
 "stop_page.grouped.a11y_fmt" = "Linha %1$@ para %2$@, próxima partida em %3$d minutos, %4$@. Mais %5$d partidas carregadas.";
+"stop_page.grouped.a11y_arrives_fmt" = "Linha %1$@ para %2$@, próxima chegada em %3$d minutos, %4$@. Mais %5$d partidas carregadas.";
 
 /* VoiceOver custom action on a grouped route card's header that cancels the alarm already set for the next departure. */
 "stop_page.grouped.a11y_remove_alarm" = "Remover lembrete";
@@ -1307,6 +1311,7 @@
 
 /* VoiceOver label for a departure row: route, headsign, minutes, status. */
 "stop_page.row.a11y_fmt" = "Linha %1$@ para %2$@, parte em %3$d minutos, %4$@";
+"stop_page.row.a11y_arrives_fmt" = "Linha %1$@ para %2$@, chega em %3$d minutos, %4$@";
 
 /* VoiceOver clause appended to a departure row that's upcoming but not reachable on foot before it leaves. */
 "stop_page.row.a11y_missed" = "provavelmente perdida — parte antes de você conseguir chegar a pé à parada";
@@ -1655,6 +1660,9 @@
 
 /* Accessibility label for the transfer arrival banner shown when navigating to a connecting stop. */
 "walk_time_view.transfer_accessibility_label" = "Horário de chegada da baldeação";
+
+/* Spoken value for the map weather control. First %@ is the temperature, second is the weather condition. */
+"weather.button_accessibility_value_format" = "%1$@, %2$@";
 
 /* Format for the chance-of-rain percentage on the weather card header. %d is the integer percent. */
 "weather.chance_of_rain_format" = "Chance de Chuva: %d%%";

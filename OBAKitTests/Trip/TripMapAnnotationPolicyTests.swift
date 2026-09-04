@@ -29,6 +29,25 @@ final class TripMapAnnotationPolicyTests: OBATestCase {
         ).entry
     }
 
+    /// An `ArrivalDeparture` with its references resolved. `Fixtures.arrivalDeparture()`
+    /// leaves `route` nil, and anything that reaches `openStop` reads it through
+    /// `TransferContext.from` — that crashed CI at `ArrivalDeparture.swift:221`.
+    private func loadReferencedArrivalDeparture() throws -> ArrivalDeparture {
+        let stopArrivals = try Fixtures.loadRESTAPIPayload(
+            type: StopArrivals.self,
+            fileName: "arrivals-and-departures-for-stop-1_10914.json"
+        )
+        return try #require(stopArrivals.arrivalsAndDepartures.first)
+    }
+
+    private func analytics(for controller: TripViewController) throws -> AnalyticsMock {
+        try #require(controller.application.analytics as? AnalyticsMock)
+    }
+
+    private func stopAnnotationTapCount(_ analytics: AnalyticsMock) -> Int {
+        analytics.reportedEvents.filter { $0.label == AnalyticsLabels.mapStopAnnotationTapped }.count
+    }
+
     /// `viewFor` only applies the policy when `arrivalDeparture` is set. Building
     /// the controller from `TripConvertible(tripDetails:)` skipped that branch,
     /// so `canShowCallout` was just MKAnnotationView's default `false`.
@@ -84,21 +103,14 @@ final class TripMapAnnotationPolicyTests: OBATestCase {
 
         #expect(nav.viewControllers.count == 1)
         #expect(nav.viewControllers.first === controller)
+        #expect(stopAnnotationTapCount(try analytics(for: controller)) == 0)
     }
 
-    /// A rider tap with callouts off still opens the stop.
-    ///
-    /// Needs a referenced `ArrivalDeparture`: `openStop` builds `TransferContext.from`,
-    /// which reads `routeShortName`. `Fixtures.arrivalDeparture()` leaves `route` nil
-    /// and crashed CI at `ArrivalDeparture.swift:221`.
+    /// A rider tap with callouts off still opens the stop, and reports the open —
+    /// `MapViewController` reports the identical "selection is the open gesture" case.
     @Test @MainActor
     func `User tap opens the stop when callouts are hidden`() throws {
-        let stopArrivals = try Fixtures.loadRESTAPIPayload(
-            type: StopArrivals.self,
-            fileName: "arrivals-and-departures-for-stop-1_10914.json"
-        )
-        let arrivalDeparture = try #require(stopArrivals.arrivalsAndDepartures.first)
-        let controller = makeController(arrivalDeparture: arrivalDeparture)
+        let controller = makeController(arrivalDeparture: try loadReferencedArrivalDeparture())
         let nav = UINavigationController(rootViewController: controller)
 
         let stopTime = try #require(try loadTripDetails().stopTimes.first)
@@ -109,34 +121,20 @@ final class TripMapAnnotationPolicyTests: OBATestCase {
         controller.mapView(MKMapView(), didSelect: annotationView)
 
         #expect(nav.viewControllers.count == 2)
+
+        let reported = try #require(try analytics(for: controller).reportedEvents.first)
+        #expect(reported.label == AnalyticsLabels.mapStopAnnotationTapped)
+        #expect(reported.pageURL == "app://localhost/trip")
     }
 
-    /// `$tripDetails` republishes every 30s. Re-assigning origin on every
-    /// emission is a value-equal write, so `didSet` must drop a leaked skip
-    /// arm — otherwise the next pin tap is swallowed. Do not load `.view`.
-    /// Does not tap-to-open: `Fixtures.arrivalDeparture` leaves `route` nil.
+    /// `$tripDetails` republishes every 30s, and the origin select is applied on the
+    /// first emission only. `selectedStopTime = nil` is the production teardown: the
+    /// load-time select fires `didSelect`, which consumes the skip, deselects the pin,
+    /// and `didDeselect` clears the property. A later emission must leave that nil
+    /// alone — writing origin back would fire `didSelect` → `openStop` and push the
+    /// stop page out from under the rider. Do not load `.view`.
     @Test @MainActor
-    func `Value-equal origin refresh clears a leaked skip arm`() throws {
-        let details = try loadTripDetails()
-        let originID = try #require(details.stopTimes.first?.stopID)
-        let arrivalDeparture = try Fixtures.arrivalDeparture(stopID: originID)
-        let controller = makeController(arrivalDeparture: arrivalDeparture)
-
-        controller.applyOriginStopSelection(from: details)
-        #expect(controller.skipNextStopTimeHighlight)
-        #expect(controller.selectedStopTime?.stopID == originID)
-
-        controller.applyOriginStopSelection(from: details)
-        #expect(!controller.skipNextStopTimeHighlight)
-        #expect(controller.selectedStopTime?.stopID == originID)
-    }
-
-    /// After the rider deselects (or picks another stop), a 30s refresh must
-    /// not write the origin back. That re-select would fire `didSelect` →
-    /// `openStop`. Setting `selectedStopTime = nil` is the production
-    /// `didDeselect` assignment. Do not load `.view`.
-    @Test @MainActor
-    func `Refresh does not reselect origin after the rider deselects`() throws {
+    func `Refresh does not reselect the origin stop`() throws {
         let details = try loadTripDetails()
         let originID = try #require(details.stopTimes.first?.stopID)
         let arrivalDeparture = try Fixtures.arrivalDeparture(stopID: originID)
@@ -149,6 +147,22 @@ final class TripMapAnnotationPolicyTests: OBATestCase {
         controller.applyOriginStopSelection(from: details)
 
         #expect(controller.selectedStopTime == nil)
+        #expect(!controller.skipNextStopTimeHighlight)
+    }
+
+    /// A trip with no stop time for the rider's boarding stop selects nothing — and,
+    /// just as importantly, arms nothing. `skipNextStopTimeHighlight` is armed at the
+    /// `selectAnnotation` call site, so an assignment that finds no annotation cannot
+    /// leave an arm behind to swallow the rider's next pin tap. Do not load `.view`.
+    @Test @MainActor
+    func `No origin selection when the trip has no matching stop`() throws {
+        let details = try loadTripDetails()
+        let controller = makeController(arrivalDeparture: try Fixtures.arrivalDeparture(stopID: "no_such_stop"))
+
+        controller.applyOriginStopSelection(from: details)
+
+        #expect(controller.selectedStopTime == nil)
+        #expect(!controller.skipNextStopTimeHighlight)
     }
 
     /// Callouts are off, so selection is the only open gesture. Leaving the
@@ -157,12 +171,7 @@ final class TripMapAnnotationPolicyTests: OBATestCase {
     /// passed in — not `self.mapView`, which would load `.view`.
     @Test @MainActor
     func `Opening a stop deselects the pin so a second tap still opens`() throws {
-        let stopArrivals = try Fixtures.loadRESTAPIPayload(
-            type: StopArrivals.self,
-            fileName: "arrivals-and-departures-for-stop-1_10914.json"
-        )
-        let arrivalDeparture = try #require(stopArrivals.arrivalsAndDepartures.first)
-        let controller = makeController(arrivalDeparture: arrivalDeparture)
+        let controller = makeController(arrivalDeparture: try loadReferencedArrivalDeparture())
         let nav = UINavigationController(rootViewController: controller)
         let mapView = MKMapView()
         let stopTime = try #require(try loadTripDetails().stopTimes.first)

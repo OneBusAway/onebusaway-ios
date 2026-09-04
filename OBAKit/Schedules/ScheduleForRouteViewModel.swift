@@ -28,6 +28,10 @@ class ScheduleForRouteViewModel: ObservableObject {
     let routeID: RouteID
     let application: Application
 
+    /// Bumped at the start of each fetch so a cancelled request cannot clear
+    /// `isLoading` or set `error` after a newer fetch has begun.
+    private var fetchGeneration = 0
+
     /// The route name, if available from schedule data
     var routeName: String {
         if let route = scheduleData?.route {
@@ -164,14 +168,18 @@ class ScheduleForRouteViewModel: ObservableObject {
             return
         }
 
+        fetchGeneration += 1
+        let generation = fetchGeneration
         isLoading = true
         error = nil
-        defer { isLoading = false }
 
         do {
             let response = try await apiService.getScheduleForRoute(routeID: routeID, date: selectedDate)
+            guard generation == fetchGeneration, !Task.isCancelled else { return }
             scheduleData = response.entry
+            isLoading = false
         } catch let apiError as APIError {
+            guard generation == fetchGeneration else { return }
             if case .requestNotFound = apiError {
                 if application.currentRegion?.supportsScheduleForRoute == false {
                     self.error = UnstructuredError(
@@ -187,8 +195,12 @@ class ScheduleForRouteViewModel: ObservableObject {
             } else {
                 self.error = apiError
             }
+            isLoading = false
         } catch {
+            guard generation == fetchGeneration else { return }
+            guard !error.isCancellation else { return }
             self.error = error
+            isLoading = false
         }
     }
 

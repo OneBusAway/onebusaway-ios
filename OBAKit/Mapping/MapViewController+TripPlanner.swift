@@ -14,8 +14,10 @@ import OTPKit
 import SwiftUI
 import UIKit
 
-/// Trip planner presentation. An extension rather than more of `MapViewController`:
-/// the class it hangs off is already at SwiftLint's body-length ceiling.
+/// Trip planner presentation. An extension rather than more of `MapViewController`
+/// because presenting one feature is a separate concern from the map state that
+/// class holds — not because of a lint limit. `type_body_length` reports nothing
+/// on `MapViewController` today; only `file_length` is suppressed there.
 /// See: https://github.com/OneBusAway/onebusaway-ios/issues/1303
 extension MapViewController {
 

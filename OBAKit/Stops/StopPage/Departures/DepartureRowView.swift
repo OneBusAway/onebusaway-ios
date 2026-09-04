@@ -179,7 +179,8 @@ struct DepartureRowView: View {
         CountdownView(
             minutes: departure.arrivalDepartureMinutes,
             isRealTime: status.isRealTime,
-            color: dimmed ? Color(uiColor: .tertiaryLabel) : Color(uiColor: status.color)
+            color: dimmed ? Color(uiColor: .tertiaryLabel) : Color(uiColor: status.color),
+            caption: formatters.arrivalDepartureCaption(for: departure.arrivalDepartureStatus, temporalState: departure.temporalState)
         )
     }
 
@@ -213,8 +214,13 @@ struct DepartureRowView: View {
             let fmt = OBALoc("stop_page.row.a11y_past_fmt", value: "Route %@ to %@, departed %d minutes ago, %@", comment: "VoiceOver label for a departure row that has already departed: route, headsign, minutes ago, status.")
             return String(format: fmt, departure.routeShortName, departure.tripHeadsign ?? "", abs(departure.arrivalDepartureMinutes), status.accessibilityStatusDescription)
         case .normal, .missed:
-            let fmt = OBALoc("stop_page.row.a11y_fmt", value: "Route %@ to %@, departs in %d minutes, %@", comment: "VoiceOver label for a departure row: route, headsign, minutes, status.")
-            return String(format: fmt, departure.routeShortName, departure.tripHeadsign ?? "", departure.arrivalDepartureMinutes, status.accessibilityStatusDescription)
+            return StopPageAccessibilityCopy.upcomingIdentity(
+                routeShortName: departure.routeShortName,
+                headsign: departure.tripHeadsign ?? "",
+                minutes: departure.arrivalDepartureMinutes,
+                arrivalDepartureStatus: departure.arrivalDepartureStatus,
+                adherence: status.accessibilityStatusDescription
+            )
         }
     }
 }

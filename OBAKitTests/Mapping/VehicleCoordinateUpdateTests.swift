@@ -35,7 +35,7 @@ struct VehicleCoordinateUpdateTests {
         #expect(decision == .animate(duration: VehicleCoordinateUpdate.animationDuration))
     }
 
-    /// Farther than one or two polls at motorway speed is a new fix, not motion.
+    /// Farther than `snapBeyondMeters` is a new fix, not motion.
     @Test func `A kilometre jump snaps`() {
         let far = CLLocationCoordinate2D(latitude: 47.62, longitude: -122.33)
         #expect(VehicleCoordinateUpdate.decision(from: seattle, to: far) == .snap)

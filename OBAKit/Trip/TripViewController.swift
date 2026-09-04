@@ -251,9 +251,8 @@ class TripViewController: UIViewController,
     }
 
     func showStopOnMap(_ tripStop: TripStopViewModel) {
-        self.floatingPanel.move(to: .half, animated: true) {
-            self.skipNextStopTimeHighlight = true
-            self.selectedStopTime = tripStop.stopTime
+        floatingPanel.move(to: .half, animated: true) { [weak self] in
+            self?.selectedStopTime = tripStop.stopTime
         }
     }
 
@@ -333,7 +332,13 @@ class TripViewController: UIViewController,
         return map
     }()
 
+    /// Armed by `selectedStopTime`'s `didSet` immediately before a programmatic
+    /// `selectAnnotation`, and consumed by the `didSelect` it provokes. Riders never
+    /// assign `selectedStopTime` — their taps arrive as `didSelect` — so every
+    /// selection this controller makes itself is one the rider did not ask for and
+    /// must not open a stop page.
     public var skipNextStopTimeHighlight = false
+
     public func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
         guard let stopTime = view.annotation as? TripStopTime else { return }
         defer { skipNextStopTimeHighlight = false }
@@ -345,7 +350,10 @@ class TripViewController: UIViewController,
             return
         }
 
-        tripDetailsController.highlightStopInList(stopTime.stop)
+        // Scroll the list without blinking the row: `openStop` pushes the stop page on
+        // the next line, so the delayed blink would play underneath it and be over
+        // before the rider comes back. The scroll still leaves the row on screen for them.
+        tripDetailsController.highlightStopInList(stopTime.stop, blinksAfterScroll: false)
         openStop(stopTime, on: mapView)
     }
 
@@ -366,6 +374,14 @@ class TripViewController: UIViewController,
         // Same reason as `MapViewController`: leaving the tapped pin selected
         // only strands a highlight. MapKit will not fire `didSelect` again.
         mapView.deselectAnnotation(stopTime, animated: false)
+
+        // Callouts are off here, so selection is the open gesture — the same case
+        // `MapViewController` reports when a stop annotation has no chevron to tap.
+        application.analytics?.reportEvent(
+            pageURL: "app://localhost/trip",
+            label: AnalyticsLabels.mapStopAnnotationTapped,
+            value: nil
+        )
 
         application.viewRouter.navigateTo(stop: stopTime.stop, from: self, transferContext: transferContext)
     }
@@ -437,13 +453,6 @@ class TripViewController: UIViewController,
         didSet {
             guard !isBeingPreviewed else { return }
 
-            // Value-equal write (30s refresh of the same stop): nothing to
-            // select. Drop a leaked skip so the next pin tap still opens.
-            if oldValue == selectedStopTime {
-                skipNextStopTimeHighlight = false
-                return
-            }
-
             var animated = true
             if isFirstStopTimeLoad {
                 animated = false
@@ -457,28 +466,31 @@ class TripViewController: UIViewController,
             if let annotation = self.mapView.annotations
                 .filter(type: TripStopTime.self)
                 .filter({ $0.stopID == selectedStopTime.stopID }).first {
+                // Arm the skip here rather than at the call sites: this is the only
+                // statement that can provoke `didSelect`, so an arm can never outlive
+                // an assignment that found no annotation to select.
+                skipNextStopTimeHighlight = true
                 self.mapView.selectAnnotation(annotation, animated: true)
             }
         }
     }
     private var isFirstStopTimeLoad = true
+    private var hasAppliedOriginStopSelection = false
 
-    /// Auto-selects the rider's origin stop when trip details first load.
-    /// Later `$tripDetails` emissions (30s refresh) must not write origin
-    /// back if the rider deselected or picked another stop — that
-    /// `selectAnnotation` would fire `didSelect` → `openStop`.
+    /// Selects the rider's origin stop when trip details first arrive, and only then.
+    ///
+    /// `$tripDetails` republishes about every 30 seconds. A second programmatic select
+    /// would fire `didSelect` → `openStop` and push the stop page out from under
+    /// whatever the rider is doing. There is no rider selection to compare against
+    /// either: the load-time select is torn down inside its own call stack, because
+    /// `didSelect` consumes the skip, deselects the pin, and `didDeselect` clears
+    /// `selectedStopTime`.
     func applyOriginStopSelection(from details: TripDetails) {
+        guard !hasAppliedOriginStopSelection else { return }
         guard let arrivalDeparture = tripConvertible.arrivalDeparture else { return }
         guard let origin = details.stopTimes.first(where: { $0.stopID == arrivalDeparture.stopID }) else { return }
 
-        if let current = selectedStopTime, current.stopID != origin.stopID {
-            return
-        }
-        if selectedStopTime == nil && !isFirstStopTimeLoad {
-            return
-        }
-
-        skipNextStopTimeHighlight = true
+        hasAppliedOriginStopSelection = true
         selectedStopTime = origin
     }
 }

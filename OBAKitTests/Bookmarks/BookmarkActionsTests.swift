@@ -147,10 +147,10 @@ final class BookmarkActionsTests: OBATestCase {
             departureEpoch: 1_700_000_840
         )
 
-        let state = try #require(BookmarkActions.buildContentState(
+        let state = BookmarkActions.buildContentState(
             from: [oppositeSooner, tracked, laterSameDirection],
             matching: tracked
-        ))
+        )
 
         #expect(state.arrivals.count == 2)
         #expect(state.arrivals.map(\.departureTime) == [
@@ -176,13 +176,72 @@ final class BookmarkActionsTests: OBATestCase {
             departureEpoch: 1_700_000_100
         )
 
-        let state = try #require(BookmarkActions.buildContentState(
+        let state = BookmarkActions.buildContentState(
             from: [otherRoute],
             matching: tracked
-        ))
+        )
 
         #expect(state.arrivals.count == 1)
         #expect(state.arrivals[0].departureTime == Int(tracked.arrivalDepartureDate.timeIntervalSince1970))
+    }
+
+    /// The stop page hands over an empty list when arrivals haven't loaded yet.
+    /// The matching overload still produces content, from the tapped departure —
+    /// that guarantee is what lets its caller drop the failure branch entirely.
+    @Test @MainActor func `Content state matching an empty list uses the selected departure`() throws {
+        let tracked = try arrivalDeparture(
+            routeID: "40_100479",
+            headsign: "Lynnwood City Center",
+            tripID: "trip_north",
+            departureEpoch: 1_700_000_480
+        )
+
+        let state = BookmarkActions.buildContentState(from: [], matching: tracked)
+
+        #expect(state.arrivals.count == 1)
+        #expect(state.arrivals[0].departureTime == Int(tracked.arrivalDepartureDate.timeIntervalSince1970))
+    }
+
+    /// A feed that omits `trip_headsign` collapses the `TripBookmarkKey` headsign
+    /// to `""`, so matching falls back to stop and route and readmits the opposite
+    /// direction — the #1326 symptom, from the other end. Pinned rather than
+    /// fixed: matching on the departure alone would leave the card showing a
+    /// single arrival, so the production path keeps the grouping and logs.
+    @Test @MainActor func `Content state matching degrades to route only without a headsign`() throws {
+        let tracked = try arrivalDeparture(
+            routeID: "40_100479",
+            headsign: nil,
+            tripID: "trip_north",
+            departureEpoch: 1_700_000_480
+        )
+        let oppositeDirection = try arrivalDeparture(
+            routeID: "40_100479",
+            headsign: nil,
+            tripID: "trip_south",
+            departureEpoch: 1_700_000_120
+        )
+        let namedDirection = try arrivalDeparture(
+            routeID: "40_100479",
+            headsign: "Lynnwood City Center",
+            tripID: "trip_north_2",
+            departureEpoch: 1_700_000_240
+        )
+
+        // Neither the departure nor its trip reference supplies one, which is the
+        // condition the production warning fires on.
+        #expect(tracked.tripHeadsign == nil)
+
+        let state = BookmarkActions.buildContentState(
+            from: [oppositeDirection, namedDirection, tracked],
+            matching: tracked
+        )
+
+        // Both headsign-less trips match, soonest first — including the one going
+        // the other way. The trip that does carry a headsign is the one dropped.
+        #expect(state.arrivals.map(\.departureTime) == [
+            Int(oppositeDirection.arrivalDepartureDate.timeIntervalSince1970),
+            Int(tracked.arrivalDepartureDate.timeIntervalSince1970)
+        ])
     }
 
     /// Tracking a bookmark with no loaded arrivals can't build a content state,
@@ -229,13 +288,18 @@ final class BookmarkActionsTests: OBATestCase {
     /// Minimal `ArrivalDeparture` for Live Activity content-state tests. Times are
     /// JSON numbers; `JSONDecoder`'s default Date strategy is seconds-since-2001,
     /// which is fine — we compare through `arrivalDepartureDate`, not the raw ints.
+    ///
+    /// Pass `headsign: nil` to model a feed that omits `trip_headsign`. That case
+    /// is why references are loaded here: `ArrivalDeparture.tripHeadsign` falls
+    /// through to `trip.headsign`, and `trip` is an implicitly unwrapped optional
+    /// that only `loadReferences` populates.
     private func arrivalDeparture(
         routeID: String,
-        headsign: String,
+        headsign: String?,
         tripID: String,
         departureEpoch: Int
     ) throws -> ArrivalDeparture {
-        try Fixtures.dictionaryToModel(type: ArrivalDeparture.self, dictionary: [
+        var dictionary: [String: Any] = [
             "arrivalEnabled": true,
             "blockTripSequence": 1,
             "departureEnabled": true,
@@ -252,13 +316,67 @@ final class BookmarkActionsTests: OBATestCase {
             "serviceDate": departureEpoch,
             "situationIds": [] as [String],
             "status": "default",
-            "stopId": "1_mtc",
+            "stopId": Self.stopID,
             "stopSequence": 10,
             "totalStopsInTrip": 20,
-            "tripHeadsign": headsign,
             "tripId": tripID,
             "vehicleId": "vehicle_\(tripID)"
-        ])
+        ]
+        // Omitted rather than encoded as a null: `JSONSerialization` rejects
+        // `nil as Any`, and an absent key is what a feed without a headsign sends.
+        if let headsign {
+            dictionary["tripHeadsign"] = headsign
+        }
+
+        let arrivalDeparture = try Fixtures.dictionaryToModel(type: ArrivalDeparture.self, dictionary: dictionary)
+        let references = try Self.references(routeID: routeID, tripID: tripID)
+        arrivalDeparture.loadReferences(references, regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier)
+        return arrivalDeparture
+    }
+
+    private static let stopID = "1_mtc"
+
+    /// The route, stop and trip that `ArrivalDeparture.loadReferences` force-unwraps.
+    /// The trip deliberately carries no `tripHeadsign`, so a departure built with
+    /// `headsign: nil` resolves to `nil` instead of inheriting one from the reference.
+    private static func references(routeID: String, tripID: String) throws -> References {
+        let referencesData: [String: Any] = [
+            "agencies": [[
+                "id": "1",
+                "name": "Test Agency",
+                "url": "https://example.com",
+                "timezone": "America/Los_Angeles",
+                "lang": "en",
+                "phone": "555-0123",
+                "privateService": false
+            ]],
+            "routes": [[
+                "id": routeID,
+                "agencyId": "1",
+                "shortName": "1 Line",
+                "type": 3
+            ]],
+            "stops": [[
+                "id": stopID,
+                "code": "mtc",
+                "name": "Transit Center",
+                "lat": 47.6097,
+                "lon": -122.3331,
+                "locationType": 0,
+                "routeIds": [routeID]
+            ]],
+            "trips": [[
+                "id": tripID,
+                "blockId": "block_\(tripID)",
+                "routeId": routeID,
+                "serviceId": "service_1",
+                "routeShortName": "1 Line",
+                "tripShortName": "Trip",
+                "timeZone": "America/Los_Angeles"
+            ]]
+        ]
+
+        return try Fixtures.dictionaryToModel(type: References.self, dictionary: referencesData)
     }
 }
 

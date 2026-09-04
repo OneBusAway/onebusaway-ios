@@ -31,10 +31,10 @@ import OTPKit
 /// vehicles to be rebucketed wholesale. Projected space eliminates this amplification.
 ///
 /// This is also what makes a density cap unnecessary. Marker count is bounded by
-/// *occupied cells* (screen area ÷ cell area, roughly 90 on an iPhone-sized
-/// map), not by how many vehicles the viewport holds, so `RentalMapLayer`'s
-/// 500-vehicle `densityBudget` never translates into 500 SwiftUI views — and no
-/// vehicle is ever silently dropped to stay under a limit.
+/// *occupied cells* (screen area ÷ cell area, roughly 36 at the default 100pt
+/// cell size on a 390×844 map), not by how many vehicles the viewport holds, so
+/// `RentalMapLayer`'s 500-vehicle `densityBudget` never translates into 500
+/// SwiftUI views — and no vehicle is ever silently dropped to stay under a limit.
 ///
 /// Cluster centroids are clamped to within `cellSize/4` (a quarter-cell) of
 /// their cell's centre. This guarantees that adjacent cells' markers are

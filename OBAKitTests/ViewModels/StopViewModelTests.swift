@@ -938,6 +938,31 @@ final class StopViewModelTests: OBATestCase {
         #expect(!app.userDataStore.alarms.isEmpty)
     }
 
+    // MARK: - Live Activity Toast
+
+    /// The toast's own contract: the flag goes up on demand, and a second signal
+    /// arriving inside the first one's window leaves it up rather than inheriting
+    /// that window's imminent dismissal.
+    ///
+    /// The race the `Task.checkCancellation()` in `signalLiveActivityStarted`
+    /// closes is not reachable from here. It needs `cancel()` to land after the
+    /// sleep has already resumed but before its continuation runs — a window the
+    /// scheduler owns, with no seam to force it from a test. Same limitation
+    /// `ProximityAlertTests` documents for the 24-hour expiry boundary.
+    @Test @MainActor
+    func `Signalling a Live Activity raises the toast and a second signal keeps it up`() {
+        let (viewModel, _) = buildViewModel(arrivalsFixture: "arrivals_and_departures_for_stop_1_10020.json")
+
+        #expect(!viewModel.liveActivityStarted)
+
+        viewModel.signalLiveActivityStarted()
+        #expect(viewModel.liveActivityStarted)
+
+        // The duplicate-Track path signals again; the rider must still see a toast.
+        viewModel.signalLiveActivityStarted()
+        #expect(viewModel.liveActivityStarted)
+    }
+
     // MARK: - Review prompt success recording
 
     @Test @MainActor

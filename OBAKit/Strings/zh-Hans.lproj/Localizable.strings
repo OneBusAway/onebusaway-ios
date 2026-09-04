@@ -783,11 +783,14 @@
 /* Accessibility label for the onboarding progress bar */
 "onboarding.progress.accessibility_label" = "引导进度";
 
-/* Body of the region onboarding screen */
+/* Body of the region onboarding screen when the region was detected from the rider's location */
 "onboarding.region.body" = "我们找到了离你最近的交通网络。";
 
-/* Body of the region onboarding screen when no location is available */
-"onboarding.region.body_no_location" = "选择你乘坐的交通网络。";
+/* Body of the region onboarding screen prompting the rider to choose a transit network */
+"onboarding.region.body_choose" = "选择你乘坐的交通网络。";
+
+/* Label on the region card when the region was already selected by app configuration or an earlier launch rather than detected from the rider's location */
+"onboarding.region.current_label" = "当前地区";
 
 /* Label on the detected-region card */
 "onboarding.region.detected_label" = "在你附近检测到";
@@ -1247,6 +1250,7 @@
 
 /* VoiceOver label for a grouped route card */
 "stop_page.grouped.a11y_fmt" = "%1$@号公交线路，开往%2$@，下一班将在%3$d分钟后离站，%4$@。另外加载了%5$d个班次。";
+"stop_page.grouped.a11y_arrives_fmt" = "%1$@号公交线路，开往%2$@，下一班将在%3$d分钟后到站，%4$@。另外加载了%5$d个班次。";
 
 /* VoiceOver custom action on a grouped route card's header that cancels the alarm already set for the next departure. */
 "stop_page.grouped.a11y_remove_alarm" = "移除闹钟";
@@ -1307,6 +1311,7 @@
 
 /* VoiceOver label for a departure row: route, headsign, minutes, status. */
 "stop_page.row.a11y_fmt" = "%1$@号公交线路，开往%2$@，将在%3$d分钟后离站，%4$@";
+"stop_page.row.a11y_arrives_fmt" = "%1$@号公交线路，开往%2$@，将在%3$d分钟后到站，%4$@";
 
 /* VoiceOver clause appended to a departure row that's upcoming but not reachable on foot before it leaves. */
 "stop_page.row.a11y_missed" = "很可能赶不上——此班次的离站时间早于您步行到车站所需的时间";
@@ -1655,6 +1660,9 @@
 
 /* Accessibility label for the transfer arrival banner shown when navigating to a connecting stop. */
 "walk_time_view.transfer_accessibility_label" = "换乘到站时间";
+
+/* Spoken value for the map weather control. First %@ is the temperature, second is the weather condition. */
+"weather.button_accessibility_value_format" = "%1$@，%2$@";
 
 /* Format for the chance-of-rain percentage on the weather card header. %d is the integer percent. */
 "weather.chance_of_rain_format" = "降雨概率：%d%%";
