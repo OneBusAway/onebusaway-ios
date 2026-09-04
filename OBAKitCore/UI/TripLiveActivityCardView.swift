@@ -33,7 +33,7 @@ public struct TripLiveActivityCardView: View {
         VStack(alignment: .leading, spacing: 10) {
             primaryRow(primary: primary, now: now)
             if !chips.isEmpty {
-                chipsRow(chips: chips, now: now)
+                chipsRow(chips: chips)
             }
         }
         .padding(.horizontal, 16)
@@ -59,7 +59,7 @@ public struct TripLiveActivityCardView: View {
             }
             Spacer(minLength: 8)
             if let primary {
-                countdownBadge(for: primary, now: now)
+                countdownBadge(for: primary)
             }
         }
     }
@@ -90,16 +90,16 @@ public struct TripLiveActivityCardView: View {
     }
 
     @ViewBuilder
-    private func countdownBadge(for arrival: TripAttributes.ContentState.ArrivalInfo, now: Date) -> some View {
+    private func countdownBadge(for arrival: TripAttributes.ContentState.ArrivalInfo) -> some View {
         CountdownView(
-            minutes: Int(arrival.departureDate.timeIntervalSince(now) / 60.0),
+            departure: arrival.departureDate,
             isRealTime: arrival.scheduleStatus != .unknown,
             color: Color(uiColor: presenter.color(for: arrival))
         )
     }
 
     @ViewBuilder
-    private func chipsRow(chips: [TripAttributes.ContentState.ArrivalInfo], now: Date) -> some View {
+    private func chipsRow(chips: [TripAttributes.ContentState.ArrivalInfo]) -> some View {
         HStack(spacing: 8) {
             // departureTime is NOT a safe identity here: the server can (and,
             // due to an upstream OBA bug, briefly did) emit duplicate
@@ -110,22 +110,20 @@ public struct TripLiveActivityCardView: View {
             // replaced on every content update, so positional identity is
             // safe and can't collide.
             ForEach(Array(chips.enumerated()), id: \.offset) { _, arrival in
-                departurePill(for: arrival, now: now)
+                departurePill(for: arrival)
             }
             Spacer()
         }
     }
 
     @ViewBuilder
-    private func departurePill(for arrival: TripAttributes.ContentState.ArrivalInfo, now: Date) -> some View {
+    private func departurePill(for arrival: TripAttributes.ContentState.ArrivalInfo) -> some View {
         let color = Color(uiColor: presenter.color(for: arrival))
-        let minutes = max(0, Int(arrival.departureDate.timeIntervalSince(now) / 60.0))
-        Text(minutes == 0
-             ? OBALoc("stop_page.countdown.now", value: "NOW", comment: "Shown in place of the minutes countdown when the vehicle is departing now")
-             : "\(minutes)m")
-            .font(.caption.weight(.heavy))
-            .monospacedDigit()
-            .foregroundStyle(color)
+        TickingCountdownText(
+            departure: arrival.departureDate,
+            font: .caption.weight(.heavy),
+            color: color
+        )
             .padding(.horizontal, 8)
             .padding(.vertical, 3)
             .background(color.opacity(0.14), in: RoundedRectangle(cornerRadius: 8))
