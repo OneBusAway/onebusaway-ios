@@ -825,6 +825,13 @@ class StopViewModel: ObservableObject {
         liveActivityToastDismissTask = Task { [weak self] in
             do {
                 try await Task.sleep(for: .seconds(2))
+                // `cancel()` only interrupts the sleep while it is still
+                // suspended. Once it has resumed, this continuation is already
+                // queued on the main actor behind the newer signal that cancelled
+                // it — and that signal has set the flag back to true. Clearing it
+                // here would dismiss the *new* toast a moment after it appeared,
+                // which is the behaviour the cancellation exists to prevent.
+                try Task.checkCancellation()
             } catch {
                 // Superseded by a newer signal; that signal's task owns the dismissal.
                 return

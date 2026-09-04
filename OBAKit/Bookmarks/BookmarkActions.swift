@@ -79,10 +79,53 @@ final class BookmarkActions {
         (bookmark.routeShortName ?? bookmark.name, bookmark.tripHeadsign ?? "")
     }
 
+    /// Builds content from whatever arrivals a bookmark row has loaded, or `nil`
+    /// when it has none — the bookmark paths have no single departure to fall
+    /// back on, so an empty list really is a failure for them.
     static func buildContentState(from arrivalDepartures: [ArrivalDeparture]) -> TripAttributes.ContentState? {
         guard !arrivalDepartures.isEmpty else {
             return nil
         }
+        return contentState(from: arrivalDepartures)
+    }
+
+    /// Builds content for the trip the rider actually tracked: same stop, route,
+    /// and destination as `departure`. Route-only matching mixes both directions
+    /// at a transit center and shows the opposite bus's countdown (#1326).
+    ///
+    /// Non-optional on purpose. When the stop list no longer contains the tracked
+    /// trip — stale data, or a list that never loaded — this falls back to
+    /// `departure` itself, so there is always at least one arrival to show and
+    /// callers need no failure branch.
+    static func buildContentState(
+        from arrivalDepartures: [ArrivalDeparture],
+        matching departure: ArrivalDeparture
+    ) -> TripAttributes.ContentState {
+        let key = TripBookmarkKey(arrivalDeparture: departure)
+
+        if (departure.tripHeadsign ?? "").isEmpty {
+            // `TripBookmarkKey` substitutes "" for a missing headsign, so the
+            // filter below degrades to stop + route and can readmit the opposite
+            // direction — the very symptom this method exists to prevent. Still
+            // better than showing no trip at all, but it must not be silent.
+            // See: https://github.com/OneBusAway/onebusaway-ios/issues/1326
+            Logger.warn("Departure \(departure.tripID) at stop \(departure.stopID) has no trip headsign; Live Activity arrivals match on stop and route only and may mix directions.")
+        }
+
+        let sameTrip = arrivalDepartures
+            .filter { TripBookmarkKey(arrivalDeparture: $0) == key }
+            .sorted { $0.arrivalDepartureDate < $1.arrivalDepartureDate }
+        let source = sameTrip.isEmpty ? [departure] : sameTrip
+        return contentState(from: source)
+    }
+
+    /// Maps the soonest three arrivals into the Live Activity payload.
+    ///
+    /// - Precondition: `arrivalDepartures` is non-empty. Both entry points above
+    ///   establish that — one by guarding, the other by falling back to the
+    ///   tracked departure — which is why only the guarding one returns an
+    ///   `Optional`.
+    private static func contentState(from arrivalDepartures: [ArrivalDeparture]) -> TripAttributes.ContentState {
         let arrivals = arrivalDepartures.prefix(3).map { arrDep in
             TripAttributes.ContentState.ArrivalInfo(
                 departureTime: Int(arrDep.arrivalDepartureDate.timeIntervalSince1970),
@@ -132,28 +175,12 @@ final class BookmarkActions {
         }
 
         let attributes = TripAttributes(staticData: staticData)
-        // Prominence so the Dynamic Island switches to this Track when another
-        // trip is already live (#1189 Problem 2). Default score is 0 and equal
-        // scores keep the first-started activity.
-        let prominence = TripLiveActivityRelevance.prominenceScore()
         do {
-            let activity = try Activity.request(
+            let activity = try Activity<TripAttributes>.requestProminent(
                 attributes: attributes,
-                content: TripLiveActivityRelevance.content(
-                    state: contentState,
-                    staleDate: nil,
-                    relevanceScore: prominence
-                ),
-                pushType: .token
+                state: contentState
             )
             trackLiveActivity(activity, arrivalDepartures: arrivalDepartures)
-            let activityID = activity.id
-            Task {
-                await Activity<TripAttributes>.demoteLivePeers(
-                    exceptActivityID: activityID,
-                    relativeTo: prominence
-                )
-            }
             Logger.info("Started Live Activity with ID: \(activity.id)")
             showLiveActivityStartedToast()
             return .started

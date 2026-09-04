@@ -946,7 +946,7 @@ public class StopViewController: UIViewController,
                 actions.append(schedule)
             }
 
-            let shareTrip = UIAction(title: OBALoc("stop_controller.share_trip", value: "Share Trip", comment: "Context menu button that allows the user to share their trip status."), image: Icons.share) { [weak self] _ in
+            let shareTrip = UIAction(title: Strings.shareTrip, image: Icons.share) { [weak self] _ in
                 self?.shareTripStatus(viewModel: viewModel)
             }
             actions.append(shareTrip)

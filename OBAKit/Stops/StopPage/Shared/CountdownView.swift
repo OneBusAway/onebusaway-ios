@@ -14,17 +14,25 @@ struct CountdownView: View {
     let color: Color
     /// true = card-header size (grouped card / chrono row), false = compact.
     var emphasized: Bool = true
+    /// "Arrives" / "Departs" under the minutes. Nil on surfaces that are
+    /// already one-sided (trip card = arriving, bookmark = departing).
+    var caption: String? = nil
 
     var body: some View {
-        // Top-aligned so the glyph floats at the number's top-right corner
-        // like a superscript, per the comps — not baseline-aligned beside it.
-        HStack(alignment: .top, spacing: 2) {
-            Text(minutes == 0 ? OBALoc("stop_page.countdown.now", value: "NOW", comment: "Shown in place of the minutes countdown when the vehicle is departing now") : "\(minutes)m")
-                .font(emphasized ? .system(.title2, design: .rounded, weight: .heavy) : .system(.callout, design: .rounded, weight: .heavy))
-                .monospacedDigit()
-                .foregroundStyle(color)
-            RealtimeGlyph(isRealTime: isRealTime, color: color, size: emphasized ? 11 : 9)
-                .padding(.top, 1)
+        VStack(spacing: 1) {
+            HStack(alignment: .top, spacing: 2) {
+                Text(minutes == 0 ? OBALoc("stop_page.countdown.now", value: "NOW", comment: "Shown in place of the minutes countdown when the vehicle is departing now") : "\(minutes)m")
+                    .font(emphasized ? .system(.title2, design: .rounded, weight: .heavy) : .system(.callout, design: .rounded, weight: .heavy))
+                    .monospacedDigit()
+                    .foregroundStyle(color)
+                RealtimeGlyph(isRealTime: isRealTime, color: color, size: emphasized ? 11 : 9)
+                    .padding(.top, 1)
+            }
+            if let caption {
+                Text(caption)
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(color)
+            }
         }
         // Hidden outright rather than an empty `children: .ignore` element:
         // every consumer (departure rows, grouped cards) speaks the countdown

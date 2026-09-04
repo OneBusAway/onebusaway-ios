@@ -217,6 +217,36 @@
 /* Button title to let the user view a data migration report. */
 "data_migration_bulletin.view_report_button" = "Xem báo cáo";
 
+/* Error shown when the boarding stop cannot be found in the trip's stop list. */
+"destination_stop_picker.error_boarding_stop_not_found" = "Không thể xác định điểm lên xe của bạn trên chuyến đi này.";
+
+/* Error shown when the API service is unavailable in the destination stop picker. */
+"destination_stop_picker.error_no_service" = "Không thể kết nối với dịch vụ vận tải.";
+
+/* Title shown while loading the list of stops for destination selection. */
+"destination_stop_picker.loading_title" = "Đang tải điểm dừng";
+
+/* Body text shown when there are no stops available after the boarding stop. */
+"destination_stop_picker.no_stops_body" = "Không còn điểm dừng nào trên chuyến đi này.";
+
+/* Title shown when there are no stops available after the boarding stop. */
+"destination_stop_picker.no_stops_title" = "Không có điểm dừng nào";
+
+/* Button to retry loading stops after an error. */
+"destination_stop_picker.retry_button" = "Thử lại";
+
+/* Section header prompting user to select their destination stop. */
+"destination_stop_picker.select_destination_header" = "Bạn xuống ở đâu?";
+
+/* VoiceOver label for the navigation bar button that shares the trip when no destination could be loaded. */
+"destination_stop_picker.share_without_destination_a11y_label" = "Chia sẻ chuyến đi mà không có điểm dừng đến";
+
+/* Button shown when a trip has no remaining stops, letting the user share the trip without picking a destination. */
+"destination_stop_picker.share_without_destination_button" = "Chia sẻ không kèm điểm đến";
+
+/* Navigation bar title for the destination stop picker when sharing a trip. */
+"destination_stop_picker.title" = "Chọn điểm đến";
+
 /* Body of the donation widget that appears on the stop view controller */
 "donation_cell.body" = "Ứng dụng này hiện được xây dựng hoàn toàn bằng công sức tình nguyện, và chúng tôi cần bạn giúp tài trợ cho việc phát triển trong tương lai.";
 
@@ -430,8 +460,14 @@
 /* Voiceover text indicating that this button toggles the base map type. */
 "map_controller.map_type.accessibility_label" = "Loại bản đồ";
 
+/* Voiceover value combining the base map type with the number of enabled map layers. %1$@ is the base map type, %2$d is the layer count. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
+"map_controller.map_type.accessibility_value_with_layers_fmt" = "%1$@, %2$d lớp đang bật";
+
 /* Voiceover text indicating the current map type as the hybrid base map (satellite view with labels). */
 "map_controller.map_type.hybrid.accessibility_value" = "kết hợp";
+
+/* Voiceover text indicating the current map type as the satellite base map. */
+"map_controller.map_type.satellite.accessibility_value" = "vệ tinh";
 
 /* Voiceover text indicating the current map type as the standard base map. */
 "map_controller.map_type.standard.accessibility_value" = "tiêu chuẩn";
@@ -747,11 +783,14 @@
 /* Accessibility label for the onboarding progress bar */
 "onboarding.progress.accessibility_label" = "Tiến trình hướng dẫn";
 
-/* Body of the region onboarding screen */
+/* Body of the region onboarding screen when the region was detected from the rider's location */
 "onboarding.region.body" = "Chúng tôi đã tìm thấy mạng lưới giao thông gần bạn nhất.";
 
-/* Body of the region onboarding screen when no location is available */
-"onboarding.region.body_no_location" = "Chọn mạng lưới giao thông bạn sử dụng.";
+/* Body of the region onboarding screen prompting the rider to choose a transit network */
+"onboarding.region.body_choose" = "Chọn mạng lưới giao thông bạn sử dụng.";
+
+/* Label on the region card when the region was already selected by app configuration or an earlier launch rather than detected from the rider's location */
+"onboarding.region.current_label" = "Khu vực hiện tại";
 
 /* Label on the detected-region card */
 "onboarding.region.detected_label" = "Phát hiện gần bạn";
@@ -761,6 +800,9 @@
 
 /* Link to the full region picker */
 "onboarding.region.see_all_button" = "Xem tất cả khu vực";
+
+/* Label on the region card when the rider chose the region from the list rather than it being detected from their location */
+"onboarding.region.selected_label" = "Lựa chọn của bạn";
 
 /* Title of the region onboarding screen */
 "onboarding.region.title" = "Khu vực của bạn";
@@ -776,6 +818,12 @@
 
 /* Title of the first onboarding screen; the argument is the app name */
 "onboarding.welcome.title_fmt" = "Chào mừng đến với %@";
+
+/* Body of the destination alert notification. %@ is the name of the rider's destination stop. */
+"proximity_alert.notification.body_fmt" = "Bạn đang đến gần %@.";
+
+/* Title of the notification shown when the rider nears the stop they set a destination alert on. */
+"proximity_alert.notification.title" = "Sắp đến điểm dừng của bạn";
 
 /* Reachability bulletin shown when the user has disabled cellular data for this app in iOS Settings. Both substituted values are the app name. */
 "reachability_bulletin.description.cellular_data_restricted_fmt" = "%1$@ hiện không được phép truy cập dữ liệu di động. Để khắc phục, hãy vào Cài đặt > Di động và bật dữ liệu di động cho %2$@, hoặc kết nối với mạng WiFi.";
@@ -1202,6 +1250,7 @@
 
 /* VoiceOver label for a grouped route card */
 "stop_page.grouped.a11y_fmt" = "Tuyến %1$@ đi %2$@, chuyến khởi hành tiếp theo sau %3$d phút, %4$@. Đã tải thêm %5$d chuyến khởi hành.";
+"stop_page.grouped.a11y_arrives_fmt" = "Tuyến %1$@ đi %2$@, chuyến đến tiếp theo sau %3$d phút, %4$@. Đã tải thêm %5$d chuyến khởi hành.";
 
 /* VoiceOver custom action on a grouped route card's header that cancels the alarm already set for the next departure. */
 "stop_page.grouped.a11y_remove_alarm" = "Xóa lời nhắc";
@@ -1262,6 +1311,7 @@
 
 /* VoiceOver label for a departure row: route, headsign, minutes, status. */
 "stop_page.row.a11y_fmt" = "Tuyến %1$@ đi %2$@, khởi hành sau %3$d phút, %4$@";
+"stop_page.row.a11y_arrives_fmt" = "Tuyến %1$@ đi %2$@, đến sau %3$d phút, %4$@";
 
 /* VoiceOver clause appended to a departure row that's upcoming but not reachable on foot before it leaves. */
 "stop_page.row.a11y_missed" = "có thể lỡ — xe khởi hành trước khi bạn kịp đi bộ đến điểm dừng";
@@ -1503,6 +1553,12 @@
 /* Describes the previous trip of this vehicle. e.g. Starts as 10 - Downtown Seattle */
 "trip_details_controller.starts_as_fmt" = "Bắt đầu là %@";
 
+/* Alert message when trip sharing fails. */
+"trip_sharing.share_error.message" = "Đã xảy ra lỗi khi chuẩn bị liên kết chuyến đi. Vui lòng thử lại.";
+
+/* Alert title when trip sharing fails. */
+"trip_sharing.share_error.title" = "Không thể chia sẻ";
+
 /* A formatted string for displaying a vehicle's ID on the trip status map. e.g. 'Vehicle ID: 12345' */
 "trip_status_annotation.title_fmt" = "Mã phương tiện: %@";
 
@@ -1604,6 +1660,9 @@
 
 /* Accessibility label for the transfer arrival banner shown when navigating to a connecting stop. */
 "walk_time_view.transfer_accessibility_label" = "Giờ đến khi chuyển tuyến";
+
+/* Spoken value for the map weather control. First %@ is the temperature, second is the weather condition. */
+"weather.button_accessibility_value_format" = "%1$@, %2$@";
 
 /* Format for the chance-of-rain percentage on the weather card header. %d is the integer percent. */
 "weather.chance_of_rain_format" = "Khả năng có mưa: %d%%";

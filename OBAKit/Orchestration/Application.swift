@@ -106,6 +106,18 @@ public class Application: CoreApplication, PushServiceDelegate {
     @MainActor
     lazy var walkingSpeedManager = WalkingSpeedManager(userDataStore: userDataStore)
 
+    /// Owns the rider's destination proximity alerts.
+    ///
+    /// `lazy` only because it needs a fully-initialized `self`; `init` forces it
+    /// immediately, and the comment there explains why it must not wait for a
+    /// first use that may never come.
+    @MainActor
+    public private(set) lazy var proximityAlertManager = ProximityAlertManager(
+        locationService: locationService,
+        userDataStore: userDataStore,
+        regionIDProvider: { [weak self] in self?.regionsService.currentRegion?.regionIdentifier }
+    )
+
     @objc lazy var userActivityBuilder = UserActivityBuilder(application: self)
 
     /// Handles all deep-linking into the app.
@@ -169,6 +181,15 @@ public class Application: CoreApplication, PushServiceDelegate {
         bookmarkWidgetRefresher = BookmarkWidgetRefresher()
 
         super.init(config: config)
+
+        // Force the proximity alert manager now instead of leaving it to a first
+        // use that may never come. A geofence crossing relaunches a terminated
+        // app, and Core Location delivers the queued region event to whatever
+        // `LocationService` delegates exist once launch finishes — a launch on
+        // which no screen is ever built and nothing touches this property.
+        // Constructing it here registers the delegate, and re-arms the regions,
+        // before that event lands.
+        _ = proximityAlertManager
 
         configureAppearanceProxies()
     }
@@ -364,6 +385,36 @@ public class Application: CoreApplication, PushServiceDelegate {
         Task { await pushRegistrationManager.registerIfNeeded() }
     }
 
+    public func pushService(_ pushService: PushService, receivedProximityAlertForStopID stopID: StopID, regionID: Int?) {
+        // The alert's own region wins where it has one. `currentRegion` is right
+        // only while it tracks the rider's location — the ordinary case, since the
+        // geofence is crossed where they are — and is wrong for a manually pinned
+        // region, which would send them to the pinned region's API for a stop they
+        // set somewhere else. Alerts stored before they carried a region still
+        // fall back to it, exactly as they always did.
+        guard let regionID = regionID ?? regionsService.currentRegion?.regionIdentifier else {
+            // Neither names one — the ordinary case for a tap that relaunched a
+            // terminated app, since the regions list loads asynchronously. Stash
+            // without one, exactly as the fired-alarm handler above does: the
+            // drain navigates as soon as a root controller exists, and
+            // `regionsService(_:updatedRegion:)` drains again once a region lands.
+            // Returning here instead would drop the only thing the rider tapped.
+            Logger.info("Proximity alert tap for stop \(stopID) arrived with no region; deferring navigation.")
+            pendingStopID = stopID
+            // Cleared rather than left alone: a region stashed by an earlier
+            // navigation would make the drain refuse this stop as belonging to
+            // somewhere else.
+            pendingStopRegionID = nil
+            return
+        }
+        // Through `queueOrOpenStop` on both branches, rather than a second copy of
+        // its deferral logic here: once the region can come from the alert instead
+        // of from `currentRegion`, its mismatch guard can finally disagree with
+        // itself, and a tap that relaunched the app stashes a region the drain can
+        // check instead of navigating against whatever loads first.
+        queueOrOpenStop(AppLinksRouter.StopDestination(stopID: stopID, regionID: regionID))
+    }
+
     /// Deletes the stored alarm whose deep-link identity matches `pushBody`, so the stop
     /// page reflects the fired state without waiting for the next full refresh.
     @MainActor
@@ -497,6 +548,12 @@ public class Application: CoreApplication, PushServiceDelegate {
         }
 
         configureConnectivity()
+
+        // Re-arm proximity geofences and reap alerts that expired while the app was
+        // away. Same reason the Live Activity cleanup below runs here: alerts age
+        // out on a clock that keeps running with no process to notice, and the
+        // regions standing for them outlive the process that armed them.
+        proximityAlertManager.reconcileMonitoredRegions()
 
         // Clean up Live Activity subscriptions whose activities are gone. This has to run on an
         // app-lifecycle hook rather than in a view controller: an activity the user dismissed

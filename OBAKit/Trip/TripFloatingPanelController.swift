@@ -165,7 +165,13 @@ class TripFloatingPanelController: UIViewController,
     }
 
     // MARK: - Public Methods
-    public func highlightStopInList(_ matchingStop: Stop) {
+    /// Scrolls the trip stop list to `matchingStop`'s row and, by default, blinks it.
+    /// - Parameters:
+    ///   - matchingStop: The stop whose row should be brought into view.
+    ///   - blinksAfterScroll: Pass `false` when the caller is about to push another view
+    ///     controller. The blink is delayed until scrolling settles, so it would play
+    ///     underneath the pushed page and be finished before the rider returned to see it.
+    public func highlightStopInList(_ matchingStop: Stop, blinksAfterScroll: Bool = true) {
         let data = self.items(for: listView)
 
         var matchingIndexPath: IndexPath?
@@ -178,15 +184,17 @@ class TripFloatingPanelController: UIViewController,
             }
         }
 
-        if let matchingIndexPath = matchingIndexPath {
-            listView.scrollToItem(at: matchingIndexPath, at: .top, animated: true)
+        guard let matchingIndexPath else { return }
 
-            // There's no completionHandler for scrollToItem, so just wait 3/4 of
-            // a second for scrolling to hopefully finish.
-            // Note: If 750ms passes, but the cell is still not visible, then the `blink` won't appear.
-            scrollBlinkThrottler.throttle(deadline: .now() + .milliseconds(750)) { [weak self] in
-                (self?.listView.cellForItem(at: matchingIndexPath) as? OBAListViewCell)?.blink()
-            }
+        listView.scrollToItem(at: matchingIndexPath, at: .top, animated: true)
+
+        guard blinksAfterScroll else { return }
+
+        // There's no completionHandler for scrollToItem, so just wait 3/4 of
+        // a second for scrolling to hopefully finish.
+        // Note: If 750ms passes, but the cell is still not visible, then the `blink` won't appear.
+        scrollBlinkThrottler.throttle(deadline: .now() + .milliseconds(750)) { [weak self] in
+            (self?.listView.cellForItem(at: matchingIndexPath) as? OBAListViewCell)?.blink()
         }
     }
 
