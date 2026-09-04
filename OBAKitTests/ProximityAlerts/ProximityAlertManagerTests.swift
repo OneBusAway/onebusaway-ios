@@ -50,13 +50,20 @@ final class ProximityAlertManagerTests: OBATestCase {
 
     // MARK: - Helpers
 
-    /// - Parameter notificationStatus: what the manager sees when it checks
-    ///   whether a notification it posted could actually reach the rider.
-    private func makeManager(notificationStatus: UNAuthorizationStatus = .authorized) -> ProximityAlertManager {
+    /// - Parameters:
+    ///   - notificationStatus: what the manager sees when it checks whether a
+    ///     notification it posted could actually reach the rider.
+    ///   - regionID: the region the rider is in as the manager sees it, recorded
+    ///     onto every alert it creates.
+    private func makeManager(
+        notificationStatus: UNAuthorizationStatus = .authorized,
+        regionID: Int? = nil
+    ) -> ProximityAlertManager {
         let delivered = self.delivered!
         return ProximityAlertManager(
             locationService: locationService,
             userDataStore: store,
+            regionIDProvider: { regionID },
             authorizationStatusProvider: { notificationStatus },
             scheduleNotification: { request, completion in
                 delivered.value.append(request)
@@ -209,6 +216,99 @@ final class ProximityAlertManagerTests: OBATestCase {
         #expect(result == .regionLimitReached(limit: LocationService.maximumMonitoredRegions))
         #expect(self.store.proximityAlerts.isEmpty)
         #expect(self.locationService.monitoredProximityAlertIDs.isEmpty)
+    }
+
+    @Test func `Create refuses a second alert on the same stop`() async {
+        let manager = makeManager()
+        guard case .activated(let first) = await manager.createProximityAlert(for: stop) else {
+            Issue.record("Setup failed: alert did not activate")
+            return
+        }
+
+        let result = await manager.createProximityAlert(for: stop)
+
+        guard case .alreadyActive(let existing) = result else {
+            Issue.record("Expected .alreadyActive, got \(result)")
+            return
+        }
+        #expect(existing.id == first.id)
+        // The point of the guard. Asserting only the returned case would pass
+        // even if a second geofence had armed at the same coordinate, holding a
+        // second one of the twenty slots and firing alongside the first.
+        #expect(self.store.proximityAlerts.map(\.id) == [first.id])
+        #expect(self.locationService.monitoredProximityAlertIDs == [first.id])
+    }
+
+    @Test func `Create allows an alert on a stop whose old one expired`() async {
+        let manager = makeManager()
+        // Assigned rather than `add`ed. `add` posts `.proximityAlertsDidChange`,
+        // which this manager observes with the selector form — `NotificationCenter`
+        // invokes that inline, so reconciliation would reap the alert before the
+        // guard ever saw it and the test would pass without exercising the expiry
+        // filter it exists for.
+        store.proximityAlerts = [ProximityAlert(
+            stop: stop,
+            createdAt: Date(timeIntervalSinceNow: -ProximityAlert.expirationInterval - 60)
+        )]
+
+        let result = await manager.createProximityAlert(for: stop)
+
+        // The filter is easy to lose in a refactor, and losing it is invisible
+        // until a rider cannot set today's alert on yesterday's stop.
+        guard case .activated(let alert) = result else {
+            Issue.record("Expected .activated, got \(result)")
+            return
+        }
+        #expect(self.locationService.monitoredProximityAlertIDs == [alert.id])
+    }
+
+    @Test func `Create allows an alert on a different stop`() async {
+        let manager = makeManager()
+        _ = await manager.createProximityAlert(for: stops[0])
+
+        let result = await manager.createProximityAlert(for: stops[1])
+
+        // The guard keys on the stop. One that dropped that predicate would pass
+        // every other test here while refusing every second alert the rider sets.
+        guard case .activated(let second) = result else {
+            Issue.record("Expected .activated, got \(result)")
+            return
+        }
+        #expect(second.stopID == self.stops[1].id)
+        #expect(self.store.proximityAlerts.count == 2)
+        #expect(self.locationService.monitoredProximityAlertIDs.count == 2)
+    }
+
+    @Test func `Create on a stop that already has an alert still reports lost authorization`() async {
+        let manager = makeManager()
+        guard case .activated = await manager.createProximityAlert(for: stop) else {
+            Issue.record("Setup failed: alert did not activate")
+            return
+        }
+        // A downgrade from Always neither disarms nor deletes, so the stored alert
+        // still looks healthy to the duplicate guard while no longer able to
+        // deliver in the background.
+        locationManagerMock._authorizationStatus = .authorizedWhenInUse
+
+        let result = await manager.createProximityAlert(for: stop)
+
+        // Ordering, asserted: "you already have one" would be true and useless
+        // here, because the one they have went quiet when Always did. This is the
+        // actionable answer, and the explanation.
+        #expect(result == .needsLocationAuthorization(.authorizedWhenInUse))
+    }
+
+    @Test func `Create records the region the alert was set in`() async {
+        let manager = makeManager(regionID: 12)
+
+        guard case .activated(let alert) = await manager.createProximityAlert(for: stop) else {
+            Issue.record("Setup failed: alert did not activate")
+            return
+        }
+        #expect(alert.regionID == 12)
+        // Persisted, not merely returned: the tap that needs the region reads the
+        // stored alert, often from a process that did not create it.
+        #expect(self.store.proximityAlerts.first?.regionID == 12)
     }
 
     // MARK: - Cancelling Alerts
@@ -421,6 +521,41 @@ final class ProximityAlertManagerTests: OBATestCase {
         #expect(request?.identifier == ProximityAlertManager.notificationIdentifierPrefix + alert.id.uuidString)
         // The payload `PushService` routes a tap on, back to the stop page.
         #expect(request?.content.userInfo[ProximityAlertManager.notificationUserInfoKey] as? String == self.stop.id)
+    }
+
+    @Test func `The notification carries the region the alert was set in`() async {
+        let manager = makeManager(regionID: 12)
+        guard case .activated(let alert) = await manager.createProximityAlert(for: stop) else {
+            Issue.record("Setup failed: alert did not activate")
+            return
+        }
+
+        enterRegion(for: alert)
+
+        let userInfo = self.delivered.value.first?.content.userInfo
+        #expect(userInfo?[ProximityAlertManager.notificationRegionUserInfoKey] as? Int == 12)
+        // Beside a stop ID that is still bare, not repackaged into a dictionary
+        // with it: a notification delivered by an earlier build and tapped after
+        // the update routes on this key's shape alone, and reshaping it would drop
+        // that tap into the fallback that re-presents the notification's own text.
+        #expect(userInfo?[ProximityAlertManager.notificationUserInfoKey] as? String == self.stop.id)
+    }
+
+    @Test func `The notification omits the region key when the alert has none`() async {
+        let manager = makeManager()
+        guard case .activated(let alert) = await manager.createProximityAlert(for: stop) else {
+            Issue.record("Setup failed: alert did not activate")
+            return
+        }
+
+        enterRegion(for: alert)
+
+        // Absent rather than present and empty: `PushService` reads the key
+        // optionally, so an alert that named no region delivers the payload every
+        // alert delivered before the field existed did.
+        let userInfo = self.delivered.value.first?.content.userInfo
+        #expect(userInfo?.keys.contains(ProximityAlertManager.notificationRegionUserInfoKey) == false)
+        #expect(userInfo?[ProximityAlertManager.notificationUserInfoKey] as? String == self.stop.id)
     }
 
     @Test func `Entering the geofence clears the alert`() async {
