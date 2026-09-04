@@ -10,6 +10,12 @@
 import Foundation
 import MapKit
 
+public extension Notification.Name {
+    /// Posted after `Formatters.timeZone` changes so on-screen clock rows can
+    /// redraw when the region zone lands asynchronously.
+    static let formattersTimeZoneDidChange = Notification.Name("OBAFormattersTimeZoneDidChange")
+}
+
 public class Formatters: NSObject {
     private let locale: Locale
     private let themeColors: ThemeColors
@@ -18,10 +24,14 @@ public class Formatters: NSObject {
     /// Zone used for clock times (arrivals, trip times, transfer banners).
     ///
     /// Defaults to the device zone so existing tests and pre-region-load UI stay
-    /// stable. `CoreApplication` replaces this with the region's dominant
-    /// agency zone once `agencies-with-coverage` returns.
+    /// stable. When the rider opts in, `CoreApplication` replaces this with the
+    /// region's dominant agency zone once `agencies-with-coverage` returns.
     public var timeZone: TimeZone = .current {
-        didSet { applyTimeZoneToFormatters() }
+        didSet {
+            guard oldValue != timeZone else { return }
+            applyTimeZoneToFormatters()
+            NotificationCenter.default.post(name: .formattersTimeZoneDidChange, object: self)
+        }
     }
 
     /// Creates a new `Formatters` object that will use the provided `Calendar` and `Locale` for locale-specific customization.

@@ -1023,6 +1023,12 @@
 /* Settings > Arrival Display > Footer for the Show transfer arrival banner switch only, not the Show Departures filter */
 "settings_controller.arrival_display_section.transfer_banner.footer" = "Ipakita ang banner ng pagdating sa transfer: kapag naka-on, ang oras ay relative sa pagdating mo kapag magbubukas ng hintuan mula sa biyahe. I-off ang switch na iyon para sa ordinaryong oras at lahat ng pag-alis.";
 
+/* Settings > Arrival & Departure Display > Footer describing the transfer banner and region time zone toggles */
+"settings_controller.arrival_display_section.footer" = "Transfer banner: opening a stop from a trip shows times relative to when you arrive. Region time zone: clock times use the transit region's zone, with a short badge when your phone differs. Both are independent.";
+
+/* Settings > Arrival & Departure Display > Opt-in toggle for displaying arrival clocks in the transit region's time zone */
+"settings_controller.arrival_display_section.region_time_zone" = "Show times in region time zone";
+
 /* Title for the departure filter selection alert */
 "settings_controller.arrival_filter.selector_title" = "Ipakita ang mga Pag-alis";
 

@@ -1367,6 +1367,13 @@ private extension StopViewController {
                 }
             }
             .store(in: &cancellables)
+
+        viewModel.$formattersTimeZoneGeneration
+            .dropFirst()
+            .sink { [weak self] _ in
+                self?.listView.applyData(animated: false)
+            }
+            .store(in: &cancellables)
     }
 
     func seedCollapsedPastDepartureSections(for arrivals: StopArrivals) {

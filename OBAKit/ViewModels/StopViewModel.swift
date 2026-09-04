@@ -127,6 +127,10 @@ class StopViewModel: ObservableObject {
     /// write through this single index (§4.7).
     @Published private(set) var alarmsByDepartureID: [String: Alarm] = [:]
 
+    /// Bumped when `Formatters.timeZone` changes so clock rows (and the zone
+    /// badge) redraw after a late `agencies-with-coverage` response.
+    @Published private(set) var formattersTimeZoneGeneration = 0
+
     /// Non-nil after an alarm create/cancel fails; consumer shows a toast/alert.
     @Published private(set) var alarmError: Error?
 
@@ -159,6 +163,7 @@ class StopViewModel: ObservableObject {
 
     private var alarmFiredCancellable: AnyCancellable?
     private var userDefaultsCancellable: AnyCancellable?
+    private var formattersTimeZoneCancellable: AnyCancellable?
 
     // MARK: - Init Context
 
@@ -231,6 +236,11 @@ class StopViewModel: ObservableObject {
             .publisher(for: UserDefaults.didChangeNotification, object: environment.userDefaults)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in self?.syncArrivalDepartureFilterFromDefaults() }
+
+        formattersTimeZoneCancellable = NotificationCenter.default
+            .publisher(for: .formattersTimeZoneDidChange, object: environment.formatters)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.formattersTimeZoneGeneration += 1 }
     }
 
     /// Backward-compatible entry point for existing callers that pass `Application` directly.
