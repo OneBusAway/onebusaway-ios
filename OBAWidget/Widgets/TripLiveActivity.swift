@@ -75,6 +75,7 @@ struct TripLiveActivity: Widget {
                             .fill(Color.white.opacity(0.15))
                             .frame(height: 1)
                             .padding(.vertical, 8)
+                        // Dim headsign/minutes only; warning stays full opacity (#1376).
                         HStack(alignment: .top, spacing: 0) {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(context.attributes.staticData.routeHeadsign)
@@ -94,11 +95,6 @@ struct TripLiveActivity: Widget {
                                         .foregroundColor(Color(presenter.primaryColor(for: context.state)))
                                 }
                                 .padding(.top, 2)
-                                if context.isStale {
-                                    Text(LiveActivityStaleChrome.warningText)
-                                        .font(.caption.weight(.semibold))
-                                        .foregroundStyle(.orange)
-                                }
                             }
                             .padding(.leading, 6)
                             Spacer(minLength: 12)
@@ -114,6 +110,15 @@ struct TripLiveActivity: Widget {
                             .padding(.trailing, 6)
                         }
                         .opacity(staleOpacity)
+
+                        if context.isStale {
+                            Text(LiveActivityStaleChrome.warningText)
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.orange)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.leading, 6)
+                                .padding(.top, 4)
+                        }
                     }
                 }
             } compactLeading: {
@@ -124,6 +129,7 @@ struct TripLiveActivity: Widget {
                             .font(.system(.body, design: .rounded))
                             .fontWeight(.bold)
                             .foregroundColor(.orange)
+                            .accessibilityLabel(LiveActivityStaleChrome.warningText)
                     } else {
                         Text(context.attributes.staticData.routeShortName)
                             .font(.system(.body, design: .rounded))
@@ -142,16 +148,24 @@ struct TripLiveActivity: Widget {
                         .frame(minWidth: 20)
                 }
             } minimal: {
-                if context.isStale {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .font(.system(.callout, design: .rounded))
-                        .fontWeight(.heavy)
-                        .foregroundColor(.orange)
-                } else if let primary {
+                // Keep the countdown when stale — minimal has no room for both
+                // a warning glyph and minutes, and minutes are the only ETA the
+                // rider gets here. Compact leading already shows the triangle.
+                if let primary {
                     Text(presenter.minuteText(for: primary))
                         .font(.system(.callout, design: .rounded))
                         .fontWeight(.heavy)
-                        .foregroundColor(Color(presenter.color(for: primary)))
+                        .foregroundColor(
+                            context.isStale
+                                ? .orange
+                                : Color(presenter.color(for: primary))
+                        )
+                        .opacity(staleOpacity)
+                        .accessibilityLabel(
+                            context.isStale
+                                ? "\(LiveActivityStaleChrome.warningText), \(presenter.minuteText(for: primary))"
+                                : presenter.minuteText(for: primary)
+                        )
                 }
             }
         }

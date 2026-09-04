@@ -38,10 +38,16 @@ public struct TripLiveActivityCardView: View {
         let chips = Array(upcoming.dropFirst())
 
         VStack(alignment: .leading, spacing: 10) {
-            primaryRow(primary: primary, now: now)
-            if !chips.isEmpty {
-                chipsRow(chips: chips, now: now)
+            // Dim arrival content only — the stale warning must stay full
+            // opacity or light-mode orange ~1.6:1 and becomes unreadable (#1376).
+            VStack(alignment: .leading, spacing: 10) {
+                primaryRow(primary: primary, now: now)
+                if !chips.isEmpty {
+                    chipsRow(chips: chips, now: now)
+                }
             }
+            .opacity(LiveActivityStaleChrome.contentOpacity(isStale: isStale))
+
             if isStale {
                 HStack(spacing: 6) {
                     Image(systemName: "exclamationmark.triangle.fill")
@@ -52,7 +58,6 @@ public struct TripLiveActivityCardView: View {
                 .accessibilityElement(children: .combine)
             }
         }
-        .opacity(LiveActivityStaleChrome.contentOpacity(isStale: isStale))
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
         .background(Color(uiColor: .systemBackground))
