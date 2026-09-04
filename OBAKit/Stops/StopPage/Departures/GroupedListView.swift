@@ -20,6 +20,7 @@ import OBAKitCore
 struct GroupedListView: View {
     let groups: [StopPageListBuilder.RouteGroup<ArrivalDeparture>]
     let expandedRouteID: RouteID?
+    let highlightedTripID: TripIdentifier?
     let statusProvider: (ArrivalDeparture) -> DepartureStatus
     let alarmLookup: (ArrivalDeparture) -> Alarm?
     let alarmLeadTime: (Alarm) -> Int
@@ -45,6 +46,10 @@ struct GroupedListView: View {
     /// layout): badge + countdown become glance tokens on the first line and
     /// everything else flows below at full width.
     private var isAccessibilitySize: Bool { dynamicTypeSize.isAccessibilitySize }
+
+    private func isTransferTrip(_ departure: ArrivalDeparture) -> Bool {
+        highlightedTripID == departure.tripID
+    }
 
     /// Whether this departure should show an alarm affordance: it can take a new
     /// alarm, or it already has one that can be cancelled. Shared by the header
@@ -85,7 +90,15 @@ struct GroupedListView: View {
             headerChipsRow(group)
         }
         .padding(.vertical, 4)
-        .listRowBackground(Color(uiColor: .secondarySystemGroupedBackground))
+        .overlay(alignment: .leading) {
+            if isTransferTrip(next) {
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(Color(uiColor: ThemeColors.shared.brand))
+                    .frame(width: 4)
+                    .padding(.vertical, 4)
+            }
+        }
+        .listRowBackground(DepartureTransferHighlight.rowBackground(isHighlighted: isTransferTrip(next)))
         .contentShape(Rectangle())
         .onTapGesture { onToggleRoute(group.routeID) }
         .accessibilityElement(children: .ignore)
@@ -300,7 +313,15 @@ struct GroupedListView: View {
             }
             .contentShape(Rectangle())
             .onTapGesture { onSelectDeparture(departure) }
-            .listRowBackground(Color(uiColor: .secondarySystemGroupedBackground))
+            .overlay(alignment: .leading) {
+                if isTransferTrip(departure) {
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(Color(uiColor: ThemeColors.shared.brand))
+                        .frame(width: 4)
+                        .padding(.vertical, 4)
+                }
+            }
+            .listRowBackground(DepartureTransferHighlight.rowBackground(isHighlighted: isTransferTrip(departure)))
             // Make the whole expanded row a single VoiceOver activation target
             // that opens the trip screen, mirroring the card
             // header (`children: .ignore` + explicit label + `.isButton`). The
@@ -349,20 +370,29 @@ struct GroupedListView: View {
     /// headsign, minutes, live/scheduled status, and occupancy when present.
     private func expandedRowAccessibilityLabel(_ departure: ArrivalDeparture, status: DepartureStatus) -> String {
         let fmt = OBALoc("stop_page.grouped.expanded_row.a11y_fmt", value: "Route %@ to %@, departs in %d minutes, %@", comment: "VoiceOver label for one expanded departure row inside a grouped route card: route, headsign, minutes, status.")
+        var extras: [String] = []
+        if isTransferTrip(departure) {
+            extras.append(OBALoc("stop_page.row.a11y_transfer_trip", value: "your transfer trip", comment: "VoiceOver clause appended to a departure row that matches the rider's inbound transfer trip."))
+        }
         return DepartureAccessibility.label(
             identity: String(format: fmt, departure.routeShortName, departure.tripHeadsign ?? "", departure.arrivalDepartureMinutes, status.accessibilityStatusDescription),
             departure: departure,
             status: status,
-            timeDisplay: timeDisplay(departure)
+            timeDisplay: timeDisplay(departure),
+            extraClauses: extras
         )
     }
 
     private func groupAccessibilityLabel(_ group: StopPageListBuilder.RouteGroup<ArrivalDeparture>, status: DepartureStatus) -> String {
         let fmt = OBALoc("stop_page.grouped.a11y_fmt", value: "Route %@ to %@, next departure in %d minutes, %@. %d more departures loaded.", comment: "VoiceOver label for a grouped route card")
-        let label = String(format: fmt, group.next.routeShortName, group.next.tripHeadsign ?? "", group.next.arrivalDepartureMinutes, status.accessibilityStatusDescription, group.upcoming.count)
+        var label = String(format: fmt, group.next.routeShortName, group.next.tripHeadsign ?? "", group.next.arrivalDepartureMinutes, status.accessibilityStatusDescription, group.upcoming.count)
         // Appended after the sentence rather than comma-joined like the row
         // labels: this format string ends in a full stop, and VoiceOver's pause
         // there keeps the time attached to the card rather than to the count.
-        return label + " " + timeDisplay(group.next).accessibilityTimeDescription
+        label += " " + timeDisplay(group.next).accessibilityTimeDescription
+        if isTransferTrip(group.next) {
+            label += ", " + OBALoc("stop_page.row.a11y_transfer_trip", value: "your transfer trip", comment: "VoiceOver clause appended to a departure row that matches the rider's inbound transfer trip.")
+        }
+        return label
     }
 }
