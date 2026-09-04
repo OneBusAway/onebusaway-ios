@@ -239,6 +239,22 @@ final class UserDefaultsStoreTests: OBATestCase {
         #expect(self.userDefaultsStore.userDefaults.bool(forKey: UserDefaultsStore.showTransferArrivalBannerKey) == false)
     }
 
+    // MARK: - Region Time Zone Display
+
+    @Test func `Region time zone display defaults off`() {
+        #expect(!self.userDefaultsStore.showRegionTimeZone)
+        #expect(UserDefaultsStore.showRegionTimeZoneKey == "showRegionTimeZone")
+    }
+
+    @Test func `Region time zone display on persists`() {
+        userDefaultsStore.showRegionTimeZone = true
+        #expect(self.userDefaultsStore.showRegionTimeZone)
+
+        let reloaded = UserDefaultsStore(userDefaults: userDefaults)
+        #expect(reloaded.showRegionTimeZone)
+        #expect(self.userDefaultsStore.userDefaults.bool(forKey: UserDefaultsStore.showRegionTimeZoneKey))
+    }
+
     // MARK: - Survey Properties
 
     @Test func `Survey user identifier generates UUID`() {

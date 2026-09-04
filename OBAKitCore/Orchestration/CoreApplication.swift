@@ -201,9 +201,21 @@ open class CoreApplication: NSObject,
         refreshFormattersTimeZone()
     }
 
-    /// Points `formatters` at the region's dominant agency zone so clock times
-    /// match the timetable a rider is looking at, not the phone's zone.
+    /// Applies or clears region-zone clock display from the Settings toggle.
+    /// Default is off (#1102 / #332): device zone, no badge.
+    public func setShowRegionTimeZone(_ enabled: Bool) {
+        userDefaultsStore.showRegionTimeZone = enabled
+        refreshFormattersTimeZone()
+    }
+
+    /// Points `formatters` at the region's dominant agency zone when the rider
+    /// has opted in; otherwise keeps (or resets to) the device zone.
     private func refreshFormattersTimeZone() {
+        guard userDefaultsStore.showRegionTimeZone else {
+            formatters.timeZone = .current
+            return
+        }
+
         Task {
             guard let apiService else { return }
             do {

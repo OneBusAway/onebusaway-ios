@@ -15,6 +15,9 @@ struct GridTimetable: View {
     private let columnWidth: CGFloat = 80
 
     var body: some View {
+        // `formattersTimeZoneGeneration` forces a rebuild when the region zone
+        // lands asynchronously (#332 / PR #1308); dates and HH:mm both depend on it.
+        let _ = viewModel.formattersTimeZoneGeneration
         // Single ScrollView for both horizontal and vertical scrolling
         // LazyVStack with pinnedViews keeps header sticky during vertical scroll
         ScrollView([.horizontal, .vertical], showsIndicators: true) {
@@ -32,6 +35,7 @@ struct GridTimetable: View {
             }
         }
         .frame(maxHeight: .infinity)
+        .id(viewModel.formattersTimeZoneGeneration)
     }
 
     private func departureRow(times: [Date?], isAlternate: Bool) -> some View {

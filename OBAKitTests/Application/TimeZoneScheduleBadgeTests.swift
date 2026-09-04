@@ -148,4 +148,67 @@ struct TimeZoneScheduleBadgeTests {
         #expect(gmtText != pacificText)
         #expect(pacificText.contains("12:00"))
     }
+
+    @Test func `Assigning timeZone posts a redraw notification`() async {
+        let formatters = Formatters(
+            locale: Locale(identifier: "en_US"),
+            calendar: Calendar(identifier: .gregorian),
+            themeColors: ThemeColors()
+        )
+        formatters.timeZone = gmt
+
+        await confirmation("formattersTimeZoneDidChange") { posted in
+            let token = NotificationCenter.default.addObserver(
+                forName: .formattersTimeZoneDidChange,
+                object: formatters,
+                queue: nil
+            ) { _ in posted() }
+            defer { NotificationCenter.default.removeObserver(token) }
+
+            formatters.timeZone = losAngeles
+        }
+    }
+
+    /// Device Taipei + region LA must not shift an 08:00 agency timetable cell.
+    /// Building the `Date` with the device calendar while formatting in LA is
+    /// the #1308 bug; pinning synthesis to the formatters zone keeps 08:00.
+    @Test func `Route timetable clock stays agency-local when device zone differs`() throws {
+        let stopTime = try Fixtures.dictionaryToModel(type: ScheduleForRoute.RouteScheduleStopTime.self, dictionary: [
+            "stopId": "1_100",
+            "tripId": "1_t",
+            "arrivalTime": 8 * 3600,
+            "departureTime": 8 * 3600,
+            "arrivalEnabled": true,
+            "departureEnabled": true,
+            "serviceId": "1_s",
+            "stopHeadsign": ""
+        ])
+
+        // Winter weekday so LA is PST. Date itself is an arbitrary instant on
+        // that civil day; only the calendar zone for start-of-day matters.
+        let scheduleDate = winterAfternoonUTC
+
+        var deviceCalendar = Calendar(identifier: .gregorian)
+        deviceCalendar.timeZone = taipei
+        let buggyDate = deviceCalendar.startOfDay(for: scheduleDate)
+            .addingTimeInterval(TimeInterval(8 * 3600))
+
+        let formatters = Formatters(
+            locale: Locale(identifier: "en_US"),
+            calendar: Calendar(identifier: .gregorian),
+            themeColors: ThemeColors()
+        )
+        formatters.timeZone = losAngeles
+
+        let buggyClock = formatters.timeFormatter.string(from: buggyDate)
+        let fixedDate = stopTime.departureDate(for: scheduleDate, timeZone: losAngeles)
+        let fixedClock = formatters.formattedClockTime(fixedDate, deviceTimeZone: taipei)
+
+        #expect(fixedClock.hasPrefix("8:00") || fixedClock.hasPrefix("08:00"))
+        #expect(fixedClock.hasSuffix(" (PST)"))
+        // Proves the device-calendar path really diverges — this test fails if
+        // someone reverts synthesis to Calendar.current while OBATestCase has
+        // pinned GMT and both zones accidentally cancel out.
+        #expect(buggyClock != formatters.timeFormatter.string(from: fixedDate))
+    }
 }
