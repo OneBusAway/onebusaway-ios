@@ -396,9 +396,13 @@ final class BookmarksViewModelTests: OBATestCase {
 
         let value = try #require(formatters.accessibilityValue(for: row))
 
-        let scheduled = formatters.timeFormatter.string(from: arrivalDep.scheduledDate)
-        let expected = formatters.timeFormatter.string(from: arrivalDep.arrivalDepartureDate)
-        #expect(value == formatters.accessibilityValue(for: arrivalDep) + " scheduled \(scheduled), now expected \(expected).")
+        // Build the clause the same way production does (`DepartureTimeDisplay`),
+        // not by re-assembling the English format string. Hardcoding the English
+        // template disagrees with `OBALoc` whenever the test host's preferred
+        // language is not English — which is how this assertion flakes on CI.
+        let timeDisplay = DepartureTimeDisplay(arrivalDeparture: arrivalDep, formatters: formatters)
+        #expect(timeDisplay.scheduledTimeText != nil)
+        #expect(value == formatters.accessibilityValue(for: arrivalDep) + " " + timeDisplay.accessibilityTimeDescription + ".")
     }
 
     /// Without a rendered correction there's nothing the strikethrough shows
@@ -439,9 +443,9 @@ final class BookmarksViewModelTests: OBATestCase {
 
         let value = try #require(formatters.accessibilityValue(for: row))
 
-        let scheduled = formatters.timeFormatter.string(from: first.scheduledDate)
-        let expected = formatters.timeFormatter.string(from: first.arrivalDepartureDate)
-        let prefix = formatters.accessibilityValue(for: first) + " scheduled \(scheduled), now expected \(expected)."
+        let timeDisplay = DepartureTimeDisplay(arrivalDeparture: first, formatters: formatters)
+        #expect(timeDisplay.scheduledTimeText != nil)
+        let prefix = formatters.accessibilityValue(for: first) + " " + timeDisplay.accessibilityTimeDescription + "."
         #expect(value.hasPrefix(prefix), "clause must directly follow the base value: \(value)")
         #expect(value.dropFirst(prefix.count).contains("Following"), "follow-up sentence must come after the clause: \(value)")
     }
