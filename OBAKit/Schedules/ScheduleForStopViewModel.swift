@@ -128,7 +128,7 @@ class ScheduleForStopViewModel: ObservableObject {
             isLoading = false
         } catch {
             guard generation == fetchGeneration else { return }
-            guard !ScheduleFetchError.isCancellation(error) else { return }
+            guard !error.isCancellation else { return }
             self.error = error
             isLoading = false
         }
