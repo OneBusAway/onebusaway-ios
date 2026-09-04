@@ -218,6 +218,10 @@
 
 /* Use for vehicles arriving in X minutes. */
 "formatters.arrives_in_x_min_fmt" = "Đến sau %d phút";
+"formatters.caption.arrives" = "Đến";
+"formatters.caption.departs" = "Khởi hành";
+"formatters.caption.arrived" = "Đã đến";
+"formatters.caption.departed" = "Đã khởi hành";
 
 /* Use for vehicles arriving now. */
 "formatters.arriving_now" = "Đang đến";

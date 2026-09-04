@@ -1250,6 +1250,7 @@
 
 /* VoiceOver label for a grouped route card */
 "stop_page.grouped.a11y_fmt" = "الخط %1$@ إلى %2$@، المغادرة التالية خلال %3$d دقائق، %4$@. تم تحميل %5$d مغادرات إضافية.";
+"stop_page.grouped.a11y_arrives_fmt" = "الخط %1$@ إلى %2$@، الوصول التالي خلال %3$d دقائق، %4$@. تم تحميل %5$d مغادرات إضافية.";
 
 /* VoiceOver custom action on a grouped route card's header that cancels the alarm already set for the next departure. */
 "stop_page.grouped.a11y_remove_alarm" = "إزالة التذكير";
@@ -1310,6 +1311,7 @@
 
 /* VoiceOver label for a departure row: route, headsign, minutes, status. */
 "stop_page.row.a11y_fmt" = "الخط %1$@ إلى %2$@، تغادر خلال %3$d دقائق، %4$@";
+"stop_page.row.a11y_arrives_fmt" = "الخط %1$@ إلى %2$@، تصل خلال %3$d دقائق، %4$@";
 
 /* VoiceOver clause appended to a departure row that's upcoming but not reachable on foot before it leaves. */
 "stop_page.row.a11y_missed" = "قد تفوتك — تغادر قبل أن تصل إلى الموقف سيرًا";

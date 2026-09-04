@@ -218,6 +218,10 @@
 
 /* Use for vehicles arriving in X minutes. */
 "formatters.arrives_in_x_min_fmt" = "%d분 후 도착";
+"formatters.caption.arrives" = "도착";
+"formatters.caption.departs" = "출발";
+"formatters.caption.arrived" = "도착함";
+"formatters.caption.departed" = "출발함";
 
 /* Use for vehicles arriving now. */
 "formatters.arriving_now" = "지금 도착";

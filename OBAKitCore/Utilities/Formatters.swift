@@ -266,6 +266,22 @@ public class Formatters: NSObject {
         }
     }
 
+    /// One-word caption under the minutes countdown so a layover/first stop
+    /// is readable at a glance (#447). The explanation line already says
+    /// Arrives/Departs; the minutes badge did not.
+    public func arrivalDepartureCaption(for status: ArrivalDepartureStatus, temporalState: TemporalState = .future) -> String {
+        switch (temporalState, status) {
+        case (.past, .arriving):
+            return OBALoc("formatters.caption.arrived", value: "Arrived", comment: "Short caption under a past stop-page countdown for a vehicle that already arrived.")
+        case (.past, .departing):
+            return OBALoc("formatters.caption.departed", value: "Departed", comment: "Short caption under a past stop-page countdown for a vehicle that already left.")
+        case (_, .arriving):
+            return OBALoc("formatters.caption.arrives", value: "Arrives", comment: "Short caption under a stop-page countdown for a vehicle arriving at this stop.")
+        case (_, .departing):
+            return OBALoc("formatters.caption.departs", value: "Departs", comment: "Short caption under a stop-page countdown for a vehicle departing this stop (first stop or layover).")
+        }
+    }
+
     // MARK: - ArrivalDeparture Schedule Deviation
 
     /// Creates a formatted string representing the deviation from schedule described by `arrivalDeparture`

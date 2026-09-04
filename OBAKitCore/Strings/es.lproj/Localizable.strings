@@ -218,6 +218,10 @@
 
 /* Use for vehicles arriving in X minutes. */
 "formatters.arrives_in_x_min_fmt" = "Llega en %dmin";
+"formatters.caption.arrives" = "Llega";
+"formatters.caption.departs" = "Sale";
+"formatters.caption.arrived" = "Llegó";
+"formatters.caption.departed" = "Salió";
 
 /* Use for vehicles arriving now. */
 "formatters.arriving_now" = "Llegando ahora";

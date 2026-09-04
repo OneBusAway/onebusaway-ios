@@ -218,6 +218,10 @@
 
 /* Use for vehicles arriving in X minutes. */
 "formatters.arrives_in_x_min_fmt" = "%d 分鐘後到站";
+"formatters.caption.arrives" = "到達";
+"formatters.caption.departs" = "發車";
+"formatters.caption.arrived" = "已到達";
+"formatters.caption.departed" = "已發車";
 
 /* Use for vehicles arriving now. */
 "formatters.arriving_now" = "進站中";

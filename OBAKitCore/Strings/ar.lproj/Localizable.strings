@@ -218,6 +218,10 @@
 
 /* Use for vehicles arriving in X minutes. */
 "formatters.arrives_in_x_min_fmt" = "تصل خلال %d د";
+"formatters.caption.arrives" = "تصل";
+"formatters.caption.departs" = "تغادر";
+"formatters.caption.arrived" = "وصلت";
+"formatters.caption.departed" = "غادرت";
 
 /* Use for vehicles arriving now. */
 "formatters.arriving_now" = "تصل الآن";
