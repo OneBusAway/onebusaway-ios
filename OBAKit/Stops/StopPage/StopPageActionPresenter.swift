@@ -587,10 +587,13 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
             return
         }
 
-        guard let contentState = buildLiveActivityContentState(for: departure, viewModel: viewModel) else {
-            Logger.error("Failed to build content state for Live Activity")
-            return
-        }
+        // Always yields content: the matching builder falls back to `departure`
+        // itself when the stop list is stale or hasn't loaded yet, so there is
+        // no failure branch to take here.
+        let contentState = BookmarkActions.buildContentState(
+            from: viewModel.stopArrivals?.arrivalsAndDepartures ?? [],
+            matching: departure
+        )
 
         do {
             let activity = try Activity<TripAttributes>.requestProminent(
@@ -604,11 +607,6 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
             Logger.error("Failed to start Live Activity: \(error)")
             presentationHost(for: "live activity error")?.showLiveActivityErrorAlert()
         }
-    }
-
-    private func buildLiveActivityContentState(for departure: ArrivalDeparture, viewModel: StopViewModel) -> TripAttributes.ContentState? {
-        let allArrivals = viewModel.stopArrivals?.arrivalsAndDepartures ?? [departure]
-        return BookmarkActions.buildContentState(from: allArrivals, matching: departure)
     }
 
     // MARK: - User Activity
