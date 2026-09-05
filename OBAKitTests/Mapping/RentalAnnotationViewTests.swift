@@ -53,14 +53,18 @@ final class RentalAnnotationViewTests {
         #expect(subject.fuelLabel.isHidden)
     }
 
-    @Test func labelIsPurpleWhenOperative() throws {
+    /// #1364: purple + light halo vanishes on dark basemap tiles; keep a fixed
+    /// white figure + black halo regardless of operative state / color scheme.
+    @Test func labelIsWhiteWithBlackHaloWhenOperative() throws {
         let subject = view(for: try RentalFixtures.vehicle(batteryPercent: 0.62, operative: true), showsFuelLabel: true)
-        #expect(subject.fuelLabel.textColor == .rentalPurple)
+        #expect(subject.fuelLabel.textColor == .white)
+        #expect(subject.fuelLabel.layer.shadowColor == UIColor.black.cgColor)
     }
 
-    @Test func labelIsGrayWhenNotOperative() throws {
+    @Test func labelIsWhiteWithBlackHaloWhenNotOperative() throws {
         let subject = view(for: try RentalFixtures.vehicle(batteryPercent: 0.62, operative: false), showsFuelLabel: true)
-        #expect(subject.fuelLabel.textColor == .systemGray)
+        #expect(subject.fuelLabel.textColor == .white)
+        #expect(subject.fuelLabel.layer.shadowColor == UIColor.black.cgColor)
     }
 
     /// A visual-clutter rule must not cost a VoiceOver user information: the fuel

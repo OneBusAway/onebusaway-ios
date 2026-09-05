@@ -44,11 +44,16 @@ struct RentalMapMarker: View {
         // bottom, reproducing the 1pt spacing the stack used to provide.
         .overlay(alignment: .bottom) {
             if showsFuelLabel, let fuelText = RentalFormat.fuelLabelText(for: rental) {
+                // Fixed white + black halo, not `markerColor` / adaptive
+                // `systemBackground` shadow. In dark mode that pair made the
+                // thin "%" glyph vanish on dark basemap tiles (#1364).
                 Text(fuelText)
                     .font(.caption.bold())
-                    .foregroundStyle(markerColor)
-                    // A light halo keeps the figure legible over satellite.
-                    .shadow(color: Color(uiColor: .systemBackground), radius: 2)
+                    // Fixed white + black halo (#1364). Purple + adaptive
+                    // `systemBackground` shadow vanished on dark basemap tiles.
+                    .foregroundStyle(.white)
+                    .shadow(color: .black.opacity(0.95), radius: 1.25)
+                    .shadow(color: .black.opacity(0.8), radius: 0.5)
                     .fixedSize()
                     .alignmentGuide(.bottom) { $0[.top] - 1 }
             }
