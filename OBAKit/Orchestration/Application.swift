@@ -696,6 +696,11 @@ public class Application: CoreApplication, PushServiceDelegate {
     /// region exist. Does not fetch this stop against a different region's API.
     func queueOrOpenStop(_ destination: AppLinksRouter.StopDestination) {
         if let current = currentRegion?.regionIdentifier, current != destination.regionID {
+            // Dropped on purpose — fetching this stop against another region's API
+            // would return the wrong stop or nothing — but say so. This is the end
+            // of the line for something the rider actually tapped, and the
+            // no-region branch that defers instead already logs its reasoning.
+            Logger.warn("Stop \(destination.stopID) belongs to region \(destination.regionID) but region \(current) is selected; dropping the tap.")
             return
         }
 
