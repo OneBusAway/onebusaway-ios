@@ -156,17 +156,27 @@ final class BookmarkActions {
         // cards and duplicate OBACloud push registrations. Re-Track still needs
         // to promote the existing activity: after A→B the Island is on B with A
         // demoted to 0, so tapping Track on A again must bump A (not just toast).
+        // Built before the duplicate check so a re-Track can install it: the rider
+        // has asked for this trip while the app holds current arrivals, and the
+        // running card would otherwise keep whatever the last push left (#1390).
+        // Still optional here — a nil simply leaves the promotion score-only,
+        // which is what it always was.
+        let freshContentState = Self.buildContentState(from: arrivalDepartures)
+
         if let existing = Activity<TripAttributes>.running(matching: staticData) {
             Logger.info("Live Activity already running for stop \(staticData.stopID) route \(staticData.routeShortName); promoting instead of duplicating.")
             let existingID = existing.id
             Task {
-                await Activity<TripAttributes>.promoteToDynamicIsland(activityID: existingID)
+                await Activity<TripAttributes>.promoteToDynamicIsland(
+                    activityID: existingID,
+                    state: freshContentState
+                )
             }
             showLiveActivityStartedToast()
             return .promotedExisting
         }
 
-        guard let contentState = Self.buildContentState(from: arrivalDepartures) else {
+        guard let contentState = freshContentState else {
             // Shouldn't happen — the context menu only offers Track once arrival
             // data has loaded — but if data was cleared between the menu render
             // and the tap, tell the user rather than silently doing nothing.
