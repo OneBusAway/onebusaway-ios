@@ -107,11 +107,14 @@ struct RentalClusterMapMarker: View {
                 .foregroundStyle(.white)
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text(String(
-            format: OBALoc(
+        // `localizedStringWithFormat`, not `String(format:)` — see the note on the
+        // sheet's `navigationTitle`; VoiceOver would otherwise read the root plural
+        // form for every count.
+        .accessibilityLabel(Text(String.localizedStringWithFormat(
+            OBALoc(
                 "rental_cluster.title_fmt",
                 value: "%d vehicles here",
-                comment: "Title of the sheet listing the members of a rental cluster"
+                comment: "Title of the sheet listing the members of a rental cluster. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback."
             ),
             count
         )))

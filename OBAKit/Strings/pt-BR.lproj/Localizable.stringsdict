@@ -50,6 +50,22 @@
 			<string>%2$d camadas ativadas</string>
 		</dict>
 	</dict>
+	<key>rental_cluster.title_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d veículo aqui</string>
+			<key>other</key>
+			<string>%d veículos aqui</string>
+		</dict>
+	</dict>
 	<key>search_results_sheet.result_count_fmt</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

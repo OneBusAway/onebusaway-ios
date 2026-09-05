@@ -900,6 +900,9 @@
 /* Title of the Report Problem view controller. */
 "report_problem.title" = "Сообщить о проблеме";
 
+/* Title of the sheet listing the members of a rental cluster. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
+"rental_cluster.title_fmt" = "Здесь %d транспортных средств";
+
 /* Report a problem with the stop at {Stop Name} */
 "report_problem_controller.report_stop_problem_fmt" = "Сообщить о проблеме с остановкой %@";
 

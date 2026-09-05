@@ -62,6 +62,26 @@
 			<string>%2$d warstwy włączonej</string>
 		</dict>
 	</dict>
+	<key>rental_cluster.title_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>1 pojazd tutaj</string>
+			<key>few</key>
+			<string>%d pojazdy tutaj</string>
+			<key>many</key>
+			<string>%d pojazdów tutaj</string>
+			<key>other</key>
+			<string>%d pojazdu tutaj</string>
+		</dict>
+	</dict>
 	<key>search_results_sheet.result_count_fmt</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
