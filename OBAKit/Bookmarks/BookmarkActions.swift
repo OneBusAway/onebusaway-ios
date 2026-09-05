@@ -79,6 +79,45 @@ final class BookmarkActions {
         (bookmark.routeShortName ?? bookmark.name, bookmark.tripHeadsign ?? "")
     }
 
+    /// The `StaticData` stored when Track is tapped on a bookmark row.
+    ///
+    /// Bookmark identity is stop + route + headsign only. `tripID` is left empty
+    /// so duplicate guards reconcile across refresh rollovers and so refresh uses
+    /// the unpinned multi-arrival builder. Trip pinning belongs on the stop-page
+    /// start path, where the rider picks a specific vehicle.
+    static func liveActivityStaticData(
+        for bookmark: Bookmark,
+        regionID: Int,
+        arrivalDepartures: [ArrivalDeparture]
+    ) -> TripAttributes.StaticData {
+        let (routeShortName, routeHeadsign) = liveActivityKeys(for: bookmark)
+        return TripAttributes.StaticData(
+            routeShortName: routeShortName,
+            routeHeadsign: routeHeadsign,
+            stopID: bookmark.stopID,
+            routeColorHex: arrivalDepartures.first?.route.color?.toHex(),
+            regionID: regionID,
+            tripID: ""
+        )
+    }
+
+    /// Builds refreshed content for a running bookmark Live Activity.
+    ///
+    /// Stop-page activities carry a pinned `tripID` in `StaticData` and keep
+    /// following that vehicle. Bookmark activities leave `tripID` empty and show
+    /// up to the soonest three same-bookmark arrivals.
+    static func buildRefreshContentState(
+        for staticData: TripAttributes.StaticData,
+        arrivalDepartures: [ArrivalDeparture]
+    ) -> TripAttributes.ContentState? {
+        guard !arrivalDepartures.isEmpty else { return nil }
+        if !staticData.tripID.isEmpty,
+           let tracked = arrivalDepartures.first(where: { $0.tripID == staticData.tripID }) {
+            return buildContentState(from: arrivalDepartures, matching: tracked)
+        }
+        return buildContentState(from: arrivalDepartures)
+    }
+
     /// Builds content from whatever arrivals a bookmark row has loaded, or `nil`
     /// when it has none — the bookmark paths have no single departure to fall
     /// back on, so an empty list really is a failure for them.
@@ -89,9 +128,11 @@ final class BookmarkActions {
         return contentState(from: arrivalDepartures)
     }
 
-    /// Builds content for the trip the rider actually tracked: same stop, route,
-    /// and destination as `departure`. Route-only matching mixes both directions
-    /// at a transit center and shows the opposite bus's countdown (#1326).
+    /// Builds content for the trip the rider actually tracked.
+    ///
+    /// Pins by `tripID` so Track follows that vehicle's ETA (#1334), not the
+    /// next same-route/headsign arrival. If the stop list no longer contains
+    /// that trip, fall back to the tapped departure alone.
     ///
     /// Non-optional on purpose. When the stop list no longer contains the tracked
     /// trip — stale data, or a list that never loaded — this falls back to
@@ -101,19 +142,8 @@ final class BookmarkActions {
         from arrivalDepartures: [ArrivalDeparture],
         matching departure: ArrivalDeparture
     ) -> TripAttributes.ContentState {
-        let key = TripBookmarkKey(arrivalDeparture: departure)
-
-        if (departure.tripHeadsign ?? "").isEmpty {
-            // `TripBookmarkKey` substitutes "" for a missing headsign, so the
-            // filter below degrades to stop + route and can readmit the opposite
-            // direction — the very symptom this method exists to prevent. Still
-            // better than showing no trip at all, but it must not be silent.
-            // See: https://github.com/OneBusAway/onebusaway-ios/issues/1326
-            Logger.warn("Departure \(departure.tripID) at stop \(departure.stopID) has no trip headsign; Live Activity arrivals match on stop and route only and may mix directions.")
-        }
-
         let sameTrip = arrivalDepartures
-            .filter { TripBookmarkKey(arrivalDeparture: $0) == key }
+            .filter { $0.id == departure.id }
             .sorted { $0.arrivalDepartureDate < $1.arrivalDepartureDate }
         let source = sameTrip.isEmpty ? [departure] : sameTrip
         return contentState(from: source)
@@ -139,15 +169,10 @@ final class BookmarkActions {
 
     @discardableResult
     func startLiveActivity(for bookmark: Bookmark, arrivalDepartures: [ArrivalDeparture]) -> TrackResult {
-        let (routeShortName, routeHeadsign) = Self.liveActivityKeys(for: bookmark)
-
-        let routeColorHex = arrivalDepartures.first?.route.color?.toHex()
-        let staticData = TripAttributes.StaticData(
-            routeShortName: routeShortName,
-            routeHeadsign: routeHeadsign,
-            stopID: bookmark.stopID,
-            routeColorHex: routeColorHex,
-            regionID: application.currentRegion?.regionIdentifier ?? 0
+        let staticData = Self.liveActivityStaticData(
+            for: bookmark,
+            regionID: application.currentRegion?.regionIdentifier ?? 0,
+            arrivalDepartures: arrivalDepartures
         )
 
         // Tapping Track again on a bookmark that is already tracked — or tracking

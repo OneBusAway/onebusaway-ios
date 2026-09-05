@@ -104,6 +104,79 @@ final class BookmarkActionsTests: OBATestCase {
         #expect(keys.routeHeadsign == (bookmark.tripHeadsign ?? ""))
     }
 
+    /// Bookmark Track must not pin a tripID in StaticData — identity is
+    /// stop+route+headsign only, so refresh rollovers can't break dedupe.
+    @Test @MainActor func `Bookmark static data leaves trip ID empty`() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let bookmark = try makeTripBookmark(application: application)
+        let stopArrivals = try Fixtures.loadRESTAPIPayload(
+            type: StopArrivals.self,
+            fileName: "arrivals-and-departures-for-stop-1_10914.json"
+        )
+        try #require(stopArrivals.arrivalsAndDepartures.first?.tripID.isEmpty == false)
+
+        let staticData = BookmarkActions.liveActivityStaticData(
+            for: bookmark,
+            regionID: Fixtures.pugetSoundRegion.regionIdentifier,
+            arrivalDepartures: stopArrivals.arrivalsAndDepartures
+        )
+
+        #expect(staticData.tripID.isEmpty)
+    }
+
+    /// Two bookmark activities with empty tripID still reconcile on
+    /// stop/route/headsign — the duplicate guard's bookmark identity rule.
+    @Test @MainActor func `Bookmark static data with empty trip ID tracks same trip`() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let bookmark = try makeTripBookmark(application: application)
+        let stopArrivals = try Fixtures.loadRESTAPIPayload(
+            type: StopArrivals.self,
+            fileName: "arrivals_and_departures_for_stop_1_29261.json"
+        )
+        let regionID = Fixtures.pugetSoundRegion.regionIdentifier
+
+        let first = BookmarkActions.liveActivityStaticData(
+            for: bookmark,
+            regionID: regionID,
+            arrivalDepartures: Array(stopArrivals.arrivalsAndDepartures.prefix(1))
+        )
+        let second = BookmarkActions.liveActivityStaticData(
+            for: bookmark,
+            regionID: regionID,
+            arrivalDepartures: stopArrivals.arrivalsAndDepartures
+        )
+
+        #expect(first.tripID.isEmpty)
+        #expect(second.tripID.isEmpty)
+        #expect(first.tracksSameTrip(as: second))
+    }
+
+    /// Bookmark refresh with empty tripID uses the unpinned builder, not the
+    /// stop-page matching branch that collapses to one arrival.
+    @Test @MainActor func `Refresh with empty trip ID builds multi-arrival content`() throws {
+        let stopArrivals = try Fixtures.loadRESTAPIPayload(
+            type: StopArrivals.self,
+            fileName: "arrivals_and_departures_for_stop_1_29261.json"
+        )
+        try #require(stopArrivals.arrivalsAndDepartures.count >= 3)
+
+        let staticData = TripAttributes.StaticData(
+            routeShortName: "43",
+            routeHeadsign: "Montlake",
+            stopID: "1_29261",
+            tripID: ""
+        )
+
+        let state = try #require(BookmarkActions.buildRefreshContentState(
+            for: staticData,
+            arrivalDepartures: stopArrivals.arrivalsAndDepartures
+        ))
+
+        #expect(state.arrivals.count == 3)
+    }
+
     /// No arrivals means no content state, which is what makes `startLiveActivity`
     /// report failure instead of requesting an empty activity.
     @Test @MainActor func `Content state is nil without arrivals`() {
@@ -123,11 +196,10 @@ final class BookmarkActionsTests: OBATestCase {
         #expect(state.arrivals.count == 3)
     }
 
-    /// Transit-center case (#1326): the same route serves both directions at one
-    /// stop. Filtering on route ID alone would pick the opposite-direction bus
-    /// because it leaves sooner. Chips and the headline countdown must follow
-    /// the tracked destination, same key as trip bookmarks.
-    @Test @MainActor func `Content state matching a departure drops the opposite direction`() throws {
+    /// Transit-center case (#1326 + #1334): the same route serves both directions
+    /// and multiple vehicles share a headsign. Matching must pin the *selected*
+    /// tripID — not "next same-direction train" — so Track follows that vehicle.
+    @Test @MainActor func `Content state matching pins the selected tripID as primary`() throws {
         let oppositeSooner = try arrivalDeparture(
             routeID: "40_100479",
             headsign: "Angle Lake",
@@ -152,12 +224,35 @@ final class BookmarkActionsTests: OBATestCase {
             matching: tracked
         )
 
-        #expect(state.arrivals.count == 2)
-        #expect(state.arrivals.map(\.departureTime) == [
-            Int(tracked.arrivalDepartureDate.timeIntervalSince1970),
-            Int(laterSameDirection.arrivalDepartureDate.timeIntervalSince1970)
-        ])
+        #expect(state.arrivals.count == 1)
+        #expect(state.arrivals[0].departureTime == Int(tracked.arrivalDepartureDate.timeIntervalSince1970))
         #expect(!state.arrivals.map(\.departureTime).contains(Int(oppositeSooner.arrivalDepartureDate.timeIntervalSince1970)))
+        #expect(!state.arrivals.map(\.departureTime).contains(Int(laterSameDirection.arrivalDepartureDate.timeIntervalSince1970)))
+    }
+
+    /// Picking a later same-direction vehicle must not surface the earlier one
+    /// as the headline countdown (#1334).
+    @Test @MainActor func `Content state matching a later vehicle does not surface an earlier same-direction trip`() throws {
+        let earlier = try arrivalDeparture(
+            routeID: "40_100479",
+            headsign: "Lynnwood City Center",
+            tripID: "trip_north",
+            departureEpoch: 1_700_000_480
+        )
+        let later = try arrivalDeparture(
+            routeID: "40_100479",
+            headsign: "Lynnwood City Center",
+            tripID: "trip_north_2",
+            departureEpoch: 1_700_000_840
+        )
+
+        let state = try #require(BookmarkActions.buildContentState(
+            from: [earlier, later],
+            matching: later
+        ))
+
+        #expect(state.arrivals.count == 1)
+        #expect(state.arrivals[0].departureTime == Int(later.arrivalDepartureDate.timeIntervalSince1970))
     }
 
     /// If the stop list is stale and no longer contains the tapped trip, still
@@ -200,48 +295,6 @@ final class BookmarkActionsTests: OBATestCase {
 
         #expect(state.arrivals.count == 1)
         #expect(state.arrivals[0].departureTime == Int(tracked.arrivalDepartureDate.timeIntervalSince1970))
-    }
-
-    /// A feed that omits `trip_headsign` collapses the `TripBookmarkKey` headsign
-    /// to `""`, so matching falls back to stop and route and readmits the opposite
-    /// direction — the #1326 symptom, from the other end. Pinned rather than
-    /// fixed: matching on the departure alone would leave the card showing a
-    /// single arrival, so the production path keeps the grouping and logs.
-    @Test @MainActor func `Content state matching degrades to route only without a headsign`() throws {
-        let tracked = try arrivalDeparture(
-            routeID: "40_100479",
-            headsign: nil,
-            tripID: "trip_north",
-            departureEpoch: 1_700_000_480
-        )
-        let oppositeDirection = try arrivalDeparture(
-            routeID: "40_100479",
-            headsign: nil,
-            tripID: "trip_south",
-            departureEpoch: 1_700_000_120
-        )
-        let namedDirection = try arrivalDeparture(
-            routeID: "40_100479",
-            headsign: "Lynnwood City Center",
-            tripID: "trip_north_2",
-            departureEpoch: 1_700_000_240
-        )
-
-        // Neither the departure nor its trip reference supplies one, which is the
-        // condition the production warning fires on.
-        #expect(tracked.tripHeadsign == nil)
-
-        let state = BookmarkActions.buildContentState(
-            from: [oppositeDirection, namedDirection, tracked],
-            matching: tracked
-        )
-
-        // Both headsign-less trips match, soonest first — including the one going
-        // the other way. The trip that does carry a headsign is the one dropped.
-        #expect(state.arrivals.map(\.departureTime) == [
-            Int(oppositeDirection.arrivalDepartureDate.timeIntervalSince1970),
-            Int(tracked.arrivalDepartureDate.timeIntervalSince1970)
-        ])
     }
 
     /// Tracking a bookmark with no loaded arrivals can't build a content state,

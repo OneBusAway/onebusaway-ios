@@ -12,7 +12,7 @@ import ActivityKit
 extension TripAttributes.StaticData {
 
     /// Whether two `StaticData` describe the same tracked trip: the same route,
-    /// with the same headsign, arriving at the same stop.
+    /// with the same headsign and trip ID, arriving at the same stop.
     ///
     /// This is the single definition of Live Activity identity — the start
     /// paths' duplicate guards and the bookmark-reconciliation match all
@@ -28,6 +28,7 @@ extension TripAttributes.StaticData {
         stopID == other.stopID
             && routeShortName == other.routeShortName
             && routeHeadsign == other.routeHeadsign
+            && tripID == other.tripID
     }
 }
 
