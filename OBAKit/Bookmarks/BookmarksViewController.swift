@@ -215,12 +215,11 @@ class BookmarksViewController: UIHostingController<BookmarksRootView>,
             let arrivalDepartures = matchingBookmark.map { viewModel.arrivalDepartures(for: $0) } ?? []
 
             let contentState: TripAttributes.ContentState? = {
-                guard matchingBookmark != nil, !arrivalDepartures.isEmpty else { return nil }
-                if !staticData.tripID.isEmpty,
-                   let tracked = arrivalDepartures.first(where: { $0.tripID == staticData.tripID }) {
-                    return BookmarkActions.buildContentState(from: arrivalDepartures, matching: tracked)
-                }
-                return BookmarkActions.buildContentState(from: arrivalDepartures)
+                guard matchingBookmark != nil else { return nil }
+                return BookmarkActions.buildRefreshContentState(
+                    for: staticData,
+                    arrivalDepartures: arrivalDepartures
+                )
             }()
 
             if matchingBookmark != nil, let contentState {

@@ -104,6 +104,79 @@ final class BookmarkActionsTests: OBATestCase {
         #expect(keys.routeHeadsign == (bookmark.tripHeadsign ?? ""))
     }
 
+    /// Bookmark Track must not pin a tripID in StaticData — identity is
+    /// stop+route+headsign only, so refresh rollovers can't break dedupe.
+    @Test @MainActor func `Bookmark static data leaves trip ID empty`() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let bookmark = try makeTripBookmark(application: application)
+        let stopArrivals = try Fixtures.loadRESTAPIPayload(
+            type: StopArrivals.self,
+            fileName: "arrivals-and-departures-for-stop-1_10914.json"
+        )
+        try #require(stopArrivals.arrivalsAndDepartures.first?.tripID.isEmpty == false)
+
+        let staticData = BookmarkActions.liveActivityStaticData(
+            for: bookmark,
+            regionID: Fixtures.pugetSoundRegion.regionIdentifier,
+            arrivalDepartures: stopArrivals.arrivalsAndDepartures
+        )
+
+        #expect(staticData.tripID.isEmpty)
+    }
+
+    /// Two bookmark activities with empty tripID still reconcile on
+    /// stop/route/headsign — the duplicate guard's bookmark identity rule.
+    @Test @MainActor func `Bookmark static data with empty trip ID tracks same trip`() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let bookmark = try makeTripBookmark(application: application)
+        let stopArrivals = try Fixtures.loadRESTAPIPayload(
+            type: StopArrivals.self,
+            fileName: "arrivals_and_departures_for_stop_1_29261.json"
+        )
+        let regionID = Fixtures.pugetSoundRegion.regionIdentifier
+
+        let first = BookmarkActions.liveActivityStaticData(
+            for: bookmark,
+            regionID: regionID,
+            arrivalDepartures: Array(stopArrivals.arrivalsAndDepartures.prefix(1))
+        )
+        let second = BookmarkActions.liveActivityStaticData(
+            for: bookmark,
+            regionID: regionID,
+            arrivalDepartures: stopArrivals.arrivalsAndDepartures
+        )
+
+        #expect(first.tripID.isEmpty)
+        #expect(second.tripID.isEmpty)
+        #expect(first.tracksSameTrip(as: second))
+    }
+
+    /// Bookmark refresh with empty tripID uses the unpinned builder, not the
+    /// stop-page matching branch that collapses to one arrival.
+    @Test @MainActor func `Refresh with empty trip ID builds multi-arrival content`() throws {
+        let stopArrivals = try Fixtures.loadRESTAPIPayload(
+            type: StopArrivals.self,
+            fileName: "arrivals_and_departures_for_stop_1_29261.json"
+        )
+        try #require(stopArrivals.arrivalsAndDepartures.count >= 3)
+
+        let staticData = TripAttributes.StaticData(
+            routeShortName: "43",
+            routeHeadsign: "Montlake",
+            stopID: "1_29261",
+            tripID: ""
+        )
+
+        let state = try #require(BookmarkActions.buildRefreshContentState(
+            for: staticData,
+            arrivalDepartures: stopArrivals.arrivalsAndDepartures
+        ))
+
+        #expect(state.arrivals.count == 3)
+    }
+
     /// No arrivals means no content state, which is what makes `startLiveActivity`
     /// report failure instead of requesting an empty activity.
     @Test @MainActor func `Content state is nil without arrivals`() {
