@@ -56,9 +56,10 @@ public class ProximityAlert: NSObject, Codable {
 
     /// Brings `radius` into the monitorable range, logging whenever it has to.
     ///
-    /// An out-of-range radius can't simply be passed along: `CLCircularRegion`
-    /// clamps it silently, so the alert would fire at a distance nobody asked for
-    /// with nothing anywhere recording that it had changed.
+    /// An out-of-range radius can't simply be passed along: Core Location rejects
+    /// an oversize region with `CLError.regionMonitoringFailure`, delivered
+    /// asynchronously and without the radius, so the alert would fail with nothing
+    /// anywhere recording what it had asked for.
     static func clampedRadius(_ radius: CLLocationDistance) -> CLLocationDistance {
         guard radius.isFinite else {
             Logger.warn("ProximityAlert radius \(radius) is not a finite number; using the \(defaultRadiusMeters)m default.")
