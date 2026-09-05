@@ -455,12 +455,16 @@ class MapViewController: UIViewController,
         }
 
         let button = UIButton(configuration: config)
-        // Restores what `7f2c1b8b` intended before the Configuration switch
-        // dropped it, with the scale factor that version omitted: without a
-        // `minimumScaleFactor`, `adjustsFontSizeToFitWidth` never shrinks
-        // anything. Three-digit temperatures scale down rather than wrap.
-        button.titleLabel?.adjustsFontSizeToFitWidth = true
-        button.titleLabel?.minimumScaleFactor = 0.7
+        // No `adjustsFontSizeToFitWidth` here, deliberately. Autoshrink only acts
+        // on a label pinned to one line, and a `UIButton.Configuration` title is
+        // not — which is exactly how `18°` came to render as "1"/"8"/"°" in the
+        // screenshot on #1344. Setting it (as this did until #1357) shrinks
+        // nothing and reads as though the width problem were handled.
+        //
+        // Making it real needs `titleLabel?.numberOfLines = 1` alongside it, which
+        // trades wrapping for truncation when the scale floor still doesn't fit.
+        // That is a visible change to a 42pt toolbar button and wants a device.
+        // The zeroed horizontal insets above are what actually bought the room.
         button.addTarget(self, action: #selector(showWeather), for: .touchUpInside)
         button.accessibilityLabel = OBALoc("map_controller.show_weather_button", value: "Show Weather Forecast", comment: "Accessibility label for a button that provides the current forecast")
         return button
