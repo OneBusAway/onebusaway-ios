@@ -715,18 +715,22 @@ final class ApplicationTests: OBATestCase {
 
     @Test func `Push service proximity alert tap is never dropped`() {
         let (app, pushService) = makeAppAndPushService()
+        // A region left behind by an earlier navigation. Without it the assertion
+        // below is inert: `pendingStopRegionID` starts nil on a freshly built
+        // `Application`, so deleting the handler's explicit clear would leave this
+        // test green.
+        app.pendingStopRegionID = 999
 
         app.pushService(pushService, receivedProximityAlertForStopID: "1_75403", regionID: nil)
 
         // The tap that matters is the one into a terminated app, where neither a
-        // root controller nor a region exists yet. Both branches must stash: with
-        // no region the handler stashes region-less, and with one `queueOrOpenStop`
-        // stashes it alongside the region. Dropping it would strand the rider on
-        // whatever screen the app happened to open to.
+        // root controller nor a region exists yet. Dropping it would strand the
+        // rider on whatever screen the app happened to open to, with no second
+        // chance — the notification is gone once tapped.
         #expect(app.pendingStopID == "1_75403")
-        // Whatever region was stashed must be the one actually current, or the
-        // drain will refuse the stop as belonging somewhere else.
-        #expect(app.pendingStopRegionID == app.regionsService.currentRegion?.regionIdentifier)
+        // Cleared, not merely absent: a stale region would make the drain refuse
+        // this stop as belonging somewhere else.
+        #expect(app.pendingStopRegionID == nil)
     }
 
     @Test func `Push service proximity alert tap stashes the region the alert carries`() {
