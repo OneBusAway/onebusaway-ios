@@ -1044,6 +1044,9 @@
 /* Directs the user to tap on the link that comes at the end of the string. Learn more: <HYPERLINK IS INSERTED HERE> */
 "service_alert_controller.learn_more_fmt" = "進一步瞭解：%@";
 
+/* 設定 > 輔助使用 > 縮小新車站和行程頁面的間距 */
+"settings_controller.accessibility_section.compact_stop_trip" = "緊湊車站和行程頁";
+
 /* Settings > Accessibility section > Always show full sheet on Voiceover */
 "settings_controller.accessibility_section.default_full_sheet_voiceover" = "開啟旁白時一律顯示完整面板";
 

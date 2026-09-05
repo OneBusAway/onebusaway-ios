@@ -1044,6 +1044,9 @@
 /* Directs the user to tap on the link that comes at the end of the string. Learn more: <HYPERLINK IS INSERTED HERE> */
 "service_alert_controller.learn_more_fmt" = "Scopri di più: %@";
 
+/* Impostazioni > Accessibilità > Riduce lo spazio nelle nuove schermate di fermata e corsa */
+"settings_controller.accessibility_section.compact_stop_trip" = "Pagine fermata e corsa compatte";
+
 /* Settings > Accessibility section > Always show full sheet on Voiceover */
 "settings_controller.accessibility_section.default_full_sheet_voiceover" = "Mostra sempre il foglio intero su VoiceOver";
 

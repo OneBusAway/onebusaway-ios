@@ -41,6 +41,10 @@ public protocol UserDataStore: NSObjectProtocol {
     /// Settings > Accessibility.
     var stopUIReducedColors: Bool { get set }
 
+    /// Whether the new stop and trip screens use tighter spacing. Opt-in,
+    /// off by default (#1278). Surfaced in Settings > Accessibility.
+    var stopTripCompactMode: Bool { get set }
+
     /// Whether opening a stop from a trip applies transfer-relative times
     /// and the "Arriving at XX:XX via ###" banner. Default `true` so existing
     /// riders keep current behavior; Settings > Arrival & Departure Display can turn it off.
@@ -441,6 +445,7 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         static let walkingSpeedSource = "UserDataStore.walkingSpeedSource"
         static let defaultAlarmLeadTimeMinutes = "UserDataStore.defaultAlarmLeadTimeMinutes"
         static let stopUIReducedColors = UserDefaultsStore.stopUIReducedColorsKey
+        static let stopTripCompactMode = UserDefaultsStore.stopTripCompactModeKey
         static let showTransferArrivalBanner = UserDefaultsStore.showTransferArrivalBannerKey
     }
 
@@ -452,6 +457,10 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
     /// docs/superpowers/specs/2026-07-20-stop-ui-accessibility-design.md §3.
     public static let stopUIReducedColorsKey = "stopUIReducedColors"
 
+    /// Defaults key for `stopTripCompactMode`. Dot-free so `@AppStorage`
+    /// on the stop and trip pages can observe it; see `stopUIReducedColorsKey`.
+    public static let stopTripCompactModeKey = "stopTripCompactMode"
+
     /// Defaults key for `showTransferArrivalBanner`. Dot-free so a future
     /// `@AppStorage` reader can observe it; see `stopUIReducedColorsKey`.
     public static let showTransferArrivalBannerKey = "showTransferArrivalBanner"
@@ -462,6 +471,7 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         self.userDefaults.register(defaults: [
             UserDefaultsKeys.debugMode: false,
             UserDefaultsKeys.stopUIReducedColors: false,
+            UserDefaultsKeys.stopTripCompactMode: false,
             UserDefaultsKeys.showTransferArrivalBanner: true,
             UserDefaultsKeys.walkingSpeedMetersPerSecond: WalkingSpeed.defaultMetersPerSecond,
             UserDefaultsKeys.walkingSpeedSource: WalkingSpeedSource.manual.rawValue
@@ -491,6 +501,17 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         }
         set {
             userDefaults.set(newValue, forKey: UserDefaultsKeys.stopUIReducedColors)
+        }
+    }
+
+    // MARK: - Compact Stop / Trip Mode
+
+    public var stopTripCompactMode: Bool {
+        get {
+            return userDefaults.bool(forKey: UserDefaultsKeys.stopTripCompactMode)
+        }
+        set {
+            userDefaults.set(newValue, forKey: UserDefaultsKeys.stopTripCompactMode)
         }
     }
 
