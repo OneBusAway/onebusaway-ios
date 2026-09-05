@@ -254,7 +254,6 @@ final class UserDefaultsStoreTests: OBATestCase {
         #expect(reloaded.displayedTransferContext(context) == nil)
         #expect(self.userDefaultsStore.userDefaults.bool(forKey: UserDefaultsStore.showTransferArrivalBannerKey) == false)
     }
-    }
 
     // MARK: - Survey Properties
 
