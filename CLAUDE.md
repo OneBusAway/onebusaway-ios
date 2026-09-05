@@ -17,6 +17,50 @@ scripts/generate_project                # Defaults to OneBusAway if no app speci
 
 **Available Apps**: OneBusAway, KiedyBus
 
+### Picking a Simulator
+
+Every command below needs a simulator UDID. Resolve one with:
+
+```bash
+SIMULATOR_UDID=$(scripts/resolve_simulator_udid)
+```
+
+That prints the first iPhone on the newest installed iOS runtime — the same
+selection `.github/workflows/tests.yml` makes, from the same implementation, so
+the two cannot drift apart.
+
+**Run it in the same shell invocation as the command that uses it.** It sets an
+ordinary shell variable, and this file's audience is Claude Code, whose Bash tool
+starts a fresh shell per call — the working directory persists, environment does
+not. Resolve it in one call and build in the next and `$SIMULATOR_UDID` is empty,
+so `-destination "platform=iOS Simulator,id="` is rejected while parsing
+arguments, before any device lookup happens:
+
+```
+xcodebuild: error: missing value for key 'id' of option 'Destination'
+```
+
+That is neither of the errors in the table below, and it is the friendlier of the
+three — it names the problem rather than implying the device is missing. Each
+block that follows repeats the resolve line so this cannot arise; keep it when
+copying one.
+
+Address the device by `id=` rather than `name=`. A hardcoded name breaks two ways,
+and they report differently — which is why neither `OS=latest` nor a fresh device
+name fixes both:
+
+| | Error |
+|---|---|
+| not installed | "Unable to find a device matching the provided destination specifier" |
+| ambiguous across runtimes | "The requested device could not be found because multiple devices matched the request" |
+
+The first is verified on the current toolchain. The second is the historical
+wording and has shifted between Xcode releases — treat the text as indicative and
+the cause as the reliable part. `id=` avoids both.
+
+A name also goes stale on every Xcode release: this file has already carried
+`iPhone 16` and `iPhone 17 Pro`.
+
 ### Building, Testing, and Driving the App: use `xcodebuildmcp`
 
 **Reach for `xcodebuildmcp` first.** It wraps `xcodebuild`/`xcrun simctl` and — critically —
@@ -33,10 +77,11 @@ Typical loop for verifying a change in the running app:
 
 ```bash
 scripts/generate_project OneBusAway                      # required before any build
-xcodebuildmcp simulator build-and-run --project-path OBAKit.xcodeproj --scheme App --simulator-id <UDID>
-xcodebuildmcp ui-automation snapshot-ui  --simulator-id <UDID> --style minimal
-xcodebuildmcp ui-automation touch        --simulator-id <UDID> --element-ref e26 --down --up --delay 0.08
-xcodebuildmcp ui-automation screenshot   --simulator-id <UDID> --return-format path --style minimal
+SIMULATOR_UDID=$(scripts/resolve_simulator_udid)         # same shell invocation as the commands below
+xcodebuildmcp simulator build-and-run --project-path OBAKit.xcodeproj --scheme App --simulator-id "$SIMULATOR_UDID"
+xcodebuildmcp ui-automation snapshot-ui  --simulator-id "$SIMULATOR_UDID" --style minimal
+xcodebuildmcp ui-automation touch        --simulator-id "$SIMULATOR_UDID" --element-ref e26 --down --up --delay 0.08
+xcodebuildmcp ui-automation screenshot   --simulator-id "$SIMULATOR_UDID" --return-format path --style minimal
 ```
 
 `snapshot-ui` returns semantic `elementRef` handles; drive those refs instead of
@@ -80,14 +125,16 @@ the single most expensive failure mode here. Install the CLI instead.
 Use these only when `xcodebuildmcp` genuinely cannot do the job.
 
 ```bash
+SIMULATOR_UDID=$(scripts/resolve_simulator_udid)         # same shell invocation as the commands below
+
 # Build for testing
-xcodebuild clean build-for-testing -scheme 'App' -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
+xcodebuild clean build-for-testing -scheme 'App' -destination "platform=iOS Simulator,id=$SIMULATOR_UDID"
 
 # Run unit tests
-xcodebuild test-without-building -only-testing:OBAKitTests -project 'OBAKit.xcodeproj' -scheme 'App' -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
+xcodebuild test-without-building -only-testing:OBAKitTests -project 'OBAKit.xcodeproj' -scheme 'App' -destination "platform=iOS Simulator,id=$SIMULATOR_UDID"
 
 # Run specific test class
-xcodebuild test-without-building -only-testing:OBAKitTests/SpecificTestClass -project 'OBAKit.xcodeproj' -scheme 'App' -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
+xcodebuild test-without-building -only-testing:OBAKitTests/SpecificTestClass -project 'OBAKit.xcodeproj' -scheme 'App' -destination "platform=iOS Simulator,id=$SIMULATOR_UDID"
 ```
 
 ### Code Quality

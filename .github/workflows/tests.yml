@@ -152,24 +152,15 @@ jobs:
     # the image ever carry a pre-SDK runtime alongside iOS 27, the tests must not
     # land on it — that's the isolated-deinit shim crash described in the download
     # step's note. Booting it here isolates first-boot cost from the test step.
+    #
+    # The selection itself lives in scripts/resolve_simulator_udid, shared with the
+    # commands CLAUDE.md documents so the two cannot drift apart. Note that the
+    # script's UDID reaches later steps only because it is written to $GITHUB_ENV
+    # here; a plain shell variable would not survive the step boundary.
     - name: Prepare iOS Simulator
       run: |
         set -euo pipefail
-        xcrun simctl list devices available -j > /tmp/devices.json
-        UDID=$(python3 <<'PY'
-        import json, re
-        data = json.load(open('/tmp/devices.json'))['devices']
-        def version(key):
-            m = re.search(r'iOS-(\d+)-(\d+)', key)
-            return (int(m.group(1)), int(m.group(2))) if m else (0, 0)
-        for key in sorted(data, key=version, reverse=True):
-            phones = [d for d in data[key] if d['name'].startswith('iPhone')]
-            if phones:
-                print(phones[0]['udid'])
-                break
-        PY
-        )
-        [ -n "$UDID" ] || { echo "::error::No available iPhone simulator found"; exit 1; }
+        UDID=$(scripts/resolve_simulator_udid)
         echo "SIMULATOR_UDID=$UDID" >> "$GITHUB_ENV"
         echo "Using simulator UDID: $UDID"
         xcrun simctl boot "$UDID" || true
