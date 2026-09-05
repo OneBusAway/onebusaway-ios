@@ -45,6 +45,21 @@ public enum TripLiveActivityRelevance {
         ActivityContent(state: state, staleDate: staleDate, relevanceScore: relevanceScore)
     }
 
+    /// The stale marker a promotion should carry.
+    ///
+    /// A score-only promotion keeps whatever the push set: the content is
+    /// unchanged, so clearing it would leave a re-Tracked card unmarked as stale
+    /// until the next push arrived. Installing fresh content is the opposite —
+    /// a date set for the *previous* content could mark new arrivals stale the
+    /// moment they land. ``LiveActivityUpdateCoalescer`` clears it for that same
+    /// reason, and the next push re-arms it.
+    public static func promotionStaleDate(
+        installing state: TripAttributes.ContentState?,
+        existing: Date?
+    ) -> Date? {
+        state == nil ? existing : nil
+    }
+
     /// Rebuilds content for a local arrivals refresh while keeping the activity's
     /// current Dynamic Island ranking. Passing anything other than
     /// `existing.relevanceScore` here is how the Island used to snap back to the
@@ -66,20 +81,26 @@ extension Activity where Attributes == TripAttributes {
     ///
     /// Takes an id (not `Activity`) so callers can hop into a `Task` without
     /// sending a non-`Sendable` ActivityKit value across isolation.
-    public static func promoteToDynamicIsland(activityID: String) async {
+    /// - Parameter state: Fresh content to install alongside the score bump, when
+    ///   the caller has it. A re-Track happens with current arrivals already
+    ///   loaded, and the card would otherwise keep whatever the last push left
+    ///   (#1390). Omit it for a score-only promotion.
+    public static func promoteToDynamicIsland(
+        activityID: String,
+        state: TripAttributes.ContentState? = nil
+    ) async {
         guard let activity = activities.first(where: { $0.id == activityID }),
               LiveActivityRegistry.isLive(activity.activityState) else {
             return
         }
         let prominence = TripLiveActivityRelevance.prominenceScore()
-        // A promotion only touches the score; the content is unchanged, so the
-        // push-set stale marker must survive it — the server always sends
-        // `stale-date`, and clearing it here left a re-Tracked card unmarked as
-        // stale until the next push arrived. Mirrors `demoteLivePeers`.
         await activity.update(
             TripLiveActivityRelevance.content(
-                state: activity.content.state,
-                staleDate: activity.content.staleDate,
+                state: state ?? activity.content.state,
+                staleDate: TripLiveActivityRelevance.promotionStaleDate(
+                    installing: state,
+                    existing: activity.content.staleDate
+                ),
                 relevanceScore: prominence
             )
         )
