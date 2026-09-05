@@ -251,7 +251,6 @@ final class FormattersTests: OBATestCase {
         #expect(label == "10, 20, 30…")
         #expect(label.contains("\u{2026}"))
         #expect(!label.contains("..."))
-        #expect(!label.contains("more"))
         #expect(!label.hasPrefix("Routes:"))
     }
 
@@ -271,6 +270,18 @@ final class FormattersTests: OBATestCase {
         #expect(subtitle.contains("Routes:"))
         #expect(subtitle.contains("62"))
         #expect(!subtitle.contains("\u{2026}"))
+    }
+
+    /// Bookmark pins title with `bookmark.name`, so the callout is the only
+    /// place routes appear — keep every route (#1342).
+    @Test func `Bookmark callout lists every route without truncating`() throws {
+        let stop = try #require(Fixtures.loadSomeStops().first)
+        stop.routes = try makeRoutes(shortNames: ["10", "20", "30", "40", "62"])
+
+        let callout = stop.bookmarkCalloutText
+        #expect(callout == "#\(stop.code)\n10, 20, 30, 40, 62")
+        #expect(!callout.contains("\u{2026}"))
+        #expect(!callout.hasPrefix("Routes:"))
     }
 
     private func makeRoutes(shortNames: [String]) throws -> [Route] {
