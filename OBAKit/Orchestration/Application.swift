@@ -192,6 +192,7 @@ public class Application: CoreApplication, PushServiceDelegate {
         _ = proximityAlertManager
 
         configureAppearanceProxies()
+        observeShortcutLifecycle()
     }
 
     private func configureTipKit() {
@@ -529,6 +530,7 @@ public class Application: CoreApplication, PushServiceDelegate {
         reportAnalyticsUserProperties()
 
         configureTipKit()
+        OBAAppShortcuts.updateAppShortcutParameters()
 
         if userDataStore.walkingSpeedSource == .healthKit {
             Task { await walkingSpeedManager.refreshFromHealthKitIfPossible() }
@@ -583,6 +585,8 @@ public class Application: CoreApplication, PushServiceDelegate {
 
         drainPendingUIPresentations()
 
+        consumePendingLiveActivityShortcut()
+
         if let region = regionsService.currentRegion, let analytics {
             analytics.updateServer?(region: region)
         }
@@ -596,6 +600,7 @@ public class Application: CoreApplication, PushServiceDelegate {
     /// otherwise wait for the next foreground cycle. This is the deterministic drain point.
     @MainActor @objc public func rootUserInterfaceDidLoad() {
         drainPendingUIPresentations()
+        consumePendingLiveActivityShortcut()
     }
 
     /// True while the onboarding flow is installed as the window's root — deferred
@@ -646,6 +651,41 @@ public class Application: CoreApplication, PushServiceDelegate {
             alertController.addAction(UIAlertAction(title: Strings.ok, style: .default))
             topViewController.present(alertController, animated: true)
             presentAddRegionAlertOnActive = false
+        }
+    }
+
+    /// A Track Bookmark Shortcut queued a Live Activity. Consume it here from
+    /// `topViewController` rather than switching to the Bookmarks tab — that
+    /// tab's stack may already have a stop page pushed, and
+    /// `rootNavigateTo(.bookmarks)` does not pop it.
+    @MainActor
+    func consumePendingLiveActivityShortcut() {
+        guard !isOnboardingRoot else { return }
+        LiveActivityShortcutDrain.consume(application: self, presentingFrom: topViewController)
+    }
+
+    /// `openAppWhenRun` activates the app before `perform()` stores, so
+    /// `applicationDidBecomeActive` / `rootUserInterfaceDidLoad` peek an empty
+    /// queue. Observe the store notification (warm launch) and bookmark
+    /// changes (Shortcut parameter list).
+    private func observeShortcutLifecycle() {
+        notificationCenter.addObserver(
+            forName: .liveActivityShortcutRequestDidStore,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self else { return }
+            MainActor.assumeIsolated {
+                self.consumePendingLiveActivityShortcut()
+            }
+        }
+
+        notificationCenter.addObserver(
+            forName: .bookmarksDidChange,
+            object: nil,
+            queue: .main
+        ) { _ in
+            OBAAppShortcuts.updateAppShortcutParameters()
         }
     }
 
@@ -841,6 +881,10 @@ public class Application: CoreApplication, PushServiceDelegate {
         // A donated stop shortcut that arrived before `currentRegion` was set
         // is sitting in `pendingStopID`. Drain now that we know which region we are in.
         drainPendingUIPresentations()
+
+        // Region change does not post `.bookmarksDidChange`, so Shortcuts
+        // would keep offering the previous region's trip bookmarks.
+        OBAAppShortcuts.updateAppShortcutParameters()
     }
 
     public func regionsService(_ service: RegionsService, displayError error: Error) {
