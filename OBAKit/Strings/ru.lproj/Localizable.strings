@@ -1071,6 +1071,12 @@
 /* Settings > Arrival Display > Footer for the Show transfer arrival banner switch only, not the Show Departures filter */
 "settings_controller.arrival_display_section.transfer_banner.footer" = "Показывать баннер прибытия при пересадке: если включён, при открытии остановки с рейса время относительно вашего прибытия. Выключите этот переключатель, чтобы видеть обычные часы и все отправления.";
 
+/* Settings > Arrival & Departure Display > Footer describing the transfer banner and region time zone toggles */
+"settings_controller.arrival_display_section.footer" = "Баннер пересадки: при открытии остановки с рейса время относительно вашего прибытия. Часовой пояс региона: часы используют пояс транспортного региона, с короткой меткой, когда телефон в другом поясе. Оба переключателя независимы.";
+
+/* Settings > Arrival & Departure Display > Opt-in toggle for displaying arrival clocks in the transit region's time zone */
+"settings_controller.arrival_display_section.region_time_zone" = "Показывать время в часовом поясе региона";
+
 /* Title for the departure filter selection alert */
 "settings_controller.arrival_filter.selector_title" = "Показывать отправления";
 

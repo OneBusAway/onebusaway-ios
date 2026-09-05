@@ -1071,6 +1071,12 @@
 /* Settings > Arrival Display > Footer for the Show transfer arrival banner switch only, not the Show Departures filter */
 "settings_controller.arrival_display_section.transfer_banner.footer" = "Pokaż baner przyjazdu przy przesiadce: gdy włączony, otwarcie przystanku z kursu pokazuje czasy względem Twojego przyjazdu. Wyłącz ten przełącznik, aby zobaczyć zegar i wszystkie odjazdy.";
 
+/* Settings > Arrival & Departure Display > Footer describing the transfer banner and region time zone toggles */
+"settings_controller.arrival_display_section.footer" = "Baner przesiadki: otwarcie przystanku z kursu pokazuje czasy względem Twojego przyjazdu. Strefa czasowa regionu: zegary używają strefy regionu transportowego, z krótką odznaką gdy telefon ma inną strefę. Oba są niezależne.";
+
+/* Settings > Arrival & Departure Display > Opt-in toggle for displaying arrival clocks in the transit region's time zone */
+"settings_controller.arrival_display_section.region_time_zone" = "Pokazuj godziny w strefie czasowej regionu";
+
 /* Title for the departure filter selection alert */
 "settings_controller.arrival_filter.selector_title" = "Pokazuj odjazdy";
 

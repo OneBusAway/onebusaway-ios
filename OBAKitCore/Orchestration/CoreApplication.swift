@@ -198,6 +198,36 @@ open class CoreApplication: NSObject,
             APIServiceConfiguration(baseURL: region.OBABaseURL, apiKey: config.apiKey, uuid: userUUID, appVersion: config.appVersion, regionIdentifier: region.regionIdentifier, surveyBaseURL: region.sidecarBaseURL),
             dataLoader: config.dataLoader
         )
+        refreshFormattersTimeZone()
+    }
+
+    /// Applies or clears region-zone clock display from the Settings toggle.
+    /// Default is off (#1102 / #332): device zone, no badge.
+    public func setShowRegionTimeZone(_ enabled: Bool) {
+        userDefaultsStore.showRegionTimeZone = enabled
+        refreshFormattersTimeZone()
+    }
+
+    /// Points `formatters` at the region's dominant agency zone when the rider
+    /// has opted in; otherwise keeps (or resets to) the device zone.
+    private func refreshFormattersTimeZone() {
+        guard userDefaultsStore.showRegionTimeZone else {
+            formatters.timeZone = .current
+            return
+        }
+
+        Task {
+            guard let apiService else { return }
+            do {
+                let agencies = try await apiService.getAgenciesWithCoverage().list
+                let identifiers = agencies.compactMap { $0.agency?.timeZone }
+                if let timeZone = TimeZone.preferredScheduleTimeZone(identifiers: identifiers) {
+                    self.formatters.timeZone = timeZone
+                }
+            } catch {
+                Logger.info("Unable to resolve region time zone from agencies-with-coverage: \(error)")
+            }
+        }
     }
 
     // MARK: - Obaco

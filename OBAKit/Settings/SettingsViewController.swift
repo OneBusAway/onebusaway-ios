@@ -71,6 +71,7 @@ class SettingsViewController: FormViewController {
             walkingSpeedUseHealthKitKey: application.userDataStore.walkingSpeedSource == .healthKit,
             stopUIReducedColorsTag: application.userDataStore.stopUIReducedColors,
             transferBannerTag: application.userDataStore.showTransferArrivalBanner,
+            regionTimeZoneTag: application.userDataStore.showRegionTimeZone,
             alwaysShowFeedbackPrompt: application.reviewPromptPolicy.alwaysShowPrompt
         ])
     }
@@ -132,6 +133,11 @@ class SettingsViewController: FormViewController {
             application.userDataStore.showTransferArrivalBanner = showBanner
         }
 
+        if let showRegionTimeZone = values[regionTimeZoneTag] as? Bool,
+           showRegionTimeZone != application.userDataStore.showRegionTimeZone {
+            application.setShowRegionTimeZone(showRegionTimeZone)
+        }
+
         saveWalkingSpeedValues(values)
     }
 
@@ -185,14 +191,15 @@ class SettingsViewController: FormViewController {
 
     private let arrivalFilterTag = "arrivalDepartureFilter"
     private let transferBannerTag = UserDefaultsStore.showTransferArrivalBannerKey
+    private let regionTimeZoneTag = UserDefaultsStore.showRegionTimeZoneKey
 
     private lazy var arrivalDisplaySection: Section = {
         let section = Section(
             header: OBALoc("settings_controller.arrival_display_section.title", value: "Arrival & Departure Display", comment: "Settings section title for controlling which arrivals/departures are shown"),
             footer: OBALoc(
-                "settings_controller.arrival_display_section.transfer_banner.footer",
-                value: "Show transfer arrival banner: when on, opening a stop from a trip shows times relative to when you arrive. Turn that switch off for ordinary clock times and every departure.",
-                comment: "Settings > Arrival & Departure Display > Footer for the Show transfer arrival banner switch only, not the Show Departures filter"
+                "settings_controller.arrival_display_section.footer",
+                value: "Transfer banner: opening a stop from a trip shows times relative to when you arrive. Region time zone: clock times use the transit region's zone, with a short badge when your phone differs. Both are independent.",
+                comment: "Settings > Arrival & Departure Display > Footer describing the transfer banner and region time zone toggles"
             )
         )
 
@@ -211,6 +218,15 @@ class SettingsViewController: FormViewController {
                 "settings_controller.arrival_display_section.transfer_banner",
                 value: "Show transfer arrival banner",
                 comment: "Settings > Arrival & Departure Display > Toggle that shows the Arriving at XX:XX via route banner when opening a stop from a trip"
+            )
+        }
+
+        section <<< SwitchRow {
+            $0.tag = regionTimeZoneTag
+            $0.title = OBALoc(
+                "settings_controller.arrival_display_section.region_time_zone",
+                value: "Show times in region time zone",
+                comment: "Settings > Arrival & Departure Display > Opt-in toggle for displaying arrival clocks in the transit region's time zone"
             )
         }
 

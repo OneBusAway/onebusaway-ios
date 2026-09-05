@@ -1071,6 +1071,12 @@
 /* Settings > Arrival Display > Footer for the Show transfer arrival banner switch only, not the Show Departures filter */
 "settings_controller.arrival_display_section.transfer_banner.footer" = "Hiện banner tới lúc chuyển tuyến: khi bật, mở điểm dừng từ chuyến đi sẽ hiện giờ theo lúc bạn tới. Tắt công tắc đó để xem đồng hồ thường và mọi chuyến.";
 
+/* Settings > Arrival & Departure Display > Footer describing the transfer banner and region time zone toggles */
+"settings_controller.arrival_display_section.footer" = "Banner chuyển tuyến: mở điểm dừng từ chuyến đi sẽ hiện giờ theo lúc bạn tới. Múi giờ vùng: đồng hồ dùng múi giờ vùng giao thông, kèm huy hiệu ngắn khi điện thoại khác múi giờ. Hai tùy chọn độc lập.";
+
+/* Settings > Arrival & Departure Display > Opt-in toggle for displaying arrival clocks in the transit region's time zone */
+"settings_controller.arrival_display_section.region_time_zone" = "Hiển thị giờ theo múi giờ vùng";
+
 /* Title for the departure filter selection alert */
 "settings_controller.arrival_filter.selector_title" = "Hiển thị chuyến khởi hành";
 
