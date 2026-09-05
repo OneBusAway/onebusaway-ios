@@ -47,15 +47,22 @@ struct TripLiveActivity: Widget {
             return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
                     HStack(spacing: 8) {
-                        Image(systemName: context.isStale ? "exclamationmark.triangle.fill" : "bus.fill")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(context.isStale ? .orange : Color(presenter.primaryColor(for: context.state)))
+                        if context.isStale {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundColor(.orange)
+                                .accessibilityLabel(LiveActivityStaleChrome.warningText)
+                        } else {
+                            Image(systemName: "bus.fill")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundColor(Color(presenter.primaryColor(for: context.state)))
+                        }
                         Text(context.attributes.staticData.routeShortName)
                             .font(.system(.title3, design: .rounded))
                             .fontWeight(.heavy)
                             .foregroundColor(.white)
+                            .opacity(staleOpacity)
                     }
-                    .opacity(staleOpacity)
                     .padding(.leading, 6)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
@@ -150,7 +157,8 @@ struct TripLiveActivity: Widget {
             } minimal: {
                 // Keep the countdown when stale — minimal has no room for both
                 // a warning glyph and minutes, and minutes are the only ETA the
-                // rider gets here. Compact leading already shows the triangle.
+                // rider gets here. Compact and minimal are mutually exclusive
+                // presentations, so there is no compact leading triangle to lean on.
                 if let primary {
                     Text(presenter.minuteText(for: primary))
                         .font(.system(.callout, design: .rounded))
