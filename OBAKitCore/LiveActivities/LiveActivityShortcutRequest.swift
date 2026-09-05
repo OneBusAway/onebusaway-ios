@@ -19,8 +19,8 @@ public extension Notification.Name {
 
 /// Queues a bookmark Live Activity request from an App Intent so the main app
 /// can start it after `openAppWhenRun` brings the process up. ActivityKit
-/// `request` lives on the in-app start path (`BookmarksViewController`); the
-/// intent must not capture an `Activity` across a `Task` hop. See #1222.
+/// `request` lives on the in-app Track path (`BookmarkActions.startLiveActivity`);
+/// the intent must not capture an `Activity` across a `Task` hop. See #1222.
 public enum LiveActivityShortcutRequest {
 
     /// UserDefaults key for the pending bookmark UUID. Dotted is fine: this is
@@ -30,9 +30,10 @@ public enum LiveActivityShortcutRequest {
     /// When the UUID was stored. Peek drops the request after `expiration`.
     public static let storedAtKey = "LiveActivityShortcut.pendingBookmarkStoredAt"
 
-    /// How long a queued request may hijack the Bookmarks tab. Short enough
-    /// that a failed arrivals fetch cannot force the tab on every launch;
-    /// long enough for a cold start to load the bookmark's stop.
+    /// How long a queued request may wait for a successful Live Activity start
+    /// (arrivals fetch + ActivityKit). Short enough that a stuck request cannot
+    /// retry forever across launches; long enough for a cold start to load the
+    /// bookmark's stop.
     public static let expiration: TimeInterval = 90
 
     public static func store(_ bookmarkID: UUID, userDefaults: UserDefaults, now: Date = Date()) {

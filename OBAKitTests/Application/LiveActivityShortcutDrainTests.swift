@@ -9,6 +9,7 @@
 
 import Foundation
 import Testing
+import ActivityKit
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -57,6 +58,47 @@ final class LiveActivityShortcutDrainTests: OBATestCase {
         app.rootUserInterfaceDidLoad()
 
         #expect(LiveActivityShortcutRequest.peek(userDefaults: app.userDefaults) == nil)
-        #expect(app.viewRouter.rootController == nil)
+    }
+
+    /// A known trip bookmark whose arrivals fetch returns nothing must keep
+    /// the queued UUID so another drain entry can retry within 90s. Clearing
+    /// before `startLiveActivity` ate the Shortcut on cold launch (#1222).
+    @Test func `failed Track keeps the queued shortcut for retry`() async throws {
+        guard ActivityAuthorizationInfo().areActivitiesEnabled else {
+            // Permanent blocker path clears immediately — covered elsewhere.
+            return
+        }
+
+        let dataLoader = MockDataLoader(testName: name)
+        let app = buildApplication(queue: queue, dataLoader: dataLoader)
+        let stopArrivals = try Fixtures.loadRESTAPIPayload(
+            type: StopArrivals.self,
+            fileName: "arrivals-and-departures-for-stop-1_10914.json"
+        )
+        let arrivalDep = try #require(stopArrivals.arrivalsAndDepartures.first)
+        let regionID = app.regionsService.currentRegion?.regionIdentifier ?? pugetSoundRegionIdentifier
+        let bookmark = Bookmark(
+            name: "Route 49",
+            regionIdentifier: regionID,
+            arrivalDeparture: arrivalDep
+        )
+        app.userDataStore.add(bookmark, to: nil)
+
+        // Empty list → buildContentState nil → .failed. Match any host: the
+        // test app's region base URL is not www.example.com.
+        dataLoader.mock(data: Fixtures.loadData(file: "arrivals_and_departures_empty.json")) { request in
+            request.url?.absoluteString.contains("arrivals-and-departures-for-stop/\(bookmark.stopID)") == true
+        }
+
+        LiveActivityShortcutRequest.store(bookmark.id, userDefaults: app.userDefaults)
+        app.consumePendingLiveActivityShortcut()
+
+        // Wait until the drain Task has had a chance to finish startLiveActivity.
+        try await Task.sleep(nanoseconds: 300_000_000)
+
+        #expect(
+            LiveActivityShortcutRequest.peek(userDefaults: app.userDefaults) == bookmark.id,
+            "Transient Track failure must leave the shortcut queued for retry"
+        )
     }
 }

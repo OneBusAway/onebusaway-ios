@@ -36,9 +36,12 @@ reads `RegionsService.currentRegionIdentifierUserDefaultsKey` (public
 `nonisolated`), not a copied string.
 
 A queued request expires after 90 seconds (and leftover ids without a timestamp
-are dropped). Drain does not switch tabs. Live Activities disabled
-system-wide, or a region mismatch, clears the request and logs a warning
-(no Track error alert — the rider is not on a Track tap).
+are dropped). Drain does not switch tabs. Permanent blockers — Live Activities
+disabled system-wide, or a region mismatch — clear the request and log a
+warning. A transient failure (empty arrivals, ActivityKit error) **keeps** the
+request so another drain entry within the 90s window can retry; only a
+successful start/promote clears it. When a presenter is available, transient
+failure also shows the Track error alert.
 
 Arbitrary stop IDs that are not bookmarked are out of scope for this change.
 

@@ -62,8 +62,9 @@ enum LiveActivityShortcutDrain {
         )
         await loader.loadDataAndWait()
 
+        // Another drain entry may have already claimed or cleared this id
+        // while we awaited arrivals.
         guard LiveActivityShortcutRequest.peek(userDefaults: application.userDefaults) == id else { return }
-        LiveActivityShortcutRequest.clear(application.userDefaults)
 
         let arrivals: [ArrivalDeparture]
         if let key = TripBookmarkKey(bookmark: bookmark) {
@@ -74,7 +75,15 @@ enum LiveActivityShortcutDrain {
 
         let result = BookmarkActions(application: application)
             .startLiveActivity(for: bookmark, arrivalDepartures: arrivals)
-        if result == .failed {
+
+        // Clear only after a successful start/promote. Empty arrivals, a nil
+        // apiService, or ActivityKit failure must leave the request so another
+        // drain entry (or the 90s window) can retry — clearing first ate the
+        // Shortcut on cold launch when `topViewController` was still nil (#1222).
+        switch result {
+        case .started, .promotedExisting:
+            LiveActivityShortcutRequest.clear(application.userDefaults)
+        case .failed:
             presenter?.showLiveActivityErrorAlert()
         }
     }

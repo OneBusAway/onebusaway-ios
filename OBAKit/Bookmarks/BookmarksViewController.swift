@@ -71,7 +71,6 @@ class BookmarksViewController: UIHostingController<BookmarksRootView>,
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         viewModel.start()
-        consumePendingLiveActivityShortcut()
 
         application.notificationCenter.addObserver(self, selector: #selector(applicationEnteredBackground), name: UIApplication.didEnterBackgroundNotification, object: nil)
         application.notificationCenter.addObserver(self, selector: #selector(applicationWillEnterForeground), name: UIApplication.willEnterForegroundNotification, object: nil)
@@ -197,12 +196,6 @@ class BookmarksViewController: UIHostingController<BookmarksRootView>,
 
     // MARK: - Live Activity Management
 
-    /// Starts a Live Activity queued by the Track Bookmark Shortcut (#1222).
-    /// `Application` owns the drain so a pushed stop page cannot hide it.
-    func consumePendingLiveActivityShortcut() {
-        application.consumePendingLiveActivityShortcut()
-    }
-
     func updateRunningLiveActivities() {
         let activities = Activity<TripAttributes>.activities
         for activity in activities {
@@ -265,7 +258,6 @@ class BookmarksViewController: UIHostingController<BookmarksRootView>,
 
     @objc private func applicationWillEnterForeground() {
         viewModel.start()
-        consumePendingLiveActivityShortcut()
     }
 
     // MARK: - Bookmark Groups
@@ -309,7 +301,6 @@ private extension BookmarksViewController {
         viewModel.didUpdate
             .sink { [weak self] _ in
                 self?.updateRunningLiveActivities()
-                self?.consumePendingLiveActivityShortcut()
             }
             .store(in: &cancellables)
 

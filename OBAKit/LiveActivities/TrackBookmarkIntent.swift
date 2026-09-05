@@ -16,6 +16,9 @@ import OBAKitCore
 /// the app (`openAppWhenRun`). `Application` starts the activity on the
 /// existing Track path once arrivals load — ActivityKit is not called from
 /// the intent, and no `Activity` is captured into a `Task`. See #1222.
+///
+/// Not `nonisolated`: `@Parameter` property wrappers are incompatible with a
+/// nonisolated AppIntent type on this SDK (entity/query/provider stay opted out).
 struct TrackBookmarkIntent: AppIntent {
     static let title: LocalizedStringResource = "Track Bookmark"
     static let description = IntentDescription("Start a Live Activity for a bookmarked trip.")
