@@ -1049,20 +1049,76 @@ final class StopViewModelTests: OBATestCase {
         await viewModel.refresh()
 
         #expect(viewModel.isBrokenBookmark)
+        #expect(viewModel.stopIsMissing)
         #expect(viewModel.operationError == nil)
         #expect(!application.promptCoordinator.sawErrorThisSession)
     }
 
     /// With no bookmark to repair, a `null` body behaves like the 404 above: no
-    /// broken-bookmark UI, but the stranding still counts against the review prompt.
+    /// broken-bookmark UI and no error card, but `stopIsMissing` still has to be set
+    /// so the page reaches a terminal state instead of the loading row, and the
+    /// stranding still counts against the review prompt.
+    ///
+    /// Named for what it asserts: `operationError` stays nil here, so "flags error"
+    /// would describe the opposite of the check.
     @Test @MainActor
-    func `JSON null without bookmark context flags error`() async {
+    func `JSON null without bookmark context marks the stop missing without an error`() async {
         let (viewModel, application) = buildViewModelWithNullArrivals()
         await viewModel.refresh()
 
         #expect(!viewModel.isBrokenBookmark)
+        #expect(viewModel.stopIsMissing)
         #expect(viewModel.operationError == nil)
         #expect(application.promptCoordinator.sawErrorThisSession)
+    }
+
+    /// The blocking case from review: without this the page has nil arrivals, no
+    /// error, no broken bookmark and `isLoading == false`, which `StopPageContent`
+    /// reads as a fetch still in flight — a spinner that never resolves.
+    @Test @MainActor
+    func `JSON null without bookmark context does not leave the page loading`() async {
+        let (viewModel, _) = buildViewModelWithNullArrivals()
+        await viewModel.refresh()
+
+        let content = StopPageContent(viewModel: viewModel)
+        #expect(!content.showsLoadingState)
+        #expect(content.stopIsMissing)
+    }
+
+    /// A stop that vanishes between refreshes must drop what the previous fetch left
+    /// behind — otherwise the page keeps counting down to a bus that isn't coming.
+    @Test @MainActor
+    func `Stop going missing after a successful refresh clears stale departures`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(
+            dataLoader: dataLoader,
+            analytics: AnalyticsMock(),
+            arrivalsFixture: "arrivals_and_departures_for_stop_1_10020.json"
+        )
+        let viewModel = StopViewModel(application: app, stopID: testStopID)
+
+        await viewModel.refresh()
+        #expect(viewModel.stopArrivals != nil)
+        #expect(viewModel.lastUpdated != nil)
+
+        // replaceMappedResponses swaps the *entire* table, so re-register the mocks
+        // the Application's background tasks still rely on.
+        dataLoader.replaceMappedResponses { staging in
+            stubRegions(dataLoader: staging)
+            stubAgenciesWithCoverage(dataLoader: staging, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
+            Fixtures.stubAllAgencyAlerts(dataLoader: staging)
+            stubSurveys(dataLoader: staging)
+            staging.mock(data: Data("null".utf8)) {
+                $0.url?.path.contains("/api/where/arrivals-and-departures-for-stop") ?? false
+            }
+        }
+
+        await viewModel.refresh()
+
+        #expect(viewModel.stopIsMissing)
+        #expect(viewModel.stopArrivals == nil)
+        #expect(viewModel.lastUpdated == nil)
+        #expect(viewModel.statusText.isEmpty)
     }
 
     /// Deliberate behaviour change. An empty HTTP 200 is also thrown as
