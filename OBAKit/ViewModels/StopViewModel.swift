@@ -100,6 +100,17 @@ class StopViewModel: ObservableObject {
     /// `true` when a bookmark's stop ID no longer resolves.
     @Published private(set) var isBrokenBookmark = false
 
+    /// `true` when the server has no stop at this ID — a literal 404, or the
+    /// `null` body many OBA servers send instead.
+    ///
+    /// Distinct from `isBrokenBookmark`, which is the subset of this with a
+    /// bookmark to repair. A stop opened from a deep link, a search result or a
+    /// map pin has no bookmark, but the page still has to reach a terminal state:
+    /// without this flag the absence of arrivals is indistinguishable from a
+    /// fetch still in flight, and `StopPageContent.showsLoadingState` spins
+    /// forever (#1336).
+    @Published private(set) var stopIsMissing = false
+
     /// User-saved preferences for this stop (sort order, hidden routes).
     @Published private(set) var stopPreferences: StopPreferences
 
@@ -296,16 +307,29 @@ class StopViewModel: ObservableObject {
                     pendingExtensionMinutes = pendingAutoExtensionAmount()
                 }
             }
-        } catch APIError.requestNotFound {
+        } catch let error as APIError where error.indicatesMissingStop {
             operationError = nil
             isBrokenBookmark = bookmarkContext != nil
+            stopIsMissing = true
 
-            // With a bookmark behind it, a 404 is the broken-bookmark path: the page
-            // explains itself and offers a way out, and it isn't a failure the rider
-            // watched happen. Without one — a deep link, a search result, a map pin —
-            // the same 404 leaves the page with no arrivals, no error, and nothing to
-            // do, which is exactly the experience that shouldn't be followed by a
-            // request for five stars.
+            // A stop the server no longer has cannot have departures. Drop whatever an
+            // earlier refresh left behind so the page doesn't keep counting down to a
+            // bus that isn't coming — the same thing `BookmarkDataLoader` does for the
+            // card — and so the freshness label stops claiming a successful update.
+            stopArrivals = nil
+            lastUpdated = nil
+            updateStatus()
+
+            // With a bookmark behind it, a server that has no stop at this ID is the
+            // broken-bookmark path: the page explains itself and offers a way out, and
+            // it isn't a failure the rider watched happen. Without one — a deep link, a
+            // search result, a map pin — there is no bookmark to repair, so the page
+            // says the stop is gone and the miss still counts against the prompt.
+            //
+            // `indicatesMissingStop` covers both shapes the servers use — a literal 404
+            // and HTTP 200 with body `null` — so this agrees with the Bookmarks tab
+            // (#1336). An empty HTTP 200 is not one of them; it falls through to the
+            // general catch as the transient error it is.
             if bookmarkContext == nil {
                 environment.noteStopLoadFailed()
             }
@@ -331,6 +355,7 @@ class StopViewModel: ObservableObject {
     private func applySuccessfulFetch(stop: Stop, arrivals: StopArrivals) {
         operationError = nil
         isBrokenBookmark = false
+        stopIsMissing = false
         lastUpdated = Date()
         updateStatus()
         // Guard the @Published re-emit. The same VM is bound to a single stopID for

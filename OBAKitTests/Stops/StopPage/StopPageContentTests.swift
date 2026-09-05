@@ -46,7 +46,8 @@ final class StopPageContentTests: OBATestCase {
         hasLoadedArrivals: Bool = true,
         isLoading: Bool = false,
         hasError: Bool = false,
-        isBrokenBookmark: Bool = false
+        isBrokenBookmark: Bool = false,
+        stopIsMissing: Bool = false
     ) -> StopPageContent {
         StopPageContent(
             stop: nil,
@@ -57,7 +58,8 @@ final class StopPageContentTests: OBATestCase {
             arrivalDepartureFilter: arrivalDepartureFilter,
             isLoading: isLoading,
             hasError: hasError,
-            isBrokenBookmark: isBrokenBookmark
+            isBrokenBookmark: isBrokenBookmark,
+            stopIsMissing: stopIsMissing
         )
     }
 
@@ -323,4 +325,35 @@ final class StopPageContentTests: OBATestCase {
 
         #expect(!content.fillsPage)
     }
+
+    // MARK: - Missing stop (#1336)
+
+    /// A stop the server doesn't have never produces arrivals, so the loading branch
+    /// would spin forever: nil arrivals, no error, no broken bookmark and no in-flight
+    /// fetch is exactly the shape `showsLoadingState` otherwise reads as "still loading".
+    @Test func `A missing stop is a terminal state, not a loading one`() {
+        let content = makeContent(allDepartures: [], hasLoadedArrivals: false, stopIsMissing: true)
+
+        #expect(content.stopIsMissing)
+        #expect(!content.showsLoadingState)
+        #expect(content.listIsEmpty)
+    }
+
+    /// The same shape without the flag is what the loading row is for — a first frame
+    /// before the fetch has resolved.
+    @Test func `No arrivals yet without a missing stop still shows loading`() {
+        let content = makeContent(allDepartures: [], hasLoadedArrivals: false)
+
+        #expect(!content.stopIsMissing)
+        #expect(content.showsLoadingState)
+    }
+
+    /// An in-flight refresh still wins: a stop marked missing by the previous cycle
+    /// must not suppress the spinner for the retry the rider just triggered.
+    @Test func `An in-flight fetch still shows loading even when the stop was missing`() {
+        let content = makeContent(allDepartures: [], hasLoadedArrivals: false, isLoading: true, stopIsMissing: true)
+
+        #expect(content.showsLoadingState)
+    }
+
 }

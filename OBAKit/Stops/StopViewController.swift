@@ -112,6 +112,9 @@ public class StopViewController: UIViewController,
     var operationError: Error? { viewModel.operationError }
     var isBrokenBookmark: Bool { viewModel.isBrokenBookmark }
 
+    /// The server has no stop at this ID, with or without a bookmark behind it.
+    var stopIsMissing: Bool { viewModel.stopIsMissing }
+
     /// Controls whether departures before the transfer arrival time are visible (local UI state).
     private var showAllTransferDepartures = false
 
@@ -503,7 +506,10 @@ public class StopViewController: UIViewController,
 
     // MARK: - OBAListView
     public func items(for listView: OBAListView) -> [OBAListViewSection] {
-        if isBrokenBookmark { return [] }
+        // Both are terminal states for a stop the server doesn't have, so there is
+        // nothing to list. Returning no sections is what hands the screen to
+        // `emptyData(for:)`, which explains which of the two it is.
+        if isBrokenBookmark || stopIsMissing { return [] }
 
         guard stopArrivals != nil else {
             if let error = self.operationError {
@@ -560,6 +566,22 @@ public class StopViewController: UIViewController,
 
             let bookmarkBrokenImage = UIImage(systemName: "bookmark.slash.fill")?.withTintColor(.systemRed)    // iOS 14+ only.
             return .standard(.init(alignment: .center, title: "Broken Bookmark", body: message, image: bookmarkBrokenImage, buttonConfig: .none))
+        }
+
+        // No bookmark to repair, but the server still has no stop at this ID. Say so
+        // rather than leaving a bare header and no explanation (#1336).
+        if stopIsMissing {
+            let title = OBALoc(
+                "stop_controller.stop_not_found_title",
+                value: "Stop Not Found",
+                comment: "Title of the message shown when the server has no stop at the requested ID."
+            )
+            let message = OBALoc(
+                "stop_page.empty.stop_not_found",
+                value: "This stop isn't in the transit agency's data anymore. It may have been moved or removed.",
+                comment: "Empty state shown when the server has no stop at the requested ID and there is no bookmark to repair — the rider arrived from a deep link, a search result or a map pin."
+            )
+            return .standard(.init(title: title, body: message, image: UIImage(systemName: "mappin.slash")))
         }
 
         if let error = self.operationError {

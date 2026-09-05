@@ -122,6 +122,17 @@ final class StopViewModelTests: OBATestCase {
         return (viewModel, app)
     }
 
+    /// Builds a `StopViewModel` whose arrivals fetch answers HTTP 200 with the literal
+    /// body `null` — what OBA servers that cannot 404 send for a stop that isn't there.
+    /// `APIService+GetData` throws that as `invalidContentType(_, "json", "nothing")`.
+    @MainActor
+    private func buildViewModelWithNullArrivals(bookmarkContext: Bookmark? = nil) -> (StopViewModel, Application) {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock(), arrivalsData: Data("null".utf8))
+        let viewModel = StopViewModel(application: app, stopID: testStopID, bookmarkContext: bookmarkContext)
+        return (viewModel, app)
+    }
+
     /// Hides every route present in `arrivals_and_departures_for_stop_1_10020.json`
     /// (routes `1_30` and `1_65`) so the rider never sees a real-time row from that
     /// fixture. Writes straight to the view model's in-memory `stopPreferences` via
@@ -1024,5 +1035,123 @@ final class StopViewModelTests: OBATestCase {
         let (viewModel, application) = buildViewModelWithFailingArrivals(statusCode: 404)
         await viewModel.refresh()
         #expect(application.promptCoordinator.sawErrorThisSession)
+    }
+
+    // MARK: - Missing Stop Shapes (#1336)
+
+    /// The #1336 fix. A `null` body means the same thing to the server as a 404, so the
+    /// Stop screen must offer the deletion rather than a generic error with no way out.
+    @Test @MainActor
+    func `JSON null with bookmark context flags broken bookmark`() async throws {
+        let stop = try #require(try Fixtures.loadSomeStops().first)
+        let bookmark = Bookmark(name: "Broken", regionIdentifier: pugetSoundRegionIdentifier, stop: stop)
+        let (viewModel, application) = buildViewModelWithNullArrivals(bookmarkContext: bookmark)
+        await viewModel.refresh()
+
+        #expect(viewModel.isBrokenBookmark)
+        #expect(viewModel.stopIsMissing)
+        #expect(viewModel.operationError == nil)
+        #expect(!application.promptCoordinator.sawErrorThisSession)
+    }
+
+    /// With no bookmark to repair, a `null` body behaves like the 404 above: no
+    /// broken-bookmark UI and no error card, but `stopIsMissing` still has to be set
+    /// so the page reaches a terminal state instead of the loading row, and the
+    /// stranding still counts against the review prompt.
+    ///
+    /// Named for what it asserts: `operationError` stays nil here, so "flags error"
+    /// would describe the opposite of the check.
+    @Test @MainActor
+    func `JSON null without bookmark context marks the stop missing without an error`() async {
+        let (viewModel, application) = buildViewModelWithNullArrivals()
+        await viewModel.refresh()
+
+        #expect(!viewModel.isBrokenBookmark)
+        #expect(viewModel.stopIsMissing)
+        #expect(viewModel.operationError == nil)
+        #expect(application.promptCoordinator.sawErrorThisSession)
+    }
+
+    /// The blocking case from review: without this the page has nil arrivals, no
+    /// error, no broken bookmark and `isLoading == false`, which `StopPageContent`
+    /// reads as a fetch still in flight — a spinner that never resolves.
+    @Test @MainActor
+    func `JSON null without bookmark context does not leave the page loading`() async {
+        let (viewModel, _) = buildViewModelWithNullArrivals()
+        await viewModel.refresh()
+
+        let content = StopPageContent(viewModel: viewModel)
+        #expect(!content.showsLoadingState)
+        #expect(content.stopIsMissing)
+    }
+
+    /// A stop that vanishes between refreshes must drop what the previous fetch left
+    /// behind — otherwise the page keeps counting down to a bus that isn't coming.
+    @Test @MainActor
+    func `Stop going missing after a successful refresh clears stale departures`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(
+            dataLoader: dataLoader,
+            analytics: AnalyticsMock(),
+            arrivalsFixture: "arrivals_and_departures_for_stop_1_10020.json"
+        )
+        let viewModel = StopViewModel(application: app, stopID: testStopID)
+
+        await viewModel.refresh()
+        #expect(viewModel.stopArrivals != nil)
+        #expect(viewModel.lastUpdated != nil)
+
+        // replaceMappedResponses swaps the *entire* table, so re-register the mocks
+        // the Application's background tasks still rely on.
+        dataLoader.replaceMappedResponses { staging in
+            stubRegions(dataLoader: staging)
+            stubAgenciesWithCoverage(dataLoader: staging, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
+            Fixtures.stubAllAgencyAlerts(dataLoader: staging)
+            stubSurveys(dataLoader: staging)
+            staging.mock(data: Data("null".utf8)) {
+                $0.url?.path.contains("/api/where/arrivals-and-departures-for-stop") ?? false
+            }
+        }
+
+        await viewModel.refresh()
+
+        #expect(viewModel.stopIsMissing)
+        #expect(viewModel.stopArrivals == nil)
+        #expect(viewModel.lastUpdated == nil)
+        #expect(viewModel.statusText.isEmpty)
+    }
+
+    /// Deliberate behaviour change. An empty HTTP 200 is also thrown as
+    /// `requestNotFound`, but a live stop answers with a full body — so a blank one is a
+    /// transient blip. It used to prompt the rider to delete a bookmark that works.
+    /// It is now a retryable error, and the copy must not claim a 404 the server never
+    /// sent: `ErrorClassifier` reclassifies it as `.invalidResponseData`.
+    @Test @MainActor
+    func `Empty 200 with bookmark context shows an error instead of a broken bookmark`() async throws {
+        let stop = try #require(try Fixtures.loadSomeStops().first)
+        let bookmark = Bookmark(name: "Blank", regionIdentifier: pugetSoundRegionIdentifier, stop: stop)
+        let (viewModel, application) = buildViewModelWithFailingArrivals(statusCode: 200, bookmarkContext: bookmark)
+        await viewModel.refresh()
+
+        #expect(!viewModel.isBrokenBookmark)
+        #expect(viewModel.operationError != nil)
+        #expect(application.promptCoordinator.sawErrorThisSession)
+
+        let message = try #require(viewModel.operationErrorMessage)
+        #expect(!message.contains("404"))
+    }
+
+    /// Deliberate behaviour change. An empty 200 with no bookmark behind it used to
+    /// render a bare header and nothing else — no arrivals, no error, nothing to do.
+    @Test @MainActor
+    func `Empty 200 without bookmark context shows an error`() async throws {
+        let (viewModel, application) = buildViewModelWithFailingArrivals(statusCode: 200)
+        await viewModel.refresh()
+
+        #expect(viewModel.operationError != nil)
+        #expect(application.promptCoordinator.sawErrorThisSession)
+
+        let message = try #require(viewModel.operationErrorMessage)
+        #expect(!message.contains("404"))
     }
 }
