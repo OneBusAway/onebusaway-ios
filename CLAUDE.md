@@ -32,9 +32,17 @@ the two cannot drift apart.
 **Run it in the same shell invocation as the command that uses it.** It sets an
 ordinary shell variable, and this file's audience is Claude Code, whose Bash tool
 starts a fresh shell per call — the working directory persists, environment does
-not. Resolve it in one call and build in the next and you get
-`-destination "platform=iOS Simulator,id="`, which fails with exactly the error
-below. Each block that follows repeats the line for that reason; keep it when
+not. Resolve it in one call and build in the next and `$SIMULATOR_UDID` is empty,
+so `-destination "platform=iOS Simulator,id="` is rejected while parsing
+arguments, before any device lookup happens:
+
+```
+xcodebuild: error: missing value for key 'id' of option 'Destination'
+```
+
+That is neither of the errors in the table below, and it is the friendlier of the
+three — it names the problem rather than implying the device is missing. Each
+block that follows repeats the resolve line so this cannot arise; keep it when
 copying one.
 
 Address the device by `id=` rather than `name=`. A hardcoded name breaks two ways,
@@ -45,6 +53,10 @@ name fixes both:
 |---|---|
 | not installed | "Unable to find a device matching the provided destination specifier" |
 | ambiguous across runtimes | "The requested device could not be found because multiple devices matched the request" |
+
+The first is verified on the current toolchain. The second is the historical
+wording and has shifted between Xcode releases — treat the text as indicative and
+the cause as the reliable part. `id=` avoids both.
 
 A name also goes stale on every Xcode release: this file has already carried
 `iPhone 16` and `iPhone 17 Pro`.
