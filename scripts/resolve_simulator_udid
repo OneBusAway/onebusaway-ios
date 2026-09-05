@@ -40,7 +40,14 @@ fi
 udid=$(printf '%s' "$devices_json" | python3 -c '
 import json, re, sys
 
-devices = json.load(sys.stdin)["devices"]
+# simctl can exit 0 and still emit something that is not the device list, so
+# report that as itself rather than letting a traceback reach the caller and be
+# mistaken for "no simulator installed".
+try:
+    devices = json.load(sys.stdin)["devices"]
+except (json.JSONDecodeError, KeyError, TypeError) as error:
+    sys.exit("error: could not parse the device list from "
+             "xcrun simctl list devices available -j: " + str(error))
 
 def ios_version(runtime):
     match = re.search(r"iOS-(\d+)-(\d+)", runtime)
