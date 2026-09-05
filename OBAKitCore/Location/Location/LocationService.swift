@@ -75,11 +75,15 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
 
     private struct UserDefaultsKeys {
         static let promptUserForLocationPermission = "LocationService.promptUserForLocationPermission"
+        static let promptUserForAlwaysAuthorization = "LocationService.promptUserForAlwaysAuthorization"
         static let locationServicesDenied = "LocationService.locationServicesDenied"
     }
 
     private func registerDefaults() {
-        userDefaults.register(defaults: [UserDefaultsKeys.promptUserForLocationPermission: true])
+        userDefaults.register(defaults: [
+            UserDefaultsKeys.promptUserForLocationPermission: true,
+            UserDefaultsKeys.promptUserForAlwaysAuthorization: true
+        ])
     }
 
     // MARK: - Location Properties
@@ -254,6 +258,30 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
         locationManager.requestWhenInUseAuthorization()
     }
 
+    /// Whether the one-time Always upgrade prompt is still available to spend.
+    ///
+    /// iOS surfaces that prompt once per install and silently does nothing on
+    /// every later call, so an app with no record of having spent it cannot tell
+    /// "asking will show a prompt" from "asking will do nothing" — and therefore
+    /// cannot know when to stop asking and send the rider to Settings instead.
+    ///
+    /// Read-only, and persisted rather than held in memory: the limit is per
+    /// install, not per launch. ``requestAlwaysAuthorization()`` is the only
+    /// thing that clears it, deliberately — the sibling
+    /// ``canPromptUserForPermission`` leaves that to its callers, and one of the
+    /// two call sites in this app already forgets to.
+    ///
+    /// - Note: This records what the app *asked*, which is not always what iOS
+    ///   *showed*. A rider who answered the first prompt with "Allow Once" leaves
+    ///   the status at `.authorizedWhenInUse` while Apple documents further
+    ///   upgrade requests as ignored, and `CLAuthorizationStatus` offers no way to
+    ///   tell that apart from an ordinary When In Use grant, so the flag is spent
+    ///   on a prompt nobody saw. That degrades to the Settings route rather than
+    ///   breaking anything, which is why it is documented rather than detected.
+    public var canPromptForAlwaysAuthorization: Bool {
+        userDefaults.bool(forKey: UserDefaultsKeys.promptUserForAlwaysAuthorization)
+    }
+
     /// Prompts the user to upgrade to Always authorization, which region
     /// monitoring requires to deliver geofence events in the background.
     ///
@@ -262,12 +290,31 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
     /// nothing at all. Callers should therefore treat it as a one-shot upgrade
     /// path and fall back to deep-linking Settings when it no-ops.
     ///
+    /// Refuses, and logs, from any *status* Core Location would reject the
+    /// request from, so nothing is spent where nothing could have been raised. It
+    /// also refuses once ``canPromptForAlwaysAuthorization`` is gone, which is
+    /// what stops a caller asking forever into silence.
+    ///
     /// - Important: This also requires `NSLocationAlwaysAndWhenInUseUsageDescription`
     ///   in the host app's Info.plist; without it iOS ignores the call entirely.
     ///   `Apps/Shared/app_shared.yml` declares it for every white-label app, and
     ///   KiedyBus overrides the body with its own. A new app that skips both will
-    ///   never reach `.authorizedAlways`, and this method will silently do nothing.
+    ///   never reach `.authorizedAlways`, and this method will silently do nothing
+    ///   — while still spending ``canPromptForAlwaysAuthorization``, because the
+    ///   status looks promptable and nothing reports back that no prompt appeared.
+    ///   The status guard above cannot cover this; only the Info.plist can.
     @objc public func requestAlwaysAuthorization() {
+        guard authorizationStatus == .notDetermined || authorizationStatus == .authorizedWhenInUse else {
+            Logger.warn("Not requesting Always authorization from \(authorizationStatus): iOS only raises that prompt from notDetermined or authorizedWhenInUse.")
+            return
+        }
+
+        guard canPromptForAlwaysAuthorization else {
+            Logger.warn("Not requesting Always authorization: this install already spent its one-time prompt. Settings is the only route left.")
+            return
+        }
+
+        userDefaults.set(false, forKey: UserDefaultsKeys.promptUserForAlwaysAuthorization)
         locationManager.requestAlwaysAuthorization()
     }
 
