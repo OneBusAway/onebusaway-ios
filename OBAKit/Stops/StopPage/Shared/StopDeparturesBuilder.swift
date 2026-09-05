@@ -57,6 +57,7 @@ struct StopDeparturesBuilder {
             isLoading: viewModel.isLoading,
             pastCollapsed: pastCollapsed,
             expandedRouteID: expandedRouteID,
+            highlightedTripID: TransferTripHighlight.tripID(from: viewModel.transferContext),
             statusProvider: { DepartureStatus(arrivalDeparture: $0) },
             alarmLookup: { viewModel.alarm(for: $0) },
             alarmLeadTime: { viewModel.alarmLeadTimeMinutes($0) },

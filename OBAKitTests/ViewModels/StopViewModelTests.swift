@@ -810,14 +810,13 @@ final class StopViewModelTests: OBATestCase {
         #expect(presented.count == 1)
     }
 
-    // MARK: - Router transfer fallback (final-review FIX 1)
+    // MARK: - Router transfer routing (#1277)
 
-    /// A transfer (non-nil `TransferContext`) must always resolve to the legacy
-    /// `StopViewController`, even with the new-stop-page flag ON (its default),
-    /// because the transfer UX isn't built on the new page yet. A plain open with
-    /// the flag ON resolves to the new `StopPageViewController`.
+    /// With the new-stop-page flag ON, a transfer opens the new stop page and
+    /// keeps the effective context (highlight UX). The legacy banner screen is
+    /// only for when the flag is off.
     @Test @MainActor
-    func `Make stop controller transfer context falls back to legacy screen`() throws {
+    func `Make stop controller transfer context uses new stop page when flag on`() throws {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock())
 
@@ -826,18 +825,23 @@ final class StopViewModelTests: OBATestCase {
 
         let stop = try #require(try Fixtures.loadSomeStops().first)
 
-        let transfer = TransferContext(arrivalTime: Date(), fromRouteShortName: "1", fromTripHeadsign: "Downtown")
+        let transfer = TransferContext(
+            arrivalTime: Date(),
+            fromRouteShortName: "1",
+            fromTripHeadsign: "Downtown",
+            fromTripID: "trip_transfer"
+        )
         let transferController = app.viewRouter.makeStopController(stop: stop, transferContext: transfer)
-        #expect(transferController is StopViewController)
+        #expect(transferController is StopPageViewController)
+        #expect((transferController as? StopPageViewController)?.transferContext == transfer)
 
         let plainController = app.viewRouter.makeStopController(stop: stop, transferContext: nil)
         #expect(plainController is StopPageViewController)
     }
 
-    /// The banner toggle drops the effective transfer context. Routing must use
-    /// that same helper: a raw non-nil context with the toggle off is ordinary
-    /// stop UX, so it belongs on the new page (flag default ON). Leave the
-    /// router on the raw value and this fails — legacy screen, no banner.
+    /// The banner/highlight toggle drops the effective transfer context. Routing
+    /// must use that same helper so a raw non-nil context with the toggle off
+    /// lands as an ordinary stop (no highlight).
     @Test @MainActor
     func `Make stop controller ignores transfer context when the banner toggle is off`() throws {
         let dataLoader = MockDataLoader(testName: name)
@@ -847,7 +851,12 @@ final class StopViewModelTests: OBATestCase {
         app.userDataStore.showTransferArrivalBanner = false
 
         let stop = try #require(try Fixtures.loadSomeStops().first)
-        let transfer = TransferContext(arrivalTime: Date(), fromRouteShortName: "1", fromTripHeadsign: "Downtown")
+        let transfer = TransferContext(
+            arrivalTime: Date(),
+            fromRouteShortName: "1",
+            fromTripHeadsign: "Downtown",
+            fromTripID: "trip_transfer"
+        )
         let controller = app.viewRouter.makeStopController(stop: stop, transferContext: transfer)
 
         #expect(controller is StopPageViewController)

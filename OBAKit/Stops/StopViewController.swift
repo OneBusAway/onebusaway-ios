@@ -415,7 +415,25 @@ public class StopViewController: UIViewController,
             walkingDirectionsElement = UIMenu(title: walkingDirectionsTitle, image: walkingDirectionsImage, children: walkingDirectionActions)
         }
 
-        return UIMenu(title: "Location", options: .displayInline, children: [nearbyAction, walkingDirectionsElement])
+        var locationChildren: [UIMenuElement] = [nearbyAction, walkingDirectionsElement]
+
+        if StopTripPlannerAction.canPresent(application: application), let stop {
+            let directionsToHere = UIAction(
+                title: StopTripPlannerAction.directionsToHereTitle,
+                image: UIImage(systemName: "arrow.triangle.turn.up.right.diamond")
+            ) { [unowned self] _ in
+                StopTripPlannerAction.present(.directionsToStop, stop: stop, application: self.application)
+            }
+            let directionsFromHere = UIAction(
+                title: StopTripPlannerAction.directionsFromHereTitle,
+                image: UIImage(systemName: "arrow.triangle.turn.up.right.diamond.fill")
+            ) { [unowned self] _ in
+                StopTripPlannerAction.present(.directionsFromStop, stop: stop, application: self.application)
+            }
+            locationChildren.append(contentsOf: [directionsToHere, directionsFromHere])
+        }
+
+        return UIMenu(title: "Location", options: .displayInline, children: locationChildren)
     }
 
     fileprivate func sortMenu() -> UIMenu {
