@@ -433,24 +433,29 @@ final class TripPageViewController: UIHostingController<TripPageView>,
             regionID: application.currentRegion?.regionIdentifier ?? 0
         )
 
+        // Shares the mapping with the bookmark and stop paths rather than
+        // hand-rolling a third copy (#1393). Still one arrival: this screen holds
+        // a single `departure` and no stop arrival list, so there is no second one
+        // to offer — what changes is that a future edit to the mapping reaches
+        // here too.
+        let contentState = BookmarkActions.contentState(from: [departure])
+
         // The same trip can be started from here, the stop page, and the
         // bookmarks list. Without this guard one stop ends up with two Lock
-        // Screen cards and two OBACloud push registrations.
-        if Activity<TripAttributes>.running(matching: staticData) != nil {
-            Logger.info("Live Activity already running for stop \(staticData.stopID) route \(staticData.routeShortName); not starting a duplicate.")
+        // Screen cards and two OBACloud push registrations. Re-Track still has to
+        // promote, as the other two paths do: after tracking A then B the Island
+        // is on B with A demoted to `demotedScore`, so tapping Track on A again
+        // must bump A back rather than only re-rendering this screen.
+        if let existing = Activity<TripAttributes>.running(matching: staticData) {
+            Logger.info("Live Activity already running for stop \(staticData.stopID) route \(staticData.routeShortName); promoting instead of duplicating.")
+            let existingID = existing.id
+            Task {
+                await Activity<TripAttributes>.promoteToDynamicIsland(activityID: existingID)
+            }
             isTrackingLiveActivity = true
             render()
             return
         }
-
-        let contentState = TripAttributes.ContentState(arrivals: [
-            TripAttributes.ContentState.ArrivalInfo(
-                departureTime: Int(departure.arrivalDepartureDate.timeIntervalSince1970),
-                scheduleStatus: .init(departure.scheduleStatus),
-                scheduleDeviation: departure.deviationFromScheduleInMinutes * 60,
-                isArrival: departure.arrivalDepartureStatus == .arriving
-            )
-        ])
 
         do {
             let activity = try Activity<TripAttributes>.requestProminent(
