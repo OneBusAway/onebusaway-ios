@@ -39,7 +39,8 @@ final class LocalizationTests {
         "data_migration_bulletin.report_summary_number_of_failures",
         "data_migration_bulletin.report_summary_number_of_successes",
         "map_controller.map_type.accessibility_value_with_layers_fmt",
-        "search_results_sheet.result_count_fmt"
+        "search_results_sheet.result_count_fmt",
+        "rental_cluster.title_fmt"
     ]
 
     /// `%@`, `%d`, `%1$@`, `%2$d`, … and the escaped `%%`.
