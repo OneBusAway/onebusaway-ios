@@ -241,6 +241,9 @@
 /* VoiceOver label for the navigation bar button that shares the trip when no destination could be loaded. */
 "destination_stop_picker.share_without_destination_a11y_label" = "Поделиться поездкой без остановки назначения";
 
+/* Short navigation bar button that shares the trip without a destination stop, used where the full phrase will not fit. */
+"destination_stop_picker.share_without_destination_bar_button" = "Всё равно поделиться";
+
 /* Button shown when a trip has no remaining stops, letting the user share the trip without picking a destination. */
 "destination_stop_picker.share_without_destination_button" = "Поделиться без пункта назначения";
 

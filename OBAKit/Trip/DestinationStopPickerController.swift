@@ -218,20 +218,30 @@ class DestinationStopPickerController: UIViewController, AppContext, OBAListView
 
     // MARK: - Share Escape
 
-    /// One string for two surfaces: the empty state's body button and the error
-    /// state's navigation bar escape. A second key for the same words is the
-    /// defect this change set exists to remove.
+    /// The empty state's body button, which has a full row to itself.
     private static let shareWithoutDestinationTitle = OBALoc(
         "destination_stop_picker.share_without_destination_button",
         value: "Share Without Destination",
         comment: "Button shown when a trip has no remaining stops, letting the user share the trip without picking a destination."
     )
 
+    /// The navigation bar shares its width with the title and Cancel, where the
+    /// full phrase does not fit — Russian runs to 32 characters. A distinct key
+    /// because this is a shorter phrase for a narrower surface, not a second key
+    /// for the same words. The bar button's accessibility label still carries the
+    /// full phrase, so the shorter visible title costs VoiceOver nothing.
+    /// See: https://github.com/OneBusAway/onebusaway-ios/issues/1348
+    private static let shareWithoutDestinationBarButtonTitle = OBALoc(
+        "destination_stop_picker.share_without_destination_bar_button",
+        value: "Share Anyway",
+        comment: "Short navigation bar button that shares the trip without a destination stop, used where the full phrase will not fit."
+    )
+
     /// Built once rather than per state change: the item carries no state, so
     /// there is nothing to rebuild.
     private lazy var shareWithoutDestinationButton: UIBarButtonItem = {
         let item = UIBarButtonItem(
-            title: Self.shareWithoutDestinationTitle,
+            title: Self.shareWithoutDestinationBarButtonTitle,
             style: .plain,
             target: self,
             action: #selector(shareWithoutDestinationTapped)
@@ -241,6 +251,15 @@ class DestinationStopPickerController: UIViewController, AppContext, OBAListView
             value: "Share trip without a destination stop",
             comment: "VoiceOver label for the navigation bar button that shares the trip when no destination could be loaded."
         )
+        // Voice Control matches the spoken phrase against these rather than the
+        // accessibility label, which is deliberately longer than the title. Without
+        // them, "Tap Share Anyway" — the words actually on screen — matches nothing,
+        // and the gap is widest in the locales where the short title shares no words
+        // with the full phrase.
+        item.accessibilityUserInputLabels = [
+            Self.shareWithoutDestinationBarButtonTitle,
+            Self.shareWithoutDestinationTitle
+        ]
         return item
     }()
 
