@@ -84,17 +84,18 @@ final class LiveActivityShortcutDrainTests: OBATestCase {
         )
         app.userDataStore.add(bookmark, to: nil)
 
-        // Empty list → buildContentState nil → .failed. Match any host: the
-        // test app's region base URL is not www.example.com.
         dataLoader.mock(data: Fixtures.loadData(file: "arrivals_and_departures_empty.json")) { request in
-            request.url?.absoluteString.contains("arrivals-and-departures-for-stop/\(bookmark.stopID)") == true
+            request.url?.path.contains("/api/where/arrivals-and-departures-for-stop") == true
         }
 
-        LiveActivityShortcutRequest.store(bookmark.id, userDefaults: app.userDefaults)
-        app.consumePendingLiveActivityShortcut()
+        // Write the queue without posting `.didStore` — that would race a second
+        // drain via Application's observer while this test also calls consume.
+        app.userDefaults.set(bookmark.id.uuidString, forKey: LiveActivityShortcutRequest.userDefaultsKey)
+        app.userDefaults.set(Date().timeIntervalSince1970, forKey: LiveActivityShortcutRequest.storedAtKey)
+        #expect(LiveActivityShortcutRequest.peek(userDefaults: app.userDefaults) == bookmark.id)
 
-        // Wait until the drain Task has had a chance to finish startLiveActivity.
-        try await Task.sleep(nanoseconds: 300_000_000)
+        app.consumePendingLiveActivityShortcut()
+        try await Task.sleep(nanoseconds: 500_000_000)
 
         #expect(
             LiveActivityShortcutRequest.peek(userDefaults: app.userDefaults) == bookmark.id,
