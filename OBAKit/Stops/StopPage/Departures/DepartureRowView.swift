@@ -31,6 +31,9 @@ struct DepartureRowView: View {
     let canAlarm: Bool
     let onAlarmToggle: () -> Void
     var style: Style = .normal
+    /// True when this row is the rider's inbound transfer trip and should
+    /// read as visually selected (background tint is applied by the list).
+    var isTransferHighlight: Bool = false
     let onTap: () -> Void
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -89,6 +92,14 @@ struct DepartureRowView: View {
             }
         }
         .opacity(dimmed ? 0.55 : 1.0)
+        .overlay(alignment: .leading) {
+            if isTransferHighlight {
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(Color(uiColor: ThemeColors.shared.brand))
+                    .frame(width: 4)
+                    .padding(.vertical, 4)
+            }
+        }
         .contentShape(Rectangle())
         .onTapGesture(perform: onTap)
         .accessibilityElement(children: .ignore)
@@ -176,6 +187,10 @@ struct DepartureRowView: View {
 
     private var accessibilityText: String {
         var extras: [String] = []
+
+        if isTransferHighlight {
+            extras.append(OBALoc("stop_page.row.a11y_transfer_trip", value: "your transfer trip", comment: "VoiceOver clause appended to a departure row that matches the rider's inbound transfer trip."))
+        }
 
         if style == .missed {
             extras.append(OBALoc("stop_page.row.a11y_missed", value: "likely missed — departs sooner than your walk to the stop", comment: "VoiceOver clause appended to a departure row that's upcoming but not reachable on foot before it leaves."))

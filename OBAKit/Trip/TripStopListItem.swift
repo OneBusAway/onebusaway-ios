@@ -89,13 +89,14 @@ nonisolated struct TripStopViewModel: OBAListViewItem {
         arrivalDeparture: ArrivalDeparture?,
         stopIndex: Int,
         closestStopIndex: Int?,
+        userStopIndex: Int?,
         onSelectAction: OBAListViewAction<TripStopViewModel>?
     ) {
         self.stopTime = stopTime
 
         stop = stopTime.stop
 
-        isUserDestination = arrivalDeparture.map { stopTime.stopID == $0.stopID } ?? false
+        isUserDestination = userStopIndex.map { stopIndex == $0 } ?? false
 
         // Derive isCurrentVehicleLocation from the same closestStopIndex used for
         // temporalState so both properties always agree on which stop is "current".

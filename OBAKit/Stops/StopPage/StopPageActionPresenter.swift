@@ -109,6 +109,8 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
             showScheduleForRoute: trip.showScheduleForRoute,
             canScheduleForRoute: application.currentRegion?.supportsScheduleForRoute ?? true,
             showWalkingDirections: stop.showWalkingDirections,
+            showDirectionsToHere: stop.showDirectionsToHere,
+            showDirectionsFromHere: stop.showDirectionsFromHere,
             showAlertDetail: stop.showAlertDetail,
             showBookmarkEditor: stop.showBookmarkEditor,
             shareTrip: trip.shareTrip,
@@ -182,6 +184,8 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
     /// Everything scoped to the stop as a whole.
     private struct StopClosures {
         let showWalkingDirections: () -> Void
+        let showDirectionsToHere: (() -> Void)?
+        let showDirectionsFromHere: (() -> Void)?
         let showAlertDetail: (ServiceAlert) -> Void
         let showBookmarkEditor: (ArrivalDeparture?) -> Void
         let showRouteFilter: () -> Void
@@ -191,11 +195,20 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
     }
 
     private func makeStopClosures(viewModel: StopViewModel) -> StopClosures {
-        StopClosures(
+        let tripPlannerAvailable = StopTripPlannerAction.canPresent(application: application)
+        return StopClosures(
             showWalkingDirections: { [weak self] in
                 guard let coordinate = viewModel.stop?.coordinate else { return }
                 self?.showWalkingDirections(coordinate: coordinate)
             },
+            showDirectionsToHere: tripPlannerAvailable ? { [weak self] in
+                guard let stop = viewModel.stop else { return }
+                self?.showTripPlanner(action: .directionsToStop, stop: stop)
+            } : nil,
+            showDirectionsFromHere: tripPlannerAvailable ? { [weak self] in
+                guard let stop = viewModel.stop else { return }
+                self?.showTripPlanner(action: .directionsFromStop, stop: stop)
+            } : nil,
             showAlertDetail: { [weak self] alert in
                 guard let self, let host = self.presentationHost(for: "alert detail") else { return }
                 self.application.viewRouter.navigateTo(alert: alert, from: host)
@@ -411,6 +424,12 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
         }
         sheet.addAction(UIAlertAction(title: Strings.cancel, style: .cancel))
         present(actionSheet: sheet)
+    }
+
+    /// Switches to the map tab and opens the classic trip planner with this stop
+    /// as origin or destination. Shared by the pushed Stop page and the map sheet.
+    func showTripPlanner(action: StopTripPlannerAction, stop: Stop) {
+        StopTripPlannerAction.present(action, stop: stop, application: application)
     }
 
     /// An unanchored action sheet is a hard crash on a regular-width device.

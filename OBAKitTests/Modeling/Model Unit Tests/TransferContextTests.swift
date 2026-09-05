@@ -142,10 +142,21 @@ final class TransferContextTests: OBATestCase {
         #expect(context.arrivalTime == arrivalTime)
         #expect(context.fromRouteShortName == arrDep.routeShortName)
         #expect(context.fromTripHeadsign == (arrDep.tripHeadsign ?? ""))
+        #expect(context.fromTripID == arrDep.tripID)
         // fromRouteDisplay is now computed from the component fields.
         let expectedDisplay = [arrDep.routeShortName, arrDep.tripHeadsign ?? ""]
             .filter { !$0.isEmpty }
             .joined(separator: " - ")
         #expect(context.fromRouteDisplay == expectedDisplay)
+    }
+
+    @Test func `Init stores fromTripID`() {
+        let context = TransferContext(
+            arrivalTime: Date(timeIntervalSince1970: 1_000_000),
+            fromRouteShortName: "10",
+            fromTripHeadsign: "Capitol Hill",
+            fromTripID: "1_trip_abc"
+        )
+        #expect(context.fromTripID == "1_trip_abc")
     }
 }

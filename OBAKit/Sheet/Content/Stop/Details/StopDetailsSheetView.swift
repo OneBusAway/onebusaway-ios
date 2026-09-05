@@ -430,6 +430,8 @@ struct StopDetailsSheetView: View {
             onServiceAlerts: navigation.showServiceAlerts,
             onNearbyStops: navigation.showNearbyStops,
             onWalkingDirections: navigation.showWalkingDirections,
+            onDirectionsToHere: navigation.showDirectionsToHere,
+            onDirectionsFromHere: navigation.showDirectionsFromHere,
             onReportProblem: navigation.showReportProblem
         )
     }

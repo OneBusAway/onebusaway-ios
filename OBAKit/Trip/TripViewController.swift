@@ -353,7 +353,12 @@ class TripViewController: UIViewController,
         // Scroll the list without blinking the row: `openStop` pushes the stop page on
         // the next line, so the delayed blink would play underneath it and be over
         // before the rider comes back. The scroll still leaves the row on screen for them.
-        tripDetailsController.highlightStopInList(stopTime.stop, blinksAfterScroll: false)
+        if let stopTimes = tripDetailsController.tripDetails?.stopTimes,
+           let stopIndex = stopTimes.firstIndex(where: { $0 == stopTime }) {
+            tripDetailsController.highlightStopInList(stopTime.stop, stopIndex: stopIndex, blinksAfterScroll: false)
+        } else {
+            tripDetailsController.highlightStopInList(stopTime.stop, blinksAfterScroll: false)
+        }
         openStop(stopTime, on: mapView)
     }
 
