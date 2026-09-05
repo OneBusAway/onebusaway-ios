@@ -28,6 +28,10 @@ struct GroupedListView: View {
     /// hide the alarm affordance when a new alarm can't be created — while still
     /// showing it for a departure that already has one, so it can be cancelled.
     let canAlarm: (ArrivalDeparture) -> Bool
+    /// Supplies the same long-press menu the chronological rows get. Grouped mode
+    /// renders its own rows rather than reusing `DepartureRowView`, so without
+    /// this the menu simply wasn't there — see `departureRowActions(_:)`.
+    let actionsProvider: (ArrivalDeparture) -> DepartureRowActions
     let onToggleRoute: (RouteID) -> Void
     let onSelectDeparture: (ArrivalDeparture) -> Void
     let onAlarmToggle: (ArrivalDeparture) -> Void
@@ -114,6 +118,11 @@ struct GroupedListView: View {
                 }
             }
         }
+        // Applied outside the accessibility element, matching how
+        // `ChronologicalListView` composes it onto `DepartureRowView`. The header
+        // is the route's next departure and is all a rider sees while the card is
+        // collapsed, so the menu has to reach it too — not just expanded rows.
+        .departureRowActions(actionsProvider(next))
     }
 
     private func alarmActionName(for alarm: Alarm?) -> String {
@@ -319,6 +328,7 @@ struct GroupedListView: View {
                     }
                 }
             }
+            .departureRowActions(actionsProvider(departure))
         }
     }
 

@@ -225,6 +225,7 @@ struct StopDeparturesSections: View {
                 alarmLookup: alarmLookup,
                 alarmLeadTime: alarmLeadTime,
                 canAlarm: canAlarm,
+                actionsProvider: actionsProvider,
                 onToggleRoute: onToggleRoute,
                 onSelectDeparture: onSelectDeparture,
                 onAlarmToggle: onAlarmToggle
