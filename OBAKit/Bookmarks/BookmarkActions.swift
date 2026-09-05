@@ -121,11 +121,17 @@ final class BookmarkActions {
 
     /// Maps the soonest three arrivals into the Live Activity payload.
     ///
-    /// - Precondition: `arrivalDepartures` is non-empty. Both entry points above
-    ///   establish that — one by guarding, the other by falling back to the
-    ///   tracked departure — which is why only the guarding one returns an
-    ///   `Optional`.
-    private static func contentState(from arrivalDepartures: [ArrivalDeparture]) -> TripAttributes.ContentState {
+    /// Internal rather than private because the trip page starts from a single
+    /// `ArrivalDeparture` with no stop list to filter (#1393). It wants this
+    /// mapping and not `buildContentState(from:matching:)`, whose headsign warning
+    /// describes a direction-mixing risk that a one-element list cannot have —
+    /// logging it there would assert something permanently untrue.
+    ///
+    /// - Precondition: `arrivalDepartures` is non-empty. Every entry point
+    ///   establishes that — by guarding, by falling back to the tracked
+    ///   departure, or by passing that departure directly — which is why only the
+    ///   guarding one returns an `Optional`.
+    static func contentState(from arrivalDepartures: [ArrivalDeparture]) -> TripAttributes.ContentState {
         let arrivals = arrivalDepartures.prefix(3).map { arrDep in
             TripAttributes.ContentState.ArrivalInfo(
                 departureTime: Int(arrDep.arrivalDepartureDate.timeIntervalSince1970),
