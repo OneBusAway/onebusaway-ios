@@ -66,6 +66,15 @@ nonisolated extension Stop: @retroactive MKAnnotation {
     public var mapCalloutText: String {
         ["#\(code)", mapTitle].compactMap { $0 }.joined(separator: "\n")
     }
+
+    /// Callout text for a **bookmark** pin. The pin title is `bookmark.name`, not
+    /// the route list, so truncating routes in the callout would hide information
+    /// with no pin/callout consistency benefit (#1342). Same compact style as
+    /// `mapCalloutText`, but every route (`limit: .max`).
+    public var bookmarkCalloutText: String {
+        let routes = Formatters.formattedMapRoutes(self.routes, limit: .max)
+        return ["#\(code)", routes].compactMap { $0 }.joined(separator: "\n")
+    }
 }
 
 // MARK: - TripStatus/MKAnnotation
