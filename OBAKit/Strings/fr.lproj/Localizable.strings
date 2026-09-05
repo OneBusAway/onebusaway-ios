@@ -1024,10 +1024,10 @@
 "settings_controller.arrival_display_section.transfer_banner.footer" = "Afficher la bannière d’arrivée de correspondance : activée, l’ouverture d’un arrêt depuis un trajet affiche les horaires relatifs à votre arrivée. Désactivez ce commutateur pour l’heure réelle et tous les départs.";
 
 /* Settings > Arrival & Departure Display > Footer describing the transfer banner and region time zone toggles */
-"settings_controller.arrival_display_section.footer" = "Transfer banner: opening a stop from a trip shows times relative to when you arrive. Region time zone: clock times use the transit region's zone, with a short badge when your phone differs. Both are independent.";
+"settings_controller.arrival_display_section.footer" = "Bannière de correspondance : l'ouverture d'un arrêt depuis un trajet affiche les horaires relatifs à votre arrivée. Fuseau horaire de la région : les horaires utilisent le fuseau de la région de transport, avec un badge court lorsque votre téléphone diffère. Les deux sont indépendants.";
 
 /* Settings > Arrival & Departure Display > Opt-in toggle for displaying arrival clocks in the transit region's time zone */
-"settings_controller.arrival_display_section.region_time_zone" = "Show times in region time zone";
+"settings_controller.arrival_display_section.region_time_zone" = "Afficher les horaires dans le fuseau horaire de la région";
 
 /* Title for the departure filter selection alert */
 "settings_controller.arrival_filter.selector_title" = "Afficher les départs";

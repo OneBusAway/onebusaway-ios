@@ -132,22 +132,29 @@ final class LocalizationTests {
         }
     }
 
-    /// The footer names the switch. A locale that leaves the English phrase in
-    /// the footer while translating the title makes the two unrecognizable as
-    /// the same control.
-    @Test func `Transfer banner footer names the switch title in every locale`() {
+    /// The section footer and region time zone switch title must be translated.
+    /// Leaving English in a non-en locale regresses Settings for that language.
+    @Test func `Arrival display section footer and region time zone are localized`() {
         let bundle = Bundle(for: DonationCell.self)
-        let titleKey = "settings_controller.arrival_display_section.transfer_banner"
-        let footerKey = "settings_controller.arrival_display_section.transfer_banner.footer"
+        let footerKey = "settings_controller.arrival_display_section.footer"
+        let regionTimeZoneKey = "settings_controller.arrival_display_section.region_time_zone"
 
-        for localization in bundle.localizations where localization != "Base" {
+        guard let english = strings(in: bundle, localization: "en"),
+              let englishFooter = english[footerKey],
+              let englishRegionTimeZone = english[regionTimeZoneKey] else {
+            Issue.record("en: missing arrival display section strings")
+            return
+        }
+
+        for localization in bundle.localizations where localization != "en" && localization != "Base" {
             guard let table = strings(in: bundle, localization: localization),
-                  let title = table[titleKey],
-                  let footer = table[footerKey] else {
-                Issue.record("\(localization): missing transfer banner strings")
+                  let footer = table[footerKey],
+                  let regionTimeZone = table[regionTimeZoneKey] else {
+                Issue.record("\(localization): missing arrival display section strings")
                 continue
             }
-            #expect(footer.hasPrefix(title), "\(localization): footer must start with the switch title \"\(title)\"")
+            #expect(footer != englishFooter, "\(localization): footer is still English")
+            #expect(regionTimeZone != englishRegionTimeZone, "\(localization): region time zone title is still English")
         }
     }
 

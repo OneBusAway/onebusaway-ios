@@ -1024,10 +1024,10 @@
 "settings_controller.arrival_display_section.transfer_banner.footer" = "显示换乘到达横幅：开启后，从行程打开车站时时间相对你到达该站显示。关闭该开关将显示时钟时间和全部出发班次。";
 
 /* Settings > Arrival & Departure Display > Footer describing the transfer banner and region time zone toggles */
-"settings_controller.arrival_display_section.footer" = "Transfer banner: opening a stop from a trip shows times relative to when you arrive. Region time zone: clock times use the transit region's zone, with a short badge when your phone differs. Both are independent.";
+"settings_controller.arrival_display_section.footer" = "换乘横幅：从行程打开车站时，时间相对你到达该站显示。区域时区：时钟时间使用交通区域时区，手机时区不同时会显示简短标记。两者互不影响。";
 
 /* Settings > Arrival & Departure Display > Opt-in toggle for displaying arrival clocks in the transit region's time zone */
-"settings_controller.arrival_display_section.region_time_zone" = "Show times in region time zone";
+"settings_controller.arrival_display_section.region_time_zone" = "以区域时区显示时间";
 
 /* Title for the departure filter selection alert */
 "settings_controller.arrival_filter.selector_title" = "显示班次";

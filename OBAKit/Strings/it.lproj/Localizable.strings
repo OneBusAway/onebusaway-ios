@@ -1024,10 +1024,10 @@
 "settings_controller.arrival_display_section.transfer_banner.footer" = "Mostra il banner di arrivo della coincidenza: se attivo, aprendo una fermata da una corsa gli orari sono relativi al tuo arrivo. Disattiva quell’interruttore per l’orologio e tutte le partenze.";
 
 /* Settings > Arrival & Departure Display > Footer describing the transfer banner and region time zone toggles */
-"settings_controller.arrival_display_section.footer" = "Transfer banner: opening a stop from a trip shows times relative to when you arrive. Region time zone: clock times use the transit region's zone, with a short badge when your phone differs. Both are independent.";
+"settings_controller.arrival_display_section.footer" = "Banner di coincidenza: aprendo una fermata da una corsa gli orari sono relativi al tuo arrivo. Fuso orario della regione: gli orari usano il fuso della regione di trasporto, con un breve badge quando il telefono differisce. Entrambi sono indipendenti.";
 
 /* Settings > Arrival & Departure Display > Opt-in toggle for displaying arrival clocks in the transit region's time zone */
-"settings_controller.arrival_display_section.region_time_zone" = "Show times in region time zone";
+"settings_controller.arrival_display_section.region_time_zone" = "Mostra gli orari nel fuso orario della regione";
 
 /* Title for the departure filter selection alert */
 "settings_controller.arrival_filter.selector_title" = "Mostra partenze";
