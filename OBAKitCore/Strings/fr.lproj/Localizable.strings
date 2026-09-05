@@ -430,6 +430,9 @@
 /* Title for the schedule/timetable feature tip */
 "schedule_tip.title" = "Consultez les horaires de votre ligne";
 
+/* Shown on a Live Activity when ActivityKit marks it stale (no recent update). */
+"live_activity.stale_warning" = "Ces données peuvent être obsolètes.";
+
 /* Shown in place of the minutes countdown when the vehicle is departing now */
 "stop_page.countdown.now" = "MAINT.";
 
