@@ -97,6 +97,10 @@ final class TripFocusMapLayerTests {
         mapView.annotations.compactMap { $0 as? TripStopAnnotation }
     }
 
+    private var directionArrowAnnotations: [PolylineArrowAnnotation] {
+        mapView.annotations.compactMap { $0 as? PolylineArrowAnnotation }
+    }
+
     // MARK: - The shape
 
     /// Each half draws twice — a white casing under a colored core — so a split
@@ -121,6 +125,14 @@ final class TripFocusMapLayerTests {
         focus(content(shape: shape(), progress: 0))
 
         #expect(shapeOverlays.allSatisfy { !$0.isSpent })
+    }
+
+    @Test func `Direction arrows are placed only on the part of the trip still ahead`() {
+        let line = shape()
+        focus(content(shape: line, progress: 0.5))
+
+        #expect(!directionArrowAnnotations.isEmpty)
+        #expect(directionArrowAnnotations.allSatisfy { $0.coordinate.longitude > line[2].longitude })
     }
 
     /// An agency that publishes no shape still gets a usable map: the stops carry
@@ -224,6 +236,7 @@ final class TripFocusMapLayerTests {
 
         #expect(shapeOverlays.isEmpty)
         #expect(stopAnnotations.isEmpty)
+        #expect(directionArrowAnnotations.isEmpty)
     }
 
     /// A refresh replaces what's drawn rather than adding to it — otherwise every
