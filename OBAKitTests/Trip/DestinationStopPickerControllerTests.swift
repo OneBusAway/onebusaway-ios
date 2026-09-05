@@ -482,6 +482,13 @@ final class DestinationStopPickerControllerTests: OBATestCase {
         let shareItem = try #require(controller.navigationItem.rightBarButtonItem)
         #expect(shareItem.title == "Share Anyway")
         #expect(shareItem.accessibilityLabel == "Share trip without a destination stop")
+        // Voice Control matches the spoken phrase against these, not the label. The
+        // visible title and the label deliberately differ, so both have to be here
+        // or "Tap Share Anyway" matches nothing.
+        #expect(shareItem.accessibilityUserInputLabels == [
+            "Share Anyway",
+            "Share Without Destination"
+        ])
         #expect(
             standardEmptyData(controller, listView)?.buttonConfig?.text == "Try Again",
             "The escape must not cost the error state its retry button"

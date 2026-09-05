@@ -251,6 +251,15 @@ class DestinationStopPickerController: UIViewController, AppContext, OBAListView
             value: "Share trip without a destination stop",
             comment: "VoiceOver label for the navigation bar button that shares the trip when no destination could be loaded."
         )
+        // Voice Control matches the spoken phrase against these rather than the
+        // accessibility label, which is deliberately longer than the title. Without
+        // them, "Tap Share Anyway" — the words actually on screen — matches nothing,
+        // and the gap is widest in the locales where the short title shares no words
+        // with the full phrase.
+        item.accessibilityUserInputLabels = [
+            Self.shareWithoutDestinationBarButtonTitle,
+            Self.shareWithoutDestinationTitle
+        ]
         return item
     }()
 
