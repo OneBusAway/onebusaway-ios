@@ -262,25 +262,19 @@ final class ErrorClassifierTests {
         }
     }
 
-    /// `.invalidResponseData`'s copy names the region, so with no region there is nothing
-    /// better to say — mirrors the existing `.requestFailure` guards.
-    @Test func `Classify request not found carrying a 200 with no region passes through`() {
+    /// `.invalidResponseData`'s copy names the region, so with no region the classifier
+    /// falls back to the region-less wording. Handing the error back unchanged would
+    /// re-emit the "404 Not found" copy this case exists to prevent.
+    @Test func `Classify request not found carrying a 200 with no region uses neutral copy`() {
         let url = URL(string: "https://api.pugetsound.onebusaway.org/api/where/arrivals-and-departures-for-stop/1_75403.json")!
         let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: nil)!
         let error = APIError.requestNotFound(response)
         let result = ErrorClassifier.classify(error, regionName: nil)
 
-        guard let apiError = result as? APIError else {
-            Issue.record("Expected APIError, got \(type(of: result))")
-            return
-        }
-
-        switch apiError {
-        case .requestNotFound(let resp):
-            #expect(resp.statusCode == 200)
-        default:
-            Issue.record("Expected .requestNotFound, got \(apiError)")
-        }
+        #expect(!(result is APIError))
+        let description = result.localizedDescription
+        #expect(!description.contains("404"))
+        #expect(description.contains("can't read"))
     }
 
     // MARK: - Cellular Data Restriction (Injectable)
