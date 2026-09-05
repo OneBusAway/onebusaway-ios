@@ -46,14 +46,15 @@ jobs:
     # in CI (scripts/swiftlint.sh); this job is the review-visible gate.
     # See https://github.com/OneBusAway/onebusaway-ios/issues/1303
     - name: SwiftLint (errors only)
-      env:
-        HOMEBREW_NO_AUTO_UPDATE: 1
-        HOMEBREW_NO_INSTALL_CLEANUP: 1
       run: |
-        if ! command -v swiftlint >/dev/null; then
-          brew install swiftlint
-        fi
-        swiftlint lint --reporter github-actions-logging
+        # Pin via the official portable release so a Homebrew formula bump cannot
+        # promote a new error-severity rule and turn main red with no app change
+        # (#1340). Bump SWIFTLINT_PIN deliberately after reviewing new rules.
+        SWIFTLINT_PIN="0.65.1"
+        curl -sL "https://github.com/realm/SwiftLint/releases/download/${SWIFTLINT_PIN}/portable_swiftlint.zip" -o /tmp/swiftlint.zip
+        unzip -qo /tmp/swiftlint.zip -d /tmp/swiftlint
+        /tmp/swiftlint/swiftlint version | grep -qx "$SWIFTLINT_PIN"
+        /tmp/swiftlint/swiftlint lint --reporter github-actions-logging
 
   build:
     runs-on: xcode-27
