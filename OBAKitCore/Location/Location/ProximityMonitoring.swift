@@ -22,9 +22,10 @@ public enum ProximityMonitoringResult: Equatable, Sendable {
     case started
 
     /// Monitoring began, but at a smaller radius than requested, because the
-    /// device will not monitor one that large. Core Location clamps an oversize
-    /// radius silently, so this is the only signal that the alert will fire at a
-    /// different distance than the user chose.
+    /// device will not monitor one that large. Core Location would answer the
+    /// oversize region with `CLError.regionMonitoringFailure` — asynchronous, and
+    /// carrying no radius — so this case exists to state up front what that error
+    /// never would: the alert fires at a different distance than the user chose.
     case startedWithClampedRadius(requested: CLLocationDistance, monitored: CLLocationDistance)
 
     /// Monitoring did not begin: delivering geofence events in the background
