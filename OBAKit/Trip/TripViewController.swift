@@ -272,7 +272,16 @@ class TripViewController: UIViewController,
             }
 
             if let vehicleAnnotation = vehicleAnnotation {
+                // `tripStatus`'s didSet writes lastKnownLocation onto coordinate
+                // immediately. Restore `from` so `VehicleCoordinateUpdate` can
+                // interpolate instead of teleporting (#1341) — same pattern as
+                // `TripFocusMapLayer.drawVehicle`.
+                let from = vehicleAnnotation.coordinate
                 vehicleAnnotation.tripStatus = currentTripStatus
+                vehicleAnnotation.coordinate = from
+                if let to = currentTripStatus.lastKnownLocation?.coordinate {
+                    VehicleCoordinateUpdate.apply(from: from, to: to, on: vehicleAnnotation)
+                }
                 // Update the annotation view's heading and real-time state since
                 // the annotation property didSet on the view won't re-fire.
                 if let vehicleAnnotationView = vehicleAnnotationView as? PulsingVehicleAnnotationView {

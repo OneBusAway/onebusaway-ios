@@ -8,6 +8,7 @@
 //
 
 import CoreLocation
+import MapKit
 import Testing
 import OBAKitCore
 @testable import OBAKit
@@ -35,8 +36,9 @@ struct VehicleCoordinateUpdateTests {
         #expect(decision == .animate(duration: VehicleCoordinateUpdate.animationDuration))
     }
 
-    /// Farther than `snapBeyondMeters` is a new fix, not motion.
-    @Test func `A kilometre jump snaps`() {
+    /// Farther than `snapBeyondMeters` (500 m) is a new fix, not motion.
+    /// A ~1 km hop is well past that cliff — snaps rather than animating.
+    @Test func `A jump beyond snapBeyondMeters snaps`() {
         let far = CLLocationCoordinate2D(latitude: 47.62, longitude: -122.33)
         #expect(VehicleCoordinateUpdate.decision(from: seattle, to: far) == .snap)
     }
@@ -48,5 +50,42 @@ struct VehicleCoordinateUpdateTests {
 
     @Test func `An invalid coordinate snaps`() {
         #expect(VehicleCoordinateUpdate.decision(from: kCLLocationCoordinate2DInvalid, to: seattle) == .snap)
+    }
+
+    // MARK: - apply(from:to:on:)
+
+    @Test @MainActor func `Apply snap writes the destination coordinate`() {
+        let annotation = MKPointAnnotation()
+        annotation.coordinate = seattle
+        let far = CLLocationCoordinate2D(latitude: 47.62, longitude: -122.33)
+
+        VehicleCoordinateUpdate.apply(from: seattle, to: far, on: annotation)
+
+        #expect(annotation.coordinate.latitude == far.latitude)
+        #expect(annotation.coordinate.longitude == far.longitude)
+    }
+
+    @Test @MainActor func `Apply unchanged leaves the coordinate alone`() {
+        let annotation = MKPointAnnotation()
+        annotation.coordinate = seattle
+        let almost = CLLocationCoordinate2D(latitude: 47.6062, longitude: -122.33211)
+
+        VehicleCoordinateUpdate.apply(from: seattle, to: almost, on: annotation)
+
+        #expect(annotation.coordinate.latitude == seattle.latitude)
+        #expect(annotation.coordinate.longitude == seattle.longitude)
+    }
+
+    @Test @MainActor func `Apply animate eventually reaches the destination`() async {
+        let annotation = MKPointAnnotation()
+        annotation.coordinate = seattle
+
+        VehicleCoordinateUpdate.apply(from: seattle, to: nearby, on: annotation)
+
+        // Linear 0.8s animation; wait past it before asserting.
+        try? await Task.sleep(for: .milliseconds(900))
+
+        #expect(abs(annotation.coordinate.latitude - nearby.latitude) < 0.00001)
+        #expect(abs(annotation.coordinate.longitude - nearby.longitude) < 0.00001)
     }
 }
