@@ -37,8 +37,9 @@ public class RentalAnnotationView: MKMarkerAnnotationView {
         label.font = UIFont(descriptor: descriptor, size: 0)
         label.adjustsFontForContentSizeCategory = true
 
-        // A white halo keeps the text legible over satellite basemaps.
-        label.layer.shadowColor = UIColor.white.cgColor
+        // Fixed black halo + white fill (#1364). Purple + white halo vanished on
+        // dark basemap tiles; adaptive `systemBackground` is wrong for the same reason.
+        label.layer.shadowColor = UIColor.black.cgColor
         label.layer.shadowRadius = 2
         label.layer.shadowOpacity = 1
         label.layer.shadowOffset = .zero
@@ -115,7 +116,8 @@ public class RentalAnnotationView: MKMarkerAnnotationView {
 
         let fuelText = RentalFormat.fuelLabelText(for: rental)
         fuelLabel.text = fuelText
-        fuelLabel.textColor = rental.isOperative ? .rentalPurple : .systemGray
+        // White figure independent of operative tint / color scheme (#1364).
+        fuelLabel.textColor = .white
         fuelLabel.isHidden = fuelText == nil || !rentalAnnotation.showsFuelLabel
 
         // VoiceOver ignores the zoom gate: a visual-density rule must not cost a
