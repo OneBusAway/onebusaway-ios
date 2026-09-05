@@ -47,6 +47,9 @@ struct StopPageToolbar: View {
     let onServiceAlerts: () -> Void
     let onNearbyStops: () -> Void
     let onWalkingDirections: () -> Void
+    /// Non-nil when OTP trip planning is available for the current region.
+    let onDirectionsToHere: (() -> Void)?
+    let onDirectionsFromHere: (() -> Void)?
     let onReportProblem: () -> Void
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -178,6 +181,16 @@ struct StopPageToolbar: View {
                 Button(action: onWalkingDirections) {
                     Label(OBALoc("stops_controller.walking_directions", value: "Walking Directions", comment: "Button that launches a maps app with walking directions to this stop"), systemImage: "figure.walk")
                 }
+                if let onDirectionsToHere {
+                    Button(action: onDirectionsToHere) {
+                        Label(StopTripPlannerAction.directionsToHereTitle, systemImage: "arrow.triangle.turn.up.right.diamond")
+                    }
+                }
+                if let onDirectionsFromHere {
+                    Button(action: onDirectionsFromHere) {
+                        Label(StopTripPlannerAction.directionsFromHereTitle, systemImage: "arrow.triangle.turn.up.right.diamond.fill")
+                    }
+                }
             }
 
             Section {
@@ -260,7 +273,9 @@ struct StopPageToolbar: View {
             hasServiceAlerts: true,
             onRefresh: {}, onSetListFiltered: { _ in }, onSetDepartureFilter: { _ in },
             onBookmark: {}, onSchedule: {},
-            onServiceAlerts: {}, onNearbyStops: {}, onWalkingDirections: {}, onReportProblem: {}
+            onServiceAlerts: {}, onNearbyStops: {}, onWalkingDirections: {},
+            onDirectionsToHere: nil, onDirectionsFromHere: nil,
+            onReportProblem: {}
         )
     }
 }

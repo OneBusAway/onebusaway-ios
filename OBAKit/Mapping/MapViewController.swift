@@ -872,7 +872,8 @@ class MapViewController: UIViewController,
     private var stopFocusCancellables = Set<AnyCancellable>()
 
     /// Owns the half-detent panel that shows the redesigned Stop page over the map.
-    private lazy var stopSheet = StopSheetPresenter()
+    /// Internal so trip-planner tests can put a sheet up the same way a map pin does.
+    lazy var stopSheet = StopSheetPresenter()
 
     /// The stop whose sheet is up, or nil between presentations — the single
     /// switch behind both of the things the map does differently while a sheet

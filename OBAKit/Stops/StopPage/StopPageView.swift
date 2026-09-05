@@ -29,6 +29,12 @@ struct StopPageNavigationHandler {
     /// Opens walking directions to the stop in an external maps app (header
     /// walk pill). Presents a choice sheet when more than one app is available.
     let showWalkingDirections: () -> Void
+    /// Opens the in-app OTP trip planner with this stop as the destination
+    /// (origin = current location). `nil` when trip planning is unavailable.
+    let showDirectionsToHere: (() -> Void)?
+    /// Opens the in-app OTP trip planner with this stop as the origin.
+    /// `nil` when trip planning is unavailable.
+    let showDirectionsFromHere: (() -> Void)?
     /// Pushes the alert-detail screen for a tapped service alert.
     let showAlertDetail: (ServiceAlert) -> Void
     /// Opens the bookmark editor: `nil` for a stop-level bookmark, an
@@ -295,6 +301,8 @@ struct StopPageView: View {
             onServiceAlerts: navigation.showServiceAlerts,
             onNearbyStops: navigation.showNearbyStops,
             onWalkingDirections: navigation.showWalkingDirections,
+            onDirectionsToHere: navigation.showDirectionsToHere,
+            onDirectionsFromHere: navigation.showDirectionsFromHere,
             onReportProblem: navigation.showReportProblem
         )
     }
@@ -442,7 +450,9 @@ struct StopPageView: View {
             hasServiceAlerts: false,
             onRefresh: {}, onSetListFiltered: { _ in }, onSetDepartureFilter: { _ in },
             onBookmark: {}, onSchedule: {},
-            onServiceAlerts: {}, onNearbyStops: {}, onWalkingDirections: {}, onReportProblem: {}
+            onServiceAlerts: {}, onNearbyStops: {}, onWalkingDirections: {},
+            onDirectionsToHere: nil, onDirectionsFromHere: nil,
+            onReportProblem: {}
         )
     }
 }
