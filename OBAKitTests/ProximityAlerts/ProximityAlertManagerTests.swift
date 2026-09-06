@@ -598,11 +598,13 @@ final class ProximityAlertManagerTests: OBATestCase {
             stop: stop,
             createdAt: Date(timeIntervalSinceNow: -ProximityAlert.expirationInterval - 60)
         )
-        store.add(proximityAlert: expired)
         let manager = makeManager()
-        // Reconciliation reaped it on construction, so put it back to reach the
-        // guard under test: the crossing arriving before anything reconciles.
-        store.add(proximityAlert: expired)
+        // Assigned, not `add`ed. `add` posts `.proximityAlertsDidChange`, which
+        // this manager observes with the selector form — `NotificationCenter`
+        // invokes that inline, so reconciliation reaps the alert before the
+        // crossing arrives and the test passes through the no-longer-stored
+        // branch instead of the expiry guard it names.
+        store.proximityAlerts = [expired]
         #expect(locationService.startMonitoringProximity(for: expired) == .started)
 
         enterRegion(for: expired)
