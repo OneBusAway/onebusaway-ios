@@ -1451,8 +1451,11 @@ class MapViewController: UIViewController,
         applyLaunchCamera(userLocation: location)
     }
 
-    // MARK: - Context Menus
+}
 
+// MARK: - Context Menus
+
+extension MapViewController {
     public func contextMenuInteraction(_ interaction: UIContextMenuInteraction, configurationForMenuAtLocation location: CGPoint) -> UIContextMenuConfiguration? {
         guard
             let annotationView = interaction.view as? MKAnnotationView,
@@ -1491,7 +1494,6 @@ class MapViewController: UIViewController,
             didTapMapStatus(interaction)
         }
     }
-
 }
 
 // MARK: - ViewModel Binding
