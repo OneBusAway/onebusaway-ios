@@ -132,6 +132,12 @@ final class BookmarkActions {
     ///   departure, or by passing that departure directly — which is why only the
     ///   guarding one returns an `Optional`.
     static func contentState(from arrivalDepartures: [ArrivalDeparture]) -> TripAttributes.ContentState {
+        // Documented above, and unenforced until this became internal: the
+        // guarding wrapper used to be the only way in. An empty array yields a
+        // card with no arrivals rather than being refused, so say so in debug
+        // rather than shipping a blank Live Activity.
+        assert(!arrivalDepartures.isEmpty, "contentState(from:) needs at least one arrival")
+
         let arrivals = arrivalDepartures.prefix(3).map { arrDep in
             TripAttributes.ContentState.ArrivalInfo(
                 departureTime: Int(arrDep.arrivalDepartureDate.timeIntervalSince1970),

@@ -450,7 +450,10 @@ final class TripPageViewController: UIHostingController<TripPageView>,
             Logger.info("Live Activity already running for stop \(staticData.stopID) route \(staticData.routeShortName); promoting instead of duplicating.")
             let existingID = existing.id
             Task {
-                await Activity<TripAttributes>.promoteToDynamicIsland(activityID: existingID)
+                await Activity<TripAttributes>.promoteToDynamicIsland(
+                    activityID: existingID,
+                    state: contentState
+                )
             }
             isTrackingLiveActivity = true
             render()

@@ -127,11 +127,17 @@ final class BookmarkActionsTests: OBATestCase {
 
         let state = BookmarkActions.contentState(from: [departure])
 
-        let arrival = try #require(state.arrivals.first)
-        #expect(state.arrivals.count == 1)
-        #expect(arrival.departureTime == Int(departure.arrivalDepartureDate.timeIntervalSince1970))
-        #expect(arrival.scheduleDeviation == departure.deviationFromScheduleInMinutes * 60)
-        #expect(arrival.isArrival == (departure.arrivalDepartureStatus == .arriving))
+        // `ArrivalInfo` is `Hashable`, so one comparison pins every field — including
+        // `scheduleStatus`, which field-by-field assertions had left out while the
+        // docstring claimed otherwise.
+        let expected = TripAttributes.ContentState.ArrivalInfo(
+            departureTime: Int(departure.arrivalDepartureDate.timeIntervalSince1970),
+            scheduleStatus: .init(departure.scheduleStatus),
+            scheduleDeviation: departure.deviationFromScheduleInMinutes * 60,
+            isArrival: departure.arrivalDepartureStatus == .arriving
+        )
+
+        #expect(state.arrivals == [expected])
     }
 
     /// With arrivals, at most the first three are carried into the activity.
