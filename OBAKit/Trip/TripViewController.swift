@@ -272,7 +272,23 @@ class TripViewController: UIViewController,
             }
 
             if let vehicleAnnotation = vehicleAnnotation {
+                // `tripStatus`'s didSet writes lastKnownLocation onto coordinate
+                // immediately. Restore `from` so `VehicleCoordinateUpdate` can
+                // interpolate instead of teleporting (#1341) — same pattern as
+                // `TripFocusMapLayer.drawVehicle`.
+                let from = vehicleAnnotation.coordinate
                 vehicleAnnotation.tripStatus = currentTripStatus
+                vehicleAnnotation.coordinate = from
+                // No lastKnownLocation → drop the pin, matching `TripFocusMapLayer`
+                // (`removeVehicle()` when the feed omits a coordinate). Keeping a
+                // stale real coordinate used to drag `showAnnotations` zoom and
+                // skip the null-island filter that the old `(0,0)` fallback hit.
+                guard let to = currentTripStatus.lastKnownLocation?.coordinate else {
+                    removeVehicleAnnotation()
+                    updateTitleView()
+                    return
+                }
+                VehicleCoordinateUpdate.apply(from: from, to: to, on: vehicleAnnotation)
                 // Update the annotation view's heading and real-time state since
                 // the annotation property didSet on the view won't re-fire.
                 if let vehicleAnnotationView = vehicleAnnotationView as? PulsingVehicleAnnotationView {
@@ -280,6 +296,11 @@ class TripViewController: UIViewController,
                 }
             }
             else {
+                // Don't mint a pin on null island when the feed has no location yet.
+                guard currentTripStatus.lastKnownLocation != nil else {
+                    updateTitleView()
+                    return
+                }
                 vehicleAnnotation = VehicleAnnotation(tripStatus: currentTripStatus)
                 self.mapView.addAnnotation(vehicleAnnotation!)
             }

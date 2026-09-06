@@ -16,10 +16,13 @@ import UIKit
 ///
 /// Arrival polls land every 15–30s. Assigning `coordinate` each time teleports
 /// the pin; interpolating every hop looks like motion. Hops longer than
-/// `snapBeyondMeters` are a new fix (or a trip change), not something to ease
-/// across the map.
+/// `snapBeyondMeters` (**500 m** — a bit over one 30s poll at ~50 km/h) snap
+/// instead. That is a deliberate city-traffic tuning: freeway/express buses
+/// near or above ~60 km/h usually snap and degrade to the pre-interpolation
+/// behavior rather than easing across hundreds of metres.
 ///
 /// See: https://github.com/OneBusAway/onebusaway-ios/issues/1109
+/// Follow-up: https://github.com/OneBusAway/onebusaway-ios/issues/1341
 enum VehicleCoordinateUpdate {
     enum Decision: Equatable {
         case unchanged
