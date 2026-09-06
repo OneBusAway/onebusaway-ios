@@ -4,3 +4,7 @@
 /* Purpose string shown when the app requests HealthKit access to your walking speed. */
 "NSHealthShareUsageDescription" = "Usa su velocidad al caminar de la app Salud para ofrecerle estimaciones más precisas de la hora de llegada.";
 "NSHealthUpdateUsageDescription" = "Usa su velocidad al caminar de la app Salud para ofrecerle estimaciones más precisas de la hora de llegada.";
+
+/* Purpose strings shown when the app requests speech recognition / microphone for voice search. */
+"NSSpeechRecognitionUsageDescription" = "La búsqueda por voz convierte lo que dices en una consulta de transporte.";
+"NSMicrophoneUsageDescription" = "La búsqueda por voz escucha para que puedas buscar paradas, líneas y lugares hablando.";
