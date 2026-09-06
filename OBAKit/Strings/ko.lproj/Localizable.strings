@@ -1684,3 +1684,15 @@
 
 /* VoiceOver label for the wind speed stat on the weather card. */
 "weather.stat.wind" = "풍속";
+
+/* Accessibility label for the mic button that starts voice search. */
+"search_sheet.voice_search.start" = "음성 검색";
+
+/* Accessibility label for the mic button while voice search is listening. */
+"search_sheet.voice_search.stop" = "듣기 중지";
+
+/* Shown when the user denies speech/mic permission for voice search. */
+"voice_search.permission_denied" = "음성 검색에는 마이크 또는 음성 인식 접근 권한이 필요합니다.";
+
+/* Shown when SFSpeechRecognizer cannot run. */
+"voice_search.unavailable" = "이 기기에서는 음성 검색을 사용할 수 없습니다.";
