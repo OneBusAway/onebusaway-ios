@@ -153,6 +153,66 @@ final class BookmarkActionsTests: OBATestCase {
         #expect(first.tracksSameTrip(as: second))
     }
 
+    /// Cross-path duplicate guard: bookmark StaticData (`tripID: ""`) must
+    /// still reconcile with a stop-page activity that stores a concrete trip.
+    @Test @MainActor func `Empty bookmark trip ID tracks same trip as stop-page pin`() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let bookmark = try makeTripBookmark(application: application)
+        let stopArrivals = try Fixtures.loadRESTAPIPayload(
+            type: StopArrivals.self,
+            fileName: "arrivals_and_departures_for_stop_1_29261.json"
+        )
+        let pinned = try #require(stopArrivals.arrivalsAndDepartures.first)
+        try #require(!pinned.tripID.isEmpty)
+
+        let bookmarkStatic = BookmarkActions.liveActivityStaticData(
+            for: bookmark,
+            regionID: Fixtures.pugetSoundRegion.regionIdentifier,
+            arrivalDepartures: stopArrivals.arrivalsAndDepartures
+        )
+        let stopPageStatic = TripAttributes.StaticData(
+            routeShortName: bookmarkStatic.routeShortName,
+            routeHeadsign: bookmarkStatic.routeHeadsign,
+            stopID: bookmarkStatic.stopID,
+            tripID: pinned.tripID
+        )
+
+        #expect(bookmarkStatic.tripID.isEmpty)
+        #expect(bookmarkStatic.tracksSameTrip(as: stopPageStatic))
+        #expect(stopPageStatic.tracksSameTrip(as: bookmarkStatic))
+    }
+
+    /// Relaunch metadata must prefer the pinned trip over the soonest arrival.
+    @Test @MainActor func `Refresh primary arrival prefers pinned trip ID`() throws {
+        let base = 1_700_000_000
+        let sooner = try arrivalDeparture(
+            routeID: "1_100479",
+            headsign: "Downtown",
+            tripID: "trip_soon",
+            departureEpoch: base + 120
+        )
+        let pinned = try arrivalDeparture(
+            routeID: "1_100479",
+            headsign: "Downtown",
+            tripID: "trip_pinned",
+            departureEpoch: base + 480
+        )
+        let staticData = TripAttributes.StaticData(
+            routeShortName: "1 Line",
+            routeHeadsign: "Downtown",
+            stopID: Self.stopID,
+            tripID: "trip_pinned"
+        )
+
+        let primary = BookmarkActions.refreshPrimaryArrival(
+            for: staticData,
+            arrivalDepartures: [sooner, pinned]
+        )
+        #expect(primary?.tripID == "trip_pinned")
+        #expect(primary?.tripID != sooner.tripID)
+    }
+
     /// Bookmark refresh with empty tripID uses the unpinned builder, not the
     /// stop-page matching branch that collapses to one arrival.
     @Test @MainActor func `Refresh with empty trip ID builds multi-arrival content`() throws {

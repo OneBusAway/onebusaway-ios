@@ -101,11 +101,31 @@ final class BookmarkActions {
         )
     }
 
+    /// The arrival that should drive OBACloud re-registration metadata for a
+    /// running activity on relaunch.
+    ///
+    /// Prefer the pinned `staticData.tripID` when present and still in the list;
+    /// otherwise the soonest bookmark arrival. Kept in lockstep with
+    /// `buildRefreshContentState`'s pin lookup so push registration can't drift
+    /// onto a different vehicle than the Lock Screen card while the pin holds.
+    static func refreshPrimaryArrival(
+        for staticData: TripAttributes.StaticData,
+        arrivalDepartures: [ArrivalDeparture]
+    ) -> ArrivalDeparture? {
+        if !staticData.tripID.isEmpty,
+           let tracked = arrivalDepartures.first(where: { $0.tripID == staticData.tripID }) {
+            return tracked
+        }
+        return arrivalDepartures.first
+    }
+
     /// Builds refreshed content for a running bookmark Live Activity.
     ///
     /// Stop-page activities carry a pinned `tripID` in `StaticData` and keep
     /// following that vehicle. Bookmark activities leave `tripID` empty and show
-    /// up to the soonest three same-bookmark arrivals.
+    /// up to the soonest three same-bookmark arrivals. When a pin is set but
+    /// that trip has left the list, fall back to the unpinned builder
+    /// (degradation) rather than silently re-pinning the soonest arrival.
     static func buildRefreshContentState(
         for staticData: TripAttributes.StaticData,
         arrivalDepartures: [ArrivalDeparture]

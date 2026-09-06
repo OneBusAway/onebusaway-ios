@@ -61,16 +61,18 @@ final class TripAttributesIdentityTests {
         #expect(!staticData(tripID: "trip_a").tracksSameTrip(as: staticData(tripID: "trip_b")))
     }
 
-    /// Legacy activities without a stored trip ID still compare equal when both
-    /// sides are empty.
+    /// Legacy / bookmark activities without a stored trip ID still compare equal
+    /// when both sides are empty.
     @Test func `Matches when both trip IDs are empty`() {
         #expect(staticData(tripID: "").tracksSameTrip(as: staticData(tripID: "")))
     }
 
-    /// A new activity keyed by trip ID must not reconcile against a legacy card.
-    @Test func `Does not match when only one trip ID is empty`() {
-        #expect(!staticData(tripID: "").tracksSameTrip(as: staticData(tripID: "trip_a")))
-        #expect(!staticData(tripID: "trip_a").tracksSameTrip(as: staticData(tripID: "")))
+    /// Empty tripID is a wildcard so bookmark Track (`""`) reconciles with a
+    /// stop-page activity that carries a concrete trip — restoring the
+    /// cross-path duplicate guard without pinning bookmark identity.
+    @Test func `Matches when only one trip ID is empty`() {
+        #expect(staticData(tripID: "").tracksSameTrip(as: staticData(tripID: "trip_a")))
+        #expect(staticData(tripID: "trip_a").tracksSameTrip(as: staticData(tripID: "")))
     }
 
     /// The route colour arrives with the first arrivals payload and is nil until
@@ -101,6 +103,11 @@ final class TripAttributesIdentityTests {
         let colored = staticData(routeColorHex: "FF0000")
         #expect(plain.tracksSameTrip(as: colored))
         #expect(colored.tracksSameTrip(as: plain))
+
+        let empty = staticData(tripID: "")
+        let pinned = staticData(tripID: "trip_a")
+        #expect(empty.tracksSameTrip(as: pinned))
+        #expect(pinned.tracksSameTrip(as: empty))
     }
 
     /// Empty headsign is the fallback both start paths use when a bookmark or
