@@ -146,4 +146,62 @@ final class AgencyAlertsStoreConcurrencyTests: OBATestCase {
             #expect(!store.isAlertUnread(alert))
         }
     }
+
+    /// #1145: `deleteAgencyAlerts()`'s `removeAll()` is the mutation most likely to
+    /// corrupt state during a concurrent read. Region change drives that path;
+    /// fan it out against reads so a missing lock fails without relying on TSan.
+    @Test @MainActor
+    func `Concurrent delete-via-region-change and reads do not corrupt state`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader)
+        let store = app.alertsStore
+
+        let alerts = try makeRecentHighSeverityAlerts(count: 20)
+        store.insertAlerts(alerts)
+        #expect(store.recentHighSeverityAlerts.count == alerts.count)
+
+        let iterations = 30
+        await withTaskGroup(of: Void.self) { group in
+            group.addTask { @MainActor in
+                for _ in 0..<iterations {
+                    // `regionsService(_:updatedRegion:)` → `deleteAgencyAlerts()` on the
+                    // store's serial queue. Re-seed after each wipe so the next delete
+                    // still has something to clear.
+                    store.insertAlerts(alerts)
+                    store.regionsService(app.regionsService, updatedRegion: Fixtures.tampaRegion)
+                }
+            }
+            group.addTask {
+                for _ in 0..<iterations {
+                    _ = store.recentHighSeverityAlerts
+                    _ = store.agencyAlerts
+                    for alert in alerts {
+                        _ = store.isAlertUnread(alert)
+                    }
+                }
+            }
+            group.addTask {
+                for _ in 0..<iterations {
+                    for alert in alerts {
+                        store.markAlertRead(alert)
+                    }
+                }
+            }
+        }
+
+        // Wait for the serial delete queue + any in-flight `checkForUpdates`
+        // kicked off by `updatedRegion` to settle.
+        try await Task.sleep(nanoseconds: 300_000_000)
+
+        // `updatedRegion` deletes then refetches — do not assert emptiness.
+        // Coherence under the lock: recent/unread subsets stay inside `agencyAlerts`,
+        // and a final mark-all-read leaves no unread high-severity rows.
+        let allIDs = Set(store.agencyAlerts.map(\.id))
+        let recentIDs = Set(store.recentHighSeverityAlerts.map(\.id))
+        #expect(recentIDs.isSubset(of: allIDs))
+        for alert in store.agencyAlerts {
+            store.markAlertRead(alert)
+        }
+        #expect(store.recentUnreadHighSeverityAlerts.isEmpty)
+    }
 }
