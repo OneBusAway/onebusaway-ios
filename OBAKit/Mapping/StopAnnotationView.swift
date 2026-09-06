@@ -111,19 +111,19 @@ class StopAnnotationView: MKAnnotationView {
 
     public override func prepareForDisplay() {
         super.prepareForDisplay()
+        applyPresentation()
+    }
 
-        // The delegate's answer can change between displays — it reads a feature flag the user
-        // can flip mid-session — and a recycled view still carries the previous one.
+    /// Sets the icon before MapKit shows the view. `prepareForDisplay` can run
+    /// a frame later; leaving `image` nil for that frame is the default-pin flash.
+    func applyPresentation() {
         updateCalloutVisibility()
 
-        guard let delegate = delegate else {
-            return
-        }
+        guard let delegate else { return }
 
         if let bookmark = annotation as? Bookmark {
             prepareForDisplay(bookmark: bookmark, delegate: delegate)
-        }
-        else if let stop = annotation as? Stop {
+        } else if let stop = annotation as? Stop {
             prepareForDisplay(stop: stop, delegate: delegate)
         }
     }
