@@ -18,13 +18,11 @@ enum VoiceSearchQueryClassifier {
             return SearchRequest(query: "", type: .address)
         }
 
-        let lower = trimmed.lowercased()
-
-        if let remainder = strippingCue(from: lower, cues: Self.vehicleCues) {
+        if let remainder = strippingCue(from: trimmed, cues: Self.vehicleCues) {
             return SearchRequest(query: remainder.isEmpty ? trimmed : remainder, type: .vehicleID)
         }
 
-        if let remainder = strippingCue(from: lower, cues: Self.routeCues) {
+        if let remainder = strippingCue(from: trimmed, cues: Self.routeCues) {
             return SearchRequest(query: remainder.isEmpty ? trimmed : remainder, type: .route)
         }
 
@@ -49,19 +47,25 @@ enum VoiceSearchQueryClassifier {
         "транспорт", "车辆", "車輛", "차량"
     ]
 
-    private static func strippingCue(from lowercased: String, cues: [String]) -> String? {
+    /// Cue match is case-insensitive; the returned remainder keeps the original
+    /// casing (so "Route Rapid Ride D" searches `Rapid Ride D`, not lowercased).
+    private static func strippingCue(from original: String, cues: [String]) -> String? {
+        let lowercased = original.lowercased()
         for cue in cues {
             guard lowercased.hasPrefix(cue) else { continue }
             if lowercased.count == cue.count {
                 return ""
             }
-            let boundary = lowercased[lowercased.index(lowercased.startIndex, offsetBy: cue.count)]
+            let boundaryIndex = lowercased.index(lowercased.startIndex, offsetBy: cue.count)
+            let boundary = lowercased[boundaryIndex]
             // Avoid matching "business" as "bus".
             guard boundary.isWhitespace || boundary.isPunctuation || boundary.isNumber else {
                 continue
             }
-            return String(lowercased.dropFirst(cue.count))
-                .trimmingCharacters(in: .whitespacesAndNewlines)
+            let originalBoundary = original.index(original.startIndex, offsetBy: cue.count)
+            let remainder = original[originalBoundary...]
+                .drop(while: { $0.isWhitespace || $0.isPunctuation })
+            return String(remainder).trimmingCharacters(in: .whitespacesAndNewlines)
         }
         return nil
     }

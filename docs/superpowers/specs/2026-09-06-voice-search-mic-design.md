@@ -18,7 +18,7 @@ keeping keyboard fallback — that matches the Google pattern, not “fill only.
    - `.vehicleID` when it starts with a vehicle cue
    - `.address` otherwise (default destination lookup)
 4. Tap mic again (or clear / close) cancels listening.
-5. If speech is unavailable or permanently denied, hide the mic.
+5. If speech or the microphone is unavailable or permanently denied, hide the mic.
 
 ## Non-goals
 
@@ -30,3 +30,9 @@ keeping keyboard fallback — that matches the Google pattern, not “fill only.
 
 `NSSpeechRecognitionUsageDescription` + `NSMicrophoneUsageDescription` in shared
 Info.plist (brand-neutral), translated in each app’s `InfoPlist.strings`.
+
+Recognition uses Apple’s **cloud** speech service (`requiresOnDeviceRecognition =
+false`) even when the device supports on-device recognition. That is a conscious
+accuracy trade-off for stop and route names; audio leaves the device for Apple’s
+servers. Hide the mic when speech **or** microphone permission is permanently
+denied.

@@ -382,12 +382,66 @@ final class SearchSheetViewModelTests: OBATestCase {
         let (viewModel, _, _, _) = makeViewModel(dataLoader: MockDataLoader(testName: name), voiceSearch: voice)
 
         viewModel.startVoiceSearch()
+        for _ in 0..<50 where voice.startCount < 1 {
+            await Task.yield()
+        }
         #expect(viewModel.isListening)
+        let stopsBeforeClear = voice.stopCount
 
         viewModel.updateQuery("")
 
         #expect(viewModel.isListening == false)
-        #expect(voice.stopCount >= 1)
+        #expect(voice.stopCount > stopsBeforeClear)
+    }
+
+    @Test @MainActor
+    func `Stopping before the voice task runs never starts recognition`() async {
+        let voice = MockVoiceSearchController()
+        let (viewModel, _, _, _) = makeViewModel(dataLoader: MockDataLoader(testName: name), voiceSearch: voice)
+
+        viewModel.startVoiceSearch()
+        viewModel.stopVoiceSearch()
+
+        for _ in 0..<20 {
+            await Task.yield()
+        }
+
+        #expect(voice.startCount == 0)
+        #expect(viewModel.isListening == false)
+    }
+
+    @Test @MainActor
+    func `Typing while listening stops the mic`() async {
+        let voice = MockVoiceSearchController()
+        let (viewModel, _, _, _) = makeViewModel(dataLoader: MockDataLoader(testName: name), voiceSearch: voice)
+
+        viewModel.startVoiceSearch()
+        for _ in 0..<50 where voice.startCount < 1 {
+            await Task.yield()
+        }
+        #expect(viewModel.isListening)
+
+        viewModel.updateQuery("typed")
+        voice.emit(.partial("should not land"))
+
+        for _ in 0..<20 {
+            await Task.yield()
+        }
+
+        #expect(viewModel.isListening == false)
+        #expect(viewModel.query == "typed")
+    }
+
+    @Test @MainActor
+    func `Voice search availability mirrors the controller`() {
+        let voice = MockVoiceSearchController()
+        let (viewModel, _, _, _) = makeViewModel(dataLoader: MockDataLoader(testName: name), voiceSearch: voice)
+
+        voice.isAvailable = true
+        #expect(viewModel.isVoiceSearchAvailable)
+
+        voice.isAvailable = false
+        #expect(viewModel.isVoiceSearchAvailable == false)
     }
 
     @Test @MainActor

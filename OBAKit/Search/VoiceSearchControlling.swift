@@ -20,7 +20,7 @@ enum VoiceSearchEvent: Equatable {
 /// microphone / Speech entitlements.
 @MainActor
 protocol VoiceSearchControlling: AnyObject {
-    /// `false` when the device cannot run speech recognition (or auth is denied).
+    /// `false` when speech or the microphone cannot run (unavailable or permanently denied).
     var isAvailable: Bool { get }
 
     /// Starts listening. Yields partial transcripts, then a single `.final` (or `.failed`).
