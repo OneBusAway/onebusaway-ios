@@ -90,11 +90,10 @@ nonisolated public struct OBAListViewSection: Hashable, Identifiable, @unchecked
 
     public static func == (lhs: OBAListViewSection, rhs: OBAListViewSection) -> Bool {
         // `id` belongs in `==` because `hash(into:)` already combines it —
-        // Hashable requires equal values to share a hash. Two agency-alert
-        // sections can share a title and empty contents while differing only
-        // by id (#421 / #1327). Whether that mismatch alone caused the
-        // DiffableDataSource "Failed to find index of item" spam is unproven
-        // (#1338); including `id` is still required for a correct contract.
+        // Hashable requires equal values to share a hash. Whether omitting
+        // `id` from `==` caused the DiffableDataSource "Failed to find index
+        // of item" spam is unproven (#1338); including `id` is still required
+        // for a correct contract.
         return lhs.id == rhs.id &&
             lhs.title == rhs.title &&
             lhs.contents == rhs.contents
