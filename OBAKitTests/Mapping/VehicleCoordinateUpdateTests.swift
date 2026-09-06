@@ -82,9 +82,10 @@ struct VehicleCoordinateUpdateTests {
 
         VehicleCoordinateUpdate.apply(from: seattle, to: nearby, on: annotation)
 
-        // Linear 0.8s animation; wait past it before asserting.
-        try? await Task.sleep(for: .milliseconds(900))
-
+        // `UIView.animate`'s animations closure assigns `coordinate` synchronously;
+        // `MKPointAnnotation` has no presentation-layer interpolation, so the
+        // destination is already written. This still proves the `.animate` branch
+        // runs `apply` rather than ignoring the hop.
         #expect(abs(annotation.coordinate.latitude - nearby.latitude) < 0.00001)
         #expect(abs(annotation.coordinate.longitude - nearby.longitude) < 0.00001)
     }

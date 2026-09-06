@@ -95,6 +95,8 @@ final class StopVehicleAnnotation: VehicleAnnotation {
         // position-preferred coordinate must be assigned AFTER, or it gets
         // clobbered exactly as the initializer's comment describes.
         //
+        // Restore `from` before `VehicleCoordinateUpdate.apply` so a city-block
+        // hop interpolates instead of that didSet teleporting the pin.
         // A kilometre-scale jump still snaps; see VehicleCoordinateUpdate (#1341).
         let from = self.coordinate
         self.tripStatus = tripStatus
