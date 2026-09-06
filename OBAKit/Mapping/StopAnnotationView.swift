@@ -146,7 +146,7 @@ class StopAnnotationView: MKAnnotationView {
         labelStack.isHidden = delegate.shouldHideExtraStopAnnotationData
         image = delegate.iconFactory.buildIcon(for: bookmark.stop, isBookmarked: true, traits: traitCollection)
         titleLabel.attributedText = strokedText(bookmark.name)
-        detailCalloutAccessoryView = buildDetailLabel(text: bookmark.stop.mapCalloutText)
+        detailCalloutAccessoryView = buildDetailLabel(text: bookmark.stop.bookmarkCalloutText)
     }
 
     private func prepareForDisplay(stop: Stop, delegate: StopAnnotationDelegate) {
