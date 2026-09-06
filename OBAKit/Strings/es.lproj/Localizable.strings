@@ -1690,3 +1690,15 @@
 
 /* VoiceOver label for the wind speed stat on the weather card. */
 "weather.stat.wind" = "Velocidad del viento";
+
+/* Accessibility label for the mic button that starts voice search. */
+"search_sheet.voice_search.start" = "Búsqueda por voz";
+
+/* Accessibility label for the mic button while voice search is listening. */
+"search_sheet.voice_search.stop" = "Dejar de escuchar";
+
+/* Shown when the user denies speech/mic permission for voice search. */
+"voice_search.permission_denied" = "Se necesita acceso al micrófono o al reconocimiento de voz para la búsqueda por voz.";
+
+/* Shown when SFSpeechRecognizer cannot run. */
+"voice_search.unavailable" = "La búsqueda por voz no está disponible en este dispositivo.";

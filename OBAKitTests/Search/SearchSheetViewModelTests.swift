@@ -30,7 +30,10 @@ final class SearchSheetViewModelTests: OBATestCase {
     }
 
     @MainActor
-    private func makeViewModel(dataLoader: MockDataLoader) -> (SearchSheetViewModel, Application, SheetCoordinator<AppSheetRoute>) {
+    private func makeViewModel(
+        dataLoader: MockDataLoader,
+        voiceSearch: VoiceSearchControlling = MockVoiceSearchController()
+    ) -> (SearchSheetViewModel, Application, SheetCoordinator<AppSheetRoute>, MockVoiceSearchController?) {
         let application = buildApplication(queue: queue, dataLoader: dataLoader)
         let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
         let displayModel = MapSearchDisplayModel()
@@ -40,13 +43,18 @@ final class SearchSheetViewModelTests: OBATestCase {
             displayModel: displayModel,
             onPresentVehicleTrip: { _ in }
         )
-        let viewModel = SearchSheetViewModel(application: application, coordinator: coordinator, router: router)
-        return (viewModel, application, coordinator)
+        let viewModel = SearchSheetViewModel(
+            application: application,
+            coordinator: coordinator,
+            router: router,
+            voiceSearch: voiceSearch
+        )
+        return (viewModel, application, coordinator, voiceSearch as? MockVoiceSearchController)
     }
 
     @Test @MainActor
     func `Typing rebuilds the interactor sections`() {
-        let (viewModel, _, _) = makeViewModel(dataLoader: MockDataLoader(testName: name))
+        let (viewModel, _, _, _) = makeViewModel(dataLoader: MockDataLoader(testName: name))
 
         viewModel.updateQuery("cap hill")
 
@@ -57,14 +65,14 @@ final class SearchSheetViewModelTests: OBATestCase {
     /// is what `isVehicleSearchAvailable` gates.
     @Test @MainActor
     func `Vehicle search availability mirrors the obaco feature`() {
-        let (viewModel, application, _) = makeViewModel(dataLoader: MockDataLoader(testName: name))
+        let (viewModel, application, _, _) = makeViewModel(dataLoader: MockDataLoader(testName: name))
 
         #expect(viewModel.isVehicleSearchAvailable == (application.features.obaco == .running))
     }
 
     @Test @MainActor
     func `Showing a stop pops search and pushes stop details`() async throws {
-        let (viewModel, _, coordinator) = makeViewModel(dataLoader: MockDataLoader(testName: name))
+        let (viewModel, _, coordinator, _) = makeViewModel(dataLoader: MockDataLoader(testName: name))
         coordinator.push(.search)
         let stop = try #require(try Fixtures.loadSomeStops().first)
 
@@ -80,7 +88,7 @@ final class SearchSheetViewModelTests: OBATestCase {
     /// lands afterwards and hands the rider a detail sheet they already backed out of.
     @Test @MainActor
     func `Closing search cancels an in-flight presentation`() async throws {
-        let (viewModel, _, coordinator) = makeViewModel(dataLoader: MockDataLoader(testName: name))
+        let (viewModel, _, coordinator, _) = makeViewModel(dataLoader: MockDataLoader(testName: name))
         coordinator.push(.search)
         let stop = try #require(try Fixtures.loadSomeStops().first)
 
@@ -94,7 +102,7 @@ final class SearchSheetViewModelTests: OBATestCase {
 
     @Test @MainActor
     func `Showing a map item records it as a recent search`() async {
-        let (viewModel, application, _) = makeViewModel(dataLoader: MockDataLoader(testName: name))
+        let (viewModel, application, _, _) = makeViewModel(dataLoader: MockDataLoader(testName: name))
         let item = MKMapItem(placemark: MKPlacemark(coordinate: CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3)))
         item.name = "Pike Place Market"
 
@@ -109,7 +117,7 @@ final class SearchSheetViewModelTests: OBATestCase {
 
     @Test @MainActor
     func `Clearing recent searches empties the store and rebuilds sections`() {
-        let (viewModel, application, _) = makeViewModel(dataLoader: MockDataLoader(testName: name))
+        let (viewModel, application, _, _) = makeViewModel(dataLoader: MockDataLoader(testName: name))
         let item = MKMapItem(placemark: MKPlacemark(coordinate: CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3)))
         item.name = "Pike Place Market"
         application.userDataStore.addRecentMapItem(item)
@@ -127,7 +135,7 @@ final class SearchSheetViewModelTests: OBATestCase {
         dataLoader.mock(data: Fixtures.loadData(file: "routes_for_location_outofrange.json")) { request in
             request.url?.path.contains("/api/where/routes-for-location.json") ?? false
         }
-        let (viewModel, _, coordinator) = makeViewModel(dataLoader: dataLoader)
+        let (viewModel, _, coordinator, _) = makeViewModel(dataLoader: dataLoader)
 
         await viewModel.performSearchAndWait(request: SearchRequest(query: "zzzz", type: .route))
 
@@ -145,7 +153,7 @@ final class SearchSheetViewModelTests: OBATestCase {
         dataLoader.mock(data: Fixtures.loadData(file: "routes_for_location_outofrange.json")) { request in
             request.url?.path.contains("/api/where/routes-for-location.json") ?? false
         }
-        let (viewModel, _, _) = makeViewModel(dataLoader: dataLoader)
+        let (viewModel, _, _, _) = makeViewModel(dataLoader: dataLoader)
         let request = SearchRequest(query: "zzzz", type: .route)
 
         await viewModel.performSearchAndWait(request: request)
@@ -164,7 +172,7 @@ final class SearchSheetViewModelTests: OBATestCase {
         dataLoader.mock(data: Fixtures.loadData(file: "routes_for_location_outofrange.json")) { request in
             request.url?.path.contains("/api/where/routes-for-location.json") ?? false
         }
-        let (viewModel, _, _) = makeViewModel(dataLoader: dataLoader)
+        let (viewModel, _, _, _) = makeViewModel(dataLoader: dataLoader)
 
         await viewModel.performSearchAndWait(request: SearchRequest(query: "zzzz", type: .route))
         #expect(viewModel.message != nil)
@@ -188,7 +196,7 @@ final class SearchSheetViewModelTests: OBATestCase {
         dataLoader.mock(data: Fixtures.loadData(file: "stops-for-route-1_100002.json")) { request in
             request.url?.path.contains("/api/where/stops-for-route") ?? false
         }
-        let (viewModel, _, coordinator) = makeViewModel(dataLoader: dataLoader)
+        let (viewModel, _, coordinator, _) = makeViewModel(dataLoader: dataLoader)
         coordinator.push(.search)
 
         await viewModel.performSearchAndWait(request: SearchRequest(query: "10", type: .route))
@@ -211,7 +219,7 @@ final class SearchSheetViewModelTests: OBATestCase {
         dataLoader.mock(data: "not json".data(using: .utf8)!) { request in
             request.url?.path.contains("/api/where/stops-for-route") ?? false
         }
-        let (viewModel, _, coordinator) = makeViewModel(dataLoader: dataLoader)
+        let (viewModel, _, coordinator, _) = makeViewModel(dataLoader: dataLoader)
         coordinator.push(.search)
 
         await viewModel.performSearchAndWait(request: SearchRequest(query: "10", type: .route))
@@ -237,7 +245,7 @@ final class SearchSheetViewModelTests: OBATestCase {
         dataLoader.mock(data: "not json".data(using: .utf8)!) { request in
             request.url?.path.contains("/api/where/vehicle/") ?? false
         }
-        let (viewModel, _, coordinator) = makeViewModel(dataLoader: dataLoader)
+        let (viewModel, _, coordinator, _) = makeViewModel(dataLoader: dataLoader)
 
         await viewModel.performSearchAndWait(request: SearchRequest(query: "4351", type: .vehicleID))
 
@@ -258,7 +266,7 @@ final class SearchSheetViewModelTests: OBATestCase {
         dataLoader.mock(data: Fixtures.loadData(file: "routes_for_location_outofrange.json")) { request in
             request.url?.path.contains("/api/where/routes-for-location.json") ?? false
         }
-        let (viewModel, _, coordinator) = makeViewModel(dataLoader: dataLoader)
+        let (viewModel, _, coordinator, _) = makeViewModel(dataLoader: dataLoader)
         coordinator.push(.search)
 
         let search = Task { await viewModel.performSearchAndWait(request: SearchRequest(query: "zzzz", type: .route)) }
@@ -278,7 +286,7 @@ final class SearchSheetViewModelTests: OBATestCase {
     /// search. The event is documented as once per entry.
     @Test @MainActor
     func `Reporting search opened more than once counts once`() throws {
-        let (viewModel, application, _) = makeViewModel(dataLoader: MockDataLoader(testName: name))
+        let (viewModel, application, _, _) = makeViewModel(dataLoader: MockDataLoader(testName: name))
         let analytics = try #require(application.analytics as? AnalyticsMock)
 
         viewModel.reportSearchOpened()
@@ -326,5 +334,130 @@ final class SearchSheetViewModelTests: OBATestCase {
 
         #expect(SearchSheetViewModel.SearchOutcome(response: one) == .single(one))
         #expect(SearchSheetViewModel.SearchOutcome(response: many) == .disambiguate(many))
+    }
+
+    // MARK: - Voice search
+
+    @Test @MainActor
+    func `Partial voice results rewrite the query without searching`() async {
+        let voice = MockVoiceSearchController()
+        let (viewModel, _, _, _) = makeViewModel(dataLoader: MockDataLoader(testName: name), voiceSearch: voice)
+
+        viewModel.startVoiceSearch()
+        voice.emit(.partial("Pike"))
+
+        for _ in 0..<50 where viewModel.query != "Pike" {
+            await Task.yield()
+        }
+
+        #expect(viewModel.query == "Pike")
+        #expect(viewModel.isListening)
+        #expect(viewModel.isSearching == false)
+    }
+
+    @Test @MainActor
+    func `A final voice result classifies and runs search`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        dataLoader.mock(data: Fixtures.loadData(file: "routes_for_location_outofrange.json")) { request in
+            request.url?.path.contains("/api/where/routes-for-location.json") ?? false
+        }
+        let voice = MockVoiceSearchController()
+        let (viewModel, _, _, _) = makeViewModel(dataLoader: dataLoader, voiceSearch: voice)
+
+        viewModel.startVoiceSearch()
+        voice.emit(.final("route zzzz"))
+
+        for _ in 0..<200 where viewModel.message == nil {
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+
+        #expect(viewModel.query == "route zzzz")
+        #expect(viewModel.isListening == false)
+        #expect(viewModel.message?.kind == .noResults)
+    }
+
+    @Test @MainActor
+    func `Clearing the query stops listening`() async {
+        let voice = MockVoiceSearchController()
+        let (viewModel, _, _, _) = makeViewModel(dataLoader: MockDataLoader(testName: name), voiceSearch: voice)
+
+        viewModel.startVoiceSearch()
+        for _ in 0..<50 where voice.startCount < 1 {
+            await Task.yield()
+        }
+        #expect(viewModel.isListening)
+        let stopsBeforeClear = voice.stopCount
+
+        viewModel.updateQuery("")
+
+        #expect(viewModel.isListening == false)
+        #expect(voice.stopCount > stopsBeforeClear)
+    }
+
+    @Test @MainActor
+    func `Stopping before the voice task runs never starts recognition`() async {
+        let voice = MockVoiceSearchController()
+        let (viewModel, _, _, _) = makeViewModel(dataLoader: MockDataLoader(testName: name), voiceSearch: voice)
+
+        viewModel.startVoiceSearch()
+        viewModel.stopVoiceSearch()
+
+        for _ in 0..<20 {
+            await Task.yield()
+        }
+
+        #expect(voice.startCount == 0)
+        #expect(viewModel.isListening == false)
+    }
+
+    @Test @MainActor
+    func `Typing while listening stops the mic`() async {
+        let voice = MockVoiceSearchController()
+        let (viewModel, _, _, _) = makeViewModel(dataLoader: MockDataLoader(testName: name), voiceSearch: voice)
+
+        viewModel.startVoiceSearch()
+        for _ in 0..<50 where voice.startCount < 1 {
+            await Task.yield()
+        }
+        #expect(viewModel.isListening)
+
+        viewModel.updateQuery("typed")
+        voice.emit(.partial("should not land"))
+
+        for _ in 0..<20 {
+            await Task.yield()
+        }
+
+        #expect(viewModel.isListening == false)
+        #expect(viewModel.query == "typed")
+    }
+
+    @Test @MainActor
+    func `Voice search availability mirrors the controller`() {
+        let voice = MockVoiceSearchController()
+        let (viewModel, _, _, _) = makeViewModel(dataLoader: MockDataLoader(testName: name), voiceSearch: voice)
+
+        voice.isAvailable = true
+        #expect(viewModel.isVoiceSearchAvailable)
+
+        voice.isAvailable = false
+        #expect(viewModel.isVoiceSearchAvailable == false)
+    }
+
+    @Test @MainActor
+    func `A voice failure raises an error message`() async {
+        let voice = MockVoiceSearchController()
+        let (viewModel, _, _, _) = makeViewModel(dataLoader: MockDataLoader(testName: name), voiceSearch: voice)
+
+        viewModel.startVoiceSearch()
+        voice.emit(.failed("no mic"))
+
+        for _ in 0..<50 where viewModel.message == nil {
+            await Task.yield()
+        }
+
+        #expect(viewModel.isListening == false)
+        #expect(viewModel.message?.kind == .error)
+        #expect(viewModel.message?.text == "no mic")
     }
 }

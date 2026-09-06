@@ -1690,3 +1690,15 @@
 
 /* VoiceOver label for the wind speed stat on the weather card. */
 "weather.stat.wind" = "Bilis ng hangin";
+
+/* Accessibility label for the mic button that starts voice search. */
+"search_sheet.voice_search.start" = "Voice search";
+
+/* Accessibility label for the mic button while voice search is listening. */
+"search_sheet.voice_search.stop" = "Ihinto ang pakikinig";
+
+/* Shown when the user denies speech/mic permission for voice search. */
+"voice_search.permission_denied" = "Kailangan ang access sa microphone o speech recognition para sa voice search.";
+
+/* Shown when SFSpeechRecognizer cannot run. */
+"voice_search.unavailable" = "Hindi available ang voice search sa device na ito.";

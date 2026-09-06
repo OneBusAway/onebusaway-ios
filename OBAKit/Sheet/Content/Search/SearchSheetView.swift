@@ -119,6 +119,30 @@ struct SearchSheetView: View {
                         comment: "Accessibility label for the button that clears the search query."
                     ))
                 }
+
+                if viewModel.isVoiceSearchAvailable {
+                    Button {
+                        isFieldFocused = false
+                        viewModel.toggleVoiceSearch()
+                    } label: {
+                        Image(systemName: viewModel.isListening ? "mic.fill" : "mic")
+                            .foregroundStyle(viewModel.isListening ? Color.accentColor : Color.secondary)
+                            .symbolEffect(.pulse, isActive: viewModel.isListening)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(viewModel.isListening
+                        ? OBALoc(
+                            "search_sheet.voice_search.stop",
+                            value: "Stop listening",
+                            comment: "Accessibility label for the mic button while voice search is listening."
+                        )
+                        : OBALoc(
+                            "search_sheet.voice_search.start",
+                            value: "Voice search",
+                            comment: "Accessibility label for the mic button that starts voice search."
+                        )
+                    )
+                }
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
