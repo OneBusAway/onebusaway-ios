@@ -39,6 +39,11 @@ struct StopPageContent {
 
     let hasLoadedArrivals: Bool
     let showsLoadingState: Bool
+
+    /// The server has no stop at this ID. A terminal state: it suppresses the
+    /// loading row, which would otherwise spin forever because a missing stop
+    /// never produces arrivals (#1336).
+    let stopIsMissing: Bool
     /// `true` only when the route filter is what emptied the list.
     let isFilteredEmpty: Bool
     /// `true` only when the Departure Type filter is what emptied the list:
@@ -65,7 +70,8 @@ struct StopPageContent {
         arrivalDepartureFilter: ArrivalDepartureFilter,
         isLoading: Bool,
         hasError: Bool,
-        isBrokenBookmark: Bool
+        isBrokenBookmark: Bool,
+        stopIsMissing: Bool = false
     ) {
         let visible = isListFiltered ? allDepartures.filter(preferences: preferences) : allDepartures
         // Terminal dedup deliberately runs downstream, after the Departure Type
@@ -98,10 +104,14 @@ struct StopPageContent {
         self.listIsEmpty = isGrouped ? routeGroups.isEmpty : departures.isEmpty
 
         self.hasLoadedArrivals = hasLoadedArrivals
+        self.stopIsMissing = stopIsMissing
         // Any in-flight fetch, plus the pre-`.task` first frame (nothing
         // fetched, no error yet) so the page never flashes "No departures"
-        // before the first request has even started.
-        self.showsLoadingState = isLoading || (!hasLoadedArrivals && !hasError && !isBrokenBookmark)
+        // before the first request has even started. A missing stop is excluded
+        // for the opposite reason: it has finished, and it will never have
+        // arrivals, so without it the page spins forever.
+        self.showsLoadingState = isLoading
+            || (!hasLoadedArrivals && !hasError && !isBrokenBookmark && !stopIsMissing)
 
         // The stop has departures but none survive the route preferences.
         // Grouped mode can be empty while `allDepartures` isn't (every departure
@@ -142,7 +152,8 @@ extension StopPageContent {
             arrivalDepartureFilter: viewModel.arrivalDepartureFilter,
             isLoading: viewModel.isLoading,
             hasError: viewModel.operationError != nil,
-            isBrokenBookmark: viewModel.isBrokenBookmark
+            isBrokenBookmark: viewModel.isBrokenBookmark,
+            stopIsMissing: viewModel.stopIsMissing
         )
     }
 }

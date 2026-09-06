@@ -177,6 +177,7 @@ struct StopDeparturesSections: View {
                 Section {
                     StopPageEmptyStateRow(
                         isBrokenBookmark: isBrokenBookmark,
+                        stopIsMissing: content.stopIsMissing,
                         errorText: errorText,
                         isFilteredEmpty: content.isFilteredEmpty,
                         isDepartureFilterEmpty: content.isDepartureFilterEmpty,

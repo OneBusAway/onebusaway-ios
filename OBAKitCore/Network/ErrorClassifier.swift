@@ -71,6 +71,20 @@ public enum ErrorClassifier {
             }
             return APIError.serverUnavailable(regionName: regionName, statusCode: response.statusCode)
 
+        case .requestNotFound(let response) where response.statusCode != 404:
+            // `APIService+GetData` throws `requestNotFound` for a blank HTTP 200 as
+            // well as for a literal 404, but `errorDescription` says "404 Not found
+            // (url)" either way — a raw URL and a status code the server never sent.
+            // The host answered; the body was unusable. Say that instead (#1336).
+            guard let regionName else {
+                // Returning `apiError` here would hand back the very "404 Not found"
+                // copy this case exists to prevent, so fall back to the region-less
+                // wording instead — same treatment `classifyDecodingError` gives it.
+                logger.warning("Empty-body \(response.statusCode) but no region name available for user message.")
+                return regionlessInvalidResponseError()
+            }
+            return APIError.invalidResponseData(regionName: regionName)
+
         case .networkFailure:
             if isCellularDataRestricted {
                 logger.info("Network failure reclassified as cellular data restriction.")
@@ -110,15 +124,21 @@ public enum ErrorClassifier {
 
     private static func classifyDecodingError(_ error: Error, regionName: String?) -> Error {
         guard let regionName else {
-            let message = OBALoc(
-                "api_error.decoding_failure",
-                value: "The server returned data this app can't read. That's usually a problem with the stop or agency feed. Please try again shortly.",
-                comment: "An error shown when the server returns a body the app cannot decode and no region name is available to specialize the copy."
-            )
-            return UnstructuredError(message)
+            return regionlessInvalidResponseError()
         }
 
         return APIError.invalidResponseData(regionName: regionName)
+    }
+
+    /// The unusable-payload message for the two paths that reach it without a
+    /// region name to specialize the copy with.
+    private static func regionlessInvalidResponseError() -> Error {
+        let message = OBALoc(
+            "api_error.decoding_failure",
+            value: "The server returned data this app can't read. That's usually a problem with the stop or agency feed. Please try again shortly.",
+            comment: "An error shown when the server returns a body the app cannot decode and no region name is available to specialize the copy."
+        )
+        return UnstructuredError(message)
     }
 
     // MARK: - Helpers
