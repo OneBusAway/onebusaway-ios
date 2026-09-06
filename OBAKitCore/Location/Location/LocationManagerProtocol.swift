@@ -63,9 +63,11 @@ public protocol LocationManager {
 
     /// The largest radius, in meters, this device will actually monitor.
     ///
-    /// `CLCircularRegion` silently clamps an oversize radius, so a region built
-    /// past this limit fires at a different distance than the one requested with
-    /// no error to tell anyone. Reading the limit is what makes that detectable.
+    /// An oversize region is not silently clamped: Core Location answers it with
+    /// `CLError.regionMonitoringFailure`, delivered asynchronously through
+    /// `monitoringDidFailFor` and carrying no radius. Reading the limit up front
+    /// is what lets a caller clamp deliberately and report it, rather than learn
+    /// later that something failed without learning what.
     var maximumRegionMonitoringDistance: CLLocationDistance { get }
 }
 
