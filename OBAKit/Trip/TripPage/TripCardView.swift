@@ -31,6 +31,7 @@ struct TripCardView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.obaFormatters) private var formatters
     @AppStorage(UserDefaultsStore.stopUIReducedColorsKey) private var reducedColors = false
+    @AppStorage(UserDefaultsStore.stopTripCompactModeKey) private var compactMode = false
 
     private var status: DepartureStatus? {
         departure.map { DepartureStatus(arrivalDeparture: $0) }
@@ -45,7 +46,7 @@ struct TripCardView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: StopTripSpacing.card(compactMode)) {
             if dynamicTypeSize.isAccessibilitySize {
                 // Same stacking rule as `DepartureRowView`: badge and countdown
                 // stay together as glance tokens, everything else flows below.
@@ -58,7 +59,7 @@ struct TripCardView: View {
                 timeAndStatus
                 occupancy
             } else {
-                HStack(alignment: .top, spacing: 13) {
+                HStack(alignment: .top, spacing: StopTripSpacing.hStack(compactMode)) {
                     badge
                     VStack(alignment: .leading, spacing: 4) {
                         headsignText
@@ -78,7 +79,7 @@ struct TripCardView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .padding(14)
+        .padding(StopTripSpacing.cardPadding(compactMode))
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14))
         // The card is one fact about one vehicle, so it is one VoiceOver stop —

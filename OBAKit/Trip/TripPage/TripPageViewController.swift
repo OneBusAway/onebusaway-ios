@@ -13,15 +13,20 @@ import CoreLocation
 import SwiftUI
 import OBAKitCore
 
-/// Hosts `TripPageView` and owns every reach into `Application` the page needs —
+/// Hosts `TripPageRootView` and owns every reach into `Application` the page needs —
 /// navigation, alarms, bookmarks, schedules, Live Activities.
+///
+/// The root is `TripPageRootView`, a thin wrapper that applies
+/// `.defaultAppStorage(application.userDefaults)` so the page's `@AppStorage`
+/// shares the app-group suite with Settings — without it, compact mode and
+/// reduced colors on the trip page read `UserDefaults.standard` and stay off.
 ///
 /// Deliberately map-free. `TripViewController`, which this replaces, owned a
 /// full-screen `MKMapView` and added its own floating panel as a child; pushed
 /// into the stop sheet that nests a panel inside a panel. Keeping the map out of
 /// here is what lets the same page be pushed into a sheet over the map tab's map
 /// and, later, into a standalone host that supplies its own.
-final class TripPageViewController: UIHostingController<TripPageView>,
+final class TripPageViewController: UIHostingController<TripPageRootView>,
     AppContext,
     AlarmBuilderDelegate,
     BookmarkEditorDelegate,
@@ -58,7 +63,12 @@ final class TripPageViewController: UIHostingController<TripPageView>,
 
         // The page's actions capture `self`, which doesn't exist until after
         // `super.init`. Seed with the inert default set and replace immediately.
-        super.init(rootView: TripPageView(viewModel: viewModel, originTitle: originTitle, actions: TripPageActions()))
+        super.init(rootView: TripPageRootView(
+            viewModel: viewModel,
+            userDefaults: application.userDefaults,
+            originTitle: originTitle,
+            actions: TripPageActions()
+        ))
 
         render()
     }
@@ -188,8 +198,9 @@ final class TripPageViewController: UIHostingController<TripPageView>,
     /// view model is observed directly by the view, so this is only for the
     /// action gates and the two pieces of state this controller owns.
     private func render() {
-        rootView = TripPageView(
+        rootView = TripPageRootView(
             viewModel: viewModel,
+            userDefaults: application.userDefaults,
             originTitle: originTitle,
             actions: makeActions(),
             backBehavior: backBehavior,
