@@ -16,12 +16,19 @@ import SwiftUI
 public struct TripLiveActivityCardView: View {
     public let staticData: TripAttributes.StaticData
     public let contentState: TripAttributes.ContentState
+    /// From `ActivityViewContext.isStale` — ActivityKit flips this after `staleDate`.
+    public let isStale: Bool
 
     private let presenter = TripActivityPresenter()
 
-    public init(staticData: TripAttributes.StaticData, contentState: TripAttributes.ContentState) {
+    public init(
+        staticData: TripAttributes.StaticData,
+        contentState: TripAttributes.ContentState,
+        isStale: Bool = false
+    ) {
         self.staticData = staticData
         self.contentState = contentState
+        self.isStale = isStale
     }
 
     public var body: some View {
@@ -31,9 +38,24 @@ public struct TripLiveActivityCardView: View {
         let chips = Array(upcoming.dropFirst())
 
         VStack(alignment: .leading, spacing: 10) {
-            primaryRow(primary: primary, now: now)
-            if !chips.isEmpty {
-                chipsRow(chips: chips, now: now)
+            // Dim arrival content only — the stale warning must stay full
+            // opacity or light-mode orange ~1.6:1 and becomes unreadable (#1376).
+            VStack(alignment: .leading, spacing: 10) {
+                primaryRow(primary: primary, now: now)
+                if !chips.isEmpty {
+                    chipsRow(chips: chips, now: now)
+                }
+            }
+            .opacity(LiveActivityStaleChrome.contentOpacity(isStale: isStale))
+
+            if isStale {
+                HStack(spacing: 6) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                    Text(LiveActivityStaleChrome.warningText)
+                }
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.orange)
+                .accessibilityElement(children: .combine)
             }
         }
         .padding(.horizontal, 16)
