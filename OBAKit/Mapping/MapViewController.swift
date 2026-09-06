@@ -457,14 +457,16 @@ class MapViewController: UIViewController,
         let button = UIButton(configuration: config)
         // No `adjustsFontSizeToFitWidth` here, deliberately. Autoshrink only acts
         // on a label pinned to one line, and a `UIButton.Configuration` title is
-        // not — which is exactly how `18°` came to render as "1"/"8"/"°" in the
-        // screenshot on #1344. Setting it (as this did until #1357) shrinks
-        // nothing and reads as though the width problem were handled.
+        // not — so setting it shrinks nothing while reading as though the width
+        // problem were handled. `7f2c1b8b` added it in 2019, #1318's Configuration
+        // switch dropped it, and #1357 restored it; it has been inert since.
+        //
+        // It was never what fixed #1344 either: `18°` wrapped because `.plain()`
+        // insets ate the 42pt, which the block above corrects.
         //
         // Making it real needs `titleLabel?.numberOfLines = 1` alongside it, which
         // trades wrapping for truncation when the scale floor still doesn't fit.
         // That is a visible change to a 42pt toolbar button and wants a device.
-        // The zeroed horizontal insets above are what actually bought the room.
         button.addTarget(self, action: #selector(showWeather), for: .touchUpInside)
         button.accessibilityLabel = OBALoc("map_controller.show_weather_button", value: "Show Weather Forecast", comment: "Accessibility label for a button that provides the current forecast")
         return button
