@@ -186,18 +186,27 @@ public class ScheduleForRoute: NSObject, Identifiable, Decodable, HasReferences 
             stopHeadsign = try container.decodeIfPresent(String.self, forKey: .stopHeadsign) ?? ""
         }
 
-        /// Formats the arrival time as a Date using the provided schedule date as the base
-        public func arrivalDate(for scheduleDate: Date) -> Date {
-            let calendar = Calendar.current
-            let startOfDay = calendar.startOfDay(for: scheduleDate)
-            return startOfDay.addingTimeInterval(TimeInterval(arrivalTime))
+        /// Formats the arrival time as a Date using the provided schedule date as the base.
+        ///
+        /// `timeZone` must match the zone used to *format* the result (typically
+        /// `formatters.timeZone`). Seconds-since-midnight values are agency-local;
+        /// synthesizing with `Calendar.current` while formatting in another zone
+        /// shifts every cell by the device↔region offset (#332 / PR #1308).
+        public func arrivalDate(for scheduleDate: Date, timeZone: TimeZone) -> Date {
+            Self.date(secondsFromMidnight: arrivalTime, on: scheduleDate, timeZone: timeZone)
         }
 
-        /// Formats the departure time as a Date using the provided schedule date as the base
-        public func departureDate(for scheduleDate: Date) -> Date {
-            let calendar = Calendar.current
+        /// Formats the departure time as a Date using the provided schedule date as the base.
+        /// See `arrivalDate(for:timeZone:)` for why `timeZone` is required.
+        public func departureDate(for scheduleDate: Date, timeZone: TimeZone) -> Date {
+            Self.date(secondsFromMidnight: departureTime, on: scheduleDate, timeZone: timeZone)
+        }
+
+        private static func date(secondsFromMidnight: Int, on scheduleDate: Date, timeZone: TimeZone) -> Date {
+            var calendar = Calendar.current
+            calendar.timeZone = timeZone
             let startOfDay = calendar.startOfDay(for: scheduleDate)
-            return startOfDay.addingTimeInterval(TimeInterval(departureTime))
+            return startOfDay.addingTimeInterval(TimeInterval(secondsFromMidnight))
         }
     }
 }

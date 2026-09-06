@@ -12,6 +12,8 @@ struct AccessibilityTimetable: View {
     @EnvironmentObject var viewModel: ScheduleForRouteViewModel
 
     var body: some View {
+        // Rebuild when region zone lands (#332 / PR #1308).
+        let _ = viewModel.formattersTimeZoneGeneration
         List {
             // All departure times in one section (24-hour format)
             ForEach(Array(viewModel.departureTimesDisplay.enumerated()), id: \.offset) { _, tripTimes in
@@ -19,6 +21,7 @@ struct AccessibilityTimetable: View {
             }
         }
         .listStyle(.plain)
+        .id(viewModel.formattersTimeZoneGeneration)
     }
 
     private func accessibilityTripRow(times: [Date?]) -> some View {

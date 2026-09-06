@@ -39,16 +39,20 @@ public struct DepartureTimeDisplay: Equatable {
         // dates necessarily format alike, so that case short-circuits here as
         // well without disturbing the compare-as-rendered rule above.
         guard isRealTime, expectedDate != scheduledDate else {
-            self.expectedTimeText = formatters.timeFormatter.string(from: scheduledDate)
+            self.expectedTimeText = formatters.formattedClockTime(scheduledDate)
             self.scheduledTimeText = nil
             return
         }
 
-        let expected = formatters.timeFormatter.string(from: expectedDate)
-        let scheduled = formatters.timeFormatter.string(from: scheduledDate)
+        // Compare the clock text only. The region-zone badge is appended to the
+        // expected time; putting it on both strings would make them unequal
+        // even when they show the same minute, and the strikethrough would
+        // never collapse.
+        let expectedClock = formatters.timeFormatter.string(from: expectedDate)
+        let scheduledClock = formatters.timeFormatter.string(from: scheduledDate)
 
-        self.expectedTimeText = expected
-        self.scheduledTimeText = scheduled == expected ? nil : scheduled
+        self.expectedTimeText = formatters.appendingScheduleBadge(to: expectedClock, at: expectedDate)
+        self.scheduledTimeText = scheduledClock == expectedClock ? nil : scheduledClock
     }
 
     public init(arrivalDeparture: ArrivalDeparture, formatters: Formatters) {
