@@ -331,7 +331,12 @@ struct RentalClusterListView: View {
                 .buttonStyle(.plain)
             }
             .listStyle(.plain)
-            .navigationTitle(String(format: OBALoc("rental_cluster.title_fmt", value: "%d vehicles here", comment: "Title of the sheet listing the members of a rental cluster"), rentals.count))
+            // `localizedStringWithFormat`, not `String(format:)`: the latter expands
+            // `%#@count@` but always resolves it against the root plural rule, so the
+            // `few`/`many`/`zero`/`two` forms in the ar, pl, and ru entries could never
+            // be selected. A cluster always holds at least two, so this is the common
+            // case, not an edge one. Same trap as `SearchResultsSheetView`.
+            .navigationTitle(String.localizedStringWithFormat(OBALoc("rental_cluster.title_fmt", value: "%d vehicles here", comment: "Title of the sheet listing the members of a rental cluster. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback."), rentals.count))
             .navigationBarTitleDisplayMode(.inline)
             .sheet(item: $selectedRental) { rental in
                 RentalDetailView(
