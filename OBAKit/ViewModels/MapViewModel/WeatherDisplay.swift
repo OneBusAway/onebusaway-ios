@@ -19,7 +19,9 @@ import OBAKitCore
 /// `HeaderRow` / `StatsRow` / hourly strip take exactly the slice they need,
 /// not the whole bag.
 struct WeatherDisplay: Equatable {
-    /// Compact pill string shown on the floating weather button.
+    /// Compact temperature string shown on the map weather control.
+    /// Condition is conveyed by the SF Symbol and VoiceOver, not this title —
+    /// a full phrase like "Partly Cloudy" will not fit the 42pt hover bar.
     let buttonTitle: String
 
     /// Top section of the card: icon, region, condition, chance of rain,
@@ -48,6 +50,20 @@ struct WeatherDisplay: Equatable {
         self.header = Header(forecast: forecast, upcoming: upcoming, locale: locale)
         self.stats = Stats(forecast: forecast.currentForecast, locale: locale)
         self.hourly = HourlyEntry.list(from: upcoming, locale: locale)
+    }
+
+    /// Spoken value for the map weather control: temperature plus condition.
+    /// Unknown-icon placeholder "—" is still included so VoiceOver always
+    /// has the temperature.
+    var buttonAccessibilityValue: String {
+        String(
+            format: OBALoc(
+                "weather.button_accessibility_value_format",
+                value: "%@, %@",
+                comment: "Spoken value for the map weather control. First %@ is the temperature, second is the weather condition."
+            ),
+            buttonTitle, header.conditionSummary
+        )
     }
 }
 

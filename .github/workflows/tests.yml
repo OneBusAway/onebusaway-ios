@@ -24,6 +24,38 @@ on:
 # tests", check the step timings first — it is almost never the tests.
 
 jobs:
+  # Its own job, not a step inside `build`. As a step it ran before
+  # build-for-testing in the same job, so one lint error failed the job and took
+  # every test result for that run with it — the two answer different questions
+  # and a PR wants both. Parallel jobs also overlap lint with the build instead
+  # of serialising them. No `needs:`: neither gates the other, and GitHub still
+  # requires both to pass.
+  # See https://github.com/OneBusAway/onebusaway-ios/issues/1340
+  lint:
+    runs-on: xcode-27
+    permissions:
+      contents: read
+
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+    # Fail on SwiftLint *errors* (the error-tier rules in .swiftlint.yml), so a
+    # type_body_length breach cannot land on main while staying green on GitHub.
+    # Warnings annotate via the GitHub reporter but do not fail the job —
+    # `--strict` would collapse that split. The Xcode build phase still skips
+    # in CI (scripts/swiftlint.sh); this job is the review-visible gate.
+    # See https://github.com/OneBusAway/onebusaway-ios/issues/1303
+    - name: SwiftLint (errors only)
+      run: |
+        # Pin via the official portable release so a Homebrew formula bump cannot
+        # promote a new error-severity rule and turn main red with no app change
+        # (#1340). Bump SWIFTLINT_PIN deliberately after reviewing new rules.
+        SWIFTLINT_PIN="0.65.1"
+        curl -sL "https://github.com/realm/SwiftLint/releases/download/${SWIFTLINT_PIN}/portable_swiftlint.zip" -o /tmp/swiftlint.zip
+        unzip -qo /tmp/swiftlint.zip -d /tmp/swiftlint
+        /tmp/swiftlint/swiftlint version | grep -qx "$SWIFTLINT_PIN"
+        /tmp/swiftlint/swiftlint lint --reporter github-actions-logging
+
   build:
     runs-on: xcode-27
     permissions:
@@ -121,24 +153,15 @@ jobs:
     # the image ever carry a pre-SDK runtime alongside iOS 27, the tests must not
     # land on it — that's the isolated-deinit shim crash described in the download
     # step's note. Booting it here isolates first-boot cost from the test step.
+    #
+    # The selection itself lives in scripts/resolve_simulator_udid, shared with the
+    # commands CLAUDE.md documents so the two cannot drift apart. Note that the
+    # script's UDID reaches later steps only because it is written to $GITHUB_ENV
+    # here; a plain shell variable would not survive the step boundary.
     - name: Prepare iOS Simulator
       run: |
         set -euo pipefail
-        xcrun simctl list devices available -j > /tmp/devices.json
-        UDID=$(python3 <<'PY'
-        import json, re
-        data = json.load(open('/tmp/devices.json'))['devices']
-        def version(key):
-            m = re.search(r'iOS-(\d+)-(\d+)', key)
-            return (int(m.group(1)), int(m.group(2))) if m else (0, 0)
-        for key in sorted(data, key=version, reverse=True):
-            phones = [d for d in data[key] if d['name'].startswith('iPhone')]
-            if phones:
-                print(phones[0]['udid'])
-                break
-        PY
-        )
-        [ -n "$UDID" ] || { echo "::error::No available iPhone simulator found"; exit 1; }
+        UDID=$(scripts/resolve_simulator_udid)
         echo "SIMULATOR_UDID=$UDID" >> "$GITHUB_ENV"
         echo "Using simulator UDID: $UDID"
         xcrun simctl boot "$UDID" || true

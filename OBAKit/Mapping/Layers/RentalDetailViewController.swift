@@ -63,7 +63,10 @@ struct RentalDetailView: View {
     /// The layer's declared trust window; past it, the footer flags the data as stale.
     let staleAfter: Duration?
     let userLocation: CLLocation?
-    var onPlanTrip: (VehicleRental) -> Void
+    /// Nil on the SwiftUI map panel, which has no trip planner to route into —
+    /// `AppSheetRoute.tripPlanner` has no registered view. The button is hidden
+    /// rather than disabled: a dead primary action is worse than none.
+    var onPlanTrip: ((VehicleRental) -> Void)?
     var onOpenURL: (URL, URL?, String?) -> Void
 
     /// Reverse-geocoded on selection — never in bulk. Falls back to a plain
@@ -75,19 +78,21 @@ struct RentalDetailView: View {
             header
             statsRow
 
-            Button {
-                onPlanTrip(rental)
-            } label: {
-                Label(
-                    OBALoc("rental_detail.plan_trip", value: "Plan a trip using this bike", comment: "Primary action on the rental vehicle sheet"),
-                    systemImage: "arrow.triangle.turn.up.right.diamond.fill"
-                )
-                .font(.headline)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 6)
+            if let onPlanTrip {
+                Button {
+                    onPlanTrip(rental)
+                } label: {
+                    Label(
+                        OBALoc("rental_detail.plan_trip", value: "Plan a trip using this bike", comment: "Primary action on the rental vehicle sheet"),
+                        systemImage: "arrow.triangle.turn.up.right.diamond.fill"
+                    )
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 6)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(Color(uiColor: .rentalPurple))
             }
-            .buttonStyle(.borderedProminent)
-            .tint(Color(uiColor: .rentalPurple))
 
             if let deepLink = deepLinkURL {
                 Button {
@@ -310,7 +315,7 @@ struct RentalClusterListView: View {
     let fetchedAt: Date?
     let staleAfter: Duration?
     let userLocation: CLLocation?
-    var onPlanTrip: (VehicleRental) -> Void
+    var onPlanTrip: ((VehicleRental) -> Void)?
     var onOpenURL: (URL, URL?, String?) -> Void
 
     @State private var selectedRental: VehicleRental?
@@ -326,7 +331,12 @@ struct RentalClusterListView: View {
                 .buttonStyle(.plain)
             }
             .listStyle(.plain)
-            .navigationTitle(String(format: OBALoc("rental_cluster.title_fmt", value: "%d vehicles here", comment: "Title of the sheet listing the members of a rental cluster"), rentals.count))
+            // `localizedStringWithFormat`, not `String(format:)`: the latter expands
+            // `%#@count@` but always resolves it against the root plural rule, so the
+            // `few`/`many`/`zero`/`two` forms in the ar, pl, and ru entries could never
+            // be selected. A cluster always holds at least two, so this is the common
+            // case, not an edge one. Same trap as `SearchResultsSheetView`.
+            .navigationTitle(String.localizedStringWithFormat(OBALoc("rental_cluster.title_fmt", value: "%d vehicles here", comment: "Title of the sheet listing the members of a rental cluster. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback."), rentals.count))
             .navigationBarTitleDisplayMode(.inline)
             .sheet(item: $selectedRental) { rental in
                 RentalDetailView(

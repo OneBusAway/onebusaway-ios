@@ -21,6 +21,11 @@ public struct TransferContext: Equatable, Hashable {
     /// The headsign of the originating route (e.g., "Capitol Hill").
     public let fromTripHeadsign: String
 
+    /// The trip the rider is transferring from. Used on the redesigned stop
+    /// page to highlight the matching departure row. Nil when constructed
+    /// without a known trip (tests, legacy call sites).
+    public let fromTripID: TripIdentifier?
+
     /// Combined route and headsign for display (e.g., "10 - Capitol Hill").
     /// Derived from `fromRouteShortName` and `fromTripHeadsign` so it can
     /// never contradict the component fields.
@@ -30,10 +35,16 @@ public struct TransferContext: Equatable, Hashable {
             .joined(separator: " - ")
     }
 
-    public init(arrivalTime: Date, fromRouteShortName: String, fromTripHeadsign: String) {
+    public init(
+        arrivalTime: Date,
+        fromRouteShortName: String,
+        fromTripHeadsign: String,
+        fromTripID: TripIdentifier? = nil
+    ) {
         self.arrivalTime = arrivalTime
         self.fromRouteShortName = fromRouteShortName
         self.fromTripHeadsign = fromTripHeadsign
+        self.fromTripID = fromTripID
     }
 
     /// Convenience factory that extracts route info from an `ArrivalDeparture`.
@@ -41,7 +52,8 @@ public struct TransferContext: Equatable, Hashable {
         TransferContext(
             arrivalTime: arrivalDate,
             fromRouteShortName: arrivalDeparture.routeShortName,
-            fromTripHeadsign: arrivalDeparture.tripHeadsign ?? ""
+            fromTripHeadsign: arrivalDeparture.tripHeadsign ?? "",
+            fromTripID: arrivalDeparture.tripID
         )
     }
 

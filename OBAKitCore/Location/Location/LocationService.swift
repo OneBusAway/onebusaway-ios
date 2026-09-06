@@ -530,13 +530,44 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
     public static let maximumMonitoredRegions = 20
 
     static func proximityRegionIdentifier(for alert: ProximityAlert) -> String {
-        proximityRegionPrefix + alert.id.uuidString
+        proximityRegionIdentifier(forAlertID: alert.id)
+    }
+
+    /// Builds the same identifier from an alert's ID alone.
+    ///
+    /// An alert deleted while the app wasn't running leaves its region armed with
+    /// no `ProximityAlert` left to name it, so the ID has to be enough.
+    static func proximityRegionIdentifier(forAlertID id: UUID) -> String {
+        proximityRegionPrefix + id.uuidString
+    }
+
+    /// Recovers the proximity alert a monitored region belongs to, or nil for a
+    /// region this service did not create.
+    ///
+    /// `didEnterMonitoredRegion` and `monitoringDidFailFor` hand their delegates a
+    /// bare identifier string, and the prefix-plus-UUID encoding behind it is
+    /// built a few lines above. Decoding it here as well keeps consumers from
+    /// reconstructing a format they don't own — the two drifting apart would
+    /// strand every alert with nothing to attribute a geofence event to.
+    public static func proximityAlertID(forRegionIdentifier identifier: String) -> UUID? {
+        guard identifier.hasPrefix(proximityRegionPrefix) else { return nil }
+        return UUID(uuidString: String(identifier.dropFirst(proximityRegionPrefix.count)))
     }
 
     /// The regions currently monitored on behalf of proximity alerts, excluding
     /// any the app monitors for other reasons.
     public var monitoredProximityRegions: Set<CLRegion> {
         locationManager.monitoredRegions.filter { $0.identifier.hasPrefix(Self.proximityRegionPrefix) }
+    }
+
+    /// The IDs of the proximity alerts currently armed.
+    ///
+    /// Monitored regions outlive the process that armed them, while the alerts
+    /// explaining those regions live in `UserDataStore` and expire on a clock.
+    /// Comparing the two sets is what tells a consumer which alerts still need
+    /// arming and which regions were left behind by alerts that are gone.
+    public var monitoredProximityAlertIDs: Set<UUID> {
+        Set(monitoredProximityRegions.compactMap { Self.proximityAlertID(forRegionIdentifier: $0.identifier) })
     }
 
     /// Starts monitoring a geofence region for the given proximity alert.
@@ -562,10 +593,19 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
             return .regionLimitReached(limit: Self.maximumMonitoredRegions)
         }
 
-        // `CLCircularRegion` clamps an oversize radius without reporting it, so
-        // the alert would fire at a distance the user never chose. Clamp
-        // deliberately and say so. A non-positive device maximum means the value
-        // is unavailable rather than zero, so honor the request in that case.
+        // Clamp deliberately and report it. Core Location answers an oversize
+        // radius with `CLError.regionMonitoringFailure`, which arrives
+        // asynchronously through `monitoringDidFailFor` carrying no radius — too
+        // late, and too vague, to tell the rider their alert would have fired
+        // somewhere other than where they asked.
+        //
+        // `-1` is not an unknown limit. Apple documents it as region monitoring
+        // being unavailable or unsupported on this device, so honouring the
+        // request in that case hands the caller `.started` for an alert that can
+        // never fire. Left that way for now — the failure does still surface
+        // through `monitoringDidFailFor` — but refusing up front wants an
+        // `isMonitoringAvailable(for:)` check and a result case to carry it.
+        // Both points flagged in review of #1292.
         let requestedRadius = alert.radiusMeters
         let deviceMaximum = locationManager.maximumRegionMonitoringDistance
         let radius = deviceMaximum > 0 ? min(requestedRadius, deviceMaximum) : requestedRadius
@@ -585,11 +625,22 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
 
     /// Stops monitoring the geofence region for the given proximity alert.
     public func stopMonitoringProximity(for alert: ProximityAlert) {
-        let identifier = Self.proximityRegionIdentifier(for: alert)
+        stopMonitoringProximityAlert(id: alert.id)
+    }
+
+    /// Stops monitoring the geofence region armed for `id`, whether or not an
+    /// alert with that ID still exists.
+    ///
+    /// The counterpart to `stopMonitoringProximity(for:)` for the case that has no
+    /// alert to pass: a region whose alert was deleted or expired in an earlier
+    /// run of the app still holds one of the twenty slots, and only its ID
+    /// survives to identify it.
+    public func stopMonitoringProximityAlert(id: UUID) {
+        let identifier = Self.proximityRegionIdentifier(forAlertID: id)
         guard let matchingRegion = locationManager.monitoredRegions.first(where: {
             $0.identifier == identifier
         }) else {
-            Logger.warn("No monitored region found for proximity alert \(alert.id)")
+            Logger.warn("No monitored region found for proximity alert \(id)")
             return
         }
         locationManager.stopMonitoring(for: matchingRegion)

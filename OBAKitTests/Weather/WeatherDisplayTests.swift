@@ -231,7 +231,9 @@ final class WeatherDisplayTests {
         #expect(display.stats.precipText == "0%")
         #expect(display.stats.windText.contains("mph"))
 
-        // Button pill mirrors the current temperature.
+        // Button pill mirrors the current temperature. Condition lives in
+        // VoiceOver (`buttonAccessibilityValue`) and the SF Symbol, not here —
+        // "Partly Cloudy" will not fit the 42pt map control.
         #expect(display.buttonTitle == "71°")
 
         // Hourly strip — non-empty, first cell labelled "Now" and flagged as
@@ -244,6 +246,19 @@ final class WeatherDisplayTests {
             #expect(display.hourly[1].isNow == false)
             #expect(display.hourly[1].timeLabel != "Now")
         }
+    }
+
+    /// The map control stays compact (temperature-only title) while VoiceOver
+    /// speaks temperature plus the condition. The SF Symbol is derived from
+    /// the same header icon key both surfaces already share.
+    @Test func `Map button accessibility value includes temp and condition`() throws {
+        let forecast = try loadPugetSoundForecast()
+        let display = WeatherDisplay(forecast: forecast, locale: usLocale, now: pugetSoundNow, calendar: utcCalendar)
+
+        #expect(display.buttonTitle == "71°")
+        #expect(display.buttonAccessibilityValue.contains("71°"))
+        #expect(display.buttonAccessibilityValue.contains("Clear"))
+        #expect(WeatherFormatter.systemImageName(for: display.header.iconName) == "sun.max.fill")
     }
 
     // MARK: - Stats / Header derived strings

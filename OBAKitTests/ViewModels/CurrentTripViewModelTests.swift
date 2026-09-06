@@ -84,6 +84,39 @@ final class CurrentTripViewModelTests: OBATestCase {
         return Application(config: config)
     }
 
+    /// Builds a view model over a location manager whose authorization status the
+    /// test controls. `createApplication(withLocation: false)` cannot: its plain
+    /// `LocationManagerMock` hardcodes `.notDetermined`.
+    private func makeViewModel(authorizationStatus status: CLAuthorizationStatus) -> CurrentTripViewModel {
+        let dataLoader = MockDataLoader(testName: name)
+        stubRegions(dataLoader: dataLoader)
+        stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
+        Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
+
+        let locManager = AuthorizableLocationManagerMock(
+            updateLocation: userLocation,
+            updateHeading: TestData.mockHeading
+        )
+        let locationService = LocationService(userDefaults: userDefaults, locationManager: locManager)
+        locManager._authorizationStatus = status
+
+        let config = AppConfig(
+            regionsBaseURL: regionsURL,
+            apiKey: apiKey,
+            appVersion: appVersion,
+            userDefaults: userDefaults,
+            analytics: AnalyticsMock(),
+            queue: queue,
+            locationService: locationService,
+            bundledRegionsFilePath: bundledRegionsPath,
+            regionsAPIPath: regionsAPIPath,
+            dataLoader: dataLoader,
+            fixedRegionName: Fixtures.pugetSoundRegion.name
+        )
+
+        return CurrentTripViewModel(application: Application(config: config), route: route30())
+    }
+
     // MARK: - Fixtures
 
     private let arrivalsFixture = "arrivals_and_departures_for_stop_1_10020.json"
@@ -417,4 +450,42 @@ final class CurrentTripViewModelTests: OBATestCase {
         #expect((error as NSError).domain == "CurrentTripViewModel")
     }
 
+    // MARK: - No-Location Recovery
+
+    /// `.notDetermined` is where a rider who tapped "Not Now" during onboarding
+    /// lands — declining never calls Core Location — so the empty state must
+    /// raise the in-app prompt rather than send them to Settings.
+    @Test @MainActor
+    func `Recovery for undetermined authorization requests it in app`() throws {
+        #expect(makeViewModel(authorizationStatus: .notDetermined).noLocationRecovery == .requestAuthorization)
+    }
+
+    /// Retrying cannot undo a denial, so the empty state must point at Settings.
+    /// `LocationService` also reports Location Services being off system-wide as
+    /// `.denied`, and Settings is the only fix for that too.
+    @Test @MainActor
+    func `Recovery for denied authorization opens settings`() throws {
+        #expect(makeViewModel(authorizationStatus: .denied).noLocationRecovery == .openSettings)
+    }
+
+    /// A restricted device cannot be un-restricted by its rider, so every
+    /// affordance would be a dead end and the empty state offers none.
+    @Test @MainActor
+    func `Recovery for restricted authorization offers nothing`() throws {
+        #expect(makeViewModel(authorizationStatus: .restricted).noLocationRecovery == .unavailable)
+    }
+
+    /// Authorized but location-less means the fix simply hasn't landed yet, and
+    /// `findVehicle()` re-reads `currentLocation` — the one case a retry helps.
+    @Test @MainActor
+    func `Recovery for authorized when in use retries`() throws {
+        #expect(makeViewModel(authorizationStatus: .authorizedWhenInUse).noLocationRecovery == .retry)
+    }
+
+    /// Always authorization is no less usable here than When In Use; a rider who
+    /// upgraded for proximity alerts must not lose the retry button.
+    @Test @MainActor
+    func `Recovery for authorized always retries`() throws {
+        #expect(makeViewModel(authorizationStatus: .authorizedAlways).noLocationRecovery == .retry)
+    }
 }

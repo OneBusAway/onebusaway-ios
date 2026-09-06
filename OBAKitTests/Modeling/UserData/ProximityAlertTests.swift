@@ -44,6 +44,13 @@ final class ProximityAlertTests: OBATestCase {
         #expect(alert.radiusMeters == 500.0)
     }
 
+    @Test func `Init records the region the alert was set in`() {
+        #expect(ProximityAlert(stop: stop, regionID: 12).regionID == 12)
+        // Naming none is the default, and means the tap on this alert's
+        // notification falls back to whichever region is current by then.
+        #expect(ProximityAlert(stop: stop).regionID == nil)
+    }
+
     // MARK: - Radius Clamping
 
     @Test func `Init clamps radius below the minimum`() {
@@ -99,6 +106,28 @@ final class ProximityAlertTests: OBATestCase {
         #expect(decoded.radiusMeters == ProximityAlert.maximumRadiusMeters)
     }
 
+    @Test func `Decoding an alert persisted without a region yields nil`() throws {
+        let alert = ProximityAlert(stop: stop, regionID: 12)
+        let encoded = try JSONEncoder().encode(alert)
+
+        guard var dictionary = try JSONSerialization.jsonObject(with: encoded) as? [String: Any] else {
+            Issue.record("Encoded proximity alert was not a JSON object.")
+            return
+        }
+
+        // Stands in for an alert written by a build that predates the field. It
+        // has to keep decoding — these are the rider's alerts, not disposable
+        // cache — and the missing region is what sends its tap back to whichever
+        // one is current.
+        dictionary.removeValue(forKey: "regionID")
+
+        let legacy = try JSONSerialization.data(withJSONObject: dictionary)
+        let decoded = try JSONDecoder().decode(ProximityAlert.self, from: legacy)
+
+        #expect(decoded.regionID == nil)
+        #expect(decoded.stopID == stop.id)
+    }
+
     @Test func `Coordinate returns correct value`() {
         let alert = ProximityAlert(stop: stop)
 
@@ -119,6 +148,14 @@ final class ProximityAlertTests: OBATestCase {
         #expect(roundtripped.longitude == alert.longitude)
         #expect(roundtripped.radiusMeters == 350.0)
         expectClose(roundtripped.createdAt.timeIntervalSince1970, alert.createdAt.timeIntervalSince1970, within: 1.0)
+        #expect(roundtripped.regionID == nil)
+    }
+
+    @Test func `Codable round trip preserves the region`() {
+        let alert = ProximityAlert(stop: stop, regionID: 12)
+        let roundtripped = try! Fixtures.roundtripCodable(type: ProximityAlert.self, model: alert)
+
+        #expect(roundtripped.regionID == 12)
     }
 
     @Test func `Codable round trip preserves coordinate`() {

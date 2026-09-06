@@ -35,6 +35,8 @@ final class MapItemSheetViewTests: OBATestCase {
     private func makeFactory(application: Application) -> AppSheetViewFactory {
         AppSheetViewFactory(
             application: application,
+            mapViewModel: MapViewModel(application: application),
+            layersModel: MapPanelLayersModel(application: application),
             onPresentTrip: { _ in },
             onPresentVehicleTrip: { _ in },
             presentingController: { nil },

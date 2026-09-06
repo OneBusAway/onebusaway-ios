@@ -97,6 +97,10 @@ final class TripFocusMapLayerTests {
         mapView.annotations.compactMap { $0 as? TripStopAnnotation }
     }
 
+    private var directionArrowAnnotations: [PolylineArrowAnnotation] {
+        mapView.annotations.compactMap { $0 as? PolylineArrowAnnotation }
+    }
+
     // MARK: - The shape
 
     /// Each half draws twice — a white casing under a colored core — so a split
@@ -121,6 +125,14 @@ final class TripFocusMapLayerTests {
         focus(content(shape: shape(), progress: 0))
 
         #expect(shapeOverlays.allSatisfy { !$0.isSpent })
+    }
+
+    @Test func `Direction arrows are placed only on the part of the trip still ahead`() {
+        let line = shape()
+        focus(content(shape: line, progress: 0.5))
+
+        #expect(!directionArrowAnnotations.isEmpty)
+        #expect(directionArrowAnnotations.allSatisfy { $0.coordinate.longitude > line[2].longitude })
     }
 
     /// An agency that publishes no shape still gets a usable map: the stops carry
@@ -224,6 +236,7 @@ final class TripFocusMapLayerTests {
 
         #expect(shapeOverlays.isEmpty)
         #expect(stopAnnotations.isEmpty)
+        #expect(directionArrowAnnotations.isEmpty)
     }
 
     /// A refresh replaces what's drawn rather than adding to it — otherwise every
@@ -235,6 +248,22 @@ final class TripFocusMapLayerTests {
         focus.apply(content(shape: shape(), progress: 0.6))
 
         #expect(shapeOverlays.count == firstCount)
+    }
+
+    /// Polling used to `removeAnnotation`/`addAnnotation` the bus on every
+    /// tick. MapKit treats that as a new pin, so the marker pops instead of
+    /// sliding, and any open callout is dismissed. Keep the same object.
+    /// See: https://github.com/OneBusAway/onebusaway-ios/issues/1109
+    @Test func `A refresh moves the existing vehicle annotation instead of replacing it`() throws {
+        let status = try vehicle()
+        let focus = focus(content(shape: shape(), progress: 0.5, vehicle: status))
+        let first = try #require(mapView.annotations.compactMap { $0 as? VehicleAnnotation }.first)
+
+        focus.apply(content(shape: shape(), progress: 0.6, vehicle: status))
+
+        let after = mapView.annotations.compactMap { $0 as? VehicleAnnotation }
+        #expect(after.count == 1)
+        #expect(after.first === first)
     }
 
     @Test func `Clearing the focus clears the map`() {

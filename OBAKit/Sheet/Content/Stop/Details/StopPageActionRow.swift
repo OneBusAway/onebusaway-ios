@@ -74,6 +74,9 @@ struct StopPageActionRow: View {
     let onServiceAlerts: () -> Void
     let onNearbyStops: () -> Void
     let onWalkingDirections: () -> Void
+    /// Non-nil when OTP trip planning is available for the current region.
+    let onDirectionsToHere: (() -> Void)?
+    let onDirectionsFromHere: (() -> Void)?
     let onReportProblem: () -> Void
 
     /// No horizontal scrolling accommodation, unlike `StopPageToolbar`: that
@@ -258,6 +261,20 @@ struct StopPageActionRow: View {
                 )
             }
             .disabled(!state.canActOnStop)
+
+            if let onDirectionsToHere {
+                Button(action: onDirectionsToHere) {
+                    Label(StopTripPlannerAction.directionsToHereTitle, systemImage: "arrow.triangle.turn.up.right.diamond")
+                }
+                .disabled(!state.canActOnStop)
+            }
+
+            if let onDirectionsFromHere {
+                Button(action: onDirectionsFromHere) {
+                    Label(StopTripPlannerAction.directionsFromHereTitle, systemImage: "arrow.triangle.turn.up.right.diamond.fill")
+                }
+                .disabled(!state.canActOnStop)
+            }
         }
 
         Section {
@@ -330,7 +347,9 @@ struct StopPageActionRow: View {
     StopPageActionRow(
         state: StopPageActionRowState(hasStop: true, routeCount: 4, hasHiddenRoutes: true, isListFiltered: true, departureFilter: .all, hasServiceAlerts: true),
         onSchedule: {}, onSetListFiltered: { _ in }, onSetDepartureFilter: { _ in }, onBookmark: {},
-        onServiceAlerts: {}, onNearbyStops: {}, onWalkingDirections: {}, onReportProblem: {}
+        onServiceAlerts: {}, onNearbyStops: {}, onWalkingDirections: {},
+        onDirectionsToHere: nil, onDirectionsFromHere: nil,
+        onReportProblem: {}
     )
 }
 
@@ -340,6 +359,8 @@ struct StopPageActionRow: View {
     StopPageActionRow(
         state: StopPageActionRowState(hasStop: false, routeCount: 0, hasHiddenRoutes: false, isListFiltered: false, departureFilter: .all, hasServiceAlerts: false),
         onSchedule: {}, onSetListFiltered: { _ in }, onSetDepartureFilter: { _ in }, onBookmark: {},
-        onServiceAlerts: {}, onNearbyStops: {}, onWalkingDirections: {}, onReportProblem: {}
+        onServiceAlerts: {}, onNearbyStops: {}, onWalkingDirections: {},
+        onDirectionsToHere: nil, onDirectionsFromHere: nil,
+        onReportProblem: {}
     )
 }

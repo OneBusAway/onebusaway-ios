@@ -38,7 +38,14 @@ nonisolated struct TripStopListItemRowConfiguration: OBAContentConfiguration {
 }
 
 nonisolated struct TripStopViewModel: OBAListViewItem {
-    var id: String { stop.id }
+    /// Position-qualified: a loop visits the same stop twice, and
+    /// `NSDiffableDataSource` crashes on duplicate item identifiers (#538).
+    /// Same format as `TripStopListModel.Row.id`.
+    var id: String { "\(stopIndex)-\(stop.id)" }
+
+    /// Index of this visit on the trip. Carried so `id` can stay unique
+    /// without parsing the identity string.
+    let stopIndex: Int
 
     var configuration: OBAListViewItemConfiguration {
         return .custom(TripStopListItemRowConfiguration(viewModel: self))
@@ -82,13 +89,14 @@ nonisolated struct TripStopViewModel: OBAListViewItem {
         arrivalDeparture: ArrivalDeparture?,
         stopIndex: Int,
         closestStopIndex: Int?,
+        userStopIndex: Int?,
         onSelectAction: OBAListViewAction<TripStopViewModel>?
     ) {
         self.stopTime = stopTime
 
         stop = stopTime.stop
 
-        isUserDestination = arrivalDeparture.map { stopTime.stopID == $0.stopID } ?? false
+        isUserDestination = userStopIndex.map { stopIndex == $0 } ?? false
 
         // Derive isCurrentVehicleLocation from the same closestStopIndex used for
         // temporalState so both properties always agree on which stop is "current".
@@ -101,6 +109,7 @@ nonisolated struct TripStopViewModel: OBAListViewItem {
         routeType = stopTime.stop.prioritizedRouteTypeForDisplay
 
         self.onSelectAction = onSelectAction
+        self.stopIndex = stopIndex
     }
 
     func hash(into hasher: inout Hasher) {
@@ -114,7 +123,8 @@ nonisolated struct TripStopViewModel: OBAListViewItem {
     }
 
     static func == (lhs: TripStopViewModel, rhs: TripStopViewModel) -> Bool {
-        return lhs.isCurrentVehicleLocation == rhs.isCurrentVehicleLocation &&
+        return lhs.id == rhs.id &&
+            lhs.isCurrentVehicleLocation == rhs.isCurrentVehicleLocation &&
             lhs.isUserDestination == rhs.isUserDestination &&
             lhs.temporalState == rhs.temporalState &&
             lhs.title == rhs.title &&

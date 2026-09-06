@@ -38,6 +38,10 @@ struct StopDeparturesSections: View {
     let pastCollapsed: Bool
     let expandedRouteID: RouteID?
 
+    /// Trip ID of the rider's inbound transfer trip, when this stop was opened
+    /// as a transfer destination. Matching departure rows receive a highlight.
+    let highlightedTripID: TripIdentifier?
+
     let statusProvider: (ArrivalDeparture) -> DepartureStatus
     let alarmLookup: (ArrivalDeparture) -> Alarm?
     let alarmLeadTime: (Alarm) -> Int
@@ -173,6 +177,7 @@ struct StopDeparturesSections: View {
                 Section {
                     StopPageEmptyStateRow(
                         isBrokenBookmark: isBrokenBookmark,
+                        stopIsMissing: content.stopIsMissing,
                         errorText: errorText,
                         isFilteredEmpty: content.isFilteredEmpty,
                         isDepartureFilterEmpty: content.isDepartureFilterEmpty,
@@ -212,6 +217,7 @@ struct StopDeparturesSections: View {
                 partition: chronologicalPartition,
                 walkMinutes: walkMinutes,
                 showPast: !pastCollapsed,
+                highlightedTripID: highlightedTripID,
                 statusProvider: statusProvider,
                 alarmLookup: alarmLookup,
                 actionsProvider: actionsProvider,
@@ -221,10 +227,12 @@ struct StopDeparturesSections: View {
             GroupedListView(
                 groups: content.routeGroups,
                 expandedRouteID: expandedRouteID,
+                highlightedTripID: highlightedTripID,
                 statusProvider: statusProvider,
                 alarmLookup: alarmLookup,
                 alarmLeadTime: alarmLeadTime,
                 canAlarm: canAlarm,
+                actionsProvider: actionsProvider,
                 onToggleRoute: onToggleRoute,
                 onSelectDeparture: onSelectDeparture,
                 onAlarmToggle: onAlarmToggle

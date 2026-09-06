@@ -63,6 +63,7 @@ final class TripFocusMapLayer: NSObject, MapLayer {
 
     private var shapeOverlays: [TripShapeOverlay] = []
     private var stopAnnotations: [TripStopAnnotation] = []
+    private var directionArrowAnnotations: [PolylineArrowAnnotation] = []
     private var vehicleAnnotation: VehicleAnnotation?
 
     /// The trip the camera has already been framed for. Framing happens once per
@@ -80,6 +81,10 @@ final class TripFocusMapLayer: NSObject, MapLayer {
         mapView.register(
             TripStopAnnotationView.self,
             forAnnotationViewWithReuseIdentifier: TripStopAnnotationView.reuseIdentifier
+        )
+        mapView.register(
+            PolylineArrowAnnotationView.self,
+            forAnnotationViewWithReuseIdentifier: PolylineArrowAnnotationView.reuseIdentifier
         )
     }
 
@@ -110,15 +115,22 @@ final class TripFocusMapLayer: NSObject, MapLayer {
     // MARK: - Rendering
 
     private func render(_ content: TripMapFocus.Content?) {
-        removeAllContent()
+        // Shape and stops are cheap to replace. The vehicle marker is not:
+        // removing it dismisses any callout and pops the pin instead of sliding
+        // it. See `drawVehicle`.
+        removeShapeAndStops()
 
-        guard let content else { return }
+        guard let content else {
+            removeVehicle()
+            return
+        }
 
         // Split once: the drawing and the camera have to agree about which half
         // of the shape is still ahead of the bus.
         let split = Self.split(content)
 
         drawShape(split)
+        drawDirectionArrows(along: split.ahead, color: content.routeColor)
         drawStops(content)
         drawVehicle(content)
         frameCameraIfNeeded(content, split: split)
@@ -148,6 +160,13 @@ final class TripFocusMapLayer: NSObject, MapLayer {
         mapView.addOverlays([casing, core], level: .aboveRoads)
     }
 
+    private func drawDirectionArrows(along coordinates: [CLLocationCoordinate2D], color: UIColor) {
+        directionArrowAnnotations = PolylineDirectionArrows.placements(along: coordinates).map {
+            PolylineArrowAnnotation(placement: $0, tintColor: color)
+        }
+        mapView.addAnnotations(directionArrowAnnotations)
+    }
+
     private func drawStops(_ content: TripMapFocus.Content) {
         // A stop whose location the feed omits costs one dot, not the trip.
         stopAnnotations = content.stops.compactMap { row in
@@ -159,11 +178,41 @@ final class TripFocusMapLayer: NSObject, MapLayer {
     }
 
     private func drawVehicle(_ content: TripMapFocus.Content) {
-        guard let status = content.vehicle, Self.vehicleCoordinate(content) != nil else { return }
+        guard let status = content.vehicle, let coord = Self.vehicleCoordinate(content) else {
+            removeVehicle()
+            return
+        }
 
+        if let existing = vehicleAnnotation, Self.isSameVehicle(existing.tripStatus, status) {
+            // `tripStatus`'s didSet writes lastKnownLocation onto coordinate
+            // immediately. Restore `from` so `VehicleCoordinateUpdate` can
+            // interpolate instead of that assignment teleporting the pin.
+            let from = existing.coordinate
+            existing.tripStatus = status
+            existing.coordinate = from
+            VehicleCoordinateUpdate.apply(from: from, to: coord, on: existing)
+            if let view = mapView.view(for: existing) as? PulsingVehicleAnnotationView {
+                view.realTimeAnnotationColor = content.routeColor
+                view.applyTripStatus(status)
+            }
+            return
+        }
+
+        removeVehicle()
         let annotation = VehicleAnnotation(tripStatus: status)
         vehicleAnnotation = annotation
         mapView.addAnnotation(annotation)
+    }
+
+    /// Same bus, not merely the same trip: a block handoff should replace the
+    /// marker rather than interpolate across the depot. Missing vehicle IDs
+    /// still count as the same marker — this layer only ever draws one.
+    private static func isSameVehicle(_ existing: TripStatus?, _ incoming: TripStatus) -> Bool {
+        guard let existing else { return false }
+        if let existingID = existing.vehicleID, let incomingID = incoming.vehicleID {
+            return existingID == incomingID
+        }
+        return true
     }
 
     /// The part of the map this layer may frame into — everything the host isn't
@@ -220,13 +269,23 @@ final class TripFocusMapLayer: NSObject, MapLayer {
     }
 
     private func removeAllContent() {
+        removeShapeAndStops()
+        removeVehicle()
+    }
+
+    private func removeShapeAndStops() {
         mapView.removeOverlays(shapeOverlays)
         mapView.removeAnnotations(stopAnnotations)
+        mapView.removeAnnotations(directionArrowAnnotations)
+        shapeOverlays.removeAll()
+        stopAnnotations.removeAll()
+        directionArrowAnnotations.removeAll()
+    }
+
+    private func removeVehicle() {
         if let vehicleAnnotation {
             mapView.removeAnnotation(vehicleAnnotation)
         }
-        shapeOverlays.removeAll()
-        stopAnnotations.removeAll()
         vehicleAnnotation = nil
     }
 
@@ -252,6 +311,13 @@ final class TripFocusMapLayer: NSObject, MapLayer {
         if annotation is TripStopAnnotation {
             return mapView.dequeueReusableAnnotationView(
                 withIdentifier: TripStopAnnotationView.reuseIdentifier,
+                for: annotation
+            )
+        }
+
+        if annotation is PolylineArrowAnnotation {
+            return mapView.dequeueReusableAnnotationView(
+                withIdentifier: PolylineArrowAnnotationView.reuseIdentifier,
                 for: annotation
             )
         }
@@ -283,6 +349,7 @@ final class TripFocusMapLayer: NSObject, MapLayer {
     /// no-op and leak the following trip's markers on top.
     func mapAnnotationsWereCleared() {
         stopAnnotations.removeAll()
+        directionArrowAnnotations.removeAll()
         vehicleAnnotation = nil
     }
 

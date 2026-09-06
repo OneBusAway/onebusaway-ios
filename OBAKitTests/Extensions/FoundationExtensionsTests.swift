@@ -216,6 +216,74 @@ final class BundleFeedbackConfigTests {
         #expect(!bundle.feedbackPromptEnabled)
     }
 
+    // MARK: - Fixed region (issue #608)
+
+    /// White-label apps pin a region in `OBAKitConfig` so the picker never
+    /// appears. These keys are how `RegionsService` is configured at launch.
+    @Test func `Fixed region name reads from OBA kit config`() throws {
+        let bundle = try FeedbackConfigBundle.create(config: ["FixedRegionName": "Puget Sound"])
+        #expect(bundle.fixedRegionName == "Puget Sound")
+    }
+
+    @Test func `Fixed region name is nil when absent`() throws {
+        let bundle = try FeedbackConfigBundle.create(config: [:])
+        #expect(bundle.fixedRegionName == nil)
+    }
+
+    @Test func `Fixed region OBA base URL reads from OBA kit config`() throws {
+        let bundle = try FeedbackConfigBundle.create(config: [
+            "FixedRegionOBABaseURL": "https://api.tampa.onebusawaycloud.com/"
+        ])
+        #expect(bundle.fixedRegionOBABaseURL == URL(string: "https://api.tampa.onebusawaycloud.com/"))
+    }
+
+    @Test func `Fixed region OBA base URL is nil when absent or unparseable`() throws {
+        let missing = try FeedbackConfigBundle.create(config: [:])
+        #expect(missing.fixedRegionOBABaseURL == nil)
+
+        let garbage = try FeedbackConfigBundle.create(config: ["FixedRegionOBABaseURL": ""])
+        #expect(garbage.fixedRegionOBABaseURL == nil)
+    }
+
+    // MARK: - OBAKitConfig.MoreTab
+
+    @Test func `More tab configuration uses defaults when MoreTab is absent`() throws {
+        let bundle = try FeedbackConfigBundle.create(config: [:])
+        let more = bundle.moreTabConfiguration
+        #expect(more.headerSupportText == nil)
+        #expect(more.showHelpOutSection)
+        #expect(more.translateURL == nil)
+        #expect(more.developURL?.absoluteString == "https://github.com/oneBusAway/onebusaway-ios")
+        #expect(more.customLinks.isEmpty)
+    }
+
+    @Test func `More tab configuration reads nested MoreTab from OBAKitConfig`() throws {
+        let bundle = try FeedbackConfigBundle.create(config: [
+            "MoreTab": [
+                "HeaderSupportText": "Powered by TestAgency",
+                "ShowHelpOutSection": false,
+                "TranslateURL": "https://example.com/translate",
+                "DevelopURL": "https://example.com/develop",
+                "TutorialURL": "https://example.com/tutorials",
+                "PhoneURL": "tel:+1234567890",
+                "TextURL": "sms:+1234567890",
+                "CustomLinks": [
+                    ["Title": "Agency Site", "URL": "https://example.com"]
+                ]
+            ]
+        ])
+        let more = bundle.moreTabConfiguration
+        #expect(more.headerSupportText == "Powered by TestAgency")
+        #expect(!more.showHelpOutSection)
+        #expect(more.translateURL?.absoluteString == "https://example.com/translate")
+        #expect(more.developURL?.absoluteString == "https://example.com/develop")
+        #expect(more.tutorialURL?.absoluteString == "https://example.com/tutorials")
+        #expect(more.phoneURL?.absoluteString == "tel:+1234567890")
+        #expect(more.textURL?.absoluteString == "sms:+1234567890")
+        #expect(more.customLinks.count == 1)
+        #expect(more.customLinks[0].title == "Agency Site")
+        #expect(more.customLinks[0].url.absoluteString == "https://example.com")
+    }
     // MARK: - String.normalizedSearchQuery
 
     /// Nil means "match everything". `.searchable` hands a view the empty string

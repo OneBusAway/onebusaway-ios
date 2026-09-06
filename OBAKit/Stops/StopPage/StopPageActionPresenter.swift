@@ -109,6 +109,8 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
             showScheduleForRoute: trip.showScheduleForRoute,
             canScheduleForRoute: application.currentRegion?.supportsScheduleForRoute ?? true,
             showWalkingDirections: stop.showWalkingDirections,
+            showDirectionsToHere: stop.showDirectionsToHere,
+            showDirectionsFromHere: stop.showDirectionsFromHere,
             showAlertDetail: stop.showAlertDetail,
             showBookmarkEditor: stop.showBookmarkEditor,
             shareTrip: trip.shareTrip,
@@ -182,6 +184,8 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
     /// Everything scoped to the stop as a whole.
     private struct StopClosures {
         let showWalkingDirections: () -> Void
+        let showDirectionsToHere: (() -> Void)?
+        let showDirectionsFromHere: (() -> Void)?
         let showAlertDetail: (ServiceAlert) -> Void
         let showBookmarkEditor: (ArrivalDeparture?) -> Void
         let showRouteFilter: () -> Void
@@ -191,11 +195,20 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
     }
 
     private func makeStopClosures(viewModel: StopViewModel) -> StopClosures {
-        StopClosures(
+        let tripPlannerAvailable = StopTripPlannerAction.canPresent(application: application)
+        return StopClosures(
             showWalkingDirections: { [weak self] in
                 guard let coordinate = viewModel.stop?.coordinate else { return }
                 self?.showWalkingDirections(coordinate: coordinate)
             },
+            showDirectionsToHere: tripPlannerAvailable ? { [weak self] in
+                guard let stop = viewModel.stop else { return }
+                self?.showTripPlanner(action: .directionsToStop, stop: stop)
+            } : nil,
+            showDirectionsFromHere: tripPlannerAvailable ? { [weak self] in
+                guard let stop = viewModel.stop else { return }
+                self?.showTripPlanner(action: .directionsFromStop, stop: stop)
+            } : nil,
             showAlertDetail: { [weak self] alert in
                 guard let self, let host = self.presentationHost(for: "alert detail") else { return }
                 self.application.viewRouter.navigateTo(alert: alert, from: host)
@@ -413,6 +426,12 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
         present(actionSheet: sheet)
     }
 
+    /// Switches to the map tab and opens the classic trip planner with this stop
+    /// as origin or destination. Shared by the pushed Stop page and the map sheet.
+    func showTripPlanner(action: StopTripPlannerAction, stop: Stop) {
+        StopTripPlannerAction.present(action, stop: stop, application: application)
+    }
+
     /// An unanchored action sheet is a hard crash on a regular-width device.
     /// The sheet presentation is iPhone-only, but the pushed presentation is
     /// not, and both come through here.
@@ -576,65 +595,44 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
         // with two Lock Screen cards and two OBACloud push registrations. Re-Track
         // still needs to promote the existing activity: after A→B the Island is
         // on B with A demoted to 0, so tapping Track on A again must bump A.
+        // Built before the duplicate check so a re-Track can install it: the rider
+        // has asked for this trip while the app holds current arrivals, and the
+        // running card would otherwise keep whatever the last push left (#1390).
+        //
+        // Always yields content: the matching builder falls back to `departure`
+        // itself when the stop list is stale or hasn't loaded yet, so there is
+        // no failure branch to take here.
+        let contentState = BookmarkActions.buildContentState(
+            from: viewModel.stopArrivals?.arrivalsAndDepartures ?? [],
+            matching: departure
+        )
+
         if let existing = Activity<TripAttributes>.running(matching: staticData) {
             Logger.info("Live Activity already running for stop \(staticData.stopID) route \(staticData.routeShortName); promoting instead of duplicating.")
             let existingID = existing.id
             Task {
-                await Activity<TripAttributes>.promoteToDynamicIsland(activityID: existingID)
+                await Activity<TripAttributes>.promoteToDynamicIsland(
+                    activityID: existingID,
+                    state: contentState
+                )
             }
             // Re-show the confirmation rather than appearing to do nothing.
             viewModel.signalLiveActivityStarted()
             return
         }
 
-        guard let contentState = buildLiveActivityContentState(for: departure, viewModel: viewModel) else {
-            Logger.error("Failed to build content state for Live Activity")
-            return
-        }
-
-        // Prominence so the Dynamic Island switches to this Track when another
-        // trip is already live (#1189 Problem 2). Default score is 0 and equal
-        // scores keep the first-started activity.
-        let prominence = TripLiveActivityRelevance.prominenceScore()
         do {
-            let activity = try Activity.request(
+            let activity = try Activity<TripAttributes>.requestProminent(
                 attributes: TripAttributes(staticData: staticData),
-                content: TripLiveActivityRelevance.content(
-                    state: contentState,
-                    staleDate: nil,
-                    relevanceScore: prominence
-                ),
-                pushType: .token
+                state: contentState
             )
             application.liveActivityTracker.track(activity: activity, metadata: .init(departure))
-            let activityID = activity.id
-            Task {
-                await Activity<TripAttributes>.demoteLivePeers(
-                    exceptActivityID: activityID,
-                    relativeTo: prominence
-                )
-            }
             Logger.info("Started Live Activity with ID: \(activity.id)")
             viewModel.signalLiveActivityStarted()
         } catch {
             Logger.error("Failed to start Live Activity: \(error)")
             presentationHost(for: "live activity error")?.showLiveActivityErrorAlert()
         }
-    }
-
-    private func buildLiveActivityContentState(for departure: ArrivalDeparture, viewModel: StopViewModel) -> TripAttributes.ContentState? {
-        let allArrivals = viewModel.stopArrivals?.arrivalsAndDepartures ?? [departure]
-        let sameRoute = allArrivals.filter { $0.routeID == departure.routeID }
-        let upcoming = sameRoute.isEmpty ? [departure] : Array(sameRoute.prefix(3))
-        let arrivals = upcoming.map { arrDep in
-            TripAttributes.ContentState.ArrivalInfo(
-                departureTime: Int(arrDep.arrivalDepartureDate.timeIntervalSince1970),
-                scheduleStatus: .init(arrDep.scheduleStatus),
-                scheduleDeviation: arrDep.deviationFromScheduleInMinutes * 60,
-                isArrival: arrDep.arrivalDepartureStatus == .arriving
-            )
-        }
-        return TripAttributes.ContentState(arrivals: arrivals)
     }
 
     // MARK: - User Activity

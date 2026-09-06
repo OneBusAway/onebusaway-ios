@@ -85,22 +85,38 @@ public struct TripCountdownFormatStyle: DiscreteFormatStyle, Sendable {
 
 /// `8m` / `NOW` that self-updates on a Live Activity. Dim Lock Screen uses a
 /// static snapshot so a custom format style is not redacted to dashes.
+///
+/// `opacity` and `accessibilityLabel` are first-class so Live Activity stale
+/// chrome (#1379) can compose on this type instead of re-wrapping modifiers
+/// around every call site.
 public struct TickingCountdownText: View {
     public let departure: Date
     public let font: Font
     public let color: Color
+    /// Stale Live Activity chrome dims minutes via `LiveActivityStaleChrome.contentOpacity`.
+    public let opacity: Double
+    /// When set (e.g. minimal Island + stale warning), overrides the spoken countdown.
+    public let accessibilityLabel: String?
 
     @Environment(\.isLuminanceReduced) private var isLuminanceReduced
 
-    public init(departure: Date, font: Font, color: Color) {
+    public init(
+        departure: Date,
+        font: Font,
+        color: Color,
+        opacity: Double = 1.0,
+        accessibilityLabel: String? = nil
+    ) {
         self.departure = departure
         self.font = font
         self.color = color
+        self.opacity = opacity
+        self.accessibilityLabel = accessibilityLabel
     }
 
     public var body: some View {
         let style = TripCountdownFormatStyle(departure: departure)
-        Group {
+        let label = Group {
             if isLuminanceReduced {
                 Text(style.format(Date()))
             } else {
@@ -110,5 +126,12 @@ public struct TickingCountdownText: View {
         .font(font)
         .monospacedDigit()
         .foregroundStyle(color)
+        .opacity(opacity)
+
+        if let accessibilityLabel {
+            label.accessibilityLabel(accessibilityLabel)
+        } else {
+            label
+        }
     }
 }

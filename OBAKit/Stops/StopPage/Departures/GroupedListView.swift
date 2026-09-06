@@ -20,6 +20,7 @@ import OBAKitCore
 struct GroupedListView: View {
     let groups: [StopPageListBuilder.RouteGroup<ArrivalDeparture>]
     let expandedRouteID: RouteID?
+    let highlightedTripID: TripIdentifier?
     let statusProvider: (ArrivalDeparture) -> DepartureStatus
     let alarmLookup: (ArrivalDeparture) -> Alarm?
     let alarmLeadTime: (Alarm) -> Int
@@ -28,6 +29,10 @@ struct GroupedListView: View {
     /// hide the alarm affordance when a new alarm can't be created — while still
     /// showing it for a departure that already has one, so it can be cancelled.
     let canAlarm: (ArrivalDeparture) -> Bool
+    /// Supplies the same long-press menu the chronological rows get. Grouped mode
+    /// renders its own rows rather than reusing `DepartureRowView`, so without
+    /// this the menu simply wasn't there — see `departureRowActions(_:)`.
+    let actionsProvider: (ArrivalDeparture) -> DepartureRowActions
     let onToggleRoute: (RouteID) -> Void
     let onSelectDeparture: (ArrivalDeparture) -> Void
     let onAlarmToggle: (ArrivalDeparture) -> Void
@@ -45,6 +50,10 @@ struct GroupedListView: View {
     /// layout): badge + countdown become glance tokens on the first line and
     /// everything else flows below at full width.
     private var isAccessibilitySize: Bool { dynamicTypeSize.isAccessibilitySize }
+
+    private func isTransferTrip(_ departure: ArrivalDeparture) -> Bool {
+        highlightedTripID == departure.tripID
+    }
 
     /// Whether this departure should show an alarm affordance: it can take a new
     /// alarm, or it already has one that can be cancelled. Shared by the header
@@ -85,7 +94,15 @@ struct GroupedListView: View {
             headerChipsRow(group)
         }
         .padding(.vertical, 4)
-        .listRowBackground(Color(uiColor: .secondarySystemGroupedBackground))
+        .overlay(alignment: .leading) {
+            if isTransferTrip(next) {
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(Color(uiColor: ThemeColors.shared.brand))
+                    .frame(width: 4)
+                    .padding(.vertical, 4)
+            }
+        }
+        .listRowBackground(DepartureTransferHighlight.rowBackground(isHighlighted: isTransferTrip(next)))
         .contentShape(Rectangle())
         .onTapGesture { onToggleRoute(group.routeID) }
         .accessibilityElement(children: .ignore)
@@ -114,6 +131,11 @@ struct GroupedListView: View {
                 }
             }
         }
+        // Applied outside the accessibility element, matching how
+        // `ChronologicalListView` composes it onto `DepartureRowView`. The header
+        // is the route's next departure and is all a rider sees while the card is
+        // collapsed, so the menu has to reach it too — not just expanded rows.
+        .departureRowActions(actionsProvider(next))
     }
 
     private func alarmActionName(for alarm: Alarm?) -> String {
@@ -131,7 +153,7 @@ struct GroupedListView: View {
                 HStack(alignment: .center) {
                     routeBadge(for: next, routeColor: routeColor)
                     Spacer(minLength: 8)
-                    CountdownView(minutes: next.arrivalDepartureMinutes, isRealTime: status.isRealTime, color: Color(uiColor: status.color))
+                    CountdownView(minutes: next.arrivalDepartureMinutes, isRealTime: status.isRealTime, color: Color(uiColor: status.color), caption: formatters.arrivalDepartureCaption(for: next.arrivalDepartureStatus, temporalState: next.temporalState))
                 }
                 headsignText(next)
                 DepartureTimeText(display: timeDisplay(next))
@@ -154,7 +176,7 @@ struct GroupedListView: View {
                         }
                     }
                     Spacer(minLength: 8)
-                    CountdownView(minutes: next.arrivalDepartureMinutes, isRealTime: status.isRealTime, color: Color(uiColor: status.color))
+                    CountdownView(minutes: next.arrivalDepartureMinutes, isRealTime: status.isRealTime, color: Color(uiColor: status.color), caption: formatters.arrivalDepartureCaption(for: next.arrivalDepartureStatus, temporalState: next.temporalState))
                 }
             }
         }
@@ -266,7 +288,7 @@ struct GroupedListView: View {
                     HStack(spacing: 12) {
                         alarmIcon(for: departure)
                         Spacer(minLength: 8)
-                        CountdownView(minutes: departure.arrivalDepartureMinutes, isRealTime: status.isRealTime, color: Color(uiColor: status.color), emphasized: false)
+                        CountdownView(minutes: departure.arrivalDepartureMinutes, isRealTime: status.isRealTime, color: Color(uiColor: status.color), emphasized: false, caption: formatters.arrivalDepartureCaption(for: departure.arrivalDepartureStatus, temporalState: departure.temporalState))
                         tripChevron(departure)
                     }
                     DepartureTimeText(display: timeDisplay(departure))
@@ -293,14 +315,22 @@ struct GroupedListView: View {
                             }
                         }
                         Spacer(minLength: 8)
-                        CountdownView(minutes: departure.arrivalDepartureMinutes, isRealTime: status.isRealTime, color: Color(uiColor: status.color), emphasized: false)
+                        CountdownView(minutes: departure.arrivalDepartureMinutes, isRealTime: status.isRealTime, color: Color(uiColor: status.color), emphasized: false, caption: formatters.arrivalDepartureCaption(for: departure.arrivalDepartureStatus, temporalState: departure.temporalState))
                         tripChevron(departure)
                     }
                 }
             }
             .contentShape(Rectangle())
             .onTapGesture { onSelectDeparture(departure) }
-            .listRowBackground(Color(uiColor: .secondarySystemGroupedBackground))
+            .overlay(alignment: .leading) {
+                if isTransferTrip(departure) {
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(Color(uiColor: ThemeColors.shared.brand))
+                        .frame(width: 4)
+                        .padding(.vertical, 4)
+                }
+            }
+            .listRowBackground(DepartureTransferHighlight.rowBackground(isHighlighted: isTransferTrip(departure)))
             // Make the whole expanded row a single VoiceOver activation target
             // that opens the trip screen, mirroring the card
             // header (`children: .ignore` + explicit label + `.isButton`). The
@@ -319,6 +349,7 @@ struct GroupedListView: View {
                     }
                 }
             }
+            .departureRowActions(actionsProvider(departure))
         }
     }
 
@@ -348,21 +379,42 @@ struct GroupedListView: View {
     /// Self-describing VoiceOver label for one expanded departure row: route,
     /// headsign, minutes, live/scheduled status, and occupancy when present.
     private func expandedRowAccessibilityLabel(_ departure: ArrivalDeparture, status: DepartureStatus) -> String {
-        let fmt = OBALoc("stop_page.grouped.expanded_row.a11y_fmt", value: "Route %@ to %@, departs in %d minutes, %@", comment: "VoiceOver label for one expanded departure row inside a grouped route card: route, headsign, minutes, status.")
+        let identity = StopPageAccessibilityCopy.upcomingIdentity(
+            routeShortName: departure.routeShortName,
+            headsign: departure.tripHeadsign ?? "",
+            minutes: departure.arrivalDepartureMinutes,
+            arrivalDepartureStatus: departure.arrivalDepartureStatus,
+            adherence: status.accessibilityStatusDescription
+        )
+        var extras: [String] = []
+        if isTransferTrip(departure) {
+            extras.append(OBALoc("stop_page.row.a11y_transfer_trip", value: "your transfer trip", comment: "VoiceOver clause appended to a departure row that matches the rider's inbound transfer trip."))
+        }
         return DepartureAccessibility.label(
-            identity: String(format: fmt, departure.routeShortName, departure.tripHeadsign ?? "", departure.arrivalDepartureMinutes, status.accessibilityStatusDescription),
+            identity: identity,
             departure: departure,
             status: status,
-            timeDisplay: timeDisplay(departure)
+            timeDisplay: timeDisplay(departure),
+            extraClauses: extras
         )
     }
 
     private func groupAccessibilityLabel(_ group: StopPageListBuilder.RouteGroup<ArrivalDeparture>, status: DepartureStatus) -> String {
-        let fmt = OBALoc("stop_page.grouped.a11y_fmt", value: "Route %@ to %@, next departure in %d minutes, %@. %d more departures loaded.", comment: "VoiceOver label for a grouped route card")
-        let label = String(format: fmt, group.next.routeShortName, group.next.tripHeadsign ?? "", group.next.arrivalDepartureMinutes, status.accessibilityStatusDescription, group.upcoming.count)
+        var label = StopPageAccessibilityCopy.groupedCardIdentity(
+            routeShortName: group.next.routeShortName,
+            headsign: group.next.tripHeadsign ?? "",
+            minutes: group.next.arrivalDepartureMinutes,
+            arrivalDepartureStatus: group.next.arrivalDepartureStatus,
+            adherence: status.accessibilityStatusDescription,
+            moreCount: group.upcoming.count
+        )
         // Appended after the sentence rather than comma-joined like the row
         // labels: this format string ends in a full stop, and VoiceOver's pause
         // there keeps the time attached to the card rather than to the count.
-        return label + " " + timeDisplay(group.next).accessibilityTimeDescription
+        label += " " + timeDisplay(group.next).accessibilityTimeDescription
+        if isTransferTrip(group.next) {
+            label += ", " + OBALoc("stop_page.row.a11y_transfer_trip", value: "your transfer trip", comment: "VoiceOver clause appended to a departure row that matches the rider's inbound transfer trip.")
+        }
+        return label
     }
 }

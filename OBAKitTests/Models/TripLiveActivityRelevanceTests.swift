@@ -15,8 +15,9 @@ import Testing
 /// Pins the Dynamic Island prominence policy for #1189 Problem 2.
 ///
 /// ActivityKit itself isn't injectable, so these tests lock the score math and
-/// `ActivityContent` construction that the bookmark/stop start paths share —
-/// the same seam pattern as `TripAttributesIdentityTests` for Problem 1.
+/// `ActivityContent` construction that the three start paths share through
+/// `Activity.requestProminent` — the same seam pattern as
+/// `TripAttributesIdentityTests` for Problem 1.
 @MainActor
 @Suite(.serialized)
 final class TripLiveActivityRelevanceTests {
@@ -36,6 +37,25 @@ final class TripLiveActivityRelevanceTests {
             now: Date(timeIntervalSince1970: 1_700_000_100)
         )
         #expect(later > earlier)
+    }
+
+    /// The trip page's pre-#1375 construction didn't merely score low — a bare
+    /// `ActivityContent` scores `0`, which is exactly ``demotedScore``. A trip
+    /// tracked from that page was born indistinguishable from a peer that had
+    /// been deliberately demoted, so it could never take the Island from a
+    /// bookmark or stop Track scoring `prominenceScore()`.
+    @Test func `A bare content state is born at the demoted score`() {
+        let state = TripAttributes.ContentState(arrivals: [])
+        let bare = ActivityContent(state: state, staleDate: nil)
+
+        #expect(bare.relevanceScore == TripLiveActivityRelevance.demotedScore)
+
+        let started = TripLiveActivityRelevance.content(
+            state: state,
+            staleDate: nil,
+            relevanceScore: TripLiveActivityRelevance.prominenceScore()
+        )
+        #expect(started.relevanceScore > bare.relevanceScore)
     }
 
     @Test func `Content carries the supplied relevance score`() {
@@ -69,6 +89,31 @@ final class TripLiveActivityRelevanceTests {
         #expect(promoted.relevanceScore == 7)
     }
 
+    /// The two halves of a promotion's stale handling (#1390). A score-only
+    /// re-Track leaves the content alone, so dropping the push-set marker would
+    /// leave a stale card looking live until the next push. Installing fresh
+    /// arrivals inverts that: the existing date was set for content that no
+    /// longer exists, and carrying it forward could mark the new arrivals stale
+    /// the moment they land.
+    @Test func `A promotion keeps the stale marker only when content is unchanged`() {
+        let pushSet = Date(timeIntervalSince1970: 1_700_000_200)
+
+        #expect(
+            TripLiveActivityRelevance.promotionStaleDate(installing: nil, existing: pushSet) == pushSet,
+            "A score-only promotion must carry the push-set marker through"
+        )
+
+        let fresh = TripAttributes.ContentState(arrivals: [])
+        #expect(
+            TripLiveActivityRelevance.promotionStaleDate(installing: fresh, existing: pushSet) == nil,
+            "Fresh content must not inherit the previous content's stale date"
+        )
+
+        // Nothing to carry is still nothing, either way.
+        #expect(TripLiveActivityRelevance.promotionStaleDate(installing: nil, existing: nil) == nil)
+        #expect(TripLiveActivityRelevance.promotionStaleDate(installing: fresh, existing: nil) == nil)
+    }
+
     /// Pins the refresh path used by `updateRunningLiveActivities`: the new
     /// content state may change, but the score must come from the *existing*
     /// content — not a literal, and not the ActivityContent default of `0`.
@@ -100,8 +145,10 @@ final class TripLiveActivityRelevanceTests {
         #expect(refreshed.relevanceScore == existing.relevanceScore)
         #expect(refreshed.relevanceScore == 1_700_000_050)
 
-        // Contrast: the default ActivityContent score is 0. If the call site
-        // ever drops back to `.init(state:staleDate:)`, this is what Island gets.
+        // Contrast: the default ActivityContent score is 0. This is what the
+        // Island got from the trip page, which built content with a bare
+        // `.init(state:staleDate:)` until #1375 routed all three start paths
+        // through `Activity.requestProminent`.
         let wiped = ActivityContent(state: refreshedState, staleDate: nil)
         #expect(wiped.relevanceScore == 0)
         #expect(wiped.relevanceScore != existing.relevanceScore)

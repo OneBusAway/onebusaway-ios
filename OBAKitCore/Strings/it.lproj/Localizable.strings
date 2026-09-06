@@ -218,6 +218,10 @@
 
 /* Use for vehicles arriving in X minutes. */
 "formatters.arrives_in_x_min_fmt" = "In arrivo tra %d min";
+"formatters.caption.arrives" = "Arriva";
+"formatters.caption.departs" = "Parte";
+"formatters.caption.arrived" = "Arrivato";
+"formatters.caption.departed" = "Partito";
 
 /* Use for vehicles arriving now. */
 "formatters.arriving_now" = "In arrivo";
@@ -339,6 +343,9 @@
 /* Describes an on-time departure. e.g. departed on time. */
 "formatters.deviation.departure_past_on_time" = "partito in orario";
 
+/* Overflowing map-pin route list. The argument is the visible names; U+2026 marks that more routes exist. e.g. '10, 12, 49…' */
+"formatters.map_routes_overflow_fmt" = "%@…";
+
 /* Short formatted time text for arrivals/departures occurring now. */
 "formatters.now" = "ADESSO";
 
@@ -422,6 +429,9 @@
 
 /* Title for the schedule/timetable feature tip */
 "schedule_tip.title" = "Visualizza l'orario della tua linea";
+
+/* Shown on a Live Activity when ActivityKit marks it stale (no recent update). */
+"live_activity.stale_warning" = "Questi dati potrebbero non essere aggiornati.";
 
 /* Shown in place of the minutes countdown when the vehicle is departing now */
 "stop_page.countdown.now" = "ADESSO";

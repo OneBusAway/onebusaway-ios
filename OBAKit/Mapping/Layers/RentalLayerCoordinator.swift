@@ -7,6 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
+import Combine
 import MapKit
 import OBAKitCore
 import OTPKit
@@ -18,22 +19,35 @@ import OTPKit
 /// annotation-creation time. Fetch debounce and cancellation live in OTPKit's
 /// `VehicleRentalSource`; this class runs delivered snapshots through a second,
 /// client-side visibility pass — `RentalVisibility`, gating on form factors and the
-/// range threshold — before converting viewports and applying the resulting diffs
-/// to the map, and it tracks runtime availability from fetch outcomes.
-@MainActor final class RentalLayerCoordinator {
+/// range threshold — before publishing the resulting diffs, and it tracks runtime
+/// availability from fetch outcomes. Both the UIKit map (through `RentalAnnotationSyncer`)
+/// and the SwiftUI panel render from the published state.
+@MainActor final class RentalLayerCoordinator: ObservableObject {
 
     private let source: VehicleRentalSource
-    private weak var mapView: MKMapView?
+    private let locationService: LocationService
 
     /// Form factors per enabled layer id. The source fetches the union.
     private var enabledLayerFactors: [String: Set<VehicleFormFactor>] = [:]
 
     /// Decides which delivered rentals belong on the map. All the caching and
-    /// diffing lives here; this class only applies the result to the map view.
+    /// diffing lives here; this class only applies the result to published state.
     private var visibility = RentalVisibility()
 
-    /// The annotations currently on the map, by entity id.
-    private var annotations: [VehicleRental.ID: RentalAnnotation] = [:]
+    /// The rentals that currently belong on the map, sorted by id.
+    ///
+    /// Both surfaces render from this: the UIKit map through
+    /// `RentalAnnotationSyncer`, the SwiftUI panel by clustering it. Sorting is
+    /// not cosmetic — an unstable order reshuffles the panel's `ForEach` on
+    /// every snapshot.
+    @Published private(set) var visibleRentals: [VehicleRental] = []
+
+    /// Whether the current zoom is tight enough to show fuel figures.
+    @Published private(set) var showsFuelLabels = false
+
+    /// Keyed store behind `visibleRentals`. Must stay equal to
+    /// `RentalVisibility`'s visible-id set — see `applyChanges(_:)`.
+    private var rentalsByID: [VehicleRental.ID: VehicleRental] = [:]
 
     /// Fuel labels need more room than the markers do, so they gate on a tighter
     /// window than the layer's own `zoomWindow` (20,000-point) — the labels are
@@ -43,14 +57,12 @@ import OTPKit
     /// points (`MKMapRect` units, not metres) an 804 m-tall viewport — a few blocks.
     private static let fuelLabelZoomWindow = MapLayerZoomWindow(maxVisibleHeight: 8_000)
 
-    private var showsFuelLabels = false
-
     /// When the last successful snapshot arrived; drives freshness lines.
     private(set) var lastSnapshotAt: Date?
 
     /// The rider's location, for walk-time estimates in detail sheets.
     var userLocation: CLLocation? {
-        mapView?.userLocation.location
+        locationService.currentLocation
     }
 
     /// Configuration promises the layer works; only a fetch can prove it. Optimistic
@@ -61,9 +73,9 @@ import OTPKit
     private var failureTask: Task<Void, Never>?
     private var lastMapRect: MKMapRect?
 
-    init(service: VehicleRentalService, mapView: MKMapView) {
+    init(service: VehicleRentalService, locationService: LocationService) {
         self.source = VehicleRentalSource(service: service)
-        self.mapView = mapView
+        self.locationService = locationService
 
         let snapshots = source.snapshots
         snapshotTask = Task { [weak self] in
@@ -101,7 +113,7 @@ import OTPKit
         }
 
         let factors = combinedFormFactors
-        syncMapView(with: visibility.setFormFactors(factors))
+        applyChanges(visibility.setFormFactors(factors))
 
         let mapRect = lastMapRect
         Task {
@@ -122,7 +134,7 @@ import OTPKit
     /// Applies a new minimum-range threshold. Purely client-side: the entities are
     /// already cached, so relaxing the threshold restores vehicles with no refetch.
     func setRangeFilter(_ filter: RentalRangeFilter) {
-        syncMapView(with: visibility.setFilter(filter))
+        applyChanges(visibility.setFilter(filter))
     }
 
     /// `mapRect` is nil when the zoom gate is closed — everything is removed.
@@ -139,18 +151,12 @@ import OTPKit
         }
     }
 
-    /// Pushes the current zoom's label decision onto every annotation. Cheap: it
-    /// no-ops unless the gate actually flipped.
+    /// Publishes the current zoom's label decision. Cheap: `@Published` still
+    /// fires on every write, so the equality guard stays.
     private func updateFuelLabelVisibility(for mapRect: MKMapRect?) {
         let shows = mapRect.map { Self.fuelLabelZoomWindow.contains(visibleHeight: $0.height) } ?? false
         guard shows != showsFuelLabels else { return }
         showsFuelLabels = shows
-
-        guard let mapView else { return }
-        for annotation in annotations.values {
-            annotation.showsFuelLabel = shows
-            (mapView.view(for: annotation) as? RentalAnnotationView)?.setShowsFuelLabel(shows)
-        }
     }
 
     // MARK: - Snapshot Application
@@ -166,44 +172,29 @@ import OTPKit
             Logger.info("Rental fetch partial errors: \(snapshot.partialErrors.joined(separator: "; "))")
         }
 
-        syncMapView(with: visibility.apply(snapshot))
+        applyChanges(visibility.apply(snapshot))
     }
 
-    /// Translates a visibility diff into map view operations. The only place this
-    /// class mutates the `annotations` dictionary — it must keep `Set(annotations.keys)`
-    /// equal to `RentalVisibility`'s visible-id set. Do not add an early return here:
-    /// one that skips a branch (e.g. on an empty `added`/`removed`/`updated` array)
-    /// would silently break that invariant and, with it, cache restore.
-    private func syncMapView(with changes: RentalVisibility.Changes) {
-        guard let mapView, !changes.isEmpty else { return }
+    /// Folds a visibility diff into `rentalsByID` and republishes.
+    ///
+    /// The only place this class mutates `rentalsByID` — it must keep
+    /// `Set(rentalsByID.keys)` equal to `RentalVisibility`'s visible-id set. Do
+    /// not add an early return that skips a branch: one would silently break
+    /// that invariant and, with it, cache restore when a filter is relaxed.
+    private func applyChanges(_ changes: RentalVisibility.Changes) {
+        guard !changes.isEmpty else { return }
 
-        var removed: [RentalAnnotation] = []
         for id in changes.removed {
-            if let annotation = annotations.removeValue(forKey: id) {
-                removed.append(annotation)
-            }
+            rentalsByID.removeValue(forKey: id)
         }
-        mapView.removeAnnotations(removed)
-
-        for rental in changes.updated {
-            guard let annotation = annotations[rental.id] else { continue }
-            annotation.update(with: rental)
-            // Re-assigning the annotation re-runs the view's configure() so glyphs
-            // (availability counts), tint (operative state), and the fuel label
-            // track the data; identity is unchanged, so selection survives.
-            if let view = mapView.view(for: annotation) as? RentalAnnotationView {
-                view.annotation = annotation
-            }
+        for rental in changes.updated where rentalsByID[rental.id] != nil {
+            rentalsByID[rental.id] = rental
+        }
+        for rental in changes.added {
+            rentalsByID[rental.id] = rental
         }
 
-        var added: [RentalAnnotation] = []
-        for rental in changes.added where annotations[rental.id] == nil {
-            let annotation = RentalAnnotation(rental: rental)
-            annotation.showsFuelLabel = showsFuelLabels
-            annotations[rental.id] = annotation
-            added.append(annotation)
-        }
-        mapView.addAnnotations(added)
+        visibleRentals = rentalsByID.values.sorted { $0.id < $1.id }
     }
 
     private func handle(_ failure: VehicleRentalSource.FetchFailure) {
@@ -211,21 +202,13 @@ import OTPKit
 
         // A browse layer never alerts; a failure with nothing on the map dims the
         // layer row instead, so an empty layer is never silently "on".
-        if annotations.isEmpty {
+        if visibleRentals.isEmpty {
             setAvailability(.unavailable(reason: OBALoc(
                 "map_layers.rental_unavailable",
                 value: "Not available right now",
                 comment: "Reason shown on a dimmed rental layer row when its server is unreachable"
             )))
         }
-    }
-
-    /// Re-adds every tracked annotation to the map after a wholesale
-    /// `removeAllAnnotations` (search flows). `addAnnotations` ignores members
-    /// that are already present, so this is safe to call unconditionally.
-    func reattachAnnotations() {
-        guard let mapView, !annotations.isEmpty else { return }
-        mapView.addAnnotations(Array(annotations.values))
     }
 
     private func setAvailability(_ newValue: MapLayerAvailability) {

@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+#
+# Prints the UDID of the first available iPhone simulator on the newest
+# installed iOS runtime, for use in an xcodebuild `-destination`.
+#
+# Usage:
+#   SIMULATOR_UDID=$(scripts/resolve_simulator_udid)
+#   xcodebuild ... -destination "platform=iOS Simulator,id=$SIMULATOR_UDID"
+#
+# Address the device by `id=` rather than `name=`. A hardcoded name breaks two
+# ways, and the two report differently, which is why neither `OS=latest` nor a
+# fresh device name fixes both:
+#
+#   - not installed  -> "Unable to find a device matching the provided
+#                        destination specifier"
+#   - ambiguous across runtimes
+#                    -> "The requested device could not be found because
+#                        multiple devices matched the request"
+#
+# A name also goes stale on every Xcode release. CLAUDE.md has already carried
+# `iPhone 16` and `iPhone 17 Pro`; resolving at run time ends that cycle.
+#
+# Newest-runtime matters: if a pre-SDK runtime is installed alongside the
+# current one, tests must not land on it. See the isolated-deinit shim note in
+# .github/workflows/tests.yml.
+#
+# This is the single implementation shared by that workflow and by CLAUDE.md's
+# documented commands, so the two cannot drift apart.
+
+set -euo pipefail
+
+if ! devices_json=$(xcrun simctl list devices available -j 2>&1); then
+    echo "error: \`xcrun simctl\` failed:" >&2
+    echo "$devices_json" >&2
+    echo "If it reports a missing developer directory, point xcode-select at a full" >&2
+    echo "Xcode install: sudo xcode-select -s /Applications/Xcode.app" >&2
+    exit 1
+fi
+
+udid=$(printf '%s' "$devices_json" | python3 -c '
+import json, re, sys
+
+# simctl can exit 0 and still emit something that is not the device list, so
+# report that as itself rather than letting a traceback reach the caller and be
+# mistaken for "no simulator installed".
+try:
+    devices = json.load(sys.stdin)["devices"]
+except (json.JSONDecodeError, KeyError, TypeError) as error:
+    sys.exit("error: could not parse the device list from "
+             "xcrun simctl list devices available -j: " + str(error))
+
+def ios_version(runtime):
+    match = re.search(r"iOS-(\d+)-(\d+)", runtime)
+    return (int(match.group(1)), int(match.group(2))) if match else (0, 0)
+
+for runtime in sorted(devices, key=ios_version, reverse=True):
+    if not re.search(r"iOS-\d+-\d+", runtime):
+        continue
+    phones = [d for d in devices[runtime] if d["name"].startswith("iPhone")]
+    if phones:
+        print(phones[0]["udid"])
+        break
+')
+
+if [ -z "$udid" ]; then
+    echo "error: no available iPhone simulator on any installed iOS runtime." >&2
+    echo "Install one in Xcode > Settings > Components, or run: xcodebuild -downloadPlatform iOS" >&2
+    exit 1
+fi
+
+printf '%s\n' "$udid"

@@ -63,10 +63,116 @@ final class TripStopTemporalStateTests {
             arrivalDeparture: nil,
             stopIndex: 0,
             closestStopIndex: nil,
+            userStopIndex: nil,
             onSelectAction: nil
         )
         #expect(viewModel.temporalState == .future)
         #expect(viewModel.isCurrentVehicleLocation == false)
+    }
+}
+
+@MainActor
+@Suite(.serialized)
+final class TripStopViewModelIdentityTests {
+
+    /// A loop route visits the same stop twice. `NSDiffableDataSource` crashes
+    /// if two rows share an item identifier (#538). The SwiftUI trip page already
+    /// qualifies ids by index (`TripStopListModel`); the UIKit list did not.
+    @Test func `A stop visited twice gets two distinct list ids`() throws {
+        let data = Fixtures.loadData(file: "trip_details_1_18196913_no_status.json")
+        let response = try JSONDecoder.RESTDecoder().decode(RESTAPIResponse<TripDetails>.self, from: data)
+        let stopTime = try #require(response.entry.stopTimes.first)
+
+        let first = TripStopViewModel(
+            stopTime: stopTime,
+            arrivalDeparture: nil,
+            stopIndex: 0,
+            closestStopIndex: nil,
+            userStopIndex: nil,
+            onSelectAction: nil
+        )
+        let second = TripStopViewModel(
+            stopTime: stopTime,
+            arrivalDeparture: nil,
+            stopIndex: 5,
+            closestStopIndex: nil,
+            userStopIndex: nil,
+            onSelectAction: nil
+        )
+
+        #expect(first.id != second.id)
+        #expect(first.stop.id == second.stop.id)
+        #expect(first != second)
+    }
+
+    /// The whole-trip version of the test above. The fixture is an ordinary
+    /// point-to-point trip whose stops are all distinct, so running it as-is
+    /// proves nothing: the ids would come out unique under the bare `stop.id`
+    /// this replaced. Doubling it out-and-back gives every stop a second visit,
+    /// which is the shape a loop route actually has — and which halves the id
+    /// count the moment `stopIndex` stops qualifying them.
+    @Test func `List ids stay unique when a trip revisits every stop`() throws {
+        let data = Fixtures.loadData(file: "trip_details_1_18196913_no_status.json")
+        let response = try JSONDecoder.RESTDecoder().decode(RESTAPIResponse<TripDetails>.self, from: data)
+        let outbound = response.entry.stopTimes
+        let loop = outbound + outbound.reversed()
+
+        // Pins the premise rather than trusting it. If the doubling is ever dropped,
+        // or a future fixture stops producing repeats, this fails here — instead of
+        // the test quietly going back to passing for the wrong reason, which is what
+        // it did before.
+        #expect(Set(loop.map(\.stopID)).count < loop.count)
+
+        let ids = loop.enumerated().map { index, stopTime in
+            TripStopViewModel(
+                stopTime: stopTime,
+                arrivalDeparture: nil,
+                stopIndex: index,
+                closestStopIndex: nil,
+                userStopIndex: nil,
+                onSelectAction: nil
+            ).id
+        }
+
+        #expect(Set(ids).count == loop.count)
+    }
+
+    /// Bare stop ID alone marks every occurrence on a loop; `stopSequence` picks
+    /// the rider's boarding visit (#1346).
+    @Test func `User destination uses stop sequence on a loop`() throws {
+        let data = Fixtures.loadData(file: "trip_details_1_18196913_no_status.json")
+        let response = try JSONDecoder.RESTDecoder().decode(RESTAPIResponse<TripDetails>.self, from: data)
+        var stopTimes = response.entry.stopTimes
+        let repeated = stopTimes[1]
+        stopTimes.insert(repeated, at: 4)
+
+        let arrivalDeparture = try Fixtures.arrivalDeparture(
+            stopSequence: 4,
+            stopID: repeated.stopID
+        )
+        let userStopIndex = try #require(
+            TripStopListModel.userStopIndex(in: stopTimes, arrivalDeparture: arrivalDeparture)
+        )
+        #expect(userStopIndex == 4)
+
+        let firstVisit = TripStopViewModel(
+            stopTime: repeated,
+            arrivalDeparture: arrivalDeparture,
+            stopIndex: 1,
+            closestStopIndex: nil,
+            userStopIndex: userStopIndex,
+            onSelectAction: nil
+        )
+        let secondVisit = TripStopViewModel(
+            stopTime: repeated,
+            arrivalDeparture: arrivalDeparture,
+            stopIndex: 4,
+            closestStopIndex: nil,
+            userStopIndex: userStopIndex,
+            onSelectAction: nil
+        )
+        #expect(!firstVisit.isUserDestination)
+        #expect(secondVisit.isUserDestination)
     }
 }
 

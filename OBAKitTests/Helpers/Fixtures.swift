@@ -78,6 +78,7 @@ class Fixtures {
         scheduledDeparture: Int = 1_700_000_000,
         predictedDeparture: Int? = nil,
         stopSequence: Int = 5,
+        stopID: String = "stop_1",
         routeID: String = "route_1",
         tripID: String = "trip_1"
     ) throws -> ArrivalDeparture {
@@ -95,7 +96,7 @@ class Fixtures {
             "serviceDate": scheduledArrival,
             "situationIds": [],
             "status": "SCHEDULED",
-            "stopId": "stop_1",
+            "stopId": stopID,
             "stopSequence": stopSequence,
             "tripId": tripID,
             "vehicleId": "vehicle_1"

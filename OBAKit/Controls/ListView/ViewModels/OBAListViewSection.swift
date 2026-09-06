@@ -89,7 +89,11 @@ nonisolated public struct OBAListViewSection: Hashable, Identifiable, @unchecked
     }
 
     public static func == (lhs: OBAListViewSection, rhs: OBAListViewSection) -> Bool {
-        return lhs.title == rhs.title &&
+        // `id` belongs here: `hash(into:)` already combines it, and
+        // `NSDiffableDataSource` treats Hashable mismatch as "Failed to find
+        // index of item" on the header that uses this section's id (#421).
+        return lhs.id == rhs.id &&
+            lhs.title == rhs.title &&
             lhs.contents == rhs.contents
     }
 }

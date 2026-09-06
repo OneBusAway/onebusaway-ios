@@ -29,6 +29,12 @@ struct StopPageNavigationHandler {
     /// Opens walking directions to the stop in an external maps app (header
     /// walk pill). Presents a choice sheet when more than one app is available.
     let showWalkingDirections: () -> Void
+    /// Opens the in-app OTP trip planner with this stop as the destination
+    /// (origin = current location). `nil` when trip planning is unavailable.
+    let showDirectionsToHere: (() -> Void)?
+    /// Opens the in-app OTP trip planner with this stop as the origin.
+    /// `nil` when trip planning is unavailable.
+    let showDirectionsFromHere: (() -> Void)?
     /// Pushes the alert-detail screen for a tapped service alert.
     let showAlertDetail: (ServiceAlert) -> Void
     /// Opens the bookmark editor: `nil` for a stop-level bookmark, an
@@ -295,6 +301,8 @@ struct StopPageView: View {
             onServiceAlerts: navigation.showServiceAlerts,
             onNearbyStops: navigation.showNearbyStops,
             onWalkingDirections: navigation.showWalkingDirections,
+            onDirectionsToHere: navigation.showDirectionsToHere,
+            onDirectionsFromHere: navigation.showDirectionsFromHere,
             onReportProblem: navigation.showReportProblem
         )
     }
@@ -442,7 +450,9 @@ struct StopPageView: View {
             hasServiceAlerts: false,
             onRefresh: {}, onSetListFiltered: { _ in }, onSetDepartureFilter: { _ in },
             onBookmark: {}, onSchedule: {},
-            onServiceAlerts: {}, onNearbyStops: {}, onWalkingDirections: {}, onReportProblem: {}
+            onServiceAlerts: {}, onNearbyStops: {}, onWalkingDirections: {},
+            onDirectionsToHere: nil, onDirectionsFromHere: nil,
+            onReportProblem: {}
         )
     }
 }
@@ -532,6 +542,10 @@ struct StopPageEmptyStateRow: View {
     /// leaving them to conclude the bus simply isn't running (parity with
     /// `StopViewController.emptyData(for:)`).
     var isBrokenBookmark: Bool = false
+    /// The server has no stop at this ID and there is no bookmark to repair —
+    /// a deep link, a search result or a map pin pointing at a stop the agency
+    /// has since removed.
+    var stopIsMissing: Bool = false
     let errorText: String?
     let isFilteredEmpty: Bool
     /// The Departure Type filter (real-time only / scheduled only) removed
@@ -570,6 +584,7 @@ struct StopPageEmptyStateRow: View {
 
     private var symbolName: String {
         if isBrokenBookmark { return "bookmark.slash.fill" }
+        if stopIsMissing { return "mappin.slash" }
         if errorText != nil { return "exclamationmark.icloud" }
         if isFilteredEmpty { return "line.3.horizontal.decrease.circle" }
         if isDepartureFilterEmpty { return "antenna.radiowaves.left.and.right" }
@@ -579,6 +594,13 @@ struct StopPageEmptyStateRow: View {
     private var message: String {
         if isBrokenBookmark {
             return OBALoc("stop_controller.bad_bookmark_error_message", value: "This bookmark may not work anymore. Did your transit agency change something? Please delete and recreate the bookmark.", comment: "An error message displayed when a stop is shown by tapping on a bookmark—and the bookmark doesn't seem to point to a valid stop any longer. This problem will occur when a transit agency changes its stop IDs, perhaps as part of an annual transit system realignment.")
+        }
+        if stopIsMissing {
+            return OBALoc(
+                "stop_page.empty.stop_not_found",
+                value: "This stop isn't in the transit agency's data anymore. It may have been moved or removed.",
+                comment: "Empty state shown when the server has no stop at the requested ID and there is no bookmark to repair — the rider arrived from a deep link, a search result or a map pin."
+            )
         }
         if let errorText { return errorText }
         if isFilteredEmpty {
@@ -595,6 +617,9 @@ struct StopPageEmptyStateRow: View {
         // A broken bookmark has no retry: the stop ID itself is gone, so refetching
         // it just fails again. The message tells the user to recreate the bookmark.
         if isBrokenBookmark { return nil }
+        // Same reasoning as a broken bookmark: the stop ID itself is gone, so a
+        // retry re-runs the same failing request. The message is the whole answer.
+        if stopIsMissing { return nil }
         if errorText != nil {
             return OBALoc("stop_page.empty.retry", value: "Retry", comment: "Button that retries loading departures after an error.")
         }

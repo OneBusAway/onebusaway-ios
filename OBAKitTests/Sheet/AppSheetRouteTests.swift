@@ -224,6 +224,57 @@ final class AppSheetRouteTests {
         #expect(sheetRoute1.hashValue == sheetRoute2.hashValue)
     }
 
+    @Test func `Map settings route has a stable id`() {
+        #expect(AppSheetRoute.mapSettings.id == "mapSettings")
+    }
+
+    /// Stacked so the home sheet peeks beneath, matching every other detail
+    /// destination — and because `SheetCoordinator.push` preconditions that a
+    /// stacked route allows interactive dismissal.
+    @Test func `Map settings route stacks and allows dismissal`() {
+        #expect(AppSheetRoute.mapSettings.prefersStacking)
+        #expect(AppSheetRoute.mapSettings.detentConfiguration.isDismissDisabled == false)
+    }
+
+    /// Opens at `.medium` so the map stays visible behind the basemap tiles —
+    /// picking a basemap you cannot see is a guess.
+    @Test func `Map settings route opens at medium`() {
+        let config = AppSheetRoute.mapSettings.detentConfiguration
+        #expect(config.initialDetent == .medium)
+        #expect(config.detents == [.medium, .large])
+    }
+
+    @Test func `Rental routes embed their associated values`() {
+        #expect(AppSheetRoute.rentalDetail(rentalID: "bike_7").id == "rentalDetail-bike_7")
+    }
+
+    /// The cluster route's id is the cluster's own id, so an open sheet and the
+    /// marker that opened it agree on identity across a camera move.
+    @Test func `Rental cluster id is order independent`() {
+        let a = AppSheetRoute.rentalCluster(memberIDs: ["a", "b", "c"])
+        let b = AppSheetRoute.rentalCluster(memberIDs: ["c", "b", "a"])
+
+        #expect(a.id == b.id)
+    }
+
+    @Test func `Rental cluster id changes with membership`() {
+        let a = AppSheetRoute.rentalCluster(memberIDs: ["a", "b", "c"])
+        let b = AppSheetRoute.rentalCluster(memberIDs: ["a", "b"])
+
+        #expect(a.id != b.id)
+    }
+
+    @Test func `Rental routes stack and allow dismissal`() {
+        for route in [
+            AppSheetRoute.rentalDetail(rentalID: "bike_7"),
+            AppSheetRoute.rentalCluster(memberIDs: ["a", "b"])
+        ] {
+            #expect(route.prefersStacking)
+            #expect(route.detentConfiguration.isDismissDisabled == false)
+            #expect(route.detentConfiguration.initialDetent == .medium)
+        }
+    }
+
     // MARK: - Search result routes
 
     @Test func `Id embeds map item coordinates`() {
@@ -296,7 +347,8 @@ final class AppSheetRouteTests {
         switch route {
         case .home, .search, .nearbyAll, .recentStopsAll, .bookmarksAll,
              .stopDetails, .tripPlanner, .tripDetails, .routePicker,
-             .currentTrip, .transitAlert, .more, .settings,
+             .currentTrip, .transitAlert, .more, .settings, .mapSettings,
+             .rentalDetail, .rentalCluster,
              .searchResults, .mapItem, .routeStops, .nearbyStops:
             break
         }

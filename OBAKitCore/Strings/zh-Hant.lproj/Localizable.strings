@@ -218,6 +218,10 @@
 
 /* Use for vehicles arriving in X minutes. */
 "formatters.arrives_in_x_min_fmt" = "%d 分鐘後到站";
+"formatters.caption.arrives" = "到達";
+"formatters.caption.departs" = "發車";
+"formatters.caption.arrived" = "已到達";
+"formatters.caption.departed" = "已發車";
 
 /* Use for vehicles arriving now. */
 "formatters.arriving_now" = "進站中";
@@ -339,6 +343,9 @@
 /* Describes an on-time departure. e.g. departed on time. */
 "formatters.deviation.departure_past_on_time" = "已準點離站";
 
+/* Overflowing map-pin route list. The argument is the visible names; U+2026 marks that more routes exist. e.g. '10, 12, 49…' */
+"formatters.map_routes_overflow_fmt" = "%@……";
+
 /* Short formatted time text for arrivals/departures occurring now. */
 "formatters.now" = "現在";
 
@@ -422,6 +429,9 @@
 
 /* Title for the schedule/timetable feature tip */
 "schedule_tip.title" = "檢視您路線的時刻表";
+
+/* Shown on a Live Activity when ActivityKit marks it stale (no recent update). */
+"live_activity.stale_warning" = "此資料可能已過期。";
 
 /* Shown in place of the minutes countdown when the vehicle is departing now */
 "stop_page.countdown.now" = "現在";

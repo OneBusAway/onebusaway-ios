@@ -14,8 +14,7 @@ import UIKit
 /// Where the camera goes while a sheet owns the bottom of the screen.
 ///
 /// An extension rather than more of `MapViewController`: framing is one concern
-/// with one shared question — which part of the map is still visible — and the
-/// class it hangs off is already at SwiftLint's body-length ceiling.
+/// with one shared question — which part of the map is still visible.
 extension MapViewController {
 
     /// Keeps the tapped stop visible in the strip of map above the sheet. Without

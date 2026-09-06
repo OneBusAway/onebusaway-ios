@@ -31,6 +31,9 @@ struct DepartureRowView: View {
     let canAlarm: Bool
     let onAlarmToggle: () -> Void
     var style: Style = .normal
+    /// True when this row is the rider's inbound transfer trip and should
+    /// read as visually selected (background tint is applied by the list).
+    var isTransferHighlight: Bool = false
     let onTap: () -> Void
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -88,6 +91,14 @@ struct DepartureRowView: View {
             }
         }
         .opacity(dimmed ? 0.55 : 1.0)
+        .overlay(alignment: .leading) {
+            if isTransferHighlight {
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(Color(uiColor: ThemeColors.shared.brand))
+                    .frame(width: 4)
+                    .padding(.vertical, 4)
+            }
+        }
         .contentShape(Rectangle())
         .onTapGesture(perform: onTap)
         .accessibilityElement(children: .ignore)
@@ -168,12 +179,17 @@ struct DepartureRowView: View {
         CountdownView(
             minutes: departure.arrivalDepartureMinutes,
             isRealTime: status.isRealTime,
-            color: dimmed ? Color(uiColor: .tertiaryLabel) : Color(uiColor: status.color)
+            color: dimmed ? Color(uiColor: .tertiaryLabel) : Color(uiColor: status.color),
+            caption: formatters.arrivalDepartureCaption(for: departure.arrivalDepartureStatus, temporalState: departure.temporalState)
         )
     }
 
     private var accessibilityText: String {
         var extras: [String] = []
+
+        if isTransferHighlight {
+            extras.append(OBALoc("stop_page.row.a11y_transfer_trip", value: "your transfer trip", comment: "VoiceOver clause appended to a departure row that matches the rider's inbound transfer trip."))
+        }
 
         if style == .missed {
             extras.append(OBALoc("stop_page.row.a11y_missed", value: "likely missed — departs sooner than your walk to the stop", comment: "VoiceOver clause appended to a departure row that's upcoming but not reachable on foot before it leaves."))
@@ -198,8 +214,13 @@ struct DepartureRowView: View {
             let fmt = OBALoc("stop_page.row.a11y_past_fmt", value: "Route %@ to %@, departed %d minutes ago, %@", comment: "VoiceOver label for a departure row that has already departed: route, headsign, minutes ago, status.")
             return String(format: fmt, departure.routeShortName, departure.tripHeadsign ?? "", abs(departure.arrivalDepartureMinutes), status.accessibilityStatusDescription)
         case .normal, .missed:
-            let fmt = OBALoc("stop_page.row.a11y_fmt", value: "Route %@ to %@, departs in %d minutes, %@", comment: "VoiceOver label for a departure row: route, headsign, minutes, status.")
-            return String(format: fmt, departure.routeShortName, departure.tripHeadsign ?? "", departure.arrivalDepartureMinutes, status.accessibilityStatusDescription)
+            return StopPageAccessibilityCopy.upcomingIdentity(
+                routeShortName: departure.routeShortName,
+                headsign: departure.tripHeadsign ?? "",
+                minutes: departure.arrivalDepartureMinutes,
+                arrivalDepartureStatus: departure.arrivalDepartureStatus,
+                adherence: status.accessibilityStatusDescription
+            )
         }
     }
 }
@@ -243,7 +264,7 @@ extension View {
                     Label(Strings.addBookmark, systemImage: "bookmark")
                 }
                 Button(action: actions.onShareTrip) {
-                    Label(OBALoc("stop_page.row.share_trip", value: "Share Trip", comment: "Context menu action that shares the trip after choosing a destination stop"), systemImage: "square.and.arrow.up")
+                    Label(Strings.shareTrip, systemImage: "square.and.arrow.up")
                 }
             }, preview: {
                 actions.makePreview()

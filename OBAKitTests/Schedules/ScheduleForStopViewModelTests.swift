@@ -191,4 +191,22 @@ final class ScheduleForStopViewModelTests: OBATestCase {
 
         #expect(viewModel.scheduleData == nil)
     }
+
+    /// `.task(id:)` cancels the in-flight fetch when the date changes.
+    /// `URLSession` throws `URLError.cancelled`, which must not become the
+    /// visible error or the replacement fetch shows "Unable to load".
+    @Test @MainActor
+    func `Cancelled fetch does not set error`() async {
+        let dataLoader = MockDataLoader(testName: name)
+        stubScheduleForStop(dataLoader: dataLoader)
+        let app = createApplication(dataLoader: dataLoader)
+        let viewModel = ScheduleForStopViewModel(stopID: stopID, application: app)
+
+        let task = Task { await viewModel.fetchSchedule() }
+        task.cancel()
+        await task.value
+
+        #expect(viewModel.error == nil)
+        #expect(viewModel.scheduleData == nil)
+    }
 }

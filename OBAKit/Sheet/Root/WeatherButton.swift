@@ -10,8 +10,9 @@
 import SwiftUI
 import OBAKitCore
 
-/// Floating temperature pill rendered over `MapPanelRootView`'s map. Hidden when
-/// the forecast is unavailable so the overlay reserves no space.
+/// Floating weather control rendered over `MapPanelRootView`'s map: condition
+/// SF Symbol plus temperature. Hidden when the forecast is unavailable so the
+/// overlay reserves no space.
 struct WeatherButton: View {
     let display: WeatherDisplay?
     let onTap: (WeatherDisplay) -> Void
@@ -21,11 +22,15 @@ struct WeatherButton: View {
             Button {
                 onTap(display)
             } label: {
-                Text(display.buttonTitle)
-                    .font(.body.bold())
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .contentShape(Capsule())
+                HStack {
+                    Image(systemName: WeatherFormatter.systemImageName(for: display.header.iconName))
+                        .accessibilityHidden(true)
+                    Text(display.buttonTitle)
+                }
+                .font(.body.bold())
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .contentShape(Capsule())
             }
             .regularGlassEffectIfAvailable()
             .buttonStyle(.plain)
@@ -36,7 +41,7 @@ struct WeatherButton: View {
                     comment: "Accessibility label for a button that provides the current forecast"
                 ))
             )
-            .accessibilityValue(Text(display.buttonTitle))
+            .accessibilityValue(Text(display.buttonAccessibilityValue))
         }
     }
 }

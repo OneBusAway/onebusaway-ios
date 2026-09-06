@@ -22,7 +22,6 @@ class ScheduleForRouteViewController: UIHostingController<ScheduleForRouteView> 
         let rootView = ScheduleForRouteView(routeID: routeID, application: application)
         super.init(rootView: rootView)
 
-        // Configure modal presentation
         modalPresentationStyle = .pageSheet
     }
 

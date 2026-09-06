@@ -198,14 +198,11 @@ nonisolated struct ArrivalDepartureContentConfiguration: OBAContentConfiguration
 
     var accessibilityScheduleDeviationText: String? {
         guard let formatters = formatters else { return nil }
-        if viewModel.scheduleStatus == .unknown {
-            return Strings.scheduledNotRealTime
-        } else {
-            return formatters.formattedScheduleDeviation(
-                temporalState: viewModel.temporalState,
-                arrivalDepartureStatus: viewModel.arrivalDepartureStatus,
-                scheduleDeviation: viewModel.deviationFromScheduleInMinutes)
-        }
+        return formatters.deviationLabel(
+            scheduleStatus: viewModel.scheduleStatus,
+            temporalState: viewModel.temporalState,
+            arrivalDepartureStatus: viewModel.arrivalDepartureStatus,
+            scheduleDeviation: viewModel.deviationFromScheduleInMinutes)
     }
 
     var accessibilityScheduleDeviationLabelTextColor: UIColor? {

@@ -10,6 +10,7 @@
 import SwiftUI
 import MapKit
 import OBAKitCore
+import OTPKit
 
 // MARK: - AppSheetViewFactory
 
@@ -24,6 +25,8 @@ import OBAKitCore
 final class AppSheetViewFactory {
 
     let application: Application
+    let mapViewModel: MapViewModel
+    let layersModel: MapPanelLayersModel
     let onPresentTrip: (ArrivalDeparture) -> Void
     /// Resolves the controller a UIKit modal should be presented from.
     ///
@@ -54,6 +57,8 @@ final class AppSheetViewFactory {
     /// appearing to do nothing.
     init(
         application: Application,
+        mapViewModel: MapViewModel,
+        layersModel: MapPanelLayersModel,
         onPresentTrip: @escaping (ArrivalDeparture) -> Void,
         onPresentVehicleTrip: @escaping (VehicleStatus) -> Void,
         presentingController: @escaping () -> UIViewController?,
@@ -62,6 +67,8 @@ final class AppSheetViewFactory {
         stopsObserver: MapStopsObserver
     ) {
         self.application = application
+        self.mapViewModel = mapViewModel
+        self.layersModel = layersModel
         self.onPresentTrip = onPresentTrip
         self.onPresentVehicleTrip = onPresentVehicleTrip
         self.presentingController = presentingController
@@ -129,6 +136,15 @@ final class AppSheetViewFactory {
 
         case .currentTrip(let route):
             currentTripView(route: route)
+
+        case .rentalDetail(let rentalID):
+            rentalDetailView(rentalID: rentalID)
+
+        case .rentalCluster(let memberIDs):
+            rentalClusterView(memberIDs: memberIDs)
+
+        case .mapSettings:
+            mapSettingsView()
         }
     }
 
@@ -184,6 +200,81 @@ final class AppSheetViewFactory {
             formatters: self.application.formatters,
             onPresentTrip: onPresentTrip
         )
+    }
+
+    /// The Map sheet, shared verbatim with `MapViewController`. Its own doc
+    /// comment calls it "the single canonical place riders turn layers on and
+    /// off" — so the panel reuses it rather than growing a parallel surface.
+    func mapSettingsView() -> MapSheetView {
+        MapSheetView(model: MapSheetModel(
+            mapRegionManager: self.application.mapRegionManager,
+            mapViewModel: self.mapViewModel
+        ))
+    }
+
+    /// Resolves the id to a live model, so a vehicle that leaves the feed while
+    /// the sheet is open reads as gone rather than as a stale row.
+    ///
+    /// `onPlanTrip` is nil: the panel has no trip planner to route into. See
+    /// the doc comment on `RentalDetailView.onPlanTrip`.
+    @ViewBuilder
+    func rentalDetailView(rentalID: VehicleRental.ID) -> some View {
+        if let rental = layersModel.rental(withID: rentalID) {
+            RentalDetailView(
+                rental: rental,
+                fetchedAt: layersModel.rentalFetchedAt,
+                staleAfter: layersModel.rentalStaleAfter,
+                userLocation: layersModel.rentalUserLocation,
+                onPlanTrip: nil,
+                onOpenURL: openRentalURL
+            )
+        } else {
+            rentalUnavailableView
+        }
+    }
+
+    @ViewBuilder
+    func rentalClusterView(memberIDs: [VehicleRental.ID]) -> some View {
+        let rentals = layersModel.rentals(withIDs: memberIDs)
+        if rentals.isEmpty {
+            rentalUnavailableView
+        } else {
+            RentalClusterListView(
+                rentals: rentals,
+                fetchedAt: layersModel.rentalFetchedAt,
+                staleAfter: layersModel.rentalStaleAfter,
+                userLocation: layersModel.rentalUserLocation,
+                onPlanTrip: nil,
+                onOpenURL: openRentalURL
+            )
+        }
+    }
+
+    /// Opens a rental's deep link, falling back to the operator's web URL when
+    /// no installed app claims the scheme. Shared by both rental sheets, which
+    /// must behave identically — the cluster list is just a way of reaching the
+    /// same vehicle.
+    private var openRentalURL: (URL, URL?, String?) -> Void {
+        { [weak application] url, webFallback, _ in
+            guard let application else { return }
+            application.open(url, options: [:]) { success in
+                guard !success, let webFallback else { return }
+                application.open(webFallback, options: [:], completionHandler: nil)
+            }
+        }
+    }
+
+    /// Shown when a rental route outlives the vehicle it points at — the feed
+    /// dropped it while the sheet was open.
+    private var rentalUnavailableView: some View {
+        Text(OBALoc(
+            "map_layers.rental_unavailable",
+            value: "Not available right now",
+            comment: "Reason shown on a dimmed rental layer row when its server is unreachable"
+        ))
+        .font(.headline)
+        .foregroundStyle(.secondary)
+        .padding()
     }
 
     func mapItemView(mapItem: MKMapItem) -> MapItemSheetView {

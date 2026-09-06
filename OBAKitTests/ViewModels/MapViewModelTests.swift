@@ -195,31 +195,45 @@ final class MapViewModelTests: OBATestCase {
 
     // MARK: - Map Type
 
-    /// `toggleMapType()` flips the published `mapType` between `.standard` and `.hybrid`
-    /// and persists the selection through `MapRegionManager` so a later launch
-    /// (or the UIKit path) reads the same value.
+    /// The Map sheet's basemap tiles call `setMapType` directly; the old
+    /// two-way toggle is gone from both surfaces.
     @Test @MainActor
-    func `Toggle map type flips and publishes and persists`() {
+    func `Setting the map type persists it through the region manager`() {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader)
+
+        let viewModel = MapViewModel(application: app)
+        viewModel.setMapType(.satellite)
+
+        #expect(viewModel.mapType == .satellite)
+        #expect(app.mapRegionManager.userSelectedMapType == MapBaseType.satellite.mkMapType)
+    }
+
+    /// The `guard newType != mapType` in `setMapType(_:)` exists to suppress a
+    /// redundant `$mapType` emission — every UIKit sink on it rebuilds the map
+    /// type button and rewrites `mapView.mapType`. Asserting the value is
+    /// unchanged would pass with or without the guard, so this observes the
+    /// publisher instead.
+    @Test @MainActor
+    func `Setting the same map type publishes nothing`() {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
 
         let viewModel = MapViewModel(application: app)
         #expect(viewModel.mapType == .standard)
 
-        var observed: [MapBaseType] = []
-        let cancellable = viewModel.$mapType.sink { observed.append($0) }
+        var emissions: [MapBaseType] = []
+        // `dropFirst()` skips the CurrentValueSubject-style replay of the
+        // value already held, leaving only genuine changes.
+        let cancellable = viewModel.$mapType.dropFirst().sink { emissions.append($0) }
         defer { cancellable.cancel() }
 
-        viewModel.toggleMapType()
-        #expect(viewModel.mapType == .hybrid)
-        #expect(app.mapRegionManager.userSelectedMapType == .hybrid)
+        viewModel.setMapType(.standard)
+        #expect(emissions.isEmpty)
 
-        viewModel.toggleMapType()
-        #expect(viewModel.mapType == .standard)
-        #expect(app.mapRegionManager.userSelectedMapType == .mutedStandard)
-
-        // Initial value + two toggles.
-        #expect(observed == [.standard, .hybrid, .standard])
+        // A real change still publishes, so the guard is not swallowing everything.
+        viewModel.setMapType(.satellite)
+        #expect(emissions == [.satellite])
     }
 
     /// An external mutation of `MapRegionManager.userSelectedMapType`
@@ -234,7 +248,7 @@ final class MapViewModelTests: OBATestCase {
         let viewModel = MapViewModel(application: app)
         #expect(viewModel.mapType == .standard)
 
-        // External mutation — bypasses `toggleMapType()` entirely, simulating
+        // External mutation — bypasses `setMapType(_:)` entirely, simulating
         // the UIKit path or an out-of-VM defaults edit.
         app.mapRegionManager.userSelectedMapType = .hybrid
 

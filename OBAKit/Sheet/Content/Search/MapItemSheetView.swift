@@ -64,9 +64,10 @@ struct MapItemSheetView: View {
                     dismiss: { dismiss() }
                 ),
                 removePinHandler: nil,
-                // No trip-planner route on this surface yet. `nil` hides the button
-                // rather than rendering one that does nothing; wire it up when the
-                // trip planner lands here.
+                // Map-panel mode has no classic `MapViewController` to present the
+                // OTP trip planner on. Leave `nil` so the Plan Trip button stays
+                // hidden rather than shipping a no-op; wire when the panel can
+                // host the planner (see #883 / StopPageActionPresenter).
                 planTripHandler: nil
             )
         }

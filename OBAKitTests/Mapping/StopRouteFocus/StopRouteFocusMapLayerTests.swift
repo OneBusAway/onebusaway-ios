@@ -446,6 +446,34 @@ final class StopRouteFocusMapLayerTests {
         }
     }
 
+    @Test func `Update adds direction arrows once per route shape`() async {
+        let mapView = MKMapView()
+        let layer = makeLayer(mapView: mapView)
+        layer.begin(focus: StopMapFocus())
+
+        layer.update(model: model(routeIDs: ["H"], vehicleRouteIDs: []))
+        await layer.awaitPendingShapeWork()
+
+        let arrows = mapView.annotations.compactMap { $0 as? PolylineArrowAnnotation }
+        #expect(!arrows.isEmpty)
+        #expect(arrows.allSatisfy { $0.routeID == "H" })
+    }
+
+    @Test func `Direction arrows dim with their unfocused route`() async {
+        let mapView = MKMapView()
+        let layer = makeLayer(mapView: mapView)
+        let focus = StopMapFocus()
+        layer.begin(focus: focus)
+        layer.update(model: model(routeIDs: ["H", "62"], vehicleRouteIDs: ["H", "62"]))
+        await layer.awaitPendingShapeWork()
+
+        focus.toggleFocus(routeID: "H")
+
+        let arrows = mapView.annotations.compactMap { $0 as? PolylineArrowAnnotation }
+        #expect(arrows.filter { $0.routeID == "H" }.allSatisfy { $0.alpha == 1 })
+        #expect(arrows.filter { $0.routeID == "62" }.allSatisfy { $0.alpha < 1 })
+    }
+
     @Test func `end removes everything the layer added`() async {
         let mapView = MKMapView()
         let layer = makeLayer(mapView: mapView)
