@@ -39,14 +39,12 @@ enum StopAnnotationSync {
     ) -> Changes {
         let wantedBookmarkIDs = Set(bookmarksByStopID.values)
         let existingBookmarkIDs = Set(existingBookmarks.map(\.id))
-        let selectedBookmarkIDs = Set(
-            existingBookmarks
-                .filter { selectedStopIDs.contains($0.stopID) }
-                .map(\.id)
-        )
 
-        var bookmarkIDsToRemove = existingBookmarkIDs.subtracting(wantedBookmarkIDs)
-        bookmarkIDsToRemove.subtract(selectedBookmarkIDs)
+        // Identity diff only — deleted bookmark, or a different bookmark now
+        // representing this stop. Do not exempt selection here; open-callout
+        // protection lives in `MapRegionManager` via
+        // `affectedStopIDs.subtract(selectedBookmarkStopIDs)`.
+        let bookmarkIDsToRemove = existingBookmarkIDs.subtracting(wantedBookmarkIDs)
         let bookmarkIDsToAdd = wantedBookmarkIDs.subtracting(existingBookmarkIDs)
 
         let bookmarkedStopIDs = Set(bookmarksByStopID.keys)

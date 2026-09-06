@@ -685,10 +685,10 @@ public class MapRegionManager: NSObject,
         mapView.addAnnotations(stops.filter { changes.stopIDsToAdd.contains($0.id) })
 
         // A bookmark↔stop identity change still needs the surviving view rebound.
-        // Skip selected bookmarks: rebinding dismisses an open callout (#1266).
-        var affectedStopIDs = changes.stopIDsToRemove.union(
-            Set(bookmarksToRemove.map(\.stopID))
-        )
+        // Only the identity-diff stop IDs — not viewport removals (those annotations
+        // are already gone, so scanning for them is wasted main-thread work on every
+        // pan). Skip selected bookmarks: rebinding dismisses an open callout (#1266).
+        var affectedStopIDs = Set(bookmarksToRemove.map(\.stopID))
         let selectedBookmarkStopIDs = Set(mapView.selectedAnnotations.compactMap { ($0 as? Bookmark)?.stopID })
         affectedStopIDs.subtract(selectedBookmarkStopIDs)
 
@@ -717,8 +717,9 @@ public class MapRegionManager: NSObject,
                 continue
             }
 
-            // `prepareForReuse` is for views leaving the map. Calling it on a
-            // live pin clears the icon and is what the rider sees as a reset.
+            // Re-apply presentation after identity rebinding. The icon flash this
+            // PR removes came from MapKit recycling views on unnecessary re-adds,
+            // not from `prepareForReuse` (which only clears the label stack).
             view.annotation = annotation
             view.delegate = self
             view.applyPresentation()

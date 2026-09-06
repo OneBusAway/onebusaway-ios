@@ -98,4 +98,39 @@ struct StopAnnotationSyncTests {
         #expect(changes.bookmarkIDsToAdd.isEmpty)
         #expect(changes.bookmarkIDsToRemove.isEmpty)
     }
+
+    /// Deleting a bookmark whose pin is selected must still remove it. Exempting
+    /// selection from the identity-diff removal set left a stale bookmark pin and
+    /// let a Stop reappear underneath (#1306 review).
+    @Test func `A selected bookmark that was deleted is still removed`() {
+        let changes = StopAnnotationSync.changes(
+            existingStopIDs: [],
+            existingBookmarks: [.init(id: bookmarkA, stopID: "1")],
+            incomingStopIDs: ["1"],
+            bookmarksByStopID: [:],
+            selectedStopIDs: ["1"],
+            isStopsLayerEnabled: true
+        )
+
+        #expect(changes.bookmarkIDsToRemove == [bookmarkA])
+        #expect(changes.stopIDsToAdd == ["1"])
+        #expect(changes.bookmarkIDsToAdd.isEmpty)
+    }
+
+    /// Replacing the bookmark that represents a stop must remove the old ID even
+    /// while that pin is selected — otherwise two bookmark pins share one stop.
+    @Test func `A selected bookmark that was replaced is still removed`() {
+        let changes = StopAnnotationSync.changes(
+            existingStopIDs: [],
+            existingBookmarks: [.init(id: bookmarkA, stopID: "1")],
+            incomingStopIDs: ["1"],
+            bookmarksByStopID: ["1": bookmarkB],
+            selectedStopIDs: ["1"],
+            isStopsLayerEnabled: true
+        )
+
+        #expect(changes.bookmarkIDsToRemove == [bookmarkA])
+        #expect(changes.bookmarkIDsToAdd == [bookmarkB])
+        #expect(changes.stopIDsToAdd.isEmpty)
+    }
 }
