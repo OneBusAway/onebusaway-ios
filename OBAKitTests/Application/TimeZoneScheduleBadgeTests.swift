@@ -9,6 +9,7 @@
 
 import Foundation
 import Testing
+@testable import OBAKit
 @testable import OBAKitCore
 
 /// Pins #332: clock times follow the transit region's zone, and the badge
@@ -210,5 +211,73 @@ struct TimeZoneScheduleBadgeTests {
         // someone reverts synthesis to Calendar.current while OBATestCase has
         // pinned GMT and both zones accidentally cancel out.
         #expect(buggyClock != formatters.timeFormatter.string(from: fixedDate))
+    }
+}
+
+/// Pins Aaron's #1308 follow-up: a failed / empty agencies-with-coverage
+/// lookup must reset `formatters.timeZone` to the device zone, not leave the
+/// previous region's zone stuck (and mis-badged) for the session.
+@Suite(.serialized)
+final class FormattersTimeZoneRefreshTests: OBATestCase {
+    var queue: OperationQueue!
+
+    override init() async throws {
+        try await super.init()
+        queue = OperationQueue()
+        queue.maxConcurrentOperationCount = 1
+    }
+
+    isolated deinit {
+        queue.cancelAllOperations()
+    }
+
+    @Test @MainActor
+    func `Opt-in refresh resets previous region zone when agencies do not resolve`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        stubRegions(dataLoader: dataLoader)
+
+        // Empty list → preferredScheduleTimeZone returns nil (no resolvable IANA).
+        let emptyCoverage = Data("""
+        {"code":200,"currentTime":1,"data":{"limitExceeded":false,"list":[],"references":{"agencies":[],"routes":[],"situations":[],"stops":[],"trips":[]}},"text":"OK","version":2}
+        """.utf8)
+        let host = Fixtures.pugetSoundRegion.OBABaseURL.absoluteString
+        dataLoader.mock(
+            URLString: "\(host)api/where/agencies-with-coverage.json",
+            with: emptyCoverage
+        )
+
+        let locManager = MockAuthorizedLocationManager(
+            updateLocation: TestData.mockSeattleLocation,
+            updateHeading: TestData.mockHeading
+        )
+        let locationService = LocationService(userDefaults: userDefaults, locationManager: locManager)
+        let config = AppConfig(
+            regionsBaseURL: regionsURL,
+            apiKey: apiKey,
+            appVersion: appVersion,
+            userDefaults: userDefaults,
+            analytics: AnalyticsMock(),
+            queue: queue,
+            locationService: locationService,
+            bundledRegionsFilePath: bundledRegionsPath,
+            regionsAPIPath: regionsAPIPath,
+            dataLoader: dataLoader,
+            fixedRegionName: Fixtures.pugetSoundRegion.name
+        )
+        let app = Application(config: config)
+
+        let previousRegion = try #require(TimeZone(identifier: "America/Los_Angeles"))
+        app.formatters.timeZone = previousRegion
+        #expect(app.formatters.timeZone.identifier == previousRegion.identifier)
+
+        app.setShowRegionTimeZone(true)
+
+        // Reset must happen up front — not only on successful resolution —
+        // otherwise a nil/failed lookup leaves the previous zone stuck.
+        #expect(app.formatters.timeZone == .current)
+
+        // Let the unstructured Task settle; empty coverage must not re-stick LA.
+        try await Task.sleep(nanoseconds: 250_000_000)
+        #expect(app.formatters.timeZone == .current)
     }
 }

@@ -5,7 +5,7 @@ region's zone instead of the phone's.
 
 A rider in Taipei looking at Puget Sound used to see 4:00 PM when the bus
 leaves at noon Pacific. #332 asks for Pacific noon, with a short zone badge
-only when the phone's offset differs. Aaron required this to be opt-in
+only when the phone's offset differs. Review required this to be opt-in
 (same ask that blocked #1102 from shipping default-on).
 
 ## Settings
@@ -20,8 +20,8 @@ only when the phone's offset differs. Aaron required this to be opt-in
 
 PR #1102 appended `TimeZone.NameStyle.shortGeneric`. That style is `PT` /
 `ET` in North America and a long localized name everywhere else
-(`Poland Time`, `United Kingdom Time`) on every arrival row. Aaron closed
-that PR for that reason. This code never uses `.shortGeneric`.
+(`Poland Time`, `United Kingdom Time`) on every arrival row. That PR was
+closed for that reason. This code never uses `.shortGeneric`.
 
 ## Badge
 

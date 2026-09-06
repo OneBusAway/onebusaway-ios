@@ -210,22 +210,41 @@ open class CoreApplication: NSObject,
 
     /// Points `formatters` at the region's dominant agency zone when the rider
     /// has opted in; otherwise keeps (or resets to) the device zone.
+    ///
+    /// Opt-in always resets to the device zone first. A failed / empty
+    /// agencies-with-coverage lookup must not leave the *previous* region's
+    /// zone stuck (and mis-badged) for the rest of the session.
     private func refreshFormattersTimeZone() {
         guard userDefaultsStore.showRegionTimeZone else {
             formatters.timeZone = .current
             return
         }
 
+        // Reset before the async lookup so a nil/failed resolution can't leave
+        // the prior region's zone in place.
+        formatters.timeZone = .current
+
         Task {
+            // Setting may have been turned off while this request was in flight.
+            guard self.userDefaultsStore.showRegionTimeZone else {
+                self.formatters.timeZone = .current
+                return
+            }
             guard let apiService else { return }
             do {
                 let agencies = try await apiService.getAgenciesWithCoverage().list
+                guard self.userDefaultsStore.showRegionTimeZone else {
+                    self.formatters.timeZone = .current
+                    return
+                }
                 let identifiers = agencies.compactMap { $0.agency?.timeZone }
                 if let timeZone = TimeZone.preferredScheduleTimeZone(identifiers: identifiers) {
                     self.formatters.timeZone = timeZone
                 }
+                // else: leave the device-zone reset above in place
             } catch {
                 Logger.info("Unable to resolve region time zone from agencies-with-coverage: \(error)")
+                // Already reset to `.current` above; keep it.
             }
         }
     }
