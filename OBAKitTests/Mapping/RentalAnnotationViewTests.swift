@@ -30,7 +30,7 @@ final class RentalAnnotationViewTests {
     @Test func showsPercentWhenGatedOn() throws {
         let subject = view(for: try RentalFixtures.vehicle(batteryPercent: 0.62), showsFuelLabel: true)
 
-        #expect(subject.fuelLabel.text == "62%")
+        #expect(subject.fuelLabel.attributedText?.string == "62%")
         #expect(subject.fuelLabel.isHidden == false)
     }
 
@@ -44,7 +44,7 @@ final class RentalAnnotationViewTests {
     @Test func hidesLabelWhenThereIsNoFuelData() throws {
         let subject = view(for: try RentalFixtures.vehicle(rangeMeters: nil, batteryPercent: nil), showsFuelLabel: true)
 
-        #expect(subject.fuelLabel.text == nil)
+        #expect(subject.fuelLabel.attributedText == nil || subject.fuelLabel.attributedText?.string.isEmpty == true)
         #expect(subject.fuelLabel.isHidden)
     }
 
@@ -53,14 +53,34 @@ final class RentalAnnotationViewTests {
         #expect(subject.fuelLabel.isHidden)
     }
 
-    @Test func labelIsPurpleWhenOperative() throws {
+    /// #1364: purple + light halo vanishes on dark tiles; white + soft CALayer
+    /// shadow fails on the default mutedStandard basemap. Real outline stroke
+    /// (fill + stroke) stays legible on light and dark tiles alike.
+    @Test func labelUsesWhiteFillWithBlackStrokeWhenOperative() throws {
         let subject = view(for: try RentalFixtures.vehicle(batteryPercent: 0.62, operative: true), showsFuelLabel: true)
-        #expect(subject.fuelLabel.textColor == .rentalPurple)
+        try expectStrokedWhiteFuelLabel(subject.fuelLabel)
     }
 
-    @Test func labelIsGrayWhenNotOperative() throws {
+    @Test func labelUsesWhiteFillWithBlackStrokeWhenNotOperative() throws {
         let subject = view(for: try RentalFixtures.vehicle(batteryPercent: 0.62, operative: false), showsFuelLabel: true)
-        #expect(subject.fuelLabel.textColor == .systemGray)
+        try expectStrokedWhiteFuelLabel(subject.fuelLabel)
+    }
+
+    /// Soft Gaussian shadows are not a substitute for a stroke (#1364 review).
+    @Test func labelDoesNotUseLayerShadowHalo() throws {
+        let subject = view(for: try RentalFixtures.vehicle(batteryPercent: 0.62), showsFuelLabel: true)
+        #expect(subject.fuelLabel.layer.shadowOpacity == 0)
+    }
+
+    private func expectStrokedWhiteFuelLabel(_ label: UILabel) throws {
+        let attributed = try #require(label.attributedText)
+        #expect(attributed.string == "62%")
+        let attrs = attributed.attributes(at: 0, effectiveRange: nil)
+        #expect(attrs[.foregroundColor] as? UIColor == .white)
+        #expect(attrs[.strokeColor] as? UIColor == .black)
+        let strokeWidth = try #require(attrs[.strokeWidth] as? NSNumber)
+        #expect(strokeWidth.doubleValue < 0)
+        #expect(label.layer.shadowOpacity == 0)
     }
 
     /// A visual-clutter rule must not cost a VoiceOver user information: the fuel
@@ -106,7 +126,7 @@ final class RentalAnnotationViewTests {
         let subject = view(for: try RentalFixtures.vehicle(batteryPercent: 0.62), showsFuelLabel: true)
         subject.prepareForReuse()
 
-        #expect(subject.fuelLabel.text == nil)
+        #expect(subject.fuelLabel.attributedText == nil || subject.fuelLabel.attributedText?.string.isEmpty == true)
         #expect(subject.fuelLabel.isHidden)
     }
 
@@ -166,7 +186,7 @@ final class RentalAnnotationViewTests {
     /// regardless of the gate.
     @Test func setShowsFuelLabelKeepsHiddenWhenThereIsNoFuelText() throws {
         let subject = view(for: try RentalFixtures.vehicle(rangeMeters: nil, batteryPercent: nil), showsFuelLabel: false)
-        #expect(subject.fuelLabel.text == nil)
+        #expect(subject.fuelLabel.attributedText == nil || subject.fuelLabel.attributedText?.string.isEmpty == true)
 
         subject.setShowsFuelLabel(true)
         #expect(subject.fuelLabel.isHidden)
