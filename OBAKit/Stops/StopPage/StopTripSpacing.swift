@@ -33,8 +33,9 @@ enum StopTripSpacing {
 
     /// Vertical padding inside one trip-stop timeline row. Compact 6pt
     /// makes a default-size subheadline row ~32pt; the tap target is that
-    /// row, not a 44pt overlay. A 44pt slop on a 32pt `LazyVStack` row
-    /// overlaps the neighbour and opens the wrong stop.
+    /// row. Do not put `.frame(minHeight: 44)` on it — that clamps compact
+    /// and regular to the same height at default Dynamic Type. Canceling
+    /// slop overlaps the neighbour in a `LazyVStack(spacing: 0)`.
     static func stopRowVertical(_ compact: Bool) -> CGFloat { compact ? 6 : 11 }
 
     /// Padding around the trip header card.

@@ -28,6 +28,40 @@ struct TripPageActions {
     var onReportGhostBus: () -> Void = {}
 }
 
+/// Thin hosting wrapper for `TripPageView`. Its only job is to apply
+/// `.defaultAppStorage` so the page's `@AppStorage` reads and writes the
+/// app-group suite (matching Settings / `UserDefaultsStore`) rather than
+/// `UserDefaults.standard`. Without this, compact mode and reduced colors on
+/// the trip page are a no-op — `TripCardView`'s existing
+/// `@AppStorage(stopUIReducedColorsKey)` had the same bug.
+///
+/// It has to be a separate view. `.defaultAppStorage(_:)` only reaches
+/// `@AppStorage` *below* the view it is applied to.
+struct TripPageRootView: View {
+    let viewModel: TripViewModel
+    let userDefaults: UserDefaults
+    let originTitle: String?
+    let actions: TripPageActions
+    var backBehavior: TripPageBackBehavior = .pop
+    var hasAlarm = false
+    var isTrackingLiveActivity = false
+    /// Mutable so `TripPageViewController.setAtTip` can flip it without rebuilding.
+    var isCollapsed = false
+
+    var body: some View {
+        TripPageView(
+            viewModel: viewModel,
+            originTitle: originTitle,
+            actions: actions,
+            backBehavior: backBehavior,
+            hasAlarm: hasAlarm,
+            isTrackingLiveActivity: isTrackingLiveActivity,
+            isCollapsed: isCollapsed
+        )
+        .defaultAppStorage(userDefaults)
+    }
+}
+
 /// The trip page: which vehicle, when it gets to you, and every stop on its way.
 ///
 /// Draws no map. Whatever is showing the map — the stop sheet's, or the
