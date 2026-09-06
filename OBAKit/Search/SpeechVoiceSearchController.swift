@@ -20,6 +20,10 @@ final class SpeechVoiceSearchController: VoiceSearchControlling {
     private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
     private var recognitionTask: SFSpeechRecognitionTask?
     private var continuation: AsyncStream<VoiceSearchEvent>.Continuation?
+    /// Startup work from `start()`. Cancelled in `stop()` so a delayed permission
+    /// response cannot activate the audio session after the caller ended listening —
+    /// same idea as `pendingPresentation` cancellation in `SearchSheetViewModel.close()`.
+    private var beginRecognitionTask: Task<Void, Never>?
 
     init(locale: Locale = .current) {
         self.speechRecognizer = SFSpeechRecognizer(locale: locale)
@@ -31,6 +35,16 @@ final class SpeechVoiceSearchController: VoiceSearchControlling {
         case .denied, .restricted:
             return false
         case .authorized, .notDetermined:
+            break
+        @unknown default:
+            return false
+        }
+        // Hide the mic when the mic itself is permanently denied — speech auth alone
+        // is not enough (design: hide when unavailable or permanently denied).
+        switch AVAudioApplication.shared.recordPermission {
+        case .denied:
+            return false
+        case .granted, .undetermined:
             return true
         @unknown default:
             return false
@@ -47,13 +61,15 @@ final class SpeechVoiceSearchController: VoiceSearchControlling {
                     self?.tearDownEngine()
                 }
             }
-            Task { @MainActor in
+            self.beginRecognitionTask = Task { @MainActor in
                 await self.beginRecognition()
             }
         }
     }
 
     func stop() {
+        beginRecognitionTask?.cancel()
+        beginRecognitionTask = nil
         continuation?.finish()
         continuation = nil
         tearDownEngine()
@@ -63,27 +79,20 @@ final class SpeechVoiceSearchController: VoiceSearchControlling {
 
     private func beginRecognition() async {
         let speechAuthorized = await requestSpeechAuthorization()
+        guard !Task.isCancelled else { return }
         guard speechAuthorized else {
-            yield(.failed(OBALoc(
-                "voice_search.permission_denied",
-                value: "Microphone or speech recognition access is required for voice search.",
-                comment: "Shown when the user denies speech/mic permission for voice search."
-            )))
-            finish()
+            yieldPermissionDenied()
             return
         }
 
         let micAuthorized = await requestMicrophoneAuthorization()
+        guard !Task.isCancelled else { return }
         guard micAuthorized else {
-            yield(.failed(OBALoc(
-                "voice_search.permission_denied",
-                value: "Microphone or speech recognition access is required for voice search.",
-                comment: "Shown when the user denies speech/mic permission for voice search."
-            )))
-            finish()
+            yieldPermissionDenied()
             return
         }
 
+        guard !Task.isCancelled else { return }
         guard let speechRecognizer, speechRecognizer.isAvailable else {
             yield(.failed(OBALoc(
                 "voice_search.unavailable",
@@ -95,33 +104,46 @@ final class SpeechVoiceSearchController: VoiceSearchControlling {
         }
 
         do {
-            try configureAudioSession()
-            let request = SFSpeechAudioBufferRecognitionRequest()
-            request.shouldReportPartialResults = true
-            if #available(iOS 13, *) {
-                request.requiresOnDeviceRecognition = false
-            }
-            recognitionRequest = request
-
-            let inputNode = audioEngine.inputNode
-            let format = inputNode.outputFormat(forBus: 0)
-            inputNode.removeTap(onBus: 0)
-            inputNode.installTap(onBus: 0, bufferSize: 1024, format: format) { buffer, _ in
-                request.append(buffer)
-            }
-
-            audioEngine.prepare()
-            try audioEngine.start()
-
-            recognitionTask = speechRecognizer.recognitionTask(with: request) { [weak self] result, error in
-                Task { @MainActor in
-                    self?.handleRecognition(result: result, error: error)
-                }
-            }
+            try beginAudioCapture(speechRecognizer: speechRecognizer)
         } catch {
             yield(.failed(error.localizedDescription))
             finish()
         }
+    }
+
+    private func beginAudioCapture(speechRecognizer: SFSpeechRecognizer) throws {
+        try configureAudioSession()
+        let request = SFSpeechAudioBufferRecognitionRequest()
+        request.shouldReportPartialResults = true
+        // Cloud recognition by choice: better accuracy for stop/route names than
+        // on-device alone. Audio leaves the device for Apple's speech servers.
+        request.requiresOnDeviceRecognition = false
+        recognitionRequest = request
+
+        let inputNode = audioEngine.inputNode
+        let format = inputNode.outputFormat(forBus: 0)
+        inputNode.removeTap(onBus: 0)
+        inputNode.installTap(onBus: 0, bufferSize: 1024, format: format) { buffer, _ in
+            request.append(buffer)
+        }
+
+        audioEngine.prepare()
+        try audioEngine.start()
+
+        recognitionTask = speechRecognizer.recognitionTask(with: request) { [weak self] result, error in
+            Task { @MainActor in
+                self?.handleRecognition(result: result, error: error)
+            }
+        }
+    }
+
+    private func yieldPermissionDenied() {
+        yield(.failed(OBALoc(
+            "voice_search.permission_denied",
+            value: "Microphone or speech recognition access is required for voice search.",
+            comment: "Shown when the user denies speech/mic permission for voice search."
+        )))
+        finish()
     }
 
     private func handleRecognition(result: SFSpeechRecognitionResult?, error: Error?) {

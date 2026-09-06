@@ -76,7 +76,7 @@ final class SearchSheetViewModel: NSObject, ObservableObject, SearchDelegate {
         pendingPresentation?.cancel()
     }
 
-    /// Hidden when speech recognition cannot run (or was permanently denied).
+    /// Hidden when speech or the microphone cannot run (or was permanently denied).
     var isVoiceSearchAvailable: Bool {
         voiceSearch.isAvailable
     }
@@ -107,7 +107,9 @@ final class SearchSheetViewModel: NSObject, ObservableObject, SearchDelegate {
         query = text
         message = nil
         searchInteractor.searchModeObjects(text: text)
-        if text.isEmpty {
+        // Any UI edit (clear or type) stops the mic — otherwise the next partial
+        // overwrites what the rider just typed.
+        if isListening {
             stopVoiceSearch()
         }
     }
@@ -149,6 +151,9 @@ final class SearchSheetViewModel: NSObject, ObservableObject, SearchDelegate {
 
         voiceTask = Task { [weak self] in
             guard let self else { return }
+            // `stopVoiceSearch()` may have cancelled us before we first ran — same
+            // race `pendingPresentation` guards against in `close()`.
+            guard !Task.isCancelled else { return }
             for await event in self.voiceSearch.start() {
                 guard !Task.isCancelled else { break }
                 switch event {
@@ -159,7 +164,9 @@ final class SearchSheetViewModel: NSObject, ObservableObject, SearchDelegate {
                     self.updateQueryPreservingListen(text)
                     let request = VoiceSearchQueryClassifier.request(from: text)
                     guard !request.query.isEmpty else { return }
-                    await self.performSearchAndWait(request: request)
+                    // Go through `performSearch` so an in-flight keyboard `searchTask`
+                    // is cancelled instead of presenting stale results over voice.
+                    self.performSearch(request: request)
                 case .failed(let text):
                     self.isListening = false
                     self.message = SearchSheetMessage(kind: .error, text: text)

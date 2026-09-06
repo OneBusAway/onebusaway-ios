@@ -71,6 +71,22 @@ struct VoiceSearchQueryClassifierTests {
     }
 
     @Test
+    func `Route cue preserves remainder case`() {
+        let request = VoiceSearchQueryClassifier.request(from: "Route Rapid Ride D")
+
+        #expect(request.searchType == .route)
+        #expect(request.query == "Rapid Ride D")
+    }
+
+    @Test
+    func `Route cue with punctuation strips the separator`() {
+        let request = VoiceSearchQueryClassifier.request(from: "route: 40")
+
+        #expect(request.searchType == .route)
+        #expect(request.query == "40")
+    }
+
+    @Test
     func `Business is not treated as a bus cue`() {
         let request = VoiceSearchQueryClassifier.request(from: "business district")
 
