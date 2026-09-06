@@ -595,17 +595,10 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
         // with two Lock Screen cards and two OBACloud push registrations. Re-Track
         // still needs to promote the existing activity: after A→B the Island is
         // on B with A demoted to 0, so tapping Track on A again must bump A.
-        if let existing = Activity<TripAttributes>.running(matching: staticData) {
-            Logger.info("Live Activity already running for stop \(staticData.stopID) route \(staticData.routeShortName); promoting instead of duplicating.")
-            let existingID = existing.id
-            Task {
-                await Activity<TripAttributes>.promoteToDynamicIsland(activityID: existingID)
-            }
-            // Re-show the confirmation rather than appearing to do nothing.
-            viewModel.signalLiveActivityStarted()
-            return
-        }
-
+        // Built before the duplicate check so a re-Track can install it: the rider
+        // has asked for this trip while the app holds current arrivals, and the
+        // running card would otherwise keep whatever the last push left (#1390).
+        //
         // Always yields content: the matching builder falls back to `departure`
         // itself when the stop list is stale or hasn't loaded yet, so there is
         // no failure branch to take here.
@@ -613,6 +606,20 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
             from: viewModel.stopArrivals?.arrivalsAndDepartures ?? [],
             matching: departure
         )
+
+        if let existing = Activity<TripAttributes>.running(matching: staticData) {
+            Logger.info("Live Activity already running for stop \(staticData.stopID) route \(staticData.routeShortName); promoting instead of duplicating.")
+            let existingID = existing.id
+            Task {
+                await Activity<TripAttributes>.promoteToDynamicIsland(
+                    activityID: existingID,
+                    state: contentState
+                )
+            }
+            // Re-show the confirmation rather than appearing to do nothing.
+            viewModel.signalLiveActivityStarted()
+            return
+        }
 
         do {
             let activity = try Activity<TripAttributes>.requestProminent(

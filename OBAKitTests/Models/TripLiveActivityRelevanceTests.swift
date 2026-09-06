@@ -89,6 +89,31 @@ final class TripLiveActivityRelevanceTests {
         #expect(promoted.relevanceScore == 7)
     }
 
+    /// The two halves of a promotion's stale handling (#1390). A score-only
+    /// re-Track leaves the content alone, so dropping the push-set marker would
+    /// leave a stale card looking live until the next push. Installing fresh
+    /// arrivals inverts that: the existing date was set for content that no
+    /// longer exists, and carrying it forward could mark the new arrivals stale
+    /// the moment they land.
+    @Test func `A promotion keeps the stale marker only when content is unchanged`() {
+        let pushSet = Date(timeIntervalSince1970: 1_700_000_200)
+
+        #expect(
+            TripLiveActivityRelevance.promotionStaleDate(installing: nil, existing: pushSet) == pushSet,
+            "A score-only promotion must carry the push-set marker through"
+        )
+
+        let fresh = TripAttributes.ContentState(arrivals: [])
+        #expect(
+            TripLiveActivityRelevance.promotionStaleDate(installing: fresh, existing: pushSet) == nil,
+            "Fresh content must not inherit the previous content's stale date"
+        )
+
+        // Nothing to carry is still nothing, either way.
+        #expect(TripLiveActivityRelevance.promotionStaleDate(installing: nil, existing: nil) == nil)
+        #expect(TripLiveActivityRelevance.promotionStaleDate(installing: fresh, existing: nil) == nil)
+    }
+
     /// Pins the refresh path used by `updateRunningLiveActivities`: the new
     /// content state may change, but the score must come from the *existing*
     /// content — not a literal, and not the ActivityContent default of `0`.
