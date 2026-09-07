@@ -1690,3 +1690,20 @@
 
 /* VoiceOver label for the wind speed stat on the weather card. */
 "weather.stat.wind" = "Velocidad del viento";
+
+/* Trip page button that sets a get-off alert for the rider's destination stop. */
+"trip_page.add_get_off_alert" = "Notify me";
+/* Trip page button that removes an active get-off alert. */
+"trip_page.remove_get_off_alert" = "Remove alert";
+/* Toast shown when a get-off alert is successfully armed. */
+"trip_page.get_off_alert_set" = "Alert set";
+/* Error shown when a get-off alert cannot be set because the app only has 'While Using' location access. */
+"get_off_alert.error.needs_always_location" = "To alert you when your stop is coming up, allow location access \"Always\" in Settings.";
+/* Error shown when a get-off alert cannot be set because notification permission is denied. */
+"get_off_alert.error.needs_notifications" = "To alert you when your stop is coming up, allow notifications for this app in Settings.";
+/* Error shown when the geofence region limit is reached and the alert cannot be armed. */
+"get_off_alert.error.region_limit" = "Too many alerts are active. Remove an existing alert and try again.";
+/* Title of the notification shown when the rider is approaching their destination stop. */
+"get_off_alert.notification.title" = "Time to get off";
+/* Body of the get-off alert notification. %@ is the name of the rider's destination stop. */
+"get_off_alert.notification.body_fmt" = "Your stop, %@, is coming up.";
