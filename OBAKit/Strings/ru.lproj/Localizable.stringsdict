@@ -2,6 +2,26 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>alarm_builder_controller.minutes_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>%d минуты</string>
+			<key>many</key>
+			<string>%d минут</string>
+			<key>one</key>
+			<string>%d минута</string>
+			<key>other</key>
+			<string>%d минуты</string>
+		</dict>
+	</dict>
 	<key>data_migration_bulletin.report_summary_number_of_failures</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -12,12 +32,12 @@
 			<string>NSStringPluralRuleType</string>
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
-			<key>one</key>
-			<string>%d сбой</string>
 			<key>few</key>
 			<string>%d сбоя</string>
 			<key>many</key>
 			<string>%d сбоев</string>
+			<key>one</key>
+			<string>%d сбой</string>
 			<key>other</key>
 			<string>%d сбоя</string>
 		</dict>
@@ -32,12 +52,12 @@
 			<string>NSStringPluralRuleType</string>
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
-			<key>one</key>
-			<string>%d успешный перенос</string>
 			<key>few</key>
 			<string>%d успешных переноса</string>
 			<key>many</key>
 			<string>%d успешных переносов</string>
+			<key>one</key>
+			<string>%d успешный перенос</string>
 			<key>other</key>
 			<string>%d успешного переноса</string>
 		</dict>
@@ -52,12 +72,12 @@
 			<string>NSStringPluralRuleType</string>
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
-			<key>one</key>
-			<string>включён %2$d слой</string>
 			<key>few</key>
 			<string>включено %2$d слоя</string>
 			<key>many</key>
 			<string>включено %2$d слоёв</string>
+			<key>one</key>
+			<string>включён %2$d слой</string>
 			<key>other</key>
 			<string>включено %2$d слоя</string>
 		</dict>
@@ -72,12 +92,12 @@
 			<string>NSStringPluralRuleType</string>
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
-			<key>one</key>
-			<string>Здесь %d транспортное средство</string>
 			<key>few</key>
 			<string>Здесь %d транспортных средства</string>
 			<key>many</key>
 			<string>Здесь %d транспортных средств</string>
+			<key>one</key>
+			<string>Здесь %d транспортное средство</string>
 			<key>other</key>
 			<string>Здесь %d транспортного средства</string>
 		</dict>
@@ -92,12 +112,12 @@
 			<string>NSStringPluralRuleType</string>
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
-			<key>one</key>
-			<string>%d результат</string>
 			<key>few</key>
 			<string>%d результата</string>
 			<key>many</key>
 			<string>%d результатов</string>
+			<key>one</key>
+			<string>%d результат</string>
 			<key>other</key>
 			<string>%d результата</string>
 		</dict>
@@ -112,12 +132,12 @@
 			<string>NSStringPluralRuleType</string>
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
-			<key>one</key>
-			<string>Показать %d более раннее отправление</string>
 			<key>few</key>
 			<string>Показать %d более ранних отправления</string>
 			<key>many</key>
 			<string>Показать %d более ранних отправлений</string>
+			<key>one</key>
+			<string>Показать %d более раннее отправление</string>
 			<key>other</key>
 			<string>Показать %d более раннего отправления</string>
 		</dict>
@@ -132,14 +152,49 @@
 			<string>NSStringPluralRuleType</string>
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
-			<key>one</key>
-			<string>Нет отправлений в ближайшую %d минуту</string>
 			<key>few</key>
 			<string>Нет отправлений в ближайшие %d минуты</string>
 			<key>many</key>
 			<string>Нет отправлений в ближайшие %d минут</string>
+			<key>one</key>
+			<string>Нет отправлений в ближайшую %d минуту</string>
 			<key>other</key>
 			<string>Нет отправлений в ближайшие %d минуты</string>
+		</dict>
+	</dict>
+	<key>stop_page.grouped.a11y_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Маршрут %1$@ до %2$@, следующее отправление через %3$#@count@, %4$@. Загружено ещё %5$#@departures@.</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>%3$d минуты</string>
+			<key>many</key>
+			<string>%3$d минут</string>
+			<key>one</key>
+			<string>%3$d минуту</string>
+			<key>other</key>
+			<string>%3$d минуты</string>
+		</dict>
+		<key>departures</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>%5$d отправления</string>
+			<key>many</key>
+			<string>%5$d отправлений</string>
+			<key>one</key>
+			<string>%5$d отправление</string>
+			<key>other</key>
+			<string>%5$d отправления</string>
 		</dict>
 	</dict>
 	<key>stop_page.past_toggle_show_a11y_fmt</key>
@@ -152,14 +207,54 @@
 			<string>NSStringPluralRuleType</string>
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
-			<key>one</key>
-			<string>Показать %d прошедшее отправление</string>
 			<key>few</key>
 			<string>Показать %d прошедших отправления</string>
 			<key>many</key>
 			<string>Показать %d прошедших отправлений</string>
+			<key>one</key>
+			<string>Показать %d прошедшее отправление</string>
 			<key>other</key>
 			<string>Показать %d прошедшего отправления</string>
+		</dict>
+	</dict>
+	<key>stop_page.row.a11y_arrives_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Маршрут %1$@ до %2$@, прибытие через %3$#@count@, %4$@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>%3$d минуты</string>
+			<key>many</key>
+			<string>%3$d минут</string>
+			<key>one</key>
+			<string>%3$d минуту</string>
+			<key>other</key>
+			<string>%3$d минуты</string>
+		</dict>
+	</dict>
+	<key>stop_page.row.a11y_past_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Маршрут %1$@ до %2$@, отправился %3$#@count@ назад, %4$@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>%3$d минуты</string>
+			<key>many</key>
+			<string>%3$d минут</string>
+			<key>one</key>
+			<string>%3$d минуту</string>
+			<key>other</key>
+			<string>%3$d минуты</string>
 		</dict>
 	</dict>
 	<key>stop_page.service_alerts.show_all_fmt</key>
@@ -172,12 +267,12 @@
 			<string>NSStringPluralRuleType</string>
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
-			<key>one</key>
-			<string>Показать %d оповещение</string>
 			<key>few</key>
 			<string>Показать все %d оповещения</string>
 			<key>many</key>
 			<string>Показать все %d оповещений</string>
+			<key>one</key>
+			<string>Показать %d оповещение</string>
 			<key>other</key>
 			<string>Показать все %d оповещения</string>
 		</dict>
@@ -192,12 +287,12 @@
 			<string>NSStringPluralRuleType</string>
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
-			<key>one</key>
-			<string>%d сервисное оповещение</string>
 			<key>few</key>
 			<string>%d сервисных оповещения</string>
 			<key>many</key>
 			<string>%d сервисных оповещений</string>
+			<key>one</key>
+			<string>%d сервисное оповещение</string>
 			<key>other</key>
 			<string>%d сервисного оповещения</string>
 		</dict>
@@ -212,14 +307,34 @@
 			<string>NSStringPluralRuleType</string>
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
-			<key>one</key>
-			<string>%d остановка</string>
 			<key>few</key>
 			<string>%d остановки</string>
 			<key>many</key>
 			<string>%d остановок</string>
+			<key>one</key>
+			<string>%d остановка</string>
 			<key>other</key>
 			<string>%d остановки</string>
+		</dict>
+	</dict>
+	<key>trip_page.card.a11y_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Маршрут %1$@ до %2$@, прибытие через %3$#@count@, %4$@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>%3$d минуты</string>
+			<key>many</key>
+			<string>%3$d минут</string>
+			<key>one</key>
+			<string>%3$d минуту</string>
+			<key>other</key>
+			<string>%3$d минуты</string>
 		</dict>
 	</dict>
 </dict>

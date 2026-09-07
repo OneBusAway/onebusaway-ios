@@ -40,7 +40,17 @@ final class LocalizationTests {
         "data_migration_bulletin.report_summary_number_of_successes",
         "map_controller.map_type.accessibility_value_with_layers_fmt",
         "search_results_sheet.result_count_fmt",
-        "rental_cluster.title_fmt"
+        "rental_cluster.title_fmt",
+        // VoiceOver strings that interpolate a minute count. Slavic locales need
+        // one/few/many agreement, so a single plain form is wrong at some counts —
+        // Polish "minut" is right for 5+ and wrong for 1 and 2-4.
+        "stop_page.row.a11y_arrives_fmt",
+        "stop_page.row.a11y_past_fmt",
+        "trip_page.card.a11y_fmt",
+        "alarm_builder_controller.minutes_fmt",
+        // Two counts: the minute countdown (bound to "count", which the well-formedness
+        // check below inspects) and the number of extra departures loaded.
+        "stop_page.grouped.a11y_fmt"
     ]
 
     /// `%@`, `%d`, `%1$@`, `%2$d`, … and the escaped `%%`.
@@ -333,6 +343,46 @@ final class LocalizationTests {
     /// Regression: `MapTypeButton.accessibilityValueText` shipped calling `String(format:)`,
     /// which rendered a Polish count of 5 as `other` ("5 warstwy włączonej") rather than
     /// `many` ("5 warstw włączonych").
+    /// Structure checks only prove the categories exist. This proves the countdown actually
+    /// resolves them: Polish needs "minutę" at 1, "minuty" at 2-4 and "minut" at 5+, and the
+    /// plain string these keys used to carry was stuck on the 5+ form at every count.
+    ///
+    /// Note this must use `String.localizedStringWithFormat`, not `String(format:)` — the
+    /// latter resolves against the root plural rule, so `few`/`many` would be unreachable and
+    /// the test would pass against a broken catalog.
+    @Test func `Polish arrival countdown reaches its few and many forms`() throws {
+        let format = try #require(localizedFormat(forKey: "stop_page.row.a11y_arrives_fmt", localization: "pl"))
+        // The locale MUST be passed explicitly. `String.localizedStringWithFormat` selects the
+        // category using `Locale.current`, which on this test host is English — so 5 would pick
+        // `other`, quietly rendering "5 minuty" and passing a `contains("5 minut")` check
+        // without ever reaching Polish's `many`.
+        let polish = Locale(identifier: "pl")
+        func rendered(_ minutes: Int) -> String {
+            String(format: format, locale: polish, "10", "Centrum", minutes, "o czasie")
+        }
+
+        #expect(rendered(1).contains("1 minutę"), "pl one: \(rendered(1))")
+        #expect(rendered(3).contains("3 minuty"), "pl few: \(rendered(3))")
+        #expect(rendered(5).contains("5 minut"), "pl many: \(rendered(5))")
+        #expect(rendered(22).contains("22 minuty"), "pl few at 22: \(rendered(22))")
+    }
+
+    /// The simplest of the countdown keys, and the one a rider hears most: a bare minute count.
+    @Test func `Alarm minute count agrees in Polish and Russian`() throws {
+        let plFormat = try #require(localizedFormat(forKey: "alarm_builder_controller.minutes_fmt", localization: "pl"))
+        let pl = Locale(identifier: "pl")
+        #expect(String(format: plFormat, locale: pl, 1) == "1 minuta", "pl one: \(String(format: plFormat, locale: pl, 1))")
+        #expect(String(format: plFormat, locale: pl, 3) == "3 minuty", "pl few: \(String(format: plFormat, locale: pl, 3))")
+        #expect(String(format: plFormat, locale: pl, 5) == "5 minut", "pl many: \(String(format: plFormat, locale: pl, 5))")
+
+        let ruFormat = try #require(localizedFormat(forKey: "alarm_builder_controller.minutes_fmt", localization: "ru"))
+        let ru = Locale(identifier: "ru")
+        let one = String(format: ruFormat, locale: ru, 1)
+        let few = String(format: ruFormat, locale: ru, 3)
+        let many = String(format: ruFormat, locale: ru, 5)
+        #expect(one != few && few != many, "ru forms must differ across 1/3/5: \(one) / \(few) / \(many)")
+    }
+
     @Test func `Polish layer count reaches its few and many forms`() throws {
         let format = try #require(localizedFormat(
             forKey: "map_controller.map_type.accessibility_value_with_layers_fmt",
