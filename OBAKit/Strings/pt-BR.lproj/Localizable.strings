@@ -158,7 +158,7 @@
 "custom_region_builder_controller.example_data.region_name" = "Minha Região Personalizada";
 
 /* An explanation of the optional custom region name field. */
-"custom_region_builder_controller.name_section.explanation" = "Opcional. Se você deixar em branco, a região será nomeada de acordo com sua primeira agência de trânsito.";
+"custom_region_builder_controller.name_section.explanation" = "Opcional. Se você deixar em branco, a região será nomeada de acordo com sua primeira agência de transporte.";
 
 /* Title of the Name header. */
 "custom_region_builder_controller.name_section.header_title" = "Nome";
@@ -167,7 +167,7 @@
 "custom_region_builder_controller.new_title" = "Nova região personalizada";
 
 /* An error message displayed when a custom region's server cannot be validated. First parameter is the server URL, second is the underlying error message. */
-"custom_region_builder_controller.server_validation_error_fmt" = "Não foi possível acessar um servidor de API de trânsito compatível em %1$@. Verifique a URL base e tente novamente.\n\n%2$@";
+"custom_region_builder_controller.server_validation_error_fmt" = "Não foi possível acessar um servidor de API de transporte compatível em %1$@. Verifique a URL base e tente novamente.\n\n%2$@";
 
 /* An explanation of dragging the map to highlight the service area of a custom region. */
 "custom_region_builder_controller.service_area_section.explanation" = "Arraste o mapa até a área de serviço aproximada desta região.";
@@ -783,10 +783,10 @@
 "onboarding.progress.accessibility_label" = "Progresso da integração";
 
 /* Body of the region onboarding screen when the region was detected from the rider's location */
-"onboarding.region.body" = "Encontramos a rede de trânsito mais próxima de você.";
+"onboarding.region.body" = "Encontramos a rede de transporte público mais próxima de você.";
 
 /* Body of the region onboarding screen prompting the rider to choose a transit network */
-"onboarding.region.body_choose" = "Escolha a rede de trânsito que você usa.";
+"onboarding.region.body_choose" = "Escolha a rede de transporte público que você usa.";
 
 /* Label on the region card when the region was already selected by app configuration or an earlier launch rather than detected from the rider's location */
 "onboarding.region.current_label" = "Região atual";
@@ -810,7 +810,7 @@
 "onboarding.welcome.body" = "Chegadas em tempo real para os ônibus, trens e balsas que você usa — criado por usuários de transporte público, grátis e de código aberto.";
 
 /* Footnote of the first onboarding screen */
-"onboarding.welcome.footnote" = "Disponível em dezenas de regiões de trânsito ao redor do mundo";
+"onboarding.welcome.footnote" = "Disponível em dezenas de regiões de transporte público ao redor do mundo";
 
 /* Primary button on the first onboarding screen */
 "onboarding.welcome.primary_button" = "Começar";

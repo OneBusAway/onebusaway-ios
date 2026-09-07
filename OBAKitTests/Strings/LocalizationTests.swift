@@ -189,6 +189,23 @@ final class LocalizationTests {
         }
     }
 
+    /// Portuguese "trânsito" is road traffic, not public transport — a false friend for
+    /// English "transit". The distinction is load-bearing in this catalog, which legitimately
+    /// uses "Mostrar trânsito" for `settings_controller.map_section.shows_traffic`. So the
+    /// rule keys off the English: where the source says "transit", pt-BR must not answer
+    /// "trânsito".
+    @Test func `Brazilian Portuguese does not render transit as trânsito`() throws {
+        let bundle = Bundle(for: DonationCell.self)
+        let english = try #require(strings(in: bundle, localization: "en"))
+        let ptBR = try #require(strings(in: bundle, localization: "pt-BR"))
+
+        for (key, source) in english where source.localizedCaseInsensitiveContains("transit") {
+            guard let translated = ptBR[key] else { continue }
+            #expect(!translated.localizedCaseInsensitiveContains("trânsito"),
+                    "pt-BR/\(key): \"transit\" became \"trânsito\" (road traffic): \(translated)")
+        }
+    }
+
     /// The footer names the switch. A locale that leaves the English phrase in
     /// the footer while translating the title makes the two unrecognizable as
     /// the same control.
