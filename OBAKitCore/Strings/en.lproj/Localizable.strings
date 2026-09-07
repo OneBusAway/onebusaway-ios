@@ -4,12 +4,13 @@
 /* An error that tells the user that cellular data access is disabled for this app in iOS Settings. Both substituted values are the app name. */
 "api_error.cellular_data_restricted_fmt" = "%1$@ is not currently allowed to access cellular data. To fix this, go to Settings > Cellular and enable cellular data for %2$@, or connect to a WiFi network.";
 
-/* An error shown when the server returns data the app can't understand, indicating a likely server-side issue. */
+/* An error shown when the server returns a body the app cannot decode and no region name is available to specialize the copy. */
 "api_error.decoding_failure" = "The server returned data this app can't read. That's usually a problem with the stop or agency feed. Please try again shortly.";
 
 /* An error message that informs the user that the wrong kind of content was received from the server. */
 "api_error.invalid_content_type_fmt" = "Expected to receive %1$@ data from the server, but we received %2$@ instead.";
 
+/* An error shown when the regional server returned a body the app cannot decode. Distinct from a down server. The first substituted value is the region name, the second is the app name. */
 "api_error.invalid_response_data_fmt" = "The server for %1$@ returned data this app can't read. That's usually a problem with the stop or agency feed, not with %2$@. Try again shortly.";
 
 /* An error that tells the user that the network connection isn't working. */
@@ -30,7 +31,7 @@
 /* An error shown when the server returns a 500 Internal Server Error. The substituted value is the region name, e.g. 'Puget Sound'. */
 "api_error.server_error_fmt" = "The server for %@ encountered an error while handling your request. Please try again.";
 
-/* An error shown when the regional transit server is unavailable. The first substituted value is the region name, the second is the app name. */
+/* An error shown when the regional transit server cannot be reached. Mentions VPN because riders often hit this with a working phone on a filtered network. The first substituted value is the region name, the second is the app name. */
 "api_error.server_unavailable_fmt" = "Unable to reach the server for %1$@. %2$@ can't show transit information for this region right now. The server may be down, or a VPN or firewall may be blocking it.";
 
 /* An error message that tells the user that surveys are not available. */
@@ -218,13 +219,21 @@
 
 /* Use for vehicles arriving in X minutes. */
 "formatters.arrives_in_x_min_fmt" = "Arrives in %d min";
-"formatters.caption.arrives" = "Arrives";
-"formatters.caption.departs" = "Departs";
-"formatters.caption.arrived" = "Arrived";
-"formatters.caption.departed" = "Departed";
 
 /* Use for vehicles arriving now. */
 "formatters.arriving_now" = "Arriving now";
+
+/* Short caption under a past stop-page countdown for a vehicle that already arrived. */
+"formatters.caption.arrived" = "Arrived";
+
+/* Short caption under a stop-page countdown for a vehicle arriving at this stop. */
+"formatters.caption.arrives" = "Arrives";
+
+/* Short caption under a past stop-page countdown for a vehicle that already left. */
+"formatters.caption.departed" = "Departed";
+
+/* Short caption under a stop-page countdown for a vehicle departing this stop (first stop or layover). */
+"formatters.caption.departs" = "Departs";
 
 /* Headed in an eastern direction */
 "formatters.cardinal_adjective.east" = "Eastbound";
@@ -388,6 +397,9 @@
 /* Short text shown when a departure occurs at the same time as the rider's transfer arrival. */
 "formatters.transfer.on_arrival" = "NOW";
 
+/* Shown on a Live Activity when ActivityKit marks it stale (no recent update). */
+"live_activity.stale_warning" = "This data may be out of date.";
+
 /* The body of the tip pointing at the map toolbar's basemap button, which opens the Map sheet where the rental layers are turned on and off */
 "map_layers_tip.message" = "Tap here to show bikes and scooters on the map.";
 
@@ -429,9 +441,6 @@
 
 /* Title for the schedule/timetable feature tip */
 "schedule_tip.title" = "View Your Route's Schedule";
-
-/* Shown on a Live Activity when ActivityKit marks it stale (no recent update). */
-"live_activity.stale_warning" = "This data may be out of date.";
 
 /* Shown in place of the minutes countdown when the vehicle is departing now */
 "stop_page.countdown.now" = "NOW";
