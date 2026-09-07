@@ -114,6 +114,29 @@
 			<string>未来%d分钟内没有离站班次</string>
 		</dict>
 	</dict>
+	<key>stop_page.grouped.a11y_arrives_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$@号公交线路，开往%2$@，下一班将在%3$#@count@后到站，%4$@。另外加载了%5$#@departures@。</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>other</key>
+			<string>%3$d分钟</string>
+		</dict>
+		<key>departures</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>other</key>
+			<string>%5$d个班次</string>
+		</dict>
+	</dict>
 	<key>stop_page.grouped.a11y_fmt</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -155,6 +178,20 @@
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
 		<string>%1$@号公交线路，开往%2$@，将在%3$#@count@后到站，%4$@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>other</key>
+			<string>%3$d分钟</string>
+		</dict>
+	</dict>
+	<key>stop_page.row.a11y_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$@号公交线路，开往%2$@，将在%3$#@count@后离站，%4$@</string>
 		<key>count</key>
 		<dict>
 			<key>NSStringFormatSpecTypeKey</key>

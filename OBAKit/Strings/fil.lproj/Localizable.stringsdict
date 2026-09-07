@@ -130,6 +130,33 @@
 			<string>Walang pag-alis sa susunod na %d na minuto</string>
 		</dict>
 	</dict>
+	<key>stop_page.grouped.a11y_arrives_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Ruta %1$@ papuntang %2$@, susunod na pagdating sa loob ng %3$#@count@, %4$@. %5$#@departures@.</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%3$d minuto</string>
+			<key>other</key>
+			<string>%3$d na minuto</string>
+		</dict>
+		<key>departures</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%5$d pang pag-alis ang na-load</string>
+			<key>other</key>
+			<string>%5$d na pang pag-alis ang na-load</string>
+		</dict>
+	</dict>
 	<key>stop_page.grouped.a11y_fmt</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -177,6 +204,22 @@
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
 		<string>Ruta %1$@ papuntang %2$@, darating sa loob ng %3$#@count@, %4$@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%3$d minuto</string>
+			<key>other</key>
+			<string>%3$d na minuto</string>
+		</dict>
+	</dict>
+	<key>stop_page.row.a11y_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Ruta %1$@ papuntang %2$@, aalis sa loob ng %3$#@count@, %4$@</string>
 		<key>count</key>
 		<dict>
 			<key>NSStringFormatSpecTypeKey</key>

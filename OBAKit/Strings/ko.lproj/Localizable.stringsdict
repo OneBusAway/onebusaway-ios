@@ -114,6 +114,29 @@
 			<string>앞으로 %d분 내에 예정된 출발이 없습니다</string>
 		</dict>
 	</dict>
+	<key>stop_page.grouped.a11y_arrives_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>노선 %1$@, %2$@ 방면, 다음 도착 %3$#@count@ 후, %4$@. 출발 %5$#@departures@을 추가로 불러왔습니다.</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>other</key>
+			<string>%3$d분</string>
+		</dict>
+		<key>departures</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>other</key>
+			<string>%5$d건</string>
+		</dict>
+	</dict>
 	<key>stop_page.grouped.a11y_fmt</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -155,6 +178,20 @@
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
 		<string>노선 %1$@, %2$@ 방면, %3$#@count@ 후 도착, %4$@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>other</key>
+			<string>%3$d분</string>
+		</dict>
+	</dict>
+	<key>stop_page.row.a11y_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>노선 %1$@, %2$@ 방면, %3$#@count@ 후 출발, %4$@</string>
 		<key>count</key>
 		<dict>
 			<key>NSStringFormatSpecTypeKey</key>

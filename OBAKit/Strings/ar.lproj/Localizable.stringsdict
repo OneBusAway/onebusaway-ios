@@ -194,6 +194,49 @@
 			<string>لا توجد مغادرات قادمة</string>
 		</dict>
 	</dict>
+	<key>stop_page.grouped.a11y_arrives_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>الخط %1$@ إلى %2$@، الوصول التالي خلال %3$#@count@، %4$@. %5$#@departures@.</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>%3$d دقائق</string>
+			<key>many</key>
+			<string>%3$d دقيقة</string>
+			<key>one</key>
+			<string>دقيقة واحدة</string>
+			<key>other</key>
+			<string>%3$d دقيقة</string>
+			<key>two</key>
+			<string>دقيقتين</string>
+			<key>zero</key>
+			<string>أقل من دقيقة</string>
+		</dict>
+		<key>departures</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>تم تحميل %5$d مغادرات إضافية</string>
+			<key>many</key>
+			<string>تم تحميل %5$d مغادرة إضافية</string>
+			<key>one</key>
+			<string>تم تحميل مغادرة إضافية واحدة</string>
+			<key>other</key>
+			<string>تم تحميل %5$d مغادرة إضافية</string>
+			<key>two</key>
+			<string>تم تحميل مغادرتين إضافيتين</string>
+			<key>zero</key>
+			<string>لم يتم تحميل مغادرات إضافية</string>
+		</dict>
+	</dict>
 	<key>stop_page.grouped.a11y_fmt</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -265,6 +308,30 @@
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
 		<string>الخط %1$@ إلى %2$@، تصل خلال %3$#@count@، %4$@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>%3$d دقائق</string>
+			<key>many</key>
+			<string>%3$d دقيقة</string>
+			<key>one</key>
+			<string>دقيقة واحدة</string>
+			<key>other</key>
+			<string>%3$d دقيقة</string>
+			<key>two</key>
+			<string>دقيقتين</string>
+			<key>zero</key>
+			<string>أقل من دقيقة</string>
+		</dict>
+	</dict>
+	<key>stop_page.row.a11y_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>الخط %1$@ إلى %2$@، تغادر خلال %3$#@count@، %4$@</string>
 		<key>count</key>
 		<dict>
 			<key>NSStringFormatSpecTypeKey</key>

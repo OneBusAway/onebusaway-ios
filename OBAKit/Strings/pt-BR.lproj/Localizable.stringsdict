@@ -130,6 +130,33 @@
 			<string>Nenhuma partida nos próximos %d minutos</string>
 		</dict>
 	</dict>
+	<key>stop_page.grouped.a11y_arrives_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Linha %1$@ para %2$@, próxima chegada em %3$#@count@, %4$@. %5$#@departures@.</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%3$d minuto</string>
+			<key>other</key>
+			<string>%3$d minutos</string>
+		</dict>
+		<key>departures</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Mais %5$d partida carregada</string>
+			<key>other</key>
+			<string>Mais %5$d partidas carregadas</string>
+		</dict>
+	</dict>
 	<key>stop_page.grouped.a11y_fmt</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -177,6 +204,22 @@
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
 		<string>Linha %1$@ para %2$@, chega em %3$#@count@, %4$@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%3$d minuto</string>
+			<key>other</key>
+			<string>%3$d minutos</string>
+		</dict>
+	</dict>
+	<key>stop_page.row.a11y_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Linha %1$@ para %2$@, parte em %3$#@count@, %4$@</string>
 		<key>count</key>
 		<dict>
 			<key>NSStringFormatSpecTypeKey</key>

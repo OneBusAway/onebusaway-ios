@@ -50,7 +50,11 @@ final class LocalizationTests {
         "alarm_builder_controller.minutes_fmt",
         // Two counts: the minute countdown (bound to "count", which the well-formedness
         // check below inspects) and the number of extra departures loaded.
-        "stop_page.grouped.a11y_fmt"
+        "stop_page.grouped.a11y_fmt",
+        // The arriving/departing counterparts. Leaving these out would have made
+        // VoiceOver correct for arriving vehicles and wrong for departing ones.
+        "stop_page.row.a11y_fmt",
+        "stop_page.grouped.a11y_arrives_fmt"
     ]
 
     /// `%@`, `%d`, `%1$@`, `%2$d`, … and the escaped `%%`.
@@ -267,6 +271,36 @@ final class LocalizationTests {
             #expect(sharesRun(row, tip, minimum: 3),
                     "\(localization): OBAKit says \"\(row)\" but OBAKitCore's tip says \"\(tip)\"")
         }
+    }
+
+    /// Proves the production formatter goes through `Localizable.stringsdict` at all.
+    ///
+    /// `OBALoc` loads the format from the *test host's* localization, which is English, so this
+    /// cannot assert Polish words — passing a locale to `String(format:locale:)` selects the
+    /// plural category, it does not switch language. What it can prove is that the singular is
+    /// reached: before these keys had stringsdict entries the call site rendered the one plain
+    /// form at every count and said "arrives in 1 minutes". Polish `few`/`many` reachability is
+    /// a property of the catalog, pinned separately in the tests above.
+    @Test @MainActor func `Stop page VoiceOver copy resolves its plural forms`() {
+        func spoken(_ minutes: Int, _ status: ArrivalDepartureStatus) -> String {
+            StopPageAccessibilityCopy.upcomingIdentity(
+                routeShortName: "10", headsign: "Downtown", minutes: minutes,
+                arrivalDepartureStatus: status, adherence: "on time"
+            )
+        }
+
+        for status in [ArrivalDepartureStatus.arriving, .departing] {
+            #expect(spoken(1, status).contains("1 minute,"), "\(status) singular: \(spoken(1, status))")
+            #expect(!spoken(1, status).contains("1 minutes"), "\(status) said \"1 minutes\": \(spoken(1, status))")
+            #expect(spoken(5, status).contains("5 minutes"), "\(status) plural: \(spoken(5, status))")
+        }
+
+        let groupedOne = StopPageAccessibilityCopy.groupedCardIdentity(
+            routeShortName: "10", headsign: "Downtown", minutes: 1,
+            arrivalDepartureStatus: .departing, adherence: "on time", moreCount: 1
+        )
+        #expect(groupedOne.contains("1 minute,"), "grouped singular: \(groupedOne)")
+        #expect(groupedOne.contains("1 more departure loaded"), "grouped departures singular: \(groupedOne)")
     }
 
     /// The footer names the switch. A locale that leaves the English phrase in

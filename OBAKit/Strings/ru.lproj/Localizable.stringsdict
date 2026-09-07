@@ -162,6 +162,41 @@
 			<string>Нет отправлений в ближайшие %d минуты</string>
 		</dict>
 	</dict>
+	<key>stop_page.grouped.a11y_arrives_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Маршрут %1$@ до %2$@, следующее прибытие через %3$#@count@, %4$@. Загружено ещё %5$#@departures@.</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>%3$d минуты</string>
+			<key>many</key>
+			<string>%3$d минут</string>
+			<key>one</key>
+			<string>%3$d минуту</string>
+			<key>other</key>
+			<string>%3$d минуты</string>
+		</dict>
+		<key>departures</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>%5$d отправления</string>
+			<key>many</key>
+			<string>%5$d отправлений</string>
+			<key>one</key>
+			<string>%5$d отправление</string>
+			<key>other</key>
+			<string>%5$d отправления</string>
+		</dict>
+	</dict>
 	<key>stop_page.grouped.a11y_fmt</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -221,6 +256,26 @@
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
 		<string>Маршрут %1$@ до %2$@, прибытие через %3$#@count@, %4$@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>%3$d минуты</string>
+			<key>many</key>
+			<string>%3$d минут</string>
+			<key>one</key>
+			<string>%3$d минуту</string>
+			<key>other</key>
+			<string>%3$d минуты</string>
+		</dict>
+	</dict>
+	<key>stop_page.row.a11y_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Маршрут %1$@ до %2$@, отправление через %3$#@count@, %4$@</string>
 		<key>count</key>
 		<dict>
 			<key>NSStringFormatSpecTypeKey</key>

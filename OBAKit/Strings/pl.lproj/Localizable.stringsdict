@@ -162,6 +162,41 @@
 			<string>Brak odjazdów w ciągu najbliższych %d minuty</string>
 		</dict>
 	</dict>
+	<key>stop_page.grouped.a11y_arrives_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Linia %1$@ do %2$@, najbliższy przyjazd za %3$#@count@, %4$@. Wczytano jeszcze %5$#@departures@.</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>%3$d minuty</string>
+			<key>many</key>
+			<string>%3$d minut</string>
+			<key>one</key>
+			<string>%3$d minutę</string>
+			<key>other</key>
+			<string>%3$d minuty</string>
+		</dict>
+		<key>departures</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>%5$d odjazdy</string>
+			<key>many</key>
+			<string>%5$d odjazdów</string>
+			<key>one</key>
+			<string>%5$d odjazd</string>
+			<key>other</key>
+			<string>%5$d odjazdu</string>
+		</dict>
+	</dict>
 	<key>stop_page.grouped.a11y_fmt</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -221,6 +256,26 @@
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
 		<string>Linia %1$@ do %2$@, przyjazd za %3$#@count@, %4$@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>%3$d minuty</string>
+			<key>many</key>
+			<string>%3$d minut</string>
+			<key>one</key>
+			<string>%3$d minutę</string>
+			<key>other</key>
+			<string>%3$d minuty</string>
+		</dict>
+	</dict>
+	<key>stop_page.row.a11y_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Linia %1$@ do %2$@, odjazd za %3$#@count@, %4$@</string>
 		<key>count</key>
 		<dict>
 			<key>NSStringFormatSpecTypeKey</key>
