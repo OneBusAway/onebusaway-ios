@@ -228,6 +228,37 @@ final class LocalizationTests {
         }
     }
 
+    /// OBAKitCore's `map_layers_tip` is the onboarding tip that introduces the rental layers,
+    /// and OBAKit's `map_layers.scooters` is the row it points at. If the two modules pick
+    /// different words, the tip names something the sheet does not offer.
+    ///
+    /// Compared by shared substring rather than equality: several locales qualify the row
+    /// ("Mga scooter", "共享滑板车") while the tip carries the bare noun, and that is fine —
+    /// what matters is that the same word for the vehicle appears in both.
+    @Test func `Both modules use the same word for a scooter`() throws {
+        let kit = Bundle(for: DonationCell.self)
+        let core = Bundle(for: Strings.self)
+
+        func sharesRun(_ a: String, _ b: String, minimum: Int) -> Bool {
+            let x = Array(a.lowercased()), y = b.lowercased()
+            guard x.count >= minimum else { return false }
+            for start in 0...(x.count - minimum) {
+                for length in stride(from: x.count - start, through: minimum, by: -1) {
+                    if y.contains(String(x[start..<(start + length)])) { return true }
+                }
+            }
+            return false
+        }
+
+        for localization in kit.localizations where localization != "Base" {
+            guard let row = strings(in: kit, localization: localization)?["map_layers.scooters"],
+                  let tip = strings(in: core, localization: localization)?["map_layers_tip.title"]
+            else { continue }
+            #expect(sharesRun(row, tip, minimum: 3),
+                    "\(localization): OBAKit says \"\(row)\" but OBAKitCore's tip says \"\(tip)\"")
+        }
+    }
+
     /// The footer names the switch. A locale that leaves the English phrase in
     /// the footer while translating the title makes the two unrecognizable as
     /// the same control.
