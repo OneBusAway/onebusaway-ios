@@ -732,8 +732,8 @@
 /* A row that opens the App Store review form. %@ is the app name. */
 "more_controller.rate_app" = "Rate %@";
 
-/* Opens an sms: (or web) link for the agency's text information service. */
-"more_controller.text_agency" = "Text Agency";
+/* Opens the agency's text information service, which may be an sms: link or a web page — so the label names neither. */
+"more_controller.text_agency" = "Message Agency";
 
 /* Title of the More tab
    Title of the More tab / accessibility label for the map-panel more button. */

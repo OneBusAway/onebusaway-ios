@@ -1754,7 +1754,7 @@
 /* Opens a tel: link to call the transit agency from the More tab. */
 "more_controller.call_agency" = "Ligar para a Agência";
 /* Opens an sms: (or web) link for the agency's text information service. */
-"more_controller.text_agency" = "Enviar SMS para a Agência";
+"more_controller.text_agency" = "Enviar Mensagem para a Agência";
 /* Opens the agency's tutorial or user-manual page from the More tab. */
 "more_controller.tutorials" = "Tutoriais";
 /* Number of rental vehicles available at a station */

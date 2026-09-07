@@ -167,6 +167,28 @@ final class LocalizationTests {
                 "rental_detail.propulsion_human says pedal, but GBFS HUMAN covers kick scooters too: \(human)")
     }
 
+    /// `MoreViewController` opens `MoreTabConfiguration.textURL` with no scheme check, and
+    /// the key's own comment says that URL may be `sms:` **or** web. A label promising SMS
+    /// therefore mislabels every region that configures a web contact form. English "Text
+    /// Agency" uses "text" as a verb, which is SMS in en-US, so the narrowing starts at the
+    /// source rather than in translation.
+    @Test func `Agency contact action does not promise SMS`() throws {
+        let bundle = Bundle(for: DonationCell.self)
+        // Words that name SMS specifically, per locale. Deliberately not a blanket "sms"
+        // substring check: several locales use a generic "message"/"write to" verb that is
+        // correct for both destinations.
+        let smsWords = ["sms", "短信", "簡訊", "문자", "i-text"]
+
+        for localization in bundle.localizations where localization != "Base" {
+            guard let value = strings(in: bundle, localization: localization)?["more_controller.text_agency"]
+            else { continue }
+            let lowered = value.lowercased()
+            let offender = smsWords.first { lowered.contains($0) }
+            #expect(offender == nil,
+                    "\(localization): more_controller.text_agency promises SMS (\"\(value)\") but textURL may be a web link")
+        }
+    }
+
     /// The footer names the switch. A locale that leaves the English phrase in
     /// the footer while translating the title makes the two unrecognizable as
     /// the same control.

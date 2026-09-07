@@ -1754,7 +1754,7 @@
 /* Opens a tel: link to call the transit agency from the More tab. */
 "more_controller.call_agency" = "致电交通局";
 /* Opens an sms: (or web) link for the agency's text information service. */
-"more_controller.text_agency" = "短信联系交通局";
+"more_controller.text_agency" = "发送消息给交通局";
 /* Opens the agency's tutorial or user-manual page from the More tab. */
 "more_controller.tutorials" = "使用教程";
 /* Number of rental vehicles available at a station */

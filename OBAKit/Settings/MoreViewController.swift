@@ -332,8 +332,8 @@ public class MoreViewController: UIViewController,
             contents.append(OBAListRowView.DefaultViewModel(
                 title: OBALoc(
                     "more_controller.text_agency",
-                    value: "Text Agency",
-                    comment: "Opens an sms: (or web) link for the agency's text information service."),
+                    value: "Message Agency",
+                    comment: "Opens the agency's text information service, which may be an sms: link or a web page — so the label names neither."),
                 onSelectAction: { [weak self] _ in
                     self?.application.open(textURL, options: [:], completionHandler: nil)
                 }
