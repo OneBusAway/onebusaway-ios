@@ -35,7 +35,7 @@ public class MoreViewController: UIViewController,
         self.application = application
         super.init(nibName: nil, bundle: nil)
 
-        title = OBALoc("more_controller.title", value: "More", comment: "Title of the More tab")
+        title = OBALoc("more_controller.title", value: "More", comment: "Title of the More tab / accessibility label for the map-panel more button.")
         tabBarItem.image = Icons.moreTabIcon
         tabBarItem.selectedImage = Icons.moreSelectedTabIcon
 

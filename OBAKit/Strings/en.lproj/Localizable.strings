@@ -566,8 +566,7 @@
 /* Accessibility label for Look Around preview */
 "map_item_controller.look_around" = "Look Around preview. Tap to open full screen viewer";
 
-/* Button to view nearby stops
-   Nearby stops button */
+/* Button that shows the stops near this map item. */
 "map_item_controller.nearby_stops" = "Nearby Stops";
 
 /* Accessibility label for nearby stops button */
@@ -735,8 +734,7 @@
 /* Opens the agency's text information service, which may be an sms: link or a web page — so the label names neither. */
 "more_controller.text_agency" = "Message Agency";
 
-/* Title of the More tab
-   Title of the More tab / accessibility label for the map-panel more button. */
+/* Title of the More tab / accessibility label for the map-panel more button. */
 "more_controller.title" = "More";
 
 /* Request to help localize the app */
@@ -1465,12 +1463,10 @@
 /* VoiceOver for a grouped route card whose next vehicle is arriving at this stop. */
 "stop_page.grouped.a11y_arrives_fmt" = "Route %1$@ to %2$@, next arrival in %3$d minutes, %4$@. %5$d more departures loaded.";
 
-/* VoiceOver value of a collapsible section header when its contents are hidden.
-   VoiceOver value of a grouped route card whose departure list is hidden. */
+/* VoiceOver value of a collapsible header or grouped route card whose contents are hidden. */
 "stop_page.grouped.a11y_collapsed" = "collapsed";
 
-/* VoiceOver value of a collapsible section header when its contents are visible.
-   VoiceOver value of a grouped route card whose departure list is showing. */
+/* VoiceOver value of a collapsible header or grouped route card whose contents are showing. */
 "stop_page.grouped.a11y_expanded" = "expanded";
 
 /* VoiceOver for a grouped route card whose next vehicle is departing this stop (first stop or layover). */
