@@ -1776,7 +1776,7 @@
 /* Label for whether picking up a vehicle is currently allowed */
 "rental_detail.pickup" = "Аренда";
 /* Primary action on the rental vehicle sheet */
-"rental_detail.plan_trip" = "Спланировать поездку на этом велосипеде";
+"rental_detail.plan_trip" = "Спланировать поездку на этом транспорте";
 /* Label for a rental vehicle's propulsion type */
 "rental_detail.propulsion" = "Тип";
 /* Rental vehicle propulsion: combustion */

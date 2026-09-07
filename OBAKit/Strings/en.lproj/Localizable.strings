@@ -1055,7 +1055,7 @@
 "rental_detail.pickup" = "Pickup";
 
 /* Primary action on the rental vehicle sheet */
-"rental_detail.plan_trip" = "Plan a trip using this bike";
+"rental_detail.plan_trip" = "Plan a trip using this vehicle";
 
 /* Label for a rental vehicle's propulsion type */
 "rental_detail.propulsion" = "Type";
@@ -1067,7 +1067,7 @@
 "rental_detail.propulsion_electric" = "Electric";
 
 /* Rental vehicle propulsion: human-powered */
-"rental_detail.propulsion_human" = "Pedal";
+"rental_detail.propulsion_human" = "Human-powered";
 
 /* Label for a rental vehicle's estimated remaining range */
 "rental_detail.range" = "Range";

@@ -1776,7 +1776,7 @@
 /* Label for whether picking up a vehicle is currently allowed */
 "rental_detail.pickup" = "Retirada";
 /* Primary action on the rental vehicle sheet */
-"rental_detail.plan_trip" = "Planejar uma viagem com esta bicicleta";
+"rental_detail.plan_trip" = "Planejar uma viagem com este veículo";
 /* Label for a rental vehicle's propulsion type */
 "rental_detail.propulsion" = "Tipo";
 /* Rental vehicle propulsion: combustion */
@@ -1784,7 +1784,7 @@
 /* Rental vehicle propulsion: electric */
 "rental_detail.propulsion_electric" = "Elétrico";
 /* Rental vehicle propulsion: human-powered */
-"rental_detail.propulsion_human" = "A pedal";
+"rental_detail.propulsion_human" = "Sem motor";
 /* Label for a rental vehicle's estimated remaining range */
 "rental_detail.range" = "Autonomia";
 /* Warning shown when rental data is older than the layer's freshness window */

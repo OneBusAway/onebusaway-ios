@@ -149,6 +149,24 @@ final class LocalizationTests {
         }
     }
 
+    /// One sheet serves both rental layers: `RentalDetailViewController` branches on
+    /// `vehicle.vehicleType?.formFactor?.isScooter` and `RentalMapLayer` declares both a
+    /// bikes and a scooters layer. So the sheet's own copy must not name a vehicle type —
+    /// a scooter rider reading "Plan a trip using this bike" is being told about a vehicle
+    /// they are not looking at. Likewise GBFS `propulsion_type: HUMAN` means human-powered,
+    /// which for a kick scooter is not pedalling.
+    @Test func `Rental sheet copy does not assume a bike`() throws {
+        let english = try #require(strings(in: Bundle(for: DonationCell.self), localization: "en"))
+
+        let planTrip = try #require(english["rental_detail.plan_trip"])
+        #expect(!planTrip.localizedCaseInsensitiveContains("bike"),
+                "rental_detail.plan_trip names a bike but the sheet also shows scooters: \(planTrip)")
+
+        let human = try #require(english["rental_detail.propulsion_human"])
+        #expect(!human.localizedCaseInsensitiveContains("pedal"),
+                "rental_detail.propulsion_human says pedal, but GBFS HUMAN covers kick scooters too: \(human)")
+    }
+
     /// The footer names the switch. A locale that leaves the English phrase in
     /// the footer while translating the title makes the two unrecognizable as
     /// the same control.

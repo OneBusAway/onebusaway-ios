@@ -1776,7 +1776,7 @@
 /* Label for whether picking up a vehicle is currently allowed */
 "rental_detail.pickup" = "取车";
 /* Primary action on the rental vehicle sheet */
-"rental_detail.plan_trip" = "使用这辆单车规划行程";
+"rental_detail.plan_trip" = "使用这辆车规划行程";
 /* Label for a rental vehicle's propulsion type */
 "rental_detail.propulsion" = "动力类型";
 /* Rental vehicle propulsion: combustion */
@@ -1784,7 +1784,7 @@
 /* Rental vehicle propulsion: electric */
 "rental_detail.propulsion_electric" = "电动";
 /* Rental vehicle propulsion: human-powered */
-"rental_detail.propulsion_human" = "脚踏";
+"rental_detail.propulsion_human" = "人力";
 /* Label for a rental vehicle's estimated remaining range */
 "rental_detail.range" = "续航里程";
 /* Warning shown when rental data is older than the layer's freshness window */
