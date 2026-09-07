@@ -206,6 +206,28 @@ final class LocalizationTests {
         }
     }
 
+    /// Four keys name the same rider-facing concept — changing from one vehicle to another —
+    /// and Arabic had drifted into two words for it: التبديل on the two accessibility labels,
+    /// التحويلة in Settings. التحويلة is a detour or a railway switch, i.e. the *vehicle* being
+    /// rerouted, not the rider changing services. One term, all four keys.
+    @Test func `Arabic uses one word for a transfer`() throws {
+        let arabic = try #require(strings(in: Bundle(for: DonationCell.self), localization: "ar"))
+        let transferKeys = [
+            "settings_controller.arrival_display_section.transfer_banner",
+            "settings_controller.arrival_display_section.transfer_banner.footer",
+            "walk_time_view.transfer_accessibility_label",
+            "stop_page.row.a11y_transfer_trip"
+        ]
+
+        for key in transferKeys {
+            let value = try #require(arabic[key], "ar/\(key) is missing")
+            #expect(!value.contains("التحويلة"),
+                    "ar/\(key) says التحويلة (a detour/junction) where the app means a rider transfer: \(value)")
+            #expect(value.contains("التبديل"),
+                    "ar/\(key) does not use the app's transfer term التبديل: \(value)")
+        }
+    }
+
     /// The footer names the switch. A locale that leaves the English phrase in
     /// the footer while translating the title makes the two unrecognizable as
     /// the same control.
