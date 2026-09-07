@@ -118,6 +118,20 @@ public class Application: CoreApplication, PushServiceDelegate {
         regionIDProvider: { [weak self] in self?.regionsService.currentRegion?.regionIdentifier }
     )
 
+    /// Owns the rider's in-trip stop-approach (get-off) alerts.
+    ///
+    /// `lazy` only because it needs a fully-initialized `self`; `init` forces it
+    /// immediately for the same reason as `proximityAlertManager`: a geofence
+    /// crossing can relaunch a terminated app and Core Location delivers the
+    /// queued event to whichever `LocationService` delegates exist by the time
+    /// launch completes.
+    @MainActor
+    public private(set) lazy var getOffAlertManager = GetOffAlertManager(
+        locationService: locationService,
+        userDataStore: userDataStore,
+        regionIDProvider: { [weak self] in self?.regionsService.currentRegion?.regionIdentifier }
+    )
+
     @objc lazy var userActivityBuilder = UserActivityBuilder(application: self)
 
     /// Handles all deep-linking into the app.
@@ -190,6 +204,11 @@ public class Application: CoreApplication, PushServiceDelegate {
         // Constructing it here registers the delegate, and re-arms the regions,
         // before that event lands.
         _ = proximityAlertManager
+
+        // Same reasoning as proximityAlertManager above: a get-off alert geofence
+        // can also relaunch the app, and the delegate must be registered before
+        // Core Location delivers the queued crossing event.
+        _ = getOffAlertManager
 
         configureAppearanceProxies()
         observeShortcutLifecycle()

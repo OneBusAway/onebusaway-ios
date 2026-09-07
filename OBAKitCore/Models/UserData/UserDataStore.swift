@@ -22,6 +22,9 @@ public extension Notification.Name {
 
     /// Posted whenever proximity alerts are added or deleted in the UserDataStore.
     static let proximityAlertsDidChange = Notification.Name("UserDataStore.proximityAlertsDidChange")
+
+    /// Posted whenever get-off alerts are added, deleted, or expired in the UserDataStore.
+    static let getOffAlertsDidChange = Notification.Name("UserDataStore.getOffAlertsDidChange")
 }
 
 /// `UserDataStore` is a repository for the user's data, such as bookmarks, and recent stops.
@@ -222,6 +225,31 @@ public protocol UserDataStore: NSObjectProtocol {
 
     /// Deletes all proximity alerts that have expired (older than 24 hours).
     func deleteExpiredProximityAlerts()
+
+    // MARK: - Get-Off Alerts
+
+    /// All currently-stored get-off alerts.
+    var getOffAlerts: [GetOffAlert] { get }
+
+    /// Store a new get-off alert.
+    /// - Parameter alert: The alert to store.
+    func add(getOffAlert: GetOffAlert)
+
+    /// Delete a specific get-off alert.
+    /// - Parameter alert: The alert to delete.
+    func delete(getOffAlert: GetOffAlert)
+
+    /// Delete all get-off alerts associated with a given trip ID.
+    ///
+    /// Called when the trip page deactivates so a geofence set for one trip
+    /// cannot fire during a later, unrelated trip.
+    func deleteGetOffAlerts(forTripID tripID: String)
+
+    /// Delete all stored get-off alerts.
+    func deleteAllGetOffAlerts()
+
+    /// Delete all get-off alerts that have passed their expiration window.
+    func deleteExpiredGetOffAlerts()
     // MARK: - Survey Tracking
 
     /// Stores information about completed surveys to avoid showing them again
@@ -423,6 +451,7 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         static let bookmarkGroups = "UserDataStore.bookmarkGroups"
         static let debugMode = "UserDataStore.debugMode"
         static let proximityAlerts = "UserDataStore.proximityAlerts"
+        static let getOffAlerts = "UserDataStore.getOffAlerts"
         static let disabledVehicleFeedAgencies = "UserDataStore.disabledVehicleFeedAgencies"
         static let lastSelectedView = "UserDataStore.lastSelectedView"
         static let readServiceAlerts = "UserDataStore.readServiceAlerts"
@@ -926,6 +955,49 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         guard filtered.count != current.count else { return }
         proximityAlerts = filtered
         NotificationCenter.default.post(name: .proximityAlertsDidChange, object: self)
+    }
+
+    // MARK: - Get-Off Alerts
+
+    public var getOffAlerts: [GetOffAlert] {
+        get {
+            return decodeUserDefaultsObjects(type: [GetOffAlert].self, key: UserDefaultsKeys.getOffAlerts) ?? []
+        }
+        set {
+            try! encodeUserDefaultsObjects(newValue, key: UserDefaultsKeys.getOffAlerts) // swiftlint:disable:this force_try
+        }
+    }
+
+    public func add(getOffAlert: GetOffAlert) {
+        getOffAlerts.append(getOffAlert)
+        NotificationCenter.default.post(name: .getOffAlertsDidChange, object: self)
+    }
+
+    public func delete(getOffAlert: GetOffAlert) {
+        getOffAlerts.removeAll { $0 == getOffAlert }
+        NotificationCenter.default.post(name: .getOffAlertsDidChange, object: self)
+    }
+
+    public func deleteGetOffAlerts(forTripID tripID: String) {
+        let current = getOffAlerts
+        let filtered = current.filter { $0.tripID != tripID }
+        guard filtered.count != current.count else { return }
+        getOffAlerts = filtered
+        NotificationCenter.default.post(name: .getOffAlertsDidChange, object: self)
+    }
+
+    public func deleteAllGetOffAlerts() {
+        guard !getOffAlerts.isEmpty else { return }
+        getOffAlerts = []
+        NotificationCenter.default.post(name: .getOffAlertsDidChange, object: self)
+    }
+
+    public func deleteExpiredGetOffAlerts() {
+        let current = getOffAlerts
+        let filtered = current.filter { !$0.isExpired }
+        guard filtered.count != current.count else { return }
+        getOffAlerts = filtered
+        NotificationCenter.default.post(name: .getOffAlertsDidChange, object: self)
     }
 
     // MARK: - Survey Tracking

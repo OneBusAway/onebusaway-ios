@@ -19,6 +19,10 @@ struct TripPageActions {
     var canAlarm = false
     var canStartLiveActivity = false
     var canReportGhostBus = false
+    /// Whether the rider can set a get-off alert for their destination stop.
+    var canGetOffAlert = false
+    /// Whether a get-off alert is already active for the rider's destination stop.
+    var hasGetOffAlert = false
     var onBack: () -> Void = {}
     var onSelectStop: (StopID) -> Void = { _ in }
     var onLiveActivity: () -> Void = {}
@@ -26,6 +30,7 @@ struct TripPageActions {
     var onSchedule: () -> Void = {}
     var onAlarm: () -> Void = {}
     var onReportGhostBus: () -> Void = {}
+    var onGetOffAlert: () -> Void = {}
 }
 
 /// The trip page: which vehicle, when it gets to you, and every stop on its way.
@@ -50,6 +55,8 @@ struct TripPageView: View {
     /// current state rather than always offering to start something.
     var hasAlarm = false
     var isTrackingLiveActivity = false
+    /// `true` when a get-off alert is already armed for the rider's destination stop.
+    var hasGetOffAlert = false
 
     /// `true` while the sheet showing this page sits at its `.tip` detent, where the only thing
     /// that fits is the back row.
@@ -147,12 +154,15 @@ struct TripPageView: View {
                     canSchedule: actions.canSchedule,
                     canAlarm: actions.canAlarm,
                     hasAlarm: hasAlarm,
+                    canGetOffAlert: actions.canGetOffAlert,
+                    hasGetOffAlert: hasGetOffAlert,
                     canReportGhostBus: actions.canReportGhostBus,
                     maxHeight: pageHeight > 0 ? pageHeight * Self.actionBarHeightShare : nil,
                     onLiveActivity: actions.onLiveActivity,
                     onBookmark: actions.onBookmark,
                     onSchedule: actions.onSchedule,
                     onAlarm: actions.onAlarm,
+                    onGetOffAlert: actions.onGetOffAlert,
                     onReportGhostBus: actions.onReportGhostBus
                 )
             }
