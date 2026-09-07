@@ -382,14 +382,10 @@
 /* Description of why we need location services */
 "location_permission_bulletin.description_text" = "Consenti all'applicazione di accedere alla tua posizione per facilitare l'individuazione di fermate nei tuoi dintorni. ";
 
-/* Button the user can tap on to decline access to their location. */
-"location_permission_bulletin.do_not_use_location_button_text" = "Non adesso";
 
 /* Title of the alert that appears to request your location. */
 "location_permission_bulletin.title" = "Ti diamo il benvenuto!";
 
-/* Button the user taps to grant access to their location. */
-"location_permission_bulletin.use_location_button_text" = "Usa la mia posizione";
 
 /* No comment provided by engineer. */
 "locationservices_alert_gotosettings.button" = "Attiva nelle impostazioni";
@@ -1264,8 +1260,6 @@
 /* VoiceOver custom action on a grouped route card's header that creates an alarm for the next departure. */
 "stop_page.grouped.a11y_set_alarm" = "Imposta sveglia";
 
-/* VoiceOver label for one expanded departure row inside a grouped route card: route, headsign, minutes, status. */
-"stop_page.grouped.expanded_row.a11y_fmt" = "Linea %1$@ per %2$@, parte tra %3$d minuti, %4$@";
 
 /* Caption above the upcoming-departure minute chips on a grouped route card at accessibility text sizes. */
 "stop_page.grouped.next_departures" = "Prossime partenze";
@@ -1288,17 +1282,9 @@
 /* Stop page mode toggle: grouped by route */
 "stop_page.mode.route" = "Linea";
 
-/* Opens the full trip screen */
-"stop_page.panel.full_trip" = "Vedi itinerario completo";
 
-/* Trip panel live strip. %@ is the vehicle id. */
-"stop_page.panel.live_vehicle_fmt" = "In tempo reale · veicolo %@";
 
-/* Body of the schedule-only notice; must communicate uncertainty (§4.1/§4.4) */
-"stop_page.panel.scheduled_body" = "Nessun segnale in tempo reale da questo autobus: questo è l'orario previsto di arrivo. Potrebbe arrivare in anticipo, in ritardo o non arrivare affatto.";
 
-/* Title of the schedule-only notice */
-"stop_page.panel.scheduled_title" = "Solo orario previsto";
 
 /* Button revealing recently departed trips. %d is the count. */
 "stop_page.past_toggle_fmt" = "Passate · %d";
@@ -1367,14 +1353,8 @@
 /* Adherence label for a departure with no real-time signal; deliberately avoids claiming the bus is on time. */
 "stop_page.status.schedule_data" = "dati di orario";
 
-/* Gap marker in the approach timeline. %d is the number of elided stops between the vehicle and the stops shown. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
-"stop_page.timeline.skipped_stops_fmt" = "%d fermate";
 
-/* Vehicle-position marker. %d is minutes to the user's stop. */
-"stop_page.timeline.vehicle_here_fmt" = "veicolo qui · a %d min";
 
-/* Marker on the user's stop in the approach timeline */
-"stop_page.timeline.your_stop" = "· la tua fermata";
 
 /* Walk chip on the header card. %d is the walk time in minutes. */
 "stop_page.walk_chip_minutes_fmt" = "%d min a piedi";
@@ -1690,3 +1670,204 @@
 
 /* VoiceOver label for the wind speed stat on the weather card. */
 "weather.stat.wind" = "Velocità del vento";
+
+/* An explanation of the optional Umami analytics fields of a custom region. */
+"custom_region_builder_controller.analytics_section.explanation" = "Facoltativo. L'indirizzo di un server di analisi Umami e l'ID del sito web di questa regione. Entrambi i campi sono obbligatori per attivare le analisi; lasciali vuoti per disattivarle.";
+/* Title of the Analytics header. */
+"custom_region_builder_controller.analytics_section.header_title" = "Analisi";
+/* Placeholder for the Umami analytics website ID field. */
+"custom_region_builder_controller.analytics_section.website_id_placeholder" = "ID sito web";
+/* An explanation of the optional Obaco sidecar server URL field of a custom region. */
+"custom_region_builder_controller.sidecar_section.explanation" = "Facoltativo. L'indirizzo di un server sidecar Obaco (OneBusAway.co), che abilita funzioni come le sveglie e i sondaggi. Si presume \"https://\".";
+/* Title of the Sidecar Server header. */
+"custom_region_builder_controller.sidecar_section.header_title" = "Server sidecar";
+/* Placeholder for the optional comment field on the ghost bus form. */
+"ghost_bus_report.comment.placeholder" = "Altro che dovremmo sapere? (facoltativo)";
+/* Header over the trip summary on the ghost bus form. */
+"ghost_bus_report.context.header" = "Segnalazione";
+/* Label for the route being reported on the ghost bus form. */
+"ghost_bus_report.context.route" = "Linea";
+/* Label for the scheduled time on the ghost bus form. */
+"ghost_bus_report.context.scheduled" = "Orario previsto";
+/* Label for the stop being reported on the ghost bus form. */
+"ghost_bus_report.context.stop" = "Fermata";
+/* Label for the vehicle ID on the ghost bus form. */
+"ghost_bus_report.context.vehicle" = "Veicolo";
+/* Error message when the server rejects a duplicate ghost bus report. */
+"ghost_bus_report.error.already_reported" = "Sembra che questa corsa sia già stata segnalata da questo dispositivo.";
+/* Title of the ghost bus submission error alert. */
+"ghost_bus_report.error.title" = "Impossibile inviare";
+/* Footer text under the submit button on the ghost bus form. */
+"ghost_bus_report.footer" = "La tua segnalazione è anonima e viene inviata all'ente che gestisce questo servizio.";
+/* Toggle on the ghost bus form for including the rider's location with the report. */
+"ghost_bus_report.share_location" = "Condividi la mia posizione";
+/* Submit button on the ghost bus form. */
+"ghost_bus_report.submit" = "Invia segnalazione";
+/* Title of the ghost bus report sheet. */
+"ghost_bus_report.title" = "Segnala corsa fantasma";
+/* Header over the wait-duration picker on the ghost bus form. */
+"ghost_bus_report.wait.header" = "Oltre l'orario previsto";
+/* Label for the wait-duration picker on the ghost bus form. */
+"ghost_bus_report.wait.label" = "Quanto hai aspettato?";
+/* Wait-duration choice on the ghost bus form. */
+"ghost_bus_report.wait.minutes_fmt" = "%d min";
+/* Longest wait-duration choice on the ghost bus form. */
+"ghost_bus_report.wait.thirty_plus" = "30+ min";
+/* Title of the alert asking the user to enable location services. */
+"locationservices_alert_notdetermined.title" = "Attiva i servizi di localizzazione";
+/* Map sheet row for the rental bikes layer */
+"map_layers.bikes" = "Bici";
+/* Map sheet row for the transit stops layer */
+"map_layers.bus_stops" = "Fermate";
+/* Reason shown on a dimmed rental layer row when its server is unreachable */
+"map_layers.rental_unavailable" = "Non disponibile al momento";
+/* Map sheet row for the rental scooters layer */
+"map_layers.scooters" = "Monopattini";
+/* Map sheet row for the layer drawing a selected stop's routes and live vehicles. */
+"map_layers.stop_routes" = "Linee e veicoli";
+/* Map sheet row for the layer drawing the trip the rider is following. */
+"map_layers.trip_focus" = "Corsa seguita";
+/* Basemap style: satellite imagery with labels */
+"map_sheet.basemap_hybrid" = "Ibrida";
+/* Basemap style: satellite imagery */
+"map_sheet.basemap_satellite" = "Satellite";
+/* Basemap style: standard street map */
+"map_sheet.basemap_standard" = "Standard";
+/* Map sheet section for display options like Points of Interest */
+"map_sheet.display_group" = "Visualizzazione mappa";
+/* Map sheet row label for the rental minimum-range filter */
+"map_sheet.minimum_range" = "Autonomia minima";
+/* Range filter menu option imposing no minimum range */
+"map_sheet.minimum_range_any" = "Qualsiasi";
+/* Map sheet group header for non-transit mobility layers */
+"map_sheet.other_modes_group" = "Altri modi per spostarti";
+/* Button restoring the default map layer configuration */
+"map_sheet.reset" = "Reimposta";
+/* Map sheet toggle for Apple MapKit Points of Interest (restaurants, shops, etc.) */
+"map_sheet.shows_points_of_interest" = "Punti di interesse";
+/* Title of the Map sheet */
+"map_sheet.title" = "Mappa";
+/* Map sheet group header for transit layers */
+"map_sheet.transit_group" = "Trasporto pubblico";
+/* Header for More-tab rows that open tutorial, phone, or text links configured by the agency. */
+"more_controller.agency_contact.header" = "Contatti e assistenza";
+/* Opens a tel: link to call the transit agency from the More tab. */
+"more_controller.call_agency" = "Chiama l'ente";
+/* Opens an sms: (or web) link for the agency's text information service. */
+"more_controller.text_agency" = "Invia SMS all'ente";
+/* Opens the agency's tutorial or user-manual page from the More tab. */
+"more_controller.tutorials" = "Tutorial";
+/* Number of rental vehicles available at a station */
+"rental_annotation.vehicles_available_fmt" = "%d disponibili";
+/* Label for a rental vehicle's battery charge */
+"rental_detail.battery" = "Batteria";
+/* Label for the number of bikes available at a station */
+"rental_detail.bikes_available" = "Bici";
+/* Label for the number of open docks at a station */
+"rental_detail.docks_available" = "Stalli";
+/* Label for whether dropping off a vehicle is currently allowed */
+"rental_detail.dropoff" = "Riconsegna";
+/* Value shown when pickup or dropoff is not currently allowed */
+"rental_detail.no" = "No";
+/* Shown for a rental vehicle or station that is not operative */
+"rental_detail.not_in_service" = "Fuori servizio";
+/* Button opening the rental operator's app or website */
+"rental_detail.open_in_fmt" = "Apri in %@";
+/* Label for whether picking up a vehicle is currently allowed */
+"rental_detail.pickup" = "Ritiro";
+/* Primary action on the rental vehicle sheet */
+"rental_detail.plan_trip" = "Pianifica un viaggio con questa bici";
+/* Label for a rental vehicle's propulsion type */
+"rental_detail.propulsion" = "Tipo";
+/* Rental vehicle propulsion: combustion */
+"rental_detail.propulsion_combustion" = "Benzina";
+/* Rental vehicle propulsion: electric */
+"rental_detail.propulsion_electric" = "Elettrico";
+/* Rental vehicle propulsion: human-powered */
+"rental_detail.propulsion_human" = "A pedali";
+/* Label for a rental vehicle's estimated remaining range */
+"rental_detail.range" = "Autonomia";
+/* Warning shown when rental data is older than the layer's freshness window */
+"rental_detail.stale_warning" = "Questi dati potrebbero non essere aggiornati.";
+/* Feed freshness line; the argument is a relative time like '12 seconds ago' */
+"rental_detail.updated_fmt" = "Aggiornato %@";
+/* Estimated walking time to a rental vehicle */
+"rental_detail.walk_time_fmt" = "%d min a piedi";
+/* Settings > Debug section > Name identifying this device for test push notifications */
+"settings_controller.debug_section.test_device_description" = "Nome dispositivo di test";
+/* Placeholder example for the test device name field */
+"settings_controller.debug_section.test_device_description.placeholder" = "es. iPhone di Aaron";
+/* Settings > Map section > Show Apple MapKit Points of Interest */
+"settings_controller.map_section.shows_points_of_interest" = "Punti di interesse";
+/* Title of the message shown when the server has no stop at the requested ID. */
+"stop_controller.stop_not_found_title" = "Fermata non trovata";
+/* VoiceOver announcement posted when the Departure Type filter changes which departures are visible. */
+"stop_page.a11y.filter_changed" = "Filtro delle partenze modificato";
+/* VoiceOver announcement when the Past disclosure is closed. */
+"stop_page.a11y.past_hidden" = "Partenze passate nascoste";
+/* VoiceOver announcement when the Past disclosure is opened. %d is the count. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
+"stop_page.a11y.past_shown_fmt" = "Vengono mostrate %d partenze passate";
+/* VoiceOver announcement posted when a rider-initiated refresh finishes and the departure times have been updated. */
+"stop_page.a11y.refreshed" = "Partenze aggiornate";
+/* VoiceOver announcement posted when the route filter is turned off. */
+"stop_page.a11y.routes_all" = "Vengono mostrate tutte le linee";
+/* VoiceOver announcement posted when the route filter is turned on. */
+"stop_page.a11y.routes_filtered" = "Vengono mostrate le linee filtrate";
+/* VoiceOver-only heading that anchors the departures list in the Headings rotor, and the title of the rotor itself; not shown on screen. */
+"stop_page.departures_heading" = "Partenze";
+/* Empty state shown when the server has no stop at the requested ID and there is no bookmark to repair — the rider arrived from a deep link, a search result or a map pin. */
+"stop_page.empty.stop_not_found" = "Questa fermata non è più presente nei dati dell'ente di trasporto. Potrebbe essere stata spostata o rimossa.";
+/* VoiceOver clause appended to a departure row that matches the rider's inbound transfer trip. */
+"stop_page.row.a11y_transfer_trip" = "la tua corsa in coincidenza";
+/* Bottom-toolbar item on the Stop page that opens the Add Bookmark screen. */
+"stop_page.toolbar.bookmark" = "Segnalibro";
+/* Stop Location menu action that opens the trip planner with this stop as the origin. */
+"stops_controller.directions_from_here" = "Indicazioni da qui";
+/* Stop Location menu action that opens the trip planner with this stop as the destination. */
+"stops_controller.directions_to_here" = "Indicazioni fin qui";
+/* Header above the trip's full stop list. %d is the number of stops. Plural forms live in Localizable.stringsdict; this value is only the not-found fallback. */
+"trip_page.all_stops_fmt" = "Tutte le %d fermate";
+/* VoiceOver label for the trip page's header card: route, headsign, minutes until arrival, status. */
+"trip_page.card.a11y_fmt" = "Linea %1$@ per %2$@, arriva tra %3$d minuti, %4$@";
+/* VoiceOver label for the trip page's header card when the trip was reached without a stop, so there is no arrival time. */
+"trip_page.card.a11y_no_arrival_fmt" = "Linea %1$@ per %2$@";
+/* Error shown when a ghost bus report can't be submitted because the region's Obaco service is unreachable. */
+"trip_page.ghost_bus_report_unavailable" = "Non è stato possibile inviare questa segnalazione perché il servizio di segnalazione non è disponibile al momento. Riprova più tardi.";
+/* Trip page button that starts a Live Activity for this trip. */
+"trip_page.live_activity_start" = "Attività in tempo reale — traccia sulla schermata di blocco";
+/* Trip page button state once a Live Activity is running for this trip. */
+"trip_page.live_activity_tracking" = "Tracciamento sulla schermata di blocco";
+/* How stale the vehicle's reported position is. %@ is a relative time like '12s ago'. */
+"trip_page.position_updated_fmt" = "posizione aggiornata %@";
+/* Trip page button cancelling this trip's arrival alarm. */
+"trip_page.remove_alarm" = "Rimuovi sveglia";
+/* Trip page menu item for reporting a scheduled vehicle that never arrived. */
+"trip_page.report_ghost_bus" = "Segnala corsa fantasma";
+/* VoiceOver clause on a stop the vehicle has already served. */
+"trip_page.stop_list.a11y_passed" = "già superata";
+/* VoiceOver clause on the final stop of the trip. */
+"trip_page.stop_list.a11y_terminal" = "ultima fermata";
+/* VoiceOver clause on the stop the vehicle is currently at. */
+"trip_page.stop_list.a11y_vehicle_here" = "il veicolo è qui";
+/* VoiceOver clause on the rider's own stop. */
+"trip_page.stop_list.a11y_your_stop" = "la tua fermata";
+/* Header above the trip's stop list before the stops are known. */
+"trip_page.stops_header" = "Fermate";
+/* Shown while the trip's stop list is being fetched. */
+"trip_page.stops_loading" = "Caricamento delle fermate di questa corsa…";
+/* Shown when the trip's stop list could not be loaded. */
+"trip_page.stops_unavailable" = "L'elenco delle fermate di questa corsa non è disponibile al momento.";
+/* Identifies a vehicle by its ID on the trip page, e.g. 'Vehicle 6821'. */
+"trip_page.vehicle_label_fmt" = "Veicolo %@";
+/* Trip page button opening the route's schedule. */
+"trip_page.view_schedule" = "Vedi orario";
+/* Shown when the vehicle is arriving at the user's stop */
+"trip_progress.arriving_now" = "In arrivo adesso";
+/* Estimated time of arrival to the user's stop. e.g. ~8 min to your stop */
+"trip_progress.eta_to_stop_fmt" = "~%d min alla tua fermata";
+/* Shown when the vehicle has already passed the user's destination stop */
+"trip_progress.passed_your_stop" = "Ha superato la tua fermata";
+/* Shows the current stop position. e.g. Stop 5 of 18 */
+"trip_progress.stop_count_fmt" = "Fermata %1$d di %2$d";
+/* Voiceover text explaining that the vehicle has already passed this stop */
+"trip_stop.passed_stop.accessibility_label" = "Fermata superata";
