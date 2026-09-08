@@ -382,14 +382,10 @@
 /* Description of why we need location services */
 "location_permission_bulletin.description_text" = "대중교통 정류장을 더 쉽게 찾을 수 있도록 앱이 사용자의 위치에 접근하도록 허용해 주세요.";
 
-/* Button the user can tap on to decline access to their location. */
-"location_permission_bulletin.do_not_use_location_button_text" = "나중에";
 
 /* Title of the alert that appears to request your location. */
 "location_permission_bulletin.title" = "환영합니다!";
 
-/* Button the user taps to grant access to their location. */
-"location_permission_bulletin.use_location_button_text" = "내 위치 사용";
 
 /* No comment provided by engineer. */
 "locationservices_alert_gotosettings.button" = "설정에서 켜기";
@@ -1264,8 +1260,6 @@
 /* VoiceOver custom action on a grouped route card's header that creates an alarm for the next departure. */
 "stop_page.grouped.a11y_set_alarm" = "미리 알림 설정";
 
-/* VoiceOver label for one expanded departure row inside a grouped route card: route, headsign, minutes, status. */
-"stop_page.grouped.expanded_row.a11y_fmt" = "노선 %1$@, %2$@ 방면, %3$d분 후 출발, %4$@";
 
 /* Caption above the upcoming-departure minute chips on a grouped route card at accessibility text sizes. */
 "stop_page.grouped.next_departures" = "다음 출발";
@@ -1288,17 +1282,9 @@
 /* Stop page mode toggle: grouped by route */
 "stop_page.mode.route" = "노선";
 
-/* Opens the full trip screen */
-"stop_page.panel.full_trip" = "전체 운행 보기";
 
-/* Trip panel live strip. %@ is the vehicle id. */
-"stop_page.panel.live_vehicle_fmt" = "실시간 · 차량 %@";
 
-/* Body of the schedule-only notice; must communicate uncertainty (§4.1/§4.4) */
-"stop_page.panel.scheduled_body" = "아직 이 버스의 실시간 신호가 없습니다. 표시된 시각은 예정 도착 시각이며, 실제로는 더 일찍 오거나 늦게 오거나 오지 않을 수도 있습니다.";
 
-/* Title of the schedule-only notice */
-"stop_page.panel.scheduled_title" = "시간표 기준 시각만 표시";
 
 /* Button revealing recently departed trips. %d is the count. */
 "stop_page.past_toggle_fmt" = "지난 출발 · %d";
@@ -1367,14 +1353,8 @@
 /* Adherence label for a departure with no real-time signal; deliberately avoids claiming the bus is on time. */
 "stop_page.status.schedule_data" = "시간표 기준";
 
-/* Gap marker in the approach timeline. %d is the number of elided stops between the vehicle and the stops shown. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
-"stop_page.timeline.skipped_stops_fmt" = "정류장 %d개";
 
-/* Vehicle-position marker. %d is minutes to the user's stop. */
-"stop_page.timeline.vehicle_here_fmt" = "차량 위치 · %d분 거리";
 
-/* Marker on the user's stop in the approach timeline */
-"stop_page.timeline.your_stop" = "· 내 정류장";
 
 /* Walk chip on the header card. %d is the walk time in minutes. */
 "stop_page.walk_chip_minutes_fmt" = "도보 %d분";
@@ -1707,3 +1687,203 @@
 "get_off_alert.notification.title" = "Time to get off";
 /* Body of the get-off alert notification. %@ is the name of the rider's destination stop. */
 "get_off_alert.notification.body_fmt" = "Your stop, %@, is coming up.";
+/* An explanation of the optional Umami analytics fields of a custom region. */
+"custom_region_builder_controller.analytics_section.explanation" = "선택 사항입니다. Umami 분석 서버의 주소와 이 지역의 웹 사이트 ID입니다. 분석을 사용하려면 두 항목을 모두 입력해야 하며, 비워 두면 분석이 비활성화됩니다.";
+/* Title of the Analytics header. */
+"custom_region_builder_controller.analytics_section.header_title" = "분석";
+/* Placeholder for the Umami analytics website ID field. */
+"custom_region_builder_controller.analytics_section.website_id_placeholder" = "웹 사이트 ID";
+/* An explanation of the optional Obaco sidecar server URL field of a custom region. */
+"custom_region_builder_controller.sidecar_section.explanation" = "선택 사항입니다. 미리 알림과 설문조사 같은 기능을 지원하는 Obaco(OneBusAway.co) 사이드카 서버의 주소입니다. \"https://\"가 기본으로 적용됩니다.";
+/* Title of the Sidecar Server header. */
+"custom_region_builder_controller.sidecar_section.header_title" = "사이드카 서버";
+/* Placeholder for the optional comment field on the ghost bus form. */
+"ghost_bus_report.comment.placeholder" = "더 알려주실 내용이 있나요? (선택 사항)";
+/* Header over the trip summary on the ghost bus form. */
+"ghost_bus_report.context.header" = "신고 대상";
+/* Label for the route being reported on the ghost bus form. */
+"ghost_bus_report.context.route" = "노선";
+/* Label for the scheduled time on the ghost bus form. */
+"ghost_bus_report.context.scheduled" = "예정 시각";
+/* Label for the stop being reported on the ghost bus form. */
+"ghost_bus_report.context.stop" = "정류장";
+/* Label for the vehicle ID on the ghost bus form. */
+"ghost_bus_report.context.vehicle" = "차량";
+/* Error message when the server rejects a duplicate ghost bus report. */
+"ghost_bus_report.error.already_reported" = "이 기기에서 이 운행을 이미 신고한 것으로 보입니다.";
+/* Title of the ghost bus submission error alert. */
+"ghost_bus_report.error.title" = "제출할 수 없음";
+/* Footer text under the submit button on the ghost bus form. */
+"ghost_bus_report.footer" = "신고는 익명으로 처리되며 이 서비스를 운영하는 기관에 전달됩니다.";
+/* Toggle on the ghost bus form for including the rider's location with the report. */
+"ghost_bus_report.share_location" = "내 위치 공유";
+/* Submit button on the ghost bus form. */
+"ghost_bus_report.submit" = "신고 제출";
+/* Title of the ghost bus report sheet. */
+"ghost_bus_report.title" = "유령 버스 신고";
+/* Header over the wait-duration picker on the ghost bus form. */
+"ghost_bus_report.wait.header" = "예정 시각 이후";
+/* Label for the wait-duration picker on the ghost bus form. */
+"ghost_bus_report.wait.label" = "얼마나 기다리셨나요?";
+/* Wait-duration choice on the ghost bus form. */
+"ghost_bus_report.wait.minutes_fmt" = "%d분";
+/* Longest wait-duration choice on the ghost bus form. */
+"ghost_bus_report.wait.thirty_plus" = "30분 이상";
+/* Title of the alert asking the user to enable location services. */
+"locationservices_alert_notdetermined.title" = "위치 서비스 켜기";
+/* Map sheet row for the rental bikes layer */
+"map_layers.bikes" = "자전거";
+/* Map sheet row for the transit stops layer */
+"map_layers.bus_stops" = "정류장";
+/* Reason shown on a dimmed rental layer row when its server is unreachable */
+"map_layers.rental_unavailable" = "지금은 사용할 수 없음";
+/* Map sheet row for the rental scooters layer */
+"map_layers.scooters" = "킥보드";
+/* Map sheet row for the layer drawing a selected stop's routes and live vehicles. */
+"map_layers.stop_routes" = "노선 경로 및 차량";
+/* Map sheet row for the layer drawing the trip the rider is following. */
+"map_layers.trip_focus" = "추적 중인 운행";
+/* Basemap style: satellite imagery with labels */
+"map_sheet.basemap_hybrid" = "하이브리드";
+/* Basemap style: satellite imagery */
+"map_sheet.basemap_satellite" = "위성";
+/* Basemap style: standard street map */
+"map_sheet.basemap_standard" = "표준";
+/* Map sheet section for display options like Points of Interest */
+"map_sheet.display_group" = "지도 표시";
+/* Map sheet row label for the rental minimum-range filter */
+"map_sheet.minimum_range" = "최소 주행 거리";
+/* Range filter menu option imposing no minimum range */
+"map_sheet.minimum_range_any" = "제한 없음";
+/* Map sheet group header for non-transit mobility layers */
+"map_sheet.other_modes_group" = "다른 이동 수단";
+/* Button restoring the default map layer configuration */
+"map_sheet.reset" = "초기화";
+/* Map sheet toggle for Apple MapKit Points of Interest (restaurants, shops, etc.) */
+"map_sheet.shows_points_of_interest" = "관심 지점";
+/* Title of the Map sheet */
+"map_sheet.title" = "지도";
+/* Map sheet group header for transit layers */
+"map_sheet.transit_group" = "대중교통";
+/* Header for More-tab rows that open tutorial, phone, or text links configured by the agency. */
+"more_controller.agency_contact.header" = "문의 및 도움말";
+/* Opens a tel: link to call the transit agency from the More tab. */
+"more_controller.call_agency" = "운영 기관에 전화";
+/* Opens an sms: (or web) link for the agency's text information service. */
+"more_controller.text_agency" = "운영 기관에 메시지 보내기";
+/* Opens the agency's tutorial or user-manual page from the More tab. */
+"more_controller.tutorials" = "이용 안내";
+/* Number of rental vehicles available at a station */
+"rental_annotation.vehicles_available_fmt" = "%d대 이용 가능";
+/* Label for a rental vehicle's battery charge */
+"rental_detail.battery" = "배터리";
+/* Label for the number of bikes available at a station */
+"rental_detail.bikes_available" = "자전거";
+/* Label for the number of open docks at a station */
+"rental_detail.docks_available" = "거치대";
+/* Label for whether dropping off a vehicle is currently allowed */
+"rental_detail.dropoff" = "반납";
+/* Value shown when pickup or dropoff is not currently allowed */
+"rental_detail.no" = "불가";
+/* Shown for a rental vehicle or station that is not operative */
+"rental_detail.not_in_service" = "운영 중지";
+/* Button opening the rental operator's app or website */
+"rental_detail.open_in_fmt" = "%@에서 열기";
+/* Label for whether picking up a vehicle is currently allowed */
+"rental_detail.pickup" = "대여";
+/* Primary action on the rental vehicle sheet */
+"rental_detail.plan_trip" = "이 차량으로 경로 계획하기";
+/* Label for a rental vehicle's propulsion type */
+"rental_detail.propulsion" = "동력";
+/* Rental vehicle propulsion: combustion */
+"rental_detail.propulsion_combustion" = "가솔린";
+/* Rental vehicle propulsion: electric */
+"rental_detail.propulsion_electric" = "전기";
+/* Rental vehicle propulsion: human-powered */
+"rental_detail.propulsion_human" = "인력";
+/* Label for a rental vehicle's estimated remaining range */
+"rental_detail.range" = "주행 거리";
+/* Warning shown when rental data is older than the layer's freshness window */
+"rental_detail.stale_warning" = "이 데이터가 오래되었을 수 있습니다.";
+/* Feed freshness line; the argument is a relative time like '12 seconds ago' */
+"rental_detail.updated_fmt" = "업데이트 %@";
+/* Estimated walking time to a rental vehicle */
+"rental_detail.walk_time_fmt" = "도보 %d분";
+/* Settings > Debug section > Name identifying this device for test push notifications */
+"settings_controller.debug_section.test_device_description" = "테스트 기기 이름";
+/* Placeholder example for the test device name field */
+"settings_controller.debug_section.test_device_description.placeholder" = "예: Aaron의 iPhone";
+/* Settings > Map section > Show Apple MapKit Points of Interest */
+"settings_controller.map_section.shows_points_of_interest" = "관심 지점";
+/* Title of the message shown when the server has no stop at the requested ID. */
+"stop_controller.stop_not_found_title" = "정류장을 찾을 수 없음";
+/* VoiceOver announcement posted when the Departure Type filter changes which departures are visible. */
+"stop_page.a11y.filter_changed" = "출발 유형 필터 변경됨";
+/* VoiceOver announcement when the Past disclosure is closed. */
+"stop_page.a11y.past_hidden" = "지난 출발 숨김";
+/* VoiceOver announcement when the Past disclosure is opened. %d is the count. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
+"stop_page.a11y.past_shown_fmt" = "지난 출발 %d건 표시";
+/* VoiceOver announcement posted when a rider-initiated refresh finishes and the departure times have been updated. */
+"stop_page.a11y.refreshed" = "출발 정보 업데이트됨";
+/* VoiceOver announcement posted when the route filter is turned off. */
+"stop_page.a11y.routes_all" = "모든 노선 표시 중";
+/* VoiceOver announcement posted when the route filter is turned on. */
+"stop_page.a11y.routes_filtered" = "필터링된 노선 표시 중";
+/* VoiceOver-only heading that anchors the departures list in the Headings rotor, and the title of the rotor itself; not shown on screen. */
+"stop_page.departures_heading" = "출발";
+/* Empty state shown when the server has no stop at the requested ID and there is no bookmark to repair — the rider arrived from a deep link, a search result or a map pin. */
+"stop_page.empty.stop_not_found" = "이 정류장은 더 이상 운영 기관 데이터에 없습니다. 이전되었거나 폐지되었을 수 있습니다.";
+/* VoiceOver clause appended to a departure row that matches the rider's inbound transfer trip. */
+"stop_page.row.a11y_transfer_trip" = "내 환승 운행";
+/* Bottom-toolbar item on the Stop page that opens the Add Bookmark screen. */
+"stop_page.toolbar.bookmark" = "즐겨찾기";
+/* Stop Location menu action that opens the trip planner with this stop as the origin. */
+"stops_controller.directions_from_here" = "여기에서 출발하는 경로";
+/* Stop Location menu action that opens the trip planner with this stop as the destination. */
+"stops_controller.directions_to_here" = "여기로 가는 경로";
+/* Header above the trip's full stop list. %d is the number of stops. Plural forms live in Localizable.stringsdict; this value is only the not-found fallback. */
+"trip_page.all_stops_fmt" = "전체 정류장 %d개";
+/* VoiceOver label for the trip page's header card: route, headsign, minutes until arrival, status. */
+"trip_page.card.a11y_fmt" = "노선 %1$@, %2$@ 방면, %3$d분 후 도착, %4$@";
+/* VoiceOver label for the trip page's header card when the trip was reached without a stop, so there is no arrival time. */
+"trip_page.card.a11y_no_arrival_fmt" = "노선 %1$@, %2$@ 방면";
+/* Error shown when a ghost bus report can't be submitted because the region's Obaco service is unreachable. */
+"trip_page.ghost_bus_report_unavailable" = "신고 서비스를 사용할 수 없어 이 신고를 제출하지 못했습니다. 나중에 다시 시도해 주세요.";
+/* Trip page button that starts a Live Activity for this trip. */
+"trip_page.live_activity_start" = "실시간 액티비티 — 잠금 화면에서 추적";
+/* Trip page button state once a Live Activity is running for this trip. */
+"trip_page.live_activity_tracking" = "잠금 화면에서 추적 중";
+/* How stale the vehicle's reported position is. %@ is a relative time like '12s ago'. */
+"trip_page.position_updated_fmt" = "위치 업데이트 %@";
+/* Trip page button cancelling this trip's arrival alarm. */
+"trip_page.remove_alarm" = "미리 알림 제거";
+/* Trip page menu item for reporting a scheduled vehicle that never arrived. */
+"trip_page.report_ghost_bus" = "유령 버스 신고";
+/* VoiceOver clause on a stop the vehicle has already served. */
+"trip_page.stop_list.a11y_passed" = "이미 지나감";
+/* VoiceOver clause on the final stop of the trip. */
+"trip_page.stop_list.a11y_terminal" = "마지막 정류장";
+/* VoiceOver clause on the stop the vehicle is currently at. */
+"trip_page.stop_list.a11y_vehicle_here" = "차량이 여기에 있습니다";
+/* VoiceOver clause on the rider's own stop. */
+"trip_page.stop_list.a11y_your_stop" = "내 정류장";
+/* Header above the trip's stop list before the stops are known. */
+"trip_page.stops_header" = "정류장";
+/* Shown while the trip's stop list is being fetched. */
+"trip_page.stops_loading" = "이 운행의 정류장을 불러오는 중…";
+/* Shown when the trip's stop list could not be loaded. */
+"trip_page.stops_unavailable" = "지금은 이 운행의 정류장 목록을 사용할 수 없습니다.";
+/* Identifies a vehicle by its ID on the trip page, e.g. 'Vehicle 6821'. */
+"trip_page.vehicle_label_fmt" = "차량 %@";
+/* Trip page button opening the route's schedule. */
+"trip_page.view_schedule" = "시간표 보기";
+/* Shown when the vehicle is arriving at the user's stop */
+"trip_progress.arriving_now" = "지금 도착";
+/* Estimated time of arrival to the user's stop. e.g. ~8 min to your stop */
+"trip_progress.eta_to_stop_fmt" = "내 정류장까지 약 %d분";
+/* Shown when the vehicle has already passed the user's destination stop */
+"trip_progress.passed_your_stop" = "내 정류장 지나감";
+/* Shows the current stop position. e.g. Stop 5 of 18 */
+"trip_progress.stop_count_fmt" = "%2$d개 중 %1$d번째 정류장";
+/* Voiceover text explaining that the vehicle has already passed this stop */
+"trip_stop.passed_stop.accessibility_label" = "지나간 정류장";

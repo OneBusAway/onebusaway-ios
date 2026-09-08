@@ -212,7 +212,9 @@ struct DepartureRowView: View {
         switch style {
         case .past:
             let fmt = OBALoc("stop_page.row.a11y_past_fmt", value: "Route %@ to %@, departed %d minutes ago, %@", comment: "VoiceOver label for a departure row that has already departed: route, headsign, minutes ago, status.")
-            return String(format: fmt, departure.routeShortName, departure.tripHeadsign ?? "", abs(departure.arrivalDepartureMinutes), status.accessibilityStatusDescription)
+            // localizedStringWithFormat so the stringsdict plural categories resolve
+            // against the rider's locale rather than the root rule.
+            return String.localizedStringWithFormat(fmt, departure.routeShortName, departure.tripHeadsign ?? "", abs(departure.arrivalDepartureMinutes), status.accessibilityStatusDescription)
         case .normal, .missed:
             return StopPageAccessibilityCopy.upcomingIdentity(
                 routeShortName: departure.routeShortName,

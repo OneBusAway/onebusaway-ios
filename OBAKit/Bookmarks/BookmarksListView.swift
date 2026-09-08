@@ -151,8 +151,8 @@ struct BookmarksListView: View {
         .buttonStyle(.plain)
         .accessibilityLabel(section.title)
         .accessibilityValue(collapsed
-            ? OBALoc("stop_page.grouped.a11y_collapsed", value: "collapsed", comment: "VoiceOver value of a collapsible section header when its contents are hidden.")
-            : OBALoc("stop_page.grouped.a11y_expanded", value: "expanded", comment: "VoiceOver value of a collapsible section header when its contents are visible."))
+            ? OBALoc("stop_page.grouped.a11y_collapsed", value: "collapsed", comment: "VoiceOver value of a collapsible header or grouped route card whose contents are hidden.")
+            : OBALoc("stop_page.grouped.a11y_expanded", value: "expanded", comment: "VoiceOver value of a collapsible header or grouped route card whose contents are showing."))
     }
 
     // MARK: - Rows
