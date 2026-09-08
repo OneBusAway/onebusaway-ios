@@ -19,7 +19,9 @@ scripts/generate_project                # Defaults to OneBusAway if no app speci
 
 ### Picking a Simulator
 
-Every command below needs a simulator UDID. Resolve one with:
+The `xcodebuild` and `xcodebuildmcp` blocks below need a simulator UDID —
+`scripts/swiftlint.sh`, `scripts/docs` (which builds for `generic/platform=iOS`),
+`scripts/version` and the `--help` blocks need nothing. Resolve one with:
 
 ```bash
 SIMULATOR_UDID=$(scripts/resolve_simulator_udid)
