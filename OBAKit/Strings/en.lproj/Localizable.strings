@@ -520,8 +520,10 @@
 /* Title of the alert that appears when the user is updating their current region manually. */
 "map_controller.change_region_alert.title" = "Change Region?";
 
-/* Voiceover text for the button that opens the Map settings sheet.
-   Voiceover text indicating that this button toggles the base map type. */
+/* Voiceover text for the button that opens the Map settings sheet, which covers the base map, points of interest, transit layers and other travel modes. */
+"map_controller.map_settings.accessibility_label" = "Map settings";
+
+/* Voiceover text indicating that this button toggles the base map type. */
 "map_controller.map_type.accessibility_label" = "Map type";
 
 /* Voiceover value combining the base map type with the number of enabled map layers. %1$@ is the base map type, %2$d is the layer count. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
