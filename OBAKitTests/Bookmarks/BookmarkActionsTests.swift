@@ -110,6 +110,36 @@ final class BookmarkActionsTests: OBATestCase {
         #expect(BookmarkActions.buildContentState(from: []) == nil)
     }
 
+    /// The trip page's entry point (#1393). It holds one `ArrivalDeparture` and no
+    /// stop list, so it calls the mapping directly rather than
+    /// `buildContentState(from:matching:)`, whose headsign warning describes a
+    /// direction-mixing risk a one-element list cannot have.
+    ///
+    /// Pins that this produces exactly what the trip page used to build by hand,
+    /// field for field — the change is meant to be a no-op there.
+    @Test @MainActor func `Content state from a single departure maps that departure`() throws {
+        let departure = try arrivalDeparture(
+            routeID: "40_100479",
+            headsign: "Angle Lake",
+            tripID: "trip_south",
+            departureEpoch: 1_700_000_120
+        )
+
+        let state = BookmarkActions.contentState(from: [departure])
+
+        // `ArrivalInfo` is `Hashable`, so one comparison pins every field — including
+        // `scheduleStatus`, which field-by-field assertions had left out while the
+        // docstring claimed otherwise.
+        let expected = TripAttributes.ContentState.ArrivalInfo(
+            departureTime: Int(departure.arrivalDepartureDate.timeIntervalSince1970),
+            scheduleStatus: .init(departure.scheduleStatus),
+            scheduleDeviation: departure.deviationFromScheduleInMinutes * 60,
+            isArrival: departure.arrivalDepartureStatus == .arriving
+        )
+
+        #expect(state.arrivals == [expected])
+    }
+
     /// With arrivals, at most the first three are carried into the activity.
     @Test @MainActor func `Content state carries at most three arrivals`() throws {
         let stopArrivals = try Fixtures.loadRESTAPIPayload(
