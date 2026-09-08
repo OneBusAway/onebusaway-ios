@@ -146,6 +146,51 @@ final class LocationServiceRegionMonitoringTests: OBATestCase {
         #expect(self.service.isProximityMonitoringAuthorized)
     }
 
+    @Test func `Always prompt is unspent on a fresh install`() {
+        #expect(self.service.canPromptForAlwaysAuthorization)
+    }
+
+    @Test func `Requesting Always spends the one time prompt`() {
+        locationManagerMock._authorizationStatus = .authorizedWhenInUse
+
+        service.requestAlwaysAuthorization()
+
+        #expect(self.service.isProximityMonitoringAuthorized)
+        #expect(!self.service.canPromptForAlwaysAuthorization)
+    }
+
+    @Test func `A second Always request is never forwarded`() {
+        locationManagerMock._authorizationStatus = .authorizedWhenInUse
+        service.requestAlwaysAuthorization()
+        // Back where a rider who dismissed the prompt would be.
+        locationManagerMock._authorizationStatus = .authorizedWhenInUse
+
+        service.requestAlwaysAuthorization()
+
+        // The mock upgrades whenever it is asked, so a status that did not move
+        // is proof the request stopped here instead of reaching Core Location —
+        // which is what the real one-shot does, silently.
+        #expect(self.service.authorizationStatus == .authorizedWhenInUse)
+    }
+
+    @Test func `A denied status does not spend the Always prompt`() {
+        locationManagerMock._authorizationStatus = .denied
+
+        service.requestAlwaysAuthorization()
+
+        // iOS raises nothing from `.denied`, so nothing was spent: a rider who
+        // turns location back on in Settings still has their upgrade path.
+        #expect(self.service.canPromptForAlwaysAuthorization)
+    }
+
+    @Test func `Already having Always does not spend the prompt`() {
+        locationManagerMock._authorizationStatus = .authorizedAlways
+
+        service.requestAlwaysAuthorization()
+
+        #expect(self.service.canPromptForAlwaysAuthorization)
+    }
+
     @Test func `Request always authorization does nothing when denied`() {
         locationManagerMock._authorizationStatus = .denied
 
