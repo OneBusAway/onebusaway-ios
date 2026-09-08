@@ -24,6 +24,11 @@ struct TripActionBar: View {
     let canSchedule: Bool
     let canAlarm: Bool
     let hasAlarm: Bool
+    /// Whether the rider can set a get-off alert for their destination stop.
+    /// Shown only when `isProximityMonitoringAuthorized` and a departure is known.
+    let canGetOffAlert: Bool
+    /// `true` once an alert is already armed — button switches to "Remove" state.
+    let hasGetOffAlert: Bool
     let canReportGhostBus: Bool
 
     /// Ceiling on the bar's height at accessibility sizes, past which it scrolls. Supplied by the
@@ -45,6 +50,7 @@ struct TripActionBar: View {
     let onBookmark: () -> Void
     let onSchedule: () -> Void
     let onAlarm: () -> Void
+    let onGetOffAlert: () -> Void
     let onReportGhostBus: () -> Void
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -136,6 +142,16 @@ struct TripActionBar: View {
                         : Strings.addAlarm,
                     systemImage: hasAlarm ? "bell.fill" : "bell",
                     action: onAlarm
+                )
+            }
+
+            if canGetOffAlert {
+                secondaryButton(
+                    title: hasGetOffAlert
+                        ? OBALoc("trip_page.remove_get_off_alert", value: "Remove alert", comment: "Trip page button that removes an active get-off alert.")
+                        : OBALoc("trip_page.add_get_off_alert", value: "Notify me", comment: "Trip page button that sets a get-off alert for the rider's destination stop."),
+                    systemImage: hasGetOffAlert ? "figure.walk.arrival" : "figure.walk.departure",
+                    action: onGetOffAlert
                 )
             }
 

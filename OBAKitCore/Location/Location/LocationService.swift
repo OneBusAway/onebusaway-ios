@@ -653,15 +653,105 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
         }
     }
 
-    public func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
-        guard region.identifier.hasPrefix(Self.proximityRegionPrefix) else { return }
+    // MARK: - Get-Off Alert Region Monitoring
 
-        // Every region registered under this prefix is created as a
-        // `CLCircularRegion` a few lines above, so one that isn't means either a
-        // bug here or something else writing into our identifier namespace.
-        // Returning silently would strand the alert with nothing to debug from.
+    /// The region-identifier prefix used for get-off alert geofences.
+    ///
+    /// Deliberately distinct from `proximityRegionPrefix` so the two features'
+    /// regions never collide or intercept each other's events.
+    public static let getOffAlertRegionPrefix = "oba.get-off-alert."
+
+    static func getOffAlertRegionIdentifier(for alert: GetOffAlert) -> String {
+        getOffAlertRegionPrefix + alert.id.uuidString
+    }
+
+    static func getOffAlertRegionIdentifier(forAlertID id: UUID) -> String {
+        getOffAlertRegionPrefix + id.uuidString
+    }
+
+    /// Recovers the get-off alert UUID from a region identifier, or nil for
+    /// regions this feature did not create.
+    public static func getOffAlertID(forRegionIdentifier identifier: String) -> UUID? {
+        guard identifier.hasPrefix(getOffAlertRegionPrefix) else { return nil }
+        return UUID(uuidString: String(identifier.dropFirst(getOffAlertRegionPrefix.count)))
+    }
+
+    /// The regions currently monitored on behalf of get-off alerts.
+    public var monitoredGetOffAlertRegions: Set<CLRegion> {
+        locationManager.monitoredRegions.filter { $0.identifier.hasPrefix(Self.getOffAlertRegionPrefix) }
+    }
+
+    /// The IDs of the get-off alerts currently armed.
+    public var monitoredGetOffAlertIDs: Set<UUID> {
+        Set(monitoredGetOffAlertRegions.compactMap { Self.getOffAlertID(forRegionIdentifier: $0.identifier) })
+    }
+
+    /// Arms a geofence for a get-off alert.
+    ///
+    /// The result must not be discarded: a failure here is permanent until
+    /// something re-arms the alert — nothing self-heals it.
+    @discardableResult
+    public func startMonitoringGetOffAlert(_ alert: GetOffAlert) -> ProximityMonitoringResult {
+        guard isProximityMonitoringAuthorized else {
+            Logger.warn("GetOffAlert \(alert.id): needs authorizedAlways, have \(authorizationStatus).")
+            return .insufficientAuthorization(authorizationStatus)
+        }
+
+        let identifier = Self.getOffAlertRegionIdentifier(for: alert)
+
+        let isReplacement = locationManager.monitoredRegions.contains { $0.identifier == identifier }
+        if !isReplacement, locationManager.monitoredRegions.count >= Self.maximumMonitoredRegions {
+            Logger.warn("GetOffAlert \(alert.id): already at the \(Self.maximumMonitoredRegions)-region limit.")
+            return .regionLimitReached(limit: Self.maximumMonitoredRegions)
+        }
+
+        let requestedRadius = alert.radiusMeters
+        let deviceMaximum = locationManager.maximumRegionMonitoringDistance
+        let radius = deviceMaximum > 0 ? min(requestedRadius, deviceMaximum) : requestedRadius
+
+        let region = CLCircularRegion(center: alert.coordinate, radius: radius, identifier: identifier)
+        region.notifyOnEntry = true
+        region.notifyOnExit = false
+        locationManager.startMonitoring(for: region)
+
+        guard radius == requestedRadius else {
+            Logger.warn("GetOffAlert \(alert.id) radius \(requestedRadius)m exceeds device max \(deviceMaximum)m; monitoring at \(radius)m.")
+            return .startedWithClampedRadius(requested: requestedRadius, monitored: radius)
+        }
+
+        return .started
+    }
+
+    /// Stops monitoring the geofence for a specific get-off alert.
+    public func stopMonitoringGetOffAlert(_ alert: GetOffAlert) {
+        stopMonitoringGetOffAlertID(alert.id)
+    }
+
+    /// Stops monitoring by alert ID — used when the alert object itself is no
+    /// longer available (e.g. it expired and was deleted before reconciliation ran).
+    public func stopMonitoringGetOffAlertID(_ id: UUID) {
+        let identifier = Self.getOffAlertRegionIdentifier(forAlertID: id)
+        guard let region = locationManager.monitoredRegions.first(where: { $0.identifier == identifier }) else {
+            return
+        }
+        locationManager.stopMonitoring(for: region)
+    }
+
+    /// Stops monitoring all get-off alert regions, leaving other monitored
+    /// regions (e.g. proximity alerts) untouched.
+    public func stopMonitoringAllGetOffAlerts() {
+        for region in monitoredGetOffAlertRegions {
+            locationManager.stopMonitoring(for: region)
+        }
+    }
+
+    public func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
+        let isProximity = region.identifier.hasPrefix(Self.proximityRegionPrefix)
+        let isGetOff = region.identifier.hasPrefix(Self.getOffAlertRegionPrefix)
+        guard isProximity || isGetOff else { return }
+
         guard region is CLCircularRegion else {
-            Logger.error("Entered region \(region.identifier) carrying the proximity prefix but typed \(type(of: region)) rather than CLCircularRegion. Ignoring.")
+            Logger.error("Entered region \(region.identifier) carrying a monitored prefix but typed \(type(of: region)) rather than CLCircularRegion. Ignoring.")
             return
         }
 
@@ -680,15 +770,14 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
             return
         }
 
-        // Mirrors the prefix filter in `didEnterRegion`. Without it, proximity
-        // delegates receive every monitoring failure in the app — including ones
-        // they can neither attribute nor act on.
-        guard identifier.hasPrefix(Self.proximityRegionPrefix) else {
-            Logger.error("Region monitoring failed for non-proximity region \(identifier) (\(kind)): \(error)")
+        let isKnown = identifier.hasPrefix(Self.proximityRegionPrefix)
+            || identifier.hasPrefix(Self.getOffAlertRegionPrefix)
+        guard isKnown else {
+            Logger.error("Region monitoring failed for non-managed region \(identifier) (\(kind)): \(error)")
             return
         }
 
-        Logger.error("Region monitoring failed for proximity region \(identifier) (\(kind)): \(error)")
+        Logger.error("Region monitoring failed for region \(identifier) (\(kind)): \(error)")
         notifyDelegatesMonitoringDidFail(identifier, error: error, kind: kind)
     }
 }

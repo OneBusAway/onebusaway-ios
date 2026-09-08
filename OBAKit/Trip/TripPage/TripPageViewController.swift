@@ -39,6 +39,9 @@ final class TripPageViewController: UIHostingController<TripPageView>,
     private var alarmBuilder: AlarmBuilder?
     private var alarmBuilderDeparture: ArrivalDeparture?
     private var isTrackingLiveActivity = false
+    /// Tracks whether a get-off alert is currently armed for this trip's destination stop.
+    /// Rebuilt on every `render()` from `getOffAlertManager`.
+    private var isGetOffAlertActive = false
 
     /// `true` while the sheet showing this page sits at its `.tip` detent. Stored rather than
     /// derived so every `render()` — the 30s refresh drives one — rebuilds the page with the
@@ -132,6 +135,12 @@ final class TripPageViewController: UIHostingController<TripPageView>,
         // the map back then would drop the trip while the rider is still on it.
         if isMovingFromParent {
             onMapFocusChanged?(nil)
+            // Cancel any get-off alerts for this trip — they should not survive
+            // the rider navigating away. A stale geofence would fire for a later,
+            // unrelated trip that happens to pass the same stop.
+            if let tripID = departure?.tripID {
+                application.getOffAlertManager.cancelAlerts(forTripID: tripID)
+            }
         }
     }
 
@@ -188,6 +197,15 @@ final class TripPageViewController: UIHostingController<TripPageView>,
     /// view model is observed directly by the view, so this is only for the
     /// action gates and the two pieces of state this controller owns.
     private func render() {
+        // Rebuild get-off alert state on every render so the button
+        // reflects the live store rather than a snapshot from init.
+        if let departure {
+            isGetOffAlertActive = application.getOffAlertManager.hasActiveAlert(
+                tripID: departure.tripID,
+                stopID: departure.stopID
+            )
+        }
+
         rootView = TripPageView(
             viewModel: viewModel,
             originTitle: originTitle,
@@ -195,6 +213,7 @@ final class TripPageViewController: UIHostingController<TripPageView>,
             backBehavior: backBehavior,
             hasAlarm: false,
             isTrackingLiveActivity: isTrackingLiveActivity,
+            hasGetOffAlert: isGetOffAlertActive,
             isCollapsed: isAtTip
         )
     }
@@ -245,6 +264,11 @@ final class TripPageViewController: UIHostingController<TripPageView>,
         // there is no stop and nothing to count down to.
         actions.canStartLiveActivity = departure != nil && ActivityAuthorizationInfo().areActivitiesEnabled
         actions.canReportGhostBus = application.features.obaco == .running
+        // Get-off alert requires Always location permission (geofences) and a
+        // departure to identify which stop the rider wants to be notified for.
+        actions.canGetOffAlert = departure != nil
+            && application.locationService.isProximityMonitoringAuthorized
+        actions.hasGetOffAlert = isGetOffAlertActive
 
         actions.onBack = { [weak self] in self?.goBack() }
         actions.onSelectStop = { [weak self] stopID in
@@ -256,6 +280,7 @@ final class TripPageViewController: UIHostingController<TripPageView>,
         actions.onAlarm = { [weak self] in self?.showAlarmPicker() }
         actions.onLiveActivity = { [weak self] in self?.startLiveActivity() }
         actions.onReportGhostBus = { [weak self] in self?.showGhostBusReport() }
+        actions.onGetOffAlert = { [weak self] in self?.toggleGetOffAlert() }
 
         return actions
     }
@@ -386,6 +411,100 @@ final class TripPageViewController: UIHostingController<TripPageView>,
         alarmBuilderDeparture = departure
         alarmBuilder = AlarmBuilder(arrivalDeparture: departure, application: application, delegate: self)
         alarmBuilder?.showBulletin(above: self)
+    }
+
+    // MARK: - Get-Off Alert
+
+    private func toggleGetOffAlert() {
+        guard let departure else { return }
+
+        let manager = application.getOffAlertManager
+
+        // If an alert is already active, cancel it and update the UI.
+        if let existing = manager.activeAlert(tripID: departure.tripID, stopID: departure.stopID) {
+            manager.cancel(existing)
+            isGetOffAlertActive = false
+            render()
+            return
+        }
+
+        // Arm a new alert. The async result tells us whether to show a success
+        // toast or an explanation of what permission is missing.
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            guard let stop = departure.stop else { return }
+            let result = await manager.createAlert(
+                for: stop,
+                tripID: departure.tripID,
+                stopSequence: departure.stopSequence
+            )
+
+            switch result {
+            case .activated, .activatedWithClampedRadius:
+                isGetOffAlertActive = true
+                render()
+                let message = OBALoc(
+                    "trip_page.get_off_alert_set",
+                    value: "Alert set",
+                    comment: "Toast shown when a get-off alert is successfully armed."
+                )
+                ProgressHUD.showSuccessAndDismiss(message: message)
+
+            case .needsLocationAuthorization:
+                await AlertPresenter.show(
+                    error: GetOffAlertError.needsAlwaysLocation,
+                    presentingController: self
+                )
+
+            case .needsNotificationAuthorization:
+                await AlertPresenter.show(
+                    error: GetOffAlertError.needsNotifications,
+                    presentingController: self
+                )
+
+            case .alreadyActive:
+                // Race: another path activated it between the guard above and the
+                // await. Sync state and move on — no user-visible error needed.
+                isGetOffAlertActive = true
+                render()
+
+            case .regionLimitReached:
+                await AlertPresenter.show(
+                    error: GetOffAlertError.regionLimitReached,
+                    presentingController: self
+                )
+            }
+        }
+    }
+
+    /// User-facing errors for `GetOffAlertActivationResult` failure cases.
+    private enum GetOffAlertError: LocalizedError {
+        case needsAlwaysLocation
+        case needsNotifications
+        case regionLimitReached
+
+        var errorDescription: String? {
+            switch self {
+            case .needsAlwaysLocation:
+                return OBALoc(
+                    "get_off_alert.error.needs_always_location",
+                    value: "To alert you when your stop is coming up, allow location access \"Always\" in Settings.",
+                    comment: "Error shown when a get-off alert cannot be set because the app only has 'While Using' location access."
+                )
+            case .needsNotifications:
+                return OBALoc(
+                    "get_off_alert.error.needs_notifications",
+                    value: "To alert you when your stop is coming up, allow notifications for this app in Settings.",
+                    comment: "Error shown when a get-off alert cannot be set because notification permission is denied."
+                )
+            case .regionLimitReached:
+                return OBALoc(
+                    "get_off_alert.error.region_limit",
+                    value: "Too many alerts are active. Remove an existing alert and try again.",
+                    comment: "Error shown when a get-off alert cannot be set because the OS geofence limit has been reached."
+                )
+            }
+        }
     }
 
     // MARK: - AlarmBuilderDelegate
