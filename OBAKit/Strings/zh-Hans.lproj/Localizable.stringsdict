@@ -2,6 +2,20 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>alarm_builder_controller.minutes_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>other</key>
+			<string>%d分钟</string>
+		</dict>
+	</dict>
 	<key>data_migration_bulletin.report_summary_number_of_failures</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -100,6 +114,52 @@
 			<string>未来%d分钟内没有离站班次</string>
 		</dict>
 	</dict>
+	<key>stop_page.grouped.a11y_arrives_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$@号公交线路，开往%2$@，下一班将在%3$#@count@后到站，%4$@。另外加载了%5$#@departures@。</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>other</key>
+			<string>%3$d分钟</string>
+		</dict>
+		<key>departures</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>other</key>
+			<string>%5$d个班次</string>
+		</dict>
+	</dict>
+	<key>stop_page.grouped.a11y_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$@号公交线路，开往%2$@，下一班将在%3$#@count@后离站，%4$@。另外加载了%5$#@departures@。</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>other</key>
+			<string>%3$d分钟</string>
+		</dict>
+		<key>departures</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>other</key>
+			<string>%5$d个班次</string>
+		</dict>
+	</dict>
 	<key>stop_page.past_toggle_show_a11y_fmt</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -112,6 +172,48 @@
 			<string>d</string>
 			<key>other</key>
 			<string>显示%d个已离站的班次</string>
+		</dict>
+	</dict>
+	<key>stop_page.row.a11y_arrives_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$@号公交线路，开往%2$@，将在%3$#@count@后到站，%4$@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>other</key>
+			<string>%3$d分钟</string>
+		</dict>
+	</dict>
+	<key>stop_page.row.a11y_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$@号公交线路，开往%2$@，将在%3$#@count@后离站，%4$@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>other</key>
+			<string>%3$d分钟</string>
+		</dict>
+	</dict>
+	<key>stop_page.row.a11y_past_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$@号公交线路，开往%2$@，已在%3$#@count@前离站，%4$@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>other</key>
+			<string>%3$d分钟</string>
 		</dict>
 	</dict>
 	<key>stop_page.service_alerts.show_all_fmt</key>
@@ -154,6 +256,20 @@
 			<string>d</string>
 			<key>other</key>
 			<string>%d个车站</string>
+		</dict>
+	</dict>
+	<key>trip_page.card.a11y_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$@号公交线路，开往%2$@，将在%3$#@count@后到站，%4$@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>other</key>
+			<string>%3$d分钟</string>
 		</dict>
 	</dict>
 </dict>
