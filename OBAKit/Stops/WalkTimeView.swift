@@ -109,9 +109,10 @@ class WalkTimeView: UIView {
         let arrivalTime = formatters.timeFormatter.string(from: Date().addingTimeInterval(timeToWalk))
 
         if let timeString = formatters.positionalTimeFormatter.string(from: timeToWalk) {
-            let fmt = isBikeMode
-                ? OBALoc("walk_time_view.distance_time_bike_fmt", value: "%@, %@: arriving at %@", comment: "Format string with placeholders for distance from stop, biking time to stop, and predicted arrival time. e.g. 1.2 miles, 6m: arriving at 09:41 A.M.")
-                : OBALoc("walk_time_view.distance_time_fmt", value: "%@, %@: arriving at %@", comment: "Format string with placeholders for distance from stop, walking time to stop, and predicted arrival time. e.g. 1.2 miles, 17m: arriving at 09:41 A.M.")
+            // Mode-neutral by construction — "1.2 miles, 6m: arriving at 09:41" reads the same
+            // whether those minutes were walked or ridden, so both modes share one string
+            // rather than making translators maintain two identical ones.
+            let fmt = OBALoc("walk_time_view.distance_time_fmt", value: "%@, %@: arriving at %@", comment: "Format string with placeholders for distance from stop, travel time to stop, and predicted arrival time. e.g. 1.2 miles, 17m: arriving at 09:41 A.M.")
             label.text = String(format: fmt, distanceString, timeString, arrivalTime)
         }
         else {

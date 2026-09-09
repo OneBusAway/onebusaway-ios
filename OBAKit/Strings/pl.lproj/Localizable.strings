@@ -1079,6 +1079,18 @@
 /* Title for the departure filter setting row */
 "settings_controller.arrival_filter.title" = "Pokazuj odjazdy";
 
+/* Settings > Bike Mode section title */
+"settings_controller.bike_mode_section.title" = "Tryb rowerowy";
+
+/* Settings > Bike Mode section footer */
+"settings_controller.bike_mode_section.footer" = "Używa większej prędkości przemieszczania się do szacowania czasu dojazdu na przystanek, godzin przyjazdu i na stronie przystanku.";
+
+/* Settings > Bike Mode > on/off toggle */
+"settings_controller.bike_mode.title" = "Tryb rowerowy";
+
+/* Settings > Bike Mode > HealthKit denial or no-data toast */
+"settings_controller.bike_mode.healthkit_unavailable" = "Nie udało się zsynchronizować prędkości jazdy rowerem z aplikacją Zdrowie. Zostanie użyta standardowa prędkość roweru.";
+
 /* Settings > Debug section > Refresh regions on every launch */
 "settings_controller.debug_section.always_refresh_regions" = "Odśwież regiony przy każdym uruchomieniu";
 
@@ -1216,6 +1228,15 @@
 
 /* Title of the alert shown when the user tries to set a departure alarm but notifications are denied in Settings. */
 "stop_page.alarm_permission_denied.title" = "Powiadomienia są wyłączone";
+
+/* Divider between departures you'd miss on a bike and ones you can still catch. %d is the bike time in minutes. */
+"stop_page.bike_divider_fmt" = "%d MIN ROWEREM — PONIŻEJ ZDĄŻYSZ";
+
+/* VoiceOver description of the bike divider. %d is bike minutes. */
+"stop_page.bike_divider_a11y_fmt" = "Odjazdy powyżej tego miejsca nastąpią, zanim dojedziesz na przystanek. Dojazd rowerem zajmuje %d min.";
+
+/* Bike chip on the header card. %d is the bike time in minutes. */
+"stop_page.bike_chip_minutes_fmt" = "%d min rowerem";
 
 /* Shown in place of the minutes countdown when the vehicle is departing now */
 "stop_page.countdown.now" = "TERAZ";
@@ -1638,8 +1659,14 @@
 /* A label for blind or low-vision users on the UI element that describes how long it takes to walk to the stop. */
 "walk_time_view.accessibility_label" = "Czas spaceru do przystanku";
 
+/* A label for blind or low-vision users on the UI element that describes how long it takes to bike to the stop. */
+"walk_time_view.accessibility_label_bike" = "Czas dojazdu rowerem do przystanku";
+
 /* Accessibility string with placeholders for distance from stop, walking time to stop, and predicted arrival time. e.g. 1.2 miles. Takes 17 minutes to walk, arriving at 9:41 am */
 "walk_time_view.accessibility_value" = "%1$@. Potrzeba%2$@ spacerem, przyjazd o %3$@";
+
+/* Accessibility string with placeholders for distance from stop, biking time to stop, and predicted arrival time. e.g. 1.2 miles. Takes 6 minutes to bike, arriving at 9:41 am */
+"walk_time_view.accessibility_value_bike" = "%1$@. Potrzeba %2$@ rowerem, przyjazd o %3$@";
 
 /* Format string with placeholders for distance from stop, walking time to stop, and predicted arrival time. e.g. 1.2 miles, 17m: arriving at 09:41 A.M. */
 "walk_time_view.distance_time_fmt" = "%1$@, %2$@: przyjedzie %3$@";

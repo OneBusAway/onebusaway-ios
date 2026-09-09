@@ -1079,6 +1079,18 @@
 /* Title for the departure filter setting row */
 "settings_controller.arrival_filter.title" = "顯示班次";
 
+/* Settings > Bike Mode section title */
+"settings_controller.bike_mode_section.title" = "騎乘模式";
+
+/* Settings > Bike Mode section footer */
+"settings_controller.bike_mode_section.footer" = "在到站時間估算、預計抵達時間與站牌頁面中使用較快的移動速度。";
+
+/* Settings > Bike Mode > on/off toggle */
+"settings_controller.bike_mode.title" = "騎乘模式";
+
+/* Settings > Bike Mode > HealthKit denial or no-data toast */
+"settings_controller.bike_mode.healthkit_unavailable" = "無法從「健康」同步騎乘速度。將使用標準騎乘速度。";
+
 /* Settings > Debug section > Refresh regions on every launch */
 "settings_controller.debug_section.always_refresh_regions" = "每次啟動時重新整理區域";
 
@@ -1216,6 +1228,15 @@
 
 /* Title of the alert shown when the user tries to set a departure alarm but notifications are denied in Settings. */
 "stop_page.alarm_permission_denied.title" = "通知已關閉";
+
+/* Divider between departures you'd miss on a bike and ones you can still catch. %d is the bike time in minutes. */
+"stop_page.bike_divider_fmt" = "騎乘 %d 分鐘 — 以下可搭乘";
+
+/* VoiceOver description of the bike divider. %d is bike minutes. */
+"stop_page.bike_divider_a11y_fmt" = "此分隔線以上的班次，會在您騎乘 %d 分鐘抵達站牌之前離站";
+
+/* Bike chip on the header card. %d is the bike time in minutes. */
+"stop_page.bike_chip_minutes_fmt" = "騎乘 %d 分鐘";
 
 /* Shown in place of the minutes countdown when the vehicle is departing now */
 "stop_page.countdown.now" = "現在";
@@ -1638,8 +1659,14 @@
 /* A label for blind or low-vision users on the UI element that describes how long it takes to walk to the stop. */
 "walk_time_view.accessibility_label" = "步行至站牌所需時間";
 
+/* A label for blind or low-vision users on the UI element that describes how long it takes to bike to the stop. */
+"walk_time_view.accessibility_label_bike" = "騎乘至站牌所需時間";
+
 /* Accessibility string with placeholders for distance from stop, walking time to stop, and predicted arrival time. e.g. 1.2 miles. Takes 17 minutes to walk, arriving at 9:41 am */
 "walk_time_view.accessibility_value" = "%1$@。步行需 %2$@，將於 %3$@ 抵達";
+
+/* Accessibility string with placeholders for distance from stop, biking time to stop, and predicted arrival time. e.g. 1.2 miles. Takes 6 minutes to bike, arriving at 9:41 am */
+"walk_time_view.accessibility_value_bike" = "%1$@。騎乘需 %2$@，將於 %3$@ 抵達";
 
 /* Format string with placeholders for distance from stop, walking time to stop, and predicted arrival time. e.g. 1.2 miles, 17m: arriving at 09:41 A.M. */
 "walk_time_view.distance_time_fmt" = "%1$@，%2$@：%3$@ 抵達";

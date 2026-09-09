@@ -1079,6 +1079,18 @@
 /* Title for the departure filter setting row */
 "settings_controller.arrival_filter.title" = "출발 표시";
 
+/* Settings > Bike Mode section title */
+"settings_controller.bike_mode_section.title" = "자전거 모드";
+
+/* Settings > Bike Mode section footer */
+"settings_controller.bike_mode_section.footer" = "정류장까지의 소요 시간 추정, 도착 예정 시간, 정류장 화면에 더 빠른 이동 속도를 사용합니다.";
+
+/* Settings > Bike Mode > on/off toggle */
+"settings_controller.bike_mode.title" = "자전거 모드";
+
+/* Settings > Bike Mode > HealthKit denial or no-data toast */
+"settings_controller.bike_mode.healthkit_unavailable" = "건강 앱에서 자전거 속도를 동기화할 수 없습니다. 표준 자전거 속도를 사용합니다.";
+
 /* Settings > Debug section > Refresh regions on every launch */
 "settings_controller.debug_section.always_refresh_regions" = "실행할 때마다 지역 새로고침";
 
@@ -1216,6 +1228,15 @@
 
 /* Title of the alert shown when the user tries to set a departure alarm but notifications are denied in Settings. */
 "stop_page.alarm_permission_denied.title" = "알림이 꺼져 있음";
+
+/* Divider between departures you'd miss on a bike and ones you can still catch. %d is the bike time in minutes. */
+"stop_page.bike_divider_fmt" = "자전거 %d분 — 아래부터 탑승 가능";
+
+/* VoiceOver description of the bike divider. %d is bike minutes. */
+"stop_page.bike_divider_a11y_fmt" = "이 지점 위의 출발편은 정류장까지 자전거 %d분보다 먼저 출발합니다";
+
+/* Bike chip on the header card. %d is the bike time in minutes. */
+"stop_page.bike_chip_minutes_fmt" = "자전거 %d분";
 
 /* Shown in place of the minutes countdown when the vehicle is departing now */
 "stop_page.countdown.now" = "지금";
@@ -1638,8 +1659,14 @@
 /* A label for blind or low-vision users on the UI element that describes how long it takes to walk to the stop. */
 "walk_time_view.accessibility_label" = "정류장까지 도보 시간";
 
+/* A label for blind or low-vision users on the UI element that describes how long it takes to bike to the stop. */
+"walk_time_view.accessibility_label_bike" = "정류장까지 자전거 이동 시간";
+
 /* Accessibility string with placeholders for distance from stop, walking time to stop, and predicted arrival time. e.g. 1.2 miles. Takes 17 minutes to walk, arriving at 9:41 am */
 "walk_time_view.accessibility_value" = "%1$@. 도보로 %2$@ 걸리며, %3$@에 도착합니다";
+
+/* Accessibility string with placeholders for distance from stop, biking time to stop, and predicted arrival time. e.g. 1.2 miles. Takes 6 minutes to bike, arriving at 9:41 am */
+"walk_time_view.accessibility_value_bike" = "%1$@. 자전거로 %2$@ 걸리며, %3$@에 도착합니다";
 
 /* Format string with placeholders for distance from stop, walking time to stop, and predicted arrival time. e.g. 1.2 miles, 17m: arriving at 09:41 A.M. */
 "walk_time_view.distance_time_fmt" = "%1$@, %2$@: %3$@ 도착";
