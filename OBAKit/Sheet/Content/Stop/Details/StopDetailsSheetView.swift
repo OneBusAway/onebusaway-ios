@@ -382,7 +382,8 @@ struct StopDetailsSheetView: View {
                 if let stop = viewModel.stop {
                     StopPageSheetHeaderView(
                         stop: stop,
-                        walkTime: viewModel.walkTime,
+                        walkTime: viewModel.headerWalkTime,
+                        bikeTime: viewModel.headerBikeTime,
                         onWalkingDirections: navigation.showWalkingDirections,
                         onClose: { coordinator.pop() },
                         showsCloseButton: false,

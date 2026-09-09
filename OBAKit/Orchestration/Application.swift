@@ -118,6 +118,9 @@ public class Application: CoreApplication, PushServiceDelegate {
         regionIDProvider: { [weak self] in self?.regionsService.currentRegion?.regionIdentifier }
     )
 
+    @MainActor
+    lazy var bikeModeManager = BikeModeManager(userDataStore: userDataStore)
+
     @objc lazy var userActivityBuilder = UserActivityBuilder(application: self)
 
     /// Handles all deep-linking into the app.
@@ -534,6 +537,14 @@ public class Application: CoreApplication, PushServiceDelegate {
 
         if userDataStore.walkingSpeedSource == .healthKit {
             Task { await walkingSpeedManager.refreshFromHealthKitIfPossible() }
+        }
+
+        // Matches the walking-speed refresh above: gated on the sync source alone, not
+        // on whether Bike Mode is currently toggled on. The header's bike chip is always
+        // shown regardless of mode, so a rider who synced once and later turned Bike Mode
+        // off would otherwise keep a frozen cycling-speed ETA on every stop header forever.
+        if userDataStore.bikeSpeedSource == .healthKit {
+            Task { await bikeModeManager.refreshFromHealthKitIfPossible() }
         }
     }
 

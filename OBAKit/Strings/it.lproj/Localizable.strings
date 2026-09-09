@@ -1079,6 +1079,18 @@
 /* Title for the departure filter setting row */
 "settings_controller.arrival_filter.title" = "Mostra partenze";
 
+/* Settings > Bike Mode section title */
+"settings_controller.bike_mode_section.title" = "Modalità bici";
+
+/* Settings > Bike Mode section footer */
+"settings_controller.bike_mode_section.footer" = "Usa una velocità di spostamento più elevata per le stime dei tempi verso la fermata, gli orari di arrivo e la pagina della fermata.";
+
+/* Settings > Bike Mode > on/off toggle */
+"settings_controller.bike_mode.title" = "Modalità bici";
+
+/* Settings > Bike Mode > HealthKit denial or no-data toast */
+"settings_controller.bike_mode.healthkit_unavailable" = "Impossibile sincronizzare la velocità in bici da Salute. Verrà usata una velocità in bici standard.";
+
 /* Settings > Debug section > Refresh regions on every launch */
 "settings_controller.debug_section.always_refresh_regions" = "Aggiorna area a ogni avvio";
 
@@ -1216,6 +1228,15 @@
 
 /* Title of the alert shown when the user tries to set a departure alarm but notifications are denied in Settings. */
 "stop_page.alarm_permission_denied.title" = "Notifiche disattivate";
+
+/* Divider between departures you'd miss on a bike and ones you can still catch. %d is the bike time in minutes. */
+"stop_page.bike_divider_fmt" = "%d MIN IN BICI — DA QUI IN GIÙ LE PRENDI";
+
+/* VoiceOver description of the bike divider. %d is bike minutes. */
+"stop_page.bike_divider_a11y_fmt" = "Le partenze sopra questo punto avvengono prima dei %d minuti necessari per raggiungere la fermata in bici";
+
+/* Bike chip on the header card. %d is the bike time in minutes. */
+"stop_page.bike_chip_minutes_fmt" = "%d min in bici";
 
 /* Shown in place of the minutes countdown when the vehicle is departing now */
 "stop_page.countdown.now" = "ADESSO";
@@ -1638,8 +1659,14 @@
 /* A label for blind or low-vision users on the UI element that describes how long it takes to walk to the stop. */
 "walk_time_view.accessibility_label" = "Tempo necessario per raggiungere la fermata";
 
+/* A label for blind or low-vision users on the UI element that describes how long it takes to bike to the stop. */
+"walk_time_view.accessibility_label_bike" = "Tempo necessario per raggiungere la fermata in bici";
+
 /* Accessibility string with placeholders for distance from stop, walking time to stop, and predicted arrival time. e.g. 1.2 miles. Takes 17 minutes to walk, arriving at 9:41 am */
 "walk_time_view.accessibility_value" = "%1$@. Camminando arriverai in %2$@, giungendo a destinazione alle ore %3$@";
+
+/* Accessibility string with placeholders for distance from stop, biking time to stop, and predicted arrival time. e.g. 1.2 miles. Takes 6 minutes to bike, arriving at 9:41 am */
+"walk_time_view.accessibility_value_bike" = "%1$@. In bici arriverai in %2$@, giungendo a destinazione alle ore %3$@";
 
 /* Format string with placeholders for distance from stop, walking time to stop, and predicted arrival time. e.g. 1.2 miles, 17m: arriving at 09:41 A.M. */
 "walk_time_view.distance_time_fmt" = "%1$@, %2$@: arriverai alle %3$@";

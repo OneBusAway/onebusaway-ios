@@ -1259,6 +1259,18 @@
 /* Title for the departure filter setting row */
 "settings_controller.arrival_filter.title" = "Show Departures";
 
+/* Settings > Bike Mode > HealthKit denial or no-data toast */
+"settings_controller.bike_mode.healthkit_unavailable" = "Couldn't sync cycling speed from Health. Using a standard biking speed instead.";
+
+/* Settings > Bike Mode > on/off toggle */
+"settings_controller.bike_mode.title" = "Bike Mode";
+
+/* Settings > Bike Mode section footer */
+"settings_controller.bike_mode_section.footer" = "Uses a faster travel speed for walk-time estimates, arrival ETAs, and the Stop page.";
+
+/* Settings > Bike Mode section title */
+"settings_controller.bike_mode_section.title" = "Bike Mode";
+
 /* Settings > Debug section > Refresh regions on every launch */
 "settings_controller.debug_section.always_refresh_regions" = "Refresh regions on every launch";
 
@@ -1426,6 +1438,15 @@
 
 /* Title of the alert shown when the user tries to set a departure alarm but notifications are denied in Settings. */
 "stop_page.alarm_permission_denied.title" = "Notifications Are Off";
+
+/* Bike chip on the header card. %d is the bike time in minutes. */
+"stop_page.bike_chip_minutes_fmt" = "%d min bike";
+
+/* VoiceOver description of the bike divider. %d is bike minutes. */
+"stop_page.bike_divider_a11y_fmt" = "Departures above this point leave sooner than your %d minute bike ride to the stop";
+
+/* Divider between departures you'd miss on a bike and ones you can still catch. %d is the bike time in minutes. */
+"stop_page.bike_divider_fmt" = "%d MIN BIKE — CATCH BELOW";
 
 /* Shown in place of the minutes countdown when the vehicle is departing now */
 "stop_page.countdown.now" = "NOW";
@@ -1931,10 +1952,16 @@
 /* A label for blind or low-vision users on the UI element that describes how long it takes to walk to the stop. */
 "walk_time_view.accessibility_label" = "Time to walk to stop";
 
+/* A label for blind or low-vision users on the UI element that describes how long it takes to bike to the stop. */
+"walk_time_view.accessibility_label_bike" = "Time to bike to stop";
+
 /* Accessibility string with placeholders for distance from stop, walking time to stop, and predicted arrival time. e.g. 1.2 miles. Takes 17 minutes to walk, arriving at 9:41 am */
 "walk_time_view.accessibility_value" = "%1$@. Takes %2$@ to walk, arriving at %3$@";
 
-/* Format string with placeholders for distance from stop, walking time to stop, and predicted arrival time. e.g. 1.2 miles, 17m: arriving at 09:41 A.M. */
+/* Accessibility string with placeholders for distance from stop, biking time to stop, and predicted arrival time. e.g. 1.2 miles. Takes 6 minutes to bike, arriving at 9:41 am */
+"walk_time_view.accessibility_value_bike" = "%1$@. Takes %2$@ to bike, arriving at %3$@";
+
+/* Format string with placeholders for distance from stop, travel time to stop, and predicted arrival time. e.g. 1.2 miles, 17m: arriving at 09:41 A.M. */
 "walk_time_view.distance_time_fmt" = "%1$@, %2$@: arriving at %3$@";
 
 /* Accessibility label for the transfer arrival banner shown when navigating to a connecting stop. */
