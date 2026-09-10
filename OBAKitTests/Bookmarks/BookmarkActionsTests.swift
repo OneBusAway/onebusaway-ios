@@ -129,9 +129,13 @@ final class BookmarkActionsTests: OBATestCase {
 
         let arrival = try #require(state.arrivals.first)
         #expect(state.arrivals.count == 1)
-        #expect(arrival.departureTime == Int(departure.arrivalDepartureDate.timeIntervalSince1970))
-        #expect(arrival.scheduleDeviation == departure.deviationFromScheduleInMinutes * 60)
-        #expect(arrival.isArrival == (departure.arrivalDepartureStatus == .arriving))
+        let expected = TripAttributes.ContentState.ArrivalInfo(
+            departureTime: Int(departure.arrivalDepartureDate.timeIntervalSince1970),
+            scheduleStatus: .init(departure.scheduleStatus),
+            scheduleDeviation: departure.deviationFromScheduleInMinutes * 60,
+            isArrival: departure.arrivalDepartureStatus == .arriving
+        )
+        #expect(arrival == expected)
     }
 
     /// With arrivals, at most the first three are carried into the activity.
