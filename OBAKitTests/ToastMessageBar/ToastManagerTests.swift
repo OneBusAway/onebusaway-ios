@@ -1,8 +1,8 @@
-//
+﻿//
 //  ToastManagerTests.swift
 //  OBAKitTests
 //
-//  Copyright � Open Transit Software Foundation
+//  Copyright © Open Transit Software Foundation
 //  This source code is licensed under the Apache 2.0 license found in the
 //  LICENSE file in the root directory of this source tree.
 //
@@ -41,13 +41,21 @@ final class ToastManagerTests {
         #expect(manager.toast?.duration == 2.0)
     }
 
-    @Test func `Dismiss toast clears properties immediately`() {
+        @Test func `Dismiss toast clears visibility immediately and cleans up toast after delay`() async throws {
         let manager = ToastManager()
         manager.showSuccess("Dismiss me")
         #expect(manager.isShowing == true)
         
         manager.dismiss()
         
+        // Visibility is cleared immediately
         #expect(manager.isShowing == false)
+        #expect(manager.toast != nil)
+        
+        // Payload is cleaned up after a 0.3s delay (wait 0.4s to be safe)
+        try await Task.sleep(nanoseconds: 400_000_000)
+        
+        #expect(manager.toast == nil)
     }
 }
+
