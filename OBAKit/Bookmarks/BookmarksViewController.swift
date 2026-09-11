@@ -201,19 +201,34 @@ class BookmarksViewController: UIHostingController<BookmarksRootView>,
         for activity in activities {
             let staticData = activity.attributes.staticData
             let matchingBookmark = application.userDataStore.bookmarks.first(where: { bookmark in
-                // Delegates to the shared identity rule so this match can't
-                // drift from the start paths' duplicate guard.
+                // Bookmark identity is unpinned (`tripID: ""`). Empty tripID is a
+                // wildcard in `tracksSameTrip`, so this still reconciles with a
+                // stop-page activity that carries a concrete trip — same rule the
+                // start paths' duplicate guards use.
                 let keys = BookmarkActions.liveActivityKeys(for: bookmark)
                 let bookmarkIdentity = TripAttributes.StaticData(
                     routeShortName: keys.routeShortName,
                     routeHeadsign: keys.routeHeadsign,
-                    stopID: bookmark.stopID
+                    stopID: bookmark.stopID,
+                    tripID: ""
                 )
                 return bookmarkIdentity.tracksSameTrip(as: staticData)
             })
             let arrivalDepartures = matchingBookmark.map { viewModel.arrivalDepartures(for: $0) } ?? []
+            let primaryArrival = BookmarkActions.refreshPrimaryArrival(
+                for: staticData,
+                arrivalDepartures: arrivalDepartures
+            )
 
-            if matchingBookmark != nil, let contentState = BookmarkActions.buildContentState(from: arrivalDepartures) {
+            let contentState: TripAttributes.ContentState? = {
+                guard matchingBookmark != nil else { return nil }
+                return BookmarkActions.buildRefreshContentState(
+                    for: staticData,
+                    arrivalDepartures: arrivalDepartures
+                )
+            }()
+
+            if matchingBookmark != nil, let contentState {
                 // Re-arm the push token/lifecycle observers on relaunch. `startLiveActivity`
                 // only tracks activities it creates in-session, so without this a Live Activity
                 // that's still running after a relaunch would never re-establish its observers
@@ -225,10 +240,14 @@ class BookmarksViewController: UIHostingController<BookmarksRootView>,
                 // Deliberately keyed on the token task and not on `isTracking`: an activity that
                 // the sweep below could only lifecycle-observe (no matching bookmark at the time)
                 // must still be upgradable to a full registration once its bookmark reappears.
+                //
+                // Metadata must be the pinned arrival when `staticData.tripID` is set —
+                // `arrivalDepartures.first` is soonest-first and would re-POST the wrong
+                // vehicle to OBACloud after relaunch (#1334).
                 if !application.liveActivityTracker.isForwardingPushToken(activityID: activity.id) {
                     application.liveActivityTracker.track(
                         activity: activity,
-                        metadata: .init(arrivalDepartures.first)
+                        metadata: .init(primaryArrival)
                     )
                 }
                 // Coalesce per activity ID. The worker re-fetches the activity
