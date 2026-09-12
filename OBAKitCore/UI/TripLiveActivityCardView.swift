@@ -113,11 +113,42 @@ public struct TripLiveActivityCardView: View {
 
     @ViewBuilder
     private func countdownBadge(for arrival: TripAttributes.ContentState.ArrivalInfo, now: Date) -> some View {
-        CountdownView(
-            minutes: Int(arrival.departureDate.timeIntervalSince(now) / 60.0),
-            isRealTime: arrival.scheduleStatus != .unknown,
-            color: Color(uiColor: presenter.color(for: arrival))
-        )
+        let color = Color(uiColor: presenter.color(for: arrival))
+        let isRealTime = arrival.scheduleStatus != .unknown
+        VStack(spacing: 1) {
+            HStack(alignment: .top, spacing: 2) {
+                // Use SwiftUI's date-relative Text so the countdown ticks
+                // automatically on the lock screen without requiring a push
+                // to re-render the snapshot. (#1187)
+                //
+                // The `if` is evaluated once when the snapshot is rendered —
+                // Live Activity `body` is NOT re-invoked between pushes, so
+                // there is no risk of the surrounding condition flipping while
+                // Text(.relative) is ticking. `upcomingArrivals` dropping an
+                // arrival only happens on the next push, at which point a fresh
+                // snapshot replaces this one entirely. The `else` branch handles
+                // snapshots rendered at or after the departure time (e.g. a
+                // late-arriving push), showing "NOW" rather than a negative
+                // "X seconds ago" string.
+                if arrival.departureDate > now {
+                    Text(arrival.departureDate, style: .relative)
+                        .font(.system(.title2, design: .rounded, weight: .heavy))
+                        .monospacedDigit()
+                        .foregroundStyle(color)
+                        // Suppress the default "in X minutes" VoiceOver phrasing;
+                        // the parent row speaks its own combined a11y label.
+                        .accessibilityHidden(true)
+                } else {
+                    Text(OBALoc("stop_page.countdown.now", value: "NOW",
+                                comment: "Shown in place of the minutes countdown when the vehicle is departing now"))
+                        .font(.system(.title2, design: .rounded, weight: .heavy))
+                        .foregroundStyle(color)
+                        .accessibilityHidden(true)
+                }
+                RealtimeGlyph(isRealTime: isRealTime, color: color, size: 11)
+                    .padding(.top, 1)
+            }
+        }
     }
 
     @ViewBuilder
@@ -141,16 +172,25 @@ public struct TripLiveActivityCardView: View {
     @ViewBuilder
     private func departurePill(for arrival: TripAttributes.ContentState.ArrivalInfo, now: Date) -> some View {
         let color = Color(uiColor: presenter.color(for: arrival))
-        let minutes = max(0, Int(arrival.departureDate.timeIntervalSince(now) / 60.0))
-        Text(minutes == 0
-             ? OBALoc("stop_page.countdown.now", value: "NOW", comment: "Shown in place of the minutes countdown when the vehicle is departing now")
-             : "\(minutes)m")
-            .font(.caption.weight(.heavy))
-            .monospacedDigit()
-            .foregroundStyle(color)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 3)
-            .background(color.opacity(0.14), in: RoundedRectangle(cornerRadius: 8))
+        // Use date-relative Text so the chip ticks automatically on the lock
+        // screen without a keepalive push. (#1187)
+        // `body` is not re-invoked between pushes in a Live Activity — the
+        // `if` is evaluated once at snapshot render time. See countdownBadge
+        // for a full explanation of the rendering model.
+        Group {
+            if arrival.departureDate > now {
+                Text(arrival.departureDate, style: .relative)
+                    .monospacedDigit()
+            } else {
+                Text(OBALoc("stop_page.countdown.now", value: "NOW",
+                            comment: "Shown in place of the minutes countdown when the vehicle is departing now"))
+            }
+        }
+        .font(.caption.weight(.heavy))
+        .foregroundStyle(color)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 3)
+        .background(color.opacity(0.14), in: RoundedRectangle(cornerRadius: 8))
     }
 
     private var resolvedRouteColor: Color {
