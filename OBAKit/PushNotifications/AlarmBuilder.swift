@@ -320,7 +320,10 @@ class AlarmTimePickerManager: NSObject, UIPickerViewDelegate, UIPickerViewDataSo
         }
         else {
             let fmt = OBALoc("alarm_builder_controller.minutes_fmt", value: "%d minutes", comment: "{X} minutes. always plural.")
-            return String(format: fmt, minutes)
+            // localizedStringWithFormat, not String(format:) — the latter resolves
+            // `%#@count@` against the root plural rule, so Polish `few`/`many` would
+            // be unreachable and 5 would read "5 minuty" instead of "5 minut".
+            return String.localizedStringWithFormat(fmt, minutes)
         }
     }
 }
