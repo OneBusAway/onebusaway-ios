@@ -1672,21 +1672,21 @@
 "weather.stat.wind" = "风速";
 
 /* Trip page button that sets a get-off alert for the rider's destination stop. */
-"trip_page.add_get_off_alert" = "Notify me";
+"trip_page.add_get_off_alert" = "通知我";
 /* Trip page button that removes an active get-off alert. */
-"trip_page.remove_get_off_alert" = "Remove alert";
+"trip_page.remove_get_off_alert" = "删除提醒";
 /* Toast shown when a get-off alert is successfully armed. */
-"trip_page.get_off_alert_set" = "Alert set";
+"trip_page.get_off_alert_set" = "提醒已设置";
 /* Error shown when a get-off alert cannot be set because the app only has 'While Using' location access. */
-"get_off_alert.error.needs_always_location" = "To alert you when your stop is coming up, allow location access \"Always\" in Settings.";
+"get_off_alert.error.needs_always_location" = "要在您的站点即将到达时收到提醒，请在设置中将位置访问权限设为“始终”。";
 /* Error shown when a get-off alert cannot be set because notification permission is denied. */
-"get_off_alert.error.needs_notifications" = "To alert you when your stop is coming up, allow notifications for this app in Settings.";
+"get_off_alert.error.needs_notifications" = "要在您的站点即将到达时收到提醒，请在设置中允许此应用发送通知。";
 /* Error shown when the geofence region limit is reached and the alert cannot be armed. */
-"get_off_alert.error.region_limit" = "Too many alerts are active. Remove an existing alert and try again.";
+"get_off_alert.error.region_limit" = "活动提醒过多。请删除现有提醒后重试。";
 /* Title of the notification shown when the rider is approaching their destination stop. */
-"get_off_alert.notification.title" = "Time to get off";
+"get_off_alert.notification.title" = "该下车了";
 /* Body of the get-off alert notification. %@ is the name of the rider's destination stop. */
-"get_off_alert.notification.body_fmt" = "Your stop, %@, is coming up.";
+"get_off_alert.notification.body_fmt" = "您的站点 %@ 即将到达。";
 /* An explanation of the optional Umami analytics fields of a custom region. */
 "custom_region_builder_controller.analytics_section.explanation" = "可选。Umami 分析服务器的地址以及该地区的网站 ID。两个字段都填写后才会启用分析；留空则停用。";
 /* Title of the Analytics header. */

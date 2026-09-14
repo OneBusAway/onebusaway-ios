@@ -199,10 +199,13 @@ final class TripPageViewController: UIHostingController<TripPageView>,
     private func render() {
         // Rebuild get-off alert state on every render so the button
         // reflects the live store rather than a snapshot from init.
+        // Use the terminal stop's ID, not the boarding stop: the geofence
+        // is always armed on the last stop of the trip.
         if let departure {
+            let terminalStopID = viewModel.tripDetails?.stopTimes.last?.stopID ?? departure.stopID
             isGetOffAlertActive = application.getOffAlertManager.hasActiveAlert(
                 tripID: departure.tripID,
-                stopID: departure.stopID
+                stopID: terminalStopID
             )
         }
 
@@ -264,9 +267,11 @@ final class TripPageViewController: UIHostingController<TripPageView>,
         // there is no stop and nothing to count down to.
         actions.canStartLiveActivity = departure != nil && ActivityAuthorizationInfo().areActivitiesEnabled
         actions.canReportGhostBus = application.features.obaco == .running
-        // Get-off alert requires Always location permission (geofences) and a
-        // departure to identify which stop the rider wants to be notified for.
+        // Get-off alert requires Always location permission (geofences), a departure
+        // to identify the trip, and trip details so we know the terminal stop to arm.
+        // Without tripDetails the destination is unknown and the button must stay hidden.
         actions.canGetOffAlert = departure != nil
+            && !(viewModel.tripDetails?.stopTimes.isEmpty ?? true)
             && application.locationService.isProximityMonitoringAuthorized
         actions.hasGetOffAlert = isGetOffAlertActive
 
@@ -418,10 +423,21 @@ final class TripPageViewController: UIHostingController<TripPageView>,
     private func toggleGetOffAlert() {
         guard let departure else { return }
 
+        // The alert targets the trip's last stop, not the boarding stop.
+        // `departure.stop` is where the rider boards — they are already inside
+        // its 150 m geofence, so Core Location would never fire an entry event.
+        // `stopTimes.last` is the terminal, which is always downstream.
+        guard let stopTimes = viewModel.tripDetails?.stopTimes, !stopTimes.isEmpty,
+              let lastStopTime = stopTimes.last, let terminalStop = lastStopTime.stop else { return }
+
+        let terminalStopID = lastStopTime.stopID
+        // Use the array index as the sequence: TripStopListModel.index(in:stopID:stopSequence:)
+        // tries the sequence as a direct array index first, so this is always unambiguous.
+        let terminalStopSequence = stopTimes.count - 1
         let manager = application.getOffAlertManager
 
-        // If an alert is already active, cancel it and update the UI.
-        if let existing = manager.activeAlert(tripID: departure.tripID, stopID: departure.stopID) {
+        // If an alert is already active for the terminal stop, cancel it and update the UI.
+        if let existing = manager.activeAlert(tripID: departure.tripID, stopID: terminalStopID) {
             manager.cancel(existing)
             isGetOffAlertActive = false
             render()
@@ -432,11 +448,10 @@ final class TripPageViewController: UIHostingController<TripPageView>,
         // toast or an explanation of what permission is missing.
         Task { @MainActor [weak self] in
             guard let self else { return }
-            guard let stop = departure.stop else { return }
             let result = await manager.createAlert(
-                for: stop,
+                for: terminalStop,
                 tripID: departure.tripID,
-                stopSequence: departure.stopSequence
+                stopSequence: terminalStopSequence
             )
 
             switch result {

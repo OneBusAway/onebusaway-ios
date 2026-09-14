@@ -305,7 +305,8 @@ public final class ProximityAlertManager: NSObject, LocationServiceDelegate {
 
     public func locationService(_ service: LocationService, didEnterMonitoredRegion identifier: String) {
         guard let alertID = LocationService.proximityAlertID(forRegionIdentifier: identifier) else {
-            Logger.error("Entered proximity region \(identifier), whose identifier carries no alert ID. Ignoring.")
+            // Not a proximity-alert region — another feature's region (e.g. a get-off alert)
+            // crossed while this delegate is also registered. Nothing to do.
             return
         }
 
@@ -365,6 +366,11 @@ public final class ProximityAlertManager: NSObject, LocationServiceDelegate {
         }
 
         guard let identifier, let alertID = LocationService.proximityAlertID(forRegionIdentifier: identifier) else {
+            if let identifier {
+                // A named region whose identifier doesn't carry a proximity alert ID.
+                // It belongs to another feature (e.g. a get-off alert). Ignore it.
+                return
+            }
             // Core Location reports the region-count cap, and some setup failures,
             // with no region attached. There is no alert to act on.
             Logger.error("Proximity monitoring failed (\(kind)) without naming a region: \(error)")

@@ -1672,21 +1672,21 @@
 "weather.stat.wind" = "Tốc độ gió";
 
 /* Trip page button that sets a get-off alert for the rider's destination stop. */
-"trip_page.add_get_off_alert" = "Notify me";
+"trip_page.add_get_off_alert" = "Thông báo cho tôi";
 /* Trip page button that removes an active get-off alert. */
-"trip_page.remove_get_off_alert" = "Remove alert";
+"trip_page.remove_get_off_alert" = "Xóa cảnh báo";
 /* Toast shown when a get-off alert is successfully armed. */
-"trip_page.get_off_alert_set" = "Alert set";
+"trip_page.get_off_alert_set" = "Đã đặt cảnh báo";
 /* Error shown when a get-off alert cannot be set because the app only has 'While Using' location access. */
-"get_off_alert.error.needs_always_location" = "To alert you when your stop is coming up, allow location access \"Always\" in Settings.";
+"get_off_alert.error.needs_always_location" = "Để nhận thông báo khi điểm dừng sắp đến, hãy cho phép truy cập vị trí \"Luôn luôn\" trong Cài đặt.";
 /* Error shown when a get-off alert cannot be set because notification permission is denied. */
-"get_off_alert.error.needs_notifications" = "To alert you when your stop is coming up, allow notifications for this app in Settings.";
+"get_off_alert.error.needs_notifications" = "Để nhận thông báo khi điểm dừng sắp đến, hãy cho phép thông báo cho ứng dụng này trong Cài đặt.";
 /* Error shown when the geofence region limit is reached and the alert cannot be armed. */
-"get_off_alert.error.region_limit" = "Too many alerts are active. Remove an existing alert and try again.";
+"get_off_alert.error.region_limit" = "Có quá nhiều cảnh báo đang hoạt động. Hãy xóa một cảnh báo hiện có và thử lại.";
 /* Title of the notification shown when the rider is approaching their destination stop. */
-"get_off_alert.notification.title" = "Time to get off";
+"get_off_alert.notification.title" = "Đến lúc xuống xe";
 /* Body of the get-off alert notification. %@ is the name of the rider's destination stop. */
-"get_off_alert.notification.body_fmt" = "Your stop, %@, is coming up.";
+"get_off_alert.notification.body_fmt" = "Điểm dừng của bạn, %@, sắp đến.";
 /* An explanation of the optional Umami analytics fields of a custom region. */
 "custom_region_builder_controller.analytics_section.explanation" = "Tùy chọn. Địa chỉ của máy chủ phân tích Umami và mã trang web của khu vực này. Cần điền cả hai trường để bật phân tích; để trống cả hai để tắt.";
 /* Title of the Analytics header. */
