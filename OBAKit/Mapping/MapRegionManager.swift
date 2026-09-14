@@ -666,7 +666,8 @@ public class MapRegionManager: NSObject,
             incomingStopIDs: Set(stops.map(\.id)),
             bookmarksByStopID: Dictionary(uniqueKeysWithValues: bookmarksHash.map { ($0.key, $0.value.id) }),
             selectedStopIDs: selectedStopIDs,
-            isStopsLayerEnabled: isStopsLayerEnabled
+            isStopsLayerEnabled: isStopsLayerEnabled,
+            preserveStopsOutsideIncoming: searchResponseOverridesStopLoading()
         )
 
         let stopsToRemove = existingAnnotations.compactMap { $0 as? Stop }

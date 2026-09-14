@@ -133,4 +133,26 @@ struct StopAnnotationSyncTests {
         #expect(changes.bookmarkIDsToAdd == [bookmarkB])
         #expect(changes.stopIDsToAdd.isEmpty)
     }
+
+    /// Route search pins are `Stop` annotations that never came from the region
+    /// fetch. A bookmark refresh must not treat them as viewport leftovers, and
+    /// must not add the stale pre-search set back. The bookmarked stop still
+    /// becomes a bookmark pin.
+    @Test func `Route-search pins survive a bookmark refresh`() {
+        let changes = StopAnnotationSync.changes(
+            existingStopIDs: ["route-a", "route-b", "route-c"],
+            existingBookmarks: [],
+            incomingStopIDs: ["stale-1", "stale-2"],
+            bookmarksByStopID: ["route-b": bookmarkA],
+            selectedStopIDs: [],
+            isStopsLayerEnabled: true,
+            preserveStopsOutsideIncoming: true
+        )
+
+        #expect(changes.stopIDsToRemove == ["route-b"])
+        #expect(!changes.stopIDsToRemove.contains("route-a"))
+        #expect(!changes.stopIDsToRemove.contains("route-c"))
+        #expect(changes.stopIDsToAdd.isEmpty)
+        #expect(changes.bookmarkIDsToAdd == [bookmarkA])
+    }
 }

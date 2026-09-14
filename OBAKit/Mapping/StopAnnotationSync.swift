@@ -35,7 +35,11 @@ enum StopAnnotationSync {
         incomingStopIDs: Set<StopID>,
         bookmarksByStopID: [StopID: UUID],
         selectedStopIDs: Set<StopID>,
-        isStopsLayerEnabled: Bool
+        isStopsLayerEnabled: Bool,
+        /// Route search puts `Stop` pins on the map that are not in `stops`.
+        /// Viewport removal would delete them and add the stale pre-search set
+        /// back. Bookmark identity changes still apply.
+        preserveStopsOutsideIncoming: Bool = false
     ) -> Changes {
         let wantedBookmarkIDs = Set(bookmarksByStopID.values)
         let existingBookmarkIDs = Set(existingBookmarks.map(\.id))
@@ -49,7 +53,11 @@ enum StopAnnotationSync {
 
         let bookmarkedStopIDs = Set(bookmarksByStopID.keys)
         var wantedStopIDs: Set<StopID> = []
-        if isStopsLayerEnabled {
+        if preserveStopsOutsideIncoming {
+            // Keep pins that didn't come from the region fetch. Only drop a
+            // stop when a bookmark now shadows it.
+            wantedStopIDs = existingStopIDs.subtracting(bookmarkedStopIDs)
+        } else if isStopsLayerEnabled {
             wantedStopIDs = incomingStopIDs.subtracting(bookmarkedStopIDs)
         }
         wantedStopIDs.formUnion(selectedStopIDs.subtracting(bookmarkedStopIDs))
