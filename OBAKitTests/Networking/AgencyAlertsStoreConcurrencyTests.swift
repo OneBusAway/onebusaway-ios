@@ -148,13 +148,16 @@ final class AgencyAlertsStoreConcurrencyTests: OBATestCase {
     }
 
     /// #1145: `deleteAgencyAlerts()`'s `removeAll()` is the mutation most likely to
-    /// corrupt state during a concurrent read. Region change drives that path;
-    /// fan it out against reads so a missing lock fails without relying on TSan.
+    /// corrupt state during a concurrent read. Region change drives that path,
+    /// but it cancels a still-pending delete — so this waits for each delete to
+    /// finish before queuing the next. Emptiness after that wait fails if the
+    /// delete never ran. A missing lock is still only proven under TSan (#1145).
     @Test @MainActor
     func `Concurrent delete-via-region-change and reads do not corrupt state`() async throws {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         let store = app.alertsStore
+        store.suppressLiveAlertFetchesForTesting()
 
         let alerts = try makeRecentHighSeverityAlerts(count: 20)
         store.insertAlerts(alerts)
@@ -164,12 +167,17 @@ final class AgencyAlertsStoreConcurrencyTests: OBATestCase {
         await withTaskGroup(of: Void.self) { group in
             group.addTask { @MainActor in
                 for _ in 0..<iterations {
-                    // `regionsService(_:updatedRegion:)` → `deleteAgencyAlerts()` on the
-                    // store's serial queue. Re-seed after each wipe so the next delete
-                    // still has something to clear.
                     store.insertAlerts(alerts)
+                    #expect(store.recentHighSeverityAlerts.count == alerts.count)
+                    // `regionsService(_:updatedRegion:)` → `deleteAgencyAlerts()`.
+                    // Wait before the next call so `cancelAllOperations()` does not
+                    // drop the delete that just queued.
                     store.regionsService(app.regionsService, updatedRegion: Fixtures.tampaRegion)
+                    store.finishQueuedMutationsForTesting()
+                    #expect(store.agencyAlerts.isEmpty)
+                    #expect(store.recentHighSeverityAlerts.isEmpty)
                 }
+                store.insertAlerts(alerts)
             }
             group.addTask {
                 for _ in 0..<iterations {
@@ -189,18 +197,12 @@ final class AgencyAlertsStoreConcurrencyTests: OBATestCase {
             }
         }
 
-        // Wait for the serial delete queue + any in-flight `checkForUpdates`
-        // kicked off by `updatedRegion` to settle.
-        try await Task.sleep(nanoseconds: 300_000_000)
-
-        // `updatedRegion` deletes then refetches — do not assert emptiness.
-        // Coherence under the lock: recent/unread subsets stay inside `agencyAlerts`,
-        // and a final mark-all-read leaves no unread high-severity rows.
-        let allIDs = Set(store.agencyAlerts.map(\.id))
-        let recentIDs = Set(store.recentHighSeverityAlerts.map(\.id))
-        #expect(recentIDs.isSubset(of: allIDs))
-        for alert in store.agencyAlerts {
+        store.finishQueuedMutationsForTesting()
+        #expect(store.recentHighSeverityAlerts.count == alerts.count)
+        #expect(store.agencyAlerts.count == alerts.count)
+        for alert in alerts {
             store.markAlertRead(alert)
+            #expect(!store.isAlertUnread(alert))
         }
         #expect(store.recentUnreadHighSeverityAlerts.isEmpty)
     }
