@@ -1088,6 +1088,9 @@
 /* Settings > Bike Mode > on/off toggle */
 "settings_controller.bike_mode.title" = "자전거 모드";
 
+/* Settings > Bike Mode section > HealthKit toggle */
+"settings_controller.bike_mode.use_healthkit" = "건강 앱 데이터 사용";
+
 /* Settings > Bike Mode > HealthKit denial or no-data toast */
 "settings_controller.bike_mode.healthkit_unavailable" = "건강 앱에서 자전거 속도를 동기화할 수 없습니다. 표준 자전거 속도를 사용합니다.";
 

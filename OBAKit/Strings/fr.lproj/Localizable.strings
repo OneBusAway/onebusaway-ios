@@ -1088,6 +1088,9 @@
 /* Settings > Bike Mode > on/off toggle */
 "settings_controller.bike_mode.title" = "Mode vélo";
 
+/* Settings > Bike Mode section > HealthKit toggle */
+"settings_controller.bike_mode.use_healthkit" = "Utiliser les données de l'app Santé";
+
 /* Settings > Bike Mode > HealthKit denial or no-data toast */
 "settings_controller.bike_mode.healthkit_unavailable" = "Impossible de synchroniser la vitesse à vélo depuis Santé. Une vitesse à vélo standard sera utilisée.";
 

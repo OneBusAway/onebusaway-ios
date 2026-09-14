@@ -1088,6 +1088,9 @@
 /* Settings > Bike Mode > on/off toggle */
 "settings_controller.bike_mode.title" = "Mode ng Bisikleta";
 
+/* Settings > Bike Mode section > HealthKit toggle */
+"settings_controller.bike_mode.use_healthkit" = "Gamitin ang data ng Health app";
+
 /* Settings > Bike Mode > HealthKit denial or no-data toast */
 "settings_controller.bike_mode.healthkit_unavailable" = "Hindi ma-sync ang bilis ng pagbibisikleta mula sa Health. Gagamit na lang ng karaniwang bilis ng bisikleta.";
 
