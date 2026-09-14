@@ -1111,6 +1111,9 @@
 /* Settings > Bike Mode > on/off toggle */
 "settings_controller.bike_mode.title" = "Modo bicicleta";
 
+/* Settings > Bike Mode section > HealthKit toggle */
+"settings_controller.bike_mode.use_healthkit" = "Usar dados do app Saúde";
+
 /* Settings > Bike Mode > HealthKit denial or no-data toast */
 "settings_controller.bike_mode.healthkit_unavailable" = "Não foi possível sincronizar a velocidade de bicicleta com o app Saúde. Será usada uma velocidade de bicicleta padrão.";
 

@@ -1111,6 +1111,9 @@
 /* Settings > Bike Mode > on/off toggle */
 "settings_controller.bike_mode.title" = "Chế độ xe đạp";
 
+/* Settings > Bike Mode section > HealthKit toggle */
+"settings_controller.bike_mode.use_healthkit" = "Dùng dữ liệu ứng dụng Sức khỏe";
+
 /* Settings > Bike Mode > HealthKit denial or no-data toast */
 "settings_controller.bike_mode.healthkit_unavailable" = "Không thể đồng bộ tốc độ đạp xe từ Sức khỏe. Sẽ dùng tốc độ đạp xe tiêu chuẩn.";
 

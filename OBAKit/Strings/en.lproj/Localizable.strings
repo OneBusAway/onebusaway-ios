@@ -1287,6 +1287,9 @@
 /* Settings > Bike Mode > on/off toggle */
 "settings_controller.bike_mode.title" = "Bike Mode";
 
+/* Settings > Bike Mode section > HealthKit toggle */
+"settings_controller.bike_mode.use_healthkit" = "Use Health app data";
+
 /* Settings > Bike Mode section footer */
 "settings_controller.bike_mode_section.footer" = "Uses a faster travel speed for walk-time estimates, arrival ETAs, and the Stop page.";
 

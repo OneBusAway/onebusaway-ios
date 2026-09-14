@@ -1111,6 +1111,9 @@
 /* Settings > Bike Mode > on/off toggle */
 "settings_controller.bike_mode.title" = "Tryb rowerowy";
 
+/* Settings > Bike Mode section > HealthKit toggle */
+"settings_controller.bike_mode.use_healthkit" = "Użyj danych z aplikacji Zdrowie";
+
 /* Settings > Bike Mode > HealthKit denial or no-data toast */
 "settings_controller.bike_mode.healthkit_unavailable" = "Nie udało się zsynchronizować prędkości jazdy rowerem z aplikacją Zdrowie. Zostanie użyta standardowa prędkość roweru.";
 

@@ -1111,6 +1111,9 @@
 /* Settings > Bike Mode > on/off toggle */
 "settings_controller.bike_mode.title" = "骑行模式";
 
+/* Settings > Bike Mode section > HealthKit toggle */
+"settings_controller.bike_mode.use_healthkit" = "使用“健康”App数据";
+
 /* Settings > Bike Mode > HealthKit denial or no-data toast */
 "settings_controller.bike_mode.healthkit_unavailable" = "无法从“健康”App同步骑行速度。将使用标准骑行速度。";
 

@@ -1111,6 +1111,9 @@
 /* Settings > Bike Mode > on/off toggle */
 "settings_controller.bike_mode.title" = "وضع الدراجة";
 
+/* Settings > Bike Mode section > HealthKit toggle */
+"settings_controller.bike_mode.use_healthkit" = "استخدام بيانات تطبيق «صحتي»";
+
 /* Settings > Bike Mode > HealthKit denial or no-data toast */
 "settings_controller.bike_mode.healthkit_unavailable" = "تعذّرت مزامنة سرعة ركوب الدراجة من تطبيق «صحتي». سيتم استخدام سرعة قياسية للدراجة بدلًا من ذلك.";
 

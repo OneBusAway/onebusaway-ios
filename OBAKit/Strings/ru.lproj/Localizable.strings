@@ -1111,6 +1111,9 @@
 /* Settings > Bike Mode > on/off toggle */
 "settings_controller.bike_mode.title" = "Режим велосипеда";
 
+/* Settings > Bike Mode section > HealthKit toggle */
+"settings_controller.bike_mode.use_healthkit" = "Использовать данные приложения «Здоровье»";
+
 /* Settings > Bike Mode > HealthKit denial or no-data toast */
 "settings_controller.bike_mode.healthkit_unavailable" = "Не удалось синхронизировать скорость езды на велосипеде из приложения «Здоровье». Будет использована стандартная скорость велосипеда.";
 
