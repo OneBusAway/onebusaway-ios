@@ -609,8 +609,7 @@ struct StopPageEmptyStateRow: View {
         if isDepartureFilterEmpty {
             return OBALoc("stop_page.empty.departure_filter", value: "No departures match the current Departure Type filter", comment: "Empty state shown when the Departure Type filter (real-time only / scheduled only) hides every departure at the stop.")
         }
-        let fmt = OBALoc("stop_page.empty.no_departures_fmt", value: "No departures in the next %d minutes", comment: "Empty state shown when the stop has no upcoming departures within the loaded time window. %d is the number of minutes. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback.")
-        return String(format: fmt, minutesAfter)
+        return CountPlural.format("stop_page.empty.no_departures_fmt", value: "No departures in the next %d minutes", comment: "Empty state shown when the stop has no upcoming departures within the loaded time window. %d is the number of minutes. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback.", count: Int(minutesAfter))
     }
 
     private var actionTitle: String? {
