@@ -97,7 +97,7 @@ final class StopVehicleAnnotation: VehicleAnnotation {
         //
         // Restore `from` before `VehicleCoordinateUpdate.apply` so a city-block
         // hop interpolates instead of that didSet teleporting the pin.
-        // A kilometre-scale jump still snaps; see VehicleCoordinateUpdate (#1341).
+        // A kilometre-scale jump still snaps; see VehicleCoordinateUpdate (#1109, #1323).
         let from = self.coordinate
         self.tripStatus = tripStatus
         self.coordinate = from
