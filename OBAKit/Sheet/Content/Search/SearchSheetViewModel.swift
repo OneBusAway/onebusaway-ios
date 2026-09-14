@@ -196,6 +196,9 @@ final class SearchSheetViewModel: NSObject, ObservableObject, SearchDelegate {
     // MARK: - SearchDelegate
 
     func performSearch(request: SearchRequest) {
+        // A quick-search row leaves through this path. Stop before the fetch so
+        // a later `.final` cannot search a sheet the rider already left.
+        stopVoiceSearch()
         searchTask?.cancel()
         searchTask = Task { [weak self] in
             await self?.performSearchAndWait(request: request)
@@ -277,6 +280,7 @@ final class SearchSheetViewModel: NSObject, ObservableObject, SearchDelegate {
             message = SearchSheetMessage(kind: .noResults, text: Self.noResultsText)
 
         case .disambiguate(let response):
+            stopVoiceSearch()
             coordinator.push(.searchResults(response))
 
         case .single(let response):
@@ -294,6 +298,7 @@ final class SearchSheetViewModel: NSObject, ObservableObject, SearchDelegate {
             guard !Task.isCancelled else { return }
             // Leave search before opening the result, so Close on the detail sheet
             // lands back on home rather than on a stale search screen.
+            stopVoiceSearch()
             coordinator.pop()
             router.present(resolved)
         }
@@ -322,6 +327,9 @@ final class SearchSheetViewModel: NSObject, ObservableObject, SearchDelegate {
     /// Same order as the single-result path: resolve, then unwind, then present — so
     /// search is only left once there's something to show.
     private func leaveSearchAndPresent(_ result: Any) async {
+        // Tap-to-leave. Stop before the resolve await so a `.final` in flight
+        // cannot `performSearch` onto the sheet the rider just opened.
+        stopVoiceSearch()
         let resolved = await router.resolve(result: result)
         // Cancelling the task doesn't stop the resolve already in flight, so check
         // before touching the screen: `close()` has already popped search, and

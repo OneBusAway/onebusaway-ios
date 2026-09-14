@@ -444,6 +444,79 @@ final class SearchSheetViewModelTests: OBATestCase {
         #expect(viewModel.isVoiceSearchAvailable == false)
     }
 
+    /// A partial refreshes suggestion rows while the mic is still open. Tapping one
+    /// leaves search via `coordinator.pop()` — that has to stop recognition, or a
+    /// later `.final` runs `performSearch` on a sheet the rider already left, and
+    /// the task's strong `self` keeps the mic hot after the view is gone.
+    @Test @MainActor
+    func `Leaving search for a stop stops the mic so a later final cannot search`() async throws {
+        let voice = MockVoiceSearchController()
+        let (viewModel, _, coordinator, _) = makeViewModel(dataLoader: MockDataLoader(testName: name), voiceSearch: voice)
+        coordinator.push(.search)
+        let stop = try #require(try Fixtures.loadSomeStops().first)
+
+        viewModel.startVoiceSearch()
+        voice.emit(.partial("Pike"))
+        for _ in 0..<50 where viewModel.query != "Pike" {
+            await Task.yield()
+        }
+        #expect(viewModel.isListening)
+        let stopsBeforeLeave = voice.stopCount
+
+        viewModel.searchInteractor(viewModel.searchInteractor, showStop: stop)
+        await viewModel.pendingPresentation?.value
+
+        #expect(voice.stopCount > stopsBeforeLeave)
+        #expect(viewModel.isListening == false)
+        #expect(coordinator.currentRoute == .home)
+
+        voice.emit(.final("route zzzz"))
+        for _ in 0..<30 {
+            await Task.yield()
+        }
+        #expect(viewModel.query == "Pike")
+        #expect(viewModel.isSearching == false)
+    }
+
+    /// Quick-search rows leave through `performSearch` → `present(.single)`, which
+    /// also pops without stopping the mic. Stop as soon as that search starts, not
+    /// after the fetch — a `.final` during the request is the same late search.
+    @Test @MainActor
+    func `A search that leaves the sheet stops the mic first`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        dataLoader.mock(data: Fixtures.loadData(file: "routes-for-location-10.json")) { request in
+            request.url?.path.contains("/api/where/routes-for-location.json") ?? false
+        }
+        dataLoader.mock(data: Fixtures.loadData(file: "stops-for-route-1_100002.json")) { request in
+            request.url?.path.contains("/api/where/stops-for-route") ?? false
+        }
+        let voice = MockVoiceSearchController()
+        let (viewModel, _, coordinator, _) = makeViewModel(dataLoader: dataLoader, voiceSearch: voice)
+        coordinator.push(.search)
+
+        viewModel.startVoiceSearch()
+        for _ in 0..<50 where voice.startCount < 1 {
+            await Task.yield()
+        }
+        #expect(viewModel.isListening)
+        let stopsBeforeSearch = voice.stopCount
+
+        viewModel.performSearch(request: SearchRequest(query: "10", type: .route))
+        for _ in 0..<20 where voice.stopCount <= stopsBeforeSearch {
+            await Task.yield()
+        }
+
+        #expect(voice.stopCount > stopsBeforeSearch)
+        #expect(viewModel.isListening == false)
+
+        await viewModel.pendingPresentation?.value
+        // Search task is unstructured; yield until the sheet has left search.
+        for _ in 0..<200 where coordinator.currentRoute == .search {
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+        #expect(coordinator.currentRoute == .home)
+    }
+
     @Test @MainActor
     func `A voice failure raises an error message`() async {
         let voice = MockVoiceSearchController()

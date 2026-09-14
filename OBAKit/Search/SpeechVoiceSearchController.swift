@@ -122,10 +122,16 @@ final class SpeechVoiceSearchController: VoiceSearchControlling {
 
         let inputNode = audioEngine.inputNode
         let format = inputNode.outputFormat(forBus: 0)
+        // Form the tap in a nonisolated helper. A closure written here inherits
+        // this type's @MainActor isolation and Swift 6 inserts an executor check
+        // that traps when AVAudioEngine calls the tap on its I/O thread.
         inputNode.removeTap(onBus: 0)
-        inputNode.installTap(onBus: 0, bufferSize: 1024, format: format) { buffer, _ in
-            request.append(buffer)
-        }
+        inputNode.installTap(
+            onBus: 0,
+            bufferSize: 1024,
+            format: format,
+            block: Self.captureTapBlock(appendingTo: request)
+        )
 
         audioEngine.prepare()
         try audioEngine.start()
@@ -199,10 +205,37 @@ final class SpeechVoiceSearchController: VoiceSearchControlling {
     }
 
     private func requestSpeechAuthorization() async -> Bool {
+        await Self.requestSpeechAuthorizationOffMain()
+    }
+
+    /// `AVAudioNodeTapBlock` is non-Sendable, so a tap written inside a
+    /// `@MainActor` method is main-actor isolated and crashes on the audio
+    /// thread. Building it here keeps the closure off the main actor.
+    /// `append` is the API the tap is meant to call from that thread.
+    nonisolated static func captureTapBlock(
+        appendingTo request: SFSpeechAudioBufferRecognitionRequest
+    ) -> AVAudioNodeTapBlock {
+        { buffer, _ in
+            request.append(buffer)
+        }
+    }
+
+    /// The Speech authorization handler is not guaranteed to run on the main
+    /// queue. Form it in a nonisolated function so Swift 6 does not insert a
+    /// main-executor check that traps when Speech calls back off-main.
+    nonisolated static func speechAuthorizationHandler(
+        _ resume: @escaping @Sendable (Bool) -> Void
+    ) -> (SFSpeechRecognizerAuthorizationStatus) -> Void {
+        { status in
+            resume(status == .authorized)
+        }
+    }
+
+    nonisolated static func requestSpeechAuthorizationOffMain() async -> Bool {
         await withCheckedContinuation { continuation in
-            SFSpeechRecognizer.requestAuthorization { status in
-                continuation.resume(returning: status == .authorized)
-            }
+            SFSpeechRecognizer.requestAuthorization(speechAuthorizationHandler { granted in
+                continuation.resume(returning: granted)
+            })
         }
     }
 
