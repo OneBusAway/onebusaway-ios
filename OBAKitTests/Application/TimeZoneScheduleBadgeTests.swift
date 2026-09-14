@@ -61,6 +61,20 @@ struct TimeZoneScheduleBadgeTests {
         #expect(!badge.contains("Time"))
     }
 
+    @Test func `An even split picks the same identifier every time`() {
+        let forward = TimeZone.preferredScheduleTimeZone(identifiers: [
+            "America/New_York",
+            "Europe/Warsaw"
+        ])
+        let reverse = TimeZone.preferredScheduleTimeZone(identifiers: [
+            "Europe/Warsaw",
+            "America/New_York"
+        ])
+
+        #expect(forward?.identifier == "America/New_York")
+        #expect(forward?.identifier == reverse?.identifier)
+    }
+
     @Test func `Preferred zone is the most common identifier`() {
         let tz = TimeZone.preferredScheduleTimeZone(identifiers: [
             "America/Los_Angeles",

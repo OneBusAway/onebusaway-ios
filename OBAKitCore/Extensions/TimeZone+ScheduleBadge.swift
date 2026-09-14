@@ -33,17 +33,21 @@ extension TimeZone {
         return Self.gmtOffsetLabel(secondsFromGMT: secondsFromGMT(for: date))
     }
 
-    /// The most common resolvable IANA identifier. Ties go to the first winner
-    /// `max(by:)` returns; invalid strings are skipped.
+    /// The most common resolvable IANA identifier. An even split picks the
+    /// lexicographically first identifier so the winner does not change between
+    /// launches. Invalid strings are skipped.
     public static func preferredScheduleTimeZone(identifiers: [String]) -> TimeZone? {
         let resolved = identifiers.compactMap { TimeZone(identifier: $0) }
         guard !resolved.isEmpty else { return nil }
 
         let counts = Dictionary(grouping: resolved, by: \.identifier).mapValues(\.count)
-        guard let identifier = counts.max(by: { $0.value < $1.value })?.key else {
-            return nil
-        }
-        return TimeZone(identifier: identifier)
+        guard let maxCount = counts.values.max() else { return nil }
+        let identifier = counts
+            .filter { $0.value == maxCount }
+            .keys
+            .sorted()
+            .first
+        return identifier.flatMap { TimeZone(identifier: $0) }
     }
 
     /// `PST`, `CEST`, `IST` — not `GMT+9`, not `Poland Time`.
@@ -57,8 +61,25 @@ extension TimeZone {
         let hours = absolute / 3600
         let minutes = (absolute % 3600) / 60
         if minutes == 0 {
-            return "GMT\(sign)\(hours)"
+            return String(
+                format: OBALoc(
+                    "timezone.gmt_offset_hours_fmt",
+                    value: "GMT%@%d",
+                    comment: "GMT offset with whole hours, e.g. GMT+5 or GMT-8. First argument is + or -. Second is the hour count."
+                ),
+                sign,
+                hours
+            )
         }
-        return String(format: "GMT%@%d:%02d", sign, hours, minutes)
+        return String(
+            format: OBALoc(
+                "timezone.gmt_offset_hours_minutes_fmt",
+                value: "GMT%@%d:%02d",
+                comment: "GMT offset with hours and minutes, e.g. GMT+5:30. Arguments are sign, hours, and zero-padded minutes."
+            ),
+            sign,
+            hours,
+            minutes
+        )
     }
 }

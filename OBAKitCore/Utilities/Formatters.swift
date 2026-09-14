@@ -80,7 +80,15 @@ public class Formatters: NSObject {
         guard let badge = timeZone.scheduleBadge(at: date, versus: deviceTimeZone) else {
             return clock
         }
-        return "\(clock) (\(badge))"
+        return String(
+            format: OBALoc(
+                "timezone.clock_with_badge_fmt",
+                value: "%1$@ (%2$@)",
+                comment: "Clock time with a timezone badge, e.g. 4:00 PM (PST). First argument is the clock. Second is the badge."
+            ),
+            clock,
+            badge
+        )
     }
 
     private func applyTimeZoneToFormatters() {
