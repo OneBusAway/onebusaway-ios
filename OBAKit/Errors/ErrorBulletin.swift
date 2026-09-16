@@ -82,6 +82,17 @@ class ErrorBulletin: NSObject {
 
     @MainActor
     func show(in app: UIApplication) {
+        // Re-entrant while this manager's card is already up: no-op. Callers that
+        // create a *new* ErrorBulletin each time must also gate on `isShowing`
+        // (see `Application.displayError`) — a fresh manager always reports
+        // `isShowingBulletin == false`.
+        guard !bulletinManager.isShowingBulletin else { return }
         bulletinManager.show(in: app, rootItem: page)
+    }
+
+    /// `true` while this bulletin's `BLTNItemManager` is presenting.
+    @MainActor
+    var isShowing: Bool {
+        bulletinManager.isShowingBulletin
     }
 }
