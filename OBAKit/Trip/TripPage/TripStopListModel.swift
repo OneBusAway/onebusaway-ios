@@ -102,6 +102,35 @@ struct TripStopListModel {
         return index(in: stopTimes, stopID: arrivalDeparture.stopID, stopSequence: arrivalDeparture.stopSequence)
     }
 
+    /// Vehicle row for UIKit (and any caller that only has IDs), using the same
+    /// loop-aware rules as `make` / `vehicleIndex`. #1425: do not replace this
+    /// with `firstIndex { $0.stopID == closestStopID }`.
+    static func vehicleStopIndex<S: TripStopListEntry>(
+        in stopTimes: [S],
+        closestStopID: StopID?,
+        userStopID: StopID?,
+        userStopSequence: Int?
+    ) -> Int? {
+        let userIndex = userStopID.flatMap {
+            index(in: stopTimes, stopID: $0, stopSequence: userStopSequence)
+        }
+        return vehicleIndex(in: stopTimes, closestStopID: closestStopID, userIndex: userIndex)
+    }
+
+    /// Convenience overload for the trip panel's `ArrivalDeparture`.
+    static func vehicleStopIndex(
+        in stopTimes: [TripStopTime],
+        closestStopID: StopID?,
+        arrivalDeparture: ArrivalDeparture?
+    ) -> Int? {
+        vehicleStopIndex(
+            in: stopTimes,
+            closestStopID: closestStopID,
+            userStopID: arrivalDeparture?.stopID,
+            userStopSequence: arrivalDeparture?.stopSequence
+        )
+    }
+
     /// The vehicle's position, resolved from a stop ID that a loop route can
     /// match more than once.
     ///
