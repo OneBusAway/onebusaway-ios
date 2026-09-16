@@ -216,25 +216,35 @@ open class CoreApplication: NSObject,
     /// zone stuck (and mis-badged) for the rest of the session.
     private func refreshFormattersTimeZone() {
         guard userDefaultsStore.showRegionTimeZone else {
-            formatters.timeZone = .current
+            formatters.timeZone = .autoupdatingCurrent
             return
         }
 
         // Reset before the async lookup so a nil/failed resolution can't leave
         // the prior region's zone in place.
-        formatters.timeZone = .current
+        formatters.timeZone = .autoupdatingCurrent
+
+        // Capture the region this lookup is for. A later region change must not
+        // let this Task write A's zone after B has already taken over.
+        let regionIDAtStart = currentRegion?.regionIdentifier
 
         Task {
             // Setting may have been turned off while this request was in flight.
             guard self.userDefaultsStore.showRegionTimeZone else {
-                self.formatters.timeZone = .current
+                self.formatters.timeZone = .autoupdatingCurrent
+                return
+            }
+            guard self.currentRegion?.regionIdentifier == regionIDAtStart else {
                 return
             }
             guard let apiService else { return }
             do {
                 let agencies = try await apiService.getAgenciesWithCoverage().list
                 guard self.userDefaultsStore.showRegionTimeZone else {
-                    self.formatters.timeZone = .current
+                    self.formatters.timeZone = .autoupdatingCurrent
+                    return
+                }
+                guard self.currentRegion?.regionIdentifier == regionIDAtStart else {
                     return
                 }
                 let identifiers = agencies.compactMap { $0.agency?.timeZone }
@@ -244,7 +254,7 @@ open class CoreApplication: NSObject,
                 // else: leave the device-zone reset above in place
             } catch {
                 Logger.info("Unable to resolve region time zone from agencies-with-coverage: \(error)")
-                // Already reset to `.current` above; keep it.
+                // Already reset to `.autoupdatingCurrent` above; keep it.
             }
         }
     }

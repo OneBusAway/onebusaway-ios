@@ -505,6 +505,16 @@
 /* Accessibility label  that toggles the selection state of a survey option. */
 "surveys.accessibility_tap_toggle_selection" = "탭하여 선택 전환";
 
+
+/* Clock time with a timezone badge, e.g. 4:00 PM (PST). First argument is the clock. Second is the badge. */
+"timezone.clock_with_badge_fmt" = "%1$@ (%2$@)";
+
+/* GMT offset with whole hours, e.g. GMT+5 or GMT-8. First argument is + or -. Second is the hour count. */
+"timezone.gmt_offset_hours_fmt" = "GMT%1$@%2$d";
+
+/* GMT offset with hours and minutes, e.g. GMT+5:30. Arguments are sign, hours, and zero-padded minutes. */
+"timezone.gmt_offset_hours_minutes_fmt" = "GMT%1$@%2$d:%3$02d";
+
 /* Message for the trip planner tip */
 "trip_planner_tip.message" = "여기를 탭하면 장소를 검색하고 대중교통 길찾기로 여정을 계획할 수 있습니다.";
 

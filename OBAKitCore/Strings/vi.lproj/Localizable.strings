@@ -505,6 +505,16 @@
 /* Accessibility label  that toggles the selection state of a survey option. */
 "surveys.accessibility_tap_toggle_selection" = "Nhấn để chuyển đổi lựa chọn";
 
+
+/* Clock time with a timezone badge, e.g. 4:00 PM (PST). First argument is the clock. Second is the badge. */
+"timezone.clock_with_badge_fmt" = "%1$@ (%2$@)";
+
+/* GMT offset with whole hours, e.g. GMT+5 or GMT-8. First argument is + or -. Second is the hour count. */
+"timezone.gmt_offset_hours_fmt" = "GMT%1$@%2$d";
+
+/* GMT offset with hours and minutes, e.g. GMT+5:30. Arguments are sign, hours, and zero-padded minutes. */
+"timezone.gmt_offset_hours_minutes_fmt" = "GMT%1$@%2$d:%3$02d";
+
 /* Message for the trip planner tip */
 "trip_planner_tip.message" = "Nhấn vào đây để tìm kiếm địa điểm và lên kế hoạch hành trình với chỉ đường phương tiện công cộng.";
 

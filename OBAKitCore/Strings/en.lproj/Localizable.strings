@@ -523,7 +523,6 @@
 /* GMT offset with hours and minutes, e.g. GMT+5:30. Arguments are sign, hours, and zero-padded minutes. */
 "timezone.gmt_offset_hours_minutes_fmt" = "GMT%1$@%2$d:%3$02d";
 
-
 /* Message for the trip planner tip */
 "trip_planner_tip.message" = "Tap here to search for places and plan your journey with transit directions.";
 

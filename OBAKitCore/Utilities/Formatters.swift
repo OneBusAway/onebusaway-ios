@@ -26,7 +26,7 @@ public class Formatters: NSObject {
     /// Defaults to the device zone so existing tests and pre-region-load UI stay
     /// stable. When the rider opts in, `CoreApplication` replaces this with the
     /// region's dominant agency zone once `agencies-with-coverage` returns.
-    public var timeZone: TimeZone = .current {
+    public var timeZone: TimeZone = .autoupdatingCurrent {
         didSet {
             guard oldValue != timeZone else { return }
             applyTimeZoneToFormatters()
