@@ -41,10 +41,15 @@ struct MapTypeButton: View {
                     .accessibilityHidden(true)
             }
         }
+        // Distinct from the UIKit hover bar's `map_controller.map_type.*` label,
+        // which really does toggle the basemap. This opens `MapSheetView`, whose
+        // basemap picker is one of four sections — the others cover POI display,
+        // transit layers and rental modes — so "Map type" described a quarter of
+        // where it leads (#1412).
         .accessibilityLabel(Text(OBALoc(
-            "map_controller.map_type.accessibility_label",
-            value: "Map type",
-            comment: "Voiceover text for the button that opens the Map settings sheet."
+            "map_controller.map_settings.accessibility_label",
+            value: "Map settings",
+            comment: "Voiceover text for the button that opens the Map settings sheet, which covers the base map, points of interest, transit layers and other travel modes."
         )))
         .accessibilityValue(Text(accessibilityValueText))
     }

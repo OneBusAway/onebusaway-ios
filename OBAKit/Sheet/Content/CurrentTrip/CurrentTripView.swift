@@ -109,7 +109,7 @@ struct CurrentTripView: View {
     private var resultsList: some View {
         List {
             Section(header: Text(Strings.currentTripMultipleVehicles)) {
-                ForEach(viewModel.matchResults, id: \.arrivalDeparture.tripID) { result in
+                ForEach(viewModel.matchResults, id: \.listID) { result in
                     Button {
                         onPresentTrip(result.arrivalDeparture)
                     } label: {

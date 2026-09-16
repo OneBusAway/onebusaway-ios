@@ -40,7 +40,21 @@ final class LocalizationTests {
         "data_migration_bulletin.report_summary_number_of_successes",
         "map_controller.map_type.accessibility_value_with_layers_fmt",
         "search_results_sheet.result_count_fmt",
-        "rental_cluster.title_fmt"
+        "rental_cluster.title_fmt",
+        // VoiceOver strings that interpolate a minute count. Slavic locales need
+        // one/few/many agreement, so a single plain form is wrong at some counts —
+        // Polish "minut" is right for 5+ and wrong for 1 and 2-4.
+        "stop_page.row.a11y_arrives_fmt",
+        "stop_page.row.a11y_past_fmt",
+        "trip_page.card.a11y_fmt",
+        "alarm_builder_controller.minutes_fmt",
+        // Two counts: the minute countdown (bound to "count", which the well-formedness
+        // check below inspects) and the number of extra departures loaded.
+        "stop_page.grouped.a11y_fmt",
+        // The arriving/departing counterparts. Leaving these out would have made
+        // VoiceOver correct for arriving vehicles and wrong for departing ones.
+        "stop_page.row.a11y_fmt",
+        "stop_page.grouped.a11y_arrives_fmt"
     ]
 
     /// `%@`, `%d`, `%1$@`, `%2$d`, … and the escaped `%%`.
@@ -149,6 +163,146 @@ final class LocalizationTests {
         }
     }
 
+    /// One sheet serves both rental layers: `RentalDetailViewController` branches on
+    /// `vehicle.vehicleType?.formFactor?.isScooter` and `RentalMapLayer` declares both a
+    /// bikes and a scooters layer. So the sheet's own copy must not name a vehicle type —
+    /// a scooter rider reading "Plan a trip using this bike" is being told about a vehicle
+    /// they are not looking at. Likewise GBFS `propulsion_type: HUMAN` means human-powered,
+    /// which for a kick scooter is not pedalling.
+    @Test func `Rental sheet copy does not assume a bike`() throws {
+        let english = try #require(strings(in: Bundle(for: DonationCell.self), localization: "en"))
+
+        let planTrip = try #require(english["rental_detail.plan_trip"])
+        #expect(!planTrip.localizedCaseInsensitiveContains("bike"),
+                "rental_detail.plan_trip names a bike but the sheet also shows scooters: \(planTrip)")
+
+        let human = try #require(english["rental_detail.propulsion_human"])
+        #expect(!human.localizedCaseInsensitiveContains("pedal"),
+                "rental_detail.propulsion_human says pedal, but GBFS HUMAN covers kick scooters too: \(human)")
+    }
+
+    /// `MoreViewController` opens `MoreTabConfiguration.textURL` with no scheme check, and
+    /// the key's own comment says that URL may be `sms:` **or** web. A label promising SMS
+    /// therefore mislabels every region that configures a web contact form. English "Text
+    /// Agency" uses "text" as a verb, which is SMS in en-US, so the narrowing starts at the
+    /// source rather than in translation.
+    @Test func `Agency contact action does not promise SMS`() throws {
+        let bundle = Bundle(for: DonationCell.self)
+        // Words that name SMS specifically, per locale. Deliberately not a blanket "sms"
+        // substring check: several locales use a generic "message"/"write to" verb that is
+        // correct for both destinations.
+        let smsWords = ["sms", "短信", "簡訊", "문자", "i-text"]
+
+        for localization in bundle.localizations where localization != "Base" {
+            guard let value = strings(in: bundle, localization: localization)?["more_controller.text_agency"]
+            else { continue }
+            let lowered = value.lowercased()
+            let offender = smsWords.first { lowered.contains($0) }
+            #expect(offender == nil,
+                    "\(localization): more_controller.text_agency promises SMS (\"\(value)\") but textURL may be a web link")
+        }
+    }
+
+    /// Portuguese "trânsito" is road traffic, not public transport — a false friend for
+    /// English "transit". The distinction is load-bearing in this catalog, which legitimately
+    /// uses "Mostrar trânsito" for `settings_controller.map_section.shows_traffic`. So the
+    /// rule keys off the English: where the source says "transit", pt-BR must not answer
+    /// "trânsito".
+    @Test func `Brazilian Portuguese does not render transit as trânsito`() throws {
+        let bundle = Bundle(for: DonationCell.self)
+        let english = try #require(strings(in: bundle, localization: "en"))
+        let ptBR = try #require(strings(in: bundle, localization: "pt-BR"))
+
+        for (key, source) in english where source.localizedCaseInsensitiveContains("transit") {
+            guard let translated = ptBR[key] else { continue }
+            #expect(!translated.localizedCaseInsensitiveContains("trânsito"),
+                    "pt-BR/\(key): \"transit\" became \"trânsito\" (road traffic): \(translated)")
+        }
+    }
+
+    /// Four keys name the same rider-facing concept — changing from one vehicle to another —
+    /// and Arabic had drifted into two words for it: التبديل on the two accessibility labels,
+    /// التحويلة in Settings. التحويلة is a detour or a railway switch, i.e. the *vehicle* being
+    /// rerouted, not the rider changing services. One term, all four keys.
+    @Test func `Arabic uses one word for a transfer`() throws {
+        let arabic = try #require(strings(in: Bundle(for: DonationCell.self), localization: "ar"))
+        let transferKeys = [
+            "settings_controller.arrival_display_section.transfer_banner",
+            "settings_controller.arrival_display_section.transfer_banner.footer",
+            "walk_time_view.transfer_accessibility_label",
+            "stop_page.row.a11y_transfer_trip"
+        ]
+
+        for key in transferKeys {
+            let value = try #require(arabic[key], "ar/\(key) is missing")
+            #expect(!value.contains("التحويلة"),
+                    "ar/\(key) says التحويلة (a detour/junction) where the app means a rider transfer: \(value)")
+            #expect(value.contains("التبديل"),
+                    "ar/\(key) does not use the app's transfer term التبديل: \(value)")
+        }
+    }
+
+    /// OBAKitCore's `map_layers_tip` is the onboarding tip that introduces the rental layers,
+    /// and OBAKit's `map_layers.scooters` is the row it points at. If the two modules pick
+    /// different words, the tip names something the sheet does not offer.
+    ///
+    /// Compared by shared substring rather than equality: several locales qualify the row
+    /// ("Mga scooter", "共享滑板车") while the tip carries the bare noun, and that is fine —
+    /// what matters is that the same word for the vehicle appears in both.
+    @Test func `Both modules use the same word for a scooter`() throws {
+        let kit = Bundle(for: DonationCell.self)
+        let core = Bundle(for: Strings.self)
+
+        func sharesRun(_ a: String, _ b: String, minimum: Int) -> Bool {
+            let x = Array(a.lowercased()), y = b.lowercased()
+            guard x.count >= minimum else { return false }
+            for start in 0...(x.count - minimum) {
+                for length in stride(from: x.count - start, through: minimum, by: -1) {
+                    if y.contains(String(x[start..<(start + length)])) { return true }
+                }
+            }
+            return false
+        }
+
+        for localization in kit.localizations where localization != "Base" {
+            guard let row = strings(in: kit, localization: localization)?["map_layers.scooters"],
+                  let tip = strings(in: core, localization: localization)?["map_layers_tip.title"]
+            else { continue }
+            #expect(sharesRun(row, tip, minimum: 3),
+                    "\(localization): OBAKit says \"\(row)\" but OBAKitCore's tip says \"\(tip)\"")
+        }
+    }
+
+    /// Proves the production formatter goes through `Localizable.stringsdict` at all.
+    ///
+    /// `OBALoc` loads the format from the *test host's* localization, which is English, so this
+    /// cannot assert Polish words — passing a locale to `String(format:locale:)` selects the
+    /// plural category, it does not switch language. What it can prove is that the singular is
+    /// reached: before these keys had stringsdict entries the call site rendered the one plain
+    /// form at every count and said "arrives in 1 minutes". Polish `few`/`many` reachability is
+    /// a property of the catalog, pinned separately in the tests above.
+    @Test @MainActor func `Stop page VoiceOver copy resolves its plural forms`() {
+        func spoken(_ minutes: Int, _ status: ArrivalDepartureStatus) -> String {
+            StopPageAccessibilityCopy.upcomingIdentity(
+                routeShortName: "10", headsign: "Downtown", minutes: minutes,
+                arrivalDepartureStatus: status, adherence: "on time"
+            )
+        }
+
+        for status in [ArrivalDepartureStatus.arriving, .departing] {
+            #expect(spoken(1, status).contains("1 minute,"), "\(status) singular: \(spoken(1, status))")
+            #expect(!spoken(1, status).contains("1 minutes"), "\(status) said \"1 minutes\": \(spoken(1, status))")
+            #expect(spoken(5, status).contains("5 minutes"), "\(status) plural: \(spoken(5, status))")
+        }
+
+        let groupedOne = StopPageAccessibilityCopy.groupedCardIdentity(
+            routeShortName: "10", headsign: "Downtown", minutes: 1,
+            arrivalDepartureStatus: .departing, adherence: "on time", moreCount: 1
+        )
+        #expect(groupedOne.contains("1 minute,"), "grouped singular: \(groupedOne)")
+        #expect(groupedOne.contains("1 more departure loaded"), "grouped departures singular: \(groupedOne)")
+    }
+
     /// The footer names the switch. A locale that leaves the English phrase in
     /// the footer while translating the title makes the two unrecognizable as
     /// the same control.
@@ -223,6 +377,46 @@ final class LocalizationTests {
     /// Regression: `MapTypeButton.accessibilityValueText` shipped calling `String(format:)`,
     /// which rendered a Polish count of 5 as `other` ("5 warstwy włączonej") rather than
     /// `many` ("5 warstw włączonych").
+    /// Structure checks only prove the categories exist. This proves the countdown actually
+    /// resolves them: Polish needs "minutę" at 1, "minuty" at 2-4 and "minut" at 5+, and the
+    /// plain string these keys used to carry was stuck on the 5+ form at every count.
+    ///
+    /// Note this must use `String.localizedStringWithFormat`, not `String(format:)` — the
+    /// latter resolves against the root plural rule, so `few`/`many` would be unreachable and
+    /// the test would pass against a broken catalog.
+    @Test func `Polish arrival countdown reaches its few and many forms`() throws {
+        let format = try #require(localizedFormat(forKey: "stop_page.row.a11y_arrives_fmt", localization: "pl"))
+        // The locale MUST be passed explicitly. `String.localizedStringWithFormat` selects the
+        // category using `Locale.current`, which on this test host is English — so 5 would pick
+        // `other`, quietly rendering "5 minuty" and passing a `contains("5 minut")` check
+        // without ever reaching Polish's `many`.
+        let polish = Locale(identifier: "pl")
+        func rendered(_ minutes: Int) -> String {
+            String(format: format, locale: polish, "10", "Centrum", minutes, "o czasie")
+        }
+
+        #expect(rendered(1).contains("1 minutę"), "pl one: \(rendered(1))")
+        #expect(rendered(3).contains("3 minuty"), "pl few: \(rendered(3))")
+        #expect(rendered(5).contains("5 minut"), "pl many: \(rendered(5))")
+        #expect(rendered(22).contains("22 minuty"), "pl few at 22: \(rendered(22))")
+    }
+
+    /// The simplest of the countdown keys, and the one a rider hears most: a bare minute count.
+    @Test func `Alarm minute count agrees in Polish and Russian`() throws {
+        let plFormat = try #require(localizedFormat(forKey: "alarm_builder_controller.minutes_fmt", localization: "pl"))
+        let pl = Locale(identifier: "pl")
+        #expect(String(format: plFormat, locale: pl, 1) == "1 minuta", "pl one: \(String(format: plFormat, locale: pl, 1))")
+        #expect(String(format: plFormat, locale: pl, 3) == "3 minuty", "pl few: \(String(format: plFormat, locale: pl, 3))")
+        #expect(String(format: plFormat, locale: pl, 5) == "5 minut", "pl many: \(String(format: plFormat, locale: pl, 5))")
+
+        let ruFormat = try #require(localizedFormat(forKey: "alarm_builder_controller.minutes_fmt", localization: "ru"))
+        let ru = Locale(identifier: "ru")
+        let one = String(format: ruFormat, locale: ru, 1)
+        let few = String(format: ruFormat, locale: ru, 3)
+        let many = String(format: ruFormat, locale: ru, 5)
+        #expect(one != few && few != many, "ru forms must differ across 1/3/5: \(one) / \(few) / \(many)")
+    }
+
     @Test func `Polish layer count reaches its few and many forms`() throws {
         let format = try #require(localizedFormat(
             forKey: "map_controller.map_type.accessibility_value_with_layers_fmt",

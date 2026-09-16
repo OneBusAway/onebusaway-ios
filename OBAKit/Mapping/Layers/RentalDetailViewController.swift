@@ -83,7 +83,7 @@ struct RentalDetailView: View {
                     onPlanTrip(rental)
                 } label: {
                     Label(
-                        OBALoc("rental_detail.plan_trip", value: "Plan a trip using this bike", comment: "Primary action on the rental vehicle sheet"),
+                        OBALoc("rental_detail.plan_trip", value: "Plan a trip using this vehicle", comment: "Primary action on the rental vehicle sheet"),
                         systemImage: "arrow.triangle.turn.up.right.diamond.fill"
                     )
                     .font(.headline)
@@ -265,7 +265,7 @@ struct RentalDetailView: View {
         case "ELECTRIC", "ELECTRIC_ASSIST":
             return OBALoc("rental_detail.propulsion_electric", value: "Electric", comment: "Rental vehicle propulsion: electric")
         case "HUMAN":
-            return OBALoc("rental_detail.propulsion_human", value: "Pedal", comment: "Rental vehicle propulsion: human-powered")
+            return OBALoc("rental_detail.propulsion_human", value: "Human-powered", comment: "Rental vehicle propulsion: human-powered")
         case "COMBUSTION":
             return OBALoc("rental_detail.propulsion_combustion", value: "Gas", comment: "Rental vehicle propulsion: combustion")
         default:

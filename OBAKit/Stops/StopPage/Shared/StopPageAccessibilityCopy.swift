@@ -13,13 +13,21 @@ import OBAKitCore
 /// Spoken identity for an upcoming stop-page row. The minutes badge is
 /// "5m" either way; first/layover stops are `.departing` and every other
 /// stop is `.arriving`. VoiceOver used to say "departs" for both (#447).
+///
+/// These formats carry a minute count and resolve through `Localizable.stringsdict`.
+/// The locale has to be passed to `String(format:locale:)` explicitly: the no-locale
+/// overload resolves `%#@count@` against the *root* plural rule, so only `one` and
+/// `other` are ever reachable and a Polish rider hears "5 minuty" instead of
+/// "5 minut". `locale` is injectable so tests can exercise a locale whose categories
+/// differ from the root's.
 enum StopPageAccessibilityCopy {
     static func upcomingIdentity(
         routeShortName: String,
         headsign: String,
         minutes: Int,
         arrivalDepartureStatus: ArrivalDepartureStatus,
-        adherence: String
+        adherence: String,
+        locale: Locale = .current
     ) -> String {
         let fmt: String
         switch arrivalDepartureStatus {
@@ -36,7 +44,7 @@ enum StopPageAccessibilityCopy {
                 comment: "VoiceOver for a stop-page row whose vehicle is departing this stop (first stop or layover). Route, headsign, minutes, adherence."
             )
         }
-        return String(format: fmt, routeShortName, headsign, minutes, adherence)
+        return String(format: fmt, locale: locale, routeShortName, headsign, minutes, adherence)
     }
 
     /// VoiceOver for a grouped route card. The next trip is arriving or
@@ -47,7 +55,8 @@ enum StopPageAccessibilityCopy {
         minutes: Int,
         arrivalDepartureStatus: ArrivalDepartureStatus,
         adherence: String,
-        moreCount: Int
+        moreCount: Int,
+        locale: Locale = .current
     ) -> String {
         let fmt: String
         switch arrivalDepartureStatus {
@@ -64,6 +73,6 @@ enum StopPageAccessibilityCopy {
                 comment: "VoiceOver for a grouped route card whose next vehicle is departing this stop (first stop or layover)."
             )
         }
-        return String(format: fmt, routeShortName, headsign, minutes, adherence, moreCount)
+        return String(format: fmt, locale: locale, routeShortName, headsign, minutes, adherence, moreCount)
     }
 }
