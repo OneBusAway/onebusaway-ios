@@ -813,6 +813,14 @@ final class ApplicationTests: OBATestCase {
         // Should not crash when delegate is nil
     }
 
+    /// #1421: each `ErrorBulletin` owns its own `BLTNItemManager`. Presenting a
+    /// second while the first is up stacks managers on the shared overlay window
+    /// and leaves Dismiss unable to clear the card (force-kill required).
+    @Test func `Should not present a second error bulletin while one is showing`() {
+        #expect(Application.shouldPresentErrorBulletin(alreadyShowing: true) == false)
+        #expect(Application.shouldPresentErrorBulletin(alreadyShowing: false) == true)
+    }
+
     // MARK: - Agency Alerts Tests
 
     @Test func `Agency alerts store display error`() {

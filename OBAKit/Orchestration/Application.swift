@@ -909,6 +909,15 @@ public class Application: CoreApplication, PushServiceDelegate {
 
     // MARK: - Error Visualization
 
+    /// Whether a new error bulletin should be presented.
+    ///
+    /// Each `ErrorBulletin` owns its own `BLTNItemManager`. Presenting a second
+    /// one while the first is up stacks managers on `BulletinOverlayWindow` and
+    /// leaves Dismiss unable to clear the card (#1421).
+    static func shouldPresentErrorBulletin(alreadyShowing: Bool) -> Bool {
+        !alreadyShowing
+    }
+
     /// Classifies and displays an error to the end user.
     @MainActor
     public override func displayError(_ error: Error) async {
@@ -916,6 +925,10 @@ public class Application: CoreApplication, PushServiceDelegate {
         Logger.error("Error: \(classified.localizedDescription)")
 
         analytics?.reportError?(error)
+
+        guard Self.shouldPresentErrorBulletin(alreadyShowing: errorBulletin?.isShowing ?? false) else {
+            return
+        }
 
         guard let uiApp = delegate?.uiApplication else { return }
         let bulletin = ErrorBulletin(application: self, classifiedError: classified)

@@ -242,11 +242,26 @@ Your server must send HTTP/2 requests to APNs with specific headers:
             "vehicleId": "1234",
             "occupancyStatus": "MANY_SEATS_AVAILABLE"
         },
-        "stale-date": 1706198520,
-        "relevance-score": 100
+        "stale-date": 1706198520
     }
 }
 ```
+
+**Do not send a flat `"relevance-score": 100` on updates (#1252 / #1189).**
+ActivityKit shows the Live Activity with the highest score in the Dynamic
+Island. The app assigns a monotonic on-device score when the rider Tracks a
+trip (`TripLiveActivityRelevance.prominenceScore`) and demotes peers to `0`.
+A push that stamps every card with `100` re-ties those scores and undoes
+Island ordering. Either:
+
+1. **Omit `relevance-score`** on Live Activity updates so the on-device score
+   is left alone (preferred), or
+2. Send a **per-activity** score that preserves newest-Track-highest ordering.
+
+Local arrivals refreshes already go through
+`TripLiveActivityRelevance.contentPreservingRelevance` / 
+`LiveActivityUpdateCoalescer` and keep the existing score; only the push
+path can wipe it.
 
 #### Update with Alert (for significant changes)
 
@@ -365,7 +380,12 @@ class APNsService {
                 event: options.event || 'update',
                 'content-state': contentState,
                 'stale-date': Math.floor(Date.now() / 1000) + 120, // 2 min
-                'relevance-score': options.relevanceScore || 100
+                // Omit relevance-score by default (#1252): a flat 100 re-ties
+                // Dynamic Island ordering that the app set on Track. Pass
+                // options.relevanceScore only when you have a per-activity value.
+                ...(options.relevanceScore != null
+                    ? { 'relevance-score': options.relevanceScore }
+                    : {})
             }
         };
 
