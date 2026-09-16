@@ -47,6 +47,14 @@ public enum NearbyTripMatcher {
     public struct MatchResult {
         public let arrivalDeparture: ArrivalDeparture
         public let distanceFromUser: CLLocationDistance
+
+        /// Identity for a disambiguation row. Same key `filterAndSort` uses to
+        /// keep one row per vehicle: a feed can assign two vehicles to one trip,
+        /// so `tripID` alone is not unique. Falls back to the trip when the feed
+        /// omits a vehicle id — those rows were already collapsed to one.
+        public var listID: String {
+            arrivalDeparture.vehicleID ?? arrivalDeparture.tripID
+        }
     }
 
     /// Finds active, real-time vehicles on `route` near `userLocation`.
